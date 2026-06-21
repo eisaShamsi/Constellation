@@ -500,6 +500,11 @@
 			{ label: 'Overdue date', type: 'color', var: '--gt-overdue' },
 			{ label: 'Due-today date', type: 'color', var: '--gt-today' },
 			{ label: 'Text size', type: 'range', var: '--gt-text-scale', min: 70, max: 140, step: 5, unit: '', def: 100 } ] },
+		// MIG-080 §D-text — Cataloger (the universe review queue) text size. Scales the
+		// CatalogerView chrome (calc(X * var(--cat-scale,1))) AND the embedded
+		// SourceReviewPanel cards (via .cataloger-queue { --rs-scale: var(--cat-scale) }).
+		cataloger: { name: 'Cataloger', controls: [
+			{ label: 'Text size', type: 'range', var: '--cat-text-scale', min: 70, max: 140, step: 5, unit: '', def: 100 } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -516,7 +521,7 @@
 		{ key: 'globalTasks', name: 'Global Tasks', surface: 'editor', elements: ['globalTasks'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
-		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
+		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent', 'cataloger'] },
 		{ key: 'shell', name: 'Shell', surface: 'shell', elements: ['accent'] },
 	];
 	// element key → its (first) category, so clicking a part in the preview opens the right category.

@@ -350,7 +350,7 @@ pub fn read_suggestions(
 ) -> Result<Option<SuggestionRecord>, String> {
     // V3-§8: also read composite_json (may not exist on older DBs;
     // we COALESCE through SELECT * via a fallback query).
-    let row: Option<(String, i64, i64, Option<String>)> = conn
+    let row_result: Result<(String, i64, i64, Option<String>), rusqlite::Error> = conn
         .query_row(
             "SELECT suggestions_json, classifier_tier, created_at, composite_json
              FROM sources_suggestions WHERE note_path = ?1",
@@ -365,8 +365,17 @@ pub fn read_suggestions(
                 params![note_path],
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, None)),
             )
-        })
-        .ok();
+        });
+    // MIG-080 §D — distinguish "no suggestion row for this note" (→ Ok(None), the
+    // normal case) from a genuine DB failure (→ Err). The previous blanket `.ok()`
+    // collapsed BOTH into None, so a locked/corrupt DB silently rendered as
+    // "Nothing to review" for a note that DID have a queued suggestion — a false
+    // empty the right-rail note-scoped panel would now surface per-note.
+    let row: Option<(String, i64, i64, Option<String>)> = match row_result {
+        Ok(r) => Some(r),
+        Err(rusqlite::Error::QueryReturnedNoRows) => None,
+        Err(e) => return Err(format!("Failed to read suggestions for {}: {}", note_path, e)),
+    };
     match row {
         None => Ok(None),
         Some((json, tier, created, composite)) => {

@@ -317,6 +317,11 @@
     overflow: hidden;
     background: var(--background-primary, #fff);
     color: var(--text-normal, #222);
+    /* MIG-080 §D-text — Cataloger text size (Style Setter "Cataloger" → Text size,
+       --cat-text-scale 70–140, default 100). Text-only; the chrome font-sizes are
+       calc(X * var(--cat-scale, 1)) and the embedded SourceReviewPanel is driven via
+       .cataloger-queue below. */
+    --cat-scale: calc(var(--cat-text-scale, 100) / 100);
   }
   /* Full-width — the dock view uses the whole content area (not a narrow
      centered column, which read as a "window within a window"). */
@@ -341,13 +346,13 @@
   .cataloger-heading { min-width: 0; }
   .cataloger-title {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: calc(1.5rem * var(--cat-scale, 1));
     font-weight: 700;
     letter-spacing: -0.01em;
   }
   .cataloger-tagline {
     margin: 4px 0 0;
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--cat-scale, 1));
     color: var(--text-muted, #888);
     line-height: 1.4;
   }
@@ -368,7 +373,7 @@
     color: var(--text-normal, #222);
     border-radius: 6px;
     padding: 6px 12px;
-    font-size: 0.82rem;
+    font-size: calc(0.82rem * var(--cat-scale, 1));
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
@@ -397,7 +402,7 @@
     padding: 6px 10px;
     border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.15));
     border-radius: 5px;
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--cat-scale, 1));
     background: var(--background-secondary, #f5f5f5);
     color: var(--text-normal, #222);
     outline: none;
@@ -421,7 +426,7 @@
     border: none;
     background: transparent;
     color: var(--text-normal, #222);
-    font-size: 0.83rem;
+    font-size: calc(0.83rem * var(--cat-scale, 1));
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
@@ -433,13 +438,13 @@
   }
   .cataloger-picker-result:disabled { opacity: 0.55; cursor: not-allowed; }
   .cataloger-picker-state {
-    font-size: 0.8rem;
+    font-size: calc(0.8rem * var(--cat-scale, 1));
     color: var(--text-muted, #888);
     padding: 4px 10px;
     text-align: center;
   }
   .cataloger-picker-error {
-    font-size: 0.78rem;
+    font-size: calc(0.78rem * var(--cat-scale, 1));
     color: var(--text-error, #c00);
     padding: 4px 10px;
   }
@@ -451,7 +456,7 @@
     color: var(--text-on-accent, #fff);
     border-radius: 6px;
     padding: 6px 14px;
-    font-size: 0.82rem;
+    font-size: calc(0.82rem * var(--cat-scale, 1));
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -477,5 +482,10 @@
     flex: 1;
     min-height: 0;
     margin-top: 4px;
+    /* MIG-080 §D-text — drive the embedded SourceReviewPanel's existing per-panel
+       text scale (--rs-scale, from §H) off the Cataloger's --cat-scale, so the
+       Cataloger Text-size slider scales the cards too. The RIGHT-RAIL SourceReviewPanel
+       is a different instance with its own --rs-scale (from .rs-inner) → unaffected. */
+    --rs-scale: var(--cat-scale, 1);
   }
 </style>

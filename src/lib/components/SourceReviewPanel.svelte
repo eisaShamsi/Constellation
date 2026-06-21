@@ -698,18 +698,48 @@
   let horizontalTaxonomy = $state<HorizontalNode[]>([]);
   let verticalTaxonomy = $state<VerticalNode[]>([]);
 
+  // MIG-080 §D — monotonic load token. The new note-switch $effect can fire
+  // loadQueue() faster than the IPC round-trips (rapid A→B→C tab switching);
+  // without sequencing, a stale in-flight response could overwrite a newer one
+  // and leave the rail showing the wrong note. Each call captures `seq`; only
+  // the latest call is allowed to write `queue`/`loading`/`error`.
+  let _srpLoadSeq = 0;
   async function loadQueue() {
+    const seq = ++_srpLoadSeq;
     loading = true;
     error = null;
     try {
-      queue = await invoke<SuggestionRecord[]>('sources_list_pending_suggestions');
+      if (activeNotePath) {
+        // Right-rail (note-context): THIS note's pending suggestion record only
+        // (sources_get_suggestions → Option<SuggestionRecord>). The universe queue
+        // stays in the Cataloger, which mounts this panel WITHOUT activeNotePath
+        // → the else-branch below.
+        const rec = await invoke<SuggestionRecord | null>('sources_get_suggestions', { notePath: activeNotePath });
+        if (seq !== _srpLoadSeq) return; // superseded by a newer load
+        queue = rec ? [rec] : [];
+      } else {
+        const all = await invoke<SuggestionRecord[]>('sources_list_pending_suggestions');
+        if (seq !== _srpLoadSeq) return;
+        queue = all;
+      }
     } catch (e) {
+      if (seq !== _srpLoadSeq) return;
       error = String(e);
       queue = [];
     } finally {
-      loading = false;
+      if (seq === _srpLoadSeq) loading = false;
     }
   }
+
+  // MIG-080 §D — right-rail instances reload when the open note changes. The
+  // first run is skipped (onMount already loaded); the Cataloger keeps
+  // activeNotePath null so this never reloads it.
+  let _srpLastNote: string | null | undefined = undefined;
+  $effect(() => {
+    const p = activeNotePath;
+    if (_srpLastNote === undefined) { _srpLastNote = p; return; }
+    if (p !== _srpLastNote) { _srpLastNote = p; loadQueue(); }
+  });
 
   async function classifyActiveNote() {
     if (!activeNotePath || classifying) return;
@@ -878,6 +908,12 @@
     const detail = (e as CustomEvent).detail as { notePath?: string };
     const notePath = detail?.notePath;
     if (!notePath || classifying) return;
+    // MIG-080 §D — a NOTE-SCOPED instance (right rail, activeNotePath set) honors
+    // ONLY events for its own note. Foreign classify-and-show events (e.g. a
+    // file-tree right-click on a different note) belong to the universe Cataloger
+    // instance (activeNotePath null), which still prepends them. Without this, an
+    // X-scoped rail would be contaminated by note Y's freshly-classified card.
+    if (activeNotePath && notePath !== activeNotePath) return;
     classifying = true;
     error = null;
     try {
@@ -1087,7 +1123,7 @@
          needs. Always operates on the full queue (so Approve All math
          and the count strip stay accurate). Legacy v2-era cards only
          appear in 'all'. -->
-    {#if queue.length > 1}
+    {#if queue.length > 1 && !activeNotePath}
       <div class="srp-filter-row" role="tablist" aria-label={$t('cece.queueFilter.ariaLabel') || 'Filter the review queue by composition'}>
         {#each filterChips as f}
           <button
@@ -1105,8 +1141,9 @@
         {/each}
       </div>
     {/if}
-    {#if trustCalActive}
-      <!-- V3-§8.r5.3 — trust-calibration banner. Quiet but persistent
+    {#if trustCalActive && !activeNotePath}
+      <!-- V3-§8.r5.3 — trust-calibration banner (universe-only; hidden in the
+           note-scoped right rail per MIG-080 §D). Quiet but persistent
            reminder that reasoning trails are auto-expanded so the user
            learns when to trust the cataloger ensemble. Disappears once
            the user has reviewed TRUST_CAL_THRESHOLD cards. -->
@@ -1131,25 +1168,33 @@
           </span>
         {/if}
       </span>
-      <!-- MIG-021v2 §1F'.b — bulk Approve All / Reject All -->
-      <span class="srp-bulk-actions">
-        <button
-          class="srp-bulk-btn srp-bulk-accept"
-          onclick={() => bulkConfirm = 'accept'}
-          disabled={bulkRunning}
-          title={$t('sources.review.acceptAllTitle') || 'Apply every queued suggestion to its note'}
-        >
-          {$t('sources.review.acceptAll') || 'Approve all'}
-        </button>
-        <button
-          class="srp-bulk-btn srp-bulk-reject"
-          onclick={() => bulkConfirm = 'reject'}
-          disabled={bulkRunning}
-          title={$t('sources.review.rejectAllTitle') || 'Clear every queued suggestion without writing'}
-        >
-          {$t('sources.review.rejectAll') || 'Reject all'}
-        </button>
-      </span>
+      <!-- MIG-021v2 §1F'.b — bulk Approve All / Reject All.
+           MIG-080 §D — UNIVERSE-ONLY. The note-scoped right rail (activeNotePath set)
+           must NOT expose these: sources_accept_all_pending / sources_reject_all_pending
+           act on the ENTIRE universe queue (reject = DELETE FROM sources_suggestions with
+           NO WHERE clause), so showing them beside a single note's card would let one
+           note's panel wipe every pending suggestion across the Universe. The per-note
+           rail uses the per-card Accept / Reject only. -->
+      {#if !activeNotePath}
+        <span class="srp-bulk-actions">
+          <button
+            class="srp-bulk-btn srp-bulk-accept"
+            onclick={() => bulkConfirm = 'accept'}
+            disabled={bulkRunning}
+            title={$t('sources.review.acceptAllTitle') || 'Apply every queued suggestion to its note'}
+          >
+            {$t('sources.review.acceptAll') || 'Approve all'}
+          </button>
+          <button
+            class="srp-bulk-btn srp-bulk-reject"
+            onclick={() => bulkConfirm = 'reject'}
+            disabled={bulkRunning}
+            title={$t('sources.review.rejectAllTitle') || 'Clear every queued suggestion without writing'}
+          >
+            {$t('sources.review.rejectAll') || 'Reject all'}
+          </button>
+        </span>
+      {/if}
     </div>
 
     {#if bulkRunning}

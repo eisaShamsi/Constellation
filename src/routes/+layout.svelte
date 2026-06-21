@@ -383,12 +383,15 @@
 	let rightSidebarOpen = $state(false);
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360' | 'sourceReview'>('properties');
 	// MIG-007 follow-up (task_19b5319d) — which right-sidebar tabs require an open note. The rest
-	// (tags / links / review / sourceReview) are universe-wide and render with or without a note.
+	// (links / review) are universe-wide and render with or without a note. ('tags' → §B,
+	// 'sourceReview' → §D are now note-scoped — see NOTE_SCOPED_TABS below.)
 	// Gated ONCE in the content area below, replacing the old `isHome && sidebarTab` note-gate that
 	// hoisted tags/links above it and duplicated review/sourceReview inside + outside it.
 	// MIG-080 §A — 'calendar' removed (relocated to the left daily-note launcher).
 	// MIG-080 §B — 'tags' is now note-scoped (the right rail shows ONLY the open note's tags; the universe All-tags view moved to the Dashboard).
-	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags']);
+	// MIG-080 §D — 'sourceReview' is now note-scoped: the right rail shows THIS note's pending source
+	//   suggestions (sources_get_suggestions); the universe suggestion queue stays in the Cataloger (left dock).
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags', 'sourceReview']);
 	// MIG-080 §B — the right-sidebar Tags tab is note-scoped (the open note's tags only).
 	// The universe-wide All-tags browse moved to the Dashboard (DashboardView, reading the
 	// tag_counts-derived allLibraryTags). The 'note'/'all' toggle was removed.
@@ -5170,14 +5173,24 @@
 		return () => window.removeEventListener('constellation:reveal-in-tree', handler);
 	});
 
-	// MIG-021v2 §1E' — right-click action handler. Opens the Source Review
-	// panel and emits a window event the panel listens for; the panel fires
-	// the classifier IPC + prepends the resulting record to the visible queue.
+	// MIG-021v2 §1E' — right-click "Suggest sources & content type" action handler.
+	// MIG-080 §D — the right-sidebar Source Review is now NOTE-SCOPED (shows only the
+	// OPEN note's suggestions). A file-tree right-click targets an ARBITRARY note that
+	// may not be the open tab, so this is a UNIVERSE-level classify action: route it to
+	// the Cataloger (the universe queue's home post-§D). The Cataloger's universe-scoped
+	// SourceReviewPanel (activeNotePath null) listens for `classify-and-show`, fires the
+	// classifier IPC, and prepends + flashes the record. (Opening the right-rail tab here
+	// would no-op when no note is focused, or contaminate a different note's scoped rail.)
 	function handleSuggestSourcesForNote(notePath: string) {
-		rightSidebarOpen = true;
-		rightSidebarTab = 'sourceReview';
-		// Defer the dispatch one frame so the panel has mounted (the listener
-		// is attached in onMount).
+		showSkyView = false; showGlobalTasks = false; showIndex = false;
+		showConstellationMap = false; showOrgChart = false; showInspector360 = false;
+		showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
+		showExpressionForge = false; showSenseMakingCanvas = false;
+		lensActive = false; sightV3Active = false; sightV4Active = false;
+		sightV5Active = false; sightV6Active = false;
+		showCataloger = true;
+		// Defer the dispatch one frame so CatalogerView's panel has mounted (the
+		// listener is attached in onMount) — matches the 'cataloger' command path.
 		requestAnimationFrame(() => {
 			window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
 				detail: { notePath },
@@ -7421,7 +7434,10 @@
 						/>
 					</div>
 				{:else if rightSidebarTab === 'sourceReview'}
-					<!-- MIG-021 §1C — Source Review queue (works with or without an active note). -->
+					<!-- MIG-021 §1C — Source Review queue. MIG-080 §D — now NOTE-SCOPED: this
+					     branch renders only when a note IS open (the empty-guard above shows
+					     "no note selected" otherwise); the panel shows THIS note's pending
+					     suggestions via activeNotePath. The universe queue lives in the Cataloger. -->
 					<div class="rs-section rs-full-height">
 						<SourceReviewPanel
 							activeNotePath={sidebarTab?.path ?? null}
