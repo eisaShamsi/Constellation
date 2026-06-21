@@ -3533,7 +3533,14 @@
 			"health": "स्वास्थ्य",
 			"provenance": "उत्पत्ति",
 			"review": "समीक्षा",
-			"source_review": "स्रोत समीक्षा"
+			"source_review": "स्रोत समीक्षा",
+			"global_tasks": "वैश्विक कार्य",
+			"surface": "सतह",
+			"text": "पाठ",
+			"border": "किनारा",
+			"row_hover": "पंक्ति होवर",
+			"overdue_date": "अतिदेय तिथि",
+			"due_today_date": "आज की देय तिथि"
 		}
 	}
 }

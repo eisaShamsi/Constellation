@@ -3533,7 +3533,14 @@
 			"health": "Gesundheit",
 			"provenance": "Herkunft",
 			"review": "Wiederholung",
-			"source_review": "Quellenprüfung"
+			"source_review": "Quellenprüfung",
+			"global_tasks": "Globale Aufgaben",
+			"surface": "Oberfläche",
+			"text": "Text",
+			"border": "Rahmen",
+			"row_hover": "Zeile (Hover)",
+			"overdue_date": "Überfälliges Datum",
+			"due_today_date": "Heute fälliges Datum"
 		}
 	}
 }

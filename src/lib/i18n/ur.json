@@ -3533,7 +3533,14 @@
 			"health": "صحت",
 			"provenance": "ماخذ",
 			"review": "جائزہ",
-			"source_review": "ماخذ کا جائزہ"
+			"source_review": "ماخذ کا جائزہ",
+			"global_tasks": "عمومی کام",
+			"surface": "سطح",
+			"text": "متن",
+			"border": "کنارہ",
+			"row_hover": "قطار ہوور",
+			"overdue_date": "مقررہ تاریخ گزر گئی",
+			"due_today_date": "آج کی مقررہ تاریخ"
 		}
 	}
 }

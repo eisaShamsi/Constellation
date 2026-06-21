@@ -3668,7 +3668,14 @@
 			"health": "الصحة",
 			"provenance": "المصدر",
 			"review": "المراجعة",
-			"source_review": "مراجعة المصادر"
+			"source_review": "مراجعة المصادر",
+			"global_tasks": "المهام العامة",
+			"surface": "السطح",
+			"text": "النص",
+			"border": "الحدّ",
+			"row_hover": "تمرير الصف",
+			"overdue_date": "تاريخ متأخّر",
+			"due_today_date": "تاريخ مستحقّ اليوم"
 		}
 	}
 }

@@ -3533,7 +3533,14 @@
 			"health": "건강",
 			"provenance": "출처",
 			"review": "복습",
-			"source_review": "출처 검토"
+			"source_review": "출처 검토",
+			"global_tasks": "전역 작업",
+			"surface": "배경",
+			"text": "텍스트",
+			"border": "테두리",
+			"row_hover": "행 호버",
+			"overdue_date": "기한 지난 날짜",
+			"due_today_date": "오늘 마감 날짜"
 		}
 	}
 }

@@ -5568,6 +5568,16 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="0.6" fill="currentColor" stroke="none"/></svg>
 			</button>
 			{/if}
+			<!-- MIG-080 §C.3 — universe Task agenda, relocated out of the note-context right rail
+			     to the left dock (beside the Calendar); reuses the full-page GlobalTasksView. -->
+			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => {
+				showGlobalTasks = !showGlobalTasks;
+				if (showGlobalTasks) {
+					showSkyView = false; showCalendarPage = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
+				}
+			}} title={$t('commands.globalTasks') || 'Tasks'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+			</button>
 			{#if $appSettings.enabledFeatures?.aiSkills !== false}
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>

@@ -486,6 +486,20 @@
 			{ label: 'Holiday dot', type: 'color', var: '--cal-event-holiday' },
 			{ label: 'Observance dot', type: 'color', var: '--cal-event-observance' },
 			{ label: 'Special-day dot', type: 'color', var: '--cal-event-special' } ] },
+		// MIG-080 §C.3 — Global Tasks (the universe task agenda). Each surface uses
+		// var(--gt-X, var(--theme-var, default)) → follows the universe theme by
+		// default, these override it. (Live two-zone — open the Tasks view to see edits.)
+		globalTasks: { name: 'Global Tasks', controls: [
+			{ label: 'Background', type: 'color', var: '--gt-bg' },
+			{ label: 'Surface', type: 'color', var: '--gt-surface' },
+			{ label: 'Text', type: 'color', var: '--gt-text' },
+			{ label: 'Muted text', type: 'color', var: '--gt-muted' },
+			{ label: 'Accent', type: 'color', var: '--gt-accent' },
+			{ label: 'Border', type: 'color', var: '--gt-border' },
+			{ label: 'Row hover', type: 'color', var: '--gt-hover' },
+			{ label: 'Overdue date', type: 'color', var: '--gt-overdue' },
+			{ label: 'Due-today date', type: 'color', var: '--gt-today' },
+			{ label: 'Text size', type: 'range', var: '--gt-text-scale', min: 70, max: 140, step: 5, unit: '', def: 100 } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -499,6 +513,7 @@
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
+		{ key: 'globalTasks', name: 'Global Tasks', surface: 'editor', elements: ['globalTasks'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },

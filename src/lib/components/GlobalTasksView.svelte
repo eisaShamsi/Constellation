@@ -310,20 +310,24 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background: var(--bg-primary, #1a1a1a);
+		background: var(--gt-bg, var(--background-primary, #1a1a1a));
+		/* MIG-080 §C.3c — Global Tasks text size (Style Setter "Global Tasks" → Text size,
+		   --gt-text-scale 70–140, default 100). Text-only; every font-size is
+		   calc(X * var(--gt-scale, 1)). */
+		--gt-scale: calc(var(--gt-text-scale, 100) / 100);
 	}
 	.gt-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 12px 16px;
-		border-bottom: 1px solid var(--border-light, #333);
+		border-bottom: 1px solid var(--gt-border, var(--border-light, #333));
 	}
 	.gt-title {
-		font-size: 1rem;
+		font-size: calc(1rem * var(--gt-scale, 1));
 		font-weight: 600;
 		margin: 0;
-		color: var(--text-normal, #ccc);
+		color: var(--gt-text, var(--text-normal, #ccc));
 	}
 	.gt-header-end {
 		display: flex;
@@ -331,8 +335,8 @@
 		gap: 8px;
 	}
 	.gt-stats {
-		font-size: 0.72rem;
-		color: var(--text-faint, #666);
+		font-size: calc(0.72rem * var(--gt-scale, 1));
+		color: var(--gt-muted, var(--text-faint, #666));
 	}
 	.gt-refresh, .gt-close {
 		width: 28px;
@@ -342,14 +346,14 @@
 		justify-content: center;
 		background: none;
 		border: none;
-		color: var(--text-faint, #888);
-		font-size: 1.1rem;
+		color: var(--gt-muted, var(--text-faint, #888));
+		font-size: calc(1.1rem * var(--gt-scale, 1));
 		cursor: pointer;
 		border-radius: 4px;
 	}
 	.gt-refresh:hover, .gt-close:hover {
-		background: var(--bg-hover, rgba(255, 255, 255, 0.05));
-		color: var(--text-normal, #ccc);
+		background: var(--gt-hover, var(--bg-hover, rgba(255,255,255,0.05)));
+		color: var(--gt-text, var(--text-normal, #ccc));
 	}
 
 	/* Toolbar */
@@ -358,7 +362,7 @@
 		flex-wrap: wrap;
 		gap: 6px;
 		padding: 8px 16px;
-		border-bottom: 1px solid var(--border-light, #333);
+		border-bottom: 1px solid var(--gt-border, var(--border-light, #333));
 		align-items: center;
 	}
 	.gt-filter-group {
@@ -367,24 +371,24 @@
 	}
 	.gt-fbtn {
 		padding: 4px 8px;
-		font-size: 0.72rem;
-		border: 1px solid var(--border-light, #333);
+		font-size: calc(0.72rem * var(--gt-scale, 1));
+		border: 1px solid var(--gt-border, var(--border-light, #333));
 		background: transparent;
-		color: var(--text-faint, #888);
+		color: var(--gt-muted, var(--text-faint, #888));
 		border-radius: 4px;
 		cursor: pointer;
 	}
 	.gt-fbtn.active {
-		background: var(--accent, #7c3aed);
+		background: var(--gt-accent, var(--accent, #7c3aed));
 		color: white;
-		border-color: var(--accent, #7c3aed);
+		border-color: var(--gt-accent, var(--accent, #7c3aed));
 	}
 	.gt-filter-group select {
-		font-size: 0.72rem;
+		font-size: calc(0.72rem * var(--gt-scale, 1));
 		padding: 4px 6px;
-		border: 1px solid var(--border-light, #333);
-		background: var(--bg-secondary, #1e1e1e);
-		color: var(--text-normal, #ccc);
+		border: 1px solid var(--gt-border, var(--border-light, #333));
+		background: var(--gt-surface, var(--bg-secondary, #1e1e1e));
+		color: var(--gt-text, var(--text-normal, #ccc));
 		border-radius: 4px;
 	}
 	.gt-search {
@@ -394,10 +398,10 @@
 	.gt-search input {
 		width: 100%;
 		padding: 4px 8px;
-		font-size: 0.75rem;
-		border: 1px solid var(--border-light, #333);
-		background: var(--bg-secondary, #1e1e1e);
-		color: var(--text-normal, #ccc);
+		font-size: calc(0.75rem * var(--gt-scale, 1));
+		border: 1px solid var(--gt-border, var(--border-light, #333));
+		background: var(--gt-surface, var(--bg-secondary, #1e1e1e));
+		color: var(--gt-text, var(--text-normal, #ccc));
 		border-radius: 4px;
 	}
 
@@ -410,8 +414,8 @@
 	.gt-loading, .gt-empty {
 		padding: 40px 16px;
 		text-align: center;
-		font-size: 0.85rem;
-		color: var(--text-faint, #666);
+		font-size: calc(0.85rem * var(--gt-scale, 1));
+		color: var(--gt-muted, var(--text-faint, #666));
 	}
 
 	/* Groups */
@@ -420,15 +424,15 @@
 		align-items: center;
 		gap: 8px;
 		padding: 8px 16px 4px;
-		font-size: 0.75rem;
+		font-size: calc(0.75rem * var(--gt-scale, 1));
 		font-weight: 600;
-		color: var(--accent, #7c3aed);
+		color: var(--gt-accent, var(--accent, #7c3aed));
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
 	.gt-group-count {
-		font-size: 0.65rem;
-		background: var(--accent, #7c3aed);
+		font-size: calc(0.65rem * var(--gt-scale, 1));
+		background: var(--gt-accent, var(--accent, #7c3aed));
 		color: white;
 		padding: 0 5px;
 		border-radius: 8px;
@@ -441,11 +445,11 @@
 		align-items: flex-start;
 		gap: 10px;
 		padding: 8px 16px;
-		border-bottom: 1px solid var(--border-faint, #222);
+		border-bottom: 1px solid var(--gt-border, var(--border-light, #222));
 		transition: background 0.1s;
 	}
 	.gt-task:hover {
-		background: var(--bg-hover, rgba(255, 255, 255, 0.03));
+		background: var(--gt-hover, var(--bg-hover, rgba(255,255,255,0.03)));
 	}
 	.gt-task.completed {
 		opacity: 0.5;
@@ -459,21 +463,21 @@
 		width: 15px;
 		height: 15px;
 		cursor: pointer;
-		accent-color: var(--accent, #7c3aed);
+		accent-color: var(--gt-accent, var(--accent, #7c3aed));
 	}
 	.gt-task-body {
 		flex: 1;
 		min-width: 0;
 	}
 	.gt-text {
-		font-size: 0.85rem;
-		color: var(--text-normal, #ccc);
+		font-size: calc(0.85rem * var(--gt-scale, 1));
+		color: var(--gt-text, var(--text-normal, #ccc));
 		line-height: 1.4;
 		word-break: break-word;
 	}
 	.gt-text.done {
 		text-decoration: line-through;
-		color: var(--text-faint, #666);
+		color: var(--gt-muted, var(--text-faint, #666));
 	}
 	.gt-meta {
 		display: flex;
@@ -483,39 +487,39 @@
 		align-items: center;
 	}
 	.gt-priority {
-		font-size: 0.75rem;
+		font-size: calc(0.75rem * var(--gt-scale, 1));
 	}
 	.gt-due {
-		font-size: 0.7rem;
+		font-size: calc(0.7rem * var(--gt-scale, 1));
 		padding: 1px 6px;
 		border-radius: 3px;
 		font-weight: 500;
 	}
 	.gt-due.overdue {
 		background: rgba(239, 68, 68, 0.2);
-		color: #ef4444;
+		color: var(--gt-overdue, #ef4444);
 	}
 	.gt-due.due-today {
 		background: rgba(245, 158, 11, 0.2);
-		color: #f59e0b;
+		color: var(--gt-today, #f59e0b);
 	}
 	.gt-due.upcoming {
 		background: rgba(100, 100, 100, 0.2);
-		color: var(--text-faint, #888);
+		color: var(--gt-muted, var(--text-faint, #888));
 	}
 	.gt-tag {
-		font-size: 0.68rem;
+		font-size: calc(0.68rem * var(--gt-scale, 1));
 		padding: 1px 5px;
 		border-radius: 3px;
 		background: rgba(124, 58, 237, 0.15);
-		color: var(--accent, #7c3aed);
+		color: var(--gt-accent, var(--accent, #7c3aed));
 	}
 	.gt-file-link {
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		font-size: 0.7rem;
-		color: var(--text-faint, #666);
+		font-size: calc(0.7rem * var(--gt-scale, 1));
+		color: var(--gt-muted, var(--text-faint, #666));
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -526,7 +530,7 @@
 		white-space: nowrap;
 	}
 	.gt-file-link:hover {
-		color: var(--accent, #7c3aed);
+		color: var(--gt-accent, var(--accent, #7c3aed));
 	}
 	.gt-library-dot {
 		width: 6px;

@@ -3533,7 +3533,14 @@
 			"health": "בריאות",
 			"provenance": "מקור",
 			"review": "חזרה",
-			"source_review": "סקירת מקורות"
+			"source_review": "סקירת מקורות",
+			"global_tasks": "משימות כלליות",
+			"surface": "משטח",
+			"text": "טקסט",
+			"border": "מסגרת",
+			"row_hover": "ריחוף על שורה",
+			"overdue_date": "תאריך באיחור",
+			"due_today_date": "תאריך להיום"
 		}
 	}
 }

@@ -3670,7 +3670,14 @@
 			"health": "Health",
 			"provenance": "Provenance",
 			"review": "Review",
-			"source_review": "Source Review"
+			"source_review": "Source Review",
+			"global_tasks": "Global Tasks",
+			"surface": "Surface",
+			"text": "Text",
+			"border": "Border",
+			"row_hover": "Row hover",
+			"overdue_date": "Overdue date",
+			"due_today_date": "Due-today date"
 		}
 	}
 }

@@ -3533,7 +3533,14 @@
 			"health": "سلامت",
 			"provenance": "منشأ",
 			"review": "مرور",
-			"source_review": "بازبینی منابع"
+			"source_review": "بازبینی منابع",
+			"global_tasks": "وظایف سراسری",
+			"surface": "سطح",
+			"text": "متن",
+			"border": "کادر",
+			"row_hover": "نشانگر روی سطر",
+			"overdue_date": "تاریخ گذشته",
+			"due_today_date": "تاریخ امروز"
 		}
 	}
 }

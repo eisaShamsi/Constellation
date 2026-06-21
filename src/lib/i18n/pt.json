@@ -3533,7 +3533,14 @@
 			"health": "Saúde",
 			"provenance": "Proveniência",
 			"review": "Revisão",
-			"source_review": "Revisão de fontes"
+			"source_review": "Revisão de fontes",
+			"global_tasks": "Tarefas globais",
+			"surface": "Superfície",
+			"text": "Texto",
+			"border": "Borda",
+			"row_hover": "Linha ao passar",
+			"overdue_date": "Data vencida",
+			"due_today_date": "Data de hoje"
 		}
 	}
 }
