@@ -176,7 +176,9 @@
 			"tabSize": "Taille de tabulation",
 			"tabSizeDesc": "Nombre d'espaces qu'un caractère de tabulation représente",
 			"noteTitleSummary": "Résumé du titre de la note",
-			"noteTitleSummaryDesc": "Affiche le résumé d'une ligne généré par IA de la note directement sous son titre dans l'éditeur. Désactivé par défaut pour une zone de titre plus épurée."
+			"noteTitleSummaryDesc": "Affiche le résumé d'une ligne généré par IA de la note directement sous son titre dans l'éditeur. Désactivé par défaut pour une zone de titre plus épurée.",
+			"taskDates": "Dates de tâches en langage naturel",
+			"taskDatesDesc": "Dans une ligne de tâche, taper @today / @tomorrow / @next week (ou le mot seul) suggère une date 📅 à épingler. Acceptez la suggestion pour l’insérer."
 		},
 		"language": {
 			"title": "Langue",

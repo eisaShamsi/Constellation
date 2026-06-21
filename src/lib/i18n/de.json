@@ -176,7 +176,9 @@
 			"tabSize": "Tab-Größe",
 			"tabSizeDesc": "Anzahl der Leerzeichen, die ein Tabulator-Zeichen darstellt",
 			"noteTitleSummary": "Notiztitel-Zusammenfassung",
-			"noteTitleSummaryDesc": "Zeigt die einzeilige KI-Zusammenfassung der Notiz direkt unter ihrem Titel im Editor an. Standardmäßig deaktiviert für einen schlankeren Titelbereich."
+			"noteTitleSummaryDesc": "Zeigt die einzeilige KI-Zusammenfassung der Notiz direkt unter ihrem Titel im Editor an. Standardmäßig deaktiviert für einen schlankeren Titelbereich.",
+			"taskDates": "Aufgabentermine in natürlicher Sprache",
+			"taskDatesDesc": "In einer Aufgabenzeile schlägt die Eingabe von @today / @tomorrow / @next week (oder dem bloßen Wort) ein 📅-Datum zum Anheften vor. Nimm den Vorschlag an, um es einzufügen."
 		},
 		"language": {
 			"title": "Sprache",

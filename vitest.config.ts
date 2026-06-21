@@ -22,6 +22,8 @@ export default defineConfig({
 	},
 	test: {
 		include: [
+			// MIG-080 §C.2 (2026-06-21) — natural-language task due-date resolution.
+			'tests/mig-080/taskDates.test.ts',
 			'tests/sight-v6/perf.test.ts',
 			'tests/sight-v6/tradition-isolation.test.ts',
 			'tests/sight-v6/tradition-perf.test.ts',

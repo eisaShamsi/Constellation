@@ -14,13 +14,14 @@
 		writeNote, markRecentWrite, wasRecentlyWritten, setWriteAhead, clearWriteAhead,
 		renameItem,
 		scanLibraryLinks, scanLibraryTags,
+		toggleTaskReconciled,
 		buildSkyData,
 		libraryStats, loadAllStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
 	import { detectDir, renderMarkdown } from '$lib/utils';
-	import { scanNoteTasks, toggleTask } from '$lib/tasks/store';
+	import { scanNoteTasks } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import { get } from 'svelte/store';
@@ -1341,7 +1342,7 @@
 											{libraryColorMap}
 											onToggle={async (filePath, lineNumber) => {
 												try {
-													await toggleTask(filePath, lineNumber);
+													await toggleTaskReconciled(filePath, lineNumber);
 													if (splitCompanionData) await loadSplitCompanionPanelData(splitCompanionData);
 												} catch {}
 											}}
@@ -1474,7 +1475,7 @@
 										{libraryColorMap}
 										onToggle={async (filePath, lineNumber) => {
 											try {
-												await toggleTask(filePath, lineNumber);
+												await toggleTaskReconciled(filePath, lineNumber);
 												if (editorPanelsData) await loadEditorPanelsData(editorPanelsData);
 											} catch {}
 										}}

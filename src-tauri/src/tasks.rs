@@ -499,6 +499,29 @@ pub fn toggle_task(
     // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
     crate::write_gate::gate_write(path, &final_content, None, "task_toggle")?;
 
+    // MIG-080 §C (Debt Register E.2) — refresh the search index after the toggle.
+    // Before, toggle_task wrote via the gate but NEVER reindexed → the FTS/body
+    // (and any task-line tags) drifted from disk after a checkbox toggle. Reindex
+    // is FREEZE-SAFE here: a checkbox toggle changes no [[links]], so index_note's
+    // unchanged-edges guard (search.rs ~:4740) skips the note_links rebuild + the
+    // MIG-001 trigger cascade — only the cheap note_meta/FTS refresh runs.
+    // Best-effort: the disk write is the source of truth; a reindex glitch must
+    // not fail the toggle (the watcher / next full reindex would catch it).
+    // (bases.rs:745 pattern — resolve the library name from the path, then reindex.)
+    {
+        let libraries = crate::libraries::load_libraries(&app);
+        let lib_name = libraries.iter().find(|v| {
+            fs::canonicalize(&file_path).ok()
+                .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
+                .unwrap_or(false)
+        }).map(|v| v.name.clone());
+        if let Some(lib_name) = lib_name {
+            use tauri::Manager;
+            let search_state = app.state::<crate::search::SearchState>();
+            let _ = crate::search::reindex_single_note(&search_state, &file_path, &lib_name);
+        }
+    }
+
     Ok(final_content)
 }
 

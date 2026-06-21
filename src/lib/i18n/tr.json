@@ -176,7 +176,9 @@
 			"tabSize": "Sekme boyutu",
 			"tabSizeDesc": "Bir sekme karakterinin görüntüleneceği boşluk sayısı",
 			"noteTitleSummary": "Not başlığı özeti",
-			"noteTitleSummaryDesc": "Notun tek satırlık yapay zekâ özetini düzenleyicide doğrudan başlığının altında gösterir. Daha sade bir başlık alanı için varsayılan olarak kapalı."
+			"noteTitleSummaryDesc": "Notun tek satırlık yapay zekâ özetini düzenleyicide doğrudan başlığının altında gösterir. Daha sade bir başlık alanı için varsayılan olarak kapalı.",
+			"taskDates": "Doğal dilde görev tarihleri",
+			"taskDatesDesc": "Bir görev satırında @today / @tomorrow / @next week (ya da yalın sözcüğü) yazmak, sabitlenecek bir 📅 tarihi önerir. Eklemek için öneriyi kabul edin."
 		},
 		"language": {
 			"title": "Dil",

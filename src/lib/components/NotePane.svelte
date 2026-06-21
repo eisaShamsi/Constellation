@@ -27,7 +27,7 @@
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
-	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
+	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion, createTaskDateCompletion } from '$lib/editor/completions';
 	import { shortcodeCompletion } from '$lib/editor/shortcodeAutocomplete';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
@@ -256,6 +256,7 @@
 		return true;
 	}
 
+
 	/* ─── Background save ─── */
 	// Snapshot of the file this NotePane instance is editing, captured at
 	// mount. The `filePath` prop updates reactively when the parent swaps
@@ -381,6 +382,8 @@
 	const tagCompletion = createTagCompletion(() => allTags);
 	const slashCompletion = createSlashCompletion();
 	const typedLinkCompletion = createTypedLinkCompletion(); // CE Phase 1: [[note|type]]
+	// MIG-080 §C.2 — natural-language task due-date autosuggest (@today / bare keyword → 📅 date).
+	const taskDateCompletion = createTaskDateCompletion(() => $appSettings.naturalLanguageTaskDates ?? true);
 
 	/* ─── Mount ─── */
 	onMount(() => {
@@ -403,8 +406,8 @@
 				autocompletion({
 					override: (
 						$appSettings.enabledFeatures?.emojiIconPicker !== false
-							? [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion, shortcodeCompletion]
-							: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion]
+							? [taskDateCompletion, typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion, shortcodeCompletion]
+							: [taskDateCompletion, typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion]
 					),
 					activateOnTyping: true,
 					// MIG-067 — the dropdown re-builds + bidi-lays-out this many rows

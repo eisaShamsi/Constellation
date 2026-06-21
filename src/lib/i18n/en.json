@@ -132,6 +132,8 @@
 			"autoPairMarkdownDesc": "Pair symbols automatically for bold, italic, code, and more",
 			"smartLists": "Smart lists",
 			"smartListsDesc": "Automatically set indentation and place list items correctly",
+			"taskDates": "Natural-language task dates",
+			"taskDatesDesc": "In a task line, typing @today / @tomorrow / @next week (or the bare word) suggests a 📅 date to pin. Accept the suggestion to insert it.",
 			"tabSize": "Tab size",
 			"tabSizeDesc": "Number of spaces a tab character will render as",
 			"foldHeading": "Fold headings",

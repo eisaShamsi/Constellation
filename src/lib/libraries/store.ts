@@ -3387,6 +3387,8 @@ export interface AppSettings {
 	smartLists: boolean;
 	autoPairBrackets: boolean;
 	autoPairMarkdown: boolean;
+	/** MIG-080 §C.2 — task due-date autosuggest (@today / bare keyword → 📅 date). */
+	naturalLanguageTaskDates: boolean;
 	spellcheck: boolean;
 	showFloatingToolbar: boolean;
 	foldHeading: boolean;
@@ -3852,6 +3854,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	smartLists: true,
 	autoPairBrackets: true,
 	autoPairMarkdown: true,
+	naturalLanguageTaskDates: true,
 	spellcheck: false,
 	showFloatingToolbar: true,
 	foldHeading: true,

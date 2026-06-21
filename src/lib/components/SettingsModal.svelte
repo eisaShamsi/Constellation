@@ -1135,6 +1135,19 @@
 						</label>
 					</div>
 
+					<!-- MIG-080 §C.2 — natural-language task due dates -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.taskDates') || 'Natural-language task dates'}</div>
+							<div class="setting-desc">{$t('settings.editor.taskDatesDesc') || 'In a task line, typing @today / @tomorrow / @next week (or the bare word) suggests a 📅 date to pin. Accept the suggestion to insert it.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.naturalLanguageTaskDates ?? true}
+								onchange={(e) => updateSettings({ naturalLanguageTaskDates: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.tabSize')}</div>

@@ -6,6 +6,7 @@ import { type CompletionContext, type Completion, startCompletion } from '@codem
 import { EditorView } from '@codemirror/view';
 import { generateTable } from './tableUtils';
 import { getLinkTypes, isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
+import { taskDateCompletions, TASK_RE } from './taskDates';
 
 export const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] = [
 	{ label: '/heading1', detail: 'H1', apply: '# ' },
@@ -220,5 +221,30 @@ export function createSlashCompletion() {
 			})),
 			filter: true
 		};
+	};
+}
+
+/**
+ * MIG-080 §C.2 (Boss 2026-06-21, research-backed) — natural-language task due-date
+ * autosuggest. On a TASK line, an `@today`/`@tomorrow`/… trigger (or a bare keyword
+ * as a fallback) offers a `📅 YYYY-MM-DD` suggestion the user ACCEPTS (the Obsidian
+ * nldates `@` + Tasks task-line-gate pattern; never a silent rewrite). Gated by
+ * `isEnabled()` (Settings → Tasks → "Natural-language dates"). The pure resolution +
+ * matching lives in taskDates.ts (unit-tested); this is the thin CM6 wrapper.
+ */
+export function createTaskDateCompletion(isEnabled: () => boolean) {
+	return function taskDateCompletion(context: CompletionContext) {
+		if (!isEnabled()) return null;
+		const line = context.state.doc.lineAt(context.pos);
+		if (!TASK_RE.test(line.text)) return null;
+		const before = line.text.slice(0, context.pos - line.from);
+		const res = taskDateCompletions(before, new Date());
+		if (!res) return null;
+		const options: Completion[] = res.options.map((o) => ({
+			label: o.label, detail: o.detail, apply: o.label, type: 'keyword',
+		}));
+		// filter:false — we pre-filter by the typed @-partial; the labels are dates,
+		// so CM6's own text-filter (against the date string) would hide everything.
+		return { from: line.from + res.from, options, filter: false };
 	};
 }

@@ -176,7 +176,9 @@
 			"tabSize": "Tamaño de tabulación",
 			"tabSizeDesc": "Número de espacios que representa un carácter de tabulación",
 			"noteTitleSummary": "Resumen del título de la nota",
-			"noteTitleSummaryDesc": "Muestra el resumen de una línea generado por IA de la nota directamente bajo su título en el editor. Desactivado por defecto para un área de título más ligera."
+			"noteTitleSummaryDesc": "Muestra el resumen de una línea generado por IA de la nota directamente bajo su título en el editor. Desactivado por defecto para un área de título más ligera.",
+			"taskDates": "Fechas de tareas en lenguaje natural",
+			"taskDatesDesc": "En una línea de tarea, al escribir @today / @tomorrow / @next week (o la palabra sola) se sugiere una fecha 📅 para fijar. Acepta la sugerencia para insertarla."
 		},
 		"language": {
 			"title": "Idioma",
