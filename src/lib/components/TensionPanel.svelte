@@ -153,31 +153,31 @@
 	   column with overflow:hidden — children own their scroll, and this
 	   panel can hold hundreds of rows. */
 	.tension-panel { padding: 8px 0; flex: 1; min-height: 0; overflow-y: auto; }
-	.tp-empty, .tp-none, .tp-more { font-size: 0.78rem; color: var(--text-faint); padding: 4px 12px; }
+	.tp-empty, .tp-none, .tp-more { font-size: calc(0.78rem * var(--rs-scale, 1)); color: var(--text-faint); padding: 4px 12px; }
 	.tp-inactive { text-align: center; padding: 24px 16px; }
-	.tp-inactive-icon { font-size: 2rem; margin-bottom: 8px; }
-	.tp-inactive-text { font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
-	.tp-inactive-count { font-size: 0.75rem; color: var(--text-faint); margin-top: 8px; }
+	.tp-inactive-icon { font-size: calc(2rem * var(--rs-scale, 1)); margin-bottom: 8px; }
+	.tp-inactive-text { font-size: calc(0.82rem * var(--rs-scale, 1)); color: var(--text-muted); line-height: 1.4; }
+	.tp-inactive-count { font-size: calc(0.75rem * var(--rs-scale, 1)); color: var(--text-faint); margin-top: 8px; }
 	.tp-section { margin-bottom: 4px; }
 	.tp-header {
 		display: flex; align-items: center; gap: 6px; width: 100%;
 		padding: 6px 12px; border: none; background: none; cursor: pointer;
-		font-size: 0.78rem; font-weight: 600; color: var(--text-normal); font-family: inherit;
+		font-size: calc(0.78rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-normal); font-family: inherit;
 		text-align: start;
 	}
 	.tp-header:hover { background: var(--background-modifier-hover); }
-	.tp-chevron { font-size: 0.65rem; transition: transform 0.15s; flex-shrink: 0; }
+	.tp-chevron { font-size: calc(0.65rem * var(--rs-scale, 1)); transition: transform 0.15s; flex-shrink: 0; }
 	.tp-chevron.collapsed { transform: rotate(-90deg); }
 	:global([dir="rtl"]) .tp-chevron.collapsed { transform: rotate(90deg); }
-	.tp-count { margin-inline-start: auto; font-size: 0.7rem; color: var(--text-faint); font-weight: 400; }
+	.tp-count { margin-inline-start: auto; font-size: calc(0.7rem * var(--rs-scale, 1)); color: var(--text-faint); font-weight: 400; }
 	.tp-item, .tp-gap {
 		display: flex; align-items: center; gap: 6px; width: 100%;
 		padding: 4px 12px 4px 24px; border: none; background: none; cursor: pointer;
-		font-size: 0.78rem; color: var(--text-normal); font-family: inherit; text-align: start;
+		font-size: calc(0.78rem * var(--rs-scale, 1)); color: var(--text-normal); font-family: inherit; text-align: start;
 	}
 	.tp-item:hover { background: var(--background-modifier-hover); }
 	.tp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 	.tp-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
 	.tp-tag { color: var(--interactive-accent); font-weight: 500; white-space: nowrap; }
-	.tp-detail { font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tp-detail { font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

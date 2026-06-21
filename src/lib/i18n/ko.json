@@ -1753,7 +1753,9 @@
 		"reviewed": "검토 완료",
 		"snooze": "7일 스누즈",
 		"dismiss": "무시",
-		"checkpointHint": "아직 이 견해를 유지하고 있습니까?"
+		"checkpointHint": "아직 이 견해를 유지하고 있습니까?",
+		"more": "개 더보기",
+		"showLess": "간략히 보기"
 	},
 	"trailNav": {
 		"trail": "트레일",
@@ -3519,7 +3521,17 @@
 			"task_dot": "작업 점",
 			"holiday_dot": "공휴일 점",
 			"observance_dot": "기념일 점",
-			"special_day_dot": "특별일 점"
+			"special_day_dot": "특별일 점",
+			"right_sidebar_text": "오른쪽 사이드바 텍스트",
+			"360_3d": "360.3D",
+			"properties": "속성",
+			"backlinks": "백링크",
+			"tags": "태그",
+			"tasks": "작업",
+			"health": "건강",
+			"provenance": "출처",
+			"review": "복습",
+			"source_review": "출처 검토"
 		}
 	}
 }

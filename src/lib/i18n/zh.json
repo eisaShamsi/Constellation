@@ -1753,7 +1753,9 @@
 		"reviewed": "已复习",
 		"snooze": "推迟7天",
 		"dismiss": "忽略",
-		"checkpointHint": "你还持有这个观点吗？"
+		"checkpointHint": "你还持有这个观点吗？",
+		"more": "更多",
+		"showLess": "收起"
 	},
 	"trailNav": {
 		"trail": "路径",
@@ -3519,7 +3521,17 @@
 			"task_dot": "任务圆点",
 			"holiday_dot": "节日圆点",
 			"observance_dot": "纪念日圆点",
-			"special_day_dot": "特殊日圆点"
+			"special_day_dot": "特殊日圆点",
+			"right_sidebar_text": "右侧边栏文本",
+			"360_3d": "360.3D",
+			"properties": "属性",
+			"backlinks": "反向链接",
+			"tags": "标签",
+			"tasks": "任务",
+			"health": "健康",
+			"provenance": "来源",
+			"review": "复习",
+			"source_review": "来源审阅"
 		}
 	}
 }

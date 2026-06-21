@@ -1313,7 +1313,9 @@
 		"reviewed": "נסקר",
 		"snooze": "דחה 7 ימים",
 		"dismiss": "בטל",
-		"checkpointHint": "האם אתה עדיין מחזיק בעמדה זו?"
+		"checkpointHint": "האם אתה עדיין מחזיק בעמדה זו?",
+		"more": "נוספים",
+		"showLess": "הצג פחות"
 	},
 	"trailNav": {
 		"trail": "שביל",
@@ -3417,7 +3419,7 @@
 			"sidebar_shell": "מעטפת סרגל צד",
 			"sidebar_toolbar": "סרגל כלים של סרגל צד",
 			"size": "גודל",
-			"sky_view": "תצוגת שמיים",
+			"sky_view": "Sky View",
 			"small_radius": "רדיוס קטן",
 			"small_shadow": "צל קטן",
 			"solid": "רציף",
@@ -3519,7 +3521,17 @@
 			"task_dot": "נקודת משימה",
 			"holiday_dot": "נקודת חג",
 			"observance_dot": "נקודת ציון",
-			"special_day_dot": "נקודת יום מיוחד"
+			"special_day_dot": "נקודת יום מיוחד",
+			"right_sidebar_text": "טקסט הסרגל הצדדי הימני",
+			"360_3d": "360.3D",
+			"properties": "מאפיינים",
+			"backlinks": "קישורים נכנסים",
+			"tags": "תגיות",
+			"tasks": "משימות",
+			"health": "בריאות",
+			"provenance": "מקור",
+			"review": "חזרה",
+			"source_review": "סקירת מקורות"
 		}
 	}
 }

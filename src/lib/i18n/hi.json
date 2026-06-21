@@ -1753,7 +1753,9 @@
 		"reviewed": "समीक्षा की गई",
 		"snooze": "7 दिन स्नूज़",
 		"dismiss": "खारिज करें",
-		"checkpointHint": "क्या आप अभी भी यह विचार रखते हैं?"
+		"checkpointHint": "क्या आप अभी भी यह विचार रखते हैं?",
+		"more": "और",
+		"showLess": "कम दिखाएं"
 	},
 	"trailNav": {
 		"trail": "ट्रेल",
@@ -3519,7 +3521,17 @@
 			"task_dot": "कार्य बिंदु",
 			"holiday_dot": "अवकाश बिंदु",
 			"observance_dot": "अनुष्ठान बिंदु",
-			"special_day_dot": "विशेष-दिवस बिंदु"
+			"special_day_dot": "विशेष-दिवस बिंदु",
+			"right_sidebar_text": "दायाँ साइडबार टेक्स्ट",
+			"360_3d": "360.3D",
+			"properties": "गुण",
+			"backlinks": "बैकलिंक्स",
+			"tags": "टैग",
+			"tasks": "कार्य",
+			"health": "स्वास्थ्य",
+			"provenance": "उत्पत्ति",
+			"review": "समीक्षा",
+			"source_review": "स्रोत समीक्षा"
 		}
 	}
 }

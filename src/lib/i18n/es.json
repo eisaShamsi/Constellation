@@ -1324,7 +1324,9 @@
 		"reviewed": "Revisado",
 		"snooze": "Posponer 7d",
 		"dismiss": "Descartar",
-		"checkpointHint": "¿Sigues manteniendo esta opinión?"
+		"checkpointHint": "¿Sigues manteniendo esta opinión?",
+		"more": "más",
+		"showLess": "Mostrar menos"
 	},
 	"trailNav": {
 		"trail": "Ruta",
@@ -3519,7 +3521,17 @@
 			"task_dot": "Punto de tarea",
 			"holiday_dot": "Punto de festivo",
 			"observance_dot": "Punto de conmemoración",
-			"special_day_dot": "Punto de día especial"
+			"special_day_dot": "Punto de día especial",
+			"right_sidebar_text": "Texto de la barra lateral derecha",
+			"360_3d": "360.3D",
+			"properties": "Propiedades",
+			"backlinks": "Backlinks",
+			"tags": "Etiquetas",
+			"tasks": "Tareas",
+			"health": "Salud",
+			"provenance": "Procedencia",
+			"review": "Revisión",
+			"source_review": "Revisión de fuentes"
 		}
 	}
 }

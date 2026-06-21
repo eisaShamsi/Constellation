@@ -81,11 +81,11 @@
 
 <style>
 	.prov-panel { padding: 8px 0; flex: 1; min-height: 0; overflow-y: auto; } /* self-scrolling — host column is overflow:hidden */
-	.prov-empty { font-size: 0.78rem; color: var(--text-faint); padding: 8px 12px; }
+	.prov-empty { font-size: calc(0.78rem * var(--rs-scale, 1)); color: var(--text-faint); padding: 8px 12px; }
 	.prov-empty-state { text-align: center; padding: 24px 16px; }
-	.prov-empty-icon { font-size: 1.5rem; margin-bottom: 8px; }
-	.prov-empty-text { font-size: 0.82rem; color: var(--text-muted); }
-	.prov-empty-hint { font-size: 0.72rem; color: var(--text-faint); margin-top: 6px; }
+	.prov-empty-icon { font-size: calc(1.5rem * var(--rs-scale, 1)); margin-bottom: 8px; }
+	.prov-empty-text { font-size: calc(0.82rem * var(--rs-scale, 1)); color: var(--text-muted); }
+	.prov-empty-hint { font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-faint); margin-top: 6px; }
 
 	.prov-origin {
 		display: flex; align-items: center; gap: 6px;
@@ -93,31 +93,31 @@
 		background: var(--background-secondary); border-radius: 6px;
 	}
 	.prov-origin-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-	.prov-origin-label { font-size: 0.82rem; font-weight: 600; color: var(--text-normal); }
-	.prov-depth { margin-inline-start: auto; font-size: 0.72rem; color: var(--text-faint); }
+	.prov-origin-label { font-size: calc(0.82rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-normal); }
+	.prov-depth { margin-inline-start: auto; font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-faint); }
 
 	.prov-chain { padding: 0 8px; }
 	.prov-node { display: flex; align-items: center; gap: 4px; padding: 3px 4px; }
-	.prov-current { font-weight: 600; font-size: 0.82rem; color: var(--text-normal); padding-bottom: 6px; }
-	.prov-node-name { font-size: 0.82rem; }
-	.prov-connector { color: var(--text-faint); font-size: 0.75rem; flex-shrink: 0; }
+	.prov-current { font-weight: 600; font-size: calc(0.82rem * var(--rs-scale, 1)); color: var(--text-normal); padding-bottom: 6px; }
+	.prov-node-name { font-size: calc(0.82rem * var(--rs-scale, 1)); }
+	.prov-connector { color: var(--text-faint); font-size: calc(0.75rem * var(--rs-scale, 1)); flex-shrink: 0; }
 
 	.prov-ancestor {
 		display: flex; align-items: center; gap: 4px;
 		border: none; background: none; cursor: pointer; padding: 3px 6px;
-		border-radius: 4px; font-family: inherit; font-size: 0.78rem;
+		border-radius: 4px; font-family: inherit; font-size: calc(0.78rem * var(--rs-scale, 1));
 		color: var(--text-normal); text-align: start;
 	}
 	.prov-ancestor:hover { background: var(--background-modifier-hover); }
 	.prov-source-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 	.prov-ancestor-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
 	.prov-ancestor-badge {
-		font-size: 0.65rem; font-weight: 600; color: var(--text-faint);
+		font-size: calc(0.65rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-faint);
 		background: var(--background-modifier-border); border-radius: 3px;
 		padding: 0 4px; min-width: 16px; text-align: center;
 	}
 	.prov-external-tag {
-		font-size: 0.62rem; color: #4A9EFF; font-weight: 500;
+		font-size: calc(0.62rem * var(--rs-scale, 1)); color: #4A9EFF; font-weight: 500;
 		border: 1px solid #4A9EFF40; border-radius: 3px; padding: 0 3px;
 	}
 </style>

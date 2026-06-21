@@ -1324,7 +1324,9 @@
 		"reviewed": "بازبینی شد",
 		"snooze": "تعویق ۷ روزه",
 		"dismiss": "رد کردن",
-		"checkpointHint": "آیا هنوز این نظر را دارید؟"
+		"checkpointHint": "آیا هنوز این نظر را دارید؟",
+		"more": "مورد دیگر",
+		"showLess": "نمایش کمتر"
 	},
 	"trailNav": {
 		"trail": "مسیر",
@@ -3417,7 +3419,7 @@
 			"sidebar_shell": "پوستهٔ نوار کناری",
 			"sidebar_toolbar": "نوار ابزار نوار کناری",
 			"size": "اندازه",
-			"sky_view": "نمای آسمان",
+			"sky_view": "Sky View",
 			"small_radius": "شعاع کوچک",
 			"small_shadow": "سایهٔ کوچک",
 			"solid": "یکدست",
@@ -3519,7 +3521,17 @@
 			"task_dot": "نقطه وظیفه",
 			"holiday_dot": "نقطه تعطیلی",
 			"observance_dot": "نقطه مناسبت",
-			"special_day_dot": "نقطه روز ویژه"
+			"special_day_dot": "نقطه روز ویژه",
+			"right_sidebar_text": "متن نوار کناری راست",
+			"360_3d": "360.3D",
+			"properties": "ویژگی‌ها",
+			"backlinks": "پیوندهای ورودی",
+			"tags": "برچسب‌ها",
+			"tasks": "وظایف",
+			"health": "سلامت",
+			"provenance": "منشأ",
+			"review": "مرور",
+			"source_review": "بازبینی منابع"
 		}
 	}
 }

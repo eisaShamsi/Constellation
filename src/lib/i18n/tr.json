@@ -1753,7 +1753,9 @@
 		"reviewed": "İncelendi",
 		"snooze": "7 gün ertele",
 		"dismiss": "Kaldır",
-		"checkpointHint": "Bu görüşü hâlâ paylaşıyor musunuz?"
+		"checkpointHint": "Bu görüşü hâlâ paylaşıyor musunuz?",
+		"more": "tane daha",
+		"showLess": "Daha az göster"
 	},
 	"trailNav": {
 		"trail": "Yol",
@@ -3519,7 +3521,17 @@
 			"task_dot": "Görev noktası",
 			"holiday_dot": "Tatil noktası",
 			"observance_dot": "Anma noktası",
-			"special_day_dot": "Özel gün noktası"
+			"special_day_dot": "Özel gün noktası",
+			"right_sidebar_text": "Sağ kenar çubuğu metni",
+			"360_3d": "360.3D",
+			"properties": "Özellikler",
+			"backlinks": "Geri Bağlantılar",
+			"tags": "Etiketler",
+			"tasks": "Görevler",
+			"health": "Sağlık",
+			"provenance": "Köken",
+			"review": "Gözden Geçirme",
+			"source_review": "Kaynak İncelemesi"
 		}
 	}
 }

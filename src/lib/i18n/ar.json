@@ -1861,7 +1861,9 @@
 		"reviewed": "تمت المراجعة",
 		"snooze": "تأجيل 7 أيام",
 		"dismiss": "رفض",
-		"checkpointHint": "هل ما زلت تتبنى هذا الرأي؟"
+		"checkpointHint": "هل ما زلت تتبنى هذا الرأي؟",
+		"more": "أخرى",
+		"showLess": "عرض أقل"
 	},
 	"trailNav": {
 		"trail": "مسار",
@@ -3654,7 +3656,17 @@
 			"task_dot": "نقطة المهمة",
 			"holiday_dot": "نقطة العطلة",
 			"observance_dot": "نقطة المناسبة",
-			"special_day_dot": "نقطة اليوم الخاص"
+			"special_day_dot": "نقطة اليوم الخاص",
+			"right_sidebar_text": "نص الشريط الجانبي الأيمن",
+			"360_3d": "360.3D",
+			"properties": "الخصائص",
+			"backlinks": "الروابط الواردة",
+			"tags": "العلامات",
+			"tasks": "المهام",
+			"health": "الصحة",
+			"provenance": "المصدر",
+			"review": "المراجعة",
+			"source_review": "مراجعة المصادر"
 		}
 	}
 }

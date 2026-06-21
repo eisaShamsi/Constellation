@@ -94,6 +94,14 @@ If a workspace was saved before the panel placement system was introduced, loadi
 
 ---
 
+## Note-context sidebar
+
+The right sidebar is the **open note's context** — every tab is about *this* note. The **Tags** tab shows only the open note's tags (the whole-universe tag list is on the **Dashboard**), and the **360.3D Inspector** can be placed or hidden like any other panel.
+
+## Per-panel text size
+
+Each right-sidebar panel has its **own** text size, in the **Style Setter → Components → Right Sidebar Text** (one slider per panel, 70–140 %, default 100). Scaling is **text-only** (spacing is unchanged) and affects only the right-sidebar copy of each panel. Drag a panel's slider with that panel's tab open to see it resize live.
+
 ## Tips
 
 - **"Note as organism"**: Placing Backlinks on the left and Outgoing Links on the right puts your note at the center of its link network — you can see what flows in (left) and what flows out (right) at a glance.

@@ -1324,7 +1324,9 @@
 		"reviewed": "Überprüft",
 		"snooze": "7 Tage zurückstellen",
 		"dismiss": "Verwerfen",
-		"checkpointHint": "Halten Sie noch an dieser Ansicht fest?"
+		"checkpointHint": "Halten Sie noch an dieser Ansicht fest?",
+		"more": "weitere",
+		"showLess": "Weniger anzeigen"
 	},
 	"trailNav": {
 		"trail": "Trail",
@@ -3519,7 +3521,17 @@
 			"task_dot": "Aufgabenpunkt",
 			"holiday_dot": "Feiertagspunkt",
 			"observance_dot": "Gedenktagspunkt",
-			"special_day_dot": "Besondere-Tage-Punkt"
+			"special_day_dot": "Besondere-Tage-Punkt",
+			"right_sidebar_text": "Text der rechten Seitenleiste",
+			"360_3d": "360.3D",
+			"properties": "Eigenschaften",
+			"backlinks": "Rückverweise",
+			"tags": "Tags",
+			"tasks": "Aufgaben",
+			"health": "Gesundheit",
+			"provenance": "Herkunft",
+			"review": "Wiederholung",
+			"source_review": "Quellenprüfung"
 		}
 	}
 }

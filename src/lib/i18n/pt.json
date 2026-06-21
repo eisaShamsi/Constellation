@@ -1753,7 +1753,9 @@
 		"reviewed": "Revisado",
 		"snooze": "Adiar 7d",
 		"dismiss": "Descartar",
-		"checkpointHint": "Você ainda mantém essa visão?"
+		"checkpointHint": "Você ainda mantém essa visão?",
+		"more": "mais",
+		"showLess": "Mostrar menos"
 	},
 	"trailNav": {
 		"trail": "Trilha",
@@ -3519,7 +3521,17 @@
 			"task_dot": "Ponto de tarefa",
 			"holiday_dot": "Ponto de feriado",
 			"observance_dot": "Ponto de comemoração",
-			"special_day_dot": "Ponto de dia especial"
+			"special_day_dot": "Ponto de dia especial",
+			"right_sidebar_text": "Texto da barra lateral direita",
+			"360_3d": "360.3D",
+			"properties": "Propriedades",
+			"backlinks": "Backlinks",
+			"tags": "Etiquetas",
+			"tasks": "Tarefas",
+			"health": "Saúde",
+			"provenance": "Proveniência",
+			"review": "Revisão",
+			"source_review": "Revisão de fontes"
 		}
 	}
 }

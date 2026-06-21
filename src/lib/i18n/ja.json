@@ -1753,7 +1753,9 @@
 		"reviewed": "レビュー済み",
 		"snooze": "7日後に通知",
 		"dismiss": "却下",
-		"checkpointHint": "この見解はまだ有効ですか？"
+		"checkpointHint": "この見解はまだ有効ですか？",
+		"more": "件",
+		"showLess": "表示を減らす"
 	},
 	"trailNav": {
 		"trail": "トレイル",
@@ -3519,7 +3521,17 @@
 			"task_dot": "タスクドット",
 			"holiday_dot": "祝日ドット",
 			"observance_dot": "記念日ドット",
-			"special_day_dot": "特別日ドット"
+			"special_day_dot": "特別日ドット",
+			"right_sidebar_text": "右サイドバーのテキスト",
+			"360_3d": "360.3D",
+			"properties": "プロパティ",
+			"backlinks": "バックリンク",
+			"tags": "タグ",
+			"tasks": "タスク",
+			"health": "ヘルス",
+			"provenance": "来歴",
+			"review": "レビュー",
+			"source_review": "出典レビュー"
 		}
 	}
 }

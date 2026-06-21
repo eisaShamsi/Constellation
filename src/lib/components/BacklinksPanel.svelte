@@ -353,11 +353,11 @@
 {/if}
 
 <style>
-	.backlinks-panel { font-size: 0.8rem; }
+	.backlinks-panel { font-size: calc(0.8rem * var(--rs-scale, 1)); }
 	.bl-filter { padding: 2px 8px 4px; }
 	.bl-filter input {
 		width: 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
-		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+		background: var(--bg); color: var(--text); font-size: calc(0.75rem * var(--rs-scale, 1)); font-family: inherit; outline: none;
 	}
 	.bl-filter input:focus { border-color: var(--interactive-accent); }
 	.bl-filter input::placeholder { color: var(--text-faint); }
@@ -370,7 +370,7 @@
 	.bl-vlist-wrap { display: flex; flex-direction: column; max-height: 60vh; min-height: 0; }
 	.bl-header {
 		display: flex; align-items: center; gap: 4px;
-		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
+		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: calc(0.75rem * var(--rs-scale, 1));
 		text-transform: uppercase; letter-spacing: 0.03em;
 	}
 	.bl-toggle {
@@ -384,7 +384,7 @@
 		color: var(--interactive-accent, #7c3aed);
 		border-radius: var(--pill-radius, 10px); padding: 0 8px;
 		height: var(--pill-height, 20px); line-height: 1;
-		font-size: 0.7rem; font-weight: var(--pill-weight, 700);
+		font-size: calc(0.7rem * var(--rs-scale, 1)); font-weight: var(--pill-weight, 700);
 		font-variant-numeric: tabular-nums;
 		box-sizing: border-box;
 	}
@@ -400,12 +400,12 @@
 	.bl-item:hover { background: var(--background-modifier-hover); }
 	.bl-name-row { display: flex; align-items: center; gap: 4px; }
 	.bl-library-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-	.bl-library-label { font-size: 0.68rem; color: var(--text-faint); flex-shrink: 0; }
-	.bl-name { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.bl-library-label { font-size: calc(0.68rem * var(--rs-scale, 1)); color: var(--text-faint); flex-shrink: 0; }
+	.bl-name { color: var(--interactive-accent); font-size: calc(0.8rem * var(--rs-scale, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.bl-context { display: block; color: var(--text-faint); font-size: calc(0.72rem * var(--rs-scale, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-annotation {
 		display: block; margin-top: 2px;
-		color: var(--interactive-accent); font-size: 0.7rem; font-style: italic;
+		color: var(--interactive-accent); font-size: calc(0.7rem * var(--rs-scale, 1)); font-style: italic;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	/* MIG-044 Phase 2 — NSC summary headline under each row.
@@ -413,10 +413,10 @@
 	   NoteEditor's .ne-summary-band: italic, muted, single-line ellipsis. */
 	.bl-headline {
 		display: block; margin-top: 2px;
-		color: var(--text-faint); font-size: 0.7rem; font-style: italic;
+		color: var(--text-faint); font-size: calc(0.7rem * var(--rs-scale, 1)); font-style: italic;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
+	.bl-empty { color: var(--color-base-40); font-size: calc(0.78rem * var(--rs-scale, 1)); padding: 4px 0; }
 	.bl-link-btn {
 		flex-shrink: 0; background: none; border: 1px solid var(--background-modifier-border);
 		border-radius: 4px; padding: 3px 4px; cursor: pointer;
@@ -425,7 +425,7 @@
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 	.bl-traversal-chip {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		font-size: calc(0.65rem * var(--rs-scale, 1)); font-weight: var(--pill-weight, 700); line-height: 1;
 		padding: 0 8px; height: var(--pill-height, 20px);
 		border-radius: var(--pill-radius, 10px); white-space: nowrap; flex-shrink: 0;
 		color: var(--interactive-accent, #7c3aed);
@@ -466,17 +466,17 @@
 		border: 1px solid var(--border); border-radius: 6px;
 		box-shadow: 0 8px 20px rgba(0,0,0,0.18);
 		padding: 4px; min-width: 160px;
-		font-size: 0.78rem;
+		font-size: calc(0.78rem * var(--rs-scale, 1));
 	}
 	.conf-menu-header {
-		padding: 6px 8px 4px; color: var(--text-muted); font-size: 0.68rem;
+		padding: 6px 8px 4px; color: var(--text-muted); font-size: calc(0.68rem * var(--rs-scale, 1));
 		text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
 	}
 	.conf-menu-item {
 		display: flex; align-items: center; gap: 8px;
 		width: 100%; padding: 6px 8px; border: none; background: none;
 		cursor: pointer; border-radius: 4px; text-align: start;
-		color: var(--text-normal); font-family: inherit; font-size: 0.78rem;
+		color: var(--text-normal); font-family: inherit; font-size: calc(0.78rem * var(--rs-scale, 1));
 	}
 	.conf-menu-item:hover { background: var(--background-modifier-hover); }
 	.conf-menu-item.active { font-weight: 600; color: var(--interactive-accent); }

@@ -1313,7 +1313,9 @@
 		"reviewed": "جائزہ لیا گیا",
 		"snooze": "7 دن کے لیے ملتوی",
 		"dismiss": "خارج کریں",
-		"checkpointHint": "کیا آپ ابھی بھی یہ رائے رکھتے ہیں؟"
+		"checkpointHint": "کیا آپ ابھی بھی یہ رائے رکھتے ہیں؟",
+		"more": "مزید",
+		"showLess": "کم دکھائیں"
 	},
 	"trailNav": {
 		"trail": "پگڈنڈی",
@@ -3417,7 +3419,7 @@
 			"sidebar_shell": "سائڈبار خول",
 			"sidebar_toolbar": "سائڈبار ٹول بار",
 			"size": "سائز",
-			"sky_view": "اسکائی ویو",
+			"sky_view": "Sky View",
 			"small_radius": "چھوٹا رداس",
 			"small_shadow": "چھوٹا سایہ",
 			"solid": "ٹھوس",
@@ -3519,7 +3521,17 @@
 			"task_dot": "ٹاسک نقطہ",
 			"holiday_dot": "تعطیل نقطہ",
 			"observance_dot": "تہوار نقطہ",
-			"special_day_dot": "خاص دن نقطہ"
+			"special_day_dot": "خاص دن نقطہ",
+			"right_sidebar_text": "دائیں سائیڈبار کا متن",
+			"360_3d": "360.3D",
+			"properties": "خصوصیات",
+			"backlinks": "بیک لنکس",
+			"tags": "ٹیگز",
+			"tasks": "کام",
+			"health": "صحت",
+			"provenance": "ماخذ",
+			"review": "جائزہ",
+			"source_review": "ماخذ کا جائزہ"
 		}
 	}
 }

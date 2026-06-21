@@ -319,6 +319,20 @@
 			{ label: 'Tab icon (active)', type: 'color', var: '--rs-tab-active-color' },
 			{ label: 'Tab row height', type: 'range', var: '--rs-tab-height', min: 24, max: 56, step: 1, unit: 'px', def: 30 },
 			{ label: 'Tab icon size', type: 'range', var: '--rs-icon-size', min: 10, max: 28, step: 1, unit: 'px', def: 16 } ] },
+		// MIG-080 §H — PER-PANEL right-sidebar text size. Each control writes --rs-text-scale-<tab>;
+		// .rs-inner applies the ACTIVE tab's token to --rs-scale, which the 181 font-size wraps read.
+		// Text-only (spacing untouched); default 100 = no change. Live two-zone edit (Components surface).
+		cRsText: { name: 'Right Sidebar Text', controls: [
+			{ label: 'Properties',    type: 'range', var: '--rs-text-scale-properties',   min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Backlinks',     type: 'range', var: '--rs-text-scale-backlinks',    min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Tags',          type: 'range', var: '--rs-text-scale-tags',         min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Sky View',      type: 'range', var: '--rs-text-scale-star',         min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Tasks',         type: 'range', var: '--rs-text-scale-tasks',        min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Health',        type: 'range', var: '--rs-text-scale-health',       min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Provenance',    type: 'range', var: '--rs-text-scale-provenance',   min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Review',        type: 'range', var: '--rs-text-scale-review',       min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: '360.3D',        type: 'range', var: '--rs-text-scale-inspector360', min: 70, max: 140, step: 5, unit: '', def: 100 },
+			{ label: 'Source Review', type: 'range', var: '--rs-text-scale-sourceReview', min: 70, max: 140, step: 5, unit: '', def: 100 } ] },
 		cButtons: { name: 'Buttons', controls: [
 			{ label: 'Radius', type: 'range', var: '--button-radius', min: 0, max: 24, step: 1, unit: 'px', def: 6 },
 			{ label: 'Padding (horizontal)', type: 'range', var: '--button-padding-x', min: 4, max: 32, step: 1, unit: 'px', def: 12 },
@@ -478,7 +492,7 @@
 	// the heavy plugins are their own preview surfaces.
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
-		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
+		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },

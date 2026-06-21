@@ -1429,6 +1429,12 @@ The left-of-note and right-of-note positions create **flanking columns** — thi
 
 The tab bar shows only the panels currently placed in `right-sidebar`. Tabs for panels moved to flanks or hidden are automatically removed. If you move the active tab's panel away, Constellation switches to the next available tab.
 
+The right sidebar is the **open note's context** — every tab answers "tell me about *this* note." The **Tags** tab shows only the open note's tags; the whole-universe tag list lives on the **Dashboard**. The **360.3D Inspector** can now be placed/hidden like any other panel (Settings → Panels).
+
+### Right sidebar text size
+
+Each right-sidebar panel has its **own** text size, set in the **Style Setter** → **Components** → **Right Sidebar Text** (a slider per panel: Properties, Backlinks, Tags, Sky View, Tasks, Health, Provenance, Review, 360.3D, Source Review; 70–140 %, default 100). Scaling is **text-only** — spacing is unchanged — and applies only to the right-sidebar copy of each panel. Drag a panel's slider while that panel's tab is open to see it resize live.
+
 ### Workspaces
 
 Panel placements are saved and restored with workspaces. Older workspaces (saved before this feature existed) leave the current layout unchanged when loaded.

@@ -1324,7 +1324,9 @@
 		"reviewed": "Révisé",
 		"snooze": "Reporter 7j",
 		"dismiss": "Ignorer",
-		"checkpointHint": "Maintenez-vous toujours ce point de vue ?"
+		"checkpointHint": "Maintenez-vous toujours ce point de vue ?",
+		"more": "de plus",
+		"showLess": "Afficher moins"
 	},
 	"trailNav": {
 		"trail": "Parcours",
@@ -3519,7 +3521,17 @@
 			"task_dot": "Point de tâche",
 			"holiday_dot": "Point de jour férié",
 			"observance_dot": "Point de commémoration",
-			"special_day_dot": "Point de jour spécial"
+			"special_day_dot": "Point de jour spécial",
+			"right_sidebar_text": "Texte de la barre latérale droite",
+			"360_3d": "360.3D",
+			"properties": "Propriétés",
+			"backlinks": "Rétroliens",
+			"tags": "Étiquettes",
+			"tasks": "Tâches",
+			"health": "Santé",
+			"provenance": "Provenance",
+			"review": "Révision",
+			"source_review": "Révision des sources"
 		}
 	}
 }

@@ -1928,7 +1928,9 @@
 		"reviewed": "Reviewed",
 		"snooze": "Snooze 7d",
 		"dismiss": "Dismiss",
-		"checkpointHint": "Do you still hold this view?"
+		"checkpointHint": "Do you still hold this view?",
+		"more": "more",
+		"showLess": "Show less"
 	},
 	"trailNav": {
 		"trail": "Trail",
@@ -3656,7 +3658,17 @@
 			"task_dot": "Task dot",
 			"holiday_dot": "Holiday dot",
 			"observance_dot": "Observance dot",
-			"special_day_dot": "Special-day dot"
+			"special_day_dot": "Special-day dot",
+			"right_sidebar_text": "Right Sidebar Text",
+			"360_3d": "360.3D",
+			"properties": "Properties",
+			"backlinks": "Backlinks",
+			"tags": "Tags",
+			"tasks": "Tasks",
+			"health": "Health",
+			"provenance": "Provenance",
+			"review": "Review",
+			"source_review": "Source Review"
 		}
 	}
 }

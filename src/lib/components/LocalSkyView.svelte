@@ -338,7 +338,7 @@
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
 		padding: 4px 10px;
-		font-size: 0.8rem;
+		font-size: calc(0.8rem * var(--rs-scale, 1));
 		color: var(--text-normal);
 		box-shadow: var(--shadow-s);
 		/* Narrower than before (was 320) — keeps the tooltip inside the
@@ -359,7 +359,7 @@
 		white-space: nowrap;
 	}
 	.local-star-tooltip-headline {
-		font-size: 0.7rem;
+		font-size: calc(0.7rem * var(--rs-scale, 1));
 		font-style: italic;
 		color: var(--text-faint);
 		line-height: 1.35;

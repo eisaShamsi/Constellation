@@ -176,7 +176,7 @@
 	.tp-filter-btn {
 		flex: 1;
 		padding: 4px 6px;
-		font-size: 0.72rem;
+		font-size: calc(0.72rem * var(--rs-scale, 1));
 		border: 1px solid var(--border-light, #333);
 		background: transparent;
 		color: var(--text-faint, #888);
@@ -193,7 +193,7 @@
 		border-color: var(--accent, #7c3aed);
 	}
 	.tp-count {
-		font-size: 0.65rem;
+		font-size: calc(0.65rem * var(--rs-scale, 1));
 		opacity: 0.7;
 	}
 	.tp-sort {
@@ -201,7 +201,7 @@
 	}
 	.tp-sort select {
 		width: 100%;
-		font-size: 0.72rem;
+		font-size: calc(0.72rem * var(--rs-scale, 1));
 		padding: 3px 6px;
 		border: 1px solid var(--border-light, #333);
 		background: var(--bg-secondary, #1e1e1e);
@@ -243,7 +243,7 @@
 		min-width: 0;
 	}
 	.tp-text {
-		font-size: 0.82rem;
+		font-size: calc(0.82rem * var(--rs-scale, 1));
 		color: var(--text-normal, #ccc);
 		line-height: 1.4;
 		word-break: break-word;
@@ -260,10 +260,10 @@
 		align-items: center;
 	}
 	.tp-priority {
-		font-size: 0.7rem;
+		font-size: calc(0.7rem * var(--rs-scale, 1));
 	}
 	.tp-due {
-		font-size: 0.68rem;
+		font-size: calc(0.68rem * var(--rs-scale, 1));
 		padding: 1px 5px;
 		border-radius: 3px;
 		font-weight: 500;
@@ -281,14 +281,14 @@
 		color: var(--text-faint, #888);
 	}
 	.tp-tag {
-		font-size: 0.65rem;
+		font-size: calc(0.65rem * var(--rs-scale, 1));
 		padding: 1px 5px;
 		border-radius: 3px;
 		background: rgba(124, 58, 237, 0.15);
 		color: var(--accent, #7c3aed);
 	}
 	.tp-file-link {
-		font-size: 0.65rem;
+		font-size: calc(0.65rem * var(--rs-scale, 1));
 		color: var(--text-faint, #666);
 		background: none;
 		border: none;
@@ -307,7 +307,7 @@
 	.tp-empty {
 		padding: 24px 12px;
 		text-align: center;
-		font-size: 0.8rem;
+		font-size: calc(0.8rem * var(--rs-scale, 1));
 		color: var(--text-faint, #666);
 	}
 </style>

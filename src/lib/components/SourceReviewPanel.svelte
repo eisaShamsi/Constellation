@@ -1523,7 +1523,7 @@
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    font-size: 13px;
+    font-size: calc(13px * var(--rs-scale, 1));
     color: var(--text-normal, #1a1a1a);
   }
   .srp-header {
@@ -1537,7 +1537,7 @@
   .srp-title {
     font-weight: 600;
     letter-spacing: 1px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     text-transform: uppercase;
     color: var(--text-muted, #6b6a64);
   }
@@ -1553,7 +1553,7 @@
     cursor: pointer;
     padding: 3px 8px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
   }
   .srp-classify:hover:not(:disabled) {
     background: var(--background-modifier-hover, rgba(0,0,0,0.05));
@@ -1578,7 +1578,7 @@
   }
   .srp-count {
     padding: 6px 12px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-muted, #6b6a64);
   }
   .srp-empty,
@@ -1593,14 +1593,14 @@
     color: var(--text-normal, #1a1a1a);
   }
   .srp-empty-sub {
-    font-size: 12px;
+    font-size: calc(12px * var(--rs-scale, 1));
     line-height: 1.5;
   }
   .srp-error {
     color: var(--text-error, #a83232);
   }
   .srp-error-detail {
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     margin-top: 6px;
     word-break: break-word;
   }
@@ -1621,7 +1621,7 @@
     flex-shrink: 0;
   }
   .srp-show-more-note {
-    font-size: 0.72rem;
+    font-size: calc(0.72rem * var(--rs-scale, 1));
     color: var(--text-muted);
   }
   /* MIG-040 (NSC): the per-card note summary, under the title. */
@@ -1631,14 +1631,14 @@
     border-inline-start: 2px solid var(--interactive-accent, #7c3aed);
     background: var(--background-modifier-hover, rgba(0,0,0,0.03));
     border-radius: 0 4px 4px 0;
-    font-size: 0.82rem;
+    font-size: calc(0.82rem * var(--rs-scale, 1));
     line-height: 1.45;
     color: var(--text-muted, #555);
   }
   .srp-summary-label {
     display: inline-block;
     margin-inline-end: 6px;
-    font-size: 0.66rem;
+    font-size: calc(0.66rem * var(--rs-scale, 1));
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1664,7 +1664,7 @@
     padding: 0;
     color: var(--text-accent, #2a4a8c);
     font-weight: 600;
-    font-size: 13px;
+    font-size: calc(13px * var(--rs-scale, 1));
     cursor: pointer;
     text-align: start;
     flex: 1;
@@ -1681,7 +1681,7 @@
     margin-bottom: 8px;
   }
   .srp-axis-label {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-muted, #6b6a64);
@@ -1697,7 +1697,7 @@
     padding: 6px 8px;
     border-inline-start: 2px solid transparent;
     margin-bottom: 4px;
-    font-size: 12px;
+    font-size: calc(12px * var(--rs-scale, 1));
   }
   .srp-suggestion.primary {
     border-inline-start-color: #c9a227;
@@ -1715,21 +1715,21 @@
   }
   .srp-tier-badge {
     color: #faf6e8;
-    font-size: 9px;
+    font-size: calc(9px * var(--rs-scale, 1));
     font-weight: 600;
     padding: 1px 5px;
     border-radius: 3px;
     flex-shrink: 0;
   }
   .srp-confidence {
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-muted, #6b6a64);
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
   .srp-evidence {
     margin-top: 3px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-muted, #6b6a64);
     font-style: italic;
   }
@@ -1769,7 +1769,7 @@
     border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.18));
     color: var(--text-normal, #1a1a1a);
     padding: 4px 12px;
-    font-size: 12px;
+    font-size: calc(12px * var(--rs-scale, 1));
     border-radius: 4px;
     cursor: pointer;
   }
@@ -1824,7 +1824,7 @@
   /* V3-§8.r5.6 — Legacy pill (replaces the bare T1/T2 abbreviation
      for v2-era rows that don't carry a per-cataloger trail). */
   .srp-legacy-pill {
-    font-size: 9px;
+    font-size: calc(9px * var(--rs-scale, 1));
     padding: 1px 6px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.05);
@@ -1846,12 +1846,12 @@
   .srp-trail-btn {
     background: transparent; border: none;
     color: var(--text-muted, #6b6a64);
-    font-size: 11px; cursor: pointer;
+    font-size: calc(11px * var(--rs-scale, 1)); cursor: pointer;
     padding: 2px 0;
   }
   .srp-trail-btn:hover { color: var(--text-normal); }
   .srp-split-pill {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 2px 6px;
     background: rgba(201, 162, 39, 0.18);
     color: #856204;
@@ -1859,7 +1859,7 @@
     border: 1px solid rgba(201, 162, 39, 0.4);
   }
   .srp-majority-pill {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 2px 6px;
     background: rgba(83, 74, 183, 0.12);
     color: #534ab7;
@@ -1869,7 +1869,7 @@
   /* V3-§8.r5.3 — Unanimous pill (only shown during trust-calibration so
      the user can tell why the trail is auto-open even on agreed cards). */
   .srp-unanimous-pill {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 2px 6px;
     background: rgba(15, 110, 86, 0.12);
     color: #0f6e56;
@@ -1884,7 +1884,7 @@
     background: rgba(83, 74, 183, 0.06);
     border: 1px dashed rgba(83, 74, 183, 0.25);
     color: var(--text-muted, #6b6a64);
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     line-height: 1.5;
     cursor: help;
   }
@@ -1897,7 +1897,7 @@
     padding: 6px 12px 8px;
     background: rgba(0, 0, 0, 0.02);
     border-block: 1px solid var(--background-modifier-border, rgba(0,0,0,0.06));
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-normal);
   }
   .srp-trail-summary {
@@ -1916,7 +1916,7 @@
   }
   .srp-trail-item:first-child { border-top: none; }
   .srp-trail-conf {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     color: var(--text-faint);
     margin-inline-start: 4px;
   }
@@ -1943,7 +1943,7 @@
     display: flex; flex-wrap: wrap; gap: 3px;
   }
   .srp-trail-rule {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 1px 6px;
     background: rgba(0, 0, 0, 0.04);
     color: var(--text-muted);
@@ -1960,7 +1960,7 @@
     display: flex; flex-direction: column; gap: 6px;
   }
   .srp-disambig-prompt {
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-normal);
     line-height: 1.4;
   }
@@ -1968,7 +1968,7 @@
     display: flex; flex-direction: column; gap: 4px;
   }
   .srp-disambig-axis-label {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1983,7 +1983,7 @@
     color: var(--text-normal, #1a1a1a);
     padding: 4px 10px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     cursor: pointer;
     transition: background 0.12s;
   }
@@ -2001,7 +2001,7 @@
     display: flex; gap: 6px;
   }
   .srp-bulk-btn {
-    padding: 3px 10px; font-size: 11px;
+    padding: 3px 10px; font-size: calc(11px * var(--rs-scale, 1));
     border-radius: 4px; cursor: pointer;
     border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.18));
     background: transparent;
@@ -2016,7 +2016,7 @@
     gap: 8px; padding: 6px 8px;
     background: rgba(201, 162, 39, 0.10);
     border-block: 1px solid rgba(201, 162, 39, 0.25);
-    font-size: 11px; color: var(--text-normal);
+    font-size: calc(11px * var(--rs-scale, 1)); color: var(--text-normal);
   }
   .srp-bulk-progress-text { font-variant-numeric: tabular-nums; }
   .srp-bulk-cancel {
@@ -2025,7 +2025,7 @@
     color: var(--text-muted);
     border-radius: 4px;
     padding: 1px 8px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     cursor: pointer;
   }
   .srp-bulk-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -2038,13 +2038,13 @@
     display: flex; flex-direction: column; gap: 8px;
   }
   .srp-bulk-confirm-text {
-    font-size: 12px; line-height: 1.5; color: var(--text-normal);
+    font-size: calc(12px * var(--rs-scale, 1)); line-height: 1.5; color: var(--text-normal);
   }
   /* V3-§8.r5.5 — secondary aside under the main confirm prompt explaining
      the Split-aware skip behavior. */
   .srp-bulk-confirm-aside {
     margin-top: 6px;
-    font-size: 11px;
+    font-size: calc(11px * var(--rs-scale, 1));
     color: var(--text-muted, #6b6a64);
     font-style: italic;
   }
@@ -2063,7 +2063,7 @@
     padding: 4px 8px 0;
   }
   .srp-filter-chip {
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 3px 8px;
     background: transparent;
     color: var(--text-muted, #6b6a64);
@@ -2104,7 +2104,7 @@
     display: flex; flex-direction: column; gap: 8px; align-items: center;
   }
   .srp-empty-bucket-text {
-    font-size: 12px;
+    font-size: calc(12px * var(--rs-scale, 1));
   }
 
   /* V3-§8.r5.4 — queue-level Split count chip surfaces the "needs your
@@ -2112,7 +2112,7 @@
      gold borders. */
   .srp-queue-split-chip {
     margin-inline-start: 6px;
-    font-size: 10px;
+    font-size: calc(10px * var(--rs-scale, 1));
     padding: 1px 6px;
     background: rgba(201, 162, 39, 0.18);
     color: #856204;

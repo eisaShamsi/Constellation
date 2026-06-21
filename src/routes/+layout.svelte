@@ -7136,7 +7136,8 @@
 	<aside class="right-sidebar" data-style-target="cRightSidebar" class:collapsed={!rightSidebarOpen || skyViewInspectMode} style:width={(rightSidebarOpen && !skyViewInspectMode) ? rightSidebarWidth + 'px' : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
-		<div class="rs-inner" dir={noteDir}>
+		<!-- MIG-080 §H — per-panel text size: --rs-scale follows the ACTIVE tab's own token. -->
+		<div class="rs-inner" dir={noteDir} style="--rs-scale: calc(var(--rs-text-scale-{rightSidebarTab}, 100) / 100)">
 			<!-- Right sidebar tab bar.
 			     Each tab button is gated on its panel being placed in 'right-sidebar'.
 			     Falls back to showing the tab when no placement is saved (new install),
@@ -7198,7 +7199,8 @@
 							.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
 					}} title={$t('panels.review') || 'Review Pulse'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-						{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
+						<!-- MIG-080 §H.4 — tab count badge removed (Boss): the Review panel's
+						     "Never Reviewed" section header already shows the count. -->
 					</button>
 				{/if}
 				{#if ($appSettings.panelPlacements?.inspector360 ?? 'right-sidebar') === 'right-sidebar'}
@@ -8949,6 +8951,12 @@
 	.rs-inner {
 		height: 100%;
 		display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+		/* MIG-080 §H — PER-PANEL right-sidebar text size. --rs-scale is set INLINE on this
+		   element (markup) from the ACTIVE tab's own token: var(--rs-text-scale-<tab>, 100)/100.
+		   Only one panel renders at a time, so this scopes the scale to whichever panel is open;
+		   descendant panels read --rs-scale (the 181 `calc(X * var(--rs-scale, 1))` wraps). The
+		   same shared panel rendered OUTSIDE .rs-inner has --rs-scale unset → fallback 1. Each
+		   panel's size is its own Style-Setter control (--rs-text-scale-properties, …). Text-only. */
 	}
 
 	.rs-tabs {
@@ -8976,12 +8984,6 @@
 		color: var(--rs-tab-active-color, var(--accent));
 		border-bottom-color: var(--rs-tab-active-color, var(--accent));
 	}
-	.rs-tab-badge {
-		position: absolute; top: -2px; inset-inline-end: -2px;
-		font-size: 0.55rem; background: var(--interactive-accent); color: white;
-		border-radius: 6px; padding: 0 3px; min-width: 12px; text-align: center;
-		line-height: 1.3;
-	}
 	.rs-tab { position: relative; }
 
 	.rs-section {
@@ -8994,7 +8996,7 @@
 		min-height: 0;
 	}
 	.rs-header {
-		font-size: 0.78rem; font-weight: 600; color: var(--accent);
+		font-size: calc(0.78rem * var(--rs-scale, 1)); font-weight: 600; color: var(--accent);
 		margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em;
 	}
 	/* Tag Browser (#12) — Tags-tab header with the This-note ⇄ All-tags toggle. */
@@ -9017,21 +9019,21 @@
 		.rs-tags-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 10px 10px; }
 		.rs-prop {
 		display: flex; justify-content: space-between; gap: 8px;
-		padding: 3px 0; font-size: 0.8rem;
+		padding: 3px 0; font-size: calc(0.8rem * var(--rs-scale, 1));
 	}
-	.rs-prop-icon { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; width: 16px; text-align: center; }
+	.rs-prop-icon { color: var(--text-muted); font-size: calc(0.75rem * var(--rs-scale, 1)); flex-shrink: 0; width: 16px; text-align: center; }
 	.rs-prop-key { color: var(--text-secondary); font-weight: 500; }
 	.rs-prop-val { color: var(--text); text-align: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.rs-heading {
 		display: block; width: 100%; border: none; background: none;
 		text-align: start; font-family: inherit;
-		padding: 3px 8px; font-size: 0.8rem; color: var(--text-secondary);
+		padding: 3px 8px; font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-secondary);
 		cursor: pointer; border-radius: 3px;
 	}
 	.rs-heading:hover { background: var(--bg-hover); color: var(--text); }
-	.rs-empty { font-size: 0.8rem; color: var(--text-faint); }
+	.rs-empty { font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-faint); }
 	.rs-empty-full {
-		padding: 24px; text-align: center; color: var(--text-faint); font-size: 0.85rem;
+		padding: 24px; text-align: center; color: var(--text-faint); font-size: calc(0.85rem * var(--rs-scale, 1));
 	}
 	.rs-note-tags {
 		display: flex; flex-wrap: wrap; gap: 6px;
@@ -9040,7 +9042,7 @@
 		display: inline-flex; align-items: center; gap: 2px;
 		padding: 3px 8px; border-radius: 12px;
 		background: var(--bg-hover); border: 1px solid var(--border-light);
-		font-size: 0.78rem; color: var(--text-secondary);
+		font-size: calc(0.78rem * var(--rs-scale, 1)); color: var(--text-secondary);
 		cursor: pointer; font-family: inherit;
 	}
 	.rs-tag-chip:hover { background: var(--accent-bg, rgba(124, 58, 237, 0.1)); color: var(--accent); border-color: var(--accent); }
