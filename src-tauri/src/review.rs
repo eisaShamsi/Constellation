@@ -87,9 +87,9 @@ pub fn mark_reviewed(
 
     pulse.last_reviewed.insert(note_path.clone(), today);
 
-    // Double the interval (start at 1 day, max 30)
-    let current = pulse.intervals.get(&note_path).copied().unwrap_or(1);
-    let next = (current * 2).min(30);
+    // MIG-083 — the documented 1·3·7·14·30 ladder (cap 30), not the old doubling.
+    let current = pulse.intervals.get(&note_path).copied().unwrap_or(0);
+    let next = next_interval(current);
     pulse.intervals.insert(note_path.clone(), next);
 
     // Remove from snoozed if present
@@ -130,23 +130,10 @@ pub fn dismiss_note(
     save_pulse_data(&cdir, &pulse)
 }
 
-/// Record that a note was visited (called from frontend on tab open).
-#[tauri::command]
-pub fn record_note_visit(
-    app: tauri::AppHandle,
-    note_path: String,
-) -> Result<(), String> {
-    let cdir = crate::universe::active_constellation_dir(&app)?;
-    let mut pulse = load_pulse_data(&cdir);
-
-    // Only update if not already reviewed today
-    let today = today_str();
-    if pulse.last_reviewed.get(&note_path).map(|d| d.as_str()) != Some(today.as_str()) {
-        pulse.last_reviewed.insert(note_path, today);
-    }
-
-    save_pulse_data(&cdir, &pulse)
-}
+// MIG-083 — `record_note_visit` REMOVED (Boss decision 2026-06-22: opening a
+// note does NOT count as a review; only the explicit "✓ Reviewed" action sets
+// last_reviewed, so "I re-confronted this held position" stays meaningful). It
+// was registered but never called from the frontend.
 
 // ─── Internal helpers ───
 
@@ -178,6 +165,12 @@ fn date_to_days(date_str: &str) -> i64 {
     } else {
         0
     }
+}
+
+#[cfg(test)]
+fn day_to_date(days: i64) -> String {
+    let base = chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+    (base + chrono::Duration::days(days)).format("%Y-%m-%d").to_string()
 }
 
 fn add_days(date_str: &str, days: i64) -> String {
@@ -365,9 +358,158 @@ pub fn compute_schedule_row(
     }
 }
 
+// ── §B — the derived-table gate + write-time maintenance (DB side) ──────────
+
+/// Is the `review_schedule` table built + authoritative? (schema_versions.review)
+/// Until stamped (by the §C back-fill), the legacy FS scan is the source of truth
+/// and every maintenance hook below is skipped — so §B is INERT until §C.
+pub fn is_stamped(conn: &rusqlite::Connection) -> bool {
+    conn.query_row(
+        "SELECT version FROM schema_versions WHERE module = 'review'",
+        [],
+        |r| r.get::<_, i64>(0),
+    )
+    .map(|v| v >= 1)
+    .unwrap_or(false)
+}
+
+/// Unix seconds → days-since-2020-01-01 (the epoch `date_to_days` uses), so a
+/// note's `modified` timestamp and a `YYYY-MM-DD` review date are comparable.
+pub fn secs_to_days(secs: i64) -> i64 {
+    const UNIX_2020_01_01: i64 = 1_577_836_800;
+    (secs - UNIX_2020_01_01).div_euclid(86_400)
+}
+
+/// Write-time maintenance of ONE note's Mode-1/3 schedule row, from data already
+/// in hand at `index_note` (zero extra `.md` reads). Preserves the action-owned
+/// fields (`last_reviewed`, `interval`) and a `dismissed` state across re-index;
+/// recomputes the content-derived fields (`is_checkpoint`, `reason`, `due_days`,
+/// `stratum`). Caller gates on [`is_stamped`].
+pub fn upsert_schedule_row(
+    conn: &rusqlite::Connection,
+    path: &str,
+    tags_json: &str,
+    modified_secs: i64,
+    stratum: i64,
+) -> Result<(), String> {
+    let existing: Option<(Option<String>, i64, String)> = conn
+        .query_row(
+            "SELECT last_reviewed, interval, reason FROM review_schedule WHERE path = ?1",
+            rusqlite::params![path],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .ok();
+
+    // A dismissed note stays dismissed across re-index (else it'd resurface on
+    // the next save). Leave the row untouched.
+    if let Some((_, _, ref reason)) = existing {
+        if reason == "dismissed" {
+            return Ok(());
+        }
+    }
+
+    let (last_reviewed, interval): (Option<String>, u32) = existing
+        .map(|(lr, iv, _)| (lr, iv.max(0) as u32))
+        .unwrap_or((None, 0));
+    let is_cp = is_checkpoint(tags_json);
+    let anchor_day = secs_to_days(modified_secs);
+    let lr_day = last_reviewed.as_ref().map(|d| date_to_days(d));
+    let (reason, due_days) = compute_schedule_row(lr_day, interval, is_cp, anchor_day);
+
+    conn.execute(
+        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(path) DO UPDATE SET
+           reason        = excluded.reason,
+           due_days      = excluded.due_days,
+           is_checkpoint = excluded.is_checkpoint,
+           stratum       = excluded.stratum",
+        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64],
+    )
+    .map_err(|e| format!("review_schedule upsert {}: {}", path, e))?;
+    Ok(())
+}
+
+/// Drop a note's schedule row (on note deletion). Caller gates on [`is_stamped`].
+pub fn delete_schedule_row(conn: &rusqlite::Connection, path: &str) -> Result<(), String> {
+    conn.execute("DELETE FROM review_schedule WHERE path = ?1", rusqlite::params![path])
+        .map_err(|e| format!("review_schedule delete {}: {}", path, e))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sched_db() -> rusqlite::Connection {
+        let c = rusqlite::Connection::open_in_memory().unwrap();
+        c.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
+               is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0,
+               interval INTEGER NOT NULL DEFAULT 0);",
+        ).unwrap();
+        c
+    }
+    fn row(c: &rusqlite::Connection, path: &str) -> (String, i64, i64) {
+        c.query_row("SELECT reason, due_days, is_checkpoint FROM review_schedule WHERE path=?1",
+            rusqlite::params![path], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?))).unwrap()
+    }
+
+    #[test]
+    fn is_stamped_gate() {
+        let c = sched_db();
+        assert!(!is_stamped(&c), "unstamped by default");
+        c.execute("INSERT INTO schema_versions (module, version) VALUES ('review', 1)", []).unwrap();
+        assert!(is_stamped(&c));
+    }
+
+    #[test]
+    fn upsert_new_note_is_never_reviewed() {
+        let c = sched_db();
+        let modified = 1_577_836_800 + 100 * 86_400; // day 100
+        upsert_schedule_row(&c, "/n.md", "[]", modified, 3).unwrap();
+        let (reason, due, is_cp) = row(&c, "/n.md");
+        assert_eq!(reason, "never_reviewed");
+        assert_eq!(due, 101, "anchor day 100 + 1");
+        assert_eq!(is_cp, 0);
+        assert_eq!(c.query_row("SELECT stratum FROM review_schedule WHERE path='/n.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 3);
+    }
+
+    #[test]
+    fn upsert_preserves_review_state_and_recomputes_checkpoint() {
+        let c = sched_db();
+        // a previously-reviewed row (last_reviewed day 200, interval 7)
+        c.execute("INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
+                   VALUES ('/n.md','interval_due',207,0,?1,2,7)",
+            rusqlite::params![day_to_date(200)]).unwrap();
+        // re-index after tagging it #assumption → becomes a checkpoint; last_reviewed/interval preserved
+        upsert_schedule_row(&c, "/n.md", r#"["assumption"]"#, 0, 5).unwrap();
+        let (reason, due, is_cp) = row(&c, "/n.md");
+        assert_eq!(reason, "checkpoint");
+        assert_eq!(is_cp, 1);
+        assert_eq!(due, 230, "last_reviewed 200 + 30-day checkpoint cadence");
+        let (lr, iv): (String, i64) = c.query_row("SELECT last_reviewed, interval FROM review_schedule WHERE path='/n.md'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(date_to_days(&lr), 200, "last_reviewed preserved");
+        assert_eq!(iv, 7, "interval preserved");
+    }
+
+    #[test]
+    fn upsert_leaves_dismissed_alone() {
+        let c = sched_db();
+        c.execute("INSERT INTO review_schedule (path, reason, due_days) VALUES ('/n.md','dismissed',0)", []).unwrap();
+        upsert_schedule_row(&c, "/n.md", r#"["assumption"]"#, 0, 9).unwrap();
+        let (reason, _, _) = row(&c, "/n.md");
+        assert_eq!(reason, "dismissed", "a dismissed note is not resurrected by re-index");
+    }
+
+    #[test]
+    fn delete_drops_the_row() {
+        let c = sched_db();
+        upsert_schedule_row(&c, "/n.md", "[]", 1_577_836_800, 0).unwrap();
+        delete_schedule_row(&c, "/n.md").unwrap();
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM review_schedule", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
+    }
 
     #[test]
     fn ladder_is_1_3_7_14_30_capped() {

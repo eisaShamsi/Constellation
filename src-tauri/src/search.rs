@@ -2374,7 +2374,8 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             due_days      INTEGER NOT NULL,
             is_checkpoint INTEGER NOT NULL DEFAULT 0,
             last_reviewed TEXT,
-            stratum       INTEGER NOT NULL DEFAULT 0
+            stratum       INTEGER NOT NULL DEFAULT 0,
+            interval      INTEGER NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_review_due ON review_schedule(due_days);
     ").map_err(|e| format!("Failed to create review_schedule: {}", e))?;

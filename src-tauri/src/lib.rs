@@ -428,7 +428,6 @@ pub fn run() {
             review::mark_reviewed,
             review::snooze_note,
             review::dismiss_note,
-            review::record_note_visit,
             trails::list_trails,
             trails::read_trail,
             canvas::list_canvases,
