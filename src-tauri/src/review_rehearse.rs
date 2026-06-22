@@ -83,25 +83,14 @@ fn backfill(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &s
             .map_err(|e| e.to_string())?;
         it.filter_map(|x| x.ok()).collect()
     };
+    // Exercise the REAL shared per-note step (backfill_one) so the harness can't
+    // drift from production.
     for (path, tags_json, modified, body_text) in &rows {
-        let stratum: i64 = conn
-            .query_row("SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1", params![path], |r| r.get(0))
-            .unwrap_or(0);
-        let lr = pulse.last_reviewed.get(path).map(|s| s.as_str());
-        let interval = pulse.intervals.get(path).copied().unwrap_or(0);
-        let snoozed = pulse.snoozed.get(path).map(|s| s.as_str());
-        let dismissed = pulse.dismissed.contains(path);
-        crate::review::backfill_schedule_row(conn, path, tags_json, *modified, stratum, lr, interval, snoozed, dismissed, today)?;
-        // Baseline content_hash exactly as review_backfill::process_batch does.
-        conn.execute(
-            "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
-            params![path, crate::review::content_hash(body_text)],
-        )
-        .map_err(|e| e.to_string())?;
+        crate::review::backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
     }
     conn.execute(
-        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', 1, strftime('%s','now'))",
-        [],
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', ?1, strftime('%s','now'))",
+        params![crate::review::REVIEW_SCHEMA_VERSION],
     )
     .map_err(|e| format!("stamp review: {}", e))?;
     Ok(rows.len() as i64)

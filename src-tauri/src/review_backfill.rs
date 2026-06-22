@@ -14,6 +14,7 @@
 
 use crate::search::SearchState;
 use rusqlite::{params, Connection};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -22,8 +23,14 @@ use tauri::{Emitter, Manager};
 const BATCH_SIZE: usize = 1000;
 const INTER_BATCH_SLEEP_MS: u64 = 50;
 
+/// One-shot guard. Unlike the other back-fills (scheduled once at boot), this one is
+/// ALSO kicked lazily from `get_due_notes` on every unstamped read (§E) — without
+/// this, repeated reads during the build window would spawn concurrent back-fill
+/// threads racing on the same WAL. compare_exchange ensures exactly one runs.
+static RUNNING: AtomicBool = AtomicBool::new(false);
+
 /// Schedule the back-fill on a background thread. Returns immediately. No-op if
-/// `review` is already stamped (the common steady-state case).
+/// `review` is already stamped (the common steady-state case) or one is already running.
 pub fn maybe_schedule(app: tauri::AppHandle) {
     {
         let state = app.state::<SearchState>();
@@ -37,10 +44,15 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
             _ => {}
         }
     }
+    // Claim the single run-slot; if another back-fill already holds it, do nothing.
+    if RUNNING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        return;
+    }
     thread::spawn(move || {
         if let Err(e) = run(&app) {
             eprintln!("review_backfill: {}", e);
         }
+        RUNNING.store(false, Ordering::SeqCst);
     });
 }
 
@@ -116,27 +128,7 @@ fn process_batch(
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
         for (path, tags_json, modified, body_text) in &rows {
-            let stratum: i64 = conn
-                .query_row(
-                    "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
-                    params![path],
-                    |r| r.get(0),
-                )
-                .unwrap_or(0);
-            let last_reviewed = pulse.last_reviewed.get(path).map(|s| s.as_str());
-            let interval = pulse.intervals.get(path).copied().unwrap_or(0);
-            let snoozed = pulse.snoozed.get(path).map(|s| s.as_str());
-            let dismissed = pulse.dismissed.contains(path);
-            crate::review::backfill_schedule_row(
-                conn, path, tags_json, *modified, stratum, last_reviewed, interval, snoozed, dismissed, today,
-            )?;
-            // Baseline the content hash (only if not already set — resume-safe; content_changed_at
-            // stays NULL so nothing is "stale" until a real post-stamp body change bumps it).
-            conn.execute(
-                "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
-                params![path, crate::review::content_hash(body_text)],
-            )
-            .map_err(|e| format!("baseline content_hash {}: {}", path, e))?;
+            crate::review::backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
         }
         Ok(())
     })();
@@ -193,8 +185,8 @@ fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let r = (|| -> Result<(), String> {
         conn.execute(
-            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', 1, strftime('%s','now'))",
-            [],
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', ?1, strftime('%s','now'))",
+            params![crate::review::REVIEW_SCHEMA_VERSION],
         )
         .map_err(|e| format!("stamp review: {}", e))?;
         conn.execute("DELETE FROM review_backfill_cursor WHERE id = 1", [])

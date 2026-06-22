@@ -554,16 +554,23 @@ pub fn compute_schedule_row(
 
 // ── §B — the derived-table gate + write-time maintenance (DB side) ──────────
 
-/// Is the `review_schedule` table built + authoritative? (schema_versions.review)
-/// Until stamped (by the §C back-fill), the legacy FS scan is the source of truth
-/// and every maintenance hook below is skipped — so §B is INERT until §C.
+/// The `review_schedule` schema/logic version. Bumping it makes [`is_stamped`] report
+/// false until the back-fill re-runs + re-stamps — the sibling rollback/re-build path
+/// (mirrors `SKY_SCHEMA_VERSION`): a future change to the scheduling logic bumps this,
+/// the next boot rebuilds, and the reconcile self-heals (Architect I7).
+pub const REVIEW_SCHEMA_VERSION: i64 = 1;
+
+/// Is the `review_schedule` table built + authoritative at the current version?
+/// (schema_versions.review ≥ [`REVIEW_SCHEMA_VERSION`]). Until stamped (by the §C
+/// back-fill), `get_due_notes` returns empty + kicks the back-fill — so §B is INERT
+/// until §C.
 pub fn is_stamped(conn: &rusqlite::Connection) -> bool {
     conn.query_row(
         "SELECT version FROM schema_versions WHERE module = 'review'",
         [],
         |r| r.get::<_, i64>(0),
     )
-    .map(|v| v >= 1)
+    .map(|v| v >= REVIEW_SCHEMA_VERSION)
     .unwrap_or(false)
 }
 
@@ -804,6 +811,82 @@ pub fn backfill_schedule_row(
     Ok(())
 }
 
+/// The shared per-note step of the §C back-fill, the §E reconcile recompute, and the
+/// rehearsal harness: rebuild ONE note's `review_schedule` row from the data in hand
+/// (real `stratum` from sky_nodes; action state from the pulse) + baseline its
+/// `content_hash` from `body_text` if unset. Single-sourced so the three callers
+/// can't drift (the rehearsal then exercises the REAL back-fill body).
+pub(crate) fn backfill_one(
+    conn: &rusqlite::Connection,
+    path: &str,
+    tags_json: &str,
+    modified_secs: i64,
+    body_text: &str,
+    pulse: &ReviewPulseData,
+    today: &str,
+) -> Result<(), String> {
+    let stratum: i64 = conn
+        .query_row(
+            "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
+            rusqlite::params![path],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    backfill_schedule_row(
+        conn,
+        path,
+        tags_json,
+        modified_secs,
+        stratum,
+        pulse.last_reviewed.get(path).map(|s| s.as_str()),
+        pulse.intervals.get(path).copied().unwrap_or(0),
+        pulse.snoozed.get(path).map(|s| s.as_str()),
+        pulse.dismissed.contains(&path.to_string()),
+        today,
+    )?;
+    // Baseline content_hash (only if unset — resume-safe; content_changed_at stays
+    // NULL so nothing is "stale" until a real post-stamp body change bumps it).
+    conn.execute(
+        "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
+        rusqlite::params![path, content_hash(body_text)],
+    )
+    .map_err(|e| format!("baseline content_hash {}: {}", path, e))?;
+    Ok(())
+}
+
+/// MIG-083 §E — the reconcile self-heal (Plan §C / Architect I1). Authoritatively
+/// rebuild `review_schedule` from the just-reconciled `note_meta` + the per-universe
+/// action state (`review-pulse.json`): sweep orphan rows (notes gone from disk),
+/// refresh every row's content-derived fields (reason/due/stratum/is_checkpoint) and
+/// re-anchor the action-owned fields (last_reviewed/interval/snooze/dismiss). So any
+/// drift — an orphan, a stratum gone stale via a neighbour's link edit, a row missed
+/// in a back-fill inter-batch window — self-heals on the periodic reconcile. Mirrors
+/// `tag_counts::recompute_all_in`; the caller wraps it in one transaction.
+pub fn recompute_all_in(
+    conn: &rusqlite::Connection,
+    pulse: &ReviewPulseData,
+    today: &str,
+) -> Result<(), String> {
+    conn.execute(
+        "DELETE FROM review_schedule WHERE path NOT IN (SELECT path FROM note_meta)",
+        [],
+    )
+    .map_err(|e| format!("review_schedule orphan sweep: {}", e))?;
+    let rows: Vec<(String, String, i64, String)> = {
+        let mut stmt = conn
+            .prepare("SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0), COALESCE(body_text,'') FROM note_meta")
+            .map_err(|e| e.to_string())?;
+        let it = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?)))
+            .map_err(|e| e.to_string())?;
+        it.filter_map(|x| x.ok()).collect()
+    };
+    for (path, tags_json, modified, body_text) in &rows {
+        backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -968,7 +1051,8 @@ mod tests {
     fn read_db() -> rusqlite::Connection {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER);
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '');
+             CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
              CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
                is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0, interval INTEGER NOT NULL DEFAULT 0, snoozed_until TEXT);",
@@ -1134,6 +1218,25 @@ mod tests {
         let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days, 1).unwrap();
         let paths: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
         assert_eq!(paths, vec!["/U/Lib/a.md"], "only the real child; siblings /U/Lib2 + /U/Library excluded");
+    }
+
+    #[test]
+    fn recompute_all_in_sweeps_orphans_and_rebuilds() {
+        // §E reconcile self-heal (Plan §C / Architect I1, audit P1): an orphan row
+        // (no backing note_meta) is swept, and every real note gets a fresh row.
+        let c = read_db();
+        let today = "2026-06-22";
+        c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,tags_json) VALUES ('/lib/Real.md','Real','CIDR',?1,'[]')",
+            rusqlite::params![secs("2026-01-01")]).unwrap();
+        // a stale orphan + a real-but-missing-row (back-fill-window gap)
+        c.execute("INSERT INTO review_schedule (path,reason,due_days) VALUES ('/lib/Ghost.md','interval_due',0)", []).unwrap();
+
+        recompute_all_in(&c, &ReviewPulseData::default(), today).unwrap();
+
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM review_schedule WHERE path='/lib/Ghost.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 0,
+            "orphan row (no note_meta) swept");
+        let (reason, _): (String, i64) = c.query_row("SELECT reason, due_days FROM review_schedule WHERE path='/lib/Real.md'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(reason, "never_reviewed", "real note (no pulse entry) rebuilt as never_reviewed");
     }
 
     #[test]

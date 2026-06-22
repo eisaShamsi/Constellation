@@ -603,9 +603,11 @@ pub(crate) const LINKS_OUTGOING_SCHEMA_VERSION: i64 = 1;
 ///                            populates it (gated on `schema_versions.review`).
 ///   - `content_changed_at` — Unix seconds of the last REAL body change (bumped only
 ///                            when `content_hash` differs). NULL until the note's first
-///                            post-stamp content edit; the Mode-2 JOIN uses
-///                            `COALESCE(content_changed_at, modified)` so an
-///                            un-initialized note falls back to its file mtime.
+///                            post-stamp content edit; the Mode-2 probe REQUIRES
+///                            `content_changed_at IS NOT NULL` (NO mtime fallback) — an
+///                            un-initialized / never-edited dependency is treated as NOT
+///                            changed, so a touch/sync/frontmatter save never false-fires
+///                            staleness (the finding-A touch-test, asserted by the harness).
 fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_content_hash = false;
     let mut have_content_changed_at = false;
@@ -7809,6 +7811,26 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
                 }
             }
             Err(e) => eprintln!("[tag_counts] reconcile txn begin failed: {}", e),
+        }
+    }
+
+    // MIG-083 §E — rebuild review_schedule authoritatively from the just-reconciled
+    // note_meta + the per-universe review-pulse.json (the periodic self-heal +
+    // orphan sweep + stratum refresh; Plan §C / Architect I1). Only when stamped —
+    // before the back-fill has run, the table isn't in use. One short transaction;
+    // the write-time index_note/action hooks keep it current between reconciles.
+    if crate::review::is_stamped(&walk_conn) {
+        let cdir = path.parent().map(|p| p.to_path_buf()).unwrap_or_default();
+        let pulse = crate::review::load_pulse_data(&cdir);
+        let today = crate::review::today_str();
+        match walk_conn.transaction() {
+            Ok(tx) => {
+                let r = crate::review::recompute_all_in(&tx, &pulse, &today);
+                if let Err(e) = r.and_then(|_| tx.commit().map_err(|e| e.to_string())) {
+                    eprintln!("[review] reconcile recompute failed: {}", e);
+                }
+            }
+            Err(e) => eprintln!("[review] reconcile txn begin failed: {}", e),
         }
     }
 

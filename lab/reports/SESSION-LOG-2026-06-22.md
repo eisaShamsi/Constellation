@@ -70,6 +70,13 @@ Built release binary (16:45), Boss-tested in two stages:
 - **Stage 2 PASS (Mode-2 live)** — built a self-contained "Review Demo" scratch universe (Claim --derives-from--> Evidence) + `seed_review_demo` harness (seeds the app's OWN DB at its real paths, resolves the link, Claim reviewed-10d + Evidence changed-today). Boss reopened → **🥀 Claim under "Due for Review"** = stale. Mode-2 confirmed end-to-end on real files.
 - **Demo-plumbing lessons:** (a) a forward link to a not-yet-indexed target resolves `target_cid_cn` to NULL until a later re-index (pre-existing link-system behavior; self-heals); (b) seed the app's OWN DB (not a pre-built one) to avoid path-form mismatch; (c) open the seed connection via `init_db` (registers the custom FTS tokenizer). Scratch universe at `E:\Constellation Universes\Review Demo` (delete at §E cleanup unless kept).
 
-## Open / next
-- **§D-grace (Boss-requested with the C ruling):** a configurable **staleness grace period** Setting (days, min 1, default 1) — Mode-2 fires when `dep_changed_day − last_reviewed_day ≥ grace`. (grace=1 == current strict-next-day behavior.) Build next.
-- Then **§E** (remove `scan_due_recursive`, `/simplify`, 3-agent audit, orientation v-bump, help/manual), then **MIG-080 §F** (note-context Review tab + two-lens reviewer over the now-cheap read) → §G.
+## §D-grace — SHIPPED (`b366e654`)
+Configurable **staleness grace period** Setting (days, min 1, default 1). Mode-2 fires when `local_day(dep.content_changed_at) − last_reviewed_day ≥ grace`. `get_due_notes` gains an optional `stale_grace_days`; `appSettings.review.staleGraceDays` (merged safely); new **Review** Settings section (clock icon) with a min-1 number field; 4 i18n keys × **15 locales** (native, all validated). Unit test `stale_grace_period_gates_by_days`. Grace binary built 18:13.
+
+## §E — migration close
+- **§E-1 SHIPPED (`5ca1d8aa`):** retired `scan_due_recursive` (the Rule-8-violating FS-walk fallback). Unstamped `get_due_notes` now kicks the back-fill (idempotent) + returns empty. No `read_dir`/`metadata`/`read_to_string`/regex anywhere on the read path.
+- **§E-2 SHIPPED (`6...`):** `/simplify` (4-agent) — applied scope_clause helper (single-sourced finding-D predicate), `staleness_types_sql()`, `date_to_days→parse_day`, `epoch_2020()`, `today_str` reuse, and a **per-batch transaction** in the back-fill (≈2N commits → 1). Skipped riskier refactors of verified functions. 22 tests + rehearsal green.
+- **§E-3 (running):** the `/migration` Phase-4 audit (3 agents — invariants I1–I8 / drift LL-023 / migration-path). Findings fixed per WA#6, then orientation v-bump (SO #6 — MIG-083 ships) + help/manual ×15 + MoCh + handover.
+
+## Open / next (after §E close)
+- **MIG-080 §F** (now UNBLOCKED): note-context **Review tab** (`get_note_review_status`, O(1)) + the full-page **two-lens reviewer** (Due-for-Review + Stale, each with per-row "why") over the now-cheap `get_due_notes`. Drop the old `record_note_visit→openNoteTab` wiring (already removed). → then **§G** closes MIG-080.
