@@ -105,7 +105,8 @@
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
-	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
+	import ReviewStatusPanel from '$lib/components/ReviewStatusPanel.svelte';
+	import ReviewerView from '$lib/components/ReviewerView.svelte';
 	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
@@ -391,7 +392,7 @@
 	// MIG-080 §B — 'tags' is now note-scoped (the right rail shows ONLY the open note's tags; the universe All-tags view moved to the Dashboard).
 	// MIG-080 §D — 'sourceReview' is now note-scoped: the right rail shows THIS note's pending source
 	//   suggestions (sources_get_suggestions); the universe suggestion queue stays in the Cataloger (left dock).
-	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags', 'sourceReview']);
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags', 'sourceReview', 'review']);
 	// MIG-080 §B — the right-sidebar Tags tab is note-scoped (the open note's tags only).
 	// The universe-wide All-tags browse moved to the Dashboard (DashboardView, reading the
 	// tag_counts-derived allLibraryTags). The 'note'/'all' toggle was removed.
@@ -438,7 +439,6 @@
 			sidebarSnapshots.set(key, { left, right });
 		}
 	}
-	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
@@ -618,6 +618,7 @@
 
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
+	let showReviewer = $state(false); // MIG-080 §F — left-dock universe Review reviewer
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let indexActiveNotePath = $state('');
 	let indexSelectedTerms = $state<Set<string>>(new Set());
@@ -1340,13 +1341,22 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
 	// MIG-080 §A.2 — the Calendar page is a full-page overlay; if another full-page
 	// overlay opens while it's up, close the Calendar (the dock buttons close it the
 	// other direction). Settles: once false, the guard is inert (no loop).
 	$effect(() => {
-		if (showCalendarPage && (showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible)) {
+		if (showCalendarPage && (showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible)) {
 			showCalendarPage = false;
+		}
+	});
+	// MIG-080 §F — mirror the Calendar guard for the Review reviewer: if another
+	// full-page overlay opens (via its own dock button, which doesn't know about
+	// showReviewer), close the reviewer. Settles in one tick; no loop (once false,
+	// inert). NOT gated on isDashboardVisible — the reviewer overlays the home dashboard.
+	$effect(() => {
+		if (showReviewer && (showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || showCalendarPage)) {
+			showReviewer = false;
 		}
 	});
 
@@ -2137,7 +2147,7 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -5695,6 +5705,11 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 			{/if}
+			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
+			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
+			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; indexReturnPending = false; }} title={$t('panels.review') || 'Review Pulse'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+			</button>
 			{#if $appSettings.enabledFeatures?.cece !== false}
 			<button class="dock-btn" class:active={showCataloger} onclick={() => {
 				showCataloger = !showCataloger;
@@ -6434,6 +6449,24 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- MIG-080 §F — the universe Review reviewer: a LEFT-DOCK full-page surface
+		     (Boss ruling 2026-06-22). Conditionally mounted so it loads fresh on open
+		     (the now-cheap get_due_notes). The per-note status lives in the right rail. -->
+		{#if showReviewer}
+			<div class="reviewer-overlay reviewer-visible">
+				<ReviewerView
+					libraryPath={$libraries[0]?.path ?? null}
+					staleGraceDays={$appSettings.review?.staleGraceDays ?? 1}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showReviewer = false;
+					}}
+					onClose={() => { showReviewer = false; }}
+				/>
+			</div>
+		{/if}
 
 		<!-- Constellation Map — lazy-mounted (LL-022). -->
 		{#if mapEverOpened}
@@ -7309,15 +7342,11 @@
 					</button>
 				{/if}
 				{#if ($appSettings.panelPlacements?.review ?? 'right-sidebar') === 'right-sidebar'}
-					<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => {
-						rightSidebarTab = 'review';
-						const lib = get(libraries)[0];
-						if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 })
-							.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
-					}} title={$t('panels.review') || 'Review Pulse'}>
+					<!-- MIG-080 §F — the right-sidebar Review tab is now NOTE-SCOPED (this note's
+					     status, via ReviewStatusPanel). The universe-wide queue moved to the
+					     left-dock reviewer. No universe get_due_notes load here. -->
+					<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => { rightSidebarTab = 'review'; }} title={$t('panels.review') || 'Review Pulse'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-						<!-- MIG-080 §H.4 — tab count badge removed (Boss): the Review panel's
-						     "Never Reviewed" section header already shows the count. -->
 					</button>
 				{/if}
 				{#if ($appSettings.panelPlacements?.inspector360 ?? 'right-sidebar') === 'right-sidebar'}
@@ -7516,17 +7545,9 @@
 					</div>
 				{:else if rightSidebarTab === 'review'}
 					<div class="rs-section rs-full-height">
-						<ReviewPulsePanel
-							{dueNotes}
-							onNoteClick={(path, name) => {
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
-								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-							}}
-							onRefresh={() => {
-								const lib = get(libraries)[0];
-								if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 })
-									.then(notes => { dueNotes = notes; }).catch(() => {});
-							}}
+						<ReviewStatusPanel
+							notePath={sidebarTab?.path ?? null}
+							staleGraceDays={$appSettings.review?.staleGraceDays ?? 1}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'sourceReview'}
@@ -8729,12 +8750,12 @@
 		overflow: hidden;
 	}
 
-	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay, .calendar-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay, .calendar-overlay, .reviewer-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible, .reviewer-overlay.reviewer-visible { display: flex; flex-direction: column; }
 
 	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
 	.calendar-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
