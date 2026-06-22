@@ -87,7 +87,8 @@
 			"panels": "پینلز",
 			"iconOverrides": "ایپ آئیکنز",
 			"debug": "ڈیبگ",
-			"index": "اشاریہ"
+			"index": "اشاریہ",
+			"review": "مراجعہ"
 		},
 		"general": {
 			"language": "زبان",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "ریویو پلس ترتیب دیں — نوٹس کو دوبارہ غور و فکر کے لیے کیسے دوبارہ سامنے لایا جائے۔",
+			"staleGrace": {
+				"label": "باسی پن کی رعایتی مدت (دن)",
+				"description": "کسی نوٹ کو \"باسی\" کا نشان صرف اُس وقت لگتا ہے جب وہ نوٹ — جس پر یہ نوٹ (کسی بوجھ اٹھانے والے لنک کے ذریعے) منحصر ہے — آپ کے آخری جائزے کے کم از کم اتنے دن بعد بدلا ہو۔ کم از کم 1 — اگلے دن سے (جو کچھ آپ نے آج جائزہ لیا اس پر کبھی تنگ نہیں کرتا)۔ زیادہ قدریں زیادہ تحمل والی ہیں۔"
 			}
 		},
 		"sight": {

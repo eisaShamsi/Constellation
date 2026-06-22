@@ -2137,7 +2137,7 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -7312,7 +7312,7 @@
 					<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => {
 						rightSidebarTab = 'review';
 						const lib = get(libraries)[0];
-						if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+						if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 })
 							.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
 					}} title={$t('panels.review') || 'Review Pulse'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -7524,7 +7524,7 @@
 							}}
 							onRefresh={() => {
 								const lib = get(libraries)[0];
-								if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+								if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path, staleGraceDays: get(appSettings).review?.staleGraceDays ?? 1 })
 									.then(notes => { dueNotes = notes; }).catch(() => {});
 							}}
 						/>

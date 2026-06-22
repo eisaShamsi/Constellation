@@ -87,7 +87,8 @@
 			"panels": "Panels",
 			"iconOverrides": "App-Icons",
 			"debug": "Debug",
-			"index": "Index"
+			"index": "Index",
+			"review": "Überprüfung"
 		},
 		"general": {
 			"language": "Sprache",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Konfigurieren Sie den Review-Puls — wie Notizen zur erneuten Auseinandersetzung wieder hervorgeholt werden.",
+			"staleGrace": {
+				"label": "Karenzzeit für Veralten (Tage)",
+				"description": "Eine Notiz wird erst dann als „veraltet“ markiert, wenn eine Notiz, von der sie abhängt (über einen tragenden Link), mindestens so viele Tage NACH Ihrer letzten Überprüfung geändert wurde. Minimum 1 — ab dem nächsten Tag (nervt Sie also nie wegen etwas, das Sie heute überprüft haben). Höhere Werte sind geduldiger."
 			}
 		},
 		"sight": {

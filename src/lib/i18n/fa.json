@@ -87,7 +87,8 @@
 			"panels": "پانل‌ها",
 			"iconOverrides": "آیکون‌های برنامه",
 			"debug": "اشکال‌زدایی",
-			"index": "فهرست"
+			"index": "فهرست",
+			"review": "مرور"
 		},
 		"general": {
 			"language": "زبان",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "تنظیم ضربان مرور — اینکه یادداشت‌ها چگونه برای رویارویی دوباره به سطح می‌آیند.",
+			"staleGrace": {
+				"label": "مهلت کهنگی (روز)",
+				"description": "یک یادداشت تنها زمانی «کهنه» علامت می‌خورد که یادداشتی که این یادداشت به آن وابسته است (از طریق یک پیوند تکیه‌گاهی) دست‌کم به همین تعداد روز پس از آخرین مروری که انجام داده‌اید تغییر کرده باشد. کمینه ۱ — از روز بعد به بعد (هرگز دربارهٔ چیزی که امروز مرور کرده‌اید سرزنشتان نمی‌کند). مقادیر بزرگ‌تر شکیباترند."
 			}
 		},
 		"sight": {

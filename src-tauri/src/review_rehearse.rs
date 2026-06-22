@@ -257,7 +257,7 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
     // recorded content change anywhere, the Stale lens MUST be empty — nothing fires
     // off a file mtime / touch. We assert this before seeding.
     let schedule_rows = backfill(&conn, &pulse, &today)?;
-    let pre = crate::review::query_due_notes_indexed(&conn, "", &today, today_days)?;
+    let pre = crate::review::query_due_notes_indexed(&conn, "", &today, today_days, 1)?;
     let pre_seed_stale = pre.iter().filter(|d| d.reason == "stale").count();
 
     // Now seed ONE real-graph fixture (one dep "changed today", one source reviewed
@@ -270,7 +270,7 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
     let mut last: Vec<crate::review::DueNote> = Vec::new();
     for i in 0..6 {
         let t0 = std::time::Instant::now();
-        last = crate::review::query_due_notes_indexed(&conn, "", &today, today_days)?;
+        last = crate::review::query_due_notes_indexed(&conn, "", &today, today_days, 1)?;
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
         if i > 0 {
             // ignore the warmup run (cold page cache)
@@ -378,7 +378,7 @@ fn seed_review_demo() {
     // Evidence "changed today".
     conn.execute("UPDATE note_meta SET content_changed_at = ?2 WHERE path = ?1", rusqlite::params![ev_path, secs_of_day(today_days)]).unwrap();
 
-    let due = crate::review::query_due_notes_indexed(&conn, "", &today, today_days).unwrap();
+    let due = crate::review::query_due_notes_indexed(&conn, "", &today, today_days, 1).unwrap();
     eprintln!("── Review Demo seeded ({} due) ──", due.len());
     for d in &due {
         eprintln!("  {} [{}] trigger={:?} changed_on={:?}", d.note_name, d.reason, d.stale_trigger_name, d.stale_changed_on);

@@ -87,7 +87,8 @@
 			"panels": "पैनल",
 			"iconOverrides": "ऐप आइकन",
 			"debug": "डीबग",
-			"index": "अनुक्रमणिका"
+			"index": "अनुक्रमणिका",
+			"review": "समीक्षा"
 		},
 		"general": {
 			"language": "भाषा",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "रिव्यू पल्स कॉन्फ़िगर करें — नोट्स को पुनः सामना करने के लिए फिर से कैसे सामने लाया जाता है।",
+			"staleGrace": {
+				"label": "बासीपन छूट अवधि (दिन)",
+				"description": "किसी नोट को \"बासी\" तभी चिह्नित किया जाता है जब वह जिस नोट पर निर्भर है (किसी भार-वहन करने वाले लिंक के ज़रिए) वह आपके द्वारा अंतिम बार समीक्षा करने के बाद कम से कम इतने दिनों में बदला हो। न्यूनतम 1 — अगले दिन से (जो आपने आज समीक्षा किया, उसके बारे में कभी टोकता नहीं)। अधिक मान अधिक धैर्यवान होते हैं।"
 			}
 		},
 		"sight": {

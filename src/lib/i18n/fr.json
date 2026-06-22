@@ -87,7 +87,8 @@
 			"panels": "Panneaux",
 			"iconOverrides": "Icônes de l'app",
 			"debug": "Débogage",
-			"index": "Index"
+			"index": "Index",
+			"review": "Révision"
 		},
 		"general": {
 			"language": "Langue",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Configurez le Pouls de révision — la façon dont les notes refont surface pour être réexaminées.",
+			"staleGrace": {
+				"label": "Délai de tolérance avant péremption (jours)",
+				"description": "Une note n'est signalée comme « périmée » que lorsqu'une note dont elle dépend (via un lien porteur) a été modifiée au moins ce nombre de jours APRÈS votre dernière révision. Minimum 1 — dès le lendemain (ne vous harcèle jamais pour une note révisée aujourd'hui). Des valeurs plus élevées sont plus patientes."
 			}
 		},
 		"sight": {

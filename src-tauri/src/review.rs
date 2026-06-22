@@ -50,12 +50,14 @@ pub struct DueNote {
 pub fn get_due_notes(
     app: tauri::AppHandle,
     library_path: String,
+    stale_grace_days: Option<i64>,
 ) -> Result<Vec<DueNote>, String> {
     crate::libraries::validate_path_in_any_library(&app, &library_path)
         .map_err(|e| format!("Access denied: {}", e))?;
 
     let today = today_str();
     let today_days = date_to_days(&today);
+    let grace = stale_grace_days.unwrap_or(1); // default: strict next-day (Mode-2)
 
     // MIG-083 §D — Rule-8 fast path. Once the §C back-fill has built + stamped the
     // write-time `review_schedule` table, read it (an indexed SELECT ∪ the Mode-2
@@ -66,7 +68,7 @@ pub fn get_due_notes(
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
                 if is_stamped(conn) {
-                    return query_due_notes_indexed(conn, &library_path, &today, today_days);
+                    return query_due_notes_indexed(conn, &library_path, &today, today_days, grace);
                 }
             }
         }
@@ -114,7 +116,12 @@ pub(crate) fn query_due_notes_indexed(
     library_path: &str,
     today: &str,
     today_days: i64,
+    stale_grace_days: i64,
 ) -> Result<Vec<DueNote>, String> {
+    // Staleness grace period (Boss-configurable, minimum 1 day): a dependency must
+    // have changed at least `grace` days AFTER the note's last review to flag it.
+    // grace=1 == the strict next-day-onward default.
+    let grace = stale_grace_days.max(1);
     let mut due: Vec<DueNote> = Vec::new();
     // Library scoping: a note is in-scope iff its path begins with library_path AND
     // the next char is a path separator — so "/U/Lib" matches "/U/Lib/x.md" but NOT
@@ -253,7 +260,7 @@ pub(crate) fn query_due_notes_indexed(
             // changed on a later LOCAL day than the review (strict > → same-day safe).
             while let Some(Ok((link_type, dep_name, cca))) = rows.next() {
                 let dep_day = local_day(cca);
-                if dep_day > lr_day {
+                if dep_day - lr_day >= grace {
                     due.push(DueNote {
                         note_path: path.clone(),
                         note_name: name.clone(),
@@ -1130,7 +1137,7 @@ mod tests {
                 rusqlite::params![src, tname, tcid, lt]).unwrap();
         }
 
-        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
         let got: std::collections::HashSet<(String, String)> =
             due.iter().map(|d| (d.note_path.clone(), d.reason.clone())).collect();
 
@@ -1168,7 +1175,7 @@ mod tests {
         c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Light','CIDL','supports','active',1.0)", []).unwrap();
         c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Heavy','CIDH','supports','active',5.0)", []).unwrap();
 
-        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
         let stale: Vec<_> = due.iter().filter(|d| d.reason == "stale").collect();
         assert_eq!(stale.len(), 1, "S surfaces once, not once-per-dep");
         assert_eq!(stale[0].stale_trigger_name.as_deref(), Some("Heavy"), "cites the heaviest link");
@@ -1195,10 +1202,36 @@ mod tests {
             rusqlite::params![today_days - 5]).unwrap();
         c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Dep','CIDD','supports','active',2.0)", []).unwrap();
 
-        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
         let s_reasons: Vec<&str> = due.iter().filter(|d| d.note_path == "/lib/S.md").map(|d| d.reason.as_str()).collect();
         assert_eq!(s_reasons, vec!["stale"],
             "snoozed note must be HIDDEN from Due (Lens-1) but STILL shown as Stale (Lens-2); got {:?}", s_reasons);
+    }
+
+    #[test]
+    fn stale_grace_period_gates_by_days() {
+        // Boss 2026-06-22: a configurable grace period (min 1). A dependency must have
+        // changed at least `grace` days after the review to flag stale.
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        // S reviewed 2026-06-01; dep changed 2026-06-15 (~14 days later — wide enough
+        // that a ±1-day timezone shift in local_day can't flip the assertions).
+        for (p, n, cid, cca) in [
+            ("/lib/S.md", "S", "CIDS", None),
+            ("/lib/D.md", "D", "CIDD", Some(secs("2026-06-15"))),
+        ] {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,content_changed_at) VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![p, n, cid, secs("2026-01-01"), cca]).unwrap();
+        }
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum) VALUES ('/lib/S.md','interval_due',?1,'2026-06-01',1)",
+            rusqlite::params![today_days + 100]).unwrap();
+        c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','D','CIDD','supports','active',1.0)", []).unwrap();
+
+        let stale = |grace: i64| query_due_notes_indexed(&c, "/lib/", today, today_days, grace).unwrap().iter().any(|d| d.reason == "stale");
+        assert!(stale(1), "grace 1: a ~14-day-later change is stale");
+        assert!(stale(5), "grace 5: still stale");
+        assert!(!stale(30), "grace 30: a ~14-day-later change is NOT yet stale");
     }
 
     #[test]
@@ -1212,7 +1245,7 @@ mod tests {
             c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES (?1,'never_reviewed',?2,1)",
                 rusqlite::params![p, today_days - 1]).unwrap();
         }
-        let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days).unwrap();
+        let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days, 1).unwrap();
         let paths: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
         assert_eq!(paths, vec!["/U/Lib/a.md"], "only the real child; siblings /U/Lib2 + /U/Library excluded");
     }
@@ -1226,7 +1259,7 @@ mod tests {
         let today_days = date_to_days(today);
         c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES ('/lib/ghost.md','never_reviewed',?1,1)",
             rusqlite::params![today_days - 1]).unwrap();
-        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
         assert!(due.is_empty(), "orphan row (no note_meta) must not surface; got {:?}", due.iter().map(|d| &d.note_path).collect::<Vec<_>>());
     }
 

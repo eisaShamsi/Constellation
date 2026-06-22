@@ -87,7 +87,8 @@
 			"panels": "Paneller",
 			"iconOverrides": "Uygulama simgeleri",
 			"debug": "Hata ayıklama",
-			"index": "Dizin"
+			"index": "Dizin",
+			"review": "Gözden Geçirme"
 		},
 		"general": {
 			"language": "Dil",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Gözden Geçirme Nabzı'nı yapılandırın — notların yeniden yüzleşme için nasıl yeniden gün yüzüne çıkarılacağı.",
+			"staleGrace": {
+				"label": "Bayatlama hoşgörü süresi (gün)",
+				"description": "Bir not yalnızca, bağlı olduğu bir not (yük taşıyan bir bağlantı yoluyla), onu en son gözden geçirmenizden en az bu kadar gün SONRA değiştiğinde \"bayat\" olarak işaretlenir. En az 1 — ertesi günden itibaren (bugün gözden geçirdiğiniz bir şey için sizi asla rahatsız etmez). Daha yüksek değerler daha sabırlıdır."
 			}
 		},
 		"sight": {

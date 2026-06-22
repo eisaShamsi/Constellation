@@ -87,7 +87,8 @@
 			"panels": "Painéis",
 			"iconOverrides": "Ícones do app",
 			"debug": "Depuração",
-			"index": "Índice"
+			"index": "Índice",
+			"review": "Revisão"
 		},
 		"general": {
 			"language": "Idioma",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Configure o Pulso de Revisão — como as notas voltam à superfície para serem reconfrontadas.",
+			"staleGrace": {
+				"label": "Período de tolerância de obsolescência (dias)",
+				"description": "Uma nota é marcada como \"obsoleta\" apenas quando uma nota da qual ela depende (por meio de um link estrutural) foi alterada pelo menos este número de dias DEPOIS da sua última revisão. Mínimo de 1 — a partir do dia seguinte (nunca o incomoda por algo que você revisou hoje). Valores maiores são mais pacientes."
 			}
 		},
 		"sight": {

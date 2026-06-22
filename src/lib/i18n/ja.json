@@ -87,7 +87,8 @@
 			"panels": "パネル",
 			"iconOverrides": "アプリアイコン",
 			"debug": "デバッグ",
-			"index": "インデックス"
+			"index": "インデックス",
+			"review": "レビュー"
 		},
 		"general": {
 			"language": "言語",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "レビューパルスを設定します — ノートを再検討のために再浮上させる仕組みです。",
+			"staleGrace": {
+				"label": "陳腐化の猶予期間（日数）",
+				"description": "ノートが「陳腐化」と判定されるのは、そのノートが（耐荷重リンクを介して）依存している別のノートが、最後にレビューした日からこの日数以上あとに変更された場合だけです。最小値は1 — つまり翌日以降から（今日レビューしたものについて催促されることは決してありません）。値を大きくするほど猶予が長くなります。"
 			}
 		},
 		"sight": {

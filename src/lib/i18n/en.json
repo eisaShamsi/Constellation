@@ -40,7 +40,8 @@
 			"arabicOverrides": "Arabic Overrides",
 			"debug": "Debug",
 			"panels": "Panels",
-			"index": "Index"
+			"index": "Index",
+			"review": "Review"
 		},
 		"dashboard": {
 			"libraries": "Libraries",
@@ -510,6 +511,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Configure the Review Pulse — how notes are resurfaced for re-confrontation.",
+			"staleGrace": {
+				"label": "Staleness grace period (days)",
+				"description": "A note is flagged \"stale\" only when a note it depends on (via a load-bearing link) changed at least this many days AFTER you last reviewed it. Minimum 1 — the next day onward (never nags you about something you reviewed today). Higher values are more patient."
 			}
 		},
 		"knowledge": {

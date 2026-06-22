@@ -64,5 +64,12 @@ The fixes were re-verified adversarially; the 6 fixes are correct with no regres
 - **J [P3] — rename loses review state.** The `review_schedule`-row half is now FIXED (rename migrates the row, carrying ✓ history). The `review-pulse.json` path-keyed half remains (pre-existing) — separate follow-up.
 - **K [P3] — §C reconcile self-heal** — confirmed NOT shipped (`reconcile_filesystem` has no review recompute). Self-heals on a note's next save; → §E's migration-path audit implements it.
 
+## Boss test — PASSED (2026-06-22)
+Built release binary (16:45), Boss-tested in two stages:
+- **Stage 1 PASS** — Review panel opens instantly; ✓/Snooze/Dismiss persist + remove the row. (Empty universe correctly shows only "Never Reviewed" — Due/Checkpoints are earned.)
+- **Stage 2 PASS (Mode-2 live)** — built a self-contained "Review Demo" scratch universe (Claim --derives-from--> Evidence) + `seed_review_demo` harness (seeds the app's OWN DB at its real paths, resolves the link, Claim reviewed-10d + Evidence changed-today). Boss reopened → **🥀 Claim under "Due for Review"** = stale. Mode-2 confirmed end-to-end on real files.
+- **Demo-plumbing lessons:** (a) a forward link to a not-yet-indexed target resolves `target_cid_cn` to NULL until a later re-index (pre-existing link-system behavior; self-heals); (b) seed the app's OWN DB (not a pre-built one) to avoid path-form mismatch; (c) open the seed connection via `init_db` (registers the custom FTS tokenizer). Scratch universe at `E:\Constellation Universes\Review Demo` (delete at §E cleanup unless kept).
+
 ## Open / next
-- Boss test (Testing Instructions Rule), then §E (remove `scan_due_recursive`, `/simplify`, 3-agent audit, orientation v-bump, help/manual), then **MIG-080 §F** (note-context Review tab + two-lens reviewer over the now-cheap read) → §G.
+- **§D-grace (Boss-requested with the C ruling):** a configurable **staleness grace period** Setting (days, min 1, default 1) — Mode-2 fires when `dep_changed_day − last_reviewed_day ≥ grace`. (grace=1 == current strict-next-day behavior.) Build next.
+- Then **§E** (remove `scan_due_recursive`, `/simplify`, 3-agent audit, orientation v-bump, help/manual), then **MIG-080 §F** (note-context Review tab + two-lens reviewer over the now-cheap read) → §G.

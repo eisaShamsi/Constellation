@@ -87,7 +87,8 @@
 			"panels": "Панели",
 			"iconOverrides": "Иконки приложения",
 			"debug": "Отладка",
-			"index": "Указатель"
+			"index": "Указатель",
+			"review": "Повторение"
 		},
 		"general": {
 			"language": "Язык",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Настройте «Пульс повторения» — как заметки возвращаются к вам для повторного осмысления.",
+			"staleGrace": {
+				"label": "Льготный период устаревания (дни)",
+				"description": "Заметка помечается как «устаревшая» только тогда, когда заметка, от которой она зависит (через несущую ссылку), была изменена по меньшей мере на столько дней ПОЗЖЕ вашего последнего просмотра. Минимум 1 — начиная со следующего дня (никогда не напоминает о том, что вы просмотрели сегодня). Чем выше значение, тем терпеливее."
 			}
 		},
 		"sight": {

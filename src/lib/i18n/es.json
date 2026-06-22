@@ -87,7 +87,8 @@
 			"panels": "Paneles",
 			"iconOverrides": "Iconos de la app",
 			"debug": "Diagnóstico",
-			"index": "Índice"
+			"index": "Índice",
+			"review": "Revisión"
 		},
 		"general": {
 			"language": "Idioma",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "Configura el Pulso de Revisión: cómo se vuelven a mostrar las notas para reconfrontarlas.",
+			"staleGrace": {
+				"label": "Periodo de gracia para notas desactualizadas (días)",
+				"description": "Una nota se marca como «desactualizada» solo cuando una nota de la que depende (mediante un enlace de carga) cambió al menos este número de días DESPUÉS de tu última revisión. Mínimo 1: a partir del día siguiente (nunca te insiste sobre algo que revisaste hoy). Los valores más altos son más pacientes."
 			}
 		},
 		"sight": {

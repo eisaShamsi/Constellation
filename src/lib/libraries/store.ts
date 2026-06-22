@@ -3574,6 +3574,15 @@ export interface AppSettings {
 		searchHistoryEnabled: boolean;
 	};
 
+	/** MIG-083 §D — Review Pulse (the resurfacing/staleness queue) settings. */
+	review: {
+		/** Staleness grace period, in DAYS (minimum 1). A note is flagged "stale"
+		 *  only when a load-bearing dependency's content changed at least this many
+		 *  days AFTER the note's last explicit review. 1 = the next day onward
+		 *  (most patient minimum); higher = more patient. Boss 2026-06-22. */
+		staleGraceDays: number;
+	};
+
 	// Sky View graph settings
 	skyView: {
 		nodeSize: number;
@@ -3936,6 +3945,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		semanticSearchEnabled: false,
 		searchHistoryEnabled: false,
 	},
+	review: {
+		staleGraceDays: 1,
+	},
 	skyView: {
 		nodeSize: 1.5,
 		labelVisibility: 'hover' as const,
@@ -4141,6 +4153,7 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		...(parsed as Partial<AppSettings>),
 		skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
 		index: { ...DEFAULT_SETTINGS.index, ...((parsed.index as Record<string, unknown>) || {}) },
+		review: { ...DEFAULT_SETTINGS.review, ...((parsed.review as Record<string, unknown>) || {}) },
 		security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
 		// MIG-038 (2026-05-19) — Map DISABLED pre-Wings. The trailing
 		// `constellationMap: false` override force-disables Constellation

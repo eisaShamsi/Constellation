@@ -87,7 +87,8 @@
 			"panels": "面板",
 			"iconOverrides": "应用图标",
 			"debug": "调试",
-			"index": "索引"
+			"index": "索引",
+			"review": "回顾"
 		},
 		"general": {
 			"language": "语言",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "配置「回顾脉动」——决定笔记如何被重新浮现以供再次审视。",
+			"staleGrace": {
+				"label": "过时宽限期（天）",
+				"description": "只有当某条笔记所依赖的笔记（通过承重链接）在你上次回顾它之后至少经过这么多天才发生变更时，该笔记才会被标记为「过时」。最小值为 1——即从次日起算（绝不会因为你今天才回顾过的内容而催促你）。数值越大，越宽容。"
 			}
 		},
 		"sight": {

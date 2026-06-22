@@ -87,7 +87,8 @@
 			"panels": "패널",
 			"iconOverrides": "앱 아이콘",
 			"debug": "디버그",
-			"index": "색인"
+			"index": "색인",
+			"review": "리뷰"
 		},
 		"general": {
 			"language": "언어",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "리뷰 펄스를 설정합니다 — 노트를 다시 마주하도록 재부상시키는 방식입니다.",
+			"staleGrace": {
+				"label": "지난 기간 허용 일수(일)",
+				"description": "노트는 그것이 의존하는(핵심 링크로 연결된) 다른 노트가 마지막으로 검토한 시점보다 최소 이만큼의 날수 이후에 변경된 경우에만 \"지난(stale)\" 상태로 표시됩니다. 최소값은 1로, 다음 날부터 적용됩니다(오늘 검토한 항목은 절대 재촉하지 않습니다). 값이 클수록 더 너그럽게 동작합니다."
 			}
 		},
 		"sight": {

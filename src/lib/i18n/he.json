@@ -87,7 +87,8 @@
 			"panels": "פאנלים",
 			"iconOverrides": "אייקוני האפליקציה",
 			"debug": "ניפוי שגיאות",
-			"index": "אינדקס"
+			"index": "אינדקס",
+			"review": "סקירה"
 		},
 		"general": {
 			"language": "שפה",
@@ -613,6 +614,13 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			}
+		},
+		"review": {
+			"intro": "הגדר את דופק הסקירה — כיצד פתקים מוצפים מחדש לעימות חוזר.",
+			"staleGrace": {
+				"label": "תקופת חסד להתיישנות (ימים)",
+				"description": "פתק מסומן כ\"מיושן\" רק כאשר פתק שהוא תלוי בו (דרך קישור נושא-משקל) השתנה לפחות מספר ימים זה אחרי הפעם האחרונה שסקרת אותו. מינימום 1 — מהיום שלמחרת ואילך (לעולם לא מטריד אותך על משהו שסקרת היום). ערכים גבוהים יותר סבלניים יותר."
 			}
 		},
 		"sight": {
