@@ -154,7 +154,8 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
 
     // Lens 2: Mode 2 — staleness, by iterating load-bearing out-links in Rust. Mirrors
     // the corrected impl: content_changed_at IS NOT NULL (no mtime fallback), local_day
-    // comparison, self-link excluded, snooze-suppressed, malformed last_reviewed skipped.
+    // comparison, self-link excluded, malformed last_reviewed skipped. Snooze does NOT
+    // suppress the Stale lens (Boss 2026-06-22) — the lenses are fully separate.
     {
         let types_in = STALENESS_TRIGGER_TYPES.iter().map(|t| format!("'{}'", t)).collect::<Vec<_>>().join(",");
         let sql = format!(
@@ -176,11 +177,7 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
             if pulse.dismissed.contains(&src) {
                 continue;
             }
-            if let Some(su) = pulse.snoozed.get(&src) {
-                if su.as_str() > today {
-                    continue; // snoozed → not stale
-                }
-            }
+            // (snooze does NOT suppress staleness — lenses are separate.)
             let lr_day = match crate::review::parse_day(lr) {
                 Some(d) => d,
                 None => continue, // malformed → skip

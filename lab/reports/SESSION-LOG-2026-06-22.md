@@ -56,10 +56,13 @@ The fixes were re-verified adversarially; the 6 fixes are correct with no regres
 
 **20 review unit tests pass; live rehearsal: touch-test 0, parity exact, Mode-2 fires, 16.73 ms.**
 
-**Surfaced to Boss (genuine design/scope — not parked):**
-- **B [P2] — content hash is over `plain_body`** (markdown-stripped + Arabic-normalized), so pure formatting / URL / **Arabic-diacritic** edits don't fire staleness (false *negatives*). Fixing cleanly needs the back-fill to read raw `.md` bodies (a Rule-8 departure for the one-time population) — a Boss-weighable call. Prose edits ARE caught.
-- **J [P3] — rename loses review state** (`review-pulse.json` is path-keyed, not migrated on rename). **Pre-existing** (true of the legacy scan too); needs rename-cascade integration — separate follow-up.
-- **K [P3] — §C reconcile self-heal** (planned, verify it shipped). Belongs to §E's migration-path audit.
+**Boss rulings (2026-06-22, via AskUserQuestion):**
+- **B → "Substantive edits only (ship now)"** — keep hashing `plain_body`; pure formatting/diacritic/URL-only edits don't trip staleness (prose edits do). No code change; diacritic-sensitivity is a documented fast-follow if wanted later.
+- **C → "No — keep the lenses fully separate"** — REVERSED my snooze-suppresses-stale: snooze hides a note from **Due-for-Review (Lens-1) only**; a snoozed note can STILL surface as **Stale (Lens-2)**. Removed the Lens-2 snooze clause + the reference skip; kept the `snoozed_until` column (Lens-1 hide + the finding-E re-index preservation). Test renamed → `snooze_hides_from_due_not_from_stale`.
+
+**Still surfaced / deferred (not parked):**
+- **J [P3] — rename loses review state.** The `review_schedule`-row half is now FIXED (rename migrates the row, carrying ✓ history). The `review-pulse.json` path-keyed half remains (pre-existing) — separate follow-up.
+- **K [P3] — §C reconcile self-heal** — confirmed NOT shipped (`reconcile_filesystem` has no review recompute). Self-heals on a note's next save; → §E's migration-path audit implements it.
 
 ## Open / next
 - Boss test (Testing Instructions Rule), then §E (remove `scan_due_recursive`, `/simplify`, 3-agent audit, orientation v-bump, help/manual), then **MIG-080 §F** (note-context Review tab + two-lens reviewer over the now-cheap read) → §G.

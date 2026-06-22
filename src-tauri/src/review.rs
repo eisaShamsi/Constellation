@@ -195,18 +195,21 @@ pub(crate) fn query_due_notes_indexed(
         let reviewed: Vec<(String, String, i64, String)> = {
             let mut stmt = conn
                 .prepare(
+                    // NOTE (Boss 2026-06-22): snooze does NOT suppress the Stale lens —
+                    // the two lenses stay fully separate. Snooze hides a note from
+                    // time-based "Due for Review" (Lens-1) only; staleness is a distinct
+                    // signal (a dependency changed) and still surfaces while snoozed.
                     "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed
                      FROM review_schedule rs
                      JOIN note_meta nm ON nm.path = rs.path
                      WHERE rs.last_reviewed IS NOT NULL
                        AND rs.reason != 'dismissed'
-                       AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?1)
-                       AND (?2 = '' OR (substr(rs.path, 1, length(?2)) = ?2
-                            AND substr(rs.path, length(?2) + 1, 1) IN ('/', char(92))))",
+                       AND (?1 = '' OR (substr(rs.path, 1, length(?1)) = ?1
+                            AND substr(rs.path, length(?1) + 1, 1) IN ('/', char(92))))",
                 )
                 .map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
-                .query_map(rusqlite::params![today, library_path], |r| {
+                .query_map(rusqlite::params![library_path], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
                 })
                 .map_err(|e| format!("due lens-2 reviewed query: {}", e))?;
@@ -1172,12 +1175,14 @@ mod tests {
     }
 
     #[test]
-    fn snooze_suppresses_both_lenses() {
+    fn snooze_hides_from_due_not_from_stale() {
+        // Boss 2026-06-22: the lenses are SEPARATE. Snooze hides a note from time-based
+        // "Due for Review" (Lens-1) but NOT from "Stale" (Lens-2) — staleness is a
+        // distinct signal. S is reviewed + due-by-interval + snoozed into the future,
+        // AND has a changed load-bearing dep → must appear ONLY as stale, not as due.
         let c = read_db();
         let today = "2026-06-22";
         let today_days = date_to_days(today);
-        // S is reviewed + has a changed load-bearing dep (would be stale) AND is due
-        // by interval — but it is snoozed into the future. It must surface in NEITHER lens.
         for (p, n, cid, cca) in [
             ("/lib/S.md", "Snoozed", "CIDS", None),
             ("/lib/Dep.md", "Dep", "CIDD", Some(secs("2026-06-10"))),
@@ -1191,8 +1196,9 @@ mod tests {
         c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Dep','CIDD','supports','active',2.0)", []).unwrap();
 
         let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
-        assert!(!due.iter().any(|d| d.note_path == "/lib/S.md"),
-            "a snoozed note must appear in NEITHER lens (got {:?})", due.iter().map(|d| (&d.note_path, &d.reason)).collect::<Vec<_>>());
+        let s_reasons: Vec<&str> = due.iter().filter(|d| d.note_path == "/lib/S.md").map(|d| d.reason.as_str()).collect();
+        assert_eq!(s_reasons, vec!["stale"],
+            "snoozed note must be HIDDEN from Due (Lens-1) but STILL shown as Stale (Lens-2); got {:?}", s_reasons);
     }
 
     #[test]
