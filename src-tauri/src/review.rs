@@ -148,7 +148,7 @@ pub fn dismiss_note(
 
 // ─── Internal helpers ───
 
-fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
+pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
     let path = cdir.join("review-pulse.json");
     if path.exists() {
         if let Ok(data) = fs::read_to_string(&path) {
@@ -528,6 +528,45 @@ fn review_row_dismiss(conn: &rusqlite::Connection, path: &str) -> Result<(), Str
     Ok(())
 }
 
+/// §C — populate ONE note's schedule row from the `review-pulse.json` action
+/// state (the back-fill's per-note step; idempotent `INSERT OR REPLACE`). Unlike
+/// the write-time upsert, this SETS `last_reviewed`/`interval` from the JSON
+/// source of truth. `today` is passed in (not read) so it's deterministic to test.
+pub fn backfill_schedule_row(
+    conn: &rusqlite::Connection,
+    path: &str,
+    tags_json: &str,
+    modified_secs: i64,
+    stratum: i64,
+    last_reviewed: Option<&str>,
+    interval: u32,
+    snoozed_until: Option<&str>,
+    dismissed: bool,
+    today: &str,
+) -> Result<(), String> {
+    let is_cp = is_checkpoint(tags_json);
+    let (reason, due_days) = if dismissed {
+        ("dismissed".to_string(), 0)
+    } else {
+        let lr_day = last_reviewed.map(date_to_days);
+        let (r, mut d) = compute_schedule_row(lr_day, interval, is_cp, secs_to_days(modified_secs));
+        // A still-active snooze pushes the due day to the snooze date (keep reason).
+        if let Some(su) = snoozed_until {
+            if su > today {
+                d = date_to_days(su);
+            }
+        }
+        (r, d)
+    };
+    conn.execute(
+        "INSERT OR REPLACE INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64],
+    )
+    .map_err(|e| format!("review_schedule backfill {}: {}", path, e))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -627,6 +666,20 @@ mod tests {
         assert_eq!(row(&c, "/n.md").0, "dismissed");
         review_row_dismiss(&c, "/absent.md").unwrap();
         assert_eq!(row(&c, "/absent.md").0, "dismissed", "dismiss persists even with no prior row");
+    }
+
+    #[test]
+    fn backfill_sets_state_snooze_dismiss() {
+        let c = sched_db();
+        let today = "2026-06-22";
+        let lr = day_to_date(100);
+        backfill_schedule_row(&c, "/r.md", "[]", 0, 2, Some(&lr), 7, None, false, today).unwrap();
+        assert_eq!(row(&c, "/r.md"), ("interval_due".to_string(), 107, 0));
+        backfill_schedule_row(&c, "/d.md", "[]", 0, 0, None, 0, None, true, today).unwrap();
+        assert_eq!(row(&c, "/d.md").0, "dismissed");
+        // active snooze → due pushed to the snooze day, reason kept
+        backfill_schedule_row(&c, "/s.md", "[]", 0, 0, Some(&lr), 3, Some("2099-01-01"), false, today).unwrap();
+        assert_eq!(c.query_row("SELECT due_days FROM review_schedule WHERE path='/s.md'", [], |r| r.get::<_,i64>(0)).unwrap(), date_to_days("2099-01-01"));
     }
 
     #[test]

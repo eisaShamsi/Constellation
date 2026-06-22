@@ -7371,6 +7371,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // it write-time. Boot's read_tags then becomes an O(distinct-tags) lookup.
     crate::tag_counts::maybe_schedule(app.clone());
 
+    // MIG-083 §C — schedule the post-paint review_schedule back-fill. No-op once
+    // schema_versions.review is stamped; stamping (on completion) is what flips
+    // the §B write-time maintenance from inert to live.
+    crate::review_backfill::maybe_schedule(app.clone());
+
     // MIG-079 §C.2a: schedule the one-shot incoming-link aggregate backfill on a
     // background thread. No-op once stamped. Recomputes note_meta.incoming_* from
     // note_links (convergent with the live triggers); thereafter the badge reads a
