@@ -321,71 +321,72 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
     })
 }
 
-/// MIG-083 §D — build + verify the "Review Demo" scratch universe so the Boss can
-/// SEE Mode-2 staleness live without touching Cognitive Knowledge. Indexes the two
-/// notes (Claim --derives-from--> Evidence), seeds Claim reviewed 10 days ago +
-/// Evidence changed today, and asserts Claim surfaces as `stale`. Leaves the DB so
-/// the app preserves it on open (upsert keeps last_reviewed; the baselined content
-/// hash keeps content_changed_at). Run:
-///   REVIEW_DEMO_DIR="E:/Constellation Universes/Review Demo" cargo test --release build_review_demo -- --nocapture
+/// MIG-083 §D — SEED the "Review Demo" universe's ALREADY-app-built search.db so the
+/// Boss sees Mode-2 staleness live, without touching Cognitive Knowledge. The app must
+/// have opened the universe once (so it indexed the notes at ITS real path form) and
+/// then be CLOSED. This reads the app's actual paths (no path-guessing), ensures
+/// `review` is stamped, resolves Claim→Evidence's link, seeds Claim reviewed 10 days
+/// ago + Evidence changed today, and asserts Claim surfaces as `stale`. Run:
+///   REVIEW_DEMO_DIR="E:/Constellation Universes/Review Demo" cargo test --release seed_review_demo -- --nocapture
 #[test]
-fn build_review_demo() {
+fn seed_review_demo() {
     let dir = match std::env::var("REVIEW_DEMO_DIR") {
         Ok(v) if !v.is_empty() => v,
         _ => {
-            eprintln!("build_review_demo: SKIPPED (set REVIEW_DEMO_DIR)");
+            eprintln!("seed_review_demo: SKIPPED (set REVIEW_DEMO_DIR)");
             return;
         }
     };
-    // Normalize to the OS-native (backslash) form so the pre-built note_meta.path
-    // matches what the app will store when it walks the universe on open (else the
-    // app's re-index creates fresh rows and our seeded ones orphan).
-    let dir = dir.replace('/', "\\");
-    let root = Path::new(&dir);
-    let db = root.join(".constellation").join("search.db");
-    let _ = std::fs::remove_file(&db);
-    let _ = std::fs::remove_file(db.with_extension("db-wal"));
-    let _ = std::fs::remove_file(db.with_extension("db-shm"));
-    let conn = crate::search::init_db(&db).expect("init_db");
-
-    // Index the TARGET first so the source's typed link resolves its target_cid_cn
-    // (a forward link to a not-yet-indexed note would resolve to NULL → not stale).
-    crate::search::index_note(&conn, &root.join("Evidence.md").to_string_lossy(), "Review Demo", true).expect("index Evidence");
-    crate::search::index_note(&conn, &root.join("Claim.md").to_string_lossy(), "Review Demo", true).expect("index Claim");
-
+    let db = Path::new(&dir).join(".constellation").join("search.db");
+    // init_db (not bare Connection::open) so the custom "constellation" FTS tokenizer
+    // is registered — note_links/note_meta triggers cascade into notes_fts. Migrations
+    // are idempotent on the app's already-built DB.
+    let conn = crate::search::init_db(&db).expect("open the app's search.db (close Constellation first)");
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
     let today_days = crate::review::date_to_days(&today);
-    backfill(&conn, &crate::review::ReviewPulseData::default(), &today).expect("backfill");
 
-    let claim_path: String = conn.query_row("SELECT path FROM note_meta WHERE name='Claim'", [], |r| r.get(0)).expect("Claim row");
-    let ev_path: String = conn.query_row("SELECT path FROM note_meta WHERE name='Evidence'", [], |r| r.get(0)).expect("Evidence row");
+    // The indexed Lens-2 only runs when `review` is stamped (else get_due_notes uses the
+    // legacy FS scan, which has NO Mode-2). Ensure it's stamped + every note has a row.
+    if !crate::review::is_stamped(&conn) {
+        backfill(&conn, &crate::review::ReviewPulseData::default(), &today).expect("backfill+stamp");
+    }
 
-    // Claim reviewed 10 days ago, interval 30 → due_days far future (NOT interval-due,
-    // so the ONLY reason it surfaces is staleness).
+    // Read the APP's actual paths (whatever separator form it stored).
+    let claim_path: String = conn.query_row("SELECT path FROM note_meta WHERE name='Claim'", [], |r| r.get(0)).expect("Claim note_meta row");
+    let (ev_path, ev_cid): (String, String) = conn.query_row("SELECT path, cid_cn FROM note_meta WHERE name='Evidence'", [], |r| Ok((r.get(0)?, r.get(1)?))).expect("Evidence note_meta row");
+    eprintln!("  Claim path:    {}", claim_path);
+    eprintln!("  Evidence path: {} (cid {})", ev_path, ev_cid);
+
+    // Resolve Claim→Evidence's load-bearing link (in case the app indexed Claim before
+    // Evidence and left target_cid_cn NULL).
+    let n = conn.execute(
+        "UPDATE note_links SET target_cid_cn = ?2, link_type = 'derives-from' WHERE source_path = ?1 AND LOWER(target_name) = 'evidence'",
+        rusqlite::params![claim_path, ev_cid],
+    ).unwrap();
+    eprintln!("  resolved {} Claim→Evidence link row(s)", n);
+
+    // Seed: Claim reviewed 10 days ago, interval 30 → due_days far future (NOT interval-
+    // due, so the ONLY reason it surfaces is staleness). Upsert so it works whether or
+    // not a row already exists at the app's path.
     let lr = "2026-06-12";
     conn.execute(
-        "UPDATE review_schedule SET last_reviewed=?2, interval=30, reason='interval_due', due_days=?3, snoozed_until=NULL WHERE path=?1",
-        rusqlite::params![claim_path, lr, crate::review::date_to_days(lr) + 30],
+        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval, snoozed_until)
+         VALUES (?1, 'interval_due', ?2, 0, ?3, 1, 30, NULL)
+         ON CONFLICT(path) DO UPDATE SET reason='interval_due', due_days=?2, last_reviewed=?3, interval=30, snoozed_until=NULL",
+        rusqlite::params![claim_path, crate::review::date_to_days(lr) + 30, lr],
     ).unwrap();
-    // Evidence "changed today" (content_hash already baselined → the app's re-index on
-    // open will see an identical hash and NOT bump, preserving this).
-    conn.execute("UPDATE note_meta SET content_changed_at=?2 WHERE path=?1", rusqlite::params![ev_path, secs_of_day(today_days)]).unwrap();
-
-    // Rewrite review-pulse.json with the VERIFIED path (so a later ✓ stays consistent).
-    let _ = std::fs::write(
-        root.join(".constellation").join("review-pulse.json"),
-        format!("{{\n  \"last_reviewed\": {{ {:?}: \"{}\" }},\n  \"snoozed\": {{}},\n  \"intervals\": {{ {:?}: 30 }},\n  \"dismissed\": []\n}}", claim_path, lr, claim_path),
-    );
+    // Evidence "changed today".
+    conn.execute("UPDATE note_meta SET content_changed_at = ?2 WHERE path = ?1", rusqlite::params![ev_path, secs_of_day(today_days)]).unwrap();
 
     let due = crate::review::query_due_notes_indexed(&conn, "", &today, today_days).unwrap();
-    eprintln!("── Review Demo built ({} due) ──", due.len());
+    eprintln!("── Review Demo seeded ({} due) ──", due.len());
     for d in &due {
         eprintln!("  {} [{}] trigger={:?} changed_on={:?}", d.note_name, d.reason, d.stale_trigger_name, d.stale_changed_on);
     }
     let claim_stale = due.iter().any(|d| d.note_name == "Claim" && d.reason == "stale");
     drop(conn);
-    assert!(claim_stale, "Claim must surface as stale — demo not ready");
-    eprintln!("✓ Demo ready: open the 'Review Demo' universe → Review panel → Claim shows 🥀 stale.");
+    assert!(claim_stale, "Claim must surface as stale — seed failed (check the link resolved + stamp)");
+    eprintln!("✓ Seeded: reopen the 'Review Demo' universe → Review panel → Claim shows 🥀 stale.");
 }
 
 #[test]
