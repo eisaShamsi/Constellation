@@ -78,6 +78,8 @@ mod perf_trace;
 mod provenance;
 mod review;
 mod review_backfill;
+#[cfg(test)]
+mod review_rehearse;
 mod strata;
 mod tension;
 mod trails;

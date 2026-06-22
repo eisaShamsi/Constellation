@@ -2413,6 +2413,12 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             interval      INTEGER NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_review_due ON review_schedule(due_days);
+        -- MIG-083 §D — partial index over ONLY the reviewed notes. The Mode-2
+        -- staleness JOIN drives from `WHERE last_reviewed IS NOT NULL`; without this
+        -- the planner instead scans every active note_links row (233k+ on a large
+        -- universe) → ~200 ms. With it, lens-2 starts from the tiny reviewed set and
+        -- probes each note's out-links (idx_link_source) → the read stays <100 ms.
+        CREATE INDEX IF NOT EXISTS idx_review_last_reviewed ON review_schedule(last_reviewed) WHERE last_reviewed IS NOT NULL;
     ").map_err(|e| format!("Failed to create review_schedule: {}", e))?;
 
     // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
