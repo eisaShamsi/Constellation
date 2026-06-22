@@ -230,7 +230,59 @@ pub(crate) fn query_due_notes_indexed(
     Ok(due)
 }
 
-/// Mark a note as reviewed. Doubles the review interval.
+/// MIG-083 §D — a note's Review-Pulse status (the §F note-context Review tab reads
+/// this, O(1)). `reason`/`due_days` are None when the note has no schedule row yet
+/// (unstamped, or not-yet-indexed) — the tab renders a clean "not scheduled" state.
+#[derive(Debug, Clone, Serialize)]
+pub struct NoteReviewStatus {
+    pub reason: Option<String>,        // never_reviewed | interval_due | checkpoint | dismissed
+    pub due_days: Option<i64>,         // due date as days-since-2020 (None if no row)
+    pub last_reviewed: Option<String>, // ISO date of the last explicit ✓, or None
+    pub never_reviewed: bool,          // true iff no explicit review has happened
+    pub is_checkpoint: bool,           // a #assumption/#model mental-model checkpoint
+}
+
+/// MIG-083 §D — O(1) PK lookup of one note's review status. Read-only single-row
+/// metadata fetch keyed by an already-open note's path (no fs access, no library
+/// validation needed — the frontend only asks for notes it already opened).
+#[tauri::command]
+pub fn get_note_review_status(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<NoteReviewStatus, String> {
+    if let Some(state) = app.try_state::<crate::search::SearchState>() {
+        if let Ok(guard) = state.db.lock() {
+            if let Some(conn) = guard.as_ref() {
+                let row: Option<(String, i64, Option<String>, i64)> = conn
+                    .query_row(
+                        "SELECT reason, due_days, last_reviewed, is_checkpoint FROM review_schedule WHERE path = ?1",
+                        rusqlite::params![note_path],
+                        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+                    )
+                    .ok();
+                if let Some((reason, due_days, last_reviewed, is_cp)) = row {
+                    return Ok(NoteReviewStatus {
+                        never_reviewed: last_reviewed.is_none(),
+                        reason: Some(reason),
+                        due_days: Some(due_days),
+                        last_reviewed,
+                        is_checkpoint: is_cp != 0,
+                    });
+                }
+            }
+        }
+    }
+    // No row (unstamped, or the note isn't scheduled): a clean "never reviewed" status.
+    Ok(NoteReviewStatus {
+        reason: None,
+        due_days: None,
+        last_reviewed: None,
+        never_reviewed: true,
+        is_checkpoint: false,
+    })
+}
+
+/// Mark a note as reviewed. Advances to the next interval on the 1·3·7·14·30 ladder.
 #[tauri::command]
 pub fn mark_reviewed(
     app: tauri::AppHandle,
