@@ -4666,6 +4666,25 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
             .map_err(|e| format!("tag_counts delta for {}: {}", note_path, e))?;
         }
 
+        // MIG-083 §B-2 — write-time review_schedule maintenance (Mode 1/3), gated on
+        // schema_versions.review (inert until the §C back-fill stamps). is_checkpoint
+        // from `tags_json` + the note's `modified` anchor (both already in hand → zero
+        // extra .md read); real stratum from sky_nodes (CAST TEXT→INT, 0 if unpopulated).
+        // upsert_schedule_row PRESERVES the action-owned last_reviewed/interval + a
+        // dismissed state. A body-only save that changes neither tags nor stratum is a
+        // cheap no-op re-write. (Mode-2 staleness + content_changed_at land in §D.)
+        if crate::review::is_stamped(conn) {
+            let stratum: i64 = conn
+                .query_row(
+                    "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
+                    params![note_path],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            crate::review::upsert_schedule_row(conn, note_path, &tags_json, modified as i64, stratum)
+                .map_err(|e| format!("review_schedule for {}: {}", note_path, e))?;
+        }
+
         // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for
         // this path. The DELETE is partitioned by `source` so any
         // 'rename'-stamped or 'import'-stamped aliases stay put — they
@@ -7737,6 +7756,10 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
         if let Some(old) = old_tags_json {
             let _ = crate::tag_counts::apply_delta(conn, &old, "[]");
+        }
+        // MIG-083 §B-2 — drop the note's review_schedule row on deletion (gated).
+        if crate::review::is_stamped(conn) {
+            let _ = crate::review::delete_schedule_row(conn, note_path);
         }
         // MIG-078 §BL.1 — drop the body shadow row too. Ordered AFTER the
         // note_meta delete so the (future §BL.2) note_meta AFTER-DELETE trigger

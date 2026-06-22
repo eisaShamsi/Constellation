@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use tauri::Manager; // for app.try_state in the action-writer row-sync (§B-2)
 
 /// Persisted review schedule data.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -85,7 +86,7 @@ pub fn mark_reviewed(
     let mut pulse = load_pulse_data(&cdir);
     let today = today_str();
 
-    pulse.last_reviewed.insert(note_path.clone(), today);
+    pulse.last_reviewed.insert(note_path.clone(), today.clone());
 
     // MIG-083 — the documented 1·3·7·14·30 ladder (cap 30), not the old doubling.
     let current = pulse.intervals.get(&note_path).copied().unwrap_or(0);
@@ -95,7 +96,10 @@ pub fn mark_reviewed(
     // Remove from snoozed if present
     pulse.snoozed.remove(&note_path);
 
-    save_pulse_data(&cdir, &pulse)
+    save_pulse_data(&cdir, &pulse)?;
+    // §B-2 — cache the action into the schedule row (no-op until §C stamps).
+    sync_action_to_row(&app, |conn| review_row_mark(conn, &note_path, &today, next));
+    Ok(())
 }
 
 /// Snooze a note for N days.
@@ -109,9 +113,13 @@ pub fn snooze_note(
     let mut pulse = load_pulse_data(&cdir);
 
     let snooze_until = add_days(&today_str(), days as i64);
-    pulse.snoozed.insert(note_path, snooze_until);
+    let until_day = date_to_days(&snooze_until);
+    pulse.snoozed.insert(note_path.clone(), snooze_until);
 
-    save_pulse_data(&cdir, &pulse)
+    save_pulse_data(&cdir, &pulse)?;
+    // §B-2 — push the schedule row's due day out so the read excludes it.
+    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, until_day));
+    Ok(())
 }
 
 /// Dismiss a note from the review queue permanently.
@@ -124,10 +132,13 @@ pub fn dismiss_note(
     let mut pulse = load_pulse_data(&cdir);
 
     if !pulse.dismissed.contains(&note_path) {
-        pulse.dismissed.push(note_path);
+        pulse.dismissed.push(note_path.clone());
     }
 
-    save_pulse_data(&cdir, &pulse)
+    save_pulse_data(&cdir, &pulse)?;
+    // §B-2 — mark the schedule row dismissed (persists across re-index).
+    sync_action_to_row(&app, |conn| review_row_dismiss(conn, &note_path));
+    Ok(())
 }
 
 // MIG-083 — `record_note_visit` REMOVED (Boss decision 2026-06-22: opening a
@@ -437,6 +448,86 @@ pub fn delete_schedule_row(conn: &rusqlite::Connection, path: &str) -> Result<()
     Ok(())
 }
 
+// ── §B-2 — action-writer row-sync ───────────────────────────────────────────
+// The row CACHES last_reviewed/interval; `upsert_schedule_row` reads them from
+// the ROW (not review-pulse.json) to stay off the per-save hot path. So an
+// explicit ✓/snooze/dismiss must write the row directly. No-op until `review` is
+// stamped (the row doesn't exist before the §C back-fill anyway).
+
+/// Run `f` against the search DB iff it's ready and `review` is stamped.
+fn sync_action_to_row(
+    app: &tauri::AppHandle,
+    f: impl FnOnce(&rusqlite::Connection) -> Result<(), String>,
+) {
+    if let Some(state) = app.try_state::<crate::search::SearchState>() {
+        if let Ok(db) = state.db.lock() {
+            if let Some(conn) = db.as_ref() {
+                if is_stamped(conn) {
+                    let _ = f(conn);
+                }
+            }
+        }
+    }
+}
+
+/// ✓ Reviewed: cache the new last_reviewed + interval and recompute reason/due
+/// (is_checkpoint is read from the row — it's content-derived, set by index_note).
+fn review_row_mark(
+    conn: &rusqlite::Connection,
+    path: &str,
+    last_reviewed: &str,
+    interval: u32,
+) -> Result<(), String> {
+    let is_cp = conn
+        .query_row(
+            "SELECT is_checkpoint FROM review_schedule WHERE path = ?1",
+            rusqlite::params![path],
+            |r| r.get::<_, i64>(0),
+        )
+        .map(|v| v != 0)
+        .unwrap_or(false);
+    let (reason, due_days) =
+        compute_schedule_row(Some(date_to_days(last_reviewed)), interval, is_cp, 0);
+    conn.execute(
+        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
+         VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6)
+         ON CONFLICT(path) DO UPDATE SET
+           reason=excluded.reason, due_days=excluded.due_days,
+           last_reviewed=excluded.last_reviewed, interval=excluded.interval",
+        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, interval as i64],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Snooze: push the due day forward so the read (`due_days <= today`) excludes it.
+fn review_row_snooze(conn: &rusqlite::Connection, path: &str, until_day: i64) -> Result<(), String> {
+    conn.execute(
+        "UPDATE review_schedule SET due_days = ?1 WHERE path = ?2",
+        rusqlite::params![until_day, path],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Dismiss: mark the row dismissed (persists across re-index); insert if absent.
+fn review_row_dismiss(conn: &rusqlite::Connection, path: &str) -> Result<(), String> {
+    let changed = conn
+        .execute(
+            "UPDATE review_schedule SET reason = 'dismissed' WHERE path = ?1",
+            rusqlite::params![path],
+        )
+        .map_err(|e| e.to_string())?;
+    if changed == 0 {
+        conn.execute(
+            "INSERT OR IGNORE INTO review_schedule (path, reason, due_days) VALUES (?1, 'dismissed', 0)",
+            rusqlite::params![path],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -509,6 +600,33 @@ mod tests {
         upsert_schedule_row(&c, "/n.md", "[]", 1_577_836_800, 0).unwrap();
         delete_schedule_row(&c, "/n.md").unwrap();
         assert_eq!(c.query_row("SELECT COUNT(*) FROM review_schedule", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
+    }
+
+    #[test]
+    fn row_mark_uses_ladder_and_checkpoint() {
+        let c = sched_db();
+        c.execute("INSERT INTO review_schedule (path, reason, due_days, is_checkpoint) VALUES ('/n.md','never_reviewed',5,0)", []).unwrap();
+        review_row_mark(&c, "/n.md", &day_to_date(100), 1).unwrap(); // first ✓ → interval 1
+        let (reason, due, _) = row(&c, "/n.md");
+        assert_eq!(reason, "interval_due");
+        assert_eq!(due, 101);
+        // a checkpoint row marks on the 30-day cadence regardless of interval
+        c.execute("INSERT INTO review_schedule (path, reason, due_days, is_checkpoint) VALUES ('/c.md','checkpoint',0,1)", []).unwrap();
+        review_row_mark(&c, "/c.md", &day_to_date(200), 7).unwrap();
+        assert_eq!(row(&c, "/c.md"), ("checkpoint".to_string(), 230, 1));
+    }
+
+    #[test]
+    fn row_snooze_and_dismiss() {
+        let c = sched_db();
+        c.execute("INSERT INTO review_schedule (path, reason, due_days) VALUES ('/n.md','interval_due',100)", []).unwrap();
+        review_row_snooze(&c, "/n.md", 150).unwrap();
+        assert_eq!(c.query_row("SELECT due_days FROM review_schedule WHERE path='/n.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 150);
+        // dismiss existing + absent
+        review_row_dismiss(&c, "/n.md").unwrap();
+        assert_eq!(row(&c, "/n.md").0, "dismissed");
+        review_row_dismiss(&c, "/absent.md").unwrap();
+        assert_eq!(row(&c, "/absent.md").0, "dismissed", "dismiss persists even with no prior row");
     }
 
     #[test]
