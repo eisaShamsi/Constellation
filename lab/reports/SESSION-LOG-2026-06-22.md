@@ -89,3 +89,24 @@ Boss asked whether Review Pulse stays a right-sidebar tab or becomes a left-dock
 
 ## Open / next (after §E close)
 - **MIG-080 §F** (now UNBLOCKED): note-context **Review tab** (`get_note_review_status`, O(1)) + the **LEFT-DOCK** full-page **two-lens reviewer** (Due-for-Review + Stale, each with per-row "why") over the now-cheap `get_due_notes`; retire the transitional right-sidebar universe panel; help/manual ×15. Drop the old `record_note_visit→openNoteTab` wiring (already removed). → then **§G** closes MIG-080.
+
+---
+
+## MIG-080 §F — Review Pulse SPLIT (built; awaiting Boss test)
+The split is built, reviewed, and shipped behind the running binary (rebuilt 20:04 — frontend rebuilt + embedded, verified via `build/` strings + fresh mtime; the `.exe` itself compresses assets so a binary grep is a false-negative).
+
+- **§F-0** `217a59a5` — backend: `get_note_review_status` gained per-note Mode-2 staleness; extracted the shared `note_stale_status` probe (single-sources Lens-2 of `query_due_notes_indexed` + the note tab).
+- **§F-1/2** `0c0b55f9` — components: `ReviewStatusPanel` (note-scoped status: due/checkpoint/never + the per-note 🥀 stale callout + ✓/Snooze/Dismiss), `ReviewerView` (left-dock full-page wrapper), `ReviewPulsePanel` enhanced (Stale is now its own lens with the per-row "why").
+- **§F-3** `4d054216` — `+layout` integration: right-sidebar Review tab → NOTE-SCOPED (`'review'` ∈ NOTE_SCOPED_TABS, renders `ReviewStatusPanel`); NEW left-dock clock icon → full-page `ReviewerView`; `fullPageActive` += `showReviewer` + a guard `$effect` (mirrors the Calendar guard); command palette opens the reviewer; retired the right-sidebar universe panel + the orphaned `dueNotes` state and its 3 load sites.
+- **Adversarial review** (4 dims × find→verify, 17 agents) → **11 confirmed findings, ALL fixed** in **§F-4** `<pending hash>` (Fix-What-You-Discover, none deferred):
+  - **P1** i18n: the `$t(key)||fallback` idiom is DEAD here (a miss returns the truthy key-path) → the UI would have shown raw `reviewStatus.dueIn`. Added the 11 new keys (`reviewStatus.*` ×9 + `reviewPanel.stale`/`staleBecause`) to **all 15 locales**, native translations, tokens preserved+validated.
+  - **P1** reviewer overlay stacked with the editor/dashboard → added `showReviewer` to `.content-area` `content-hidden`.
+  - **P2** reviewer mutual-exclusion: dock button + palette now clear the FULL settable peer set (else the guard closed the reviewer the instant it opened over OrgChart/Health/SearchHub/Forge/Canvas/Calendar).
+  - **P2** `ReviewStatusPanel` "due in N" used UTC vs Rust's LOCAL day (±1) → anchored to local midnight.
+  - **P3** request-token guard on `load()`; `aria-label` via `$t`; restored prepare-once for the bulk Lens-2 probe (`note_stale_status_with_stmt`) + fixed the stale comment; rehearsal parity oracle made grace-aware.
+- **Verification**: 21/21 review unit tests pass post-refactor; svelte-check 0; frontend rebuilt + embedded.
+
+### Still pending in §F
+- **Boss test** (staged): Stage 1 = the note-scoped Review tab; Stage 2 = the left-dock reviewer.
+- **§F help/manual ×15** (the SO #2 docs pass) — deferred to AFTER Boss UI validation (final strings/behavior).
+- Then **§G** closes MIG-080.
