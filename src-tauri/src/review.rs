@@ -116,17 +116,14 @@ pub(crate) fn query_due_notes_indexed(
     today_days: i64,
 ) -> Result<Vec<DueNote>, String> {
     let mut due: Vec<DueNote> = Vec::new();
-    // Boundary-terminated scope prefix (empty = match-all). Note paths use the OS
-    // separator; the universe-root call (path == root) still matches every note
-    // because they all live under "root<sep>…".
-    let scope = if library_path.is_empty()
-        || library_path.ends_with('/')
-        || library_path.ends_with('\\')
-    {
-        library_path.to_string()
-    } else {
-        format!("{}{}", library_path, std::path::MAIN_SEPARATOR)
-    };
+    // Library scoping: a note is in-scope iff its path begins with library_path AND
+    // the next char is a path separator — so "/U/Lib" matches "/U/Lib/x.md" but NOT
+    // the sibling "/U/Lib2/y.md" (review finding D). Matches EITHER '/' or '\' (=char(92))
+    // so it is correct whether note_meta stores POSIX or Windows separators — appending
+    // one fixed separator would zero out the queue if the stored form differed. An empty
+    // library_path means "whole universe" (the rehearsal harness) → match all. A trailing
+    // separator on the input is trimmed so the boundary char lands on the real separator.
+    let library_path = library_path.trim_end_matches(['/', '\\']);
 
     // ── Lens 1: Mode 1/3 — time-based resurfacing + checkpoints (indexed on due_days). ──
     {
@@ -138,11 +135,12 @@ pub(crate) fn query_due_notes_indexed(
                  WHERE rs.due_days <= ?1
                    AND rs.reason != 'dismissed'
                    AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
-                   AND substr(rs.path, 1, length(?2)) = ?2",
+                   AND (?2 = '' OR (substr(rs.path, 1, length(?2)) = ?2
+                        AND substr(rs.path, length(?2) + 1, 1) IN ('/', char(92))))",
             )
             .map_err(|e| format!("due lens-1 prepare: {}", e))?;
         let rows = stmt
-            .query_map(rusqlite::params![today_days, scope, today], |r| {
+            .query_map(rusqlite::params![today_days, library_path, today], |r| {
                 Ok((
                     r.get::<_, String>(0)?,
                     r.get::<_, String>(1)?,
@@ -200,11 +198,12 @@ pub(crate) fn query_due_notes_indexed(
                      WHERE rs.last_reviewed IS NOT NULL
                        AND rs.reason != 'dismissed'
                        AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?1)
-                       AND substr(rs.path, 1, length(?2)) = ?2",
+                       AND (?2 = '' OR (substr(rs.path, 1, length(?2)) = ?2
+                            AND substr(rs.path, length(?2) + 1, 1) IN ('/', char(92))))",
                 )
                 .map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
-                .query_map(rusqlite::params![today, scope], |r| {
+                .query_map(rusqlite::params![today, library_path], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
                 })
                 .map_err(|e| format!("due lens-2 reviewed query: {}", e))?;
@@ -1191,6 +1190,37 @@ mod tests {
         let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
         assert!(!due.iter().any(|d| d.note_path == "/lib/S.md"),
             "a snoozed note must appear in NEITHER lens (got {:?})", due.iter().map(|d| (&d.note_path, &d.reason)).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn library_scope_excludes_sibling_prefix() {
+        // "/U/Lib" must NOT match the sibling "/U/Lib2" (review finding D).
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        for (p, n) in [("/U/Lib/a.md", "A"), ("/U/Lib2/b.md", "B"), ("/U/Library/c.md", "C")] {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified) VALUES (?1,?2,?2,0)", rusqlite::params![p, n]).unwrap();
+            c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES (?1,'never_reviewed',?2,1)",
+                rusqlite::params![p, today_days - 1]).unwrap();
+        }
+        let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days).unwrap();
+        let paths: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
+        assert_eq!(paths, vec!["/U/Lib/a.md"], "only the real child; siblings /U/Lib2 + /U/Library excluded");
+    }
+
+    #[test]
+    fn upsert_preserves_active_snooze_across_reindex() {
+        // review finding E (#7): a re-index (save / rename-cascade) must NOT drop a snooze.
+        let c = sched_db();
+        let far = "2099-01-01";
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,is_checkpoint,last_reviewed,stratum,interval,snoozed_until)
+                   VALUES ('/n.md','interval_due',?1,0,?2,2,7,?3)",
+            rusqlite::params![date_to_days(far), day_to_date(100), far]).unwrap();
+        upsert_schedule_row(&c, "/n.md", "[]", 0, 5).unwrap(); // simulate re-index
+        let (dd, snz): (i64, Option<String>) = c.query_row(
+            "SELECT due_days, snoozed_until FROM review_schedule WHERE path='/n.md'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(snz.as_deref(), Some(far), "snooze preserved across re-index");
+        assert_eq!(dd, date_to_days(far), "due_days kept at the snooze day (not reset to lr+interval=107)");
     }
 
     #[test]
