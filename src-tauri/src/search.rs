@@ -4774,20 +4774,36 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
             crate::review::upsert_schedule_row(conn, note_path, &tags_json, modified as i64, stratum)
                 .map_err(|e| format!("review_schedule for {}: {}", note_path, e))?;
 
-            // MIG-083 §D — the Mode-2 staleness content-change signal. Bump
-            // content_changed_at ONLY when the body hash actually differs from the
-            // stored one, so a touch / sync / cid_cn / frontmatter-only save does NOT
-            // false-fire staleness for this note's dependents. When unchanged this is a
-            // pure read + comparison — zero writes (keeps the no-link, body-identical
-            // re-save path free). The main note_meta UPSERT above does not touch
-            // content_hash, so this is the sole writer of both columns.
+            // MIG-083 §D — the Mode-2 staleness content-change signal. The main
+            // note_meta UPSERT above does not touch content_hash, so this is the sole
+            // writer of both columns. Three cases:
+            //   • old_content_hash IS NULL (never baselined — a brand-new note, or one
+            //     the §C back-fill missed in an inter-batch window): record the baseline
+            //     hash but do NOT set content_changed_at. A first OBSERVATION is not a
+            //     CHANGE — this hardens against any never-baselined note false-firing
+            //     staleness on its first post-stamp touch (re-verify finding).
+            //   • hash differs from the stored baseline: a real body edit → bump
+            //     content_changed_at (a touch / sync / cid_cn / frontmatter-only save
+            //     leaves plain_body identical → hash matches → no bump).
+            //   • hash unchanged: pure read + comparison, zero writes (the body-identical
+            //     re-save stays free).
             let new_hash = crate::review::content_hash(&plain_body);
-            if old_content_hash.as_deref() != Some(new_hash.as_str()) {
-                conn.execute(
-                    "UPDATE note_meta SET content_hash = ?2, content_changed_at = ?3 WHERE path = ?1",
-                    params![note_path, new_hash, modified as i64],
-                )
-                .map_err(|e| format!("content_changed_at for {}: {}", note_path, e))?;
+            match old_content_hash.as_deref() {
+                None => {
+                    conn.execute(
+                        "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1",
+                        params![note_path, new_hash],
+                    )
+                    .map_err(|e| format!("content_hash baseline for {}: {}", note_path, e))?;
+                }
+                Some(h) if h != new_hash => {
+                    conn.execute(
+                        "UPDATE note_meta SET content_hash = ?2, content_changed_at = ?3 WHERE path = ?1",
+                        params![note_path, new_hash, modified as i64],
+                    )
+                    .map_err(|e| format!("content_changed_at for {}: {}", note_path, e))?;
+                }
+                Some(_) => {}
             }
         }
 

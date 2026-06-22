@@ -49,6 +49,13 @@
 
 **Harness strengthened (L/#13):** independent Lens-1 reference (no shared `schedule_for`); touch-test; self-link/snooze mirrored.
 
+### Re-verification pass (4 agents on the fix diff) — `all_fixes_correct: true` + 2 NEW findings (both fixed)
+The fixes were re-verified adversarially; the 6 fixes are correct with no regressions in them. Two NEW issues surfaced + fixed (WA#6):
+- **[P3] back-fill-window note keeps `content_hash` NULL → first post-stamp touch false-bumps** (residual of A). A note created during an inter-batch window at a path below the cursor is never baselined. Fix: `index_note` now treats a first-observation (`old_content_hash IS NULL`) as a **baseline** — writes the hash, does NOT set `content_changed_at`. Hardens against *any* never-baselined note.
+- **[P2 — NEW §D regression] rename orphans the old-path `review_schedule` row → phantom queue entry** (dead path). The legacy FS scan could never list a nonexistent path. Two-layer fix: (a) `rename_item` migrates the row (`DELETE` stale new-path row, then `UPDATE … SET path`) — kills the orphan AND carries ✓ history to the new path (closes J's rename case); (b) Lens-1 + Lens-2 changed `LEFT JOIN note_meta` → **INNER JOIN**, so an orphan from *any* source can never surface. Unit test `indexed_read_excludes_orphan_rows` added.
+
+**20 review unit tests pass; live rehearsal: touch-test 0, parity exact, Mode-2 fires, 16.73 ms.**
+
 **Surfaced to Boss (genuine design/scope — not parked):**
 - **B [P2] — content hash is over `plain_body`** (markdown-stripped + Arabic-normalized), so pure formatting / URL / **Arabic-diacritic** edits don't fire staleness (false *negatives*). Fixing cleanly needs the back-fill to read raw `.md` bodies (a Rule-8 departure for the one-time population) — a Boss-weighable call. Prose edits ARE caught.
 - **J [P3] — rename loses review state** (`review-pulse.json` is path-keyed, not migrated on rename). **Pre-existing** (true of the legacy scan too); needs rename-cascade integration — separate follow-up.

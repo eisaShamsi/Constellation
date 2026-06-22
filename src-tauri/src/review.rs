@@ -129,9 +129,12 @@ pub(crate) fn query_due_notes_indexed(
     {
         let mut stmt = conn
             .prepare(
-                "SELECT rs.path, COALESCE(nm.name, rs.path), rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
+                // INNER JOIN: a row with no backing note_meta (an orphan — e.g. left by
+                // some non-delete path) must NEVER surface as a phantom queue entry
+                // pointing at a dead path (re-verify finding). No note_meta → not a note.
+                "SELECT rs.path, nm.name, rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
                  FROM review_schedule rs
-                 LEFT JOIN note_meta nm ON nm.path = rs.path
+                 JOIN note_meta nm ON nm.path = rs.path
                  WHERE rs.due_days <= ?1
                    AND rs.reason != 'dismissed'
                    AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
@@ -192,9 +195,9 @@ pub(crate) fn query_due_notes_indexed(
         let reviewed: Vec<(String, String, i64, String)> = {
             let mut stmt = conn
                 .prepare(
-                    "SELECT rs.path, COALESCE(nm.name, rs.path), rs.stratum, rs.last_reviewed
+                    "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed
                      FROM review_schedule rs
-                     LEFT JOIN note_meta nm ON nm.path = rs.path
+                     JOIN note_meta nm ON nm.path = rs.path
                      WHERE rs.last_reviewed IS NOT NULL
                        AND rs.reason != 'dismissed'
                        AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?1)
@@ -1206,6 +1209,19 @@ mod tests {
         let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days).unwrap();
         let paths: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
         assert_eq!(paths, vec!["/U/Lib/a.md"], "only the real child; siblings /U/Lib2 + /U/Library excluded");
+    }
+
+    #[test]
+    fn indexed_read_excludes_orphan_rows() {
+        // A due review_schedule row with NO backing note_meta (an orphan, e.g. left by
+        // a rename before §D's migration) must NOT surface as a phantom queue entry.
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES ('/lib/ghost.md','never_reviewed',?1,1)",
+            rusqlite::params![today_days - 1]).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        assert!(due.is_empty(), "orphan row (no note_meta) must not surface; got {:?}", due.iter().map(|d| &d.note_path).collect::<Vec<_>>());
     }
 
     #[test]

@@ -1021,6 +1021,25 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
                         "UPDATE note_embeddings SET path = ?2 WHERE path = ?1",
                         rusqlite::params![&old_path, &new_path],
                     );
+                    // MIG-083 §D — migrate the review_schedule row to the new path
+                    // (gated on the stamp). Without this the old-path row is orphaned:
+                    // it is never deleted (rename != delete) and the indexed read would
+                    // surface it as a PHANTOM due-queue entry pointing at a dead path
+                    // (re-verify finding). Migrating also carries last_reviewed / interval
+                    // / snooze forward, so the note's ✓ history survives the rename (the
+                    // reindex below then preserves it via upsert_schedule_row).
+                    if crate::review::is_stamped(conn) {
+                        // Clear any stale row already at new_path first, so the migrate
+                        // can't hit the PRIMARY KEY and silently leave the old orphan.
+                        let _ = conn.execute(
+                            "DELETE FROM review_schedule WHERE path = ?1",
+                            rusqlite::params![&new_path],
+                        );
+                        let _ = conn.execute(
+                            "UPDATE review_schedule SET path = ?2 WHERE path = ?1",
+                            rusqlite::params![&old_path, &new_path],
+                        );
+                    }
                 }
                 // 'rename' alias — durable safety net for old title
                 // lookups regardless of any later frontmatter edits.
