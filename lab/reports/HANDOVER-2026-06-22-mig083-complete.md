@@ -1,0 +1,28 @@
+# Handover — 2026-06-22 — MIG-083 COMPLETE → resume at MIG-080 §F
+
+## State (all committed; final binary built 18:49; PUSH pending in this session's PCS)
+- **MIG-083 (Review Pulse → Rule-8 write-time schedule + Mode-2 staleness): §A–§E COMPLETE + Boss-validated.**
+  - The Review panel that re-walked the whole library FS on every open now reads the write-time `review_schedule` SQLite table — indexed `SELECT … WHERE due_days <= today`, zero filesystem access. **232 ms → ~18 ms** on the live 7,660-note universe. Legacy `scan_due_recursive` removed.
+  - **Mode-2 staleness** (the new lens): a note is stale when a load-bearing OUT-dependency (`supports`/`contradicts`/`derives-from`/`part-of`/`supersedes`) had a real body-content change (FNV-1a hash; touch/sync doesn't fire) on a later LOCAL day than its last explicit ✓ review. Separate lens from Due-for-Review. Boss saw 🥀 live.
+  - **Boss rulings:** substantive-edits-only (B); lenses fully separate — snooze hides Due-for-Review only (C); a configurable **staleness grace period** Setting (Settings → Review, min 1, default 1, localized ×15).
+  - **Triple-reviewed + audited:** 24-finding adversarial review + 4-agent re-verify + `/migration` Phase-4 audit — every confirmed finding fixed (WA#6). The live-copy rehearsal harness (`review_rehearse.rs`, gated on `REVIEW_REHEARSE_DB`) proves parity + touch-test 0 + <100 ms + Mode-2 on the real corpus.
+- **Orientation bumped to v3.01.** Session log + MoCh (`MoCh-2026-06-22-1530.md`) written.
+- **Demo universe** at `E:\Constellation Universes\Review Demo` (Claim --derives-from--> Evidence, pre-seeded stale). Disposable — delete when done, or keep for §F UI testing. Seed it again with `REVIEW_DEMO_DIR=... cargo test --release seed_review_demo -- --nocapture` (app must be closed).
+
+## Key code (where things live)
+- `review.rs`: `get_due_notes` (stamped → `query_due_notes_indexed` = Lens-1 SELECT ∪ Lens-2 staleness; unstamped → empty + kick back-fill); `get_note_review_status` (O(1), for §F); the pure core (`compute_schedule_row`/`schedule_for`/`next_interval`/`is_checkpoint`); `backfill_one` (shared per-note step); `recompute_all_in` (reconcile self-heal); `content_hash` (FNV-1a); `scope_clause`/`staleness_types_sql` helpers; `REVIEW_SCHEMA_VERSION`.
+- `search.rs`: the `review_schedule` table + `idx_review_due` + partial `idx_review_last_reviewed` + `snoozed_until`/`content_changed_at`; the §D `index_note` hook (gated, baseline-on-first-observation); `reindex_delete_note` hook; the rename row-migration in `libraries.rs::rename_item`; the reconcile call in `reconcile_filesystem`.
+- `review_backfill.rs`: post-paint resumable back-fill (cursor, per-batch transaction, `AtomicBool RUNNING` guard, stamps `REVIEW_SCHEMA_VERSION`).
+- Frontend: `appSettings.review.staleGraceDays`; the Settings → **Review** section (`SettingsModal.svelte`); the 3 `get_due_notes` call sites pass it; `ReviewPulsePanel.svelte` already folds `reason==='stale'` into Due-for-Review with 🥀.
+
+## RESUME HERE — MIG-080 §F (now UNBLOCKED by the cheap schedule)
+Per `docs/MIG-080-Plan.md` §F (verify the exact clause). Concept (the horse): the note-context Review tab answers *"is THIS open note due / stale?"*; the full-page reviewer answers *"what across my universe needs re-confronting?"* — as **two distinct lenses**.
+1. **Note-context Review tab:** add `'review'` to `NOTE_SCOPED_TABS`; the tab reads `get_note_review_status(notePath)` (O(1)) → shows this note's status (never-reviewed / due in N days / checkpoint / **stale because {dep} changed on {date}**) + the ✓/Snooze/Dismiss actions.
+2. **Full-page two-lens reviewer (`ReviewerView`)** over `get_due_notes`: present **Due-for-Review** and **Stale** as two separate sections, each row with its "why" (stale rows already carry `stale_trigger_name`/`stale_trigger_type`/`stale_changed_on` from the backend — render them). Keep `record_note_visit` dropped (opening ≠ review).
+3. **Help / User Manual ×15 (SO #2, deferred here on purpose):** write the Review-Pulse help topic + manual section — the instant panel, the two lenses + per-row "why", ✓/Snooze/Dismiss, AND the Settings → Review grace-period control. Land it WITH §F so it documents the final surface, not the transitional panel.
+Then **§G** closes MIG-080 (final reconcile + audit + `/simplify`).
+
+## READY-TO-PASTE next-session prompt
+```
+Resume MIG-080 §F (now unblocked: MIG-083 shipped the cheap write-time review_schedule + Mode-2 staleness). First: git pull; read docs/Constellation Orientation & Onboarding v3.01.md, docs/MIG-080-Plan.md §F, and lab/reports/HANDOVER-2026-06-22-mig083-complete.md (the "RESUME HERE — §F" section). State the function-in-hand + the concept (the horse). Build §F: (1) the note-context Review tab on get_note_review_status (O(1)) — add 'review' to NOTE_SCOPED_TABS; (2) the full-page two-lens ReviewerView over get_due_notes presenting Due-for-Review + Stale as distinct lenses, each row rendering its "why" (stale rows carry stale_trigger_name/type/changed_on); keep record_note_visit dropped (opening ≠ review). (3) Write the Review-Pulse help topic + User Manual section ×15 (the deferred SO #2 item) WITH §F so it documents the final surface: the instant panel, the two lenses + per-row why, ✓/Snooze/Dismiss, and Settings → Review staleGraceDays. Run an adversarial review before the Boss test (the §D/§E pattern). Honor: Concept-Before-Function, Fix-What-You-Discover, full-localization ×15. Then §G closes MIG-080.
+```
