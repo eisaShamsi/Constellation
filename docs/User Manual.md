@@ -2145,3 +2145,15 @@ There are two ways to open the Inspector for whichever note you have active.
 
 *Constellation User Manual — Version 0.1.0 — March 2026*
 *uconstellation.world*
+
+
+## The Note-Context Right Sidebar
+
+The right sidebar's panels are **note-context**: each answers a question about the note you have open right now.
+
+- **Tags** — the open note's tags. (The universe-wide all-tags browser moved to the Dashboard.)
+- **Knowledge Health** — the open note's intellectual *tensions*: contradicted by another note, orphaned (nothing links to it), a single point of failure, or in a structural gap. The whole-library Knowledge Health dashboard is a separate full-page view (Command Palette → Knowledge Health).
+- **Tasks** — the open note's tasks. The whole-universe task agenda is a **Tasks** button in the left dock (full-page, with filters, grouping, and search; it follows the universe theme and has a *Style Setter → Global Tasks* tab with colours + a Text-size slider). Natural-language due dates: type `@today`, `@next week`, a weekday, or `@in 3 days` and accept the suggestion to pin a real date — toggle in Settings → Editor.
+- **Source Review** — the open note's pending source suggestion. The universe-wide review queue, with the bulk Approve-all / Reject-all tools, lives in the full-page **Cataloger** (left dock). The Cataloger has a *Style Setter → Cataloger → Text size* control.
+
+A note-context panel shows **"No note selected"** when no note is open.

@@ -242,3 +242,15 @@ Ouvrez Paramètres → Intelligence → CECE → Per-Library calibration. Le tab
 - **Cognitive Engine** — la philosophie plus large de formulation des connaissances dans laquelle s'inscrit CECE.
 - **Properties** — les champs de frontmatter `sources:` et `content_type:` dans lesquels CECE écrit.
 - **Knowledge Hierarchy** — comment Source × Content Type s'inscrit dans la structure Universe / Library / Folder / Note.
+
+
+---
+
+## La barre latérale droite vs le Catalogueur — deux endroits distincts
+
+L'onglet **Revue des sources** de la barre latérale droite et le **Catalogueur** en pleine page sont désormais des **surfaces distinctes** :
+
+- **Barre latérale droite → Revue des sources** affiche la suggestion en attente pour la **note que vous avez ouverte** — sa propre carte et ses commandes *Accepter / Modifier / Rejeter* par carte.
+- **Le Catalogueur** (icône de cartes empilées, dock de gauche) affiche la file de revue de **l'ensemble de l'univers** — chaque note en attente de décision — accompagnée des outils groupés **Tout approuver / Tout rejeter** et des puces de filtre. Ces outils groupés se trouvent *uniquement* ici, jamais à côté d'une seule note.
+
+Vous pouvez ajuster la taille du texte du Catalogueur dans **Style Setter → Catalogueur → Taille du texte**.

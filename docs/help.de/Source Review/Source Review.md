@@ -242,3 +242,15 @@ Verwenden Sie die Filter-Chips. Beginnen Sie mit **Catalogers agreed** (Stempelk
 - **Cognitive Engine** — die umfassendere Wissensformulierungsphilosophie, in die CECE passt.
 - **Properties** — die Frontmatter-Felder `sources:` und `content_type:`, in die CECE schreibt.
 - **Knowledge Hierarchy** — wie Source × Content Type in die Universe / Library / Folder / Note-Struktur passt.
+
+
+---
+
+## Rechte Seitenleiste vs. der Cataloger – zwei verschiedene Orte
+
+Der Tab **Source Review** in der rechten Seitenleiste und der ganzseitige **Cataloger** sind nun **getrennte Bereiche**:
+
+- **Rechte Seitenleiste → Source Review** zeigt den ausstehenden Vorschlag für die **gerade geöffnete Notiz** – ihre eigene Karte und das kartenbezogene *Accept / Edit / Reject*.
+- **Der Cataloger** (Symbol mit gestapelten Karten, linkes Dock) zeigt die **universumsweite** Prüfwarteschlange – jede Notiz, die auf eine Entscheidung wartet – zusammen mit den Sammelaktionen **Approve all / Reject all** und den Filter-Chips. Diese Sammelaktionen gibt es *nur* hier, niemals neben einer einzelnen Notiz.
+
+Du kannst die Textgröße des Catalogers unter **Style Setter → Cataloger → Text size** anpassen.

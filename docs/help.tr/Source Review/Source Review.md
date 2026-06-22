@@ -242,3 +242,15 @@ Ayarlar → Zekâ → CECE → Kütüphane bazında kalibrasyon'u açın. Tablo,
 - **[Cognitive Engine](../Cognitive%20Engine/Cognitive%20Engine.md)** — CECE'nin içine yerleştiği daha geniş bilgi formülasyon felsefesi.
 - **[Properties](../Properties/Properties.md)** — CECE'nin yazdığı `sources:` ve `content_type:` frontmatter alanları.
 - **[Knowledge Hierarchy](../Knowledge%20Hierarchy/Knowledge%20Hierarchy.md)** — Kaynak × İçerik Türü'nün Evren / Kütüphane / Klasör / Not yapısına nasıl uyduğu.
+
+
+---
+
+## Sağ kenar çubuğu ile Kataloglayıcı — iki ayrı yer
+
+Sağ kenar çubuğundaki **Kaynak İncelemesi** sekmesi ile tam sayfa **Kataloglayıcı** artık **ayrı yüzeylerdir**:
+
+- **Sağ kenar çubuğu → Kaynak İncelemesi**, **açık olan not** için bekleyen öneriyi gösterir — kendi kartını ve karta özgü *Kabul Et / Düzenle / Reddet* seçeneklerini.
+- **Kataloglayıcı** (üst üste kartlar simgesi, sol pano), **evren çapındaki** inceleme kuyruğunu gösterir — karar bekleyen her notu — toplu **Tümünü onayla / Tümünü reddet** araçları ve filtre çipleriyle birlikte. Bu toplu araçlar *yalnızca* burada bulunur, asla tek bir notun yanında değil.
+
+Kataloglayıcı'nın metnini **Stil Belirleyici → Kataloglayıcı → Metin boyutu** bölümünden yeniden boyutlandırabilirsiniz.

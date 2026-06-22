@@ -107,3 +107,17 @@ Each right-sidebar panel has its **own** text size, in the **Style Setter → Co
 - **"Note as organism"**: Placing Backlinks on the left and Outgoing Links on the right puts your note at the center of its link network — you can see what flows in (left) and what flows out (right) at a glance.
 - **Focus mode**: All flanking columns and the right sidebar are automatically hidden when Focus mode is active. Your placement settings are preserved and restored when you leave Focus mode.
 - **Split view**: Flanking panels are hidden during split view to maximize the available editing space.
+
+
+---
+
+## The note-context right sidebar
+
+The right-sidebar panels are **note-context** — each one answers a question about the note you have open right now, not the whole library:
+
+- **Tags** shows the open note's tags. (The universe-wide *all-tags* browser moved to the Dashboard.)
+- **Knowledge Health** shows the open note's intellectual *tensions* — whether it is **contradicted** by another note, **orphaned** (nothing links to it), a **single point of failure** (much depends on it, it rests on little), or sitting in a **structural gap** (a cluster of related notes with no links between them). The whole-library Knowledge Health dashboard is a separate, full-page view (Command Palette → *Knowledge Health*).
+- **Tasks** shows the open note's tasks. The whole-universe task agenda moved to a **Tasks** button in the left dock — see the **Tasks** topic.
+- **Source Review** shows the open note's pending source suggestion. The universe-wide review queue lives in the **Cataloger** — see the **Source Review** topic.
+
+When no note is open, a note-context panel reads **"No note selected."**

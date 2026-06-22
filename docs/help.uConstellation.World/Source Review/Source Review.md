@@ -236,3 +236,15 @@ Open Settings → Intelligence → CECE → Per-Library calibration. The table s
 - **Cognitive Engine** — the broader knowledge formulation philosophy CECE fits into.
 - **Properties** — the `sources:` and `content_type:` frontmatter fields CECE writes to.
 - **Knowledge Hierarchy** — how Source × Content Type fits into the Universe / Library / Folder / Note structure.
+
+
+---
+
+## Right sidebar vs the Cataloger — two distinct places
+
+The right-sidebar **Source Review** tab and the full-page **Cataloger** are now **distinct surfaces**:
+
+- **Right sidebar → Source Review** shows the pending suggestion for the **note you have open** — its own card and its per-card *Accept / Edit / Reject*.
+- **The Cataloger** (stacked-cards icon, left dock) shows the **whole-universe** review queue — every note awaiting a decision — together with the bulk **Approve all / Reject all** tools and the filter chips. Those bulk tools live *only* here, never beside a single note.
+
+You can resize the Cataloger's text in **Style Setter → Cataloger → Text size**.

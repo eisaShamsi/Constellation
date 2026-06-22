@@ -242,3 +242,15 @@ Abra Configurações → Intelligence → CECE → Per-Library calibration. A ta
 - **Cognitive Engine** — a filosofia mais ampla de formulação do conhecimento na qual o CECE se encaixa.
 - **Properties** — os campos de frontmatter `sources:` e `content_type:` nos quais o CECE escreve.
 - **Knowledge Hierarchy** — como Source × Content Type se encaixa na estrutura Universe / Library / Folder / Note.
+
+
+---
+
+## Barra lateral direita vs. o Cataloger — dois lugares distintos
+
+A aba **Source Review** da barra lateral direita e o **Cataloger** de página inteira agora são **superfícies distintas**:
+
+- **Barra lateral direita → Source Review** mostra a sugestão pendente da **nota que você tem aberta** — o cartão dela e os seus próprios *Accept / Edit / Reject* por cartão.
+- **O Cataloger** (ícone de cartões empilhados, doca esquerda) mostra a fila de revisão de **todo o universo** — todas as notas aguardando uma decisão — junto com as ferramentas em massa **Approve all / Reject all** e os chips de filtro. Essas ferramentas em massa ficam *apenas* aqui, nunca ao lado de uma única nota.
+
+Você pode redimensionar o texto do Cataloger em **Style Setter → Cataloger → Text size**.

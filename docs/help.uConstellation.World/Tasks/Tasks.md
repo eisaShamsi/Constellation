@@ -85,3 +85,14 @@ Group tasks by:
 
 > [!tip] RTL Support
 > Tasks panels fully support right-to-left languages. Due date badges, priority icons, and filter controls all respect the current text direction.
+
+
+---
+
+## The universe task agenda (left dock)
+
+The right-sidebar **Tasks** tab shows the open note's tasks. To see **every** task across all your libraries at once, open the **Tasks** button in the **left dock** — a full-page agenda with filter chips (All / Incomplete / Completed), dropdowns (by date, by library, by priority), *Group by file*, *Sort by due date*, and search.
+
+**Appearance.** The agenda follows your current universe's theme automatically. To fine-tune it, open **Style Setter → Global Tasks** — colour controls (background, text, accent, borders, overdue / due-today dates) plus a **Text size** slider that scales the agenda's text.
+
+**Natural-language due dates.** While typing a task, type **`@today`**, **`@tomorrow`**, **`@yesterday`**, **`@next week`**, **`@next month`**, a weekday name (**`@monday`**), or **`@in 3 days`** / **`@in 2 weeks`** and accept the autosuggestion — it pins a fixed real date (for example `📅 2026-06-25`). You don't have to add the `📅` yourself. Turn the feature on or off in **Settings → Editor → Natural-language task dates**.
