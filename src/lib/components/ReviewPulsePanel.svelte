@@ -39,9 +39,23 @@
 	const VLIST_THRESHOLD = 80;
 	function rpRowHeight(): number { return 30; }
 
-	const resurfacing = $derived(dueNotes.filter(n => n.reason === 'interval_due' || n.reason === 'stale'));
+	// MIG-080 §F — Stale is its OWN lens, separate from time-based Due-for-Review
+	// (Boss: never merged into one score). Order: Stale (most consequential) → Due → Checkpoints → Never.
+	const stale = $derived(dueNotes.filter(n => n.reason === 'stale'));
+	const resurfacing = $derived(dueNotes.filter(n => n.reason === 'interval_due'));
 	const checkpoints = $derived(dueNotes.filter(n => n.reason === 'checkpoint'));
 	const neverReviewed = $derived(dueNotes.filter(n => n.reason === 'never_reviewed'));
+
+	let showStale = $state(true);
+
+	// The per-row detail for a stale note: WHY it's stale (the triggering dependency).
+	function staleDetail(n: DueNote): string {
+		const name = n.stale_trigger_name ?? '?';
+		const type = n.stale_trigger_type ?? '';
+		const date = n.stale_changed_on ?? '';
+		return ($t('reviewPanel.staleBecause') || '{name} ({type}) changed {date}')
+			.replace('{name}', name).replace('{type}', type).replace('{date}', date);
+	}
 
 	async function markReviewed(path: string) {
 		try {
@@ -75,7 +89,7 @@
 			<span class="rp-reason">{reasonIcon(note.reason)}</span>
 			{note.note_name}
 		</button>
-		<span class="rp-detail">{kind === 'checkpoint' ? ($t('reviewPanel.checkpointHint') || 'Do you still hold this view?') : kind === 'overdue' ? `${note.days_overdue}d overdue` : `${note.days_overdue}d old`}</span>
+		<span class="rp-detail">{kind === 'stale' ? staleDetail(note) : kind === 'checkpoint' ? ($t('reviewPanel.checkpointHint') || 'Do you still hold this view?') : kind === 'overdue' ? `${note.days_overdue}d overdue` : `${note.days_overdue}d old`}</span>
 		<div class="rp-actions">
 			<button class="rp-action" title={$t('reviewPanel.reviewed') || 'Reviewed'} onclick={() => markReviewed(note.note_path)}>✓</button>
 			<button class="rp-action" title={$t('reviewPanel.snooze') || 'Snooze 7d'} onclick={() => snooze(note.note_path)}>👁</button>
@@ -103,6 +117,16 @@
 			<div class="rp-empty-text">{$t('reviewPanel.allCaughtUp') || 'All caught up! No notes due for review.'}</div>
 		</div>
 	{:else}
+	{#if stale.length > 0}
+	<div class="rp-section">
+		<button class="rp-header" onclick={() => showStale = !showStale}>
+			<span class="rp-chevron" class:collapsed={!showStale}>▾</span>
+			<span>🥀 {$t('reviewPanel.stale') || 'Stale'}</span>
+			<span class="rp-count">{stale.length}</span>
+		</button>
+		{#if showStale}{@render section(stale, 'stale', true)}{/if}
+	</div>
+	{/if}
 	{#if resurfacing.length > 0}
 	<div class="rp-section">
 		<button class="rp-header" onclick={() => showResurfacing = !showResurfacing}>

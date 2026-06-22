@@ -1,0 +1,134 @@
+<script lang="ts">
+	// MIG-080 §F — the note-context Review tab. Answers "is THIS open note due or
+	// stale?" via get_note_review_status (O(1) row lookup + the per-note Mode-2 probe).
+	// Note-scoped: re-loads when the open note changes. The universe-wide queue lives
+	// in the left-dock ReviewerView, not here.
+	import { t } from '$lib/i18n';
+	import { invoke } from '@tauri-apps/api/core';
+
+	interface NoteReviewStatus {
+		reason: string | null;          // never_reviewed | interval_due | checkpoint | dismissed | null
+		due_days: number | null;        // days-since-2020
+		last_reviewed: string | null;
+		never_reviewed: boolean;
+		is_checkpoint: boolean;
+		is_stale: boolean;
+		stale_trigger_name: string | null;
+		stale_trigger_type: string | null;
+		stale_changed_on: string | null;
+	}
+
+	let {
+		notePath = null,
+		staleGraceDays = 1,
+		onRefresh,
+	}: {
+		notePath?: string | null;
+		staleGraceDays?: number;
+		onRefresh?: () => void;
+	} = $props();
+
+	let status = $state<NoteReviewStatus | null>(null);
+	let loading = $state(false);
+
+	// Day-number (days since 2020-01-01) for "due in N days" math. 18262 = days from
+	// the 1970 epoch to 2020-01-01 (1577836800 / 86400).
+	const todayDay = $derived(Math.floor(Date.now() / 86_400_000) - 18262);
+
+	async function load() {
+		if (!notePath) { status = null; return; }
+		loading = true;
+		try {
+			status = await invoke<NoteReviewStatus>('get_note_review_status', { notePath, staleGraceDays });
+		} catch { status = null; }
+		loading = false;
+	}
+
+	// Re-load when the open note (or the grace setting) changes. Reads props, writes
+	// `status` only — no echo loop.
+	$effect(() => { notePath; staleGraceDays; load(); });
+
+	async function act(cmd: 'mark_reviewed' | 'snooze_note' | 'dismiss_note') {
+		if (!notePath) return;
+		try {
+			if (cmd === 'snooze_note') await invoke(cmd, { notePath, days: 7 });
+			else await invoke(cmd, { notePath });
+			await load();
+			onRefresh?.();
+		} catch {}
+	}
+
+	// The primary Mode-1/3 status line (separate from the stale lens below).
+	const dueLine = $derived.by(() => {
+		if (!status || status.reason === null) return { icon: '🆕', text: $t('reviewStatus.notScheduled') || 'Not yet in the review schedule' };
+		if (status.reason === 'dismissed') return { icon: '🗄️', text: $t('reviewStatus.dismissed') || 'Dismissed from review' };
+		if (status.never_reviewed) return { icon: '📝', text: $t('reviewStatus.neverReviewed') || 'Never reviewed' };
+		const dd = status.due_days ?? todayDay;
+		const delta = dd - todayDay; // >0 future, 0 today, <0 overdue
+		const icon = status.reason === 'checkpoint' ? '🧠' : '🔄';
+		let text: string;
+		if (delta > 0) text = (status.reason === 'checkpoint' ? ($t('reviewStatus.checkpointIn') || 'Checkpoint in {n}d') : ($t('reviewStatus.dueIn') || 'Due in {n}d')).replace('{n}', String(delta));
+		else if (delta === 0) text = $t('reviewStatus.dueToday') || 'Due today';
+		else text = ($t('reviewStatus.overdue') || 'Overdue by {n}d').replace('{n}', String(-delta));
+		return { icon, text };
+	});
+</script>
+
+<div class="rsp" dir="auto">
+	{#if !notePath}
+		<div class="rsp-empty">{$t('panels.noNoteSelected') || 'No note selected'}</div>
+	{:else}
+		<!-- Mode 1/3: time-based review status -->
+		<div class="rsp-row rsp-primary">
+			<span class="rsp-icon">{dueLine.icon}</span>
+			<span class="rsp-text">{dueLine.text}</span>
+			{#if status?.is_checkpoint}<span class="rsp-badge" title={$t('reviewPanel.checkpoints') || 'Mental Model Checkpoint'}>🧠</span>{/if}
+		</div>
+		{#if status?.last_reviewed}
+			<div class="rsp-sub">{($t('reviewStatus.lastReviewed') || 'Last reviewed {date}').replace('{date}', status.last_reviewed)}</div>
+		{/if}
+
+		<!-- Mode 2: staleness (a separate lens; shown only when this note is stale) -->
+		{#if status?.is_stale}
+			<div class="rsp-stale">
+				<span class="rsp-icon">🥀</span>
+				<span class="rsp-text">{
+					($t('reviewStatus.staleBecause') || 'Stale — {name} ({type}) changed on {date}')
+						.replace('{name}', status.stale_trigger_name ?? '?')
+						.replace('{type}', status.stale_trigger_type ?? '')
+						.replace('{date}', status.stale_changed_on ?? '')
+				}</span>
+			</div>
+		{/if}
+
+		<!-- Actions (the only thing that advances last_reviewed is the explicit ✓). -->
+		<div class="rsp-actions">
+			<button class="rsp-btn" onclick={() => act('mark_reviewed')} title={$t('reviewPanel.reviewed') || 'Reviewed'}>✓ {$t('reviewPanel.reviewed') || 'Reviewed'}</button>
+			<button class="rsp-btn" onclick={() => act('snooze_note')} title={$t('reviewPanel.snooze') || 'Snooze 7d'}>👁</button>
+			<button class="rsp-btn" onclick={() => act('dismiss_note')} title={$t('reviewPanel.dismiss') || 'Dismiss'}>🗄️</button>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.rsp { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+	.rsp-empty { text-align: center; color: var(--text-muted); padding: 24px 12px; font-size: calc(0.82rem * var(--rs-scale, 1)); }
+	.rsp-row { display: flex; align-items: center; gap: 8px; }
+	.rsp-primary { font-size: calc(0.9rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-normal); }
+	.rsp-icon { flex-shrink: 0; }
+	.rsp-text { min-width: 0; }
+	.rsp-badge { margin-inline-start: auto; font-size: calc(0.8rem * var(--rs-scale, 1)); }
+	.rsp-sub { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-faint); }
+	.rsp-stale {
+		display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 6px;
+		background: var(--background-modifier-error-hover, rgba(220,80,80,0.12));
+		font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-normal); line-height: 1.35;
+	}
+	.rsp-actions { display: flex; gap: 6px; margin-top: 4px; }
+	.rsp-btn {
+		border: 1px solid var(--background-modifier-border); background: var(--background-primary);
+		color: var(--text-normal); border-radius: 6px; padding: 5px 10px; cursor: pointer;
+		font-family: inherit; font-size: calc(0.78rem * var(--rs-scale, 1));
+	}
+	.rsp-btn:hover { background: var(--background-modifier-hover); }
+</style>
