@@ -594,6 +594,41 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
 /// forces a re-run on the next boot.
 pub(crate) const LINKS_OUTGOING_SCHEMA_VERSION: i64 = 1;
 
+/// MIG-083 §D — ensure `note_meta` carries the Mode-2 staleness content-change
+/// signal. Idempotent (probes `PRAGMA table_info`, ALTERs only when missing):
+///   - `content_hash`       — FNV-1a of the body. Present in the base CREATE TABLE,
+///                            but absent on very old DBs created before it was added,
+///                            and never previously WRITTEN (it was a dead column) —
+///                            so we ensure it exists here and `index_note` now
+///                            populates it (gated on `schema_versions.review`).
+///   - `content_changed_at` — Unix seconds of the last REAL body change (bumped only
+///                            when `content_hash` differs). NULL until the note's first
+///                            post-stamp content edit; the Mode-2 JOIN uses
+///                            `COALESCE(content_changed_at, modified)` so an
+///                            un-initialized note falls back to its file mtime.
+fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_content_hash = false;
+    let mut have_content_changed_at = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            match col?.as_str() {
+                "content_hash" => have_content_hash = true,
+                "content_changed_at" => have_content_changed_at = true,
+                _ => {}
+            }
+        }
+    }
+    if !have_content_hash {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN content_hash TEXT;")?;
+    }
+    if !have_content_changed_at {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN content_changed_at INTEGER;")?;
+    }
+    Ok(())
+}
+
 /// MIG-066 §A — ensure `note_meta` has the outgoing-link aggregate columns.
 /// Idempotent (probes `PRAGMA table_info`, ALTERs only if missing). These are
 /// maintained write-time by the `note_links_outgoing_*` triggers and a one-shot
@@ -2399,6 +2434,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // the §C.2a triggers + backfill populate them (gated schema_versions.incoming_links).
     ensure_note_meta_mig079_incoming_columns(&conn)
         .map_err(|e| format!("Failed to ensure note_meta MIG-079 incoming columns: {}", e))?;
+    // MIG-083 §D — the Mode-2 staleness content-change signal (content_hash +
+    // content_changed_at). Idempotent; inert until index_note's review-gated hook
+    // populates them. The column add itself changes no behavior.
+    ensure_note_meta_review_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta MIG-083 review columns: {}", e))?;
     let stored_note_meta_version: i64 = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'note_meta'",
@@ -4621,6 +4661,24 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
             None
         };
 
+        // MIG-083 §D — capture the PRIOR content_hash (before the UPSERT overwrites
+        // the row) so the Mode-2 content-change signal can tell a REAL body edit from
+        // a touch. Same gate as the review_schedule maintenance below; None until §C
+        // stamps `review`. `content_hash` is nullable → query_row yields Option<String>,
+        // and a first-time INSERT (no prior row) errs → None (treated as "changed").
+        let review_on = crate::review::is_stamped(conn);
+        let old_content_hash: Option<String> = if review_on {
+            conn.query_row(
+                "SELECT content_hash FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok()
+            .flatten()
+        } else {
+            None
+        };
+
         // MIG-078 §BL.1 — dual-write the body into note_body FIRST (before the
         // note_meta UPSERT). Ordering matters for §BL.2: once the FTS-sync
         // triggers source body from note_body, the AFTER-INSERT trigger's
@@ -4672,8 +4730,8 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
         // extra .md read); real stratum from sky_nodes (CAST TEXT→INT, 0 if unpopulated).
         // upsert_schedule_row PRESERVES the action-owned last_reviewed/interval + a
         // dismissed state. A body-only save that changes neither tags nor stratum is a
-        // cheap no-op re-write. (Mode-2 staleness + content_changed_at land in §D.)
-        if crate::review::is_stamped(conn) {
+        // cheap no-op re-write.
+        if review_on {
             let stratum: i64 = conn
                 .query_row(
                     "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
@@ -4683,6 +4741,22 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
                 .unwrap_or(0);
             crate::review::upsert_schedule_row(conn, note_path, &tags_json, modified as i64, stratum)
                 .map_err(|e| format!("review_schedule for {}: {}", note_path, e))?;
+
+            // MIG-083 §D — the Mode-2 staleness content-change signal. Bump
+            // content_changed_at ONLY when the body hash actually differs from the
+            // stored one, so a touch / sync / cid_cn / frontmatter-only save does NOT
+            // false-fire staleness for this note's dependents. When unchanged this is a
+            // pure read + comparison — zero writes (keeps the no-link, body-identical
+            // re-save path free). The main note_meta UPSERT above does not touch
+            // content_hash, so this is the sole writer of both columns.
+            let new_hash = crate::review::content_hash(&plain_body);
+            if old_content_hash.as_deref() != Some(new_hash.as_str()) {
+                conn.execute(
+                    "UPDATE note_meta SET content_hash = ?2, content_changed_at = ?3 WHERE path = ?1",
+                    params![note_path, new_hash, modified as i64],
+                )
+                .map_err(|e| format!("content_changed_at for {}: {}", note_path, e))?;
+            }
         }
 
         // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for

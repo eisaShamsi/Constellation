@@ -391,6 +391,29 @@ pub fn secs_to_days(secs: i64) -> i64 {
     (secs - UNIX_2020_01_01).div_euclid(86_400)
 }
 
+/// MIG-083 §D — the Mode-2 content-change signal. A stable FNV-1a 64-bit hash of
+/// a note's body, hex-encoded. `index_note` stores this in `note_meta.content_hash`
+/// and bumps `content_changed_at` ONLY when the hash differs from the stored one —
+/// so a real body edit fires staleness for dependents, but a touch / sync / cid_cn /
+/// frontmatter-only save (body unchanged) does NOT.
+///
+/// FNV-1a is chosen deliberately over `std`'s `DefaultHasher`: the hash is PERSISTED
+/// to disk and compared across app restarts and Rust toolchain upgrades. The std
+/// hasher's algorithm is explicitly "not specified … should not be relied upon over
+/// releases", which would silently false-fire every dependent on the first save after
+/// a toolchain bump. FNV-1a is a fixed, specified algorithm — same bytes, same hash,
+/// forever.
+pub fn content_hash(body: &str) -> String {
+    const OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+    let mut h = OFFSET_BASIS;
+    for &b in body.as_bytes() {
+        h ^= b as u64;
+        h = h.wrapping_mul(PRIME);
+    }
+    format!("{:016x}", h)
+}
+
 /// Write-time maintenance of ONE note's Mode-1/3 schedule row, from data already
 /// in hand at `index_note` (zero extra `.md` reads). Preserves the action-owned
 /// fields (`last_reviewed`, `interval`) and a `dismissed` state across re-index;
@@ -722,5 +745,20 @@ mod tests {
         assert_eq!(compute_schedule_row(None, 0, false, 200), ("never_reviewed".into(), 201));
         // never-reviewed checkpoint surfaces as never_reviewed first (checkpoint cadence starts post-review)
         assert_eq!(compute_schedule_row(None, 0, true, 200), ("never_reviewed".into(), 201));
+    }
+
+    #[test]
+    fn content_hash_is_stable_and_distinguishes_real_changes() {
+        // Empty body → the FNV-1a offset basis (the one vector we can assert by
+        // construction; guards against an accidental algorithm change).
+        assert_eq!(content_hash(""), "cbf29ce484222325");
+        // Deterministic: same bytes, same hash (across calls → across restarts).
+        assert_eq!(content_hash("The horse pulls the carriage."), content_hash("The horse pulls the carriage."));
+        // A one-character body edit flips the hash → content_changed_at WILL bump.
+        assert_ne!(content_hash("conviction"), content_hash("convictions"));
+        // Whitespace IS content (a real edit) — but an identical re-save is a no-op.
+        assert_ne!(content_hash("a b"), content_hash("a  b"));
+        // 16 hex chars always (fixed-width, so a TEXT-column compare is exact).
+        assert_eq!(content_hash("anything at all").len(), 16);
     }
 }
