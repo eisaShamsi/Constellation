@@ -125,13 +125,13 @@ fn stale_probe_sql() -> String {
     )
 }
 
-/// Is `source_path` stale? Returns its MOST consequential changed load-bearing
-/// dependency `(link_type, dep_name, dep_changed_local_day)` — a dependency whose
-/// content changed at least `grace` (min 1) days, in LOCAL calendar terms, AFTER
-/// `last_reviewed` — or `None`. A malformed `last_reviewed` → `None` (never bucketed
-/// to day 0). Shared per-note step of the Lens-2 read + the §F note-status tab.
-pub(crate) fn note_stale_status(
-    conn: &rusqlite::Connection,
+/// Core of the staleness probe, against a CALLER-PREPARED statement (so the Lens-2
+/// bulk read prepares [`stale_probe_sql`] ONCE and reuses it across the reviewed set).
+/// Returns the MOST consequential changed load-bearing dependency `(link_type,
+/// dep_name, dep_changed_local_day)` — content changed ≥ `grace` (min 1) LOCAL days
+/// AFTER `last_reviewed` — or `None` (incl. a malformed `last_reviewed`, never day 0).
+pub(crate) fn note_stale_status_with_stmt(
+    probe: &mut rusqlite::Statement,
     source_path: &str,
     last_reviewed: &str,
     grace: i64,
@@ -141,7 +141,6 @@ pub(crate) fn note_stale_status(
         None => return Ok(None),
     };
     let grace = grace.max(1);
-    let mut probe = conn.prepare(&stale_probe_sql()).map_err(|e| format!("stale probe prepare: {}", e))?;
     let mut rows = probe
         .query_map(rusqlite::params![source_path], |r| {
             Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?))
@@ -156,6 +155,18 @@ pub(crate) fn note_stale_status(
         }
     }
     Ok(None)
+}
+
+/// Single-note convenience wrapper: prepares the probe + delegates. Used by the §F
+/// note-status tab (`get_note_review_status`) where there's exactly one note.
+pub(crate) fn note_stale_status(
+    conn: &rusqlite::Connection,
+    source_path: &str,
+    last_reviewed: &str,
+    grace: i64,
+) -> Result<Option<(String, String, i64)>, String> {
+    let mut probe = conn.prepare(&stale_probe_sql()).map_err(|e| format!("stale probe prepare: {}", e))?;
+    note_stale_status_with_stmt(&mut probe, source_path, last_reviewed, grace)
 }
 
 pub(crate) fn query_due_notes_indexed(
@@ -268,11 +279,12 @@ pub(crate) fn query_due_notes_indexed(
             rows.flatten().collect()
         };
 
-        // The reviewed set is small (only notes explicitly ✓-reviewed), so a per-note
-        // probe via the shared `note_stale_status` is fine — and single-sources the
-        // staleness logic with `get_note_review_status` (§F).
+        // Prepare the staleness probe ONCE and reuse it across the reviewed set
+        // (`note_stale_status_with_stmt`) — single-sources the SQL + day-comparison
+        // with `get_note_review_status` (§F) without re-preparing per note.
+        let mut probe = conn.prepare(&stale_probe_sql()).map_err(|e| format!("lens-2 stale probe prepare: {}", e))?;
         for (path, name, stratum, last_reviewed) in reviewed {
-            if let Some((link_type, dep_name, dep_day)) = note_stale_status(conn, &path, &last_reviewed, grace)? {
+            if let Some((link_type, dep_name, dep_day)) = note_stale_status_with_stmt(&mut probe, &path, &last_reviewed, grace)? {
                 due.push(DueNote {
                     note_path: path,
                     note_name: name,

@@ -37,7 +37,7 @@
 	<div class="reviewer-header">
 		<h1>🕐 {$t('panels.review') || 'Review Pulse'}</h1>
 		<span class="reviewer-count">{dueNotes.length}</span>
-		<button class="reviewer-close" onclick={() => onClose?.()} aria-label="Close" title={$t('common.close') || 'Close'}>✕</button>
+		<button class="reviewer-close" onclick={() => onClose?.()} aria-label={$t('common.close') || 'Close'} title={$t('common.close') || 'Close'}>✕</button>
 	</div>
 	<div class="reviewer-body">
 		{#if loading}

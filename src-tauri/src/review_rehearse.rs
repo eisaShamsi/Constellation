@@ -101,7 +101,7 @@ fn backfill(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &s
 /// INDEPENDENTLY of `schedule_for`/`compute_schedule_row` (review finding L) so a bug
 /// in the production scheduling logic makes parity FAIL rather than passing on both
 /// sides. `today_days` must be the LOCAL today (matches `local_day`).
-fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &str, today_days: i64) -> Result<HashSet<(String, String)>, String> {
+fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &str, today_days: i64, grace: i64) -> Result<HashSet<(String, String)>, String> {
     let mut set: HashSet<(String, String)> = HashSet::new();
     let today_day = crate::review::parse_day(today).unwrap_or(today_days);
 
@@ -182,7 +182,9 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
                 if dep_path == src {
                     continue; // self-link
                 }
-                if crate::review::local_day(cca) > lr_day {
+                // Grace-aware so the oracle stays a true parity reference for any
+                // configurable grace (≥1). At grace=1 this is identical to `> lr_day`.
+                if crate::review::local_day(cca) - lr_day >= grace.max(1) {
                     set.insert((src, "stale".to_string()));
                 }
             }
@@ -270,7 +272,7 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
 
     // ── Parity: indexed set vs the independent reference. ──
     let indexed_set: HashSet<(String, String)> = last.iter().map(|d| (d.note_path.clone(), d.reason.clone())).collect();
-    let reference_set = reference_due_set(&conn, &pulse, &today, today_days)?;
+    let reference_set = reference_due_set(&conn, &pulse, &today, today_days, 1)?;
     let only_indexed: Vec<(String, String)> = indexed_set.difference(&reference_set).cloned().take(20).collect();
     let only_reference: Vec<(String, String)> = reference_set.difference(&indexed_set).cloned().take(20).collect();
     let parity_ok = only_indexed.is_empty() && only_reference.is_empty();

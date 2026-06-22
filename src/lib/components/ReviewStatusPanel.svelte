@@ -31,17 +31,27 @@
 	let status = $state<NoteReviewStatus | null>(null);
 	let loading = $state(false);
 
-	// Day-number (days since 2020-01-01) for "due in N days" math. 18262 = days from
-	// the 1970 epoch to 2020-01-01 (1577836800 / 86400).
-	const todayDay = $derived(Math.floor(Date.now() / 86_400_000) - 18262);
+	// Day-number (days since 2020-01-01) for "due in N days" math. Anchored to the
+	// LOCAL calendar date (Date.UTC of the local Y/M/D = the local midnight as UTC-ms)
+	// so it shares the Rust LOCAL frame — review.rs writes due_days via date_to_days of
+	// today_str() (chrono::Local). 18262 = days from the 1970 epoch to 2020-01-01.
+	const todayDay = $derived.by(() => {
+		const n = new Date();
+		return Math.floor(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / 86_400_000) - 18262;
+	});
 
+	// Monotonic request token: fast note-switching can resolve an earlier load() after
+	// a later one — only the latest request may write `status`.
+	let gen = 0;
 	async function load() {
 		if (!notePath) { status = null; return; }
+		const my = ++gen;
 		loading = true;
 		try {
-			status = await invoke<NoteReviewStatus>('get_note_review_status', { notePath, staleGraceDays });
-		} catch { status = null; }
-		loading = false;
+			const r = await invoke<NoteReviewStatus>('get_note_review_status', { notePath, staleGraceDays });
+			if (my === gen) status = r;
+		} catch { if (my === gen) status = null; }
+		if (my === gen) loading = false;
 	}
 
 	// Re-load when the open note (or the grace setting) changes. Reads props, writes

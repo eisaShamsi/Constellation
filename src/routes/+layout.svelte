@@ -2147,7 +2147,7 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -5707,7 +5707,7 @@
 			{/if}
 			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
 			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
-			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; indexReturnPending = false; }} title={$t('panels.review') || 'Review Pulse'}>
+			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('panels.review') || 'Review Pulse'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
 			{#if $appSettings.enabledFeatures?.cece !== false}
@@ -6696,7 +6696,7 @@
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360 || showCalendarPage} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showReviewer || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360 || showCalendarPage} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
