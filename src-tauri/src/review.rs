@@ -95,6 +95,16 @@ pub fn get_due_notes(
 /// filter. `substr` is char-indexed in SQLite (correct for the multibyte Arabic root).
 /// The two lenses are kept distinct (Boss: "two separate lenses, never merged into
 /// one score") — a note can appear once per lens, each carrying its own `reason`.
+/// The library-scope WHERE fragment for bind placeholder `p` (e.g. "?2"). A note is
+/// in scope iff its path begins with the (separator-trimmed) library prefix AND the
+/// next char is a separator — so "/U/Lib" matches "/U/Lib/x.md" but NOT the sibling
+/// "/U/Lib2/y.md" (review finding D). Matches either '/' or '\' (=char(92)) so it's
+/// correct for POSIX and Windows path forms alike. An empty prefix ⇒ whole universe.
+/// Single-sourced across both lenses so finding D's guard can't drift between them.
+fn scope_clause(p: &str) -> String {
+    format!("({p} = '' OR (substr(rs.path, 1, length({p})) = {p} AND substr(rs.path, length({p}) + 1, 1) IN ('/', char(92))))")
+}
+
 pub(crate) fn query_due_notes_indexed(
     conn: &rusqlite::Connection,
     library_path: &str,
@@ -118,21 +128,20 @@ pub(crate) fn query_due_notes_indexed(
 
     // ── Lens 1: Mode 1/3 — time-based resurfacing + checkpoints (indexed on due_days). ──
     {
-        let mut stmt = conn
-            .prepare(
-                // INNER JOIN: a row with no backing note_meta (an orphan — e.g. left by
-                // some non-delete path) must NEVER surface as a phantom queue entry
-                // pointing at a dead path (re-verify finding). No note_meta → not a note.
-                "SELECT rs.path, nm.name, rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
-                 FROM review_schedule rs
-                 JOIN note_meta nm ON nm.path = rs.path
-                 WHERE rs.due_days <= ?1
-                   AND rs.reason != 'dismissed'
-                   AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
-                   AND (?2 = '' OR (substr(rs.path, 1, length(?2)) = ?2
-                        AND substr(rs.path, length(?2) + 1, 1) IN ('/', char(92))))",
-            )
-            .map_err(|e| format!("due lens-1 prepare: {}", e))?;
+        // INNER JOIN: a row with no backing note_meta (an orphan — e.g. left by some
+        // non-delete path) must NEVER surface as a phantom queue entry pointing at a
+        // dead path (re-verify finding). No note_meta → not a note.
+        let sql = format!(
+            "SELECT rs.path, nm.name, rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
+             FROM review_schedule rs
+             JOIN note_meta nm ON nm.path = rs.path
+             WHERE rs.due_days <= ?1
+               AND rs.reason != 'dismissed'
+               AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
+               AND {scope}",
+            scope = scope_clause("?2"),
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-1 prepare: {}", e))?;
         let rows = stmt
             .query_map(rusqlite::params![today_days, library_path, today], |r| {
                 Ok((
@@ -184,21 +193,20 @@ pub(crate) fn query_due_notes_indexed(
     // arithmetic (no SQLite-`/` vs `div_euclid` divergence — finding H).
     {
         let reviewed: Vec<(String, String, i64, String)> = {
-            let mut stmt = conn
-                .prepare(
-                    // NOTE (Boss 2026-06-22): snooze does NOT suppress the Stale lens —
-                    // the two lenses stay fully separate. Snooze hides a note from
-                    // time-based "Due for Review" (Lens-1) only; staleness is a distinct
-                    // signal (a dependency changed) and still surfaces while snoozed.
-                    "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed
-                     FROM review_schedule rs
-                     JOIN note_meta nm ON nm.path = rs.path
-                     WHERE rs.last_reviewed IS NOT NULL
-                       AND rs.reason != 'dismissed'
-                       AND (?1 = '' OR (substr(rs.path, 1, length(?1)) = ?1
-                            AND substr(rs.path, length(?1) + 1, 1) IN ('/', char(92))))",
-                )
-                .map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
+            // NOTE (Boss 2026-06-22): snooze does NOT suppress the Stale lens — the two
+            // lenses stay fully separate. Snooze hides a note from time-based "Due for
+            // Review" (Lens-1) only; staleness is a distinct signal (a dependency
+            // changed) and still surfaces while snoozed.
+            let sql = format!(
+                "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed
+                 FROM review_schedule rs
+                 JOIN note_meta nm ON nm.path = rs.path
+                 WHERE rs.last_reviewed IS NOT NULL
+                   AND rs.reason != 'dismissed'
+                   AND {scope}",
+                scope = scope_clause("?1"),
+            );
+            let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
                 .query_map(rusqlite::params![library_path], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
@@ -207,11 +215,7 @@ pub(crate) fn query_due_notes_indexed(
             rows.flatten().collect()
         };
 
-        let types_in = STALENESS_TRIGGER_TYPES
-            .iter()
-            .map(|t| format!("'{}'", t))
-            .collect::<Vec<_>>()
-            .join(",");
+        let types_in = staleness_types_sql();
         // Per reviewed note: its load-bearing out-links whose dependency has a
         // hash-confirmed content change, most-consequential first. The day filter +
         // "first that beats last_reviewed" pick happen in Rust (local_day).
@@ -409,16 +413,19 @@ fn save_pulse_data(cdir: &Path, pulse: &ReviewPulseData) -> Result<(), String> {
     fs::write(&path, json).map_err(|e| format!("Failed to write review-pulse.json: {}", e))
 }
 
-fn today_str() -> String {
+pub(crate) fn today_str() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 
+/// The day-number epoch — all `*_days` values are counted from here.
+fn epoch_2020() -> chrono::NaiveDate {
+    chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()
+}
+
 pub(crate) fn date_to_days(date_str: &str) -> i64 {
-    if let Ok(d) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
-        d.signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()).num_days()
-    } else {
-        0
-    }
+    // Lenient variant: an unparseable date buckets to day 0 (preserves the legacy
+    // Mode-1 contract). Mode-2 uses the strict [`parse_day`] instead (finding E).
+    parse_day(date_str).unwrap_or(0)
 }
 
 /// Strict variant of [`date_to_days`]: `None` when the string isn't a valid
@@ -428,7 +435,7 @@ pub(crate) fn date_to_days(date_str: &str) -> i64 {
 pub(crate) fn parse_day(date_str: &str) -> Option<i64> {
     chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
         .ok()
-        .map(|d| d.signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()).num_days())
+        .map(|d| d.signed_duration_since(epoch_2020()).num_days())
 }
 
 /// Unix seconds → the **local** calendar day (days-since-2020), via the OS timezone.
@@ -441,10 +448,7 @@ pub(crate) fn parse_day(date_str: &str) -> Option<i64> {
 pub(crate) fn local_day(secs: i64) -> i64 {
     use chrono::TimeZone;
     match chrono::Local.timestamp_opt(secs, 0).single() {
-        Some(dt) => dt
-            .date_naive()
-            .signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap())
-            .num_days(),
+        Some(dt) => dt.date_naive().signed_duration_since(epoch_2020()).num_days(),
         None => secs_to_days(secs),
     }
 }
@@ -452,8 +456,7 @@ pub(crate) fn local_day(secs: i64) -> i64 {
 /// Days-since-2020-01-01 → `YYYY-MM-DD` (the inverse of `date_to_days`). Used to
 /// render `stale_changed_on` for the Mode-2 lens.
 fn day_to_date(days: i64) -> String {
-    let base = chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-    (base + chrono::Duration::days(days)).format("%Y-%m-%d").to_string()
+    (epoch_2020() + chrono::Duration::days(days)).format("%Y-%m-%d").to_string()
 }
 
 fn add_days(date_str: &str, days: i64) -> String {
@@ -492,6 +495,17 @@ pub const STALENESS_TRIGGER_TYPES: [&str; 5] =
 /// Does a link type trigger Mode-2 staleness for its SOURCE note?
 pub fn is_staleness_trigger_type(link_type: &str) -> bool {
     STALENESS_TRIGGER_TYPES.contains(&link_type)
+}
+
+/// The staleness trigger types as a SQL `IN (…)` list — `'supports','contradicts',…`.
+/// Single-sourced for the Mode-2 probe + the rehearsal reference (the values are
+/// fixed code constants, so the interpolation is injection-safe).
+pub(crate) fn staleness_types_sql() -> String {
+    STALENESS_TRIGGER_TYPES
+        .iter()
+        .map(|t| format!("'{}'", t))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// The corrected interval ladder: 1 → 3 → 7 → 14 → 30 (cap 30). Returns the

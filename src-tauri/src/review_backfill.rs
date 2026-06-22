@@ -55,7 +55,7 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // Load the per-universe action state ONCE (small JSON; the source of truth).
     let cdir = crate::universe::active_constellation_dir(app)?;
     let pulse = crate::review::load_pulse_data(&cdir);
-    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let today = crate::review::today_str();
 
     let mut last_path = read_cursor(&state.db)?;
     let mut total: u64 = 0;
@@ -109,28 +109,43 @@ fn process_batch(
     }
     let new_last = rows.last().unwrap().0.clone();
 
-    for (path, tags_json, modified, body_text) in &rows {
-        let stratum: i64 = conn
-            .query_row(
-                "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
-                params![path],
-                |r| r.get(0),
+    // One transaction per batch: each row writes twice (the review_schedule
+    // INSERT OR REPLACE + the content_hash baseline UPDATE); without this every
+    // write auto-commits, so a 1000-row batch fsyncs ~2000 times. BEGIN IMMEDIATE
+    // collapses that to one commit.
+    conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
+    let result = (|| -> Result<(), String> {
+        for (path, tags_json, modified, body_text) in &rows {
+            let stratum: i64 = conn
+                .query_row(
+                    "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
+                    params![path],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            let last_reviewed = pulse.last_reviewed.get(path).map(|s| s.as_str());
+            let interval = pulse.intervals.get(path).copied().unwrap_or(0);
+            let snoozed = pulse.snoozed.get(path).map(|s| s.as_str());
+            let dismissed = pulse.dismissed.contains(path);
+            crate::review::backfill_schedule_row(
+                conn, path, tags_json, *modified, stratum, last_reviewed, interval, snoozed, dismissed, today,
+            )?;
+            // Baseline the content hash (only if not already set — resume-safe; content_changed_at
+            // stays NULL so nothing is "stale" until a real post-stamp body change bumps it).
+            conn.execute(
+                "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
+                params![path, crate::review::content_hash(body_text)],
             )
-            .unwrap_or(0);
-        let last_reviewed = pulse.last_reviewed.get(path).map(|s| s.as_str());
-        let interval = pulse.intervals.get(path).copied().unwrap_or(0);
-        let snoozed = pulse.snoozed.get(path).map(|s| s.as_str());
-        let dismissed = pulse.dismissed.contains(path);
-        crate::review::backfill_schedule_row(
-            conn, path, tags_json, *modified, stratum, last_reviewed, interval, snoozed, dismissed, today,
-        )?;
-        // Baseline the content hash (only if not already set — resume-safe; content_changed_at
-        // stays NULL so nothing is "stale" until a real post-stamp body change bumps it).
-        conn.execute(
-            "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
-            params![path, crate::review::content_hash(body_text)],
-        )
-        .map_err(|e| format!("baseline content_hash {}: {}", path, e))?;
+            .map_err(|e| format!("baseline content_hash {}: {}", path, e))?;
+        }
+        Ok(())
+    })();
+    match result {
+        Ok(()) => conn.execute_batch("COMMIT").map_err(|e| e.to_string())?,
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(e);
+        }
     }
     Ok((rows.len(), new_last))
 }

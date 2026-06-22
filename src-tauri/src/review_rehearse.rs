@@ -27,7 +27,6 @@
 
 #![cfg(test)]
 
-use crate::review::STALENESS_TRIGGER_TYPES;
 use rusqlite::{params, Connection};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -157,7 +156,7 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
     // comparison, self-link excluded, malformed last_reviewed skipped. Snooze does NOT
     // suppress the Stale lens (Boss 2026-06-22) — the lenses are fully separate.
     {
-        let types_in = STALENESS_TRIGGER_TYPES.iter().map(|t| format!("'{}'", t)).collect::<Vec<_>>().join(",");
+        let types_in = crate::review::staleness_types_sql();
         let sql = format!(
             "SELECT jl.source_path, jl.target_cid_cn FROM note_links jl
              WHERE jl.status='active' AND jl.link_type IN ({types})
@@ -209,7 +208,7 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
 /// pulse (reflected into review_schedule by the subsequent back-fill) + note_meta.
 /// Returns the source path it seeded, or None if the graph has no such link.
 fn seed_mode2_fixture(conn: &Connection, pulse: &mut crate::review::ReviewPulseData, today_days: i64) -> Result<Option<String>, String> {
-    let types_in = STALENESS_TRIGGER_TYPES.iter().map(|t| format!("'{}'", t)).collect::<Vec<_>>().join(",");
+    let types_in = crate::review::staleness_types_sql();
     let sql = format!(
         "SELECT jl.source_path, dep.path FROM note_links jl
          JOIN note_meta dep ON dep.cid_cn = jl.target_cid_cn
