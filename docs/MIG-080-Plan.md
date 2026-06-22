@@ -44,14 +44,18 @@
 - Universe Health → **reuse `KnowledgeHealthDashboard`**; add a summary card on the Dashboard.
 **Verify:** svelte-check 0; cargo test; build; **Boss-test** — right-rail Health = this note's tensions only; the Dashboard/KH-Dashboard shows the universe health; distinct from 360.3D. (Read-only.)
 
-## §F — Review Pulse split (note IPC + ReviewStatusPanel + NEW full-page reviewer + `record_note_visit` fix)
-**The heaviest phase.**
+## §F — Review Pulse split (note status tab + NEW full-page two-lens reviewer)
+**The heaviest phase.** **UPDATED 2026-06-22 to reflect MIG-083 (shipped) + the Boss placement ruling.** MIG-083 changed the foundations this phase builds on:
+- `get_note_review_status(notePath)` is **already built** (MIG-083 §D-3) — an O(1) PK lookup on the `review_schedule` **table** (NOT `review-pulse.json`). Returns `{ reason, due_days, last_reviewed, never_reviewed, is_checkpoint }`. §F just consumes it.
+- **`record_note_visit` is DROPPED — locked decision (opening ≠ review).** The ONLY thing that advances `last_reviewed` is the explicit **✓ Reviewed** action. So the old §7.E.4 "call `record_note_visit` from `openNoteTab`" and "dispatch `record_note_visit` on advance" are **obsolete — do NOT build them.**
+- `get_due_notes` now returns **TWO lenses** (Due-for-Review + Stale); stale `DueNote`s carry `stale_trigger_name`/`stale_trigger_type`/`stale_changed_on` for the per-row "why."
+
 **Changes:**
-- **New IPC** `get_note_review_status(notePath)` — O(1) lookups in `review-pulse.json` (last reviewed / next due / interval).
-- **New `ReviewStatusPanel`** (compact: the 4 fields + mark/snooze/dismiss, reusing `ReviewPulsePanel`'s actions) for the right-rail Review tab; add `'review'` to `NOTE_SCOPED_TABS`.
-- **New full-page reviewer** (`ReviewerView` — the decision's "1 new overlay"): stepped cards over `get_due_notes`, dispatching `record_note_visit` on advance. + a "N due" Dashboard card.
-- **Defect §7.E.4 fix:** call `record_note_visit(notePath)` from `openNoteTab` (note opened = visited) so reviewed notes stop resurfacing.
-**Verify:** svelte-check 0; cargo test; build; **Boss-test** — right-rail Review = this note's status; the full-page reviewer steps through due notes; opening a note marks it visited (it leaves the due list); the Dashboard "N due" card is correct. (Review state only — not note content.)
+- **New `ReviewStatusPanel`** (compact: this note's status from `get_note_review_status` + ✓/Snooze/Dismiss, reusing `ReviewPulsePanel`'s actions) for the **right-rail Review tab**; add `'review'` to `NOTE_SCOPED_TABS`. This makes the right-sidebar Review tab genuinely **note-scoped** (resolves the "Review Pulse isn't note-related" mismatch).
+- **New full-page two-lens reviewer (`ReviewerView`)** over `get_due_notes`: **Due-for-Review** and **Stale** as two distinct sections, each row rendering its "why" (stale → "stale because {type} {name} changed on {date}"). **Placement — Boss ruling 2026-06-22: a LEFT-DOCK core surface** (a clock nav icon → the full-page reviewer), matching Sky View / Index / Map / Calendar. The universe-wide queue leaves the note-context right sidebar entirely; the left dock is where universe-wide full-page views live. Optionally + a "N due" Dashboard card.
+- **Retire the transitional right-sidebar universe `ReviewPulsePanel`** (its universe queue moves to the left-dock reviewer; its per-note slot becomes `ReviewStatusPanel`). Honor the Predecessor Lookup Rule for the `panelPlacements.review` wiring.
+- **Help / User Manual ×15 (the SO #2 item deferred from MIG-083):** write the Review-Pulse help topic + manual section here, documenting the FINAL surface — the note-status tab, the left-dock two-lens reviewer + per-row why, ✓/Snooze/Dismiss, and Settings → Review staleGraceDays.
+**Verify:** svelte-check 0; cargo test; build; **Boss-test** — the right-rail Review tab shows THIS note's status; the left-dock clock icon opens the full-page reviewer with Due-for-Review + Stale lenses (each row's why correct); ✓/Snooze/Dismiss persist + the row leaves; grace-period Setting observable. (Review state only — not note content.)
 
 ## §G — Final reconcile + Audit
 - Confirm the final `NOTE_SCOPED_TABS` = `{properties, backlinks, star, tags, provenance, inspector360, health, review, tasks, sourceReview}` (no `calendar`).
