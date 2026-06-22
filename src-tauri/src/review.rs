@@ -105,6 +105,59 @@ fn scope_clause(p: &str) -> String {
     format!("({p} = '' OR (substr(rs.path, 1, length({p})) = {p} AND substr(rs.path, length({p}) + 1, 1) IN ('/', char(92))))")
 }
 
+/// MIG-083 — the Mode-2 staleness probe for ONE note (`?1` = its path): its active
+/// load-bearing out-links whose dependency has a hash-confirmed content change,
+/// most-consequential first (weight, then most-recent change, then id). Self-links
+/// excluded. Single-sourced by both the Lens-2 read and `get_note_review_status` (§F).
+fn stale_probe_sql() -> String {
+    format!(
+        "SELECT jl.link_type, COALESCE(dep.name, jl.target_name), dep.content_changed_at
+         FROM note_links jl
+         JOIN note_meta dep ON dep.cid_cn = jl.target_cid_cn
+         WHERE jl.source_path = ?1
+           AND jl.status = 'active'
+           AND jl.link_type IN ({types})
+           AND jl.target_cid_cn IS NOT NULL AND jl.target_cid_cn != ''
+           AND dep.content_changed_at IS NOT NULL
+           AND dep.path != ?1
+         ORDER BY jl.weight DESC, dep.content_changed_at DESC, jl.id DESC",
+        types = staleness_types_sql(),
+    )
+}
+
+/// Is `source_path` stale? Returns its MOST consequential changed load-bearing
+/// dependency `(link_type, dep_name, dep_changed_local_day)` — a dependency whose
+/// content changed at least `grace` (min 1) days, in LOCAL calendar terms, AFTER
+/// `last_reviewed` — or `None`. A malformed `last_reviewed` → `None` (never bucketed
+/// to day 0). Shared per-note step of the Lens-2 read + the §F note-status tab.
+pub(crate) fn note_stale_status(
+    conn: &rusqlite::Connection,
+    source_path: &str,
+    last_reviewed: &str,
+    grace: i64,
+) -> Result<Option<(String, String, i64)>, String> {
+    let lr_day = match parse_day(last_reviewed) {
+        Some(d) => d,
+        None => return Ok(None),
+    };
+    let grace = grace.max(1);
+    let mut probe = conn.prepare(&stale_probe_sql()).map_err(|e| format!("stale probe prepare: {}", e))?;
+    let mut rows = probe
+        .query_map(rusqlite::params![source_path], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?))
+        })
+        .map_err(|e| format!("stale probe: {}", e))?;
+    // Rows arrive most-consequential first; the first whose dependency changed ≥ grace
+    // LOCAL days after the review is the answer.
+    while let Some(Ok((link_type, dep_name, cca))) = rows.next() {
+        let dep_day = local_day(cca);
+        if dep_day - lr_day >= grace {
+            return Ok(Some((link_type, dep_name, dep_day)));
+        }
+    }
+    Ok(None)
+}
+
 pub(crate) fn query_due_notes_indexed(
     conn: &rusqlite::Connection,
     library_path: &str,
@@ -215,53 +268,22 @@ pub(crate) fn query_due_notes_indexed(
             rows.flatten().collect()
         };
 
-        let types_in = staleness_types_sql();
-        // Per reviewed note: its load-bearing out-links whose dependency has a
-        // hash-confirmed content change, most-consequential first. The day filter +
-        // "first that beats last_reviewed" pick happen in Rust (local_day).
-        let probe_sql = format!(
-            "SELECT jl.link_type, COALESCE(dep.name, jl.target_name), dep.content_changed_at
-             FROM note_links jl
-             JOIN note_meta dep ON dep.cid_cn = jl.target_cid_cn
-             WHERE jl.source_path = ?1
-               AND jl.status = 'active'
-               AND jl.link_type IN ({types})
-               AND jl.target_cid_cn IS NOT NULL AND jl.target_cid_cn != ''
-               AND dep.content_changed_at IS NOT NULL
-               AND dep.path != ?1
-             ORDER BY jl.weight DESC, dep.content_changed_at DESC, jl.id DESC",
-            types = types_in,
-        );
-        let mut probe = conn.prepare(&probe_sql).map_err(|e| format!("due lens-2 probe prepare: {}", e))?;
+        // The reviewed set is small (only notes explicitly ✓-reviewed), so a per-note
+        // probe via the shared `note_stale_status` is fine — and single-sources the
+        // staleness logic with `get_note_review_status` (§F).
         for (path, name, stratum, last_reviewed) in reviewed {
-            // A malformed last_reviewed is SKIPPED (never bucketed to day 0).
-            let lr_day = match parse_day(&last_reviewed) {
-                Some(d) => d,
-                None => continue,
-            };
-            let mut rows = probe
-                .query_map(rusqlite::params![path], |r| {
-                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?))
-                })
-                .map_err(|e| format!("due lens-2 probe query: {}", e))?;
-            // Rows arrive most-consequential first; take the first whose dependency
-            // changed on a later LOCAL day than the review (strict > → same-day safe).
-            while let Some(Ok((link_type, dep_name, cca))) = rows.next() {
-                let dep_day = local_day(cca);
-                if dep_day - lr_day >= grace {
-                    due.push(DueNote {
-                        note_path: path.clone(),
-                        note_name: name.clone(),
-                        reason: "stale".to_string(),
-                        days_overdue: (today_days - dep_day).max(0),
-                        stratum: stratum.clamp(0, 255) as u8,
-                        last_reviewed: Some(last_reviewed.clone()),
-                        stale_trigger_name: Some(dep_name),
-                        stale_trigger_type: Some(link_type),
-                        stale_changed_on: Some(day_to_date(dep_day)),
-                    });
-                    break;
-                }
+            if let Some((link_type, dep_name, dep_day)) = note_stale_status(conn, &path, &last_reviewed, grace)? {
+                due.push(DueNote {
+                    note_path: path,
+                    note_name: name,
+                    reason: "stale".to_string(),
+                    days_overdue: (today_days - dep_day).max(0),
+                    stratum: stratum.clamp(0, 255) as u8,
+                    last_reviewed: Some(last_reviewed),
+                    stale_trigger_name: Some(dep_name),
+                    stale_trigger_type: Some(link_type),
+                    stale_changed_on: Some(day_to_date(dep_day)),
+                });
             }
         }
     }
@@ -281,16 +303,24 @@ pub struct NoteReviewStatus {
     pub last_reviewed: Option<String>, // ISO date of the last explicit ✓, or None
     pub never_reviewed: bool,          // true iff no explicit review has happened
     pub is_checkpoint: bool,           // a #assumption/#model mental-model checkpoint
+    // MIG-080 §F — Mode-2 staleness for THIS note (so the note-context tab answers
+    // "is this note due OR stale?", not just due). is_stale + the triggering neighbour.
+    pub is_stale: bool,
+    pub stale_trigger_name: Option<String>,
+    pub stale_trigger_type: Option<String>,
+    pub stale_changed_on: Option<String>,
 }
 
-/// MIG-083 §D — O(1) PK lookup of one note's review status. Read-only single-row
-/// metadata fetch keyed by an already-open note's path (no fs access, no library
-/// validation needed — the frontend only asks for notes it already opened).
+/// MIG-083 §D / MIG-080 §F — one note's Review-Pulse status: the O(1) `review_schedule`
+/// PK lookup (Mode 1/3) PLUS the per-note Mode-2 staleness probe. Read-only, keyed by an
+/// already-open note's path (no fs access; the frontend only asks for notes it opened).
 #[tauri::command]
 pub fn get_note_review_status(
     app: tauri::AppHandle,
     note_path: String,
+    stale_grace_days: Option<i64>,
 ) -> Result<NoteReviewStatus, String> {
+    let grace = stale_grace_days.unwrap_or(1);
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
@@ -302,12 +332,21 @@ pub fn get_note_review_status(
                     )
                     .ok();
                 if let Some((reason, due_days, last_reviewed, is_cp)) = row {
+                    // Mode-2: a reviewed, non-dismissed note can also be stale.
+                    let stale = match (&last_reviewed, reason.as_str()) {
+                        (Some(lr), r) if r != "dismissed" => note_stale_status(conn, &note_path, lr, grace)?,
+                        _ => None,
+                    };
                     return Ok(NoteReviewStatus {
                         never_reviewed: last_reviewed.is_none(),
                         reason: Some(reason),
                         due_days: Some(due_days),
                         last_reviewed,
                         is_checkpoint: is_cp != 0,
+                        is_stale: stale.is_some(),
+                        stale_trigger_type: stale.as_ref().map(|(t, _, _)| t.clone()),
+                        stale_trigger_name: stale.as_ref().map(|(_, n, _)| n.clone()),
+                        stale_changed_on: stale.as_ref().map(|(_, _, d)| day_to_date(*d)),
                     });
                 }
             }
@@ -320,6 +359,10 @@ pub fn get_note_review_status(
         last_reviewed: None,
         never_reviewed: true,
         is_checkpoint: false,
+        is_stale: false,
+        stale_trigger_name: None,
+        stale_trigger_type: None,
+        stale_changed_on: None,
     })
 }
 
