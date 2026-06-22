@@ -59,11 +59,9 @@ pub fn get_due_notes(
     let today_days = date_to_days(&today);
     let grace = stale_grace_days.unwrap_or(1); // default: strict next-day (Mode-2)
 
-    // MIG-083 §D — Rule-8 fast path. Once the §C back-fill has built + stamped the
-    // write-time `review_schedule` table, read it (an indexed SELECT ∪ the Mode-2
-    // staleness JOIN) — ZERO filesystem access, <100 ms on 7,600 notes. Until then
-    // (unstamped, e.g. a fresh universe mid-back-fill) fall through to the legacy
-    // full-FS-walk scan so the panel is never empty during the one-off build.
+    // MIG-083 — Rule-8 read. Once the §C back-fill has built + stamped the write-time
+    // `review_schedule` table, read it (an indexed SELECT ∪ the Mode-2 staleness JOIN)
+    // — ZERO filesystem access, <100 ms on 7,600 notes.
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
@@ -74,29 +72,15 @@ pub fn get_due_notes(
         }
     }
 
-    // ── Legacy fallback (unstamped): the full-FS-walk recompute (Rule-8 violation,
-    // retired in §E once the swap is proven). ──
-    let cdir = crate::universe::active_constellation_dir(&app)?;
-    let pulse = load_pulse_data(&cdir);
-    let tag_re = regex::Regex::new(r"(?:^|\s)#(assumption|model)\b").ok();
-    let mut due: Vec<DueNote> = Vec::new();
-
-    scan_due_recursive(
-        Path::new(&library_path),
-        &pulse,
-        &today,
-        today_days,
-        &tag_re,
-        &mut due,
-    );
-
-    // Sort: higher stratum first, then more overdue first
-    due.sort_by(|a, b| {
-        b.stratum.cmp(&a.stratum)
-            .then(b.days_overdue.cmp(&a.days_overdue))
-    });
-
-    Ok(due)
+    // Unstamped — the write-time schedule isn't built yet (first boot of a MIG-083
+    // build, before the post-paint back-fill stamps; or a never-built table). The
+    // legacy full-FS-walk `scan_due_recursive` was REMOVED in §E once the indexed swap
+    // was Boss-validated (it was the Rule-8 violation this migration existed to kill).
+    // Kick the back-fill (idempotent — no-op if already running/stamped) and return an
+    // empty list; the panel shows "All caught up" for the few seconds until it stamps,
+    // then every read is the cheap indexed path.
+    crate::review_backfill::maybe_schedule(app.clone());
+    Ok(Vec::new())
 }
 
 /// MIG-083 §D — the Rule-8 indexed read. Builds the due list from the write-time
@@ -477,118 +461,6 @@ fn add_days(date_str: &str, days: i64) -> String {
         (d + chrono::Duration::days(days)).format("%Y-%m-%d").to_string()
     } else {
         date_str.to_string()
-    }
-}
-
-fn scan_due_recursive(
-    dir: &Path,
-    pulse: &ReviewPulseData,
-    today: &str,
-    today_days: i64,
-    tag_re: &Option<regex::Regex>,
-    due: &mut Vec<DueNote>,
-) {
-    let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let fname = entry.file_name().to_string_lossy().to_string();
-        if fname.starts_with('.') { continue; }
-        if path.is_dir() {
-            scan_due_recursive(&path, pulse, today, today_days, tag_re, due);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let path_str = path.to_string_lossy().to_string();
-            // MIG-008 Step 4: review-pulse "due notes" use the human title.
-            // Helper reads the file ONLY for canonical-named notes (skipped
-            // for human-named ones), so non-canonical libraries pay no
-            // extra cost; canonical libraries pay one read per note.
-            let note_name = crate::libraries::note_display_name(&path, None);
-
-            // Skip dismissed notes
-            if pulse.dismissed.contains(&path_str) { continue; }
-
-            // Skip snoozed notes
-            if let Some(snooze_until) = pulse.snoozed.get(&path_str) {
-                if snooze_until.as_str() > today { continue; }
-            }
-
-            let last_reviewed = pulse.last_reviewed.get(&path_str).cloned();
-            let interval = pulse.intervals.get(&path_str).copied().unwrap_or(1);
-
-            // Compute stratum (simple: use word count as proxy, or 2 as default)
-            let stratum = 2u8; // Default; real stratum comes from frontend merge
-
-            // Mode 1: Spaced Resurfacing
-            if let Some(ref lr) = last_reviewed {
-                let lr_days = date_to_days(lr);
-                let due_days = lr_days + interval as i64;
-                if today_days >= due_days {
-                    let overdue = today_days - due_days;
-                    due.push(DueNote {
-                        note_path: path_str.clone(),
-                        note_name: note_name.clone(),
-                        reason: "interval_due".to_string(),
-                        days_overdue: overdue,
-                        stratum,
-                        last_reviewed: Some(lr.clone()),
-                        stale_trigger_name: None,
-                        stale_trigger_type: None,
-                        stale_changed_on: None,
-                    });
-                    continue; // Don't double-count
-                }
-            } else {
-                // Never reviewed — check if note is older than 1 day
-                if let Ok(meta) = fs::metadata(&path) {
-                    if let Ok(modified) = meta.modified() {
-                        let age_secs = std::time::SystemTime::now()
-                            .duration_since(modified)
-                            .unwrap_or_default()
-                            .as_secs();
-                        if age_secs > 86400 {
-                            due.push(DueNote {
-                                note_path: path_str.clone(),
-                                note_name: note_name.clone(),
-                                reason: "never_reviewed".to_string(),
-                                days_overdue: (age_secs / 86400) as i64,
-                                stratum,
-                                last_reviewed: None,
-                                stale_trigger_name: None,
-                                stale_trigger_type: None,
-                                stale_changed_on: None,
-                            });
-                            continue;
-                        }
-                    }
-                }
-            }
-
-            // Mode 3: Mental Model Checkpoints (#assumption, #model)
-            if let Some(ref re) = tag_re {
-                if let Ok(content) = fs::read_to_string(&path) {
-                    if re.is_match(&content) {
-                        // Check if 30+ days since last review
-                        let needs_checkpoint = if let Some(ref lr) = last_reviewed {
-                            today_days - date_to_days(lr) >= 30
-                        } else {
-                            true
-                        };
-                        if needs_checkpoint {
-                            due.push(DueNote {
-                                note_path: path_str.clone(),
-                                note_name: note_name.clone(),
-                                reason: "checkpoint".to_string(),
-                                days_overdue: 0,
-                                stratum,
-                                last_reviewed: last_reviewed.clone(),
-                                stale_trigger_name: None,
-                                stale_trigger_type: None,
-                                stale_changed_on: None,
-                            });
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
