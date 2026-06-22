@@ -10,6 +10,11 @@
 		days_overdue: number;
 		stratum: number;
 		last_reviewed: string | null;
+		// MIG-083 §D — Mode-2 staleness "why" (present only when reason === 'stale').
+		// The §F two-lens reviewer renders the full "stale because …" line from these.
+		stale_trigger_name?: string | null;
+		stale_trigger_type?: string | null;
+		stale_changed_on?: string | null;
 	}
 
 	let {

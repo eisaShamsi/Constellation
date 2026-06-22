@@ -38,6 +38,11 @@ pub struct DueNote {
     pub days_overdue: i64,
     pub stratum: u8,
     pub last_reviewed: Option<String>,
+    // MIG-083 §D — Mode-2 staleness "why" (None for Mode-1/3 rows). The §F two-lens
+    // reviewer renders "stale because {type} {name} changed on {date}" from these.
+    pub stale_trigger_name: Option<String>, // the changed OUT-dependency's display name
+    pub stale_trigger_type: Option<String>, // the load-bearing link type that carries it
+    pub stale_changed_on: Option<String>,   // YYYY-MM-DD the dependency's content changed
 }
 
 /// Get all notes due for review in a library.
@@ -49,12 +54,28 @@ pub fn get_due_notes(
     crate::libraries::validate_path_in_any_library(&app, &library_path)
         .map_err(|e| format!("Access denied: {}", e))?;
 
-    let cdir = crate::universe::active_constellation_dir(&app)?;
-    let pulse = load_pulse_data(&cdir);
     let today = today_str();
     let today_days = date_to_days(&today);
 
-    // Scan library for note metadata
+    // MIG-083 §D — Rule-8 fast path. Once the §C back-fill has built + stamped the
+    // write-time `review_schedule` table, read it (an indexed SELECT ∪ the Mode-2
+    // staleness JOIN) — ZERO filesystem access, <100 ms on 7,600 notes. Until then
+    // (unstamped, e.g. a fresh universe mid-back-fill) fall through to the legacy
+    // full-FS-walk scan so the panel is never empty during the one-off build.
+    if let Some(state) = app.try_state::<crate::search::SearchState>() {
+        if let Ok(guard) = state.db.lock() {
+            if let Some(conn) = guard.as_ref() {
+                if is_stamped(conn) {
+                    return query_due_notes_indexed(conn, &library_path, &today, today_days);
+                }
+            }
+        }
+    }
+
+    // ── Legacy fallback (unstamped): the full-FS-walk recompute (Rule-8 violation,
+    // retired in §E once the swap is proven). ──
+    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let pulse = load_pulse_data(&cdir);
     let tag_re = regex::Regex::new(r"(?:^|\s)#(assumption|model)\b").ok();
     let mut due: Vec<DueNote> = Vec::new();
 
@@ -73,6 +94,139 @@ pub fn get_due_notes(
             .then(b.days_overdue.cmp(&a.days_overdue))
     });
 
+    Ok(due)
+}
+
+/// MIG-083 §D — the Rule-8 indexed read. Builds the due list from the write-time
+/// `review_schedule` table (Mode 1/3) UNION the Mode-2 staleness JOIN, with **zero
+/// filesystem access** (no `read_dir` / `metadata` / `read_to_string` / regex over
+/// `.md`). Caller holds the DB lock and has verified [`is_stamped`].
+///
+/// `library_path` scopes to the same subtree the legacy scan walked — a path-prefix
+/// match on the universe-wide table (`substr` is char-indexed in SQLite, so this is
+/// correct for multibyte paths like the Arabic universe root). The two lenses are
+/// kept distinct (Boss decision: "two separate lenses, never merged into one score")
+/// — a note can appear once per lens, each carrying its own `reason`.
+pub(crate) fn query_due_notes_indexed(
+    conn: &rusqlite::Connection,
+    library_path: &str,
+    _today: &str,
+    today_days: i64,
+) -> Result<Vec<DueNote>, String> {
+    let mut due: Vec<DueNote> = Vec::new();
+
+    // ── Lens 1: Mode 1/3 — time-based resurfacing + checkpoints (indexed on due_days). ──
+    {
+        let mut stmt = conn
+            .prepare(
+                "SELECT rs.path, COALESCE(nm.name, rs.path), rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
+                 FROM review_schedule rs
+                 LEFT JOIN note_meta nm ON nm.path = rs.path
+                 WHERE rs.due_days <= ?1
+                   AND rs.reason != 'dismissed'
+                   AND substr(rs.path, 1, length(?2)) = ?2",
+            )
+            .map_err(|e| format!("due lens-1 prepare: {}", e))?;
+        let rows = stmt
+            .query_map(rusqlite::params![today_days, library_path], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, i64>(3)?,
+                    r.get::<_, i64>(4)?,
+                    r.get::<_, Option<String>>(5)?,
+                ))
+            })
+            .map_err(|e| format!("due lens-1 query: {}", e))?;
+        for row in rows.flatten() {
+            let (path, name, reason, due_days, stratum, last_reviewed) = row;
+            due.push(DueNote {
+                note_path: path,
+                note_name: name,
+                reason,
+                days_overdue: today_days - due_days,
+                stratum: stratum.clamp(0, 255) as u8,
+                last_reviewed,
+                stale_trigger_name: None,
+                stale_trigger_type: None,
+                stale_changed_on: None,
+            });
+        }
+    }
+
+    // ── Lens 2: Mode 2 — staleness. A note is stale when a load-bearing OUT-dependency
+    // (supports/contradicts/derives-from/part-of/supersedes; NOT associative) had its
+    // CONTENT change on a later calendar day than this note's last explicit review.
+    // Resolution: note_links.target_cid_cn → note_meta.cid_cn (both UNIQUE-indexed —
+    // the reliable join key; target_path is unset for freshly-indexed links). One row
+    // per stale note, citing its most consequential changed dependency (highest link
+    // weight, then most-recent change). 1-hop, day-granular (last_reviewed has no time
+    // component; both sides compared as days-since-2020 so a same-day change does NOT
+    // fire — avoids flicker). ──
+    {
+        let types_in = STALENESS_TRIGGER_TYPES
+            .iter()
+            .map(|t| format!("'{}'", t))
+            .collect::<Vec<_>>()
+            .join(",");
+        let sql = format!(
+            "SELECT rs.path, COALESCE(snm.name, rs.path), rs.stratum, rs.last_reviewed,
+                    jl.link_type, COALESCE(dep.name, jl.target_name),
+                    (COALESCE(dep.content_changed_at, dep.modified) - 1577836800) / 86400 AS dep_day
+             FROM review_schedule rs
+             JOIN note_meta snm ON snm.path = rs.path
+             JOIN note_links jl ON jl.source_path = rs.path
+                 AND jl.status = 'active'
+                 AND jl.link_type IN ({types})
+                 AND jl.target_cid_cn IS NOT NULL AND jl.target_cid_cn != ''
+             JOIN note_meta dep ON dep.cid_cn = jl.target_cid_cn
+             WHERE rs.last_reviewed IS NOT NULL
+               AND rs.reason != 'dismissed'
+               AND substr(rs.path, 1, length(?1)) = ?1
+               AND (COALESCE(dep.content_changed_at, dep.modified) - 1577836800) / 86400
+                   > (CAST(strftime('%s', rs.last_reviewed) AS INTEGER) - 1577836800) / 86400
+             ORDER BY rs.path, jl.weight DESC, dep_day DESC",
+            types = types_in,
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-2 prepare: {}", e))?;
+        let rows = stmt
+            .query_map(rusqlite::params![library_path], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)?,
+                    r.get::<_, Option<String>>(3)?,
+                    r.get::<_, String>(4)?,
+                    r.get::<_, String>(5)?,
+                    r.get::<_, i64>(6)?,
+                ))
+            })
+            .map_err(|e| format!("due lens-2 query: {}", e))?;
+        let mut last_src: Option<String> = None;
+        for row in rows.flatten() {
+            let (path, name, stratum, last_reviewed, link_type, dep_name, dep_day) = row;
+            // ORDER BY groups by path; keep only the FIRST (most consequential) per note.
+            if last_src.as_deref() == Some(path.as_str()) {
+                continue;
+            }
+            last_src = Some(path.clone());
+            due.push(DueNote {
+                note_path: path,
+                note_name: name,
+                reason: "stale".to_string(),
+                days_overdue: (today_days - dep_day).max(0),
+                stratum: stratum.clamp(0, 255) as u8,
+                last_reviewed,
+                stale_trigger_name: Some(dep_name),
+                stale_trigger_type: Some(link_type),
+                stale_changed_on: Some(day_to_date(dep_day)),
+            });
+        }
+    }
+
+    // Sort: higher stratum first, then more overdue first (matches the legacy scan).
+    due.sort_by(|a, b| b.stratum.cmp(&a.stratum).then(b.days_overdue.cmp(&a.days_overdue)));
     Ok(due)
 }
 
@@ -178,7 +332,8 @@ fn date_to_days(date_str: &str) -> i64 {
     }
 }
 
-#[cfg(test)]
+/// Days-since-2020-01-01 → `YYYY-MM-DD` (the inverse of `date_to_days`). Used to
+/// render `stale_changed_on` for the Mode-2 lens.
 fn day_to_date(days: i64) -> String {
     let base = chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
     (base + chrono::Duration::days(days)).format("%Y-%m-%d").to_string()
@@ -242,6 +397,9 @@ fn scan_due_recursive(
                         days_overdue: overdue,
                         stratum,
                         last_reviewed: Some(lr.clone()),
+                        stale_trigger_name: None,
+                        stale_trigger_type: None,
+                        stale_changed_on: None,
                     });
                     continue; // Don't double-count
                 }
@@ -261,6 +419,9 @@ fn scan_due_recursive(
                                 days_overdue: (age_secs / 86400) as i64,
                                 stratum,
                                 last_reviewed: None,
+                                stale_trigger_name: None,
+                                stale_trigger_type: None,
+                                stale_changed_on: None,
                             });
                             continue;
                         }
@@ -286,6 +447,9 @@ fn scan_due_recursive(
                                 days_overdue: 0,
                                 stratum,
                                 last_reviewed: last_reviewed.clone(),
+                                stale_trigger_name: None,
+                                stale_trigger_type: None,
+                                stale_changed_on: None,
                             });
                         }
                     }
@@ -745,6 +909,109 @@ mod tests {
         assert_eq!(compute_schedule_row(None, 0, false, 200), ("never_reviewed".into(), 201));
         // never-reviewed checkpoint surfaces as never_reviewed first (checkpoint cadence starts post-review)
         assert_eq!(compute_schedule_row(None, 0, true, 200), ("never_reviewed".into(), 201));
+    }
+
+    /// Minimal slice of the real schema needed by `query_due_notes_indexed`.
+    fn read_db() -> rusqlite::Connection {
+        let c = rusqlite::Connection::open_in_memory().unwrap();
+        c.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
+               is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0, interval INTEGER NOT NULL DEFAULT 0);",
+        ).unwrap();
+        c
+    }
+    /// Unix seconds at UTC-midnight of a YYYY-MM-DD date (matches strftime('%s', d)).
+    fn secs(date: &str) -> i64 { date_to_days(date) * 86_400 + 1_577_836_800 }
+
+    #[test]
+    fn indexed_read_two_lenses_scope_and_filters() {
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+
+        // note_meta: A/B/C/E/G in the library; D/F/H dependencies; Z outside the library.
+        let nm = |p: &str, n: &str, cid: &str, modified: i64, cca: Option<i64>| (p.to_string(), n.to_string(), cid.to_string(), modified, cca);
+        for (p, n, cid, m, cca) in [
+            nm("/lib/A.md", "Alpha", "CIDA", secs("2026-01-01"), None),
+            nm("/lib/B.md", "Beta", "CIDB", secs("2026-01-01"), None),
+            nm("/lib/C.md", "Gamma", "CIDC", secs("2026-01-01"), None),
+            nm("/lib/E.md", "Epsilon", "CIDE", secs("2026-01-01"), None),
+            nm("/lib/G.md", "Gee", "CIDG", secs("2026-01-01"), None),
+            nm("/lib/D.md", "Delta-dep", "CIDD", secs("2026-01-01"), Some(secs("2026-06-10"))), // changed AFTER C's review
+            nm("/lib/F.md", "Foxtrot-dep", "CIDF", secs("2026-01-01"), Some(secs("2026-06-10"))),
+            nm("/lib/H.md", "Hotel-dep", "CIDH", secs("2026-05-01"), None),                      // NULL cca → falls back to modified (BEFORE review)
+            nm("/other/Z.md", "Zulu", "CIDZ", secs("2026-01-01"), None),                          // outside the library
+        ] {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,content_changed_at) VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![p, n, cid, m, cca]).unwrap();
+        }
+        // review_schedule: A due (lens 1); B dismissed (excluded); C/E/G reviewed but NOT due
+        // (so any appearance is purely lens 2); Z due but out-of-library.
+        for (p, reason, due, lr) in [
+            ("/lib/A.md", "interval_due", today_days - 1, Some("2026-06-01")),
+            ("/lib/B.md", "dismissed", 0i64, None),
+            ("/lib/C.md", "interval_due", today_days + 100, Some("2026-06-01")),
+            ("/lib/E.md", "interval_due", today_days + 100, Some("2026-06-01")),
+            ("/lib/G.md", "interval_due", today_days + 100, Some("2026-06-01")),
+            ("/other/Z.md", "interval_due", today_days - 1, Some("2026-06-01")),
+        ] {
+            c.execute("INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum) VALUES (?1,?2,?3,?4,3)",
+                rusqlite::params![p, reason, due, lr]).unwrap();
+        }
+        // links: C→D derives-from (load-bearing) ; E→F associative (excluded) ; G→H derives-from (dep unchanged since review)
+        for (src, tname, tcid, lt) in [
+            ("/lib/C.md", "Delta-dep", "CIDD", "derives-from"),
+            ("/lib/E.md", "Foxtrot-dep", "CIDF", "associative"),
+            ("/lib/G.md", "Hotel-dep", "CIDH", "derives-from"),
+        ] {
+            c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES (?1,?2,?3,?4,'active',2.0)",
+                rusqlite::params![src, tname, tcid, lt]).unwrap();
+        }
+
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let got: std::collections::HashSet<(String, String)> =
+            due.iter().map(|d| (d.note_path.clone(), d.reason.clone())).collect();
+
+        // Lens 1: only A is due. Lens 2: only C is stale (E associative-excluded; G dep
+        // unchanged-since-review via COALESCE→modified; Z out-of-library; B dismissed).
+        assert_eq!(got.len(), 2, "exactly A(due) + C(stale); got {:?}", got);
+        assert!(got.contains(&("/lib/A.md".into(), "interval_due".into())));
+        assert!(got.contains(&("/lib/C.md".into(), "stale".into())));
+        assert!(!got.iter().any(|(p, _)| p == "/other/Z.md"), "library scope excludes /other");
+
+        // The stale row explains itself.
+        let c_row = due.iter().find(|d| d.note_path == "/lib/C.md").unwrap();
+        assert_eq!(c_row.stale_trigger_type.as_deref(), Some("derives-from"));
+        assert_eq!(c_row.stale_trigger_name.as_deref(), Some("Delta-dep"));
+        assert_eq!(c_row.stale_changed_on.as_deref(), Some("2026-06-10"));
+    }
+
+    #[test]
+    fn indexed_read_dedups_to_most_consequential_dependency() {
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        // One source S reviewed 2026-06-01, with TWO changed load-bearing deps of
+        // different weight. Mode 2 must surface S ONCE, citing the heavier link.
+        for (p, n, cid, cca) in [
+            ("/lib/S.md", "Source", "CIDS", None),
+            ("/lib/Light.md", "Light", "CIDL", Some(secs("2026-06-05"))),
+            ("/lib/Heavy.md", "Heavy", "CIDH", Some(secs("2026-06-05"))),
+        ] {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,content_changed_at) VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![p, n, cid, secs("2026-01-01"), cca]).unwrap();
+        }
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum) VALUES ('/lib/S.md','interval_due',?1,'2026-06-01',1)",
+            rusqlite::params![today_days + 100]).unwrap();
+        c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Light','CIDL','supports','active',1.0)", []).unwrap();
+        c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Heavy','CIDH','supports','active',5.0)", []).unwrap();
+
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        let stale: Vec<_> = due.iter().filter(|d| d.reason == "stale").collect();
+        assert_eq!(stale.len(), 1, "S surfaces once, not once-per-dep");
+        assert_eq!(stale[0].stale_trigger_name.as_deref(), Some("Heavy"), "cites the heaviest link");
     }
 
     #[test]
