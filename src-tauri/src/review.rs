@@ -290,3 +290,124 @@ fn scan_due_recursive(
         }
     }
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// MIG-083 §A — corrected, pure scheduling logic (no I/O; unit-tested).
+// These are the CORRECTED behaviours (Boss "fix all quirks", 2026-06-22):
+// the documented 1·3·7·14·30 ladder; the tags_json checkpoint definition;
+// and the Mode-2 staleness trigger-type set. Consumed by §B (write-time
+// maintenance) + §D (the read). The table is created in search.rs init_db.
+// ════════════════════════════════════════════════════════════════════════
+
+/// One row of the derived `review_schedule` table (Mode 1/3). The Mode-2
+/// "stale" lens is computed by a separate read-time JOIN (§D), not stored here.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScheduleRow {
+    pub path: String,
+    pub reason: String,        // "never_reviewed" | "interval_due" | "checkpoint"
+    pub due_days: i64,         // due date as days-since-epoch (date_to_days)
+    pub is_checkpoint: bool,
+    pub last_reviewed: Option<String>,
+    pub stratum: i64,          // real maturity stratum (sky_nodes.stratum), 0 if unknown
+}
+
+/// MIG-083 — Mode-2 staleness fires ONLY on these load-bearing OUT-link types
+/// (Boss 2026-06-22). Plain `associative` is excluded (the anti-noise filter).
+pub const STALENESS_TRIGGER_TYPES: [&str; 5] =
+    ["supports", "contradicts", "derives-from", "part-of", "supersedes"];
+
+/// Does a link type trigger Mode-2 staleness for its SOURCE note?
+pub fn is_staleness_trigger_type(link_type: &str) -> bool {
+    STALENESS_TRIGGER_TYPES.contains(&link_type)
+}
+
+/// The corrected interval ladder: 1 → 3 → 7 → 14 → 30 (cap 30). Returns the
+/// next step strictly above `prev` (so a fresh note's first interval is 1).
+pub fn next_interval(prev: u32) -> u32 {
+    const LADDER: [u32; 5] = [1, 3, 7, 14, 30];
+    for &step in LADDER.iter() {
+        if step > prev {
+            return step;
+        }
+    }
+    30
+}
+
+/// A note is a Mental-Model Checkpoint iff its `tags_json` (frontmatter + inline
+/// `#` tags, already built by `index_note`) contains `assumption` or `model`.
+/// (Boss decision: `tags_json` is the canonical checkpoint definition — the
+/// superset that catches Properties-tagged checkpoints the old `#`-regex missed.)
+pub fn is_checkpoint(tags_json: &str) -> bool {
+    serde_json::from_str::<Vec<String>>(tags_json)
+        .map(|tags| {
+            tags.iter().any(|t| {
+                let l = t.to_lowercase();
+                l == "assumption" || l == "model"
+            })
+        })
+        .unwrap_or(false)
+}
+
+/// Compute the (reason, due_days) for a note's Mode-1/3 schedule row.
+/// Precedence: a reviewed checkpoint follows the 30-day re-confrontation
+/// cadence; a reviewed non-checkpoint follows the ladder; an unreviewed note is
+/// `never_reviewed`, due one day after its anchor (created/modified day).
+pub fn compute_schedule_row(
+    last_reviewed_day: Option<i64>,
+    interval: u32,
+    is_checkpoint: bool,
+    anchor_day: i64,
+) -> (String, i64) {
+    match last_reviewed_day {
+        Some(lr) if is_checkpoint => ("checkpoint".to_string(), lr + 30),
+        Some(lr) => ("interval_due".to_string(), lr + interval.max(1) as i64),
+        None => ("never_reviewed".to_string(), anchor_day + 1),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ladder_is_1_3_7_14_30_capped() {
+        assert_eq!(next_interval(0), 1, "fresh → 1");
+        assert_eq!(next_interval(1), 3);
+        assert_eq!(next_interval(3), 7);
+        assert_eq!(next_interval(7), 14);
+        assert_eq!(next_interval(14), 30);
+        assert_eq!(next_interval(30), 30, "cap at 30");
+        assert_eq!(next_interval(99), 30, "anything ≥30 caps at 30");
+    }
+
+    #[test]
+    fn checkpoint_from_tags_json_both_sources() {
+        assert!(is_checkpoint(r#"["assumption","x"]"#), "inline/frontmatter assumption");
+        assert!(is_checkpoint(r#"["Model"]"#), "case-insensitive");
+        assert!(!is_checkpoint(r#"["modeling","assumptions"]"#), "no partial match");
+        assert!(!is_checkpoint(r#"[]"#));
+        assert!(!is_checkpoint("not json"), "malformed → false, never panics");
+    }
+
+    #[test]
+    fn staleness_trigger_types_exclude_associative() {
+        for t in ["supports", "contradicts", "derives-from", "part-of", "supersedes"] {
+            assert!(is_staleness_trigger_type(t), "{t} should trigger");
+        }
+        assert!(!is_staleness_trigger_type("associative"), "associative must NOT trigger (anti-noise)");
+        assert!(!is_staleness_trigger_type("exemplifies"));
+        assert!(!is_staleness_trigger_type("causes"));
+    }
+
+    #[test]
+    fn schedule_row_precedence() {
+        // reviewed non-checkpoint → ladder
+        assert_eq!(compute_schedule_row(Some(100), 7, false, 0), ("interval_due".into(), 107));
+        // reviewed checkpoint → 30-day cadence, regardless of interval
+        assert_eq!(compute_schedule_row(Some(100), 7, true, 0), ("checkpoint".into(), 130));
+        // never reviewed → due one day after the anchor
+        assert_eq!(compute_schedule_row(None, 0, false, 200), ("never_reviewed".into(), 201));
+        // never-reviewed checkpoint surfaces as never_reviewed first (checkpoint cadence starts post-review)
+        assert_eq!(compute_schedule_row(None, 0, true, 200), ("never_reviewed".into(), 201));
+    }
+}

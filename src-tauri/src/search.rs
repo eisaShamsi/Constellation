@@ -2361,6 +2361,24 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create tag_counts: {}", e))?;
 
+    // MIG-083 §A — review_schedule: the derived Review-Pulse due-list (Modes 1/3),
+    // maintained write-time in index_note (gated on schema_versions.review), built
+    // once by the background back-fill (review_backfill.rs, §C), and read instead of
+    // the full-FS-walk scan_due_recursive. The Mode-2 "stale" lens is a separate
+    // read-time JOIN (out-dependency load-bearing links × content_changed_at). Adding
+    // the table is INERT until stamped (the legacy scan keeps running until then).
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS review_schedule (
+            path          TEXT PRIMARY KEY,
+            reason        TEXT NOT NULL,
+            due_days      INTEGER NOT NULL,
+            is_checkpoint INTEGER NOT NULL DEFAULT 0,
+            last_reviewed TEXT,
+            stratum       INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_review_due ON review_schedule(due_days);
+    ").map_err(|e| format!("Failed to create review_schedule: {}", e))?;
+
     // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
     // on ADD COLUMN, so we probe table_info. Cheap (one row per column,
     // runs once per boot).
