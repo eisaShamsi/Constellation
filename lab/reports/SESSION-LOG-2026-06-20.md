@@ -306,3 +306,9 @@
 - **Known-broken:** none. **Uncommitted:** none (everything pushed).
 - **Doc-drift to fix in §E close-out:** MIG-080 §F help/manual updates (the note-context panels are user-facing) were not written this session — owed at MIG-080 §G.
 - **Close-out artifacts:** orientation **v3.00**; MoCh `MoCh-2026-06-22-0900.md`; handover + next-session prompt `HANDOVER-2026-06-22-mig083-b2.md`; this state-of-standing.
+
+## ▶ Session CONTINUED past the close (Boss "Proceed" ×N) — MIG-083 §B-2 + §C built
+- **§B-2 committed `2200ddc0`** — wired the gated `review_schedule` write-time maintenance into the hot path: `index_note` upsert (stratum via `CAST(sky_nodes.stratum AS INTEGER)`), `reindex_delete_note` drop, and the action-writer row-sync (mark/snooze/dismiss → row via `app.try_state::<SearchState>`). `record_note_visit` already removed in §B-1. 11 tests.
+- **§C committed `a98b52e7`** — `review_backfill.rs`: resumable post-paint back-fill (cursor, 1000-row batches, 50ms sleep, idempotent `INSERT OR REPLACE`), scheduled at boot; **`finalize` stamps `schema_versions.review=1` + wipes cursor in one txn = the go-live moment** (flips §B from inert to live; reads stay legacy until §D). 12 tests.
+- **Still INERT** — nothing stamps until a shipped build runs the back-fill; reads don't swap until §D.
+- **RESUME AT §D** (read swap + Mode-2 staleness JOIN + `content_changed_at` + the live-copy rehearsal harness + **Boss test**). Spec + ready-to-paste prompt in `HANDOVER-2026-06-22-mig083-b2.md` ("RESUME HERE — §D"). Re-closed here: §D is the biggest, user-facing, Boss-test-bearing phase + the novel staleness feature — deserves fresh eyes (secure-don't-muddle).
