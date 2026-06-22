@@ -4543,7 +4543,7 @@ fn strip_markdown(text: &str) -> String {
 }
 
 /// Index a single note into the database.
-fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<(), String> {
+pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<(), String> {
     let path = Path::new(note_path);
     if !path.exists() || path.extension().map(|e| e != "md").unwrap_or(true) {
         return Ok(());
