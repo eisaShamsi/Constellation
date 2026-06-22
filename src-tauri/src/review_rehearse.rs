@@ -39,6 +39,7 @@ struct RehearseReport {
     indexed_total: usize,
     lens1_count: usize,
     lens2_count: usize,
+    pre_seed_stale: usize, // stale count BEFORE seeding — must be 0 (touch-test, finding A)
     query_ms_max: f64,
     parity_ok: bool,
     parity_only_indexed: Vec<(String, String)>,
@@ -74,16 +75,16 @@ fn copy_db(src: &Path) -> Result<PathBuf, String> {
 /// then stamp `review` — exactly mirroring `review_backfill::run`, inline (no app
 /// handle). Returns the row count.
 fn backfill(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &str) -> Result<i64, String> {
-    let rows: Vec<(String, String, i64)> = {
+    let rows: Vec<(String, String, i64, String)> = {
         let mut stmt = conn
-            .prepare("SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0) FROM note_meta")
+            .prepare("SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0), COALESCE(body_text,'') FROM note_meta")
             .map_err(|e| e.to_string())?;
         let it = stmt
-            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?)))
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?)))
             .map_err(|e| e.to_string())?;
         it.filter_map(|x| x.ok()).collect()
     };
-    for (path, tags_json, modified) in &rows {
+    for (path, tags_json, modified, body_text) in &rows {
         let stratum: i64 = conn
             .query_row("SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1", params![path], |r| r.get(0))
             .unwrap_or(0);
@@ -92,6 +93,12 @@ fn backfill(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &s
         let snoozed = pulse.snoozed.get(path).map(|s| s.as_str());
         let dismissed = pulse.dismissed.contains(path);
         crate::review::backfill_schedule_row(conn, path, tags_json, *modified, stratum, lr, interval, snoozed, dismissed, today)?;
+        // Baseline content_hash exactly as review_backfill::process_batch does.
+        conn.execute(
+            "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
+            params![path, crate::review::content_hash(body_text)],
+        )
+        .map_err(|e| e.to_string())?;
     }
     conn.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', 1, strftime('%s','now'))",
@@ -102,11 +109,15 @@ fn backfill(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &s
 }
 
 /// The independent reference: recompute the universe-wide due-set in Rust loops from
-/// the action state + `note_meta`, NOT from `review_schedule`.
+/// the action state + `note_meta`, NOT from `review_schedule`. Lens-1 is recomputed
+/// INDEPENDENTLY of `schedule_for`/`compute_schedule_row` (review finding L) so a bug
+/// in the production scheduling logic makes parity FAIL rather than passing on both
+/// sides. `today_days` must be the LOCAL today (matches `local_day`).
 fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, today: &str, today_days: i64) -> Result<HashSet<(String, String)>, String> {
     let mut set: HashSet<(String, String)> = HashSet::new();
+    let today_day = crate::review::parse_day(today).unwrap_or(today_days);
 
-    // Lens 1: Mode 1/3 — one (reason, due_days) per note from pulse + note_meta.
+    // Lens 1: Mode 1/3 — INDEPENDENT recompute of the (reason, due_days) spec.
     {
         let mut stmt = conn
             .prepare("SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0) FROM note_meta")
@@ -116,19 +127,34 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
             .map_err(|e| e.to_string())?;
         for row in rows.flatten() {
             let (path, tags_json, modified) = row;
+            if pulse.dismissed.contains(&path) {
+                continue;
+            }
+            // Active snooze hides the note from Lens-1 too.
+            if let Some(su) = pulse.snoozed.get(&path) {
+                if su.as_str() > today {
+                    continue;
+                }
+            }
             let is_cp = crate::review::is_checkpoint(&tags_json);
-            let lr = pulse.last_reviewed.get(&path).map(|s| s.as_str());
-            let interval = pulse.intervals.get(&path).copied().unwrap_or(0);
-            let snoozed = pulse.snoozed.get(&path).map(|s| s.as_str());
-            let dismissed = pulse.dismissed.contains(&path);
-            let (reason, due_days) = crate::review::schedule_for(is_cp, modified, lr, interval, snoozed, dismissed, today);
-            if reason != "dismissed" && due_days <= today_days {
-                set.insert((path, reason));
+            let interval = pulse.intervals.get(&path).copied().unwrap_or(0).max(1);
+            // (reason, due_days) recomputed inline — NOT via schedule_for/compute_schedule_row.
+            let (reason, due_days) = match pulse.last_reviewed.get(&path) {
+                Some(lr) => {
+                    let d = crate::review::parse_day(lr).unwrap_or(0);
+                    if is_cp { ("checkpoint", d + 30) } else { ("interval_due", d + interval as i64) }
+                }
+                None => ("never_reviewed", crate::review::secs_to_days(modified) + 1),
+            };
+            if due_days <= today_day {
+                set.insert((path, reason.to_string()));
             }
         }
     }
 
-    // Lens 2: Mode 2 — staleness, by iterating load-bearing out-links in Rust.
+    // Lens 2: Mode 2 — staleness, by iterating load-bearing out-links in Rust. Mirrors
+    // the corrected impl: content_changed_at IS NOT NULL (no mtime fallback), local_day
+    // comparison, self-link excluded, snooze-suppressed, malformed last_reviewed skipped.
     {
         let types_in = STALENESS_TRIGGER_TYPES.iter().map(|t| format!("'{}'", t)).collect::<Vec<_>>().join(",");
         let sql = format!(
@@ -143,7 +169,6 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
             .map_err(|e| e.to_string())?;
         for row in rows.flatten() {
             let (src, target_cid) = row;
-            // source must be reviewed + not dismissed
             let lr = match pulse.last_reviewed.get(&src) {
                 Some(d) => d,
                 None => continue,
@@ -151,18 +176,28 @@ fn reference_due_set(conn: &Connection, pulse: &crate::review::ReviewPulseData, 
             if pulse.dismissed.contains(&src) {
                 continue;
             }
-            let lr_day = crate::review::date_to_days(lr);
-            // resolve dep + its content-change day
-            let dep: Option<(Option<i64>, i64)> = conn
+            if let Some(su) = pulse.snoozed.get(&src) {
+                if su.as_str() > today {
+                    continue; // snoozed → not stale
+                }
+            }
+            let lr_day = match crate::review::parse_day(lr) {
+                Some(d) => d,
+                None => continue, // malformed → skip
+            };
+            // resolve dep: its path (self-link exclusion) + content-change instant
+            let dep: Option<(String, Option<i64>)> = conn
                 .query_row(
-                    "SELECT content_changed_at, COALESCE(modified,0) FROM note_meta WHERE cid_cn = ?1",
+                    "SELECT path, content_changed_at FROM note_meta WHERE cid_cn = ?1",
                     params![target_cid],
                     |r| Ok((r.get(0)?, r.get(1)?)),
                 )
                 .ok();
-            if let Some((cca, modified)) = dep {
-                let dep_day = crate::review::secs_to_days(cca.unwrap_or(modified));
-                if dep_day > lr_day {
+            if let Some((dep_path, Some(cca))) = dep {
+                if dep_path == src {
+                    continue; // self-link
+                }
+                if crate::review::local_day(cca) > lr_day {
                     set.insert((src, "stale".to_string()));
                 }
             }
@@ -220,11 +255,18 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
 
     let note_count: i64 = conn.query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0)).unwrap_or(0);
 
-    // Seed the Mode-2 fixture BEFORE the back-fill so the seeded review state lands
-    // in review_schedule, and BOTH the indexed read + the reference see it.
-    let seeded = seed_mode2_fixture(&conn, &mut pulse, today_days)?;
-
+    // FIRST back-fill (unseeded): baselines content_hash corpus-wide, leaves
+    // content_changed_at NULL everywhere. TOUCH-TEST (review finding A): with no
+    // recorded content change anywhere, the Stale lens MUST be empty — nothing fires
+    // off a file mtime / touch. We assert this before seeding.
     let schedule_rows = backfill(&conn, &pulse, &today)?;
+    let pre = crate::review::query_due_notes_indexed(&conn, "", &today, today_days)?;
+    let pre_seed_stale = pre.iter().filter(|d| d.reason == "stale").count();
+
+    // Now seed ONE real-graph fixture (one dep "changed today", one source reviewed
+    // long ago) + re-back-fill so the seeded review state lands in review_schedule.
+    let seeded = seed_mode2_fixture(&conn, &mut pulse, today_days)?;
+    backfill(&conn, &pulse, &today)?;
 
     // ── Budget: time the indexed read (universe-wide: empty prefix matches all). ──
     let mut query_ms_max = 0.0_f64;
@@ -260,9 +302,12 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
         }
     };
 
-    // best-effort cleanup of the copy
+    // best-effort cleanup of the copy. Drop the connection FIRST — Windows refuses
+    // to delete a file with an open handle, which would silently leak the ~2 GB copy.
+    drop(conn);
     let _ = std::fs::remove_file(&copy);
     let _ = std::fs::remove_file(copy.with_extension("db-wal"));
+    let _ = std::fs::remove_file(copy.with_extension("db-shm"));
 
     Ok(RehearseReport {
         note_count,
@@ -270,6 +315,7 @@ fn run(live_db: &Path) -> Result<RehearseReport, String> {
         indexed_total: last.len(),
         lens1_count,
         lens2_count,
+        pre_seed_stale,
         query_ms_max,
         parity_ok,
         parity_only_indexed: only_indexed,
@@ -292,6 +338,7 @@ fn review_rehearse_live() {
     eprintln!("notes in corpus      : {}", report.note_count);
     eprintln!("review_schedule rows : {}", report.schedule_rows);
     eprintln!("due (indexed total)  : {}  (lens-1 {} + lens-2/stale {})", report.indexed_total, report.lens1_count, report.lens2_count);
+    eprintln!("touch-test (pre-seed): {} stale  (must be 0 — no staleness off a touch/mtime)", report.pre_seed_stale);
     eprintln!("query_due_notes max  : {:.2} ms  (target < 100 ms)", report.query_ms_max);
     eprintln!("parity indexed==ref  : {}", report.parity_ok);
     if !report.parity_ok {
@@ -301,6 +348,7 @@ fn review_rehearse_live() {
     eprintln!("mode-2 fixture       : {}", report.mode2_fixture);
     eprintln!("─────────────────────────────────────────────");
 
+    assert_eq!(report.pre_seed_stale, 0, "TOUCH-TEST FAILED: {} notes were stale with NO recorded content change (firing off mtime — finding A)", report.pre_seed_stale);
     assert!(report.parity_ok, "indexed read diverged from the corrected reference");
     assert!(report.query_ms_max < 100.0, "get_due_notes exceeded the 100 ms budget: {:.2} ms", report.query_ms_max);
     assert!(!report.mode2_fixture.starts_with("FAILED"), "Mode-2 staleness did not fire: {}", report.mode2_fixture);

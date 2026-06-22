@@ -629,6 +629,26 @@ fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-083 §D — ensure `review_schedule` has the `snoozed_until` column. Idempotent
+/// (the table is created with it on fresh DBs, but a dev DB built at §A predates it;
+/// `CREATE TABLE IF NOT EXISTS` is a no-op on the existing table, so probe + ALTER).
+fn ensure_review_schedule_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_snoozed = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(review_schedule)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col?.as_str() == "snoozed_until" {
+                have_snoozed = true;
+            }
+        }
+    }
+    if !have_snoozed {
+        conn.execute_batch("ALTER TABLE review_schedule ADD COLUMN snoozed_until TEXT;")?;
+    }
+    Ok(())
+}
+
 /// MIG-066 §A — ensure `note_meta` has the outgoing-link aggregate columns.
 /// Idempotent (probes `PRAGMA table_info`, ALTERs only if missing). These are
 /// maintained write-time by the `note_links_outgoing_*` triggers and a one-shot
@@ -2410,7 +2430,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             is_checkpoint INTEGER NOT NULL DEFAULT 0,
             last_reviewed TEXT,
             stratum       INTEGER NOT NULL DEFAULT 0,
-            interval      INTEGER NOT NULL DEFAULT 0
+            interval      INTEGER NOT NULL DEFAULT 0,
+            -- MIG-083 §D — the active snooze date (ISO YYYY-MM-DD) or NULL. Both lenses
+            -- treat a note with snoozed_until > today as hidden (snooze = not-now,
+            -- across BOTH lenses); preserved across re-index so a save cannot drop it.
+            snoozed_until TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_review_due ON review_schedule(due_days);
         -- MIG-083 §D — partial index over ONLY the reviewed notes. The Mode-2
@@ -2420,6 +2444,8 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         -- probes each note's out-links (idx_link_source) → the read stays <100 ms.
         CREATE INDEX IF NOT EXISTS idx_review_last_reviewed ON review_schedule(last_reviewed) WHERE last_reviewed IS NOT NULL;
     ").map_err(|e| format!("Failed to create review_schedule: {}", e))?;
+    ensure_review_schedule_columns(&conn)
+        .map_err(|e| format!("Failed to ensure review_schedule columns: {}", e))?;
 
     // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
     // on ADD COLUMN, so we probe table_info. Cheap (one row per column,

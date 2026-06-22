@@ -83,9 +83,14 @@ fn process_batch(
     let guard = db.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("DB not initialized")?;
 
-    let rows: Vec<(String, String, i64)> = {
+    // body_text comes along so we can BASELINE note_meta.content_hash (MIG-083 §D,
+    // review finding A): with a baseline in place, the first post-stamp save of a
+    // dependency that is a mere touch (body unchanged) hashes equal → does NOT bump
+    // content_changed_at → does NOT false-fire staleness. Hashing note_meta.body_text
+    // (= the same plain_body index_note hashes) keeps the back-fill .md-read-free.
+    let rows: Vec<(String, String, i64, String)> = {
         let mut stmt = conn
-            .prepare("SELECT path, tags_json, modified FROM note_meta WHERE path > ?1 ORDER BY path LIMIT ?2")
+            .prepare("SELECT path, tags_json, modified, COALESCE(body_text,'') FROM note_meta WHERE path > ?1 ORDER BY path LIMIT ?2")
             .map_err(|e| e.to_string())?;
         let it = stmt
             .query_map(params![last_path, BATCH_SIZE as i64], |r| {
@@ -93,6 +98,7 @@ fn process_batch(
                     r.get::<_, String>(0)?,
                     r.get::<_, Option<String>>(1)?.unwrap_or_default(),
                     r.get::<_, Option<i64>>(2)?.unwrap_or(0),
+                    r.get::<_, String>(3)?,
                 ))
             })
             .map_err(|e| e.to_string())?;
@@ -103,7 +109,7 @@ fn process_batch(
     }
     let new_last = rows.last().unwrap().0.clone();
 
-    for (path, tags_json, modified) in &rows {
+    for (path, tags_json, modified, body_text) in &rows {
         let stratum: i64 = conn
             .query_row(
                 "SELECT CAST(stratum AS INTEGER) FROM sky_nodes WHERE path = ?1",
@@ -118,6 +124,13 @@ fn process_batch(
         crate::review::backfill_schedule_row(
             conn, path, tags_json, *modified, stratum, last_reviewed, interval, snoozed, dismissed, today,
         )?;
+        // Baseline the content hash (only if not already set — resume-safe; content_changed_at
+        // stays NULL so nothing is "stale" until a real post-stamp body change bumps it).
+        conn.execute(
+            "UPDATE note_meta SET content_hash = ?2 WHERE path = ?1 AND content_hash IS NULL",
+            params![path, crate::review::content_hash(body_text)],
+        )
+        .map_err(|e| format!("baseline content_hash {}: {}", path, e))?;
     }
     Ok((rows.len(), new_last))
 }

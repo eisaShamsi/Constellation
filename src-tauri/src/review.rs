@@ -102,18 +102,31 @@ pub fn get_due_notes(
 /// filesystem access** (no `read_dir` / `metadata` / `read_to_string` / regex over
 /// `.md`). Caller holds the DB lock and has verified [`is_stamped`].
 ///
-/// `library_path` scopes to the same subtree the legacy scan walked — a path-prefix
-/// match on the universe-wide table (`substr` is char-indexed in SQLite, so this is
-/// correct for multibyte paths like the Arabic universe root). The two lenses are
-/// kept distinct (Boss decision: "two separate lenses, never merged into one score")
-/// — a note can appear once per lens, each carrying its own `reason`.
+/// `library_path` scopes to the same subtree the legacy scan walked. To avoid
+/// sibling-library bleed-through ("/U/Lib" must NOT match "/U/Lib2"; review finding
+/// D), the prefix is **separator-terminated** so the match lands on a path boundary.
+/// An EMPTY `library_path` means "whole universe" (the rehearsal harness) → no scope
+/// filter. `substr` is char-indexed in SQLite (correct for the multibyte Arabic root).
+/// The two lenses are kept distinct (Boss: "two separate lenses, never merged into
+/// one score") — a note can appear once per lens, each carrying its own `reason`.
 pub(crate) fn query_due_notes_indexed(
     conn: &rusqlite::Connection,
     library_path: &str,
-    _today: &str,
+    today: &str,
     today_days: i64,
 ) -> Result<Vec<DueNote>, String> {
     let mut due: Vec<DueNote> = Vec::new();
+    // Boundary-terminated scope prefix (empty = match-all). Note paths use the OS
+    // separator; the universe-root call (path == root) still matches every note
+    // because they all live under "root<sep>…".
+    let scope = if library_path.is_empty()
+        || library_path.ends_with('/')
+        || library_path.ends_with('\\')
+    {
+        library_path.to_string()
+    } else {
+        format!("{}{}", library_path, std::path::MAIN_SEPARATOR)
+    };
 
     // ── Lens 1: Mode 1/3 — time-based resurfacing + checkpoints (indexed on due_days). ──
     {
@@ -124,11 +137,12 @@ pub(crate) fn query_due_notes_indexed(
                  LEFT JOIN note_meta nm ON nm.path = rs.path
                  WHERE rs.due_days <= ?1
                    AND rs.reason != 'dismissed'
+                   AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
                    AND substr(rs.path, 1, length(?2)) = ?2",
             )
             .map_err(|e| format!("due lens-1 prepare: {}", e))?;
         let rows = stmt
-            .query_map(rusqlite::params![today_days, library_path], |r| {
+            .query_map(rusqlite::params![today_days, scope, today], |r| {
                 Ok((
                     r.get::<_, String>(0)?,
                     r.get::<_, String>(1)?,
@@ -157,13 +171,15 @@ pub(crate) fn query_due_notes_indexed(
 
     // ── Lens 2: Mode 2 — staleness. A note is stale when a load-bearing OUT-dependency
     // (supports/contradicts/derives-from/part-of/supersedes; NOT associative) had its
-    // CONTENT change on a later calendar day than this note's last explicit review.
+    // CONTENT actually change (hash-confirmed — `content_changed_at IS NOT NULL`; we
+    // do NOT fall back to file mtime, so a sync/touch/cid_cn/frontmatter save never
+    // false-fires — review finding A) on a later LOCAL calendar day than this note's
+    // last explicit review (`local_day` vs the local `last_reviewed` — finding F).
     // Resolution: note_links.target_cid_cn → note_meta.cid_cn (both UNIQUE-indexed —
-    // the reliable join key; target_path is unset for freshly-indexed links). One row
-    // per stale note, citing its most consequential changed dependency (highest link
-    // weight, then most-recent change). 1-hop, day-granular (last_reviewed has no time
-    // component; both sides compared as days-since-2020 so a same-day change does NOT
-    // fire — avoids flicker). ──
+    // the reliable join key; target_path is unset for freshly-indexed links). 1-hop;
+    // self-links excluded (finding I). One row per stale note, citing its most
+    // consequential changed dependency (highest weight, then most-recent change, then
+    // jl.id for a stable tie-break — finding G). ──
     //
     // Structured as two steps (NOT one big JOIN) for a guaranteed query plan: the
     // single-JOIN form let SQLite drive from `note_links.status='active'` — scanning
@@ -171,8 +187,9 @@ pub(crate) fn query_due_notes_indexed(
     // is unindexed-looking to the planner on a freshly-built table. Instead: (1) fetch
     // the tiny reviewed set (the partial index idx_review_last_reviewed makes this
     // O(reviewed), not O(corpus)); (2) probe each note's out-links with a prepared
-    // statement reused per note — every call rides idx_link_source. lr_day is computed
-    // in Rust (no per-row strftime).
+    // statement reused per note — every call rides idx_link_source. The day comparison
+    // is done in Rust (`local_day`) so impl + the rehearsal reference share ONE
+    // arithmetic (no SQLite-`/` vs `div_euclid` divergence — finding H).
     {
         let reviewed: Vec<(String, String, i64, String)> = {
             let mut stmt = conn
@@ -182,11 +199,12 @@ pub(crate) fn query_due_notes_indexed(
                      LEFT JOIN note_meta nm ON nm.path = rs.path
                      WHERE rs.last_reviewed IS NOT NULL
                        AND rs.reason != 'dismissed'
-                       AND substr(rs.path, 1, length(?1)) = ?1",
+                       AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?1)
+                       AND substr(rs.path, 1, length(?2)) = ?2",
                 )
                 .map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
-                .query_map(rusqlite::params![library_path], |r| {
+                .query_map(rusqlite::params![today, scope], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
                 })
                 .map_err(|e| format!("due lens-2 reviewed query: {}", e))?;
@@ -198,42 +216,52 @@ pub(crate) fn query_due_notes_indexed(
             .map(|t| format!("'{}'", t))
             .collect::<Vec<_>>()
             .join(",");
-        // Per reviewed note: its MOST consequential changed load-bearing dependency
-        // (highest link weight, then most-recent change). LIMIT 1 = the dedup.
+        // Per reviewed note: its load-bearing out-links whose dependency has a
+        // hash-confirmed content change, most-consequential first. The day filter +
+        // "first that beats last_reviewed" pick happen in Rust (local_day).
         let probe_sql = format!(
-            "SELECT jl.link_type, COALESCE(dep.name, jl.target_name),
-                    (COALESCE(dep.content_changed_at, dep.modified) - 1577836800) / 86400 AS dep_day
+            "SELECT jl.link_type, COALESCE(dep.name, jl.target_name), dep.content_changed_at
              FROM note_links jl
              JOIN note_meta dep ON dep.cid_cn = jl.target_cid_cn
              WHERE jl.source_path = ?1
                AND jl.status = 'active'
                AND jl.link_type IN ({types})
                AND jl.target_cid_cn IS NOT NULL AND jl.target_cid_cn != ''
-               AND (COALESCE(dep.content_changed_at, dep.modified) - 1577836800) / 86400 > ?2
-             ORDER BY jl.weight DESC, dep_day DESC
-             LIMIT 1",
+               AND dep.content_changed_at IS NOT NULL
+               AND dep.path != ?1
+             ORDER BY jl.weight DESC, dep.content_changed_at DESC, jl.id DESC",
             types = types_in,
         );
         let mut probe = conn.prepare(&probe_sql).map_err(|e| format!("due lens-2 probe prepare: {}", e))?;
         for (path, name, stratum, last_reviewed) in reviewed {
-            let lr_day = date_to_days(&last_reviewed);
-            let mut hits = probe
-                .query_map(rusqlite::params![path, lr_day], |r| {
+            // A malformed last_reviewed is SKIPPED (never bucketed to day 0).
+            let lr_day = match parse_day(&last_reviewed) {
+                Some(d) => d,
+                None => continue,
+            };
+            let mut rows = probe
+                .query_map(rusqlite::params![path], |r| {
                     Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?))
                 })
                 .map_err(|e| format!("due lens-2 probe query: {}", e))?;
-            if let Some(Ok((link_type, dep_name, dep_day))) = hits.next() {
-                due.push(DueNote {
-                    note_path: path,
-                    note_name: name,
-                    reason: "stale".to_string(),
-                    days_overdue: (today_days - dep_day).max(0),
-                    stratum: stratum.clamp(0, 255) as u8,
-                    last_reviewed: Some(last_reviewed),
-                    stale_trigger_name: Some(dep_name),
-                    stale_trigger_type: Some(link_type),
-                    stale_changed_on: Some(day_to_date(dep_day)),
-                });
+            // Rows arrive most-consequential first; take the first whose dependency
+            // changed on a later LOCAL day than the review (strict > → same-day safe).
+            while let Some(Ok((link_type, dep_name, cca))) = rows.next() {
+                let dep_day = local_day(cca);
+                if dep_day > lr_day {
+                    due.push(DueNote {
+                        note_path: path.clone(),
+                        note_name: name.clone(),
+                        reason: "stale".to_string(),
+                        days_overdue: (today_days - dep_day).max(0),
+                        stratum: stratum.clamp(0, 255) as u8,
+                        last_reviewed: Some(last_reviewed.clone()),
+                        stale_trigger_name: Some(dep_name),
+                        stale_trigger_type: Some(link_type),
+                        stale_changed_on: Some(day_to_date(dep_day)),
+                    });
+                    break;
+                }
             }
         }
     }
@@ -332,12 +360,12 @@ pub fn snooze_note(
     let mut pulse = load_pulse_data(&cdir);
 
     let snooze_until = add_days(&today_str(), days as i64);
-    let until_day = date_to_days(&snooze_until);
-    pulse.snoozed.insert(note_path.clone(), snooze_until);
+    pulse.snoozed.insert(note_path.clone(), snooze_until.clone());
 
     save_pulse_data(&cdir, &pulse)?;
-    // §B-2 — push the schedule row's due day out so the read excludes it.
-    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, until_day));
+    // §B-2 — push the schedule row's due day out (Lens-1) + record snoozed_until
+    // (Lens-2) so the read excludes it from BOTH lenses.
+    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, &snooze_until));
     Ok(())
 }
 
@@ -394,6 +422,34 @@ pub(crate) fn date_to_days(date_str: &str) -> i64 {
         d.signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()).num_days()
     } else {
         0
+    }
+}
+
+/// Strict variant of [`date_to_days`]: `None` when the string isn't a valid
+/// `YYYY-MM-DD`. Mode-2 uses this so a malformed `last_reviewed` is SKIPPED rather
+/// than silently bucketed to day 0 (2020-01-01), which would make almost every
+/// dependency look "changed after review" → spurious staleness (review finding E).
+pub(crate) fn parse_day(date_str: &str) -> Option<i64> {
+    chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+        .ok()
+        .map(|d| d.signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()).num_days())
+}
+
+/// Unix seconds → the **local** calendar day (days-since-2020), via the OS timezone.
+/// Mode-2 compares a dependency's change day against `last_reviewed` — which is
+/// written in LOCAL time (`today_str` uses `chrono::Local`). A file mtime is an
+/// absolute (UTC) instant, so bucketing it by UTC day skews ±1 against the local
+/// review date near midnight in non-UTC zones (review finding F). Converting the
+/// mtime to the local day makes both sides share one frame. Falls back to the UTC
+/// day only if the timestamp is out of range.
+pub(crate) fn local_day(secs: i64) -> i64 {
+    use chrono::TimeZone;
+    match chrono::Local.timestamp_opt(secs, 0).single() {
+        Some(dt) => dt
+            .date_naive()
+            .signed_duration_since(chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap())
+            .num_days(),
+        None => secs_to_days(secs),
     }
 }
 
@@ -655,39 +711,50 @@ pub fn upsert_schedule_row(
     modified_secs: i64,
     stratum: i64,
 ) -> Result<(), String> {
-    let existing: Option<(Option<String>, i64, String)> = conn
+    let existing: Option<(Option<String>, i64, String, Option<String>)> = conn
         .query_row(
-            "SELECT last_reviewed, interval, reason FROM review_schedule WHERE path = ?1",
+            "SELECT last_reviewed, interval, reason, snoozed_until FROM review_schedule WHERE path = ?1",
             rusqlite::params![path],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
         )
         .ok();
 
     // A dismissed note stays dismissed across re-index (else it'd resurface on
     // the next save). Leave the row untouched.
-    if let Some((_, _, ref reason)) = existing {
+    if let Some((_, _, ref reason, _)) = existing {
         if reason == "dismissed" {
             return Ok(());
         }
     }
 
-    let (last_reviewed, interval): (Option<String>, u32) = existing
-        .map(|(lr, iv, _)| (lr, iv.max(0) as u32))
-        .unwrap_or((None, 0));
+    let (last_reviewed, interval, snoozed_until): (Option<String>, u32, Option<String>) = existing
+        .map(|(lr, iv, _, su)| (lr, iv.max(0) as u32, su))
+        .unwrap_or((None, 0, None));
     let is_cp = is_checkpoint(tags_json);
     let anchor_day = secs_to_days(modified_secs);
     let lr_day = last_reviewed.as_ref().map(|d| date_to_days(d));
-    let (reason, due_days) = compute_schedule_row(lr_day, interval, is_cp, anchor_day);
+    let (reason, mut due_days) = compute_schedule_row(lr_day, interval, is_cp, anchor_day);
+
+    // Preserve an ACTIVE snooze across re-index (review finding E #7): without this,
+    // a save (or a rename-cascade re-index) recomputes due_days and silently drops
+    // the snooze. Keep due_days at the snooze day so Lens-1 stays hidden; the
+    // snoozed_until column itself is preserved by NOT touching it in DO UPDATE.
+    let today = today_str();
+    if let Some(ref su) = snoozed_until {
+        if su.as_str() > today.as_str() {
+            due_days = date_to_days(su);
+        }
+    }
 
     conn.execute(
-        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval, snoozed_until)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
          ON CONFLICT(path) DO UPDATE SET
            reason        = excluded.reason,
            due_days      = excluded.due_days,
            is_checkpoint = excluded.is_checkpoint,
            stratum       = excluded.stratum",
-        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64],
+        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64, snoozed_until],
     )
     .map_err(|e| format!("review_schedule upsert {}: {}", path, e))?;
     Ok(())
@@ -740,23 +807,27 @@ fn review_row_mark(
         .unwrap_or(false);
     let (reason, due_days) =
         compute_schedule_row(Some(date_to_days(last_reviewed)), interval, is_cp, 0);
+    // ✓ Reviewed clears any active snooze (reviewing IS engaging with the note).
     conn.execute(
-        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
-         VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6)
+        "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval, snoozed_until)
+         VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, NULL)
          ON CONFLICT(path) DO UPDATE SET
            reason=excluded.reason, due_days=excluded.due_days,
-           last_reviewed=excluded.last_reviewed, interval=excluded.interval",
+           last_reviewed=excluded.last_reviewed, interval=excluded.interval, snoozed_until=NULL",
         rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, interval as i64],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
 }
 
-/// Snooze: push the due day forward so the read (`due_days <= today`) excludes it.
-fn review_row_snooze(conn: &rusqlite::Connection, path: &str, until_day: i64) -> Result<(), String> {
+/// Snooze: push the due day forward (Lens-1 excludes via `due_days <= today`) AND
+/// record `snoozed_until` so the Mode-2 Stale lens also hides it — snooze = "not
+/// now" across BOTH lenses (review findings C #3/#10).
+fn review_row_snooze(conn: &rusqlite::Connection, path: &str, snooze_until: &str) -> Result<(), String> {
+    let until_day = date_to_days(snooze_until);
     conn.execute(
-        "UPDATE review_schedule SET due_days = ?1 WHERE path = ?2",
-        rusqlite::params![until_day, path],
+        "UPDATE review_schedule SET due_days = ?1, snoozed_until = ?2 WHERE path = ?3",
+        rusqlite::params![until_day, snooze_until, path],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -827,9 +898,9 @@ pub fn backfill_schedule_row(
     let (reason, due_days) =
         schedule_for(is_cp, modified_secs, last_reviewed, interval, snoozed_until, dismissed, today);
     conn.execute(
-        "INSERT OR REPLACE INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64],
+        "INSERT OR REPLACE INTO review_schedule (path, reason, due_days, is_checkpoint, last_reviewed, stratum, interval, snoozed_until)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        rusqlite::params![path, reason, due_days, is_cp as i64, last_reviewed, stratum, interval as i64, snoozed_until],
     )
     .map_err(|e| format!("review_schedule backfill {}: {}", path, e))?;
     Ok(())
@@ -845,7 +916,7 @@ mod tests {
             "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
                is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0,
-               interval INTEGER NOT NULL DEFAULT 0);",
+               interval INTEGER NOT NULL DEFAULT 0, snoozed_until TEXT);",
         ).unwrap();
         c
     }
@@ -927,8 +998,11 @@ mod tests {
     fn row_snooze_and_dismiss() {
         let c = sched_db();
         c.execute("INSERT INTO review_schedule (path, reason, due_days) VALUES ('/n.md','interval_due',100)", []).unwrap();
-        review_row_snooze(&c, "/n.md", 150).unwrap();
-        assert_eq!(c.query_row("SELECT due_days FROM review_schedule WHERE path='/n.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 150);
+        let su = day_to_date(150);
+        review_row_snooze(&c, "/n.md", &su).unwrap();
+        let (dd, snz): (i64, Option<String>) = c.query_row("SELECT due_days, snoozed_until FROM review_schedule WHERE path='/n.md'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(dd, 150, "due pushed to the snooze day (Lens-1 hides it)");
+        assert_eq!(snz.as_deref(), Some(su.as_str()), "snoozed_until recorded (Lens-2 hides it)");
         // dismiss existing + absent
         review_row_dismiss(&c, "/n.md").unwrap();
         assert_eq!(row(&c, "/n.md").0, "dismissed");
@@ -997,9 +1071,9 @@ mod tests {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
             "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER);
-             CREATE TABLE note_links (source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
+             CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
-               is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0, interval INTEGER NOT NULL DEFAULT 0);",
+               is_checkpoint INTEGER NOT NULL DEFAULT 0, last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0, interval INTEGER NOT NULL DEFAULT 0, snoozed_until TEXT);",
         ).unwrap();
         c
     }
@@ -1093,6 +1167,30 @@ mod tests {
         let stale: Vec<_> = due.iter().filter(|d| d.reason == "stale").collect();
         assert_eq!(stale.len(), 1, "S surfaces once, not once-per-dep");
         assert_eq!(stale[0].stale_trigger_name.as_deref(), Some("Heavy"), "cites the heaviest link");
+    }
+
+    #[test]
+    fn snooze_suppresses_both_lenses() {
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        // S is reviewed + has a changed load-bearing dep (would be stale) AND is due
+        // by interval — but it is snoozed into the future. It must surface in NEITHER lens.
+        for (p, n, cid, cca) in [
+            ("/lib/S.md", "Snoozed", "CIDS", None),
+            ("/lib/Dep.md", "Dep", "CIDD", Some(secs("2026-06-10"))),
+        ] {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,content_changed_at) VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![p, n, cid, secs("2026-01-01"), cca]).unwrap();
+        }
+        // due_days in the past (would be due) BUT snoozed_until in the future.
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum,snoozed_until) VALUES ('/lib/S.md','interval_due',?1,'2026-06-01',2,'2099-01-01')",
+            rusqlite::params![today_days - 5]).unwrap();
+        c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) VALUES ('/lib/S.md','Dep','CIDD','supports','active',2.0)", []).unwrap();
+
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days).unwrap();
+        assert!(!due.iter().any(|d| d.note_path == "/lib/S.md"),
+            "a snoozed note must appear in NEITHER lens (got {:?})", due.iter().map(|d| (&d.note_path, &d.reason)).collect::<Vec<_>>());
     }
 
     #[test]
