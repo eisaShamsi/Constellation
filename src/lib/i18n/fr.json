@@ -3612,6 +3612,29 @@
     "openEditor": "Ouvrir dans l'éditeur",
     "see360": "Contexte complet (360°)",
     "classify": "Classer",
-    "selectNote": "Sélectionnez une note pour voir son contexte de révision."
+    "selectNote": "Sélectionnez une note pour voir son contexte de révision.",
+    "prescriptionLabel": "Prescription",
+    "summaryEmpty": "Pas encore de résumé.",
+    "manual": "manuelle",
+    "computedWouldBe": "Le calcul donnerait {n}",
+    "resetComputed": "Rétablir la valeur calculée",
+    "topPct": "parmi les {n} % les plus prioritaires",
+    "markStandalone": "Marquer comme autonome",
+    "returnToReviewer": "Réviseur",
+    "factor": {
+      "decay": "En retard / obsolète",
+      "disturbance": "Perturbation",
+      "reach": "Sollicitée",
+      "maturity": "Maturité",
+      "fragility": "Fragilité"
+    },
+    "rx": {
+      "stale": "Confrontez-la à « {name} » — conciliez votre position ou mettez-la à jour.",
+      "orphan": "Reliez-la à une note connexe — ou marquez-la comme délibérément autonome.",
+      "fragile": "Ajoutez un lien justificatif (dérive-de) pour l’étayer.",
+      "due": "Relisez-la et confirmez qu’elle tient toujours, puis marquez-la comme révisée.",
+      "never": "Donnez-lui sa première révision — lisez-la en entier, puis confirmez-la ou affinez-la.",
+      "checkpoint": "Réexaminez cette vue — confirmez-la, révisez-la ou remplacez-la."
+    }
   }
 }

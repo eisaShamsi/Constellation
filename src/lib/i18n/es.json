@@ -3612,6 +3612,29 @@
     "openEditor": "Abrir en el editor",
     "see360": "Contexto completo (360°)",
     "classify": "Clasificar",
-    "selectNote": "Selecciona una nota para ver su contexto de revisión."
+    "selectNote": "Selecciona una nota para ver su contexto de revisión.",
+    "prescriptionLabel": "Prescripción",
+    "summaryEmpty": "Aún no hay resumen.",
+    "manual": "manual",
+    "computedWouldBe": "El valor calculado sería {n}",
+    "resetComputed": "Restablecer al valor calculado",
+    "topPct": "{n}% superior",
+    "markStandalone": "Marcar como independiente",
+    "returnToReviewer": "Revisor",
+    "factor": {
+      "decay": "Vencida / obsoleta",
+      "disturbance": "Alteración",
+      "reach": "Dependencia",
+      "maturity": "Madurez",
+      "fragility": "Fragilidad"
+    },
+    "rx": {
+      "stale": "Revísala frente a «{name}» — reconcilia tu postura o actualízala.",
+      "orphan": "Conéctala con una nota relacionada — o márcala como deliberadamente independiente.",
+      "fragile": "Añade un enlace de apoyo (se-deriva-de) para fundamentarla.",
+      "due": "Reléela y confirma que sigue siendo válida; luego márcala como revisada.",
+      "never": "Dale su primera revisión — léela por completo, luego confírmala o refínala.",
+      "checkpoint": "Reexamina esta postura — confírmala, revísala o sustitúyela."
+    }
   }
 }

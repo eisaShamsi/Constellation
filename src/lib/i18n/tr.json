@@ -3612,6 +3612,29 @@
     "openEditor": "Düzenleyicide aç",
     "see360": "Tam bağlam (360°)",
     "classify": "Sınıflandır",
-    "selectNote": "Gözden geçirme bağlamını görmek için bir not seç."
+    "selectNote": "Gözden geçirme bağlamını görmek için bir not seç.",
+    "prescriptionLabel": "Reçete",
+    "summaryEmpty": "Henüz özet yok.",
+    "manual": "elle",
+    "computedWouldBe": "Hesaplanan değer {n} olurdu",
+    "resetComputed": "Hesaplanana sıfırla",
+    "topPct": "en üst %{n}",
+    "markStandalone": "Bağımsız olarak işaretle",
+    "returnToReviewer": "İnceleyici",
+    "factor": {
+      "decay": "Gecikmiş / bayat",
+      "disturbance": "Sarsıntı",
+      "reach": "Bağımlılık",
+      "maturity": "Olgunluk",
+      "fragility": "Kırılganlık"
+    },
+    "rx": {
+      "stale": "“{name}” notuna göre gözden geçir — duruşunu uzlaştır ya da güncelle.",
+      "orphan": "İlgili bir notla bağla — ya da bilinçli olarak bağımsız işaretle.",
+      "fragile": "Temellendirmek için destekleyici bir (kaynaklanır) bağlantı ekle.",
+      "due": "Yeniden oku ve hâlâ geçerli olduğunu doğrula, sonra incelendi olarak işaretle.",
+      "never": "İlk incelemesini yap — baştan sona oku, sonra doğrula ya da iyileştir.",
+      "checkpoint": "Bu görüşü yeniden incele — doğrula, gözden geçir ya da yerine yenisini koy."
+    }
   }
 }

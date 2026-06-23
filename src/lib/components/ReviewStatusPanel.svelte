@@ -5,6 +5,7 @@
 	// in the left-dock ReviewerView, not here.
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
+	import { computedPriority, effectivePriority } from '$lib/reviewer/priorities';
 
 	interface NoteReviewStatus {
 		reason: string | null;          // never_reviewed | interval_due | checkpoint | dismissed | null
@@ -16,7 +17,14 @@
 		stale_trigger_name: string | null;
 		stale_trigger_type: string | null;
 		stale_changed_on: string | null;
-		priority: number;               // MIG-084 §D — user-set 0–100 (default 50)
+		// MIG-084 §F.2 — the override (null = use computed) + the signals to mirror the
+		// Reviewer's computed priority.
+		priority_override: number | null;
+		word_count: number;
+		incoming_count: number;
+		outgoing_count: number;
+		maturity: string;
+		days_overdue: number;
 	}
 
 	let {
@@ -69,13 +77,21 @@
 		} catch {}
 	}
 
-	// MIG-084 §D — the priority lever, mirrored from the Reviewer's detail pane. Live
-	// draft on input; persisted on change (set_review_priority); bubbles a refresh.
+	// MIG-084 §F.2 — the priority lever, mirrored from the Reviewer's detail pane. The
+	// EFFECTIVE priority = the user override, else the computed score (same engine as the
+	// Reviewer). Dragging commits an override; Reset clears it (null = use computed).
+	const computed = $derived(status ? computedPriority({
+		reason: status.reason ?? '', days_overdue: status.days_overdue,
+		stale_trigger_type: status.stale_trigger_type, stale_changed_on: status.stale_changed_on,
+		incoming_count: status.incoming_count, outgoing_count: status.outgoing_count, maturity: status.maturity,
+	}, todayDay).score : 50);
+	const effective = $derived(effectivePriority(status?.priority_override, computed));
+	const isManual = $derived(status?.priority_override != null);
 	let priorityDraft = $state<number | null>(null);
 	$effect(() => { notePath; priorityDraft = null; }); // reset on note change
-	async function commitPriority(value: number) {
+	async function commitPriority(value: number | null) {
 		if (!notePath) return;
-		try { await invoke('set_review_priority', { notePath, priority: value }); if (status) status.priority = value; onRefresh?.(); } catch {}
+		try { await invoke('set_review_priority', { notePath, priority: value }); await load(); onRefresh?.(); } catch {}
 	}
 
 	// The primary Mode-1/3 status line (separate from the stale lens below).
@@ -121,15 +137,22 @@
 			</div>
 		{/if}
 
-		<!-- Priority lever (mirrors the Reviewer detail pane; 0–100, default 50). -->
+		<!-- Priority lever (mirrors the Reviewer; computed by default, overridable). -->
 		<div class="rsp-priority">
 			<label for="rsp-prio">{$t('reviewer.priority') || 'Priority'}</label>
 			<input id="rsp-prio" type="range" min="0" max="100" step="5"
-				value={priorityDraft ?? status?.priority ?? 50}
+				value={priorityDraft ?? effective}
 				oninput={(e) => priorityDraft = Number((e.currentTarget as HTMLInputElement).value)}
 				onchange={(e) => commitPriority(Number((e.currentTarget as HTMLInputElement).value))} />
-			<span class="rsp-prio-val">{priorityDraft ?? status?.priority ?? 50}</span>
+			<span class="rsp-prio-val">{priorityDraft ?? effective}</span>
+			{#if isManual}<span class="rsp-prio-tag">{$t('reviewer.manual') || 'manual'}</span>{/if}
 		</div>
+		{#if isManual}
+			<div class="rsp-prio-override">
+				{($t('reviewer.computedWouldBe') || 'Computed would be {n}').replace('{n}', String(computed))}
+				<button class="rsp-reset" onclick={() => commitPriority(null)}>{$t('reviewer.resetComputed') || 'Reset to computed'}</button>
+			</div>
+		{/if}
 
 		<!-- Actions (the only thing that advances last_reviewed is the explicit ✓). -->
 		<div class="rsp-actions">
@@ -158,6 +181,9 @@
 	.rsp-priority label { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-muted); flex-shrink: 0; }
 	.rsp-priority input[type="range"] { flex: 1; accent-color: var(--interactive-accent, #7c3aed); min-width: 0; }
 	.rsp-prio-val { font-size: calc(0.76rem * var(--rs-scale, 1)); color: var(--text-normal); width: 2.2em; text-align: end; }
+	.rsp-prio-tag { font-size: calc(0.62rem * var(--rs-scale, 1)); color: var(--text-on-accent, #fff); background: var(--interactive-accent, #7c3aed); border-radius: 4px; padding: 1px 5px; }
+	.rsp-prio-override { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: calc(0.68rem * var(--rs-scale, 1)); color: var(--text-faint); }
+	.rsp-reset { border: none; background: none; cursor: pointer; color: var(--interactive-accent, #7c3aed); font-family: inherit; font-size: inherit; padding: 0; text-decoration: underline; }
 	.rsp-actions { display: flex; gap: 6px; margin-top: 4px; }
 	.rsp-btn {
 		border: 1px solid var(--background-modifier-border); background: var(--background-primary);

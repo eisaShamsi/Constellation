@@ -3612,6 +3612,29 @@
     "openEditor": "Im Editor öffnen",
     "see360": "Voller Kontext (360°)",
     "classify": "Einordnen",
-    "selectNote": "Wähle eine Notiz, um ihren Prüfkontext zu sehen."
+    "selectNote": "Wähle eine Notiz, um ihren Prüfkontext zu sehen.",
+    "prescriptionLabel": "Verordnung",
+    "summaryEmpty": "Noch keine Zusammenfassung.",
+    "manual": "manuell",
+    "computedWouldBe": "Berechnet wäre {n}",
+    "resetComputed": "Auf berechneten Wert zurücksetzen",
+    "topPct": "obere {n}%",
+    "markStandalone": "Als eigenständig markieren",
+    "returnToReviewer": "Prüfung",
+    "factor": {
+      "decay": "Überfällig / veraltet",
+      "disturbance": "Störung",
+      "reach": "Worauf gestützt wird",
+      "maturity": "Reife",
+      "fragility": "Fragilität"
+    },
+    "rx": {
+      "stale": "Prüfe sie gegen „{name}“ — bringe deine Haltung in Einklang oder aktualisiere sie.",
+      "orphan": "Verknüpfe sie mit einer verwandten Notiz — oder markiere sie als bewusst eigenständig.",
+      "fragile": "Füge eine stützende Verknüpfung (leitet-ab-von) hinzu, um sie zu fundieren.",
+      "due": "Lies sie erneut und bestätige, dass sie weiterhin gilt, dann markiere sie als geprüft.",
+      "never": "Gib ihr ihre erste Prüfung — lies sie durch, dann bestätige oder verfeinere sie.",
+      "checkpoint": "Überdenke diese Sichtweise — bestätige sie, überarbeite sie oder löse sie ab."
+    }
   }
 }

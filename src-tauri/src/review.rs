@@ -456,6 +456,10 @@ pub struct NoteReviewStatus {
     // so the note tab mirrors the Reviewer's computed-priority + prescription logic.
     pub priority_override: Option<i64>,
     pub word_count: i64,
+    pub incoming_count: i64,
+    pub outgoing_count: i64,
+    pub maturity: String,
+    pub days_overdue: i64,
 }
 
 /// MIG-083 §D / MIG-080 §F — one note's Review-Pulse status: the O(1) `review_schedule`
@@ -472,14 +476,21 @@ pub fn get_note_review_status(
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
                 // §F.2 — the note's priority OVERRIDE (nullable; None = use computed) +
-                // word_count, from note_meta; present even for an unscheduled orphan.
-                let (priority_override, word_count) = conn
+                // the signals the note tab needs to mirror the Reviewer's computed score
+                // (incoming/outgoing counts + the maturity vocabulary). Present even for an
+                // unscheduled orphan.
+                let today_days = date_to_days(&today_str());
+                let now_secs = day_midnight_secs(today_days);
+                let (priority_override, word_count, incoming_count, outgoing_count, maturity) = conn
                     .query_row(
-                        "SELECT review_priority, word_count FROM note_meta WHERE path = ?1",
+                        "SELECT review_priority, word_count, incoming_count, outgoing_count, created_at, modified FROM note_meta WHERE path = ?1",
                         rusqlite::params![note_path],
-                        |r| Ok((r.get::<_, Option<i64>>(0)?, r.get::<_, i64>(1)?)),
+                        |r| Ok((
+                            r.get::<_, Option<i64>>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?,
+                            maturity_label(r.get::<_, i64>(2)?, r.get::<_, Option<i64>>(4)?, r.get::<_, i64>(5)?, now_secs),
+                        )),
                     )
-                    .unwrap_or((None, 0));
+                    .unwrap_or((None, 0, 0, 0, "seed".to_string()));
                 let row: Option<(String, i64, Option<String>, i64)> = conn
                     .query_row(
                         "SELECT reason, due_days, last_reviewed, is_checkpoint FROM review_schedule WHERE path = ?1",
@@ -503,15 +514,17 @@ pub fn get_note_review_status(
                         stale_trigger_type: stale.as_ref().map(|(t, _, _)| t.clone()),
                         stale_trigger_name: stale.as_ref().map(|(_, n, _)| n.clone()),
                         stale_changed_on: stale.as_ref().map(|(_, _, d)| day_to_date(*d)),
-                        priority_override, word_count,
+                        priority_override, word_count, incoming_count, outgoing_count, maturity,
+                        days_overdue: (today_days - due_days).max(0),
                     });
                 }
                 // note_meta exists but no review_schedule row (e.g. an orphan): clean
-                // never-reviewed status, still carrying the override + word_count.
+                // never-reviewed status, still carrying the override + signals.
                 return Ok(NoteReviewStatus {
                     reason: None, due_days: None, last_reviewed: None, never_reviewed: true,
                     is_checkpoint: false, is_stale: false, stale_trigger_name: None,
                     stale_trigger_type: None, stale_changed_on: None, priority_override, word_count,
+                    incoming_count, outgoing_count, maturity, days_overdue: 0,
                 });
             }
         }
@@ -529,6 +542,10 @@ pub fn get_note_review_status(
         stale_changed_on: None,
         priority_override: None,
         word_count: 0,
+        incoming_count: 0,
+        outgoing_count: 0,
+        maturity: "seed".to_string(),
+        days_overdue: 0,
     })
 }
 

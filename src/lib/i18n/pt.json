@@ -3612,6 +3612,29 @@
     "openEditor": "Abrir no editor",
     "see360": "Contexto completo (360°)",
     "classify": "Classificar",
-    "selectNote": "Selecione uma nota para ver o seu contexto de revisão."
+    "selectNote": "Selecione uma nota para ver o seu contexto de revisão.",
+    "prescriptionLabel": "Prescrição",
+    "summaryEmpty": "Ainda sem resumo.",
+    "manual": "manual",
+    "computedWouldBe": "O valor calculado seria {n}",
+    "resetComputed": "Repor para o valor calculado",
+    "topPct": "top {n}%",
+    "markStandalone": "Marcar como autónoma",
+    "returnToReviewer": "Revisor",
+    "factor": {
+      "decay": "Atrasada / desatualizada",
+      "disturbance": "Perturbação",
+      "reach": "Dependência",
+      "maturity": "Maturidade",
+      "fragility": "Fragilidade"
+    },
+    "rx": {
+      "stale": "Reveja-a face a “{name}” — concilie a sua posição ou atualize-a.",
+      "orphan": "Ligue-a a uma nota relacionada — ou marque-a como deliberadamente autónoma.",
+      "fragile": "Adicione uma ligação de apoio (deriva-de) para a fundamentar.",
+      "due": "Releia-a e confirme que ainda se sustenta, depois marque-a como revista.",
+      "never": "Dê-lhe a primeira revisão — leia-a por inteiro, depois confirme ou refine.",
+      "checkpoint": "Reexamine esta perspetiva — confirme-a, reveja-a ou substitua-a."
+    }
   }
 }

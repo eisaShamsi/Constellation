@@ -3749,6 +3749,29 @@
     "openEditor": "Open in editor",
     "see360": "Full context (360°)",
     "classify": "Classify",
-    "selectNote": "Select a note to see its review context."
+    "selectNote": "Select a note to see its review context.",
+    "prescriptionLabel": "Prescription",
+    "summaryEmpty": "No summary yet.",
+    "manual": "manual",
+    "computedWouldBe": "Computed would be {n}",
+    "resetComputed": "Reset to computed",
+    "topPct": "top {n}%",
+    "markStandalone": "Mark standalone",
+    "returnToReviewer": "Reviewer",
+    "factor": {
+      "decay": "Overdue / stale",
+      "disturbance": "Disruption",
+      "reach": "Depended on",
+      "maturity": "Maturity",
+      "fragility": "Fragility"
+    },
+    "rx": {
+      "stale": "Review it against “{name}” — reconcile your stance or update it.",
+      "orphan": "Connect it to a related note — or mark it deliberately standalone.",
+      "fragile": "Add a supporting (derives-from) link to ground it.",
+      "due": "Re-read it and confirm it still holds, then mark it reviewed.",
+      "never": "Give it its first review — read it through, then confirm or refine.",
+      "checkpoint": "Re-examine this view — confirm it, revise it, or supersede it."
+    }
   }
 }

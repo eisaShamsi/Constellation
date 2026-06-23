@@ -9,6 +9,7 @@
 	// pane hands off to them, never rebuilds them.
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
+	import { computedPriority, effectivePriority, type ComputedPriority } from '$lib/reviewer/priorities';
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 	import VirtualList from './VirtualList.svelte';
 
@@ -25,7 +26,8 @@
 		incoming_count: number;
 		outgoing_count: number;
 		maturity: string;
-		priority: number;
+		word_count: number;
+		priority_override: number | null; // null = use the computed score
 	}
 
 	let {
@@ -82,14 +84,38 @@
 		{ reason: 'never_reviewed',icon: '📝', key: 'never' },
 	];
 
+	// Today as days-since-2020 (local), the engine's decay frame.
+	const todayDay = $derived.by(() => {
+		const d = new Date();
+		return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000) - 18262;
+	});
+	// Each note carries its COMPUTED priority + EFFECTIVE priority (override ?? computed),
+	// computed once here (cheap arithmetic, memoized by the $derived) and reused for
+	// grouping, sorting, the detail recipe, and the percentile.
+	type RankedNote = DueNote & { _computed: ComputedPriority; _effective: number };
+	const ranked = $derived.by<RankedNote[]>(() =>
+		dueNotes.map((n) => {
+			const _computed = computedPriority(n, todayDay);
+			return { ...n, _computed, _effective: effectivePriority(n.priority_override, _computed.score) };
+		})
+	);
 	const byReason = $derived.by(() => {
-		const m = new Map<string, DueNote[]>();
+		const m = new Map<string, RankedNote[]>();
 		for (const l of LENSES) m.set(l.reason, []);
-		for (const n of dueNotes) { if (m.has(n.reason)) m.get(n.reason)!.push(n); }
+		for (const n of ranked) { if (m.has(n.reason)) m.get(n.reason)!.push(n); }
+		// Within each lens, highest EFFECTIVE priority first (the ranking lever).
+		for (const arr of m.values()) arr.sort((a, b) => b._effective - a._effective);
 		return m;
 	});
 	// Distinct notes (a note can sit in several lenses) — the truthful "how many need me".
 	const distinctCount = $derived(new Set(dueNotes.map(n => n.note_path)).size);
+	// Percentile of the selected note's effective priority among all due notes ("top N%").
+	const selectedPercentile = $derived.by(() => {
+		if (!selected || ranked.length < 2) return null;
+		const me = (selected as RankedNote)._effective;
+		const above = ranked.filter((r) => r._effective > me).length;
+		return Math.max(1, Math.round((100 * (above + 1)) / ranked.length));
+	});
 
 	// All six lenses are ALWAYS shown (Eisa): empty ones appear muted with a 0. Each is
 	// collapsible (a non-empty lens can be folded away).
@@ -104,7 +130,7 @@
 	// the detail pane is never empty when there's work. A $derived (not a selectedPath-
 	// writing $effect) — no echo loop (Rule 2). A stale selectedPath after reload simply
 	// falls through to dueNotes[0].
-	const selected = $derived(dueNotes.find(n => keyOf(n) === selectedKey) ?? dueNotes[0] ?? null);
+	const selected = $derived<RankedNote | null>(ranked.find(n => keyOf(n) === selectedKey) ?? ranked[0] ?? null);
 
 	// Reset the live priority draft whenever the displayed note changes.
 	$effect(() => { selected?.note_path; priorityDraft = null; });
@@ -183,14 +209,44 @@
 			await load();
 			// The acted row usually leaves the queue; if the selection is now stale, move it
 			// to the first remaining note so a row stays highlighted (matches the detail
-			// pane's own fallback). Writing selectedKey here is fine — not inside a $effect.
-			if (!dueNotes.some(x => keyOf(x) === selectedKey)) selectedKey = dueNotes[0] ? keyOf(dueNotes[0]) : null;
+			// pane's fallback). Writing selectedKey here is fine — not inside a $effect.
+			if (!ranked.some(x => keyOf(x) === selectedKey)) selectedKey = ranked[0] ? keyOf(ranked[0]) : null;
 		} catch {}
 	}
 
-	async function commitPriority(n: DueNote, value: number) {
-		try { await invoke('set_review_priority', { notePath: n.note_path, priority: value }); n.priority = value; } catch {}
+	// Priority override: dragging commits an explicit override; Reset clears it (NULL =
+	// use computed). Either reloads so the queue re-ranks by the new effective priority.
+	const isManual = $derived(selected != null && selected.priority_override != null);
+	async function commitPriority(value: number) {
+		if (!selected) return;
+		try { await invoke('set_review_priority', { notePath: selected.note_path, priority: value }); priorityDraft = null; await load(); } catch {}
 	}
+	async function resetPriority() {
+		if (!selected) return;
+		try { await invoke('set_review_priority', { notePath: selected.note_path, priority: null }); priorityDraft = null; await load(); } catch {}
+	}
+
+	// The healthy PRESCRIPTION — the one remedy that cures this note's condition (the verb
+	// itself is a button below). Deterministic per lens; the diagnosis is the why-now line.
+	function prescription(n: DueNote): string {
+		switch (n.reason) {
+			case 'stale': return sub($t('reviewer.rx.stale') || 'Review it against “{name}” — reconcile your stance or update it.', { name: n.stale_trigger_name ?? '?' });
+			case 'orphan': return $t('reviewer.rx.orphan') || 'Connect it to a related note — or mark it deliberately standalone.';
+			case 'fragile': return $t('reviewer.rx.fragile') || 'Add a supporting (derives-from) link to ground it.';
+			case 'interval_due': return $t('reviewer.rx.due') || 'Re-read it and confirm it still holds, then mark it reviewed.';
+			case 'never_reviewed': return $t('reviewer.rx.never') || 'Give it its first review — read it through, then confirm or refine.';
+			case 'checkpoint': return $t('reviewer.rx.checkpoint') || 'Re-examine this view — confirm it, revise it, or supersede it.';
+			default: return '';
+		}
+	}
+
+	const factorLabel = (key: string): string => (({
+		decay: $t('reviewer.factor.decay') || 'Overdue / stale',
+		disturbance: $t('reviewer.factor.disturbance') || 'Disruption',
+		reach: $t('reviewer.factor.reach') || 'Depended on',
+		maturity: $t('reviewer.factor.maturity') || 'Maturity',
+		fragility: $t('reviewer.factor.fragility') || 'Fragility',
+	}) as Record<string, string>)[key] ?? key;
 
 	const fmtCount = (n: DueNote) =>
 		sub($t('reviewer.connections') || '{in} in · {out} out', { in: n.incoming_count, out: n.outgoing_count });
@@ -253,13 +309,57 @@
 				{#if selected}
 					{@const n = selected}
 					<div class="rv-d-title" dir="auto">{n.note_name}</div>
-					{#if summaries.get(n.note_path)?.headline}
-						<div class="rv-d-headline" dir="auto">{summaries.get(n.note_path)?.headline}</div>
+
+					<!-- Summary — ALWAYS shown (full body, regardless of any setting; Eisa). -->
+					{#if summaries.get(n.note_path)?.summary}
+						<div class="rv-d-summary" dir="auto">{summaries.get(n.note_path)?.summary}</div>
+					{:else}
+						<div class="rv-d-summary rv-d-summary-empty">{$t('reviewer.summaryEmpty') || 'No summary yet.'}</div>
 					{/if}
 
+					<!-- DIAGNOSIS: what's wrong (the why-now). -->
 					<div class="rv-d-why">
 						<span class="rv-d-why-icon">{LENSES.find(l => l.reason === n.reason)?.icon}</span>
 						<span dir="auto">{whyNow(n)}</span>
+					</div>
+
+					<!-- PRESCRIPTION: the one healthy thing that cures it. -->
+					<div class="rv-d-rx">
+						<span class="rv-d-rx-label">{$t('reviewer.prescriptionLabel') || 'Prescription'}</span>
+						<span class="rv-d-rx-text" dir="auto">{prescription(n)}</span>
+					</div>
+
+					<!-- PRIORITY: the computed score as a readable recipe + the override lever. -->
+					<div class="rv-d-prio-box">
+						<div class="rv-prio-head">
+							<span class="rv-prio-num">{n._effective}</span>
+							<span class="rv-prio-label">{$t('reviewer.priority') || 'Priority'}</span>
+							{#if isManual}<span class="rv-prio-tag">{$t('reviewer.manual') || 'manual'}</span>{/if}
+							{#if selectedPercentile != null}<span class="rv-prio-pct">{sub($t('reviewer.topPct') || 'top {n}%', { n: selectedPercentile })}</span>{/if}
+						</div>
+						<div class="rv-prio-bar" aria-hidden="true">
+							{#each n._computed.contributions.filter(c => c.points >= 1) as c}
+								<div class="rv-seg rv-seg-{c.axis}" style="flex: {c.points}" title="{factorLabel(c.key)} +{Math.round(c.points)}"></div>
+							{/each}
+						</div>
+						<div class="rv-prio-legend">
+							{#each n._computed.contributions.filter(c => c.points >= 1) as c}
+								<span class="rv-leg"><span class="rv-leg-dot rv-seg-{c.axis}"></span>{factorLabel(c.key)} +{Math.round(c.points)}</span>
+							{/each}
+						</div>
+						<div class="rv-d-priority">
+							<input id="rv-prio" type="range" min="0" max="100" step="5"
+								value={priorityDraft ?? n._effective}
+								oninput={(e) => priorityDraft = Number((e.currentTarget as HTMLInputElement).value)}
+								onchange={(e) => commitPriority(Number((e.currentTarget as HTMLInputElement).value))} />
+							<span class="rv-prio-val">{priorityDraft ?? n._effective}</span>
+						</div>
+						{#if isManual}
+							<div class="rv-prio-override">
+								{sub($t('reviewer.computedWouldBe') || 'Computed would be {n}', { n: n._computed.score })}
+								<button class="rv-link" onclick={resetPriority}>{$t('reviewer.resetComputed') || 'Reset to computed'}</button>
+							</div>
+						{/if}
 					</div>
 
 					<div class="rv-d-facts">
@@ -277,16 +377,6 @@
 						</div>
 					</div>
 
-					<!-- Priority: the user's ranking lever (also on the note's Review tab). -->
-					<div class="rv-d-priority">
-						<label for="rv-prio">{$t('reviewer.priority') || 'Priority'}</label>
-						<input id="rv-prio" type="range" min="0" max="100" step="5"
-							value={priorityDraft ?? n.priority}
-							oninput={(e) => priorityDraft = Number((e.currentTarget as HTMLInputElement).value)}
-							onchange={(e) => commitPriority(n, Number((e.currentTarget as HTMLInputElement).value))} />
-						<span class="rv-prio-val">{priorityDraft ?? n.priority}</span>
-					</div>
-
 					<!-- Decision verbs, each previewing its consequence where it has one. -->
 					<div class="rv-d-actions">
 						{#if isOrphan(n)}
@@ -295,12 +385,9 @@
 							<button class="rv-btn primary" onclick={() => act('mark_reviewed', n)}>✓ {$t('reviewPanel.reviewed') || 'Reviewed'}</button>
 						{/if}
 						{#if n.reason === 'interval_due' || n.reason === 'checkpoint' || n.reason === 'never_reviewed'}
-							<!-- Snooze only on the time-based lenses it actually suppresses (Lens-1).
-							     Stale/Orphan/Fragile aren't snooze-suppressed (Boss ruling + the note_meta
-							     lenses ignore snoozed_until), so a Snooze button there would be a no-op. -->
 							<button class="rv-btn" onclick={() => act('snooze_note', n)} title={$t('reviewPanel.snooze') || 'Snooze 7 days'}>👁 {$t('reviewer.snooze7') || 'Snooze 7d'}</button>
 						{/if}
-						<button class="rv-btn" onclick={() => act('dismiss_note', n)} title={$t('reviewPanel.dismiss') || 'Dismiss'}>🗄️ {$t('reviewer.dismiss') || 'Dismiss'}</button>
+						<button class="rv-btn" onclick={() => act('dismiss_note', n)} title={isOrphan(n) ? ($t('reviewer.markStandalone') || 'Mark as standalone') : ($t('reviewPanel.dismiss') || 'Dismiss')}>🗄️ {isOrphan(n) ? ($t('reviewer.markStandalone') || 'Mark standalone') : ($t('reviewer.dismiss') || 'Dismiss')}</button>
 					</div>
 
 					<!-- Hand-offs: the Reviewer triages, the siblings explain. -->
@@ -371,20 +458,44 @@
 	}
 
 	.rv-d-title { font-size: calc(1.25rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-normal); }
-	.rv-d-headline { font-size: calc(0.88rem * var(--rs-scale, 1)); color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+	.rv-d-summary { font-size: calc(0.88rem * var(--rs-scale, 1)); color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
+	.rv-d-summary-empty { font-style: italic; color: var(--text-faint); }
 	.rv-d-why {
 		display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px 14px; border-radius: 8px;
 		background: var(--background-secondary); font-size: calc(0.92rem * var(--rs-scale, 1)); color: var(--text-normal); line-height: 1.4;
 	}
 	.rv-d-why-icon { flex-shrink: 0; }
 
+	/* PRESCRIPTION — the remedy, set apart with an accent edge. */
+	.rv-d-rx {
+		display: flex; flex-direction: column; gap: 3px; margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+		border-inline-start: 3px solid var(--interactive-accent, #7c3aed); background: var(--background-secondary);
+	}
+	.rv-d-rx-label { font-size: calc(0.66rem * var(--rs-scale, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--interactive-accent, #7c3aed); font-weight: 600; }
+	.rv-d-rx-text { font-size: calc(0.9rem * var(--rs-scale, 1)); color: var(--text-normal); line-height: 1.4; }
+
+	/* PRIORITY recipe — the score, the stacked contribution bar, the legend, the lever. */
+	.rv-d-prio-box { margin-top: 22px; }
+	.rv-prio-head { display: flex; align-items: baseline; gap: 8px; }
+	.rv-prio-num { font-size: calc(1.4rem * var(--rs-scale, 1)); font-weight: 700; color: var(--text-normal); }
+	.rv-prio-label { font-size: calc(0.72rem * var(--rs-scale, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); }
+	.rv-prio-tag { font-size: calc(0.66rem * var(--rs-scale, 1)); color: var(--text-on-accent, #fff); background: var(--interactive-accent, #7c3aed); border-radius: 4px; padding: 1px 6px; }
+	.rv-prio-pct { margin-inline-start: auto; font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-faint); }
+	.rv-prio-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; background: var(--background-modifier-border); }
+	.rv-seg { min-width: 2px; }
+	.rv-seg-urgency { background: var(--color-orange, #e08c3b); }
+	.rv-seg-importance { background: var(--color-blue, #4b8bd6); }
+	.rv-prio-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+	.rv-leg { display: inline-flex; align-items: center; gap: 4px; font-size: calc(0.7rem * var(--rs-scale, 1)); color: var(--text-muted); }
+	.rv-leg-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+	.rv-prio-override { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-faint); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+
 	.rv-d-facts { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px; }
 	.rv-fact { display: flex; flex-direction: column; gap: 2px; }
 	.rv-fact-k { font-size: calc(0.7rem * var(--rs-scale, 1)); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; }
 	.rv-fact-v { font-size: calc(0.95rem * var(--rs-scale, 1)); color: var(--text-normal); }
 
-	.rv-d-priority { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
-	.rv-d-priority label { font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-muted); flex-shrink: 0; }
+	.rv-d-priority { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 	.rv-d-priority input[type="range"] { flex: 1; accent-color: var(--interactive-accent, #7c3aed); }
 	.rv-prio-val { font-size: calc(0.85rem * var(--rs-scale, 1)); color: var(--text-normal); width: 2.5em; text-align: end; }
 

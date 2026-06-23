@@ -3612,6 +3612,29 @@
     "openEditor": "在编辑器中打开",
     "see360": "完整脉络（360°）",
     "classify": "归类",
-    "selectNote": "选择一条笔记以查看其复习脉络。"
+    "selectNote": "选择一条笔记以查看其复习脉络。",
+    "prescriptionLabel": "处方",
+    "summaryEmpty": "暂无摘要。",
+    "manual": "手动",
+    "computedWouldBe": "系统计算值为 {n}",
+    "resetComputed": "重置为计算值",
+    "topPct": "前 {n}%",
+    "markStandalone": "标记为独立",
+    "returnToReviewer": "审阅器",
+    "factor": {
+      "decay": "逾期 / 陈旧",
+      "disturbance": "扰动",
+      "reach": "被依赖",
+      "maturity": "成熟度",
+      "fragility": "脆弱度"
+    },
+    "rx": {
+      "stale": "对照“{name}”重新审视它——调和你的立场或更新它。",
+      "orphan": "将它连接到一篇相关笔记——或将它标记为有意保持独立。",
+      "fragile": "添加一条支撑性的（衍生自）链接，为它奠定根基。",
+      "due": "重新阅读它，确认它依然成立，然后标记为已审阅。",
+      "never": "给它第一次审阅——通读一遍，然后确认或完善它。",
+      "checkpoint": "重新检视此观点——确认它、修订它，或将它取代。"
+    }
   }
 }

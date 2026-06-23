@@ -619,6 +619,7 @@
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
 	let showReviewer = $state(false); // MIG-080 §F — left-dock universe Review reviewer
+	let cameFromReviewer = $state(false); // MIG-084 §F.2 — show a "← Reviewer" return chip
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let indexActiveNotePath = $state('');
 	let indexSelectedTerms = $state<Set<string>>(new Set());
@@ -5707,7 +5708,7 @@
 			{/if}
 			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
 			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
-			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('panels.review') || 'Review Pulse'}>
+			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('panels.review') || 'Review Pulse'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
 			{#if $appSettings.enabledFeatures?.cece !== false}
@@ -6462,11 +6463,13 @@
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
+						cameFromReviewer = true;
 					}}
 					onOpenWithTab={(path, name, tab) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
+						cameFromReviewer = true;
 						// Honor the panel placement (it may be relocated out of the right rail).
 						const placement = ($appSettings.panelPlacements as Record<string, string> | undefined)?.[tab] ?? 'right-sidebar';
 						if (placement === 'right-sidebar') {
@@ -6480,6 +6483,14 @@
 					onClose={() => { showReviewer = false; }}
 				/>
 			</div>
+		{/if}
+
+		<!-- MIG-084 §F.2 — Return-to-Reviewer chip: after opening a note FROM the
+		     reviewer, offer one click back to the queue (only while no full-page view). -->
+		{#if cameFromReviewer && !showReviewer && !fullPageActive}
+			<button class="reviewer-return-chip" onclick={() => { cameFromReviewer = false; showReviewer = true; }}>
+				← {$t('reviewer.returnToReviewer') || 'Reviewer'}
+			</button>
 		{/if}
 
 		<!-- Constellation Map — lazy-mounted (LL-022). -->
@@ -8770,6 +8781,18 @@
 		min-height: 0;
 	}
 	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible, .reviewer-overlay.reviewer-visible { display: flex; flex-direction: column; }
+
+	/* MIG-084 §F.2 — Return-to-Reviewer chip: floats over the editor after you open a note
+	   from the reviewer, offering one click back to the queue. RTL-aware (inset-inline). */
+	.reviewer-return-chip {
+		position: fixed; bottom: 18px; inset-inline-end: 18px; z-index: 50;
+		display: inline-flex; align-items: center; gap: 6px;
+		border: 1px solid var(--background-modifier-border); background: var(--background-primary);
+		color: var(--text-normal); border-radius: 999px; padding: 7px 14px; cursor: pointer;
+		font-family: inherit; font-size: calc(0.8rem * var(--rs-scale, 1));
+		box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+	}
+	.reviewer-return-chip:hover { background: var(--background-modifier-hover); }
 
 	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
 	.calendar-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
