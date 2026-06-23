@@ -88,9 +88,18 @@
 		for (const n of dueNotes) { if (m.has(n.reason)) m.get(n.reason)!.push(n); }
 		return m;
 	});
-	const activeLenses = $derived(LENSES.filter(l => (byReason.get(l.reason)?.length ?? 0) > 0));
 	// Distinct notes (a note can sit in several lenses) — the truthful "how many need me".
 	const distinctCount = $derived(new Set(dueNotes.map(n => n.note_path)).size);
+
+	// All six lenses are ALWAYS shown (Eisa): empty ones appear muted with a 0. Each is
+	// collapsible (a non-empty lens can be folded away).
+	let collapsed = $state<Set<string>>(new Set());
+	const isCollapsed = (r: string) => collapsed.has(r);
+	function toggleLens(r: string) {
+		const s = new Set(collapsed);
+		if (s.has(r)) s.delete(r); else s.add(r);
+		collapsed = s;
+	}
 	// The displayed selection: the clicked note, else fall back to the first due note so
 	// the detail pane is never empty when there's work. A $derived (not a selectedPath-
 	// writing $effect) — no echo loop (Rule 2). A stale selectedPath after reload simply
@@ -205,14 +214,16 @@
 		<div class="rv-body">
 			<!-- MASTER: the six-lens queue -->
 			<div class="rv-master">
-				{#each activeLenses as lens (lens.reason)}
+				{#each LENSES as lens (lens.reason)}
 					{@const items = byReason.get(lens.reason) ?? []}
-					<section class="rv-lens">
-						<div class="rv-lens-head">
+					<section class="rv-lens" class:rv-empty={items.length === 0}>
+						<button class="rv-lens-head" onclick={() => toggleLens(lens.reason)} disabled={items.length === 0}>
+							<span class="rv-chevron" class:collapsed={isCollapsed(lens.reason)}>▾</span>
 							<span class="rv-lens-icon">{lens.icon}</span>
 							<span class="rv-lens-name">{lensLabel(lens.key)}</span>
 							<span class="rv-lens-count">{items.length}</span>
-						</div>
+						</button>
+						{#if items.length > 0 && !isCollapsed(lens.reason)}
 						{#if items.length > 80}
 							<div class="rv-vlist">
 								<VirtualList items={items} getItemHeight={() => 46} overscan={8}>
@@ -231,6 +242,7 @@
 									<span class="rv-row-why" dir="auto">{whyNow(n)}</span>
 								</button>
 							{/each}
+						{/if}
 						{/if}
 					</section>
 				{/each}
@@ -326,9 +338,18 @@
 	.rv-lens { margin-bottom: 6px; }
 	.rv-lens-head {
 		display: flex; align-items: center; gap: 8px; padding: 6px 16px; position: sticky; top: 0;
+		width: 100%; border: none; text-align: start; cursor: pointer; font-family: inherit;
 		background: var(--background-primary); z-index: 1;
 		font-size: calc(0.8rem * var(--rs-scale, 1)); font-weight: 600; color: var(--text-normal);
 	}
+	.rv-lens-head:hover:not(:disabled) { background: var(--background-modifier-hover); }
+	.rv-lens-head:disabled { cursor: default; }
+	/* Empty lens: always listed but muted, just the header + a 0 (Eisa). */
+	.rv-empty .rv-lens-head { color: var(--text-faint); opacity: 0.6; }
+	.rv-chevron { font-size: calc(0.62rem * var(--rs-scale, 1)); transition: transform 0.15s; flex-shrink: 0; }
+	.rv-chevron.collapsed { transform: rotate(-90deg); }
+	:global([dir="rtl"]) .rv-chevron.collapsed { transform: rotate(90deg); }
+	.rv-empty .rv-chevron { visibility: hidden; }
 	.rv-lens-icon { flex-shrink: 0; }
 	.rv-lens-count { margin-inline-start: auto; font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-faint); font-weight: 400; }
 
