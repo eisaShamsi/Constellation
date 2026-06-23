@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "연결할 노트:",
+    "suggestLabelFragile": "보강이 필요해요 — 연결할 노트:",
+    "suggestSharedTerms": "공통 단어:",
+    "suggestLinkBtn": "연결",
+    "suggestLoading": "관련 노트를 찾는 중…",
+    "suggestEmpty": "아직 라이브러리에서 딱 맞는 노트를 찾지 못했어요 — 직접 연결하거나 독립 노트로 표시하세요.",
     "lens": {
       "stale": "갱신 필요",
       "due": "검토 시점 도래",

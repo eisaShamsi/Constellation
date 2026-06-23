@@ -2967,6 +2967,34 @@ export async function readCooccurringTerms(
 	});
 }
 
+// ─── MIG-086 — related-note suggestions (BM25 "More Like This") ───
+
+/** One related-but-UNLINKED note suggested for an orphan/fragile note.
+ *  `shared_terms` is the *why* — the distinctive terms it shares with the
+ *  source (rendered as chips); never empty. From `suggest_related_notes`. */
+export interface RelatedCandidate {
+	note_path: string;
+	note_name: string;
+	score: number;          // |bm25| — higher = more related (optional UI bar)
+	shared_terms: string[]; // the legible reason they relate
+	snippet: string;        // short body preview (may be empty)
+}
+
+/** Suggest related-but-unlinked notes for the given note (orphan/fragile triage →
+ *  action). Query-time over the live FTS index — call ON DEMAND (panel/detail open,
+ *  note change), NEVER per-keystroke. Returns `[]` when nothing clears the bar. */
+export async function suggestRelatedNotes(
+	libraryPath: string,
+	notePath: string,
+	limit?: number
+): Promise<RelatedCandidate[]> {
+	return await invoke('suggest_related_notes', {
+		libraryPath,
+		notePath,
+		limit: limit ?? null,
+	});
+}
+
 // ─── MIG-011 — Index filter cross-language bridge ───
 
 /** Single cross-language lemma surfaced by the Index filter bridge.

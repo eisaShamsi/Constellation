@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Verknüpfen mit:",
+    "suggestLabelFragile": "Absichern – verknüpfen mit:",
+    "suggestSharedTerms": "gemeinsam:",
+    "suggestLinkBtn": "Verknüpfen",
+    "suggestLoading": "Verwandte Notizen werden gesucht…",
+    "suggestEmpty": "Noch keine starken Treffer in deiner Bibliothek – verknüpfe sie manuell oder markiere sie als eigenständig.",
     "lens": {
       "stale": "Veraltet",
       "due": "Wiedervorlage fällig",

@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "连接到：",
+    "suggestLabelFragile": "为它加固 — 连接到：",
+    "suggestSharedTerms": "共有：",
+    "suggestLinkBtn": "连接",
+    "suggestLoading": "正在查找相关笔记…",
+    "suggestEmpty": "你的知识库中暂无高度匹配的笔记 — 可手动连接，或将其标记为独立笔记。",
     "lens": {
       "stale": "已过时",
       "due": "待复习",

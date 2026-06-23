@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Şuna bağla:",
+    "suggestLabelFragile": "Sağlamlaştır — şuna bağla:",
+    "suggestSharedTerms": "ortak:",
+    "suggestLinkBtn": "Bağla",
+    "suggestLoading": "İlgili notlar bulunuyor…",
+    "suggestEmpty": "Kitaplığında henüz güçlü bir eşleşme yok — elle bağla veya bağımsız olarak işaretle.",
     "lens": {
       "stale": "Bayatlamış",
       "due": "Gözden Geçirme Vakti",

@@ -3710,6 +3710,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "اربطها بـ:",
+    "suggestLabelFragile": "عزّزها — اربطها بـ:",
+    "suggestSharedTerms": "مشترك:",
+    "suggestLinkBtn": "اربط",
+    "suggestLoading": "جارٍ البحث عن ملاحظات ذات صلة…",
+    "suggestEmpty": "لا توجد تطابقات قويّة في مكتبتك بعد — اربطها يدويًّا، أو علّمها كمستقلّة.",
     "lens": {
       "stale": "بحاجة إلى تحديث",
       "due": "حان وقت المراجعة",

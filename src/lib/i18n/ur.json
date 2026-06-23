@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "اِس سے جوڑیں:",
+    "suggestLabelFragile": "اِسے سہارا دیں — اِس سے جوڑیں:",
+    "suggestSharedTerms": "مشترک:",
+    "suggestLinkBtn": "جوڑیں",
+    "suggestLoading": "متعلقہ نوٹ تلاش کیے جا رہے ہیں…",
+    "suggestEmpty": "آپ کی لائبریری میں ابھی کوئی مضبوط مطابقت نہیں — اِسے دستی طور پر جوڑیں، یا تنہا نشان زد کریں۔",
     "lens": {
       "stale": "باسی",
       "due": "نظرثانی کا وقت",

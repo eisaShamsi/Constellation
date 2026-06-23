@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Relier à :",
+    "suggestLabelFragile": "Consolidez-la — reliez à :",
+    "suggestSharedTerms": "en commun :",
+    "suggestLinkBtn": "Relier",
+    "suggestLoading": "Recherche de notes liées…",
+    "suggestEmpty": "Aucune correspondance forte dans votre Bibliothèque pour l'instant — reliez-la manuellement, ou marquez-la comme autonome.",
     "lens": {
       "stale": "Périmée",
       "due": "À revoir",

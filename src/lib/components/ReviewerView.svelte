@@ -12,6 +12,7 @@
 	import { computedPriority, effectivePriority, type ComputedPriority } from '$lib/reviewer/priorities';
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 	import VirtualList from './VirtualList.svelte';
+	import RelatedCandidates from './RelatedCandidates.svelte';
 
 	interface DueNote {
 		note_path: string;
@@ -340,6 +341,18 @@
 						<span class="rv-d-rx-label">{$t('reviewer.prescriptionLabel') || 'Prescription'}</span>
 						<span class="rv-d-rx-text" dir="auto">{prescription(n)}</span>
 					</div>
+
+					<!-- MIG-086: the diagnosis becomes an action — suggested related notes to connect.
+					     Orphan ("connect me") + fragile ("shore me up") get the list; fragile pre-sets
+					     the derives-from type + a "shore it up" heading (§C). -->
+					{#if isOrphan(n) || n.reason === 'fragile'}
+						<RelatedCandidates
+							notePath={n.note_path}
+							{libraryPath}
+							defaultType={n.reason === 'fragile' ? 'derives-from' : 'associative'}
+							heading={n.reason === 'fragile' ? ($t('reviewer.suggestLabelFragile') || 'Shore it up — connect to:') : null}
+						/>
+					{/if}
 
 					<!-- PRIORITY: the computed score as a readable recipe + the override lever. -->
 					<div class="rv-d-prio-box">

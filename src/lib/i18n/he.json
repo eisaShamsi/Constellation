@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "חברו אל:",
+    "suggestLabelFragile": "חזקו אותו — חברו אל:",
+    "suggestSharedTerms": "משותף:",
+    "suggestLinkBtn": "קישור",
+    "suggestLoading": "מחפש פתקים קשורים…",
+    "suggestEmpty": "אין עדיין התאמות חזקות בספרייה שלכם — חברו ידנית, או סמנו אותו כעצמאי.",
     "lens": {
       "stale": "לא טרי",
       "due": "הגיע למועד עיון",

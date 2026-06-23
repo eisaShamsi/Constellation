@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "つなげる先：",
+    "suggestLabelFragile": "支えを足そう — つなげる先：",
+    "suggestSharedTerms": "共通：",
+    "suggestLinkBtn": "リンク",
+    "suggestLoading": "関連するノートを探しています…",
+    "suggestEmpty": "ライブラリにまだ強い一致がありません — 手動でつなげるか、独立したノートとして印を付けてください。",
     "lens": {
       "stale": "古くなった",
       "due": "見直し時期",

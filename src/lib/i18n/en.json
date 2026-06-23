@@ -3712,6 +3712,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Connect to:",
+    "suggestLabelFragile": "Shore it up — connect to:",
+    "suggestSharedTerms": "shared:",
+    "suggestLinkBtn": "Link",
+    "suggestLoading": "Finding related notes…",
+    "suggestEmpty": "No strong matches in your Library yet — connect it manually, or mark it standalone.",
     "lens": {
       "stale": "Stale",
       "due": "Due for Review",

@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Ligar a:",
+    "suggestLabelFragile": "Reforce-a — ligue a:",
+    "suggestSharedTerms": "em comum:",
+    "suggestLinkBtn": "Ligar",
+    "suggestLoading": "A procurar notas relacionadas…",
+    "suggestEmpty": "Ainda não há correspondências fortes na sua Biblioteca — ligue-a manualmente ou marque-a como autónoma.",
     "lens": {
       "stale": "Desatualizada",
       "due": "A rever",

@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "پیوند به:",
+    "suggestLabelFragile": "استوارش کن — پیوند به:",
+    "suggestSharedTerms": "مشترک:",
+    "suggestLinkBtn": "پیوند",
+    "suggestLoading": "در حال یافتن یادداشت‌های مرتبط…",
+    "suggestEmpty": "هنوز همخوانی نیرومندی در کتابخانه‌ات نیست — آن را دستی پیوند بده، یا مستقل علامت بزن.",
     "lens": {
       "stale": "کهنه‌شده",
       "due": "موعد بازبینی",

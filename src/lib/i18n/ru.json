@@ -3575,6 +3575,12 @@
     }
   },
   "reviewer": {
+    "suggestLabel": "Связать с:",
+    "suggestLabelFragile": "Укрепи — свяжи с:",
+    "suggestSharedTerms": "общее:",
+    "suggestLinkBtn": "Связать",
+    "suggestLoading": "Ищу связанные заметки…",
+    "suggestEmpty": "В вашей Библиотеке пока нет надёжных совпадений — свяжите вручную или отметьте как самостоятельную.",
     "lens": {
       "stale": "Устарело",
       "due": "Пора пересмотреть",
