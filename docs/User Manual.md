@@ -2157,3 +2157,24 @@ The right sidebar's panels are **note-context**: each answers a question about t
 - **Source Review** — the open note's pending source suggestion. The universe-wide review queue, with the bulk Approve-all / Reject-all tools, lives in the full-page **Cataloger** (left dock). The Cataloger has a *Style Setter → Cataloger → Text size* control.
 
 A note-context panel shows **"No note selected"** when no note is open.
+
+---
+
+## 22. Review Pulse (the Reviewer)
+
+**Review Pulse** is Constellation's *call-back list*: the one surface that comes to you with the notes that need attention, ranked by urgency, each with a plain-language reason and a prescribed remedy. Open it from the **🕐 clock** icon in the left dock.
+
+It is a two-column **master-detail** surface. The left column is a queue grouped into **six lenses** (all always shown; empty ones greyed with a 0; each collapsible):
+
+- 🥀 **Stale** — a note this one leans on changed after you last reviewed it.
+- 🔄 **Due for Review** — the review interval elapsed.
+- 🧠 **Mental-Model Checkpoints** — an assumption/model to re-examine.
+- 🔗 **Orphan — connect me** — real content that nothing links to yet (an *alarm* to connect it, not clutter).
+- ⚠ **Fragile — shore me up** — many depend on it, little holds it up.
+- 📝 **Never reviewed** — never given a first read-through.
+
+Click a note and the right pane **diagnoses and prescribes**: a summary (always shown), the "why now," the one healthy remedy, and a **Priority** (0–100) rendered as a readable recipe bar — its segments (Time pressure, Depended-on, Maturity, …) add up to the number, so you can see *why* it ranks where it does. **Drag the slider** to override the priority (badged "manual," with "Reset to computed"). Act with **✓ Reviewed**, **🔗 Connect** (orphans), **👁 Snooze 7d**, or **🗄️ Dismiss**; hand off to **Open in editor**, **Full context (360°)**, or **Classify**. Opening a note from the Reviewer leaves a **‹ Reviewer** button in the top tab strip to return.
+
+Each note's own status also appears in the right-sidebar **🕐 Review** tab when that note is open — the same priority + actions, scoped to that note.
+
+**Settings → Review** sets the *staleness grace period* (days, minimum 1): a dependency change only flags a note as stale once that many days have passed since your last review. Keep it higher if you make many small edits.

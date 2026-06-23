@@ -130,3 +130,22 @@ After §F shipped the split, Eisa: the left-dock Reviewer is "a thin list on a v
 - **P3 #8** no reactive reload → FIXED: `$effect` instead of `onMount`. **#9** stale selection after an action → FIXED: reconcile selectedKey post-load. **#12** header double-counted multi-lens notes → FIXED: distinct-path count.
 - **#10 (P3) — RULED, needs its own small migration (not silently parked):** the Reviewer derives maturity from the write-time `note_meta.incoming_count` (Rule 8 — correct); but Inspector360 + `maturity.rs` recompute inbound via a file/link walk, so the same note's maturity could differ by a bucket between surfaces. The Reviewer is doing the RIGHT thing; aligning 360/maturity to read `note_meta.incoming_count` is a cross-subsystem consistency change that would alter those panels' output → a separate `/migration` with Boss sign-off, NOT a §F edit. **Surfacing for a ruling.**
 - **#11 (P3) — judged proportionate as-is:** the priority post-pass scans scoped `note_meta` once per `get_due_notes`; this is the same scoped read the lenses already do and is well within the <100ms budget (correct + tested). Left as-is rather than ripping out tested code for a ~2ms gain (secure-don't-muddle); can tighten to per-lens SELECT later if a perf budget ever demands it.
+
+---
+
+## MIG-084 — The Rich Reviewer — COMPLETE (2026-06-23), Boss-validated
+A→G shipped + Boss-tested (Tests A–F + re-tests E/F all pass). The left-dock Reviewer is now a master-detail decision surface: 6 lenses (Stale·Due·Checkpoints·🔗Orphan·⚠Fragile·Never, all always shown + collapsible), a per-note **diagnosis→prescription**, a **computed+overridable Priority** rendered as a readable recipe bar (the segments sum to the score; override badged "manual" + reset-to-computed), always-on summary, and a top-tab-strip Return-to-Reviewer that restores the note you were on.
+- **§A** review_priority → nullable OVERRIDE (shape-aware migration of the §D NOT-NULL-50 column); set_review_priority Option.
+- **§B** `src/lib/reviewer/priorities.ts` — pure two-axis (Eisenhower) engine, 7 vitest tests.
+- **§C** Orphan + Fragile lenses (write-time columns; reuse 360 thresholds).
+- **§D** Priority backend; **§F.2** the prescription engine + recipe UI + note-tab mirror.
+- Three adversarial reviews (find→verify) across the build caught + fixed 11 + 12 + 13 findings (incl. the multi-lens-selection P1, the i18n-fallback-is-dead P1, and the note-tab/Reviewer priority misalignment).
+- **§G Phase-4 audit** (3 agents): 6 findings, no P0/P1. Fixed: dismissed-note alarm gate; canonical days_overdue (one priority per note across rows + the note tab); 360 SPOF reconciled to outgoing-derives.
+- **PERF (measured on the real 7,660-note universe):** the priority post-pass full-scanned all in-scope note_meta (~480 ms, fat body_text rows) → now fetches only the due paths (PK lookups) + `idx_note_meta_incoming_wc`. (Production is library-scoped, so far smaller than the 7,660 worst case.)
+- 25 review (Rust) + 7 priorities (vitest) tests; svelte-check 0.
+
+### Approved follow-ups (Eisa 2026-06-23, "build now") — to land as their own migrations
+- **MIG-085 — Cross-surface diagnostic consistency:** single-source maturity's inbound to `note_meta.incoming_count` (maturity.rs + the maturity_sql trigger + inspector360), and reconcile tension.rs SPOF to the outgoing-derives definition (inspector360 already done in §G). Touches Sky View's maturity maintenance + tension's SPOF + their tests → a careful /migration, not a tail-of-session patch.
+- **MIG-086 — Tier-2 link suggestions:** for an Orphan/Fragile note, suggest the specific related notes to link (reuse the Index FTS5 co-occurrence / read_term_mentions) with one-click create. A new feature needing a relatedness design pass.
+
+### Observation (not yet a job): the Reviewer is scoped to libraries[0]; on a multi-library universe it won't show other libraries' due notes. Pre-existing get_due_notes(library_path) shape. Flag if Eisa wants whole-universe aggregation.
