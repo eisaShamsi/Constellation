@@ -198,7 +198,9 @@ fn scan_notes_recursive(
 }
 
 /// Assign maturity state based on inbound links + file age.
-fn compute_state(inbound: usize, days_since_created: u64, days_since_modified: u64) -> String {
+/// `pub(crate)` so the Reviewer (MIG-084 §B) derives the same vocabulary at read
+/// time from the write-time `note_meta` columns — one source of the thresholds.
+pub(crate) fn compute_state(inbound: usize, days_since_created: u64, days_since_modified: u64) -> String {
     // Canonical: 10+ inbound, untouched 30+ days (stable, authoritative)
     if inbound >= 10 && days_since_modified >= 30 {
         return "canonical".to_string();

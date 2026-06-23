@@ -43,6 +43,12 @@ pub struct DueNote {
     pub stale_trigger_name: Option<String>, // the changed OUT-dependency's display name
     pub stale_trigger_type: Option<String>, // the load-bearing link type that carries it
     pub stale_changed_on: Option<String>,   // YYYY-MM-DD the dependency's content changed
+    // MIG-084 §B — rich-Reviewer decision context (all from write-time note_meta columns,
+    // Rule 8). incoming/outgoing = active-link counts; maturity = the named vocabulary
+    // (seed/sapling/evergreen/canonical/wilting) derived via maturity::compute_state.
+    pub incoming_count: i64,
+    pub outgoing_count: i64,
+    pub maturity: String,
 }
 
 /// Get all notes due for review in a library.
@@ -180,6 +186,9 @@ pub(crate) fn query_due_notes_indexed(
     // have changed at least `grace` days AFTER the note's last review to flag it.
     // grace=1 == the strict next-day-onward default.
     let grace = stale_grace_days.max(1);
+    // MIG-084 §B — deterministic "now" for maturity (UTC-midnight of today, same
+    // day-frame as the schedule), so the maturity label is reproducible in tests.
+    let now_secs = day_midnight_secs(today_days);
     let mut due: Vec<DueNote> = Vec::new();
     // Library scoping: a note is in-scope iff its path begins with library_path AND
     // the next char is a path separator — so "/U/Lib" matches "/U/Lib/x.md" but NOT
@@ -196,7 +205,8 @@ pub(crate) fn query_due_notes_indexed(
         // non-delete path) must NEVER surface as a phantom queue entry pointing at a
         // dead path (re-verify finding). No note_meta → not a note.
         let sql = format!(
-            "SELECT rs.path, nm.name, rs.reason, rs.due_days, rs.stratum, rs.last_reviewed
+            "SELECT rs.path, nm.name, rs.reason, rs.due_days, rs.stratum, rs.last_reviewed,
+                    nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified
              FROM review_schedule rs
              JOIN note_meta nm ON nm.path = rs.path
              WHERE rs.due_days <= ?1
@@ -215,11 +225,15 @@ pub(crate) fn query_due_notes_indexed(
                     r.get::<_, i64>(3)?,
                     r.get::<_, i64>(4)?,
                     r.get::<_, Option<String>>(5)?,
+                    r.get::<_, i64>(6)?,
+                    r.get::<_, i64>(7)?,
+                    r.get::<_, Option<i64>>(8)?,
+                    r.get::<_, i64>(9)?,
                 ))
             })
             .map_err(|e| format!("due lens-1 query: {}", e))?;
         for row in rows.flatten() {
-            let (path, name, reason, due_days, stratum, last_reviewed) = row;
+            let (path, name, reason, due_days, stratum, last_reviewed, inc, out, created_at, modified) = row;
             due.push(DueNote {
                 note_path: path,
                 note_name: name,
@@ -230,6 +244,9 @@ pub(crate) fn query_due_notes_indexed(
                 stale_trigger_name: None,
                 stale_trigger_type: None,
                 stale_changed_on: None,
+                incoming_count: inc,
+                outgoing_count: out,
+                maturity: maturity_label(inc, created_at, modified, now_secs),
             });
         }
     }
@@ -256,13 +273,14 @@ pub(crate) fn query_due_notes_indexed(
     // is done in Rust (`local_day`) so impl + the rehearsal reference share ONE
     // arithmetic (no SQLite-`/` vs `div_euclid` divergence — finding H).
     {
-        let reviewed: Vec<(String, String, i64, String)> = {
+        let reviewed: Vec<(String, String, i64, String, i64, i64, Option<i64>, i64)> = {
             // NOTE (Boss 2026-06-22): snooze does NOT suppress the Stale lens — the two
             // lenses stay fully separate. Snooze hides a note from time-based "Due for
             // Review" (Lens-1) only; staleness is a distinct signal (a dependency
             // changed) and still surfaces while snoozed.
             let sql = format!(
-                "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed
+                "SELECT rs.path, nm.name, rs.stratum, rs.last_reviewed,
+                        nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified
                  FROM review_schedule rs
                  JOIN note_meta nm ON nm.path = rs.path
                  WHERE rs.last_reviewed IS NOT NULL
@@ -273,7 +291,8 @@ pub(crate) fn query_due_notes_indexed(
             let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
                 .query_map(rusqlite::params![library_path], |r| {
-                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?,
+                        r.get::<_, i64>(4)?, r.get::<_, i64>(5)?, r.get::<_, Option<i64>>(6)?, r.get::<_, i64>(7)?))
                 })
                 .map_err(|e| format!("due lens-2 reviewed query: {}", e))?;
             rows.flatten().collect()
@@ -283,7 +302,7 @@ pub(crate) fn query_due_notes_indexed(
         // (`note_stale_status_with_stmt`) — single-sources the SQL + day-comparison
         // with `get_note_review_status` (§F) without re-preparing per note.
         let mut probe = conn.prepare(&stale_probe_sql()).map_err(|e| format!("lens-2 stale probe prepare: {}", e))?;
-        for (path, name, stratum, last_reviewed) in reviewed {
+        for (path, name, stratum, last_reviewed, inc, out, created_at, modified) in reviewed {
             if let Some((link_type, dep_name, dep_day)) = note_stale_status_with_stmt(&mut probe, &path, &last_reviewed, grace)? {
                 due.push(DueNote {
                     note_path: path,
@@ -295,6 +314,9 @@ pub(crate) fn query_due_notes_indexed(
                     stale_trigger_name: Some(dep_name),
                     stale_trigger_type: Some(link_type),
                     stale_changed_on: Some(day_to_date(dep_day)),
+                    incoming_count: inc,
+                    outgoing_count: out,
+                    maturity: maturity_label(inc, created_at, modified, now_secs),
                 });
             }
         }
@@ -506,6 +528,23 @@ pub(crate) fn local_day(secs: i64) -> i64 {
         Some(dt) => dt.date_naive().signed_duration_since(epoch_2020()).num_days(),
         None => secs_to_days(secs),
     }
+}
+
+/// Unix seconds at UTC-midnight of a days-since-2020 value (2020-01-01 = 1577836800).
+/// Used to give the Reviewer a deterministic `now` in the same day-frame as the
+/// review schedule (vs. wall-clock, which would make tests non-deterministic).
+pub(crate) fn day_midnight_secs(days: i64) -> i64 { days * 86_400 + 1_577_836_800 }
+
+/// MIG-084 §B — the named maturity vocabulary for a Reviewer row, derived at READ
+/// time from the write-time `note_meta` columns (Rule 8) through the SHARED
+/// [`crate::maturity::compute_state`] thresholds (one source of truth). `now_secs`
+/// is UTC-midnight of today; a NULL `created_at` falls back to `modified`.
+pub(crate) fn maturity_label(inbound: i64, created_at: Option<i64>, modified: i64, now_secs: i64) -> String {
+    let created = created_at.unwrap_or(modified).max(0);
+    let modified = modified.max(0);
+    let dsc = ((now_secs - created).max(0) / 86_400) as u64;
+    let dsm = ((now_secs - modified).max(0) / 86_400) as u64;
+    crate::maturity::compute_state(inbound.max(0) as usize, dsc, dsm)
 }
 
 /// Days-since-2020-01-01 → `YYYY-MM-DD` (the inverse of `date_to_days`). Used to
@@ -1106,7 +1145,7 @@ mod tests {
     fn read_db() -> rusqlite::Connection {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '');
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER);
              CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
              CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
@@ -1116,6 +1155,31 @@ mod tests {
     }
     /// Unix seconds at UTC-midnight of a YYYY-MM-DD date (matches strftime('%s', d)).
     fn secs(date: &str) -> i64 { date_to_days(date) * 86_400 + 1_577_836_800 }
+
+    #[test]
+    fn due_notes_carry_connection_counts_and_maturity() {
+        // MIG-084 §B — the queue enriches each row with the write-time connection
+        // counts + the named maturity vocabulary (derived via maturity::compute_state).
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        // A canonical hub: 12 inbound, 4 outbound, untouched 30+ days.
+        c.execute(
+            "INSERT INTO note_meta (path,name,cid_cn,modified,incoming_count,outgoing_count,created_at) \
+             VALUES ('/lib/H.md','Hub','CIDH',?1,12,4,?2)",
+            rusqlite::params![secs("2026-01-01"), secs("2025-06-01")],
+        ).unwrap();
+        c.execute(
+            "INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum) \
+             VALUES ('/lib/H.md','interval_due',?1,'2026-06-01',5)",
+            rusqlite::params![today_days - 1],
+        ).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
+        let h = due.iter().find(|d| d.note_path == "/lib/H.md").expect("hub is due");
+        assert_eq!(h.incoming_count, 12);
+        assert_eq!(h.outgoing_count, 4);
+        assert_eq!(h.maturity, "canonical", "12 inbound + untouched 30+ days ⇒ canonical");
+    }
 
     #[test]
     fn indexed_read_two_lenses_scope_and_filters() {
