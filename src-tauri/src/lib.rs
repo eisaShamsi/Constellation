@@ -497,6 +497,7 @@ pub fn run() {
             libraries::read_index_entries,
             libraries::read_term_mentions,
             libraries::read_cooccurring_terms,
+            libraries::suggest_related_notes,
             lexicon::lexicon_expand_for_filter,
             // MIG-013 §1D — CTSE Bridge Adapter (query-time concept
             // expansion). The earlier index-time backfill / first-fill

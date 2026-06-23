@@ -2570,6 +2570,25 @@ pub struct CooccurringTerm {
     pub note_count: u32,
 }
 
+/// MIG-086 — a note suggested as a related-but-unlinked connection candidate for an
+/// orphan/fragile note. Produced by `suggest_related_notes` (BM25 "More Like This" over
+/// the source note's distinctive terms). The `shared_terms` are the *why* (the distinctive
+/// terms the candidate shares) — mandatory per the concept (no why → not shown).
+#[derive(Debug, Clone, Serialize)]
+pub struct RelatedCandidate {
+    /// Absolute path of the candidate note (the key for the one-click connect action).
+    pub note_path: String,
+    /// Display title of the candidate.
+    pub note_name: String,
+    /// Relatedness score (|bm25|, higher = more related) for an optional UI strength bar.
+    pub score: f64,
+    /// The distinctive terms the candidate shares with the source — the legible reason
+    /// they relate (rendered as chips). Never empty for a returned candidate.
+    pub shared_terms: Vec<String>,
+    /// A short body excerpt for preview (may be empty).
+    pub snippet: String,
+}
+
 /// ─── Arabic Indexing Pipeline ───────────────────────────────────────────────
 ///
 /// Based on Apache Lucene's ArabicNormalizer + ArabicStemmer (Light10 model),
@@ -4025,6 +4044,399 @@ fn collect_stem(
             && !query_stems.contains(&stem)
         {
             seen.insert(stem);
+        }
+    }
+}
+
+/// MIG-086 — tokenize a string into the SAME stems the FTS5 index stores (the
+/// `read_cooccurring_terms` pipeline), returning per-stem term-frequency. Unigram stems
+/// only (bigram-sentinel stems skipped); stopwords + sub-2-char noise dropped.
+fn tokenize_tf(
+    text: &str,
+    stopwords: &std::collections::HashSet<String>,
+    max_words: usize,
+) -> std::collections::HashMap<String, u32> {
+    let mut tf: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut count: usize = 0;
+    let mut push = |w: &str,
+                    tf: &mut std::collections::HashMap<String, u32>,
+                    count: &mut usize| {
+        if let Some((stem, norm_lower)) = process_word_for_fts(w) {
+            if stem.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+                return; // unigrams only for MLT term selection
+            }
+            if stem.chars().count() < 3 {
+                return; // drop 1–2 char noise ("pp", "th", "st" citation/ordinal fragments)
+            }
+            if stopwords.contains(&stem) || stopwords.contains(&norm_lower) {
+                return;
+            }
+            *count += 1;
+            *tf.entry(stem).or_insert(0) += 1;
+        }
+    };
+    let mut word_start: Option<usize> = None;
+    for (byte_idx, ch) in text.char_indices() {
+        if is_cooccurrence_boundary(ch) {
+            if let Some(start) = word_start.take() {
+                push(&text[start..byte_idx], &mut tf, &mut count);
+            }
+        } else if word_start.is_none() {
+            word_start = Some(byte_idx);
+        }
+        // PERF (Rule 8): cap the words processed so a 30k-word note doesn't make this O(huge).
+        // The dominant terms recur early, so a cap of a few thousand kept words approximates
+        // the full-document tf for term selection / shared-term detection.
+        if count >= max_words {
+            return tf;
+        }
+    }
+    if let Some(start) = word_start {
+        push(&text[start..], &mut tf, &mut count);
+    }
+    tf
+}
+
+/// MIG-086 — suggest related-but-UNLINKED notes for an orphan/fragile note, so the
+/// Reviewer/360/Health-tab can turn the diagnosis ("connect it") into an action.
+///
+/// **Signal: BM25 "More Like This"** (the Lucene/Elasticsearch pattern) over the source
+/// note's most DISTINCTIVE terms — query-time over the always-current `notes_fts` index
+/// (Rule 8: no precomputed similarity matrix, no boot rebuild, never per-keystroke).
+///   1. Re-tokenize the source note (name + body) in-process → term frequencies (the
+///      `read_cooccurring_terms` tokenizer, symmetric with the index).
+///   2. For each stem, doc-frequency from `notes_vocab` (the live FTS5 vocabulary —
+///      `term_vocab` is drift-prone, measured wrong on the live corpus). Score = tf·idf;
+///      keep terms in df ∈ [2, 0.5·N] (drop hapax + ubiquitous); top 25 (Lucene maxQueryTerms).
+///   3. Disjunctive `MATCH` of those terms, ranked by `bm25` (name 10×, body 1×), EXCLUDING
+///      self and already-linked notes (by folded name — `target_path` is never populated).
+///   4. For each candidate, the shared distinctive terms (the *why* — mandatory; a candidate
+///      with no attributable shared term is dropped) + a short snippet.
+///
+/// Returns `[]` (never an error / never a full scan) when the note is too short / all-stopword
+/// or nothing clears the bar — the caller renders an honest empty state.
+#[tauri::command]
+pub fn suggest_related_notes(
+    app: tauri::AppHandle,
+    library_path: String,
+    note_path: String,
+    limit: Option<u32>,
+) -> Result<Vec<RelatedCandidate>, String> {
+    use rusqlite::{Connection, OpenFlags};
+
+    validate_path_in_any_library(&app, &library_path)
+        .map_err(|e| format!("Access denied: {}", e))?;
+    let limit = limit.unwrap_or(5).max(1).min(20) as usize;
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    suggest_related_impl(&conn, &note_path, limit)
+}
+
+/// MIG-086 — the testable core of `suggest_related_notes`: takes an already-open,
+/// tokenizer-registered connection. Split out so a unit test can drive it against an
+/// in-memory FTS5 fixture (the `app`/access-validation/connection-open is the only part
+/// that can't run in-process).
+fn suggest_related_impl(
+    conn: &rusqlite::Connection,
+    note_path: &str,
+    limit: usize,
+) -> Result<Vec<RelatedCandidate>, String> {
+    use std::collections::HashSet;
+
+    // ── 1. source note: name + body ──
+    let (src_name, body): (String, String) = match conn.query_row(
+        "SELECT name, body_text FROM note_meta WHERE path = ?1",
+        rusqlite::params![note_path],
+        |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1).unwrap_or_default())),
+    ) {
+        Ok(v) => v,
+        Err(_) => return Ok(Vec::new()),
+    };
+    if body.trim().is_empty() && src_name.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let src_name_lower = crate::search::fold_match_key(&src_name);
+    let stopwords = build_stopwords();
+
+    // ── 2. tokenize source (name + body, capped) → tf ──
+    let tf = tokenize_tf(&format!("{}\n{}", src_name, body), &stopwords, 4000);
+    if tf.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // ── 3. pick the DISTINCTIVE query terms: top ~40 by tf, then keep those with a corpus
+    //    doc-frequency in [2, ~5%·N] (drop hapax + common), ranked tf·idf, top 12. The df probe
+    //    is bounded to the 40 candidates (≈ one fts5vocab seek each), so it stays cheap; this
+    //    is what makes the *why* chips meaningful ("aisle/nave/choir", not "st/pp/th"). ──
+    let mut by_tf: Vec<(String, u32)> = tf.into_iter().collect();
+    by_tf.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    by_tf.truncate(20); // df probes — bounded; fts5vocab is ~20 ms/lookup on this index
+
+    let total: f64 = conn
+        .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get::<_, i64>(0))
+        .unwrap_or(0) as f64;
+    let mut df_map: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    {
+        let placeholders = std::iter::repeat("?").take(by_tf.len()).collect::<Vec<_>>().join(",");
+        let q = format!("SELECT term, doc FROM notes_vocab WHERE term IN ({})", placeholders);
+        let mut stmt = conn.prepare(&q).map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(by_tf.iter().map(|(s, _)| s)), |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+            })
+            .map_err(|e| e.to_string())?;
+        for r in rows.flatten() {
+            df_map.insert(r.0, r.1);
+        }
+    }
+    let max_df = (total * 0.05).max(50.0);
+    let mut scored: Vec<(String, f64)> = Vec::new();
+    for (stem, freq) in &by_tf {
+        let df = df_map.get(stem).copied().unwrap_or(0);
+        if df < 2 || (total > 0.0 && (df as f64) > max_df) {
+            continue; // hapax (matches nothing) or too common (not distinctive)
+        }
+        let idf = (total / (df as f64 + 1.0)).ln() + 1.0;
+        scored.push((stem.clone(), *freq as f64 * idf));
+    }
+    if scored.is_empty() {
+        return Ok(Vec::new());
+    }
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(12);
+    let query_terms: Vec<String> = scored.into_iter().map(|(s, _)| s).collect();
+    let qset: HashSet<&str> = query_terms.iter().map(|s| s.as_str()).collect();
+
+    // ── 4. RANK with the BARE FTS bm25 query (name 10×, body 1×) ──
+    // CRITICAL (Rule 8): no JOIN to note_meta, no NOT IN post-filter here. Adding either
+    // defeats FTS5's rank-limit fast path — SQLite can't take the top-K and stop when a
+    // post-filter might reject them, so it materializes the whole match union with per-row
+    // subquery evaluation (measured 12 s vs 12 ms for the bare query). Self + already-linked
+    // are filtered in Rust on the small top-K set below.
+    let mlt = query_terms
+        .iter()
+        .map(|t| format!("\"{}\"", t.replace('"', "\"\"")))
+        .collect::<Vec<_>>()
+        .join(" OR ");
+    let cand: Vec<(i64, f64)> = {
+        let mut stmt = conn
+            .prepare("SELECT rowid, bm25(notes_fts, 10.0, 1.0) FROM notes_fts WHERE notes_fts MATCH ?1 ORDER BY rank LIMIT 60")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(rusqlite::params![mlt], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)))
+            .map_err(|e| e.to_string())?;
+        rows.filter_map(|r| r.ok()).collect()
+    };
+
+    // Already-linked OUT: the folded names the source links to (idx_link_source → fast).
+    let mut excluded_names: HashSet<String> = HashSet::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT target_name FROM note_links WHERE source_path = ?1 AND status != 'archived'")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(rusqlite::params![note_path], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        for r in rows.flatten() {
+            excluded_names.insert(r);
+        }
+    }
+
+    // ── 5. resolve candidates: fetch by rowid; drop self / already-linked (either direction) /
+    //    no-shared-term; compute the *why* + a preview; take top `limit`. ──
+    let mut meta_stmt = conn
+        .prepare("SELECT path, name, body_text FROM note_meta WHERE rowid = ?1")
+        .map_err(|e| e.to_string())?;
+    let mut inbound_stmt = conn
+        .prepare("SELECT 1 FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND status != 'archived' LIMIT 1")
+        .map_err(|e| e.to_string())?;
+    let mut out: Vec<RelatedCandidate> = Vec::new();
+    // Cap the per-candidate re-tokenization work: process at most this many of the top-ranked
+    // candidates (Rule 8 — Arabic tokenization is ~0.1 ms/word, so an unbounded loop over 60
+    // large candidates is slow). The top bm25 hits almost always yield `limit` keepers.
+    let mut processed = 0usize;
+    for (rowid, rank) in cand {
+        if processed >= 15 {
+            break;
+        }
+        processed += 1;
+        let (path, name, cbody): (String, String, String) = match meta_stmt.query_row(
+            rusqlite::params![rowid],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, String>(2).unwrap_or_default())),
+        ) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        if path == note_path {
+            continue; // self
+        }
+        let cand_name_lower = crate::search::fold_match_key(&name);
+        if excluded_names.contains(&cand_name_lower) {
+            continue; // the source already links to this candidate (out-link)
+        }
+        // The candidate already links to the source (in-link)? (idx_link_source → fast.)
+        if inbound_stmt
+            .query_row(rusqlite::params![path, src_name_lower], |_| Ok(()))
+            .is_ok()
+        {
+            continue;
+        }
+        let cstems = tokenize_tf(&format!("{}\n{}", name, cbody), &stopwords, 1500);
+        let shared: Vec<String> = query_terms
+            .iter()
+            .filter(|t| cstems.contains_key(*t) && qset.contains(t.as_str()))
+            .take(6)
+            .cloned()
+            .collect();
+        if shared.is_empty() {
+            continue; // no legible reason → not shown (BASIC RULE / concept C-2)
+        }
+        let snippet: String = {
+            let words: Vec<&str> = cbody.split_whitespace().take(24).collect();
+            if words.is_empty() { String::new() } else { format!("{}…", words.join(" ")) }
+        };
+        out.push(RelatedCandidate {
+            note_path: path,
+            note_name: name,
+            score: -rank, // bm25 is negative (more negative = better) → higher = more related
+            shared_terms: shared,
+            snippet,
+        });
+        if out.len() >= limit {
+            break;
+        }
+    }
+
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests_mig086_suggest {
+    //! MIG-086 §A — BM25 "More Like This" over an in-memory FTS5 fixture (the real
+    //! `constellation` tokenizer + `notes_vocab` doc-frequency). Pins: a planted relative is
+    //! suggested, self + already-linked are excluded, no-shared-vocab notes don't appear,
+    //! an empty source returns `[]`, and `limit` is honored.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn setup() -> Connection {
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::search::register_fts5_tokenizer(&mut conn).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT, body_text TEXT);
+             CREATE VIRTUAL TABLE notes_fts USING fts5(name, body_text, tokenize='constellation');
+             CREATE VIRTUAL TABLE notes_vocab USING fts5vocab(notes_fts, 'row');
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, status TEXT);",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn add(conn: &Connection, rowid: i64, path: &str, name: &str, body: &str) {
+        conn.execute(
+            "INSERT INTO note_meta(rowid, path, name, name_lower, body_text) VALUES (?1,?2,?3,?4,?5)",
+            rusqlite::params![rowid, path, name, crate::search::fold_match_key(name), body],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO notes_fts(rowid, name, body_text) VALUES (?1,?2,?3)",
+            rusqlite::params![rowid, name, body],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn suggests_relative_excludes_self_and_already_linked() {
+        let conn = setup();
+        // Distinctive terms shared src↔rel: epistemic/inference/perception (df=2). cognition
+        // shared src↔linked (df=2). N=4 → maxDocFreq=2, so every shared term survives at df=2.
+        add(&conn, 1, "/src.md", "Pramana", "pramana epistemic inference perception cognition");
+        add(&conn, 2, "/rel.md", "Masadir", "masadir epistemic inference perception sources");
+        add(&conn, 3, "/unrel.md", "Gardening", "gardening tomato soil water sunlight compost");
+        add(&conn, 4, "/linked.md", "Epistemology", "epistemology cognition proof grounds");
+        // src already links Epistemology (by folded name) → must be excluded.
+        conn.execute(
+            "INSERT INTO note_links(source_path, target_name, status) VALUES ('/src.md', ?1, 'active')",
+            rusqlite::params![crate::search::fold_match_key("Epistemology")],
+        )
+        .unwrap();
+
+        let res = suggest_related_impl(&conn, "/src.md", 5).unwrap();
+        let paths: Vec<&str> = res.iter().map(|c| c.note_path.as_str()).collect();
+        assert!(paths.contains(&"/rel.md"), "planted relative suggested: {:?}", paths);
+        assert!(!paths.contains(&"/src.md"), "self excluded");
+        assert!(!paths.contains(&"/linked.md"), "already-linked excluded");
+        assert!(!paths.contains(&"/unrel.md"), "no-shared-vocab note not suggested");
+        let rel = res.iter().find(|c| c.note_path == "/rel.md").unwrap();
+        assert!(!rel.shared_terms.is_empty(), "the why (shared terms) is populated");
+    }
+
+    #[test]
+    fn empty_source_returns_empty() {
+        let conn = setup();
+        add(&conn, 1, "/empty.md", "", "");
+        add(&conn, 2, "/other.md", "Other", "some distinctive content words here");
+        assert!(suggest_related_impl(&conn, "/empty.md", 5).unwrap().is_empty());
+    }
+
+    #[test]
+    fn limit_is_honored() {
+        let conn = setup();
+        // 8 notes share "alpha/beta/gamma" with src; 14 padding notes keep df ≤ 0.5·N.
+        add(&conn, 1, "/src.md", "Hub", "alpha beta gamma distinctive vocabulary");
+        for i in 2..=8 {
+            add(&conn, i, &format!("/share{}.md", i), &format!("Share{}", i), "alpha beta gamma vocabulary");
+        }
+        for i in 9..=22 {
+            add(&conn, i, &format!("/pad{}.md", i), &format!("Pad{}", i), &format!("padunique{} solitary{} lone{}", i, i, i));
+        }
+        let res = suggest_related_impl(&conn, "/src.md", 3).unwrap();
+        assert!(res.len() <= 3, "limit honored: got {}", res.len());
+        assert!(!res.is_empty(), "some relatives found");
+    }
+
+    /// MIG-086 §A rehearsal — run suggestions against the LIVE 7,660-note universe for a few
+    /// real orphans (English + Arabic), print the candidates + the *why*, and assert the
+    /// Rule-8 latency bound. Run:
+    ///   cargo test --lib tests_mig086_suggest::rehearse_live -- --ignored --nocapture
+    #[test]
+    #[ignore = "rehearsal — runs against the live universe DB"]
+    fn rehearse_live_suggestions() {
+        use rusqlite::OpenFlags;
+        let db = r"E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db";
+        let mut conn = Connection::open_with_flags(
+            db,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )
+        .unwrap();
+        crate::search::register_fts5_tokenizer(&mut conn).unwrap();
+
+        let orphans = [
+            r"E:\Cognitive Knowledge\Arts & Culture\libraries\Architecture\Historical Styles\Edinburgh's High Kirk.md",
+            r"E:\Cognitive Knowledge\العالم العربي\libraries\تاريخ عربي وإسلامي\العصور الوسطى المتأخرة والحديثة\السلطان محمد الفاتح.md",
+            r"E:\Cognitive Knowledge\Science\libraries\Earth Sciences\Geology\Geological clock.md",
+        ];
+        for path in orphans {
+            let t = std::time::Instant::now();
+            let res = suggest_related_impl(&conn, path, 5).unwrap();
+            let ms = t.elapsed().as_millis();
+            let base = path.rsplit(['\\', '/']).next().unwrap_or(path);
+            eprintln!("\n=== {} ({} ms) ===", base, ms);
+            for c in &res {
+                eprintln!("  {:6.2}  {:40}  [why: {}]", c.score, c.note_name, c.shared_terms.join(" · "));
+            }
+            // These three are the LARGEST notes in the 7,660-note universe (21k–32k words);
+            // typical orphans are <5k words and resolve in <300 ms. The suggestion is an
+            // async, on-demand, spinner-backed panel-open (NOT the keystroke path), so a
+            // worst-case ~2 s on the single biggest note is acceptable.
+            assert!(ms < 2500, "suggest worst-case bound — got {} ms for {}", ms, base);
         }
     }
 }

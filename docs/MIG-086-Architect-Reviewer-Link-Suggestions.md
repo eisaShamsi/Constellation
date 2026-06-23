@@ -248,7 +248,21 @@ Confirm fragile notes get the list with the `derives-from` default and the "shor
 
 ---
 
-## 9. Open Boss decisions
+## 9b. Boss rulings (2026-06-23)
+
+1. **Default link type → ALWAYS ASK THE TYPE** (option B below). Clicking "Link" always opens the
+   8-type picker; orphan pre-selects `associative`, fragile pre-selects `derives-from`.
+2. **Scope → EVERYWHERE NOW** (beyond the recommended Reviewer-only v1). Build the reusable
+   `<RelatedCandidates>` component and wire it into the Reviewer, the NotePane, **and any other core
+   surface that deals with links** (Backlinks/Outgoing panels, 360 Inspector — wherever it fits).
+3. Candidate count → **5**. 4. Fragile → **same list, picker pre-set to `derives-from`, "shore it up"
+   heading**. 5. Inert "Connect" button → **removed** (the list replaces it).
+
+Plan reflecting these: `docs/MIG-086-Plan.md`.
+
+---
+
+## 9. Open Boss decisions (original options — resolved by §9b above)
 
 1. **Default link type for one-click connect.** Three options: **(A)** orphan → `associative` (neutral, retype later), fragile → `derives-from` (matches the fragile prescription) — *Architect's recommended default*; **(B)** every one-click opens the 8-type picker first (more deliberate, one extra click, surfaces the cognitive vocabulary Constellation is proud of); **(C)** always `associative`, never typed at connect time. The Living-Link philosophy ("links are living vessels carrying type/confidence") argues for surfacing type; one-click speed argues for a sensible default. *Recommend A, with the chip retypeable in the editor afterward.*
 

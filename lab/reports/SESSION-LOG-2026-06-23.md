@@ -135,3 +135,40 @@ INCLUDE NFC.
   `total_outbound` — so the override changes only the header (↑16 ↓17), no percentage breakage. The
   matrix below still visualizes all link instances (a separate representation; flagged to Boss if he
   wants it deduped too). Rebuilt for re-test.
+ **Boss re-test: PASS.** Pushed (`0b2b0d50`).
+
+## MIG-086 — Reviewer/360/Health/Sky link suggestions
+
+Architected (`docs/MIG-086-Architect-Reviewer-Link-Suggestions.md`) + planned (`docs/MIG-086-Plan.md`)
++ concept-validated (the horse: "reveal a note's unconnected relatives, let the user *formulate* each
+as a typed connection"; keystone safeguard = Boss's "always ask the type") + left-dock surface-validated
+(final hosts: Reviewer · NotePane sidebar · 360.3D both mounts · the note's Health tab/TensionPanel ·
+Sky View right-click menu). Boss decisions locked (§9b): always-ask-type, everywhere-scope, 5 candidates,
+fragile→derives-from default, inert Connect button removed. Plan-approved → cascading §A→§E.
+
+### §A — `suggest_related_notes` backend (BM25 "More Like This") — BUILT + verified
+`libraries.rs::suggest_related_notes` (+ testable `suggest_related_impl`, `tokenize_tf`,
+`RelatedCandidate`), registered in `lib.rs`; reuses the `read_cooccurring_terms` tokenizer. Algorithm:
+tokenize source (name+body, cap 4000) → top-20-by-tf → df from **`notes_vocab`** (live FTS5 vocab;
+`term_vocab` is DRIFT-broken — `knowledge` reads 2 vs 1933) → keep df∈[2,5%·N], tf·idf, top 12 → **bare**
+`bm25(notes_fts,10,1) ORDER BY rank LIMIT 60` (NO join/NOT-IN in the ranking query) → Rust exclusion
+(self / already-linked either direction, by folded name) + the shared-term *why* (≤15 cands, cap 800) +
+a 24-word snippet.
+
+**Perf war (Rule 8), 60 s → bounded — diagnosed empirically:** probes pinpointed three costs:
+(1) a `notes_vocab` lookup per source stem = thousands of vocab scans; (2) `snippet()` in the SELECT
+(FTS aux fns evaluate per matched row) = +16 s; (3) **the killer** — `JOIN note_meta` + two `NOT IN`
+post-filters on the bm25 `ORDER BY rank LIMIT` DEFEAT FTS5's rank-limit fast path (bare query **12 ms**;
+with join+filters **12 s**). Fix: rank with the bare FTS query, exclude in Rust on the top-60; bounded
+df probes; capped tokenization; capped candidate loop. **Live results (3 LARGEST notes):** Edinburgh's
+High Kirk (21k words) 1.1 s, السلطان محمد الفاتح (32k) 2.3 s, Geological clock 0.5 s; **typical <300 ms**
+(async, spinner-backed, on-demand — not the keystroke path). **Quality excellent** across English
+(Siena/Wells/Bourges Cathedrals + Gothic architect William Butterfield), Arabic (الدولة العثمانية /
+عبد الحميد الثاني / مملكة الحجاز — chips باشا·قسطنطين·فَاتِح), science (Geologic eon · stratigraphy).
+3 unit tests + a live-DB rehearsal (`#[ignore]`). Full suite **972 passed / 0 failed**.
+
+**Discovered (flagged, out of §A scope):** (a) `term_vocab` is drifted (doc_counts wrong vs
+`notes_vocab`); (b) the FTS5 index looks fragmented (fts5vocab ~20 ms/lookup) — a one-time `optimize`
+would speed all search. Both deserve a follow-up.
+
+**NEXT: §B** — the shared `<RelatedCandidates>` component, read-only in the Reviewer (first Boss-test).
