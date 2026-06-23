@@ -34,12 +34,14 @@
 	let {
 		libraryPath = null,
 		staleGraceDays = 1,
+		selectPath = null, // MIG-084 §F.2 — seed the selection (return-to-the-note-you-were-on)
 		onNoteClick,
 		onClose,
 		onOpenWithTab,   // (path, name, rightSidebarTab) — hand-off to 360 / Source Review
 	}: {
 		libraryPath?: string | null;
 		staleGraceDays?: number;
+		selectPath?: string | null;
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
 		onOpenWithTab?: (path: string, name: string, tab: string) => void;
@@ -65,6 +67,12 @@
 			const rows = await invoke<DueNote[]>('get_due_notes', { libraryPath, staleGraceDays });
 			if (my !== gen) return;
 			dueNotes = rows;
+			// Return-to-the-note-you-were-on: on a fresh open (no selection yet), seed the
+			// selection to the note we came back from, if it's still in the queue.
+			if (selectPath && !selectedKey) {
+				const r = rows.find(x => x.note_path === selectPath);
+				if (r) selectedKey = `${r.reason}|${r.note_path}`;
+			}
 			// Batched NSC headlines for the row context lines (reused from CeCe/Index — not
 			// regenerated here; Rule 3). Fire-and-forget; the UI updates when it resolves.
 			getSummariesFor(rows.map(r => r.note_path)).then(m => { if (my === gen) summaries = m; }).catch(() => {});

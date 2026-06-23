@@ -620,6 +620,7 @@
 	let showIndex = $state(false);
 	let showReviewer = $state(false); // MIG-080 §F — left-dock universe Review reviewer
 	let cameFromReviewer = $state(false); // MIG-084 §F.2 — show a "← Reviewer" return chip
+	let reviewerReturnPath = $state<string | null>(null); // the note opened FROM the reviewer (restore on return)
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let indexActiveNotePath = $state('');
 	let indexSelectedTerms = $state<Set<string>>(new Set());
@@ -2148,7 +2149,7 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -5708,7 +5709,7 @@
 			{/if}
 			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
 			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
-			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('panels.review') || 'Review Pulse'}>
+			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; reviewerReturnPath = null;showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('panels.review') || 'Review Pulse'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
 			{#if $appSettings.enabledFeatures?.cece !== false}
@@ -6467,17 +6468,20 @@
 				<ReviewerView
 					libraryPath={$libraries[0]?.path ?? null}
 					staleGraceDays={$appSettings.review?.staleGraceDays ?? 1}
+					selectPath={reviewerReturnPath}
 					onNoteClick={(path, name) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
 						cameFromReviewer = true;
+						reviewerReturnPath = path;
 					}}
 					onOpenWithTab={(path, name, tab) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
 						cameFromReviewer = true;
+						reviewerReturnPath = path;
 						// Honor the panel placement (it may be relocated out of the right rail).
 						const placement = ($appSettings.panelPlacements as Record<string, string> | undefined)?.[tab] ?? 'right-sidebar';
 						if (placement === 'right-sidebar') {
