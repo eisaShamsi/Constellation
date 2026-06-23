@@ -611,15 +611,17 @@ pub(crate) const LINKS_OUTGOING_SCHEMA_VERSION: i64 = 1;
 fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_content_hash = false;
     let mut have_content_changed_at = false;
-    let mut have_review_priority = false;
+    let mut review_priority_notnull: Option<bool> = None; // None = column absent
     {
+        // PRAGMA table_info columns: cid(0) name(1) type(2) notnull(3) dflt_value(4) pk(5).
         let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
-        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
-        for col in rows {
-            match col?.as_str() {
+        let rows = stmt.query_map([], |row| Ok((row.get::<_, String>(1)?, row.get::<_, i64>(3)?)))?;
+        for r in rows {
+            let (name, notnull) = r?;
+            match name.as_str() {
                 "content_hash" => have_content_hash = true,
                 "content_changed_at" => have_content_changed_at = true,
-                "review_priority" => have_review_priority = true,
+                "review_priority" => review_priority_notnull = Some(notnull != 0),
                 _ => {}
             }
         }
@@ -630,12 +632,24 @@ fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     if !have_content_changed_at {
         conn.execute_batch("ALTER TABLE note_meta ADD COLUMN content_changed_at INTEGER;")?;
     }
-    // MIG-084 §D — user-set review priority (0–100, default 50). On note_meta (NOT
-    // review_schedule) so every note — orphans included — has one, and so index_note's
-    // ON CONFLICT(path) DO UPDATE (which does NOT list this column) preserves it across
-    // re-indexing. Default 50 ⇒ no back-fill needed.
-    if !have_review_priority {
-        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN review_priority INTEGER NOT NULL DEFAULT 50;")?;
+    // MIG-084 §F.2 — review_priority is the user OVERRIDE for the computed review priority:
+    // NULLABLE, where NULL = "use the computed score" and a set 0..100 = an explicit
+    // override (kept on note_meta so every note — orphans included — has one, and so
+    // index_note's ON CONFLICT(path) DO UPDATE, which omits this column, preserves it).
+    // MIG-084 §D shipped it NOT NULL DEFAULT 50 — that makes every untouched note read as a
+    // deliberate "50" override. Migrate that shape: DROP + re-add nullable (the old 50s
+    // become NULL = use-computed; no real overrides exist yet — the slider never shipped).
+    match review_priority_notnull {
+        None => {
+            conn.execute_batch("ALTER TABLE note_meta ADD COLUMN review_priority INTEGER;")?;
+        }
+        Some(true) => {
+            conn.execute_batch(
+                "ALTER TABLE note_meta DROP COLUMN review_priority;
+                 ALTER TABLE note_meta ADD COLUMN review_priority INTEGER;",
+            )?;
+        }
+        Some(false) => {} // already nullable — nothing to do
     }
     Ok(())
 }
