@@ -255,19 +255,22 @@ fn load_notes_from_db(
 fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
     let note_names: HashSet<String> = notes.keys().cloned().collect();
 
-    // Phase 2: Build inbound map
+    // Phase 2: Build inbound map + each note's OUTGOING derives-from count.
     let mut inbound_count: HashMap<String, usize> = HashMap::new();
     let mut inbound_sources: HashMap<String, HashSet<String>> = HashMap::new();
-    let mut derives_from_sources: HashMap<String, HashSet<String>> = HashMap::new();
+    // MIG-085 — a single point of failure is a note MANY depend on that itself rests on
+    // ≤1 derives-from support (OUTGOING). Count the note's own outgoing derives-from, to
+    // match the Reviewer's fragile lens + inspector360's SPOF (one canonical definition).
+    let mut out_derives: HashMap<String, usize> = HashMap::new();
 
-    for info in notes.values() {
+    for (key, info) in &notes {
         for (target, link_type) in &info.outgoing {
+            if link_type.as_deref() == Some("derives-from") {
+                *out_derives.entry(key.clone()).or_insert(0) += 1;
+            }
             if note_names.contains(target) {
                 *inbound_count.entry(target.clone()).or_insert(0) += 1;
                 inbound_sources.entry(target.clone()).or_default().insert(info.name.clone());
-                if link_type.as_deref() == Some("derives-from") {
-                    derives_from_sources.entry(target.clone()).or_default().insert(info.name.clone());
-                }
             }
         }
     }
@@ -427,8 +430,8 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
     let mut single_points: Vec<TensionItem> = Vec::new();
     for (name_lower, sources) in &inbound_sources {
         if sources.len() >= 5 {
-            let derives_count = derives_from_sources.get(name_lower)
-                .map(|s| s.len()).unwrap_or(0);
+            // OUTGOING derives-from — what THIS note rests on (matches the Reviewer/360).
+            let derives_count = out_derives.get(name_lower).copied().unwrap_or(0);
             if derives_count <= 1 {
                 if let Some(info) = notes.get(name_lower) {
                     single_points.push(TensionItem {
@@ -436,7 +439,7 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
                         note_path: info.path.clone(),
                         severity: if sources.len() >= 10 { "high".to_string() }
                             else { "medium".to_string() },
-                        detail: format!("referenced by {} notes, only {} source", sources.len(), derives_count),
+                        detail: format!("{} notes depend on this; it rests on only {} support", sources.len(), derives_count),
                         detail_kind: "single_point".to_string(),
                         detail_args: vec![sources.len().to_string(), derives_count.to_string()],
                     });
