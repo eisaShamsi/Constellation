@@ -2871,6 +2871,15 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             ON note_meta(path, name, word_count, modified, created_at, outgoing_links_json);
     ").map_err(|e| format!("Failed to create idx_note_meta_map: {}", e))?;
 
+    // MIG-084 §F.2 — the Reviewer's connection-health lenses scan note_meta by
+    // incoming_count (orphan: =0; fragile: >=5). This covering index makes both
+    // index-only (the lens also reads word_count + path for scope). IF NOT EXISTS, no
+    // version bump => picked up next launch.
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_note_meta_incoming_wc
+            ON note_meta(incoming_count, word_count, path);
+    ").map_err(|e| format!("Failed to create idx_note_meta_incoming_wc: {}", e))?;
+
     // ─── Living Link System (Knowledge Formulation) ─────────────────────
     // note_links: stores typed, directed, annotated links with lifecycle data.
     // Source of truth: LINK files on disk. This table is the fast index.
