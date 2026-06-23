@@ -12,20 +12,23 @@ use std::fs;
 use std::path::Path;
 use tauri::Manager;
 
-/// MIG-085 §B.1 — the canonical inbound count for a note: the write-time
-/// `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded). `None`
-/// if the DB is unavailable or the note has no row yet (caller falls back to the FS count).
-fn read_incoming_count(app: &tauri::AppHandle, note_path: &str) -> Option<usize> {
+/// MIG-085 §B.1/§B.2 — the canonical connection counts for a note: the write-time
+/// `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded) and
+/// `outgoing_count` (DISTINCT active outgoing edges). `None` if the DB is unavailable or
+/// the note has no row yet (caller falls back to the FS occurrence counts). Single-sourcing
+/// BOTH so the 360 header (↑ out · ↓ in) matches the Backlinks panel and the badge — the
+/// FS scan counts raw `[[link]]` occurrences (duplicates + reds), which over-counts.
+fn read_connection_counts(app: &tauri::AppHandle, note_path: &str) -> Option<(usize, usize)> {
     let state = app.state::<crate::search::SearchState>();
     let guard = state.db.lock().ok()?;
     let conn = guard.as_ref()?;
     conn.query_row(
-        "SELECT incoming_count FROM note_meta WHERE path = ?1",
+        "SELECT incoming_count, outgoing_count FROM note_meta WHERE path = ?1",
         [note_path],
-        |r| r.get::<_, i64>(0),
+        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)),
     )
     .ok()
-    .map(|n| n.max(0) as usize)
+    .map(|(inc, out)| (inc.max(0) as usize, out.max(0) as usize))
 }
 
 /// A note connected to the inspected note.
@@ -196,14 +199,17 @@ pub fn get_360_view(
         }
     }
 
-    // ─── MIG-085 §B.1 — single-source the inbound COUNT ───
-    // Override the filesystem occurrence-count with the write-time
-    // `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded via
-    // §B.0) so 360's stratum / maturity / orphan / SPOF verdicts AND the displayed inbound
-    // count all match the Reviewer, the Backlinks badge and Sky View. Falls back to the FS
-    // count only if the row is absent (a note not yet indexed).
-    if let Some(inc) = read_incoming_count(&app, &note_path) {
+    // ─── MIG-085 §B.1/§B.2 — single-source the connection COUNTS ───
+    // Override the filesystem occurrence-counts with the write-time
+    // `note_meta.incoming_count` / `outgoing_count` (DISTINCT, alias-aware, Unicode-folded
+    // via §B.0) so 360's stratum / maturity / orphan / SPOF verdicts AND the displayed
+    // ↑out·↓in counts all match the Reviewer, the Backlinks panel and Sky View. The FS scan
+    // counts raw `[[link]]` occurrences (duplicates + red links), which over-counts both
+    // directions (Boss-caught: 360 ↑34 vs Backlinks 16). Falls back to the FS counts only
+    // if the row is absent (a note not yet indexed).
+    if let Some((inc, out)) = read_connection_counts(&app, &note_path) {
         total_inbound = inc;
+        total_outbound = out;
     }
 
     // ─── Phase 2: Stratum ───

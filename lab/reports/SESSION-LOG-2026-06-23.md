@@ -119,3 +119,19 @@ INCLUDE NFC.
 - Release binary rebuilt (Rust + frontend) for the Boss test.
 
 **NEXT: Boss test (Stage 1 — the accent fix), then MIG-086.**
+
+### Boss test results + §B.2 (outbound single-source)
+
+- **Stage 1 (§B.0 accent fix): PASS** — Boss-validated live. `Île-de-France` et al. left the Reviewer's
+  false-orphan lens; Backlinks shows the real ~17 inbound; maturity is correct.
+- **Stage 2 (§B.1 maturity agreement): inbound PASS** (360 ↓17 == Backlinks 17 == Sky); Boss CAUGHT a
+  pre-existing **outbound** mismatch — the 360 header showed **↑34** while Backlinks/`outgoing_count`
+  showed **16**. Same occurrence-vs-distinct class as the inbound bug, on the OUTBOUND side, which §B.1
+  hadn't touched. Verified on the live DB: `note_meta.outgoing_count = 16` == 16 active `note_links`
+  edges; the 360 was counting **34 raw `[[link]]` occurrences** (a Wikipedia import duplicates targets).
+- **§B.2 fix:** `inspector360` now overrides BOTH `total_inbound` AND `total_outbound` from the
+  write-time `note_meta.incoming_count`/`outgoing_count` (one `read_connection_counts` query). Verified
+  the 360 frontend's type-breakdown percentages derive from the `typed_links`/`untyped_links` lists, NOT
+  `total_outbound` — so the override changes only the header (↑16 ↓17), no percentage breakage. The
+  matrix below still visualizes all link instances (a separate representation; flagged to Boss if he
+  wants it deduped too). Rebuilt for re-test.
