@@ -3573,5 +3573,45 @@
       "overdue_date": "기한 지난 날짜",
       "due_today_date": "오늘 마감 날짜"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "갱신 필요",
+      "due": "검토 시점 도래",
+      "checkpoint": "사고 모델 점검",
+      "orphan": "외톨이 — 연결해 주세요",
+      "fragile": "취약 — 보강해 주세요",
+      "never": "검토한 적 없음"
+    },
+    "maturity": {
+      "seed": "씨앗",
+      "sapling": "묘목",
+      "evergreen": "상록수",
+      "canonical": "고목",
+      "wilting": "시드는 중"
+    },
+    "why": {
+      "stale": "{type} “{name}” 이(가) {date} 에 변경됨",
+      "overdue": "검토 기한 {n}일 지남",
+      "dueToday": "오늘 검토 예정",
+      "checkpoint": "사고 모델입니다 — 지금도 이 견해를 유지하시나요?",
+      "orphan": "아직 아무것도 연결되지 않음 — 사고의 흐름에 엮어 보세요",
+      "fragile": "{in}개의 노트가 이것에 의존하지만, 뒷받침은 {out}개뿐",
+      "never": "검토한 적 없음 · {n}일 경과"
+    },
+    "connections": "들어옴 {in} · 나감 {out}",
+    "allCaughtUp": "모두 처리 완료 — 지금 챙길 것이 없습니다.",
+    "maturityLabel": "성숙도",
+    "connectionsLabel": "연결",
+    "lastReviewedLabel": "마지막 검토",
+    "never": "없음",
+    "priority": "우선순위",
+    "connect": "연결하기",
+    "snooze7": "7일 미루기",
+    "dismiss": "닫기",
+    "openEditor": "편집기에서 열기",
+    "see360": "전체 맥락 (360°)",
+    "classify": "분류하기",
+    "selectNote": "검토 맥락을 보려면 노트를 선택하세요."
   }
 }

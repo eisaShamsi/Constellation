@@ -3573,5 +3573,45 @@
       "overdue_date": "Fecha vencida",
       "due_today_date": "Fecha de hoy"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "Desactualizada",
+      "due": "Toca revisar",
+      "checkpoint": "Puntos de revisión del modelo mental",
+      "orphan": "Huérfana — conéctame",
+      "fragile": "Frágil — refuérzame",
+      "never": "Nunca revisada"
+    },
+    "maturity": {
+      "seed": "semilla",
+      "sapling": "brote",
+      "evergreen": "perenne",
+      "canonical": "canónica",
+      "wilting": "marchitándose"
+    },
+    "why": {
+      "stale": "{type} «{name}» cambió el {date}",
+      "overdue": "Revisión atrasada {n} día(s)",
+      "dueToday": "Toca revisar hoy",
+      "checkpoint": "Un modelo mental — ¿sigues sosteniendo esta visión?",
+      "orphan": "Aún nada enlaza aquí — intégrala en tu pensamiento",
+      "fragile": "{in} notas dependen de esta, con solo {out} de apoyo",
+      "never": "Nunca revisada · {n} día(s) de antigüedad"
+    },
+    "connections": "{in} entran · {out} salen",
+    "allCaughtUp": "Todo al día — nada necesita tu atención ahora mismo.",
+    "maturityLabel": "Madurez",
+    "connectionsLabel": "Conexiones",
+    "lastReviewedLabel": "Última revisión",
+    "never": "nunca",
+    "priority": "Prioridad",
+    "connect": "Conectar",
+    "snooze7": "Posponer 7 d",
+    "dismiss": "Descartar",
+    "openEditor": "Abrir en el editor",
+    "see360": "Contexto completo (360°)",
+    "classify": "Clasificar",
+    "selectNote": "Selecciona una nota para ver su contexto de revisión."
   }
 }

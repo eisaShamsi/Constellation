@@ -3573,5 +3573,45 @@
       "overdue_date": "Geciken tarih",
       "due_today_date": "Bugün biten tarih"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "Bayatlamış",
+      "due": "Gözden Geçirme Vakti",
+      "checkpoint": "Zihinsel Model Kontrolleri",
+      "orphan": "Öksüz — beni bağla",
+      "fragile": "Kırılgan — beni güçlendir",
+      "never": "Hiç gözden geçirilmedi"
+    },
+    "maturity": {
+      "seed": "tohum",
+      "sapling": "fidan",
+      "evergreen": "her dem yeşil",
+      "canonical": "köklü",
+      "wilting": "solmakta"
+    },
+    "why": {
+      "stale": "{type} “{name}” {date} tarihinde değişti",
+      "overdue": "Gözden geçirme {n} gün gecikti",
+      "dueToday": "Bugün gözden geçirilmeli",
+      "checkpoint": "Bir zihinsel model — hâlâ bu görüşte misin?",
+      "orphan": "Buraya henüz hiçbir bağ yok — onu düşüncene bağla",
+      "fragile": "{in} not buna dayanıyor, oysa yalnızca {out} destek var",
+      "never": "Hiç gözden geçirilmedi · {n} günlük"
+    },
+    "connections": "{in} gelen · {out} giden",
+    "allCaughtUp": "Her şey güncel — şu an ilgilenmen gereken bir şey yok.",
+    "maturityLabel": "Olgunluk",
+    "connectionsLabel": "Bağlantılar",
+    "lastReviewedLabel": "Son gözden geçirme",
+    "never": "hiç",
+    "priority": "Öncelik",
+    "connect": "Bağla",
+    "snooze7": "7 gün ertele",
+    "dismiss": "Kapat",
+    "openEditor": "Düzenleyicide aç",
+    "see360": "Tam bağlam (360°)",
+    "classify": "Sınıflandır",
+    "selectNote": "Gözden geçirme bağlamını görmek için bir not seç."
   }
 }

@@ -16,6 +16,7 @@
 		stale_trigger_name: string | null;
 		stale_trigger_type: string | null;
 		stale_changed_on: string | null;
+		priority: number;               // MIG-084 §D — user-set 0–100 (default 50)
 	}
 
 	let {
@@ -68,6 +69,15 @@
 		} catch {}
 	}
 
+	// MIG-084 §D — the priority lever, mirrored from the Reviewer's detail pane. Live
+	// draft on input; persisted on change (set_review_priority); bubbles a refresh.
+	let priorityDraft = $state<number | null>(null);
+	$effect(() => { notePath; priorityDraft = null; }); // reset on note change
+	async function commitPriority(value: number) {
+		if (!notePath) return;
+		try { await invoke('set_review_priority', { notePath, priority: value }); if (status) status.priority = value; onRefresh?.(); } catch {}
+	}
+
 	// The primary Mode-1/3 status line (separate from the stale lens below).
 	const dueLine = $derived.by(() => {
 		if (!status || status.reason === null) return { icon: '🆕', text: $t('reviewStatus.notScheduled') || 'Not yet in the review schedule' };
@@ -111,6 +121,16 @@
 			</div>
 		{/if}
 
+		<!-- Priority lever (mirrors the Reviewer detail pane; 0–100, default 50). -->
+		<div class="rsp-priority">
+			<label for="rsp-prio">{$t('reviewer.priority') || 'Priority'}</label>
+			<input id="rsp-prio" type="range" min="0" max="100" step="5"
+				value={priorityDraft ?? status?.priority ?? 50}
+				oninput={(e) => priorityDraft = Number((e.currentTarget as HTMLInputElement).value)}
+				onchange={(e) => commitPriority(Number((e.currentTarget as HTMLInputElement).value))} />
+			<span class="rsp-prio-val">{priorityDraft ?? status?.priority ?? 50}</span>
+		</div>
+
 		<!-- Actions (the only thing that advances last_reviewed is the explicit ✓). -->
 		<div class="rsp-actions">
 			<button class="rsp-btn" onclick={() => act('mark_reviewed')} title={$t('reviewPanel.reviewed') || 'Reviewed'}>✓ {$t('reviewPanel.reviewed') || 'Reviewed'}</button>
@@ -134,6 +154,10 @@
 		background: var(--background-modifier-error-hover, rgba(220,80,80,0.12));
 		font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-normal); line-height: 1.35;
 	}
+	.rsp-priority { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+	.rsp-priority label { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-muted); flex-shrink: 0; }
+	.rsp-priority input[type="range"] { flex: 1; accent-color: var(--interactive-accent, #7c3aed); min-width: 0; }
+	.rsp-prio-val { font-size: calc(0.76rem * var(--rs-scale, 1)); color: var(--text-normal); width: 2.2em; text-align: end; }
 	.rsp-actions { display: flex; gap: 6px; margin-top: 4px; }
 	.rsp-btn {
 		border: 1px solid var(--background-modifier-border); background: var(--background-primary);

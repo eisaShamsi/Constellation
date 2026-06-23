@@ -3573,5 +3573,45 @@
       "overdue_date": "Data vencida",
       "due_today_date": "Data de hoje"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "Desatualizada",
+      "due": "A rever",
+      "checkpoint": "Pontos de verificação de modelos mentais",
+      "orphan": "Órfã — conecte-me",
+      "fragile": "Frágil — reforce-me",
+      "never": "Nunca revista"
+    },
+    "maturity": {
+      "seed": "semente",
+      "sapling": "muda",
+      "evergreen": "perene",
+      "canonical": "canónica",
+      "wilting": "a murchar"
+    },
+    "why": {
+      "stale": "{type} “{name}” mudou em {date}",
+      "overdue": "Revisão atrasada em {n} dia(s)",
+      "dueToday": "A rever hoje",
+      "checkpoint": "Um modelo mental — ainda sustenta esta visão?",
+      "orphan": "Ainda nada se liga aqui — conecte-a ao seu pensamento",
+      "fragile": "{in} notas dependem desta, com apenas {out} de apoio",
+      "never": "Nunca revista · {n} dia(s) de idade"
+    },
+    "connections": "{in} a entrar · {out} a sair",
+    "allCaughtUp": "Tudo em dia — nada precisa da sua atenção neste momento.",
+    "maturityLabel": "Maturidade",
+    "connectionsLabel": "Conexões",
+    "lastReviewedLabel": "Última revisão",
+    "never": "nunca",
+    "priority": "Prioridade",
+    "connect": "Conectar",
+    "snooze7": "Adiar 7 dias",
+    "dismiss": "Dispensar",
+    "openEditor": "Abrir no editor",
+    "see360": "Contexto completo (360°)",
+    "classify": "Classificar",
+    "selectNote": "Selecione uma nota para ver o seu contexto de revisão."
   }
 }

@@ -6463,6 +6463,13 @@
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
 					}}
+					onOpenWithTab={(path, name, tab) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						rightSidebarOpen = true;
+						rightSidebarTab = tab as typeof rightSidebarTab;
+						showReviewer = false;
+					}}
 					onClose={() => { showReviewer = false; }}
 				/>
 			</div>

@@ -3573,5 +3573,45 @@
       "overdue_date": "Überfälliges Datum",
       "due_today_date": "Heute fälliges Datum"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "Veraltet",
+      "due": "Wiedervorlage fällig",
+      "checkpoint": "Denkmodell-Prüfpunkte",
+      "orphan": "Verwaist — verknüpf mich",
+      "fragile": "Fragil — stütz mich",
+      "never": "Nie geprüft"
+    },
+    "maturity": {
+      "seed": "Samen",
+      "sapling": "Setzling",
+      "evergreen": "immergrün",
+      "canonical": "verholzt",
+      "wilting": "welkend"
+    },
+    "why": {
+      "stale": "{type} „{name}“ wurde am {date} geändert",
+      "overdue": "Wiedervorlage überfällig seit {n} Tag(en)",
+      "dueToday": "Heute zur Wiedervorlage fällig",
+      "checkpoint": "Ein Denkmodell — hältst du an dieser Sicht noch fest?",
+      "orphan": "Noch nichts verweist hierher — binde sie in dein Denken ein",
+      "fragile": "{in} Notizen hängen hieran, mit nur {out} Stützen",
+      "never": "Nie geprüft · {n} Tag(e) alt"
+    },
+    "connections": "{in} ein · {out} aus",
+    "allCaughtUp": "Alles erledigt — derzeit braucht nichts deine Aufmerksamkeit.",
+    "maturityLabel": "Reife",
+    "connectionsLabel": "Verbindungen",
+    "lastReviewedLabel": "Zuletzt geprüft",
+    "never": "nie",
+    "priority": "Priorität",
+    "connect": "Verknüpfen",
+    "snooze7": "7 Tage zurückstellen",
+    "dismiss": "Verwerfen",
+    "openEditor": "Im Editor öffnen",
+    "see360": "Voller Kontext (360°)",
+    "classify": "Einordnen",
+    "selectNote": "Wähle eine Notiz, um ihren Prüfkontext zu sehen."
   }
 }

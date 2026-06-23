@@ -3573,5 +3573,45 @@
       "overdue_date": "תאריך באיחור",
       "due_today_date": "תאריך להיום"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "לא טרי",
+      "due": "הגיע למועד עיון",
+      "checkpoint": "נקודות בקרה למודלים מנטליים",
+      "orphan": "יתום — חברו אותי",
+      "fragile": "שביר — חזקו אותי",
+      "never": "לא נסקר מעולם"
+    },
+    "maturity": {
+      "seed": "זרע",
+      "sapling": "שתיל",
+      "evergreen": "ירוק־עד",
+      "canonical": "מבוסס",
+      "wilting": "נובל"
+    },
+    "why": {
+      "stale": "{type} ”{name}“ השתנה בתאריך {date}",
+      "overdue": "העיון מאחר ב־{n} ימים",
+      "dueToday": "הגיע למועד עיון היום",
+      "checkpoint": "מודל מנטלי — האם עדיין מחזיק בעמדה זו?",
+      "orphan": "עדיין שום דבר לא מקשר לכאן — חברו אותו לחשיבה שלכם",
+      "fragile": "{in} פתקים תלויים בזה, עם {out} תימוכין בלבד",
+      "never": "לא נסקר מעולם · בן {n} ימים"
+    },
+    "connections": "{in} נכנס · {out} יוצא",
+    "allCaughtUp": "הכול מעודכן — שום דבר לא דורש את תשומת לבכם כעת.",
+    "maturityLabel": "בשלות",
+    "connectionsLabel": "קשרים",
+    "lastReviewedLabel": "עיון אחרון",
+    "never": "מעולם",
+    "priority": "עדיפות",
+    "connect": "חברו",
+    "snooze7": "דחו ל־7 ימים",
+    "dismiss": "בטלו",
+    "openEditor": "פתחו בעורך",
+    "see360": "הקשר מלא (360°)",
+    "classify": "סווגו",
+    "selectNote": "בחרו פתק כדי לראות את הקשר העיון שלו."
   }
 }

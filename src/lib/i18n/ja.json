@@ -3573,5 +3573,45 @@
       "overdue_date": "期限切れの日付",
       "due_today_date": "本日期限の日付"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "古くなった",
+      "due": "見直し時期",
+      "checkpoint": "思考モデルの点検",
+      "orphan": "孤立 — つなげよう",
+      "fragile": "脆い — 支えよう",
+      "never": "未見直し"
+    },
+    "maturity": {
+      "seed": "種",
+      "sapling": "苗木",
+      "evergreen": "常緑",
+      "canonical": "大樹",
+      "wilting": "萎れ"
+    },
+    "why": {
+      "stale": "{type}「{name}」が{date}に変わりました",
+      "overdue": "見直しが{n}日遅れています",
+      "dueToday": "今日が見直し日です",
+      "checkpoint": "思考モデル — 今もこの見方を保っていますか？",
+      "orphan": "まだ何もつながっていません — 思考に組み込みましょう",
+      "fragile": "{in}件のノートがこれに依存、支えは{out}件のみ",
+      "never": "未見直し・作成から{n}日"
+    },
+    "connections": "入{in}・出{out}",
+    "allCaughtUp": "すべて対応済み — 今は気にかけることはありません。",
+    "maturityLabel": "熟度",
+    "connectionsLabel": "つながり",
+    "lastReviewedLabel": "前回の見直し",
+    "never": "なし",
+    "priority": "優先度",
+    "connect": "つなげる",
+    "snooze7": "7日後に再通知",
+    "dismiss": "非表示",
+    "openEditor": "エディタで開く",
+    "see360": "全体の文脈（360°）",
+    "classify": "分類する",
+    "selectNote": "ノートを選ぶと見直しの文脈が表示されます。"
   }
 }

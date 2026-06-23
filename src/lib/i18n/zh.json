@@ -3573,5 +3573,45 @@
       "overdue_date": "逾期日期",
       "due_today_date": "今日到期日期"
     }
+  },
+  "reviewer": {
+    "lens": {
+      "stale": "已过时",
+      "due": "待复习",
+      "checkpoint": "心智模型检查点",
+      "orphan": "孤立 — 待连接",
+      "fragile": "脆弱 — 待加固",
+      "never": "从未复习"
+    },
+    "maturity": {
+      "seed": "种子",
+      "sapling": "幼苗",
+      "evergreen": "常青",
+      "canonical": "定稿",
+      "wilting": "枯萎"
+    },
+    "why": {
+      "stale": "{type}“{name}”于 {date} 发生变更",
+      "overdue": "复习已逾期 {n} 天",
+      "dueToday": "今天待复习",
+      "checkpoint": "一个心智模型 — 你是否仍持此看法？",
+      "orphan": "尚无任何连接 — 把它接入你的思考",
+      "fragile": "{in} 条笔记依赖于此，却只有 {out} 条支撑",
+      "never": "从未复习 · 已有 {n} 天"
+    },
+    "connections": "{in} 入 · {out} 出",
+    "allCaughtUp": "全部处理完毕 — 当前无需关注。",
+    "maturityLabel": "成熟度",
+    "connectionsLabel": "连接",
+    "lastReviewedLabel": "上次复习",
+    "never": "从未",
+    "priority": "优先级",
+    "connect": "连接",
+    "snooze7": "暂缓 7 天",
+    "dismiss": "忽略",
+    "openEditor": "在编辑器中打开",
+    "see360": "完整脉络（360°）",
+    "classify": "归类",
+    "selectNote": "选择一条笔记以查看其复习脉络。"
   }
 }
