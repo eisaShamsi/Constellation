@@ -2757,14 +2757,19 @@ export function getBacklinks(
 	// the active note's aliases (frontmatter or rename-stamped) counts
 	// as a backlink. Aliases are pre-lowercased + Arabic-normalized
 	// in the DB; pass them through as-is.
-	const target = noteName.toLowerCase();
+	// MIG-085 §B.0 — fold the match key the SAME way the Rust side does
+	// (fold_match_key = NFC → lower → NFC), so this panel's backlink count
+	// matches incoming_count / the badge / the Reviewer even for accented
+	// titles ("Île-de-France") and NFD (macOS-origin) names.
+	const foldKey = (s: string) => s.normalize('NFC').toLowerCase().normalize('NFC');
+	const target = foldKey(noteName);
 	const targets = new Set<string>([target]);
 	if (noteAliases) {
 		for (const a of noteAliases) {
-			if (a) targets.add(a.toLowerCase());
+			if (a) targets.add(foldKey(a));
 		}
 	}
-	const linked = allLinks.filter(l => targets.has(l.target.toLowerCase()) && l.status !== 'archived');
+	const linked = allLinks.filter(l => targets.has(foldKey(l.target)) && l.status !== 'archived');
 	// Sort by Living Link weight (desc), decayed if caller opted in. Ties
 	// break alphabetically by source name so fresh vaults (all weights == 1)
 	// stay in a stable order across boots.

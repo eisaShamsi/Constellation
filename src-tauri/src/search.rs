@@ -201,6 +201,10 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                               OR target_name IN (SELECT alias_lower FROM note_aliases
                                                   WHERE path = sky_nodes.path))) >= 5
                 THEN 1 ELSE 0 END)
+        -- NB: this ≥5 inbound-EDGE signal stays COUNT(*) (total occurrences) to match
+        -- strata.rs::compute_stratum (the FS stratum the 360 Inspector uses); the
+        -- distinct-source ≥3 signal below is the separate one. Only MATURITY moved to
+        -- DISTINCT (MIG-085 §B.1) because it must equal compute_state(incoming_count).
         + (CASE WHEN EXISTS(SELECT 1 FROM note_links
                              WHERE source_path = sky_nodes.path
                                AND link_type = 'generalizes'
@@ -223,7 +227,11 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
 /// MIG-002 §5 — SQL fragment that computes sky_nodes.maturity from the
 /// same three signals as maturity.rs::compute_state:
 ///
-///   inbound                  — active links targeting this note
+///   inbound                  — DISTINCT source notes linking to this note (MIG-085 §B.1:
+///                              COUNT(DISTINCT source_path), matching note_meta.incoming_count
+///                              by construction so maturity reads identically on the Reviewer,
+///                              the maturity panel, the 360 Inspector and Sky View — was
+///                              COUNT(*), which double-counted a source that links twice)
 ///   days_since_created       — (now - note_meta.created_at) / 86400
 ///   days_since_modified      — (now - note_meta.modified)    / 86400
 ///
@@ -248,8 +256,8 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
 pub(crate) const MATURITY_SQL_EXPR: &str = "
     CASE
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
-        WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE status = 'active'
+        WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
+                 WHERE status != 'archived'
                    AND (target_name = sky_nodes.id
                         OR target_name IN (SELECT alias_lower FROM note_aliases
                                             WHERE path = sky_nodes.path))) >= 10)
@@ -259,8 +267,8 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         THEN 'canonical'
 
         -- wilting: evergreen-level but untouched 90+ days
-        WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE status = 'active'
+        WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
+                 WHERE status != 'archived'
                    AND (target_name = sky_nodes.id
                         OR target_name IN (SELECT alias_lower FROM note_aliases
                                             WHERE path = sky_nodes.path))) >= 4)
@@ -276,8 +284,8 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         THEN 'wilting'
 
         -- evergreen: 4+ inbound, created 7+ days ago
-        WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE status = 'active'
+        WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
+                 WHERE status != 'archived'
                    AND (target_name = sky_nodes.id
                         OR target_name IN (SELECT alias_lower FROM note_aliases
                                             WHERE path = sky_nodes.path))) >= 4)
@@ -290,8 +298,8 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         THEN 'evergreen'
 
         -- sapling: 1+ inbound OR created 2+ days ago
-        WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE status = 'active'
+        WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
+                 WHERE status != 'archived'
                    AND (target_name = sky_nodes.id
                         OR target_name IN (SELECT alias_lower FROM note_aliases
                                             WHERE path = sky_nodes.path))) >= 1)
@@ -307,6 +315,89 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         ELSE 'seed'
     END
 ";
+
+#[cfg(test)]
+mod tests_mig085b_surfaces_agree {
+    //! MIG-085 §B — the deliverable: prove maturity's inbound is single-sourced so the
+    //! Reviewer (note_meta.incoming_count → compute_state), the maturity panel / 360
+    //! (compute_state), and the Sky trigger (MATURITY_SQL_EXPR) all agree — AND that the
+    //! count is DISTINCT-source (§B.1) AND that an accented-title note matches its own
+    //! inbound links (§B.0, the false-orphan fix).
+    use super::*;
+    use rusqlite::Connection;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn accented_note_distinct_source_agrees_across_surfaces() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT,
+                incoming_count INTEGER NOT NULL DEFAULT 0,
+                incoming_link_types TEXT NOT NULL DEFAULT '',
+                incoming_link_types_json TEXT NOT NULL DEFAULT '{}',
+                incoming_top_rank INTEGER NOT NULL DEFAULT 9,
+                created_at INTEGER, modified INTEGER, word_count INTEGER DEFAULT 100);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT,
+                target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
+             CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);
+             CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, id TEXT, maturity TEXT);",
+        )
+        .unwrap();
+
+        // Anchor timestamps to real now (MATURITY_SQL_EXPR uses strftime('%s','now')).
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let created = now - 100 * 86_400; // dsc = 100
+        let modified = now - 10 * 86_400; //  dsm = 10
+        let name = "Île-de-France";
+        let nl = fold_match_key(name); // "île-de-france" — the §B.0 fix
+        conn.execute(
+            "INSERT INTO note_meta(path,name,name_lower,created_at,modified,word_count) VALUES ('/ile.md',?1,?2,?3,?4,100)",
+            params![name, nl, created, modified],
+        )
+        .unwrap();
+        conn.execute("INSERT INTO sky_nodes(path,id) VALUES ('/ile.md',?1)", params![nl]).unwrap();
+
+        // 3 DISTINCT sources, but S1 links twice → 4 occurrences. Targets are stored
+        // fold_match_key'd, exactly as parse_link_body now writes them.
+        let t = fold_match_key("Île-de-France");
+        for (src, n) in [("/s1.md", 2), ("/s2.md", 1), ("/s3.md", 1)] {
+            for _ in 0..n {
+                conn.execute(
+                    "INSERT INTO note_links(source_path,target_name,link_type,status) VALUES (?1,?2,'associative','active')",
+                    params![src, t],
+                )
+                .unwrap();
+            }
+        }
+
+        // (1) The Reviewer / Backlinks badge source — DISTINCT, and NON-ZERO despite the accent.
+        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        let inc: i64 = conn
+            .query_row("SELECT incoming_count FROM note_meta WHERE path='/ile.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(inc, 3, "DISTINCT sources (S1 twice = once); accent matched (ASCII LOWER would give 0)");
+
+        // (2) The Sky trigger maturity.
+        conn.execute(
+            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path='/ile.md'", MATURITY_SQL_EXPR),
+            [],
+        )
+        .unwrap();
+        let sky_mat: String = conn
+            .query_row("SELECT maturity FROM sky_nodes WHERE path='/ile.md'", [], |r| r.get(0))
+            .unwrap();
+
+        // (3) The Reviewer / maturity panel / 360 verdict.
+        let dsc = ((now - created) / 86_400) as u64;
+        let dsm = ((now - modified) / 86_400) as u64;
+        let computed = crate::maturity::compute_state(inc as usize, dsc, dsm);
+
+        // 3 distinct inbound → sapling. (4 OCCURRENCES would wrongly read evergreen.)
+        assert_eq!(computed, "sapling");
+        assert_eq!(sky_mat, computed, "Sky trigger == compute_state(incoming_count) — every surface agrees");
+    }
+}
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -769,6 +860,32 @@ fn ensure_note_meta_mig079_incoming_columns(conn: &Connection) -> rusqlite::Resu
     Ok(())
 }
 
+/// MIG-085 §B.0 — ensure `note_meta` has the Unicode-folded name key `name_lower`.
+/// Written write-time by `index_note` (`fold_match_key(name)`); read by every name↔target
+/// match (incoming aggregate, sky_nodes.id, incoming_signature) via
+/// `COALESCE(name_lower, LOWER(name))` so the column's NULL-ness is the rollout gate:
+/// a row not yet backfilled falls back to the old ASCII `LOWER()` (today's behaviour, no
+/// regression); a backfilled/saved row uses the correct Unicode fold. Idempotent
+/// (PRAGMA probe). Inert (NULL) until `name_fold_backfill` populates it.
+fn ensure_note_meta_name_lower(conn: &Connection) -> rusqlite::Result<()> {
+    let have = {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        let mut found = false;
+        for col in rows {
+            if col? == "name_lower" {
+                found = true;
+                break;
+            }
+        }
+        found
+    };
+    if !have {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN name_lower TEXT;")?;
+    }
+    Ok(())
+}
+
 /// MIG-079 §C.2a — add the VIRTUAL generated column `LOWER(target_name)` on
 /// `note_links`, so the incoming recompute matches a note's name + aliases via a
 /// plain-column equality/JOIN that SEEKS its index (an EXPRESSION index does NOT
@@ -840,7 +957,7 @@ mod tests_c2a_target_name_lower_idempotent {
     fn maintain_incoming_touches_only_changed_targets() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT,
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT,
                 incoming_count INTEGER NOT NULL DEFAULT 0,
                 incoming_link_types TEXT NOT NULL DEFAULT '',
                 incoming_link_types_json TEXT NOT NULL DEFAULT '{}',
@@ -1001,7 +1118,7 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     // UPDATE row. COUNT is DISTINCT source_path (getBacklinks' dedupeBySource).
     let matched = format!(
         "(SELECT nl.source_path, nl.link_type FROM note_links nl \
-            WHERE nl.status != 'archived' AND nl.target_name_lower = LOWER({np}.name) \
+            WHERE nl.status != 'archived' AND nl.target_name_lower = COALESCE({np}.name_lower, LOWER({np}.name)) \
           UNION \
           SELECT nl.source_path, nl.link_type FROM note_aliases a \
             JOIN note_links nl ON nl.target_name_lower = a.alias_lower \
@@ -1041,7 +1158,12 @@ fn incoming_signature(
         }
     }
     let name: String = conn
-        .query_row("SELECT LOWER(name) FROM note_meta WHERE path = ?1", [path], |r| r.get(0))
+        .query_row(
+            // MIG-085 §B.0 — folded name key (Unicode), falling back to ASCII LOWER pre-backfill.
+            "SELECT COALESCE(name_lower, LOWER(name)) FROM note_meta WHERE path = ?1",
+            [path],
+            |r| r.get(0),
+        )
         .unwrap_or_default();
     let mut aliases = std::collections::HashSet::new();
     {
@@ -1062,7 +1184,8 @@ fn resolve_incoming_target_paths(
     out: &mut std::collections::HashSet<String>,
 ) -> rusqlite::Result<()> {
     {
-        let mut stmt = conn.prepare("SELECT path FROM note_meta WHERE LOWER(name) = ?1")?;
+        // MIG-085 §B.0 — match the note's folded name key (Unicode), ASCII-LOWER fallback.
+        let mut stmt = conn.prepare("SELECT path FROM note_meta WHERE COALESCE(name_lower, LOWER(name)) = ?1")?;
         let rows = stmt.query_map([name_lower], |r| r.get::<_, String>(0))?;
         for r in rows {
             out.insert(r?);
@@ -2412,7 +2535,8 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             headings_json TEXT DEFAULT '[]',
             body_text TEXT DEFAULT '',
             word_count INTEGER NOT NULL DEFAULT 0,
-            created_at INTEGER
+            created_at INTEGER,
+            name_lower TEXT          -- MIG-085 §B.0 — Unicode-folded name match key
         );
     ").map_err(|e| format!("Failed to create note_meta: {}", e))?;
 
@@ -2491,6 +2615,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // the §C.2a triggers + backfill populate them (gated schema_versions.incoming_links).
     ensure_note_meta_mig079_incoming_columns(&conn)
         .map_err(|e| format!("Failed to ensure note_meta MIG-079 incoming columns: {}", e))?;
+    // MIG-085 §B.0 — the Unicode-folded name match key. Idempotent; inert (NULL) until
+    // index_note writes it / the name_fold backfill populates it. The add changes nothing.
+    ensure_note_meta_name_lower(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta name_lower column: {}", e))?;
     // MIG-083 §D — the Mode-2 staleness content-change signal (content_hash +
     // content_changed_at). Idempotent; inert until index_note's review-gated hook
     // populates them. The column add itself changes no behavior.
@@ -3233,8 +3361,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
         AFTER INSERT ON note_meta
         BEGIN
+            -- MIG-085 §B.0 — sky_nodes.id is the Unicode-folded name (matches note_links.target_name,
+            -- which is fold_match_key'd). COALESCE → ASCII LOWER pre-backfill (no regression).
             INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
-            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
+            VALUES (NEW.path, COALESCE(NEW.name_lower, LOWER(NEW.name)), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
             UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
             UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
         END;
@@ -3281,24 +3411,24 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             -- have unique paths by filesystem invariant).
             UPDATE sky_nodes
                SET path = NEW.path,
-                   id = LOWER(NEW.name),
+                   id = COALESCE(NEW.name_lower, LOWER(NEW.name)), -- MIG-085 §B.0 Unicode-folded id
                    name = NEW.name,
                    library_name = NEW.library_name,
                    updated_at = strftime('%s','now')
              WHERE path = OLD.path;
 
             -- Migrate edges referencing the old identity. target_name
-            -- match uses LOWER(OLD.name) because note_links stores
-            -- target_name pre-lowercased (all 232k rows on the target
-            -- universe confirm this — see BUG-010).
+            -- match uses the folded OLD/NEW name (note_links stores
+            -- target_name fold_match_key'd; all 232k rows on the target
+            -- universe confirm pre-lowercasing — see BUG-010 / MIG-085 §B.0).
             UPDATE sky_links
                SET source_path = NEW.path
              WHERE source_path = OLD.path
                AND OLD.path IS NOT NEW.path;
             UPDATE sky_links
-               SET target_name = LOWER(NEW.name)
-             WHERE target_name = LOWER(OLD.name)
-               AND LOWER(OLD.name) IS NOT LOWER(NEW.name);
+               SET target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
+             WHERE target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
+               AND COALESCE(OLD.name_lower, LOWER(OLD.name)) IS NOT COALESCE(NEW.name_lower, LOWER(NEW.name));
 
             -- MIG-004 §4: cascade alias rows on path change. Only
             -- triggered when path actually moves — a name-only or
@@ -3340,7 +3470,8 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             UPDATE sky_nodes SET enrichment_dirty = 1
              WHERE path IN (
                    SELECT source_path FROM note_links
-                    WHERE (target_name = LOWER(OLD.name) OR target_name = LOWER(NEW.name))
+                    WHERE (target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
+                           OR target_name = COALESCE(NEW.name_lower, LOWER(NEW.name)))
                       AND link_type = 'derives-from'
                       AND status = 'active');
         END;
@@ -4320,7 +4451,10 @@ pub(crate) fn normalize_alias_for_match(raw: &str) -> String {
     if cleaned.is_empty() {
         return String::new();
     }
-    normalize_arabic_for_search(&cleaned.to_lowercase())
+    // MIG-085 §B.0 — NFC + full-Unicode lower (fold_match_key), then the existing
+    // Arabic strip. Adds NFC for cross-platform consistency; keeps the prior alias
+    // semantics (measured: zero change to existing alias_lower values).
+    normalize_arabic_for_search(&fold_match_key(cleaned))
 }
 
 /// A typed link extracted from note content.
@@ -4374,7 +4508,7 @@ fn parse_link_body(body: &str) -> Option<(String, String, String)> {
                 Some((tg, d)) => (tg, d),
                 None => (rest, ""),
             };
-            let target = target.trim().to_lowercase();
+            let target = fold_match_key(target.trim()); // MIG-085 §B.0 — canonical name↔target fold
             if target.is_empty() { return None; }
             return Some((t, target, ann.trim().to_string()));
         }
@@ -4384,7 +4518,7 @@ fn parse_link_body(body: &str) -> Option<(String, String, String)> {
 
     // Predicate-LAST / untyped: split on '|'.
     let parts: Vec<&str> = body.split('|').collect();
-    let target = parts[0].trim().to_lowercase();
+    let target = fold_match_key(parts[0].trim()); // MIG-085 §B.0 — canonical name↔target fold
     if target.is_empty() { return None; }
     if parts.len() >= 2 {
         let last = parts[parts.len() - 1].trim().to_lowercase();
@@ -4549,6 +4683,76 @@ fn extract_headings(content: &str) -> Vec<String> {
 /// codebase — any future range fix benefits every caller at once.
 fn normalize_arabic_for_search(text: &str) -> String {
     crate::arabic::normalizer::normalize_stripped(text)
+}
+
+/// MIG-085 §B.0 — the ONE canonical fold for matching a note's display name to a
+/// wikilink target (and to aliases). Reused by BOTH the name side (note_meta.name_lower,
+/// sky_nodes.id) AND the target/alias side (extract_wikilinks, parse_link_body,
+/// normalize_alias_for_match) so the two can never drift.
+///
+/// Why this exists: SQLite's built-in `LOWER()` / `COLLATE NOCASE` fold ASCII A–Z ONLY
+/// (SQLite docs: "works for ASCII characters only … load the ICU extension"). Note
+/// names like "Île-de-France" were folded name-side with SQLite `LOWER()` → "Île-de-france"
+/// (Î unfolded) while their link targets were Rust-folded → "île-de-france", so a note
+/// failed to match its own inbound links (incoming_count=0 → false orphan / wrong
+/// maturity). Folding in Rust with full Unicode lowercasing fixes that.
+///
+/// Steps (the Unicode caseless-match recipe, kept identical on every side):
+///   1. NFC-normalise (precompose "e"+◌́ → "é") so cross-platform input — macOS files are
+///      NFD — folds to one key. Rust `.to_lowercase()` does NOT normalise on its own.
+///   2. Full-Unicode lowercase.
+///   3. Re-NFC (lowercasing can denormalise a few codepoints).
+///
+/// DELIBERATELY no Arabic tashkeel/tatweel strip: the actual match key on the target side
+/// is `note_links.target_name`, produced by `parse_link_body` (plain `.to_lowercase()`, no
+/// strip), and the OLD name side was SQLite `LOWER(name)` (no strip). Neither matching side
+/// stripped Arabic, so adding a strip here would fold the name side but not the target →
+/// breaking Arabic links. `extract_wikilinks`' Arabic-stripping fold feeds a *different*
+/// column (`outgoing_links_json`), not this match key.
+///
+/// Measured on the live 7,660-note universe: this changes ZERO existing target_name /
+/// alias_lower values (already NFC + correctly lowercased) and exactly the 13 accented-
+/// capital note names — i.e. it fixes the bug with no collateral data change.
+pub(crate) fn fold_match_key(s: &str) -> String {
+    use unicode_normalization::UnicodeNormalization;
+    let nfc: String = s.nfc().collect();
+    let lowered = nfc.to_lowercase();
+    lowered.nfc().collect()
+}
+
+#[cfg(test)]
+mod tests_fold_match_key {
+    use super::fold_match_key;
+
+    #[test]
+    fn folds_accented_capitals_to_match_lowercase_targets() {
+        // The 13 live-universe failures: these now fold to the exact form their
+        // wikilink targets are stored as (so incoming_count stops being 0).
+        assert_eq!(fold_match_key("Île-de-France"), "île-de-france");
+        assert_eq!(fold_match_key("Śramaṇa"), "śramaṇa");
+        assert_eq!(fold_match_key("Étienne-Jules Marey"), "étienne-jules marey");
+        assert_eq!(fold_match_key("Đông Sơn culture"), "đông sơn culture");
+        assert_eq!(fold_match_key("Émilie du Châtelet"), "émilie du châtelet");
+        assert_eq!(fold_match_key("Abū Ḥanīfa"), "abū ḥanīfa");
+    }
+
+    #[test]
+    fn ascii_names_unchanged() {
+        // ~7,647 of 7,660 notes: byte-identical to the old SQLite LOWER(name).
+        assert_eq!(fold_match_key("Stone Age"), "stone age");
+        assert_eq!(fold_match_key("apple tree fruit"), "apple tree fruit");
+    }
+
+    #[test]
+    fn nfc_and_nfd_fold_to_the_same_key() {
+        // Cross-device safety (macOS files are NFD): "é" as one codepoint and as
+        // "e"+combining-acute must produce one key, else a link spawns a duplicate.
+        let nfc = "Café";                 // U+00E9
+        let nfd = "Cafe\u{0301}";          // 'e' + U+0301 combining acute
+        assert_ne!(nfc, nfd, "inputs are byte-different");
+        assert_eq!(fold_match_key(nfc), fold_match_key(nfd));
+        assert_eq!(fold_match_key(nfd), "café");
+    }
 }
 
 /// Strip markdown syntax for plain-text indexing.
@@ -4758,8 +4962,8 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         ).map_err(|e| format!("Failed to write note_body {}: {}", note_path, e))?;
 
         conn.execute(
-            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources, content_type)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources, content_type, name_lower)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
              ON CONFLICT(path) DO UPDATE SET
                name                = excluded.name,
                library_name        = excluded.library_name,
@@ -4773,8 +4977,10 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                created_at          = excluded.created_at,
                cid_cn              = excluded.cid_cn,
                sources             = excluded.sources,
-               content_type        = excluded.content_type",
-            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json, content_type_json],
+               content_type        = excluded.content_type,
+               name_lower          = excluded.name_lower",
+            // MIG-085 §B.0 — write the Unicode-folded name key alongside the display name.
+            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json, content_type_json, fold_match_key(&name)],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // MIG-079 §C.1 — apply the write-time tag_counts ±delta inside this same
@@ -7538,6 +7744,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // narrow column instead of inverting outgoing_links_json (the drift fix).
     crate::incoming_links_backfill::maybe_schedule(app.clone());
 
+    // MIG-085 §B.0: schedule the one-shot Unicode name-fold backfill. No-op once stamped.
+    // Populates note_meta.name_lower for existing rows, then fixes the accented-capital
+    // notes' sky_nodes.id + incoming_count + maturity/stratum (the false-orphan / wrong-
+    // maturity fix). Thereafter index_note maintains name_lower write-time.
+    crate::name_fold_backfill::maybe_schedule(app.clone());
+
     // MIG-079 §C.3: schedule the one-shot build of the `idx_link_boot` COVERING
     // index on a background thread. No-op once stamped. Lets the deferred
     // `cache_full_links` edge scan read index leaf pages only (USING COVERING
@@ -8834,7 +9046,7 @@ mod tests_pj060_index_gate {
                 modified INTEGER, properties_json TEXT, tags_json TEXT,
                 outgoing_links_json TEXT, headings_json TEXT, body_text TEXT,
                 word_count INTEGER, created_at INTEGER, cid_cn TEXT DEFAULT '',
-                sources TEXT, content_type TEXT
+                sources TEXT, content_type TEXT, name_lower TEXT
              );
              CREATE TABLE note_aliases (path TEXT, alias_lower TEXT, source TEXT, cid_cn TEXT);
              CREATE TABLE note_body (path TEXT PRIMARY KEY, body_text TEXT NOT NULL DEFAULT '');

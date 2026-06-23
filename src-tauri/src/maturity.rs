@@ -1,6 +1,6 @@
 //! Maturity Lifecycle — Cognitive Engine Phase 3.
 //!
-//! Tracks note growth through 4 maturity states, computed from structural signals.
+//! Tracks note growth through 5 maturity states, computed from structural signals.
 //! No manual tagging. States derived from inbound link count + file age.
 //!
 //! States:
@@ -9,45 +9,17 @@
 //!   🌳 evergreen  — 4+ inbound links AND modified 7+ days after creation
 //!   ⭐ canonical  — 10+ inbound links AND last modified 30+ days ago
 //!   🥀 wilting    — evergreen but untouched 90+ days
+//!
+//! MIG-085 §B.1 — single-sourced inbound. This panel reads the write-time
+//! `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded via
+//! MIG-085 §B.0) and the same `compute_state` thresholds the Reviewer uses
+//! (`review::maturity_label`) and the Sky trigger uses (`MATURITY_SQL_EXPR`), so maturity
+//! reads identically on every surface. This also removes the prior full-filesystem walk
+//! (a Rule-8 violation): the panel is now a single indexed `note_meta` read.
 
 use serde::Serialize;
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
-
-/// MIG-005 §3: read `note_aliases` into an in-memory map. See
-/// `map.rs::load_alias_map` for the canonical comment — same shape per
-/// Option A's per-surface discipline.
-fn load_alias_map(app: &tauri::AppHandle) -> HashMap<String, String> {
-    let mut map = HashMap::new();
-    let state = app.state::<crate::search::SearchState>();
-    let guard = match state.db.lock() {
-        Ok(g) => g,
-        Err(_) => return map,
-    };
-    let conn = match guard.as_ref() {
-        Some(c) => c,
-        None => return map,
-    };
-    let mut stmt = match conn
-        .prepare("SELECT alias_lower, path FROM note_aliases ORDER BY path")
-    {
-        Ok(s) => s,
-        Err(_) => return map,
-    };
-    let rows = match stmt.query_map([], |r| {
-        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-    }) {
-        Ok(rs) => rs,
-        Err(_) => return map,
-    };
-    for r in rows.flatten() {
-        map.entry(r.0).or_insert(r.1);
-    }
-    map
-}
 
 /// Per-note maturity result returned to the frontend.
 #[derive(Debug, Clone, Serialize)]
@@ -59,7 +31,7 @@ pub struct NoteMaturity {
     pub days_since_modified: u64,
 }
 
-/// Compute the maturity state for every note in a library.
+/// Compute the maturity state for every note in a library — a pure `note_meta` read.
 #[tauri::command]
 pub fn compute_note_maturity(
     app: tauri::AppHandle,
@@ -72,134 +44,62 @@ pub fn compute_note_maturity(
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_secs();
+        .as_secs() as i64;
 
-    let re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]")
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = match guard.as_ref() {
+        Some(c) => c,
+        None => return Ok(Vec::new()),
+    };
+
+    // Scope to the library by path prefix, matching the Reviewer's `scope_clause`
+    // (handles both '/' and '\\' separators so a sibling library whose path is a
+    // prefix of this one — "Lib" vs "Library2" — never bleeds in). Trim any trailing
+    // separator first (as review.rs does) — otherwise the `substr(.. +1, 1)` boundary
+    // check lands one char past the real separator and zeroes the whole library out.
+    let lib = library_path.trim_end_matches(['/', '\\']);
+    let sql = "SELECT path, name, incoming_count, created_at, modified \
+               FROM note_meta \
+               WHERE substr(path, 1, length(?1)) = ?1 \
+                 AND substr(path, length(?1) + 1, 1) IN ('/', char(92))";
+    let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([lib], |r| {
+            Ok((
+                r.get::<_, String>(0)?,        // path
+                r.get::<_, String>(1)?,        // name
+                r.get::<_, i64>(2)?,           // incoming_count
+                r.get::<_, Option<i64>>(3)?,   // created_at
+                r.get::<_, i64>(4)?,           // modified
+            ))
+        })
         .map_err(|e| e.to_string())?;
 
-    // Phase 1: Scan all notes — collect metadata + outgoing links
-    let mut notes: HashMap<String, NoteRecord> = HashMap::new();
-    scan_notes_recursive(Path::new(&library_path), &re, &mut notes, now);
-
-    // Phase 2: Count inbound links
-    // MIG-005 §3: alias-aware. Renamed targets map back to their canonical
-    // note via note_aliases, so a wikilink targeting an old title still
-    // counts toward the renamed note's inbound — preventing the
-    // canonical/evergreen/sapling tier from regressing on rename.
-    // 3-tier resolution mirrors cache.rs::read_sky_links_raw (MIG-004 §8).
-    let note_names: std::collections::HashSet<String> = notes.keys().cloned().collect();
-    let alias_to_path = load_alias_map(&app);
-    let path_to_name: HashMap<String, String> = notes
-        .values()
-        .map(|n| (n.path.clone(), n.name_lower.clone()))
-        .collect();
-
-    let mut inbound_counts: HashMap<String, usize> = HashMap::new();
-    for record in notes.values() {
-        for target in &record.outgoing_targets {
-            let target_lower = target.to_lowercase();
-            let canonical = if note_names.contains(&target_lower) {
-                target_lower
-            } else if let Some(canonical_path) = alias_to_path.get(&target_lower) {
-                match path_to_name.get(canonical_path) {
-                    Some(n) => n.clone(),
-                    None => continue,
-                }
-            } else {
-                continue;
-            };
-            *inbound_counts.entry(canonical).or_insert(0) += 1;
-        }
-    }
-
-    // Phase 3: Assign maturity state
-    let results: Vec<NoteMaturity> = notes.values().map(|n| {
-        let inbound = inbound_counts.get(&n.name_lower).copied().unwrap_or(0);
-        let state = compute_state(inbound, n.days_since_created, n.days_since_modified);
-        NoteMaturity {
-            note_path: n.path.clone(),
-            note_name: n.name.clone(),
-            state,
+    let mut results: Vec<NoteMaturity> = Vec::new();
+    for row in rows.flatten() {
+        let (path, name, inc, created_at, modified) = row;
+        let inbound = inc.max(0) as usize;
+        // Days computed exactly like review::maturity_label so the surfaces agree.
+        let created = created_at.unwrap_or(modified).max(0);
+        let modified = modified.max(0);
+        let dsc = ((now - created).max(0) / 86_400) as u64;
+        let dsm = ((now - modified).max(0) / 86_400) as u64;
+        results.push(NoteMaturity {
+            note_path: path,
+            note_name: name,
+            state: compute_state(inbound, dsc, dsm),
             inbound_count: inbound,
-            days_since_modified: n.days_since_modified,
-        }
-    }).collect();
+            days_since_modified: dsm,
+        });
+    }
 
     Ok(results)
 }
 
-struct NoteRecord {
-    path: String,
-    name: String,
-    name_lower: String,
-    outgoing_targets: Vec<String>,
-    days_since_created: u64,
-    days_since_modified: u64,
-}
-
-fn scan_notes_recursive(
-    dir: &Path,
-    re: &regex::Regex,
-    notes: &mut HashMap<String, NoteRecord>,
-    now_secs: u64,
-) {
-    let read_dir = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return,
-    };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let fname = entry.file_name().to_string_lossy().to_string();
-        if fname.starts_with('.') { continue; }
-        if path.is_dir() {
-            scan_notes_recursive(&path, re, notes, now_secs);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            // MIG-008 Step 3: read the content once and derive both the
-            // display name (frontmatter title with file_stem fallback)
-            // and the outgoing-link list from the same string.
-            let content_opt = fs::read_to_string(&path).ok();
-            let note_name = crate::libraries::note_display_name(&path, content_opt.as_deref());
-
-            // File metadata
-            let meta = fs::metadata(&path).ok();
-            let created_secs = meta.as_ref()
-                .and_then(|m| m.created().ok())
-                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                .map(|d| d.as_secs())
-                .unwrap_or(now_secs);
-            let modified_secs = meta.as_ref()
-                .and_then(|m| m.modified().ok())
-                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                .map(|d| d.as_secs())
-                .unwrap_or(now_secs);
-
-            let days_since_created = (now_secs.saturating_sub(created_secs)) / 86400;
-            let days_since_modified = (now_secs.saturating_sub(modified_secs)) / 86400;
-
-            // Parse outgoing links
-            let mut outgoing_targets: Vec<String> = Vec::new();
-            if let Some(content) = &content_opt {
-                for cap in re.captures_iter(content) {
-                    outgoing_targets.push(cap[1].trim().to_string());
-                }
-            }
-
-            let name_lower = note_name.to_lowercase();
-            notes.insert(name_lower.clone(), NoteRecord {
-                path: path.to_string_lossy().to_string(),
-                name: note_name,
-                name_lower,
-                outgoing_targets,
-                days_since_created,
-                days_since_modified,
-            });
-        }
-    }
-}
-
 /// Assign maturity state based on inbound links + file age.
-/// `pub(crate)` so the Reviewer (MIG-084 §B) derives the same vocabulary at read
-/// time from the write-time `note_meta` columns — one source of the thresholds.
+/// `pub(crate)` so the Reviewer (MIG-084 §B) + the Sky trigger derive the same vocabulary
+/// from the write-time `note_meta` columns — one source of the thresholds.
 pub(crate) fn compute_state(inbound: usize, days_since_created: u64, days_since_modified: u64) -> String {
     // Canonical: 10+ inbound, untouched 30+ days (stable, authoritative)
     if inbound >= 10 && days_since_modified >= 30 {

@@ -258,15 +258,18 @@ fn process_batch(
         let last_path = paths.last().map(|p| p.0.clone()).unwrap_or_default();
 
         {
+            // MIG-085 §B.0 — sky_nodes.id is the Unicode-folded name (fold_match_key),
+            // computed in Rust so it matches note_links.target_name for accented titles
+            // (SQLite LOWER() is ASCII-only and would leave "Île-de-France" unmatched).
             let mut ins = tx
                 .prepare(
                     "INSERT OR IGNORE INTO sky_nodes
                         (path, id, name, library_name, updated_at)
-                     VALUES (?1, LOWER(?2), ?2, ?3, strftime('%s','now'))",
+                     VALUES (?1, ?4, ?2, ?3, strftime('%s','now'))",
                 )
                 .map_err(|e| format!("prepare ins node: {}", e))?;
             for (p, name, lib) in &paths {
-                ins.execute(params![p, name, lib])
+                ins.execute(params![p, name, lib, crate::search::fold_match_key(name)])
                     .map_err(|e| format!("exec ins node: {}", e))?;
             }
         }

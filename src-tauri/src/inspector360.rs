@@ -10,6 +10,23 @@ use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
+use tauri::Manager;
+
+/// MIG-085 §B.1 — the canonical inbound count for a note: the write-time
+/// `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded). `None`
+/// if the DB is unavailable or the note has no row yet (caller falls back to the FS count).
+fn read_incoming_count(app: &tauri::AppHandle, note_path: &str) -> Option<usize> {
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.db.lock().ok()?;
+    let conn = guard.as_ref()?;
+    conn.query_row(
+        "SELECT incoming_count FROM note_meta WHERE path = ?1",
+        [note_path],
+        |r| r.get::<_, i64>(0),
+    )
+    .ok()
+    .map(|n| n.max(0) as usize)
+}
 
 /// A note connected to the inspected note.
 #[derive(Debug, Clone, Serialize)]
@@ -177,6 +194,16 @@ pub fn get_360_view(
                 }
             }
         }
+    }
+
+    // ─── MIG-085 §B.1 — single-source the inbound COUNT ───
+    // Override the filesystem occurrence-count with the write-time
+    // `note_meta.incoming_count` (DISTINCT source notes, alias-aware, Unicode-folded via
+    // §B.0) so 360's stratum / maturity / orphan / SPOF verdicts AND the displayed inbound
+    // count all match the Reviewer, the Backlinks badge and Sky View. Falls back to the FS
+    // count only if the row is absent (a note not yet indexed).
+    if let Some(inc) = read_incoming_count(&app, &note_path) {
+        total_inbound = inc;
     }
 
     // ─── Phase 2: Stratum ───

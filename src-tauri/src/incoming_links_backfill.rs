@@ -133,7 +133,7 @@ mod tests {
     fn incoming_count_dedupes_resolves_aliases_and_excludes_archived() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT,
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT,
                 incoming_count INTEGER NOT NULL DEFAULT 0,
                 incoming_link_types TEXT NOT NULL DEFAULT '',
                 incoming_link_types_json TEXT NOT NULL DEFAULT '{}',

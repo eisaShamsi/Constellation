@@ -68,6 +68,7 @@ mod links_backfill;
 mod note_body_backfill;
 mod tag_counts;
 mod incoming_links_backfill;
+mod name_fold_backfill;
 mod link_boot_index;
 mod reconcile;
 mod link_types;
