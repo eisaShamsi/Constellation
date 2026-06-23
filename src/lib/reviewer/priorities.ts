@@ -62,8 +62,11 @@ const UW = { decay: 0.55, disturbance: 0.45 };
 const IW = { reach: 0.5, maturity: 0.3, fragility: 0.2 };
 const REACH_CAP = 12; // backlinks at which reach saturates to full importance
 
-/** "How many days of decay" drives urgency, per lens (stale counts from the change). */
+/** "How many days of decay" drives urgency, per lens (stale counts from the change).
+ *  Fragile is excluded: its `days_overdue` is overloaded as the incoming-link COUNT
+ *  (review.rs), not days — it must not feed the time/decay axis (review §F.2 P2). */
 function decayDays(n: PrioritySignals, todayDay: number): number {
+	if (n.reason === 'fragile') return 0;
 	if (n.reason === 'stale') {
 		const d = parseDayToEpoch2020(n.stale_changed_on);
 		if (d != null) return Math.max(0, todayDay - d);
@@ -122,7 +125,7 @@ export function computedPriority(n: PrioritySignals, todayDay: number): Computed
 		{ key: 'disturbance', axis: 'urgency', points: pts(AXIS.urgency, UW.disturbance, f.disturbance), value: f.disturbance },
 		{ key: 'reach', axis: 'importance', points: pts(AXIS.importance, IW.reach, f.reach), value: n.incoming_count },
 		{ key: 'maturity', axis: 'importance', points: pts(AXIS.importance, IW.maturity, f.maturity), value: f.maturity },
-		{ key: 'fragility', axis: 'importance', points: pts(AXIS.importance, IW.fragility, f.fragility), value: n.incoming_count },
+		{ key: 'fragility', axis: 'importance', points: pts(AXIS.importance, IW.fragility, f.fragility), value: f.fragility },
 	];
 	// Keep all five (their points sum exactly to the score — the bar's invariant); the
 	// component hides zero/negligible segments at render. Sorted high→low.

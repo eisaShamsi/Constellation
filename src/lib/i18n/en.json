@@ -3759,7 +3759,7 @@
     "markStandalone": "Mark standalone",
     "returnToReviewer": "Reviewer",
     "factor": {
-      "decay": "Overdue / stale",
+      "decay": "Time pressure",
       "disturbance": "Disruption",
       "reach": "Depended on",
       "maturity": "Maturity",

@@ -3622,7 +3622,7 @@
     "markStandalone": "סמן כעצמאי",
     "returnToReviewer": "סוקר",
     "factor": {
-      "decay": "באיחור / מיושן",
+      "decay": "דחיפות זמן",
       "disturbance": "שיבוש",
       "reach": "תלויים בו",
       "maturity": "בשלות",

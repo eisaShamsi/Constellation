@@ -2148,7 +2148,7 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -6489,7 +6489,8 @@
 		     reviewer, offer one click back to the queue (only while no full-page view). -->
 		{#if cameFromReviewer && !showReviewer && !fullPageActive}
 			<button class="reviewer-return-chip" onclick={() => { cameFromReviewer = false; showReviewer = true; }}>
-				← {$t('reviewer.returnToReviewer') || 'Reviewer'}
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+				{$t('reviewer.returnToReviewer') || 'Reviewer'}
 			</button>
 		{/if}
 
@@ -8793,6 +8794,7 @@
 		box-shadow: 0 2px 10px rgba(0,0,0,0.18);
 	}
 	.reviewer-return-chip:hover { background: var(--background-modifier-hover); }
+	:global([dir="rtl"]) .reviewer-return-chip svg { transform: scaleX(-1); } /* chevron points back in RTL */
 
 	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
 	.calendar-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }

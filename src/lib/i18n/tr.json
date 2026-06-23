@@ -3622,7 +3622,7 @@
     "markStandalone": "Bağımsız olarak işaretle",
     "returnToReviewer": "İnceleyici",
     "factor": {
-      "decay": "Gecikmiş / bayat",
+      "decay": "Zaman baskısı",
       "disturbance": "Sarsıntı",
       "reach": "Bağımlılık",
       "maturity": "Olgunluk",

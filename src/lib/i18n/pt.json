@@ -3622,7 +3622,7 @@
     "markStandalone": "Marcar como autónoma",
     "returnToReviewer": "Revisor",
     "factor": {
-      "decay": "Atrasada / desatualizada",
+      "decay": "Pressão temporal",
       "disturbance": "Perturbação",
       "reach": "Dependência",
       "maturity": "Maturidade",

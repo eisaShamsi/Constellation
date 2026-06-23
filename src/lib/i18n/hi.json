@@ -3622,7 +3622,7 @@
     "markStandalone": "स्वतंत्र के रूप में चिह्नित करें",
     "returnToReviewer": "समीक्षक",
     "factor": {
-      "decay": "बकाया / पुराना",
+      "decay": "समय दबाव",
       "disturbance": "व्यवधान",
       "reach": "निर्भरता",
       "maturity": "परिपक्वता",

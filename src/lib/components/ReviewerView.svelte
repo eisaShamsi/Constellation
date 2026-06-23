@@ -337,13 +337,21 @@
 							{#if isManual}<span class="rv-prio-tag">{$t('reviewer.manual') || 'manual'}</span>{/if}
 							{#if selectedPercentile != null}<span class="rv-prio-pct">{sub($t('reviewer.topPct') || 'top {n}%', { n: selectedPercentile })}</span>{/if}
 						</div>
+							<!-- The recipe explains the COMPUTED score; captioned when overridden so the
+							     bar (summing to computed) is not read as the override (review §F.2 P3). -->
+						{#if isManual}
+							<div class="rv-prio-override">
+								{sub($t('reviewer.computedWouldBe') || 'Computed would be {n}', { n: n._computed.score })}
+								<button class="rv-link" onclick={resetPriority}>{$t('reviewer.resetComputed') || 'Reset to computed'}</button>
+							</div>
+						{/if}
 						<div class="rv-prio-bar" aria-hidden="true">
-							{#each n._computed.contributions.filter(c => c.points >= 1) as c}
+							{#each n._computed.contributions.filter(c => c.points > 0) as c}
 								<div class="rv-seg rv-seg-{c.axis}" style="flex: {c.points}" title="{factorLabel(c.key)} +{Math.round(c.points)}"></div>
 							{/each}
 						</div>
 						<div class="rv-prio-legend">
-							{#each n._computed.contributions.filter(c => c.points >= 1) as c}
+							{#each n._computed.contributions.filter(c => c.points > 0) as c}
 								<span class="rv-leg"><span class="rv-leg-dot rv-seg-{c.axis}"></span>{factorLabel(c.key)} +{Math.round(c.points)}</span>
 							{/each}
 						</div>
@@ -354,12 +362,6 @@
 								onchange={(e) => commitPriority(Number((e.currentTarget as HTMLInputElement).value))} />
 							<span class="rv-prio-val">{priorityDraft ?? n._effective}</span>
 						</div>
-						{#if isManual}
-							<div class="rv-prio-override">
-								{sub($t('reviewer.computedWouldBe') || 'Computed would be {n}', { n: n._computed.score })}
-								<button class="rv-link" onclick={resetPriority}>{$t('reviewer.resetComputed') || 'Reset to computed'}</button>
-							</div>
-						{/if}
 					</div>
 
 					<div class="rv-d-facts">

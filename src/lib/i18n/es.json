@@ -3622,7 +3622,7 @@
     "markStandalone": "Marcar como independiente",
     "returnToReviewer": "Revisor",
     "factor": {
-      "decay": "Vencida / obsoleta",
+      "decay": "Urgencia temporal",
       "disturbance": "Alteración",
       "reach": "Dependencia",
       "maturity": "Madurez",

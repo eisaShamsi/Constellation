@@ -25,6 +25,7 @@
 		outgoing_count: number;
 		maturity: string;
 		days_overdue: number;
+		alarm_reason: string | null; // resolved lens reason (stale>fragile>orphan>schedule)
 	}
 
 	let {
@@ -81,7 +82,9 @@
 	// EFFECTIVE priority = the user override, else the computed score (same engine as the
 	// Reviewer). Dragging commits an override; Reset clears it (null = use computed).
 	const computed = $derived(status ? computedPriority({
-		reason: status.reason ?? '', days_overdue: status.days_overdue,
+		// Use the resolved lens reason (stale/fragile/orphan/schedule) so the note tab's
+		// computed score matches the Reviewer's exactly (review §F.2 P1).
+		reason: status.alarm_reason ?? status.reason ?? '', days_overdue: status.days_overdue,
 		stale_trigger_type: status.stale_trigger_type, stale_changed_on: status.stale_changed_on,
 		incoming_count: status.incoming_count, outgoing_count: status.outgoing_count, maturity: status.maturity,
 	}, todayDay).score : 50);

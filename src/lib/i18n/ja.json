@@ -3622,7 +3622,7 @@
     "markStandalone": "独立ノートとして設定",
     "returnToReviewer": "レビュー",
     "factor": {
-      "decay": "期限切れ／古い",
+      "decay": "緊急度",
       "disturbance": "影響",
       "reach": "被依存度",
       "maturity": "成熟度",

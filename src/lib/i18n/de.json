@@ -3622,7 +3622,7 @@
     "markStandalone": "Als eigenständig markieren",
     "returnToReviewer": "Prüfung",
     "factor": {
-      "decay": "Überfällig / veraltet",
+      "decay": "Zeitdruck",
       "disturbance": "Störung",
       "reach": "Worauf gestützt wird",
       "maturity": "Reife",

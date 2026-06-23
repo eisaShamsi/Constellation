@@ -402,11 +402,6 @@ pub(crate) fn query_due_notes_indexed(
         }
     }
 
-    // MIG-084 §D — stamp each row with its user-set priority (note_meta.review_priority,
-    // default 50) in one scoped pass, then rank by priority FIRST (SuperMemo's idea:
-    // handle overload by ranking, not firefighting). Every due note has a note_meta row
-    // (the lenses all JOIN it), so the map always resolves; the `50` placeholder above is
-    // only a safety default.
     if !due.is_empty() {
         // MIG-084 §F.2 — stamp each row with its priority OVERRIDE (NULL = use computed)
         // and word_count, in one scoped pass. The effective priority + the queue's
@@ -460,6 +455,10 @@ pub struct NoteReviewStatus {
     pub outgoing_count: i64,
     pub maturity: String,
     pub days_overdue: i64,
+    // MIG-084 §F.2 — the resolved lens reason (stale > fragile > orphan > schedule), so
+    // the note tab feeds the SAME `reason` to the priority engine the Reviewer uses (the
+    // schedule `reason` alone never carries stale/orphan/fragile). None = no alarm/schedule.
+    pub alarm_reason: Option<String>,
 }
 
 /// MIG-083 §D / MIG-080 §F — one note's Review-Pulse status: the O(1) `review_schedule`
@@ -491,6 +490,17 @@ pub fn get_note_review_status(
                         )),
                     )
                     .unwrap_or((None, 0, 0, 0, "seed".to_string()));
+                // §F.2 — the connection-health lens flags (same thresholds as the Reviewer's
+                // orphan/fragile lenses) so alarm_reason matches the queue exactly.
+                let derives_count: i64 = conn
+                    .query_row(
+                        "SELECT COUNT(*) FROM note_links WHERE source_path = ?1 AND link_type = 'derives-from' AND status = 'active'",
+                        rusqlite::params![note_path],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or(0);
+                let is_orphan = incoming_count == 0 && word_count > 20;
+                let is_fragile = incoming_count >= 5 && derives_count <= 1;
                 let row: Option<(String, i64, Option<String>, i64)> = conn
                     .query_row(
                         "SELECT reason, due_days, last_reviewed, is_checkpoint FROM review_schedule WHERE path = ?1",
@@ -506,7 +516,7 @@ pub fn get_note_review_status(
                     };
                     return Ok(NoteReviewStatus {
                         never_reviewed: last_reviewed.is_none(),
-                        reason: Some(reason),
+                        reason: Some(reason.clone()),
                         due_days: Some(due_days),
                         last_reviewed,
                         is_checkpoint: is_cp != 0,
@@ -516,6 +526,11 @@ pub fn get_note_review_status(
                         stale_changed_on: stale.as_ref().map(|(_, _, d)| day_to_date(*d)),
                         priority_override, word_count, incoming_count, outgoing_count, maturity,
                         days_overdue: (today_days - due_days).max(0),
+                        // stale > fragile > orphan > the schedule reason.
+                        alarm_reason: Some(if stale.is_some() { "stale".into() }
+                            else if is_fragile { "fragile".into() }
+                            else if is_orphan { "orphan".into() }
+                            else { reason }),
                     });
                 }
                 // note_meta exists but no review_schedule row (e.g. an orphan): clean
@@ -525,6 +540,7 @@ pub fn get_note_review_status(
                     is_checkpoint: false, is_stale: false, stale_trigger_name: None,
                     stale_trigger_type: None, stale_changed_on: None, priority_override, word_count,
                     incoming_count, outgoing_count, maturity, days_overdue: 0,
+                    alarm_reason: if is_fragile { Some("fragile".into()) } else if is_orphan { Some("orphan".into()) } else { None },
                 });
             }
         }
@@ -546,6 +562,7 @@ pub fn get_note_review_status(
         outgoing_count: 0,
         maturity: "seed".to_string(),
         days_overdue: 0,
+        alarm_reason: None,
     })
 }
 

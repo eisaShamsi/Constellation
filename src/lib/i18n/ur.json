@@ -3622,7 +3622,7 @@
     "markStandalone": "خود مختار کے طور پر نشان زد کریں",
     "returnToReviewer": "جائزہ کار",
     "factor": {
-      "decay": "مدت گزشتہ / باسی",
+      "decay": "وقت کا دباؤ",
       "disturbance": "خلل",
       "reach": "انحصار شدہ",
       "maturity": "پختگی",

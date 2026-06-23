@@ -3622,7 +3622,7 @@
     "markStandalone": "Marquer comme autonome",
     "returnToReviewer": "Réviseur",
     "factor": {
-      "decay": "En retard / obsolète",
+      "decay": "Urgence temporelle",
       "disturbance": "Perturbation",
       "reach": "Sollicitée",
       "maturity": "Maturité",

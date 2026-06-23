@@ -3622,7 +3622,7 @@
     "markStandalone": "독립 노트로 표시",
     "returnToReviewer": "리뷰어",
     "factor": {
-      "decay": "기한 초과 / 오래됨",
+      "decay": "시급성",
       "disturbance": "교란",
       "reach": "의존됨",
       "maturity": "성숙도",

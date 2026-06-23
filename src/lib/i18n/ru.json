@@ -3622,7 +3622,7 @@
     "markStandalone": "Отметить как самостоятельную",
     "returnToReviewer": "Ревизор",
     "factor": {
-      "decay": "Просрочено / устарело",
+      "decay": "Срочность",
       "disturbance": "Возмущение",
       "reach": "Зависимость",
       "maturity": "Зрелость",

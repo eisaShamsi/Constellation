@@ -3622,7 +3622,7 @@
     "markStandalone": "علامت‌گذاری به‌عنوان مستقل",
     "returnToReviewer": "بازبین",
     "factor": {
-      "decay": "معوق / کهنه",
+      "decay": "فشار زمانی",
       "disturbance": "اختلال",
       "reach": "مورد اتکا",
       "maturity": "پختگی",

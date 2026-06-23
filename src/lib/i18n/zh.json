@@ -3622,7 +3622,7 @@
     "markStandalone": "标记为独立",
     "returnToReviewer": "审阅器",
     "factor": {
-      "decay": "逾期 / 陈旧",
+      "decay": "时间压力",
       "disturbance": "扰动",
       "reach": "被依赖",
       "maturity": "成熟度",
