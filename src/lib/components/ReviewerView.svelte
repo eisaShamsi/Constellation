@@ -28,6 +28,7 @@
 		maturity: string;
 		word_count: number;
 		priority_override: number | null; // null = use the computed score
+		alarm_reason: string | null;      // the note's canonical reason — drives priority
 	}
 
 	let {
@@ -95,7 +96,10 @@
 	type RankedNote = DueNote & { _computed: ComputedPriority; _effective: number };
 	const ranked = $derived.by<RankedNote[]>(() =>
 		dueNotes.map((n) => {
-			const _computed = computedPriority(n, todayDay);
+			// Priority is computed from the note's CANONICAL reason (alarm_reason), NOT the
+			// per-row lens reason, so a multi-lens note has ONE priority on every row and
+			// matches the note tab (review §F.2 P1 fix). The lens grouping still uses n.reason.
+			const _computed = computedPriority({ ...n, reason: n.alarm_reason ?? n.reason }, todayDay);
 			return { ...n, _computed, _effective: effectivePriority(n.priority_override, _computed.score) };
 		})
 	);

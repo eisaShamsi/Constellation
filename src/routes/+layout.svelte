@@ -6309,6 +6309,14 @@
 					{$t('searchHub.title')}
 				</button>
 			{/if}
+			{#if cameFromReviewer}
+				<!-- MIG-084 §F.2 — Return-to-Reviewer in the top tab strip (Eisa: match the
+				     Sky-View return pill's placement, not a floating bottom chip). -->
+				<button class="index-return-btn" onclick={() => { showReviewer = true; cameFromReviewer = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('reviewer.returnToReviewer') || 'Reviewer'}
+				</button>
+			{/if}
 			{#if skyViewReturnPending}
 				<button class="index-return-btn" onclick={() => { showSkyView = true; skyViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -6483,15 +6491,6 @@
 					onClose={() => { showReviewer = false; }}
 				/>
 			</div>
-		{/if}
-
-		<!-- MIG-084 §F.2 — Return-to-Reviewer chip: after opening a note FROM the
-		     reviewer, offer one click back to the queue (only while no full-page view). -->
-		{#if cameFromReviewer && !showReviewer && !fullPageActive}
-			<button class="reviewer-return-chip" onclick={() => { cameFromReviewer = false; showReviewer = true; }}>
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-				{$t('reviewer.returnToReviewer') || 'Reviewer'}
-			</button>
 		{/if}
 
 		<!-- Constellation Map — lazy-mounted (LL-022). -->
@@ -8783,18 +8782,6 @@
 	}
 	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible, .reviewer-overlay.reviewer-visible { display: flex; flex-direction: column; }
 
-	/* MIG-084 §F.2 — Return-to-Reviewer chip: floats over the editor after you open a note
-	   from the reviewer, offering one click back to the queue. RTL-aware (inset-inline). */
-	.reviewer-return-chip {
-		position: fixed; bottom: 18px; inset-inline-end: 18px; z-index: 50;
-		display: inline-flex; align-items: center; gap: 6px;
-		border: 1px solid var(--background-modifier-border); background: var(--background-primary);
-		color: var(--text-normal); border-radius: 999px; padding: 7px 14px; cursor: pointer;
-		font-family: inherit; font-size: calc(0.8rem * var(--rs-scale, 1));
-		box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-	}
-	.reviewer-return-chip:hover { background: var(--background-modifier-hover); }
-	:global([dir="rtl"]) .reviewer-return-chip svg { transform: scaleX(-1); } /* chevron points back in RTL */
 
 	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
 	.calendar-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }

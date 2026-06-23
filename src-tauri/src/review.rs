@@ -54,6 +54,11 @@ pub struct DueNote {
     // score"; the frontend computes the effective priority from these signals via the
     // priorities.ts engine). 0..100 = an explicit override. Filled by the post-lens pass.
     pub priority_override: Option<i64>,
+    // MIG-084 §F.2-fix — the note's CANONICAL reason (highest-precedence lens it appears
+    // in: stale > fragile > orphan > checkpoint > interval_due > never_reviewed). The
+    // PRIORITY engine reads THIS (not the per-row lens reason) so a multi-lens note has
+    // ONE priority across all its rows AND matches the note tab. Filled by the post-pass.
+    pub alarm_reason: Option<String>,
 }
 
 /// Get all notes due for review in a library.
@@ -252,7 +257,7 @@ pub(crate) fn query_due_notes_indexed(
                 incoming_count: inc,
                 outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
-                word_count: 0, priority_override: None, // both filled by the §F.2 post-pass below
+                word_count: 0, priority_override: None, alarm_reason: None, // filled by the §F.2 post-passes below
             });
         }
     }
@@ -323,7 +328,7 @@ pub(crate) fn query_due_notes_indexed(
                     incoming_count: inc,
                     outgoing_count: out,
                     maturity: maturity_label(inc, created_at, modified, now_secs),
-                    word_count: 0, priority_override: None, // both filled by the §F.2 post-pass below
+                    word_count: 0, priority_override: None, alarm_reason: None, // filled by the §F.2 post-passes below
                 });
             }
         }
@@ -360,7 +365,7 @@ pub(crate) fn query_due_notes_indexed(
                 stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
                 incoming_count: inc, outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
-                word_count: 0, priority_override: None, // both filled by the §F.2 post-pass below
+                word_count: 0, priority_override: None, alarm_reason: None, // filled by the §F.2 post-passes below
             });
         }
     }
@@ -397,7 +402,7 @@ pub(crate) fn query_due_notes_indexed(
                 stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
                 incoming_count: inc, outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
-                word_count: 0, priority_override: None, // both filled by the §F.2 post-pass below
+                word_count: 0, priority_override: None, alarm_reason: None, // filled by the §F.2 post-passes below
             });
         }
     }
@@ -422,6 +427,23 @@ pub(crate) fn query_due_notes_indexed(
         for d in due.iter_mut() {
             if let Some((ovr, wc)) = meta.get(&d.note_path) { d.priority_override = *ovr; d.word_count = *wc; }
         }
+
+        // MIG-084 §F.2-fix — stamp each row with the note's CANONICAL reason (highest-
+        // precedence lens it appears in), so a multi-lens note computes ONE priority across
+        // all its rows AND matches get_note_review_status (the note tab). Precedence mirrors
+        // the note tab's: stale > fragile > orphan > checkpoint > interval_due > never_reviewed.
+        fn precedence(r: &str) -> u8 {
+            match r {
+                "stale" => 0, "fragile" => 1, "orphan" => 2,
+                "checkpoint" => 3, "interval_due" => 4, "never_reviewed" => 5, _ => 6,
+            }
+        }
+        let mut canonical: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        for d in &due {
+            let cur = canonical.entry(d.note_path.clone()).or_insert_with(|| d.reason.clone());
+            if precedence(&d.reason) < precedence(cur) { *cur = d.reason.clone(); }
+        }
+        for d in due.iter_mut() { d.alarm_reason = canonical.get(&d.note_path).cloned(); }
     }
 
     // Sort: higher stratum first, then more overdue (the legacy tie-break). The Reviewer
@@ -1401,6 +1423,26 @@ mod tests {
         let fragile: Vec<&str> = due.iter().filter(|d| d.reason == "fragile").map(|d| d.note_path.as_str()).collect();
         assert_eq!(orphans, vec!["/lib/Orphan.md"], "only the real-content, non-dismissed orphan");
         assert_eq!(fragile, vec!["/lib/Hub.md"], "the 8-inbound, single-support hub is fragile");
+    }
+
+    #[test]
+    fn multi_lens_note_gets_one_canonical_alarm_reason() {
+        // MIG-084 §F.2-fix — a note in BOTH the never-reviewed lens AND the orphan lens
+        // (0 inbound + real content, never ✓) gets ONE canonical reason on every row
+        // (orphan > never_reviewed), so its priority is identical across rows + the note tab.
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,incoming_count,outgoing_count,word_count) \
+                   VALUES ('/lib/N.md','Note N','CN',?1,0,1,120)", rusqlite::params![secs("2026-01-01")]).unwrap();
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES ('/lib/N.md','never_reviewed',?1,3)",
+            rusqlite::params![today_days - 5]).unwrap();
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
+        let rows: Vec<&DueNote> = due.iter().filter(|d| d.note_path == "/lib/N.md").collect();
+        assert_eq!(rows.len(), 2, "appears in both never_reviewed and orphan lenses");
+        for r in &rows {
+            assert_eq!(r.alarm_reason.as_deref(), Some("orphan"), "canonical reason is orphan on EVERY row");
+        }
     }
 
     #[test]
