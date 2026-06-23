@@ -4439,6 +4439,54 @@ mod tests_mig086_suggest {
             assert!(ms < 2500, "suggest worst-case bound — got {} ms for {}", ms, base);
         }
     }
+
+    /// FTS-health diagnostic — copy the live DB, time fts5vocab + single-term MATCH, run
+    /// `optimize`, re-time. Confirms (or refutes) segment fragmentation as the cause of the
+    /// slow FTS ops. Run:
+    ///   cargo test --lib tests_mig086_suggest::fts_optimize -- --ignored --nocapture
+    #[test]
+    #[ignore = "fts-health — copies the live DB + runs optimize; manual"]
+    fn fts_optimize_timing() {
+        let src = r"E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db";
+        let tmp = std::env::temp_dir().join("fts_opt_test.db");
+        let _ = std::fs::remove_file(&tmp);
+        std::fs::copy(src, &tmp).expect("copy live db");
+        let mut conn = Connection::open(&tmp).unwrap();
+        crate::search::register_fts5_tokenizer(&mut conn).unwrap();
+
+        let bench = |conn: &Connection, label: &str| {
+            let t = std::time::Instant::now();
+            let m: i64 = conn
+                .query_row("SELECT count(*) FROM notes_fts WHERE notes_fts MATCH '\"church\"'", [], |r| r.get(0))
+                .unwrap_or(-1);
+            let match_ms = t.elapsed().as_millis();
+            let t = std::time::Instant::now();
+            // 20 vocab lookups (mirrors a suggest call's df probe).
+            for term in ["knowledge", "church", "aisle", "nave", "paris", "gothic", "history", "art",
+                         "science", "river", "city", "king", "war", "music", "light", "energy",
+                         "system", "theory", "model", "design"] {
+                let _: i64 = conn.query_row("SELECT doc FROM notes_vocab WHERE term=?1", [term], |r| r.get(0)).unwrap_or(0);
+            }
+            let vocab_ms = t.elapsed().as_millis();
+            eprintln!("[{}] MATCH 'church' (n={}): {} ms | 20 vocab lookups: {} ms", label, m, match_ms, vocab_ms);
+        };
+
+        let data_rows: i64 = conn.query_row("SELECT count(*) FROM notes_fts_data", [], |r| r.get(0)).unwrap_or(-1);
+        let docsize: i64 = conn.query_row("SELECT count(*) FROM notes_fts_docsize", [], |r| r.get(0)).unwrap_or(-1);
+        eprintln!("notes_fts_data rows BEFORE: {} | docsize rows: {}", data_rows, docsize);
+        bench(&conn, "BEFORE");
+
+        let t = std::time::Instant::now();
+        conn.execute("INSERT INTO notes_fts(notes_fts) VALUES('optimize')", []).expect("optimize");
+        eprintln!("optimize took: {} ms", t.elapsed().as_millis());
+
+        let data_rows2: i64 = conn.query_row("SELECT count(*) FROM notes_fts_data", [], |r| r.get(0)).unwrap_or(-1);
+        eprintln!("notes_fts_data rows AFTER: {}", data_rows2);
+        bench(&conn, "AFTER");
+
+        drop(conn);
+        let _ = std::fs::remove_file(&tmp);
+    }
 }
 
 // ─── MIG-012 — Index search history IPCs ─────────────────────
