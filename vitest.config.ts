@@ -47,6 +47,8 @@ export default defineConfig({
 			'tests/mig-076/noteModel.test.ts',
 			'tests/mig-076/runtimeHarness.test.ts',
 			'tests/mig-076/currentBugRepro.test.ts',
+			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
+			'tests/mig-084/priorities.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
