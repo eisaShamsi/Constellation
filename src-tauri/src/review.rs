@@ -107,8 +107,8 @@ pub fn get_due_notes(
 /// "/U/Lib2/y.md" (review finding D). Matches either '/' or '\' (=char(92)) so it's
 /// correct for POSIX and Windows path forms alike. An empty prefix ⇒ whole universe.
 /// Single-sourced across both lenses so finding D's guard can't drift between them.
-fn scope_clause(p: &str) -> String {
-    format!("({p} = '' OR (substr(rs.path, 1, length({p})) = {p} AND substr(rs.path, length({p}) + 1, 1) IN ('/', char(92))))")
+fn scope_clause(p: &str, col: &str) -> String {
+    format!("({p} = '' OR (substr({col}, 1, length({p})) = {p} AND substr({col}, length({p}) + 1, 1) IN ('/', char(92))))")
 }
 
 /// MIG-083 — the Mode-2 staleness probe for ONE note (`?1` = its path): its active
@@ -213,7 +213,7 @@ pub(crate) fn query_due_notes_indexed(
                AND rs.reason != 'dismissed'
                AND (rs.snoozed_until IS NULL OR rs.snoozed_until <= ?3)
                AND {scope}",
-            scope = scope_clause("?2"),
+            scope = scope_clause("?2", "rs.path"),
         );
         let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-1 prepare: {}", e))?;
         let rows = stmt
@@ -286,7 +286,7 @@ pub(crate) fn query_due_notes_indexed(
                  WHERE rs.last_reviewed IS NOT NULL
                    AND rs.reason != 'dismissed'
                    AND {scope}",
-                scope = scope_clause("?1"),
+                scope = scope_clause("?1", "rs.path"),
             );
             let mut stmt = conn.prepare(&sql).map_err(|e| format!("due lens-2 reviewed prepare: {}", e))?;
             let rows = stmt
@@ -319,6 +319,77 @@ pub(crate) fn query_due_notes_indexed(
                     maturity: maturity_label(inc, created_at, modified, now_secs),
                 });
             }
+        }
+    }
+
+    // ── Lens: Orphan (MIG-084 §C) — a note with real content that NOTHING links to
+    // yet (incoming_count == 0 AND word_count > 20 — the inspector360 `is_orphan`
+    // thresholds). An orphan is an ALARM ("connect me"), NEVER disposable (Eisa
+    // 2026-06-23): surfaced regardless of review schedule, oldest-first (days_overdue
+    // = age). A note dismissed from review is excluded (LEFT JOIN). All from write-time
+    // note_meta columns — no FS walk (Rule 8). ──
+    {
+        let sql = format!(
+            "SELECT nm.path, nm.name, nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified, rs.last_reviewed
+             FROM note_meta nm
+             LEFT JOIN review_schedule rs ON rs.path = nm.path
+             WHERE nm.incoming_count = 0 AND nm.word_count > 20
+               AND (rs.reason IS NULL OR rs.reason != 'dismissed')
+               AND {scope}",
+            scope = scope_clause("?1", "nm.path"),
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| format!("orphan lens prepare: {}", e))?;
+        let rows = stmt.query_map(rusqlite::params![library_path], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?,
+                r.get::<_, Option<i64>>(4)?, r.get::<_, i64>(5)?, r.get::<_, Option<String>>(6)?))
+        }).map_err(|e| format!("orphan lens query: {}", e))?;
+        for row in rows.flatten() {
+            let (path, name, inc, out, created_at, modified, last_reviewed) = row;
+            due.push(DueNote {
+                note_path: path, note_name: name, reason: "orphan".to_string(),
+                days_overdue: (now_secs - created_at.unwrap_or(modified)).max(0) / 86_400, // age, oldest-first
+                stratum: 0,
+                last_reviewed,
+                stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
+                incoming_count: inc, outgoing_count: out,
+                maturity: maturity_label(inc, created_at, modified, now_secs),
+            });
+        }
+    }
+
+    // ── Lens: Fragile / single-point-of-failure (MIG-084 §C) — many notes depend on
+    // this one but it rests on ≤1 `derives-from` support (inspector360 SPOF:
+    // incoming_count >= 5 AND derives_count <= 1). "Shore me up." Most-depended-on
+    // first (days_overdue = incoming_count). The derives count is a subquery over the
+    // SMALL inbound>=5 candidate set only, so it stays cheap. Dismissed-excluded. ──
+    {
+        let sql = format!(
+            "SELECT nm.path, nm.name, nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified, rs.last_reviewed
+             FROM note_meta nm
+             LEFT JOIN review_schedule rs ON rs.path = nm.path
+             WHERE nm.incoming_count >= 5
+               AND (SELECT COUNT(*) FROM note_links jl
+                    WHERE jl.source_path = nm.path AND jl.link_type = 'derives-from' AND jl.status = 'active') <= 1
+               AND (rs.reason IS NULL OR rs.reason != 'dismissed')
+               AND {scope}",
+            scope = scope_clause("?1", "nm.path"),
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| format!("fragile lens prepare: {}", e))?;
+        let rows = stmt.query_map(rusqlite::params![library_path], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?,
+                r.get::<_, Option<i64>>(4)?, r.get::<_, i64>(5)?, r.get::<_, Option<String>>(6)?))
+        }).map_err(|e| format!("fragile lens query: {}", e))?;
+        for row in rows.flatten() {
+            let (path, name, inc, out, created_at, modified, last_reviewed) = row;
+            due.push(DueNote {
+                note_path: path, note_name: name, reason: "fragile".to_string(),
+                days_overdue: inc, // most-depended-on first
+                stratum: 0,
+                last_reviewed,
+                stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
+                incoming_count: inc, outgoing_count: out,
+                maturity: maturity_label(inc, created_at, modified, now_secs),
+            });
         }
     }
 
@@ -1145,7 +1216,7 @@ mod tests {
     fn read_db() -> rusqlite::Connection {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER);
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER, word_count INTEGER NOT NULL DEFAULT 0);
              CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
              CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
@@ -1179,6 +1250,35 @@ mod tests {
         assert_eq!(h.incoming_count, 12);
         assert_eq!(h.outgoing_count, 4);
         assert_eq!(h.maturity, "canonical", "12 inbound + untouched 30+ days ⇒ canonical");
+    }
+
+    #[test]
+    fn orphan_and_fragile_lenses_surface_connection_alarms() {
+        // MIG-084 §C — the two connection-health lenses. Orphan = real content, zero
+        // inbound. Fragile = many inbound, ≤1 derives-from support. Both from write-time
+        // columns; dismissed notes excluded; tiny stubs (word_count ≤ 20) are NOT orphans.
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        let put = |path: &str, name: &str, inc: i64, wc: i64| {
+            c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,incoming_count,outgoing_count,created_at,word_count) \
+                       VALUES (?1,?2,?3,?4,?5,1,?6,?7)",
+                rusqlite::params![path, name, name, secs("2026-01-01"), inc, secs("2026-01-01"), wc]).unwrap();
+        };
+        put("/lib/Orphan.md", "Lonely", 0, 100);   // orphan: 0 inbound, real content
+        put("/lib/Stub.md", "Tiny", 0, 5);          // NOT an orphan: too short
+        put("/lib/Hub.md", "Fragile Hub", 8, 300);  // fragile candidate: 8 inbound
+        put("/lib/Dismissed.md", "Hidden", 0, 100); // orphan but dismissed → excluded
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,stratum) VALUES ('/lib/Dismissed.md','dismissed',0,1)", []).unwrap();
+        // Hub has only 1 derives-from out-link ⇒ single point of failure.
+        c.execute("INSERT INTO note_links (source_path,target_name,target_cid_cn,link_type,status,weight) \
+                   VALUES ('/lib/Hub.md','Some Dep','CIDX','derives-from','active',1.0)", []).unwrap();
+
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
+        let orphans: Vec<&str> = due.iter().filter(|d| d.reason == "orphan").map(|d| d.note_path.as_str()).collect();
+        let fragile: Vec<&str> = due.iter().filter(|d| d.reason == "fragile").map(|d| d.note_path.as_str()).collect();
+        assert_eq!(orphans, vec!["/lib/Orphan.md"], "only the real-content, non-dismissed orphan");
+        assert_eq!(fragile, vec!["/lib/Hub.md"], "the 8-inbound, single-support hub is fragile");
     }
 
     #[test]
