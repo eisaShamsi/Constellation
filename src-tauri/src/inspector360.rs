@@ -110,6 +110,11 @@ pub fn get_360_view(
     let mut used_types: HashSet<String> = HashSet::new();
     let mut total_outbound = 0;
     let mut total_inbound = 0;
+    // MIG-084 §G — count OUTGOING derives-from only (what this note "rests on"), so the
+    // single-point-of-failure verdict matches the Reviewer's fragile lens (which counts
+    // outgoing derives-from). The mixed typed_links["derives-from"] (in + out) made 360
+    // contradict the very alarm that hands the user here (audit drift finding).
+    let mut out_derives = 0usize;
 
     // Outbound links from this note
     if let Some(info) = target_info {
@@ -122,6 +127,7 @@ pub fn get_360_view(
                 stratum: strata.get(target).copied().unwrap_or(1),
             };
             if let Some(lt) = link_type {
+                if lt == "derives-from" { out_derives += 1; }
                 used_types.insert(lt.clone());
                 typed_links.entry(lt.clone()).or_default().push(linked);
             } else {
@@ -184,8 +190,8 @@ pub fn get_360_view(
         .map(|v| v.iter().map(|n| n.name.clone()).collect())
         .unwrap_or_default();
     let is_orphan = total_inbound == 0 && target_info.map(|i| i.word_count > 20).unwrap_or(false);
-    let derives_count = typed_links.get("derives-from").map(|v| v.len()).unwrap_or(0);
-    let single_point_of_failure = total_inbound >= 5 && derives_count <= 1;
+    // OUTGOING derives-from only (what this note rests on) — matches the Reviewer's fragile lens.
+    let single_point_of_failure = total_inbound >= 5 && out_derives <= 1;
 
     // ─── Phase 5: Provenance ───
     let (origin_type, trust_depth) = compute_provenance_for_note(&note_lower, &all_notes);

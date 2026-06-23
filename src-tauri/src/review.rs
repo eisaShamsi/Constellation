@@ -412,14 +412,20 @@ pub(crate) fn query_due_notes_indexed(
         // and word_count, in one scoped pass. The effective priority + the queue's
         // priority ordering are computed FRONTEND-side (priorities.ts) from these signals,
         // so the backend carries only the override, not a duplicated formula.
+        // MIG-084 §G perf — fetch review_priority + word_count for ONLY the due notes
+        // (by their paths), not a full note_meta scan. The old `WHERE {scope}` scanned all
+        // in-scope rows (fat — they carry body_text) regardless of how few were due — ~480 ms
+        // on the 7,660-note universe. Path is the PK, so this is N indexed lookups.
         let mut meta: std::collections::HashMap<String, (Option<i64>, i64)> = std::collections::HashMap::new();
-        let sql = format!(
-            "SELECT path, review_priority, word_count FROM note_meta WHERE {scope}",
-            scope = scope_clause("?1", "path"),
-        );
+        let mut paths: Vec<String> = due.iter().map(|d| d.note_path.clone()).collect();
+        paths.sort();
+        paths.dedup();
+        let placeholders = std::iter::repeat("?").take(paths.len()).collect::<Vec<_>>().join(",");
+        let sql = format!("SELECT path, review_priority, word_count FROM note_meta WHERE path IN ({})", placeholders);
         let mut stmt = conn.prepare(&sql).map_err(|e| format!("priority fetch prepare: {}", e))?;
+        let params: Vec<&dyn rusqlite::ToSql> = paths.iter().map(|p| p as &dyn rusqlite::ToSql).collect();
         let rows = stmt
-            .query_map(rusqlite::params![library_path], |r| {
+            .query_map(params.as_slice(), |r| {
                 Ok((r.get::<_, String>(0)?, r.get::<_, Option<i64>>(1)?, r.get::<_, i64>(2)?))
             })
             .map_err(|e| format!("priority fetch: {}", e))?;
@@ -444,6 +450,25 @@ pub(crate) fn query_due_notes_indexed(
             if precedence(&d.reason) < precedence(cur) { *cur = d.reason.clone(); }
         }
         for d in due.iter_mut() { d.alarm_reason = canonical.get(&d.note_path).cloned(); }
+
+        // MIG-084 §G (audit P2) — a note's PRIORITY must be identical across all its rows
+        // AND match the note tab. alarm_reason unifies the reason, but `days_overdue` is
+        // overloaded per lens (orphan = age, fragile = inbound-count, time-lenses = days-
+        // since-due). The note tab's days_overdue is the SCHEDULE value (today-due), so adopt
+        // a TIME-LENS row's days_overdue (never/interval_due/checkpoint/stale) as the note's
+        // canonical days for ALL its rows; a note with no time-lens row (a pure orphan/
+        // fragile) keeps its own. days_overdue display per row is unaffected (orphan/fragile
+        // why-lines don't print it). This makes the per-row computedPriority converge.
+        let time_lens = |r: &str| matches!(r, "never_reviewed" | "interval_due" | "checkpoint" | "stale");
+        let mut canon_days: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        for d in &due {
+            if time_lens(&d.reason) {
+                canon_days.entry(d.note_path.clone()).or_insert(d.days_overdue);
+            }
+        }
+        for d in due.iter_mut() {
+            if let Some(days) = canon_days.get(&d.note_path) { d.days_overdue = *days; }
+        }
     }
 
     // Sort: higher stratum first, then more overdue (the legacy tie-break). The Reviewer
@@ -548,10 +573,13 @@ pub fn get_note_review_status(
                         stale_changed_on: stale.as_ref().map(|(_, _, d)| day_to_date(*d)),
                         priority_override, word_count, incoming_count, outgoing_count, maturity,
                         days_overdue: (today_days - due_days).max(0),
-                        // stale > fragile > orphan > the schedule reason.
+                        // stale > fragile > orphan > the schedule reason. A DISMISSED note
+                        // resolves to "dismissed" (NOT fragile/orphan): every get_due_notes
+                        // lens excludes dismissed, so the note tab must not fabricate an alarm
+                        // priority for a note the queue shows nowhere (audit §G drift).
                         alarm_reason: Some(if stale.is_some() { "stale".into() }
-                            else if is_fragile { "fragile".into() }
-                            else if is_orphan { "orphan".into() }
+                            else if reason != "dismissed" && is_fragile { "fragile".into() }
+                            else if reason != "dismissed" && is_orphan { "orphan".into() }
                             else { reason }),
                     });
                 }
@@ -1443,6 +1471,10 @@ mod tests {
         for r in &rows {
             assert_eq!(r.alarm_reason.as_deref(), Some("orphan"), "canonical reason is orphan on EVERY row");
         }
+        // §G (audit P2) — canonical days_overdue: both rows adopt the time-lens (never_reviewed)
+        // value (today - due_days = 5), so the per-row computed priority is identical.
+        let days: Vec<i64> = rows.iter().map(|r| r.days_overdue).collect();
+        assert_eq!(days, vec![5, 5], "all rows share the time-lens days_overdue (5)");
     }
 
     #[test]
