@@ -110,3 +110,13 @@ The split is built, reviewed, and shipped behind the running binary (rebuilt 20:
 - **Boss test** (staged): Stage 1 = the note-scoped Review tab; Stage 2 = the left-dock reviewer.
 - **§F help/manual ×15** (the SO #2 docs pass) — deferred to AFTER Boss UI validation (final strings/behavior).
 - Then **§G** closes MIG-080.
+
+---
+
+## MIG-084 — The Rich Reviewer (build, 2026-06-23)
+After §F shipped the split, Eisa: the left-dock Reviewer is "a thin list on a vast empty page" — make it a RICH decision surface + add a Reviewer Style Setter (text resize). Cross-checked against the core plugins (the "prescription"); corrected my "orphan is disposable" error (an orphan is an ALARM). Rulings: master-detail; self-explanatory law; SIX lenses (Stale·Due·Checkpoints·🔗Orphan·⚠Fragile·Never); priority slider in BOTH the detail pane + the note tab; dedicated Reviewer Style Setter category.
+
+- **§A** `<hash>` — Architect doc (`docs/MIG-084-Rich-Reviewer-ARCHITECT.md`).
+- **§B** `<hash>` — DueNote enriched with incoming/outgoing counts + maturity (read-time via the shared maturity::compute_state; the planned §E maturity migration COLLAPSED into this reuse — Rule 8).
+- **§C** `<hash>` — Orphan + Fragile lenses (from note_meta.incoming_count/word_count + a cheap derives-from count; reuse inspector360 thresholds; dismissed-excluded).
+- **§D** — Priority (the ONE schema change). **WA#4 impact note:** `review_priority INTEGER NOT NULL DEFAULT 50` goes on **note_meta** (NOT review_schedule) — verified index_note's `ON CONFLICT(path) DO UPDATE SET` lists specific columns and does NOT touch review_priority, so it survives re-indexing; review-recompute only touches review_schedule, so it survives that too; every note (incl. orphans with no schedule row) has one; the lenses already JOIN note_meta. Default 50 ⇒ no back-fill. New cmd `set_review_priority`; sort ranks by priority first. Cuts: nothing.

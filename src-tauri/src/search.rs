@@ -611,6 +611,7 @@ pub(crate) const LINKS_OUTGOING_SCHEMA_VERSION: i64 = 1;
 fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_content_hash = false;
     let mut have_content_changed_at = false;
+    let mut have_review_priority = false;
     {
         let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
@@ -618,6 +619,7 @@ fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
             match col?.as_str() {
                 "content_hash" => have_content_hash = true,
                 "content_changed_at" => have_content_changed_at = true,
+                "review_priority" => have_review_priority = true,
                 _ => {}
             }
         }
@@ -627,6 +629,13 @@ fn ensure_note_meta_review_columns(conn: &Connection) -> rusqlite::Result<()> {
     }
     if !have_content_changed_at {
         conn.execute_batch("ALTER TABLE note_meta ADD COLUMN content_changed_at INTEGER;")?;
+    }
+    // MIG-084 §D — user-set review priority (0–100, default 50). On note_meta (NOT
+    // review_schedule) so every note — orphans included — has one, and so index_note's
+    // ON CONFLICT(path) DO UPDATE (which does NOT list this column) preserves it across
+    // re-indexing. Default 50 ⇒ no back-fill needed.
+    if !have_review_priority {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN review_priority INTEGER NOT NULL DEFAULT 50;")?;
     }
     Ok(())
 }

@@ -429,6 +429,7 @@ pub fn run() {
             provenance::compute_note_origins,
             review::get_due_notes,
             review::get_note_review_status,
+            review::set_review_priority,
             review::mark_reviewed,
             review::snooze_note,
             review::dismiss_note,

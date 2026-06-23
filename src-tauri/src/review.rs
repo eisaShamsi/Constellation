@@ -49,6 +49,9 @@ pub struct DueNote {
     pub incoming_count: i64,
     pub outgoing_count: i64,
     pub maturity: String,
+    // MIG-084 §D — user-set review priority (0–100, default 50; note_meta). Stamped by
+    // the post-lens pass and used as the primary sort key (overload by ranking).
+    pub priority: i64,
 }
 
 /// Get all notes due for review in a library.
@@ -247,6 +250,7 @@ pub(crate) fn query_due_notes_indexed(
                 incoming_count: inc,
                 outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
+                priority: 50, // filled by the §D priority post-pass below
             });
         }
     }
@@ -317,6 +321,7 @@ pub(crate) fn query_due_notes_indexed(
                     incoming_count: inc,
                     outgoing_count: out,
                     maturity: maturity_label(inc, created_at, modified, now_secs),
+                    priority: 50, // filled by the §D priority post-pass below
                 });
             }
         }
@@ -353,6 +358,7 @@ pub(crate) fn query_due_notes_indexed(
                 stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
                 incoming_count: inc, outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
+                priority: 50, // filled by the §D priority post-pass below
             });
         }
     }
@@ -389,12 +395,39 @@ pub(crate) fn query_due_notes_indexed(
                 stale_trigger_name: None, stale_trigger_type: None, stale_changed_on: None,
                 incoming_count: inc, outgoing_count: out,
                 maturity: maturity_label(inc, created_at, modified, now_secs),
+                priority: 50, // filled by the §D priority post-pass below
             });
         }
     }
 
-    // Sort: higher stratum first, then more overdue first (matches the legacy scan).
-    due.sort_by(|a, b| b.stratum.cmp(&a.stratum).then(b.days_overdue.cmp(&a.days_overdue)));
+    // MIG-084 §D — stamp each row with its user-set priority (note_meta.review_priority,
+    // default 50) in one scoped pass, then rank by priority FIRST (SuperMemo's idea:
+    // handle overload by ranking, not firefighting). Every due note has a note_meta row
+    // (the lenses all JOIN it), so the map always resolves; the `50` placeholder above is
+    // only a safety default.
+    if !due.is_empty() {
+        let mut prio: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        let sql = format!(
+            "SELECT path, review_priority FROM note_meta WHERE {scope}",
+            scope = scope_clause("?1", "path"),
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| format!("priority fetch prepare: {}", e))?;
+        let rows = stmt
+            .query_map(rusqlite::params![library_path], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .map_err(|e| format!("priority fetch: {}", e))?;
+        for row in rows.flatten() { prio.insert(row.0, row.1); }
+        for d in due.iter_mut() {
+            if let Some(p) = prio.get(&d.note_path) { d.priority = *p; }
+        }
+    }
+
+    // Sort: highest priority first, then higher stratum, then more overdue (the legacy
+    // tie-break). Priority is the user's explicit ranking lever over the queue.
+    due.sort_by(|a, b| {
+        b.priority.cmp(&a.priority)
+            .then(b.stratum.cmp(&a.stratum))
+            .then(b.days_overdue.cmp(&a.days_overdue))
+    });
     Ok(due)
 }
 
@@ -414,6 +447,9 @@ pub struct NoteReviewStatus {
     pub stale_trigger_name: Option<String>,
     pub stale_trigger_type: Option<String>,
     pub stale_changed_on: Option<String>,
+    // MIG-084 §D — this note's user-set review priority (0–100, default 50); the note
+    // tab's slider reads + writes it via set_review_priority.
+    pub priority: i64,
 }
 
 /// MIG-083 §D / MIG-080 §F — one note's Review-Pulse status: the O(1) `review_schedule`
@@ -429,6 +465,15 @@ pub fn get_note_review_status(
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
+                // §D — the note's user-set priority (note_meta, default 50); present even
+                // for an unscheduled orphan that has no review_schedule row.
+                let priority = conn
+                    .query_row(
+                        "SELECT review_priority FROM note_meta WHERE path = ?1",
+                        rusqlite::params![note_path],
+                        |r| r.get::<_, i64>(0),
+                    )
+                    .unwrap_or(50);
                 let row: Option<(String, i64, Option<String>, i64)> = conn
                     .query_row(
                         "SELECT reason, due_days, last_reviewed, is_checkpoint FROM review_schedule WHERE path = ?1",
@@ -452,12 +497,20 @@ pub fn get_note_review_status(
                         stale_trigger_type: stale.as_ref().map(|(t, _, _)| t.clone()),
                         stale_trigger_name: stale.as_ref().map(|(_, n, _)| n.clone()),
                         stale_changed_on: stale.as_ref().map(|(_, _, d)| day_to_date(*d)),
+                        priority,
                     });
                 }
+                // note_meta exists but no review_schedule row (e.g. an orphan): clean
+                // never-reviewed status, still carrying the real priority.
+                return Ok(NoteReviewStatus {
+                    reason: None, due_days: None, last_reviewed: None, never_reviewed: true,
+                    is_checkpoint: false, is_stale: false, stale_trigger_name: None,
+                    stale_trigger_type: None, stale_changed_on: None, priority,
+                });
             }
         }
     }
-    // No row (unstamped, or the note isn't scheduled): a clean "never reviewed" status.
+    // No SearchState/conn at all (unstamped boot): a clean default.
     Ok(NoteReviewStatus {
         reason: None,
         due_days: None,
@@ -468,7 +521,33 @@ pub fn get_note_review_status(
         stale_trigger_name: None,
         stale_trigger_type: None,
         stale_changed_on: None,
+        priority: 50,
     })
+}
+
+/// MIG-084 §D — set a note's review priority (0–100, clamped). A user-owned ranking
+/// lever on `note_meta` (survives re-indexing — index_note's conflict-update does not
+/// list this column). The Reviewer detail pane + the note's Review tab both call this.
+#[tauri::command]
+pub fn set_review_priority(
+    app: tauri::AppHandle,
+    note_path: String,
+    priority: i64,
+) -> Result<(), String> {
+    let clamped = priority.clamp(0, 100);
+    if let Some(state) = app.try_state::<crate::search::SearchState>() {
+        if let Ok(guard) = state.db.lock() {
+            if let Some(conn) = guard.as_ref() {
+                conn.execute(
+                    "UPDATE note_meta SET review_priority = ?2 WHERE path = ?1",
+                    rusqlite::params![note_path, clamped],
+                )
+                .map_err(|e| format!("set_review_priority: {}", e))?;
+                return Ok(());
+            }
+        }
+    }
+    Err("database not ready".to_string())
 }
 
 /// Mark a note as reviewed. Advances to the next interval on the 1·3·7·14·30 ladder.
@@ -1216,7 +1295,7 @@ mod tests {
     fn read_db() -> rusqlite::Connection {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER, word_count INTEGER NOT NULL DEFAULT 0);
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER, word_count INTEGER NOT NULL DEFAULT 0, review_priority INTEGER NOT NULL DEFAULT 50);
              CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
              CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
@@ -1279,6 +1358,29 @@ mod tests {
         let fragile: Vec<&str> = due.iter().filter(|d| d.reason == "fragile").map(|d| d.note_path.as_str()).collect();
         assert_eq!(orphans, vec!["/lib/Orphan.md"], "only the real-content, non-dismissed orphan");
         assert_eq!(fragile, vec!["/lib/Hub.md"], "the 8-inbound, single-support hub is fragile");
+    }
+
+    #[test]
+    fn priority_ranks_the_queue() {
+        // MIG-084 §D — priority (note_meta, 0–100) is the primary sort key: two equally
+        // overdue/strata notes rank by priority, and the value reaches the DueNote.
+        let c = read_db();
+        let today = "2026-06-22";
+        let today_days = date_to_days(today);
+        for (p, name, prio) in [("/lib/A.md", "Alpha", 50i64), ("/lib/B.md", "Beta", 90i64)] {
+            c.execute(
+                "INSERT INTO note_meta (path,name,cid_cn,modified,review_priority) VALUES (?1,?2,?2,?3,?4)",
+                rusqlite::params![p, name, secs("2026-01-01"), prio],
+            ).unwrap();
+            c.execute(
+                "INSERT INTO review_schedule (path,reason,due_days,last_reviewed,stratum) VALUES (?1,'interval_due',?2,'2026-06-01',3)",
+                rusqlite::params![p, today_days - 1],
+            ).unwrap();
+        }
+        let due = query_due_notes_indexed(&c, "/lib/", today, today_days, 1).unwrap();
+        let order: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
+        assert_eq!(order, vec!["/lib/B.md", "/lib/A.md"], "higher priority ranks first");
+        assert_eq!(due.iter().find(|d| d.note_path == "/lib/B.md").unwrap().priority, 90);
     }
 
     #[test]
