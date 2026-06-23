@@ -3596,7 +3596,7 @@
       "dueToday": "Bugün gözden geçirilmeli",
       "checkpoint": "Bir zihinsel model — hâlâ bu görüşte misin?",
       "orphan": "Buraya henüz hiçbir bağ yok — onu düşüncene bağla",
-      "fragile": "{in} not buna dayanıyor, oysa yalnızca {out} destek var",
+      "fragile": "{in} not buna dayanıyor — sağlam bir temele oturt",
       "never": "Hiç gözden geçirilmedi · {n} günlük"
     },
     "connections": "{in} gelen · {out} giden",

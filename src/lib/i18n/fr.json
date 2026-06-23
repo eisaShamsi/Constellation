@@ -3596,7 +3596,7 @@
       "dueToday": "À revoir aujourd'hui",
       "checkpoint": "Un modèle mental — tenez-vous toujours cette vue ?",
       "orphan": "Rien n'y mène encore — reliez-la à votre pensée",
-      "fragile": "{in} notes en dépendent, avec seulement {out} soutien",
+      "fragile": "{in} notes s'appuient sur celle-ci — consolidez-la",
       "never": "Jamais revue · {n} jour(s) d'ancienneté"
     },
     "connections": "{in} entrant · {out} sortant",

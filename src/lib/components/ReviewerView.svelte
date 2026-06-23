@@ -9,7 +9,6 @@
 	// pane hands off to them, never rebuilds them.
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
-	import { onMount } from 'svelte';
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 	import VirtualList from './VirtualList.svelte';
 
@@ -45,7 +44,12 @@
 
 	let dueNotes = $state<DueNote[]>([]);
 	let loading = $state(true);
-	let selectedPath = $state<string | null>(null);
+	// Selection identity is (reason | path), NOT path alone: a note legitimately appears
+	// once per lens (two-lens-never-merged), so the SAME note can be both never_reviewed
+	// AND orphan. Keying on path would resolve to the first row and show the wrong lens —
+	// hiding an orphan's "Connect" verb behind its never-reviewed twin (review P1).
+	let selectedKey = $state<string | null>(null);
+	const keyOf = (n: DueNote) => `${n.reason}|${n.note_path}`;
 	let summaries = $state<Map<string, { headline: string; summary: string }>>(new Map());
 	let priorityDraft = $state<number | null>(null); // live slider value for the selected note
 
@@ -64,7 +68,9 @@
 		} catch { if (my === gen) dueNotes = []; }
 		if (my === gen) loading = false;
 	}
-	onMount(load);
+	// Load on mount AND whenever libraryPath / grace change (the gen token guards races).
+	// Reads props, writes dueNotes/loading — no echo loop (Rule 2).
+	$effect(() => { libraryPath; staleGraceDays; load(); });
 
 	// The six lenses, in order of consequence. The glyph + key drive header + row icon.
 	const LENSES: { reason: string; icon: string; key: string }[] = [
@@ -83,11 +89,13 @@
 		return m;
 	});
 	const activeLenses = $derived(LENSES.filter(l => (byReason.get(l.reason)?.length ?? 0) > 0));
+	// Distinct notes (a note can sit in several lenses) — the truthful "how many need me".
+	const distinctCount = $derived(new Set(dueNotes.map(n => n.note_path)).size);
 	// The displayed selection: the clicked note, else fall back to the first due note so
 	// the detail pane is never empty when there's work. A $derived (not a selectedPath-
 	// writing $effect) — no echo loop (Rule 2). A stale selectedPath after reload simply
 	// falls through to dueNotes[0].
-	const selected = $derived(dueNotes.find(n => n.note_path === selectedPath) ?? dueNotes[0] ?? null);
+	const selected = $derived(dueNotes.find(n => keyOf(n) === selectedKey) ?? dueNotes[0] ?? null);
 
 	// Reset the live priority draft whenever the displayed note changes.
 	$effect(() => { selected?.note_path; priorityDraft = null; });
@@ -112,6 +120,17 @@
 	const maturityWord = (m: string) => $t(MATURITY[m]?.key ?? '') || MATURITY[m]?.fallback || m;
 	const maturityGlyph = (m: string) => MATURITY[m]?.glyph ?? '·';
 
+	// Localize a link-type id (supports/derives-from/…) via the existing linkTypes.*
+	// catalog, never leak the raw id into prose (self-explanatory law). Guard on the
+	// key-path return (this i18n layer returns the key when a key is missing, so plain
+	// `|| fallback` cannot work) — fall back to the raw id for unknown/custom types.
+	const typeName = (id: string | null | undefined) => {
+		const raw = id ?? '';
+		const k = 'linkTypes.' + raw.toLowerCase();
+		const tr = $t(k);
+		return tr && tr !== k ? tr : raw;
+	};
+
 	function sub(s: string, vars: Record<string, string | number>): string {
 		return Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), s);
 	}
@@ -122,7 +141,7 @@
 		switch (n.reason) {
 			case 'stale':
 				return sub($t('reviewer.why.stale') || '{type} “{name}” changed on {date}', {
-					type: n.stale_trigger_type ?? '', name: n.stale_trigger_name ?? '?', date: n.stale_changed_on ?? '',
+					type: typeName(n.stale_trigger_type), name: n.stale_trigger_name ?? '?', date: n.stale_changed_on ?? '',
 				});
 			case 'interval_due':
 				return n.days_overdue > 0
@@ -133,8 +152,11 @@
 			case 'orphan':
 				return $t('reviewer.why.orphan') || 'Nothing links here yet — connect it into your thinking';
 			case 'fragile':
-				return sub($t('reviewer.why.fragile') || '{in} notes depend on this, with only {out} support', {
-					in: n.incoming_count, out: n.outgoing_count,
+				// {out} dropped: the lens selects on the derives-from count (≤1), not the
+				// total out-links, so showing outgoing_count as "support" would overstate it
+				// (review P2). The detail facts row shows the accurate in/out separately.
+				return sub($t('reviewer.why.fragile') || '{in} notes lean on this — give it firmer support', {
+					in: n.incoming_count,
 				});
 			case 'never_reviewed':
 				return sub($t('reviewer.why.never') || 'Never reviewed · {n} day(s) old', { n: n.days_overdue });
@@ -150,6 +172,10 @@
 			if (cmd === 'snooze_note') await invoke(cmd, { notePath: n.note_path, days: 7 });
 			else await invoke(cmd, { notePath: n.note_path });
 			await load();
+			// The acted row usually leaves the queue; if the selection is now stale, move it
+			// to the first remaining note so a row stays highlighted (matches the detail
+			// pane's own fallback). Writing selectedKey here is fine — not inside a $effect.
+			if (!dueNotes.some(x => keyOf(x) === selectedKey)) selectedKey = dueNotes[0] ? keyOf(dueNotes[0]) : null;
 		} catch {}
 	}
 
@@ -164,7 +190,7 @@
 <div class="rv">
 	<header class="rv-head">
 		<h1>🕐 {$t('panels.review') || 'Review Pulse'}</h1>
-		<span class="rv-total">{dueNotes.length}</span>
+		<span class="rv-total">{distinctCount}</span>
 		<button class="rv-close" onclick={() => onClose?.()} aria-label={$t('common.close') || 'Close'} title={$t('common.close') || 'Close'}>✕</button>
 	</header>
 
@@ -191,7 +217,7 @@
 							<div class="rv-vlist">
 								<VirtualList items={items} getItemHeight={() => 46} overscan={8}>
 									{#snippet row(n, _i)}
-										<button class="rv-row" class:sel={n.note_path === selectedPath} onclick={() => selectedPath = n.note_path}>
+										<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)}>
 											<span class="rv-row-name" dir="auto">{n.note_name}</span>
 											<span class="rv-row-why" dir="auto">{whyNow(n)}</span>
 										</button>
@@ -200,7 +226,7 @@
 							</div>
 						{:else}
 							{#each items as n (n.note_path)}
-								<button class="rv-row" class:sel={n.note_path === selectedPath} onclick={() => selectedPath = n.note_path}>
+								<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)}>
 									<span class="rv-row-name" dir="auto">{n.note_name}</span>
 									<span class="rv-row-why" dir="auto">{whyNow(n)}</span>
 								</button>
@@ -256,7 +282,12 @@
 						{:else}
 							<button class="rv-btn primary" onclick={() => act('mark_reviewed', n)}>✓ {$t('reviewPanel.reviewed') || 'Reviewed'}</button>
 						{/if}
-						<button class="rv-btn" onclick={() => act('snooze_note', n)} title={$t('reviewPanel.snooze') || 'Snooze 7 days'}>👁 {$t('reviewer.snooze7') || 'Snooze 7d'}</button>
+						{#if n.reason === 'interval_due' || n.reason === 'checkpoint' || n.reason === 'never_reviewed'}
+							<!-- Snooze only on the time-based lenses it actually suppresses (Lens-1).
+							     Stale/Orphan/Fragile aren't snooze-suppressed (Boss ruling + the note_meta
+							     lenses ignore snoozed_until), so a Snooze button there would be a no-op. -->
+							<button class="rv-btn" onclick={() => act('snooze_note', n)} title={$t('reviewPanel.snooze') || 'Snooze 7 days'}>👁 {$t('reviewer.snooze7') || 'Snooze 7d'}</button>
+						{/if}
 						<button class="rv-btn" onclick={() => act('dismiss_note', n)} title={$t('reviewPanel.dismiss') || 'Dismiss'}>🗄️ {$t('reviewer.dismiss') || 'Dismiss'}</button>
 					</div>
 

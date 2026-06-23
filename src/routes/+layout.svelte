@@ -6466,9 +6466,16 @@
 					onOpenWithTab={(path, name, tab) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-						rightSidebarOpen = true;
-						rightSidebarTab = tab as typeof rightSidebarTab;
 						showReviewer = false;
+						// Honor the panel placement (it may be relocated out of the right rail).
+						const placement = ($appSettings.panelPlacements as Record<string, string> | undefined)?.[tab] ?? 'right-sidebar';
+						if (placement === 'right-sidebar') {
+							rightSidebarOpen = true;
+							rightSidebarTab = tab as typeof rightSidebarTab;
+						} else if (tab === 'inspector360') {
+							// relocated out of the right rail → the always-available full-page 360.
+							showInspector360 = true; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showCataloger = false;
+						}
 					}}
 					onClose={() => { showReviewer = false; }}
 				/>

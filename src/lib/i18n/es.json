@@ -3596,7 +3596,7 @@
       "dueToday": "Toca revisar hoy",
       "checkpoint": "Un modelo mental — ¿sigues sosteniendo esta visión?",
       "orphan": "Aún nada enlaza aquí — intégrala en tu pensamiento",
-      "fragile": "{in} notas dependen de esta, con solo {out} de apoyo",
+      "fragile": "{in} notas se apoyan en esta — dale una base más firme",
       "never": "Nunca revisada · {n} día(s) de antigüedad"
     },
     "connections": "{in} entran · {out} salen",

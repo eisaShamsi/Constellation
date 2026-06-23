@@ -3596,7 +3596,7 @@
       "dueToday": "Heute zur Wiedervorlage fällig",
       "checkpoint": "Ein Denkmodell — hältst du an dieser Sicht noch fest?",
       "orphan": "Noch nichts verweist hierher — binde sie in dein Denken ein",
-      "fragile": "{in} Notizen hängen hieran, mit nur {out} Stützen",
+      "fragile": "{in} Notizen stützen sich darauf — untermauere sie besser",
       "never": "Nie geprüft · {n} Tag(e) alt"
     },
     "connections": "{in} ein · {out} aus",

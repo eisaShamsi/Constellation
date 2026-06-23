@@ -3733,7 +3733,7 @@
       "dueToday": "Due for review today",
       "checkpoint": "A mental model — do you still hold this view?",
       "orphan": "Nothing links here yet — connect it into your thinking",
-      "fragile": "{in} notes depend on this, with only {out} support",
+      "fragile": "{in} notes lean on this — give it firmer support",
       "never": "Never reviewed · {n} day(s) old"
     },
     "connections": "{in} in · {out} out",

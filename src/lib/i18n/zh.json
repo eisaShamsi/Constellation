@@ -3596,7 +3596,7 @@
       "dueToday": "今天待复习",
       "checkpoint": "一个心智模型 — 你是否仍持此看法？",
       "orphan": "尚无任何连接 — 把它接入你的思考",
-      "fragile": "{in} 条笔记依赖于此，却只有 {out} 条支撑",
+      "fragile": "{in} 条笔记依赖于此 — 为它夯实支撑",
       "never": "从未复习 · 已有 {n} 天"
     },
     "connections": "{in} 入 · {out} 出",
