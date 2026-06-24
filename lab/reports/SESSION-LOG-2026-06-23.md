@@ -172,3 +172,40 @@ High Kirk (21k words) 1.1 s, السلطان محمد الفاتح (32k) 2.3 s, G
 would speed all search. Both deserve a follow-up.
 
 **NEXT: §B** — the shared `<RelatedCandidates>` component, read-only in the Reviewer (first Boss-test).
+
+### §B — <RelatedCandidates> component (read-only) — SHIPPED + Boss-validated
+New `src/lib/components/RelatedCandidates.svelte` (shared, read-only): a "Connect to:" list
+of related-but-unlinked notes, each with the shared-term *why* + snippet + an inert Link
+button (wired in §C). `suggestRelatedNotes` wrapper + `RelatedCandidate` type in store.ts;
+mounted in ReviewerView's detail (orphan/fragile gate; fragile → derives-from default +
+"shore it up" heading). Fire-once `$effect` keyed on notePath; honest loading/empty states.
+6 `reviewer.suggest*` keys ×15 (native, verified). svelte-check 0.
+
+Boss test caught 4 things — ALL fixed (fix-what-you-discover):
+1. **CRITICAL — stuck "Finding related notes…" forever** (no results/empty/Link, every note).
+   Root cause: a `$effect` loop (Rule 2) — the effect read AND wrote `lastKey` ($state), so
+   writing it self-retriggered the effect whose cleanup cancelled the in-flight fetch. Fix:
+   `lastKey` → a plain non-reactive `let`. **Pass.**
+2. **"Review Pulse" → "Reviewer"** — new `reviewer.title` ×15 (header + dock tooltip; the
+   note-scoped review tab keeps `panels.review`). **Pass.**
+3. **RTL (content)** — Arabic-content cards weren't mirrored (the `shared:` row used
+   `dir="auto"`, keyed off the English label → forced LTR). **Pass.**
+4. **RTL (UI)** — switching to Arabic UI, the localized "اربطها بـ:" label + the empty state
+   stayed LEFT. Final rule: mirror when **UI is RTL ($dir) OR content is RTL** (covers all
+   four UI×content combos incl. the empty state); `.rc-label` display:block + text-align
+   start pins it to the right edge. **Pass (both UI directions).**
+
+Commits: `f076acfc` (§B) · `7979d345` ($effect loop + title) · `b667d01b` (RTL content) ·
+`ac67f19a` (RTL by UI-or-content). Binary 10:25.
+
+### Session standing at close
+- **MIG-085 §B** — SHIPPED + Boss-validated end-to-end + pushed.
+- **MIG-086** — architected → concept-validated → surface-validated (5 hosts) → **§A backend**
+  (SHIPPED, BM25 MLT, 60 s→bounded perf, quality verified EN/AR/sci) → **§B component**
+  (SHIPPED + Boss-validated read-only). **NEXT: §C** (the one-click typed-link action — the
+  SAVE-PATH code; full Editor-Surface Gate; build FRESH) → §D (wire the other 4 hosts) → §E.
+- **Forensics** (Boss-requested): term_vocab ~92% empty (P2, re-point to notes_vocab);
+  FTS index NOT fragmented (mild; the 1.9 GB size + live-access is the slowness). Report:
+  `docs/FTS-Health-Forensics-2026-06-23.md`. Two worktree sessions spawned.
+- **Help/User-Manual: deferred to §C** — §B's feature is read-only (Link inert), not yet
+  user-actionable; documenting a half-feature would mislead. Lands when §C completes the loop.
