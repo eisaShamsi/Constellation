@@ -128,6 +128,7 @@
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
+	import RelatedCandidates from '$lib/components/RelatedCandidates.svelte'; // MIG-086 §D — suggest+one-click typed link
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
@@ -7481,6 +7482,20 @@
 							onArchive={applyArchiveLocally}
 						/>
 					</div>
+					<!-- MIG-086 §D — surface #2: the same suggest + one-click typed-link affordance
+					     for the OPEN note. Direction OUTBOUND (in-hand note → suggestion): writes the
+					     typed link into THIS note's frontmatter. The component's $effect is keyed on
+					     notePath only (fire-once on note change; Rule 1/3 — never per-keystroke). -->
+					<div class="rs-section rs-section--flush">
+						<RelatedCandidates
+							notePath={sidebarTab?.path ?? null}
+							noteName={sidebarTab?.name ?? null}
+							libraryPath={sidebarTab?.libraryPath ?? null}
+							direction="outbound"
+							defaultType="associative"
+							heading={$t('panels.suggestedConnections') || 'Suggested connections'}
+						/>
+					</div>
 				{:else if rightSidebarTab === 'star'}
 					<!-- Local star centered on the active note -->
 					<div class="rs-section rs-full-height">
@@ -7531,6 +7546,8 @@
 							loading={tensionLoading}
 							noteContext={sidebarTab?.name ?? null}
 							noteStatus={tensionNoteStatus}
+							notePath={sidebarTab?.path ?? null}
+							libraryPath={sidebarTab?.libraryPath ?? null}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { openNoteTab } from '$lib/libraries/store';
+	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 
 	interface TensionItem {
 		note_name: string;
@@ -33,11 +34,15 @@
 		onNoteClick,
 		noteContext = null as string | null,
 		noteStatus = null as { indexed: boolean; ambiguous_title: boolean } | null,
+		notePath = null as string | null,     // MIG-086 §D — the open note's path (for <RelatedCandidates>)
+		libraryPath = null as string | null,  // MIG-086 §D — the open note's library path
 	}: {
 		report?: TensionReport | null;
 		loading?: boolean;
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string) => void;
+		notePath?: string | null;
+		libraryPath?: string | null;
 		/** MIG-080 §E — the open note's name when this panel is the note-scoped
 		 *  right-rail Health tab (report already filtered to this note). When set,
 		 *  empty sections are hidden and a positive "no tensions" state replaces the
@@ -59,6 +64,16 @@
 				report.single_points.length >
 				0,
 	);
+
+	// MIG-086 §D — does THIS note (note-scoped mode only) carry a CONNECTION-fixable gap?
+	// Orphan / SPOF / structural-gap are healed by adding links; contradictions are not, so
+	// they're excluded from the gate. Library-wide mode (noteContext null) never shows the
+	// suggest block — there's no single note in hand to connect. Needs the path + lib too.
+	const noteNeedsConnections = $derived(
+		!!noteContext && !!notePath && !!libraryPath && !!report &&
+			report.orphans.length + report.single_points.length + report.structural_gaps.length > 0,
+	);
+	const noteIsSPOF = $derived(!!report && report.single_points.length > 0);
 
 	let showContradictions = $state(true);
 	let showOrphans = $state(true);
@@ -221,6 +236,24 @@
 				{/each}
 			{/if}
 		</div>
+
+		<!-- MIG-086 §D — surface #4: turn the diagnosis into an action. When THIS note is
+		     flagged orphan / SPOF / in a structural gap, offer the same suggest + one-click
+		     typed-link block beneath the tension rows. Direction INBOUND (suggestion → this
+		     note) — the new link gives the note an incoming connection, clearing the flag on
+		     the next analysis pass. SPOF pre-sets derives-from + a "shore it up" heading. -->
+		{#if noteNeedsConnections}
+			<div class="tp-suggest">
+				<RelatedCandidates
+					{notePath}
+					noteName={noteContext}
+					{libraryPath}
+					direction="inbound"
+					defaultType={noteIsSPOF ? 'derives-from' : 'associative'}
+					heading={noteIsSPOF ? ($t('reviewer.suggestLabelFragile') || 'Shore it up — connect to:') : null}
+				/>
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -240,6 +273,9 @@
 	.tp-healthy-text { font-size: calc(0.82rem * var(--rs-scale, 1)); color: var(--text-muted); line-height: 1.4; }
 	/* MIG-080 §E-fix #4 — reliability caveat above the tension rows of an ambiguous-titled note */
 	.tp-caveat { font-size: calc(0.74rem * var(--rs-scale, 1)); color: #f59e0b; padding: 6px 12px; margin-bottom: 4px; line-height: 1.3; }
+	/* MIG-086 §D — the inline suggest block beneath the tension rows. Side inset matches the
+	   rows (12px); RelatedCandidates owns its own internal scroll for long candidate lists. */
+	.tp-suggest { padding: 0 12px 8px; }
 	.tp-section { margin-bottom: 4px; }
 	.tp-header {
 		display: flex; align-items: center; gap: 6px; width: 100%;

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { lookupStageEmoji } from '$lib/libraries/store';
+	import { lookupStageEmoji, libraryStats } from '$lib/libraries/store';
 	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
+	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 
 	interface LinkedNote { name: string; path: string; depth: number; stratum: number; }
 	interface Note360View {
@@ -33,6 +34,18 @@
 		previousNoteName?: string | null;
 		onBack?: () => void;
 	} = $props();
+
+	// MIG-086 §D — the library path for <RelatedCandidates>, derived from the CURRENTLY
+	// DISPLAYED note (`data.note_path`) rather than plumbed as a prop. The host's
+	// sidebarTab-derived libraryPath updates ~200 ms before `data` (the 360 fetch is
+	// debounced), so a plumbed prop would briefly pair the NEW library with the OLD
+	// note_path → a suggest query for the wrong note in the wrong library. Deriving from
+	// `data` keeps notePath + libraryPath in lockstep with what's on screen.
+	const relLibraryPath = $derived.by(() => {
+		const p = data?.note_path;
+		if (!p) return null;
+		return $libraryStats.find((l) => p.startsWith(l.path))?.path ?? null;
+	});
 
 	// §112: Stratification Matrix replaces the spherical/angular line.
 	// Vertical axis = stratum (1..8, displayed top-down 8→1). Horizontal axis
@@ -280,6 +293,21 @@
 					{#if data.missing_link_types.length > 0}<span class="i360-warn">{'⚠'} {data.missing_link_types.length} {$t('inspector360.gaps') || 'gaps'}</span>{/if}
 					{#if data.is_due}<span class="i360-warn">{'\u{1F4CB}'} {$t('inspector360.dueForReview') || 'Review due'}</span>{/if}
 				</div>
+				<!-- MIG-086 §D — surface #3 (compact right-rail scorecard): same suggest +
+				     one-click typed-link block as the full-window matrix. Direction INBOUND
+				     (suggestion → this note); SPOF/blind-spot pre-set derives-from + "shore it up". -->
+				{#if data.is_orphan || data.single_point_of_failure || data.missing_link_types.length > 0}
+					<div class="i360-suggest">
+						<RelatedCandidates
+							notePath={data.note_path}
+							noteName={data.note_name}
+							libraryPath={relLibraryPath}
+							direction="inbound"
+							defaultType={data.single_point_of_failure ? 'derives-from' : 'associative'}
+							heading={data.single_point_of_failure ? ($t('reviewer.suggestLabelFragile') || 'Shore it up — connect to:') : null}
+						/>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -440,6 +468,26 @@
 							<div class="i360-rowtot" class:active={isActive}>{matrix.rowTotals[stratum]}</div>
 						{/each}
 					</div>
+
+					<!-- MIG-086 §D — surface #3: turn the diagnosis into an action. When THIS note
+					     is an orphan, a single point of failure, or has blind-spot link types, offer
+					     the same suggest + one-click typed-link block beneath the matrix (inside the
+					     scrollable matrix-wrap so it scrolls with content, not clipped by the absolute
+					     HUD). Direction INBOUND (suggestion → this note): the link lives in the
+					     candidate's frontmatter pointing here, so an orphan gains an incoming link and
+					     the flag clears on the next open. SPOF/blind-spot pre-set derives-from. -->
+					{#if data.is_orphan || data.single_point_of_failure || data.missing_link_types.length > 0}
+						<div class="i360-suggest">
+							<RelatedCandidates
+								notePath={data.note_path}
+								noteName={data.note_name}
+								libraryPath={relLibraryPath}
+								direction="inbound"
+								defaultType={data.single_point_of_failure ? 'derives-from' : 'associative'}
+								heading={data.single_point_of_failure ? ($t('reviewer.suggestLabelFragile') || 'Shore it up — connect to:') : null}
+							/>
+						</div>
+					{/if}
 
 				</div>
 			</div>
@@ -670,6 +718,15 @@
 		max-width: 1600px;
 		display: flex; flex-direction: column;
 		min-height: 0;
+	}
+	/* MIG-086 §D — the inline suggest block (beneath the full-window matrix and inside the
+	   compact scorecard). A top rule separates it from the diagnosis it acts on; the
+	   <RelatedCandidates> component owns its own internal scroll (max-height: 60vh). */
+	.i360-suggest {
+		margin-top: 16px;
+		padding-top: 12px;
+		border-top: 1px solid var(--background-modifier-border);
+		flex-shrink: 0;
 	}
 	.i360-matrix {
 		display: grid;

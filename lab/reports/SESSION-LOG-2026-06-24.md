@@ -295,3 +295,57 @@ mark shipped). Then PJ-067 (typology Concept Paper), PJ-065, PJ-066.
 - **General surfaces → outbound:** NotePane sidebar Backlinks tab (always), Sky View per-node menu.
 - libraryPath plumbing gaps to close: Inspector360 (both mounts) + TensionPanel (prop) + GraphMindView
   (derive from libraryName via allNotes). Mount map captured this turn.
+
+---
+
+## SESSION 2 (2026-06-24, cont.) — MIG-086 §D BUILD (4 hosts wired)
+
+**Function in hand:** the `<RelatedCandidates>` "Suggested connections" surface — wired into its 4
+remaining hosts with a host-set `direction` prop. §F1–§F3 (frontmatter fold) shipped `dc6056a4`.
+
+### §D — wire `<RelatedCandidates>` into the 4 remaining hosts (BUILT; pending Boss test)
+**Touched (6 files, +163/-2):** RelatedCandidates.svelte, +layout.svelte, Inspector360.svelte,
+TensionPanel.svelte, GraphMindView.svelte, i18n/en.json.
+
+- **§D.1 — `direction` prop** on `<RelatedCandidates>` (`'inbound' | 'outbound'`, default inbound; NOT a
+  user In/Out/Both toggle — that's PJ-067). `choose()` routes the connect: inbound →
+  `addLinkToNote(cand.path, type, noteName)` (suggestion → in-hand / de-orphan); outbound →
+  `addLinkToNote(notePath, type, cand.note_name)` (in-hand → suggestion). Endpoints validated before the
+  mid-connect state.
+- **§D.2 — NotePane Backlinks tab (outbound):** new `.rs-section` after OutgoingLinksPanel; renders only
+  when a note is open (existing note-scoped guard); `heading = panels.suggestedConnections`.
+- **§D.3 — 360 Inspector, BOTH branches (inbound):** mounted in the full-window matrix-wrap (after the
+  grid, inside the scroll — not clipped by the absolute HUD) AND the compact scorecard (after the flags).
+  Gate `is_orphan ‖ single_point_of_failure ‖ missing_link_types`; defaultType = SPOF ? derives-from :
+  associative. **libraryPath derived INSIDE Inspector360 from `data.note_path`** (not plumbed) — see fix #1.
+- **§D.4 — Health/TensionPanel (inbound):** new `notePath`+`libraryPath` props; gated to note-scoped mode +
+  a connection-fixable flag (orphan/SPOF/structural-gap; contradictions excluded); SPOF → derives-from.
+- **§D.5 — Sky View per-node menu (outbound):** new "Suggest connections…" context-menu item; `ctxSuggest`
+  resolves libraryPath from the node path via `libraryStats`; a fixed popover hosts `<RelatedCandidates>`
+  (✕ + Escape dismiss; global click handler intentionally leaves it open so the Link button + picker work).
+- **i18n:** `panels.suggestedConnections`, `graphView.suggestConnections` added to en.json (graceful en
+  fallback for all locales until §E backfills ×15); ✕ reuses `common.close`.
+
+### Verification
+- **svelte-check: 0 errors** (321 warnings, all pre-existing unused-CSS).
+- **Architectural-impact review (WA#4, ultracode):** 8-agent workflow — 4 dimension reviewers (wiring /
+  save-path / reactivity / ux-i18n-display) + adversarial verification of every finding. **4 findings, all
+  verified real, all fixed (WA#6 — none deferred):**
+  1. **P0** — `choose()` stale optimistic update: the host swapping notes mid-`addLinkToNote` could drop a
+     candidate from the NEW note's freshly-fetched list. Fixed: snapshot note identity; skip the optimistic
+     removal/`onConnected` if it changed (the write still lands on the captured-correct source).
+  2. **P2** — Inspector360 fetch-window mismatch: the 360 fetch is debounced 200 ms, so a host-plumbed
+     libraryPath (from sidebarTab) briefly paired the NEW library with the OLD `note_path`. Fixed: derive
+     libraryPath INSIDE Inspector360 from `data.note_path` (lockstep with what's displayed); reverted the
+     host prop plumbing.
+  3. **P2** — `ctxSuggest` could open a dead popover when the node's library can't be resolved. Fixed: guard.
+  4. **P2** — Sky popover ✕ missing the `|| 'Close'` fallback pattern. Fixed: `common.close || 'Close'`.
+- **Display-not-domain:** verified — SecondScreenPage mounts NONE of the §D hosts; RelatedCandidates is
+  main-window only.
+- **Backend correctness (re-confirmed):** `cand.note_name = note_meta.name` (frontmatter title/stem, clean
+  wikilink); the §A anti-join excludes BOTH link directions, so the optimistic removal matches the backend
+  re-query for inbound AND outbound.
+- **Build:** `npm run build` clean (new strings embedded in `build/`); release binary rebuilt.
+
+**Next:** §D Boss test (paused here) → §E (i18n ×15, RTL, /simplify, help/UM ×15, full Orientation v-bump,
+§F4 display polish, MoCh, mark MIG-086 shipped).

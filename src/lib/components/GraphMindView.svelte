@@ -23,7 +23,8 @@
 	// MIG-072 — Sky View palette: resolve every graph colour from the user's --skyview-* overrides
 	// + the Link Types registry, then hand it to the engine (the engine never reads CSS).
 	import { resolveSkyPalette, hexColorToInt } from '$lib/graph/skyPalette';
-	import { appSettings, liveStyleDraft } from '$lib/libraries/store';
+	import { appSettings, liveStyleDraft, libraryStats } from '$lib/libraries/store';
+	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 	import { linkTypesStore, getLinkTypes, linkTypeColor } from '$lib/libraries/linkTypeRegistry';
 	// MIG-044 Phase 2 (correction #3) — NSC summary headline in the
 	// main full-window Sky View's hover tooltip. Earlier corrections
@@ -122,6 +123,11 @@
 
 	// Context menu
 	let contextMenu = $state<{ node: { id: string; name: string; path: string; libraryName: string }; x: number; y: number } | null>(null);
+	// MIG-086 §D — surface #5: the per-node "Suggest connections…" popover. Outbound — the
+	// right-clicked node is the in-hand note; the chosen typed link is written into ITS
+	// frontmatter, pointing at the picked relative. libraryPath is resolved at open time
+	// (the node carries libraryName, but <RelatedCandidates>'s §A query needs the library PATH).
+	let suggestPopover = $state<{ node: { id: string; name: string; path: string; libraryName: string }; x: number; y: number; libraryPath: string } | null>(null);
 
 	// Focus mode
 	let focusActive = $state(false);
@@ -425,7 +431,8 @@
 			if (!searchVisible) searchQuery = '';
 		}
 		if (e.key === 'Escape') {
-			// Priority: close context menu → exit focus → close search → close settings
+			// Priority: close suggest popover → context menu → exit focus → close search → settings
+			if (suggestPopover) { suggestPopover = null; return; }
 			if (contextMenu) { contextMenu = null; return; }
 			if (focusActive) { engine?.setFocusNode(null); return; }
 			if (searchVisible) { searchVisible = false; searchQuery = ''; return; }
@@ -483,6 +490,20 @@
 		if (!contextMenu) return;
 		engine?.hideNode(contextMenu.node.id);
 		contextMenu = null;
+	}
+	// MIG-086 §D — open the suggest+connect popover for the right-clicked node. The node
+	// carries libraryName but not the library PATH; resolve it from the note's full path via
+	// libraryStats (the canonical "which library owns this path" lookup used across the app).
+	function ctxSuggest() {
+		if (!contextMenu) return;
+		const { node, x, y } = contextMenu;
+		const lib = $libraryStats.find((l) => node.path.startsWith(l.path));
+		contextMenu = null;
+		// Don't open a popover that can't work: if the node's library can't be resolved,
+		// <RelatedCandidates> would render an empty state with no way to fetch (honest-UX /
+		// Form-Aligns-To-Purpose). Defensive — every Sky node belongs to a library.
+		if (!lib?.path) return;
+		suggestPopover = { node, x, y, libraryPath: lib.path };
 	}
 
 	// ─── Search bar helpers ─────────────────────────────────
@@ -1156,7 +1177,30 @@
 			<button class="gm-ctx-item" onclick={ctxOpen}>📄 {$t('graphView.open')}</button>
 			<button class="gm-ctx-item" onclick={ctxFocus}>🔍 {$t('graphView.focus')}</button>
 			<button class="gm-ctx-item" onclick={ctxPin}>📌 {engine?.isNodePinned(contextMenu.node.id) ? $t('graphView.unpin') : $t('graphView.pin')}</button>
+			<button class="gm-ctx-item" onclick={ctxSuggest}>🔗 {$t('graphView.suggestConnections') || 'Suggest connections…'}</button>
 			<button class="gm-ctx-item gm-ctx-danger" onclick={ctxHide}>👁 {$t('graphView.hide')}</button>
+		</div>
+	{/if}
+
+	<!-- MIG-086 §D — surface #5: the per-node suggest + one-click typed-link popover.
+	     Direction OUTBOUND (this node → suggestion). Dismiss with ✕ or Escape (the global
+	     click handler intentionally leaves it open so the Link button + type picker work). -->
+	{#if suggestPopover}
+		<div class="gm-suggest-popover"
+			style="{$isRTLStore ? 'right' : 'left'}:{$isRTLStore ? (window.innerWidth - suggestPopover.x) : suggestPopover.x}px;top:{suggestPopover.y}px"
+			dir="auto">
+			<div class="gm-suggest-head">
+				<span class="gm-suggest-title" dir="auto" title={suggestPopover.node.name}>{suggestPopover.node.name}</span>
+				<button class="gm-suggest-close" onclick={() => (suggestPopover = null)} title={$t('common.close') || 'Close'}>×</button>
+			</div>
+			<RelatedCandidates
+				notePath={suggestPopover.node.path}
+				noteName={suggestPopover.node.name}
+				libraryPath={suggestPopover.libraryPath}
+				direction="outbound"
+				defaultType="associative"
+				heading={$t('panels.suggestedConnections') || 'Suggested connections'}
+			/>
 		</div>
 	{/if}
 
@@ -1673,6 +1717,25 @@
 	.gm-ctx-item:hover { background: var(--background-modifier-hover); }
 	.gm-ctx-danger { color: var(--text-error, #ef4444); }
 	.gm-ctx-danger:hover { background: rgba(239, 68, 68, 0.1); }
+	/* MIG-086 §D — the per-node "Suggest connections…" popover. Wider than the menu (it hosts
+	   the candidate list); caps its height and scrolls so a long list can't run off-screen. */
+	.gm-suggest-popover {
+		position: fixed; z-index: 110;
+		width: 340px; max-width: 90vw;
+		max-height: 70vh; overflow: auto;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 10px; padding: 10px 12px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+	}
+	.gm-suggest-head { display: flex; align-items: center; gap: 8px; }
+	.gm-suggest-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-suggest-close {
+		flex-shrink: 0; border: none; background: transparent;
+		color: var(--text-muted); font-size: 18px; line-height: 1;
+		cursor: pointer; padding: 0 4px; border-radius: 4px;
+	}
+	.gm-suggest-close:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 
 	/* Focus bar */
 	.gm-focus-bar {
