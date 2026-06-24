@@ -3719,6 +3719,7 @@
     "suggestLinkBtn": "Link",
     "suggestLoading": "Finding related notes…",
     "suggestEmpty": "No strong matches in your Library yet — connect it manually, or mark it standalone.",
+    "pickTypeTitle": "How do they relate?",
     "lens": {
       "stale": "Stale",
       "due": "Due for Review",

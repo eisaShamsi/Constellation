@@ -227,6 +227,20 @@
 		} catch {}
 	}
 
+	// MIG-086 §F2 — after a one-click connect, OPTIMISTICALLY drop the in-hand note's
+	// current lens row (orphan → now linked; fragile → now shored up) for INSTANT feedback.
+	// We do NOT block on get_due_notes here: the connect's reindex runs in the background
+	// (a link-dense source reindex can be slow — PJ-066), so the incoming_count isn't
+	// updated yet and an immediate reload would still show the row. The DB reconciles on
+	// the next Reviewer load (reopen / library change). selected.reason scopes the removal
+	// to the lens the user acted on, so the note's OTHER lens rows (e.g. never_reviewed) stay.
+	function refreshAfterConnect() {
+		const sel = selected;
+		if (!sel) return;
+		dueNotes = dueNotes.filter(d => !(d.note_path === sel.note_path && d.reason === sel.reason));
+		if (!ranked.some(x => keyOf(x) === selectedKey)) selectedKey = ranked[0] ? keyOf(ranked[0]) : null;
+	}
+
 	// Priority override: dragging commits an explicit override; Reset clears it (NULL =
 	// use computed). Either reloads so the queue re-ranks by the new effective priority.
 	const isManual = $derived(selected != null && selected.priority_override != null);
@@ -348,9 +362,11 @@
 					{#if isOrphan(n) || n.reason === 'fragile'}
 						<RelatedCandidates
 							notePath={n.note_path}
+							noteName={n.note_name}
 							{libraryPath}
 							defaultType={n.reason === 'fragile' ? 'derives-from' : 'associative'}
 							heading={n.reason === 'fragile' ? ($t('reviewer.suggestLabelFragile') || 'Shore it up — connect to:') : null}
+							onConnected={refreshAfterConnect}
 						/>
 					{/if}
 
@@ -406,9 +422,11 @@
 
 					<!-- Decision verbs, each previewing its consequence where it has one. -->
 					<div class="rv-d-actions">
-						{#if isOrphan(n)}
-							<button class="rv-btn primary" onclick={() => onNoteClick?.(n.note_path, n.note_name)}>🔗 {$t('reviewer.connect') || 'Connect'}</button>
-						{:else}
+						<!-- MIG-086 §C — the orphan's "Connect" primary button (which only opened
+						     the editor, duplicating "↗ Open in editor" below) is removed; the real
+						     connect is now the inline Link buttons in <RelatedCandidates> above.
+						     Non-orphans keep their "Reviewed" verb. -->
+						{#if !isOrphan(n)}
 							<button class="rv-btn primary" onclick={() => act('mark_reviewed', n)}>✓ {$t('reviewPanel.reviewed') || 'Reviewed'}</button>
 						{/if}
 						{#if n.reason === 'interval_due' || n.reason === 'checkpoint' || n.reason === 'never_reviewed'}

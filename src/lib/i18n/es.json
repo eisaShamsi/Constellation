@@ -3582,6 +3582,7 @@
     "suggestLinkBtn": "Enlazar",
     "suggestLoading": "Buscando notas relacionadas…",
     "suggestEmpty": "Aún no hay coincidencias sólidas en tu Biblioteca: conéctala manualmente o márcala como independiente.",
+    "pickTypeTitle": "¿Cómo se relacionan?",
     "lens": {
       "stale": "Desactualizada",
       "due": "Toca revisar",

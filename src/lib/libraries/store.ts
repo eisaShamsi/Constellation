@@ -551,6 +551,97 @@ export async function toggleTaskReconciled(filePath: string, lineNumber: number)
 	}
 }
 
+/**
+ * MIG-086 Part 2 §F2 — add a typed link to a note's FRONTMATTER as a type-as-property
+ * entry (`<type>:` list of `[[wikilink]]`). Mirrors `addTagToProps`' list semantics
+ * (dedup, `list` type). The property KEY is the link-type id; the value list holds
+ * `[[target]]` wikilinks (reconstructFrontmatter quotes them → valid, interoperable
+ * YAML). Returns the updated props, or `null` when the link is already present so the
+ * caller can skip the write.
+ */
+export function addTypedLinkToProps(
+	props: FrontmatterProperty[],
+	linkType: string,
+	wikilink: string
+): FrontmatterProperty[] | null {
+	const key = linkType.toLowerCase();
+	const idx = props.findIndex((p) => p.key.toLowerCase() === key);
+	if (idx >= 0) {
+		const p = props[idx];
+		const existing =
+			p.listItems ?? (p.value ? String(p.value).split(',').map((s) => s.trim()).filter(Boolean) : []);
+		if (existing.some((x) => x.trim().toLowerCase() === wikilink.toLowerCase())) return null; // already linked
+		const items = [...existing, wikilink];
+		return props.map((q, i) => (i === idx ? { ...q, type: 'list', listItems: items, value: items.join(', ') } : q));
+	}
+	return [...props, { key: linkType, value: wikilink, type: 'list', listItems: [wikilink] } as FrontmatterProperty];
+}
+
+/**
+ * MIG-086 Part 2 §F2 — connect notes by declaring a typed Living Link in the SOURCE
+ * note's FRONTMATTER (type-as-property), content-integrity-safe whether the source is
+ * OPEN or CLOSED. The link is born ONLY as frontmatter `<type>: ["[[target]]"]` text;
+ * `index_note` derives the `note_links` row (single-writer), defaulting it to
+ * `hypothesis` confidence + weight 1.0 (concept invariant C-4, automatic). This helper
+ * NEVER writes `note_links`.
+ *
+ * Direction (de-orphan semantics): to give note O an incoming link, pass the related
+ * CANDIDATE as `sourcePath` and O's display name as `target` — the wikilink lives in the
+ * candidate's frontmatter, pointing at O. Reindexing the candidate bumps O's
+ * `incoming_count` (`maintain_incoming_after_save`), so O leaves the orphan lens.
+ *
+ * Open/closed safety: this is the proven PROPS save path (exactly `addTagToNote`). OPEN →
+ * `composeNoteModel` (identity-guarded; refuse on `!ok`) → `saveTabContent` (composes from
+ * the model + reindexes; the body is NEVER touched, so there is no §C dangling-append and
+ * no BUG-015 surface). CLOSED → `readNote` → add prop → `writeNote` → `reindexNote`.
+ * Supersedes the §C body-append (Boss ruling 2026-06-24: typed links live in frontmatter).
+ */
+export async function addLinkToNote(sourcePath: string, linkType: string, target: string): Promise<void> {
+	const type = (linkType || 'associative').trim();
+	const tgt = (target || '').trim();
+	if (!tgt) return;
+	const srcNorm = normPath(sourcePath);
+	const lib = get(libraryStats).find((l) => srcNorm.startsWith(normPath(l.path)));
+	if (!lib) throw new Error(`addLinkToNote: no library found for ${sourcePath}`);
+	const wikilink = `[[${tgt}]]`;
+	const openTab = get(openTabs).find((t) => t.path === sourcePath);
+	if (openTab) {
+		// OPEN: the props save path (identity-guarded), exactly like addTagToNote.
+		// saveTabContent edits the model's props, composes from the model, and reindexes;
+		// the body is untouched — no dangling append, no BUG-015 surface.
+		const r = composeNoteModel(openTab.id, sourcePath);
+		if (!r.ok) return; // identity refusal — never write behind a mismatched model
+		const { properties, body } = parseFrontmatter(r.content);
+		const updated = addTypedLinkToProps(properties, type, wikilink);
+		if (!updated) return; // already linked
+		await saveTabContent(openTab.id, sourcePath, updated, body);
+		// Refresh the OPEN note's view so the new property shows immediately. The props save
+		// path updates the model + disk but does NOT re-render an already-open note's
+		// PropertyEditor (Boss finding: the link only appeared on reopen). reloadTabsFromDisk
+		// re-seeds + {#key}-remounts the tab from the just-written disk — cheap (one file read,
+		// no reindex), the proven pattern toggleTaskReconciled uses to refresh an open note
+		// after an external change.
+		await reloadTabsFromDisk([sourcePath]);
+	} else {
+		// CLOSED: gated writeNote + reindex; index_note derives the note_links row (and
+		// bumps the target's incoming_count). Adding a frontmatter property necessarily
+		// re-serializes the frontmatter — the SAME proven path addTagToNote uses for tags.
+		const content = await readNote(sourcePath);
+		const { properties, body } = parseFrontmatter(content);
+		const updated = addTypedLinkToProps(properties, type, wikilink);
+		if (!updated) return; // already linked
+		markRecentWrite(sourcePath);
+		await writeNote(sourcePath, buildFullContent(updated, body), 'reviewer_connect');
+		// Fire-and-forget the reindex (exactly like saveTabContent does for every save): a
+		// link-dense source can be slow to reindex because index_note's per-edge sky triggers
+		// re-fire for ALL its edges (pre-existing cost — PJ-066), and the CONNECT must not
+		// block on it. The frontmatter (source of truth) is already on disk; the note_links
+		// derivation + the target's incoming_count catch up in the background (or on the next
+		// boot's reindex if interrupted). The Reviewer updates optimistically (refreshAfterConnect).
+		reindexNote(sourcePath, lib.name).catch((e) => console.error('[addLinkToNote] background reindex failed:', e));
+	}
+}
+
 /** §3-redo.1 — flush every dirty tab in the affected library to disk
  *  before a wikilink rename cascade walks them. Tabs are "dirty" if
  *  they have a writeAheadBuffer entry. Without this, the cascade reads
@@ -1050,7 +1141,12 @@ export function reconstructFrontmatter(properties: FrontmatterProperty[]): strin
 		} else if (prop.type === 'list' && prop.listItems && prop.listItems.length > 0) {
 			lines.push(`${prop.key}:`);
 			for (const item of prop.listItems) {
-				lines.push(`  - ${item}`);
+				// MIG-086 Part 2 §F2 — quote list items that need it (e.g. wikilinks
+				// `[[X]]`, whose `[` would otherwise start a YAML flow sequence → invalid
+				// YAML). quoteIfNeeded is a no-op for plain items (tags etc.), and the
+				// block-list parser strips the quotes back on read, so the round-trip is
+				// byte-stable. This also fixes pre-existing special-char list items (`#`, `:`).
+				lines.push(`  - ${quoteIfNeeded(item)}`);
 			}
 		} else if (prop.type === 'checkbox') {
 			// Write bare YAML boolean (unquoted true/false)

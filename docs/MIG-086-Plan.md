@@ -205,3 +205,73 @@ Landable as one commit per surface if preferred (§D.2–§D.5); each verifiable
 ---
 
 **Commit boundaries:** §A · §B · §C · §D · §E (five commits). Each lands with its verification clause green before the next. Plan-approval = build-approval: cascade §A→§E, pausing only at the §B, §C, and §D Boss-testable verification clauses.
+
+---
+
+# PART 2 — Frontmatter Fold (Boss-ratified 2026-06-24)
+
+Architect: `docs/MIG-086-Architect-Frontmatter-Typed-Links.md`. **Supersedes §C's body-append.** §A + §B
+stay shipped. The connect now writes a **type-as-property** frontmatter link (D1); `index_note` reads typed
+links from **both** body and frontmatter (D2, dual-source, non-destructive); `note_links` stays the single
+index + earned-property store (D3). The §C UI work (`<LinkTypePicker>`, the RelatedCandidates picker wiring,
+optimistic removal, `onConnected`, the Reviewer "Connect"-button removal) is **kept** — only the *write
+mechanism* changes.
+
+### §F1 — Backend: `index_note` reads frontmatter type-as-property links (dual-source)
+**Touches:** `src-tauri/src/search.rs` (`extract_typed_links` / `index_note`). **Does NOT touch** any write path.
+- Parse the note's frontmatter: for each property whose **key is a known link type** (registry: the 8 seeds
+  + `associative` + custom) and whose value(s) are quoted `"[[wikilink]]"` (single or YAML list), emit a
+  `TypedLink { link_type = key, target, annotation: "" }`.
+- Merge with the body-derived links; **dedup on `(source, target, link_type)`** (the `note_links` UNIQUE
+  index already enforces — ensure the INSERT path treats a body+frontmatter duplicate as one row, no error).
+- Reuse `fold_match_key` for the target; `associative` accepted; unknown keys ignored (they're ordinary
+  frontmatter, e.g. `tags`, `created`).
+
+**Verify (`cargo test`, fixture):** (1) a note with `supports:\n  - "[[X]]"` frontmatter → one `note_links`
+row (type=supports, target folded, confidence `hypothesis`). (2) Body `[[derives-from::Y]]` still indexes.
+(3) The SAME `type::target` in body AND frontmatter → exactly ONE row. (4) The existing §A suggest tests +
+all prior link tests stay green.
+
+### §F2 — Rewrite `addLinkToNote` to write the frontmatter property (props save path)
+**Touches:** `src/lib/libraries/store.ts` (`addLinkToNote`), `RelatedCandidates.svelte` (call shape unchanged).
+- Add `"[[<targetName>]]"` to the source note's frontmatter property named by the chosen type (create the key
+  as a list if absent; append + dedup if present).
+- **OPEN source:** `composeNoteModel` (identity-guard; refuse on `!ok`) → `editNoteProps`(updated props) →
+  `saveTabContent`. **CLOSED source:** `readNote` → `parseFrontmatter` → add to props → `buildFullContent`
+  → `writeNote('reviewer_connect')` → `reindexNote`. **Remove** the body-append + `markCascading` /
+  `reloadTabsFromDisk` dance — the props path is BUG-015-safe by construction (it's exactly `addTagToNote`).
+- Confidence default `hypothesis` still comes from `index_note` (C-4, automatic). NO `note_links` writer.
+
+**Verify (Boss test + reproduction harness):** the FULL **8-point Editor-Surface Gate** on the props path;
+connect → the source note's frontmatter gains `type:\n  - "[[orphan]]"`; orphan leaves the orphan lens;
+**on-screen === disk** after every connect; the **linked-probe rename pair** (A links B in frontmatter,
+rename B, both identities intact). Boss tutorial per the Testing-Instructions Rule.
+
+### §F3 — Rename cascade rewrites frontmatter wikilinks
+**Touches:** `src-tauri/src/libraries.rs` (`update_links_on_rename`) + the JS cascade reload.
+- Extend the walker to rewrite quoted `"[[oldname]]"` / `"[[oldname|alias]]"` inside frontmatter typed-link
+  properties, not just body wikilinks (invariant D6 — frontmatter links must survive rename).
+
+**Verify:** rename a note that is a frontmatter link target → the source's frontmatter link updates; reindex
+reflects the new target; linked-probe pair intact; no body corruption.
+
+### §F4 — Editor display of frontmatter typed-links
+**Touches:** `PropertyEditor.svelte` (+ NotePane sidebar as needed).
+- Render a type-as-property link with a self-contained `LinkTypePill` + a clickable target (opens the note).
+
+**Verify:** a note with frontmatter typed-links shows the type pill + clickable target in its properties;
+the target's Backlinks/Outgoing show the relationship; clicking opens the target.
+
+### §D — Wire `<RelatedCandidates>` into the remaining 4 hosts
+As Part 1 §D, but the connect now writes frontmatter. Resolve the **direction** question here: for
+non-orphan hosts (NotePane sidebar / Sky node), default the declared link to **in-hand note → suggestion**;
+confirm with Boss at the §D test (orphan/fragile stay suggestion → orphan, required to de-orphan).
+
+### §E — i18n ×15, RTL, /simplify, docs, gate, SO
+As Part 1 §E, plus: document **frontmatter typed-links** as a user-facing feature in help + User Manual ×15;
+Orientation v-bump (the frontmatter-link model + the doc-drift correction that no `LINK` file exists);
+mark MIG-086 shipped.
+
+**Commit boundaries (Part 2):** §F1 · §F2 · §F3 · §F4 · §D · §E. Plan-approval = build-approval: cascade,
+pausing at the **§F2** (connect) and **§D** Boss tests. §C's body-append (`addLinkToNote` v1) is replaced by
+§F2 and never shipped.

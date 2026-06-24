@@ -3582,6 +3582,7 @@
     "suggestLinkBtn": "连接",
     "suggestLoading": "正在查找相关笔记…",
     "suggestEmpty": "你的知识库中暂无高度匹配的笔记 — 可手动连接，或将其标记为独立笔记。",
+    "pickTypeTitle": "它们有什么关系？",
     "lens": {
       "stale": "已过时",
       "due": "待复习",

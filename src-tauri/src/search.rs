@@ -4538,6 +4538,186 @@ fn parse_link_body(body: &str) -> Option<(String, String, String)> {
     Some(("associative".to_string(), target, String::new()))
 }
 
+/// MIG-086 Part 2 §F1 — typed links DECLARED in the FRONTMATTER (type-as-property):
+///
+/// ```yaml
+/// supports: "[[X]]"                 # scalar
+/// supports: ["[[X]]", "[[Y]]"]      # inline array
+/// derives-from:                     # block list
+///   - "[[A]]"
+///   - "[[B]]"
+/// ```
+///
+/// A property is a typed-link declaration when its KEY is a known link type
+/// (`link_types::is_known_type` — the 8 seeds + any custom types; the SAME check the
+/// body parser uses, so frontmatter has full parity). Each value's `[[wikilink]]` is
+/// emitted as `TypedLink{ link_type = key, target, annotation = display/alias }`.
+///
+/// A wikilink under a NON-type key is emitted as `associative` — byte-for-byte the
+/// behavior of the prior full-content scan (`extract_typed_links(&content)`), so no
+/// existing link is lost; the only change is that a known-type key now yields its REAL
+/// type instead of a bare `associative`. (D1 / D2 / invariant 7, back-compat.)
+///
+/// Block-aware like `extract_aliases`: tracks the current top-level key so a `-` list
+/// item is attributed to the right property. Handles all three YAML shapes.
+fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
+    let Some((frontmatter, _)) = split_frontmatter(content) else {
+        return Vec::new();
+    };
+    use std::sync::OnceLock;
+    static WL: OnceLock<regex::Regex> = OnceLock::new();
+    let wl = WL.get_or_init(|| regex::Regex::new(r"\[\[([^\[\]]+)\]\]").unwrap());
+
+    let mut out: Vec<TypedLink> = Vec::new();
+    let mut seen = std::collections::HashSet::<String>::new();
+    let mut current_key: Option<String> = None;
+
+    for line in frontmatter.lines() {
+        let trimmed = line.trim_start();
+        let is_indented = line.len() != trimmed.len();
+
+        if !is_indented {
+            // A new top-level line resets the active property (matches extract_aliases:
+            // any non-list line ends the prior block). Capture the new key + inline value.
+            current_key = None;
+            if let Some(colon) = trimmed.find(':') {
+                let key = trimmed[..colon].trim().to_lowercase();
+                if !key.is_empty() {
+                    let value = trimmed[colon + 1..].trim();
+                    emit_frontmatter_links(wl, &key, value, &mut out, &mut seen);
+                    current_key = Some(key); // a following block list belongs to this key
+                }
+            }
+            continue;
+        }
+
+        // Indented line — a value (list item) under the current property.
+        if let Some(key) = current_key.as_deref() {
+            emit_frontmatter_links(wl, key, trimmed, &mut out, &mut seen);
+        }
+    }
+    out
+}
+
+/// Push a `TypedLink` per `[[wikilink]]` in one frontmatter value chunk, typed by
+/// `key` (its real type when `key` is a known link type, else `associative`).
+/// Dedups on `(type::target)`. The property NAME is the type (property-name-as-type,
+/// D1) — the inner link's inferred type is ignored; only its folded target + display
+/// survive (via `parse_link_body`).
+fn emit_frontmatter_links(
+    wl: &regex::Regex,
+    key: &str,
+    value: &str,
+    out: &mut Vec<TypedLink>,
+    seen: &mut std::collections::HashSet<String>,
+) {
+    if value.is_empty() {
+        return;
+    }
+    let link_type = if crate::link_types::is_known_type(key) {
+        key.to_string()
+    } else {
+        "associative".to_string()
+    };
+    for cap in wl.captures_iter(value) {
+        let body = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+        let Some((_inner_type, target, annotation)) = parse_link_body(body) else {
+            continue;
+        };
+        if target.is_empty() {
+            continue;
+        }
+        if !seen.insert(format!("{}::{}", link_type, target)) {
+            continue;
+        }
+        out.push(TypedLink {
+            target,
+            link_type: link_type.clone(),
+            annotation,
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests_mig086_frontmatter_links {
+    //! MIG-086 Part 2 §F1 — typed links declared in frontmatter (type-as-property).
+    //! Known-type keys yield their real type; non-type keys stay `associative`
+    //! (back-compat with the prior full-content scan); all three YAML shapes parse.
+    use super::*;
+
+    fn pairs(content: &str) -> Vec<(String, String)> {
+        let mut v: Vec<(String, String)> = extract_frontmatter_typed_links(content)
+            .into_iter()
+            .map(|l| (l.link_type, l.target))
+            .collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn block_list_typed_by_key() {
+        let md = "---\nsupports:\n  - \"[[Alpha]]\"\n  - \"[[Beta]]\"\n---\nbody";
+        assert_eq!(
+            pairs(md),
+            vec![
+                ("supports".to_string(), "alpha".to_string()),
+                ("supports".to_string(), "beta".to_string())
+            ]
+        );
+    }
+
+    #[test]
+    fn inline_array_typed_by_key() {
+        let md = "---\nderives-from: [\"[[A]]\", \"[[B]]\"]\n---\n";
+        assert_eq!(
+            pairs(md),
+            vec![
+                ("derives-from".to_string(), "a".to_string()),
+                ("derives-from".to_string(), "b".to_string())
+            ]
+        );
+    }
+
+    #[test]
+    fn scalar_typed_by_key() {
+        let md = "---\ncauses: \"[[Effect]]\"\n---\n";
+        assert_eq!(pairs(md), vec![("causes".to_string(), "effect".to_string())]);
+    }
+
+    #[test]
+    fn non_type_key_stays_associative_backcompat() {
+        let md = "---\nsource: \"[[Book]]\"\n---\n";
+        assert_eq!(pairs(md), vec![("associative".to_string(), "book".to_string())]);
+    }
+
+    #[test]
+    fn no_frontmatter_yields_nothing() {
+        assert!(extract_frontmatter_typed_links("just a body with [[X]]").is_empty());
+    }
+
+    #[test]
+    fn alias_display_preserved() {
+        let md = "---\nsupports:\n  - \"[[Krebs cycle|Krebs]]\"\n---\n";
+        let links = extract_frontmatter_typed_links(md);
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].link_type, "supports");
+        assert_eq!(links[0].annotation, "Krebs");
+    }
+
+    #[test]
+    fn tags_list_after_type_block_not_swallowed() {
+        // A `tags:` block following a typed block must not be attributed to the type.
+        let md = "---\nsupports:\n  - \"[[A]]\"\ntags:\n  - \"[[B]]\"\n---\n";
+        assert_eq!(
+            pairs(md),
+            vec![
+                ("associative".to_string(), "b".to_string()), // tags → associative (non-type key)
+                ("supports".to_string(), "a".to_string()),
+            ]
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests_link_parser {
     //! Link-Type Syntax Correction — `extract_typed_links` / `parse_link_body`
@@ -4877,8 +5057,25 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         .map(|d| d.as_secs() as i64)
         .unwrap_or(modified as i64);
 
-    // Extract typed links for the living link system
-    let typed_links = extract_typed_links(&content);
+    // Extract typed links for the living link system — MIG-086 Part 2 §F1: from BOTH
+    // sources, merged + deduped on (type::target):
+    //  • BODY: contextual `[[type::target]]`, parsed over the frontmatter-stripped
+    //    `body` so a frontmatter wikilink is not ALSO caught here (it used to be, as a
+    //    bare `associative`, when this ran over the whole file).
+    //  • FRONTMATTER: declared type-as-property (`supports:\n  - "[[X]]"`), typed by the
+    //    property name; a non-type key's wikilink stays `associative` (back-compat).
+    let mut typed_links = extract_typed_links(&body);
+    {
+        let mut seen: std::collections::HashSet<String> = typed_links
+            .iter()
+            .map(|l| format!("{}::{}", l.link_type, l.target))
+            .collect();
+        for l in extract_frontmatter_typed_links(&content) {
+            if seen.insert(format!("{}::{}", l.link_type, l.target)) {
+                typed_links.push(l);
+            }
+        }
+    }
     let now = chrono::Utc::now().to_rfc3339();
 
     // MIG-021 §1A — extract `sources:` from frontmatter (handles all three

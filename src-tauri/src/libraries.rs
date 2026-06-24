@@ -4126,7 +4126,11 @@ pub fn suggest_related_notes(
 
     validate_path_in_any_library(&app, &library_path)
         .map_err(|e| format!("Access denied: {}", e))?;
-    let limit = limit.unwrap_or(5).max(1).min(20) as usize;
+    // Boss (MIG-086 §C): show ALL related notes, sequenced by closeness — not an arbitrary
+    // few. The ceiling is the BM25 candidate pool itself (LIMIT below), a generous relatedness
+    // bound, not a small UI cap. Default/clamp to that pool size so `null` from the frontend
+    // means "all the engine ranks".
+    let limit = limit.unwrap_or(60).max(1).min(60) as usize;
 
     let db_path = crate::search::db_path(&app)?;
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -4212,7 +4216,6 @@ fn suggest_related_impl(
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.truncate(12);
     let query_terms: Vec<String> = scored.into_iter().map(|(s, _)| s).collect();
-    let qset: HashSet<&str> = query_terms.iter().map(|s| s.as_str()).collect();
 
     // ── 4. RANK with the BARE FTS bm25 query (name 10×, body 1×) ──
     // CRITICAL (Rule 8): no JOIN to note_meta, no NOT IN post-filter here. Adding either
@@ -4249,24 +4252,46 @@ fn suggest_related_impl(
         }
     }
 
-    // ── 5. resolve candidates: fetch by rowid; drop self / already-linked (either direction) /
-    //    no-shared-term; compute the *why* + a preview; take top `limit`. ──
+    // ── 5a. shared-term "why" via the FTS INDEX (not per-candidate re-tokenization) ──
+    // For each distinctive query term, ask the index which candidate rows contain it — the
+    // index already holds the stemmed tokens, so ≤12 cheap term lookups replace N full
+    // candidate re-tokenizations. THIS is what lets §C surface ALL related notes (Boss:
+    // "list all, regardless of numbers"), ranked closest-first, instead of only the top 15 —
+    // without the per-candidate tokenization cost the old `processed` cap existed to bound
+    // (Rule 8). Each term's df is already constrained to ≤5%·N (step 3), so each lookup is small.
+    let cand_rowids: HashSet<i64> = cand.iter().map(|(r, _)| *r).collect();
+    let mut term_hits: std::collections::HashMap<String, HashSet<i64>> = std::collections::HashMap::new();
+    {
+        let mut tstmt = conn
+            .prepare("SELECT rowid FROM notes_fts WHERE notes_fts MATCH ?1")
+            .map_err(|e| e.to_string())?;
+        for t in &query_terms {
+            let phrase = format!("\"{}\"", t.replace('"', "\"\""));
+            let rows = tstmt
+                .query_map(rusqlite::params![phrase], |r| r.get::<_, i64>(0))
+                .map_err(|e| e.to_string())?;
+            let mut set: HashSet<i64> = HashSet::new();
+            for rid in rows.flatten() {
+                if cand_rowids.contains(&rid) {
+                    set.insert(rid);
+                }
+            }
+            term_hits.insert(t.clone(), set);
+        }
+    }
+
+    // ── 5b. resolve candidates: fetch by rowid; drop self / already-linked (either direction) /
+    //    no-shared-term; attach the *why* + a bounded preview; take top `limit`. ──
+    // body_text is read only as a 400-char prefix (enough for the 24-word snippet) so the
+    // whole-pool scan stays cheap even for large candidate bodies.
     let mut meta_stmt = conn
-        .prepare("SELECT path, name, body_text FROM note_meta WHERE rowid = ?1")
+        .prepare("SELECT path, name, substr(body_text, 1, 400) FROM note_meta WHERE rowid = ?1")
         .map_err(|e| e.to_string())?;
     let mut inbound_stmt = conn
         .prepare("SELECT 1 FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND status != 'archived' LIMIT 1")
         .map_err(|e| e.to_string())?;
     let mut out: Vec<RelatedCandidate> = Vec::new();
-    // Cap the per-candidate re-tokenization work: process at most this many of the top-ranked
-    // candidates (Rule 8 — Arabic tokenization is ~0.1 ms/word, so an unbounded loop over 60
-    // large candidates is slow). The top bm25 hits almost always yield `limit` keepers.
-    let mut processed = 0usize;
     for (rowid, rank) in cand {
-        if processed >= 15 {
-            break;
-        }
-        processed += 1;
         let (path, name, cbody): (String, String, String) = match meta_stmt.query_row(
             rusqlite::params![rowid],
             |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, String>(2).unwrap_or_default())),
@@ -4288,10 +4313,9 @@ fn suggest_related_impl(
         {
             continue;
         }
-        let cstems = tokenize_tf(&format!("{}\n{}", name, cbody), &stopwords, 1500);
         let shared: Vec<String> = query_terms
             .iter()
-            .filter(|t| cstems.contains_key(*t) && qset.contains(t.as_str()))
+            .filter(|t| term_hits.get(*t).map_or(false, |s| s.contains(&rowid)))
             .take(6)
             .cloned()
             .collect();
@@ -5103,6 +5127,20 @@ mod cascade_walker_tests {
             "x.y (z)",
         );
         assert_eq!(out, "see [[x.y (z)]] and [[x.y (z)|note]]");
+    }
+
+    #[test]
+    fn frontmatter_typed_link_rewrites_on_rename() {
+        // MIG-086 Part 2 §F3 / invariant D6 — a quoted typed-link wikilink declared in
+        // FRONTMATTER must survive a target rename. The cascade rewrites raw file content,
+        // so the `[[Old]]` inside `"[[Old]]"` is rewritten in place; the surrounding quotes
+        // (outside the regex match) are preserved → still valid YAML.
+        let md = "---\nsupports:\n  - \"[[Old Note]]\"\nderives-from: [\"[[Old Note]]\"]\n---\nbody [[Old Note]] too";
+        let out = rewrite_for_test(md, "Old Note", "New Note");
+        assert_eq!(
+            out,
+            "---\nsupports:\n  - \"[[New Note]]\"\nderives-from: [\"[[New Note]]\"]\n---\nbody [[New Note]] too"
+        );
     }
 
     #[test]

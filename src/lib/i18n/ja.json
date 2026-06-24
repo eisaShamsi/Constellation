@@ -3582,6 +3582,7 @@
     "suggestLinkBtn": "リンク",
     "suggestLoading": "関連するノートを探しています…",
     "suggestEmpty": "ライブラリにまだ強い一致がありません — 手動でつなげるか、独立したノートとして印を付けてください。",
+    "pickTypeTitle": "どう関連していますか？",
     "lens": {
       "stale": "古くなった",
       "due": "見直し時期",

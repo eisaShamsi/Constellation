@@ -3582,6 +3582,7 @@
     "suggestLinkBtn": "Relier",
     "suggestLoading": "Recherche de notes liées…",
     "suggestEmpty": "Aucune correspondance forte dans votre Bibliothèque pour l'instant — reliez-la manuellement, ou marquez-la comme autonome.",
+    "pickTypeTitle": "Comment sont-ils liés ?",
     "lens": {
       "stale": "Périmée",
       "due": "À revoir",
