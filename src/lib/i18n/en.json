@@ -3712,6 +3712,7 @@
     }
   },
   "reviewer": {
+    "title": "Reviewer",
     "suggestLabel": "Connect to:",
     "suggestLabelFragile": "Shore it up — connect to:",
     "suggestSharedTerms": "shared:",

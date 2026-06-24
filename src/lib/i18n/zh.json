@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "回顾",
     "suggestLabel": "连接到：",
     "suggestLabelFragile": "为它加固 — 连接到：",
     "suggestSharedTerms": "共有：",

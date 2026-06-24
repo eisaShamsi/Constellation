@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "見直し",
     "suggestLabel": "つなげる先：",
     "suggestLabelFragile": "支えを足そう — つなげる先：",
     "suggestSharedTerms": "共通：",

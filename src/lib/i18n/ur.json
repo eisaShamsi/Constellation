@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "مُراجِع",
     "suggestLabel": "اِس سے جوڑیں:",
     "suggestLabelFragile": "اِسے سہارا دیں — اِس سے جوڑیں:",
     "suggestSharedTerms": "مشترک:",

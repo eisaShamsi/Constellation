@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "Revisor",
     "suggestLabel": "Ligar a:",
     "suggestLabelFragile": "Reforce-a — ligue a:",
     "suggestSharedTerms": "em comum:",

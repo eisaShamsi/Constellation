@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "Révision",
     "suggestLabel": "Relier à :",
     "suggestLabelFragile": "Consolidez-la — reliez à :",
     "suggestSharedTerms": "en commun :",

@@ -3710,6 +3710,7 @@
     }
   },
   "reviewer": {
+    "title": "المُراجِع",
     "suggestLabel": "اربطها بـ:",
     "suggestLabelFragile": "عزّزها — اربطها بـ:",
     "suggestSharedTerms": "مشترك:",

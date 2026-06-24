@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "다시 보기",
     "suggestLabel": "연결할 노트:",
     "suggestLabelFragile": "보강이 필요해요 — 연결할 노트:",
     "suggestSharedTerms": "공통 단어:",

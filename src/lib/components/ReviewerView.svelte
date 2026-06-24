@@ -267,7 +267,7 @@
 
 <div class="rv">
 	<header class="rv-head">
-		<h1>🕐 {$t('panels.review') || 'Review Pulse'}</h1>
+		<h1>🕐 {$t('reviewer.title') || 'Reviewer'}</h1>
 		<span class="rv-total">{distinctCount}</span>
 		<button class="rv-close" onclick={() => onClose?.()} aria-label={$t('common.close') || 'Close'} title={$t('common.close') || 'Close'}>✕</button>
 	</header>

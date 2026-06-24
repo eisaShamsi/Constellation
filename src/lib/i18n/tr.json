@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "Gözden Geçirme",
     "suggestLabel": "Şuna bağla:",
     "suggestLabelFragile": "Sağlamlaştır — şuna bağla:",
     "suggestSharedTerms": "ortak:",

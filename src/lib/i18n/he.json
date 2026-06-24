@@ -3575,6 +3575,7 @@
     }
   },
   "reviewer": {
+    "title": "מבקר",
     "suggestLabel": "חברו אל:",
     "suggestLabelFragile": "חזקו אותו — חברו אל:",
     "suggestSharedTerms": "משותף:",
