@@ -269,7 +269,20 @@ tier + `co-completes` + ALL new dimensions/families live in PJ-067, NOT MIG-086.
   doc; this session log. Binary at 18:21 has §F1–§F3 + all fixes.
 
 **Known-broken / at-risk:** PJ-066 (link-dense reindex ~2 min, background, pre-existing — Boss deferred).
-Check 2 fix not yet Boss-re-verified. Nothing committed yet this session (work safe on disk).
+
+**COMMITTED `dc6056a4` (2026-06-24)** — MIG-086 §F1–§F3 + §A uncap + §C UI, Boss-validated (Check 2
+re-verified PASS → §F2 fully closed). 26 files. The frontmatter fold is secured on `main`. (The regenerated
+`_manifests.generated.ts` was deliberately left unstaged — unrelated Sight build artifact.)
+
+### SESSION CLOSE — PCS (2026-06-24, 20:14)
+- **Commit + Push:** code milestone `dc6056a4`; SO artifacts committed + pushed at close.
+- **SO docs:** Orientation **v3.05** (new file; preamble captures the frontmatter fold + the LINK-file
+  doc-drift correction + PJ-065/066/067 + the typology — BODY §4.x/§8/§12 reconciliation deferred to the
+  §E ship-time full v-bump); **MoCh** `docs/MoCh/MoCh-2026-06-24-1100.md` (conversational trace); **Handover**
+  `lab/reports/HANDOVER-2026-06-24-mig086-frontmatter-fold.md` (+ ready-to-paste next-session prompt).
+- **Help / User Manual:** DEFERRED to §E (per the plan — MIG-086 not fully shipped; §D pending; documenting
+  a half-wired feature would mislead). Stated explicitly, not silently skipped.
+- **Next session:** MIG-086 §D (4 hosts) → §E. Then PJ-067 (typology Concept Paper), PJ-066 (sky perf), PJ-065.
 
 **Pending, not started:** §D (4 hosts), §E (i18n×15, RTL, /simplify, help/UM, Orientation v-bump, MoCh,
 mark shipped). Then PJ-067 (typology Concept Paper), PJ-065, PJ-066.
