@@ -983,6 +983,39 @@ mod tests_c2a_target_name_lower_idempotent {
         let beta2: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/B.md'", [], |r| r.get(0)).unwrap();
         assert_eq!(beta2, 99, "text-only edit recomputes nothing");
     }
+
+    /// PJ-066 §B2 — the sky affected-set diff recomputes ONLY the changed target + the
+    /// source (its outgoing changed), never an unchanged target; a text-only edit (old ==
+    /// new signature) recomputes NOTHING. The SKY mirror of the incoming test above.
+    #[test]
+    fn sky_affected_only_changed_targets_and_source() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT);
+             INSERT INTO note_meta(path,name,name_lower) VALUES ('/X.md','X','x'),('/A.md','Alpha','alpha'),('/B.md','Beta','beta');
+             INSERT INTO note_links(source_path,target_name,link_type,status) VALUES ('/X.md','Alpha','supports','active');",
+        )
+        .unwrap();
+        // X currently links {Alpha}. Capture its signature, then X also links Beta.
+        let (old_t, old_n, old_a) = incoming_signature(&conn, "/X.md").unwrap();
+        conn.execute(
+            "INSERT INTO note_links(source_path,target_name,link_type,status) VALUES ('/X.md','Beta','supports','active')",
+            [],
+        )
+        .unwrap();
+        let affected = sky_affected_paths(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        assert!(affected.contains("/B.md"), "new target Beta recomputed (its inbound changed)");
+        assert!(affected.contains("/X.md"), "source X recomputed (its outgoing set changed)");
+        assert!(!affected.contains("/A.md"), "unchanged target Alpha NOT recomputed");
+        assert_eq!(affected.len(), 2, "exactly {{Beta, X}} — no over-recompute");
+
+        // Text-only edit: same targets/name/aliases → empty affected set (instant save).
+        let (t2, n2, a2) = incoming_signature(&conn, "/X.md").unwrap();
+        let affected2 = sky_affected_paths(&conn, "/X.md", &t2, &n2, &a2).unwrap();
+        assert!(affected2.is_empty(), "text-only edit recomputes nothing");
+    }
 }
 
 /// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
@@ -1223,6 +1256,64 @@ fn maintain_incoming_after_save(
     let sql = format!(
         "UPDATE note_meta SET {assign} WHERE path = ?1",
         assign = incoming_aggregate_assignments("note_meta"),
+    );
+    for p in &affected {
+        conn.execute(&sql, params![p])?;
+    }
+    Ok(())
+}
+
+/// PJ-066 §B2 — the set of sky_nodes paths whose stratum/maturity must be recomputed
+/// after this note's edges were rebuilt: every TARGET whose inbound changed (this note
+/// started/stopped linking to it) PLUS the source note itself when its own edge set /
+/// name / aliases changed (the source's stratum depends on its OUTGOING edges). Pure set
+/// logic, mirroring `maintain_incoming_after_save`'s diff — unit-tested directly.
+fn sky_affected_paths(
+    conn: &Connection,
+    note_path: &str,
+    old_targets: &std::collections::HashSet<String>,
+    old_name: &str,
+    old_aliases: &std::collections::HashSet<String>,
+) -> rusqlite::Result<std::collections::HashSet<String>> {
+    let (new_targets, new_name, new_aliases) = incoming_signature(conn, note_path)?;
+    let mut affected: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Targets this note started/stopped linking to → their inbound changed → recompute.
+    for t in old_targets.symmetric_difference(&new_targets) {
+        resolve_incoming_target_paths(conn, t, &mut affected)?;
+    }
+    // The source itself recomputes when its outgoing set changed (stratum depends on
+    // outgoing count + outgoing 'generalizes'/'causes'/'supports' signals) OR its
+    // name/aliases changed (the edges matching IT — its own inbound — moved).
+    if old_targets != &new_targets || old_name != new_name || old_aliases != &new_aliases {
+        affected.insert(note_path.to_string());
+    }
+    Ok(affected)
+}
+
+/// PJ-066 §B2 — maintain `sky_nodes.stratum`/`maturity` write-time, the SKY parallel of
+/// MIG-079 §C.2a's `maintain_incoming_after_save`. REPLACES the per-edge sky stratum/maturity
+/// triggers (dropped in §B4), which recomputed via a 4×N fan-out on every save — the measured
+/// ~1–2 min freeze on a link-dense note. `old_*` is captured BEFORE index_note (reuse the
+/// SAME `incoming_signature` tuple the incoming maintenance already captures); this runs
+/// AFTER. A text-only edit changes no targets/name/aliases → zero recomputes → instant save.
+/// Each affected node is one index-seeking UPDATE with the SHARED `STRATUM_SQL_EXPR` /
+/// `MATURITY_SQL_EXPR` (fast after §A1). Best-effort; `recompute_all_sky` (reconcile) is the
+/// authoritative self-heal.
+fn maintain_sky_after_save(
+    conn: &Connection,
+    note_path: &str,
+    old_targets: &std::collections::HashSet<String>,
+    old_name: &str,
+    old_aliases: &std::collections::HashSet<String>,
+) -> rusqlite::Result<()> {
+    let affected = sky_affected_paths(conn, note_path, old_targets, old_name, old_aliases)?;
+    if affected.is_empty() {
+        return Ok(());
+    }
+    let sql = format!(
+        "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
+        stratum = STRATUM_SQL_EXPR,
+        maturity = MATURITY_SQL_EXPR,
     );
     for p in &affected {
         conn.execute(&sql, params![p])?;
@@ -8375,6 +8466,18 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
             for p in &affected {
                 let _ = conn.execute(&sql, params![p]);
             }
+            // PJ-066 §B3 — those former targets also lose this note as an inbound source →
+            // recompute their sky stratum/maturity (the deleted note's own sky_nodes row is
+            // already removed by note_meta_sky_ad, so it is NOT in `affected` — only its
+            // former targets are). Mirrors the incoming recompute above; shared sky exprs.
+            let sky_sql = format!(
+                "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
+                stratum = STRATUM_SQL_EXPR,
+                maturity = MATURITY_SQL_EXPR,
+            );
+            for p in &affected {
+                let _ = conn.execute(&sky_sql, params![p]);
+            }
         }
     }
     Ok(())
@@ -8453,6 +8556,13 @@ pub fn reindex_single_note(
         if let Some((old_t, old_n, old_a)) = inc_old {
             if let Err(e) = maintain_incoming_after_save(conn, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
+            }
+            // PJ-066 §B3 — maintain sky stratum/maturity write-time from the SAME pre-save
+            // signature (replaces the per-edge sky triggers dropped in §B4). Only the changed
+            // targets + the source recompute; a text-only edit recomputes nothing. Best-effort;
+            // recompute_all_sky (reconcile) is the authoritative self-heal.
+            if let Err(e) = maintain_sky_after_save(conn, note_path, &old_t, &old_n, &old_a) {
+                eprintln!("[sky] maintain after save failed for {}: {}", note_path, e);
             }
         }
     }
