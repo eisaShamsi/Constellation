@@ -41,3 +41,44 @@ inbound) → Stage 3 (Sky View node menu, outbound). Then §E.
   triggers / diff-edges); awaiting Boss ruling. The frontmatter link itself still writes instantly.
 
 **Next:** Boss re-verify picker (v2) → Stage 3 (Sky View node menu, outbound) → PJ-066 ruling → §E.
+
+## §D Boss test — Round 3 — ALL PASS → §D COMPLETE (Boss-validated)
+- **Picker re-verify (v2): PASS** (no truncation; scrolls in place).
+- **Stage 3 (Sky View per-node menu, outbound): PASS.**
+- **§D fully validated:** Backlinks tab (outbound) · 360° Inspector ×2 (inbound) · Health/TensionPanel
+  (inbound) · Sky View node menu (outbound) · LinkTypePicker viewport clamp. Direction split (diagnostic =
+  inbound / general = outbound) Boss-accepted.
+- Commits this §D arc: `eb0cc280` (§D wiring + 4 review fixes), `f4e1f3cd` (picker v1), `f5492543` (picker
+  v2 bulletproof + re-embed). Local on `main`; not yet pushed (session-close PCS or on request).
+- **OPEN DECISION (Boss):** sequence PJ-066 (the ~1-min connect freeze — its own /migration) BEFORE §E, or
+  §E first. Recommended: PJ-066 next, then §E (don't mark MIG-086 shipped while connecting freezes the app).
+
+---
+
+## PJ-066 — sky-trigger reindex perf migration (Boss chose A+B → near-instant)
+**Decision:** PJ-066 BEFORE §E (Boss). Then A+B together (Boss). Docs: docs/PJ-066-Architect-*.md, docs/PJ-066-Plan.md.
+
+### Shipped (committed on main)
+- **§A1** `8bd9039b` — rewrote the sky COUNT(DISTINCT) `(target=id OR target IN alias-subq)` disjunction →
+  `IN (SELECT id UNION SELECT alias…)`. MEASURED 5,572ms→26ms (215×), 0 mismatches across 18 heavy targets.
+  EXPLAIN proved the index was already used → the handover's "composite index" guess would NOT have worked.
+- **§B1** `30434318` — recompute_all_sky (links_backfill.rs) + wired into reconcile (the bulk self-heal).
+- **§B2+§B3** `41bbf55a` — maintain_sky_after_save (save/delete diff, mirror of MIG-079 §C.2a); only changed
+  targets + source recompute. Unit test green.
+- **§B4** `65d17041` — dropped the per-edge note_links_sky_stratum/maturity triggers; kept note_meta_sky_*;
+  added drop_sky_aggregate_triggers + reconcile-window drop. Full lib suite 981 pass.
+
+### Boss test (Ancient history, 533 links): PASS, **~1–2 min → 30–50 s**.
+
+### Reproduce-First measurement (live-DB copy + Rust timing test; test then reverted)
+- **maintain_sky = 1.3 ms** — §B is perfect; the sky cost is GONE.
+- The outgoing-trigger guess was WRONG (0.4 s, covering index) — not the residual.
+- **Steady-state per-connect backend `index_note` = ~6.1 s** (run2/run3), NOT 30–50 s. Run-1 was 15.9 s =
+  a ONE-TIME FTS re-tokenize; the `note_meta_au` FTS trigger ALREADY guards `WHEN body/name changed`, so a
+  frontmatter-only connect (body unchanged) SKIPS FTS in steady state. The 30–50 s the Boss saw was
+  dominated by the ONE-TIME first-boot reconcile (recompute_all_* over 7,659 notes, ~15 s) + frontend.
+- Residual 6.1 s = ~3.8 s note_links DELETE-all+INSERT-all rebuild + ~2.3 s read/parse/upsert of the 88 KB
+  file. **diff-edges** (only touch the 1 changed edge) would cut the 3.8 s → backend ~2.3 s, but touches
+  the traversal-data-preserving note_links rebuild. Frontend (remount + 533-link panels) unmeasured.
+- **Re-framed decision surfaced to Boss:** steady-state is ~6 s (not 30–50 s); the big number was one-time.
+  Pursue diff-edges (+frontend) or ship §A+§B and finish MIG-086 §E?
