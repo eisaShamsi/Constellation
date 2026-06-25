@@ -132,3 +132,82 @@ diff before/after reconcile = 0 mismatches; spot-check the 18 ≥500-inbound tar
 
 **Commit boundaries:** §A1 · §B1 · §B2 · §B3 · §B4 · (§B5). Plan-approval = build-approval: cascade,
 pausing at the §B4 Boss connect re-test.
+
+---
+
+# PART 3 — §C: the connect freeze is the SYNC reindex on the UI thread (measured 2026-06-25)
+
+**How we got here:** §A+§B killed the sky-trigger cost (the original diagnosis), taking the mega-article
+connect from ~2 min to 30–50 s. Boss: "still slow — don't patch/reinvent, check how others solve it."
+Research (WA#5) → the universal patterns are **(a) async/non-blocking indexing** (Lucene/ES: index off the
+write path; never block the UI on the commit) and **(b) incremental/diff indexing** (Obsidian metadata
+cache, LightRAG set-merge: touch only what changed). Then ONE Boss-approved split-measurement (frontend +
+backend timing → diagnostics.log) on the live universe pinned the cause exactly.
+
+## Measured split (Ancient history, 533 links, 88 KB)
+```
+PJ066-BE reindex            46.18 s          ← the whole cost (first connect)
+PJ066-FE addLinkToNote OPEN  compose=1ms saveTab=58ms reloadStore=47922ms total=47980ms
+PJ066-FE NotePane remount    mountCost=8ms   ← the editor rebuild is NEGLIGIBLE
+```
+Plus Boss: 2nd connect = 7 s, 3rd = 5 s.
+
+## Root cause (definitive)
+1. **`constellation_search_reindex` is a SYNCHRONOUS Tauri command** (`pub fn`, search.rs:8349). Tauri runs
+   non-`async` commands **on the WebView2 UI thread** → a long reindex **freezes the whole app and blocks
+   ALL IPC**. The connect's `reloadTabsFromDisk → read_note` (file-only, no DB) couldn't even *start* until
+   the reindex finished → `reloadStore` = 47.9 s. (Same class as LL-021's "16 sync scans queued on the UI
+   thread → 19.5 s"; Tauri's own guidance: long commands must be `async`.)
+2. **First connect to a note = ~46 s = a ONE-TIME FTS re-tokenize** (the stored index body was stale vs the
+   current parse; the `note_meta_au` FTS guard re-syncs it once). After that, steady-state = **~5–7 s**
+   (note_links DELETE-all+INSERT-all rebuild + 88 KB parse). The editor remount is **8 ms** — the frontend
+   is innocent.
+
+## §C steps (each = one commit)
+
+### §C1 — make the reindex ASYNC (off the UI thread) — PRIMARY, ~1 line
+**File:** `src-tauri/src/search.rs:8349`. Change `#[tauri::command]` → `#[tauri::command(async)]` on
+`constellation_search_reindex` (the documented codebase idiom — libraries.rs:2409 `scan_library_tags`,
+LL-021). Tauri then routes it through `tauri::async_runtime::spawn` → it runs on a Tokio worker, the **UI
+thread pays only spawn cost**, and the connect's `read_note` (file-only) runs immediately → **connect feels
+instant regardless of reindex cost**. The reindex still holds the single `state.db` lock in the background
+(DB-dependent panels lag during that window — shrunk by §C2), but the freeze is gone.
+**Verify:** Boss connect on a mega-article → connect returns immediately, app stays responsive (can scroll/
+switch tabs during the background reindex); the new link still appears; `cargo test` green. Check no awaited
+caller of `constellation_search_reindex` depends on synchronous completion (it's fire-and-forget from
+saveTabContent / reindexNote).
+
+### §C2 — incremental diff-edges for note_links (reduce the background cost + lock window)
+**File:** `src-tauri/src/search.rs` `index_note`. Today index_note does DELETE-all + INSERT-all of the
+note's `note_links` (≈1,067 row-ops × 14 indexes for the 533-link note). Replace with a **diff**: compute
+old vs new edge set (key = (target_name, link_type)); only DELETE removed + INSERT added; leave unchanged
+rows untouched. This is the Obsidian/LightRAG incremental pattern AND our own MIG-079 §C.2a / PJ-066 §B
+precedent (already diff-based for the aggregates). **Bonus: SAFER for traversal data** — unchanged edges
+keep their existing rows (weight/last_traversed/traversal_count) untouched, so the current snapshot-restore
+dance around DELETE-all is no longer needed for them.
+**Verify:** connect to a mega-article → reindex time drops (~6 s → ~2 s steady); `note_links` for the note
+is byte-identical to a full rebuild (diff vs DELETE-all+INSERT-all on a fixture + the live-copy harness);
+traversal data on unchanged edges preserved; `cargo test` green.
+
+### §C3 — (lower priority) the one-time FTS re-tokenize
+With §C1 the 46 s first-connect re-tokenize is background (non-freezing); a reconcile heals the stale-body
+staleness universe-wide. Investigate whether the props-save path needlessly rewrites `body_text` (if so,
+keep it byte-identical so the `note_meta_au` FTS guard skips on the FIRST connect too). Defer unless the
+first-connect background lag proves disruptive after §C1.
+
+## Invariants / risks
+- **I (correctness):** §C2 must produce identical `note_links` to the full rebuild (diff fixtures + live-copy
+  snapshot). Traversal data on unchanged edges preserved (it's now *more* preserved, not less).
+- **R1 — async caller assumptions:** every `constellation_search_reindex` caller is fire-and-forget or
+  awaits-for-completion-only; `(async)` keeps the same return contract, just off-thread. Audit all callers.
+- **R2 — background lock contention:** while the async reindex holds `state.db`, DB-dependent panels wait.
+  §C2 shrinks the window; if still disruptive, a separate read-only connection for read-side commands is the
+  next lever (out of §C scope).
+- **R3 — single-writer:** §C2 still writes `note_links` only inside index_note's DELETE/INSERT.
+
+## Rollback
+- §C1: revert the `(async)` attribute. §C2: revert to DELETE-all + INSERT-all. Both contained; reconcile
+  always re-derives note_links from the files.
+
+**Commit boundaries:** §C1 · §C2 · (§C3). Plan-approval = build-approval: cascade, pausing at the §C1 Boss
+connect re-test (the freeze should be gone) and again after §C2 (steady-state should drop).

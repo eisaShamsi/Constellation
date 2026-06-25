@@ -82,3 +82,17 @@ inbound) → Stage 3 (Sky View node menu, outbound). Then §E.
   the traversal-data-preserving note_links rebuild. Frontend (remount + 533-link panels) unmeasured.
 - **Re-framed decision surfaced to Boss:** steady-state is ~6 s (not 30–50 s); the big number was one-time.
   Pursue diff-edges (+frontend) or ship §A+§B and finish MIG-086 §E?
+
+### PJ-066 §C — split-measurement (Boss-approved instrumentation, then reverted) + the real root cause
+Boss steer: "don't patch/reinvent — check how others solve it." Research (WA#5): the two universal patterns
+are **async/non-blocking indexing** (Lucene/ES) + **incremental/diff indexing** (Obsidian/LightRAG). Then ONE
+split-measurement (FE+BE timing → diagnostics.log) on the live universe:
+- **PJ066-BE reindex = 46.18 s** (first connect) · **FE addLinkToNote reloadStore = 47.9 s (waiting on it)** ·
+  **FE NotePane remount = 8 ms** (frontend INNOCENT). Boss: 2nd connect 7 s, 3rd 5 s.
+- **Root cause:** `constellation_search_reindex` is a SYNC Tauri command → runs on the WebView2 UI thread →
+  freezes the whole app + blocks the connect's `read_note` for the full reindex (LL-021 class). First connect
+  ~46 s = one-time FTS re-tokenize (stale stored body); steady-state ~5–7 s = note_links rebuild + parse.
+- **§C plan (docs/PJ-066-Plan.md PART 3):** §C1 — `#[tauri::command(async)]` on the reindex (off the UI
+  thread; connect instant; codebase idiom LL-021). §C2 — incremental diff-edges in index_note (don't rebuild
+  all 533 links; Obsidian/LightRAG + our MIG-079/PJ-066 §B precedent; safer for traversal data). §C3 (opt) —
+  the one-time FTS re-tokenize. Instrumentation reverted; awaiting Boss approval of §C.
