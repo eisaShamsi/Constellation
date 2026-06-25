@@ -1334,6 +1334,24 @@ pub(crate) fn drop_incoming_link_triggers(conn: &Connection) -> Result<(), Strin
     .map_err(|e| format!("drop incoming-link triggers: {}", e))
 }
 
+/// PJ-066 §B4 — drop the six per-edge SKY stratum/maturity aggregate triggers (for the
+/// reconcile bulk-walk pause; idempotent). These are no longer recreated by `init_db`
+/// (the §B4 removal) — sky stratum/maturity is maintained by `maintain_sky_after_save`
+/// (save/delete diff) + `recompute_all_sky` (reconcile / sky_backfill). The note-row
+/// `note_meta_sky_*_au` triggers stay and are unaffected. Mirrors
+/// `drop_incoming_link_triggers`.
+pub(crate) fn drop_sky_aggregate_triggers(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "DROP TRIGGER IF EXISTS note_links_sky_stratum_ai;
+         DROP TRIGGER IF EXISTS note_links_sky_stratum_ad;
+         DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
+         DROP TRIGGER IF EXISTS note_links_sky_maturity_ai;
+         DROP TRIGGER IF EXISTS note_links_sky_maturity_ad;
+         DROP TRIGGER IF EXISTS note_links_sky_maturity_au;",
+    )
+    .map_err(|e| format!("drop sky aggregate triggers: {}", e))
+}
+
 /// MIG-067 §B — react to a change in the active link-type vocabulary (a live
 /// `save_universe_link_types`). Two effects, both idempotent and non-blocking:
 ///   1. Recreate the outgoing-link triggers so subsequent live edge writes use the
@@ -3615,46 +3633,12 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
         END;
 
-        -- note_links insert: new active edge changes source's outgoing
-        -- count + target's inbound count. Archived links (status != active)
-        -- don't contribute to the stratum formula — skip the trigger body
-        -- via WHEN. target_name match updates ALL sky_nodes sharing that
-        -- lowercased name (expected behavior — inbound_count is name-
-        -- scoped in strata.rs).
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_ai
-        AFTER INSERT ON note_links
-        WHEN NEW.status = 'active'
-        BEGIN
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = NEW.target_name;
-        END;
-
-        -- note_links delete: symmetric to insert — the lost edge changes
-        -- source's outgoing count + target's inbound count.
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_ad
-        AFTER DELETE ON note_links
-        WHEN OLD.status = 'active'
-        BEGIN
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = OLD.target_name;
-        END;
-
-        -- note_links update: covers re-type (link_type changed), archive
-        -- toggle (status changed), and rename cascade (source_path or
-        -- target_name changed via §6). Touches both OLD and NEW identities
-        -- so stratum is correct for both sides.
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_au
-        AFTER UPDATE ON note_links
-        WHEN OLD.status IS NOT NEW.status
-          OR OLD.link_type IS NOT NEW.link_type
-          OR OLD.source_path IS NOT NEW.source_path
-          OR OLD.target_name IS NOT NEW.target_name
-        BEGIN
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = OLD.target_name;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = NEW.target_name;
-        END;
+        -- PJ-066 §B4 — the per-edge note_links_sky_stratum_ai/ad/au triggers are REMOVED.
+        -- They recomputed stratum via a 4×N fan-out on every save of a link-dense note (the
+        -- measured ~1–2 min freeze). Sky stratum is now maintained write-time by
+        -- maintain_sky_after_save (the save/delete changed-targets+source diff) and
+        -- recompute_all_sky (reconcile / sky_backfill self-heal). The unconditional DROP
+        -- statements above shed these triggers from existing DBs on next boot.
     ", expr = STRATUM_SQL_EXPR))
     .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
 
@@ -3694,36 +3678,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
         END;
 
-        -- note_links insert: a new active edge changes the target's
-        -- inbound count → recompute target's maturity. Source maturity
-        -- does NOT depend on outgoing edges; skip the source update.
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_ai
-        AFTER INSERT ON note_links
-        WHEN NEW.status = 'active'
-        BEGIN
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = NEW.target_name;
-        END;
-
-        -- note_links delete: symmetric — deletion drops target's inbound.
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_ad
-        AFTER DELETE ON note_links
-        WHEN OLD.status = 'active'
-        BEGIN
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = OLD.target_name;
-        END;
-
-        -- note_links update: covers archive toggle (status) and rename
-        -- cascade (target_name changed via §6). Only target-side is
-        -- relevant for maturity; no source updates. Both OLD and NEW
-        -- target identities are touched.
-        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_au
-        AFTER UPDATE ON note_links
-        WHEN OLD.status IS NOT NEW.status
-          OR OLD.target_name IS NOT NEW.target_name
-        BEGIN
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = OLD.target_name;
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = NEW.target_name;
-        END;
+        -- PJ-066 §B4 — the per-edge note_links_sky_maturity_ai/ad/au triggers are REMOVED
+        -- (see the stratum block). Maturity is maintained write-time by maintain_sky_after_save
+        -- + recompute_all_sky. note_meta_sky_ai still seeds maturity inline on note INSERT,
+        -- and note_meta_sky_maturity_au (above) refreshes it on a modified/created_at change.
     ", expr = MATURITY_SQL_EXPR))
     .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
 
@@ -8290,6 +8248,10 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // MIG-079 §C.2a — incoming maintenance is a save-path Rust diff, not triggers;
     // drop any incoming triggers a prior build left (harmless cleanup).
     let _ = drop_incoming_link_triggers(&walk_conn);
+    // PJ-066 §B4 — sky stratum/maturity maintenance is also a save-path Rust diff now;
+    // drop the per-edge sky triggers for the trigger-free bulk walk (recompute_all_sky
+    // below restores every node's value in one pass). Idempotent cleanup.
+    let _ = drop_sky_aggregate_triggers(&walk_conn);
 
     let libraries = crate::libraries::load_all_libraries(app);
     for lib in &libraries {
