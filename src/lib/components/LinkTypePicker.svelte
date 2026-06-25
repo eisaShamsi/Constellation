@@ -50,18 +50,25 @@
 	let menuEl = $state<HTMLDivElement>();
 	// `pos` is null until the clamp runs; the template falls back to the raw x/y props
 	// (read in markup — no reactive-capture warning) while hidden, then snaps to `pos`.
-	let pos = $state<{ left: number; top: number } | null>(null);
+	let pos = $state<{ left: number; top: number; maxHeight: number } | null>(null);
 	$effect(() => {
 		if (!menuEl || pos) return;
-		const r = menuEl.getBoundingClientRect();
 		const pad = 8;
 		const vw = window.innerWidth;
 		const vh = window.innerHeight;
+		// Measure the menu's NATURAL height (no CSS cap while hidden — see the removed
+		// `max-height: 60vh`). The 8 seeds + associative + the user's CUSTOM types can make
+		// the list taller than the window; cap it to the viewport in JS px (window.innerHeight,
+		// NOT a `vh` CSS unit the webview wasn't honoring) and clamp the top so it NEVER runs
+		// off the bottom edge — it scrolls in place instead (Boss finding: picker truncated).
+		const r = menuEl.getBoundingClientRect();
+		const maxHeight = vh - 2 * pad;
+		const h = Math.min(r.height, maxHeight);
 		let nx = x;
 		let ny = y;
 		if (nx + r.width + pad > vw) nx = Math.max(pad, vw - r.width - pad);
-		if (ny + r.height + pad > vh) ny = Math.max(pad, vh - r.height - pad);
-		pos = { left: nx, top: ny };
+		if (ny + h + pad > vh) ny = Math.max(pad, vh - h - pad);
+		pos = { left: nx, top: ny, maxHeight };
 	});
 </script>
 
@@ -75,7 +82,7 @@
 	onclick={() => onCancel()}
 	oncontextmenu={(e) => { e.preventDefault(); onCancel(); }}
 ></button>
-<div class="ltp-menu" class:placed={pos} bind:this={menuEl} style="left:{pos?.left ?? x}px;top:{pos?.top ?? y}px" dir={$uiDir}>
+<div class="ltp-menu" class:placed={pos} bind:this={menuEl} style="left:{pos?.left ?? x}px;top:{pos?.top ?? y}px;max-height:{pos ? pos.maxHeight + 'px' : 'none'}" dir={$uiDir}>
 	<div class="ltp-header">{$t('reviewer.pickTypeTitle') || 'How do they relate?'}</div>
 	{#each types as id (id)}
 		<button
@@ -106,7 +113,9 @@
 		z-index: 1001;
 		min-width: 180px;
 		max-width: min(320px, 90vw);
-		max-height: 60vh;
+		/* max-height is set INLINE in px by the clamp $effect (window.innerHeight − padding).
+		   No CSS `max-height: 60vh` here: it would cap the natural-height measurement and the
+		   webview wasn't honoring `vh` reliably, so a long type list ran off the bottom. */
 		overflow-y: auto;
 		visibility: hidden; /* shown only after the clamp $effect places it (no flash) */
 	}
