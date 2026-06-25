@@ -8089,39 +8089,41 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
     }
+    // PJ-066 §C3 — open the read-only reader connection BEFORE the gen-validated publish, so the
+    // slow part (file open + tokenizer registration) happens OUTSIDE the lock; then db + read_db +
+    // the db_ready flag are all published together under ONE generation check. Best-effort: on
+    // open failure the read commands fall back to `db` (slower, still correct).
+    let read_conn = open_read_only_search_conn(&path)
+        .map_err(|e| { eprintln!("[search] read_db open failed (reads fall back to db): {}", e); e })
+        .ok();
     {
         let mut db = state.db.lock().map_err(|e| e.to_string())?;
         let cur_gen = state
             .federation_generation
             .load(std::sync::atomic::Ordering::SeqCst);
         if cur_gen != init_gen {
-            // Universe switched during init_db — discard this connection so the
-            // next ensure_search_db_ready re-initializes for the active
-            // universe. `conn` drops here (closes the stale handle); db stays None.
+            // Universe switched during init (incl. the read_db open above) — discard BOTH stale
+            // connections so the next ensure_search_db_ready re-initializes for the active
+            // universe. `conn` + `read_conn` drop here (closing the stale handles); db stays None
+            // and db_ready stays false (the §J-audit class fix — PJ-066 §E audit 4A/I7).
             eprintln!(
-                "[search] ensure_search_db_ready: universe switched during init (gen {} -> {}); discarding stale connection",
+                "[search] ensure_search_db_ready: universe switched during init (gen {} -> {}); discarding stale connections",
                 init_gen, cur_gen
             );
             return Ok(());
         }
         *db = Some(conn);
-    }
-    // PJ-066 §C3 — open the read-only reader connection now that the writer `db` is live for
-    // this universe (the gen-check above already guaranteed we didn't switch mid-init). Reads
-    // route to this so they never wait on the writer's lock. Best-effort: on failure the read
-    // commands fall back to `db` (slower, still correct). NULL'd by invalidate_search_state.
-    {
-        let mut rdb = state.read_db.lock().map_err(|e| e.to_string())?;
-        if rdb.is_none() {
-            match open_read_only_search_conn(&path) {
-                Ok(c) => { *rdb = Some(c); }
-                Err(e) => eprintln!("[search] read_db open failed (reads fall back to db): {}", e),
-            }
+        // Publish the reader under the SAME gen-validated section so a stale read_db can never
+        // be stored for a switched-away universe. (db→read_db lock order matches
+        // invalidate_search_state; with_read_conn never holds both — no deadlock.)
+        if let Some(rc) = read_conn {
+            let mut rdb = state.read_db.lock().map_err(|e| e.to_string())?;
+            *rdb = Some(rc);
         }
+        // Publish readiness LAST, still inside the gen-validated block, so the lock-free fast
+        // path is only enabled for a fully-initialized, current-universe DB.
+        state.db_ready.store(true, std::sync::atomic::Ordering::Release);
     }
-    // PJ-066 §C3 — publish readiness LAST (after db + read_db are live) so the lock-free
-    // fast path can short-circuit future calls without taking db.lock().
-    state.db_ready.store(true, std::sync::atomic::Ordering::Release);
     // MIG-001 Step 5: schedule the Sky View back-fill on a background
     // thread. No-op if schema_versions.sky is already at target. Returns
     // immediately so this doesn't extend boot time.
