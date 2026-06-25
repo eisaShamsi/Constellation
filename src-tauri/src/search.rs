@@ -8345,7 +8345,18 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
 }
 
 /// Reindex a single note (called on file change).
-#[tauri::command]
+///
+/// PJ-066 §C1 — `(async)` so Tauri routes this OFF the WebView2 UI thread
+/// (`respond_async_serialized` → `tauri::async_runtime::spawn`, the LL-021 /
+/// `scan_library_tags` idiom). A single-note reindex can take seconds on a
+/// link-dense note (note_links rebuild + parse); as a *synchronous* command it
+/// ran on the UI thread and FROZE the whole app + blocked every other IPC (incl.
+/// the connect's `read_note`) for its full duration — the measured 30–50 s connect
+/// freeze (2026-06-25 split-measurement). Off the UI thread, the connect returns
+/// immediately and the reindex catches up in the background (Lucene/ES async-index
+/// pattern). The `invoke` contract is unchanged — the Promise still resolves on
+/// completion (awaited callers stay correct; fire-and-forget callers don't wait).
+#[tauri::command(async)]
 pub fn constellation_search_reindex(
     app: tauri::AppHandle,
     note_path: String,
