@@ -566,27 +566,24 @@ pub fn get_backlink_rows(
     let schemas = get_federated_schemas(&app);
     let is_federated = schemas.len() > 1;
     let state = app.state::<crate::search::SearchState>();
-    let bare_conn;
-    let fed_guard;
-    let conn: &Connection;
     if is_federated {
-        fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
-        match fed_guard.as_ref() {
-            Some(c) => conn = c,
-            None => return Ok(Vec::new()),
+        let fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        let conn = match fed_guard.as_ref() { Some(c) => c, None => return Ok(Vec::new()) };
+        let mut out: Vec<NoteLink> = Vec::new();
+        for schema in &schemas {
+            out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
         }
-    } else {
-        bare_conn = match open_reader(&app) {
-            Ok(c) => c,
-            Err(_) => return Ok(Vec::new()),
-        };
-        conn = &bare_conn;
+        return Ok(out);
     }
-    let mut out: Vec<NoteLink> = Vec::new();
-    for schema in &schemas {
-        out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
-    }
-    Ok(out)
+    // PJ-066 §C3 — single-schema: use the cached READ-ONLY reader connection (never waits on
+    // the writer's lock, and no per-call connection open like the old `open_reader`).
+    crate::search::with_read_conn(state.inner(), |conn| {
+        let mut out: Vec<NoteLink> = Vec::new();
+        for schema in &schemas {
+            out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
+        }
+        Ok(out)
+    })
 }
 
 /// MIG-079 §C.2c — outgoing rows for the active note (federated). Replaces the
@@ -603,27 +600,23 @@ pub fn get_outgoing_rows(
     let schemas = get_federated_schemas(&app);
     let is_federated = schemas.len() > 1;
     let state = app.state::<crate::search::SearchState>();
-    let bare_conn;
-    let fed_guard;
-    let conn: &Connection;
     if is_federated {
-        fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
-        match fed_guard.as_ref() {
-            Some(c) => conn = c,
-            None => return Ok(Vec::new()),
+        let fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        let conn = match fed_guard.as_ref() { Some(c) => c, None => return Ok(Vec::new()) };
+        let mut out: Vec<NoteLink> = Vec::new();
+        for schema in &schemas {
+            out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
         }
-    } else {
-        bare_conn = match open_reader(&app) {
-            Ok(c) => c,
-            Err(_) => return Ok(Vec::new()),
-        };
-        conn = &bare_conn;
+        return Ok(out);
     }
-    let mut out: Vec<NoteLink> = Vec::new();
-    for schema in &schemas {
-        out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
-    }
-    Ok(out)
+    // PJ-066 §C3 — single-schema: cached READ-ONLY reader (never waits on the writer).
+    crate::search::with_read_conn(state.inner(), |conn| {
+        let mut out: Vec<NoteLink> = Vec::new();
+        for schema in &schemas {
+            out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
+        }
+        Ok(out)
+    })
 }
 
 fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {

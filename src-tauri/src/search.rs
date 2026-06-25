@@ -462,6 +462,27 @@ pub struct SearchIndexStats {
 
 pub struct SearchState {
     pub db: Mutex<Option<Connection>>,
+    /// PJ-066 §C3 — a SECOND, read-only Connection on the SAME WAL `search.db`.
+    /// Read commands (backlinks, outgoing, search, link stats, …) use THIS so they
+    /// never wait on the writer's `db` lock. SQLite WAL natively allows many concurrent
+    /// readers + one writer; the single shared `db` connection defeated that (every read
+    /// queued behind a write — the measured ~5s connect freeze while a background reindex
+    /// held the lock). Opened read-only after `db` in `ensure_search_db_ready`; NULL'd
+    /// alongside `db` in `invalidate_search_state` on universe switch. Read commands fall
+    /// back to `db` when this is `None` (pre-init / mid-switch), so behavior is never wrong,
+    /// only occasionally not-yet-accelerated. (One connection serializes reads among
+    /// themselves — fine; reads are ms — the win is reads vs the seconds-long WRITE.)
+    pub read_db: Mutex<Option<Connection>>,
+    /// PJ-066 §C3 — lock-free "is the DB initialized for the active universe?" flag.
+    /// `ensure_search_db_ready` is called at the top of nearly every command; its old
+    /// fast-path took `db.lock()` just to check `is_some()` — which BLOCKS for the full
+    /// duration a writer (a single-note reindex) holds the lock, freezing every caller on
+    /// the UI thread. This atomic lets the steady-state readiness check return WITHOUT
+    /// touching `db`, so reads/commands no longer queue behind an in-flight write. Set
+    /// `true` only after `db` is fully initialized (`*db = Some`); set `false` in
+    /// `invalidate_search_state`. (When false, the slow path still locks + double-checks,
+    /// so the flag is an accelerator, never the source of truth.)
+    pub db_ready: std::sync::atomic::AtomicBool,
     /// MIG-078 §B1 — dedicated init serialization lock (the thundering-herd
     /// fix). `ensure_search_db_ready` takes this BEFORE running `init_db` so
     /// the slow (20-40s on a cold 1.7 GB universe) one-time init runs EXACTLY
@@ -520,6 +541,8 @@ impl SearchState {
     pub fn new() -> Self {
         SearchState {
             db: Mutex::new(None),
+            read_db: Mutex::new(None),
+            db_ready: std::sync::atomic::AtomicBool::new(false),
             init_lock: Mutex::new(()),
             federation: Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: Mutex::new(None),
@@ -533,6 +556,45 @@ impl SearchState {
 pub(crate) fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let cdir = crate::universe::active_constellation_dir(app)?;
     Ok(cdir.join("search.db"))
+}
+
+/// PJ-066 §C3 — open a READ-ONLY connection on the WAL `search.db` for `SearchState.read_db`.
+/// Mirrors the read-only opens already in libraries.rs (read_index_entries / suggest_related_notes):
+/// READ_ONLY + busy_timeout + the custom FTS5 tokenizer (tokenizers are connection-local, so a read
+/// command that runs `notes_fts MATCH` needs it registered here too). WAL is a file property —
+/// inherited — so this reader sees the last committed snapshot and NEVER blocks the writer.
+pub(crate) fn open_read_only_search_conn(db_path: &Path) -> Result<Connection, String> {
+    use rusqlite::OpenFlags;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(db_path, flags)
+        .map_err(|e| format!("open read-only search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(5000))
+        .map_err(|e| e.to_string())?;
+    let _ = conn.execute_batch("PRAGMA query_only=ON; PRAGMA mmap_size=268435456;");
+    register_fts5_tokenizer(&mut conn)?;
+    Ok(conn)
+}
+
+/// PJ-066 §C3 — run a READ-ONLY query through the reader connection so it never waits on the
+/// writer's `db` lock (the connect-freeze fix). Falls back to `db` when the reader isn't open
+/// yet (pre-init / mid universe-switch) — correct, just not yet accelerated. The closure gets
+/// a `&Connection` and MUST only read: the reader is opened READ_ONLY + `query_only=ON`, so a
+/// stray write errors out (a guard against routing a write command here by mistake).
+pub(crate) fn with_read_conn<T>(
+    state: &SearchState,
+    f: impl FnOnce(&Connection) -> Result<T, String>,
+) -> Result<T, String> {
+    {
+        let guard = state.read_db.lock().map_err(|e| e.to_string())?;
+        if let Some(conn) = guard.as_ref() {
+            return f(conn);
+        }
+    }
+    let guard = state.db.lock().map_err(|e| e.to_string())?;
+    match guard.as_ref() {
+        Some(conn) => f(conn),
+        None => Err("search DB not initialized".to_string()),
+    }
 }
 
 /// MIG-058/MIG-059 diagnostic — Tauri command for the frontend to write
@@ -7726,12 +7788,24 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     state.federation_generation
         .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
+    // PJ-066 §C3 — clear readiness FIRST so no caller takes the lock-free fast path against
+    // the universe we're tearing down; the next ensure_search_db_ready re-initializes + re-publishes.
+    state.db_ready.store(false, std::sync::atomic::Ordering::Release);
+
     // Same bind-then-mutate pattern as `ensure_search_db_ready` — the `if
     // let` shorthand keeps the lock-guard temporary alive across the
     // block in a way that NLL flags as outliving `state`.
     let guard = state.db.lock();
     if let Ok(mut db) = guard {
         *db = None;
+    }
+    // PJ-066 §C3 — drop the read-only reader connection too; the next
+    // ensure_search_db_ready re-opens it for the new active universe. (If left
+    // open it would point at the OLD universe's search.db — the bug the §J audit
+    // caught for the federated connection.)
+    let read_guard = state.read_db.lock();
+    if let Ok(mut rdb) = read_guard {
+        *rdb = None;
     }
     // MIG-056 §B.1 — also drop the federated connection. The next
     // `ensure_search_db_ready` background-thread spawn will rebuild it
@@ -7939,9 +8013,19 @@ fn federation_prewarm(
 
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<SearchState>();
+    // PJ-066 §C3 — LOCK-FREE fast path: once the DB is initialized for the active universe,
+    // return without taking `db.lock()` at all. The old `db.lock()` check below blocked for
+    // the FULL duration a writer (a single-note reindex) held the lock — and since nearly
+    // every command calls this first, that froze the UI for the reindex's ~5s. The flag is
+    // set true only after init fully completes, so a `true` reading is always safe.
+    if state.db_ready.load(std::sync::atomic::Ordering::Acquire) {
+        return Ok(());
+    }
     // Fast path: the DB is already live for the active universe — return
     // instantly without touching the init lock. This is the steady-state path
-    // for every call after the first on a given universe.
+    // for every call after the first on a given universe. (Reached only when
+    // db_ready is still false — i.e. not yet initialized, so no reindex can be
+    // holding the lock; this check does not block on a writer.)
     {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         if guard.is_some() {
@@ -8022,6 +8106,22 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
         }
         *db = Some(conn);
     }
+    // PJ-066 §C3 — open the read-only reader connection now that the writer `db` is live for
+    // this universe (the gen-check above already guaranteed we didn't switch mid-init). Reads
+    // route to this so they never wait on the writer's lock. Best-effort: on failure the read
+    // commands fall back to `db` (slower, still correct). NULL'd by invalidate_search_state.
+    {
+        let mut rdb = state.read_db.lock().map_err(|e| e.to_string())?;
+        if rdb.is_none() {
+            match open_read_only_search_conn(&path) {
+                Ok(c) => { *rdb = Some(c); }
+                Err(e) => eprintln!("[search] read_db open failed (reads fall back to db): {}", e),
+            }
+        }
+    }
+    // PJ-066 §C3 — publish readiness LAST (after db + read_db are live) so the lock-free
+    // fast path can short-circuit future calls without taking db.lock().
+    state.db_ready.store(true, std::sync::atomic::Ordering::Release);
     // MIG-001 Step 5: schedule the Sky View back-fill on a background
     // thread. No-op if schema_versions.sky is already at target. Returns
     // immediately so this doesn't extend boot time.
@@ -9661,6 +9761,8 @@ mod tests_m8c {
         .expect("seed note_meta");
         SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            read_db: std::sync::Mutex::new(None),
+            db_ready: std::sync::atomic::AtomicBool::new(true),
             init_lock: std::sync::Mutex::new(()),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
@@ -9856,6 +9958,8 @@ mod tests_m8c {
         }
         let state = SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            read_db: std::sync::Mutex::new(None),
+            db_ready: std::sync::atomic::AtomicBool::new(true),
             init_lock: std::sync::Mutex::new(()),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
