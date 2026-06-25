@@ -1016,6 +1016,48 @@ mod tests_c2a_target_name_lower_idempotent {
         let affected2 = sky_affected_paths(&conn, "/X.md", &t2, &n2, &a2).unwrap();
         assert!(affected2.is_empty(), "text-only edit recomputes nothing");
     }
+
+    /// PJ-066 §C2 — diff-edges: adding ONE link must leave the note's OTHER edges' rows
+    /// physically untouched (same rowid → not delete+re-inserted) AND keep their earned
+    /// traversal data. The new edge is added fresh. End-to-end via index_note on a temp file.
+    #[test]
+    fn pj066_diff_edges_leaves_unchanged_rows_untouched() {
+        let dir = std::env::temp_dir().join(format!("pj066diff_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let note = dir.join("Src.md");
+        let dbp = dir.join("search.db");
+        std::fs::write(&note, "---\nsupports:\n  - \"[[Alpha]]\"\n---\n\nBody links [[Beta]].\n").unwrap();
+        let conn = init_db(&dbp).unwrap();
+        let np = note.to_string_lossy().to_string();
+        index_note(&conn, &np, "TestLib", true).unwrap();
+
+        // Capture the two edges' (target, link_type, rowid).
+        let before: Vec<(String, String, i64)> = {
+            let mut s = conn.prepare("SELECT target_name, link_type, id FROM note_links WHERE source_path=?1 ORDER BY target_name").unwrap();
+            s.query_map(params![np], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?))).unwrap().flatten().collect()
+        };
+        assert_eq!(before.len(), 2, "Alpha (supports) + Beta (associative)");
+        // Earn both edges (traversal data the diff must preserve).
+        conn.execute("UPDATE note_links SET traversal_count=7, weight=3.0, confidence='evidence' WHERE source_path=?1", params![np]).unwrap();
+
+        // Add a THIRD link, reindex.
+        std::fs::write(&note, "---\nsupports:\n  - \"[[Alpha]]\"\n---\n\nBody links [[Beta]] and [[Gamma]].\n").unwrap();
+        index_note(&conn, &np, "TestLib", true).unwrap();
+
+        let after: Vec<(String, String, i64, i64)> = {
+            let mut s = conn.prepare("SELECT target_name, link_type, id, traversal_count FROM note_links WHERE source_path=?1 ORDER BY target_name").unwrap();
+            s.query_map(params![np], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))).unwrap().flatten().collect()
+        };
+        assert_eq!(after.len(), 3, "Alpha + Beta + Gamma");
+        // The two original edges kept their ROWID (untouched, not delete+re-inserted) AND traversal.
+        for (t, lt, id) in &before {
+            let m = after.iter().find(|(at, alt, _, _)| at == t && alt == lt).expect("original edge still present");
+            assert_eq!(m.2, *id, "unchanged edge {} kept its rowid (diff did NOT delete+re-insert it)", t);
+            assert_eq!(m.3, 7, "unchanged edge {} kept its earned traversal_count", t);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 
 /// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
@@ -5384,10 +5426,47 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             });
 
         if !unchanged {
-            conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
-                .map_err(|e| e.to_string())?;
+            // PJ-066 §C2 — INCREMENTAL diff-edges. The old code DELETE-all'd + INSERT-all'd
+            // EVERY edge on any change — on a 533-link note that churned ~1067 rows × 14 indexes
+            // (measured ~3.8 s) just to add one link, and re-stamped every other edge's confidence
+            // back to 'hypothesis'. Now: only DELETE removed edges + (DELETE+re-INSERT) the edges
+            // whose properties actually changed; leave UNCHANGED rows entirely untouched — which is
+            // cheaper AND preserves their earned weight/confidence/traversal (Obsidian/LightRAG
+            // incremental pattern, mirroring our own MIG-079 §C.2a / PJ-066 §B diffs). Key =
+            // (target_name, link_type), exactly the `new_edges`/`old_edges`/`preserved` key.
+            let src_cid = cid_cn.as_str();
+            // (1) DELETE edges the note no longer has (old − new).
+            for key in old_edges.keys() {
+                if !new_edges.contains_key(key) {
+                    conn.execute(
+                        "DELETE FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND link_type = ?3",
+                        params![note_path, key.0, key.1],
+                    ).map_err(|e| e.to_string())?;
+                }
+            }
+            // (2) For each current edge: skip if it already exists ACTIVE with identical props
+            //     (the row — and its earned traversal data — stays put); otherwise DELETE any
+            //     stale row for that key and re-INSERT it (restoring preserved traversal for an
+            //     earned edge, else fresh defaults) — exactly the old per-edge behavior, but only
+            //     for the edges that changed/were added.
             for (key, (annotation, target_cid_cn)) in &new_edges {
                 let (target, link_type) = key;
+                let identical = old_edges.get(key).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status)| {
+                    o_status == "active"
+                        && o_ann == annotation
+                        && o_tcc == target_cid_cn
+                        && o_sname == &name
+                        && o_scc.as_deref().unwrap_or("") == src_cid
+                        && o_lib == &library_name
+                });
+                if identical {
+                    continue; // unchanged edge — leave the row (weight/confidence/traversal) intact
+                }
+                // changed (re-typed source name/cid/lib, annotation, archived→active) or added:
+                conn.execute(
+                    "DELETE FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND link_type = ?3",
+                    params![note_path, target, link_type],
+                ).map_err(|e| e.to_string())?;
                 let pkey = format!("{}::{}", link_type, target);
                 if let Some((w, lt, tc, conf, created)) = preserved.get(&pkey) {
                     conn.execute(
