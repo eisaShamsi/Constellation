@@ -197,9 +197,7 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(*) FROM note_links
                        WHERE status = 'active'
-                         AND (target_name = sky_nodes.id
-                              OR target_name IN (SELECT alias_lower FROM note_aliases
-                                                  WHERE path = sky_nodes.path))) >= 5
+                         AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 5
                 THEN 1 ELSE 0 END)
         -- NB: this ≥5 inbound-EDGE signal stays COUNT(*) (total occurrences) to match
         -- strata.rs::compute_stratum (the FS stratum the 360 Inspector uses); the
@@ -217,9 +215,7 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(DISTINCT source_path) FROM note_links
                        WHERE status = 'active'
-                         AND (target_name = sky_nodes.id
-                              OR target_name IN (SELECT alias_lower FROM note_aliases
-                                                  WHERE path = sky_nodes.path))) >= 3
+                         AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 3
                 THEN 1 ELSE 0 END)
     ))
 ";
@@ -258,9 +254,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
                  WHERE status != 'archived'
-                   AND (target_name = sky_nodes.id
-                        OR target_name IN (SELECT alias_lower FROM note_aliases
-                                            WHERE path = sky_nodes.path))) >= 10)
+                   AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 10)
          AND ((strftime('%s','now') -
                COALESCE((SELECT modified FROM note_meta WHERE path = sky_nodes.path), 0))
               / 86400 >= 30)
@@ -269,9 +263,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         -- wilting: evergreen-level but untouched 90+ days
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
                  WHERE status != 'archived'
-                   AND (target_name = sky_nodes.id
-                        OR target_name IN (SELECT alias_lower FROM note_aliases
-                                            WHERE path = sky_nodes.path))) >= 4)
+                   AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
@@ -286,9 +278,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         -- evergreen: 4+ inbound, created 7+ days ago
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
                  WHERE status != 'archived'
-                   AND (target_name = sky_nodes.id
-                        OR target_name IN (SELECT alias_lower FROM note_aliases
-                                            WHERE path = sky_nodes.path))) >= 4)
+                   AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
@@ -300,9 +290,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         -- sapling: 1+ inbound OR created 2+ days ago
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
                  WHERE status != 'archived'
-                   AND (target_name = sky_nodes.id
-                        OR target_name IN (SELECT alias_lower FROM note_aliases
-                                            WHERE path = sky_nodes.path))) >= 1)
+                   AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 1)
           OR ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
