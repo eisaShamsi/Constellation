@@ -96,3 +96,43 @@ split-measurement (FE+BE timing → diagnostics.log) on the live universe:
   thread; connect instant; codebase idiom LL-021). §C2 — incremental diff-edges in index_note (don't rebuild
   all 533 links; Obsidian/LightRAG + our MIG-079/PJ-066 §B precedent; safer for traversal data). §C3 (opt) —
   the one-time FTS re-tokenize. Instrumentation reverted; awaiting Boss approval of §C.
+
+### PJ-066 §C — SHIPPED (Boss chose "§C2 + full read-connection split")
+- **§C1** `74a3c32f` — `constellation_search_reindex` flipped `#[tauri::command]` → `#[tauri::command(async)]`
+  (off the WebView2 UI thread; LL-021 idiom). Boss re-test: 47 s → **5 s** + the app no longer fully frozen.
+- **§C2** `eb198124` — incremental **diff-edges** in `index_note`: the note_links rebuild changed from
+  DELETE-all + INSERT-all to a DIFF keyed on `(target_name, link_type)` — DELETE removed edges, DELETE+
+  re-INSERT changed edges, **leave unchanged edges untouched** (preserves their rowid + weight/confidence/
+  traversal data). A global `unchanged` fast-path skips the whole block on a body-only/identical save. New
+  test `pj066_diff_edges_leaves_unchanged_rows_untouched` (asserts unchanged edges keep rowid + traversal).
+- **§C3** `a0454fb9` — **root-caused the residual freeze.** The split-measurement had attributed it to the
+  panel reads (get_backlink_rows / get_outgoing_rows); re-reading the code corrected that — those use a fresh
+  read-only WAL conn (`open_reader`) / `federated_conn`, NOT `state.db`. Their ONLY `state.db` contact is the
+  `ensure_search_db_ready()` call at the top, whose fast path took `db.lock()` just to check `is_some()` —
+  which BLOCKS for the full duration the background reindex holds the lock. Since nearly every command calls
+  it first, that froze the UI. Fixes: (a) **`db_ready: AtomicBool`** — `ensure_search_db_ready` now returns
+  via a LOCK-FREE atomic load once initialized (never takes `db.lock()` in steady state). (b) **`read_db`** —
+  a second READ-ONLY WAL connection (SQLite WAL = concurrent readers + 1 writer); `with_read_conn()` routes
+  reads to it. (c) routed get_backlink_rows / get_outgoing_rows (single-schema) to the cached reader.
+- **Boss re-test (heaviest note, 533 links):** 5 s → **~3 s, data correct.** Net PJ-066 = **~2 min → ~3 s
+  (≈15×)**; typical notes instant. Boss ruling: **"Lock in + audit + ship PJ-066"** — the residual ~3 s on
+  mega-notes (during the now-background reindex) + completing the full read-routing → a follow-up PJ.
+
+### PJ-066 §E — Audit + /simplify + close-out
+- **Phase-4 audit** (3 dimensions — invariant / drift / migration-path — each finding adversarially verified,
+  6 agents): **1 P1 confirmed, 2 false positives dismissed** (incl. a "missing `state.inner()`" misread —
+  Tauri `State<T>` provides `inner()`, and the build proves it). The P1: §C3 opened `read_db` + published
+  `db_ready=true` WITHOUT re-checking `federation_generation`, so a universe switch DURING the (slow) reader
+  open could store a stale reader + publish readiness for the old universe (the §J-audit race class).
+- **Audit fix** `4a1a290e` (WA#6 — fixed in-pass, not deferred): open the reader BEFORE the lock (slow part
+  outside), then publish `db` + `read_db` + `db_ready` TOGETHER inside the single gen-validated `db`-lock
+  block — a switch during the open is caught and BOTH stale connections discarded. Full lib suite **982 pass**.
+- **/simplify** (4 agents — reuse / simplification / efficiency / altitude): the diff is **clean** (mirrors
+  the proven recompute_all_incoming / maintain_incoming_after_save / State patterns). 3 quality suggestions
+  recorded as follow-ups (NOT in-diff, NOT applied): (1) migrate libraries.rs's 6 read-only-open sites to the
+  new shared `open_read_only_search_conn`; (2) extract a generic windowed-recompute helper shared by
+  recompute_all_incoming + recompute_all_sky; (3) apply `#[tauri::command(async)]` to constellation_search /
+  link_stats for the same off-UI-thread consistency (overlaps the PJ-066 follow-up). All touch existing code
+  outside the PJ-066 diff or need their own Boss-test cycle → folded into the PJ-066 follow-up.
+- **PJ-066 CLOSED.** Follow-up (logged, not started): residual mega-note ~3 s + complete the read-connection
+  split (route search/stats reads off the writer lock; make the sibling read commands async).
