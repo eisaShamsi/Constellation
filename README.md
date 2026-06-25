@@ -1,10 +1,12 @@
 # Constellation
 
-**A Universe of Libraries**
+**A Universe of Libraries — a Personal Knowledge _Formulation_ system**
 
-Constellation is a standalone desktop knowledge management platform that brings all your Markdown libraries together in one unified interface — without ever merging, moving, or copying your files.
+Constellation is a standalone, local-first desktop application for **Personal Knowledge Formulation** — not just management. It brings all your Markdown libraries together in one unified interface (without ever merging, moving, or copying your files) and treats the **connections between your ideas as first-class, living objects** you can type, weigh, challenge, and grow over time.
 
-If you use multiple Markdown libraries, you know the pain: switching between windows, losing track of where things are, and never seeing the big picture. Constellation solves this by giving you a single dashboard that sits on top of your libraries, reading and writing files in place.
+Most tools help you *store* notes. Constellation helps you *formulate understanding*: it is built around the idea that knowledge is about **connecting, challenging, and synthesizing** ideas — not accumulating files. Its search is a diagnostic instrument for your intellectual life; its links carry meaning, confidence, and history; and its surfaces are designed to move you through the **Five Acts of knowledge creation** — Observation → Connection → Tension → Synthesis → Conviction.
+
+If you use multiple Markdown libraries, you also know the pain of isolated islands: switching windows, losing track of where things are, never seeing the big picture. Constellation sits on top of all your libraries at once, reading and writing files in place.
 
 ---
 
@@ -24,6 +26,47 @@ Constellation bridges this gap.
 - **All local.** No cloud. No accounts. No telemetry. No tracking. Everything runs on your machine.
 - **Read and write in place.** Constellation works directly with your library files. No duplication.
 - **Non-destructive.** If you delete Constellation, you lose nothing. Your libraries remain untouched, exactly as they were.
+
+## Personal Knowledge Formulation (PKF)
+
+Most note apps are **knowledge _management_** systems: they help you *capture, file, and retrieve* information. Constellation is a **Personal Knowledge _Formulation_** system. The distinction is the whole point.
+
+> **Knowledge is not about storing information. It is about connecting, challenging, synthesizing, and building understanding.**
+
+A folder full of notes is not knowledge — it is inventory. Knowledge lives in the *relationships* between ideas, in the *tensions* you notice between them, and in the *convictions* you reach by working those tensions through. Management asks *"where did I put that?"* Formulation asks *"what do I actually think, and why?"* Constellation is built, end to end, to answer the second question.
+
+### The Five Acts of Knowledge Creation
+
+Formulation is a process, and Constellation's surfaces are designed to move an idea through it:
+
+1. **Observation** — capture a thought fast and frictionlessly (FocusPane: plain text, no toolbar, no rendering — *that is the design*).
+2. **Connection** — relate it to what you already know. Constellation actively *suggests* what a note could connect to, with the shared reasons that explain *why*.
+3. **Tension** — surface where ideas pull against each other. Contradictions, fragile single-points-of-failure, and structural gaps are first-class signals, not errors to hide.
+4. **Synthesis** — resolve the tension into something new — a higher-altitude note that generalizes, causes, or supersedes what came before.
+5. **Conviction** — arrive at a stance you can stand behind, with the evidence and lineage that earned it.
+
+The hardest acts — **Tension** and **Synthesis** — are exactly where ordinary tools go quiet. Constellation leans in there.
+
+### Links Are Alive
+
+In a management tool a link is a shortcut: *"see also."* In Constellation a link is a **living knowledge object** that records *how* two ideas relate and how that relationship lives over time:
+
+- **Type** — the *cognitive verb* of the connection (`supports`, `contradicts`, `causes`, `exemplifies`, `generalizes`, `derives-from`, `part-of`, `supersedes`). Typing a link is an act of thinking, so Constellation always asks *what kind* — never auto-spraying generic links.
+- **Confidence** — `hypothesis → evidence → established → contested`. A claim is allowed to be uncertain, and to *change*.
+- **Weight & lifecycle** — a link is **earned through use**: it grows stronger as you return to it and decays gently when you don't, moving through a lifecycle (Spark → Birth → Growth → Maturity → Dormancy → Renewal/Archival). The graph reflects your *current* thinking, not a fossil of every link you ever made.
+- **The untyped link _is_ the open question.** An `associative` (untyped) link is not a deficiency waiting to be upgraded — it is the live edge of your thinking, the place you haven't decided yet. **Facts rest; formulations inquire.**
+
+This is the honest differentiator: plenty of tools let you *type* a connection (IBIS, Toulmin, discourse graphs). Constellation's contribution is keeping the connection **alive** — weight, decay, and lifecycle are the literal machinery of *"without ongoing thought, I will not find the truth."*
+
+### Search as a Diagnostic Instrument
+
+Constellation's search is not a file finder — it is a **diagnostic instrument for your intellectual life.** It is the engine behind Suggested Connections, the Index term browser, and the cross-language bridge: it tells you not just *where* an idea appears, but *what relates to it and why* — so you can see the shape of your own understanding and find its gaps.
+
+### How It's Built (design principles)
+
+- **Concept before function — the horse and the carriage.** Before any feature is built, its *concept* must be stated clearly: the one question it answers. A function without a concept is a carriage without a horse — it won't go anywhere. If the concept can't be stated, the feature isn't built.
+- **Form aligns to purpose.** Every visual element and interaction must serve the cognitive question it answers — no decorative filler, no "free space" filled with noise.
+- **Constraint as design.** Every feature must justify its existence; doing less, deliberately, is a feature.
 
 ## The Metaphor
 
@@ -100,11 +143,29 @@ Constellation's core differentiator — your `[[wikilinks]]` work across every l
 - **`![[library:note]]`** — embeds from a specific library
 - Embeds nest up to 3 levels deep
 
-#### Typed Links
-- **`[[note|type:related-to]]`** — adds a semantic type to the link
-- Built-in types: `related-to`, `prerequisite`, `see-also`, `contradicts`, `supports`, `extends`
-- Typed links appear with distinct colors in the Sky View
-- Autocomplete: type `[[note|type:` to see available link types
+#### The Living Link Architecture
+
+In Constellation a link is a **first-class knowledge object** — it records *how* two ideas relate, not merely *that* they relate. Every typed link carries type, confidence, weight, and temporal data, and every link operation is reversible (archival, never silent deletion).
+
+- **Eight cognitive link types** — the vocabulary of thinking:
+  `supports` · `contradicts` · `causes` · `exemplifies` · `generalizes` · `derives-from` · `part-of` · `supersedes`
+  (plus `associative` — the default/untyped link, which *is* the open question, not a deficiency). The set is user-extensible with your own custom types.
+- **Two ways to author a typed link:**
+  - *Inline, in the body:* `[[supports::Other Note]]` — a connection made in the flow of writing.
+  - *Declared, in the frontmatter (type-as-property):* a deliberate, contextless connection, e.g.
+    ```yaml
+    supports:
+      - "[[Other Note]]"
+    ```
+  Both are indexed into one unified link graph.
+- **Four confidence levels** — `hypothesis → evidence → established → contested`. A suggested connection enters as a *hypothesis* to be earned, never asserted as fact.
+- **Weight earned through use** — a link grows stronger as you traverse it and decays gently when neglected, so the graph reflects your *living* thinking, not a one-time snapshot.
+- **Searchable by every property** — type, confidence, weight, direction — in your own language.
+- Typed links are color-coded by type in the Sky View and rendered as type pills in a note's properties.
+
+#### Suggested Connections (one-click typed links)
+
+When a note is link-poor — an orphan ("connect me") or a fragile single-point-of-failure ("shore me up") — Constellation answers *what it could connect to*. It surfaces the most-related existing notes (ranked, with the **shared distinctive terms that explain _why_** they relate) and turns the answer into a real, **typed** Living Link in one click — always asking *what kind* of relationship it is, so each connection is an act of formulation, not link-spraying. The same tool appears wherever you work with a note's connections: the Reviewer, the note's Backlinks sidebar, the 360° Inspector, the Knowledge Health tab, and the Sky View right-click menu.
 
 #### Smart Auto-Linker (Unlinked Mentions)
 - The Backlinks panel detects plain-text mentions of the current note name across all libraries
@@ -144,6 +205,17 @@ Constellation's core differentiator — your `[[wikilinks]]` work across every l
 - Tags panel
 - Sky View (with library clustering + typed link colors)
 - Link Dashboard (cross-library links, broken links, orphans, most connected)
+
+### Cognitive Surfaces
+
+Beyond browsing, Constellation gives you instruments for *examining the shape of your knowledge*:
+
+- **The Reviewer** — a knowledge-triage desk. It surfaces notes that need attention (due for review, orphaned, fragile), explains *why* each one matters, and offers the one-click **Suggested Connections** action to heal the gap on the spot.
+- **The 360° Inspector** — a single note's connection profile as a **stratification matrix** (altitude/stratum × link type), flagging orphans, single-points-of-failure, and "blind-spot" link types the note is missing.
+- **Knowledge Health** — universe-wide and per-note tensions: orphans, contradictions, single points of failure, and structural gaps — each a clickable starting point for formulation work.
+- **The Index** — a living term browser built directly from the search index, with cross-language bridging so a concept in one language surfaces its equivalents in others.
+
+These surfaces are kept current at **write time**: when a note changes, the views that depend on it update in the same step — Constellation reads what's already computed rather than recomputing on every open, which is why it stays fast on large universes (thousands of notes, hundreds of thousands of links).
 
 ### Workspaces
 - Save and restore window layouts
@@ -292,14 +364,22 @@ existing installs.
 
 ## Roadmap
 
+**Shipped**
 1. **Project scaffold** — Tauri + Svelte + TypeScript setup
-2. **Library registration** — Add/remove library paths
-3. **File browser** — Navigate library contents
-4. **Search** — Cross-library full-text search
-5. **Sky View** — Unified graph with library clustering
-6. **Cross-library references** — Star Lines
-7. **Plugin system** — TypeScript extension API
-8. **Mobile companion** — Read-only library access
+2. **Library registration** — add/remove library paths; per-universe library sets
+3. **File browser & editor** — navigate, create, rename, move, edit (live-preview + FocusPane)
+4. **Search** — cross-library full-text search; the Index term browser with cross-language bridging
+5. **Sky View** — unified graph with library clustering + typed-link colors
+6. **Cross-library references** — `[[wikilinks]]`, aliases, heading/block refs, embeds
+7. **The Living Link Architecture** — eight typed link kinds + confidence, weight, and lifecycle; typed links authored inline *or* as frontmatter properties
+8. **Suggested Connections** — BM25 "More Like This" + one-click typed connect, everywhere a note's links live
+9. **Cognitive surfaces** — the Reviewer, the 360° Inspector, Knowledge Health, the Index — all maintained at write time for speed on large universes
+
+**Upcoming**
+- **Backup & recovery** — a user-facing safety net for your knowledge base
+- **Constellation Wings** — optional external plug-ins (e.g. the visualization-heavy Sight & Map lenses)
+- **Plugin system** — a TypeScript extension API
+- **Mobile companion** — read-only library access, then editing
 
 ## License
 
