@@ -8227,6 +8227,15 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         }
     }
 
+    // PJ-066 §B1 — recompute every note's sky stratum + maturity authoritatively from
+    // note_links (the periodic self-heal). Once §B4 drops the per-edge sky stratum/maturity
+    // triggers, the bulk walk no longer maintains sky via triggers, so THIS pass is the
+    // replacement. Idempotent; a no-op on values while the triggers still exist (§B1 lands
+    // it BEFORE §B4 removes them). Empty sky_nodes (pre-backfill) → zero iterations.
+    if let Err(e) = crate::links_backfill::recompute_all_sky(&walk_conn) {
+        eprintln!("[links_backfill] recompute_all_sky after reconcile failed: {}", e);
+    }
+
     // MIG-079 §C.1 — rebuild tag_counts authoritatively from the just-reconciled
     // note_meta (the periodic self-heal). Only when stamped — before the backfill
     // has run, the table isn't in use and the live scan is the source of truth.

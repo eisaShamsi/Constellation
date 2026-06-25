@@ -349,6 +349,60 @@ pub(crate) fn recompute_all_incoming(conn: &Connection) -> rusqlite::Result<usiz
     Ok(total)
 }
 
+/// PJ-066 §B1 — recompute `sky_nodes.stratum` + `maturity` for a `(after, last]` path
+/// window from `note_links`, using the SAME shared `STRATUM_SQL_EXPR` / `MATURITY_SQL_EXPR`
+/// the triggers + sky_backfill use (single source of truth — cannot drift). One combined
+/// UPDATE per window. Replaces the per-edge sky triggers' work on the bulk/reconcile path.
+pub(crate) fn recompute_sky_range(conn: &Connection, after: &str, last: &str) -> rusqlite::Result<usize> {
+    let sql = format!(
+        "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path > ?1 AND path <= ?2",
+        stratum = crate::search::STRATUM_SQL_EXPR,
+        maturity = crate::search::MATURITY_SQL_EXPR,
+    );
+    conn.execute(&sql, params![after, last])
+}
+
+/// PJ-066 §B1 — recompute EVERY note's sky stratum + maturity from `note_links`.
+/// `reconcile_filesystem` calls this after the trigger-free bulk walk (the per-edge sky
+/// stratum/maturity triggers are dropped by §B4, so reconcile no longer maintains sky via
+/// triggers — this is the replacement). Batched (500-row windows) + busy-retry, mirroring
+/// `recompute_all_incoming` so it never holds a long write lock on a large universe.
+/// Idempotent (reads current note_links); unconditional (self-heals stale values).
+pub(crate) fn recompute_all_sky(conn: &Connection) -> rusqlite::Result<usize> {
+    let mut after = String::new();
+    let mut total = 0usize;
+    loop {
+        let paths: Vec<String> = {
+            let mut stmt =
+                conn.prepare("SELECT path FROM sky_nodes WHERE path > ?1 ORDER BY path LIMIT 500")?;
+            let rows = stmt.query_map(params![after], |r| r.get::<_, String>(0))?;
+            let mut v = Vec::with_capacity(500);
+            for r in rows {
+                v.push(r?);
+            }
+            v
+        };
+        if paths.is_empty() {
+            break;
+        }
+        let last = paths.last().cloned().unwrap_or_default();
+        let mut attempt = 0;
+        loop {
+            match recompute_sky_range(conn, &after, &last) {
+                Ok(_) => break,
+                Err(e) if is_busy_error(&e) && attempt < 8 => {
+                    attempt += 1;
+                    thread::sleep(Duration::from_millis(400));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        total += paths.len();
+        after = last;
+    }
+    Ok(total)
+}
+
 /// True for SQLITE_BUSY / SQLITE_LOCKED (the transient contention worth retrying).
 fn is_busy_error(e: &rusqlite::Error) -> bool {
     let s = e.to_string().to_lowercase();
