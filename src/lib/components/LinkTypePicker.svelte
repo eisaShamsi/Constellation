@@ -62,12 +62,15 @@
 		// NOT a `vh` CSS unit the webview wasn't honoring) and clamp the top so it NEVER runs
 		// off the bottom edge — it scrolls in place instead (Boss finding: picker truncated).
 		const r = menuEl.getBoundingClientRect();
-		const maxHeight = vh - 2 * pad;
-		const h = Math.min(r.height, maxHeight);
+		const desiredH = r.height || vh; // natural (uncapped) height; fall back to full viewport
 		let nx = x;
 		let ny = y;
 		if (nx + r.width + pad > vw) nx = Math.max(pad, vw - r.width - pad);
-		if (ny + h + pad > vh) ny = Math.max(pad, vh - h - pad);
+		if (ny + desiredH + pad > vh) ny = Math.max(pad, vh - desiredH - pad);
+		// Cap to the space from the CLAMPED top down to the viewport bottom: bottom = ny +
+		// maxHeight = vh − pad, ALWAYS on-screen — even if `desiredH` was measured stale (e.g.
+		// the custom-type list populated after the first measure). The menu scrolls in place.
+		const maxHeight = vh - ny - pad;
 		pos = { left: nx, top: ny, maxHeight };
 	});
 </script>
