@@ -914,7 +914,7 @@
     "provenance": "Происхождение",
     "review": "Пульс обзора",
     "inspector360": "360.3D",
-    "skyView": "Sky View"
+    "skyView": "Вид неба"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
