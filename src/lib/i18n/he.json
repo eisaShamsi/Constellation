@@ -217,7 +217,7 @@
       "cancel": "בטל",
       "remove": "הסר",
       "reindexing": "מאנדקס מחדש…",
-      "reindexed": "{count} הערות אונדקסו מחדש",
+      "reindexed": "עודכן האינדקס עבור {noun}",
       "posProperNoun": "שם פרטי",
       "posNoun": "שם עצם",
       "posAdjective": "שם תואר",
@@ -974,8 +974,8 @@
     "copyName": "העתק שם"
   },
   "dialogs": {
-    "batchDeleteTrash": "למחוק {count} פתקים? הם יועברו לתיקיית ‎.trash.",
-    "batchDeleteSystem": "למחוק {count} פתקים? הם יועברו לסל המיחזור.",
+    "batchDeleteTrash": "למחוק {noun}? היעד: תיקיית ‎.trash.",
+    "batchDeleteSystem": "למחוק {noun}? היעד: סל המיחזור.",
     "confirmDelete": "האם אתה בטוח שברצונך למחוק את \"{name}\"?",
     "delete": "מחק",
     "cancel": "ביטול"
@@ -1757,7 +1757,7 @@
     "scanning": "סורק קבצים...",
     "previewTitle": "מוכן לייבוא",
     "files": "קבצים",
-    "andMore": "ועוד {count}...",
+    "andMore": "ו{noun}...",
     "back": "חזרה",
     "importNow": "ייבא עכשיו",
     "importing": "מייבא...",

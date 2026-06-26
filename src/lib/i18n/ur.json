@@ -217,7 +217,7 @@
       "cancel": "منسوخ کریں",
       "remove": "ہٹائیں",
       "reindexing": "دوبارہ انڈیکسنگ…",
-      "reindexed": "{count} نوٹ دوبارہ انڈیکس ہوئے",
+      "reindexed": "{noun} کی دوبارہ انڈیکسنگ مکمل",
       "posProperNoun": "اسم خاص",
       "posNoun": "اسم",
       "posAdjective": "صفت",
@@ -974,8 +974,8 @@
     "copyName": "نام کاپی کریں"
   },
   "dialogs": {
-    "batchDeleteTrash": "{count} نوٹ حذف کریں؟ انہیں .trash فولڈر میں منتقل کر دیا جائے گا۔",
-    "batchDeleteSystem": "{count} نوٹ حذف کریں؟ انہیں ری سائیکل بِن میں منتقل کر دیا جائے گا۔",
+    "batchDeleteTrash": "کیا {noun} حذف کریں؟ حذف شدہ مواد ‎.trash‎ فولڈر میں منتقل ہو جائے گا۔",
+    "batchDeleteSystem": "کیا {noun} حذف کریں؟ حذف شدہ مواد ری سائیکل بِن میں منتقل ہو جائے گا۔",
     "confirmDelete": "کیا آپ واقعی \"{name}\" کو حذف کرنا چاہتے ہیں؟",
     "delete": "حذف کریں",
     "cancel": "منسوخ"
@@ -1757,7 +1757,7 @@
     "scanning": "فائلیں اسکین ہو رہی ہیں...",
     "previewTitle": "درآمد کے لیے تیار",
     "files": "فائلیں",
-    "andMore": "اور {count} مزید...",
+    "andMore": "اور {noun}...",
     "back": "واپس",
     "importNow": "ابھی درآمد کریں",
     "importing": "درآمد ہو رہا ہے...",

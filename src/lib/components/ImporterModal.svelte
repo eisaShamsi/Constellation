@@ -152,7 +152,7 @@
 							</div>
 						{/each}
 						{#if preview.files.length > 50}
-							<div class="preview-more">...{$t('importer.andMore', { count: String(preview.files.length - 50) })}</div>
+							<div class="preview-more">...{$t('importer.andMore', { noun: $tn('plurals.more', preview.files.length - 50) })}</div>
 						{/if}
 					</div>
 

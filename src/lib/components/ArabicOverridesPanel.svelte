@@ -22,7 +22,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 
 	type PartOfSpeech =
@@ -169,9 +169,10 @@
 		setStatus($t('settings.arabicOverrides.reindexing') || 'Reindexing…', 'info', 0);
 		try {
 			const count = await invoke<number>('reindex_arabic_overrides', { surface });
-			const tmpl =
-				$t('settings.arabicOverrides.reindexed') || 'Reindexed {count} note(s)';
-			setStatus(tmpl.replace('{count}', String(count ?? 0)), 'success');
+			// MIG-087 §D (i18n sentence-embed): {noun} filled with the plural-aware
+			// noun phrase so the count agrees grammatically per locale.
+			const noun = $tn('plurals.notes', count ?? 0);
+			setStatus($t('settings.arabicOverrides.reindexed', { noun }), 'success');
 		} catch (e: any) {
 			setStatus(String(e?.message ?? e ?? 'unknown'), 'error');
 		}

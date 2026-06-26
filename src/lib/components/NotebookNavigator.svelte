@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { libraries, appSettings, deleteWithSetting, collectLibraryNotesWithMeta, type NoteWithMeta, type FileEntry } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import NavBrowserPane from './navigator/NavBrowserPane.svelte';
@@ -278,7 +278,11 @@
 		if (selectedPaths.size === 0) return;
 		const dest = $appSettings.trashDestination ?? 'system';
 		const key = dest === 'local' ? 'dialogs.batchDeleteTrash' : 'dialogs.batchDeleteSystem';
-		batchDeleteConfirm = $t(key, { count: String(selectedPaths.size) });
+		// MIG-087 §D (i18n sentence-embed): the {noun} placeholder is filled with the
+		// plural-aware noun phrase ($tn) so the count agrees grammatically per locale
+		// (Arabic 1/2/11+ etc.) — never "{count} notes" hardcoded.
+		const noun = $tn('plurals.notes', selectedPaths.size);
+		batchDeleteConfirm = $t(key, { noun });
 	}
 
 	async function confirmBatchDelete() {

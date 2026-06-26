@@ -217,7 +217,7 @@
       "cancel": "取消",
       "remove": "移除",
       "reindexing": "重新索引中…",
-      "reindexed": "已重新索引 {count} 条笔记",
+      "reindexed": "已重新索引{noun}",
       "posProperNoun": "专有名词",
       "posNoun": "名词",
       "posAdjective": "形容词",
@@ -1414,8 +1414,8 @@
     "copyName": "复制名称"
   },
   "dialogs": {
-    "batchDeleteTrash": "删除 {count} 条笔记？它们将被移至 .trash 文件夹。",
-    "batchDeleteSystem": "删除 {count} 条笔记？它们将被移至回收站。",
+    "batchDeleteTrash": "删除{noun}？将移至 .trash 文件夹。",
+    "batchDeleteSystem": "删除{noun}？将移至回收站。",
     "confirmDelete": "确定要删除 \"{name}\" 吗？",
     "delete": "删除",
     "cancel": "取消"
@@ -2197,7 +2197,7 @@
     "scanning": "正在扫描文件...",
     "previewTitle": "准备导入",
     "files": "个文件",
-    "andMore": "还有 {count} 个...",
+    "andMore": "{noun}...",
     "back": "返回",
     "importNow": "立即导入",
     "importing": "正在导入...",

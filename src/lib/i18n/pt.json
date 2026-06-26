@@ -217,7 +217,7 @@
       "cancel": "Cancelar",
       "remove": "Remover",
       "reindexing": "A reindexar…",
-      "reindexed": "{count} nota(s) reindexada(s)",
+      "reindexed": "Reindexação concluída: {noun}.",
       "posProperNoun": "Nome próprio",
       "posNoun": "Substantivo",
       "posAdjective": "Adjetivo",
@@ -1414,8 +1414,8 @@
     "copyName": "Copiar nome"
   },
   "dialogs": {
-    "batchDeleteTrash": "Excluir {count} notas? Elas serão movidas para a pasta .trash.",
-    "batchDeleteSystem": "Excluir {count} notas? Elas serão movidas para a Lixeira.",
+    "batchDeleteTrash": "Excluir {noun}? O conteúdo irá para a pasta .trash.",
+    "batchDeleteSystem": "Excluir {noun}? O conteúdo irá para a Lixeira.",
     "confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",
     "delete": "Excluir",
     "cancel": "Cancelar"
@@ -2197,7 +2197,7 @@
     "scanning": "Escaneando arquivos...",
     "previewTitle": "Pronto para importar",
     "files": "arquivos",
-    "andMore": "e mais {count}...",
+    "andMore": "e {noun}...",
     "back": "Voltar",
     "importNow": "Importar agora",
     "importing": "Importando...",

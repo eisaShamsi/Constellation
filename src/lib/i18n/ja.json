@@ -217,7 +217,7 @@
       "cancel": "キャンセル",
       "remove": "削除",
       "reindexing": "再インデックス中…",
-      "reindexed": "{count} 件のノートを再インデックスしました",
+      "reindexed": "{noun}を再インデックスしました",
       "posProperNoun": "固有名詞",
       "posNoun": "名詞",
       "posAdjective": "形容詞",
@@ -1414,8 +1414,8 @@
     "copyName": "名前をコピー"
   },
   "dialogs": {
-    "batchDeleteTrash": "{count} 件のノートを削除しますか？ .trash フォルダーに移動します。",
-    "batchDeleteSystem": "{count} 件のノートを削除しますか？ ごみ箱に移動します。",
+    "batchDeleteTrash": "{noun}を削除しますか？ .trash フォルダーに移動します。",
+    "batchDeleteSystem": "{noun}を削除しますか？ ごみ箱に移動します。",
     "confirmDelete": "「{name}」を削除してもよろしいですか？",
     "delete": "削除",
     "cancel": "キャンセル"
@@ -2197,7 +2197,7 @@
     "scanning": "ファイルをスキャン中...",
     "previewTitle": "インポート準備完了",
     "files": "ファイル",
-    "andMore": "他{count}件...",
+    "andMore": "{noun}...",
     "back": "戻る",
     "importNow": "今すぐインポート",
     "importing": "インポート中...",

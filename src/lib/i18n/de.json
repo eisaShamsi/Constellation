@@ -217,7 +217,7 @@
       "cancel": "Abbrechen",
       "remove": "Entfernen",
       "reindexing": "Neuindiziert…",
-      "reindexed": "{count} Notiz(en) neu indiziert",
+      "reindexed": "{noun} neu indiziert",
       "posProperNoun": "Eigenname",
       "posNoun": "Substantiv",
       "posAdjective": "Adjektiv",
@@ -974,8 +974,8 @@
     "copyName": "Namen kopieren"
   },
   "dialogs": {
-    "batchDeleteTrash": "{count} Notizen löschen? Sie werden in den .trash-Ordner verschoben.",
-    "batchDeleteSystem": "{count} Notizen löschen? Sie werden in den Papierkorb verschoben.",
+    "batchDeleteTrash": "{noun} in den .trash-Ordner verschieben?",
+    "batchDeleteSystem": "{noun} in den Papierkorb verschieben?",
     "confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",
     "delete": "Löschen",
     "cancel": "Abbrechen"
@@ -1769,7 +1769,7 @@
     "scanning": "Dateien werden gescannt...",
     "previewTitle": "Bereit zum Import",
     "files": "Dateien",
-    "andMore": "und {count} weitere...",
+    "andMore": "und {noun}...",
     "back": "Zurück",
     "importNow": "Jetzt importieren",
     "importing": "Importieren...",

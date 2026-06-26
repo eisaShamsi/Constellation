@@ -217,7 +217,7 @@
       "cancel": "لغو",
       "remove": "حذف",
       "reindexing": "در حال بازنمایه‌سازی…",
-      "reindexed": "{count} یادداشت بازنمایه‌سازی شد",
+      "reindexed": "{noun} بازنمایه‌سازی شد",
       "posProperNoun": "اسم خاص",
       "posNoun": "اسم",
       "posAdjective": "صفت",
@@ -974,8 +974,8 @@
     "copyName": "کپی نام"
   },
   "dialogs": {
-    "batchDeleteTrash": "حذف {count} یادداشت؟ به پوشهٔ .trash منتقل می‌شوند.",
-    "batchDeleteSystem": "حذف {count} یادداشت؟ به سطل بازیافت منتقل می‌شوند.",
+    "batchDeleteTrash": "حذف {noun}؟ به پوشهٔ .trash منتقل می‌شود.",
+    "batchDeleteSystem": "حذف {noun}؟ به سطل بازیافت منتقل می‌شود.",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید \"{name}\" را حذف کنید؟",
     "delete": "حذف",
     "cancel": "لغو"
@@ -1768,7 +1768,7 @@
     "scanning": "در حال اسکن فایل‌ها...",
     "previewTitle": "آماده وارد کردن",
     "files": "فایل",
-    "andMore": "و {count} مورد دیگر...",
+    "andMore": "و {noun}...",
     "back": "بازگشت",
     "importNow": "وارد کردن",
     "importing": "در حال وارد کردن...",

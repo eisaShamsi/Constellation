@@ -217,7 +217,7 @@
       "cancel": "İptal",
       "remove": "Kaldır",
       "reindexing": "Yeniden dizinleniyor…",
-      "reindexed": "{count} not yeniden dizinlendi",
+      "reindexed": "{noun} yeniden dizinlendi",
       "posProperNoun": "Özel ad",
       "posNoun": "Ad",
       "posAdjective": "Sıfat",
@@ -1414,8 +1414,8 @@
     "copyName": "Adı kopyala"
   },
   "dialogs": {
-    "batchDeleteTrash": "{count} not silinsin mi? .trash klasörüne taşınacaklar.",
-    "batchDeleteSystem": "{count} not silinsin mi? Geri Dönüşüm Kutusu'na taşınacaklar.",
+    "batchDeleteTrash": "{noun} silinsin mi? .trash klasörüne taşınacak.",
+    "batchDeleteSystem": "{noun} silinsin mi? Geri Dönüşüm Kutusu'na taşınacak.",
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
     "delete": "Sil",
     "cancel": "İptal"
@@ -2197,7 +2197,7 @@
     "scanning": "Dosyalar taranıyor...",
     "previewTitle": "İçe aktarmaya hazır",
     "files": "dosya",
-    "andMore": "ve {count} tane daha...",
+    "andMore": "ve {noun}...",
     "back": "Geri",
     "importNow": "Şimdi içe aktar",
     "importing": "İçe aktarılıyor...",

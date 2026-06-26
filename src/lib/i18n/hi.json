@@ -217,7 +217,7 @@
       "cancel": "रद्द करें",
       "remove": "हटाएँ",
       "reindexing": "पुनः अनुक्रमण…",
-      "reindexed": "{count} नोट पुनः अनुक्रमित",
+      "reindexed": "{noun} पुनः अनुक्रमित",
       "posProperNoun": "व्यक्तिवाचक संज्ञा",
       "posNoun": "संज्ञा",
       "posAdjective": "विशेषण",
@@ -1414,8 +1414,8 @@
     "copyName": "नाम कॉपी करें"
   },
   "dialogs": {
-    "batchDeleteTrash": "{count} नोट हटाएँ? उन्हें .trash फ़ोल्डर में ले जाया जाएगा।",
-    "batchDeleteSystem": "{count} नोट हटाएँ? उन्हें रीसायकल बिन में ले जाया जाएगा।",
+    "batchDeleteTrash": "क्या {noun} हटाना है? .trash फ़ोल्डर में ले जाया जाएगा।",
+    "batchDeleteSystem": "क्या {noun} हटाना है? रीसायकल बिन में ले जाया जाएगा।",
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",
     "delete": "हटाएँ",
     "cancel": "रद्द करें"
@@ -2197,7 +2197,7 @@
     "scanning": "फ़ाइलें स्कैन हो रही हैं...",
     "previewTitle": "आयात के लिए तैयार",
     "files": "फ़ाइलें",
-    "andMore": "और {count} अधिक...",
+    "andMore": "{noun}...",
     "back": "वापस",
     "importNow": "अभी आयात करें",
     "importing": "आयात हो रहा है...",

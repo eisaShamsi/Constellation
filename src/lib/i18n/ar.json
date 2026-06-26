@@ -217,7 +217,7 @@
       "cancel": "إلغاء",
       "remove": "إزالة",
       "reindexing": "جارٍ إعادة الفهرسة…",
-      "reindexed": "أُعيدت فهرسة {count} ملاحظة",
+      "reindexed": "فُهرست {noun} من جديد",
       "posProperNoun": "اسم عَلَم",
       "posNoun": "اسم",
       "posAdjective": "صفة",
@@ -1513,8 +1513,8 @@
     "copyName": "نسخ الاسم"
   },
   "dialogs": {
-    "batchDeleteTrash": "حذف {count} ملاحظة؟ ستُنقل إلى مجلد .trash.",
-    "batchDeleteSystem": "حذف {count} ملاحظة؟ ستُنقل إلى سلة المحذوفات.",
+    "batchDeleteTrash": "ستُحذف {noun}، ثم تُنقل إلى مجلد .trash. أتريد المتابعة؟",
+    "batchDeleteSystem": "ستُحذف {noun}، ثم تُنقل إلى سلة المحذوفات. أتريد المتابعة؟",
     "confirmDelete": "هل أنت متأكد من حذف \"{name}\"؟",
     "delete": "حذف",
     "cancel": "إلغاء"
@@ -2307,7 +2307,7 @@
     "scanning": "جاري فحص الملفات...",
     "previewTitle": "جاهز للاستيراد",
     "files": "ملفات",
-    "andMore": "و{count} أخرى...",
+    "andMore": "و{noun}...",
     "back": "رجوع",
     "importNow": "استيراد الآن",
     "importing": "جاري الاستيراد...",

@@ -182,7 +182,7 @@
       "cancel": "Cancel",
       "remove": "Remove",
       "reindexing": "Reindexing…",
-      "reindexed": "Reindexed {count} note(s)",
+      "reindexed": "Reindexed {noun}",
       "posProperNoun": "Proper noun",
       "posNoun": "Noun",
       "posAdjective": "Adjective",
@@ -1580,8 +1580,8 @@
     "copyName": "Copy Name"
   },
   "dialogs": {
-    "batchDeleteTrash": "Delete {count} notes? They will be moved to the .trash folder.",
-    "batchDeleteSystem": "Delete {count} notes? They will be moved to the Recycle Bin.",
+    "batchDeleteTrash": "Delete {noun}? The selection will be moved to the .trash folder.",
+    "batchDeleteSystem": "Delete {noun}? The selection will be moved to the Recycle Bin.",
     "confirmDelete": "Are you sure you want to delete \"{name}\"?",
     "delete": "Delete",
     "cancel": "Cancel"
@@ -2359,7 +2359,7 @@
     "scanning": "Scanning files...",
     "previewTitle": "Ready to import",
     "files": "files",
-    "andMore": "and {count} more...",
+    "andMore": "and {noun}...",
     "back": "Back",
     "importNow": "Import now",
     "importing": "Importing...",

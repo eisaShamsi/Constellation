@@ -217,7 +217,7 @@
       "cancel": "Отмена",
       "remove": "Удалить",
       "reindexing": "Переиндексация…",
-      "reindexed": "Переиндексировано заметок: {count}",
+      "reindexed": "Переиндексировано: {noun}",
       "posProperNoun": "Имя собственное",
       "posNoun": "Существительное",
       "posAdjective": "Прилагательное",
@@ -1414,8 +1414,8 @@
     "copyName": "Копировать имя"
   },
   "dialogs": {
-    "batchDeleteTrash": "Удалить {count} заметок? Они будут перемещены в папку .trash.",
-    "batchDeleteSystem": "Удалить {count} заметок? Они будут перемещены в Корзину.",
+    "batchDeleteTrash": "Будет удалено {noun}. Перемещаем в папку .trash?",
+    "batchDeleteSystem": "Будет удалено {noun}. Перемещаем в Корзину?",
     "confirmDelete": "Вы уверены, что хотите удалить \"{name}\"?",
     "delete": "Удалить",
     "cancel": "Отмена"
@@ -2197,7 +2197,7 @@
     "scanning": "Сканирование файлов...",
     "previewTitle": "Готово к импорту",
     "files": "файлов",
-    "andMore": "и ещё {count}...",
+    "andMore": "и {noun}...",
     "back": "Назад",
     "importNow": "Импортировать",
     "importing": "Импорт...",
