@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "링크된 언급",
     "noBacklinks": "백링크 없음",
+    "filter": "필터...",
     "unlinkedMentions": "링크되지 않은 언급"
   },
   "outgoingLinksPanel": {

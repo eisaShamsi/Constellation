@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "Связанные упоминания",
     "noBacklinks": "Нет обратных ссылок",
+    "filter": "Фильтр...",
     "unlinkedMentions": "Несвязанные упоминания"
   },
   "outgoingLinksPanel": {

@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "Menções vinculadas",
     "noBacklinks": "Sem backlinks",
+    "filter": "Filtrar...",
     "unlinkedMentions": "Menções não vinculadas"
   },
   "outgoingLinksPanel": {

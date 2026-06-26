@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "אזכורים מקושרים",
     "noBacklinks": "אין קישורים נכנסים",
+    "filter": "סנן...",
     "unlinkedMentions": "אזכורים לא מקושרים"
   },
   "outgoingLinksPanel": {

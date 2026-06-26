@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "Menciones enlazadas",
     "noBacklinks": "Sin backlinks",
+    "filter": "Filtrar...",
     "unlinkedMentions": "Menciones no enlazadas"
   },
   "outgoingLinksPanel": {

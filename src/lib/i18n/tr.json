@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "Bağlantılı bahsetmeler",
     "noBacklinks": "Geri bağlantı yok",
+    "filter": "Filtrele...",
     "unlinkedMentions": "Bağlantısız bahsetmeler"
   },
   "outgoingLinksPanel": {

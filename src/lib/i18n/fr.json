@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "Mentions liées",
     "noBacklinks": "Aucun rétrolien",
+    "filter": "Filtrer...",
     "unlinkedMentions": "Mentions non liées"
   },
   "outgoingLinksPanel": {

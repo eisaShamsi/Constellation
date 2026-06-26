@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "已链接的提及",
     "noBacklinks": "无反向链接",
+    "filter": "筛选...",
     "unlinkedMentions": "未链接的提及"
   },
   "outgoingLinksPanel": {

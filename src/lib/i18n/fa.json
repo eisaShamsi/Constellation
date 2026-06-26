@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "اشاره‌های لینک‌شده",
     "noBacklinks": "لینک برگشتی‌ای نیست",
+    "filter": "فیلتر...",
     "unlinkedMentions": "اشاره‌های بدون لینک"
   },
   "outgoingLinksPanel": {

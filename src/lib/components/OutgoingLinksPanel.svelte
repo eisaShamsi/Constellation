@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
-	import { t, tIn } from '$lib/i18n';
+	import { t, tIn, dir as uiDir } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import VirtualList from './VirtualList.svelte';
@@ -223,7 +223,8 @@
 	</button>
 {/snippet}
 
-<div class="outgoing-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
+<!-- MIG-086 §E — chrome (headers) follows the UI direction; rows keep dir="auto" (per note). -->
+<div class="outgoing-panel" dir={$uiDir} style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	<button class="ol-header ol-toggle" onclick={() => showOutgoing = !showOutgoing}>
 		<svg class="ol-chev" class:expanded={showOutgoing} width="8" height="8" viewBox="0 0 10 10">
 			<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>

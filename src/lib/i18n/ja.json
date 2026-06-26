@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "リンクされた言及",
     "noBacklinks": "バックリンクなし",
+    "filter": "絞り込み...",
     "unlinkedMentions": "リンクされていない言及"
   },
   "outgoingLinksPanel": {

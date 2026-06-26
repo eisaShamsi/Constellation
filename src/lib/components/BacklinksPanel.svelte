@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
-	import { t, tIn } from '$lib/i18n';
+	import { t, tIn, dir as uiDir } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import VirtualList from './VirtualList.svelte';
@@ -221,7 +221,7 @@
 <!-- MIG-079 §C.2c-3 — ONE source of truth for each row, rendered by both the
      plain {#each} (small notes) and the VirtualList (hub notes). -->
 {#snippet backlinkRow(bl: BacklinkRow)}
-	<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
+	<button class="bl-item" dir="auto" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
 		oncontextmenu={(e) => openConfMenu(e, bl.path, activeNoteName, bl.confidence ?? 'hypothesis')}
 		title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 		<span class="bl-name-row">
@@ -253,7 +253,7 @@
 
 {#snippet unlinkedRow(ul: { name: string; path: string; context: string; libraryName: string })}
 	<div class="bl-item-row">
-		<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
+		<button class="bl-item" dir="auto" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
 			<span class="bl-name-row">
 				{#if ul.libraryName}
 					<span class="bl-library-dot" style="background:{getLibraryColor(ul.libraryName)}"></span>
@@ -276,10 +276,14 @@
 	</div>
 {/snippet}
 
-<div class="backlinks-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
+<!-- MIG-086 §E — the section headers + row chrome are UI-language labels, so the panel follows
+     the UI direction (not the open note's content direction it would otherwise inherit from
+     `.rs-inner dir={noteDir}`). Individual note NAMES stay dir="auto" so each reads in its own
+     script. (Boss finding: an LTR note in an RTL UI rendered these headers LTR.) -->
+<div class="backlinks-panel" dir={$uiDir} style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	{#if backlinks.length + unlinkedMentions.length > 3}
 		<div class="bl-filter">
-			<input type="text" dir="auto" placeholder="Filter..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+			<input type="text" dir="auto" placeholder={$t('backlinksPanel.filter')} value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
 		</div>
 	{/if}
 	<div class="bl-section">

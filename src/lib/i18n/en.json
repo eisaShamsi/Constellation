@@ -1646,6 +1646,7 @@
   "backlinksPanel": {
     "linkedMentions": "Linked mentions",
     "noBacklinks": "No backlinks",
+    "filter": "Filter...",
     "unlinkedMentions": "Unlinked mentions"
   },
   "outgoingLinksPanel": {

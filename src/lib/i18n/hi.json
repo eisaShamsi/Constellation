@@ -1483,6 +1483,7 @@
   "backlinksPanel": {
     "linkedMentions": "लिंक किए गए उल्लेख",
     "noBacklinks": "कोई बैकलिंक्स नहीं",
+    "filter": "फ़िल्टर करें...",
     "unlinkedMentions": "लिंक न किए गए उल्लेख"
   },
   "outgoingLinksPanel": {

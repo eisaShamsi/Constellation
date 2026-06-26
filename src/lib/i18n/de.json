@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "Verknüpfte Erwähnungen",
     "noBacklinks": "Keine Rückverweise",
+    "filter": "Filtern...",
     "unlinkedMentions": "Nicht verknüpfte Erwähnungen"
   },
   "outgoingLinksPanel": {

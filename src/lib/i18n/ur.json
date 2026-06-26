@@ -1043,6 +1043,7 @@
   "backlinksPanel": {
     "linkedMentions": "لنک شدہ حوالے",
     "noBacklinks": "کوئی بیک لنکس نہیں",
+    "filter": "فلٹر کریں...",
     "unlinkedMentions": "غیر لنک شدہ حوالے"
   },
   "outgoingLinksPanel": {

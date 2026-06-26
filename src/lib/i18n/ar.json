@@ -1579,6 +1579,7 @@
   "backlinksPanel": {
     "linkedMentions": "الروابط الواردة",
     "noBacklinks": "لا توجد روابط واردة",
+    "filter": "تصفية...",
     "unlinkedMentions": "إشارات غير مرتبطة"
   },
   "outgoingLinksPanel": {
