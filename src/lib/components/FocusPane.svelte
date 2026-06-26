@@ -5,7 +5,7 @@
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 
 	let {
 		value = '',
@@ -241,7 +241,7 @@
 	<!-- Word count -->
 	<div class="focus-footer">
 		{#if wordCount > 0}
-			<span>{wordCount} {$t('focus.wordCount')}</span>
+			<span>{$tn('plurals.words', wordCount)}</span>
 		{/if}
 	</div>
 </div>

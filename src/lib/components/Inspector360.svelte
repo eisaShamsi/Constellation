@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { lookupStageEmoji, libraryStats } from '$lib/libraries/store';
 	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
@@ -290,7 +290,7 @@
 				<div class="i360-card-flags">
 					{#if data.is_orphan}<span class="i360-warn">{'⚠'} {$t('inspector360.orphan') || 'Orphan'}</span>{/if}
 					{#if data.single_point_of_failure}<span class="i360-warn">{'⚠'} {$t('inspector360.fragile') || 'Fragile'}</span>{/if}
-					{#if data.missing_link_types.length > 0}<span class="i360-warn">{'⚠'} {data.missing_link_types.length} {$t('inspector360.gaps') || 'gaps'}</span>{/if}
+					{#if data.missing_link_types.length > 0}<span class="i360-warn">{'⚠'} {$tn('plurals.gaps', data.missing_link_types.length)}</span>{/if}
 					{#if data.is_due}<span class="i360-warn">{'\u{1F4CB}'} {$t('inspector360.dueForReview') || 'Review due'}</span>{/if}
 				</div>
 				<!-- MIG-086 §D — surface #3 (compact right-rail scorecard): same suggest +
@@ -504,15 +504,15 @@
 			<!-- Bottom HUD -->
 			<div class="i360-hud">
 				<div class="i360-hud-left">
-					<span class="i360-hud-item">{'⬆'} {data.total_outbound} {$t('inspector360.outbound') || 'outbound'}</span>
-					<span class="i360-hud-item">{'⬇'} {data.total_inbound} {$t('inspector360.inbound') || 'inbound'}</span>
-					<span class="i360-hud-item">{'\u{1F4DD}'} {data.word_count.toLocaleString()} {$t('inspector360.words') || 'words'}</span>
+					<span class="i360-hud-item">{'⬆'} {$tn('plurals.outbound', data.total_outbound)}</span>
+					<span class="i360-hud-item">{'⬇'} {$tn('plurals.inbound', data.total_inbound)}</span>
+					<span class="i360-hud-item">{'\u{1F4DD}'} {$tn('plurals.words', data.word_count)}</span>
 				</div>
 				<div class="i360-hud-right">
 					{#if data.is_orphan}<span class="i360-hud-item i360-hud-warn-orphan">{'⚠'} {$t('inspector360.orphan') || 'Orphan'} <HelpTip tooltip={tr($t('inspector360.help_hud_orphan'), 'inspector360.help_hud_orphan', '')} position="top" /></span>{/if}
 					{#if data.single_point_of_failure}<span class="i360-hud-item i360-hud-warn-fragile">{'⚠'} {$t('inspector360.fragile') || 'Fragile'} <HelpTip tooltip={tr($t('inspector360.help_hud_fragile'), 'inspector360.help_hud_fragile', '')} position="top" /></span>{/if}
-					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn-blind">{'⚠'} {data.missing_link_types.length} {$t('inspector360.blindSpots') || 'blind spots'} <HelpTip tooltip={tr($t('inspector360.help_hud_blind_spots'), 'inspector360.help_hud_blind_spots', '')} position="top" /></span>{/if}
-					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn-tensions">{'⚡'} {data.contradictions.length} {$t('inspector360.tensions') || 'tensions'} <HelpTip tooltip={tr($t('inspector360.help_hud_tensions'), 'inspector360.help_hud_tensions', '')} position="top" /></span>{/if}
+					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn-blind">{'⚠'} {$tn('plurals.blindSpots', data.missing_link_types.length)} <HelpTip tooltip={tr($t('inspector360.help_hud_blind_spots'), 'inspector360.help_hud_blind_spots', '')} position="top" /></span>{/if}
+					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn-tensions">{'⚡'} {$tn('plurals.tensions', data.contradictions.length)} <HelpTip tooltip={tr($t('inspector360.help_hud_tensions'), 'inspector360.help_hud_tensions', '')} position="top" /></span>{/if}
 				</div>
 			</div>
 		{/if}

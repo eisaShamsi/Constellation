@@ -71,7 +71,7 @@
       "editor": "المحرر",
       "skyview": "عرض السماء والروابط",
       "links": "الروابط",
-      "sight": "Sight",
+      "sight": "بصيرة",
       "intelligence": "الذكاء",
       "security": "الأمان والخصوصية",
       "appearance": "المظهر",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "إعداد كيفية عمل خطوط النجوم (الروابط عبر المكتبات) وعرض السماء.",
-      "linking": "Linking",
+      "linking": "الربط",
       "graphAppearance": "مظهر الرسم البياني",
       "nodeSize": "حجم العقدة",
       "nodeSizeDesc": "معامل تكبير نصف قطر العقدة في الرسم البياني",
@@ -498,7 +498,7 @@
       "searchDesc": "البحث في جميع الملاحظات",
       "quickSwitcher": "التبديل السريع",
       "quickSwitcherDesc": "التنقل السريع بين الملاحظات",
-      "commandPalette": "Command Palette",
+      "commandPalette": "لوحة الأوامر",
       "commandPaletteDesc": "الوصول السريع لجميع الأوامر",
       "wordCount": "عداد الكلمات",
       "wordCountDesc": "عرض عدد الكلمات في شريط الحالة",
@@ -508,11 +508,11 @@
       "indexDesc": "جمع وتصفح المصطلحات من جميع الملاحظات",
       "semanticSearch": "البحث الدلالي",
       "semanticSearchDesc": "اكتشف الملاحظات المرتبطة مفاهيمياً عبر 100 لغة باستخدام الذكاء الاصطناعي (بدون إنترنت)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "خريطة المعرفة",
+      "constellationMapDesc": "عرض شعاعي شمسي لبنية المعرفة",
+      "constellationSight": "الجهاز العصبي للمعرفة",
+      "constellationSightDesc": "عرض يتنقّل عبر روابط كونك — مقاييس صحة الكون، والمجتمعات، وأبرز الجسور، وتحليل الفجوات الهيكلية (\"النقاط العمياء\").",
+      "constellationSightV3": "بصيرة المعرفة",
       "constellationSightV3Desc": "تصور المعرفة كخريطة نجوم — رؤية كامل العالم في لمحة",
       "notesNavigator": "متصفح الملاحظات",
       "notesNavigatorDesc": "تصفح وتصفية الملاحظات حسب المجلد أو الوسم أو الخاصية",
@@ -624,7 +624,7 @@
       "fanout": "توزيع وانسَ"
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Constellation Sight — عرض القبة المرساة لكونك مع تموضع حسب الطبقة × الزمن، وتدرّج الكثافة عند الزوم الافتراضي، وقباب مصغّرة لكل قناة.",
       "projection": {
         "label": "الإسقاط",
         "lambert": "Lambert (متساوي المساحة)",
@@ -749,7 +749,7 @@
     "insertTemplate": "إدراج من قالب",
     "importNotes": "استيراد الملاحظات",
     "insertTable": "إدراج جدول",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "التقاط سريع",
     "skyView": "منظر السماء",
     "reviewDueNotes": "مراجعة الملاحظات المستحقة",
     "openTrail": "فتح مسار",
@@ -1764,10 +1764,10 @@
     "welcomeSubtitle": "أضف مكتبتك الأولى من الشريط الجانبي",
     "addLibraryCta": "+ إضافة مكتبة",
     "selectNote": "اختر ملاحظة من الشريط الجانبي",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "ربط مكتبة موجودة",
+    "linkLibraryDesc": "اربط مجلداً موجوداً كمكتبة",
+    "newLibrary": "إنشاء مكتبة جديدة",
+    "newLibraryDesc": "أنشئ مجلد مكتبة جديداً فارغاً"
   },
   "skills": {
     "title": "المهارات",
@@ -2186,16 +2186,16 @@
       "remove": "إزالة",
       "starterKit": "تضمين حزمة البدء",
       "starterKitDesc": "إضافة ملاحظات وهيكل مجلدات نموذجي للبدء",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "استيراد من تطبيق",
+      "importAppDesc": "استيراد الملاحظات من تطبيق آخر",
+      "importConfirm": "استيراد",
+      "importDescription": "اختر تطبيقاً لاستيراد الملاحظات منه",
+      "importHeading": "استيراد الملاحظات",
+      "importLocationLabel": "موقع الاستيراد",
+      "importPreviewHeading": "معاينة",
+      "importingNotes": "جارٍ استيراد الملاحظات...",
+      "linkLibrary": "ربط مكتبة موجودة",
+      "linkLibraryDesc": "اربط مجلد ملاحظات موجوداً"
     },
     "manager": {
       "heading": "مدير الأكوان",
@@ -2218,7 +2218,7 @@
     "migrating": "جارٍ ترحيل بياناتك..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "عرض البيانات",
     "loading": "جارٍ تحميل الاستعلام...",
     "noResults": "لا توجد نتائج",
     "results": "نتائج",
@@ -2318,12 +2318,12 @@
     "done": "تم"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "الرئيسية",
+    "libraries": "المكتبات",
+    "skills": "المهارات"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "تبويب جديد",
     "closeTab": "إغلاق التبويب",
     "openNote": "فتح ملاحظة"
   },
@@ -2384,8 +2384,8 @@
     "universe": "الكون",
     "libraries": "مكتبات",
     "notes": "ملاحظات",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "العودة إلى المخطط الهيكلي",
+    "reset": "إعادة ضبط العرض"
   },
   "universeNotes": {
     "title": "ملاحظات الكون",
@@ -2578,7 +2578,7 @@
       }
     },
     "v6": {
-      "title": "Constellation Sight",
+      "title": "بصيرة المعرفة",
       "returnToSight": "العودة إلى Sight",
       "stratum": {
         "foundation": "الأساس",
@@ -2987,7 +2987,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "بصيرة المعرفة",
     "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1E)",
     "close": "إغلاق Sight",
     "tooltip": {
@@ -3051,7 +3051,7 @@
     "legendGapDesc": "فجوة هيكلية — نقطة عمياء بين مناطق منفصلة",
     "legendCluster": "منطقة ملونة",
     "legendClusterDesc": "حدود المجتمع — مجموعة موضوعية مترابطة",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "العودة إلى الجهاز العصبي",
     "fitToScreen": "ملاءمة الشاشة",
     "searchAll": "بحث في الكل... (Enter)",
     "searchTitles": "بحث في العناوين...",
@@ -3781,6 +3781,197 @@
       "due": "أعد قراءتها وتأكّد من أنها لا تزال صحيحة، ثم وسمها كمُراجَعة.",
       "never": "امنحها مراجعتها الأولى — اقرأها بالكامل، ثم أكّدها أو نقّحها.",
       "checkpoint": "أعد فحص هذا الرأي — أكّده أو نقّحه أو استبدله."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "ملاحظة",
+      "two": "ملاحظتان",
+      "few": "{count} ملاحظات",
+      "many": "{count} ملاحظة",
+      "other": "{count} ملاحظة"
+    },
+    "libraries": {
+      "one": "مكتبة",
+      "two": "مكتبتان",
+      "few": "{count} مكتبات",
+      "many": "{count} مكتبة",
+      "other": "{count} مكتبة"
+    },
+    "properties": {
+      "one": "خاصية",
+      "two": "خاصيتان",
+      "few": "{count} خصائص",
+      "many": "{count} خاصية",
+      "other": "{count} خاصية"
+    },
+    "words": {
+      "one": "كلمة",
+      "two": "كلمتان",
+      "few": "{count} كلمات",
+      "many": "{count} كلمة",
+      "other": "{count} كلمة"
+    },
+    "characters": {
+      "one": "حرف",
+      "two": "حرفان",
+      "few": "{count} أحرف",
+      "many": "{count} حرفًا",
+      "other": "{count} حرف"
+    },
+    "links": {
+      "one": "رابط",
+      "two": "رابطان",
+      "few": "{count} روابط",
+      "many": "{count} رابطًا",
+      "other": "{count} رابط"
+    },
+    "nodes": {
+      "one": "عقدة",
+      "two": "عقدتان",
+      "few": "{count} عقد",
+      "many": "{count} عقدة",
+      "other": "{count} عقدة"
+    },
+    "edges": {
+      "one": "حافة",
+      "two": "حافتان",
+      "few": "{count} حواف",
+      "many": "{count} حافة",
+      "other": "{count} حافة"
+    },
+    "results": {
+      "one": "نتيجة",
+      "two": "نتيجتان",
+      "few": "{count} نتائج",
+      "many": "{count} نتيجة",
+      "other": "{count} نتيجة"
+    },
+    "terms": {
+      "one": "مصطلح",
+      "two": "مصطلحان",
+      "few": "{count} مصطلحات",
+      "many": "{count} مصطلحًا",
+      "other": "{count} مصطلح"
+    },
+    "tabs": {
+      "one": "تبويب",
+      "two": "تبويبان",
+      "few": "{count} تبويبات",
+      "many": "{count} تبويبًا",
+      "other": "{count} تبويب"
+    },
+    "files": {
+      "one": "ملف",
+      "two": "ملفان",
+      "few": "{count} ملفات",
+      "many": "{count} ملفًا",
+      "other": "{count} ملف"
+    },
+    "items": {
+      "one": "عنصر",
+      "two": "عنصران",
+      "few": "{count} عناصر",
+      "many": "{count} عنصرًا",
+      "other": "{count} عنصر"
+    },
+    "tags": {
+      "one": "وسم",
+      "two": "وسمان",
+      "few": "{count} وسوم",
+      "many": "{count} وسمًا",
+      "other": "{count} وسم"
+    },
+    "tasksDue": {
+      "one": "مهمة مستحقة",
+      "two": "مهمتان مستحقتان",
+      "few": "{count} مهام مستحقة",
+      "many": "{count} مهمة مستحقة",
+      "other": "{count} مهمة مستحقة"
+    },
+    "gaps": {
+      "one": "فجوة",
+      "two": "فجوتان",
+      "few": "{count} فجوات",
+      "many": "{count} فجوة",
+      "other": "{count} فجوة"
+    },
+    "tensions": {
+      "one": "توتر",
+      "two": "توتران",
+      "few": "{count} توترات",
+      "many": "{count} توترًا",
+      "other": "{count} توتر"
+    },
+    "blindSpots": {
+      "one": "نقطة عمياء",
+      "two": "نقطتان عمياوان",
+      "few": "{count} نقاط عمياء",
+      "many": "{count} نقطة عمياء",
+      "other": "{count} نقطة عمياء"
+    },
+    "outbound": {
+      "one": "صادر",
+      "two": "صادران",
+      "few": "{count} صادرة",
+      "many": "{count} صادرًا",
+      "other": "{count} صادر"
+    },
+    "inbound": {
+      "one": "وارد",
+      "two": "واردان",
+      "few": "{count} واردة",
+      "many": "{count} واردًا",
+      "other": "{count} وارد"
+    },
+    "selected": {
+      "one": "محدد",
+      "two": "محددان",
+      "few": "{count} محددة",
+      "many": "{count} محددًا",
+      "other": "{count} محدد"
+    },
+    "hidden": {
+      "one": "مخفي",
+      "two": "مخفيان",
+      "few": "{count} مخفية",
+      "many": "{count} مخفيًا",
+      "other": "{count} مخفي"
+    },
+    "more": {
+      "one": "آخر",
+      "two": "آخران",
+      "few": "{count} أخرى",
+      "many": "{count} آخر",
+      "other": "{count} أخرى"
+    },
+    "incomingLinks": {
+      "one": "رابط وارد",
+      "two": "رابطان واردان",
+      "few": "{count} روابط واردة",
+      "many": "{count} رابطًا واردًا",
+      "other": "{count} رابط وارد"
+    },
+    "walks": {
+      "one": "عبور",
+      "two": "عبوران",
+      "few": "{count} مرّات عبور",
+      "many": "{count} مرّة عبور",
+      "other": "{count} مرّة عبور"
+    },
+    "days": {
+      "one": "يوم",
+      "two": "يومان",
+      "few": "{count} أيام",
+      "many": "{count} يومًا",
+      "other": "{count} يوم"
+    },
+    "mentions": {
+      "one": "إشارة",
+      "two": "إشارتان",
+      "few": "{count} إشارات",
+      "many": "{count} إشارة",
+      "other": "{count} إشارة"
     }
   }
 }

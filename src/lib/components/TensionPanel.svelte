@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { openNoteTab } from '$lib/libraries/store';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 
@@ -192,7 +192,7 @@
 					<div class="tp-none">{$t('tensionPanel.none') || 'None found'}</div>
 				{/each}
 				{#if report.orphans.length > 30}
-					<div class="tp-more">+{report.orphans.length - 30} {$t('tensionPanel.more') || 'more'}</div>
+					<div class="tp-more">+{$tn('plurals.more', report.orphans.length - 30)}</div>
 				{/if}
 			{/if}
 		</div>

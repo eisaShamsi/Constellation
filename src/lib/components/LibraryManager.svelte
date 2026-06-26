@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { libraryStats, addLibrary, removeLibraryWithCleanup } from '$lib/libraries/store';
 	import type { LibraryStats } from '$lib/libraries/store';
 	import { invoke } from '@tauri-apps/api/core';
@@ -82,7 +82,7 @@
 								<div class="vm-lib-name">{lib.name}</div>
 								<div class="vm-lib-path" title={lib.path}>{truncatePath(lib.path)}</div>
 							</div>
-							<span class="vm-library-count">{lib.star_count} {$t('libraryManager.notes')}</span>
+							<span class="vm-library-count">{$tn('plurals.notes', lib.star_count)}</span>
 						</div>
 						<div class="vm-lib-actions">
 							<button class="vm-action" title={$t('libraryManager.openFolder')} onclick={() => handleOpenFolder(lib.path)}>

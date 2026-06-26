@@ -16,7 +16,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import SightPanel from './SightPanel.svelte';
 	import * as d3 from 'd3';
-	import { t, dir, getSearchOps } from '$lib/i18n';
+	import { t, tn, dir, getSearchOps } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 	import {
@@ -1187,7 +1187,7 @@
 	<div class="sight2-header">
 		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 		<span class="sight2-title">{$t('lens.title') || 'Constellation Nervous System (CNS)'}</span>
-		<span class="sight2-stats">{simNodes.length} {$t('lens.nodes') || 'nodes'} · {simLinks.length} {$t('lens.links') || 'links'}
+		<span class="sight2-stats">{$tn('plurals.nodes', simNodes.length)} · {$tn('plurals.links', simLinks.length)}
 			<!-- §B3 (paper ruling d): the graph-layer scope caption — CNS counts
 			     resolved on-graph edges; CCS/KH count recorded link rows. -->
 			<span class="sight2-caption">· {$t('lens.linkCountNote') || 'resolved connections · this universe'}</span>

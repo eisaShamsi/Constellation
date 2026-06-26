@@ -11,7 +11,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { t, dir } from '$lib/i18n';
+	import { t, tn, dir } from '$lib/i18n';
 	import { appSettings } from '$lib/libraries/store';
 
 	import type { UniverseHealth } from '$lib/graph/clusterEngine';
@@ -243,7 +243,7 @@
 				{#each hubs as hub}
 					<button class="sp-item" onclick={() => onNoteClick?.(hub.target_name)} dir="auto">
 						<span class="sp-item-name">{hub.target_name}</span>
-						<span class="sp-item-score">{$t('knowledgeHealth.incomingLinks', { n: (hub.traversal_count ?? 0).toLocaleString() })}</span>
+						<span class="sp-item-score">{$tn('plurals.incomingLinks', hub.traversal_count ?? 0)}</span>
 					</button>
 				{:else}
 					<div class="sp-empty">{$t('sightPanel.noResults') || 'No results'}</div>

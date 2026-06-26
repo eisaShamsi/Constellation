@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { t, dir, getSearchOps } from '$lib/i18n';
+	import { t, tn, dir, getSearchOps } from '$lib/i18n';
 	import { libraries, appSettings, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { detectDir } from '$lib/utils';
@@ -871,7 +871,7 @@
 		<svg class="oc-fs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 		<span class="oc-fs-title">{universeName || $t('orgChart.universe') || 'Universe'}</span>
 		{#if mapRoot}
-			<span class="oc-fs-stat">{mapRoot.note_count} {$t('secondScreen.dashboard.notes') || 'notes'} · {formatWordCount(mapRoot.word_count)} words</span>
+			<span class="oc-fs-stat">{$tn('plurals.notes', mapRoot.note_count)} · {$tn('plurals.words', mapRoot.word_count)}</span>
 		{/if}
 		<div class="oc-fs-actions">
 			<div class="oc-search-box">
@@ -1209,9 +1209,9 @@
 	<!-- Status bar -->
 	{#if rootNode}
 		<div class="oc-status">
-			<span>{$libraries.length} {$t('orgChart.libraries') || 'libraries'}</span>
+			<span>{$tn('plurals.libraries', $libraries.length)}</span>
 			<span class="oc-sep">·</span>
-			<span>{rootNode.noteCount || 0} {$t('orgChart.notes') || 'notes'}</span>
+			<span>{$tn('plurals.notes', rootNode.noteCount || 0)}</span>
 		</div>
 	{/if}
 </div>

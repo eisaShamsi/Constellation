@@ -6,7 +6,7 @@
 	// glyphs, Islamic-event dots (Hijri only), note/task dots, optional Wk column.
 	// All colours/fonts are CSS variables (--cal-*) so the Style Setter can retheme it
 	// (§C.2d). Cells key onDayClick + the note/task dots on Gregorian ISO. RTL via dir.
-	import { t, dir, locale } from '$lib/i18n';
+	import { t, tn, dir, locale } from '$lib/i18n';
 	import {
 		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth, applyCalendarPrefs, setLunarYearStyles, setMonthNameStyle,
 		type CalendarSystem, type RichMonthGrid, type CalculationMode,
@@ -165,8 +165,8 @@
 								title={[
 									cell.eventName ?? '',
 									cell.moonName ?? '',
-									nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
-									tks.length > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tks.length) }) : ''
+									nc > 0 ? $tn('plurals.notes', nc) : '',
+									tks.length > 0 ? $tn('plurals.tasksDue', tks.length) : ''
 								].filter(Boolean).join(' · ')}
 							></button>
 							{#if cell.moonSymbol}<span class="cal-moon">{cell.moonSymbol}</span>{/if}
@@ -175,8 +175,8 @@
 							<span class="cal-dots">
 								{#if cell.eventType}<span class="cal-dot cal-event cal-event-{cell.eventType}" title={cell.eventName}></span>{/if}
 								{#if dailies.length}<button class="cal-dot cal-note cal-daily" onclick={(e) => clickNotes(e, dailies)} title={$t('calendarPanel.dailyNote') || 'Daily note'} aria-label={$t('calendarPanel.dailyNote') || 'Daily note'}></button>{/if}
-								{#if others.length}<button class="cal-dot cal-note" onclick={(e) => clickNotes(e, others)} title={$t('calendarPanel.notesCount', { count: localeCount(others.length) })} aria-label={$t('calendarPanel.notesCount', { count: localeCount(others.length) })}></button>{/if}
-								{#if tks.length}<button class="cal-dot cal-task" onclick={(e) => clickTasks(e, tks)} title={$t('calendarPanel.tasksCount', { count: localeCount(tks.length) })} aria-label={$t('calendarPanel.tasksCount', { count: localeCount(tks.length) })}></button>{/if}
+								{#if others.length}<button class="cal-dot cal-note" onclick={(e) => clickNotes(e, others)} title={$tn('plurals.notes', others.length)} aria-label={$tn('plurals.notes', others.length)}></button>{/if}
+								{#if tks.length}<button class="cal-dot cal-task" onclick={(e) => clickTasks(e, tks)} title={$tn('plurals.tasksDue', tks.length)} aria-label={$tn('plurals.tasksDue', tks.length)}></button>{/if}
 							</span>
 						</div>
 					{/each}

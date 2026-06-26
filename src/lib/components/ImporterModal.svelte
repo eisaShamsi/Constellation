@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { importPickSource, importPreview, importWithCanonical } from '$lib/importers/store';
 	import type { ImportFormat, ImportPreview, ImportResult } from '$lib/importers/types';
 
@@ -140,7 +140,7 @@
 				{:else if preview}
 					<div class="preview-header">
 						<h3>{$t('importer.previewTitle')}</h3>
-						<span class="preview-count">{preview.file_count} {$t('importer.files')}</span>
+						<span class="preview-count">{$tn('plurals.files', preview.file_count)}</span>
 					</div>
 					<div class="preview-list">
 						{#each preview.files.slice(0, 50) as file}

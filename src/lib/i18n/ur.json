@@ -71,7 +71,7 @@
       "editor": "ایڈیٹر",
       "skyview": "اسکائی ویو اور لنکس",
       "links": "لنکس",
-      "sight": "Sight",
+      "sight": "نظر",
       "intelligence": "ذہانت",
       "security": "سیکیورٹی اور رازداری",
       "appearance": "ظاہری شکل",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "Star Lines (کراس لائبریری لنکس) اور اسکائی ویو کے رویے کو ترتیب دیں۔",
-      "linking": "Linking",
+      "linking": "ربط سازی",
       "graphAppearance": "گراف کی ظاہری شکل",
       "nodeSize": "نوڈ کا سائز",
       "nodeSizeDesc": "گراف میں نوڈ کے ریڈیئس کا اسکیل فیکٹر",
@@ -498,7 +498,7 @@
       "searchDesc": "تمام نوٹس میں تلاش کریں",
       "quickSwitcher": "فوری سوئچر",
       "quickSwitcherDesc": "نوٹس کے درمیان تیزی سے منتقلی",
-      "commandPalette": "Command Palette",
+      "commandPalette": "کمانڈ پیلیٹ",
       "commandPaletteDesc": "تمام کمانڈز تک فوری رسائی",
       "wordCount": "الفاظ کی گنتی",
       "wordCountDesc": "اسٹیٹس بار میں الفاظ کی تعداد دکھائیں",
@@ -508,11 +508,11 @@
       "indexDesc": "تمام نوٹس سے اصطلاحات جمع اور براؤز کریں",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Constellation کا نقشہ",
+      "constellationMapDesc": "علم کی ساخت کی سن برسٹ تصویری نمائندگی",
+      "constellationSight": "علم کا اعصابی نظام",
+      "constellationSightDesc": "آپ کی کائنات کا رابطہ پیمائی منظر — کائناتی صحت کے پیمانے، برادریاں، نمایاں پل، اور ساختی خلا (\"اندھے دھبے\") کا تجزیہ۔",
+      "constellationSightV3": "Constellation کی نظر",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "نوٹس نیویگیٹر",
       "notesNavigatorDesc": "فولڈر، ٹیگ یا خاصیت کے مطابق نوٹس براؤز کریں",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Constellation کی نظر — آپ کی کائنات کا اینکر گنبد منظر جس میں طبقہ × وقت کی پوزیشننگ، طے شدہ زوم پر کثافت کا میلان، اور فی چینل چھوٹے گنبد شامل ہیں۔",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "ٹیبل داخل کریں",
     "addLibrary": "خزانہ شامل کریں",
     "searchLibrary": "خزانے میں تلاش",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "فوری اندراج",
     "skyView": "آسمان کا منظر",
     "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
     "openTrail": "پگڈنڈی کھولیں",
@@ -1227,10 +1227,10 @@
     "selectNote": "سائڈبار سے ایک نوٹ منتخب کریں",
     "addLibrary": "+ خزانہ شامل کریں",
     "addLibraryCta": "+ خزانہ شامل کریں",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "موجودہ لائبریری منسلک کریں",
+    "linkLibraryDesc": "موجودہ فولڈر کو بطور لائبریری منسلک کریں",
+    "newLibrary": "نئی لائبریری بنائیں",
+    "newLibraryDesc": "ایک نیا خالی لائبریری فولڈر بنائیں"
   },
   "skills": {
     "title": "مہارتیں",
@@ -1637,16 +1637,16 @@
       "remove": "ہٹائیں",
       "starterKit": "اسٹارٹر کٹ شامل کریں",
       "starterKitDesc": "شروع کرنے کے لیے نمونہ نوٹس اور فولڈر ڈھانچہ شامل کریں",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "ایپ سے درآمد کریں",
+      "importAppDesc": "کسی دوسری ایپلیکیشن سے نوٹس درآمد کریں",
+      "importConfirm": "درآمد کریں",
+      "importDescription": "نوٹس درآمد کرنے کے لیے ایک ایپ منتخب کریں",
+      "importHeading": "نوٹس درآمد کریں",
+      "importLocationLabel": "درآمد کا مقام",
+      "importPreviewHeading": "پیش منظر",
+      "importingNotes": "نوٹس درآمد ہو رہے ہیں...",
+      "linkLibrary": "موجودہ لائبریری منسلک کریں",
+      "linkLibraryDesc": "نوٹس کا موجودہ فولڈر منسلک کریں"
     },
     "manager": {
       "heading": "کائنات مینیجر",
@@ -1669,7 +1669,7 @@
     "migrating": "آپ کا ڈیٹا منتقل ہو رہا ہے..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "ڈیٹا منظر",
     "loading": "استفسار لوڈ ہو رہا ہے...",
     "noResults": "کوئی نتائج نہیں",
     "results": "نتائج",
@@ -1780,12 +1780,12 @@
     "openLibrary": "+ والٹ کھولیں"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "ہوم",
+    "libraries": "لائبریریاں",
+    "skills": "مہارتیں"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "نیا ٹیب",
     "closeTab": "ٹیب بند کریں",
     "openNote": "نوٹ کھولیں"
   },
@@ -1846,8 +1846,8 @@
     "universe": "کائنات",
     "libraries": "لائبریریاں",
     "notes": "نوٹس",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "تنظیمی چارٹ پر واپس جائیں",
+    "reset": "منظر بحال کریں"
   },
   "universeNotes": {
     "title": "کائنات نوٹس",
@@ -1978,7 +1978,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Constellation کی نظر",
       "returnToSight": "Sight پر واپس جائیں",
       "stratum": {
         "foundation": "بنیاد",
@@ -2387,7 +2387,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Constellation کی نظر",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2451,7 +2451,7 @@
     "legendGapDesc": "ساختی خلا — الگ تھلگ شعبوں کے درمیان اندھا نقطہ",
     "legendCluster": "رنگین علاقہ",
     "legendClusterDesc": "برادری کی حد — گنجان جڑا موضوعی گروہ",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "اعصابی نظام پر واپس جائیں",
     "fitToScreen": "اسکرین پر فٹ",
     "searchAll": "سب تلاش کریں... (Enter)",
     "searchTitles": "عنوانات تلاش کریں...",
@@ -3646,6 +3646,116 @@
       "due": "اسے دوبارہ پڑھیں اور تصدیق کریں کہ یہ اب بھی درست ہے، پھر اسے جائزہ شدہ نشان زد کریں۔",
       "never": "اسے پہلا جائزہ دیں — اسے پورا پڑھیں، پھر تصدیق یا تطہیر کریں۔",
       "checkpoint": "اس مؤقف کا دوبارہ جائزہ لیں — اس کی تصدیق کریں، اس پر نظرثانی کریں، یا اسے متروک قرار دیں۔"
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} نوٹ",
+      "other": "{count} نوٹس"
+    },
+    "libraries": {
+      "one": "{count} خزانہ",
+      "other": "{count} خزانے"
+    },
+    "properties": {
+      "one": "{count} خصوصیت",
+      "other": "{count} خصوصیات"
+    },
+    "words": {
+      "one": "{count} لفظ",
+      "other": "{count} الفاظ"
+    },
+    "characters": {
+      "one": "{count} حرف",
+      "other": "{count} حروف"
+    },
+    "links": {
+      "one": "{count} لنک",
+      "other": "{count} لنکس"
+    },
+    "nodes": {
+      "one": "{count} نوڈ",
+      "other": "{count} نوڈز"
+    },
+    "edges": {
+      "one": "{count} کنارہ",
+      "other": "{count} کنارے"
+    },
+    "results": {
+      "one": "{count} نتیجہ",
+      "other": "{count} نتائج"
+    },
+    "terms": {
+      "one": "{count} اصطلاح",
+      "other": "{count} اصطلاحات"
+    },
+    "tabs": {
+      "one": "{count} ٹیب",
+      "other": "{count} ٹیبز"
+    },
+    "files": {
+      "one": "{count} فائل",
+      "other": "{count} فائلیں"
+    },
+    "items": {
+      "one": "{count} آئٹم",
+      "other": "{count} آئٹمز"
+    },
+    "tags": {
+      "one": "{count} ٹیگ",
+      "other": "{count} ٹیگز"
+    },
+    "tasksDue": {
+      "one": "{count} واجب الادا کام",
+      "other": "{count} واجب الادا کام"
+    },
+    "gaps": {
+      "one": "{count} خلا",
+      "other": "{count} خلا"
+    },
+    "tensions": {
+      "one": "{count} تناؤ",
+      "other": "{count} تناؤ"
+    },
+    "blindSpots": {
+      "one": "{count} اندھا نقطہ",
+      "other": "{count} اندھے نقاط"
+    },
+    "outbound": {
+      "one": "{count} باہر جانے والا",
+      "other": "{count} باہر جانے والے"
+    },
+    "inbound": {
+      "one": "{count} آنے والا",
+      "other": "{count} آنے والے"
+    },
+    "selected": {
+      "one": "{count} منتخب",
+      "other": "{count} منتخب"
+    },
+    "hidden": {
+      "one": "{count} چھپا ہوا",
+      "other": "{count} چھپے ہوئے"
+    },
+    "more": {
+      "one": "{count} مزید",
+      "other": "{count} مزید"
+    },
+    "incomingLinks": {
+      "one": "{count} آنے والا رابطہ",
+      "other": "{count} آنے والے روابط"
+    },
+    "walks": {
+      "one": "{count} گزر",
+      "other": "{count} گزر"
+    },
+    "days": {
+      "one": "{count} دن",
+      "other": "{count} دن"
+    },
+    "mentions": {
+      "one": "{count} ذکر",
+      "other": "{count} اذکار"
     }
   }
 }

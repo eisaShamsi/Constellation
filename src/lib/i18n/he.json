@@ -71,7 +71,7 @@
       "editor": "עורך",
       "skyview": "תצוגת שמיים וקישורים",
       "links": "קישורים",
-      "sight": "Sight",
+      "sight": "ראייה",
       "intelligence": "בינה",
       "security": "אבטחה ופרטיות",
       "appearance": "מראה",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "הגדר כיצד קווי כוכב (קישורים חוצי ספריות) ותצוגת שמיים פועלים.",
-      "linking": "Linking",
+      "linking": "קישור",
       "graphAppearance": "מראה הגרף",
       "nodeSize": "גודל צומת",
       "nodeSizeDesc": "מקדם קנה מידה לרדיוס הצומת בגרף",
@@ -498,7 +498,7 @@
       "searchDesc": "חפש בכל הפתקים",
       "quickSwitcher": "מעבר מהיר",
       "quickSwitcherDesc": "נווט במהירות בין פתקים",
-      "commandPalette": "Command Palette",
+      "commandPalette": "לוח הפקודות",
       "commandPaletteDesc": "גישה מהירה לכל הפקודות",
       "wordCount": "ספירת מילים",
       "wordCountDesc": "הצג ספירת מילים בשורת המצב",
@@ -508,11 +508,11 @@
       "indexDesc": "איסוף ועיון במונחים מכל הפתקים",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "מפת ידע",
+      "constellationMapDesc": "המחשה חזותית של מבנה הידע בתצוגת זוהר־שמש",
+      "constellationSight": "מערכת העצבים של הידע",
+      "constellationSightDesc": "תצוגת מעבר־קשרים של היקום שלך — מדדי בריאות היקום, קהילות, גשרים מובילים וניתוח פערים מבניים (\"נקודות עיוורון\").",
+      "constellationSightV3": "ראיית קבוצת הכוכבים",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "ניווט הערות",
       "notesNavigatorDesc": "עיון וסינון הערות לפי תיקייה, תגית או מאפיין",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "ראיית קבוצת הכוכבים — תצוגת כיפת־עוגן של היקום שלך עם מיקום לפי שכבה × זמן, מפל־צפיפות בזום ברירת המחדל וכיפות־מיני לכל ערוץ.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "הוסף טבלה",
     "addLibrary": "הוסף כספת",
     "searchLibrary": "חפש בכספת",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "לכידה מהירה",
     "skyView": "תצוגת שמיים",
     "reviewDueNotes": "סקור פתקים שהגיע מועדם",
     "openTrail": "פתח שביל",
@@ -1227,10 +1227,10 @@
     "selectNote": "בחר פתק מהסרגל הצדדי",
     "addLibrary": "+ הוסף כספת",
     "addLibraryCta": "+ הוסף כספת",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "קישור ספרייה קיימת",
+    "linkLibraryDesc": "חיבור תיקייה קיימת כספרייה",
+    "newLibrary": "יצירת ספרייה חדשה",
+    "newLibraryDesc": "יצירת תיקיית ספרייה ריקה חדשה"
   },
   "skills": {
     "title": "כישורים",
@@ -1637,16 +1637,16 @@
       "remove": "הסר",
       "starterKit": "כלול ערכת התחלה",
       "starterKitDesc": "הוסף הערות לדוגמה ומבנה תיקיות להתחלה",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "ייבוא מאפליקציה",
+      "importAppDesc": "ייבוא פתקים מאפליקציה אחרת",
+      "importConfirm": "ייבוא",
+      "importDescription": "בחר אפליקציה לייבוא פתקים ממנה",
+      "importHeading": "ייבוא פתקים",
+      "importLocationLabel": "מיקום הייבוא",
+      "importPreviewHeading": "תצוגה מקדימה",
+      "importingNotes": "מייבא פתקים...",
+      "linkLibrary": "קישור ספרייה קיימת",
+      "linkLibraryDesc": "חיבור תיקיית פתקים קיימת"
     },
     "manager": {
       "heading": "מנהל יקומים",
@@ -1669,7 +1669,7 @@
     "migrating": "מעביר את הנתונים שלך..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "תצוגת נתונים",
     "loading": "טוען שאילתה...",
     "noResults": "אין תוצאות",
     "results": "תוצאות",
@@ -1780,12 +1780,12 @@
     "openLibrary": "+ פתח כספת"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "בית",
+    "libraries": "ספריות",
+    "skills": "כישורים"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "כרטיסייה חדשה",
     "closeTab": "סגור לשונית",
     "openNote": "פתח פתק"
   },
@@ -1846,8 +1846,8 @@
     "universe": "יקום",
     "libraries": "ספריות",
     "notes": "פתקים",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "חזרה לתרשים הארגוני",
+    "reset": "איפוס התצוגה"
   },
   "universeNotes": {
     "title": "הערות היקום",
@@ -1978,7 +1978,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "ראיית קבוצת הכוכבים",
       "returnToSight": "חזרה ל-Sight",
       "stratum": {
         "foundation": "יסוד",
@@ -2387,7 +2387,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "ראיית קבוצת הכוכבים",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2451,7 +2451,7 @@
     "legendGapDesc": "פער מבני — נקודה עיוורת בין אזורים מנותקים",
     "legendCluster": "אזור צבעוני",
     "legendClusterDesc": "גבול קהילה — אשכול נושאי מחובר בצפיפות",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "חזרה למערכת העצבים",
     "fitToScreen": "התאם למסך",
     "searchAll": "...חיפוש בהכל (Enter)",
     "searchTitles": "...חיפוש בכותרות",
@@ -3646,6 +3646,143 @@
       "due": "קרא אותו מחדש ואשר שהוא עדיין תקף, ואז סמן כנסקר.",
       "never": "תן לו את הסקירה הראשונה שלו — קרא אותו מתחילתו, ואז אשר או חדד.",
       "checkpoint": "בחן מחדש את התובנה הזו — אשר אותה, תקן אותה, או החלף אותה."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "פתק {count}",
+      "two": "{count} פתקים",
+      "other": "{count} פתקים"
+    },
+    "libraries": {
+      "one": "ספרייה {count}",
+      "two": "{count} ספריות",
+      "other": "{count} ספריות"
+    },
+    "properties": {
+      "one": "מאפיין {count}",
+      "two": "{count} מאפיינים",
+      "other": "{count} מאפיינים"
+    },
+    "words": {
+      "one": "מילה {count}",
+      "two": "{count} מילים",
+      "other": "{count} מילים"
+    },
+    "characters": {
+      "one": "תו {count}",
+      "two": "{count} תווים",
+      "other": "{count} תווים"
+    },
+    "links": {
+      "one": "קישור {count}",
+      "two": "{count} קישורים",
+      "other": "{count} קישורים"
+    },
+    "nodes": {
+      "one": "צומת {count}",
+      "two": "{count} צמתים",
+      "other": "{count} צמתים"
+    },
+    "edges": {
+      "one": "קשת {count}",
+      "two": "{count} קשתות",
+      "other": "{count} קשתות"
+    },
+    "results": {
+      "one": "תוצאה {count}",
+      "two": "{count} תוצאות",
+      "other": "{count} תוצאות"
+    },
+    "terms": {
+      "one": "מונח {count}",
+      "two": "{count} מונחים",
+      "other": "{count} מונחים"
+    },
+    "tabs": {
+      "one": "לשונית {count}",
+      "two": "{count} לשוניות",
+      "other": "{count} לשוניות"
+    },
+    "files": {
+      "one": "קובץ {count}",
+      "two": "{count} קבצים",
+      "other": "{count} קבצים"
+    },
+    "items": {
+      "one": "פריט {count}",
+      "two": "{count} פריטים",
+      "other": "{count} פריטים"
+    },
+    "tags": {
+      "one": "תגית {count}",
+      "two": "{count} תגיות",
+      "other": "{count} תגיות"
+    },
+    "tasksDue": {
+      "one": "משימה {count} נדרשת",
+      "two": "{count} משימות נדרשות",
+      "other": "{count} משימות נדרשות"
+    },
+    "gaps": {
+      "one": "פער {count}",
+      "two": "{count} פערים",
+      "other": "{count} פערים"
+    },
+    "tensions": {
+      "one": "מתח {count}",
+      "two": "{count} מתחים",
+      "other": "{count} מתחים"
+    },
+    "blindSpots": {
+      "one": "נקודה עיוורת {count}",
+      "two": "{count} נקודות עיוורות",
+      "other": "{count} נקודות עיוורות"
+    },
+    "outbound": {
+      "one": "{count} יוצא",
+      "two": "{count} יוצאים",
+      "other": "{count} יוצאים"
+    },
+    "inbound": {
+      "one": "{count} נכנס",
+      "two": "{count} נכנסים",
+      "other": "{count} נכנסים"
+    },
+    "selected": {
+      "one": "{count} נבחר",
+      "two": "{count} נבחרו",
+      "other": "{count} נבחרו"
+    },
+    "hidden": {
+      "one": "{count} מוסתר",
+      "two": "{count} מוסתרים",
+      "other": "{count} מוסתרים"
+    },
+    "more": {
+      "one": "עוד {count}",
+      "two": "עוד {count}",
+      "other": "עוד {count}"
+    },
+    "incomingLinks": {
+      "one": "קישור נכנס {count}",
+      "two": "{count} קישורים נכנסים",
+      "other": "{count} קישורים נכנסים"
+    },
+    "walks": {
+      "one": "מעבר {count}",
+      "two": "{count} מעברים",
+      "other": "{count} מעברים"
+    },
+    "days": {
+      "one": "יום {count}",
+      "two": "{count} ימים",
+      "other": "{count} ימים"
+    },
+    "mentions": {
+      "one": "אזכור {count}",
+      "two": "{count} אזכורים",
+      "other": "{count} אזכורים"
     }
   }
 }

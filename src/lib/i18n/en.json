@@ -3784,5 +3784,115 @@
       "never": "Give it its first review — read it through, then confirm or refine.",
       "checkpoint": "Re-examine this view — confirm it, revise it, or supersede it."
     }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} note",
+      "other": "{count} notes"
+    },
+    "libraries": {
+      "one": "{count} library",
+      "other": "{count} libraries"
+    },
+    "properties": {
+      "one": "{count} property",
+      "other": "{count} properties"
+    },
+    "words": {
+      "one": "{count} word",
+      "other": "{count} words"
+    },
+    "characters": {
+      "one": "{count} character",
+      "other": "{count} characters"
+    },
+    "links": {
+      "one": "{count} link",
+      "other": "{count} links"
+    },
+    "nodes": {
+      "one": "{count} node",
+      "other": "{count} nodes"
+    },
+    "edges": {
+      "one": "{count} edge",
+      "other": "{count} edges"
+    },
+    "results": {
+      "one": "{count} result",
+      "other": "{count} results"
+    },
+    "terms": {
+      "one": "{count} term",
+      "other": "{count} terms"
+    },
+    "tabs": {
+      "one": "{count} tab",
+      "other": "{count} tabs"
+    },
+    "files": {
+      "one": "{count} file",
+      "other": "{count} files"
+    },
+    "items": {
+      "one": "{count} item",
+      "other": "{count} items"
+    },
+    "tags": {
+      "one": "{count} tag",
+      "other": "{count} tags"
+    },
+    "tasksDue": {
+      "one": "{count} task due",
+      "other": "{count} tasks due"
+    },
+    "gaps": {
+      "one": "{count} gap",
+      "other": "{count} gaps"
+    },
+    "tensions": {
+      "one": "{count} tension",
+      "other": "{count} tensions"
+    },
+    "blindSpots": {
+      "one": "{count} blind spot",
+      "other": "{count} blind spots"
+    },
+    "outbound": {
+      "one": "{count} outbound",
+      "other": "{count} outbound"
+    },
+    "inbound": {
+      "one": "{count} inbound",
+      "other": "{count} inbound"
+    },
+    "selected": {
+      "one": "{count} selected",
+      "other": "{count} selected"
+    },
+    "hidden": {
+      "one": "{count} hidden",
+      "other": "{count} hidden"
+    },
+    "more": {
+      "one": "{count} more",
+      "other": "{count} more"
+    },
+    "incomingLinks": {
+      "one": "{count} incoming link",
+      "other": "{count} incoming links"
+    },
+    "walks": {
+      "one": "{count} walk",
+      "other": "{count} walks"
+    },
+    "days": {
+      "one": "{count} day",
+      "other": "{count} days"
+    },
+    "mentions": {
+      "one": "{count} mention",
+      "other": "{count} mentions"
+    }
   }
 }

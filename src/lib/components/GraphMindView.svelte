@@ -12,7 +12,7 @@
 	 *   - Simulation state (owned by forceWorker)
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t, dir, isRTL as isRTLStore, getSearchOps } from '$lib/i18n';
+	import { t, tn, dir, isRTL as isRTLStore, getSearchOps } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
@@ -903,7 +903,7 @@
 						</button>
 						{#if searchMatches.length > 0}
 							<button class="gm-search-count" onclick={() => showCategoryBreakdown = !showCategoryBreakdown}>
-								{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {searchMatches.length} {$t('searchHub.notes')}</span>{/if}
+								{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {$tn('plurals.notes', searchMatches.length)}</span>{/if}
 							</button>
 							{#if showCategoryBreakdown && Object.keys(searchCategoryCounts).length > 0}
 								<div class="gm-cat-dropdown">
@@ -1164,7 +1164,7 @@
 	<!-- Hidden nodes indicator -->
 	{#if hiddenCount > 0}
 		<div class="gm-hidden-bar" dir="auto">
-			<span>{hiddenCount} {$t('graphView.hidden')}</span>
+			<span>{$tn('plurals.hidden', hiddenCount)}</span>
 			<button class="gm-btn" style="width:auto;padding:0 8px;height:24px;font-size:11px" onclick={() => engine?.showAllHidden()}>
 				{$t('graphView.showAll')}
 			</button>
@@ -1206,9 +1206,9 @@
 
 	<!-- Stats bar -->
 <div class="gm-stats" dir="auto">
-		<span>{nodeCount} {$t('graphView.nodes') || 'nodes'}</span>
+		<span>{$tn('plurals.nodes', nodeCount)}</span>
 		<span class="gm-sep">&middot;</span>
-		<span>{edgeCount} {$t('graphView.edges') || 'edges'}</span>
+		<span>{$tn('plurals.edges', edgeCount)}</span>
 		{#if mocCount > 0}
 			<span class="gm-sep">&middot;</span>
 			<span>{mocCount} MOCs</span>

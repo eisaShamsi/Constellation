@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { marked } from 'marked';
 	import {
@@ -171,7 +171,7 @@
 		{#if searchQuery}
 			<div class="search-panel">
 				{#if $searchResults.length > 0}
-					<div class="section-label">{$searchResults.length} {$t('libraries.results')}</div>
+					<div class="section-label">{$tn('plurals.results', $searchResults.length)}</div>
 					{#each $searchResults as star}
 						<button class="search-result" class:active={$selectedNote?.path === star.path} onclick={() => handleSearchResultClick(star.path, star.library_name)}>
 							<div class="sr-name">{star.name}</div>

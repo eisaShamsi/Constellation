@@ -8,7 +8,7 @@
 	// lifecycle commands). Opening a note from a register NEVER fires
 	// `constellation_link_traverse` — CCS observes circulation; it must not
 	// feed the metric it displays (invariant I2b).
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import LinkTypePill from './LinkTypePill.svelte';
@@ -262,7 +262,7 @@
 						<p class="ccs-empty">{$t('ccs.living.empty')}</p>
 					{:else}
 						{@render linkRows(living.rows, (r) =>
-							$t('ccs.meta.walks', { n: r.traversal_count.toLocaleString() })
+							$tn('plurals.walks', r.traversal_count)
 							+ (walkedDate(r.last_traversed) ? ` · ${$t('ccs.meta.lastWalked', { date: walkedDate(r.last_traversed) })}` : ''))}
 					{/if}
 				</div>
@@ -275,7 +275,7 @@
 						<p class="ccs-empty">{$t('ccs.loadBearing.empty')}</p>
 					{:else}
 						{@render linkRows(loadBearing.rows, (r) =>
-							`${$t('knowledgeHealth.weightAbbrev')}:${r.weight.toFixed(1)} · ${$t('ccs.meta.walks', { n: r.traversal_count.toLocaleString() })}`)}
+							`${$t('knowledgeHealth.weightAbbrev')}:${r.weight.toFixed(1)} · ${$tn('plurals.walks', r.traversal_count)}`)}
 					{/if}
 				</div>
 

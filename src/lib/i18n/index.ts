@@ -115,6 +115,61 @@ function lookup(obj: Record<string, unknown>, path: string, params?: Record<stri
 }
 
 /**
+ * Plural-aware lookup (MIG-087 / Boss-directed grammatical-number, 2026-06-26).
+ *
+ * Counted nouns must agree with the count per each language's grammar — a bug
+ * Eisa caught in the status bar ("19 مكتبات" / "7659 ملاحظات" used the plural
+ * form unconditionally, wrong Arabic for 1, 2, and 11+). We resolve the form via
+ * the Unicode CLDR plural categories exposed natively by `Intl.PluralRules` (the
+ * same engine ICU/CLDR use — WA#5: the battle-tested standard, not hand-rolled).
+ *
+ * Arabic uses all of one/two/few/many/other (+zero); Russian one/few/many;
+ * Hebrew one/two/other; most languages one/other; CJK only other.
+ *
+ * The locale data lives under the `plurals.<noun>` namespace as a category map,
+ * e.g. plurals.notes = { one, two?, few?, many?, other, zero? }. Each form is the
+ * COMPLETE rendered phrase (with `{count}` where the digit should appear) so each
+ * locale controls whether the number shows — Arabic 1/2 are word-only ("ملاحظة" /
+ * "ملاحظتان"), 3+ carry the number ("{count} ملاحظات", "{count} ملاحظة").
+ */
+const pluralRulesCache: Partial<Record<string, Intl.PluralRules>> = {};
+function pluralCategory(loc: string, count: number): Intl.LDMLPluralRule {
+	let pr = pluralRulesCache[loc];
+	if (!pr) {
+		try {
+			pr = new Intl.PluralRules(loc, { type: 'cardinal' });
+		} catch {
+			pr = new Intl.PluralRules('en', { type: 'cardinal' });
+		}
+		pluralRulesCache[loc] = pr;
+	}
+	return pr.select(count);
+}
+
+/** Resolve the best-matching plural form string for (loc, key, count), or null. */
+function resolvePluralForm(loc: Locale, key: string, count: number): string | null {
+	const cat = pluralCategory(loc, count);
+	const dict = translations[loc] ?? translations.en;
+	// category → other → one : graceful fallback when a locale omits a category.
+	for (const candidate of [`${key}.${cat}`, `${key}.other`, `${key}.one`]) {
+		const r = lookup(dict as Record<string, unknown>, candidate);
+		if (r !== candidate) return r;
+	}
+	return null;
+}
+
+/** Interpolate {count} (and any extra params) into a resolved plural form. */
+function interpCount(form: string, count: number, params?: Record<string, string | number>): string {
+	let result = form.replace(/\{count\}/g, String(count));
+	if (params) {
+		for (const [k, v] of Object.entries(params)) {
+			result = result.replace(`{${k}}`, String(v));
+		}
+	}
+	return result;
+}
+
+/**
  * Reactive translation store with interpolation support.
  * Usage in Svelte: $t('app.tagline')
  * With params: $t('dialogs.confirmDelete', { name: 'My Note' })
@@ -139,6 +194,20 @@ export const t = derived(locale, ($locale) => {
 	};
 });
 
+/**
+ * Reactive PLURAL-aware translation store (MIG-087).
+ * Usage in Svelte: $tn('plurals.notes', count)  →  e.g. "ملاحظتان" / "{count} ملاحظات"
+ * Picks the CLDR plural category for the active locale, falls back active→en→key.
+ */
+export const tn = derived(locale, ($locale) => {
+	return (key: string, count: number, params?: Record<string, string | number>): string => {
+		let form = resolvePluralForm($locale, key, count);
+		if (form === null && $locale !== 'en') form = resolvePluralForm('en', key, count);
+		if (form === null) return key;
+		return interpCount(form, count, params);
+	};
+});
+
 export function setLocale(newLocale: Locale) {
 	locale.set(newLocale);
 }
@@ -158,6 +227,19 @@ export function tIn(loc: string, key: string, params?: Record<string, string>): 
 		if (enResult !== key) return enResult;
 	}
 	return key;
+}
+
+/**
+ * Plural-aware translate in a SPECIFIC locale (non-reactive sibling of `tIn`).
+ * Same active-locale → en → key fallback as `tn`. For surfaces that render in a
+ * locale other than the reactive UI locale.
+ */
+export function tnIn(loc: string, key: string, count: number, params?: Record<string, string | number>): string {
+	const l = (loc in translations ? loc : 'en') as Locale;
+	let form = resolvePluralForm(l, key, count);
+	if (form === null && l !== 'en') form = resolvePluralForm('en', key, count);
+	if (form === null) return key;
+	return interpCount(form, count, params);
 }
 
 /** Get the searchOps map for the current locale (for query canonicalization). */

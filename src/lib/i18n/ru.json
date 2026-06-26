@@ -71,7 +71,7 @@
       "editor": "Редактор",
       "skyview": "Sky View и ссылки",
       "links": "Ссылки",
-      "sight": "Sight",
+      "sight": "Обзор",
       "intelligence": "Интеллект",
       "security": "Безопасность и конфиденциальность",
       "appearance": "Внешний вид",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "Настройте поведение Star Lines (межбиблиотечных ссылок) и Sky View.",
-      "linking": "Linking",
+      "linking": "Связывание",
       "graphAppearance": "Внешний вид графа",
       "nodeSize": "Размер узла",
       "nodeSizeDesc": "Коэффициент масштабирования радиуса узлов в графе",
@@ -498,7 +498,7 @@
       "searchDesc": "Поиск по всем заметкам",
       "quickSwitcher": "Быстрый переключатель",
       "quickSwitcherDesc": "Быстрая навигация между заметками",
-      "commandPalette": "Command Palette",
+      "commandPalette": "Командная палитра",
       "commandPaletteDesc": "Быстрый доступ ко всем командам",
       "wordCount": "Счётчик слов",
       "wordCountDesc": "Показывать количество слов в строке состояния",
@@ -508,11 +508,11 @@
       "indexDesc": "Сбор и просмотр терминов из всех заметок",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Карта Созвездия",
+      "constellationMapDesc": "Лучевая визуализация структуры знаний",
+      "constellationSight": "Нервная система знаний",
+      "constellationSightDesc": "Просмотр вашей вселенной через обход связей — метрики здоровья вселенной, сообщества, ключевые мосты и анализ структурных пробелов («слепых зон»).",
+      "constellationSightV3": "Обзор Созвездия",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "Навигатор заметок",
       "notesNavigatorDesc": "Просмотр и фильтрация заметок по папке, тегу или свойству",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Обзор Созвездия — вид вселенной в виде якорного купола с позиционированием по слоям × времени, градиентом плотности при стандартном масштабе и мини-куполами по каналам.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "Вставить таблицу",
     "addLibrary": "Добавить хранилище",
     "searchLibrary": "Поиск по хранилищу",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "Быстрая запись",
     "skyView": "Вид неба",
     "reviewDueNotes": "Просмотреть просроченные заметки",
     "openTrail": "Открыть маршрут",
@@ -1667,10 +1667,10 @@
     "selectNote": "Выберите заметку на боковой панели",
     "addLibrary": "+ Добавить хранилище",
     "addLibraryCta": "+ Добавить хранилище",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "Подключить существующую библиотеку",
+    "linkLibraryDesc": "Подключить существующую папку как библиотеку",
+    "newLibrary": "Создать новую библиотеку",
+    "newLibraryDesc": "Создать новую пустую папку библиотеки"
   },
   "skills": {
     "title": "Навыки",
@@ -2077,16 +2077,16 @@
       "remove": "Удалить",
       "starterKit": "Включить стартовый набор",
       "starterKitDesc": "Добавить примеры заметок и структуру папок для начала",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "Импорт из приложения",
+      "importAppDesc": "Импортировать заметки из другого приложения",
+      "importConfirm": "Импортировать",
+      "importDescription": "Выберите приложение для импорта заметок",
+      "importHeading": "Импорт заметок",
+      "importLocationLabel": "Расположение импорта",
+      "importPreviewHeading": "Предпросмотр",
+      "importingNotes": "Импорт заметок...",
+      "linkLibrary": "Подключить существующую библиотеку",
+      "linkLibraryDesc": "Подключить существующую папку с заметками"
     },
     "manager": {
       "heading": "Менеджер Вселенных",
@@ -2109,7 +2109,7 @@
     "migrating": "Миграция данных..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Просмотр данных",
     "loading": "Загрузка запроса...",
     "noResults": "Нет результатов",
     "results": "результатов",
@@ -2220,12 +2220,12 @@
     "openLibrary": "+ Открыть хранилище"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "Главная",
+    "libraries": "Библиотеки",
+    "skills": "Навыки"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "Новая вкладка",
     "closeTab": "Закрыть вкладку",
     "openNote": "Открыть заметку"
   },
@@ -2286,8 +2286,8 @@
     "universe": "Вселенная",
     "libraries": "библиотеки",
     "notes": "заметки",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "Вернуться к организационной диаграмме",
+    "reset": "Сбросить вид"
   },
   "universeNotes": {
     "title": "Заметки Вселенной",
@@ -2418,7 +2418,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Обзор Созвездия",
       "returnToSight": "Вернуться к Sight",
       "stratum": {
         "foundation": "ОСНОВА",
@@ -2827,7 +2827,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Обзор Созвездия",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2891,7 +2891,7 @@
     "legendGapDesc": "Структурный разрыв — слепая зона между изолированными областями",
     "legendCluster": "Цветная область",
     "legendClusterDesc": "Граница сообщества — плотно связанный тематический кластер",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "Вернуться к нервной системе",
     "fitToScreen": "По размеру экрана",
     "searchAll": "Искать всё... (Enter)",
     "searchTitles": "Искать в заголовках...",
@@ -3646,6 +3646,143 @@
       "due": "Перечитайте её и подтвердите, что она всё ещё верна, затем отметьте как проверенную.",
       "never": "Проведите её первую проверку — прочитайте от начала до конца, затем подтвердите или уточните.",
       "checkpoint": "Пересмотрите этот взгляд — подтвердите его, измените или замените на новый."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} заметка",
+      "few": "{count} заметки",
+      "many": "{count} заметок"
+    },
+    "libraries": {
+      "one": "{count} хранилище",
+      "few": "{count} хранилища",
+      "many": "{count} хранилищ"
+    },
+    "properties": {
+      "one": "{count} свойство",
+      "few": "{count} свойства",
+      "many": "{count} свойств"
+    },
+    "words": {
+      "one": "{count} слово",
+      "few": "{count} слова",
+      "many": "{count} слов"
+    },
+    "characters": {
+      "one": "{count} символ",
+      "few": "{count} символа",
+      "many": "{count} символов"
+    },
+    "links": {
+      "one": "{count} ссылка",
+      "few": "{count} ссылки",
+      "many": "{count} ссылок"
+    },
+    "nodes": {
+      "one": "{count} узел",
+      "few": "{count} узла",
+      "many": "{count} узлов"
+    },
+    "edges": {
+      "one": "{count} ребро",
+      "few": "{count} ребра",
+      "many": "{count} рёбер"
+    },
+    "results": {
+      "one": "{count} результат",
+      "few": "{count} результата",
+      "many": "{count} результатов"
+    },
+    "terms": {
+      "one": "{count} термин",
+      "few": "{count} термина",
+      "many": "{count} терминов"
+    },
+    "tabs": {
+      "one": "{count} вкладка",
+      "few": "{count} вкладки",
+      "many": "{count} вкладок"
+    },
+    "files": {
+      "one": "{count} файл",
+      "few": "{count} файла",
+      "many": "{count} файлов"
+    },
+    "items": {
+      "one": "{count} элемент",
+      "few": "{count} элемента",
+      "many": "{count} элементов"
+    },
+    "tags": {
+      "one": "{count} тег",
+      "few": "{count} тега",
+      "many": "{count} тегов"
+    },
+    "tasksDue": {
+      "one": "{count} задача к сроку",
+      "few": "{count} задачи к сроку",
+      "many": "{count} задач к сроку"
+    },
+    "gaps": {
+      "one": "{count} пробел",
+      "few": "{count} пробела",
+      "many": "{count} пробелов"
+    },
+    "tensions": {
+      "one": "{count} противоречие",
+      "few": "{count} противоречия",
+      "many": "{count} противоречий"
+    },
+    "blindSpots": {
+      "one": "{count} слепое пятно",
+      "few": "{count} слепых пятна",
+      "many": "{count} слепых пятен"
+    },
+    "outbound": {
+      "one": "{count} исходящая",
+      "few": "{count} исходящие",
+      "many": "{count} исходящих"
+    },
+    "inbound": {
+      "one": "{count} входящая",
+      "few": "{count} входящие",
+      "many": "{count} входящих"
+    },
+    "selected": {
+      "one": "{count} выбран",
+      "few": "{count} выбрано",
+      "many": "{count} выбрано"
+    },
+    "hidden": {
+      "one": "{count} скрыт",
+      "few": "{count} скрыто",
+      "many": "{count} скрыто"
+    },
+    "more": {
+      "one": "ещё {count}",
+      "few": "ещё {count}",
+      "many": "ещё {count}"
+    },
+    "incomingLinks": {
+      "one": "{count} входящая ссылка",
+      "few": "{count} входящие ссылки",
+      "many": "{count} входящих ссылок"
+    },
+    "walks": {
+      "one": "{count} проход",
+      "few": "{count} прохода",
+      "many": "{count} проходов"
+    },
+    "days": {
+      "one": "{count} день",
+      "few": "{count} дня",
+      "many": "{count} дней"
+    },
+    "mentions": {
+      "one": "{count} упоминание",
+      "few": "{count} упоминания",
+      "many": "{count} упоминаний"
     }
   }
 }

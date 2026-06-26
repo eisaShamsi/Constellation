@@ -71,7 +71,7 @@
       "editor": "Editor",
       "skyview": "Sky View & Links",
       "links": "Links",
-      "sight": "Sight",
+      "sight": "Blick",
       "intelligence": "Intelligenz",
       "security": "Sicherheit & Datenschutz",
       "appearance": "Erscheinungsbild",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "Konfiguriere das Verhalten von Star Lines (bibliotheksübergreifende Links) und Sky View.",
-      "linking": "Linking",
+      "linking": "Verknüpfung",
       "graphAppearance": "Graph-Darstellung",
       "nodeSize": "Knotengröße",
       "nodeSizeDesc": "Skalierungsfaktor für den Knotenradius im Graphen",
@@ -498,7 +498,7 @@
       "searchDesc": "In allen Notizen suchen",
       "quickSwitcher": "Schnellwechsler",
       "quickSwitcherDesc": "Schnell zwischen Notizen navigieren",
-      "commandPalette": "Command Palette",
+      "commandPalette": "Befehlspalette",
       "commandPaletteDesc": "Schneller Zugriff auf alle Befehle",
       "wordCount": "Wortanzahl",
       "wordCountDesc": "Wortanzahl in der Statusleiste anzeigen",
@@ -508,11 +508,11 @@
       "indexDesc": "Begriffe aus allen Notizen sammeln und durchsuchen",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Constellation-Karte",
+      "constellationMapDesc": "Sunburst-Visualisierung der Wissensstruktur",
+      "constellationSight": "Nervensystem des Wissens",
+      "constellationSightDesc": "Verbindungsbasierte Ansicht deines Universums – Kennzahlen zur Universum-Gesundheit, Gemeinschaften, wichtigste Brücken und Analyse struktureller Lücken („blinde Flecken“).",
+      "constellationSightV3": "Constellation-Blick",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "Notizen-Navigator",
       "notesNavigatorDesc": "Notizen nach Ordner, Tag oder Eigenschaft durchsuchen",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Constellation-Blick – Ankerkuppel-Ansicht deines Universums mit Positionierung nach Schicht × Zeit, Dichtegradient bei Standardzoom und Mini-Kuppeln je Kanal.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTemplate": "Aus Vorlage einfügen",
     "importNotes": "Notizen importieren",
     "insertTable": "Tabelle einfügen",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "Schnellerfassung",
     "skyView": "Himmelsansicht",
     "reviewDueNotes": "Fällige Notizen überprüfen",
     "openTrail": "Trail öffnen",
@@ -1227,10 +1227,10 @@
     "welcomeSubtitle": "Fügen Sie Ihre erste Bibliothek über die Seitenleiste hinzu",
     "addLibraryCta": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "Vorhandene Bibliothek verknüpfen",
+    "linkLibraryDesc": "Einen vorhandenen Ordner als Bibliothek einbinden",
+    "newLibrary": "Neue Bibliothek erstellen",
+    "newLibraryDesc": "Einen neuen, leeren Bibliotheksordner erstellen"
   },
   "skills": {
     "title": "Fähigkeiten",
@@ -1648,16 +1648,16 @@
       "remove": "Entfernen",
       "starterKit": "Starterpaket einschließen",
       "starterKitDesc": "Beispielnotizen und Ordnerstruktur zum Einstieg hinzufügen",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "Aus App importieren",
+      "importAppDesc": "Notizen aus einer anderen Anwendung importieren",
+      "importConfirm": "Importieren",
+      "importDescription": "Wähle eine App aus, aus der Notizen importiert werden sollen",
+      "importHeading": "Notizen importieren",
+      "importLocationLabel": "Importort",
+      "importPreviewHeading": "Vorschau",
+      "importingNotes": "Notizen werden importiert …",
+      "linkLibrary": "Vorhandene Bibliothek verknüpfen",
+      "linkLibraryDesc": "Einen vorhandenen Notizordner einbinden"
     },
     "manager": {
       "heading": "Universum-Manager",
@@ -1680,7 +1680,7 @@
     "migrating": "Daten werden migriert..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Datenansicht",
     "loading": "Abfrage wird geladen...",
     "noResults": "Keine Ergebnisse",
     "results": "Ergebnisse",
@@ -1780,12 +1780,12 @@
     "done": "Fertig"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "Start",
+    "libraries": "Bibliotheken",
+    "skills": "Fähigkeiten"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "Neuer Tab",
     "closeTab": "Tab schließen",
     "openNote": "Notiz öffnen"
   },
@@ -1846,8 +1846,8 @@
     "universe": "Universum",
     "libraries": "Bibliotheken",
     "notes": "Notizen",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "Zurück zum Organigramm",
+    "reset": "Ansicht zurücksetzen"
   },
   "universeNotes": {
     "title": "Universum-Notizen",
@@ -1978,7 +1978,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Constellation-Blick",
       "returnToSight": "Zurück zu Sight",
       "tradition": {
         "family": {
@@ -2387,7 +2387,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Constellation-Blick",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2451,7 +2451,7 @@
     "legendGapDesc": "Strukturelle Lücke — blinder Fleck zwischen getrennten Bereichen",
     "legendCluster": "Farbige Region",
     "legendClusterDesc": "Gemeinschaftsgrenze — dicht verbundenes Themencluster",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "Zurück zum Nervensystem",
     "fitToScreen": "An Bildschirm anpassen",
     "searchAll": "Alles durchsuchen... (Enter)",
     "searchTitles": "Titel durchsuchen...",
@@ -3646,6 +3646,116 @@
       "due": "Lies sie erneut und bestätige, dass sie weiterhin gilt, dann markiere sie als geprüft.",
       "never": "Gib ihr ihre erste Prüfung — lies sie durch, dann bestätige oder verfeinere sie.",
       "checkpoint": "Überdenke diese Sichtweise — bestätige sie, überarbeite sie oder löse sie ab."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} Notiz",
+      "other": "{count} Notizen"
+    },
+    "libraries": {
+      "one": "{count} Bibliothek",
+      "other": "{count} Bibliotheken"
+    },
+    "properties": {
+      "one": "{count} Eigenschaft",
+      "other": "{count} Eigenschaften"
+    },
+    "words": {
+      "one": "{count} Wort",
+      "other": "{count} Wörter"
+    },
+    "characters": {
+      "one": "{count} Zeichen",
+      "other": "{count} Zeichen"
+    },
+    "links": {
+      "one": "{count} Link",
+      "other": "{count} Links"
+    },
+    "nodes": {
+      "one": "{count} Knoten",
+      "other": "{count} Knoten"
+    },
+    "edges": {
+      "one": "{count} Kante",
+      "other": "{count} Kanten"
+    },
+    "results": {
+      "one": "{count} Ergebnis",
+      "other": "{count} Ergebnisse"
+    },
+    "terms": {
+      "one": "{count} Begriff",
+      "other": "{count} Begriffe"
+    },
+    "tabs": {
+      "one": "{count} Tab",
+      "other": "{count} Tabs"
+    },
+    "files": {
+      "one": "{count} Datei",
+      "other": "{count} Dateien"
+    },
+    "items": {
+      "one": "{count} Element",
+      "other": "{count} Elemente"
+    },
+    "tags": {
+      "one": "{count} Tag",
+      "other": "{count} Tags"
+    },
+    "tasksDue": {
+      "one": "{count} fällige Aufgabe",
+      "other": "{count} fällige Aufgaben"
+    },
+    "gaps": {
+      "one": "{count} Lücke",
+      "other": "{count} Lücken"
+    },
+    "tensions": {
+      "one": "{count} Spannung",
+      "other": "{count} Spannungen"
+    },
+    "blindSpots": {
+      "one": "{count} blinder Fleck",
+      "other": "{count} blinde Flecken"
+    },
+    "outbound": {
+      "one": "{count} ausgehend",
+      "other": "{count} ausgehend"
+    },
+    "inbound": {
+      "one": "{count} eingehend",
+      "other": "{count} eingehend"
+    },
+    "selected": {
+      "one": "{count} ausgewählt",
+      "other": "{count} ausgewählt"
+    },
+    "hidden": {
+      "one": "{count} ausgeblendet",
+      "other": "{count} ausgeblendet"
+    },
+    "more": {
+      "one": "{count} mehr",
+      "other": "{count} mehr"
+    },
+    "incomingLinks": {
+      "one": "{count} eingehende Verknüpfung",
+      "other": "{count} eingehende Verknüpfungen"
+    },
+    "walks": {
+      "one": "{count} Begehung",
+      "other": "{count} Begehungen"
+    },
+    "days": {
+      "one": "{count} Tag",
+      "other": "{count} Tage"
+    },
+    "mentions": {
+      "one": "{count} Erwähnung",
+      "other": "{count} Erwähnungen"
     }
   }
 }

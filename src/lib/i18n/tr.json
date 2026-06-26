@@ -71,7 +71,7 @@
       "editor": "Editör",
       "skyview": "Gökyüzü Görünümü & Bağlantılar",
       "links": "Bağlantılar",
-      "sight": "Sight",
+      "sight": "Görüş",
       "intelligence": "Zeka",
       "security": "Güvenlik & Gizlilik",
       "appearance": "Görünüm",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın.",
-      "linking": "Linking",
+      "linking": "Bağlama",
       "graphAppearance": "Grafik Görünümü",
       "nodeSize": "Düğüm boyutu",
       "nodeSizeDesc": "Grafikteki düğüm yarıçapı için ölçek faktörü",
@@ -498,7 +498,7 @@
       "searchDesc": "Tüm notlarda arama yap",
       "quickSwitcher": "Hızlı Geçiş",
       "quickSwitcherDesc": "Notlar arasında hızlica gezin",
-      "commandPalette": "Command Palette",
+      "commandPalette": "Komut Paleti",
       "commandPaletteDesc": "Tüm komutlara hızlı erişim",
       "wordCount": "Kelime Sayısı",
       "wordCountDesc": "Durum çubuğunda kelime sayısını göster",
@@ -508,11 +508,11 @@
       "indexDesc": "Tüm notlardan terimleri toplayın ve göz atın",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Constellation Harita",
+      "constellationMapDesc": "Bilgi yapısının güneş patlaması (sunburst) görselleştirmesi",
+      "constellationSight": "Bilginin Sinir Sistemi",
+      "constellationSightDesc": "Evreninizin bağlantı-dolaşım görünümü — Evren Sağlığı ölçütleri, topluluklar, en önemli köprüler ve yapısal-boşluk (\"Kör Nokta\") analizi.",
+      "constellationSightV3": "Constellation Görüş",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "Not Gezgini",
       "notesNavigatorDesc": "Notları klasör, etiket veya özelliğe göre göz atın",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Constellation Görüş — evreninizin çapa-kubbe görünümü; katman × zaman konumlandırması, varsayılan yakınlaştırmada yoğunluk-eğimi ve kanal başına mini kubbeler.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "Tablo ekle",
     "addLibrary": "Kasa ekle",
     "searchLibrary": "Kasada ara",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "Hızlı Yakalama",
     "skyView": "Gökyüzü Görünümü",
     "reviewDueNotes": "Vadesi gelen notları gözden geçir",
     "openTrail": "Yolu aç",
@@ -1667,10 +1667,10 @@
     "selectNote": "Kenar çubuğundan bir not seçin",
     "addLibrary": "+ Kasa ekle",
     "addLibraryCta": "+ Kasa Ekle",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "Mevcut Kütüphaneyi Bağla",
+    "linkLibraryDesc": "Mevcut bir klasörü kütüphane olarak bağla",
+    "newLibrary": "Yeni Kütüphane Oluştur",
+    "newLibraryDesc": "Yeni ve boş bir kütüphane klasörü oluştur"
   },
   "skills": {
     "title": "Beceriler",
@@ -2077,16 +2077,16 @@
       "remove": "Kaldır",
       "starterKit": "Başlangıç kitini dahil et",
       "starterKitDesc": "Başlamak için örnek notlar ve klasör yapısı ekle",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "Uygulamadan İçe Aktar",
+      "importAppDesc": "Başka bir uygulamadan notları içe aktar",
+      "importConfirm": "İçe Aktar",
+      "importDescription": "Notların içe aktarılacağı bir uygulama seçin",
+      "importHeading": "Notları İçe Aktar",
+      "importLocationLabel": "İçe Aktarma Konumu",
+      "importPreviewHeading": "Önizleme",
+      "importingNotes": "Notlar içe aktarılıyor...",
+      "linkLibrary": "Mevcut Kütüphaneyi Bağla",
+      "linkLibraryDesc": "Mevcut bir not klasörünü bağla"
     },
     "manager": {
       "heading": "Evren Yöneticisi",
@@ -2109,7 +2109,7 @@
     "migrating": "Verileriniz taşınıyor..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Veri Görünümü",
     "loading": "Sorgu yükleniyor...",
     "noResults": "Sonuç yok",
     "results": "sonuç",
@@ -2220,12 +2220,12 @@
     "openLibrary": "+ Kasa aç"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "Ana Sayfa",
+    "libraries": "Kütüphaneler",
+    "skills": "Beceriler"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "Yeni Sekme",
     "closeTab": "Sekmeyi kapat",
     "openNote": "Not aç"
   },
@@ -2286,8 +2286,8 @@
     "universe": "Evren",
     "libraries": "kütüphaneler",
     "notes": "notlar",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "Organizasyon Şeması'na Dön",
+    "reset": "Görünümü sıfırla"
   },
   "universeNotes": {
     "title": "Evren Notları",
@@ -2418,7 +2418,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Constellation Görüş",
       "returnToSight": "Sight'a dön",
       "stratum": {
         "foundation": "TEMEL",
@@ -2827,7 +2827,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Constellation Görüş",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2891,7 +2891,7 @@
     "legendGapDesc": "Yapısal boşluk — bağlantısız alanlar arasındaki kör nokta",
     "legendCluster": "Renkli bölge",
     "legendClusterDesc": "Topluluk sınırı — yoğun bağlantılı konu kümesi",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "Sinir Sistemi'ne Dön",
     "fitToScreen": "Ekrana sığdır",
     "searchAll": "Tümünde ara... (Enter)",
     "searchTitles": "Başlıklarda ara...",
@@ -3646,6 +3646,116 @@
       "due": "Yeniden oku ve hâlâ geçerli olduğunu doğrula, sonra incelendi olarak işaretle.",
       "never": "İlk incelemesini yap — baştan sona oku, sonra doğrula ya da iyileştir.",
       "checkpoint": "Bu görüşü yeniden incele — doğrula, gözden geçir ya da yerine yenisini koy."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} not",
+      "other": "{count} not"
+    },
+    "libraries": {
+      "one": "{count} kütüphane",
+      "other": "{count} kütüphane"
+    },
+    "properties": {
+      "one": "{count} özellik",
+      "other": "{count} özellik"
+    },
+    "words": {
+      "one": "{count} kelime",
+      "other": "{count} kelime"
+    },
+    "characters": {
+      "one": "{count} karakter",
+      "other": "{count} karakter"
+    },
+    "links": {
+      "one": "{count} bağlantı",
+      "other": "{count} bağlantı"
+    },
+    "nodes": {
+      "one": "{count} düğüm",
+      "other": "{count} düğüm"
+    },
+    "edges": {
+      "one": "{count} kenar",
+      "other": "{count} kenar"
+    },
+    "results": {
+      "one": "{count} sonuç",
+      "other": "{count} sonuç"
+    },
+    "terms": {
+      "one": "{count} terim",
+      "other": "{count} terim"
+    },
+    "tabs": {
+      "one": "{count} sekme",
+      "other": "{count} sekme"
+    },
+    "files": {
+      "one": "{count} dosya",
+      "other": "{count} dosya"
+    },
+    "items": {
+      "one": "{count} öğe",
+      "other": "{count} öğe"
+    },
+    "tags": {
+      "one": "{count} etiket",
+      "other": "{count} etiket"
+    },
+    "tasksDue": {
+      "one": "{count} vadesi gelen görev",
+      "other": "{count} vadesi gelen görev"
+    },
+    "gaps": {
+      "one": "{count} boşluk",
+      "other": "{count} boşluk"
+    },
+    "tensions": {
+      "one": "{count} gerilim",
+      "other": "{count} gerilim"
+    },
+    "blindSpots": {
+      "one": "{count} kör nokta",
+      "other": "{count} kör nokta"
+    },
+    "outbound": {
+      "one": "{count} giden bağlantı",
+      "other": "{count} giden bağlantı"
+    },
+    "inbound": {
+      "one": "{count} gelen bağlantı",
+      "other": "{count} gelen bağlantı"
+    },
+    "selected": {
+      "one": "{count} seçili",
+      "other": "{count} seçili"
+    },
+    "hidden": {
+      "one": "{count} gizli",
+      "other": "{count} gizli"
+    },
+    "more": {
+      "one": "{count} daha",
+      "other": "{count} daha"
+    },
+    "incomingLinks": {
+      "one": "{count} gelen bağlantı",
+      "other": "{count} gelen bağlantı"
+    },
+    "walks": {
+      "one": "{count} geçiş",
+      "other": "{count} geçiş"
+    },
+    "days": {
+      "one": "{count} gün",
+      "other": "{count} gün"
+    },
+    "mentions": {
+      "one": "{count} değinme",
+      "other": "{count} değinme"
     }
   }
 }

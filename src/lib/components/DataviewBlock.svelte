@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { executeDataviewQuery } from '$lib/dataview/store';
 	import type { DataviewResult, DataviewRow } from '$lib/dataview/types';
 	import { detectDir } from '$lib/utils';
@@ -132,7 +132,7 @@
 
 				<!-- Footer -->
 				<div class="dv-footer">
-					{result.rows.length} {$t('dataview.results')}
+					{$tn('plurals.results', result.rows.length)}
 					{#if result.total_count > result.rows.length}
 						{$t('dataview.of')} {result.total_count} {$t('dataview.total')}
 					{/if}

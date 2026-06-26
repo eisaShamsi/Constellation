@@ -71,7 +71,7 @@
       "editor": "편집기",
       "skyview": "스카이 뷰 & 링크",
       "links": "링크",
-      "sight": "Sight",
+      "sight": "시야",
       "intelligence": "인텔리전스",
       "security": "보안 & 개인정보",
       "appearance": "외관",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다.",
-      "linking": "Linking",
+      "linking": "연결",
       "graphAppearance": "그래프 모양",
       "nodeSize": "노드 크기",
       "nodeSizeDesc": "그래프에서 노드 반경의 배율",
@@ -498,7 +498,7 @@
       "searchDesc": "모든 노트에서 검색",
       "quickSwitcher": "빠른 전환",
       "quickSwitcherDesc": "노트 간 빠르게 이동",
-      "commandPalette": "Command Palette",
+      "commandPalette": "명령 팔레트",
       "commandPaletteDesc": "모든 명령에 빠르게 접근",
       "wordCount": "단어 수",
       "wordCountDesc": "상태 표시줄에 단어 수 표시",
@@ -508,11 +508,11 @@
       "indexDesc": "모든 노트에서 용어를 수집하고 탐색",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "별자리 지도",
+      "constellationMapDesc": "지식 구조를 보여주는 선버스트 시각화",
+      "constellationSight": "지식의 신경계",
+      "constellationSightDesc": "유니버스를 연결 중심으로 탐색하는 보기 — 유니버스 건강도 지표, 커뮤니티, 주요 다리, 구조적 공백(\"사각지대\") 분석을 제공합니다.",
+      "constellationSightV3": "별자리 시야",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "노트 내비게이터",
       "notesNavigatorDesc": "폴더, 태그 또는 속성으로 노트 탐색 및 필터링",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "별자리 시야 — 계층 × 시간 배치, 기본 확대 단계의 밀도 그라데이션, 채널별 미니 돔으로 유니버스를 앵커 돔 형태로 보여주는 보기입니다.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "표 삽입",
     "addLibrary": "보관함 추가",
     "searchLibrary": "보관함 검색",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "빠른 기록",
     "skyView": "하늘 보기",
     "reviewDueNotes": "만기 노트 검토",
     "openTrail": "트레일 열기",
@@ -1667,10 +1667,10 @@
     "selectNote": "사이드바에서 노트를 선택하세요",
     "addLibrary": "+ 보관함 추가",
     "addLibraryCta": "+ 보관함 추가",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "기존 라이브러리 연결",
+    "linkLibraryDesc": "기존 폴더를 라이브러리로 연결합니다",
+    "newLibrary": "새 라이브러리 만들기",
+    "newLibraryDesc": "비어 있는 새 라이브러리 폴더를 만듭니다"
   },
   "skills": {
     "title": "스킬",
@@ -2077,16 +2077,16 @@
       "remove": "제거",
       "starterKit": "스타터 키트 포함",
       "starterKitDesc": "시작용 샘플 노트와 폴더 구조 추가",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "앱에서 가져오기",
+      "importAppDesc": "다른 애플리케이션에서 노트를 가져옵니다",
+      "importConfirm": "가져오기",
+      "importDescription": "노트를 가져올 앱을 선택하세요",
+      "importHeading": "노트 가져오기",
+      "importLocationLabel": "가져오기 위치",
+      "importPreviewHeading": "미리 보기",
+      "importingNotes": "노트를 가져오는 중...",
+      "linkLibrary": "기존 라이브러리 연결",
+      "linkLibraryDesc": "기존 노트 폴더를 연결합니다"
     },
     "manager": {
       "heading": "유니버스 관리자",
@@ -2109,7 +2109,7 @@
     "migrating": "데이터 마이그레이션 중..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "데이터 보기",
     "loading": "쿼리 로딩 중...",
     "noResults": "결과 없음",
     "results": "결과",
@@ -2220,12 +2220,12 @@
     "openLibrary": "+ 볼트 열기"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "홈",
+    "libraries": "라이브러리",
+    "skills": "스킬"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "새 탭",
     "closeTab": "탭 닫기",
     "openNote": "노트 열기"
   },
@@ -2286,8 +2286,8 @@
     "universe": "유니버스",
     "libraries": "라이브러리",
     "notes": "노트",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "조직도로 돌아가기",
+    "reset": "보기 초기화"
   },
   "universeNotes": {
     "title": "유니버스 노트",
@@ -2418,7 +2418,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "별자리 시야",
       "returnToSight": "Sight로 돌아가기",
       "stratum": {
         "foundation": "기초",
@@ -2827,7 +2827,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "별자리 시야",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2891,7 +2891,7 @@
     "legendGapDesc": "구조적 갭 — 분리된 영역 간 사각지대",
     "legendCluster": "색상 영역",
     "legendClusterDesc": "커뮤니티 경계 — 밀접하게 연결된 주제 클러스터",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "신경계로 돌아가기",
     "fitToScreen": "화면에 맞추기",
     "searchAll": "모두 검색... (Enter)",
     "searchTitles": "제목 검색...",
@@ -3646,6 +3646,89 @@
       "due": "다시 읽고 여전히 유효한지 확인한 뒤, 검토 완료로 표시하세요.",
       "never": "첫 검토를 진행하세요 — 끝까지 읽은 뒤, 확정하거나 다듬으세요.",
       "checkpoint": "이 관점을 다시 살펴보세요 — 확정하거나, 수정하거나, 대체(supersede)하세요."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "other": "노트 {count}개"
+    },
+    "libraries": {
+      "other": "보관함 {count}개"
+    },
+    "properties": {
+      "other": "속성 {count}개"
+    },
+    "words": {
+      "other": "단어 {count}개"
+    },
+    "characters": {
+      "other": "글자 {count}자"
+    },
+    "links": {
+      "other": "링크 {count}개"
+    },
+    "nodes": {
+      "other": "노드 {count}개"
+    },
+    "edges": {
+      "other": "엣지 {count}개"
+    },
+    "results": {
+      "other": "결과 {count}개"
+    },
+    "terms": {
+      "other": "용어 {count}개"
+    },
+    "tabs": {
+      "other": "탭 {count}개"
+    },
+    "files": {
+      "other": "파일 {count}개"
+    },
+    "items": {
+      "other": "항목 {count}개"
+    },
+    "tags": {
+      "other": "태그 {count}개"
+    },
+    "tasksDue": {
+      "other": "마감 작업 {count}개"
+    },
+    "gaps": {
+      "other": "격차 {count}개"
+    },
+    "tensions": {
+      "other": "긴장 {count}개"
+    },
+    "blindSpots": {
+      "other": "사각지대 {count}개"
+    },
+    "outbound": {
+      "other": "나가는 링크 {count}개"
+    },
+    "inbound": {
+      "other": "들어오는 링크 {count}개"
+    },
+    "selected": {
+      "other": "{count}개 선택됨"
+    },
+    "hidden": {
+      "other": "{count}개 숨겨짐"
+    },
+    "more": {
+      "other": "{count}개 더 보기"
+    },
+    "incomingLinks": {
+      "other": "들어오는 링크 {count}개"
+    },
+    "walks": {
+      "other": "{count}회 통과"
+    },
+    "days": {
+      "other": "{count}일"
+    },
+    "mentions": {
+      "other": "언급 {count}개"
     }
   }
 }

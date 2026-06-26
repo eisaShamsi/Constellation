@@ -71,7 +71,7 @@
       "editor": "संपादक",
       "skyview": "स्काई व्यू और लिंक",
       "links": "लिंक",
-      "sight": "Sight",
+      "sight": "दृष्टि",
       "intelligence": "बुद्धिमत्ता",
       "security": "सुरक्षा और गोपनीयता",
       "appearance": "दिखावट",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।",
-      "linking": "Linking",
+      "linking": "लिंकिंग",
       "graphAppearance": "ग्राफ़ का रूप",
       "nodeSize": "नोड का आकार",
       "nodeSizeDesc": "ग्राफ़ में नोड त्रिज्या का स्केल फ़ैक्टर",
@@ -498,7 +498,7 @@
       "searchDesc": "सभी नोट्स में खोजें",
       "quickSwitcher": "त्वरित स्विचर",
       "quickSwitcherDesc": "नोट्स के बीच ते़ज़ी से नेविगेट करें",
-      "commandPalette": "Command Palette",
+      "commandPalette": "कमांड पैलेट",
       "commandPaletteDesc": "सभी कमांड्स तक त्वरित पहुँच",
       "wordCount": "शब्द गणना",
       "wordCountDesc": "स्टेटस बार में शब्दों की संख्या दिखाएँ",
@@ -508,11 +508,11 @@
       "indexDesc": "सभी नोट्स से शब्दों को एकत्र और ब्राउज़ करें",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "तारामंडल मानचित्र",
+      "constellationMapDesc": "ज्ञान संरचना का सनबर्स्ट दृश्यीकरण",
+      "constellationSight": "ज्ञान का तंत्रिका तंत्र (CNS)",
+      "constellationSightDesc": "आपके ब्रह्मांड का कनेक्शन-ट्रैवर्सल दृश्य — ब्रह्मांड स्वास्थ्य मेट्रिक्स, समुदाय, शीर्ष सेतु, और संरचनात्मक-अंतराल (\"ब्लाइंड स्पॉट\") विश्लेषण।",
+      "constellationSightV3": "तारामंडल दृष्टि",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "नोट्स नेविगेटर",
       "notesNavigatorDesc": "फ़ोल्डर, टैग या प्रॉपर्टी के अनुसार नोट्स ब्राउज़ करें",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "तारामंडल दृष्टि — आपके ब्रह्मांड का एंकर-डोम दृश्य, जिसमें स्तर × समय स्थिति-निर्धारण, डिफ़ॉल्ट ज़ूम पर घनत्व-प्रवणता, और प्रति-चैनल मिनी-डोम शामिल हैं।",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "तालिका डालें",
     "addLibrary": "तिजोरी जोड़ें",
     "searchLibrary": "तिजोरी में खोजें",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "त्वरित कैप्चर",
     "skyView": "आकाश दृश्य",
     "reviewDueNotes": "देय नोट्स की समीक्षा करें",
     "openTrail": "ट्रेल खोलें",
@@ -1667,10 +1667,10 @@
     "selectNote": "साइडबार से एक नोट चुनें",
     "addLibrary": "+ तिजोरी जोड़ें",
     "addLibraryCta": "+ तिजोरी जोड़ें",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "मौजूदा लाइब्रेरी जोड़ें",
+    "linkLibraryDesc": "किसी मौजूदा फ़ोल्डर को लाइब्रेरी के रूप में जोड़ें",
+    "newLibrary": "नई लाइब्रेरी बनाएँ",
+    "newLibraryDesc": "एक नई खाली लाइब्रेरी फ़ोल्डर बनाएँ"
   },
   "skills": {
     "title": "कौशल",
@@ -2077,16 +2077,16 @@
       "remove": "हटाएं",
       "starterKit": "स्टार्टर किट शामिल करें",
       "starterKitDesc": "शुरू करने के लिए नमूना नोट्स और फ़ोल्डर संरचना जोड़ें",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "ऐप से आयात करें",
+      "importAppDesc": "किसी अन्य एप्लिकेशन से नोट्स आयात करें",
+      "importConfirm": "आयात करें",
+      "importDescription": "नोट्स आयात करने के लिए एक ऐप चुनें",
+      "importHeading": "नोट्स आयात करें",
+      "importLocationLabel": "आयात स्थान",
+      "importPreviewHeading": "पूर्वावलोकन",
+      "importingNotes": "नोट्स आयात किए जा रहे हैं...",
+      "linkLibrary": "मौजूदा लाइब्रेरी जोड़ें",
+      "linkLibraryDesc": "नोट्स वाले किसी मौजूदा फ़ोल्डर को जोड़ें"
     },
     "manager": {
       "heading": "ब्रह्मांड प्रबंधक",
@@ -2109,7 +2109,7 @@
     "migrating": "आपका डेटा माइग्रेट हो रहा है..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "डेटा दृश्य",
     "loading": "क्वेरी लोड हो रही है...",
     "noResults": "कोई परिणाम नहीं",
     "results": "परिणाम",
@@ -2220,12 +2220,12 @@
     "openLibrary": "+ वॉल्ट खोलें"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "होम",
+    "libraries": "लाइब्रेरी",
+    "skills": "कौशल"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "नया टैब",
     "closeTab": "टैब बंद करें",
     "openNote": "नोट खोलें"
   },
@@ -2286,8 +2286,8 @@
     "universe": "ब्रह्मांड",
     "libraries": "पुस्तकालय",
     "notes": "नोट्स",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "संगठन चार्ट पर लौटें",
+    "reset": "दृश्य रीसेट करें"
   },
   "universeNotes": {
     "title": "ब्रह्मांड नोट्स",
@@ -2418,7 +2418,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "तारामंडल दृष्टि",
       "returnToSight": "Sight पर वापस जाएं",
       "stratum": {
         "foundation": "आधार",
@@ -2827,7 +2827,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "तारामंडल दृष्टि",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2891,7 +2891,7 @@
     "legendGapDesc": "संरचनात्मक अंतर — अलग क्षेत्रों के बीच अंधा बिंदु",
     "legendCluster": "रंगीन क्षेत्र",
     "legendClusterDesc": "समुदाय सीमा — घनी जुड़ा विषय समूह",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "तंत्रिका तंत्र पर लौटें",
     "fitToScreen": "स्क्रीन पर फिट",
     "searchAll": "सब खोजें... (Enter)",
     "searchTitles": "शीर्षक खोजें...",
@@ -3646,6 +3646,116 @@
       "due": "इसे दोबारा पढ़ें और पुष्टि करें कि यह अब भी टिकता है, फिर इसे समीक्षित चिह्नित करें।",
       "never": "इसे इसकी पहली समीक्षा दें — इसे पूरा पढ़ें, फिर पुष्टि करें या परिष्कृत करें।",
       "checkpoint": "इस दृष्टि की पुनःपरख करें — इसकी पुष्टि करें, इसे संशोधित करें, या इसे अधिक्रमित करें।"
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} नोट",
+      "other": "{count} नोट्स"
+    },
+    "libraries": {
+      "one": "{count} तिजोरी",
+      "other": "{count} तिजोरियाँ"
+    },
+    "properties": {
+      "one": "{count} गुण",
+      "other": "{count} गुण"
+    },
+    "words": {
+      "one": "{count} शब्द",
+      "other": "{count} शब्द"
+    },
+    "characters": {
+      "one": "{count} अक्षर",
+      "other": "{count} अक्षर"
+    },
+    "links": {
+      "one": "{count} लिंक",
+      "other": "{count} लिंक"
+    },
+    "nodes": {
+      "one": "{count} नोड",
+      "other": "{count} नोड"
+    },
+    "edges": {
+      "one": "{count} किनारा",
+      "other": "{count} किनारे"
+    },
+    "results": {
+      "one": "{count} परिणाम",
+      "other": "{count} परिणाम"
+    },
+    "terms": {
+      "one": "{count} पद",
+      "other": "{count} पद"
+    },
+    "tabs": {
+      "one": "{count} टैब",
+      "other": "{count} टैब्स"
+    },
+    "files": {
+      "one": "{count} फ़ाइल",
+      "other": "{count} फ़ाइलें"
+    },
+    "items": {
+      "one": "{count} आइटम",
+      "other": "{count} आइटम"
+    },
+    "tags": {
+      "one": "{count} टैग",
+      "other": "{count} टैग्स"
+    },
+    "tasksDue": {
+      "one": "{count} देय कार्य",
+      "other": "{count} देय कार्य"
+    },
+    "gaps": {
+      "one": "{count} अंतराल",
+      "other": "{count} अंतराल"
+    },
+    "tensions": {
+      "one": "{count} तनाव",
+      "other": "{count} तनाव"
+    },
+    "blindSpots": {
+      "one": "{count} अंधा बिंदु",
+      "other": "{count} अंधे बिंदु"
+    },
+    "outbound": {
+      "one": "{count} बहिर्गामी",
+      "other": "{count} बहिर्गामी"
+    },
+    "inbound": {
+      "one": "{count} आगत",
+      "other": "{count} आगत"
+    },
+    "selected": {
+      "one": "{count} चयनित",
+      "other": "{count} चयनित"
+    },
+    "hidden": {
+      "one": "{count} छिपा हुआ",
+      "other": "{count} छिपे हुए"
+    },
+    "more": {
+      "one": "{count} और",
+      "other": "{count} और"
+    },
+    "incomingLinks": {
+      "one": "{count} आने वाला लिंक",
+      "other": "{count} आने वाले लिंक"
+    },
+    "walks": {
+      "one": "{count} आवागमन",
+      "other": "{count} आवागमन"
+    },
+    "days": {
+      "one": "{count} दिन",
+      "other": "{count} दिन"
+    },
+    "mentions": {
+      "one": "{count} उल्लेख",
+      "other": "{count} उल्लेख"
     }
   }
 }

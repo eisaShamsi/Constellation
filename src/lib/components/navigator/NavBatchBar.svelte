@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 
 	let {
 		count = 0,
@@ -18,7 +18,7 @@
 
 {#if count > 0}
 	<div class="nav-batch-bar">
-		<span class="nav-batch-count">{count} {$t('navigator.selected') || 'selected'}</span>
+		<span class="nav-batch-count">{$tn('plurals.selected', count)}</span>
 		<div class="nav-batch-actions">
 			<button class="nav-batch-btn" onclick={onBatchTag} title={$t('navigator.batchTag') || 'Add tag'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L12 24"/><path d="M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8 18"/></svg>

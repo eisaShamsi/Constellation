@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace, type WorkspaceLayout, type WorkspaceSecondScreen } from '$lib/libraries/store';
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 
 	let {
 		onClose,
@@ -72,7 +72,7 @@
 					<div class="ws-item">
 						<div class="ws-item-info">
 							<span class="ws-item-name">{ws.name}</span>
-							<span class="ws-item-meta">{ws.tabs.length} {$t('workspacesPanel.tabs')} · {formatDate(ws.timestamp)}</span>
+							<span class="ws-item-meta">{$tn('plurals.tabs', ws.tabs.length)} · {formatDate(ws.timestamp)}</span>
 						</div>
 						<div class="ws-item-actions">
 							<button class="ws-restore" onclick={() => handleRestore(ws)} title={$t('workspacesPanel.restore')}>

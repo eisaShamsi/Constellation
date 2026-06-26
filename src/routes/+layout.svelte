@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '$lib/theme.css';
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
-	import { dir, t } from '$lib/i18n';
+	import { dir, t, tn } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -1824,18 +1824,41 @@
 		} catch (e) { console.error('Calendar task toggle failed:', e); }
 	}
 
-	// Status bar stats from focused tab (debounced to avoid per-keystroke recompute)
+	// Status bar stats for the focused tab — BODY only (frontmatter YAML excluded;
+	// counting the full file inflated the word count by every property key/value).
+	// Two writers, never overlapping in time: this $effect sets the baseline when
+	// the tab switches/reloads (sidebarTab.content changes), and `handleLiveStats`
+	// updates it live as the user types. During editing sidebarTab.content is
+	// stable (the editor owns its content), so this $effect stays dormant and the
+	// live handler owns the value — no clobber, no loop.
 	let wordCount = $state(0);
 	let charCount = $state(0);
 	let _wcTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
-		const content = sidebarTab?.content ?? '';
-		charCount = content.length;
+		const body = sidebarParsed?.body ?? '';
+		charCount = body.length;
 		clearTimeout(_wcTimer);
 		_wcTimer = setTimeout(() => {
-			wordCount = content ? (content.match(/\S+/g)?.length ?? 0) : 0;
+			wordCount = body ? (body.match(/\S+/g)?.length ?? 0) : 0;
 		}, 300);
 	});
+
+	// MIG-087 — live word/char counter. ONE-WAY, display-only: the editor passes
+	// its live CM6 body rope here on every doc change; we never write back into
+	// the editor's content (so this is outside the BUG-015 / §C-2 vector). Only the
+	// FOCUSED tab drives the status bar; background/split editors are ignored.
+	// doc.length is O(1) on the rope (immediate); the word regex is debounced off
+	// the keystroke path (Performance Rule 1).
+	let _liveWcTimer: ReturnType<typeof setTimeout> | undefined;
+	function handleLiveStats(id: string, doc: { length: number; toString(): string }) {
+		if (id !== sidebarTab?.id) return;
+		charCount = doc.length;
+		clearTimeout(_liveWcTimer);
+		_liveWcTimer = setTimeout(() => {
+			const text = doc.toString();
+			wordCount = text ? (text.match(/\S+/g)?.length ?? 0) : 0;
+		}, 300);
+	}
 
 	// All note names across all libraries (for quick switcher)
 	const allSwitcherNotes = $derived(allNotes);
@@ -3166,6 +3189,7 @@
 		clearTimeout(watcherDebounce);
 		clearTimeout(unlinkedDebounce);
 		clearTimeout(_wcTimer);
+		clearTimeout(_liveWcTimer);
 		clearTimeout(_localStarTimer);
 		clearTimeout(_tasksTimer);
 		clearTimeout(_calTimer);
@@ -6955,6 +6979,7 @@
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={handleStageChanged}
 									onTitleRename={handleRenameComplete}
+									onLiveStats={handleLiveStats}
 								/>
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
@@ -7128,6 +7153,7 @@
 								onnavigateforward={() => navigateForward()}
 								onStageChanged={handleStageChanged}
 								onTitleRename={handleRenameComplete}
+								onLiveStats={handleLiveStats}
 								onmoreaction={async (action) => {
 									switch (action) {
 										case 'rename': {
@@ -7996,17 +8022,17 @@
 		<div class="sb-right">
 			{#if sidebarTab}
 				{#if sidebarProperties.length > 0}
-					<span class="sb-item">{sidebarProperties.length} {$t('statusBar.properties')}</span>
+					<span class="sb-item">{$tn('plurals.properties', sidebarProperties.length)}</span>
 					<span class="sb-dot">·</span>
 				{/if}
-				<span class="sb-item">{wordCount} {$t('statusBar.words')}</span>
+				<span class="sb-item">{$tn('plurals.words', wordCount)}</span>
 				<span class="sb-dot">·</span>
-				<span class="sb-item">{charCount} {$t('statusBar.characters')}</span>
+				<span class="sb-item">{$tn('plurals.characters', charCount)}</span>
 				<span class="sb-dot">·</span>
 			{/if}
-			<span class="sb-item">{$libraryCount} {$t('statusBar.libraries')}</span>
+			<span class="sb-item">{$tn('plurals.libraries', $libraryCount)}</span>
 			<span class="sb-dot">·</span>
-			<span class="sb-item">{$totalStars} {$t('statusBar.notes')}</span>
+			<span class="sb-item">{$tn('plurals.notes', $totalStars)}</span>
 			{#if federationWarnings.length > 0}
 				<!-- MIG-056 §H — Federation warning badge. Surfaces when one
 				     or more cUniverses failed to attach (skip_unavailable

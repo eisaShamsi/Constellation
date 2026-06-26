@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, dir, getSearchOps } from '$lib/i18n';
+	import { t, tn, dir, getSearchOps } from '$lib/i18n';
 	import {
 		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
 		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars,
@@ -416,7 +416,7 @@
 			</button>
 			{#if totalResults() > 0}
 				{@const unique = uniqueNoteCount()}
-				<span class="sh-total">{totalResults()} {#if unique < totalResults()}<span class="sh-unique">{$t('searchHub.from')} {unique} {$t('searchHub.notes')}</span>{/if}</span>
+				<span class="sh-total">{totalResults()} {#if unique < totalResults()}<span class="sh-unique">{$t('searchHub.from')} {$tn('plurals.notes', unique)}</span>{/if}</span>
 			{/if}
 			<button class="sh-close" onclick={() => onClose()}>×</button>
 		</div>
@@ -513,7 +513,7 @@
 
 			{:else if isAdvancedMode && filteredResults.length > 0}
 				<!-- Advanced mode: single query, flat result list -->
-				<div class="sh-section-label">{filteredResults.length} {$t('sidebar.results')}</div>
+				<div class="sh-section-label">{$tn('plurals.results', filteredResults.length)}</div>
 				{#each filteredResults as r, idx}
 					{@const rustDir = r.snippet === '↑' || r.snippet === '↓' || r.snippet === '↑↓' ? r.snippet : null}
 					{@const dir = rustDir ?? queryDirection(query)}

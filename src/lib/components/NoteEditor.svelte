@@ -72,6 +72,7 @@
 		onmoreaction,
 		onStageChanged,
 		onTitleRename,
+		onLiveStats,
 		linkTraversalMap,
 	}: {
 		tab: TabLike;
@@ -93,6 +94,12 @@
 		 *  gap on the §C/§D-safe foundation. Without it (or under rollback) the
 		 *  direct-renameItem fallback keeps today's behavior. */
 		onTitleRename?: (oldPath: string, newName: string) => void | Promise<void>;
+		/** One-way, display-only live-content notification for the host's status-bar
+		 *  word/character counter. Fires on every CM6 doc change with this tab's id +
+		 *  the live rope. It NEVER feeds back into content flow (no value-prop / doc
+		 *  sync), so it sits outside the BUG-015 / §C-2 vector; the host debounces the
+		 *  count. Purely an observer — the editor still owns its content. */
+		onLiveStats?: (id: string, doc: Text) => void;
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
@@ -435,7 +442,7 @@
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
 	{linkTraversalMap}
 	onchange={() => {}}
-	onDocChange={(doc: Text) => editBody(tab.id, doc, tab.path)}
+	onDocChange={(doc: Text) => { editBody(tab.id, doc, tab.path); onLiveStats?.(tab.id, doc); }}
 	onpromote={handlePromote}
 	onsave={handleSave}
 	onflush={handleFlush}

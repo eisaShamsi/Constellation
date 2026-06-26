@@ -71,7 +71,7 @@
       "editor": "Editor",
       "skyview": "Sky View y Enlaces",
       "links": "Enlaces",
-      "sight": "Sight",
+      "sight": "Visión",
       "intelligence": "Inteligencia",
       "security": "Seguridad y Privacidad",
       "appearance": "Apariencia",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View.",
-      "linking": "Linking",
+      "linking": "Vinculación",
       "graphAppearance": "Apariencia del grafo",
       "nodeSize": "Tamaño del nodo",
       "nodeSizeDesc": "Factor de escala para el radio de los nodos en el grafo",
@@ -498,7 +498,7 @@
       "searchDesc": "Buscar en todas las notas",
       "quickSwitcher": "Cambio rápido",
       "quickSwitcherDesc": "Navegar rápidamente entre notas",
-      "commandPalette": "Command Palette",
+      "commandPalette": "Paleta de comandos",
       "commandPaletteDesc": "Acceso rápido a todos los comandos",
       "wordCount": "Conteo de palabras",
       "wordCountDesc": "Mostrar conteo de palabras en la barra de estado",
@@ -508,11 +508,11 @@
       "indexDesc": "Recopilar y explorar términos de todas las notas",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Mapa de Constellation",
+      "constellationMapDesc": "Visualización en explosión solar de la estructura del conocimiento",
+      "constellationSight": "Sistema nervioso del conocimiento",
+      "constellationSightDesc": "Vista de recorrido de conexiones de tu universo: métricas de salud del universo, comunidades, principales puentes y análisis de brechas estructurales (\"puntos ciegos\").",
+      "constellationSightV3": "Visión de Constellation",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "Navegador de Notas",
       "notesNavigatorDesc": "Explorar y filtrar notas por carpeta, etiqueta o propiedad",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Visión de Constellation: vista en cúpula anclada de tu universo con posicionamiento de estrato × tiempo, gradiente de densidad con el zoom predeterminado y minicúpulas por canal.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTemplate": "Insertar desde plantilla",
     "importNotes": "Importar notas",
     "insertTable": "Insertar tabla",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "Captura rápida",
     "skyView": "Vista del cielo",
     "reviewDueNotes": "Revisar notas pendientes",
     "openTrail": "Abrir ruta",
@@ -1227,10 +1227,10 @@
     "welcomeSubtitle": "Añade tu primera biblioteca desde la barra lateral",
     "addLibraryCta": "+ Añadir biblioteca",
     "selectNote": "Selecciona una nota desde la barra lateral",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "Vincular biblioteca existente",
+    "linkLibraryDesc": "Conecta una carpeta existente como biblioteca",
+    "newLibrary": "Crear biblioteca nueva",
+    "newLibraryDesc": "Crea una carpeta de biblioteca nueva y vacía"
   },
   "skills": {
     "title": "Habilidades",
@@ -1648,16 +1648,16 @@
       "remove": "Eliminar",
       "starterKit": "Incluir kit de inicio",
       "starterKitDesc": "Agregar notas de ejemplo y estructura de carpetas para comenzar",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "Importar desde una aplicación",
+      "importAppDesc": "Importa notas desde otra aplicación",
+      "importConfirm": "Importar",
+      "importDescription": "Selecciona una aplicación desde la que importar notas",
+      "importHeading": "Importar notas",
+      "importLocationLabel": "Ubicación de importación",
+      "importPreviewHeading": "Vista previa",
+      "importingNotes": "Importando notas...",
+      "linkLibrary": "Vincular biblioteca existente",
+      "linkLibraryDesc": "Conecta una carpeta de notas existente"
     },
     "manager": {
       "heading": "Gestor de Universos",
@@ -1680,7 +1680,7 @@
     "migrating": "Migrando tus datos..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Vista de datos",
     "loading": "Cargando consulta...",
     "noResults": "Sin resultados",
     "results": "resultados",
@@ -1780,12 +1780,12 @@
     "done": "Listo"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "Inicio",
+    "libraries": "Bibliotecas",
+    "skills": "Habilidades"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "Nueva pestaña",
     "closeTab": "Cerrar pestaña",
     "openNote": "Abrir una nota"
   },
@@ -1846,8 +1846,8 @@
     "universe": "Universo",
     "libraries": "bibliotecas",
     "notes": "notas",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "Volver al organigrama",
+    "reset": "Restablecer vista"
   },
   "universeNotes": {
     "title": "Notas del Universo",
@@ -1978,7 +1978,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Visión de Constellation",
       "returnToSight": "Volver a Sight",
       "tradition": {
         "family": {
@@ -2387,7 +2387,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Visión de Constellation",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2451,7 +2451,7 @@
     "legendGapDesc": "Brecha estructural — punto ciego entre áreas desconectadas",
     "legendCluster": "Región coloreada",
     "legendClusterDesc": "Límite de comunidad — grupo temático densamente conectado",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "Volver al sistema nervioso",
     "fitToScreen": "Ajustar a pantalla",
     "searchAll": "Buscar todo... (Enter)",
     "searchTitles": "Buscar títulos...",
@@ -3646,6 +3646,116 @@
       "due": "Reléela y confirma que sigue siendo válida; luego márcala como revisada.",
       "never": "Dale su primera revisión — léela por completo, luego confírmala o refínala.",
       "checkpoint": "Reexamina esta postura — confírmala, revísala o sustitúyela."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} nota",
+      "other": "{count} notas"
+    },
+    "libraries": {
+      "one": "{count} biblioteca",
+      "other": "{count} bibliotecas"
+    },
+    "properties": {
+      "one": "{count} propiedad",
+      "other": "{count} propiedades"
+    },
+    "words": {
+      "one": "{count} palabra",
+      "other": "{count} palabras"
+    },
+    "characters": {
+      "one": "{count} carácter",
+      "other": "{count} caracteres"
+    },
+    "links": {
+      "one": "{count} enlace",
+      "other": "{count} enlaces"
+    },
+    "nodes": {
+      "one": "{count} nodo",
+      "other": "{count} nodos"
+    },
+    "edges": {
+      "one": "{count} arista",
+      "other": "{count} aristas"
+    },
+    "results": {
+      "one": "{count} resultado",
+      "other": "{count} resultados"
+    },
+    "terms": {
+      "one": "{count} término",
+      "other": "{count} términos"
+    },
+    "tabs": {
+      "one": "{count} pestaña",
+      "other": "{count} pestañas"
+    },
+    "files": {
+      "one": "{count} archivo",
+      "other": "{count} archivos"
+    },
+    "items": {
+      "one": "{count} elemento",
+      "other": "{count} elementos"
+    },
+    "tags": {
+      "one": "{count} etiqueta",
+      "other": "{count} etiquetas"
+    },
+    "tasksDue": {
+      "one": "{count} tarea pendiente",
+      "other": "{count} tareas pendientes"
+    },
+    "gaps": {
+      "one": "{count} brecha",
+      "other": "{count} brechas"
+    },
+    "tensions": {
+      "one": "{count} tensión",
+      "other": "{count} tensiones"
+    },
+    "blindSpots": {
+      "one": "{count} punto ciego",
+      "other": "{count} puntos ciegos"
+    },
+    "outbound": {
+      "one": "{count} enlace saliente",
+      "other": "{count} enlaces salientes"
+    },
+    "inbound": {
+      "one": "{count} enlace entrante",
+      "other": "{count} enlaces entrantes"
+    },
+    "selected": {
+      "one": "{count} seleccionado",
+      "other": "{count} seleccionados"
+    },
+    "hidden": {
+      "one": "{count} oculto",
+      "other": "{count} ocultos"
+    },
+    "more": {
+      "one": "{count} más",
+      "other": "{count} más"
+    },
+    "incomingLinks": {
+      "one": "{count} enlace entrante",
+      "other": "{count} enlaces entrantes"
+    },
+    "walks": {
+      "one": "{count} recorrido",
+      "other": "{count} recorridos"
+    },
+    "days": {
+      "one": "{count} día",
+      "other": "{count} días"
+    },
+    "mentions": {
+      "one": "{count} mención",
+      "other": "{count} menciones"
     }
   }
 }

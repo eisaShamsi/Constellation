@@ -5,7 +5,7 @@
 	 * Inspired by Goalscape. Uses D3.js d3.partition() for layout.
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t, dir, getSearchOps } from '$lib/i18n';
+	import { t, tn, dir, getSearchOps } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import * as d3 from 'd3';
 	import { get } from 'svelte/store';
@@ -698,7 +698,7 @@
 		<!-- Search results sidebar -->
 		{#if searchResults.length > 0}
 			<div class="cmap-results" style="width:{sidebarWidth}px">
-				<div class="cmap-results-header">{searchResults.length} {$t('sightPanel.totalNodes') || 'results'}</div>
+				<div class="cmap-results-header">{$tn('plurals.results', searchResults.length)}</div>
 				<div class="cmap-results-list">
 					{#each searchResults as result, i}
 						<button class="cmap-result-row" class:active={i === searchIdx}
@@ -742,19 +742,19 @@
 			<div class="cmap-tt-name">{tooltip.node.name}</div>
 			{#if tooltip.node.node_type === 'child_universe'}
 				<div class="cmap-tt-type">{$t('constellationMap.childUniverse') || 'Child Universe'}</div>
-				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
-				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
+				<div class="cmap-tt-row">{$tn('plurals.notes', tooltip.node.note_count)}</div>
+				<div class="cmap-tt-row">{$tn('plurals.words', tooltip.node.word_count)}</div>
 			{:else if tooltip.node.node_type === 'library'}
 				<div class="cmap-tt-type">{$t('constellationMap.library') || 'Library'}</div>
-				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
-				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
-				<div class="cmap-tt-row">{tooltip.node.link_count} {$t('constellationMap.links') || 'links'}</div>
+				<div class="cmap-tt-row">{$tn('plurals.notes', tooltip.node.note_count)}</div>
+				<div class="cmap-tt-row">{$tn('plurals.words', tooltip.node.word_count)}</div>
+				<div class="cmap-tt-row">{$tn('plurals.links', tooltip.node.link_count)}</div>
 			{:else if tooltip.node.is_dir}
-				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
-				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
-				<div class="cmap-tt-row">{tooltip.node.link_count} {$t('constellationMap.links') || 'links'}</div>
+				<div class="cmap-tt-row">{$tn('plurals.notes', tooltip.node.note_count)}</div>
+				<div class="cmap-tt-row">{$tn('plurals.words', tooltip.node.word_count)}</div>
+				<div class="cmap-tt-row">{$tn('plurals.links', tooltip.node.link_count)}</div>
 			{:else}
-				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'} · {tooltip.node.link_count} {$t('constellationMap.links') || 'links'}</div>
+				<div class="cmap-tt-row">{$tn('plurals.words', tooltip.node.word_count)} · {$tn('plurals.links', tooltip.node.link_count)}</div>
 				{#if tooltip.node.maturity}
 					<div class="cmap-tt-row">
 						<span class="cmap-tt-dot" style="background:{MATURITY_COLORS[tooltip.node.maturity] || '#999'}"></span>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, isRTL as isRTLStore } from '$lib/i18n';
+	import { t, tn, isRTL as isRTLStore } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { createNote, writeNote, openNoteTab } from '$lib/libraries/store';
 
@@ -313,7 +313,7 @@
 		<!-- Canvas workspace -->
 		<div class="smc-header">
 			<span class="smc-header-title">🎨 {canvasTitle}</span>
-			<span class="smc-header-count">{items.length} {$t('senseMakingCanvas.items') || 'items'}</span>
+			<span class="smc-header-count">{$tn('plurals.items', items.length)}</span>
 			<span class="smc-header-hint">{$t('senseMakingCanvas.hint') || 'Double-click to add • Shift+drag to pan • Scroll to zoom'}</span>
 			<button class="smc-header-btn" title="Fit to screen" onclick={fitToScreen}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>

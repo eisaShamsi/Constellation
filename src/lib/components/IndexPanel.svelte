@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, tn } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import ContextMenu from './ContextMenu.svelte';
 	import {
@@ -1112,7 +1112,7 @@
 			{/if}
 		</div>
 		<div class="gp-actions">
-			<span class="gp-total">{totalTerms} {$t('indexPanel.terms')}</span>
+			<span class="gp-total">{$tn('plurals.terms', totalTerms)}</span>
 			<div class="gp-btns">
 				<button class="gp-icon-btn" class:active={sortMode === 'freq'} onclick={() => sortMode = sortMode === 'alpha' ? 'freq' : 'alpha'} title={sortMode === 'alpha' ? 'Sort by frequency' : 'Sort alphabetically'}>
 					{#if sortMode === 'alpha'}

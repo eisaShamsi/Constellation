@@ -71,7 +71,7 @@
       "editor": "エディタ",
       "skyview": "スカイビュー＆リンク",
       "links": "リンク",
-      "sight": "Sight",
+      "sight": "サイト",
       "intelligence": "インテリジェンス",
       "security": "セキュリティ＆プライバシー",
       "appearance": "外観",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。",
-      "linking": "Linking",
+      "linking": "リンク",
       "graphAppearance": "グラフの外観",
       "nodeSize": "ノードサイズ",
       "nodeSizeDesc": "グラフ内のノード半径のスケール係数",
@@ -498,7 +498,7 @@
       "searchDesc": "すべてのノートを横断検索",
       "quickSwitcher": "クイックスイッチャー",
       "quickSwitcherDesc": "ノート間を素早く移動",
-      "commandPalette": "Command Palette",
+      "commandPalette": "コマンドパレット",
       "commandPaletteDesc": "すべてのコマンドにすばやくアクセス",
       "wordCount": "文字数カウント",
       "wordCountDesc": "ステータスバーに文字数を表示",
@@ -508,11 +508,11 @@
       "indexDesc": "すべてのノートから用語を収集・閲覧",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "Constellation マップ",
+      "constellationMapDesc": "知識構造のサンバースト可視化",
+      "constellationSight": "知識の神経系",
+      "constellationSightDesc": "ユニバースをつながりの観点からたどるビュー — ユニバースの健全性指標、コミュニティ、主要なブリッジ、構造的なギャップ（「ブラインドスポット」）の分析。",
+      "constellationSightV3": "Constellation サイト",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "ノートナビゲーター",
       "notesNavigatorDesc": "フォルダ、タグ、プロパティでノートを閲覧・フィルタ",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "Constellation サイト — 層 × 時間で配置するアンカードーム表示でユニバースを俯瞰し、既定のズームでは密度グラデーション、チャネルごとのミニドームも表示します。",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTable": "テーブルを挿入",
     "addLibrary": "保管庫を追加",
     "searchLibrary": "保管庫を検索",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "クイックキャプチャ",
     "skyView": "天空ビュー",
     "reviewDueNotes": "期限のノートを確認",
     "openTrail": "トレイルを開く",
@@ -1667,10 +1667,10 @@
     "selectNote": "サイドバーからノートを選択してください",
     "addLibrary": "+ 保管庫を追加",
     "addLibraryCta": "+ 保管庫を追加",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "既存のライブラリをリンク",
+    "linkLibraryDesc": "既存のフォルダーをライブラリとして接続します",
+    "newLibrary": "新規ライブラリを作成",
+    "newLibraryDesc": "空の新しいライブラリフォルダーを作成します"
   },
   "skills": {
     "title": "スキル",
@@ -2077,16 +2077,16 @@
       "remove": "削除",
       "starterKit": "スターターキットを含める",
       "starterKitDesc": "開始用のサンプルノートとフォルダ構造を追加",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "アプリからインポート",
+      "importAppDesc": "別のアプリケーションからノートをインポートします",
+      "importConfirm": "インポート",
+      "importDescription": "ノートのインポート元となるアプリを選択してください",
+      "importHeading": "ノートをインポート",
+      "importLocationLabel": "インポート先",
+      "importPreviewHeading": "プレビュー",
+      "importingNotes": "ノートをインポート中…",
+      "linkLibrary": "既存のライブラリをリンク",
+      "linkLibraryDesc": "既存のノートのフォルダーを接続します"
     },
     "manager": {
       "heading": "ユニバースマネージャー",
@@ -2109,7 +2109,7 @@
     "migrating": "データを移行中..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "データビュー",
     "loading": "クエリを読み込み中...",
     "noResults": "結果なし",
     "results": "件",
@@ -2220,12 +2220,12 @@
     "openLibrary": "+ ボールトを開く"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "ホーム",
+    "libraries": "ライブラリ",
+    "skills": "スキル"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "新規タブ",
     "closeTab": "タブを閉じる",
     "openNote": "ノートを開く"
   },
@@ -2286,8 +2286,8 @@
     "universe": "ユニバース",
     "libraries": "ライブラリ",
     "notes": "ノート",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "組織図に戻る",
+    "reset": "表示をリセット"
   },
   "universeNotes": {
     "title": "ユニバースノート",
@@ -2418,7 +2418,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "Constellation サイト",
       "returnToSight": "Sight に戻る",
       "stratum": {
         "foundation": "基礎",
@@ -2827,7 +2827,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "Constellation サイト",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2891,7 +2891,7 @@
     "legendGapDesc": "構造的ギャップ — 切断された領域間の盲点",
     "legendCluster": "色付き領域",
     "legendClusterDesc": "コミュニティ境界 — 密接に接続されたトピッククラスタ",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "神経系に戻る",
     "fitToScreen": "画面に合わせる",
     "searchAll": "すべて検索... (Enter)",
     "searchTitles": "タイトル検索...",
@@ -3646,6 +3646,89 @@
       "due": "読み直して今も妥当か確認し、レビュー済みとして設定しましょう。",
       "never": "初めてのレビューを行いましょう——通読して、確認するか練り直しましょう。",
       "checkpoint": "この見解を再検討しましょう——確認する、修正する、または取って代わらせましょう。"
+    }
+  },
+  "plurals": {
+    "notes": {
+      "other": "{count}件のノート"
+    },
+    "libraries": {
+      "other": "{count}個の保管庫"
+    },
+    "properties": {
+      "other": "{count}件のプロパティ"
+    },
+    "words": {
+      "other": "{count}語"
+    },
+    "characters": {
+      "other": "{count}文字"
+    },
+    "links": {
+      "other": "{count}件のリンク"
+    },
+    "nodes": {
+      "other": "{count}個のノード"
+    },
+    "edges": {
+      "other": "{count}本のエッジ"
+    },
+    "results": {
+      "other": "{count}件の結果"
+    },
+    "terms": {
+      "other": "{count}件の用語"
+    },
+    "tabs": {
+      "other": "{count}個のタブ"
+    },
+    "files": {
+      "other": "{count}個のファイル"
+    },
+    "items": {
+      "other": "{count}個のアイテム"
+    },
+    "tags": {
+      "other": "{count}個のタグ"
+    },
+    "tasksDue": {
+      "other": "{count}件のタスク期限"
+    },
+    "gaps": {
+      "other": "{count}件のギャップ"
+    },
+    "tensions": {
+      "other": "{count}件の緊張"
+    },
+    "blindSpots": {
+      "other": "{count}件の盲点"
+    },
+    "outbound": {
+      "other": "発信リンク{count}件"
+    },
+    "inbound": {
+      "other": "受信リンク{count}件"
+    },
+    "selected": {
+      "other": "{count}件選択済み"
+    },
+    "hidden": {
+      "other": "{count}件非表示"
+    },
+    "more": {
+      "other": "他{count}件"
+    },
+    "incomingLinks": {
+      "other": "被リンク{count}件"
+    },
+    "walks": {
+      "other": "{count}回の通過"
+    },
+    "days": {
+      "other": "{count}日"
+    },
+    "mentions": {
+      "other": "{count}件の言及"
     }
   }
 }

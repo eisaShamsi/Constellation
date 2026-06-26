@@ -71,7 +71,7 @@
       "editor": "ویرایشگر",
       "skyview": "نمای آسمان و پیوندها",
       "links": "پیوندها",
-      "sight": "Sight",
+      "sight": "بینش",
       "intelligence": "هوش",
       "security": "امنیت و حریم خصوصی",
       "appearance": "ظاهر",
@@ -426,7 +426,7 @@
     },
     "skyview": {
       "intro": "تنظیم نحوه کار خطوط ستاره (پیوندهای بین کتابخانه‌ای) و نمای آسمان.",
-      "linking": "Linking",
+      "linking": "پیوندسازی",
       "graphAppearance": "ظاهر نمودار",
       "nodeSize": "اندازه گره",
       "nodeSizeDesc": "ضریب مقیاس شعاع گره در نمودار",
@@ -498,7 +498,7 @@
       "searchDesc": "جستجو در تمام یادداشت‌ها",
       "quickSwitcher": "جابجایی سریع",
       "quickSwitcherDesc": "پیمایش سریع بین یادداشت‌ها",
-      "commandPalette": "Command Palette",
+      "commandPalette": "پالت فرمان",
       "commandPaletteDesc": "دسترسی سریع به همه دستورات",
       "wordCount": "شمارش کلمات",
       "wordCountDesc": "نمایش تعداد کلمات در نوار وضعیت",
@@ -508,11 +508,11 @@
       "indexDesc": "جمع‌آوری و مرور اصطلاحات از تمام یادداشت‌ها",
       "semanticSearch": "Semantic Search",
       "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
-      "constellationMap": "Constellation Map",
-      "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Nervous System (CNS)",
-      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
-      "constellationSightV3": "Constellation Sight",
+      "constellationMap": "نقشه صورت فلکی",
+      "constellationMapDesc": "تجسم خورشیدپرتو از ساختار دانش",
+      "constellationSight": "دستگاه عصبی دانش",
+      "constellationSightDesc": "نمای پیمایش پیوندهای جهان شما — سنجه‌های سلامت جهان، جامعه‌ها، پل‌های برتر و تحلیل شکاف ساختاری («نقطه کور»).",
+      "constellationSightV3": "بینش صورت فلکی",
       "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "ناوبر یادداشت‌ها",
       "notesNavigatorDesc": "مرور و فیلتر یادداشت‌ها بر اساس پوشه، برچسب یا ویژگی",
@@ -624,7 +624,7 @@
       }
     },
     "sight": {
-      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
+      "intro": "بینش صورت فلکی — نمای گنبد لنگرگاهی از جهان شما با موقعیت‌یابی لایه × زمان، گرادیان چگالی در بزرگ‌نمایی پیش‌فرض، و گنبدهای کوچک هر کانال.",
       "projection": {
         "label": "Projection",
         "lambert": "Lambert (equal-area)",
@@ -748,7 +748,7 @@
     "insertTemplate": "درج از الگو",
     "importNotes": "وارد کردن یادداشت‌ها",
     "insertTable": "درج جدول",
-    "quickCapture": "Quick Capture",
+    "quickCapture": "ثبت سریع",
     "skyView": "نمای آسمان",
     "reviewDueNotes": "بازبینی یادداشت‌های موعد",
     "openTrail": "باز کردن مسیر",
@@ -1227,10 +1227,10 @@
     "welcomeSubtitle": "اولین کتابخانه خود را از نوار کناری اضافه کنید",
     "addLibraryCta": "+ افزودن کتابخانه",
     "selectNote": "یک یادداشت از نوار کناری انتخاب کنید",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
-    "newLibrary": "Create New Library",
-    "newLibraryDesc": "Create a new empty library folder"
+    "linkLibrary": "پیوند کتابخانه موجود",
+    "linkLibraryDesc": "اتصال یک پوشه موجود به‌عنوان کتابخانه",
+    "newLibrary": "ایجاد کتابخانه جدید",
+    "newLibraryDesc": "ایجاد یک پوشه کتابخانه خالی جدید"
   },
   "skills": {
     "title": "مهارت‌ها",
@@ -1648,16 +1648,16 @@
       "remove": "حذف",
       "starterKit": "شامل بسته شروع",
       "starterKitDesc": "افزودن یادداشت‌ها و ساختار پوشه نمونه برای شروع",
-      "importApp": "Import from App",
-      "importAppDesc": "Import notes from another application",
-      "importConfirm": "Import",
-      "importDescription": "Select an app to import notes from",
-      "importHeading": "Import Notes",
-      "importLocationLabel": "Import Location",
-      "importPreviewHeading": "Preview",
-      "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes"
+      "importApp": "درون‌ریزی از برنامه",
+      "importAppDesc": "درون‌ریزی یادداشت‌ها از برنامه‌ای دیگر",
+      "importConfirm": "درون‌ریزی",
+      "importDescription": "برنامه‌ای را برای درون‌ریزی یادداشت‌ها انتخاب کنید",
+      "importHeading": "درون‌ریزی یادداشت‌ها",
+      "importLocationLabel": "محل درون‌ریزی",
+      "importPreviewHeading": "پیش‌نمایش",
+      "importingNotes": "در حال درون‌ریزی یادداشت‌ها...",
+      "linkLibrary": "پیوند کتابخانه موجود",
+      "linkLibraryDesc": "اتصال یک پوشه موجود از یادداشت‌ها"
     },
     "manager": {
       "heading": "مدیر جهان‌ها",
@@ -1680,7 +1680,7 @@
     "migrating": "در حال انتقال داده‌ها..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "نمای داده",
     "loading": "در حال بارگذاری پرس‌وجو...",
     "noResults": "نتیجه‌ای یافت نشد",
     "results": "نتایج",
@@ -1780,12 +1780,12 @@
     "targetLibrary": "صندوق مقصد"
   },
   "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
+    "home": "خانه",
+    "libraries": "کتابخانه‌ها",
+    "skills": "مهارت‌ها"
   },
   "tabs": {
-    "newTab": "New Tab",
+    "newTab": "زبانه جدید",
     "closeTab": "بستن برگه",
     "openNote": "باز کردن یادداشت"
   },
@@ -1846,8 +1846,8 @@
     "universe": "جهان",
     "libraries": "کتابخانه‌ها",
     "notes": "یادداشت‌ها",
-    "returnToOrgChart": "Return to OrgChart",
-    "reset": "Reset view"
+    "returnToOrgChart": "بازگشت به نمودار سازمانی",
+    "reset": "بازنشانی نما"
   },
   "universeNotes": {
     "title": "یادداشت‌های جهان",
@@ -1978,7 +1978,7 @@
   },
   "sight": {
     "v6": {
-      "title": "Constellation Sight",
+      "title": "بینش صورت فلکی",
       "returnToSight": "بازگشت به Sight",
       "stratum": {
         "foundation": "بنیان",
@@ -2387,7 +2387,7 @@
     }
   },
   "sightV3": {
-    "title": "Constellation Sight",
+    "title": "بینش صورت فلکی",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
     "close": "Close Sight",
     "tooltip": {
@@ -2451,7 +2451,7 @@
     "legendGapDesc": "شکاف ساختاری — نقطه کور بین حوزه‌های منفصل",
     "legendCluster": "منطقه رنگی",
     "legendClusterDesc": "مرز جامعه — خوشه موضوعی متراکم",
-    "returnToLens": "Return to CNS",
+    "returnToLens": "بازگشت به دستگاه عصبی",
     "fitToScreen": "تنظیم به صفحه",
     "searchAll": "جستجوی همه... (Enter)",
     "searchTitles": "جستجوی عناوین...",
@@ -3646,6 +3646,116 @@
       "due": "دوباره آن را بخوان و تأیید کن که هنوز پابرجاست، سپس بازبینی‌شده علامت بزن.",
       "never": "نخستین بازبینی‌اش را به آن بده — سرتاسرش را بخوان، سپس تأیید یا پالایش کن.",
       "checkpoint": "این دیدگاه را دوباره بررسی کن — تأییدش کن، بازنگری‌اش کن، یا جایگزینش کن."
+    }
+  },
+  "plurals": {
+    "notes": {
+      "one": "{count} یادداشت",
+      "other": "{count} یادداشت"
+    },
+    "libraries": {
+      "one": "{count} کتابخانه",
+      "other": "{count} کتابخانه"
+    },
+    "properties": {
+      "one": "{count} ویژگی",
+      "other": "{count} ویژگی"
+    },
+    "words": {
+      "one": "{count} کلمه",
+      "other": "{count} کلمه"
+    },
+    "characters": {
+      "one": "{count} نویسه",
+      "other": "{count} نویسه"
+    },
+    "links": {
+      "one": "{count} لینک",
+      "other": "{count} لینک"
+    },
+    "nodes": {
+      "one": "{count} گره",
+      "other": "{count} گره"
+    },
+    "edges": {
+      "one": "{count} یال",
+      "other": "{count} یال"
+    },
+    "results": {
+      "one": "{count} نتیجه",
+      "other": "{count} نتیجه"
+    },
+    "terms": {
+      "one": "{count} اصطلاح",
+      "other": "{count} اصطلاح"
+    },
+    "tabs": {
+      "one": "{count} تب",
+      "other": "{count} تب"
+    },
+    "files": {
+      "one": "{count} فایل",
+      "other": "{count} فایل"
+    },
+    "items": {
+      "one": "{count} مورد",
+      "other": "{count} مورد"
+    },
+    "tags": {
+      "one": "{count} برچسب",
+      "other": "{count} برچسب"
+    },
+    "tasksDue": {
+      "one": "{count} وظیفه سررسید",
+      "other": "{count} وظیفه سررسید"
+    },
+    "gaps": {
+      "one": "{count} شکاف",
+      "other": "{count} شکاف"
+    },
+    "tensions": {
+      "one": "{count} تنش",
+      "other": "{count} تنش"
+    },
+    "blindSpots": {
+      "one": "{count} نقطه کور",
+      "other": "{count} نقطه کور"
+    },
+    "outbound": {
+      "one": "{count} خروجی",
+      "other": "{count} خروجی"
+    },
+    "inbound": {
+      "one": "{count} ورودی",
+      "other": "{count} ورودی"
+    },
+    "selected": {
+      "one": "{count} انتخاب‌شده",
+      "other": "{count} انتخاب‌شده"
+    },
+    "hidden": {
+      "one": "{count} پنهان",
+      "other": "{count} پنهان"
+    },
+    "more": {
+      "one": "{count} بیشتر",
+      "other": "{count} بیشتر"
+    },
+    "incomingLinks": {
+      "one": "{count} پیوند ورودی",
+      "other": "{count} پیوند ورودی"
+    },
+    "walks": {
+      "one": "{count} پیمایش",
+      "other": "{count} پیمایش"
+    },
+    "days": {
+      "one": "{count} روز",
+      "other": "{count} روز"
+    },
+    "mentions": {
+      "one": "{count} اشاره",
+      "other": "{count} اشاره"
     }
   }
 }

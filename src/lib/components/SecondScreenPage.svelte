@@ -4,7 +4,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
-	import { dir, t, setLocale, type Locale } from '$lib/i18n';
+	import { dir, t, tn, setLocale, type Locale } from '$lib/i18n';
 	import {
 		libraries, loadLibraries, appSettings, loadSettings,
 		loadLibraryAppearance,
@@ -1004,7 +1004,7 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
 					<span class="dash-tag-badge">#{dashboardTagName}</span>
-					<span class="dash-tag-count">{dashboardTagNotes.length} {$t('secondScreen.dashboard.notes') || 'notes'}</span>
+					<span class="dash-tag-count">{$tn('plurals.notes', dashboardTagNotes.length)}</span>
 				</div>
 				<div class="dash-tag-split">
 					<div class="dash-tag-list">
@@ -1050,7 +1050,7 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
 					<span class="dash-tag-badge">{indexTermData.term}</span>
-					<span class="dash-tag-count">{indexTermData.notes.length} {$t('secondScreen.dashboard.notes') || 'notes'}</span>
+					<span class="dash-tag-count">{$tn('plurals.notes', indexTermData.notes.length)}</span>
 				</div>
 				<div class="dash-tag-split">
 					<div class="dash-tag-list">
@@ -1096,7 +1096,7 @@
 					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexCompareData = null; indexSelectedNote = null; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
-					<span class="index-compare-label">{$t('secondScreen.comparingTerms') || 'Comparing'} {indexCompareData.terms.length} {$t('secondScreen.dashboard.notes') || 'terms'}</span>
+					<span class="index-compare-label">{$t('secondScreen.comparingTerms') || 'Comparing'} {$tn('plurals.terms', indexCompareData.terms.length)}</span>
 				</div>
 				<div class="index-compare-body">
 					<div class="index-compare-columns">
@@ -1238,7 +1238,7 @@
 			<div class="split-companion">
 				<div class="split-companion-header">
 					<span class="split-companion-label">{$t('secondScreen.splitCompanion') || 'Split Comparison'}</span>
-					<span class="split-companion-count">{scPanels.length} {$t('secondScreen.dashboard.notes') || 'notes'}</span>
+					<span class="split-companion-count">{$tn('plurals.notes', scPanels.length)}</span>
 				</div>
 				<div class="split-companion-tabs">
 					{#each [
@@ -1724,7 +1724,7 @@
 
 	<!-- Bottom status bar -->
 	<div class="screen-status">
-		<span class="status-count">{allNotes.length} {$t('statusBar.notes')}</span>
+		<span class="status-count">{$tn('plurals.notes', allNotes.length)}</span>
 		<span class="status-linked">{$t('secondScreen.linked')}</span>
 	</div>
 </div>

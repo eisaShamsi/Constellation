@@ -4,7 +4,7 @@
 	import { getVersion } from '@tauri-apps/api/app';
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
-	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
+	import { t, tn, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, type WriteJournalStats } from '$lib/libraries/store';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
@@ -2521,7 +2521,7 @@
 							<div class="bp-timestamp">
 								{$t('settings.debug.measuredAt') || 'Measured at'}
 								<code>{bootPerf.timestamp ?? '—'}</code>
-								· {bootPerf.note_count ?? '—'} {$t('settings.debug.notes') || 'notes'}
+								· {typeof bootPerf.note_count === 'number' ? $tn('plurals.notes', bootPerf.note_count) : '—'}
 							</div>
 							<button class="setting-btn" onclick={() => loadBootPerfReport(true)}>
 								{$t('settings.debug.refresh') || 'Refresh'}
