@@ -290,7 +290,7 @@
 	.tp-count { margin-inline-start: auto; font-size: calc(0.7rem * var(--rs-scale, 1)); color: var(--text-faint); font-weight: 400; }
 	.tp-item, .tp-gap {
 		display: flex; align-items: center; gap: 6px; width: 100%;
-		padding: 4px 12px 4px 24px; border: none; background: none; cursor: pointer;
+		padding: 4px 12px; padding-inline-start: 24px; border: none; background: none; cursor: pointer;
 		font-size: calc(0.78rem * var(--rs-scale, 1)); color: var(--text-normal); font-family: inherit; text-align: start;
 	}
 	.tp-item:hover { background: var(--background-modifier-hover); }

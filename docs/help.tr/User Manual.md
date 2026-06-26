@@ -1363,3 +1363,21 @@ Bilişsel Motor'un tüm araçları **Ayarlar > Bilişsel Motor** bölümünden y
 
 *Constellation Kullanım Kılavuzu — Sürüm 0.1.0 — Mart 2026*
 *uconstellation.world*
+
+---
+
+## 23. Önerilen Bağlantılar
+
+Constellation bilgiyi *formüle etmek* içindir ve bilgi bağlantıdır. **Önerilen Bağlantılar**, kütüphanenizde halihazırda bulunan ve baktığınız notla en çok ilişkili olan notları bulur — bağlanması gereken ama henüz bağlanmamış akrabalarını — ve bunların herhangi birini tek tıkla bir **türlü bağlantıya** dönüştürür. Bu, "buna benzer daha fazlası" ama düşünmek içindir.
+
+**Her öneri türlüdür.** Bir öneriyi kabul ettiğinizde, Constellation iki notun *nasıl* ilişkili olduğunu sorar — destekler, çelişir, örnekler, türetilir, vb. ya da yalnızca **ilişkili**. Türlü bir bağlantı, daha sonra okuyabileceğiniz, arayabileceğiniz ve sorgulayabileceğiniz bir muhakeme parçasıdır; özellik asla toplu olarak bağlantı eklemez ve asla sessizce türsüz bir bağlantı eklemez. (Bkz. **Bilgi Formülasyonu** ve **Özellikler**.)
+
+**Onları nasıl bulur.** Adaylar **yalnızca kendi kütüphanenizden** gelir ve en *ayırt edici* ortak söz dağarcığına göre — yaygın olanlara değil, nadir ve belirleyici sözcüklere göre — Constellation'ın canlı arama dizinine karşı sıralanır. Her öneri, neden ortaya çıktığını açıklayan **ortak terimleri** gösterir, böylece asla bir kara kutu tahminini kabul etmezsiniz.
+
+**Beş yer, tek liste.** Aynı öneri listesi şu yerlerde görünür: **Gözden Geçirme** (🕐, *öksüz* veya *kırılgan* olarak işaretlediği notlar için), **Geri Bağlantılar sekmesi** (sağ kenar çubuğu), **360° Denetleyici**, **Sağlık sekmesi** ve **Sky View** (🌌 — herhangi bir yıldıza sağ tıklayın → **Bağlantıları öner…**).
+
+**Gelen mi giden mi — ve neden siz seçmiyorsunuz.** Tanı yüzeyleri (**360° Denetleyici** ve **Sağlık sekmesi**) **gelen** bağlantılar önerir — *hangi notlar **buraya** işaret etmeli*. Genel yüzeyler (**Geri Bağlantılar sekmesi** ve **Sky View**) **giden** bağlantılar önerir — *bu not neye **işaret etmeli***. Yönü, işine uyan biçimde yüzey seçer; notu ve türü siz seçersiniz. (Gelecekteki bir güncelleme, yönü kendiniz değiştirmenize olanak tanıyacaktır.)
+
+**Kullanımı.** **Önerilen Bağlantılar** başlığı altında, en yakın önce sıralanmış ilgili notları, her birini ortak terimleriyle birlikte göreceksiniz. Bir adayın **Bağla** düğmesine tıklayın → küçük **"Nasıl ilişkililer?"** menüsünde ilişki türünü seçin → türlü bağlantı **anında** oluşturulur ve öneri listeden düşer. Ardından notun **özelliklerinde** yaşar, geri bağlantılarında/giden bağlantılarında ve grafiğin her yerinde görünür. Hiçbiri gerçekten uymuyorsa onları olduğu gibi bırakın — ya da Gözden Geçirme'de notu bilinçli bir **bağımsız** olarak işaretleyin. Önerilen Bağlantılar önerir; kararı siz verirsiniz.
+
+**Yerel, gizli, engellemeyen.** Öneriler yalnızca kütüphanenizden talep üzerine hesaplanır — hiçbir şey cihazınızdan ayrılmaz — ve onların toplanması yazmanızı asla engellemez (çalışırken kısa bir "İlgili notlar bulunuyor…" göreceksiniz). Öneriler, ortak terim ipuçları ve ilişki türleri seçtiğiniz dilde görünür ve sağdan sola yazılar için doğru biçimde yansıtılır.

@@ -1358,3 +1358,21 @@ Tous les outils du Moteur Cognitif se configurent dans **Parametres > Moteur Cog
 
 *Manuel d'utilisation de Constellation — Version 0.1.0 — Mars 2026*
 *uconstellation.world*
+
+---
+
+## 23. Connexions suggérées
+
+Constellation sert à *formuler* la connaissance, et la connaissance est connexion. Les **Connexions suggérées** trouvent, parmi les notes déjà présentes dans votre Bibliothèque, celles qui sont les plus apparentées à celle que vous regardez — les proches auxquels elle devrait être reliée mais ne l'est pas encore — et transforment chacune d'elles en un **lien typé** d'un seul clic. C'est un « plus de notes comme celle-ci », mais pour la pensée.
+
+**Chaque suggestion est typée.** Lorsque vous en acceptez une, Constellation demande *comment* les deux notes sont liées — soutient, contredit, illustre, dérivé-de, et ainsi de suite, ou simplement **associatif**. Un lien typé est un fragment de raisonnement que vous pourrez plus tard relire, rechercher et remettre en question ; la fonction n'ajoute jamais de liens en masse et n'ajoute jamais un lien sans type en silence. (Voir **Formulation des connaissances** et **Propriétés**.)
+
+**Comment elles les trouvent.** Les candidats proviennent **uniquement de votre propre Bibliothèque**, classés au moyen de l'index de recherche en temps réel de Constellation selon le vocabulaire partagé le plus *distinctif* — les mots rares et révélateurs, pas les mots courants. Chaque suggestion affiche les **termes en commun** qui expliquent pourquoi elle est apparue, de sorte que vous n'acceptez jamais une supposition opaque.
+
+**Cinq endroits, une seule liste.** La même liste de suggestions apparaît dans le **Réviseur** (🕐, pour les notes qu'il signale comme *orphelines* ou *fragiles*), l'**onglet Rétroliens** (barre latérale droite), l'**Inspecteur 360°**, l'**onglet Santé** et la **Vue Étoiles** (🌌 — clic droit sur une étoile → **Suggérer des connexions…**).
+
+**Entrants ou sortants — et pourquoi vous n'avez pas à choisir.** Les surfaces de diagnostic (l'**Inspecteur 360°** et l'**onglet Santé**) suggèrent des connexions **entrantes** — *quelles notes devraient pointer **ici***. Les surfaces générales (l'**onglet Rétroliens** et la **Vue Étoiles**) suggèrent des connexions **sortantes** — *vers quoi cette note devrait pointer*. La surface choisit la direction qui convient à son rôle ; vous choisissez la note et le type. (Une future mise à jour vous permettra de changer la direction vous-même.)
+
+**Comment l'utiliser.** Sous le titre **Connexions suggérées**, vous verrez les notes apparentées classées de la plus proche à la plus éloignée, chacune avec ses termes en commun. Cliquez sur le bouton **Relier** d'un candidat → dans le petit menu **« Comment sont-ils liés ? »**, choisissez le type de relation → le lien typé est créé **instantanément** et la suggestion disparaît de la liste. Il figure alors dans les **propriétés** de la note et apparaît dans ses rétroliens/liens sortants et dans tout le graphe. Si rien ne convient vraiment, laissez-les — ou, dans le Réviseur, marquez la note comme **autonome** délibérée. Les Connexions suggérées proposent ; c'est vous qui décidez.
+
+**Locale, privée, sans blocage.** Les suggestions sont calculées à la demande à partir de votre seule Bibliothèque — rien ne quitte votre appareil — et leur constitution ne bloque jamais votre frappe (vous verrez un bref « Recherche de notes liées… » pendant le travail). Les suggestions, les indices de termes en commun et les types de relation apparaissent tous dans la langue que vous avez choisie et se reflètent correctement pour les écritures de droite à gauche.

@@ -1361,5 +1361,23 @@ Todas as ferramentas do Motor Cognitivo podem ser configuradas em **Configuracoe
 
 ---
 
+## 18. Conexões sugeridas
+
+O Constellation serve para *formular* conhecimento, e o conhecimento é conexão. As **Conexões sugeridas** encontram as notas que já existem na sua Biblioteca e que mais se relacionam com aquela que está a ver — os parentes a que deveria ligar mas ainda não liga — e transformam qualquer uma delas numa **ligação tipada** com um único clique. É o "mais como esta", mas para o pensamento.
+
+**Toda sugestão é tipada.** Quando aceita uma, o Constellation pergunta *como* se relacionam as duas notas — apoia, contradiz, exemplifica, deriva-de, e assim por diante, ou simplesmente **associativo**. Uma ligação tipada é um raciocínio que pode mais tarde ler, pesquisar e questionar; a funcionalidade nunca adiciona ligações em massa e nunca adiciona silenciosamente uma ligação sem tipo. (Consulte **Formulação de Conhecimento** e **Propriedades**.)
+
+**Como as encontra.** As candidatas vêm **apenas da sua própria Biblioteca**, classificadas em relação ao índice de pesquisa em tempo real do Constellation pelo vocabulário partilhado mais *distintivo* — as palavras raras e reveladoras, não as comuns. Cada sugestão mostra os **termos partilhados** que explicam por que apareceu, para que nunca aceite um palpite de caixa-preta.
+
+**Cinco lugares, uma lista.** A mesma lista de sugestões aparece no **Revisor** (🕐, para notas que assinala como *órfãs* ou *frágeis*), na **Aba de Retroligações** (barra lateral direita), no **Inspetor 360°**, na **Aba de Saúde** e na **Vista do Céu** (🌌 — clique com o botão direito em qualquer estrela → **Sugerir ligações…**).
+
+**Entrada vs saída — e por que não escolhe.** As superfícies de diagnóstico (o **Inspetor 360°** e a **Aba de Saúde**) sugerem conexões de **entrada** — *quais notas deveriam apontar **para aqui***. As superfícies gerais (a **Aba de Retroligações** e a **Vista do Céu**) sugerem conexões de **saída** — *para onde esta nota deveria apontar*. A superfície escolhe a direção que se ajusta à sua função; você escolhe a nota e o tipo. (Uma atualização futura permitir-lhe-á alternar a direção você mesmo.)
+
+**Como usar.** Sob o título **Conexões sugeridas** verá notas relacionadas classificadas das mais próximas primeiro, cada uma com os seus termos partilhados. Clique no botão **Ligar** de uma candidata → no pequeno menu **"Como se relacionam?"** escolha o tipo de relação → a ligação tipada é criada **instantaneamente** e a sugestão sai da lista. Passa então a viver nas **propriedades** da nota e aparece nas suas retroligações/ligações de saída e em todo o grafo. Se nada realmente se ajustar, deixe-as — ou, no Revisor, marque a nota como **autónoma** deliberada. As Conexões sugeridas propõem; quem decide é você.
+
+**Local, privado, não bloqueante.** As sugestões são calculadas a pedido apenas a partir da sua Biblioteca — nada sai do seu dispositivo — e reuni-las nunca bloqueia a sua escrita (verá um breve "A procurar notas relacionadas…" enquanto trabalha). As sugestões, as pistas de termos partilhados e os tipos de relação aparecem todos no idioma que escolheu e refletem-se corretamente para os sistemas de escrita da direita para a esquerda.
+
+---
+
 *Manual do Usuario do Constellation — Versao 0.1.0 — Marco 2026*
 *uconstellation.world*

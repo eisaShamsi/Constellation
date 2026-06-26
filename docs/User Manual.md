@@ -2178,3 +2178,21 @@ Click a note and the right pane **diagnoses and prescribes**: a summary (always 
 Each note's own status also appears in the right-sidebar **🕐 Review** tab when that note is open — the same priority + actions, scoped to that note.
 
 **Settings → Review** sets the *staleness grace period* (days, minimum 1): a dependency change only flags a note as stale once that many days have passed since your last review. Keep it higher if you make many small edits.
+
+---
+
+## 23. Suggested Connections
+
+Constellation is for *formulating* knowledge, and knowledge is connection. **Suggested Connections** finds the notes already in your Library that are most related to the one you're looking at — the relatives it should link to but doesn't yet — and turns any of them into a **typed link** in a single click. It is "more like this," but for thinking.
+
+**Every suggestion is typed.** When you accept one, Constellation asks *how* the two notes relate — supports, contradicts, exemplifies, derives-from, and so on, or simply **associative**. A typed link is a piece of reasoning you can later read, search, and challenge; the feature never adds links in bulk and never adds an untyped link silently. (See **Knowledge Formulation** and **Properties**.)
+
+**How it finds them.** Candidates come **only from your own Library**, ranked against Constellation's live search index by the most *distinctive* shared vocabulary — the rare, telling words, not the common ones. Each suggestion shows the **shared terms** that explain why it surfaced, so you never accept a black-box guess.
+
+**Five places, one list.** The same suggestion list appears in the **Reviewer** (🕐, for notes it flags as *orphan* or *fragile*), the **Backlinks tab** (right sidebar), the **360° Inspector**, the **Health tab**, and **Sky View** (🌌 — right-click any star → **Suggest connections…**).
+
+**Inbound vs outbound — and why you don't choose.** Diagnostic surfaces (the **360° Inspector** and **Health tab**) suggest **inbound** connections — *which notes should point **here***. General surfaces (the **Backlinks tab** and **Sky View**) suggest **outbound** connections — *what this note should point **to***. The surface picks the direction that fits its job; you pick the note and the type. (A future update will let you switch the direction yourself.)
+
+**Using it.** Under the **Suggested connections** heading you'll see related notes ranked closest-first, each with its shared terms. Click a candidate's **Link** button → in the little **"How do they relate?"** menu pick the relationship type → the typed link is created **instantly** and the suggestion drops off the list. It then lives in the note's **properties** and appears in its backlinks/outgoing links and across the graph. If nothing truly fits, leave them — or, in the Reviewer, mark the note a deliberate **standalone**. Suggested Connections proposes; you decide.
+
+**Local, private, non-blocking.** Suggestions are computed on demand from your Library only — nothing leaves your device — and gathering them never blocks your typing (you'll see a brief "Finding related notes…" while it works). The suggestions, the shared-term hints, and the relationship types all appear in your chosen language and mirror correctly for right-to-left scripts.

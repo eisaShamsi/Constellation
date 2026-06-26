@@ -1363,3 +1363,21 @@ Alle Werkzeuge der Kognitiven Engine koennen unter **Einstellungen > Kognitive E
 
 *Constellation Benutzerhandbuch — Version 0.1.0 — Maerz 2026*
 *uconstellation.world*
+
+---
+
+## 23. Vorgeschlagene Verknüpfungen
+
+Constellation dient dem *Formulieren* von Wissen, und Wissen ist Verbindung. **Vorgeschlagene Verknüpfungen** findet die Notizen, die bereits in Ihrer Bibliothek liegen und mit der gerade betrachteten am engsten verwandt sind — die Verwandten, mit denen sie verknüpft sein sollte, es aber noch nicht ist — und verwandelt jede davon mit einem einzigen Klick in eine **typisierte Verknüpfung**. Es ist „mehr in dieser Art", aber fürs Denken.
+
+**Jeder Vorschlag ist typisiert.** Wenn Sie einen annehmen, fragt Constellation, *wie* die beiden Notizen zusammenhängen — unterstützt, widerspricht, veranschaulicht, abgeleitet-von und so weiter, oder einfach **assoziativ**. Eine typisierte Verknüpfung ist ein Stück Schlussfolgerung, das Sie später lesen, durchsuchen und hinterfragen können; die Funktion fügt niemals Verknüpfungen im Stapel hinzu und legt niemals stillschweigend eine untypisierte Verknüpfung an. (Siehe **Wissensformulierung** und **Eigenschaften**.)
+
+**Wie es sie findet.** Die Kandidaten stammen **ausschließlich aus Ihrer eigenen Bibliothek** und werden gegen den laufenden Suchindex von Constellation nach dem meisten *unterscheidungskräftigen* gemeinsamen Wortschatz gewichtet — den seltenen, aussagekräftigen Wörtern, nicht den alltäglichen. Jeder Vorschlag zeigt die **gemeinsamen Begriffe**, die erklären, warum er aufgetaucht ist, sodass Sie niemals eine Black-Box-Vermutung annehmen.
+
+**Fünf Stellen, eine Liste.** Dieselbe Vorschlagsliste erscheint in der **Wiedervorlage** (🕐, für Notizen, die sie als *verwaist* oder *fragil* kennzeichnet), im **Backlinks-Tab** (rechte Seitenleiste), im **360°-Inspektor**, im **Zustands-Tab** und in der **Sternenansicht** (🌌 — Rechtsklick auf einen beliebigen Stern → **Verknüpfungen vorschlagen…**).
+
+**Eingehend vs. ausgehend — und warum Sie nicht wählen.** Diagnostische Oberflächen (der **360°-Inspektor** und der **Zustands-Tab**) schlagen **eingehende** Verknüpfungen vor — *welche Notizen **hierher** zeigen sollten*. Allgemeine Oberflächen (der **Backlinks-Tab** und die **Sternenansicht**) schlagen **ausgehende** Verknüpfungen vor — *worauf diese Notiz zeigen sollte*. Die Oberfläche wählt die Richtung, die zu ihrer Aufgabe passt; Sie wählen die Notiz und den Typ. (Ein künftiges Update wird Ihnen erlauben, die Richtung selbst umzuschalten.)
+
+**So nutzen Sie es.** Unter der Überschrift **Vorgeschlagene Verknüpfungen** sehen Sie verwandte Notizen, gewichtet mit der nächstgelegenen zuerst, jeweils mit ihren gemeinsamen Begriffen. Klicken Sie bei einem Kandidaten auf die Schaltfläche **Verknüpfen** → wählen Sie im kleinen Menü **„Wie hängen sie zusammen?"** die Beziehungsart → die typisierte Verknüpfung wird **sofort** erstellt und der Vorschlag fällt aus der Liste. Sie lebt dann in den **Eigenschaften** der Notiz und erscheint in ihren Backlinks/ausgehenden Verknüpfungen sowie im gesamten Graphen. Wenn nichts wirklich passt, lassen Sie sie stehen — oder markieren Sie die Notiz in der Wiedervorlage als bewusst **eigenständig**. Vorgeschlagene Verknüpfungen schlägt vor; Sie entscheiden.
+
+**Lokal, privat, nicht blockierend.** Vorschläge werden auf Anfrage allein aus Ihrer Bibliothek berechnet — nichts verlässt Ihr Gerät — und ihr Zusammenstellen blockiert niemals Ihr Tippen (Sie sehen kurz „Verwandte Notizen werden gesucht…", während es arbeitet). Die Vorschläge, die Hinweise auf gemeinsame Begriffe und die Beziehungsarten erscheinen alle in Ihrer gewählten Sprache und werden für rechtsläufige Schriften korrekt gespiegelt.

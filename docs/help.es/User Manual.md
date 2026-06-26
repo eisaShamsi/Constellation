@@ -1361,3 +1361,21 @@ Todas las herramientas del Motor Cognitivo se configuran desde **Ajustes > Motor
 
 *Manual de Usuario de Constellation — Version 0.1.0 — Marzo 2026*
 *uconstellation.world*
+
+---
+
+## 23. Conexiones sugeridas
+
+Constellation sirve para *formular* conocimiento, y el conocimiento es conexión. Las **Conexiones sugeridas** encuentran las notas que ya están en tu Biblioteca y que más se relacionan con la que estás mirando — los parientes con los que debería enlazar pero aún no lo hace — y convierten cualquiera de ellas en un **enlace tipado** con un solo clic. Es "más como esto", pero para el pensamiento.
+
+**Cada sugerencia está tipada.** Cuando aceptas una, Constellation pregunta *cómo* se relacionan las dos notas — apoya, contradice, ejemplifica, deriva-de, y así sucesivamente, o simplemente **asociativo**. Un enlace tipado es una pieza de razonamiento que luego podrás leer, buscar y cuestionar; la función nunca añade enlaces en bloque ni añade un enlace sin tipo de forma silenciosa. (Consulta **Formulación del conocimiento** y **Propiedades**.)
+
+**Cómo las encuentra.** Los candidatos provienen **únicamente de tu propia Biblioteca**, clasificados frente al índice de búsqueda en vivo de Constellation por el vocabulario compartido más *distintivo* — las palabras raras y reveladoras, no las comunes. Cada sugerencia muestra los **términos en común** que explican por qué apareció, de modo que nunca aceptas una conjetura de caja negra.
+
+**Cinco lugares, una lista.** La misma lista de sugerencias aparece en el **Revisor** (🕐, para las notas que marca como *huérfanas* o *frágiles*), la **Pestaña de Retroenlaces** (barra lateral derecha), el **Inspector 360°**, la **Pestaña de Salud** y la **Vista del Cielo** (🌌 — haz clic derecho en cualquier estrella → **Sugerir conexiones…**).
+
+**Entrantes frente a salientes — y por qué no eliges tú.** Las superficies de diagnóstico (el **Inspector 360°** y la **Pestaña de Salud**) sugieren conexiones **entrantes** — *qué notas deberían apuntar **aquí***. Las superficies generales (la **Pestaña de Retroenlaces** y la **Vista del Cielo**) sugieren conexiones **salientes** — *hacia dónde debería apuntar esta nota*. La superficie elige la dirección que conviene a su función; tú eliges la nota y el tipo. (Una futura actualización te permitirá cambiar la dirección por ti mismo.)
+
+**Cómo usarlo.** Bajo el encabezado **Conexiones sugeridas** verás notas relacionadas clasificadas de la más cercana a la más lejana, cada una con sus términos en común. Haz clic en el botón **Enlazar** de un candidato → en el pequeño menú **"¿Cómo se relacionan?"** elige el tipo de relación → el enlace tipado se crea **al instante** y la sugerencia desaparece de la lista. Después vive en las **propiedades** de la nota y aparece en sus retroenlaces/enlaces salientes y por todo el grafo. Si nada encaja de verdad, déjalas — o, en el Revisor, marca la nota como **independiente** deliberada. Las Conexiones sugeridas proponen; tú decides.
+
+**Local, privado, sin bloqueos.** Las sugerencias se calculan a demanda y solo a partir de tu Biblioteca — nada sale de tu dispositivo — y reunirlas nunca bloquea tu escritura (verás un breve "Buscando notas relacionadas…" mientras trabaja). Las sugerencias, las pistas de términos en común y los tipos de relación aparecen todos en el idioma que elijas y se reflejan correctamente en las escrituras de derecha a izquierda.

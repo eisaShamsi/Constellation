@@ -1188,7 +1188,7 @@
 	{#if suggestPopover}
 		<div class="gm-suggest-popover"
 			style="{$isRTLStore ? 'right' : 'left'}:{$isRTLStore ? (window.innerWidth - suggestPopover.x) : suggestPopover.x}px;top:{suggestPopover.y}px"
-			dir="auto">
+			dir={$isRTLStore ? 'rtl' : 'ltr'}>
 			<div class="gm-suggest-head">
 				<span class="gm-suggest-title" dir="auto" title={suggestPopover.node.name}>{suggestPopover.node.name}</span>
 				<button class="gm-suggest-close" onclick={() => (suggestPopover = null)} title={$t('common.close') || 'Close'}>×</button>
