@@ -1281,6 +1281,7 @@
           <div class="srp-card-header">
             <button
               class="srp-card-title"
+              dir="auto"
               onclick={() => onNoteClick(record.note_path, noteName(record.note_path))}
               title={record.note_path}
             >

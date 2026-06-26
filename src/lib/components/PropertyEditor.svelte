@@ -960,7 +960,7 @@
 				<div class="pe-tags">
 					{#if prop.listItems && prop.listItems.length > 0}
 						{#each prop.listItems as tag, tagIdx}
-							<span class="pe-tag">
+							<span class="pe-tag" dir="auto">
 								{tag}
 								<button class="pe-tag-x" onclick={() => removeTag(idx, tagIdx)}>&times;</button>
 							</span>
@@ -976,7 +976,7 @@
 				{@const linkName = prop.value.replace(/^\[\[|\]\]$/g, '')}
 				<div class="pe-link-wrap">
 					{#if linkName && onNoteClick}
-						<button class="pe-link-clickable" onclick={() => handleLinkClick(prop.value)}
+						<button class="pe-link-clickable" dir="auto" onclick={() => handleLinkClick(prop.value)}
 							title={linkName}>
 							<span class="pe-link-icon">\uD83D\uDD17</span>
 							{linkName}
@@ -1005,6 +1005,7 @@
 									<input
 										class="pe-val pe-ikhtilaf-input"
 										type="text"
+										dir="auto"
 										placeholder={$t('propertyEditor.ikhtilafSchoolPlaceholder') || 'School'}
 										value={row.school ?? ''}
 										aria-label={$t('propertyEditor.ikhtilafSchoolLabel') || 'School'}
@@ -1012,6 +1013,7 @@
 									<input
 										class="pe-val pe-ikhtilaf-input"
 										type="text"
+										dir="auto"
 										placeholder={$t('propertyEditor.ikhtilafPositionPlaceholder') || 'Position'}
 										value={row.position ?? ''}
 										aria-label={$t('propertyEditor.ikhtilafPositionLabel') || 'Position'}

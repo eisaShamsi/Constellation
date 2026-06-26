@@ -165,7 +165,7 @@
 				{#each report.contradictions as item}
 					<button class="tp-item" onclick={() => handleClick(item.note_path, item.note_name)}>
 						<span class="tp-dot" style="background:{severityDot(item.severity)}"></span>
-						<span class="tp-name">{item.note_name}</span>
+						<span class="tp-name" dir="auto">{item.note_name}</span>
 						<span class="tp-detail">{localizedDetail(item)}</span>
 					</button>
 				{:else}
@@ -185,7 +185,7 @@
 				{#each report.orphans.slice(0, 30) as item}
 					<button class="tp-item" onclick={() => handleClick(item.note_path, item.note_name)}>
 						<span class="tp-dot" style="background:{severityDot(item.severity)}"></span>
-						<span class="tp-name">{item.note_name}</span>
+						<span class="tp-name" dir="auto">{item.note_name}</span>
 						<span class="tp-detail">{localizedDetail(item)}</span>
 					</button>
 				{:else}
@@ -209,7 +209,7 @@
 					<div class="tp-gap">
 						<span class="tp-dot" style="background:{severityDot(gap.severity)}"></span>
 						<span class="tp-tag">#{gap.tag}</span>
-						<span class="tp-detail">{gap.notes.join(', ')}</span>
+						<span class="tp-detail" dir="auto">{gap.notes.join(', ')}</span>
 					</div>
 				{:else}
 					<div class="tp-none">{$t('tensionPanel.none') || 'None found'}</div>
@@ -228,7 +228,7 @@
 				{#each report.single_points as item}
 					<button class="tp-item" onclick={() => handleClick(item.note_path, item.note_name)}>
 						<span class="tp-dot" style="background:{severityDot(item.severity)}"></span>
-						<span class="tp-name">{item.note_name}</span>
+						<span class="tp-name" dir="auto">{item.note_name}</span>
 						<span class="tp-detail">{localizedDetail(item)}</span>
 					</button>
 				{:else}

@@ -7317,7 +7317,7 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
 		<!-- MIG-080 §H — per-panel text size: --rs-scale follows the ACTIVE tab's own token. -->
-		<div class="rs-inner" dir={noteDir} style="--rs-scale: calc(var(--rs-text-scale-{rightSidebarTab}, 100) / 100)">
+		<div class="rs-inner" dir={$dir} style="--rs-scale: calc(var(--rs-text-scale-{rightSidebarTab}, 100) / 100)">
 			<!-- Right sidebar tab bar.
 			     Each tab button is gated on its panel being placed in 'right-sidebar'.
 			     Falls back to showing the tab when no placement is saved (new install),
@@ -7441,7 +7441,7 @@
 						<div class="rs-header">{$t('panels.outline')}</div>
 						{#if sidebarHeadings.length > 0}
 							{#each sidebarHeadings as h}
-								<button class="rs-heading" style="padding-inline-start: {(h.level - 1) * 12 + 8}px" onclick={() => {
+								<button class="rs-heading" dir="auto" style="padding-inline-start: {(h.level - 1) * 12 + 8}px" onclick={() => {
 									const el = document.getElementById(h.id);
 									if (el) el.scrollIntoView({ behavior: 'smooth' });
 								}}>

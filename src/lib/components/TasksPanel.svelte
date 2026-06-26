@@ -134,7 +134,7 @@
 						/>
 					</label>
 					<div class="tp-content">
-						<span class="tp-text" class:done={task.completed}>{cleanTaskText(task.text)}</span>
+						<span class="tp-text" dir="auto" class:done={task.completed}>{cleanTaskText(task.text)}</span>
 						<div class="tp-meta">
 							{#if task.priority}
 								<span class="tp-priority tp-priority-{task.priority}" title={$t(`tasksPanel.${task.priority}Priority`)}>
@@ -147,9 +147,9 @@
 								</span>
 							{/if}
 							{#each task.tags as tag}
-								<span class="tp-tag">{tag}</span>
+								<span class="tp-tag" dir="auto">{tag}</span>
 							{/each}
-							<button class="tp-file-link" onclick={(e) => openTask(task, e)} title={task.file_name}>
+							<button class="tp-file-link" dir="auto" onclick={(e) => openTask(task, e)} title={task.file_name}>
 								{task.file_name}
 							</button>
 						</div>

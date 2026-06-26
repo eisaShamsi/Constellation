@@ -58,7 +58,7 @@
 		<!-- Current note (root of display) -->
 		<div class="prov-chain">
 			<div class="prov-node prov-current">
-				<span class="prov-node-name">{chain.note_name}</span>
+				<span class="prov-node-name" dir="auto">{chain.note_name}</span>
 			</div>
 
 			<!-- Ancestor tree -->
@@ -67,7 +67,7 @@
 					<span class="prov-connector">↳</span>
 					<button class="prov-ancestor" onclick={() => onNoteClick?.(ancestor.path, ancestor.name)}>
 						<span class="prov-source-dot" style="background:{ancestor.has_external_source ? '#4A9EFF' : '#FFB347'}"></span>
-						<span class="prov-ancestor-name">{ancestor.name}</span>
+						<span class="prov-ancestor-name" dir="auto">{ancestor.name}</span>
 						<span class="prov-ancestor-badge">{ancestor.depth}</span>
 						{#if ancestor.has_external_source}
 							<span class="prov-external-tag">{$t('provenancePanel.external') || 'external'}</span>
