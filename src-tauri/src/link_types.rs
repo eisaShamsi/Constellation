@@ -35,6 +35,14 @@ pub struct LinkTypeDef {
     pub emoji: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub desc: Option<String>,
+    /// PJ-065 — `true` for the structural (parent/TOC) lane: a NON-cognitive
+    /// compositional-spine relation, locked like a seed but EXCLUDED from the
+    /// cognitive apparatus (maturity/strata/360/centrality/tension/health/sky)
+    /// and from the cognitive UI enumerators. Default `false`, so every
+    /// pre-PJ-065 def (the 8 seeds + each custom type, and any old
+    /// `link-types.json`) deserializes unchanged.
+    #[serde(default)]
+    pub structural: bool,
 }
 
 /// The 8 canonical seed ids, in derived order (Concept Paper §7). `associative`
@@ -43,6 +51,14 @@ pub const SEED_IDS: &[&str] = &[
     "supports", "contradicts", "causes", "exemplifies",
     "generalizes", "derives-from", "part-of", "supersedes",
 ];
+
+/// PJ-065 — the structural (parent/TOC) seed ids: a NON-cognitive lane, locked
+/// like the 8 but flagged `structural`. **EMPTY until §5 registers `parent` /
+/// `contains`** — the safe-order rule: every cognitive-exclusion filter installed
+/// in §3/§4 derives from the `structural` flag and is a no-op until these ids
+/// exist, so registration (which makes `is_known_type` true and starts edge
+/// emission) lands LAST, after the blinders are all in place.
+pub const STRUCTURAL_SEED_IDS: &[&str] = &[];
 
 /// The 8 built-in seeds (ids + derived order + canonical colors from
 /// `DEFAULT_SETTINGS.linkPills`). The English `label`/`desc` are fallbacks; the
@@ -57,6 +73,7 @@ pub fn seeds() -> Vec<LinkTypeDef> {
         builtin: true,
         emoji: None,
         desc: Some(desc.to_string()),
+        structural: false,
     };
     vec![
         mk("supports", "Supports", "#4A9EFF", 1, "Evidence for a claim"),
@@ -89,6 +106,9 @@ impl LinkTypeRegistry {
     /// to top-level — v1 nests only under the 8).
     pub fn merge(deltas: Vec<LinkTypeDef>) -> Self {
         let seed_set: std::collections::HashSet<&str> = SEED_IDS.iter().copied().collect();
+        // PJ-065 — the structural lane lock set (empty pre-§5; dormant until then).
+        let structural_set: std::collections::HashSet<&str> =
+            STRUCTURAL_SEED_IDS.iter().copied().collect();
         let mut by_id: std::collections::BTreeMap<String, LinkTypeDef> =
             seeds().into_iter().map(|d| (d.id.clone(), d)).collect();
         for mut d in deltas {
@@ -100,6 +120,24 @@ impl LinkTypeRegistry {
             if seed_set.contains(d.id.as_str()) {
                 d.builtin = true;
                 d.parent = None;
+                d.structural = false; // cognitive seed — never structural
+                if let Some(seed) = by_id.get(&d.id) {
+                    if d.label.trim().is_empty() {
+                        d.label = seed.label.clone();
+                    }
+                    if d.desc.is_none() {
+                        d.desc = seed.desc.clone();
+                    }
+                }
+            } else if structural_set.contains(d.id.as_str()) {
+                // PJ-065 — structural seed: locked like the 8 (id/existence/parent
+                // immutable) but flagged `structural` (the non-cognitive parent/TOC
+                // lane). Coerces a stray `{id:'parent', structural:false}` delta back
+                // to the locked structural form. Dormant while STRUCTURAL_SEED_IDS is
+                // empty (pre-§5).
+                d.builtin = true;
+                d.parent = None;
+                d.structural = true;
                 if let Some(seed) = by_id.get(&d.id) {
                     if d.label.trim().is_empty() {
                         d.label = seed.label.clone();
@@ -110,6 +148,7 @@ impl LinkTypeRegistry {
                 }
             } else {
                 d.builtin = false;
+                d.structural = false; // custom types are cognitive
                 if let Some(p) = &d.parent {
                     if !seed_set.contains(p.as_str()) {
                         d.parent = None; // v1: children only under the 8
@@ -165,6 +204,71 @@ impl LinkTypeRegistry {
         }
         s.push_str("END");
         s
+    }
+
+    // ─── PJ-065 — the structural-lane partition (cognitive vs structural) ──────
+    // Every cognitive-scoring query reads the COGNITIVE variant so the structural
+    // (parent/TOC) lane is invisible to maturity/strata/360/centrality/tension/
+    // health/sky. All return "all known types" while no structural type exists
+    // (pre-§5), so installing the filters in §3/§4 is a provable no-op until §5.
+
+    /// Ids flagged structural (the parent/TOC lane). Empty pre-§5.
+    pub fn structural_ids(&self) -> Vec<String> {
+        self.types.iter().filter(|t| t.structural).map(|t| t.id.clone()).collect()
+    }
+
+    /// True if `id` is a structural (non-cognitive) type in this registry.
+    pub fn is_structural(&self, id: &str) -> bool {
+        self.types.iter().any(|t| t.id == id && t.structural)
+    }
+
+    /// Cognitive ids = every known type that is NOT structural (the 8 + customs).
+    pub fn cognitive_ids(&self) -> Vec<String> {
+        self.types.iter().filter(|t| !t.structural).map(|t| t.id.clone()).collect()
+    }
+
+    /// SQL `(...)` membership of COGNITIVE ids only (structural excluded) — for the
+    /// aggregate breakdown filters that must ignore the structural lane. Identical
+    /// to `sql_in_list` while no structural type exists.
+    pub fn sql_in_list_cognitive(&self) -> String {
+        let parts: Vec<String> = self
+            .types
+            .iter()
+            .filter(|t| !t.structural)
+            .map(|t| format!("'{}'", t.id.replace('\'', "''")))
+            .collect();
+        format!("({})", parts.join(","))
+    }
+
+    /// Rank CASE over COGNITIVE ids only (1-based, canonical order; structural
+    /// excluded). Identical to `sql_rank_case` while no structural type exists.
+    pub fn sql_rank_case_cognitive(&self) -> String {
+        let mut s = String::from("CASE link_type ");
+        let mut i = 0;
+        for t in self.types.iter().filter(|t| !t.structural) {
+            i += 1;
+            s.push_str(&format!("WHEN '{}' THEN {} ", t.id.replace('\'', "''"), i));
+        }
+        s.push_str("END");
+        s
+    }
+
+    /// The no-op-safe structural exclusion fragment — the single chokepoint every
+    /// cognitive count/edge query appends to drop the structural lane. Returns `""`
+    /// when no structural type exists (so callers append NOTHING — never the
+    /// SQL-error `NOT IN ()`), else ` AND <col> NOT IN ('parent','contains')`.
+    pub fn structural_not_in_clause(&self, col: &str) -> String {
+        let ids: Vec<String> = self
+            .types
+            .iter()
+            .filter(|t| t.structural)
+            .map(|t| format!("'{}'", t.id.replace('\'', "''")))
+            .collect();
+        if ids.is_empty() {
+            String::new()
+        } else {
+            format!(" AND {} NOT IN ({})", col, ids.join(","))
+        }
     }
 
     /// Sentinel rank when a note has no canonical typed links = `len()+1`.
@@ -240,6 +344,16 @@ pub fn is_known_type(id: &str) -> bool {
         .read()
         .map(|r| r.is_known(id))
         .unwrap_or_else(|_| SEED_IDS.contains(&id))
+}
+
+/// PJ-065 — true if `id` is a structural (non-cognitive parent/TOC) type in the
+/// active registry. Falls back to `STRUCTURAL_SEED_IDS` on a poisoned lock.
+/// (TS mirror: linkTypeRegistry.ts::isStructuralLinkType.)
+pub fn is_structural_type(id: &str) -> bool {
+    cell()
+        .read()
+        .map(|r| r.is_structural(id))
+        .unwrap_or_else(|_| STRUCTURAL_SEED_IDS.contains(&id))
 }
 
 /// Resolve `(target, Option<type>)` from a wikilink's regex capture groups —
@@ -368,6 +482,7 @@ mod tests {
         LinkTypeDef {
             id: id.into(), label: id.into(), parent: parent.map(|s| s.into()),
             color: "#123456".into(), order, builtin: false, emoji: None, desc: None,
+            structural: false,
         }
     }
 

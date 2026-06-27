@@ -34,6 +34,11 @@ export interface LinkTypeDef {
 	builtin: boolean;
 	emoji: string | null;
 	desc: string | null;
+	/** PJ-065 — true for the structural (parent/TOC) lane: a non-cognitive
+	 *  compositional-spine relation, excluded from every cognitive UI enumerator
+	 *  and from cognitive scoring. Absent/false for the 8 seeds + custom types
+	 *  (so existing payloads without the field are treated as cognitive). */
+	structural?: boolean;
 }
 
 /** The 8 seed ids in canonical order — the fallback when nothing is loaded yet
@@ -159,6 +164,27 @@ export function getLinkType(id: string): LinkTypeDef | undefined {
 /** True if `id` is a known typed act (seed or custom). */
 export function isKnownLinkType(id: string): boolean {
 	return byId.has(id) || (cache.length === 0 && (SEED_IDS as readonly string[]).includes(id));
+}
+
+/** PJ-065 — true if `id` is a structural (non-cognitive parent/TOC) type.
+ *  (Rust mirror: link_types.rs::is_structural_type.) */
+export function isStructuralLinkType(id: string): boolean {
+	return byId.get(id)?.structural === true;
+}
+
+/** The COGNITIVE types only (the 8 + custom cognitive) — the structural lane
+ *  excluded. Every cognitive enumerator (LinkTypePicker, CNS legend, Base
+ *  columns, 360 gap analysis, Settings) builds from THIS, not `getLinkTypes()`,
+ *  so the structural lane can never leak into a cognitive surface. Returns the
+ *  full list while no structural type exists (pre-§5). */
+export function cognitiveLinkTypes(): LinkTypeDef[] {
+	return cache.filter((t) => t.structural !== true);
+}
+
+/** The STRUCTURAL types only (the parent/TOC lane). Empty before §5 registers
+ *  `parent` / `contains`. */
+export function structuralLinkTypes(): LinkTypeDef[] {
+	return cache.filter((t) => t.structural === true);
 }
 
 /** True if `id` is a recognized stored `link_type` value — a typed act OR the
