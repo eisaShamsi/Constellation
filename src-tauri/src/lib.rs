@@ -82,6 +82,7 @@ mod review_backfill;
 #[cfg(test)]
 mod review_rehearse;
 mod strata;
+mod structural;
 mod tension;
 mod trails;
 mod tasks;
@@ -449,6 +450,9 @@ pub fn run() {
             cache::cache_full_links,
             cache::get_backlink_rows,
             cache::get_outgoing_rows,
+            structural::get_structural_children,
+            structural::get_structural_ancestors,
+            structural::get_structural_descendants,
             cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
             cache::cache_reconcile,
