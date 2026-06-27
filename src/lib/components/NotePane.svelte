@@ -112,6 +112,7 @@
 		onnavigateforward,
 		onmoreaction,
 		onpropschange,
+		onLiveProps,
 		stage = '',
 		onpromote,
 		trail = '',
@@ -153,6 +154,9 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onpropschange?: () => void;
+		/* MIG-087 §E (item 2) — forwarded to the embedded PropertyEditor; one-way
+		   live props-count observer for the host's status-bar count. */
+		onLiveProps?: (tabId: string, count: number) => void;
 		stage?: string;
 		onpromote?: (nextStage: string) => void;
 		trail?: string;
@@ -1141,6 +1145,7 @@
 					collapsed={propsCollapsed}
 					onToggle={() => propsCollapsed = !propsCollapsed}
 					onstagechange={(s) => { onpromote?.(s); }}
+					{onLiveProps}
 				/>
 			{/if}
 			<hr class="e-props-divider" />

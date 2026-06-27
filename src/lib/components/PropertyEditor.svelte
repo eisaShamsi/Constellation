@@ -36,6 +36,7 @@
 		collapsed = false,
 		onToggle,
 		onstagechange,
+		onLiveProps,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -47,6 +48,11 @@
 		collapsed?: boolean;
 		onToggle?: () => void;
 		onstagechange?: (stage: string) => void;
+		/* MIG-087 §E (item 2) — one-way, display-only live props-count observer
+		   (mirrors §C's onLiveStats). Reports the focused tab's non-empty-key
+		   property count on every edit; never writes back into editor content, so
+		   it sits outside the BUG-015 / §C-2 vector. The host debounces/uses it. */
+		onLiveProps?: (tabId: string, count: number) => void;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -739,6 +745,13 @@
 	}
 
 	function debouncedSave() {
+		// MIG-087 §E (item 2) — live props-count observer. Every real edit routes
+		// through here (the init-sync $effect does NOT), so this fires only on user
+		// edits — the exact analog of §C's onLiveStats(onDocChange). Report the
+		// count of non-empty-key properties (matches what reconstructFrontmatter
+		// saves, so the live count converges to the on-save baseline — no flicker).
+		// One-way: it never writes back into editor content.
+		onLiveProps?.(tabId, editableProps.filter(p => p.key.trim().length > 0).length);
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
 			saving = true;

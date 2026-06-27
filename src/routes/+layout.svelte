@@ -1860,6 +1860,22 @@
 		}, 300);
 	}
 
+	// MIG-087 §E (item 2) — live PROPERTIES count, mirroring §C exactly. The status
+	// bar's خصائص count read `sidebarProperties.length`, derived from
+	// `sidebarTab.content` — stable while editing (the editor owns content), so it
+	// refreshed only on save/tab-switch, never as the user edits properties. Same
+	// two-writer shape as wordCount/charCount: this $effect re-baselines from the
+	// saved properties on tab switch/save (dormant during editing, since
+	// sidebarProperties is then stable), and `handleLiveProps` owns the value live
+	// as the user edits either PropertyEditor instance. One-way, display-only —
+	// noteModel stays non-reactive; nothing is ever written back into content.
+	let propCount = $state(0);
+	$effect(() => { propCount = sidebarProperties.length; });
+	function handleLiveProps(id: string, count: number) {
+		if (id !== sidebarTab?.id) return;
+		propCount = count;
+	}
+
 	// All note names across all libraries (for quick switcher)
 	const allSwitcherNotes = $derived(allNotes);
 
@@ -6980,6 +6996,7 @@
 									onStageChanged={handleStageChanged}
 									onTitleRename={handleRenameComplete}
 									onLiveStats={handleLiveStats}
+									onLiveProps={handleLiveProps}
 								/>
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
@@ -7154,6 +7171,7 @@
 								onStageChanged={handleStageChanged}
 								onTitleRename={handleRenameComplete}
 								onLiveStats={handleLiveStats}
+								onLiveProps={handleLiveProps}
 								onmoreaction={async (action) => {
 									switch (action) {
 										case 'rename': {
@@ -7451,6 +7469,7 @@
 							tabId={sidebarTab.id}
 							filePath={sidebarTab.path}
 							libraryName={sidebarTab.libraryName}
+							onLiveProps={handleLiveProps}
 							onNoteClick={async (noteName) => {
 								if (!sidebarTab) return;
 								const resolved = await resolveWikilinkCrossLibrary(sidebarTab.libraryPath, noteName);
@@ -8021,8 +8040,8 @@
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
-				{#if sidebarProperties.length > 0}
-					<span class="sb-item">{$tn('plurals.properties', sidebarProperties.length)}</span>
+				{#if propCount > 0}
+					<span class="sb-item">{$tn('plurals.properties', propCount)}</span>
 					<span class="sb-dot">·</span>
 				{/if}
 				<span class="sb-item">{$tn('plurals.words', wordCount)}</span>

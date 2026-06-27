@@ -73,6 +73,7 @@
 		onStageChanged,
 		onTitleRename,
 		onLiveStats,
+		onLiveProps,
 		linkTraversalMap,
 	}: {
 		tab: TabLike;
@@ -100,6 +101,11 @@
 		 *  sync), so it sits outside the BUG-015 / §C-2 vector; the host debounces the
 		 *  count. Purely an observer — the editor still owns its content. */
 		onLiveStats?: (id: string, doc: Text) => void;
+		/** MIG-087 §E (item 2) — one-way, display-only live props-count observer for
+		 *  the host's status-bar properties count. Forwarded to NotePane's embedded
+		 *  PropertyEditor; fires on every property edit with this tab's id + the
+		 *  non-empty-key count. Like onLiveStats it NEVER feeds back into content. */
+		onLiveProps?: (id: string, count: number) => void;
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
@@ -443,6 +449,7 @@
 	{linkTraversalMap}
 	onchange={() => {}}
 	onDocChange={(doc: Text) => { editBody(tab.id, doc, tab.path); onLiveStats?.(tab.id, doc); }}
+	{onLiveProps}
 	onpromote={handlePromote}
 	onsave={handleSave}
 	onflush={handleFlush}
