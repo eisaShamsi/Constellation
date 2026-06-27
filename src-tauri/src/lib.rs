@@ -357,6 +357,7 @@ pub fn run() {
             libraries::resolve_wikilink_cross_library,
             libraries::read_library_appearance,
             libraries::scan_library_links,
+            libraries::reindex_library,
             libraries::scan_unlinked_mentions,
             libraries::scan_library_tags,
             libraries::collect_library_notes,

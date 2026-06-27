@@ -11415,3 +11415,76 @@ mod mig042_dropcol {
         assert!(!term_vocab_has_bridge_column(&conn).unwrap(), "column dropped on re-entry");
     }
 }
+
+
+#[cfg(test)]
+mod tests_pj065_index_emission {
+    //! PJ-065 §5 — REPRODUCTION: prove `index_note` folds a `contains:` frontmatter
+    //! property into STRUCTURAL `note_links` edges, with `seq` order on the `contains`
+    //! face and neutral (no living-link) values. This is the GATE-A behavior the
+    //! unindexed-library symptom obscured at the running app.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY, name TEXT, library_name TEXT,
+                modified INTEGER, properties_json TEXT, tags_json TEXT,
+                outgoing_links_json TEXT, headings_json TEXT, body_text TEXT,
+                word_count INTEGER, created_at INTEGER, cid_cn TEXT DEFAULT '',
+                sources TEXT, content_type TEXT, name_lower TEXT
+             );
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT, source TEXT, cid_cn TEXT);
+             CREATE TABLE note_body (path TEXT PRIMARY KEY, body_text TEXT NOT NULL DEFAULT '');
+             CREATE TABLE note_links (
+                source_path TEXT, source_name TEXT, target_name TEXT,
+                link_type TEXT, annotation TEXT, confidence TEXT,
+                weight REAL, created TEXT, last_traversed TEXT,
+                traversal_count INTEGER, library_name TEXT, status TEXT,
+                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER
+             );",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn contains_frontmatter_becomes_ordered_structural_edges() {
+        assert!(crate::link_types::is_known_type("contains"));
+        assert!(crate::link_types::is_structural_type("contains"));
+
+        let dir = std::env::temp_dir().join(format!("pj065_emit_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let conn = test_db();
+        let p = dir.join("Book.md");
+        std::fs::write(
+            &p,
+            "---\ntitle: \"Book\"\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n---\n\nThe body.\n",
+        )
+        .unwrap();
+        let ps = p.to_string_lossy().to_string();
+
+        index_note(&conn, &ps, "TestLib", true).unwrap();
+
+        let mut stmt = conn
+            .prepare("SELECT target_name, seq, confidence, weight FROM note_links WHERE source_path=?1 AND link_type='contains' ORDER BY seq")
+            .unwrap();
+        let rows: Vec<(String, Option<i64>, String, f64)> = stmt
+            .query_map([&ps], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
+            .unwrap()
+            .flatten()
+            .collect();
+
+        let _ = std::fs::remove_dir_all(&dir);
+
+        assert_eq!(rows.len(), 2, "two 'contains' structural edges folded from frontmatter");
+        assert_eq!(rows[0].0, "chapter one", "target stored lowercased (parse_link_body fold)");
+        assert_eq!(rows[0].1, Some(1), "first child seq=1 (declaration order)");
+        assert_eq!(rows[1].0, "chapter two");
+        assert_eq!(rows[1].1, Some(2), "second child seq=2");
+        assert_eq!(rows[0].2, "structural", "neutral confidence sentinel (no living-link apparatus)");
+        assert_eq!(rows[0].3, 1.0, "default unearned weight");
+    }
+}

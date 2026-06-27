@@ -1658,6 +1658,13 @@ export async function addLibrary(): Promise<LibraryInfo | null> {
 	const library: LibraryInfo = await invoke('add_library', { path: folderPath });
 	await loadLibraries();
 	await loadAllStats();
+	// PJ-065 §8 (cold-start) — add_library only REGISTERS the folder; its pre-existing
+	// .md files are not in the index yet (no boot walk; the watcher only catches live
+	// edits). Index them in the background so search, backlinks AND the structural
+	// spine work immediately. Fire-and-forget; refresh stats when it finishes.
+	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name })
+		.then(() => loadAllStats())
+		.catch((e) => console.error('[addLibrary] background reindex failed:', e));
 	return library;
 }
 

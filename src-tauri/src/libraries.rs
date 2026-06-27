@@ -2171,6 +2171,41 @@ pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_n
     Ok(links)
 }
 
+/// PJ-065 §8 (cold-start) — index a newly-linked library's pre-existing notes.
+/// `add_library` only REGISTERS a folder; Constellation does no boot-time filesystem
+/// walk (LL-022), and the file watcher reindexes only on a live edit — so a linked
+/// folder's existing `.md` files never entered `note_meta` / `note_links` (the LL-027 /
+/// BUG-022 class: files visible in the tree but invisible to the index, search, and the
+/// structural spine). This walks the library and runs the mtime-gated `index_note`
+/// (`force = false`) on each file: missing/changed notes index, already-current ones are
+/// a cheap no-op (re-linking a large indexed library stays fast). Async (off the UI
+/// thread); the frontend fires it after `add_library`. Returns the count of files seen.
+#[tauri::command(async)]
+pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name: String) -> Result<usize, String> {
+    use tauri::Manager;
+    let libraries = load_all_libraries(&app);
+    if !libraries.iter().any(|v| v.path == library_path) {
+        return Err("Access denied: not a registered library.".to_string());
+    }
+    // Reuse the existing recursive .md collector (same one the folder-move reindex uses).
+    let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
+    collect_md_paths(Path::new(&library_path), &mut md_paths);
+    let state = app.state::<crate::search::SearchState>();
+    let mut seen = 0usize;
+    for p in &md_paths {
+        let ps = p.to_string_lossy();
+        // Lock per note (short holds) so a large library never blocks the writer for the
+        // whole walk; index_note(force=false) is mtime-gated, cheap for current notes.
+        if let Ok(db) = state.db.lock() {
+            if let Some(conn) = db.as_ref() {
+                let _ = crate::search::index_note(conn, &ps, &library_name, false);
+                seen += 1;
+            }
+        }
+    }
+    Ok(seen)
+}
+
 fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
