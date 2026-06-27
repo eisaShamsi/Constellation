@@ -37,7 +37,8 @@
       "typedLinkDisplay": "Türlü bağlantı görünümü",
       "skyView": "Sky View görünümü",
       "layout": "Düzen",
-      "behaviour": "Davranış"
+      "behaviour": "Davranış",
+      "styleOverride": "Ayarlayıcı görünümü (özel biçimlendirme)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "Tür adını her bağlantının üstünde göster",
       "showLabelDesc": "Bağlantı türünü (örneğin \"Çelişen\") her tipli bağlantının üstünde küçük bir etiket olarak göster, böylece anlamı şüpheye yer bırakmaz.",
       "colourByType": "Bağlantıları türe göre renklendir",
-      "colourByTypeDesc": "Her tipli bağlantıyı kendi türünün rengiyle boya. Kapalıyken tipli bağlantılar standart bağlantı rengini kullanır ve tür yalnızca etiketle gösterilir."
+      "colourByTypeDesc": "Her tipli bağlantıyı kendi türünün rengiyle boya. Kapalıyken tipli bağlantılar standart bağlantı rengini kullanır ve tür yalnızca etiketle gösterilir.",
+      "resetColours": "Renkleri varsayılana sıfırla"
     },
     "title": "Ayarlar",
     "sections": {
@@ -205,7 +207,7 @@
       "newTitle": "Yeni geçersiz kılma",
       "surface": "Yüzey biçimi",
       "surfaceRequired": "Yüzey biçimi gereklidir.",
-      "lemma": "Lemma",
+      "lemma": "Sözlük biçimi",
       "lemmaHint": "Boş bırakılırsa yüzey biçimi kullanılır.",
       "root": "Kök",
       "pattern": "Örüntü",
@@ -356,7 +358,7 @@
       "provider": "Sağlayıcı",
       "providerDesc": "Yapay zeka servis sağlayıcınızı seçin",
       "none": "Hiçbiri",
-      "apiKey": "API Key",
+      "apiKey": "API Anahtarı",
       "apiKeyDesc": "API erişim anahtarınız",
       "apiKeyPlaceholder": "API Key girin",
       "serverUrl": "Sunucu URL'si",
@@ -368,7 +370,7 @@
       "connectionFailed": "Bağlantı başarısız",
       "verifyConnection": "Bağlantı ayarlarınızı doğrulayın",
       "testing": "Test ediliyor...",
-      "test": "Test",
+      "test": "Sına",
       "connectionTest": "Test"
     },
     "templates": {
@@ -506,8 +508,8 @@
       "workspacesDesc": "Çalışma alanı düzenlerini kaydet ve geri yükle",
       "index": "Dizin",
       "indexDesc": "Tüm notlardan terimleri toplayın ve göz atın",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "Anlamsal Arama",
+      "semanticSearchDesc": "Yapay zekâ gömmeleriyle 100 dil arasında kavramsal olarak ilişkili notları bulun (çevrimdışı)",
       "constellationMap": "Constellation Harita",
       "constellationMapDesc": "Bilgi yapısının güneş patlaması (sunburst) görselleştirmesi",
       "constellationSight": "Bilginin Sinir Sistemi",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "Mevcut notun frontmatter meta verileri",
       "panelTags": "Etiketler",
       "panelTagsDesc": "Kütüphaneniz için etiket tarayıcısı",
-      "panelSky": "Sky View",
+      "panelSky": "Gökyüzü Görünümü",
       "panelSkyDesc": "Bilgi evreninizin 3D bağlantı grafiği",
       "panelTasks": "Görevler",
       "panelTasksDesc": "Görev listesi ve takip",
@@ -600,20 +602,20 @@
       "fanout": "Fire-and-forget dağılım"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "Dizin panelinin kütüphanenizin söz dağarcığını nasıl gösterdiğini yapılandırın.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "Anımsatmaları diller arası genişlet",
+        "description": "Dizin panelinde bir terime tıkladığınızda, Sözcüksel Köprü'den gelen çevirilerini içeren notları da göster. Varsayılan olarak kapalıdır — açtığınızda her diller arası eşleşmeye bir \"{lemma} aracılığıyla\" rozeti eklenir; böylece hangi anımsatmaların doğrudan, hangilerinin köprülenmiş olduğunu her zaman ayırt edebilirsiniz."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "Arama geçmişi",
+        "description": "Dizin filtre sorgularını bu Evren içinde hatırla. Odaklanıldığında / aşağı ok tuşuna basıldığında filtre son sorguları gösterir. 200 girdiyle sınırlıdır; FIFO ilkesiyle eskiler çıkarılır. Varsayılan olarak kapalıdır; depolama Evren başına SQLite'tadır."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "Arama geçmişini temizle",
+        "description": "Bu Evrendeki tüm kayıtlı Dizin filtre sorgularını kalıcı olarak kaldır. Geri alınamaz.",
+        "button": "Temizle",
+        "confirm": "Bu Evrene ait tüm Dizin arama geçmişi kalıcı olarak silinsin mi?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "Beş Eylem"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "Arama Merkezi",
+    "syntaxHelpers": "Arama söz dizimi",
+    "linksTo": "Bağlantı verdikleri",
+    "linksFrom": "Bağlantı alanlar",
+    "mutual": "Karşılıklı",
+    "mentions": "Anımsatmalar",
+    "orphans": "Öksüzler",
+    "linksBetween": "Aradaki bağlantılar",
+    "linksAll": "Tüm bağlantılar",
+    "tag": "Etiket",
+    "property": "Özellik",
+    "scope": "Kütüphane",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "Başlıklar",
+    "contents": "İçerikler",
+    "tags": "Etiketler",
+    "properties": "Özellikler",
+    "wikilinks": "Viki bağlantıları",
+    "semantic": "Anlamsal",
     "notes": "not",
     "from": "içinden",
     "supports": "Destekleyen",
@@ -860,7 +862,8 @@
     "generalizes": "Genelleyen",
     "derivesFrom": "Kaynaklanan",
     "partOf": "Parçası",
-    "matchVia": "üzerinden"
+    "matchVia": "üzerinden",
+    "concept": "Kavram"
   },
   "layout": {
     "leftSidebar": "Sol kenar çubuğu",
@@ -914,7 +917,8 @@
     "provenance": "Köken",
     "review": "Gözden Geçirme Nabzı",
     "inspector360": "360.3D",
-    "skyView": "Gökyüzü Görünümü"
+    "skyView": "Gökyüzü Görünümü",
+    "sourceReview": "Kaynak İncelemesi"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1460,12 +1464,12 @@
       "literature": "Literatür",
       "permanent": "Kalıcı",
       "synthesis": "Sentez",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "Kıvılcım",
+      "birth": "Doğuş",
+      "growth": "Büyüme",
+      "maturity": "Olgunluk",
+      "dormancy": "Uyku",
+      "archival": "Arşivleme"
     },
     "noteStage": "— Aşama —"
   },
@@ -1516,9 +1520,9 @@
     "viaLemma": "{lemma} üzerinden",
     "viaLemmaTooltip": "Lexical Bridge üzerinden diller arası eşleşme",
     "returnToIndex": "Dizine dön",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "Son aramalar",
+    "semanticMatch": "≈ benzer",
+    "semanticMatchTooltip": "Anlamsal eşleşme — sorgunuzla kavramsal olarak ilişkili"
   },
   "workspacesPanel": {
     "title": "Çalışma Alanları",
@@ -1563,7 +1567,8 @@
     "ikhtilafSchoolLabel": "Mezhep",
     "ikhtilafSchoolPlaceholder": "Mezhep",
     "ikhtilafPositionLabel": "Pozisyon",
-    "ikhtilafPositionPlaceholder": "Pozisyon"
+    "ikhtilafPositionPlaceholder": "Pozisyon",
+    "stagePlaceholder": "Bir aşama yazın veya seçin…"
   },
   "editor": {
     "undo": "Geri al",
@@ -1989,7 +1994,7 @@
     "noResults": "Sonuç bulunamadı",
     "search": "Ara...",
     "success": "Başarılı",
-    "dismiss": "Dismiss"
+    "dismiss": "Kapat"
   },
   "bases": {
     "untitled": "Adsız Temel",
@@ -2278,8 +2283,8 @@
     "parent": "Üst Özellik",
     "tree": "Ağaç",
     "radial": "Radyal",
-    "sunburst": "Sunburst",
-    "treemap": "Treemap",
+    "sunburst": "Güneş patlaması",
+    "treemap": "Ağaç haritası",
     "colorLibrary": "Renk: Kütüphane",
     "colorStatus": "Renk: Durum",
     "colorDepth": "Renk: Derinlik",
@@ -2372,7 +2377,7 @@
     "preview": "Önizleme",
     "save": "Kaydet",
     "cancel": "İptal",
-    "latin": "Latin / English",
+    "latin": "Latin / İngilizce",
     "arabic": "Arapça / العربية",
     "hebrew": "İbranice / עברית",
     "cjk": "CJK / 中日韩",
@@ -3207,7 +3212,9 @@
     "legacyBase": "Bu temel eski bir biçimde olduğundan burada gösterilemiyor. Yerine yeni bir temel oluşturun.",
     "legacyBaseConvert": "Bu temel eski bir biçimde. Dosyanıza dokunulmadı — görüntülemek ve düzenlemek için onu bir Takımyıldız Temeline dönüştürün.",
     "convertBase": "Takımyıldız Temeline dönüştür",
-    "converting": "Dönüştürülüyor…"
+    "converting": "Dönüştürülüyor…",
+    "linkTypeFields": "Bağlantı türleri",
+    "count": "sayı"
   },
   "federation": {
     "warningBadge": "cUniverse kullanılamıyor",

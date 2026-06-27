@@ -37,7 +37,8 @@
       "typedLinkDisplay": "유형별 링크 표시",
       "skyView": "Sky View 모습",
       "layout": "레이아웃",
-      "behaviour": "동작"
+      "behaviour": "동작",
+      "styleOverride": "세터 모양 (사용자 지정 스타일)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "각 링크 위에 유형 이름 표시",
       "showLabelDesc": "링크 유형(예: \"모순됨\")을 각 유형 링크 위에 작은 레이블로 표시하여 그 의미를 분명하게 합니다.",
       "colourByType": "유형별로 링크 색상 지정",
-      "colourByTypeDesc": "각 유형 링크를 해당 유형의 색으로 칠합니다. 끄면 유형 링크는 표준 링크 색을 사용하고 유형은 레이블로만 표시됩니다."
+      "colourByTypeDesc": "각 유형 링크를 해당 유형의 색으로 칠합니다. 끄면 유형 링크는 표준 링크 색을 사용하고 유형은 레이블로만 표시됩니다.",
+      "resetColours": "색상을 기본값으로 초기화"
     },
     "title": "설정",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "제공자",
       "providerDesc": "AI 서비스 제공자를 선택하세요",
       "none": "없음",
-      "apiKey": "API Key",
+      "apiKey": "API 키",
       "apiKeyDesc": "API 액세스 키",
       "apiKeyPlaceholder": "API Key 입력",
       "serverUrl": "서버 URL",
@@ -506,8 +508,8 @@
       "workspacesDesc": "작업 공간 레이아웃 저장 및 복원",
       "index": "색인",
       "indexDesc": "모든 노트에서 용어를 수집하고 탐색",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "의미 검색",
+      "semanticSearchDesc": "AI 임베딩을 사용해 100개 언어에 걸쳐 개념적으로 관련된 노트를 찾습니다 (오프라인)",
       "constellationMap": "별자리 지도",
       "constellationMapDesc": "지식 구조를 보여주는 선버스트 시각화",
       "constellationSight": "지식의 신경계",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "현재 노트의 frontmatter 메타데이터",
       "panelTags": "태그",
       "panelTagsDesc": "라이브러리 태그 브라우저",
-      "panelSky": "Sky View",
+      "panelSky": "하늘 보기",
       "panelSkyDesc": "지식 우주의 3D 링크 그래프",
       "panelTasks": "작업",
       "panelTasksDesc": "작업 체크리스트 및 추적",
@@ -600,20 +602,20 @@
       "fanout": "파이어앤드포겟 팬아웃"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "색인 패널이 라이브러리의 어휘를 어떻게 표시할지 설정합니다.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "언급을 언어 간 확장",
+        "description": "색인 패널에서 용어를 클릭하면 어휘 브리지의 번역어를 포함한 노트도 함께 표시합니다. 기본값은 꺼짐 — 켜면 각 언어 간 일치 항목에 \"{lemma} 경유\" 배지가 붙어 직접 언급과 브리지된 언급을 항상 구별할 수 있습니다."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "검색 기록",
+        "description": "이 유니버스 내에서 색인 필터 검색어를 기억합니다. 포커스 시 / 아래쪽 화살표를 누르면 필터에 최근 검색어가 표시됩니다. 최대 200개 항목으로 제한되며 FIFO 방식으로 제거됩니다. 기본값은 꺼짐이며, 저장은 SQLite에 유니버스별로 이루어집니다."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "검색 기록 지우기",
+        "description": "이 유니버스에 저장된 모든 색인 필터 검색어를 영구적으로 삭제합니다. 되돌릴 수 없습니다.",
+        "button": "지우기",
+        "confirm": "이 유니버스의 모든 색인 검색 기록을 영구적으로 삭제하시겠습니까?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "다섯 가지 행위"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "검색 허브",
+    "syntaxHelpers": "검색 구문",
+    "linksTo": "나가는 링크",
+    "linksFrom": "들어오는 링크",
+    "mutual": "상호",
+    "mentions": "언급",
+    "orphans": "고립 노트",
+    "linksBetween": "사이 링크",
+    "linksAll": "모든 링크",
+    "tag": "태그",
+    "property": "속성",
+    "scope": "라이브러리",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "제목",
+    "contents": "본문",
+    "tags": "태그",
+    "properties": "속성",
+    "wikilinks": "위키링크",
+    "semantic": "의미",
     "notes": "노트",
     "from": "에서",
     "supports": "지지",
@@ -860,7 +862,8 @@
     "generalizes": "일반화",
     "derivesFrom": "파생",
     "partOf": "일부",
-    "matchVia": "경유"
+    "matchVia": "경유",
+    "concept": "개념"
   },
   "layout": {
     "leftSidebar": "왼쪽 사이드바",
@@ -914,7 +917,8 @@
     "provenance": "출처",
     "review": "리뷰 펄스",
     "inspector360": "360.3D",
-    "skyView": "하늘 보기"
+    "skyView": "하늘 보기",
+    "sourceReview": "출처 검토"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1460,12 +1464,12 @@
       "literature": "문헌",
       "permanent": "영구",
       "synthesis": "종합",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "발화",
+      "birth": "탄생",
+      "growth": "성장",
+      "maturity": "성숙",
+      "dormancy": "휴면",
+      "archival": "보관"
     },
     "noteStage": "— 단계 —"
   },
@@ -1516,9 +1520,9 @@
     "viaLemma": "{lemma} 통해",
     "viaLemmaTooltip": "Lexical Bridge를 통한 교차 언어 일치",
     "returnToIndex": "색인으로 돌아가기",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "최근 검색",
+    "semanticMatch": "≈ 유사",
+    "semanticMatchTooltip": "의미 일치 — 검색어와 개념적으로 관련됨"
   },
   "workspacesPanel": {
     "title": "작업 공간",
@@ -1563,7 +1567,8 @@
     "ikhtilafSchoolLabel": "학파",
     "ikhtilafSchoolPlaceholder": "학파",
     "ikhtilafPositionLabel": "입장",
-    "ikhtilafPositionPlaceholder": "입장"
+    "ikhtilafPositionPlaceholder": "입장",
+    "stagePlaceholder": "단계를 입력하거나 선택하세요…"
   },
   "editor": {
     "undo": "실행 취소",
@@ -1989,7 +1994,7 @@
     "noResults": "결과를 찾을 수 없습니다",
     "search": "검색...",
     "success": "성공",
-    "dismiss": "Dismiss"
+    "dismiss": "닫기"
   },
   "bases": {
     "untitled": "제목 없는 베이스",
@@ -3207,7 +3212,9 @@
     "legacyBase": "이 베이스는 이전 형식이라 여기에 표시할 수 없습니다. 새 베이스를 만들어 대체하세요.",
     "legacyBaseConvert": "이 베이스는 이전 형식입니다. 파일은 그대로 유지됩니다 — 별자리 베이스로 변환하면 보고 편집할 수 있습니다.",
     "convertBase": "별자리 베이스로 변환",
-    "converting": "변환 중…"
+    "converting": "변환 중…",
+    "linkTypeFields": "링크 유형",
+    "count": "개수"
   },
   "federation": {
     "warningBadge": "cUniverse 사용 불가",

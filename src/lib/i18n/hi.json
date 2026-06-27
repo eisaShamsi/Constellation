@@ -37,7 +37,8 @@
       "typedLinkDisplay": "टाइप किए गए लिंक का प्रदर्शन",
       "skyView": "Sky View रूप",
       "layout": "लेआउट",
-      "behaviour": "व्यवहार"
+      "behaviour": "व्यवहार",
+      "styleOverride": "सेटर रूप (कस्टम स्टाइलिंग)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "प्रत्येक लिंक के ऊपर प्रकार का नाम दिखाएँ",
       "showLabelDesc": "लिंक प्रकार (जैसे \"खंडन करता है\") को प्रत्येक टाइप किए गए लिंक के ऊपर एक छोटे लेबल के रूप में दिखाएँ, ताकि उसका अर्थ स्पष्ट रहे।",
       "colourByType": "प्रकार के अनुसार लिंक रंगें",
-      "colourByTypeDesc": "प्रत्येक टाइप किए गए लिंक को उसके प्रकार के रंग से रंगें। बंद होने पर, टाइप किए गए लिंक मानक लिंक रंग का उपयोग करते हैं और प्रकार केवल लेबल से दर्शाया जाता है।"
+      "colourByTypeDesc": "प्रत्येक टाइप किए गए लिंक को उसके प्रकार के रंग से रंगें। बंद होने पर, टाइप किए गए लिंक मानक लिंक रंग का उपयोग करते हैं और प्रकार केवल लेबल से दर्शाया जाता है।",
+      "resetColours": "रंगों को डिफ़ॉल्ट पर रीसेट करें"
     },
     "title": "सेटिंग्स",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "प्रदाता",
       "providerDesc": "अपना AI सेवा प्रदाता चुनें",
       "none": "कोई नहीं",
-      "apiKey": "API Key",
+      "apiKey": "API कुंजी",
       "apiKeyDesc": "आपकी API एक्सेस कुंजी",
       "apiKeyPlaceholder": "API Key दर्ज करें",
       "serverUrl": "सर्वर URL",
@@ -506,8 +508,8 @@
       "workspacesDesc": "वर्कस्पेस लेआउट सहेजें और पुनर्स्थापित करें",
       "index": "अनुक्रमणिका",
       "indexDesc": "सभी नोट्स से शब्दों को एकत्र और ब्राउज़ करें",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "सिमैंटिक खोज",
+      "semanticSearchDesc": "AI एम्बेडिंग का उपयोग करके 100 भाषाओं में संकल्पनात्मक रूप से संबंधित नोट्स खोजें (ऑफ़लाइन)",
       "constellationMap": "तारामंडल मानचित्र",
       "constellationMapDesc": "ज्ञान संरचना का सनबर्स्ट दृश्यीकरण",
       "constellationSight": "ज्ञान का तंत्रिका तंत्र (CNS)",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "वर्तमान नोट का frontmatter मेटाडेटा",
       "panelTags": "टैग",
       "panelTagsDesc": "आपकी लाइब्रेरी का टैग ब्राउज़र",
-      "panelSky": "Sky View",
+      "panelSky": "आकाश दृश्य",
       "panelSkyDesc": "आपके ज्ञान ब्रह्मांड का 3D लिंक ग्राफ",
       "panelTasks": "कार्य",
       "panelTasksDesc": "कार्य चेकलिस्ट और ट्रैकिंग",
@@ -600,20 +602,20 @@
       "fanout": "फायर-एंड-फॉरगेट फैनआउट"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "कॉन्फ़िगर करें कि इंडेक्स पैनल आपकी लाइब्रेरी की शब्दावली को कैसे प्रस्तुत करे।",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "उल्लेखों का विस्तार भाषाओं के पार करें",
+        "description": "जब आप इंडेक्स पैनल में किसी पद पर क्लिक करते हैं, तो लेक्सिकल ब्रिज से उसके अनुवादों वाले नोट्स भी सामने लाए जाते हैं। डिफ़ॉल्ट रूप से बंद — इसे चालू करने पर प्रत्येक भाषाओं-के-पार मिलान में एक \"{lemma} के ज़रिए\" बैज जुड़ जाता है, ताकि आप हमेशा बता सकें कि कौन-से उल्लेख प्रत्यक्ष हैं और कौन-से सेतु के माध्यम से।"
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "खोज इतिहास",
+        "description": "इस यूनिवर्स के भीतर इंडेक्स फ़िल्टर प्रश्नों को याद रखें। फ़ोकस / नीचे-तीर पर फ़िल्टर हाल के प्रश्न दिखाता है। FIFO निष्कासन के साथ अधिकतम 200 प्रविष्टियाँ। डिफ़ॉल्ट रूप से बंद; भंडारण प्रति-यूनिवर्स SQLite में होता है।"
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "खोज इतिहास साफ़ करें",
+        "description": "इस यूनिवर्स से सभी संग्रहीत इंडेक्स फ़िल्टर प्रश्न स्थायी रूप से हटा दें। इसे पूर्ववत नहीं किया जा सकता।",
+        "button": "साफ़ करें",
+        "confirm": "इस यूनिवर्स के लिए सभी इंडेक्स खोज इतिहास स्थायी रूप से हटाएँ?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "पाँच क्रियाएँ"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "खोज केंद्र",
+    "syntaxHelpers": "खोज सिंटैक्स",
+    "linksTo": "की ओर लिंक",
+    "linksFrom": "से लिंक",
+    "mutual": "पारस्परिक",
+    "mentions": "उल्लेख",
+    "orphans": "अनाथ",
+    "linksBetween": "के बीच लिंक",
+    "linksAll": "सभी लिंक",
+    "tag": "टैग",
+    "property": "गुण",
+    "scope": "लाइब्रेरी",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "शीर्षक",
+    "contents": "सामग्री",
+    "tags": "टैग",
+    "properties": "गुण",
+    "wikilinks": "विकिलिंक",
+    "semantic": "सिमैंटिक",
     "notes": "नोट्स",
     "from": "से",
     "supports": "समर्थन",
@@ -860,7 +862,8 @@
     "generalizes": "सामान्यीकरण",
     "derivesFrom": "निकला",
     "partOf": "हिस्सा",
-    "matchVia": "के माध्यम से"
+    "matchVia": "के माध्यम से",
+    "concept": "संकल्पना"
   },
   "layout": {
     "leftSidebar": "बायाँ साइडबार",
@@ -914,7 +917,8 @@
     "provenance": "उत्पत्ति",
     "review": "समीक्षा पल्स",
     "inspector360": "360.3D",
-    "skyView": "आकाश दृश्य"
+    "skyView": "आकाश दृश्य",
+    "sourceReview": "स्रोत समीक्षा"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1460,12 +1464,12 @@
       "literature": "साहित्य",
       "permanent": "स्थायी",
       "synthesis": "संश्लेषण",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "चिंगारी",
+      "birth": "जन्म",
+      "growth": "विकास",
+      "maturity": "परिपक्वता",
+      "dormancy": "सुप्तावस्था",
+      "archival": "संग्रहण"
     },
     "noteStage": "— चरण —"
   },
@@ -1516,9 +1520,9 @@
     "viaLemma": "{lemma} के माध्यम से",
     "viaLemmaTooltip": "लेक्सिकल ब्रिज के माध्यम से क्रॉस-भाषा मिलान",
     "returnToIndex": "अनुक्रमणिका पर लौटें",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "हाल की खोजें",
+    "semanticMatch": "≈ समान",
+    "semanticMatchTooltip": "सिमैंटिक मिलान — आपके प्रश्न से संकल्पनात्मक रूप से संबंधित"
   },
   "workspacesPanel": {
     "title": "वर्कस्पेस",
@@ -1563,7 +1567,8 @@
     "ikhtilafSchoolLabel": "विद्यालय",
     "ikhtilafSchoolPlaceholder": "विद्यालय",
     "ikhtilafPositionLabel": "स्थिति",
-    "ikhtilafPositionPlaceholder": "स्थिति"
+    "ikhtilafPositionPlaceholder": "स्थिति",
+    "stagePlaceholder": "कोई चरण टाइप करें या चुनें…"
   },
   "editor": {
     "undo": "पूर्ववत करें",
@@ -1989,7 +1994,7 @@
     "noResults": "कोई परिणाम नहीं मिला",
     "search": "खोजें...",
     "success": "सफलता",
-    "dismiss": "Dismiss"
+    "dismiss": "खारिज करें"
   },
   "bases": {
     "untitled": "बिना शीर्षक बेस",
@@ -3207,7 +3212,9 @@
     "legacyBase": "यह बेस पुराने प्रारूप में है और इसे यहाँ नहीं दिखाया जा सकता। इसकी जगह एक नया बेस बनाएँ।",
     "legacyBaseConvert": "यह बेस पुराने प्रारूप में है। आपकी फ़ाइल अछूती है — इसे देखने और संपादित करने के लिए तारामंडल बेस में बदलें।",
     "convertBase": "तारामंडल बेस में बदलें",
-    "converting": "बदला जा रहा है…"
+    "converting": "बदला जा रहा है…",
+    "linkTypeFields": "लिंक प्रकार",
+    "count": "गिनती"
   },
   "federation": {
     "warningBadge": "cUniverse उपलब्ध नहीं",

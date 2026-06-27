@@ -37,7 +37,8 @@
       "typedLinkDisplay": "نمایش پیوندهای نوع‌دار",
       "skyView": "ظاهر نمای آسمان",
       "layout": "چیدمان",
-      "behaviour": "رفتار"
+      "behaviour": "رفتار",
+      "styleOverride": "ظاهر تنظیم‌گر (شیوه‌پردازی سفارشی)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "نمایش نام نوع بالای هر پیوند",
       "showLabelDesc": "نوع پیوند (مانند «نقض می‌کند») را به‌صورت برچسبی کوچک بالای هر پیوند نوع‌دار نشان دهید تا معنای آن انکارناپذیر باشد.",
       "colourByType": "رنگ‌آمیزی پیوندها بر پایهٔ نوع",
-      "colourByTypeDesc": "هر پیوند نوع‌دار را با رنگ نوعش رنگ کنید. هنگام خاموش‌بودن، پیوندهای نوع‌دار از رنگ استاندارد پیوند استفاده می‌کنند و نوع تنها با برچسب نشان داده می‌شود."
+      "colourByTypeDesc": "هر پیوند نوع‌دار را با رنگ نوعش رنگ کنید. هنگام خاموش‌بودن، پیوندهای نوع‌دار از رنگ استاندارد پیوند استفاده می‌کنند و نوع تنها با برچسب نشان داده می‌شود.",
+      "resetColours": "بازنشانی رنگ‌ها به حالت پیش‌فرض"
     },
     "title": "تنظیمات",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "ارائه‌دهنده",
       "providerDesc": "ارائه‌دهنده سرویس هوش مصنوعی خود را انتخاب کنید",
       "none": "هیچ‌کدام",
-      "apiKey": "API Key",
+      "apiKey": "کلید API",
       "apiKeyDesc": "کلید دسترسی API شما",
       "apiKeyPlaceholder": "API Key را وارد کنید",
       "serverUrl": "آدرس سرور",
@@ -506,8 +508,8 @@
       "workspacesDesc": "ذخیره و بازیابی چیدمان فضای کاری",
       "index": "فهرست",
       "indexDesc": "جمع‌آوری و مرور اصطلاحات از تمام یادداشت‌ها",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "جست‌وجوی معنایی",
+      "semanticSearchDesc": "یافتن یادداشت‌های مرتبط از نظر مفهومی در میان ۱۰۰ زبان با استفاده از بُردارهای هوش مصنوعی (آفلاین)",
       "constellationMap": "نقشه صورت فلکی",
       "constellationMapDesc": "تجسم خورشیدپرتو از ساختار دانش",
       "constellationSight": "دستگاه عصبی دانش",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "متادیتای frontmatter یادداشت فعلی",
       "panelTags": "برچسب‌ها",
       "panelTagsDesc": "مرورگر برچسب‌های کتابخانه",
-      "panelSky": "Sky View",
+      "panelSky": "نمای آسمان",
       "panelSkyDesc": "نمودار لینک سه‌بعدی کیهان دانش",
       "panelTasks": "وظایف",
       "panelTasksDesc": "فهرست وظایف و پیگیری",
@@ -600,20 +602,20 @@
       "fanout": "توزیع fire-and-forget"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "نحوهٔ نمایش واژگان کتابخانهٔ خود در پنل نمایه را پیکربندی کنید.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "گسترش اشاره‌ها به‌صورت میان‌زبانی",
+        "description": "وقتی روی یک واژه در پنل نمایه کلیک می‌کنید، یادداشت‌های دربردارندهٔ ترجمه‌های آن از پل واژگانی نیز نمایش داده می‌شوند. به‌طور پیش‌فرض خاموش است — با روشن‌کردن آن، نشان «از طریق {lemma}» به هر تطبیق میان‌زبانی افزوده می‌شود تا همیشه بدانید کدام اشاره‌ها مستقیم‌اند و کدام پل‌خورده."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "تاریخچهٔ جست‌وجو",
+        "description": "به‌خاطرسپاری عبارت‌های صافی نمایه در همین کیهان. هنگام فوکوس / فشار کلید پایین، صافی عبارت‌های اخیر را نشان می‌دهد. حداکثر ۲۰۰ ورودی با حذف به‌ترتیب ورود (FIFO). به‌طور پیش‌فرض خاموش است؛ ذخیره‌سازی برای هر کیهان به‌صورت جداگانه در SQLite انجام می‌شود."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "پاک‌کردن تاریخچهٔ جست‌وجو",
+        "description": "حذف دائمی همهٔ عبارت‌های صافی نمایهٔ ذخیره‌شده در این کیهان. این کار قابل بازگشت نیست.",
+        "button": "پاک‌کردن",
+        "confirm": "همهٔ تاریخچهٔ جست‌وجوی نمایه برای این کیهان برای همیشه حذف شود؟"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "پنج کنش"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "مرکز جست‌وجو",
+    "syntaxHelpers": "نحو جست‌وجو",
+    "linksTo": "پیوند به",
+    "linksFrom": "پیوند از",
+    "mutual": "دوسویه",
+    "mentions": "اشاره‌ها",
+    "orphans": "یتیم‌ها",
+    "linksBetween": "پیوندهای میان",
+    "linksAll": "همهٔ پیوندها",
+    "tag": "برچسب",
+    "property": "ویژگی",
+    "scope": "کتابخانه",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "عنوان‌ها",
+    "contents": "محتوا",
+    "tags": "برچسب‌ها",
+    "properties": "ویژگی‌ها",
+    "wikilinks": "ویکی‌پیوندها",
+    "semantic": "معنایی",
     "notes": "یادداشت",
     "from": "از",
     "supports": "حمایت",
@@ -860,7 +862,8 @@
     "generalizes": "تعمیم",
     "derivesFrom": "برگرفته",
     "partOf": "بخشی",
-    "matchVia": "از طریق"
+    "matchVia": "از طریق",
+    "concept": "مفهوم"
   },
   "layout": {
     "leftSidebar": "نوار کناری چپ",
@@ -914,7 +917,8 @@
     "provenance": "اسناد",
     "review": "نبض بازبینی",
     "inspector360": "360.3D",
-    "skyView": "نمای آسمان"
+    "skyView": "نمای آسمان",
+    "sourceReview": "بازبینی منبع"
   },
   "tasksPanel": {
     "all": "همه",
@@ -1020,12 +1024,12 @@
       "literature": "ادبیات",
       "permanent": "دائمی",
       "synthesis": "ترکیب",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "جرقه",
+      "birth": "تولد",
+      "growth": "رشد",
+      "maturity": "بلوغ",
+      "dormancy": "خفتگی",
+      "archival": "بایگانی"
     },
     "noteStage": "— مرحله —"
   },
@@ -1076,9 +1080,9 @@
     "viaLemma": "از طریق {lemma}",
     "viaLemmaTooltip": "تطابق میان‌زبانی از طریق پل واژگانی",
     "returnToIndex": "بازگشت به فهرست",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "جست‌وجوهای اخیر",
+    "semanticMatch": "≈ مشابه",
+    "semanticMatchTooltip": "تطبیق معنایی — از نظر مفهومی مرتبط با عبارت جست‌وجوی شما"
   },
   "workspacesPanel": {
     "title": "فضاهای کاری",
@@ -1123,7 +1127,8 @@
     "ikhtilafSchoolLabel": "مذهب",
     "ikhtilafSchoolPlaceholder": "مذهب",
     "ikhtilafPositionLabel": "موضع",
-    "ikhtilafPositionPlaceholder": "موضع"
+    "ikhtilafPositionPlaceholder": "موضع",
+    "stagePlaceholder": "یک مرحله را تایپ یا انتخاب کنید…"
   },
   "editor": {
     "undo": "واگرد",
@@ -1560,7 +1565,7 @@
     "noResults": "نتیجه‌ای یافت نشد",
     "search": "جستجو...",
     "success": "موفقیت",
-    "dismiss": "Dismiss"
+    "dismiss": "رد کردن"
   },
   "bases": {
     "untitled": "پایگاه بدون عنوان",
@@ -3207,7 +3212,9 @@
     "legacyBase": "این پایگاه با قالبی قدیمی است و نمی‌توان آن را اینجا نمایش داد. پایگاهی جدید بسازید تا جایگزین آن شود.",
     "legacyBaseConvert": "این پایگاه با قالبی قدیمی است. فایل شما دست‌نخورده مانده — آن را به پایگاه صورت فلکی تبدیل کنید تا نمایش و ویرایش شود.",
     "convertBase": "تبدیل به پایگاه صورت فلکی",
-    "converting": "در حال تبدیل…"
+    "converting": "در حال تبدیل…",
+    "linkTypeFields": "انواع پیوند",
+    "count": "شمار"
   },
   "federation": {
     "warningBadge": "گیتی‌های فرعی در دسترس نیستند",

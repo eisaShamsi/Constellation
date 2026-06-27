@@ -37,7 +37,8 @@
       "typedLinkDisplay": "Visualización de enlaces tipados",
       "skyView": "Aspecto de Sky View",
       "layout": "Diseño",
-      "behaviour": "Comportamiento"
+      "behaviour": "Comportamiento",
+      "styleOverride": "Aspecto del Setter (estilo personalizado)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "Mostrar el nombre del tipo sobre cada enlace",
       "showLabelDesc": "Muestra el tipo de enlace (p. ej. «contradice») como una pequeña etiqueta sobre cada enlace tipado, para que su significado sea inconfundible.",
       "colourByType": "Colorear los enlaces por tipo",
-      "colourByTypeDesc": "Tiñe cada enlace tipado con el color de su tipo. Cuando está desactivado, los enlaces tipados usan el color de enlace estándar y el tipo se indica solo mediante la etiqueta."
+      "colourByTypeDesc": "Tiñe cada enlace tipado con el color de su tipo. Cuando está desactivado, los enlaces tipados usan el color de enlace estándar y el tipo se indica solo mediante la etiqueta.",
+      "resetColours": "Restablecer los colores predeterminados"
     },
     "title": "Ajustes",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "Proveedor",
       "providerDesc": "Elige tu proveedor de servicio de IA",
       "none": "Ninguno",
-      "apiKey": "API Key",
+      "apiKey": "Clave de API",
       "apiKeyDesc": "Tu clave de acceso API",
       "apiKeyPlaceholder": "Ingresa la API Key",
       "serverUrl": "URL del servidor",
@@ -486,7 +488,7 @@
       "templatesDesc": "Insertar contenido desde archivos de plantilla",
       "graphView": "Vista del cielo",
       "graphViewDesc": "Visualizar enlaces entre notas",
-      "backlinks": "Backlinks",
+      "backlinks": "Vínculos entrantes",
       "backlinksDesc": "Mostrar notas que enlazan a la nota actual",
       "outgoingLinks": "Enlaces salientes",
       "outgoingLinksDesc": "Mostrar enlaces en la nota actual",
@@ -506,8 +508,8 @@
       "workspacesDesc": "Guardar y restaurar diseños de espacios de trabajo",
       "index": "Índice",
       "indexDesc": "Recopilar y explorar términos de todas las notas",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "Búsqueda semántica",
+      "semanticSearchDesc": "Encuentra notas relacionadas conceptualmente en 100 idiomas mediante embeddings de IA (sin conexión)",
       "constellationMap": "Mapa de Constellation",
       "constellationMapDesc": "Visualización en explosión solar de la estructura del conocimiento",
       "constellationSight": "Sistema nervioso del conocimiento",
@@ -546,7 +548,7 @@
       "slotRightOfNote": "A la derecha de la nota",
       "slotRightSidebar": "Barra lateral derecha",
       "slotHidden": "Oculto",
-      "panelBacklinks": "Backlinks",
+      "panelBacklinks": "Vínculos entrantes",
       "panelBacklinksDesc": "Notas que enlazan a la nota actual",
       "panelOutgoing": "Enlaces salientes",
       "panelOutgoingDesc": "Enlaces que salen de la nota actual",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "Metadatos frontmatter de la nota actual",
       "panelTags": "Etiquetas",
       "panelTagsDesc": "Explorador de etiquetas de tu biblioteca",
-      "panelSky": "Sky View",
+      "panelSky": "Vista del cielo",
       "panelSkyDesc": "Gráfico de enlaces 3D de tu universo del conocimiento",
       "panelTasks": "Tareas",
       "panelTasksDesc": "Lista de tareas y seguimiento",
@@ -586,7 +588,7 @@
       "fail": "FALLO",
       "notMeasured": "No medido",
       "manual": "Manual",
-      "c1": "UI visible",
+      "c1": "Interfaz visible",
       "c2": "Totalmente responsivo",
       "c3": "Memoria RSS en reposo",
       "c4": "Barrido de estadísticas post-arranque",
@@ -600,20 +602,20 @@
       "fanout": "Distribución fire-and-forget"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "Configura cómo el panel Índice muestra el vocabulario de tu biblioteca.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "Expandir menciones entre idiomas",
+        "description": "Cuando haces clic en un término del panel Índice, también muestra notas que contienen sus traducciones del Puente Léxico. Desactivado de forma predeterminada; al activarlo se añade una insignia «vía {lemma}» a cada coincidencia entre idiomas para que siempre puedas distinguir qué menciones son directas y cuáles puenteadas."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "Historial de búsqueda",
+        "description": "Recuerda las consultas del filtro del Índice dentro de este Universo. Al enfocar o pulsar la flecha abajo, el filtro muestra las consultas recientes. Limitado a 200 entradas con expulsión FIFO. Desactivado de forma predeterminada; el almacenamiento es por Universo en SQLite."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "Borrar el historial de búsqueda",
+        "description": "Elimina de forma permanente todas las consultas del filtro del Índice almacenadas en este Universo. No se puede deshacer.",
+        "button": "Borrar",
+        "confirm": "¿Eliminar de forma permanente todo el historial de búsqueda del Índice de este Universo?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "Cinco actos"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "Centro de búsqueda",
+    "syntaxHelpers": "Sintaxis de búsqueda",
+    "linksTo": "Vincula con",
+    "linksFrom": "Vinculado desde",
+    "mutual": "Mutuos",
+    "mentions": "Menciones",
+    "orphans": "Huérfanos",
+    "linksBetween": "Vínculos entre",
+    "linksAll": "Todos los vínculos",
+    "tag": "Etiqueta",
+    "property": "Propiedad",
+    "scope": "Biblioteca",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "Títulos",
+    "contents": "Contenido",
+    "tags": "Etiquetas",
+    "properties": "Propiedades",
+    "wikilinks": "Wikienlaces",
+    "semantic": "Semántica",
     "notes": "notas",
     "from": "de",
     "supports": "Apoya",
@@ -860,7 +862,8 @@
     "generalizes": "Generaliza",
     "derivesFrom": "Deriva de",
     "partOf": "Parte de",
-    "matchVia": "vía"
+    "matchVia": "vía",
+    "concept": "Concepto"
   },
   "layout": {
     "leftSidebar": "Barra lateral izquierda",
@@ -891,8 +894,8 @@
     "noProperties": "Sin propiedades",
     "outline": "Esquema",
     "noHeadings": "Sin encabezados",
-    "backlinks": "Backlinks",
-    "backlinksHeader": "Backlinks",
+    "backlinks": "Vínculos entrantes",
+    "backlinksHeader": "Vínculos entrantes",
     "outgoingLinks": "Enlaces salientes",
     "outgoingLinksHeader": "Enlaces salientes",
     "suggestedConnections": "Conexiones sugeridas",
@@ -914,7 +917,8 @@
     "provenance": "Procedencia",
     "review": "Pulso de revisión",
     "inspector360": "360.3D",
-    "skyView": "Vista del cielo"
+    "skyView": "Vista del cielo",
+    "sourceReview": "Revisión de fuentes"
   },
   "tasksPanel": {
     "all": "Todas",
@@ -1020,12 +1024,12 @@
       "literature": "Literatura",
       "permanent": "Permanente",
       "synthesis": "Síntesis",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "Chispa",
+      "birth": "Nacimiento",
+      "growth": "Crecimiento",
+      "maturity": "Madurez",
+      "dormancy": "Latencia",
+      "archival": "Archivado"
     },
     "noteStage": "— Etapa —"
   },
@@ -1076,9 +1080,9 @@
     "viaLemma": "vía {lemma}",
     "viaLemmaTooltip": "Coincidencia entre idiomas a través del Puente Léxico",
     "returnToIndex": "Volver al índice",
-    "recentSearches": "Recent searches",
+    "recentSearches": "Búsquedas recientes",
     "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "semanticMatchTooltip": "Coincidencia semántica: relacionada conceptualmente con tu consulta"
   },
   "workspacesPanel": {
     "title": "Espacios de trabajo",
@@ -1123,7 +1127,8 @@
     "ikhtilafSchoolLabel": "Escuela",
     "ikhtilafSchoolPlaceholder": "Escuela",
     "ikhtilafPositionLabel": "Posición",
-    "ikhtilafPositionPlaceholder": "Posición"
+    "ikhtilafPositionPlaceholder": "Posición",
+    "stagePlaceholder": "Escribe o elige una etapa…"
   },
   "editor": {
     "undo": "Deshacer",
@@ -1560,7 +1565,7 @@
     "noResults": "No se encontraron resultados",
     "search": "Buscar...",
     "success": "Éxito",
-    "dismiss": "Dismiss"
+    "dismiss": "Descartar"
   },
   "bases": {
     "untitled": "Base sin título",
@@ -3207,7 +3212,9 @@
     "legacyBase": "Esta base tiene un formato antiguo y no se puede mostrar aquí. Crea una base nueva para reemplazarla.",
     "legacyBaseConvert": "Esta base tiene un formato antiguo. Tu archivo permanece intacto — conviértela en una Base de Constelación para verla y editarla.",
     "convertBase": "Convertir a Base de Constelación",
-    "converting": "Convirtiendo…"
+    "converting": "Convirtiendo…",
+    "linkTypeFields": "Tipos de vínculo",
+    "count": "recuento"
   },
   "federation": {
     "warningBadge": "cUniversos no disponibles",

@@ -37,7 +37,8 @@
       "typedLinkDisplay": "תצוגת קישורים מתויגים",
       "skyView": "מראה תצוגת השמיים",
       "layout": "פריסה",
-      "behaviour": "התנהגות"
+      "behaviour": "התנהגות",
+      "styleOverride": "מראה מותאם (עיצוב מותאם אישית)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "הצגת שם הסוג מעל כל קישור",
       "showLabelDesc": "הציגו את סוג הקישור (למשל \"סותר\") כתווית קטנה מעל כל קישור מסוּוג, כך שמשמעותו תהיה חד-משמעית.",
       "colourByType": "צביעת קישורים לפי סוג",
-      "colourByTypeDesc": "גוונו כל קישור מסוּוג בצבע הסוג שלו. כשהאפשרות כבויה, קישורים מסוּוגים משתמשים בצבע הקישור הרגיל והסוג מוצג באמצעות התווית בלבד."
+      "colourByTypeDesc": "גוונו כל קישור מסוּוג בצבע הסוג שלו. כשהאפשרות כבויה, קישורים מסוּוגים משתמשים בצבע הקישור הרגיל והסוג מוצג באמצעות התווית בלבד.",
+      "resetColours": "אפס צבעים לברירת המחדל"
     },
     "title": "הגדרות",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "ספק",
       "providerDesc": "בחר את ספק שירות ה-AI שלך",
       "none": "ללא",
-      "apiKey": "API Key",
+      "apiKey": "מפתח API",
       "apiKeyDesc": "מפתח הגישה שלך ל-API",
       "apiKeyPlaceholder": "הכנס API Key",
       "serverUrl": "כתובת שרת",
@@ -506,8 +508,8 @@
       "workspacesDesc": "שמור ושחזר פריסות סביבת עבודה",
       "index": "מפתח",
       "indexDesc": "איסוף ועיון במונחים מכל הפתקים",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "חיפוש סמנטי",
+      "semanticSearchDesc": "מצא פתקים הקשורים מבחינה מושגית ב-100 שפות באמצעות הטמעות AI (במצב לא מקוון)",
       "constellationMap": "מפת ידע",
       "constellationMapDesc": "המחשה חזותית של מבנה הידע בתצוגת זוהר־שמש",
       "constellationSight": "מערכת העצבים של הידע",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "מטא-נתוני frontmatter של הפתק הנוכחי",
       "panelTags": "תגיות",
       "panelTagsDesc": "דפדפן תגיות הספרייה",
-      "panelSky": "Sky View",
+      "panelSky": "תצוגת שמיים",
       "panelSkyDesc": "גרף קישורים תלת-ממדי של יקום הידע",
       "panelTasks": "משימות",
       "panelTasksDesc": "רשימת משימות ומעקב",
@@ -600,20 +602,20 @@
       "fanout": "הפצת fire-and-forget"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "הגדר כיצד חלונית האינדקס חושפת את אוצר המילים של הספרייה שלך.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "הרחב אזכורים בין שפות",
+        "description": "כשאתה לוחץ על מונח בחלונית האינדקס, הצג גם פתקים המכילים את תרגומיו מגשר הלקסיקון. כבוי כברירת מחדל — הפעלתו מוסיפה תג \"דרך {lemma}\" לכל התאמה בין-שפתית כדי שתמיד תוכל לדעת אילו אזכורים ישירים ואילו מגושרים."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "היסטוריית חיפושים",
+        "description": "זכור שאילתות סינון של האינדקס בתוך יקום זה. במיקוד / חץ למטה חלון הסינון מציג שאילתות אחרונות. מוגבל ל-200 רשומות עם מחיקה לפי סדר הכניסה (FIFO). כבוי כברירת מחדל; האחסון הוא פר-יקום ב-SQLite."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "נקה היסטוריית חיפושים",
+        "description": "הסר לצמיתות את כל שאילתות הסינון השמורות של האינדקס מיקום זה. לא ניתן לבטל.",
+        "button": "נקה",
+        "confirm": "למחוק לצמיתות את כל היסטוריית החיפושים של האינדקס ביקום זה?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "חמשת המעשים"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "מרכז החיפוש",
+    "syntaxHelpers": "תחביר חיפוש",
+    "linksTo": "מקשר אל",
+    "linksFrom": "מקושר מ",
+    "mutual": "הדדי",
+    "mentions": "אזכורים",
+    "orphans": "יתומים",
+    "linksBetween": "קישורים בין",
+    "linksAll": "כל הקישורים",
+    "tag": "תגית",
+    "property": "מאפיין",
+    "scope": "ספרייה",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "כותרות",
+    "contents": "תוכן",
+    "tags": "תגיות",
+    "properties": "מאפיינים",
+    "wikilinks": "קישורי ויקי",
+    "semantic": "סמנטי",
     "notes": "פתקים",
     "from": "מתוך",
     "supports": "תומך",
@@ -860,7 +862,8 @@
     "generalizes": "מכליל",
     "derivesFrom": "נגזר",
     "partOf": "חלק",
-    "matchVia": "דרך"
+    "matchVia": "דרך",
+    "concept": "מושג"
   },
   "layout": {
     "leftSidebar": "סרגל צד שמאלי",
@@ -914,7 +917,8 @@
     "provenance": "מקור",
     "review": "פולס סקירה",
     "inspector360": "360.3D",
-    "skyView": "תצוגת שמיים"
+    "skyView": "תצוגת שמיים",
+    "sourceReview": "סקירת מקורות"
   },
   "tasksPanel": {
     "all": "הכל",
@@ -1020,12 +1024,12 @@
       "literature": "ספרות",
       "permanent": "קבוע",
       "synthesis": "סינתזה",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "ניצוץ",
+      "birth": "לידה",
+      "growth": "צמיחה",
+      "maturity": "בשלות",
+      "dormancy": "תרדמה",
+      "archival": "גניזה"
     },
     "noteStage": "— שלב —"
   },
@@ -1076,9 +1080,9 @@
     "viaLemma": "דרך {lemma}",
     "viaLemmaTooltip": "התאמה בין-שפתית דרך הגשר הלקסיקלי",
     "returnToIndex": "חזרה לאינדקס",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "חיפושים אחרונים",
+    "semanticMatch": "≈ דומה",
+    "semanticMatchTooltip": "התאמה סמנטית — קשורה מבחינה מושגית לשאילתה שלך"
   },
   "workspacesPanel": {
     "title": "סביבות עבודה",
@@ -1123,7 +1127,8 @@
     "ikhtilafSchoolLabel": "בית מדרש",
     "ikhtilafSchoolPlaceholder": "בית מדרש",
     "ikhtilafPositionLabel": "עמדה",
-    "ikhtilafPositionPlaceholder": "עמדה"
+    "ikhtilafPositionPlaceholder": "עמדה",
+    "stagePlaceholder": "הקלד או בחר שלב…"
   },
   "editor": {
     "undo": "ביטול",
@@ -1549,7 +1554,7 @@
     "noResults": "לא נמצאו תוצאות",
     "search": "חיפוש...",
     "success": "הצלחה",
-    "dismiss": "Dismiss"
+    "dismiss": "התעלם"
   },
   "bases": {
     "untitled": "בסיס ללא שם",
@@ -1838,8 +1843,8 @@
     "parent": "מאפיין הורה",
     "tree": "עץ",
     "radial": "רדיאלי",
-    "sunburst": "Sunburst",
-    "treemap": "Treemap",
+    "sunburst": "תרשים קרינה",
+    "treemap": "מפת עץ",
     "colorLibrary": "צבע: ספרייה",
     "colorStatus": "צבע: סטטוס",
     "colorDepth": "צבע: עומק",
@@ -3207,7 +3212,9 @@
     "legacyBase": "בסיס זה בפורמט ישן ולא ניתן להציגו כאן. צור בסיס חדש שיחליף אותו.",
     "legacyBaseConvert": "בסיס זה בפורמט ישן. הקובץ שלך לא נגע — המר אותו לבסיס קבוצת כוכבים כדי להציג ולערוך אותו.",
     "convertBase": "המר לבסיס קבוצת כוכבים",
-    "converting": "ממיר…"
+    "converting": "ממיר…",
+    "linkTypeFields": "סוגי קישורים",
+    "count": "מספר"
   },
   "federation": {
     "warningBadge": "יקומי-בן לא זמינים",

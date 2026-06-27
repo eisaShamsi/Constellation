@@ -37,7 +37,8 @@
       "typedLinkDisplay": "型付きリンクの表示",
       "skyView": "Sky View の外観",
       "layout": "レイアウト",
-      "behaviour": "動作"
+      "behaviour": "動作",
+      "styleOverride": "セッターの外観（カスタムスタイル）"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "各リンクの上にタイプ名を表示",
       "showLabelDesc": "リンクタイプ(例:「矛盾する」)を各型付きリンクの上に小さなラベルとして表示し、その意味を明確にします。",
       "colourByType": "タイプごとにリンクを色分け",
-      "colourByTypeDesc": "各型付きリンクをそのタイプの色で着色します。オフのときは、型付きリンクは標準のリンク色を使い、タイプはラベルだけで示されます。"
+      "colourByTypeDesc": "各型付きリンクをそのタイプの色で着色します。オフのときは、型付きリンクは標準のリンク色を使い、タイプはラベルだけで示されます。",
+      "resetColours": "色を既定値に戻す"
     },
     "title": "設定",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "プロバイダー",
       "providerDesc": "AIサービスプロバイダーを選択",
       "none": "なし",
-      "apiKey": "API Key",
+      "apiKey": "APIキー",
       "apiKeyDesc": "あなたのAPIアクセスキー",
       "apiKeyPlaceholder": "API Keyを入力",
       "serverUrl": "サーバーURL",
@@ -506,8 +508,8 @@
       "workspacesDesc": "ワークスペースレイアウトを保存・復元",
       "index": "索引",
       "indexDesc": "すべてのノートから用語を収集・閲覧",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "セマンティック検索",
+      "semanticSearchDesc": "AI埋め込みを使い、100の言語にまたがって概念的に関連するノートを見つけます（オフライン）",
       "constellationMap": "Constellation マップ",
       "constellationMapDesc": "知識構造のサンバースト可視化",
       "constellationSight": "知識の神経系",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "現在のノートのフロントマターメタデータ",
       "panelTags": "タグ",
       "panelTagsDesc": "ライブラリのタグブラウザ",
-      "panelSky": "Sky View",
+      "panelSky": "スカイビュー",
       "panelSkyDesc": "知識宇宙の3Dリンクグラフ",
       "panelTasks": "タスク",
       "panelTasksDesc": "タスクチェックリストと追跡",
@@ -600,20 +602,20 @@
       "fanout": "ファイアアンドフォーゲットファンアウト"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "インデックスパネルにライブラリの語彙を表示する方法を設定します。",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "言語をまたいで言及を展開",
+        "description": "インデックスパネルで用語をクリックしたとき、レキシカルブリッジによるその訳語を含むノートも併せて表示します。既定ではオフです。オンにすると、言語をまたいで一致した各項目に「{lemma} 経由」バッジが付き、どの言及が直接でどれがブリッジ経由かを常に見分けられます。"
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "検索履歴",
+        "description": "このユニバース内でインデックスフィルターの検索語を記憶します。フォーカス時または下矢印キーで、フィルターに最近の検索語が表示されます。最大200件まで保持し、古いものから順に消去します。既定ではオフで、保存はユニバースごとにSQLite内で行われます。"
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "検索履歴を消去",
+        "description": "このユニバースに保存されたすべてのインデックスフィルター検索語を完全に削除します。元に戻せません。",
+        "button": "消去",
+        "confirm": "このユニバースのインデックス検索履歴をすべて完全に削除しますか？"
       }
     },
     "review": {
@@ -708,7 +710,7 @@
       "correctionSet": "設定",
       "correctionClearAll": "すべてクリア",
       "correctionNone": "補正は設定されていません。",
-      "ahSuffix": "AH",
+      "ahSuffix": "ヒジュラ暦",
       "day": "日",
       "days": "日"
     }
@@ -830,27 +832,27 @@
     "fiveActs": "五つの行為"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "検索ハブ",
+    "syntaxHelpers": "検索構文",
+    "linksTo": "リンク先",
+    "linksFrom": "リンク元",
+    "mutual": "相互",
+    "mentions": "言及",
+    "orphans": "孤立ノート",
+    "linksBetween": "間のリンク",
+    "linksAll": "すべてのリンク",
+    "tag": "タグ",
+    "property": "プロパティ",
+    "scope": "ライブラリ",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "タイトル",
+    "contents": "本文",
+    "tags": "タグ",
+    "properties": "プロパティ",
+    "wikilinks": "ウィキリンク",
+    "semantic": "セマンティック",
     "notes": "ノート",
     "from": "から",
     "supports": "支持",
@@ -860,7 +862,8 @@
     "generalizes": "一般化",
     "derivesFrom": "派生",
     "partOf": "一部",
-    "matchVia": "経由"
+    "matchVia": "経由",
+    "concept": "概念"
   },
   "layout": {
     "leftSidebar": "左サイドバー",
@@ -914,7 +917,8 @@
     "provenance": "来歴",
     "review": "レビューパルス",
     "inspector360": "360.3D",
-    "skyView": "天空ビュー"
+    "skyView": "天空ビュー",
+    "sourceReview": "ソースレビュー"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1460,12 +1464,12 @@
       "literature": "文献",
       "permanent": "永続",
       "synthesis": "統合",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "着想",
+      "birth": "誕生",
+      "growth": "成長",
+      "maturity": "成熟",
+      "dormancy": "休眠",
+      "archival": "保管"
     },
     "noteStage": "— 段階 —"
   },
@@ -1516,9 +1520,9 @@
     "viaLemma": "{lemma} 経由",
     "viaLemmaTooltip": "Lexical Bridge による言語横断マッチ",
     "returnToIndex": "インデックスに戻る",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "最近の検索",
+    "semanticMatch": "≈ 類似",
+    "semanticMatchTooltip": "セマンティック一致 — クエリと概念的に関連しています"
   },
   "workspacesPanel": {
     "title": "ワークスペース",
@@ -1563,7 +1567,8 @@
     "ikhtilafSchoolLabel": "学派",
     "ikhtilafSchoolPlaceholder": "学派",
     "ikhtilafPositionLabel": "立場",
-    "ikhtilafPositionPlaceholder": "立場"
+    "ikhtilafPositionPlaceholder": "立場",
+    "stagePlaceholder": "ステージを入力または選択…"
   },
   "editor": {
     "undo": "元に戻す",
@@ -1989,7 +1994,7 @@
     "noResults": "結果が見つかりません",
     "search": "検索...",
     "success": "成功",
-    "dismiss": "Dismiss"
+    "dismiss": "閉じる"
   },
   "bases": {
     "untitled": "無題のベース",
@@ -3207,7 +3212,9 @@
     "legacyBase": "このベースは古い形式のため、ここでは表示できません。新しいベースを作成して置き換えてください。",
     "legacyBaseConvert": "このベースは古い形式です。ファイルはそのまま保持されます — 星座ベースに変換すると表示・編集できます。",
     "convertBase": "星座ベースに変換",
-    "converting": "変換中…"
+    "converting": "変換中…",
+    "linkTypeFields": "リンクの種類",
+    "count": "件数"
   },
   "federation": {
     "warningBadge": "cUniverse 利用不可",

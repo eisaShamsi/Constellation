@@ -37,7 +37,8 @@
       "typedLinkDisplay": "ٹائپ شدہ لنک کی نمائش",
       "skyView": "اسکائی ویو کی شکل",
       "layout": "خاکہ",
-      "behaviour": "طرزِ عمل"
+      "behaviour": "طرزِ عمل",
+      "styleOverride": "سیٹر طرز (مخصوص اسٹائلنگ)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "ہر ربط کے اوپر قسم کا نام دکھائیں",
       "showLabelDesc": "ربط کی قسم (مثلاً «تردید کرتا ہے») کو ہر درجہ بند ربط کے اوپر ایک چھوٹے لیبل کے طور پر دکھائیں، تاکہ اس کا مفہوم بالکل واضح ہو۔",
       "colourByType": "روابط کو قسم کے مطابق رنگ دیں",
-      "colourByTypeDesc": "ہر درجہ بند ربط کو اس کی قسم کے رنگ سے رنگیں۔ بند ہونے پر، درجہ بند روابط معیاری ربط کا رنگ استعمال کرتے ہیں اور قسم صرف لیبل سے ظاہر ہوتی ہے۔"
+      "colourByTypeDesc": "ہر درجہ بند ربط کو اس کی قسم کے رنگ سے رنگیں۔ بند ہونے پر، درجہ بند روابط معیاری ربط کا رنگ استعمال کرتے ہیں اور قسم صرف لیبل سے ظاہر ہوتی ہے۔",
+      "resetColours": "رنگ پہلے سے طے شدہ پر بحال کریں"
     },
     "title": "ترتیبات",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "فراہم کنندہ",
       "providerDesc": "اپنا AI سروس فراہم کنندہ منتخب کریں",
       "none": "کوئی نہیں",
-      "apiKey": "API Key",
+      "apiKey": "API کلید",
       "apiKeyDesc": "آپ کی API رسائی کلید",
       "apiKeyPlaceholder": "API Key درج کریں",
       "serverUrl": "سرور URL",
@@ -506,8 +508,8 @@
       "workspacesDesc": "ورک اسپیس کی ترتیب محفوظ اور بحال کریں",
       "index": "فہرست",
       "indexDesc": "تمام نوٹس سے اصطلاحات جمع اور براؤز کریں",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "معنوی تلاش",
+      "semanticSearchDesc": "AI ایمبیڈنگز کے ذریعے 100 زبانوں میں تصوراتی طور پر متعلقہ نوٹس تلاش کریں (آف لائن)",
       "constellationMap": "Constellation کا نقشہ",
       "constellationMapDesc": "علم کی ساخت کی سن برسٹ تصویری نمائندگی",
       "constellationSight": "علم کا اعصابی نظام",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "موجودہ نوٹ کا frontmatter میٹا ڈیٹا",
       "panelTags": "ٹیگز",
       "panelTagsDesc": "آپ کی لائبریری کا ٹیگ براؤزر",
-      "panelSky": "Sky View",
+      "panelSky": "آسمانی منظر",
       "panelSkyDesc": "آپ کے علم کے کائنات کا 3D لنک گراف",
       "panelTasks": "کام",
       "panelTasksDesc": "کام کی فہرست اور ٹریکنگ",
@@ -600,20 +602,20 @@
       "fanout": "فائر-اینڈ-فارگیٹ فین آؤٹ"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "ترتیب دیں کہ اشاریہ پینل آپ کی لائبریری کے الفاظ کیسے پیش کرے۔",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "تذکروں کو بین اللسانی پھیلائیں",
+        "description": "جب آپ اشاریہ پینل میں کسی اصطلاح پر کلک کریں، تو لفظی پل (Lexical Bridge) سے اس کے تراجم پر مشتمل نوٹس بھی پیش کیے جائیں۔ بطورِ خود کار طور پر بند — اسے آن کرنے سے ہر بین اللسانی مماثلت پر \"بذریعہ {lemma}\" کا بیج لگ جاتا ہے تاکہ آپ ہمیشہ پہچان سکیں کہ کون سے تذکرے براہِ راست ہیں اور کون سے پل کے ذریعے۔"
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "تلاش کی تاریخ",
+        "description": "اس کائنات کے اندر اشاریہ فلٹر کی استفساروں کو یاد رکھیں۔ فوکس / نیچے کے تیر پر فلٹر حالیہ استفسارات دکھاتا ہے۔ 200 اندراجات تک محدود، FIFO طریقے سے پرانے ہٹا کر۔ بطورِ خود کار طور پر بند؛ ذخیرہ ہر کائنات کے لیے SQLite میں ہے۔"
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "تلاش کی تاریخ صاف کریں",
+        "description": "اس کائنات سے تمام محفوظ شدہ اشاریہ فلٹر استفسارات مستقل طور پر ہٹا دیں۔ اسے واپس نہیں کیا جا سکتا۔",
+        "button": "صاف کریں",
+        "confirm": "اس کائنات کے لیے تمام اشاریہ تلاش کی تاریخ مستقل طور پر حذف کریں؟"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "پانچ افعال"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "تلاش مرکز",
+    "syntaxHelpers": "تلاش کا نحو",
+    "linksTo": "روابط بطرف",
+    "linksFrom": "روابط ازطرف",
+    "mutual": "باہمی",
+    "mentions": "تذکرے",
+    "orphans": "بے ربط",
+    "linksBetween": "درمیانی روابط",
+    "linksAll": "تمام روابط",
+    "tag": "ٹیگ",
+    "property": "خاصیت",
+    "scope": "لائبریری",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "عنوانات",
+    "contents": "مواد",
+    "tags": "ٹیگز",
+    "properties": "خصوصیات",
+    "wikilinks": "ویکی روابط",
+    "semantic": "معنوی",
     "notes": "نوٹس",
     "from": "میں سے",
     "supports": "حمایت",
@@ -860,7 +862,8 @@
     "generalizes": "تعمیم",
     "derivesFrom": "ماخوذ",
     "partOf": "حصہ",
-    "matchVia": "بذریعہ"
+    "matchVia": "بذریعہ",
+    "concept": "تصور"
   },
   "layout": {
     "leftSidebar": "بایاں سائڈبار",
@@ -914,7 +917,8 @@
     "provenance": "اسناد",
     "review": "جائزہ نبض",
     "inspector360": "360.3D",
-    "skyView": "آسمان کا منظر"
+    "skyView": "آسمان کا منظر",
+    "sourceReview": "ماخذ کا جائزہ"
   },
   "tasksPanel": {
     "all": "سب",
@@ -1020,12 +1024,12 @@
       "literature": "ادب",
       "permanent": "مستقل",
       "synthesis": "ترکیب",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "چنگاری",
+      "birth": "پیدائش",
+      "growth": "نمو",
+      "maturity": "پختگی",
+      "dormancy": "سکون",
+      "archival": "محفوظ شدہ"
     },
     "noteStage": "— مرحلہ —"
   },
@@ -1076,9 +1080,9 @@
     "viaLemma": "{lemma} کے ذریعے",
     "viaLemmaTooltip": "لیکسیکل برج کے ذریعے بین اللسانی مطابقت",
     "returnToIndex": "اشاریہ پر واپس جائیں",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "حالیہ تلاشیں",
+    "semanticMatch": "≈ مماثل",
+    "semanticMatchTooltip": "معنوی مماثلت — آپ کے استفسار سے تصوراتی طور پر متعلقہ"
   },
   "workspacesPanel": {
     "title": "ورک اسپیسز",
@@ -1123,7 +1127,8 @@
     "ikhtilafSchoolLabel": "مذہب",
     "ikhtilafSchoolPlaceholder": "مذہب",
     "ikhtilafPositionLabel": "موقف",
-    "ikhtilafPositionPlaceholder": "موقف"
+    "ikhtilafPositionPlaceholder": "موقف",
+    "stagePlaceholder": "مرحلہ لکھیں یا منتخب کریں…"
   },
   "editor": {
     "undo": "واپس کریں",
@@ -1549,7 +1554,7 @@
     "noResults": "کوئی نتائج نہیں ملے",
     "search": "تلاش...",
     "success": "کامیابی",
-    "dismiss": "Dismiss"
+    "dismiss": "برخاست کریں"
   },
   "bases": {
     "untitled": "بے عنوان بیس",
@@ -3207,7 +3212,9 @@
     "legacyBase": "یہ بیس ایک پرانی شکل میں ہے اور یہاں نہیں دکھایا جا سکتا۔ اس کی جگہ نیا بیس بنائیں۔",
     "legacyBaseConvert": "یہ بیس ایک پرانی شکل میں ہے۔ آپ کی فائل کو چھوا نہیں گیا — اسے دیکھنے اور ترمیم کرنے کے لیے برج بیس میں تبدیل کریں۔",
     "convertBase": "برج بیس میں تبدیل کریں",
-    "converting": "تبدیل ہو رہا ہے…"
+    "converting": "تبدیل ہو رہا ہے…",
+    "linkTypeFields": "روابط کی اقسام",
+    "count": "تعداد"
   },
   "federation": {
     "warningBadge": "cUniverse دستیاب نہیں",

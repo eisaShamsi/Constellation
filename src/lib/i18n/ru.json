@@ -37,7 +37,8 @@
       "typedLinkDisplay": "Отображение типизированных связей",
       "skyView": "Вид Sky View",
       "layout": "Макет",
-      "behaviour": "Поведение"
+      "behaviour": "Поведение",
+      "styleOverride": "Вид оформителя (своё оформление)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "Показывать название типа над каждой ссылкой",
       "showLabelDesc": "Отображайте тип ссылки (например, «противоречит») в виде небольшой подписи над каждой типизированной ссылкой, чтобы её смысл был безошибочно понятен.",
       "colourByType": "Окрашивать ссылки по типу",
-      "colourByTypeDesc": "Окрашивайте каждую типизированную ссылку в цвет её типа. Когда выключено, типизированные ссылки используют стандартный цвет ссылки, и тип обозначается только подписью."
+      "colourByTypeDesc": "Окрашивайте каждую типизированную ссылку в цвет её типа. Когда выключено, типизированные ссылки используют стандартный цвет ссылки, и тип обозначается только подписью.",
+      "resetColours": "Сбросить цвета по умолчанию"
     },
     "title": "Настройки",
     "sections": {
@@ -356,7 +358,7 @@
       "provider": "Поставщик",
       "providerDesc": "Выберите поставщика ИИ-сервиса",
       "none": "Нет",
-      "apiKey": "API Key",
+      "apiKey": "API-ключ",
       "apiKeyDesc": "Ваш ключ доступа к API",
       "apiKeyPlaceholder": "Введите API Key",
       "serverUrl": "URL сервера",
@@ -506,8 +508,8 @@
       "workspacesDesc": "Сохранение и восстановление раскладок рабочих пространств",
       "index": "Указатель",
       "indexDesc": "Сбор и просмотр терминов из всех заметок",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "Семантический поиск",
+      "semanticSearchDesc": "Находите концептуально связанные заметки на 100 языках с помощью ИИ-эмбеддингов (офлайн)",
       "constellationMap": "Карта Созвездия",
       "constellationMapDesc": "Лучевая визуализация структуры знаний",
       "constellationSight": "Нервная система знаний",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "Метаданные frontmatter текущей заметки",
       "panelTags": "Теги",
       "panelTagsDesc": "Браузер тегов вашей библиотеки",
-      "panelSky": "Sky View",
+      "panelSky": "Небесный вид",
       "panelSkyDesc": "3D граф ссылок вашей вселенной знаний",
       "panelTasks": "Задачи",
       "panelTasksDesc": "Список задач и отслеживание",
@@ -600,20 +602,20 @@
       "fanout": "Fire-and-forget разветвление"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "Настройте, как панель «Индекс» отображает словарь вашей библиотеки.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "Расширять упоминания между языками",
+        "description": "При нажатии на термин в панели «Индекс» также показывать заметки, содержащие его переводы из лексического моста. По умолчанию выключено — при включении к каждому межъязыковому совпадению добавляется метка «через {lemma}», чтобы всегда было видно, какие упоминания прямые, а какие связаны через мост."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "История поиска",
+        "description": "Запоминать запросы фильтра «Индекс» в пределах этой Вселенной. При фокусе или нажатии стрелки вниз фильтр показывает недавние запросы. Ограничено 200 записями с вытеснением по принципу FIFO. По умолчанию выключено; данные хранятся отдельно для каждой Вселенной в SQLite."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "Очистить историю поиска",
+        "description": "Безвозвратно удалить все сохранённые запросы фильтра «Индекс» из этой Вселенной. Отменить нельзя.",
+        "button": "Очистить",
+        "confirm": "Безвозвратно удалить всю историю поиска «Индекса» для этой Вселенной?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "Пять актов"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
-    "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "title": "Центр поиска",
+    "syntaxHelpers": "Синтаксис поиска",
+    "linksTo": "Ссылается на",
+    "linksFrom": "Ссылки от",
+    "mutual": "Взаимные",
+    "mentions": "Упоминания",
+    "orphans": "Сироты",
+    "linksBetween": "Связи между",
+    "linksAll": "Все ссылки",
+    "tag": "Тег",
+    "property": "Свойство",
+    "scope": "Библиотека",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "Заголовки",
+    "contents": "Содержимое",
+    "tags": "Теги",
+    "properties": "Свойства",
+    "wikilinks": "Вики-ссылки",
+    "semantic": "Семантический",
     "notes": "заметок",
     "from": "из",
     "supports": "Поддерживает",
@@ -860,7 +862,8 @@
     "generalizes": "Обобщает",
     "derivesFrom": "Происходит от",
     "partOf": "Часть",
-    "matchVia": "через"
+    "matchVia": "через",
+    "concept": "Концепт"
   },
   "layout": {
     "leftSidebar": "Левая панель",
@@ -914,7 +917,8 @@
     "provenance": "Происхождение",
     "review": "Пульс обзора",
     "inspector360": "360.3D",
-    "skyView": "Вид неба"
+    "skyView": "Вид неба",
+    "sourceReview": "Обзор источников"
   },
   "cece": {
     "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1460,12 +1464,12 @@
       "literature": "Литература",
       "permanent": "Постоянная",
       "synthesis": "Синтез",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "Искра",
+      "birth": "Рождение",
+      "growth": "Рост",
+      "maturity": "Зрелость",
+      "dormancy": "Покой",
+      "archival": "Архивация"
     },
     "noteStage": "— Этап —"
   },
@@ -1516,9 +1520,9 @@
     "viaLemma": "через {lemma}",
     "viaLemmaTooltip": "Межъязыковое совпадение через Lexical Bridge",
     "returnToIndex": "Вернуться к указателю",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "Недавние запросы",
+    "semanticMatch": "≈ похоже",
+    "semanticMatchTooltip": "Семантическое совпадение — концептуально связано с вашим запросом"
   },
   "workspacesPanel": {
     "title": "Рабочие пространства",
@@ -1563,7 +1567,8 @@
     "ikhtilafSchoolLabel": "Школа",
     "ikhtilafSchoolPlaceholder": "Школа",
     "ikhtilafPositionLabel": "Позиция",
-    "ikhtilafPositionPlaceholder": "Позиция"
+    "ikhtilafPositionPlaceholder": "Позиция",
+    "stagePlaceholder": "Введите или выберите стадию…"
   },
   "editor": {
     "undo": "Отменить",
@@ -1712,7 +1717,7 @@
   "lockScreen": {
     "title": "Constellation заблокирован",
     "subtitle": "Введите PIN для разблокировки",
-    "enterPin": "PIN",
+    "enterPin": "PIN-код",
     "wrongPin": "Неверный PIN. Попробуйте снова."
   },
   "toolbar": {
@@ -1989,7 +1994,7 @@
     "noResults": "Результатов не найдено",
     "search": "Поиск...",
     "success": "Успешно",
-    "dismiss": "Dismiss"
+    "dismiss": "Закрыть"
   },
   "bases": {
     "untitled": "База без названия",
@@ -2278,8 +2283,8 @@
     "parent": "Родительское свойство",
     "tree": "Дерево",
     "radial": "Радиальная",
-    "sunburst": "Sunburst",
-    "treemap": "Treemap",
+    "sunburst": "Солнечная диаграмма",
+    "treemap": "Древовидная карта",
     "colorLibrary": "Цвет: Библиотека",
     "colorStatus": "Цвет: Статус",
     "colorDepth": "Цвет: Глубина",
@@ -3207,7 +3212,9 @@
     "legacyBase": "Эта база в устаревшем формате и не может быть показана здесь. Создайте новую базу взамен.",
     "legacyBaseConvert": "Эта база в устаревшем формате. Ваш файл не тронут — преобразуйте его в Базу Созвездия, чтобы просмотреть и редактировать.",
     "convertBase": "Преобразовать в Базу Созвездия",
-    "converting": "Преобразование…"
+    "converting": "Преобразование…",
+    "linkTypeFields": "Типы связей",
+    "count": "количество"
   },
   "federation": {
     "warningBadge": "cUniverse недоступны",

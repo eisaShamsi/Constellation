@@ -37,7 +37,8 @@
       "typedLinkDisplay": "Affichage des liens typés",
       "skyView": "Apparence de Sky View",
       "layout": "Disposition",
-      "behaviour": "Comportement"
+      "behaviour": "Comportement",
+      "styleOverride": "Apparence personnalisée (style sur mesure)"
     }
   },
   "app": {
@@ -62,7 +63,8 @@
       "showLabel": "Afficher le nom du type au-dessus de chaque lien",
       "showLabelDesc": "Affiche le type de lien (p. ex. « contredit ») sous forme de petite étiquette au-dessus de chaque lien typé, pour que son sens soit sans ambiguïté.",
       "colourByType": "Colorer les liens par type",
-      "colourByTypeDesc": "Teinte chaque lien typé avec la couleur de son type. Lorsque l'option est désactivée, les liens typés utilisent la couleur de lien standard et le type est indiqué par la seule étiquette."
+      "colourByTypeDesc": "Teinte chaque lien typé avec la couleur de son type. Lorsque l'option est désactivée, les liens typés utilisent la couleur de lien standard et le type est indiqué par la seule étiquette.",
+      "resetColours": "Réinitialiser les couleurs par défaut"
     },
     "title": "Paramètres",
     "sections": {
@@ -303,7 +305,7 @@
       "themeBackground": "Arrière-plan",
       "themeSurface": "Surface",
       "themeText": "Texte",
-      "themeAccent": "Accent",
+      "themeAccent": "Accentuation",
       "themeBorder": "Bordure",
       "exportTheme": "Exporter",
       "general": "Général",
@@ -356,7 +358,7 @@
       "provider": "Fournisseur",
       "providerDesc": "Choisissez votre fournisseur de service IA",
       "none": "Aucun",
-      "apiKey": "API Key",
+      "apiKey": "Clé API",
       "apiKeyDesc": "Votre clé d'accès API",
       "apiKeyPlaceholder": "Entrez la API Key",
       "serverUrl": "URL du serveur",
@@ -506,8 +508,8 @@
       "workspacesDesc": "Sauvegarder et restaurer les dispositions d’espaces de travail",
       "index": "Index",
       "indexDesc": "Collecter et parcourir les termes de toutes les notes",
-      "semanticSearch": "Semantic Search",
-      "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+      "semanticSearch": "Recherche sémantique",
+      "semanticSearchDesc": "Trouvez des notes conceptuellement liées dans plus de 100 langues grâce aux embeddings IA (hors ligne)",
       "constellationMap": "Carte Constellation",
       "constellationMapDesc": "Visualisation en rayons de soleil de la structure des connaissances",
       "constellationSight": "Système nerveux de la connaissance",
@@ -554,7 +556,7 @@
       "panelPropertiesDesc": "Métadonnées frontmatter de la note actuelle",
       "panelTags": "Étiquettes",
       "panelTagsDesc": "Explorateur d'étiquettes de votre bibliothèque",
-      "panelSky": "Sky View",
+      "panelSky": "Vue du ciel",
       "panelSkyDesc": "Graphe de liens 3D de votre univers de connaissances",
       "panelTasks": "Tâches",
       "panelTasksDesc": "Liste de tâches et suivi",
@@ -586,7 +588,7 @@
       "fail": "ÉCHEC",
       "notMeasured": "Non mesuré",
       "manual": "Manuel",
-      "c1": "UI visible",
+      "c1": "Interface visible",
       "c2": "Entièrement réactif",
       "c3": "Mémoire RSS inactive",
       "c4": "Balayage de stats post-démarrage",
@@ -600,20 +602,20 @@
       "fanout": "Distribution fire-and-forget"
     },
     "index": {
-      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "intro": "Configurez la façon dont le panneau Index fait ressortir le vocabulaire de votre bibliothèque.",
       "expandCrossLanguage": {
-        "label": "Expand mentions cross-language",
-        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+        "label": "Étendre les mentions entre les langues",
+        "description": "Lorsque vous cliquez sur un terme dans le panneau Index, faire également ressortir les notes contenant ses traductions issues du Pont lexical. Désactivé par défaut — l'activer ajoute un badge « via {lemma} » à chaque correspondance interlangue, afin que vous puissiez toujours distinguer les mentions directes des mentions reliées."
       },
       "searchHistory": {
-        "label": "Search history",
-        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+        "label": "Historique de recherche",
+        "description": "Mémoriser les requêtes du filtre Index au sein de cet Univers. À la prise de focus ou avec la flèche bas, le filtre affiche les requêtes récentes. Limité à 200 entrées avec éviction FIFO. Désactivé par défaut ; le stockage est propre à chaque Univers dans SQLite."
       },
       "clearHistory": {
-        "label": "Clear search history",
-        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
-        "button": "Clear",
-        "confirm": "Permanently delete all Index search history for this Universe?"
+        "label": "Effacer l'historique de recherche",
+        "description": "Supprimer définitivement toutes les requêtes du filtre Index enregistrées dans cet Univers. Action irréversible.",
+        "button": "Effacer",
+        "confirm": "Supprimer définitivement tout l'historique de recherche de l'Index pour cet Univers ?"
       }
     },
     "review": {
@@ -830,27 +832,27 @@
     "fiveActs": "Cinq actes"
   },
   "searchHub": {
-    "title": "Search Hub",
-    "syntaxHelpers": "Search syntax",
-    "linksTo": "Links to",
-    "linksFrom": "Links from",
-    "mutual": "Mutual",
+    "title": "Centre de recherche",
+    "syntaxHelpers": "Syntaxe de recherche",
+    "linksTo": "Liens vers",
+    "linksFrom": "Liens depuis",
+    "mutual": "Mutuels",
     "mentions": "Mentions",
-    "orphans": "Orphans",
-    "linksBetween": "Links between",
-    "linksAll": "All links",
-    "tag": "Tag",
-    "property": "Property",
-    "scope": "Library",
+    "orphans": "Orphelines",
+    "linksBetween": "Liens entre",
+    "linksAll": "Tous les liens",
+    "tag": "Étiquette",
+    "property": "Propriété",
+    "scope": "Bibliothèque",
     "preview": "...",
     "openInEditor": "Open",
     "expandSearch": "Search Hub",
-    "titles": "Titles",
-    "contents": "Contents",
-    "tags": "Tags",
-    "properties": "Properties",
-    "wikilinks": "Wikilinks",
-    "semantic": "Semantic",
+    "titles": "Titres",
+    "contents": "Contenus",
+    "tags": "Étiquettes",
+    "properties": "Propriétés",
+    "wikilinks": "Wikiliens",
+    "semantic": "Sémantique",
     "notes": "notes",
     "from": "de",
     "supports": "Soutient",
@@ -860,7 +862,8 @@
     "generalizes": "Généralise",
     "derivesFrom": "Dérive de",
     "partOf": "Partie de",
-    "matchVia": "via"
+    "matchVia": "via",
+    "concept": "Concept"
   },
   "layout": {
     "leftSidebar": "Barre latérale gauche",
@@ -914,7 +917,8 @@
     "provenance": "Provenance",
     "review": "Impulsion de révision",
     "inspector360": "360.3D",
-    "skyView": "Vue du ciel"
+    "skyView": "Vue du ciel",
+    "sourceReview": "Révision des sources"
   },
   "tasksPanel": {
     "all": "Toutes",
@@ -1018,14 +1022,14 @@
     "stage": {
       "fleeting": "Éphémère",
       "literature": "Littérature",
-      "permanent": "Permanent",
+      "permanent": "Permanente",
       "synthesis": "Synthèse",
-      "spark": "Spark",
-      "birth": "Birth",
-      "growth": "Growth",
-      "maturity": "Maturity",
-      "dormancy": "Dormancy",
-      "archival": "Archival"
+      "spark": "Étincelle",
+      "birth": "Naissance",
+      "growth": "Croissance",
+      "maturity": "Maturité",
+      "dormancy": "Dormance",
+      "archival": "Archivage"
     },
     "noteStage": "— Étape —"
   },
@@ -1076,9 +1080,9 @@
     "viaLemma": "via {lemma}",
     "viaLemmaTooltip": "Correspondance multilingue via le Pont Lexical",
     "returnToIndex": "Retour à l'index",
-    "recentSearches": "Recent searches",
-    "semanticMatch": "≈ similar",
-    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
+    "recentSearches": "Recherches récentes",
+    "semanticMatch": "≈ similaire",
+    "semanticMatchTooltip": "Correspondance sémantique — conceptuellement liée à votre requête"
   },
   "workspacesPanel": {
     "title": "Espaces de travail",
@@ -1123,7 +1127,8 @@
     "ikhtilafSchoolLabel": "École",
     "ikhtilafSchoolPlaceholder": "École",
     "ikhtilafPositionLabel": "Position",
-    "ikhtilafPositionPlaceholder": "Position"
+    "ikhtilafPositionPlaceholder": "Position",
+    "stagePlaceholder": "Saisissez ou choisissez une étape…"
   },
   "editor": {
     "undo": "Annuler",
@@ -1560,7 +1565,7 @@
     "noResults": "Aucun résultat trouvé",
     "search": "Rechercher...",
     "success": "Succès",
-    "dismiss": "Dismiss"
+    "dismiss": "Ignorer"
   },
   "bases": {
     "untitled": "Base sans titre",
@@ -1733,7 +1738,7 @@
       "libraryBreakdown": "Bibliothèques",
       "recentlyOpened": "Récemment ouverts",
       "recentlyEdited": "Récemment éditées",
-      "tags": "Tags"
+      "tags": "Étiquettes"
     },
     "graphView": "Vue du ciel",
     "splitCompanion": "Panneaux compagnon",
@@ -1833,13 +1838,13 @@
   "orgChart": {
     "title": "Organigramme",
     "folders": "Dossiers",
-    "tags": "Tags",
+    "tags": "Étiquettes",
     "moc": "Liens MOC",
     "parent": "Propriété parent",
     "tree": "Arbre",
     "radial": "Radial",
-    "sunburst": "Sunburst",
-    "treemap": "Treemap",
+    "sunburst": "Rayon de soleil",
+    "treemap": "Carte proportionnelle",
     "colorLibrary": "Couleur : Bibliothèque",
     "colorStatus": "Couleur : Statut",
     "colorDepth": "Couleur : Profondeur",
@@ -1932,7 +1937,7 @@
     "preview": "Aperçu",
     "save": "Enregistrer",
     "cancel": "Annuler",
-    "latin": "Latin / English",
+    "latin": "Latin / Anglais",
     "arabic": "Arabe / العربية",
     "hebrew": "Hébreu / עברית",
     "cjk": "CJK / 中日韩",
@@ -3207,7 +3212,9 @@
     "legacyBase": "Cette base est dans un ancien format et ne peut pas être affichée ici. Créez une nouvelle base pour la remplacer.",
     "legacyBaseConvert": "Cette base est dans un ancien format. Votre fichier reste intact — convertissez-le en Base Constellation pour l'afficher et le modifier.",
     "convertBase": "Convertir en Base Constellation",
-    "converting": "Conversion…"
+    "converting": "Conversion…",
+    "linkTypeFields": "Types de liens",
+    "count": "nombre"
   },
   "federation": {
     "warningBadge": "cUnivers indisponibles",
