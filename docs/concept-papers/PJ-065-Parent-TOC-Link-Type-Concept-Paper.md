@@ -40,6 +40,17 @@ This is **Form-Aligns-To-Purpose**: the structural relation has degrees of freed
 
 **Where it sits in the philosophy.** Knowledge Formulation is *"what can I BUILD from what I know?"*. The eight cognitive links are how understanding is **formed**; the structural link is how formed understanding is **composed into a work** — the **Externalization / Expression** face of the Cognitive Engine (CE element #6), the last mile from *constellation of ideas* → *finished artifact*. It is downstream of Conviction, not a new act of inquiry.
 
+### 2.1 Hierarchies in Constellation — where this one sits (four kinds, one machinery)
+
+"Hierarchy" is not one relation. Constellation deliberately keeps **four** separate — *unlike SKOS, which collapses is-a + part-of into a single `broader`* (good thesaurus practice splits them; Constellation does too):
+
+1. **Taxonomy (is-a / class-inclusion)** — `generalizes` / `exemplifies` — *cognitive* (PJ-067 §2).
+2. **Meronymy (part-whole)** — `part-of` + its 6 Winston/Chaffin/Herrmann subtypes — *cognitive* (PJ-067 §2).
+3. **Lineage (derivation / version)** — `derives-from` / `supersedes` — *cognitive* (PJ-067 §2).
+4. **Compositional (the work's ordered outline)** — **this paper's structural parent/TOC link.**
+
+Kinds 1–3 are **epistemic** (claims about how *ideas* relate; held under inquiry; carry the living-link apparatus — weight/confidence/decay). Kind 4 is **structural** (the authored *shape of a work*; settled by authorship; exempt from that apparatus — §2 above). They differ in **meaning** but share the **same mechanics**: **transitive closure computed on read** (recursive CTE, never stored — the LL-XXX rule), a **write-time acyclicity guard**, **inverse/converse** (parent↔child / broader↔narrower), and **ordering**. **Build that hierarchy primitive ONCE; the four kinds are its instances** — the closure / acyclicity / inverse machinery this paper specifies (§3–§4) is the same PJ-067 §2 needs for kinds 1–3.
+
 ---
 
 ## 3. Prior art (WA#5) — the battle-tested pattern, and where Constellation already half-built it
