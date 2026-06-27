@@ -94,6 +94,7 @@
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
+	import StructuralOutlinePanel from '$lib/components/StructuralOutlinePanel.svelte';
 
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
@@ -383,7 +384,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360' | 'sourceReview'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'structure' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360' | 'sourceReview'>('properties');
 	// MIG-007 follow-up (task_19b5319d) — which right-sidebar tabs require an open note. The rest
 	// (links / review) are universe-wide and render with or without a note. ('tags' → §B,
 	// 'sourceReview' → §D are now note-scoped — see NOTE_SCOPED_TABS below.)
@@ -393,7 +394,7 @@
 	// MIG-080 §B — 'tags' is now note-scoped (the right rail shows ONLY the open note's tags; the universe All-tags view moved to the Dashboard).
 	// MIG-080 §D — 'sourceReview' is now note-scoped: the right rail shows THIS note's pending source
 	//   suggestions (sources_get_suggestions); the universe suggestion queue stays in the Cataloger (left dock).
-	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags', 'sourceReview', 'review']);
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'structure', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags', 'sourceReview', 'review']);
 	// MIG-080 §B — the right-sidebar Tags tab is note-scoped (the open note's tags only).
 	// The universe-wide All-tags browse moved to the Dashboard (DashboardView, reading the
 	// tag_counts-derived allLibraryTags). The 'note'/'all' toggle was removed.
@@ -1741,6 +1742,9 @@
 			// when they're placed in the flanking slots. Force visible so the
 			// safety reset below doesn't steal the user's click.
 			backlinks:  true,
+			// PJ-065 — the Structure (parent/TOC) tab is always present in the sidebar
+			// (like backlinks); it's note-scoped and self-fetches its spine.
+			structure:  true,
 			tags:       inSidebar('tags'),
 			star:       inSidebar('sky'),
 			tasks:      inSidebar('tasks'),
@@ -1756,7 +1760,7 @@
 		};
 
 		if (!tabVisible[rightSidebarTab]) {
-			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'health', 'provenance', 'review', 'inspector360', 'sourceReview'] as const;
+			const order = ['properties', 'backlinks', 'structure', 'tags', 'star', 'tasks', 'health', 'provenance', 'review', 'inspector360', 'sourceReview'] as const;
 			const first = order.find(tab => tabVisible[tab]);
 			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}
@@ -7380,6 +7384,10 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
 				</button>
+				<!-- PJ-065 — Structure (parent/TOC) tab. Always present (note-scoped), like Backlinks. -->
+				<button class="rs-tab" class:active={rightSidebarTab === 'structure'} onclick={() => rightSidebarTab = 'structure'} title={$t('panels.structure') || 'Structure'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12h-8"/><path d="M21 6H8"/><path d="M21 18h-8"/><path d="M3 6v4c0 1.1.9 2 2 2h3"/><path d="M3 10v6c0 1.1.9 2 2 2h3"/></svg>
+				</button>
 				{#if ($appSettings.panelPlacements?.tags ?? 'right-sidebar') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -7539,6 +7547,18 @@
 							direction="outbound"
 							defaultType="associative"
 							heading={$t('panels.suggestedConnections') || 'Suggested connections'}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'structure' && !skyViewInspectMode}
+					<!-- PJ-065 — the Structure (parent/TOC) spine: ancestor breadcrumb + the
+					     descendant outline. Self-fetching from the §6 read APIs; reads on note
+					     change only while this tab is mounted (gesture-gated, never on note open). -->
+					<div class="rs-section rs-section--flush">
+						<div class="rs-header">{$t('panels.structure') || 'Structure'}</div>
+						<StructuralOutlinePanel
+							activeNoteName={sidebarTab?.name ?? ''}
+							activeNotePath={sidebarTab?.path ?? ''}
+							{libraryColorMap}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'star'}
