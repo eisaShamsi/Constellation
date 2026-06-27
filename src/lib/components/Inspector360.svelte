@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, tn } from '$lib/i18n';
 	import { lookupStageEmoji, libraryStats } from '$lib/libraries/store';
-	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { cognitiveLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 
@@ -59,7 +59,9 @@
 	// null/associative links. Was a hardcoded 7 (missing supersedes); 360.3D now
 	// shows supersedes and any user-defined type. Read at setup — the registry is
 	// boot-seeded before this panel can open.
-	const REG_TYPES = getLinkTypes();
+	// PJ-065 — the 360 matrix is the cognitive grammar; the structural (parent/TOC)
+	// lane is excluded so it never becomes a matrix column or a "missing" cognitive type.
+	const REG_TYPES = cognitiveLinkTypes();
 	type LinkType = string;
 	const TYPE_ORDER: LinkType[] = [...REG_TYPES.map((t) => t.id), 'untyped'];
 

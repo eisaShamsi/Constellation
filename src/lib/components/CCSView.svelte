@@ -12,7 +12,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import LinkTypePill from './LinkTypePill.svelte';
-	import { linkTypesStore, linkTypeColor, getLinkType, getLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypesStore, linkTypeColor, getLinkType, cognitiveLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import { listArchivedLinks, unarchiveLink, type ArchivedLink } from '$lib/libraries/store';
 
 	let {
@@ -193,7 +193,7 @@
 		void $linkTypesStore;
 		const counts = { ...byType };
 		const rows: Array<{ id: string; count: number }> = [];
-		for (const def of getLinkTypes()) {
+		for (const def of cognitiveLinkTypes()) {
 			const n = counts[def.id] ?? 0;
 			delete counts[def.id];
 			if (n > 0) rows.push({ id: def.id, count: n });

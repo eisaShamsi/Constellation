@@ -21,7 +21,7 @@
 	import { t } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import { discoverBaseProperties } from '$lib/lens/store';
-	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { cognitiveLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import { ADDABLE_REGISTERED_DIMS, columnLabel } from '$lib/lens/tableModel';
 
 	let {
@@ -65,7 +65,9 @@
 	// as a `note.link.<id>` per-type count column, matching the search.
 	const linkTypeFields = $derived.by(() => {
 		const q = search.trim().toLowerCase();
-		return getLinkTypes()
+		// PJ-065 — only cognitive types get a `note.link.<id>` Base column; the
+		// structural (parent/TOC) lane is non-cognitive and is not offered here.
+		return cognitiveLinkTypes()
 			.map((lt) => 'note.link.' + lt.id)
 			.filter((d) => !currentColumns.includes(d))
 			.filter((d) => !q || columnLabel(d, $t).toLowerCase().includes(q) || d.toLowerCase().includes(q));

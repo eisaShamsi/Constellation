@@ -2297,6 +2297,10 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 	}
 
 	// Cognitive typed link operators: "supports [[X]]", "contradicts [[X]]", etc.
+	// PJ-065 — this list is COGNITIVE-ONLY by design. The structural (parent/TOC)
+	// lane (parent / contains) must NEVER be added here: a TOC relationship is not a
+	// search operator, and `parent [[X]]` must stay plain free text, not a typed_links
+	// filter. (Structural search lives in the TOC panel, not the query grammar.)
 	const typedLinkTypes = ['supports', 'contradicts', 'causes', 'exemplifies', 'generalizes', 'derives[- ]from', 'part[- ]of'];
 	const typedLinkRe = new RegExp(`(${typedLinkTypes.join('|')})\\s+\\[\\[([^\\]]+)\\]\\]`, 'gi');
 	while ((match = typedLinkRe.exec(raw)) !== null) {
@@ -4257,6 +4261,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
  *  hardcoded 9-tuple; now registry-derived so custom types appear. Read at call
  *  time (the registry is boot-seeded; a vocabulary edit re-seeds it). */
 export function linkTypeNames(): string[] {
+	// PJ-065 note: this currently returns ALL types (incl. the structural parent/TOC
+	// lane). It has no live caller. If revived for a COGNITIVE surface, switch to
+	// cognitiveLinkTypes(); if revived for the Style Setter colour controls, all
+	// types (incl. structural) are intentionally correct (its teal is refinable there).
 	return [...getLinkTypes().map((t) => t.id), 'associative'];
 }
 

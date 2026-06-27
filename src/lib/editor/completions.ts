@@ -5,7 +5,7 @@
 import { type CompletionContext, type Completion, startCompletion } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';
 import { generateTable } from './tableUtils';
-import { getLinkTypes, isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
+import { cognitiveLinkTypes, isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
 import { taskDateCompletions, TASK_RE } from './taskDates';
 
 export const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] = [
@@ -106,7 +106,9 @@ export function createWikilinkCompletion(getNotes: () => NoteInfo[]) {
 		// Phase 1 — [[partial : link types first (start a typed link), then notes.
 		const query = inner.toLowerCase();
 		const options: Completion[] = [];
-		for (const t of getLinkTypes()) {
+		// PJ-065 — only cognitive types are offered as inline [[type:: links; the
+		// structural (parent/TOC) lane is authored in frontmatter, never in the body.
+		for (const t of cognitiveLinkTypes()) {
 			if (t.id.startsWith(query)) {
 				const head = `[[${t.id}::`;
 				options.push(linkReplaceOption(
@@ -161,7 +163,7 @@ export function createTypedLinkCompletion() {
 		const pipeIdx = before.text.lastIndexOf('|');
 		const typed = before.text.slice(pipeIdx + 1).toLowerCase();
 		const from = before.from + pipeIdx + 1;
-		const options = getLinkTypes()
+		const options = cognitiveLinkTypes()
 			.filter(t => t.id.startsWith(typed))
 			.map(t => ({
 				label: t.id,

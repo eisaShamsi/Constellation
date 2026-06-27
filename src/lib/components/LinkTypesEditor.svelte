@@ -20,7 +20,7 @@
 	import { t, locale } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
-		getLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
+		cognitiveLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
 	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
 	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
@@ -81,7 +81,7 @@
 
 	async function refresh() {
 		await loadLinkTypes();
-		types = getLinkTypes().map((tp) => ({ ...tp }));
+		types = cognitiveLinkTypes().map((tp) => ({ ...tp }));
 	}
 
 	async function persist() {
@@ -89,7 +89,7 @@
 		error = null;
 		try {
 			await saveLinkTypes(toLinkTypeDeltas(types));
-			types = getLinkTypes().map((tp) => ({ ...tp })); // reflect the resolved order
+			types = cognitiveLinkTypes().map((tp) => ({ ...tp })); // reflect the resolved order
 		} catch (e) {
 			error = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
 		} finally {

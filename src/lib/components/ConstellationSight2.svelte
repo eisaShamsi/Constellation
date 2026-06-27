@@ -28,7 +28,7 @@
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth, CommunityProfile } from '$lib/graph/clusterEngine';
 	// §D1 — the one color/label source for typed links (MIG-067 registry).
-	import { linkTypeColor, getLinkTypes, linkTypeLabel, isNullLinkType, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypeColor, cognitiveLinkTypes, linkTypeLabel, isNullLinkType, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 
 	// ─── Types ────────────────────────────────────────────────
 	interface SimNode extends d3.SimulationNodeDatum {
@@ -217,7 +217,9 @@
 
 	// §D1 — the legend's type rows come from the registry (canonical order,
 	// custom types included) and follow live recolors via the subscription.
-	let registryTypes = $state(getLinkTypes());
+	// PJ-065 — the CNS legend shows the cognitive bands only; the structural
+	// (parent/TOC) lane is excluded (its edges never enter the CNS graph).
+	let registryTypes = $state(cognitiveLinkTypes());
 	// UI-language label with the standard miss-guard chain:
 	// locale (linkTypes.{id}) → registry user-label → raw id.
 	function typeLegendLabel(id: string): string {
@@ -1069,7 +1071,7 @@
 
 		// §D1 — live registry recolors reach the well + legend while open.
 		unsubLinkTypes = subscribeLinkTypes(() => {
-			registryTypes = getLinkTypes();
+			registryTypes = cognitiveLinkTypes();
 			requestDraw();
 		});
 

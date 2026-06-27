@@ -7,7 +7,7 @@
 	// never a bulk accept). Interaction shape copied from the confidence popover
 	// (OutgoingLinksPanel.svelte): a fixed overlay + a button-per-option menu.
 	import { t, dir as uiDir } from '$lib/i18n';
-	import { linkTypesStore, getLinkTypes, getLinkType } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypesStore, cognitiveLinkTypes, getLinkType } from '$lib/libraries/linkTypeRegistry';
 	import LinkTypePill from './LinkTypePill.svelte';
 
 	let {
@@ -33,7 +33,9 @@
 	// to a §G vocabulary edit / recolour.
 	const types = $derived.by<string[]>(() => {
 		void $linkTypesStore;
-		const all = getLinkTypes().map((d) => d.id).filter((id) => id !== 'associative');
+		// PJ-065 — cognitive types only: the structural (parent/TOC) lane is not a
+		// cognitive relationship a user picks here (it is authored in frontmatter).
+		const all = cognitiveLinkTypes().map((d) => d.id).filter((id) => id !== 'associative');
 		return ['associative', ...all];
 	});
 
