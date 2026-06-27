@@ -376,7 +376,7 @@ fn process_batch(
                    WHERE stratum IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::STRATUM_SQL_EXPR,
+                expr = crate::search::stratum_sql_expr(),
             ),
             params![after_path, last_path.clone()],
         )
@@ -387,7 +387,7 @@ fn process_batch(
                    WHERE maturity IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::MATURITY_SQL_EXPR,
+                expr = crate::search::maturity_sql_expr(),
             ),
             params![after_path, last_path.clone()],
         )

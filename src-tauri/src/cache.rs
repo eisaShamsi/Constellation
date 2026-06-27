@@ -470,12 +470,16 @@ fn backlink_rows_in_schema(
         return Ok(Vec::new());
     }
     let placeholders = targets_lower.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    // PJ-065 — the structural (parent/TOC) lane never shows as a cognitive backlink
+    // (the TOC panel is its only surface) and must not break the getBacklinks ==
+    // incoming_count parity. Empty clause (no-op) until §5 registers a structural type.
+    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence \
          FROM {}.note_links \
-         WHERE status != 'archived' AND target_name_lower IN ({})",
-        schema, placeholders
+         WHERE status != 'archived'{} AND target_name_lower IN ({})",
+        schema, sx, placeholders
     );
     let mut stmt = match conn.prepare(&sql) {
         Ok(s) => s,
@@ -498,12 +502,15 @@ fn outgoing_rows_in_schema(
     schema: &str,
     source_path: &str,
 ) -> Result<Vec<NoteLink>, String> {
+    // PJ-065 — exclude the structural (parent/TOC) lane from the cognitive
+    // outgoing-links panel (the TOC panel is its surface). No-op until §5.
+    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence \
          FROM {}.note_links \
-         WHERE source_path = ? AND status != 'archived'",
-        schema
+         WHERE source_path = ? AND status != 'archived'{}",
+        schema, sx
     );
     let mut stmt = match conn.prepare(&sql) {
         Ok(s) => s,
@@ -1205,11 +1212,16 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
 /// remaining universes' link data is unaffected.
 fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>, String> {
     let mut out = Vec::new();
+    // PJ-065 — the federated full-links payload + boot BootLinks bundle stay
+    // cognitive: the structural (parent/TOC) lane is served only by the dedicated
+    // get_structural_* APIs, never the boot bundle (so boot-bundle size is
+    // unchanged and frontend cognitive graph consumers never see it). No-op until §5.
+    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence \
-         FROM {}.note_links WHERE status = 'active'",
-        schema
+         FROM {}.note_links WHERE status = 'active'{}",
+        schema, sx
     );
     let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare links ({}): {}", schema, e))?;
     let rows = stmt
@@ -1562,6 +1574,11 @@ mod tests {
             .unwrap();
         }
         for (source, target, ltype) in links {
+            // PJ-065 — structural (parent/TOC) edges never enter the sky graph
+            // (Sky View is a cognitive surface). No-op until §5.
+            if crate::link_types::is_structural_type(&ltype) {
+                continue;
+            }
             conn.execute(
                 "INSERT INTO sky_links (source_path, target_name, link_type) VALUES (?1, ?2, ?3)",
                 params![source, target, ltype],

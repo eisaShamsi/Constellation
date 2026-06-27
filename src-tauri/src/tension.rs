@@ -200,11 +200,16 @@ fn load_notes_from_db(
     }
 
     {
+        // PJ-065 — exclude the structural (parent/TOC) lane: tension's orphan / SPOF /
+        // contradiction analysis is a cognitive instrument, so a node with ONLY
+        // structural links reads as a cognitive orphan (correct). No-op until §5.
+        let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
         let mut stmt = conn
-            .prepare(
+            .prepare(&format!(
                 "SELECT source_path, target_name, link_type FROM note_links \
-                 WHERE library_name = ?1 AND status = 'active'",
-            )
+                 WHERE library_name = ?1 AND status = 'active'{}",
+                sx
+            ))
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(rusqlite::params![library_name], |row| {

@@ -187,6 +187,14 @@ fn scan_notes_recursive(
                 let body = strip_frontmatter(&content);
                 let word_count = count_words(body);
 
+                // PJ-065 — a wikilink under a structural (parent/TOC) frontmatter key
+                // is not a cognitive outgoing link. `fm_len` is the frontmatter prefix
+                // length (body is a subslice of content); the byte-offset guard skips
+                // only the frontmatter occurrence, so a body link to the same note is
+                // still counted. Empty set (no-op) until §5.
+                let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
+                let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
+
                 // Parse outgoing wikilinks + link types
                 let mut outgoing: Vec<String> = Vec::new();
                 let mut outgoing_types: HashSet<String> = HashSet::new();
@@ -197,7 +205,11 @@ fn scan_notes_recursive(
                     let (target, link_type) = crate::link_types::resolve_wikilink_type(
                         &reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
                     );
-                    outgoing.push(target.to_lowercase());
+                    let tl = target.to_lowercase();
+                    if cap.get(0).map_or(false, |m| m.start() < fm_len) && struct_fm.contains(&tl) {
+                        continue; // PJ-065 — structural-keyed frontmatter link
+                    }
+                    outgoing.push(tl);
                     if let Some(lt) = link_type {
                         outgoing_types.insert(lt);
                     }

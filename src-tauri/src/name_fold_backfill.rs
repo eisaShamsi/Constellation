@@ -165,12 +165,12 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
         .map_err(|e| format!("recompute incoming: {}", e))?;
         // 3. stratum + maturity (read target_name = sky_nodes.id, now correct).
         conn.execute(
-            &format!("UPDATE sky_nodes SET stratum = ({}) WHERE path = ?1", crate::search::STRATUM_SQL_EXPR),
+            &format!("UPDATE sky_nodes SET stratum = ({}) WHERE path = ?1", crate::search::stratum_sql_expr()),
             params![p],
         )
         .map_err(|e| format!("recompute stratum: {}", e))?;
         conn.execute(
-            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path = ?1", crate::search::MATURITY_SQL_EXPR),
+            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path = ?1", crate::search::maturity_sql_expr()),
             params![p],
         )
         .map_err(|e| format!("recompute maturity: {}", e))?;

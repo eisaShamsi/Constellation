@@ -180,7 +180,14 @@ const TERM_VOCAB_DROPCOL_SCHEMA_VERSION: i64 = 1;
 /// so it works inside any `UPDATE sky_nodes SET stratum = (…)` context.
 /// Shared between the §4 triggers in init_db and the one-shot back-fill
 /// in sky_backfill.rs — single source of truth, cannot drift.
-pub(crate) const STRATUM_SQL_EXPR: &str = "
+/// PJ-065 — built per call so the structural (parent/TOC) lane is excluded from
+/// the inbound/outbound link counts that feed the stratum (a TOC placement is not
+/// cognitive density). The `/*SX*/` markers are replaced with the registry's
+/// structural exclusion fragment (empty ⇒ a no-op, so byte-identical to the old
+/// const until §5 registers a structural type). Was a `const`.
+pub(crate) fn stratum_sql_expr() -> String {
+    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    "
     MIN(8, MAX(1,
         COALESCE(
             (SELECT CASE
@@ -193,10 +200,10 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
         )
         + (CASE WHEN (SELECT COUNT(*) FROM note_links
                        WHERE source_path = sky_nodes.path
-                         AND status = 'active') >= 3
+                         AND status = 'active'/*SX*/) >= 3
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(*) FROM note_links
-                       WHERE status = 'active'
+                       WHERE status = 'active'/*SX*/
                          AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 5
                 THEN 1 ELSE 0 END)
         -- NB: this ≥5 inbound-EDGE signal stays COUNT(*) (total occurrences) to match
@@ -214,11 +221,12 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                                AND status = 'active')
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(DISTINCT source_path) FROM note_links
-                       WHERE status = 'active'
+                       WHERE status = 'active'/*SX*/
                          AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 3
                 THEN 1 ELSE 0 END)
     ))
-";
+".replace("/*SX*/", &sx)
+}
 
 /// MIG-002 §5 — SQL fragment that computes sky_nodes.maturity from the
 /// same three signals as maturity.rs::compute_state:
@@ -249,11 +257,19 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
 /// without a true creation timestamp. On ghost rows (path in DB, file
 /// missing) the back-fill leaves created_at NULL; COALESCE to `modified`
 /// keeps the arithmetic well-defined (days_since_created becomes 0).
-pub(crate) const MATURITY_SQL_EXPR: &str = "
+/// PJ-065 — built per call so the structural (parent/TOC) lane is excluded from
+/// the inbound DISTINCT-source counts that drive maturity (a TOC placement is not
+/// cognitive inbound). `/*SX*/` is replaced with the registry's structural
+/// exclusion (empty ⇒ no-op, byte-identical to the old const until §5). This keeps
+/// the Sky maturity equal to note_meta.incoming_count (which §3a already excludes
+/// structural from) — the MIG-085 "surfaces agree" invariant. Was a `const`.
+pub(crate) fn maturity_sql_expr() -> String {
+    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    "
     CASE
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
-                 WHERE status != 'archived'
+                 WHERE status != 'archived'/*SX*/
                    AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 10)
          AND ((strftime('%s','now') -
                COALESCE((SELECT modified FROM note_meta WHERE path = sky_nodes.path), 0))
@@ -262,7 +278,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- wilting: evergreen-level but untouched 90+ days
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
-                 WHERE status != 'archived'
+                 WHERE status != 'archived'/*SX*/
                    AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
@@ -277,7 +293,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- evergreen: 4+ inbound, created 7+ days ago
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
-                 WHERE status != 'archived'
+                 WHERE status != 'archived'/*SX*/
                    AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
@@ -289,7 +305,7 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- sapling: 1+ inbound OR created 2+ days ago
         WHEN ((SELECT COUNT(DISTINCT source_path) FROM note_links
-                 WHERE status != 'archived'
+                 WHERE status != 'archived'/*SX*/
                    AND target_name IN (SELECT sky_nodes.id UNION SELECT alias_lower FROM note_aliases WHERE path = sky_nodes.path)) >= 1)
           OR ((strftime('%s','now') -
                COALESCE(
@@ -302,7 +318,8 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
         -- seed: default (fresh + isolated note)
         ELSE 'seed'
     END
-";
+".replace("/*SX*/", &sx)
+}
 
 #[cfg(test)]
 mod tests_mig085b_surfaces_agree {
@@ -368,7 +385,7 @@ mod tests_mig085b_surfaces_agree {
 
         // (2) The Sky trigger maturity.
         conn.execute(
-            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path='/ile.md'", MATURITY_SQL_EXPR),
+            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path='/ile.md'", maturity_sql_expr()),
             [],
         )
         .unwrap();
@@ -1134,11 +1151,16 @@ mod tests_c2a_target_name_lower_idempotent {
 /// localizes the id while keeping the count.
 pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
     let reg = crate::link_types::snapshot();
-    let list = reg.sql_in_list();
-    let rank = reg.sql_rank_case();
+    // PJ-065 — the structural (parent/TOC) lane is NON-cognitive: it must not
+    // count toward outgoing_count nor appear in the type breakdown. Cognitive
+    // list/rank + a NOT IN clause on the raw COUNT(*). All no-ops until §5
+    // registers a structural type (cognitive list == full list while empty).
+    let list = reg.sql_in_list_cognitive();
+    let rank = reg.sql_rank_case_cognitive();
     let sentinel = reg.sentinel_rank();
+    let sx = reg.structural_not_in_clause("link_type");
     format!(
-        "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'), \
+        "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'{sx}), \
          outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt || ' (' || cnt || ')', ', '), '') FROM \
             (SELECT link_type AS lt, COUNT(*) AS cnt FROM note_links \
              WHERE source_path = {src} AND status = 'active' AND link_type IN {list} \
@@ -1153,6 +1175,7 @@ pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
         list = list,
         rank = rank,
         sentinel = sentinel,
+        sx = sx,
     )
 }
 
@@ -1230,9 +1253,13 @@ pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), Strin
 /// `link_type IN {list}` (registry types) like outgoing.
 pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     let reg = crate::link_types::snapshot();
-    let list = reg.sql_in_list();
-    let rank = reg.sql_rank_case();
+    // PJ-065 — exclude the structural (parent/TOC) lane from incoming_count and the
+    // inbound type breakdown: cognitive list/rank + a NOT IN inside BOTH branches of
+    // the matched UNION. No-ops until §5 (cognitive list == full list while empty).
+    let list = reg.sql_in_list_cognitive();
+    let rank = reg.sql_rank_case_cognitive();
     let sentinel = reg.sentinel_rank();
+    let sx = reg.structural_not_in_clause("nl.link_type");
     // Match: active edge whose target_name (lowercased) is this note's name or an alias.
     // Matched incoming edges = active edges whose `target_name_lower` (the VIRTUAL
     // LOWER(target_name) column) equals this note's name OR any alias — expressed as
@@ -1243,12 +1270,12 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     // UPDATE row. COUNT is DISTINCT source_path (getBacklinks' dedupeBySource).
     let matched = format!(
         "(SELECT nl.source_path, nl.link_type FROM note_links nl \
-            WHERE nl.status != 'archived' AND nl.target_name_lower = COALESCE({np}.name_lower, LOWER({np}.name)) \
+            WHERE nl.status != 'archived'{sx} AND nl.target_name_lower = COALESCE({np}.name_lower, LOWER({np}.name)) \
           UNION \
           SELECT nl.source_path, nl.link_type FROM note_aliases a \
             JOIN note_links nl ON nl.target_name_lower = a.alias_lower \
-            WHERE a.path = {np}.path AND nl.status != 'archived')",
-        np = np,
+            WHERE a.path = {np}.path AND nl.status != 'archived'{sx})",
+        np = np, sx = sx,
     );
     format!(
         "incoming_count = (SELECT COUNT(DISTINCT source_path) FROM {matched}), \
@@ -1427,8 +1454,8 @@ fn maintain_sky_after_save(
     }
     let sql = format!(
         "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
-        stratum = STRATUM_SQL_EXPR,
-        maturity = MATURITY_SQL_EXPR,
+        stratum = stratum_sql_expr(),
+        maturity = maturity_sql_expr(),
     );
     for p in &affected {
         conn.execute(&sql, params![p])?;
@@ -3495,10 +3522,24 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // `COALESCE(weight, 1.0)` convention as these triggers, so OR IGNORE
     // silently keeping the back-fill's weight never produces a different
     // value from what the trigger would have written.
+    // PJ-065 — DROP first so the structural exclusion baked into the WHEN / INSERT
+    // guards below refreshes on the boot after §5 ships (CREATE IF NOT EXISTS alone
+    // would keep the old, structural-blind body — the same reason the stratum /
+    // maturity triggers DROP first). No-op while no structural type exists.
     conn.execute_batch("
+        DROP TRIGGER IF EXISTS note_links_sky_ai;
+        DROP TRIGGER IF EXISTS note_links_sky_ad;
+        DROP TRIGGER IF EXISTS note_links_sky_au;
+    ").map_err(|e| format!("Failed to drop sky_link triggers: {}", e))?;
+    // The structural (parent/TOC) lane never enters sky_links (Sky View is a
+    // cognitive surface). Injected into the AI WHEN + AU INSERT guards; an edge
+    // retyped INTO structural still fires AU → its old sky_link is DELETEd and not
+    // re-INSERTed. Empty (no-op) until §5.
+    let sx_new = crate::link_types::snapshot().structural_not_in_clause("NEW.link_type");
+    conn.execute_batch(&format!("
         CREATE TRIGGER IF NOT EXISTS note_links_sky_ai
         AFTER INSERT ON note_links
-        WHEN NEW.status = 'active'
+        WHEN NEW.status = 'active'{sx_new}
         BEGIN
             INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
             VALUES (NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0));
@@ -3527,9 +3568,9 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
               AND link_type = OLD.link_type;
             INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
             SELECT NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0)
-            WHERE NEW.status = 'active';
+            WHERE NEW.status = 'active'{sx_new};
         END;
-    ").map_err(|e| format!("Failed to create sky_link triggers: {}", e))?;
+    ", sx_new = sx_new)).map_err(|e| format!("Failed to create sky_link triggers: {}", e))?;
 
     // ─── Sky-node triggers (MIG-001 Step 4) ─────────────────────────────
     // Keep sky_nodes in lock-step with note_meta. Orphans are preserved
@@ -3716,7 +3757,7 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
                       AND link_type = 'derives-from'
                       AND status = 'active');
         END;
-    ", stratum_expr = STRATUM_SQL_EXPR, maturity_expr = MATURITY_SQL_EXPR))
+    ", stratum_expr = stratum_sql_expr(), maturity_expr = maturity_sql_expr()))
     .map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
 
     // ─── MIG-002 §4: SQL-native stratum triggers ────────────────────────
@@ -3783,7 +3824,7 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         -- maintain_sky_after_save (the save/delete changed-targets+source diff) and
         -- recompute_all_sky (reconcile / sky_backfill self-heal). The unconditional DROP
         -- statements above shed these triggers from existing DBs on next boot.
-    ", expr = STRATUM_SQL_EXPR))
+    ", expr = stratum_sql_expr()))
     .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
 
     // ─── MIG-002 §5: SQL-native maturity triggers ───────────────────────
@@ -3826,7 +3867,7 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         -- (see the stratum block). Maturity is maintained write-time by maintain_sky_after_save
         -- + recompute_all_sky. note_meta_sky_ai still seeds maturity inline on note INSERT,
         -- and note_meta_sky_maturity_au (above) refreshes it on a modified/created_at change.
-    ", expr = MATURITY_SQL_EXPR))
+    ", expr = maturity_sql_expr()))
     .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
 
     // MIG-066 §A — outgoing-link aggregate triggers. Extracted into
@@ -8676,8 +8717,8 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
             // former targets are). Mirrors the incoming recompute above; shared sky exprs.
             let sky_sql = format!(
                 "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
-                stratum = STRATUM_SQL_EXPR,
-                maturity = MATURITY_SQL_EXPR,
+                stratum = stratum_sql_expr(),
+                maturity = maturity_sql_expr(),
             );
             for p in &affected {
                 let _ = conn.execute(&sky_sql, params![p]);

@@ -330,6 +330,12 @@ fn scan_all_notes(
                 let body = crate::strata::strip_frontmatter_pub(&content);
                 let word_count = body.split_whitespace().count();
 
+                // PJ-065 — skip wikilinks under a structural (parent/TOC) frontmatter
+                // key (byte-offset guard so a body link to the same note still counts).
+                // No-op until §5.
+                let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
+                let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
+
                 let mut outgoing: Vec<(String, Option<String>)> = Vec::new();
 
                 for cap in link_re.captures_iter(&content) {
@@ -338,7 +344,11 @@ fn scan_all_notes(
                     let (target, link_type) = crate::link_types::resolve_wikilink_type(
                         &reg, &cap[1], cap.get(2).map(|m| m.as_str()), false,
                     );
-                    outgoing.push((target.to_lowercase(), link_type));
+                    let tl = target.to_lowercase();
+                    if cap.get(0).map_or(false, |m| m.start() < fm_len) && struct_fm.contains(&tl) {
+                        continue; // PJ-065 — structural-keyed frontmatter link
+                    }
+                    outgoing.push((tl, link_type));
                 }
 
                 let mut tags: HashSet<String> = HashSet::new();

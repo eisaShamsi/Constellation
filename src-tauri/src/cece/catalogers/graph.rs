@@ -191,6 +191,10 @@ fn link_type_weight(link_type: &str) -> f32 {
         "contradicts" => -0.7,
         "supports" | "generalizes" => 0.7,
         "causes" | "exemplifies" => 0.5,
+        // PJ-065 — the structural (parent/TOC) lane is non-cognitive and casts NO
+        // classification vote. The catch-all already covers parent/contains (and any
+        // future structural type), so the cataloger never treats a TOC edge as
+        // semantic evidence. Locked by a unit test in §5.
         _ => 0.0,
     }
 }

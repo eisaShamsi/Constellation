@@ -356,6 +356,59 @@ pub fn is_structural_type(id: &str) -> bool {
         .unwrap_or_else(|_| STRUCTURAL_SEED_IDS.contains(&id))
 }
 
+/// PJ-065 — the lowercased wikilink targets declared under a STRUCTURAL (parent/TOC)
+/// frontmatter key, given the note's frontmatter region (the caller passes
+/// `&content[..fm_len]`). The filesystem content-scanners (strata.rs,
+/// inspector360.rs) call this — with a byte-offset guard so only the frontmatter
+/// occurrence is skipped — to keep a structural placement from being miscounted as a
+/// cognitive outgoing link. ONE shared implementation (no divergent per-file
+/// frontmatter parser — the registry DRY rule). Empty (fast no-op) until §5 registers
+/// a structural type. Block-aware: tracks the current top-level key so `- ` list items
+/// attribute to the right property (mirrors `extract_frontmatter_typed_links`).
+pub fn structural_frontmatter_targets(frontmatter: &str) -> std::collections::HashSet<String> {
+    use std::sync::OnceLock;
+    static WL: OnceLock<regex::Regex> = OnceLock::new();
+    let wl = WL.get_or_init(|| regex::Regex::new(r"\[\[([^\[\]]+)\]\]").unwrap());
+    let mut out = std::collections::HashSet::new();
+    let reg = snapshot();
+    if reg.structural_ids().is_empty() {
+        return out; // no structural type ⇒ nothing to skip (pre-§5)
+    }
+    let mut current_structural = false;
+    for line in frontmatter.lines() {
+        let trimmed = line.trim_start();
+        let is_indented = line.len() != trimmed.len();
+        let scan_text: Option<&str> = if !is_indented {
+            current_structural = false;
+            match trimmed.find(':') {
+                Some(colon) if reg.is_structural(&trimmed[..colon].trim().to_lowercase()) => {
+                    current_structural = true;
+                    Some(&trimmed[colon + 1..])
+                }
+                _ => None,
+            }
+        } else if current_structural {
+            Some(trimmed)
+        } else {
+            None
+        };
+        if let Some(text) = scan_text {
+            for cap in wl.captures_iter(text) {
+                let inner = cap.get(1).map_or("", |m| m.as_str());
+                let (before, after) = match inner.split_once('|') {
+                    Some((b, a)) => (b, Some(a)),
+                    None => (inner, None),
+                };
+                let (target, _) = resolve_wikilink_type(&reg, before, after, true);
+                if !target.is_empty() {
+                    out.insert(target.to_lowercase());
+                }
+            }
+        }
+    }
+    out
+}
+
 /// Resolve `(target, Option<type>)` from a wikilink's regex capture groups —
 /// `before_pipe` = group 1 (text before any `|`), `after_pipe` = group 2 (the
 /// optional alias / legacy type after `|`). Understands BOTH link orders:

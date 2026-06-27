@@ -356,8 +356,8 @@ pub(crate) fn recompute_all_incoming(conn: &Connection) -> rusqlite::Result<usiz
 pub(crate) fn recompute_sky_range(conn: &Connection, after: &str, last: &str) -> rusqlite::Result<usize> {
     let sql = format!(
         "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path > ?1 AND path <= ?2",
-        stratum = crate::search::STRATUM_SQL_EXPR,
-        maturity = crate::search::MATURITY_SQL_EXPR,
+        stratum = crate::search::stratum_sql_expr(),
+        maturity = crate::search::maturity_sql_expr(),
     );
     conn.execute(&sql, params![after, last])
 }
