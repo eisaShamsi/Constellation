@@ -2357,6 +2357,11 @@ fn ensure_sky_nodes_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
 // Bumped when a fresh re-backfill is required (e.g. trigger fixed).
 pub(crate) const DEPENDENT_TABLES_MIG003_VERSION: i64 = 1;
 
+/// PJ-065 — observability stamp for the structural `note_links.seq` column.
+/// The ALTER is unconditional + idempotent (column_exists), so this version
+/// only records "PJ-065 schema present"; it must never gate the ALTER.
+pub(crate) const NOTE_LINKS_PJ065_VERSION: i64 = 1;
+
 fn column_exists(conn: &Connection, table: &str, column: &str) -> rusqlite::Result<bool> {
     let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
     let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
@@ -2378,6 +2383,20 @@ fn ensure_note_links_mig003_columns(conn: &Connection) -> rusqlite::Result<()> {
     }
     if !column_exists(conn, "note_links", "target_cid_cn")? {
         conn.execute_batch("ALTER TABLE note_links ADD COLUMN target_cid_cn TEXT;")?;
+    }
+    Ok(())
+}
+
+/// PJ-065 — ensure `note_links` has the structural sibling-order column `seq`.
+/// Nullable INTEGER, no default: existing cognitive edges legitimately keep
+/// `seq = NULL` and are never queried for order. NO back-fill — only the
+/// structural `contains` face writes a non-NULL `seq` (assigned in
+/// `index_note`). Idempotent via `column_exists`, mirroring
+/// `ensure_note_links_mig003_columns`; called UNCONDITIONALLY in `init_db`
+/// (the `schema_versions` stamp is observability only and must NOT gate it).
+fn ensure_note_links_pj065_columns(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "note_links", "seq")? {
+        conn.execute_batch("ALTER TABLE note_links ADD COLUMN seq INTEGER;")?;
     }
     Ok(())
 }
@@ -4012,6 +4031,16 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // these columns on subsequent writes land in Step 3.
     ensure_note_links_mig003_columns(&conn)
         .map_err(|e| format!("Failed to ensure note_links MIG-003 columns: {}", e))?;
+    // ─── PJ-065 — structural sibling-order column on note_links ──────────
+    // Unconditional idempotent ALTER (no back-fill; cognitive rows stay
+    // seq=NULL). The schema_versions stamp below is observability only and
+    // must NOT gate the ALTER above.
+    ensure_note_links_pj065_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_links PJ-065 seq column: {}", e))?;
+    let _ = conn.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('pj065_structural', ?1)",
+        [NOTE_LINKS_PJ065_VERSION],
+    );
     ensure_sky_nodes_mig003_columns(&conn)
         .map_err(|e| format!("Failed to ensure sky_nodes MIG-003 column: {}", e))?;
     ensure_note_aliases_mig003_columns(&conn)
