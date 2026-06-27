@@ -3224,7 +3224,7 @@
   },
   "styleSetter": {
     "labels": {
-      "3d_gizmo": "3D gizmo",
+      "3d_gizmo": "3D denetleyici",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Gevrek bir yumuşak çekirdekli meyve — tatlı, mayhoş ve sonsuz yararlı.",
       "a_day_pairs_with_a": "günde bir tanesi şununla iyi gider:",
       "abandon_unsaved_changes_the_real_app_reverts": "Kaydedilmemiş değişikliklerden vazgeç (gerçek uygulama geri döner)",
@@ -3462,7 +3462,7 @@
       "sidebar_shell": "Kenar çubuğu kabuğu",
       "sidebar_toolbar": "Kenar çubuğu araç çubuğu",
       "size": "Boyut",
-      "sky_view": "Sky View",
+      "sky_view": "Gökyüzü Görünümü",
       "small_radius": "Küçük yarıçap",
       "small_shadow": "Küçük gölge",
       "solid": "Düz",
