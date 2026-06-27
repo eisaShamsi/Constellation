@@ -409,5 +409,8 @@ mod tests {
         assert_eq!(link_type_weight("causes"), 0.5);
         assert_eq!(link_type_weight("exemplifies"), 0.5);
         assert_eq!(link_type_weight("nonsense"), 0.0);
+        // PJ-065 — the structural (parent/TOC) lane casts NO classification vote.
+        assert_eq!(link_type_weight("parent"), 0.0);
+        assert_eq!(link_type_weight("contains"), 0.0);
     }
 }

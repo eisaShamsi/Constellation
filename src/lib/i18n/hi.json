@@ -1941,7 +1941,9 @@
     "link_derives_from": "से व्युत्पन्न",
     "link_generalizes": "सामान्यीकरण",
     "link_exemplifies": "उदाहरण",
-    "link_part_of": "का हिस्सा"
+    "link_part_of": "का हिस्सा",
+    "link_contains": "शामिल",
+    "link_parent": "मूल"
   },
   "constellationMap": {
     "title": "ज्ञान मानचित्र",

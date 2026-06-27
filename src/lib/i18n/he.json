@@ -1501,7 +1501,9 @@
     "link_derives_from": "נגזר מ",
     "link_generalizes": "מכליל",
     "link_exemplifies": "ממחיש",
-    "link_part_of": "חלק מ"
+    "link_part_of": "חלק מ",
+    "link_contains": "מכיל",
+    "link_parent": "הורה"
   },
   "constellationMap": {
     "title": "מפת ידע",

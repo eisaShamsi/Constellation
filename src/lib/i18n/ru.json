@@ -1941,7 +1941,9 @@
     "link_derives_from": "Происходит от",
     "link_generalizes": "Обобщает",
     "link_exemplifies": "Иллюстрирует",
-    "link_part_of": "Часть"
+    "link_part_of": "Часть",
+    "link_contains": "Содержит",
+    "link_parent": "Родитель"
   },
   "constellationMap": {
     "title": "Карта знаний",

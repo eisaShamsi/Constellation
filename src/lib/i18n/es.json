@@ -1512,7 +1512,9 @@
     "link_derives_from": "Deriva de",
     "link_generalizes": "Generaliza",
     "link_exemplifies": "Ejemplifica",
-    "link_part_of": "Parte de"
+    "link_part_of": "Parte de",
+    "link_contains": "Contiene",
+    "link_parent": "Padre"
   },
   "constellationMap": {
     "title": "Mapa del conocimiento",

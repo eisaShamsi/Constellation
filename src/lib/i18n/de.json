@@ -1512,7 +1512,9 @@
     "link_derives_from": "Abgeleitet von",
     "link_generalizes": "Verallgemeinert",
     "link_exemplifies": "Veranschaulicht",
-    "link_part_of": "Teil von"
+    "link_part_of": "Teil von",
+    "link_contains": "Enthält",
+    "link_parent": "Übergeordnet"
   },
   "constellationMap": {
     "title": "Wissenskarte",

@@ -1941,7 +1941,9 @@
     "link_derives_from": "由来",
     "link_generalizes": "一般化",
     "link_exemplifies": "例示",
-    "link_part_of": "一部"
+    "link_part_of": "一部",
+    "link_contains": "含む",
+    "link_parent": "親"
   },
   "constellationMap": {
     "title": "ナレッジマップ",

@@ -1512,7 +1512,9 @@
     "link_derives_from": "مشتق از",
     "link_generalizes": "تعمیم",
     "link_exemplifies": "نمونه",
-    "link_part_of": "بخشی از"
+    "link_part_of": "بخشی از",
+    "link_contains": "شامل",
+    "link_parent": "والد"
   },
   "constellationMap": {
     "title": "نقشه دانش",

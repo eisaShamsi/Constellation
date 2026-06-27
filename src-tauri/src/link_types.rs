@@ -58,7 +58,7 @@ pub const SEED_IDS: &[&str] = &[
 /// in §3/§4 derives from the `structural` flag and is a no-op until these ids
 /// exist, so registration (which makes `is_known_type` true and starts edge
 /// emission) lands LAST, after the blinders are all in place.
-pub const STRUCTURAL_SEED_IDS: &[&str] = &[];
+pub const STRUCTURAL_SEED_IDS: &[&str] = &["parent", "contains"];
 
 /// The 8 built-in seeds (ids + derived order + canonical colors from
 /// `DEFAULT_SETTINGS.linkPills`). The English `label`/`desc` are fallbacks; the
@@ -84,6 +84,14 @@ pub fn seeds() -> Vec<LinkTypeDef> {
         mk("derives-from", "Derives From", "#FFD700", 6, "Provenance / source"),
         mk("part-of", "Part Of", "#AAAAAA", 7, "Compositional hierarchy"),
         mk("supersedes", "Supersedes", "#5B7A8A", 8, "Replaces an earlier stance"),
+        // PJ-065 — the structural (parent/TOC) lane: the compositional spine, a
+        // distinct NON-cognitive KIND (NOT a 9th act, NOT the cognitive `part-of`).
+        // Locked like the 8 but flagged `structural`, so every cognitive subsystem
+        // excludes it (no weight / confidence / decay / topology). Teal #14B8A6
+        // (distinct from all 8). Two inverse faces: `contains` (parent→child, carries
+        // the `seq` order) + `parent` (child→parent). Ordered after the 8, own group.
+        LinkTypeDef { id: "contains".to_string(), label: "Contains".to_string(), parent: None, color: "#14B8A6".to_string(), order: 9, builtin: true, emoji: None, desc: Some("Structural: the ordered children of this work (table of contents)".to_string()), structural: true },
+        LinkTypeDef { id: "parent".to_string(), label: "Parent".to_string(), parent: None, color: "#14B8A6".to_string(), order: 10, builtin: true, emoji: None, desc: Some("Structural: this note's place under a parent work".to_string()), structural: true },
     ]
 }
 
@@ -274,6 +282,15 @@ impl LinkTypeRegistry {
     /// Sentinel rank when a note has no canonical typed links = `len()+1`.
     pub fn sentinel_rank(&self) -> usize {
         self.types.len() + 1
+    }
+
+    /// PJ-065 — sentinel for the COGNITIVE top-rank (no cognitive typed link) =
+    /// cognitive count + 1. Distinct from `sentinel_rank` (which counts ALL types,
+    /// incl. the structural lane) so the cognitive aggregates' "no typed link"
+    /// sentinel stays stable (8 cognitive → 9) regardless of how many structural
+    /// types exist. The cognitive aggregates use THIS.
+    pub fn cognitive_sentinel_rank(&self) -> usize {
+        self.cognitive_ids().len() + 1
     }
 
     /// Version-stable fingerprint of the vocabulary (ordered ids) — gates the
@@ -540,16 +557,40 @@ mod tests {
     }
 
     #[test]
-    fn seeds_are_the_eight_in_canonical_order() {
+    fn seeds_are_the_eight_cognitive_then_the_structural_lane() {
         let r = LinkTypeRegistry::seeds_only();
+        // The 8 cognitive acts in canonical order, then the PJ-065 structural lane.
         assert_eq!(
             r.ids(),
             vec!["supports", "contradicts", "causes", "exemplifies",
-                 "generalizes", "derives-from", "part-of", "supersedes"]
+                 "generalizes", "derives-from", "part-of", "supersedes",
+                 "contains", "parent"]
         );
         assert_eq!(r.rank("supports"), 1);
         assert_eq!(r.rank("supersedes"), 8);
+        assert_eq!(r.rank("contains"), 9);
+        assert_eq!(r.rank("parent"), 10);
         assert!(r.ordered().iter().all(|t| t.builtin && t.parent.is_none()));
+        // The 8 cognitive ids exclude the structural lane; structural_ids() is exactly it.
+        assert_eq!(r.cognitive_ids().len(), 8);
+        assert_eq!(r.structural_ids(), vec!["contains".to_string(), "parent".to_string()]);
+        assert!(r.is_structural("parent") && r.is_structural("contains"));
+        assert!(!r.is_structural("part-of"), "cognitive part-of is NOT structural");
+        // The exclusion clause is non-empty now (and never the SQL-error NOT IN ()).
+        assert_eq!(r.structural_not_in_clause("link_type"), " AND link_type NOT IN ('contains','parent')");
+    }
+
+    #[test]
+    fn structural_seed_delta_is_coerced_back_to_locked_structural() {
+        // A stray delta trying to un-structural / un-lock `parent` is coerced back.
+        let r = LinkTypeRegistry::merge(vec![LinkTypeDef {
+            id: "parent".into(), label: "Mine".into(), parent: Some("supports".into()),
+            color: "#000000".into(), order: 1, builtin: false, emoji: None, desc: None,
+            structural: false,
+        }]);
+        let p = r.ordered().iter().find(|t| t.id == "parent").expect("parent present");
+        assert!(p.builtin && p.structural && p.parent.is_none(),
+            "structural seed stays locked + structural + top-level");
     }
 
     #[test]
@@ -574,9 +615,10 @@ mod tests {
 
     #[test]
     fn custom_top_level_appended_after_the_eight() {
-        let r = LinkTypeRegistry::merge(vec![custom("inspires", None, 9)]);
+        let r = LinkTypeRegistry::merge(vec![custom("inspires", None, 11)]);
         assert!(r.is_known("inspires"));
-        assert_eq!(r.rank("inspires"), 9, "custom top-level sits after the 8");
+        // After the 8 cognitive (1-8) AND the 2 structural seeds (contains=9, parent=10).
+        assert_eq!(r.rank("inspires"), 11, "custom top-level sits after the 8 cognitive + structural lane");
         assert!(!r.ordered().iter().find(|t| t.id == "inspires").unwrap().builtin);
     }
 
@@ -613,6 +655,6 @@ mod tests {
     #[test]
     fn empty_id_ignored() {
         let r = LinkTypeRegistry::merge(vec![custom("", None, 9)]);
-        assert_eq!(r.ids().len(), 8, "blank-id delta dropped; only the 8 remain");
+        assert_eq!(r.ids().len(), 10, "blank-id delta dropped; the 8 cognitive + 2 structural seeds remain");
     }
 }

@@ -1941,7 +1941,9 @@
     "link_derives_from": "Türetilmiş",
     "link_generalizes": "Geneller",
     "link_exemplifies": "Örnekler",
-    "link_part_of": "Parçası"
+    "link_part_of": "Parçası",
+    "link_contains": "İçerir",
+    "link_parent": "Üst"
   },
   "constellationMap": {
     "title": "Bilgi Haritası",

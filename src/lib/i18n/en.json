@@ -2042,6 +2042,8 @@
     "link_generalizes": "Generalizes",
     "link_exemplifies": "Exemplifies",
     "link_part_of": "Part Of",
+    "link_contains": "Contains",
+    "link_parent": "Parent",
     "untyped": "Untyped",
     "stratum_name_1": "Datum",
     "stratum_name_2": "Information",

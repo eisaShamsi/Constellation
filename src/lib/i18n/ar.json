@@ -1977,6 +1977,8 @@
     "link_generalizes": "يعمم",
     "link_exemplifies": "يمثل",
     "link_part_of": "جزء من",
+    "link_contains": "يحتوي",
+    "link_parent": "أصل",
     "untyped": "غير محدد",
     "stratum_name_1": "بَيانة",
     "stratum_name_2": "معلومة",

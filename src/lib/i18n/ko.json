@@ -1941,7 +1941,9 @@
     "link_derives_from": "유래",
     "link_generalizes": "일반화",
     "link_exemplifies": "예시",
-    "link_part_of": "부분"
+    "link_part_of": "부분",
+    "link_contains": "포함",
+    "link_parent": "상위"
   },
   "constellationMap": {
     "title": "지식 맵",

@@ -404,6 +404,66 @@ mod tests_mig085b_surfaces_agree {
     }
 }
 
+#[cfg(test)]
+mod tests_pj065_structural_exclusion {
+    //! PJ-065 §5 — with the structural lane registered, a structural inbound edge
+    //! ('parent'/'contains') must NOT count toward incoming_count nor appear in the
+    //! inbound type breakdown (the LL-023 cognitive exclusion is now LIVE). The
+    //! default registry always carries the structural seeds (merge re-adds them even
+    //! after a set_active), so this holds regardless of test ordering.
+    use super::*;
+    use rusqlite::Connection;
+
+    #[test]
+    fn structural_inbound_excluded_from_incoming_count_and_breakdown() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT,
+                incoming_count INTEGER NOT NULL DEFAULT 0,
+                incoming_link_types TEXT NOT NULL DEFAULT '',
+                incoming_link_types_json TEXT NOT NULL DEFAULT '{}',
+                incoming_top_rank INTEGER NOT NULL DEFAULT 9,
+                created_at INTEGER, modified INTEGER, word_count INTEGER DEFAULT 100);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT,
+                target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
+             CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);",
+        )
+        .unwrap();
+        // Sanity: the registry sees parent/contains as structural here.
+        assert!(crate::link_types::is_structural_type("parent"));
+        assert!(crate::link_types::is_structural_type("contains"));
+
+        let name = "Book";
+        let nl = fold_match_key(name);
+        conn.execute(
+            "INSERT INTO note_meta(path,name,name_lower) VALUES ('/book.md',?1,?2)",
+            params![name, nl],
+        )
+        .unwrap();
+        let t = fold_match_key("Book");
+        // 2 cognitive inbound (distinct sources) + 1 structural inbound ('parent').
+        for (src, lt) in [("/s1.md", "supports"), ("/s2.md", "contradicts"), ("/ch.md", "parent")] {
+            conn.execute(
+                "INSERT INTO note_links(source_path,target_name,link_type,status) VALUES (?1,?2,?3,'active')",
+                params![src, t, lt],
+            )
+            .unwrap();
+        }
+        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+
+        let inc: i64 = conn
+            .query_row("SELECT incoming_count FROM note_meta WHERE path='/book.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(inc, 2, "structural 'parent' inbound is excluded — only the 2 cognitive count");
+
+        let types: String = conn
+            .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/book.md'", [], |r| r.get(0))
+            .unwrap();
+        assert!(!types.contains("parent"), "structural type absent from the inbound breakdown: {types}");
+    }
+}
+
 // ─── Types ─────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -1157,7 +1217,7 @@ pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
     // registers a structural type (cognitive list == full list while empty).
     let list = reg.sql_in_list_cognitive();
     let rank = reg.sql_rank_case_cognitive();
-    let sentinel = reg.sentinel_rank();
+    let sentinel = reg.cognitive_sentinel_rank();
     let sx = reg.structural_not_in_clause("link_type");
     format!(
         "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'{sx}), \
@@ -1258,7 +1318,7 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     // the matched UNION. No-ops until §5 (cognitive list == full list while empty).
     let list = reg.sql_in_list_cognitive();
     let rank = reg.sql_rank_case_cognitive();
-    let sentinel = reg.sentinel_rank();
+    let sentinel = reg.cognitive_sentinel_rank();
     let sx = reg.structural_not_in_clause("nl.link_type");
     // Match: active edge whose target_name (lowercased) is this note's name or an alias.
     // Matched incoming edges = active edges whose `target_name_lower` (the VIRTUAL
@@ -5296,7 +5356,15 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
     //    bare `associative`, when this ran over the whole file).
     //  • FRONTMATTER: declared type-as-property (`supports:\n  - "[[X]]"`), typed by the
     //    property name; a non-type key's wikilink stays `associative` (back-compat).
-    let mut typed_links = extract_typed_links(&body);
+    // PJ-065 — structural (parent/TOC) edges are FRONTMATTER-ONLY. Drop any
+    // structural-typed link authored in the BODY ([[parent::X]] / [[contains::X]]) so
+    // the seq order (assigned on the frontmatter face below) and the read-time
+    // single-parent / acyclicity resolution are never bypassed by a body link. No-op
+    // pre-§5 (is_structural_type is false for every type until the lane is registered).
+    let mut typed_links: Vec<TypedLink> = extract_typed_links(&body)
+        .into_iter()
+        .filter(|l| !crate::link_types::is_structural_type(&l.link_type))
+        .collect();
     {
         let mut seen: std::collections::HashSet<String> = typed_links
             .iter()
@@ -5508,8 +5576,14 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
 
         // Fresh ("would-be") edges, deduped by (target_name, link_type) exactly like the
         // INSERT OR IGNORE below (first wins), with the resolved target_cid_cn.
-        let mut new_edges: std::collections::HashMap<(String, String), (String, Option<String>)> =
+        // PJ-065 — new_edges value gains `seq`: the structural 'contains' face
+        // (parent→child) carries the TOC order, assigned 1..n in frontmatter
+        // declaration order HERE (the HashMap loses order; `typed_links` is the
+        // ordered source, dedup is first-wins). The 'parent' face + every cognitive
+        // edge get NULL seq.
+        let mut new_edges: std::collections::HashMap<(String, String), (String, Option<String>, Option<i64>)> =
             std::collections::HashMap::new();
+        let mut contains_seq: i64 = 0;
         for tl in &typed_links {
             let key = (tl.target.clone(), tl.link_type.clone());
             if new_edges.contains_key(&key) {
@@ -5524,17 +5598,26 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                     |row| row.get(0),
                 )
                 .ok();
-            new_edges.insert(key, (tl.annotation.clone(), target_cid_cn));
+            let seq = if tl.link_type == "contains" {
+                contains_seq += 1;
+                Some(contains_seq)
+            } else {
+                None
+            };
+            new_edges.insert(key, (tl.annotation.clone(), target_cid_cn, seq));
         }
 
         // Stored edges + preserved traversal data, in one read.
         let mut preserved: std::collections::HashMap<String, (f64, String, i64, String, String)> =
             std::collections::HashMap::new();
-        let mut old_edges: std::collections::HashMap<(String, String), (String, Option<String>, String, Option<String>, String, String)> =
+        // PJ-065 — old_edges value gains `seq` (last element) so a reorder of a
+        // 'contains' list (identical keys, different order) is detected as a change and
+        // forces a re-INSERT; without this the no-op fast-path would keep stale order.
+        let mut old_edges: std::collections::HashMap<(String, String), (String, Option<String>, String, Option<String>, String, String, Option<i64>)> =
             std::collections::HashMap::new();
         {
             let mut stmt = conn.prepare(
-                "SELECT target_name, link_type, annotation, target_cid_cn, source_name, source_cid_cn, library_name, status, weight, last_traversed, traversal_count, confidence, created
+                "SELECT target_name, link_type, annotation, target_cid_cn, source_name, source_cid_cn, library_name, status, weight, last_traversed, traversal_count, confidence, created, seq
                  FROM note_links WHERE source_path = ?1",
             ).map_err(|e| e.to_string())?;
             let rows = stmt.query_map(params![note_path], |row| {
@@ -5552,14 +5635,17 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                     row.get::<_, i64>(10)?,              // traversal_count
                     row.get::<_, String>(11)?,           // confidence
                     row.get::<_, String>(12)?,           // created
+                    row.get::<_, Option<i64>>(13)?,      // seq (PJ-065; NULL for cognitive)
                 ))
             }).map_err(|e| e.to_string())?;
             for row in rows.flatten() {
-                let (target, ltype, ann, tcc, sname, scc, lib, status, w, lt, tc, conf, created) = row;
-                if tc > 0 || w != 1.0 {
+                let (target, ltype, ann, tcc, sname, scc, lib, status, w, lt, tc, conf, created, seq) = row;
+                // PJ-065 — never "preserve" a structural edge: it has no earned
+                // weight/traversal (those belong to cognitive links under inquiry).
+                if (tc > 0 || w != 1.0) && !crate::link_types::is_structural_type(&ltype) {
                     preserved.insert(format!("{}::{}", ltype, target), (w, lt, tc, conf, created));
                 }
-                old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status));
+                old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status, seq));
             }
         }
 
@@ -5567,14 +5653,15 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         // target_cid_cn + source_name + source_cid_cn + library_name match; all active.)
         let src_cid = cid_cn.as_str();
         let unchanged = new_edges.len() == old_edges.len()
-            && new_edges.iter().all(|(k, (ann, tcc))| {
-                old_edges.get(k).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status)| {
+            && new_edges.iter().all(|(k, (ann, tcc, seq))| {
+                old_edges.get(k).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq)| {
                     o_status == "active"
                         && o_ann == ann
                         && o_tcc == tcc
                         && o_sname == &name
                         && o_scc.as_deref().unwrap_or("") == src_cid
                         && o_lib == &library_name
+                        && o_seq == seq // PJ-065 — a 'contains' reorder counts as changed
                 })
             });
 
@@ -5602,24 +5689,38 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             //     stale row for that key and re-INSERT it (restoring preserved traversal for an
             //     earned edge, else fresh defaults) — exactly the old per-edge behavior, but only
             //     for the edges that changed/were added.
-            for (key, (annotation, target_cid_cn)) in &new_edges {
+            for (key, (annotation, target_cid_cn, seq)) in &new_edges {
                 let (target, link_type) = key;
-                let identical = old_edges.get(key).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status)| {
+                let identical = old_edges.get(key).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq)| {
                     o_status == "active"
                         && o_ann == annotation
                         && o_tcc == target_cid_cn
                         && o_sname == &name
                         && o_scc.as_deref().unwrap_or("") == src_cid
                         && o_lib == &library_name
+                        && o_seq == seq // PJ-065 — a 'contains' reorder forces re-INSERT
                 });
                 if identical {
-                    continue; // unchanged edge — leave the row (weight/confidence/traversal) intact
+                    continue; // unchanged edge — leave the row (weight/confidence/traversal/seq) intact
                 }
-                // changed (re-typed source name/cid/lib, annotation, archived→active) or added:
+                // changed (re-typed source name/cid/lib, annotation, archived→active, reorder) or added:
                 conn.execute(
                     "DELETE FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND link_type = ?3",
                     params![note_path, target, link_type],
                 ).map_err(|e| e.to_string())?;
+                if crate::link_types::is_structural_type(link_type) {
+                    // PJ-065 — structural (parent/TOC) edge: carries ORDER (seq) only and
+                    // NO living-link apparatus — confidence sentinel 'structural', default
+                    // (unearned) weight 1.0, traversal 0. Never traversed, never decays,
+                    // excluded from every cognitive surface (§3/§4). The 'contains' face
+                    // carries seq; the 'parent' face stores NULL. Skips the preserved path.
+                    conn.execute(
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn, seq)
+                         VALUES (?1, ?2, ?3, ?4, ?5, 'structural', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9, ?10)",
+                        params![note_path, name, target, link_type, annotation, now, library_name, cid_cn, target_cid_cn, seq],
+                    ).map_err(|e| format!("Failed to index structural link: {}", e))?;
+                    continue;
+                }
                 let pkey = format!("{}::{}", link_type, target);
                 if let Some((w, lt, tc, conf, created)) = preserved.get(&pkey) {
                     conn.execute(
@@ -9604,7 +9705,7 @@ mod tests_pj060_index_gate {
                 link_type TEXT, annotation TEXT, confidence TEXT,
                 weight REAL, created TEXT, last_traversed TEXT,
                 traversal_count INTEGER, library_name TEXT, status TEXT,
-                source_cid_cn TEXT, target_cid_cn TEXT
+                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER
              );",
         )
         .unwrap();

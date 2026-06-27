@@ -1501,7 +1501,9 @@
     "link_derives_from": "ماخوذ",
     "link_generalizes": "تعمیم",
     "link_exemplifies": "مثال",
-    "link_part_of": "حصہ"
+    "link_part_of": "حصہ",
+    "link_contains": "شامل",
+    "link_parent": "والد"
   },
   "constellationMap": {
     "title": "علم کا نقشہ",
