@@ -614,7 +614,10 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 		const { properties, body } = parseFrontmatter(r.content);
 		const updated = addTypedLinkToProps(properties, type, wikilink);
 		if (!updated) return; // already linked
-		await saveTabContent(openTab.id, sourcePath, updated, body);
+		// PJ-066 follow-up: bodyUnchanged=true — a typed-link connect only adds a
+		// frontmatter property; the body (hence its embedding) is unchanged, so skip
+		// the redundant ~32s re-embed (the felt connect-freeze on link-dense notes).
+		await saveTabContent(openTab.id, sourcePath, updated, body, true);
 		// Refresh the OPEN note's view so the new property shows immediately. The props save
 		// path updates the model + disk but does NOT re-render an already-open note's
 		// PropertyEditor (Boss finding: the link only appeared on reopen). reloadTabsFromDisk
@@ -705,7 +708,14 @@ export async function saveTabContent(
 	tabId: string,
 	filePath: string,
 	properties: FrontmatterProperty[],
-	body: string
+	body: string,
+	// PJ-066 follow-up (2026-06-27): when the caller KNOWS the body is unchanged
+	// (a frontmatter-only save — e.g. a typed-link connect), the e5 embedding of the
+	// body is identical to what's stored, so re-embedding is pure waste (~32s of ONNX
+	// on the 533-link note, measured). Passing `bodyUnchanged` flips the embed to
+	// `force: false`, which makes the Rust command skip when the note is already
+	// embedded (and still embed it if it never was — safe). Body edits leave it false.
+	bodyUnchanged: boolean = false
 ): Promise<void> {
 	if (saveLocks.get(tabId)) return;
 	// PropertyEditor's frontmatter edits land here directly, so the same
@@ -760,7 +770,7 @@ export async function saveTabContent(
 			if (tab) {
 				invoke('constellation_embed_notes', {
 					notes: [{ path: filePath, name: tab.name, content: embedBody }],
-					force: true
+					force: !bodyUnchanged
 				}).catch(() => {});
 			}
 		}

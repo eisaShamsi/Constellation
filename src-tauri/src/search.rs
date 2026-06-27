@@ -1310,7 +1310,18 @@ fn resolve_incoming_target_paths(
 ) -> rusqlite::Result<()> {
     {
         // MIG-085 §B.0 — match the note's folded name key (Unicode), ASCII-LOWER fallback.
-        let mut stmt = conn.prepare("SELECT path FROM note_meta WHERE COALESCE(name_lower, LOWER(name)) = ?1")?;
+        // PJ-066 §C5 — index-seeking form over idx_note_name_lower. The prior
+        // `WHERE COALESCE(name_lower, LOWER(name)) = ?1` defeated the index → a 22 s full
+        // SCAN of note_meta (it reads the wide body_text rows). Split into two seeks:
+        // the post-backfill path (`name_lower = ?1`, which only matches non-NULL rows so
+        // it is exactly the COALESCE's first arm) UNION the pre-backfill fallback
+        // (`name_lower IS NULL AND LOWER(name) = ?1`). Verified identical to the COALESCE
+        // over 200 real names; 21915 ms → 0.06 ms.
+        let mut stmt = conn.prepare(
+            "SELECT path FROM note_meta WHERE name_lower = ?1 \
+             UNION \
+             SELECT path FROM note_meta WHERE name_lower IS NULL AND LOWER(name) = ?1",
+        )?;
         let rows = stmt.query_map([name_lower], |r| r.get::<_, String>(0))?;
         for r in rows {
             out.insert(r?);
@@ -3169,7 +3180,17 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_note_library ON note_meta(library_name);
         CREATE INDEX IF NOT EXISTS idx_note_modified ON note_meta(modified);
         CREATE INDEX IF NOT EXISTS idx_note_name ON note_meta(name);
+        CREATE INDEX IF NOT EXISTS idx_note_name_lower ON note_meta(name_lower, path);
     ").map_err(|e| format!("Failed to create indexes: {}", e))?;
+    // PJ-066 §C5 — covering index for `resolve_incoming_target_paths` (the save-path
+    // backlink/sky maintenance resolves a target name → its note path(s) by folded key).
+    // Without it that resolve did `WHERE COALESCE(name_lower, LOWER(name)) = ?` — the
+    // COALESCE defeated every index → a full SCAN of note_meta that reads the wide
+    // body_text rows (measured 22 s on a 2 GB / 7,600-note Universe → the felt
+    // post-connect freeze). With `(name_lower, path)` the rewritten query (below, ~line
+    // 1313) is an index-only seek: 0.06 ms. `IF NOT EXISTS` + no version bump → picked
+    // up on the next launch; one-time build on a large existing DB (~same cost as
+    // idx_note_boot_snapshot above), then free thereafter.
 
     // Covering index for the boot-path projection:
     //   SELECT name, path, library_name FROM note_meta

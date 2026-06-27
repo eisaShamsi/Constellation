@@ -404,7 +404,15 @@ pub fn constellation_embed_texts(
 
 /// Batch embed notes and store in the search database.
 /// `force`: if true, re-embed even if already exists (for edited notes).
-#[tauri::command]
+///
+/// PJ-066 follow-up (2026-06-27): `#[tauri::command(async)]` — the e5 `run_embedding`
+/// inference is CPU-bound and multi-second on a large note (~32s on the 533-link
+/// "Ancient history" Wikipedia import, measured). As a SYNC command it ran on the
+/// single IPC dispatch thread and FROZE the whole app for that duration on every
+/// save. Async moves the inference onto Tauri's worker pool (the §C1 fix that the
+/// reindex already got; this is the sibling that was missed). The invoke contract is
+/// unchanged — the Promise still resolves on completion.
+#[tauri::command(async)]
 pub fn constellation_embed_notes(
     app: tauri::AppHandle,
     notes: Vec<NoteForEmbedding>,

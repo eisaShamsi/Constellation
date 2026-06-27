@@ -2248,7 +2248,12 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
 ///      produced an unreadable id instead of the human title. The fix:
 ///      read the frontmatter `title:` field first, fall back to
 ///      `file_stem()` only when title is missing.
-#[tauri::command]
+// PJ-066 §C5 — `(async)` so this read runs on a Tokio worker, NOT the WebView2 IPC
+// thread. Combined with the `with_read_conn` routing below, a post-connect reindex (which
+// holds the writer `db` lock for its whole duration) no longer freezes the UI: this used to
+// be a SYNC command that took `db.lock()` and blocked the IPC thread for the full reindex
+// (measured 47 s). Mirrors `scan_library_tags` below.
+#[tauri::command(async)]
 pub fn scan_unlinked_mentions(
     app: tauri::AppHandle,
     note_name: String,
@@ -2298,8 +2303,11 @@ pub fn scan_unlinked_mentions(
         use tauri::Manager;
         crate::search::ensure_search_db_ready(&app)?;
         let search_state = app.state::<crate::search::SearchState>();
-        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        // PJ-066 §C5 — route through the read-only WAL reader so this never waits on the
+        // writer `db` lock (a connect's background reindex holds it). Falls back to `db`
+        // pre-init. The reader sees the last committed snapshot — eventual consistency is
+        // correct for the unlinked-mentions suggestion panel.
+        crate::search::with_read_conn(search_state.inner(), |conn| {
         let mut stmt = conn
             .prepare(
                 "SELECT note_meta.path, note_meta.library_name
@@ -2333,7 +2341,8 @@ pub fn scan_unlinked_mentions(
             .filter_map(|r| r.ok())
             .collect();
 
-        (candidates, alias_holders)
+        Ok((candidates, alias_holders))
+        })?
     };
 
     // ── Verify each candidate against the RAW file (UNCHANGED logic): strip
