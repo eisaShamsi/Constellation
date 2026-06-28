@@ -2212,13 +2212,13 @@ pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name
     let mut seen = 0usize;
     for p in &md_paths {
         let ps = p.to_string_lossy();
-        // Lock per note (short holds) so a large library never blocks the writer for the
-        // whole walk; index_note(force=false) is mtime-gated, cheap for current notes.
-        if let Ok(db) = state.db.lock() {
-            if let Some(conn) = db.as_ref() {
-                let _ = crate::search::index_note(conn, &ps, &library_name, false);
-                seen += 1;
-            }
+        // reindex_single_note wraps index_note AND runs the MIG-079 §C.2a incoming-aggregate
+        // diff post-commit — so a cold-started library's TARGET notes get correct backlink
+        // (incoming_count) values, not just outgoing. (index_note alone leaves incoming stale,
+        // because incoming is save-path-maintained, not trigger-maintained.) Locks per note
+        // internally (short holds); structural edges are already excluded from those counts (§3).
+        if crate::search::reindex_single_note(state.inner(), &ps, &library_name).is_ok() {
+            seen += 1;
         }
     }
     Ok(seen)
