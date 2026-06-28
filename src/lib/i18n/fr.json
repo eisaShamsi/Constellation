@@ -902,6 +902,7 @@
     "structureLoop": "Une boucle a été détectée ; le plan s’arrête ici.",
     "structureWholeWork": "Œuvre entière",
     "structureFocusNote": "Cette note",
+    "structureContested": "Contesté",
     "outgoingLinks": "Liens sortants",
     "outgoingLinksHeader": "Liens sortants",
     "suggestedConnections": "Connexions suggérées",

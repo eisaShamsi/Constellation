@@ -11,8 +11,8 @@
 	import VirtualList from './VirtualList.svelte';
 
 	type SNode = { path: string; name: string; seq: number | null };
-	type OutlineNode = { path: string; name: string; seq: number | null; children: OutlineNode[]; truncated: boolean };
-	type Row = { path: string; name: string; depth: number; truncated: boolean; isCurrent: boolean };
+	type OutlineNode = { path: string; name: string; seq: number | null; children: OutlineNode[]; truncated: boolean; contested: boolean; contested_owner: string | null };
+	type Row = { path: string; name: string; depth: number; truncated: boolean; isCurrent: boolean; contested: boolean; contestedOwner: string | null };
 
 	let {
 		activeNoteName = '',
@@ -67,7 +67,7 @@
 		const out: Row[] = [];
 		const walk = (nodes: OutlineNode[], depth: number) => {
 			for (const n of nodes) {
-				out.push({ path: n.path, name: n.name, depth, truncated: n.truncated, isCurrent: n.path === cur });
+				out.push({ path: n.path, name: n.name, depth, truncated: n.truncated, isCurrent: n.path === cur, contested: n.contested, contestedOwner: n.contested_owner });
 				if (n.children.length) walk(n.children, depth + 1);
 			}
 		};
@@ -90,17 +90,44 @@
 		await openNoteTab(path, libName, color, undefined, newTab, activeNotePath || undefined);
 	}
 
+	// Bleeding-tip fix (Boss 2026-06-28): replace the native `title` (WebView2 renders it
+	// as a wide box that bleeds off the panel edge) with a position:fixed tooltip whose x is
+	// clamped to the viewport — the HelpTip pattern. Escapes the sidebar's overflow; never
+	// bleeds off-screen. Shared by the loop (↻) marker and the contested (⚠) badge.
+	let tip = $state<{ x: number; y: number; text: string } | null>(null);
+	function showTip(e: MouseEvent, text: string) {
+		const el = e.currentTarget as HTMLElement | null;
+		if (!el) return;
+		const r = el.getBoundingClientRect();
+		const halfW = 150; // ~max-width/2 + breathing room
+		const margin = 12;
+		const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
+		let x = r.left + r.width / 2;
+		if (x < halfW + margin) x = halfW + margin;
+		if (x > vw - halfW - margin) x = vw - halfW - margin;
+		tip = { x, y: r.bottom + 6, text };
+	}
+	function hideTip() { tip = null; }
+
 	const VTHRESH = 50;
 	const ROW_H = 24;
 </script>
 
 {#snippet outlineRow(r: Row)}
-	<button class="toc-row" class:toc-row-current={r.isCurrent} dir="auto" style="padding-inline-start: {r.depth * 14 + 8}px"
+	<button class="toc-row" class:toc-row-current={r.isCurrent} class:toc-row-contested={r.contested} dir="auto" style="padding-inline-start: {r.depth * 14 + 8}px"
 		onclick={(e) => open(r.path, e)} title={r.name}>
 		<span class="toc-bullet"></span>
 		<span class="toc-name">{r.name}</span>
-		{#if r.truncated}
-			<span class="toc-loop" title={$t('panels.structureLoop') || 'A loop was detected here; the outline stops cleanly.'}>↻</span>
+		{#if r.contested}
+			<span class="toc-contested" role="img"
+				aria-label={`${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`}
+				onmouseenter={(e) => showTip(e, `${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`)}
+				onmouseleave={hideTip}>⚠ {$t('panels.structureContested') || 'Contested'}</span>
+		{:else if r.truncated}
+			<span class="toc-loop" role="img"
+				aria-label={$t('panels.structureLoop') || 'A loop was detected; the outline stops here.'}
+				onmouseenter={(e) => showTip(e, $t('panels.structureLoop') || 'A loop was detected; the outline stops here.')}
+				onmouseleave={hideTip}>↻</span>
 		{/if}
 	</button>
 {/snippet}
@@ -144,6 +171,11 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Clamped, overflow-escaping tooltip (replaces the bleeding native title). -->
+{#if tip}
+	<div class="toc-tip" style="left: {tip.x}px; top: {tip.y}px;">{tip.text}</div>
+{/if}
 
 <style>
 	.toc-panel { font-size: calc(0.8rem * var(--rs-scale, 1)); }
@@ -199,6 +231,27 @@
 		color: var(--text-normal); font-size: calc(0.8rem * var(--rs-scale, 1));
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.toc-loop { color: #d97706; flex-shrink: 0; font-size: 0.8rem; }
+	.toc-loop { color: #d97706; flex-shrink: 0; font-size: 0.8rem; cursor: help; }
 	.toc-empty { color: var(--color-base-40); font-size: calc(0.78rem * var(--rs-scale, 1)); padding: 4px 8px; }
+	/* Contested (overruled `contains:` claim): shown muted + an amber ⚠ badge so the
+	   conflict is visible and the user can fix the frontmatter — never silently dropped. */
+	.toc-row-contested .toc-name { color: var(--text-muted); font-style: italic; }
+	.toc-row-contested .toc-bullet { background: transparent; box-shadow: inset 0 0 0 1px var(--text-faint); }
+	.toc-contested {
+		flex-shrink: 0; cursor: help; white-space: nowrap;
+		color: #d97706; font-size: calc(0.64rem * var(--rs-scale, 1));
+		font-weight: 600; text-transform: none; letter-spacing: 0;
+	}
+	/* The clamped tooltip — position:fixed escapes the sidebar's overflow; x is clamped
+	   in showTip() so it never bleeds off-screen (the native-title bug it replaces). */
+	.toc-tip {
+		position: fixed; transform: translateX(-50%);
+		max-width: 280px; padding: 8px 12px;
+		background: var(--background-secondary); color: var(--text-normal);
+		border: 1px solid var(--background-modifier-border-focus, var(--border));
+		border-radius: 8px; line-height: 1.5;
+		font-size: calc(0.78rem * var(--rs-scale, 1));
+		text-transform: none; letter-spacing: normal; white-space: normal;
+		z-index: 9999; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	}
 </style>

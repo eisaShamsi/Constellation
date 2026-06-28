@@ -28,6 +28,16 @@ pub struct StructuralNode {
     /// Order under its parent (the `contains` face). `None` = unordered (a child
     /// declared only via its own `parent:`, or a breadcrumb ancestor).
     pub seq: Option<i64>,
+    /// True when THIS node appears under a parent that is NOT its resolved single
+    /// parent — i.e. an overruled `contains:` claim (the D5 single-parent guard).
+    /// The real parent won; this listing is surfaced (not silently dropped) so the
+    /// user can fix the conflicting frontmatter. `false` for a real child.
+    #[serde(default)]
+    pub contested: bool,
+    /// When `contested`, the name of the note that actually owns this child (its
+    /// resolved parent) — for the panel's "belongs to X" notice.
+    #[serde(default)]
+    pub contested_owner: Option<String>,
 }
 
 /// A node in the descendant outline tree.
@@ -40,6 +50,12 @@ pub struct StructuralOutlineNode {
     /// True when this node's subtree was cut by the cycle / depth guard (the node
     /// is shown, but not re-expanded). Lets the panel flag a malformed loop.
     pub truncated: bool,
+    /// Mirrors `StructuralNode::contested` — an overruled `contains:` claim, shown
+    /// flagged and never re-expanded (its real subtree lives under its real parent).
+    #[serde(default)]
+    pub contested: bool,
+    #[serde(default)]
+    pub contested_owner: Option<String>,
 }
 
 /// Defensive bound on tree depth (cycles are already caught by the visited-set; this
@@ -78,14 +94,27 @@ fn children_of(conn: &Connection, parent_path: &str, parent_name: &str) -> Vec<S
             for (cname, seq) in rows.flatten() {
                 if let Some((cpath, cn)) = resolve_name(conn, &cname) {
                     if seen.insert(cpath.to_lowercase()) {
-                        out.push(StructuralNode { path: cpath, name: cn, seq });
+                        // D5 single-parent: a `contains:` child belongs here ONLY if THIS
+                        // note is its resolved parent. If another claim wins (the child's own
+                        // parent:, or a smaller-path container), surface this as a contested
+                        // (overruled) listing — never silently drop it. (One extra parent_of
+                        // resolve per contains-child; bounded by the TOC size, read-time only.)
+                        let resolved = parent_of(conn, &cpath, &cn);
+                        let (contested, owner) = match &resolved {
+                            Some(p) if p.path.to_lowercase() != parent_path.to_lowercase() => {
+                                (true, Some(p.name.clone()))
+                            }
+                            _ => (false, None),
+                        };
+                        out.push(StructuralNode { path: cpath, name: cn, seq, contested, contested_owner: owner });
                     }
                 }
             }
         }
     }
 
-    // Face 2 — `parent` (children that declared THIS note as their parent).
+    // Face 2 — `parent` (children that declared THIS note as their parent). Their own
+    // `parent:` is authoritative, so THIS note is always their resolved parent (never contested).
     if let Ok(mut stmt) = conn.prepare(
         "SELECT source_path, source_name FROM note_links \
          WHERE target_name_lower = LOWER(?1) AND link_type = 'parent' AND status = 'active' \
@@ -96,7 +125,7 @@ fn children_of(conn: &Connection, parent_path: &str, parent_name: &str) -> Vec<S
         }) {
             for (cpath, cname) in rows.flatten() {
                 if seen.insert(cpath.to_lowercase()) {
-                    out.push(StructuralNode { path: cpath, name: cname, seq: None });
+                    out.push(StructuralNode { path: cpath, name: cname, seq: None, contested: false, contested_owner: None });
                 }
             }
         }
@@ -117,7 +146,7 @@ fn parent_of(conn: &Connection, note_path: &str, note_name: &str) -> Option<Stru
         |r| r.get::<_, String>(0),
     ) {
         if let Some((ppath, pn)) = resolve_name(conn, &pname) {
-            return Some(StructuralNode { path: ppath, name: pn, seq: None });
+            return Some(StructuralNode { path: ppath, name: pn, seq: None, contested: false, contested_owner: None });
         }
     }
     // (2) Else the smallest-path parent that `contains:` this note (deterministic tie-break).
@@ -128,7 +157,7 @@ fn parent_of(conn: &Connection, note_path: &str, note_name: &str) -> Option<Stru
         rusqlite::params![note_name],
         |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
     ) {
-        return Some(StructuralNode { path: ppath, name: pn, seq: None });
+        return Some(StructuralNode { path: ppath, name: pn, seq: None, contested: false, contested_owner: None });
     }
     None
 }
@@ -145,6 +174,20 @@ fn descendants_rec(
     }
     let mut out = Vec::new();
     for k in children_of(conn, path, name) {
+        // An overruled `contains:` claim (D5): show it flagged, never re-expand — its
+        // real subtree lives under its real parent. Surfaced, not silently dropped.
+        if k.contested {
+            out.push(StructuralOutlineNode {
+                path: k.path,
+                name: k.name,
+                seq: k.seq,
+                children: Vec::new(),
+                truncated: false,
+                contested: true,
+                contested_owner: k.contested_owner,
+            });
+            continue;
+        }
         let key = k.path.to_lowercase();
         if !visited.insert(key) {
             // Already on the current path → a cycle. Show the node, do not re-expand.
@@ -154,6 +197,8 @@ fn descendants_rec(
                 seq: k.seq,
                 children: Vec::new(),
                 truncated: true,
+                contested: false,
+                contested_owner: None,
             });
             continue;
         }
@@ -168,6 +213,8 @@ fn descendants_rec(
             seq: k.seq,
             children,
             truncated: false,
+            contested: false,
+            contested_owner: None,
         });
     }
     out
@@ -308,6 +355,26 @@ mod tests {
         edge(&conn, "/alpha.md", "Alpha", "Y", "contains", Some(1));
         let p = parent_of(&conn, "/y.md", "Y").unwrap();
         assert_eq!(p.path, "/alpha.md", "deterministic smallest-path tie-break (index-order-independent)");
+    }
+
+    #[test]
+    fn contested_contains_claim_is_flagged_not_silently_dropped() {
+        let conn = db();
+        note(&conn, "/oa.md", "Owner A");
+        note(&conn, "/ob.md", "Owner B");
+        note(&conn, "/cc.md", "Contested Child");
+        edge(&conn, "/cc.md", "Contested Child", "Owner A", "parent", None); // child's own parent: A wins
+        edge(&conn, "/ob.md", "Owner B", "Contested Child", "contains", Some(1)); // B's competing claim
+        // Owner A (the resolved parent) shows it as a REAL child, not contested.
+        let a_kids = children_of(&conn, "/oa.md", "Owner A");
+        assert_eq!(a_kids.len(), 1);
+        assert_eq!(a_kids[0].name, "Contested Child");
+        assert!(!a_kids[0].contested, "the real parent lists it as a normal child");
+        // Owner B (the losing claimant) shows it FLAGGED contested → Owner A (surfaced, not dropped).
+        let b_kids = children_of(&conn, "/ob.md", "Owner B");
+        assert_eq!(b_kids.len(), 1, "the overruled claim is surfaced, never silently dropped");
+        assert!(b_kids[0].contested, "Owner B's claim lost → flagged");
+        assert_eq!(b_kids[0].contested_owner.as_deref(), Some("Owner A"));
     }
 
     #[test]

@@ -902,6 +902,7 @@
     "structureLoop": "检测到循环；大纲到此停止。",
     "structureWholeWork": "整部作品",
     "structureFocusNote": "此笔记",
+    "structureContested": "有冲突",
     "outgoingLinks": "出链",
     "outgoingLinksHeader": "出链",
     "suggestedConnections": "推荐连接",

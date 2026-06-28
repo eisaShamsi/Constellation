@@ -966,6 +966,7 @@
     "structureLoop": "A loop was detected; the outline stops here.",
     "structureWholeWork": "Whole work",
     "structureFocusNote": "This note",
+    "structureContested": "Contested",
     "outgoingLinks": "Outgoing Links",
     "outgoingLinksHeader": "Outgoing Links",
     "suggestedConnections": "Suggested connections",

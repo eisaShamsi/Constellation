@@ -902,6 +902,7 @@
     "structureLoop": "Обнаружен цикл; структура останавливается здесь.",
     "structureWholeWork": "Вся работа",
     "structureFocusNote": "Эта заметка",
+    "structureContested": "Спорный",
     "outgoingLinks": "Исходящие ссылки",
     "outgoingLinksHeader": "Исходящие ссылки",
     "suggestedConnections": "Предложенные связи",

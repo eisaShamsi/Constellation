@@ -902,6 +902,7 @@
     "structureLoop": "ループが検出されました。アウトラインはここで停止します。",
     "structureWholeWork": "作品全体",
     "structureFocusNote": "このノート",
+    "structureContested": "競合",
     "outgoingLinks": "アウトゴーイングリンク",
     "outgoingLinksHeader": "アウトゴーイングリンク",
     "suggestedConnections": "関連ノート",
