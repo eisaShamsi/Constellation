@@ -115,9 +115,13 @@
 
 {#snippet outlineRow(r: Row)}
 	<button class="toc-row" class:toc-row-current={r.isCurrent} class:toc-row-contested={r.contested} dir="auto" style="padding-inline-start: {r.depth * 14 + 8}px"
-		onclick={(e) => open(r.path, e)} title={r.name}>
+		onclick={(e) => open(r.path, e)}>
 		<span class="toc-bullet"></span>
-		<span class="toc-name">{r.name}</span>
+		<!-- No native `title` (it doubled with — and bled past — the marker tooltips). Show the
+		     full name in the clamped tooltip ONLY when the name is actually truncated. -->
+		<span class="toc-name"
+			onmouseenter={(e) => { const el = e.currentTarget as HTMLElement; if (el && el.scrollWidth > el.clientWidth) showTip(e, r.name); }}
+			onmouseleave={hideTip}>{r.name}</span>
 		{#if r.contested}
 			<span class="toc-contested" role="img"
 				aria-label={`${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`}
