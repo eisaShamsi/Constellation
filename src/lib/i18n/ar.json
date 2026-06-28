@@ -3624,6 +3624,7 @@
       "tab_icon_colour": "لون أيقونة التبويب",
       "tab_icon_size": "حجم أيقونة التبويب",
       "tab_radius": "انحناء التبويب",
+      "tab_left_offset": "إزاحة التبويب يسارًا",
       "tab_row_background": "خلفية صف التبويبات",
       "tab_row_height": "ارتفاع صف التبويبات",
       "tab_text": "نص التبويب",

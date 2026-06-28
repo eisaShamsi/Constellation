@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "Couleur de l'icône de l'onglet",
       "tab_icon_size": "Taille de l'icône de l'onglet",
       "tab_radius": "Rayon de l'onglet",
+      "tab_left_offset": "Décalage gauche de l’onglet",
       "tab_row_background": "Fond de la barre d'onglets",
       "tab_row_height": "Hauteur de la barre d'onglets",
       "tab_text": "Texte de l'onglet",

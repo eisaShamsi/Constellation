@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "탭 아이콘 색상",
       "tab_icon_size": "탭 아이콘 크기",
       "tab_radius": "탭 모서리 반경",
+      "tab_left_offset": "탭 왼쪽 오프셋",
       "tab_row_background": "탭 행 배경",
       "tab_row_height": "탭 행 높이",
       "tab_text": "탭 텍스트",

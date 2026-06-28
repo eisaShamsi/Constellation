@@ -311,7 +311,8 @@
 			{ label: 'Tab border', type: 'color', var: '--tab-border' },
 			{ label: 'Tab font size', type: 'range', var: '--tab-font-size', min: 10, max: 20, step: 1, unit: 'px', def: 13 },
 			{ label: 'Tab height', type: 'range', var: '--tab-height', min: 22, max: 48, step: 1, unit: 'px', def: 26 },
-			{ label: 'Tab radius', type: 'range', var: '--tab-radius', min: 0, max: 16, step: 1, unit: 'px', def: 6 } ] },
+			{ label: 'Tab radius', type: 'range', var: '--tab-radius', min: 0, max: 16, step: 1, unit: 'px', def: 6 },
+			{ label: 'Tab left offset', type: 'range', var: '--tab-bar-offset', min: 0, max: 64, step: 1, unit: 'px', def: 32 } ] },
 		cRightSidebar: { name: 'Right sidebar', controls: [
 			{ label: 'Background', type: 'color', var: '--right-sidebar-bg' },
 			{ label: 'Tab row background', type: 'color', var: '--rs-tabs-bg' },

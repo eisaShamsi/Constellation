@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "Cor do ícone da aba",
       "tab_icon_size": "Tamanho do ícone da aba",
       "tab_radius": "Raio da aba",
+      "tab_left_offset": "Deslocamento esquerdo do separador",
       "tab_row_background": "Fundo da linha de abas",
       "tab_row_height": "Altura da linha de abas",
       "tab_text": "Texto da aba",

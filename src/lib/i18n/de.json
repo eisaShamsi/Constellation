@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "Tab-Symbolfarbe",
       "tab_icon_size": "Tab-Symbolgröße",
       "tab_radius": "Tab-Radius",
+      "tab_left_offset": "Tab-Linksversatz",
       "tab_row_background": "Hintergrund der Tab-Leiste",
       "tab_row_height": "Höhe der Tab-Leiste",
       "tab_text": "Tab-Text",

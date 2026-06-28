@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "צבע סמל לשונית",
       "tab_icon_size": "גודל סמל לשונית",
       "tab_radius": "רדיוס לשונית",
+      "tab_left_offset": "היסט שמאלי ללשונית",
       "tab_row_background": "רקע שורת לשוניות",
       "tab_row_height": "גובה שורת לשוניות",
       "tab_text": "טקסט לשונית",

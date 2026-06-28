@@ -3622,6 +3622,7 @@
       "tab_icon_colour": "Tab icon colour",
       "tab_icon_size": "Tab icon size",
       "tab_radius": "Tab radius",
+      "tab_left_offset": "Tab left offset",
       "tab_row_background": "Tab row background",
       "tab_row_height": "Tab row height",
       "tab_text": "Tab text",

@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "Color de icono de pestaña",
       "tab_icon_size": "Tamaño de icono de pestaña",
       "tab_radius": "Radio de pestaña",
+      "tab_left_offset": "Desplazamiento izquierdo de pestaña",
       "tab_row_background": "Fondo de fila de pestañas",
       "tab_row_height": "Altura de fila de pestañas",
       "tab_text": "Texto de pestaña",

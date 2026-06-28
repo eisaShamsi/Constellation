@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "标签图标颜色",
       "tab_icon_size": "标签图标大小",
       "tab_radius": "标签圆角",
+      "tab_left_offset": "标签左偏移",
       "tab_row_background": "标签行背景",
       "tab_row_height": "标签行高度",
       "tab_text": "标签文字",

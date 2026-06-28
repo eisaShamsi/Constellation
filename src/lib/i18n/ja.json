@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "タブアイコンの色",
       "tab_icon_size": "タブアイコンのサイズ",
       "tab_radius": "タブの角丸",
+      "tab_left_offset": "タブの左オフセット",
       "tab_row_background": "タブ行の背景",
       "tab_row_height": "タブ行の高さ",
       "tab_text": "タブのテキスト",

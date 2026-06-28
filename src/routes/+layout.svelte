@@ -8571,6 +8571,8 @@
 		flex-shrink: 0;
 		min-height: var(--topbar-height, auto);
 		padding: 5px 32px 0;
+		/* PJ-065 follow-up — the left offset is Style-Setter controllable (cTabs --tab-bar-offset) so the first tab can align to the editor border. */
+		padding-inline-start: var(--tab-bar-offset, 32px);
 	}
 	/* SV inspect mode: shift the tab-bar to align with the editor's
 	   .flank-center column so tabs visually sit above the note content

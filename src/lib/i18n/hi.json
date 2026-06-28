@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "टैब आइकन रंग",
       "tab_icon_size": "टैब आइकन आकार",
       "tab_radius": "टैब त्रिज्या",
+      "tab_left_offset": "टैब बायाँ ऑफ़सेट",
       "tab_row_background": "टैब पंक्ति पृष्ठभूमि",
       "tab_row_height": "टैब पंक्ति ऊँचाई",
       "tab_text": "टैब टेक्स्ट",

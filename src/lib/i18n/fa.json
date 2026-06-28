@@ -3492,6 +3492,7 @@
       "tab_icon_colour": "رنگ آیکون زبانه",
       "tab_icon_size": "اندازهٔ آیکون زبانه",
       "tab_radius": "شعاع زبانه",
+      "tab_left_offset": "فاصلهٔ چپ زبانه",
       "tab_row_background": "پس‌زمینهٔ ردیف زبانه‌ها",
       "tab_row_height": "ارتفاع ردیف زبانه‌ها",
       "tab_text": "متن زبانه",
