@@ -1662,7 +1662,7 @@ export async function addLibrary(): Promise<LibraryInfo | null> {
 	// .md files are not in the index yet (no boot walk; the watcher only catches live
 	// edits). Index them in the background so search, backlinks AND the structural
 	// spine work immediately. Fire-and-forget; refresh stats when it finishes.
-	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name })
+	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name, onlyIfUnindexed: false })
 		.then(() => loadAllStats())
 		.catch((e) => console.error('[addLibrary] background reindex failed:', e));
 	return library;

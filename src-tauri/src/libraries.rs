@@ -2181,16 +2181,34 @@ pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_n
 /// a cheap no-op (re-linking a large indexed library stays fast). Async (off the UI
 /// thread); the frontend fires it after `add_library`. Returns the count of files seen.
 #[tauri::command(async)]
-pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name: String) -> Result<usize, String> {
+pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name: String, only_if_unindexed: bool) -> Result<usize, String> {
     use tauri::Manager;
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
         return Err("Access denied: not a registered library.".to_string());
     }
+    let state = app.state::<crate::search::SearchState>();
+    // Cheap gate (boot path): if this library already has indexed notes, skip the
+    // filesystem walk entirely — ONE indexed COUNT, no walk, honoring ZERO-BOOT-WALKS
+    // (LL-022). Only an unindexed library (linked but never walked into the index) gets
+    // the cold-start walk. Fresh adds pass `false` (always index).
+    if only_if_unindexed {
+        let indexed: i64 = crate::search::with_read_conn(state.inner(), |conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM note_meta WHERE library_name = ?1",
+                rusqlite::params![library_name],
+                |r| r.get(0),
+            )
+            .map_err(|e| e.to_string())
+        })
+        .unwrap_or(0);
+        if indexed > 0 {
+            return Ok(0);
+        }
+    }
     // Reuse the existing recursive .md collector (same one the folder-move reindex uses).
     let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
     collect_md_paths(Path::new(&library_path), &mut md_paths);
-    let state = app.state::<crate::search::SearchState>();
     let mut seen = 0usize;
     for p in &md_paths {
         let ps = p.to_string_lossy();

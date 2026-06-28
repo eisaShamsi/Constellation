@@ -2492,6 +2492,15 @@
 			)).then(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); })
 			  .catch(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); });
 		}
+		// PJ-065 §8 (cold-start) — auto-index any registered library that has files but ZERO
+		// indexed notes (linked but never walked into the index — the LL-027/BUG-022 gap:
+		// linked on an older build, or files synced while the app was closed). Server-gated
+		// by a cheap COUNT (no walk for already-indexed libraries → ZERO-BOOT-WALKS). After paint.
+		Promise.all($libraries.map(lib =>
+			invoke<number>('reindex_library', { libraryPath: lib.path, libraryName: lib.name, onlyIfUnindexed: true }).catch(() => 0)
+		)).then((counts) => {
+			if (counts.some((n) => (n ?? 0) > 0)) { loadAllStats().catch(() => {}); refreshLibraryCaches().catch(() => {}); }
+		}).catch(() => {});
 		{
 			const t0 = performance.now();
 			Promise.all($libraries.map(lib =>
