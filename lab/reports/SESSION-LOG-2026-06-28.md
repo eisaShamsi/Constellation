@@ -26,9 +26,19 @@ Stage-2 feedback: a leaf note showed an empty outline (panel rendered only the o
 - Panel now renders the whole work by default — rooted at the topmost structural ancestor, open note highlighted ("you are here") — with a segmented **Whole work / This note** toggle (shown only when the note has a parent). Reuses §6 only (ancestors → root → descendants(root)); fetch keyed on `path|scope`; out-of-order guard preserved; Rule 1/3 + Editor-Surface Gate intact.
 - Labels `panels.structureWholeWork` / `structureFocusNote` ×15 (native; ar كامل العمل / هذه الملاحظة). svelte-check 0.
 
+## 6 — Whole-work view: all 4 Boss tests PASS (`89bc6ba3` build)
+Boss: *"This is more like it; this is how it should render… What a smart move, Claude… Bravo!… You got what in my mind and more."* Whole-work + you-are-here + focus toggle validated on Chapter 2 / Part I / the Book.
+
+## 7 — GATE Stage 3 (the guards) + a tooltip fix + the contested flag
+- **Stage 3A (cycle guard) PASS:** Loop Note Alpha/Beta → no freeze, ↻ marker, "loop detected" notice, deterministic. (Boss screenshot.)
+- **Bleeding-tip fix (`aacda88a`):** the ↻ used a native `title`; WebView2 rendered it as a wide box bleeding off the panel edge. Replaced with a `position:fixed`, viewport-x-clamped tooltip (the HelpTip pattern) — escapes the sidebar overflow, never bleeds. Shared by the ↻ + the new contested badge.
+- **Contested-parent (Boss ruled: strict tree + conflict flag) (`aacda88a`):** `children_of()` now resolves each `contains:` child's real parent; an overruled claim is surfaced FLAGGED (`contested` + `contested_owner`), never silently dropped, never re-expanded. Owner A shows Contested Child as a real child; Owner B shows "⚠ Contested — Owner A". New serde-default struct fields (back-compat) + unit test. Label `panels.structureContested` x15.
+- **Boss add-on (NEXT):** a *resolve* action (accept real parent / pick claimant) — edits frontmatter → property-save path + write-path review.
+
 ---
 
 ## Open / next
-- **Boss test (this build):** whole-work view + focus toggle on Chapter 2 / Part I. Then **Stage 3** (cycle + contested-parent guards).
+- **Boss test (next build):** the fixed (non-bleeding) loop tooltip + Stage 3B (contested display: Owner A real child, Owner B flagged).
+- The *resolve* conflict action (Boss add-on) — write feature, its own focused build.
 - One-time re-link of the test-book to pick up the §8 incoming fix (Chapter 1 backlink → 1).
 - §8 remainder: rename-cascade linked-probe (both faces), docs/orientation v-bump, final 15-locale audit. Then Phase-4 Audit (3 agents) + /simplify + full PCS close-out.
