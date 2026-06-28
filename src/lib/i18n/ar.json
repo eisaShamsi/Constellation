@@ -901,6 +901,8 @@
     "structureChildren": "المخطط",
     "structureEmpty": "لا توجد روابط بنيوية بعد.",
     "structureLoop": "تم اكتشاف حلقة؛ يتوقف المخطط هنا.",
+    "structureWholeWork": "كامل العمل",
+    "structureFocusNote": "هذه الملاحظة",
     "outgoingLinks": "الروابط الصادرة",
     "outgoingLinksHeader": "الروابط الصادرة",
     "suggestedConnections": "الروابط المقترحة",

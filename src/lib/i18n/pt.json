@@ -900,6 +900,8 @@
     "structureChildren": "Tópicos",
     "structureEmpty": "Ainda não há ligações estruturais.",
     "structureLoop": "Um ciclo foi detetado; o esquema para aqui.",
+    "structureWholeWork": "Obra completa",
+    "structureFocusNote": "Esta nota",
     "outgoingLinks": "Links de saída",
     "outgoingLinksHeader": "Links de saída",
     "suggestedConnections": "Conexões sugeridas",

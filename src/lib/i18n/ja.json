@@ -900,6 +900,8 @@
     "structureChildren": "アウトライン",
     "structureEmpty": "構造リンクはまだありません。",
     "structureLoop": "ループが検出されました。アウトラインはここで停止します。",
+    "structureWholeWork": "作品全体",
+    "structureFocusNote": "このノート",
     "outgoingLinks": "アウトゴーイングリンク",
     "outgoingLinksHeader": "アウトゴーイングリンク",
     "suggestedConnections": "関連ノート",

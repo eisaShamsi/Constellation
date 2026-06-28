@@ -900,6 +900,8 @@
     "structureChildren": "Anahat",
     "structureEmpty": "Henüz yapısal bağlantı yok.",
     "structureLoop": "Bir döngü algılandı; anahat burada duruyor.",
+    "structureWholeWork": "Tüm eser",
+    "structureFocusNote": "Bu not",
     "outgoingLinks": "Giden Bağlantılar",
     "outgoingLinksHeader": "Giden Bağlantılar",
     "suggestedConnections": "Önerilen Bağlantılar",

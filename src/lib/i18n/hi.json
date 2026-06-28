@@ -900,6 +900,8 @@
     "structureChildren": "रूपरेखा",
     "structureEmpty": "अभी तक कोई संरचनात्मक लिंक नहीं।",
     "structureLoop": "एक लूप मिला; रूपरेखा यहीं रुकती है।",
+    "structureWholeWork": "संपूर्ण कृति",
+    "structureFocusNote": "यह नोट",
     "outgoingLinks": "आउटगोइंग लिंक्स",
     "outgoingLinksHeader": "आउटगोइंग लिंक्स",
     "suggestedConnections": "सुझाए गए कनेक्शन",

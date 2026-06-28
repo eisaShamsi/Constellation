@@ -900,6 +900,8 @@
     "structureChildren": "개요",
     "structureEmpty": "아직 구조 링크가 없습니다.",
     "structureLoop": "루프가 감지되어 개요가 여기서 멈춥니다.",
+    "structureWholeWork": "전체 작품",
+    "structureFocusNote": "이 노트",
     "outgoingLinks": "나가는 링크",
     "outgoingLinksHeader": "나가는 링크",
     "suggestedConnections": "추천 연결",

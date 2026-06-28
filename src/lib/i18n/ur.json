@@ -900,6 +900,8 @@
     "structureChildren": "خاکہ",
     "structureEmpty": "ابھی تک کوئی ساختی لنک نہیں۔",
     "structureLoop": "ایک لوپ کا پتہ چلا؛ خاکہ یہاں رک جاتا ہے۔",
+    "structureWholeWork": "مکمل کام",
+    "structureFocusNote": "یہ نوٹ",
     "outgoingLinks": "باہر جانے والے لنکس",
     "outgoingLinksHeader": "باہر جانے والے لنکس",
     "suggestedConnections": "تجویز کردہ روابط",

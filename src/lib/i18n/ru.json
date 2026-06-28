@@ -900,6 +900,8 @@
     "structureChildren": "Содержание",
     "structureEmpty": "Пока нет структурных связей.",
     "structureLoop": "Обнаружен цикл; структура останавливается здесь.",
+    "structureWholeWork": "Вся работа",
+    "structureFocusNote": "Эта заметка",
     "outgoingLinks": "Исходящие ссылки",
     "outgoingLinksHeader": "Исходящие ссылки",
     "suggestedConnections": "Предложенные связи",

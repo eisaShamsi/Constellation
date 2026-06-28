@@ -900,6 +900,8 @@
     "structureChildren": "מתאר",
     "structureEmpty": "אין עדיין קישורים מבניים.",
     "structureLoop": "זוהתה לולאה; המתאר נעצר כאן.",
+    "structureWholeWork": "היצירה כולה",
+    "structureFocusNote": "הערה זו",
     "outgoingLinks": "קישורים יוצאים",
     "outgoingLinksHeader": "קישורים יוצאים",
     "suggestedConnections": "קישורים מוצעים",
