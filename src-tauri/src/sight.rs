@@ -73,7 +73,7 @@ pub fn constellation_sight_centrality(
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("Search DB not initialized")?;
         // PJ-065 — the structural (parent/TOC) lane is non-cognitive: it must not
-        // enter the Brandes centrality graph. No-op until §5.
+        // enter the Brandes centrality graph. Active since §5.
         let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
         let mut stmt = conn
             .prepare(&format!("SELECT source_name, target_name, link_type FROM note_links WHERE status = 'active'{}", sx))

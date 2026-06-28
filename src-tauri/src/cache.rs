@@ -472,7 +472,7 @@ fn backlink_rows_in_schema(
     let placeholders = targets_lower.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     // PJ-065 — the structural (parent/TOC) lane never shows as a cognitive backlink
     // (the TOC panel is its only surface) and must not break the getBacklinks ==
-    // incoming_count parity. Empty clause (no-op) until §5 registers a structural type.
+    // incoming_count parity. Active since §5 (no-op only if the lane is ever un-registered).
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
@@ -503,7 +503,7 @@ fn outgoing_rows_in_schema(
     source_path: &str,
 ) -> Result<Vec<NoteLink>, String> {
     // PJ-065 — exclude the structural (parent/TOC) lane from the cognitive
-    // outgoing-links panel (the TOC panel is its surface). No-op until §5.
+    // outgoing-links panel (the TOC panel is its surface). Active since §5.
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
@@ -1215,7 +1215,7 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
     // PJ-065 — the federated full-links payload + boot BootLinks bundle stay
     // cognitive: the structural (parent/TOC) lane is served only by the dedicated
     // get_structural_* APIs, never the boot bundle (so boot-bundle size is
-    // unchanged and frontend cognitive graph consumers never see it). No-op until §5.
+    // unchanged and frontend cognitive graph consumers never see it). Active since §5.
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
@@ -1575,7 +1575,7 @@ mod tests {
         }
         for (source, target, ltype) in links {
             // PJ-065 — structural (parent/TOC) edges never enter the sky graph
-            // (Sky View is a cognitive surface). No-op until §5.
+            // (Sky View is a cognitive surface). Active since §5.
             if crate::link_types::is_structural_type(&ltype) {
                 continue;
             }

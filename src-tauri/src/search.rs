@@ -184,7 +184,7 @@ const TERM_VOCAB_DROPCOL_SCHEMA_VERSION: i64 = 1;
 /// the inbound/outbound link counts that feed the stratum (a TOC placement is not
 /// cognitive density). The `/*SX*/` markers are replaced with the registry's
 /// structural exclusion fragment (empty ⇒ a no-op, so byte-identical to the old
-/// const until §5 registers a structural type). Was a `const`.
+/// const; §5 registered the lane, so it is now a fn). Was a `const`.
 pub(crate) fn stratum_sql_expr() -> String {
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     "
@@ -260,7 +260,7 @@ pub(crate) fn stratum_sql_expr() -> String {
 /// PJ-065 — built per call so the structural (parent/TOC) lane is excluded from
 /// the inbound DISTINCT-source counts that drive maturity (a TOC placement is not
 /// cognitive inbound). `/*SX*/` is replaced with the registry's structural
-/// exclusion (empty ⇒ no-op, byte-identical to the old const until §5). This keeps
+/// exclusion (empty ⇒ no-op, byte-identical to the old const; active since §5). This keeps
 /// the Sky maturity equal to note_meta.incoming_count (which §3a already excludes
 /// structural from) — the MIG-085 "surfaces agree" invariant. Was a `const`.
 pub(crate) fn maturity_sql_expr() -> String {
@@ -1213,7 +1213,7 @@ pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
     let reg = crate::link_types::snapshot();
     // PJ-065 — the structural (parent/TOC) lane is NON-cognitive: it must not
     // count toward outgoing_count nor appear in the type breakdown. Cognitive
-    // list/rank + a NOT IN clause on the raw COUNT(*). All no-ops until §5
+    // list/rank + a NOT IN clause on the raw COUNT(*). Active since §5
     // registers a structural type (cognitive list == full list while empty).
     let list = reg.sql_in_list_cognitive();
     let rank = reg.sql_rank_case_cognitive();
@@ -1315,7 +1315,7 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     let reg = crate::link_types::snapshot();
     // PJ-065 — exclude the structural (parent/TOC) lane from incoming_count and the
     // inbound type breakdown: cognitive list/rank + a NOT IN inside BOTH branches of
-    // the matched UNION. No-ops until §5 (cognitive list == full list while empty).
+    // the matched UNION. Active since §5 (the cognitive list excludes the structural lane).
     let list = reg.sql_in_list_cognitive();
     let rank = reg.sql_rank_case_cognitive();
     let sentinel = reg.cognitive_sentinel_rank();
@@ -3594,7 +3594,7 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // The structural (parent/TOC) lane never enters sky_links (Sky View is a
     // cognitive surface). Injected into the AI WHEN + AU INSERT guards; an edge
     // retyped INTO structural still fires AU → its old sky_link is DELETEd and not
-    // re-INSERTed. Empty (no-op) until §5.
+    // re-INSERTed. Active since §5.
     let sx_new = crate::link_types::snapshot().structural_not_in_clause("NEW.link_type");
     conn.execute_batch(&format!("
         CREATE TRIGGER IF NOT EXISTS note_links_sky_ai
@@ -5397,8 +5397,8 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
     // PJ-065 — structural (parent/TOC) edges are FRONTMATTER-ONLY. Drop any
     // structural-typed link authored in the BODY ([[parent::X]] / [[contains::X]]) so
     // the seq order (assigned on the frontmatter face below) and the read-time
-    // single-parent / acyclicity resolution are never bypassed by a body link. No-op
-    // pre-§5 (is_structural_type is false for every type until the lane is registered).
+    // single-parent / acyclicity resolution are never bypassed by a body link. Active
+    // since §5 (is_structural_type is true for parent/contains).
     let mut typed_links: Vec<TypedLink> = extract_typed_links(&body)
         .into_iter()
         .filter(|l| !crate::link_types::is_structural_type(&l.link_type))

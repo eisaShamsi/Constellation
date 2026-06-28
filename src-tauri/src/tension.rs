@@ -202,7 +202,7 @@ fn load_notes_from_db(
     {
         // PJ-065 — exclude the structural (parent/TOC) lane: tension's orphan / SPOF /
         // contradiction analysis is a cognitive instrument, so a node with ONLY
-        // structural links reads as a cognitive orphan (correct). No-op until §5.
+        // structural links reads as a cognitive orphan (correct). Active since §5.
         let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
         let mut stmt = conn
             .prepare(&format!(

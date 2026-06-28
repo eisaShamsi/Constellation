@@ -53,7 +53,7 @@ pub const SEED_IDS: &[&str] = &[
 ];
 
 /// PJ-065 — the structural (parent/TOC) seed ids: a NON-cognitive lane, locked
-/// like the 8 but flagged `structural`. **EMPTY until §5 registers `parent` /
+/// like the 8 but flagged `structural`. **Registered by §5: `parent` /
 /// `contains`** — the safe-order rule: every cognitive-exclusion filter installed
 /// in §3/§4 derives from the `structural` flag and is a no-op until these ids
 /// exist, so registration (which makes `is_known_type` true and starts edge
@@ -114,7 +114,7 @@ impl LinkTypeRegistry {
     /// to top-level — v1 nests only under the 8).
     pub fn merge(deltas: Vec<LinkTypeDef>) -> Self {
         let seed_set: std::collections::HashSet<&str> = SEED_IDS.iter().copied().collect();
-        // PJ-065 — the structural lane lock set (empty pre-§5; dormant until then).
+        // PJ-065 — the structural lane lock set (registered since §5).
         let structural_set: std::collections::HashSet<&str> =
             STRUCTURAL_SEED_IDS.iter().copied().collect();
         let mut by_id: std::collections::BTreeMap<String, LinkTypeDef> =
@@ -141,8 +141,8 @@ impl LinkTypeRegistry {
                 // PJ-065 — structural seed: locked like the 8 (id/existence/parent
                 // immutable) but flagged `structural` (the non-cognitive parent/TOC
                 // lane). Coerces a stray `{id:'parent', structural:false}` delta back
-                // to the locked structural form. Dormant while STRUCTURAL_SEED_IDS is
-                // empty (pre-§5).
+                // to the locked structural form. Active since §5 (would be dormant
+                // only if STRUCTURAL_SEED_IDS were empty).
                 d.builtin = true;
                 d.parent = None;
                 d.structural = true;
@@ -218,9 +218,9 @@ impl LinkTypeRegistry {
     // Every cognitive-scoring query reads the COGNITIVE variant so the structural
     // (parent/TOC) lane is invisible to maturity/strata/360/centrality/tension/
     // health/sky. All return "all known types" while no structural type exists
-    // (pre-§5), so installing the filters in §3/§4 is a provable no-op until §5.
+    // before §5; §5 registered the lane, so the §3/§4 filters are now live.
 
-    /// Ids flagged structural (the parent/TOC lane). Empty pre-§5.
+    /// Ids flagged structural (the parent/TOC lane). Registered since §5.
     pub fn structural_ids(&self) -> Vec<String> {
         self.types.iter().filter(|t| t.structural).map(|t| t.id.clone()).collect()
     }
@@ -379,8 +379,8 @@ pub fn is_structural_type(id: &str) -> bool {
 /// inspector360.rs) call this — with a byte-offset guard so only the frontmatter
 /// occurrence is skipped — to keep a structural placement from being miscounted as a
 /// cognitive outgoing link. ONE shared implementation (no divergent per-file
-/// frontmatter parser — the registry DRY rule). Empty (fast no-op) until §5 registers
-/// a structural type. Block-aware: tracks the current top-level key so `- ` list items
+/// frontmatter parser — the registry DRY rule). Active since §5 — a fast no-op only
+/// if no structural type is registered. Block-aware: tracks the current top-level key so `- ` list items
 /// attribute to the right property (mirrors `extract_frontmatter_typed_links`).
 pub fn structural_frontmatter_targets(frontmatter: &str) -> std::collections::HashSet<String> {
     use std::sync::OnceLock;
@@ -389,7 +389,7 @@ pub fn structural_frontmatter_targets(frontmatter: &str) -> std::collections::Ha
     let mut out = std::collections::HashSet::new();
     let reg = snapshot();
     if reg.structural_ids().is_empty() {
-        return out; // no structural type ⇒ nothing to skip (pre-§5)
+        return out; // no structural type ⇒ nothing to skip
     }
     let mut current_structural = false;
     for line in frontmatter.lines() {

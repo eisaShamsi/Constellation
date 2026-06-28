@@ -332,7 +332,7 @@ fn scan_all_notes(
 
                 // PJ-065 — skip wikilinks under a structural (parent/TOC) frontmatter
                 // key (byte-offset guard so a body link to the same note still counts).
-                // No-op until §5.
+                // Active since §5.
                 let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
                 let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
 

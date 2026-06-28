@@ -191,7 +191,7 @@ fn scan_notes_recursive(
                 // is not a cognitive outgoing link. `fm_len` is the frontmatter prefix
                 // length (body is a subslice of content); the byte-offset guard skips
                 // only the frontmatter occurrence, so a body link to the same note is
-                // still counted. Empty set (no-op) until §5.
+                // still counted. Populated since §5 (empty only if the lane is ever un-registered).
                 let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
                 let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
 
