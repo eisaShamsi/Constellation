@@ -100,6 +100,12 @@
 	const KEY_SUGGESTIONS = [
 		{ key: 'tags', label: 'tags', labelAr: 'الوسم' },
 		{ key: 'aliases', label: 'aliases', labelAr: 'أسماء بديلة' },
+		// PJ-065 — the structural (parent/TOC) link properties as first-class presets. The
+		// written KEY stays canonical English ('parent'/'contains') in every locale (the
+		// structural reader matches those, like cid_cn/kind); the pill display is localized
+		// elsewhere. Picking them coerces the type so values auto-wrap as [[wikilinks]].
+		{ key: 'parent', label: 'parent', labelAr: 'parent' },
+		{ key: 'contains', label: 'contains', labelAr: 'contains' },
 		{ key: 'cssclasses', label: 'cssclasses', labelAr: 'cssclasses' },
 		{ key: 'publish', label: 'publish', labelAr: 'منشور' },
 		{ key: 'permalink', label: 'permalink', labelAr: 'رابط ثابت' },
@@ -117,6 +123,14 @@
 		{ key: 'sources', label: 'sources', labelAr: 'المصادر' },
 		{ key: 'content_type', label: 'content_type', labelAr: 'نوع المحتوى' },
 	];
+
+	// PJ-065 — structural link properties authored here. 'parent' is a SINGLE link (scalar
+	// [[ ]] → 'link' type, auto-wraps on input); 'contains' is a LIST of links ('list' type,
+	// each item auto-wrapped in [[ ]]). Canonical English keys (locale-independent).
+	const STRUCTURAL_LINK_KEYS = new Set(['parent', 'contains']);
+	const STRUCTURAL_LIST_LINK_KEYS = new Set(['contains']);
+	const structuralKeyType = (key: string): PropertyType | null =>
+		key === 'parent' ? 'link' : key === 'contains' ? 'list' : null;
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
 	let saveTimeout: ReturnType<typeof setTimeout>;
@@ -505,6 +519,14 @@
 		editableProps = editableProps.map((p, i) =>
 			i === idx ? { ...p, key: newKey } : p
 		);
+		// PJ-065 — a structural link key authors as a link property: 'parent' → 'link'
+		// (scalar [[ ]], auto-wrap on input), 'contains' → 'list' (each item auto-[[ ]]).
+		// setType handles the value conversion + auto-wrap + persists; it also debouncedSaves.
+		const targetType = structuralKeyType(newKey);
+		if (targetType && editableProps[idx].type !== targetType) {
+			setType(idx, targetType);
+			return;
+		}
 		debouncedSave();
 	}
 
@@ -593,7 +615,13 @@
 		if (!tag.trim()) return;
 		editableProps = editableProps.map((p, i) => {
 			if (i !== idx) return p;
-			const items = [...(p.listItems ?? []), tag.trim()];
+			// PJ-065 — a structural link-list (contains:) stores items as [[wikilinks]] so the
+			// structural reader registers them. Auto-wrap if the user didn't type the brackets.
+			let item = tag.trim();
+			if (STRUCTURAL_LIST_LINK_KEYS.has(p.key) && !item.startsWith('[[')) {
+				item = `[[${item}]]`;
+			}
+			const items = [...(p.listItems ?? []), item];
 			return { ...p, listItems: items, value: items.join(', ') };
 		});
 		tagInputs = { ...tagInputs, [idx]: '' };
@@ -974,7 +1002,7 @@
 					{#if prop.listItems && prop.listItems.length > 0}
 						{#each prop.listItems as tag, tagIdx}
 							<span class="pe-tag" dir="auto">
-								{tag}
+								{STRUCTURAL_LIST_LINK_KEYS.has(prop.key) ? tag.replace(/^\[\[|\]\]$/g, '') : tag}
 								<button class="pe-tag-x" onclick={() => removeTag(idx, tagIdx)}>&times;</button>
 							</span>
 						{/each}
