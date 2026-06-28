@@ -1009,10 +1009,16 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
                         "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
                         rusqlite::params![&old_path, &new_path],
                     );
-                    let _ = conn.execute(
-                        "UPDATE note_links SET target_path = ?2 WHERE target_path = ?1",
-                        rusqlite::params![&old_path, &new_path],
-                    );
+                    // NOTE (rename-perf, 2026-06-28): the former
+                    //   UPDATE note_links SET target_path = ?2 WHERE target_path = ?1
+                    // was REMOVED. `note_links.target_path` is never populated — link
+                    // targets are tracked by `target_name` (resolved at read time via
+                    // COALESCE(target_path, target_name); see cece/wiring.rs, review.rs).
+                    // So that UPDATE matched ZERO rows on every rename, yet cost ~11 s:
+                    // an all-NULL indexed column degenerates the planner into a full scan
+                    // of all ~234k note_links rows (measured, Reproduce-First). Targets are
+                    // already migrated by the `[[name]]` wikilink cascade (update_links_on_rename)
+                    // + the note_meta_sky_au trigger's target_name rewrite. Dead + slow → cut.
                     let _ = conn.execute(
                         "UPDATE note_aliases SET path = ?2 WHERE path = ?1",
                         rusqlite::params![&old_path, &new_path],
