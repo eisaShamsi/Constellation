@@ -3341,6 +3341,14 @@ export async function updateLinksOnRename(libraryPath: string, libraryName: stri
 	return await invoke('update_links_on_rename', { libraryPath, libraryName, oldName, newName });
 }
 
+// PJ-065 §D9 — one-click resolution of a contested structural parent. Edits ONE frontmatter
+// field on `notePath` (field 'parent' → set `parent: [[targetName]]`; field 'contains' → remove
+// `[[targetName]]` from `contains:`) via the proven gate_write path; the backend emits
+// cascade:rewrote so any open tab reloads from disk.
+export async function resolveStructuralConflict(notePath: string, field: 'parent' | 'contains', targetName: string): Promise<void> {
+	await invoke('resolve_structural_conflict', { notePath, field, targetName });
+}
+
 // ─── Quick Capture ───
 export async function quickCapture(libraryPath: string, inboxFolder: string): Promise<string> {
 	return await invoke('quick_capture', { libraryPath, inboxFolder });

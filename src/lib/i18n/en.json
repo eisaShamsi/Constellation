@@ -967,6 +967,8 @@
     "structureWholeWork": "Whole work",
     "structureFocusNote": "This note",
     "structureContested": "Contested",
+    "structureResolveKeep": "Keep",
+    "structureResolveMove": "Move here",
     "outgoingLinks": "Outgoing Links",
     "outgoingLinksHeader": "Outgoing Links",
     "suggestedConnections": "Suggested connections",

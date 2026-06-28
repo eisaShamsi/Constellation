@@ -350,6 +350,7 @@ pub fn run() {
             libraries::create_note,
             libraries::create_folder,
             libraries::rename_item,
+            libraries::resolve_structural_conflict,
             libraries::move_item,
             libraries::list_universe_folders,
             libraries::delete_item,

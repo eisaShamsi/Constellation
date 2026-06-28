@@ -903,6 +903,8 @@
     "structureWholeWork": "Вся работа",
     "structureFocusNote": "Эта заметка",
     "structureContested": "Спорный",
+    "structureResolveKeep": "Оставить",
+    "structureResolveMove": "Сюда",
     "outgoingLinks": "Исходящие ссылки",
     "outgoingLinksHeader": "Исходящие ссылки",
     "suggestedConnections": "Предложенные связи",

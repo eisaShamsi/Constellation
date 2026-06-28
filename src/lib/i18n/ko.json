@@ -903,6 +903,8 @@
     "structureWholeWork": "전체 작품",
     "structureFocusNote": "이 노트",
     "structureContested": "충돌",
+    "structureResolveKeep": "유지",
+    "structureResolveMove": "여기로 이동",
     "outgoingLinks": "나가는 링크",
     "outgoingLinksHeader": "나가는 링크",
     "suggestedConnections": "추천 연결",

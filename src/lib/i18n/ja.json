@@ -903,6 +903,8 @@
     "structureWholeWork": "作品全体",
     "structureFocusNote": "このノート",
     "structureContested": "競合",
+    "structureResolveKeep": "保持",
+    "structureResolveMove": "ここへ移動",
     "outgoingLinks": "アウトゴーイングリンク",
     "outgoingLinksHeader": "アウトゴーイングリンク",
     "suggestedConnections": "関連ノート",

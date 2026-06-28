@@ -1470,6 +1470,165 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
     format!("---\n{}\n---{}", new_lines.join("\n"), body)
 }
 
+/// PJ-065 resolve — set the `parent:` scalar to `"[[new_parent]]"` (replace if present,
+/// else insert). Mirrors `update_frontmatter_title`'s split/rebuild so the rest of the
+/// note is preserved byte-for-byte. `new_parent` is a bare note NAME (no brackets).
+fn set_frontmatter_parent(content: &str, new_parent: &str) -> String {
+    let esc = new_parent.replace('"', "\\\"");
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return format!("---\nparent: \"[[{}]]\"\n---\n\n{}", esc, content);
+    }
+    let after_first = &trimmed[3..];
+    let Some(end) = after_first.find("\n---") else {
+        return content.to_string();
+    };
+    // Strip the leading '\n' after the opening `---` so .lines() doesn't yield a spurious
+    // empty first line (which would add/accumulate a blank line on every edit AND break the
+    // command's no-op guard). The body keeps its own leading separator below.
+    let fm = after_first[..end].strip_prefix('\n').unwrap_or(&after_first[..end]);
+    let body = &after_first[end + 4..];
+    let mut new_lines: Vec<String> = Vec::new();
+    let mut found = false;
+    for line in fm.lines() {
+        if line.trim_start().starts_with("parent:") {
+            found = true;
+            new_lines.push(format!("parent: \"[[{}]]\"", esc));
+            continue;
+        }
+        new_lines.push(line.to_string());
+    }
+    if !found {
+        new_lines.push(format!("parent: \"[[{}]]\"", esc));
+    }
+    format!("---\n{}\n---{}", new_lines.join("\n"), body)
+}
+
+/// PJ-065 resolve — remove the `[[child]]` entry from the `contains:` YAML list (inline
+/// `[a, b]` OR block `- a`). Drops the whole `contains:` key if it becomes empty. `child`
+/// is a bare note NAME. Match is case-insensitive on the wikilink target (strips brackets,
+/// quotes, and any `|alias`). Other lines preserved exactly.
+fn remove_frontmatter_contains_item(content: &str, child: &str) -> String {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return content.to_string();
+    }
+    let after_first = &trimmed[3..];
+    let Some(end) = after_first.find("\n---") else {
+        return content.to_string();
+    };
+    let fm = after_first[..end].strip_prefix('\n').unwrap_or(&after_first[..end]);
+    let body = &after_first[end + 4..];
+
+    let target = child.trim().to_lowercase();
+    let matches_target = |item: &str| -> bool {
+        let s = item.trim().trim_matches('"').trim_matches('\'');
+        let inner = s.trim_start_matches("[[").trim_end_matches("]]");
+        let name = inner.split('|').next().unwrap_or(inner).trim();
+        name.to_lowercase() == target
+    };
+
+    let mut new_lines: Vec<String> = Vec::new();
+    let mut in_list = false;
+    let mut kept_in_list = 0usize;
+    let mut header_idx: Option<usize> = None;
+
+    for line in fm.lines() {
+        let t = line.trim();
+        if t.starts_with("contains:") {
+            let value = t["contains:".len()..].trim();
+            if value.starts_with('[') && value.ends_with(']') {
+                // Inline array.
+                let inner = &value[1..value.len() - 1];
+                let kept: Vec<String> = inner
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty() && !matches_target(s))
+                    .collect();
+                if !kept.is_empty() {
+                    new_lines.push(format!("contains: [{}]", kept.join(", ")));
+                }
+                continue;
+            }
+            // Block list — push the header now; drop it later if nothing is kept.
+            in_list = true;
+            header_idx = Some(new_lines.len());
+            kept_in_list = 0;
+            new_lines.push(line.to_string());
+            continue;
+        }
+        if in_list {
+            if t.starts_with("- ") {
+                if matches_target(&t[2..]) {
+                    continue; // drop this item
+                }
+                kept_in_list += 1;
+                new_lines.push(line.to_string());
+                continue;
+            }
+            // End of the block list.
+            in_list = false;
+            if kept_in_list == 0 {
+                if let Some(idx) = header_idx.take() {
+                    new_lines.remove(idx);
+                }
+            }
+        }
+        new_lines.push(line.to_string());
+    }
+    if in_list && kept_in_list == 0 {
+        if let Some(idx) = header_idx.take() {
+            new_lines.remove(idx);
+        }
+    }
+    format!("---\n{}\n---{}", new_lines.join("\n"), body)
+}
+
+/// PJ-065 §D9 — one-click resolution of a CONTESTED structural parent (two notes claim
+/// the same child). Edits ONE frontmatter field on `note_path` and rides the proven
+/// rename-cascade write path: gate_write (serializes vs any in-flight editor flush +
+/// suppresses the watcher) → reindex_single_note → emit `cascade:rewrote` so any open tab
+/// reloads from disk (no BUG-015 stale-buffer stomp). Explicit user action — never silent.
+///   field "parent"   → set this note's `parent:` to `[[target_name]]` (the child takes the claimant).
+///   field "contains" → remove `[[target_name]]` from this note's `contains:` (the claimant releases).
+#[tauri::command]
+pub fn resolve_structural_conflict(
+    app: tauri::AppHandle,
+    note_path: String,
+    field: String,
+    target_name: String,
+) -> Result<(), String> {
+    validate_path_in_any_library(&app, &note_path)?;
+    let path = Path::new(&note_path);
+    if !path.exists() {
+        return Err("Note does not exist.".to_string());
+    }
+    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read note: {}", e))?;
+    let updated = match field.as_str() {
+        "parent" => set_frontmatter_parent(&content, &target_name),
+        "contains" => remove_frontmatter_contains_item(&content, &target_name),
+        other => return Err(format!("resolve_structural_conflict: unknown field '{}'", other)),
+    };
+    if updated == content {
+        return Ok(()); // no-op (already resolved)
+    }
+    crate::write_gate::gate_write(path, &updated, None, "resolve_structural_conflict")?;
+
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let libs = load_all_libraries(&app);
+        if let Some(lib) = libs.iter().find(|l| note_path.starts_with(&l.path)) {
+            let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib.name);
+        }
+    }
+    {
+        use tauri::Emitter;
+        let _ = app.emit("cascade:rewrote", serde_json::json!({ "paths": [note_path] }));
+    }
+    Ok(())
+}
+
 /// Move a file or folder to a different directory within any registered library.
 #[tauri::command]
 pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
@@ -5599,6 +5758,67 @@ pub fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_pj065_resolve {
+    //! PJ-065 §D9 — the contested-conflict resolve frontmatter helpers. They must set
+    //! parent: (scalar) / remove a contains: item (list), preserve the rest of the note,
+    //! and be a true no-op when there is nothing to change (so the command never writes).
+    use super::{remove_frontmatter_contains_item, set_frontmatter_parent};
+
+    #[test]
+    fn set_parent_replaces_existing_scalar() {
+        let c = "---\ntitle: \"Contested Child\"\nparent: \"[[Owner A]]\"\n---\n\nBody stays.";
+        let out = set_frontmatter_parent(c, "Owner B");
+        assert!(out.contains("parent: \"[[Owner B]]\""), "parent re-pointed to claimant");
+        assert!(!out.contains("Owner A"), "old parent gone");
+        assert!(out.contains("title: \"Contested Child\""), "title preserved");
+        assert!(out.ends_with("\n\nBody stays."), "body preserved");
+        assert!(!out.starts_with("---\n\n"), "no spurious leading blank line");
+    }
+
+    #[test]
+    fn set_parent_inserts_when_absent() {
+        let c = "---\ntitle: \"X\"\n---\n\nBody.";
+        let out = set_frontmatter_parent(c, "Owner B");
+        assert!(out.contains("parent: \"[[Owner B]]\""));
+        assert!(out.contains("title: \"X\""));
+    }
+
+    #[test]
+    fn remove_contains_block_item_drops_empty_key() {
+        let c = "---\ntitle: \"Owner B\"\ncontains:\n  - \"[[Contested Child]]\"\n---\n\nBody.";
+        let out = remove_frontmatter_contains_item(c, "Contested Child");
+        assert!(!out.contains("Contested Child"), "claim removed");
+        assert!(!out.contains("contains:"), "empty contains: key dropped");
+        assert!(out.contains("title: \"Owner B\""), "title preserved");
+        assert!(out.ends_with("\n\nBody."), "body preserved");
+    }
+
+    #[test]
+    fn remove_contains_keeps_siblings() {
+        let c = "---\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n---\n\nB.";
+        let out = remove_frontmatter_contains_item(c, "Chapter One");
+        assert!(!out.contains("[[Chapter One]]"), "target removed");
+        assert!(out.contains("[[Chapter Two]]"), "sibling kept");
+        assert!(out.contains("contains:"), "key kept (still has an item)");
+    }
+
+    #[test]
+    fn remove_contains_inline_array() {
+        let c = "---\ncontains: [\"[[A]]\", \"[[B]]\"]\n---\n\nx";
+        let out = remove_frontmatter_contains_item(c, "A");
+        assert!(!out.contains("[[A]]"));
+        assert!(out.contains("[[B]]"));
+    }
+
+    #[test]
+    fn remove_contains_noop_is_byte_identical() {
+        let c = "---\ntitle: \"X\"\n---\n\nB";
+        let out = remove_frontmatter_contains_item(c, "Nope");
+        assert_eq!(out, c, "no contains: → unchanged (so the command's no-op guard fires)");
+    }
+}
 
 #[cfg(test)]
 mod tests {

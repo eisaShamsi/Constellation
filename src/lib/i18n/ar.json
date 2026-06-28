@@ -904,6 +904,8 @@
     "structureWholeWork": "كامل العمل",
     "structureFocusNote": "هذه الملاحظة",
     "structureContested": "متنازَع عليه",
+    "structureResolveKeep": "إبقاء",
+    "structureResolveMove": "نقل إلى هنا",
     "outgoingLinks": "الروابط الصادرة",
     "outgoingLinksHeader": "الروابط الصادرة",
     "suggestedConnections": "الروابط المقترحة",

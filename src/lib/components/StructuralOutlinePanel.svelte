@@ -6,7 +6,7 @@
 	// tab is mounted (gesture-gated — the panel mounts only when the Structure tab is
 	// active), never on note open, never writes content (Editor-Surface Gate).
 	import { invoke } from '@tauri-apps/api/core';
-	import { openNoteTab, libraries } from '$lib/libraries/store';
+	import { openNoteTab, libraries, resolveStructuralConflict } from '$lib/libraries/store';
 	import { t, dir as uiDir } from '$lib/i18n';
 	import VirtualList from './VirtualList.svelte';
 
@@ -32,14 +32,19 @@
 	// a position WITHIN the work, not the root of a fragment. A 'focus' toggle collapses to
 	// just this note's subtree. 'whole' is the default per the ruling.
 	let scope = $state<'whole' | 'subtree'>('whole');
-	let lastFetched = ''; // key = path|scope — fetch once per (note, scope) (Rule 1/3 — no per-keystroke IPC)
+	// PJ-065 §D9 — bump after a resolve action so the structural tree re-fetches (the active
+	// note/scope are unchanged, but the on-disk frontmatter just changed under us).
+	let refreshTick = $state(0);
+	let resolving = $state(false); // single-flight guard for the resolve buttons
+	let lastFetched = ''; // key = path|scope|tick — fetch once per (note, scope, refresh) (Rule 1/3 — no per-keystroke IPC)
 
 	$effect(() => {
 		const path = activeNotePath;
 		const name = activeNoteName;
 		const sc = scope;
+		const tick = refreshTick;
 		if (!path || !name) { ancestors = []; outline = []; lastFetched = ''; return; }
-		const key = path + '|' + sc;
+		const key = path + '|' + sc + '|' + tick;
 		if (key === lastFetched) return;
 		lastFetched = key;
 		loading = true;
@@ -90,6 +95,33 @@
 		await openNoteTab(path, libName, color, undefined, newTab, activeNotePath || undefined);
 	}
 
+	// PJ-065 §D9 — resolve a contested parent. The contested row appears in the LOSING
+	// claimant's outline (the open note IS the claimant); the row `r` is the child that
+	// really belongs to `r.contestedOwner`. Two one-click resolutions, both a frontmatter
+	// WRITE via the proven gate_write path (resolve_structural_conflict), then re-fetch:
+	//   keep  → this (claimant) note releases its `contains:` claim on the child.
+	//   move  → re-parent the child to this note (its `parent:` switches to the claimant).
+	async function resolveKeep(r: Row) {
+		if (resolving) return;
+		resolving = true;
+		try {
+			await resolveStructuralConflict(activeNotePath, 'contains', r.name);
+			refreshTick++;
+		} finally {
+			resolving = false;
+		}
+	}
+	async function resolveMove(r: Row) {
+		if (resolving) return;
+		resolving = true;
+		try {
+			await resolveStructuralConflict(r.path, 'parent', activeNoteName);
+			refreshTick++;
+		} finally {
+			resolving = false;
+		}
+	}
+
 	// Bleeding-tip fix (Boss 2026-06-28): replace the native `title` (WebView2 renders it
 	// as a wide box that bleeds off the panel edge) with a position:fixed tooltip whose x is
 	// clamped to the viewport — the HelpTip pattern. Escapes the sidebar's overflow; never
@@ -114,26 +146,46 @@
 </script>
 
 {#snippet outlineRow(r: Row)}
-	<button class="toc-row" class:toc-row-current={r.isCurrent} class:toc-row-contested={r.contested} dir="auto" style="padding-inline-start: {r.depth * 14 + 8}px"
-		onclick={(e) => open(r.path, e)}>
-		<span class="toc-bullet"></span>
-		<!-- No native `title` (it doubled with — and bled past — the marker tooltips). Show the
-		     full name in the clamped tooltip ONLY when the name is actually truncated. -->
-		<span class="toc-name"
-			onmouseenter={(e) => { const el = e.currentTarget as HTMLElement; if (el && el.scrollWidth > el.clientWidth) showTip(e, r.name); }}
-			onmouseleave={hideTip}>{r.name}</span>
-		{#if r.contested}
-			<span class="toc-contested" role="img"
-				aria-label={`${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`}
-				onmouseenter={(e) => showTip(e, `${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`)}
-				onmouseleave={hideTip}>⚠ {$t('panels.structureContested') || 'Contested'}</span>
-		{:else if r.truncated}
-			<span class="toc-loop" role="img"
-				aria-label={$t('panels.structureLoop') || 'A loop was detected; the outline stops here.'}
-				onmouseenter={(e) => showTip(e, $t('panels.structureLoop') || 'A loop was detected; the outline stops here.')}
-				onmouseleave={hideTip}>↻</span>
-		{/if}
-	</button>
+	{#if r.contested}
+		<!-- Contested = an overruled `contains:` claim. A <div> (not a <button>) so the resolve
+		     <button>s can nest validly. Two-line: name + ⚠ badge, then the resolve bar. -->
+		<div class="toc-row toc-row-contested" style="padding-inline-start: {r.depth * 14 + 8}px">
+			<div class="toc-contested-main">
+				<span class="toc-bullet"></span>
+				<button class="toc-name toc-name-btn" dir="auto" onclick={(e) => open(r.path, e)}
+					onmouseenter={(e) => { const el = e.currentTarget as HTMLElement; if (el && el.scrollWidth > el.clientWidth) showTip(e, r.name); }}
+					onmouseleave={hideTip}>{r.name}</button>
+				<span class="toc-contested" role="img"
+					aria-label={`${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`}
+					onmouseenter={(e) => showTip(e, `${$t('panels.structureContested') || 'Contested'}${r.contestedOwner ? ' — ' + r.contestedOwner : ''}`)}
+					onmouseleave={hideTip}>⚠ {$t('panels.structureContested') || 'Contested'}{#if r.contestedOwner} · {r.contestedOwner}{/if}</span>
+			</div>
+			<div class="toc-resolve-bar">
+				<button class="toc-resolve" disabled={resolving} onclick={() => resolveKeep(r)}
+					title={`${$t('panels.structureResolveKeep') || 'Keep'} · ${r.contestedOwner ?? ''}`.trim()}
+				>{$t('panels.structureResolveKeep') || 'Keep'}</button>
+				<button class="toc-resolve toc-resolve-move" disabled={resolving} onclick={() => resolveMove(r)}
+					title={$t('panels.structureResolveMove') || 'Move here'}
+				>{$t('panels.structureResolveMove') || 'Move here'}</button>
+			</div>
+		</div>
+	{:else}
+		<button class="toc-row" class:toc-row-current={r.isCurrent} dir="auto" style="padding-inline-start: {r.depth * 14 + 8}px"
+			onclick={(e) => open(r.path, e)}>
+			<span class="toc-bullet"></span>
+			<!-- No native `title` (it doubled with — and bled past — the marker tooltips). Show the
+			     full name in the clamped tooltip ONLY when the name is actually truncated. -->
+			<span class="toc-name"
+				onmouseenter={(e) => { const el = e.currentTarget as HTMLElement; if (el && el.scrollWidth > el.clientWidth) showTip(e, r.name); }}
+				onmouseleave={hideTip}>{r.name}</span>
+			{#if r.truncated}
+				<span class="toc-loop" role="img"
+					aria-label={$t('panels.structureLoop') || 'A loop was detected; the outline stops here.'}
+					onmouseenter={(e) => showTip(e, $t('panels.structureLoop') || 'A loop was detected; the outline stops here.')}
+					onmouseleave={hideTip}>↻</span>
+			{/if}
+		</button>
+	{/if}
 {/snippet}
 
 <div class="toc-panel" dir={$uiDir}>
@@ -166,7 +218,7 @@
 			<div class="toc-empty">{$t('panels.structureEmpty') || 'No structural children. Add a parent: or contains: link in the note frontmatter.'}</div>
 		{:else if rows.length > VTHRESH}
 			<div class="toc-vlist">
-				<VirtualList items={rows} getItemHeight={() => ROW_H} overscan={10}>
+				<VirtualList items={rows} getItemHeight={(item) => ((item as Row).contested ? ROW_H * 2 : ROW_H)} overscan={10}>
 					{#snippet row(r, _i)}{@render outlineRow(r as Row)}{/snippet}
 				</VirtualList>
 			</div>
@@ -246,6 +298,22 @@
 		color: #d97706; font-size: calc(0.64rem * var(--rs-scale, 1));
 		font-weight: 600; text-transform: none; letter-spacing: 0;
 	}
+	/* Contested row is a two-line div (name + ⚠, then the resolve bar) — see the snippet. */
+	.toc-row-contested { display: flex; flex-direction: column; gap: 2px; padding: 3px 8px; }
+	.toc-contested-main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+	.toc-name-btn {
+		background: none; border: none; cursor: pointer; font-family: inherit; padding: 0;
+		text-align: start; min-width: 0;
+	}
+	.toc-resolve-bar { display: flex; gap: 6px; padding-inline-start: 11px; flex-wrap: wrap; }
+	.toc-resolve {
+		background: none; cursor: pointer; font-family: inherit; white-space: nowrap;
+		font-size: calc(0.64rem * var(--rs-scale, 1)); padding: 1px 8px; border-radius: 4px;
+		border: 1px solid var(--border); color: var(--text-muted);
+	}
+	.toc-resolve:hover { border-color: #14B8A6; color: #14B8A6; background: color-mix(in srgb, #14B8A6 8%, transparent); }
+	.toc-resolve-move:hover { border-color: #d97706; color: #d97706; background: color-mix(in srgb, #d97706 8%, transparent); }
+	.toc-resolve:disabled { opacity: 0.5; cursor: default; }
 	/* The clamped tooltip — position:fixed escapes the sidebar's overflow; x is clamped
 	   in showTip() so it never bleeds off-screen (the native-title bug it replaces). */
 	.toc-tip {

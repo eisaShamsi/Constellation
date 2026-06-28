@@ -903,6 +903,8 @@
     "structureWholeWork": "Œuvre entière",
     "structureFocusNote": "Cette note",
     "structureContested": "Contesté",
+    "structureResolveKeep": "Garder",
+    "structureResolveMove": "Déplacer ici",
     "outgoingLinks": "Liens sortants",
     "outgoingLinksHeader": "Liens sortants",
     "suggestedConnections": "Connexions suggérées",
