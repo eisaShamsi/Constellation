@@ -25,7 +25,7 @@
 	import { resolveSkyPalette, hexColorToInt } from '$lib/graph/skyPalette';
 	import { appSettings, liveStyleDraft, libraryStats } from '$lib/libraries/store';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
-	import { linkTypesStore, getLinkTypes, linkTypeColor } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypesStore, getLinkTypes, cognitiveLinkTypes, linkTypeColor } from '$lib/libraries/linkTypeRegistry';
 	// MIG-044 Phase 2 (correction #3) — NSC summary headline in the
 	// main full-window Sky View's hover tooltip. Earlier corrections
 	// wired LocalSkyView (the embedded panel) — but the full-window
@@ -332,7 +332,11 @@
 	const typedLinksMap = $derived.by(() => {
 		void $linkTypesStore; // dependency: re-resolve when the registry changes
 		const m: Record<string, number> = {};
-		for (const tdef of getLinkTypes()) {
+		// PJ-065 Phase-4 hardening: the Sky/Graph palette is a COGNITIVE surface — structural
+		// edges never enter sky_links, so use cognitiveLinkTypes() (not the full getLinkTypes())
+		// so this enumeration matches the surface's contract and can't regress alongside a future
+		// sky_links contamination. (Benign today — the extra teal entries were simply never read.)
+		for (const tdef of cognitiveLinkTypes()) {
 			const n = hexColorToInt(linkTypeColor(tdef.id));
 			if (n !== null) m[tdef.id] = n;
 		}

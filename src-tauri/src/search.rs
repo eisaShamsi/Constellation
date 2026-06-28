@@ -4634,14 +4634,52 @@ cid_cn: 20260414T092241Z_NOTE_B85A\n\
 
 /// Extract outgoing wikilinks from note content.
 /// Applies Arabic normalization for consistent matching with title-based names.
+/// Byte length of the leading YAML (`---`-fenced) frontmatter block, else 0.
+/// Bounds the PJ-065 structural-link guard to the frontmatter region (parse_frontmatter
+/// returns an OWNED body, so the strata.rs pointer-arithmetic fm_len isn't available here).
+fn frontmatter_byte_len(content: &str) -> usize {
+    let mut lines = content.split_inclusive('\n');
+    let Some(first) = lines.next() else { return 0 };
+    if first.trim_end() != "---" {
+        return 0;
+    }
+    let mut consumed = first.len();
+    for l in lines {
+        consumed += l.len();
+        let t = l.trim_end();
+        if t == "---" || t == "..." {
+            return consumed; // byte just past the closing delimiter line = body start
+        }
+    }
+    0 // unterminated frontmatter ⇒ treat as none
+}
+
 fn extract_wikilinks(content: &str) -> Vec<String> {
     use std::sync::OnceLock;
     static RE: OnceLock<regex::Regex> = OnceLock::new();
     let re = RE.get_or_init(|| regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap());
+    // PJ-065 Phase-4 drift fix: a wikilink declared under a structural frontmatter key
+    // (parent:/contains:) is NOT a cognitive outgoing link — exclude it from
+    // outgoing_links_json (the LL-023 guard strata.rs/inspector360.rs already apply; this
+    // was the missed site). Byte-offset guard: skip ONLY the frontmatter occurrence, so a
+    // body link to the same note is still counted. Empty set ⇒ no-op (no structural type).
+    let fm_len = frontmatter_byte_len(content);
+    let struct_fm = if fm_len > 0 {
+        crate::link_types::structural_frontmatter_targets(&content[..fm_len])
+    } else {
+        std::collections::HashSet::new()
+    };
     let mut links = Vec::new();
     for cap in re.captures_iter(content) {
         if let Some(m) = cap.get(1) {
-            let target = normalize_arabic_for_search(&m.as_str().trim().to_lowercase());
+            let raw = m.as_str().trim().to_lowercase();
+            if !struct_fm.is_empty()
+                && cap.get(0).map_or(false, |g| g.start() < fm_len)
+                && struct_fm.contains(&raw)
+            {
+                continue; // structural-keyed frontmatter wikilink — not a cognitive link
+            }
+            let target = normalize_arabic_for_search(&raw);
             if !target.is_empty() && !links.contains(&target) {
                 links.push(target);
             }
@@ -6588,6 +6626,15 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         for tl in typed_links {
             let target_lower = tl.target.to_lowercase();
             let link_type_lower = tl.link_type.to_lowercase();
+            // PJ-065 Phase-4 hardening: the structural lane (parent/contains) is not a
+            // cognitive typed-link search dimension. The frontend grammar only emits
+            // cognitive types, but enforce it backend-side too (defense on both sides) —
+            // a structural typed-link filter matches nothing rather than relying solely
+            // on the frontend never sending one.
+            if crate::link_types::is_structural_type(&link_type_lower) {
+                conditions.push("1 = 0".to_string());
+                continue;
+            }
             // Query note_links table for matching typed links
             let mut source_paths: Vec<String> = Vec::new();
             if let Ok(mut stmt) = conn.prepare(
@@ -11448,6 +11495,27 @@ mod tests_pj065_index_emission {
         )
         .unwrap();
         conn
+    }
+
+    #[test]
+    fn extract_wikilinks_excludes_structural_frontmatter_keys() {
+        // PJ-065 Phase-4 drift fix: structural-keyed frontmatter wikilinks (parent:/contains:)
+        // must NOT enter outgoing_links_json, but a BODY link to the same note is still counted.
+        // (cell() seeds the structural lane via seeds_only(), so the guard is live here.)
+        assert!(crate::link_types::is_structural_type("parent"));
+
+        let content = "---\ntitle: Chapter Two\nparent: \"[[Part I]]\"\nsupports: \"[[Idea A]]\"\n---\n\nIt supports [[Idea B]] and mentions [[Part I]] in prose.";
+        let links = super::extract_wikilinks(content);
+        assert!(links.contains(&"part i".to_string()), "BODY [[Part I]] kept (only the frontmatter one is skipped)");
+        assert!(links.contains(&"idea a".to_string()), "COGNITIVE frontmatter link (supports:) kept");
+        assert!(links.contains(&"idea b".to_string()), "body link kept");
+
+        // A structural-ONLY target (contains:, never in body) is fully excluded.
+        let content2 = "---\ntitle: Part I\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n---\n\nBody with no wikilinks.";
+        let links2 = super::extract_wikilinks(content2);
+        assert!(!links2.contains(&"chapter one".to_string()), "structural-only contains: target excluded from outgoing_links_json");
+        assert!(!links2.contains(&"chapter two".to_string()), "structural-only contains: target excluded");
+        assert!(links2.is_empty(), "a purely-structural note has zero cognitive outgoing links");
     }
 
     #[test]

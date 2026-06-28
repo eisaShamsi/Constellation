@@ -274,13 +274,22 @@ fn process_batch(
             }
         }
 
+        // PJ-065 Phase-4 audit (P1 leak): the live sky triggers exclude the structural
+        // lane (sx_new), but this one-shot backfill did NOT — so a schema-version bump
+        // (or an unfinished backfill) re-running over a universe that already has
+        // parent/contains edges would copy them into sky_links and inflate Sky-View node
+        // counts. Append the same registry exclusion the triggers use. Empty string when
+        // no structural type exists ⇒ byte-identical to before the lane registered.
+        let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
         tx.execute(
-            "INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
-             SELECT source_path, target_name, link_type, COALESCE(weight, 1.0)
-             FROM note_links
-             WHERE status = 'active'
-               AND source_path > ?1
-               AND source_path <= ?2",
+            &format!(
+                "INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
+                 SELECT source_path, target_name, link_type, COALESCE(weight, 1.0)
+                 FROM note_links
+                 WHERE status = 'active'{sx}
+                   AND source_path > ?1
+                   AND source_path <= ?2"
+            ),
             params![after_path, last_path.clone()],
         )
         .map_err(|e| format!("ins links: {}", e))?;
