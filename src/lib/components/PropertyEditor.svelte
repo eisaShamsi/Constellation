@@ -528,9 +528,9 @@
 		editableProps = editableProps.map((p, i) =>
 			i === idx ? { ...p, key: newKey } : p
 		);
-		// PJ-065 — a structural link key authors as a link property: 'parent' → 'link'
-		// (scalar [[ ]], auto-wrap on input), 'contains' → 'list' (each item auto-[[ ]]).
-		// setType handles the value conversion + auto-wrap + persists; it also debouncedSaves.
+		// PJ-065 — both 'parent' and 'contains' author as a 'list' property (chips), each item
+		// auto-wrapped to [[ ]]. 'list' (not 'link') is deliberate: the link-input oninput
+		// double-wrapped into [[[triple]]]. setType converts the value + persists + debouncedSaves.
 		const targetType = structuralKeyType(newKey);
 		if (targetType && editableProps[idx].type !== targetType) {
 			setType(idx, targetType);

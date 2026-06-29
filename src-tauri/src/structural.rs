@@ -189,7 +189,7 @@ fn descendants_rec(
             continue;
         }
         let key = k.path.to_lowercase();
-        if !visited.insert(key) {
+        if !visited.insert(key.clone()) {
             // Already on the current path → a cycle. Show the node, do not re-expand.
             out.push(StructuralOutlineNode {
                 path: k.path,
@@ -206,7 +206,7 @@ fn descendants_rec(
         // Backtrack: allow the same note to appear under a different branch (a DAG
         // reachable by two routes is still acyclic), while a true cycle on the active
         // path stays cut above.
-        visited.remove(&k.path.to_lowercase());
+        visited.remove(&key);
         out.push(StructuralOutlineNode {
             path: k.path,
             name: k.name,
