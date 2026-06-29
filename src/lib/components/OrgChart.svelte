@@ -779,6 +779,8 @@
 				actions.delete = fire('delete');
 			}
 		}
+		// MIG-077 §F — "Style…" → the OrgChart category (routed via onNodeMenuAction).
+		actions.style = fire('style');
 		return buildContextMenu(target, actions);
 	}
 

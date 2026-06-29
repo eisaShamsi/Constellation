@@ -1,18 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-
-	// MIG-077 A0 — Tier-1 additive extension: `separator` renders a divider (no
-	// label/action); `disabled` renders a greyed, non-interactive row. label and
-	// action are optional so a separator can be just `{ separator: true }`;
-	// existing action items still pass both, unchanged.
-	interface MenuItem {
-		label?: string;
-		icon?: string;
-		action?: () => void;
-		danger?: boolean;
-		disabled?: boolean;
-		separator?: boolean;
-	}
+	import { dir, isRTL } from '$lib/i18n';
+	// MenuItem (separator / disabled / submenu) is the canonical shape from the
+	// shared builder — import it so the renderer and the builder never drift.
+	// (MIG-077 A0 separator/disabled; §F-sub adds the one-level `submenu` fly-out.)
+	import { type MenuItem } from './contextMenuBuilder';
 
 	let {
 		x,
@@ -27,6 +19,8 @@
 	} = $props();
 
 	let menuEl: HTMLDivElement;
+	// Which item's fly-out is open (index into `items`), or null.
+	let openSubIdx = $state<number | null>(null);
 
 	onMount(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -52,15 +46,57 @@
 		};
 	});
 
-	// Adjust position so menu doesn't overflow viewport
-	const adjustedX = $derived(Math.min(x, window.innerWidth - 180));
+	// Adjust position so the menu doesn't overflow the viewport. MIG-077 RTL: in an
+	// RTL UI the menu opens toward the start side (right edge anchored at the
+	// cursor), mirroring GraphMind / EditorContextMenu; LTR is unchanged.
+	const MENU_W = 180;
+	const adjustedX = $derived(Math.min(x, window.innerWidth - MENU_W));
+	const rtlRight = $derived(Math.min(window.innerWidth - x, window.innerWidth - MENU_W));
 	const adjustedY = $derived(Math.min(y, window.innerHeight - items.length * 32 - 16));
 </script>
 
-<div class="ctx-menu" bind:this={menuEl} style="left: {adjustedX}px; top: {adjustedY}px;">
-	{#each items as item}
+<div
+	class="ctx-menu"
+	bind:this={menuEl}
+	dir={$dir}
+	style="{$isRTL ? `right: ${rtlRight}px` : `left: ${adjustedX}px`}; top: {adjustedY}px;"
+>
+	{#each items as item, i}
 		{#if item.separator}
 			<div class="ctx-separator"></div>
+		{:else if item.submenu && item.submenu.length}
+			<!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events -->
+			<div class="ctx-sub-wrap" onmouseenter={() => (openSubIdx = i)} onmouseleave={() => { if (openSubIdx === i) openSubIdx = null; }}>
+				<button
+					class="ctx-item ctx-has-sub"
+					class:danger={item.danger}
+					disabled={item.disabled}
+					onclick={() => (openSubIdx = openSubIdx === i ? null : i)}
+				>
+					{#if item.icon}<span class="ctx-icon">{item.icon}</span>{/if}
+					<span class="ctx-label">{item.label}</span>
+					<span class="ctx-chevron">{$isRTL ? '‹' : '›'}</span>
+				</button>
+				{#if openSubIdx === i}
+					<div class="ctx-submenu">
+						{#each item.submenu as sub}
+							{#if sub.separator}
+								<div class="ctx-separator"></div>
+							{:else}
+								<button
+									class="ctx-item"
+									class:danger={sub.danger}
+									disabled={sub.disabled}
+									onclick={() => { sub.action?.(); onClose(); }}
+								>
+									{#if sub.icon}<span class="ctx-icon">{sub.icon}</span>{/if}
+									<span class="ctx-label">{sub.label}</span>
+								</button>
+							{/if}
+						{/each}
+					</div>
+				{/if}
+			</div>
 		{:else}
 			<button
 				class="ctx-item"
@@ -69,7 +105,7 @@
 				onclick={() => { item.action?.(); onClose(); }}
 			>
 				{#if item.icon}<span class="ctx-icon">{item.icon}</span>{/if}
-				<span>{item.label}</span>
+				<span class="ctx-label">{item.label}</span>
 			</button>
 		{/if}
 	{/each}
@@ -118,17 +154,39 @@
 		text-align: center;
 		flex-shrink: 0;
 	}
-		/* MIG-077 A0 — separator + disabled */
-		.ctx-separator {
-			height: 1px;
-			margin: 4px 6px;
-			background: var(--background-modifier-border);
-		}
-		.ctx-item:disabled {
-			opacity: 0.4;
-			cursor: default;
-		}
-		.ctx-item:disabled:hover {
-			background: none;
-		}
+	/* MIG-077 §F-sub — submenu fly-out. The wrapper anchors the absolute child;
+	   `inset-inline-start: 100%` opens toward the reading direction (auto-flips in
+	   RTL because the menu carries dir). The chevron + label fill the row. */
+	.ctx-label { flex: 1; min-width: 0; }
+	.ctx-chevron { flex-shrink: 0; opacity: 0.6; font-size: 0.9rem; }
+	.ctx-has-sub:hover, .ctx-sub-wrap:hover > .ctx-has-sub { background: var(--background-modifier-hover); }
+	.ctx-sub-wrap { position: relative; display: flex; }
+	.ctx-sub-wrap > .ctx-item { width: 100%; }
+	.ctx-submenu {
+		position: absolute;
+		inset-block-start: -4px;
+		inset-inline-start: 100%;
+		min-width: 180px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		box-shadow: var(--shadow-l);
+		padding: 4px;
+		display: flex;
+		flex-direction: column;
+		z-index: 1001;
+	}
+	/* MIG-077 A0 — separator + disabled */
+	.ctx-separator {
+		height: 1px;
+		margin: 4px 6px;
+		background: var(--background-modifier-border);
+	}
+	.ctx-item:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
+	.ctx-item:disabled:hover {
+		background: none;
+	}
 </style>

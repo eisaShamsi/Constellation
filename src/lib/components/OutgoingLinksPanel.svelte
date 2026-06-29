@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
+	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, type LinkConfidence } from '$lib/libraries/store';
 	import { t, tIn, dir as uiDir } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import VirtualList from './VirtualList.svelte';
+	import ConfidencePicker from './ConfidencePicker.svelte';
 	import { get } from 'svelte/store';
 	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
@@ -153,31 +154,13 @@
 		})();
 	});
 
-	// Confidence popover — mirrors BacklinksPanel.
+	// Confidence popover state — opened via right-click on an outgoing-link row;
+	// the popover UI + IPC live in the shared <ConfidencePicker> (MIG-077 A4).
 	let confMenu = $state<{ x: number; y: number; sourcePath: string; targetName: string; current: LinkConfidence } | null>(null);
-	const CONFIDENCE_LEVELS: LinkConfidence[] = ['hypothesis', 'evidence', 'established', 'contested'];
 	function openConfMenu(e: MouseEvent, sourcePath: string, targetName: string, current: LinkConfidence) {
 		e.preventDefault();
 		e.stopPropagation();
 		confMenu = { x: e.clientX, y: e.clientY, sourcePath, targetName, current };
-	}
-	async function applyConf(level: LinkConfidence) {
-		if (!confMenu) return;
-		const { sourcePath, targetName } = confMenu;
-		confMenu = null;
-		try {
-			await setLinkConfidence(sourcePath, targetName, level);
-			onConfidenceChange?.(sourcePath, targetName, level);
-		} catch { /* ignore */ }
-	}
-	async function applyArchive() {
-		if (!confMenu) return;
-		const { sourcePath, targetName } = confMenu;
-		confMenu = null;
-		try {
-			await archiveLink(sourcePath, targetName);
-			onArchive?.(sourcePath, targetName);
-		} catch { /* ignore */ }
 	}
 
 	function getLibraryColor(name: string): string {
@@ -251,24 +234,7 @@
 	{/if}
 </div>
 
-{#if confMenu}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="conf-overlay" onclick={() => confMenu = null} oncontextmenu={(e) => { e.preventDefault(); confMenu = null; }}></div>
-	<div class="conf-menu" style="left:{confMenu.x}px;top:{confMenu.y}px">
-		<div class="conf-menu-header">{$t('linkConfidence.setConfidence') || 'Set confidence'}</div>
-		{#each CONFIDENCE_LEVELS as level}
-			<button class="conf-menu-item" class:active={level === confMenu.current} onclick={() => applyConf(level)}>
-				<span class="conf-dot conf-dot-{level}"></span>
-				{$t(`linkConfidence.${level}`) || level}
-			</button>
-		{/each}
-		<div class="conf-menu-sep"></div>
-		<button class="conf-menu-item conf-menu-archive" onclick={applyArchive}>
-			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
-			{$t('linkConfidence.archive') || 'Archive link'}
-		</button>
-	</div>
-{/if}
+<ConfidencePicker menu={confMenu} {onConfidenceChange} {onArchive} onClose={() => confMenu = null} />
 
 <style>
 	.outgoing-panel { font-size: calc(0.8rem * var(--rs-scale, 1)); }
@@ -349,37 +315,4 @@
 		color: #d97706;
 	}
 
-	.conf-overlay { position: fixed; inset: 0; z-index: 99; background: transparent; }
-	.conf-menu {
-		position: fixed; z-index: 100;
-		background: var(--bg-secondary, #fff);
-		border: 1px solid var(--border); border-radius: 6px;
-		box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-		padding: 4px; min-width: 160px;
-		font-size: calc(0.78rem * var(--rs-scale, 1));
-	}
-	.conf-menu-header {
-		padding: 6px 8px 4px; color: var(--text-muted); font-size: calc(0.68rem * var(--rs-scale, 1));
-		text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
-	}
-	.conf-menu-item {
-		display: flex; align-items: center; gap: 8px;
-		width: 100%; padding: 6px 8px; border: none; background: none;
-		cursor: pointer; border-radius: 4px; text-align: start;
-		color: var(--text-normal); font-family: inherit; font-size: calc(0.78rem * var(--rs-scale, 1));
-	}
-	.conf-menu-item:hover { background: var(--background-modifier-hover); }
-	.conf-menu-item.active { font-weight: 600; color: var(--interactive-accent); }
-	.conf-dot {
-		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-		border: 1px solid var(--border);
-	}
-	.conf-dot-hypothesis { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); }
-	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
-	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
-	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
-	.conf-menu-sep { height: 1px; margin: 4px 4px; background: var(--border-light, var(--border)); }
-	.conf-menu-archive { color: var(--text-muted); }
-	.conf-menu-archive:hover { color: #d97706; }
-	.conf-menu-archive svg { flex-shrink: 0; }
 </style>

@@ -30,6 +30,8 @@ export interface MenuItem {
 	danger?: boolean;
 	disabled?: boolean;
 	separator?: boolean;
+	/** MIG-077 §F-sub — a fly-out submenu (e.g. Copy path ▸). One level deep. */
+	submenu?: MenuItem[];
 }
 
 export type NodeKind = 'note' | 'folder' | 'library';
@@ -42,6 +44,8 @@ export interface ContextTarget {
 	isMarkdown?: boolean;
 	/** Tree surfaces: choose the Expand vs Collapse label. */
 	expanded?: boolean;
+	/** Notes/folders/libraries: toggle the Bookmark vs Remove-bookmark label. */
+	bookmarked?: boolean;
 }
 
 /**
@@ -63,6 +67,16 @@ export interface ContextActions {
 	newFolder?: (target: ContextTarget) => void;
 	newBase?: (target: ContextTarget) => void;
 	toggleExpand?: (target: ContextTarget) => void;
+	// MIG-077 §F — richer items (all reuse existing ops):
+	bookmark?: (target: ContextTarget) => void;
+	/** Copy the path relative to the Library root. Pairs with `copyPath` (absolute)
+	 *  → the builder emits a "Copy path ▸" submenu when BOTH are provided. */
+	copyPathRelative?: (target: ContextTarget) => void;
+	openInDefaultApp?: (target: ContextTarget) => void;
+	showInExplorer?: (target: ContextTarget) => void;
+	/** "Style…" — open the Style Setter focused on THIS surface's category
+	 *  (the consumer passes the category via openStyleSetterToCategory). */
+	style?: (target: ContextTarget) => void;
 }
 
 /** Flatten groups, inserting a separator only between non-empty groups. */
@@ -76,32 +90,69 @@ function joinGroups(groups: MenuItem[][]): MenuItem[] {
 	return out;
 }
 
+/** Copy path as a flat item, or a "Copy path ▸" fly-out (from Library folder /
+ *  from system root) when BOTH the relative + absolute callbacks are wired. */
+function copyPathItem($t: (k: string) => string, target: ContextTarget, a: ContextActions): MenuItem | null {
+	if (a.copyPath && a.copyPathRelative) {
+		return {
+			label: $t('contextMenu.copyPath'), icon: '📋',
+			submenu: [
+				{ label: $t('contextMenu.fromLibraryFolder'), icon: '📁', action: () => a.copyPathRelative!(target) },
+				{ label: $t('contextMenu.fromSystemRoot'), icon: '🖥️', action: () => a.copyPath!(target) },
+			],
+		};
+	}
+	if (a.copyPath) return { label: $t('contextMenu.copyPath'), icon: '📋', action: () => a.copyPath!(target) };
+	return null;
+}
+
+/** Bookmark vs Remove-bookmark, label chosen from target.bookmarked. */
+function bookmarkItem($t: (k: string) => string, target: ContextTarget, a: ContextActions): MenuItem | null {
+	if (!a.bookmark) return null;
+	return { label: target.bookmarked ? $t('contextMenu.removeBookmark') : $t('contextMenu.bookmark'), icon: '🔖', action: () => a.bookmark!(target) };
+}
+
 export function buildContextMenu(target: ContextTarget, a: ContextActions): MenuItem[] {
 	const $t = get(t);
 
 	if (target.kind === 'note') {
+		// Group order follows Obsidian's Note menu (MIG-077 §F): open · organize ·
+		// copy/reveal · system · diagnostic · rename/delete. Each item is emitted
+		// only when its callback is wired (contextual).
 		const openGroup: MenuItem[] = [];
 		if (a.open) openGroup.push({ label: $t('contextMenu.open'), icon: '📂', action: () => a.open!(target) });
 		if (a.openInNewTab) openGroup.push({ label: $t('contextMenu.openInNewTab'), icon: '📑', action: () => a.openInNewTab!(target) });
 
-		const editGroup: MenuItem[] = [];
-		if (a.rename) editGroup.push({ label: $t('actions.rename'), icon: '✏️', action: () => a.rename!(target) });
-		if (a.move) editGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
-		if (a.addTag) editGroup.push({ label: $t('contextMenu.addTag'), icon: '🏷️', action: () => a.addTag!(target) });
+		const orgGroup: MenuItem[] = [];
+		if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
+		const bm = bookmarkItem($t, target, a);
+		if (bm) orgGroup.push(bm);
+		if (a.addTag) orgGroup.push({ label: $t('contextMenu.addTag'), icon: '🏷️', action: () => a.addTag!(target) });
 
-		const utilGroup: MenuItem[] = [];
-		if (a.copyPath) utilGroup.push({ label: $t('contextMenu.copyPath'), icon: '📋', action: () => a.copyPath!(target) });
-		if (a.copyName) utilGroup.push({ label: $t('contextMenu.copyName'), icon: '📋', action: () => a.copyName!(target) });
-		if (a.revealInTree) utilGroup.push({ label: $t('contextMenu.revealInTree'), icon: '🎯', action: () => a.revealInTree!(target) });
-		if (a.suggestSources && target.isMarkdown) utilGroup.push({ label: $t('sources.contextMenu.suggest'), icon: '✨', action: () => a.suggestSources!(target) });
+		const pathGroup: MenuItem[] = [];
+		const cp = copyPathItem($t, target, a);
+		if (cp) pathGroup.push(cp);
+		if (a.copyName) pathGroup.push({ label: $t('contextMenu.copyName'), icon: '🏷', action: () => a.copyName!(target) });
+		if (a.revealInTree) pathGroup.push({ label: $t('contextMenu.revealInTree'), icon: '🎯', action: () => a.revealInTree!(target) });
 
-		const dangerGroup: MenuItem[] = [];
-		if (a.delete) dangerGroup.push({ label: $t('actions.delete'), icon: '🗑️', action: () => a.delete!(target), danger: true });
+		const sysGroup: MenuItem[] = [];
+		if (a.openInDefaultApp) sysGroup.push({ label: $t('contextMenu.openDefaultApp'), icon: '↗', action: () => a.openInDefaultApp!(target) });
+		if (a.showInExplorer) sysGroup.push({ label: $t('contextMenu.showInExplorer'), icon: '🗂️', action: () => a.showInExplorer!(target) });
 
-		return joinGroups([openGroup, editGroup, utilGroup, dangerGroup]);
+		const diagGroup: MenuItem[] = [];
+		if (a.suggestSources && target.isMarkdown) diagGroup.push({ label: $t('sources.contextMenu.suggest'), icon: '✨', action: () => a.suggestSources!(target) });
+
+		const styleGroup: MenuItem[] = [];
+		if (a.style) styleGroup.push({ label: $t('contextMenu.style'), icon: '🎨', action: () => a.style!(target) });
+
+		const finalGroup: MenuItem[] = [];
+		if (a.rename) finalGroup.push({ label: $t('actions.rename'), icon: '✏️', action: () => a.rename!(target) });
+		if (a.delete) finalGroup.push({ label: $t('actions.delete'), icon: '🗑️', action: () => a.delete!(target), danger: true });
+
+		return joinGroups([openGroup, orgGroup, pathGroup, sysGroup, diagGroup, styleGroup, finalGroup]);
 	}
 
-	// folder or library
+	// folder or library — Obsidian order: create · expand · organize · copy/system · rename/delete.
 	const createGroup: MenuItem[] = [];
 	if (a.newNote) createGroup.push({ label: $t('actions.newNote'), icon: '📄', action: () => a.newNote!(target) });
 	if (a.newFolder) createGroup.push({ label: $t('actions.newFolder'), icon: '📁', action: () => a.newFolder!(target) });
@@ -113,12 +164,22 @@ export function buildContextMenu(target: ContextTarget, a: ContextActions): Menu
 	// rename/move are passed only for folders (callers omit them for libraries,
 	// matching the existing isLibraryRoot behaviour — library management lives in
 	// the Library Manager).
-	const editGroup: MenuItem[] = [];
-	if (a.rename) editGroup.push({ label: $t('actions.rename'), icon: '✏️', action: () => a.rename!(target) });
-	if (a.move) editGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
+	const orgGroup: MenuItem[] = [];
+	if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
+	const bmf = bookmarkItem($t, target, a);
+	if (bmf) orgGroup.push(bmf);
 
-	const dangerGroup: MenuItem[] = [];
-	if (a.delete) dangerGroup.push({ label: $t('actions.delete'), icon: '🗑️', action: () => a.delete!(target), danger: true });
+	const pathGroup: MenuItem[] = [];
+	const cpf = copyPathItem($t, target, a);
+	if (cpf) pathGroup.push(cpf);
+	if (a.showInExplorer) pathGroup.push({ label: $t('contextMenu.showInExplorer'), icon: '🗂️', action: () => a.showInExplorer!(target) });
 
-	return joinGroups([createGroup, expandGroup, editGroup, dangerGroup]);
+	const styleGroup: MenuItem[] = [];
+	if (a.style) styleGroup.push({ label: $t('contextMenu.style'), icon: '🎨', action: () => a.style!(target) });
+
+	const finalGroup: MenuItem[] = [];
+	if (a.rename) finalGroup.push({ label: $t('actions.rename'), icon: '✏️', action: () => a.rename!(target) });
+	if (a.delete) finalGroup.push({ label: $t('actions.delete'), icon: '🗑️', action: () => a.delete!(target), danger: true });
+
+	return joinGroups([createGroup, expandGroup, orgGroup, pathGroup, styleGroup, finalGroup]);
 }

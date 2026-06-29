@@ -43,6 +43,7 @@
 	class:selected
 	class:focused
 	dir="auto"
+	data-path={note.path}
 	onclick={() => onClick?.(note)}
 	ondblclick={() => onDoubleClick?.(note)}
 >

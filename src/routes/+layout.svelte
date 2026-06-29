@@ -120,7 +120,7 @@
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import StyleSetter from '$lib/components/StyleSetter.svelte';
-	import { openStyleSetterInspect } from '$lib/stores/styleSetter'; // MIG-070 §C item D — dock inspect shortcut
+	import { openStyleSetterInspect, openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-070 §C item D — dock inspect shortcut; MIG-077 §F — RC "Style…" deep-link
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
 	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
@@ -298,6 +298,9 @@
 			{ separator: true },
 			{ label: $t('tabContextMenu.copyPath'), action: () => tabCtxAction('copyPath') },
 			{ label: $t('tabContextMenu.copyName'), action: () => tabCtxAction('copyName') },
+			{ separator: true },
+			// MIG-077 §F — style the tab bar (cTabs lives in the Components category).
+			{ label: $t('contextMenu.style'), icon: '🎨', action: () => openStyleSetterToCategory('components') },
 		];
 	}
 	// searchMode removed — Search Hub is the single search experience
@@ -4907,6 +4910,11 @@
 
 	// ─── Context menu state ───
 	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string; isLibraryRoot?: boolean } | null>(null);
+	// MIG-077 B1 — List-mode note right-click. Reuses the shared builder + ContextMenu
+	// render, but with its own state: the file-tree menu is FileEntry-based and omits
+	// Reveal-in-tree (it IS the tree); the List-mode note is NoteWithMeta-based and
+	// ADDS Reveal-in-tree (jump from the flat list to the tree location).
+	let listCtxMenu = $state<{ x: number; y: number; items: ReturnType<typeof buildContextMenu> } | null>(null);
 	let confirmDelete = $state<{ path: string; name: string } | null>(null);
 	// MIG-077 A3-R — rename driven from a full-page surface (OrgChart etc.) where
 	// there is no inline tree row; hands the new name to handleRenameComplete.
@@ -5020,6 +5028,22 @@
 		};
 	}
 
+	// MIG-077 §F — shared menu-action helpers (reuse existing ops; no reinvention).
+	function toggleBookmarkPath(type: 'note' | 'folder', path: string, name: string) {
+		if (isBookmarked(path)) {
+			const bm = get(bookmarks).find(b => b.path === path);
+			if (bm) removeBookmark(bm.id);
+		} else {
+			const lib = $libraryStats.find(l => path.startsWith(l.path));
+			addBookmark({ type, path, name, libraryName: lib?.name ?? '' });
+		}
+	}
+	function copyRelativePath(path: string) {
+		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const rel = lib ? path.slice(lib.path.length).replace(/^[\\/]+/, '') : path;
+		navigator.clipboard.writeText(rel).catch(() => {});
+	}
+
 	function getContextMenuItems(entry: FileEntry, libraryId: string, isLibraryRoot = false) {
 		// Workspace bases keep their simplified menu (just Delete).
 		if (libraryId === '__workspace__') {
@@ -5038,18 +5062,27 @@
 		const isMd = !entry.is_dir && entry.name.toLowerCase().endsWith('.md');
 		const kind: NodeKind = isLibraryRoot ? 'library' : entry.is_dir ? 'folder' : 'note';
 		const displayName = entry.is_dir ? entry.name : (entry.display_title || entry.name.replace(/\.(md|base)$/, ''));
-		const target: ContextTarget = { kind, path: entry.path, name: displayName, isMarkdown: isMd };
+		const target: ContextTarget = { kind, path: entry.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(entry.path) };
+		const showInExplorer = () => { invoke('constellation_show_in_folder', { path: entry.path }).catch(() => {}); };
 		const actions: ContextActions = {};
 		if (kind === 'library') {
 			actions.newNote = () => handleCreateNote(entry.path, libraryId);
 			actions.newFolder = () => handleCreateFolder(entry.path, libraryId);
 			actions.newBase = () => handleCreateBase(entry.path, libraryId);
+			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
+			actions.copyPathRelative = () => copyRelativePath(entry.path);
+			actions.showInExplorer = showInExplorer;
+			actions.bookmark = () => toggleBookmarkPath('folder', entry.path, entry.name);
 		} else if (kind === 'folder') {
 			actions.newNote = () => handleCreateNote(entry.path, libraryId);
 			actions.newFolder = () => handleCreateFolder(entry.path, libraryId);
 			actions.newBase = () => handleCreateBase(entry.path, libraryId);
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, entry.name);
+			actions.bookmark = () => toggleBookmarkPath('folder', entry.path, entry.name);
+			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
+			actions.copyPathRelative = () => copyRelativePath(entry.path);
+			actions.showInExplorer = showInExplorer;
 			actions.delete = () => { confirmDelete = { path: entry.path, name: entry.name }; };
 		} else {
 			actions.open = () => handleNoteClick(entry.path, displayName);
@@ -5059,13 +5092,50 @@
 			};
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, displayName);
+			actions.bookmark = () => toggleBookmarkPath('note', entry.path, displayName);
 			actions.addTag = () => { tagDialog = { path: entry.path, name: displayName }; };
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
+			actions.copyPathRelative = () => copyRelativePath(entry.path);
 			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
+			actions.openInDefaultApp = () => { invoke('open_path', { path: entry.path }).catch(() => {}); };
+			actions.showInExplorer = showInExplorer;
 			if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(entry.path);
 			actions.delete = () => { confirmDelete = { path: entry.path, name: entry.name }; };
 		}
+		// MIG-077 §F — "Style…" styles the surface in hand: the file tree / library /
+		// folder chrome all live in the Style Setter's "Interface" category.
+		actions.style = () => openStyleSetterToCategory('interface');
 		return buildContextMenu(target, actions);
+	}
+
+	// MIG-077 B1 — build + show the List-mode note menu. Reuses the same underlying
+	// handlers as the file tree / OrgChart surfaces (rename dialog, move dialog, safe
+	// add-tag dialog, delete confirm, reveal-in-tree, suggest sources) — nothing
+	// reinvented. Deliberately NOT routed through handleOrgNodeMenuAction, whose
+	// open/reveal cases carry OrgChart-only side-effects (showOrgChart /
+	// orgChartReturnPending) that would misfire from the always-present sidebar list.
+	function handleListNoteContextMenu(note: { path: string; name: string }, x: number, y: number) {
+		const displayName = note.name.replace(/\.(md|base)$/, '');
+		const isMd = note.name.toLowerCase().endsWith('.md');
+		const target: ContextTarget = { kind: 'note', path: note.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(note.path) };
+		const lib = $libraryStats.find((l) => note.path.startsWith(l.path));
+		const actions: ContextActions = {
+			open: () => handleNoteClick(note.path, displayName, undefined),
+			openInNewTab: () => { if (lib) openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
+			rename: () => { renameDialog = { path: note.path, name: displayName }; },
+			move: () => openMoveDialog(note.path, displayName),
+			bookmark: () => toggleBookmarkPath('note', note.path, displayName),
+			addTag: () => { tagDialog = { path: note.path, name: displayName }; },
+			copyPath: () => navigator.clipboard.writeText(note.path).catch(() => {}),
+			copyPathRelative: () => copyRelativePath(note.path),
+			copyName: () => navigator.clipboard.writeText(displayName).catch(() => {}),
+			revealInTree: () => revealInTree(note.path),
+			openInDefaultApp: () => { invoke('open_path', { path: note.path }).catch(() => {}); },
+			showInExplorer: () => { invoke('constellation_show_in_folder', { path: note.path }).catch(() => {}); },
+			delete: () => { confirmDelete = { path: note.path, name: note.name }; },
+		};
+		if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(note.path);
+		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
 	}
 
 	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
@@ -5136,6 +5206,9 @@
 				if (libId) handleCreateBase(path, libId);
 				break;
 			}
+			case 'style':
+				openStyleSetterToCategory('org');
+				break;
 		}
 	}
 
@@ -5972,6 +6045,11 @@
 						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
 						onFolderSelect={(path) => { skyViewSelectedPath = path; }}
 					/>
+					<!-- MIG-077 B1 PARKED (Boss 2026-06-29): the Notes Navigator RC is disabled
+					     (onNoteContextMenu intentionally NOT passed) because the Navigator is a
+					     separate data domain that doesn't refresh on delete/move/rename — a data
+					     hazard. handleListNoteContextMenu is kept ready to re-wire once the
+					     Navigator is reworked into a display over shared data. -->
 				{:else if sidebarMode === 'skyview'}
 					<OrgChart
 						{libraryColorMap}
@@ -7937,6 +8015,15 @@
 			y={contextMenu.y}
 			items={getContextMenuItems(contextMenu.entry, contextMenu.libraryId, contextMenu.isLibraryRoot)}
 			onClose={() => contextMenu = null}
+		/>
+	{/if}
+
+	{#if listCtxMenu}
+		<ContextMenu
+			x={listCtxMenu.x}
+			y={listCtxMenu.y}
+			items={listCtxMenu.items}
+			onClose={() => listCtxMenu = null}
 		/>
 	{/if}
 

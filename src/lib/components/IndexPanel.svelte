@@ -2,6 +2,7 @@
 	import { t, tn } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import ContextMenu from './ContextMenu.svelte';
+	import { openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-077 §F — RC "Style…"
 	import {
 		SNIPPET_MARK_START,
 		SNIPPET_MARK_END,
@@ -1018,6 +1019,9 @@
 			excludedTerms.has(lower)
 				? { label: $t('indexPanel.showTerm'), action: () => unhideTerm(lower) }
 				: { label: $t('indexPanel.hideTerm'), action: () => hideTerm(lower) },
+			{ separator: true },
+			// MIG-077 §F — style the Index surface.
+			{ label: $t('contextMenu.style'), icon: '🎨', action: () => openStyleSetterToCategory('index') },
 		];
 	}
 

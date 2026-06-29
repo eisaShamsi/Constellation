@@ -20,6 +20,7 @@
 		onNoteDoubleClick,
 		onNotePreview,
 		onFolderSelect,
+		onNoteContextMenu,
 	}: {
 		mode?: 'main' | 'second';
 		libraryColorMap?: Record<string, string>;
@@ -28,6 +29,8 @@
 		onNoteDoubleClick?: (path: string, name: string, libraryName: string) => void;
 		onNotePreview?: (path: string, name: string, libraryName: string) => void;
 		onFolderSelect?: (path: string | string[] | null) => void;
+		/** MIG-077 B1 — right-click on a List-mode note row (main mode only). */
+		onNoteContextMenu?: (note: NoteWithMeta, x: number, y: number) => void;
 	} = $props();
 
 	// Data
@@ -388,6 +391,7 @@
 					onNoteClick={handleNoteClick}
 					onNoteDoubleClick={handleNoteDoubleClick}
 					onSelectionChange={(s) => selectedPaths = s}
+					onNoteContextMenu={mode === 'main' ? onNoteContextMenu : undefined}
 				/>
 			</div>
 		</div>

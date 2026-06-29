@@ -11,6 +11,7 @@
 		onNoteClick,
 		onNoteDoubleClick,
 		onSelectionChange,
+		onNoteContextMenu,
 	}: {
 		files: NoteWithMeta[];
 		libraryColorMap?: Record<string, string>;
@@ -19,6 +20,7 @@
 		onNoteClick?: (note: NoteWithMeta) => void;
 		onNoteDoubleClick?: (note: NoteWithMeta) => void;
 		onSelectionChange?: (paths: Set<string>) => void;
+		onNoteContextMenu?: (note: NoteWithMeta, x: number, y: number) => void;
 	} = $props();
 
 	let filterText = $state('');
@@ -63,6 +65,26 @@
 			sortDir = field === 'name' ? 'asc' : 'desc';
 		}
 	}
+
+	// MIG-077 B1 — ONE delegated contextmenu listener on the scroll container
+	// (reads the row's data-path; no per-row listener — the list is un-virtualized,
+	// so per-row would mean N listeners at corpus scale). Falls through to the
+	// native menu when the right-click isn't on a note row.
+	function handleRowContextMenu(e: MouseEvent) {
+		// Parked (MIG-077 B1): no menu wired ⇒ fall through to the native menu, and
+		// NEVER preventDefault. The Notes Navigator is a separate data domain that
+		// doesn't refresh on mutation, so the rich RC stays OFF here until the
+		// Navigator is reworked into a display over shared data (Boss 2026-06-29).
+		if (!onNoteContextMenu) return;
+		const row = (e.target as HTMLElement | null)?.closest('[data-path]') as HTMLElement | null;
+		if (!row) return;
+		const path = row.getAttribute('data-path');
+		if (!path) return;
+		const note = filtered.find((n) => n.path === path);
+		if (!note) return;
+		e.preventDefault();
+		onNoteContextMenu?.(note, e.clientX, e.clientY);
+	}
 </script>
 
 <div class="nav-file-list">
@@ -87,7 +109,8 @@
 		</div>
 	</div>
 	<div class="nav-list-count">{filtered.length} notes</div>
-	<div class="nav-list-scroll">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="nav-list-scroll" oncontextmenu={handleRowContextMenu}>
 		{#each filtered as note, i (note.path)}
 			<NavFileItem
 				{note}
