@@ -3649,6 +3649,8 @@
       "tab_text": "نص التبويب",
       "tag": "الوسم",
       "tag_background": "خلفية الوسم",
+      "structured": "مُهيكل",
+      "match_category": "فئة المطابقة",
       "maturity": "نضوج",
       "confidence": "الثقة",
       "hypothesis": "فرضية",

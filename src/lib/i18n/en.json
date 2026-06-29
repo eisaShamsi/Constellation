@@ -3647,6 +3647,8 @@
       "tab_text": "Tab text",
       "tag": "Tag",
       "tag_background": "Tag background",
+      "structured": "Structured",
+      "match_category": "Match category",
       "maturity": "Maturity",
       "confidence": "Confidence",
       "hypothesis": "Hypothesis",

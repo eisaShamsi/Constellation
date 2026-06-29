@@ -501,12 +501,13 @@
 					/* Hide search panel — we only want the highlights, not the UI */
 					'.cm-search.cm-panel': { display: 'none' },
 					/* Multi-color search match highlights per type */
-					'.cm-hl-title': { backgroundColor: 'color-mix(in srgb, #3b82f6 25%, transparent)', outline: '1px solid #3b82f6', borderRadius: '2px' },
-					'.cm-hl-content': { backgroundColor: 'color-mix(in srgb, #16a34a 25%, transparent)', outline: '1px solid #16a34a', borderRadius: '2px' },
-					'.cm-hl-tag': { backgroundColor: 'color-mix(in srgb, #f472b6 25%, transparent)', outline: '1px solid #f472b6', borderRadius: '2px' },
-					'.cm-hl-property': { backgroundColor: 'color-mix(in srgb, #f59e0b 25%, transparent)', outline: '1px solid #f59e0b', borderRadius: '2px' },
-					'.cm-hl-wikilink': { backgroundColor: 'color-mix(in srgb, #60a5fa 25%, transparent)', outline: '1px solid #60a5fa', borderRadius: '2px' },
-					'.cm-hl-semantic': { backgroundColor: 'color-mix(in srgb, #7c3aed 25%, transparent)', outline: '1px solid #7c3aed', borderRadius: '2px' },
+					/* MIG-088 §2e — shared Match-category colours (Style Setter → Cognitive colours); fallback = today's value. */
+					'.cm-hl-title': { backgroundColor: 'color-mix(in srgb, var(--match-category-title, #3b82f6) 25%, transparent)', outline: '1px solid var(--match-category-title, #3b82f6)', borderRadius: '2px' },
+					'.cm-hl-content': { backgroundColor: 'color-mix(in srgb, var(--match-category-content, #16a34a) 25%, transparent)', outline: '1px solid var(--match-category-content, #16a34a)', borderRadius: '2px' },
+					'.cm-hl-tag': { backgroundColor: 'color-mix(in srgb, var(--match-category-tag, #f472b6) 25%, transparent)', outline: '1px solid var(--match-category-tag, #f472b6)', borderRadius: '2px' },
+					'.cm-hl-property': { backgroundColor: 'color-mix(in srgb, var(--match-category-property, #f59e0b) 25%, transparent)', outline: '1px solid var(--match-category-property, #f59e0b)', borderRadius: '2px' },
+					'.cm-hl-wikilink': { backgroundColor: 'color-mix(in srgb, var(--match-category-wikilink, #60a5fa) 25%, transparent)', outline: '1px solid var(--match-category-wikilink, #60a5fa)', borderRadius: '2px' },
+					'.cm-hl-semantic': { backgroundColor: 'color-mix(in srgb, var(--match-category-semantic, #7c3aed) 25%, transparent)', outline: '1px solid var(--match-category-semantic, #7c3aed)', borderRadius: '2px' },
 				}),
 			],
 		});

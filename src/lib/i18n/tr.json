@@ -3517,6 +3517,8 @@
       "tab_text": "Sekme metni",
       "tag": "Etiket",
       "tag_background": "Etiket arka planı",
+      "structured": "Yapılandırılmış",
+      "match_category": "Eşleşme kategorisi",
       "maturity": "Olgunluk",
       "confidence": "Güven",
       "hypothesis": "hipotez",

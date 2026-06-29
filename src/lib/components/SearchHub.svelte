@@ -81,10 +81,11 @@
 		} as Record<string, string>;
 	});
 
+	// MIG-088 §2e — shared Match-category colours (Style Setter → Cognitive colours); fallback = today's value.
 	const categoryColors: Record<string, string> = {
-		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed',
+		titles: 'var(--match-category-title, #3b82f6)', contents: 'var(--match-category-content, #16a34a)', tags: 'var(--match-category-tag, #f472b6)', properties: 'var(--match-category-property, #f59e0b)', wikilinks: 'var(--match-category-wikilink, #60a5fa)', semantic: 'var(--match-category-semantic, #7c3aed)',
 		// match_type values from advanced/structured search
-		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#ef4444'
+		title: 'var(--match-category-title, #3b82f6)', content: 'var(--match-category-content, #16a34a)', tag: 'var(--match-category-tag, #f472b6)', property: 'var(--match-category-property, #f59e0b)', wikilink: 'var(--match-category-wikilink, #60a5fa)', structured: 'var(--match-category-structured, #ef4444)'
 	};
 
 	const syntaxChips = $derived.by(() => {

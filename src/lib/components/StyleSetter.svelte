@@ -381,6 +381,14 @@
 			{ label: 'Maturity', type: 'color', var: '--stage-maturity' },
 			{ label: 'Dormancy', type: 'color', var: '--stage-dormancy' },
 			{ label: 'Archival', type: 'color', var: '--stage-archival' } ] },
+		cogMatch: { name: 'Match category', controls: [
+			{ label: 'Title', type: 'color', var: '--match-category-title' },
+			{ label: 'Content', type: 'color', var: '--match-category-content' },
+			{ label: 'Tag', type: 'color', var: '--match-category-tag' },
+			{ label: 'Wikilink', type: 'color', var: '--match-category-wikilink' },
+			{ label: 'Property', type: 'color', var: '--match-category-property' },
+			{ label: 'Semantic', type: 'color', var: '--match-category-semantic' },
+			{ label: 'Structured', type: 'color', var: '--match-category-structured' } ] },
 		// §C Phase 9 wiring-audit — "Width" removed: the sidebar is sized by its drag-resize handle
 		// (a JS inline width), which a CSS var can't override. Background is a per-sidebar override.
 		cSidebar: { name: 'Sidebar shell', controls: [
@@ -555,7 +563,7 @@
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage'] },
+		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage', 'cogMatch'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
@@ -1276,6 +1284,17 @@
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-maturity, #7c3aed)"></span><span class="ss-cog-lbl">{L('Maturity')}</span></div>
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-dormancy, #f59e0b)"></span><span class="ss-cog-lbl">{L('Dormancy')}</span></div>
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-archival, #ef4444)"></span><span class="ss-cog-lbl">{L('Archival')}</span></div>
+						</div>
+					{:else if pk === 'cogMatch'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Match category')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-title, #3b82f6)"></span><span class="ss-cog-lbl">{L('Title')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-content, #16a34a)"></span><span class="ss-cog-lbl">{L('Content')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-tag, #f472b6)"></span><span class="ss-cog-lbl">{L('Tag')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-wikilink, #60a5fa)"></span><span class="ss-cog-lbl">{L('Wikilink')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-property, #f59e0b)"></span><span class="ss-cog-lbl">{L('Property')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-semantic, #7c3aed)"></span><span class="ss-cog-lbl">{L('Semantic')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--match-category-structured, #ef4444)"></span><span class="ss-cog-lbl">{L('Structured')}</span></div>
 						</div>
 					{:else if pk === 'cSidebar'}
 						<div class="ss-focus"><div class="ss-fsidebar"><span></span><span></span><span></span><span></span></div></div>

@@ -3517,6 +3517,8 @@
       "tab_text": "탭 텍스트",
       "tag": "태그",
       "tag_background": "태그 배경",
+      "structured": "구조화",
+      "match_category": "일치 범주",
       "maturity": "성숙",
       "confidence": "확신도",
       "hypothesis": "가설",

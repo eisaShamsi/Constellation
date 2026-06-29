@@ -3517,6 +3517,8 @@
       "tab_text": "タブのテキスト",
       "tag": "タグ",
       "tag_background": "タグの背景",
+      "structured": "構造化",
+      "match_category": "一致カテゴリ",
       "maturity": "成熟",
       "confidence": "確信度",
       "hypothesis": "仮説",

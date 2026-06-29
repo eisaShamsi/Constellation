@@ -3517,6 +3517,8 @@
       "tab_text": "Tab-Text",
       "tag": "Schlagwort",
       "tag_background": "Tag-Hintergrund",
+      "structured": "Strukturiert",
+      "match_category": "Treffer-Kategorie",
       "maturity": "Reife",
       "confidence": "Konfidenz",
       "hypothesis": "Hypothese",

@@ -3517,6 +3517,8 @@
       "tab_text": "Texto de pestaña",
       "tag": "Etiqueta",
       "tag_background": "Fondo de etiqueta",
+      "structured": "Estructurado",
+      "match_category": "Categoría de coincidencia",
       "maturity": "Madurez",
       "confidence": "Confianza",
       "hypothesis": "hipótesis",

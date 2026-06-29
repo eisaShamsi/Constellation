@@ -3517,6 +3517,8 @@
       "tab_text": "טקסט לשונית",
       "tag": "תגית",
       "tag_background": "רקע תגית",
+      "structured": "מובנה",
+      "match_category": "קטגוריית התאמה",
       "maturity": "בשלות",
       "confidence": "ביטחון",
       "hypothesis": "השערה",

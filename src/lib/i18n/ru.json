@@ -3517,6 +3517,8 @@
       "tab_text": "Текст вкладки",
       "tag": "Тег",
       "tag_background": "Фон тега",
+      "structured": "Структурный",
+      "match_category": "Категория совпадения",
       "maturity": "Зрелость",
       "confidence": "Уверенность",
       "hypothesis": "гипотеза",

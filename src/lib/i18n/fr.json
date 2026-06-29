@@ -3517,6 +3517,8 @@
       "tab_text": "Texte de l'onglet",
       "tag": "Étiquette",
       "tag_background": "Fond de l'étiquette",
+      "structured": "Structuré",
+      "match_category": "Catégorie de correspondance",
       "maturity": "Maturité",
       "confidence": "Confiance",
       "hypothesis": "hypothèse",
