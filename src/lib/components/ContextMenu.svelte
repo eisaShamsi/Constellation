@@ -53,6 +53,18 @@
 	const adjustedX = $derived(Math.min(x, window.innerWidth - MENU_W));
 	const rtlRight = $derived(Math.min(window.innerWidth - x, window.innerWidth - MENU_W));
 	const adjustedY = $derived(Math.min(y, window.innerHeight - items.length * 32 - 16));
+
+	// MIG-077 §F — flip a fly-out submenu to the LEFT when there's no room on the
+	// right (else it truncates at the viewport edge). Space-based → works LTR + RTL.
+	const SUBMENU_W = 180;
+	let subFlip = $state(false);
+	function openSubmenu(i: number) {
+		openSubIdx = i;
+		subFlip = false;
+		queueMicrotask(() => {
+			if (menuEl) subFlip = (menuEl.getBoundingClientRect().right + SUBMENU_W) > window.innerWidth;
+		});
+	}
 </script>
 
 <div
@@ -66,19 +78,19 @@
 			<div class="ctx-separator"></div>
 		{:else if item.submenu && item.submenu.length}
 			<!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events -->
-			<div class="ctx-sub-wrap" onmouseenter={() => (openSubIdx = i)} onmouseleave={() => { if (openSubIdx === i) openSubIdx = null; }}>
+			<div class="ctx-sub-wrap" onmouseenter={() => openSubmenu(i)} onmouseleave={() => { if (openSubIdx === i) openSubIdx = null; }}>
 				<button
 					class="ctx-item ctx-has-sub"
 					class:danger={item.danger}
 					disabled={item.disabled}
-					onclick={() => (openSubIdx = openSubIdx === i ? null : i)}
+					onclick={() => (openSubIdx === i ? (openSubIdx = null) : openSubmenu(i))}
 				>
 					{#if item.icon}<span class="ctx-icon">{item.icon}</span>{/if}
 					<span class="ctx-label">{item.label}</span>
 					<span class="ctx-chevron">{$isRTL ? '‹' : '›'}</span>
 				</button>
 				{#if openSubIdx === i}
-					<div class="ctx-submenu">
+					<div class="ctx-submenu" class:flip={subFlip}>
 						{#each item.submenu as sub}
 							{#if sub.separator}
 								<div class="ctx-separator"></div>
@@ -165,7 +177,8 @@
 	.ctx-submenu {
 		position: absolute;
 		inset-block-start: -4px;
-		inset-inline-start: 100%;
+		left: 100%;
+		right: auto;
 		min-width: 180px;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
@@ -175,6 +188,11 @@
 		display: flex;
 		flex-direction: column;
 		z-index: 1001;
+	}
+	/* Flip the fly-out to the left when there's no room on the right (set by JS). */
+	.ctx-submenu.flip {
+		left: auto;
+		right: 100%;
 	}
 	/* MIG-077 A0 — separator + disabled */
 	.ctx-separator {

@@ -4,6 +4,11 @@
 
 	type CursorContext = 'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock' | 'list' | 'blockquote';
 
+	// MIG-077 §F-Editor — reorganized to match Obsidian's editor menu: Add link /
+	// Add external link · Format ▸ · Paragraph ▸ · Insert ▸ · clipboard (+ Select all)
+	// · Style…. All command handlers are UNCHANGED (onFormat/onInsert/onHeading/
+	// onList/onClipboard/onLinkAction) — only the grouping moved + a few new types
+	// (math/externalLink/footnote/selectAll/copyTarget) the CM6 side now handles.
 	let {
 		x,
 		y,
@@ -18,6 +23,7 @@
 		onClipboard,
 		onTableAction,
 		onLinkAction,
+		onStyle,
 	}: {
 		x: number;
 		y: number;
@@ -32,10 +38,13 @@
 		onClipboard: (action: string) => void;
 		onTableAction?: (action: string) => void;
 		onLinkAction?: (action: string) => void;
+		onStyle?: () => void;
 	} = $props();
 
 	let menuEl: HTMLDivElement;
-	let showHeadingSub = $state(false);
+	// Which fly-out is open (one at a time).
+	let openSub = $state<'format' | 'paragraph' | 'insert' | null>(null);
+	const arrow = $derived($dir === 'rtl' ? '◂' : '▸');
 
 	onMount(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -70,68 +79,35 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ecm" bind:this={menuEl} style="left: {adjustedX}px; top: {adjustedY}px;" dir={$dir}>
 
-	<!-- Format section (only when text selected) -->
-	{#if hasSelection}
-		<button class="ecm-item" onclick={() => act(() => onFormat('bold'))}>
-			<span class="ecm-label">{$t('contextMenu.bold')}</span>
-			<span class="ecm-shortcut">Ctrl+B</span>
+	<!-- On a link: target actions -->
+	{#if cursorContext === 'link' && onLinkAction}
+		<button class="ecm-item" onclick={() => act(() => onLinkAction!('open'))}>
+			<span class="ecm-label">{$t('contextMenu.openLink')}</span>
 		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('italic'))}>
-			<span class="ecm-label">{$t('contextMenu.italic')}</span>
-			<span class="ecm-shortcut">Ctrl+I</span>
+		<button class="ecm-item" onclick={() => act(() => onLinkAction!('copyTarget'))}>
+			<span class="ecm-label">{$t('contextMenu.copyTarget')}</span>
 		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('strikethrough'))}>
-			<span class="ecm-label">{$t('contextMenu.strikethrough')}</span>
-			<span class="ecm-shortcut">Ctrl+Shift+S</span>
+		<button class="ecm-item" onclick={() => act(() => onLinkAction!('edit'))}>
+			<span class="ecm-label">{$t('contextMenu.editLink')}</span>
 		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('underline'))}>
-			<span class="ecm-label">{$t('contextMenu.underline')}</span>
-			<span class="ecm-shortcut">Ctrl+U</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('highlight'))}>
-			<span class="ecm-label">{$t('contextMenu.highlight')}</span>
-			<span class="ecm-shortcut">Ctrl+Shift+H</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('code'))}>
-			<span class="ecm-label">{$t('contextMenu.inlineCode')}</span>
-			<span class="ecm-shortcut">Ctrl+`</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('subscript'))}>
-			<span class="ecm-label">{$t('contextMenu.subscript') || 'Subscript'}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('superscript'))}>
-			<span class="ecm-label">{$t('contextMenu.superscript') || 'Superscript'}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onFormat('clear'))}>
-			<span class="ecm-label">{$t('contextMenu.clearFormatting')}</span>
+		<button class="ecm-item" onclick={() => act(() => onLinkAction!('remove'))}>
+			<span class="ecm-label">{$t('contextMenu.removeLink')}</span>
 		</button>
 		<div class="ecm-sep"></div>
 	{/if}
 
-	<!-- Context-specific: Table -->
+	<!-- In a table: row/column actions -->
 	{#if cursorContext === 'table' && onTableAction}
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('addRow'))}>
-			<span class="ecm-label">{$t('contextMenu.addRow')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('addColumn'))}>
-			<span class="ecm-label">{$t('contextMenu.addColumn')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('deleteRow'))}>
-			<span class="ecm-label">{$t('contextMenu.deleteRow')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('deleteColumn'))}>
-			<span class="ecm-label">{$t('contextMenu.deleteColumn')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('sortAsc'))}>
-			<span class="ecm-label">{$t('contextMenu.sortAscending')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onTableAction!('sortDesc'))}>
-			<span class="ecm-label">{$t('contextMenu.sortDescending')}</span>
-		</button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('addRow'))}><span class="ecm-label">{$t('contextMenu.addRow')}</span></button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('addColumn'))}><span class="ecm-label">{$t('contextMenu.addColumn')}</span></button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('deleteRow'))}><span class="ecm-label">{$t('contextMenu.deleteRow')}</span></button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('deleteColumn'))}><span class="ecm-label">{$t('contextMenu.deleteColumn')}</span></button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('sortAsc'))}><span class="ecm-label">{$t('contextMenu.sortAscending')}</span></button>
+		<button class="ecm-item" onclick={() => act(() => onTableAction!('sortDesc'))}><span class="ecm-label">{$t('contextMenu.sortDescending')}</span></button>
 		<div class="ecm-sep"></div>
 	{/if}
 
-	<!-- Context-specific: Checkbox -->
+	<!-- On a checkbox line -->
 	{#if cursorContext === 'checkbox'}
 		<button class="ecm-item" onclick={() => act(() => onFormat('toggleCheckbox'))}>
 			<span class="ecm-label">{$t('contextMenu.toggleCheckbox')}</span>
@@ -140,115 +116,107 @@
 		<div class="ecm-sep"></div>
 	{/if}
 
-	<!-- Context-specific: Link -->
-	{#if cursorContext === 'link' && onLinkAction}
-		<button class="ecm-item" onclick={() => act(() => onLinkAction!('edit'))}>
-			<span class="ecm-label">{$t('contextMenu.editLink')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onLinkAction!('open'))}>
-			<span class="ecm-label">{$t('contextMenu.openLink')}</span>
-		</button>
-		<button class="ecm-item" onclick={() => act(() => onLinkAction!('remove'))}>
-			<span class="ecm-label">{$t('contextMenu.removeLink')}</span>
-		</button>
-		<div class="ecm-sep"></div>
-	{/if}
-
-	<!-- Heading submenu -->
-	<div class="ecm-submenu-wrap"
-		onmouseenter={() => showHeadingSub = true}
-		onmouseleave={() => showHeadingSub = false}
-	>
-		<button class="ecm-item ecm-has-sub">
-			<span class="ecm-label">{$t('contextMenu.heading')}</span>
-			<span class="ecm-arrow">{$dir === 'rtl' ? '◂' : '▸'}</span>
-		</button>
-		{#if showHeadingSub}
-			<div class="ecm-sub" class:rtl={$dir === 'rtl'}>
-				{#each [1,2,3,4,5,6] as level}
-					<button
-						class="ecm-item"
-						class:ecm-active={currentHeadingLevel === level}
-						onclick={() => act(() => onHeading(level))}
-					>
-						<span class="ecm-label" style="font-size: {1.2 - level * 0.08}em; font-weight: 700;">H{level}</span>
-					</button>
-				{/each}
-				<div class="ecm-sep"></div>
-				<button class="ecm-item" onclick={() => act(() => onHeading(0))}>
-					<span class="ecm-label">{$t('contextMenu.paragraph')}</span>
-				</button>
-			</div>
-		{/if}
-	</div>
-
-	<!-- Insert section -->
+	<!-- Add link / Add external link -->
 	<button class="ecm-item" onclick={() => act(() => onInsert('link'))}>
 		<span class="ecm-label">{$t('contextMenu.link')}</span>
 		<span class="ecm-shortcut">Ctrl+K</span>
 	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('image'))}>
-		<span class="ecm-label">{$t('contextMenu.image')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('table'))}>
-		<span class="ecm-label">{$t('contextMenu.table')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('horizontalRule'))}>
-		<span class="ecm-label">{$t('contextMenu.horizontalRule')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('codeBlock'))}>
-		<span class="ecm-label">{$t('contextMenu.codeBlock')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('callout'))}>
-		<span class="ecm-label">{$t('contextMenu.callout')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onInsert('mathBlock'))}>
-		<span class="ecm-label">{$t('contextMenu.mathBlock')}</span>
+	<button class="ecm-item" onclick={() => act(() => onInsert('externalLink'))}>
+		<span class="ecm-label">{$t('contextMenu.externalLink')}</span>
 	</button>
 
 	<div class="ecm-sep"></div>
 
-	<!-- Lists -->
-	<button class="ecm-item" onclick={() => act(() => onList('bullet'))}>
-		<span class="ecm-label">{$t('contextMenu.bulletList')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onList('numbered'))}>
-		<span class="ecm-label">{$t('contextMenu.numberedList')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onList('task'))}>
-		<span class="ecm-label">{$t('contextMenu.taskList')}</span>
-	</button>
+	<!-- Format ▸ -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="ecm-submenu-wrap" onmouseenter={() => openSub = 'format'} onmouseleave={() => { if (openSub === 'format') openSub = null; }}>
+		<button class="ecm-item ecm-has-sub" onclick={() => openSub = openSub === 'format' ? null : 'format'}>
+			<span class="ecm-label">{$t('contextMenu.format')}</span>
+			<span class="ecm-arrow">{arrow}</span>
+		</button>
+		{#if openSub === 'format'}
+			<div class="ecm-sub" class:rtl={$dir === 'rtl'}>
+				<button class="ecm-item" onclick={() => act(() => onFormat('bold'))}><span class="ecm-label">{$t('contextMenu.bold')}</span><span class="ecm-shortcut">Ctrl+B</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('italic'))}><span class="ecm-label">{$t('contextMenu.italic')}</span><span class="ecm-shortcut">Ctrl+I</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('underline'))}><span class="ecm-label">{$t('contextMenu.underline')}</span><span class="ecm-shortcut">Ctrl+U</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('strikethrough'))}><span class="ecm-label">{$t('contextMenu.strikethrough')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('highlight'))}><span class="ecm-label">{$t('contextMenu.highlight')}</span></button>
+				<div class="ecm-sep"></div>
+				<button class="ecm-item" onclick={() => act(() => onFormat('code'))}><span class="ecm-label">{$t('contextMenu.inlineCode')}</span><span class="ecm-shortcut">Ctrl+`</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('math'))}><span class="ecm-label">{$t('contextMenu.math')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('toggleComment'))}><span class="ecm-label">{$t('contextMenu.toggleComment')}</span><span class="ecm-shortcut">Ctrl+/</span></button>
+				<div class="ecm-sep"></div>
+				<button class="ecm-item" onclick={() => act(() => onFormat('superscript'))}><span class="ecm-label">{$t('contextMenu.superscript')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('subscript'))}><span class="ecm-label">{$t('contextMenu.subscript')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onFormat('clear'))}><span class="ecm-label">{$t('contextMenu.clearFormatting')}</span></button>
+			</div>
+		{/if}
+	</div>
 
-	<div class="ecm-sep"></div>
+	<!-- Paragraph ▸ -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="ecm-submenu-wrap" onmouseenter={() => openSub = 'paragraph'} onmouseleave={() => { if (openSub === 'paragraph') openSub = null; }}>
+		<button class="ecm-item ecm-has-sub" onclick={() => openSub = openSub === 'paragraph' ? null : 'paragraph'}>
+			<span class="ecm-label">{$t('contextMenu.paragraph')}</span>
+			<span class="ecm-arrow">{arrow}</span>
+		</button>
+		{#if openSub === 'paragraph'}
+			<div class="ecm-sub" class:rtl={$dir === 'rtl'}>
+				<button class="ecm-item" onclick={() => act(() => onList('bullet'))}><span class="ecm-label">{$t('contextMenu.bulletList')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onList('numbered'))}><span class="ecm-label">{$t('contextMenu.numberedList')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onList('task'))}><span class="ecm-label">{$t('contextMenu.taskList')}</span></button>
+				<div class="ecm-sep"></div>
+				{#each [1,2,3,4,5,6] as level}
+					<button class="ecm-item" class:ecm-active={currentHeadingLevel === level} onclick={() => act(() => onHeading(level))}>
+						<span class="ecm-label" style="font-weight: 700;">H{level}</span>
+					</button>
+				{/each}
+				<button class="ecm-item" class:ecm-active={currentHeadingLevel === null || currentHeadingLevel === 0} onclick={() => act(() => onHeading(0))}>
+					<span class="ecm-label">{$t('contextMenu.body')}</span>
+				</button>
+				<div class="ecm-sep"></div>
+				<button class="ecm-item" onclick={() => act(() => onInsert('blockquote'))}><span class="ecm-label">{$t('contextMenu.blockquote')}</span></button>
+			</div>
+		{/if}
+	</div>
 
-	<!-- Block -->
-	<button class="ecm-item" onclick={() => act(() => onInsert('blockquote'))}>
-		<span class="ecm-label">{$t('contextMenu.blockquote')}</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onFormat('toggleComment'))}>
-		<span class="ecm-label">{$t('contextMenu.toggleComment')}</span>
-		<span class="ecm-shortcut">Ctrl+/</span>
-	</button>
+	<!-- Insert ▸ -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="ecm-submenu-wrap" onmouseenter={() => openSub = 'insert'} onmouseleave={() => { if (openSub === 'insert') openSub = null; }}>
+		<button class="ecm-item ecm-has-sub" onclick={() => openSub = openSub === 'insert' ? null : 'insert'}>
+			<span class="ecm-label">{$t('contextMenu.insert')}</span>
+			<span class="ecm-arrow">{arrow}</span>
+		</button>
+		{#if openSub === 'insert'}
+			<div class="ecm-sub" class:rtl={$dir === 'rtl'}>
+				<button class="ecm-item" onclick={() => act(() => onInsert('footnote'))}><span class="ecm-label">{$t('contextMenu.footnote')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onInsert('table'))}><span class="ecm-label">{$t('contextMenu.table')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onInsert('callout'))}><span class="ecm-label">{$t('contextMenu.callout')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onInsert('horizontalRule'))}><span class="ecm-label">{$t('contextMenu.horizontalRule')}</span></button>
+				<div class="ecm-sep"></div>
+				<button class="ecm-item" onclick={() => act(() => onInsert('codeBlock'))}><span class="ecm-label">{$t('contextMenu.codeBlock')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onInsert('mathBlock'))}><span class="ecm-label">{$t('contextMenu.mathBlock')}</span></button>
+				<button class="ecm-item" onclick={() => act(() => onInsert('image'))}><span class="ecm-label">{$t('contextMenu.image')}</span></button>
+			</div>
+		{/if}
+	</div>
 
 	<div class="ecm-sep"></div>
 
 	<!-- Clipboard -->
-	<button class="ecm-item" onclick={() => act(() => onClipboard('cut'))}>
-		<span class="ecm-label">{$t('contextMenu.cut')}</span>
-		<span class="ecm-shortcut">Ctrl+X</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onClipboard('copy'))}>
-		<span class="ecm-label">{$t('contextMenu.copy')}</span>
-		<span class="ecm-shortcut">Ctrl+C</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onClipboard('paste'))}>
-		<span class="ecm-label">{$t('contextMenu.paste')}</span>
-		<span class="ecm-shortcut">Ctrl+V</span>
-	</button>
-	<button class="ecm-item" onclick={() => act(() => onClipboard('pastePlain'))}>
-		<span class="ecm-label">{$t('contextMenu.pasteAsPlainText')}</span>
-		<span class="ecm-shortcut">Ctrl+Shift+V</span>
-	</button>
+	<button class="ecm-item" onclick={() => act(() => onClipboard('cut'))}><span class="ecm-label">{$t('contextMenu.cut')}</span><span class="ecm-shortcut">Ctrl+X</span></button>
+	<button class="ecm-item" onclick={() => act(() => onClipboard('copy'))}><span class="ecm-label">{$t('contextMenu.copy')}</span><span class="ecm-shortcut">Ctrl+C</span></button>
+	<button class="ecm-item" onclick={() => act(() => onClipboard('paste'))}><span class="ecm-label">{$t('contextMenu.paste')}</span><span class="ecm-shortcut">Ctrl+V</span></button>
+	<button class="ecm-item" onclick={() => act(() => onClipboard('pastePlain'))}><span class="ecm-label">{$t('contextMenu.pasteAsPlainText')}</span><span class="ecm-shortcut">Ctrl+Shift+V</span></button>
+	<button class="ecm-item" onclick={() => act(() => onClipboard('selectAll'))}><span class="ecm-label">{$t('contextMenu.selectAll')}</span><span class="ecm-shortcut">Ctrl+A</span></button>
+
+	<!-- Style the editor surface -->
+	{#if onStyle}
+		<div class="ecm-sep"></div>
+		<button class="ecm-item" onclick={() => act(() => onStyle!())}>
+			<span class="ecm-label">{$t('contextMenu.style')}</span>
+		</button>
+	{/if}
 </div>
 
 <style>
@@ -319,7 +287,9 @@
 		position: absolute;
 		top: -4px;
 		left: 100%;
-		min-width: 100px;
+		min-width: 160px;
+		max-height: 70vh;
+		overflow-y: auto;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;

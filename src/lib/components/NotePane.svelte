@@ -12,6 +12,9 @@
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import { stripLinkTypePrefix } from '$lib/libraries/linkTypeRegistry';
 	import PropertyEditor from './PropertyEditor.svelte';
+	import ContextMenu from './ContextMenu.svelte'; // MIG-077 §F-Editor — note RC uses the SHARED menu (consistent with the file tree)
+	import type { MenuItem } from './contextMenuBuilder';
+	import { openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-077 §F — RC "Style…"
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
 	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder, Text } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
@@ -980,6 +983,177 @@
 			setTimeout(() => window.addEventListener('click', closeMenus, { once: true }), 0);
 		}
 	}
+
+	/* ─── MIG-077 §F-Editor: the note's right-click menu (NotePane is the live editor) ─── */
+	let editorCtxMenu = $state<{ x: number; y: number; onLink: boolean } | null>(null);
+
+	function handleEditorContextMenu(e: MouseEvent) {
+		if (!view) return;
+		e.preventDefault();
+		const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+		const sel = view.state.selection.main;
+		const hasSelection = sel.from !== sel.to;
+		// Land the caret where the user right-clicked (unless they right-clicked a selection).
+		if (pos !== null && !hasSelection) view.dispatch({ selection: { anchor: pos } });
+		const line = view.state.doc.lineAt(view.state.selection.main.head);
+		const onLink = /\[\[[^\]]+\]\]/.test(line.text) || /\[[^\]]+\]\([^)]+\)/.test(line.text);
+		editorCtxMenu = { x: e.clientX, y: e.clientY, onLink };
+	}
+
+	// MIG-077 §F-Editor — the note's right-click menu, built for the SHARED <ContextMenu>
+	// (same chrome + icons + fly-out submenus as the file tree). Items reuse NotePane's
+	// own commands via the ecm* helpers below.
+	function getEditorMenuItems(): MenuItem[] {
+		const items: MenuItem[] = [];
+		if (editorCtxMenu?.onLink) {
+			items.push(
+				{ label: $t('contextMenu.openLink'), icon: '📂', action: () => ecmLinkAction('open') },
+				{ label: $t('contextMenu.copyTarget'), icon: '📋', action: () => ecmLinkAction('copyTarget') },
+				{ label: $t('contextMenu.editLink'), icon: '✏️', action: () => ecmLinkAction('edit') },
+				{ label: $t('contextMenu.removeLink'), icon: '✖️', action: () => ecmLinkAction('remove') },
+				{ separator: true },
+			);
+		}
+		items.push(
+			{ label: $t('contextMenu.link'), icon: '🔗', action: () => ecmInsert('link') },
+			{ label: $t('contextMenu.externalLink'), icon: '🌐', action: () => ecmInsert('externalLink') },
+			{ separator: true },
+			{ label: $t('contextMenu.format'), icon: '🅰️', submenu: [
+				{ label: $t('contextMenu.bold'), action: () => ecmFormat('bold') },
+				{ label: $t('contextMenu.italic'), action: () => ecmFormat('italic') },
+				{ label: $t('contextMenu.underline'), action: () => ecmFormat('underline') },
+				{ label: $t('contextMenu.strikethrough'), action: () => ecmFormat('strikethrough') },
+				{ label: $t('contextMenu.highlight'), action: () => ecmFormat('highlight') },
+				{ separator: true },
+				{ label: $t('contextMenu.inlineCode'), action: () => ecmFormat('code') },
+				{ label: $t('contextMenu.math'), action: () => ecmFormat('math') },
+				{ label: $t('contextMenu.toggleComment'), action: () => ecmFormat('toggleComment') },
+				{ separator: true },
+				{ label: $t('contextMenu.superscript'), action: () => ecmFormat('superscript') },
+				{ label: $t('contextMenu.subscript'), action: () => ecmFormat('subscript') },
+				{ label: $t('contextMenu.clearFormatting'), action: () => ecmFormat('clear') },
+			] },
+			{ label: $t('contextMenu.paragraph'), icon: '¶', submenu: [
+				{ label: $t('contextMenu.bulletList'), action: () => ecmList('bullet') },
+				{ label: $t('contextMenu.numberedList'), action: () => ecmList('numbered') },
+				{ label: $t('contextMenu.taskList'), action: () => ecmList('task') },
+				{ separator: true },
+				{ label: 'H1', action: () => ecmHeading(1) },
+				{ label: 'H2', action: () => ecmHeading(2) },
+				{ label: 'H3', action: () => ecmHeading(3) },
+				{ label: 'H4', action: () => ecmHeading(4) },
+				{ label: 'H5', action: () => ecmHeading(5) },
+				{ label: 'H6', action: () => ecmHeading(6) },
+				{ label: $t('contextMenu.body'), action: () => ecmHeading(0) },
+				{ separator: true },
+				{ label: $t('contextMenu.blockquote'), action: () => ecmInsert('blockquote') },
+			] },
+			{ label: $t('contextMenu.insert'), icon: '➕', submenu: [
+				{ label: $t('contextMenu.footnote'), action: () => ecmInsert('footnote') },
+				{ label: $t('contextMenu.table'), action: () => ecmInsert('table') },
+				{ label: $t('contextMenu.callout'), action: () => ecmInsert('callout') },
+				{ label: $t('contextMenu.horizontalRule'), action: () => ecmInsert('horizontalRule') },
+				{ separator: true },
+				{ label: $t('contextMenu.codeBlock'), action: () => ecmInsert('codeBlock') },
+				{ label: $t('contextMenu.mathBlock'), action: () => ecmInsert('mathBlock') },
+				{ label: $t('contextMenu.image'), action: () => ecmInsert('image') },
+			] },
+			{ separator: true },
+			{ label: $t('contextMenu.cut'), icon: '✂️', action: () => ecmClipboard('cut') },
+			{ label: $t('contextMenu.copy'), icon: '📋', action: () => ecmClipboard('copy') },
+			{ label: $t('contextMenu.paste'), icon: '📥', action: () => ecmClipboard('paste') },
+			{ label: $t('contextMenu.pasteAsPlainText'), icon: '📄', action: () => ecmClipboard('pastePlain') },
+			{ label: $t('contextMenu.selectAll'), icon: '🔲', action: () => ecmClipboard('selectAll') },
+			{ separator: true },
+			{ label: $t('contextMenu.style'), icon: '🎨', action: () => openStyleSetterToCategory('editor') },
+		);
+		return items;
+	}
+
+	// Map the shared EditorContextMenu callbacks onto NotePane's own commands (reuse, no reinvention).
+	function ecmFormat(type: string) {
+		switch (type) {
+			case 'bold': wrapSelection('**', '**'); break;
+			case 'italic': wrapSelection('_', '_'); break;
+			case 'underline': wrapSelection('<u>', '</u>'); break;
+			case 'strikethrough': wrapSelection('~~', '~~'); break;
+			case 'highlight': wrapSelection('==', '=='); break;
+			case 'code': wrapSelection('`', '`'); break;
+			case 'math': wrapSelection('$', '$'); break;
+			case 'superscript': wrapSelection('<sup>', '</sup>'); break;
+			case 'subscript': wrapSelection('<sub>', '</sub>'); break;
+			case 'toggleComment': wrapSelection('%%', '%%'); break;
+			case 'clear': clearFormatting(); break;
+		}
+	}
+	function ecmInsert(type: string) {
+		switch (type) {
+			case 'link': wrapSelection('[[', ']]'); break;
+			case 'externalLink': wrapSelection('[', '](url)'); break;
+			case 'blockquote': insertAtCursor('\n> '); break;
+			case 'codeBlock': insertAtCursor('\n```\n\n```\n'); break;
+			case 'horizontalRule': insertAtCursor('\n---\n'); break;
+			case 'table': insertAtCursor('\n| Col 1 | Col 2 |\n| --- | --- |\n| | |\n'); break;
+			case 'callout': insertAtCursor('\n> [!note]\n> '); break;
+			case 'mathBlock': insertAtCursor('\n$$\n\n$$\n'); break;
+			case 'image': insertAtCursor('![](url)'); break;
+			case 'footnote': {
+				if (!view) return;
+				const docLen = view.state.doc.length;
+				const at = view.state.selection.main.head;
+				const def = (docLen > 0 ? '\n\n' : '') + '[^1]: ';
+				view.dispatch({ changes: [{ from: at, insert: '[^1]' }, { from: docLen, insert: def }], selection: { anchor: docLen + 4 + def.length } });
+				view.focus();
+				break;
+			}
+		}
+	}
+	function ecmHeading(level: number) {
+		if (!view) return;
+		const line = view.state.doc.lineAt(view.state.selection.main.from);
+		const m = line.text.match(/^#{1,6}\s/);
+		const prefix = level === 0 ? '' : '#'.repeat(level) + ' ';
+		if (m) view.dispatch({ changes: { from: line.from, to: line.from + m[0].length, insert: prefix } });
+		else if (prefix) view.dispatch({ changes: { from: line.from, insert: prefix } });
+		view.focus();
+	}
+	function ecmList(type: string) {
+		if (type === 'bullet') insertLinePrefix('- ');
+		else if (type === 'numbered') insertLinePrefix('1. ');
+		else if (type === 'task') insertLinePrefix('- [ ] ');
+	}
+	function ecmClipboard(action: string) {
+		if (!view) return;
+		if (action === 'cut') document.execCommand('cut');
+		else if (action === 'copy') document.execCommand('copy');
+		else if (action === 'paste' || action === 'pastePlain') {
+			navigator.clipboard.readText().then((txt) => {
+				if (txt && view) { const { from, to } = view.state.selection.main; view.dispatch({ changes: { from, to, insert: txt }, selection: { anchor: from + txt.length } }); }
+			}).catch(() => {});
+		} else if (action === 'selectAll') {
+			view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+		}
+		view.focus();
+	}
+	function ecmLinkAction(action: string) {
+		if (!view) return;
+		const line = view.state.doc.lineAt(view.state.selection.main.head);
+		const text = line.text;
+		if (action === 'open') {
+			const m = text.match(/\[\[([^\]]+)\]\]/);
+			if (m) document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link: m[1].split('|')[0].split('#')[0] } }));
+		} else if (action === 'copyTarget') {
+			const m = text.match(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/);
+			if (m) navigator.clipboard.writeText(m[1]).catch(() => {});
+		} else if (action === 'edit') {
+			const s = text.indexOf('[['); const en = text.indexOf(']]');
+			if (s >= 0 && en >= 0) view.dispatch({ selection: { anchor: line.from + s, head: line.from + en + 2 } });
+		} else if (action === 'remove') {
+			const nt = text.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+			view.dispatch({ changes: { from: line.from, to: line.to, insert: nt } });
+		}
+		view.focus();
+	}
 </script>
 
 <div class="e-desk" dir={dir} data-style-target="text">
@@ -1215,7 +1389,16 @@
 			/>
 			</div>
 		{/if}
-		<div class="e-editor" bind:this={editorEl}></div>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="e-editor" bind:this={editorEl} oncontextmenu={handleEditorContextMenu}></div>
+		{#if editorCtxMenu}
+			<ContextMenu
+				x={editorCtxMenu.x}
+				y={editorCtxMenu.y}
+				items={getEditorMenuItems()}
+				onClose={() => editorCtxMenu = null}
+			/>
+		{/if}
 	</div>
 </div>
 
