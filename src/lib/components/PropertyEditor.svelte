@@ -1025,6 +1025,7 @@
 					{:else}
 						<span class="pe-link-bracket">[[</span>
 						<input class="pe-val pe-link-input" type="text"
+							size={Math.max((linkName?.length ?? 0) + 1, 5)}
 							placeholder={$t('propertyEditor.empty')}
 							value={linkName}
 							oninput={(e) => updateValue(idx, `[[${(e.target as HTMLInputElement).value}]]`)} />
@@ -1335,7 +1336,9 @@
 		display: flex; align-items: center; gap: 0;
 	}
 	.pe-link-bracket { color: var(--interactive-accent); font-size: calc(0.82rem * var(--rs-scale, 1)); font-weight: 600; flex-shrink: 0; }
-	.pe-link-input { flex: 1; color: var(--interactive-accent); }
+	/* PJ-065 — size to content (via the `size` attr) so the closing ]] hugs the title
+	   instead of stretching to the row's edge. Can shrink, never overflows the row. */
+	.pe-link-input { flex: 0 1 auto; min-width: 4ch; max-width: 100%; color: var(--interactive-accent); }
 	.pe-link-input::placeholder { color: var(--text-faint); font-style: italic; }
 
 	.pe-link-clickable {
