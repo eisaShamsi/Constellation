@@ -343,6 +343,18 @@
 			{ label: 'Tag text', type: 'color', var: '--tag-color' },
 			{ label: 'Tag radius', type: 'range', var: '--tag-radius', min: 0, max: 24, step: 1, unit: 'px', def: 12 },
 			{ label: 'Callout radius', type: 'range', var: '--callout-radius', min: 0, max: 24, step: 1, unit: 'px', def: 8 } ] },
+		// MIG-088 Phase 1 — the Frontmatter (Properties panel) pills, previously hardcoded. Each var
+		// falls back to today's value in PropertyEditor (--background-modifier-border-focus / #fff /
+		// --pill-radius / --pill-height) so the look is byte-identical until the user edits a control.
+		pTags: { name: 'Property tags', controls: [
+			{ label: 'Tag background', type: 'color', var: '--pe-tag-bg' },
+			{ label: 'Tag text', type: 'color', var: '--pe-tag-text-color' },
+			{ label: 'Tag radius', type: 'range', var: '--pe-tag-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 },
+			{ label: 'Height', type: 'range', var: '--pe-tag-height', min: 14, max: 32, step: 1, unit: 'px', def: 20 } ] },
+		pTaxo: { name: 'Taxonomy pills', controls: [
+			{ label: 'Background', type: 'color', var: '--pe-taxo-bg' },
+			{ label: 'Text', type: 'color', var: '--pe-taxo-text-color' },
+			{ label: 'Radius', type: 'range', var: '--pe-taxo-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
 		// §C Phase 9 wiring-audit — "Width" removed: the sidebar is sized by its drag-resize handle
 		// (a JS inline width), which a CSS var can't override. Background is a per-sidebar override.
 		cSidebar: { name: 'Sidebar shell', controls: [
@@ -514,6 +526,7 @@
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
+		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
@@ -560,7 +573,10 @@
 	// MIG-075 FU-3 — CNS joins the three-zone set for the same reason, plus a harder one: the well's
 	// hover-label vars are read once at canvas mount, so the live-behind app CANNOT preview them —
 	// only the mini gravity-well (ss-cnsprev), which reads the draft vars as CSS, can.
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
+	// MIG-088 Phase 1 — Properties (frontmatter) is THREE-zone: its dedicated centre preview shows the
+	// pill mimic. (Two-zone relies on the live app showing through behind the right-anchored panel — but
+	// the panel would occlude the right-sidebar Properties panel, so live-behind can't preview it.)
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -1185,6 +1201,20 @@
 						<div class="ss-focus ss-frow"><button class="ss-fbtn">Save</button><button class="ss-fbtn ghost">Cancel</button></div>
 					{:else if pk === 'cTags'}
 						<div class="ss-focus ss-fcol"><div class="ss-frow"><span class="ss-ftag">#idea</span><span class="ss-ftag">#fruit</span></div><div class="ss-fcallout"><b>ℹ︎ Note</b> A callout box.</div></div>
+					{:else if pk === 'pTags'}
+						<div class="ss-focus ss-fcard ss-feprops">
+							<div class="ss-fep-title">{L('Apple (Fruit)')}</div>
+							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key"># tags</span><div class="ss-fep-vals"><span class="ss-petag">fruit</span><span class="ss-petag">orchard</span><span class="ss-petag">pome</span></div></div>
+							<div class="ss-fep-row"><span class="ss-fep-key">maturity</span><span class="ss-fep-plain">evergreen</span></div>
+							<div class="ss-fep-row"><span class="ss-fep-key">domain</span><div class="ss-fep-vals"><span class="ss-petaxo">Botany</span></div></div>
+						</div>
+					{:else if pk === 'pTaxo'}
+						<div class="ss-focus ss-fcard ss-feprops">
+							<div class="ss-fep-title">{L('Apple (Fruit)')}</div>
+							<div class="ss-fep-row"><span class="ss-fep-key"># tags</span><div class="ss-fep-vals"><span class="ss-petag">fruit</span></div></div>
+							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">domain</span><div class="ss-fep-vals"><span class="ss-petaxo">Botany</span><span class="ss-petaxo">Horticulture</span></div></div>
+							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">field</span><div class="ss-fep-vals"><span class="ss-petaxo">Pomology</span></div></div>
+						</div>
 					{:else if pk === 'cSidebar'}
 						<div class="ss-focus"><div class="ss-fsidebar"><span></span><span></span><span></span><span></span></div></div>
 					{:else if pk === 'global'}
@@ -1627,6 +1657,18 @@
 	.ss-fbtn.ghost { background: var(--background-secondary, #ececed); color: var(--text-normal, #333); border: 1px solid var(--background-modifier-border, #ccc); }
 	.ss-ftag { display: inline-flex; align-items: center; font-size: 12px; background: var(--tag-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 12%, transparent)); color: var(--tag-color, var(--interactive-accent, #7c3aed)); border-radius: var(--tag-radius, 12px); padding: 2px 9px; }
 	.ss-fcallout { background: color-mix(in srgb, var(--interactive-accent, #4a9eff) 8%, transparent); border-inline-start: 3px solid var(--interactive-accent, #4a9eff); border-radius: var(--callout-radius, 8px); padding: 8px 12px; font-size: 13px; color: var(--text-normal, #333); }
+	/* MIG-088 Phase 1 — Properties (frontmatter) centre preview: a mini Properties panel. The pills
+	   mirror PropertyEditor's .pe-tag / .pe-taxo-pill, reading the same draft vars with the same
+	   fallbacks so they re-colour live as the user edits. .ss-fep-hot rings the selected element's row. */
+	.ss-feprops { gap: 9px; align-items: stretch; }
+	.ss-fep-title { font-size: 17px; font-weight: 700; color: var(--text-normal, #2e3338); margin-bottom: 3px; text-align: start; }
+	.ss-fep-row { display: flex; align-items: center; gap: 12px; min-height: 24px; padding: 2px 6px; border-radius: 6px; }
+	.ss-fep-hot { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 9%, transparent); }
+	.ss-fep-key { color: var(--text-muted, #888); font-size: 13px; min-width: 84px; text-align: start; flex-shrink: 0; }
+	.ss-fep-vals { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+	.ss-fep-plain { color: var(--text-normal, #2e3338); font-size: 13px; }
+	.ss-petag { display: inline-flex; align-items: center; height: var(--pe-tag-height, 20px); padding: 0 8px; border-radius: var(--pe-tag-radius, 10px); background: var(--pe-tag-bg, var(--background-modifier-border-focus, #555)); color: var(--pe-tag-text-color, #fff); font-size: 12px; font-weight: 700; white-space: nowrap; }
+	.ss-petaxo { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--pe-taxo-radius, 10px); background: var(--pe-taxo-bg, var(--background-modifier-border-focus, #555)); color: var(--pe-taxo-text-color, #fff); font-size: 12px; font-weight: 700; white-space: nowrap; border-inline-start: 3px solid var(--interactive-accent, #7c3aed); }
 	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
 	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
 	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }

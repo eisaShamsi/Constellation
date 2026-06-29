@@ -3517,6 +3517,8 @@
       "tab_text": "Texte de l'onglet",
       "tag": "Étiquette",
       "tag_background": "Fond de l'étiquette",
+      "property_tags": "Étiquettes de propriétés",
+      "taxonomy_pills": "Badges de taxonomie",
       "tag_radius": "Rayon de l'étiquette",
       "tag_text": "Texte de l'étiquette",
       "tags_callouts": "Étiquettes & encadrés",

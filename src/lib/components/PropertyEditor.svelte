@@ -1327,10 +1327,11 @@
 	.pe-tag {
 		display: inline-flex; align-items: center; gap: 4px;
 		box-sizing: border-box;
-		height: var(--pill-height, 20px);
+		/* MIG-088 Phase 1 — Style-Setter-controllable (Frontmatter → Property tags); fallbacks = today's look. */
+		height: var(--pe-tag-height, var(--pill-height, 20px));
 		padding: 0 8px;
-		border-radius: var(--pill-radius, 10px);
-		background: var(--background-modifier-border-focus); color: #fff;
+		border-radius: var(--pe-tag-radius, var(--pill-radius, 10px));
+		background: var(--pe-tag-bg, var(--background-modifier-border-focus)); color: var(--pe-tag-text-color, #fff);
 		font-size: calc(0.75rem * var(--rs-scale, 1)); font-weight: var(--pill-weight, 700);
 		line-height: 1; white-space: nowrap;
 	}
@@ -1490,8 +1491,9 @@
 		box-sizing: border-box;
 		height: var(--pill-height, 20px);
 		padding: 0 8px;
-		border-radius: var(--pill-radius, 10px);
-		background: var(--background-modifier-border-focus); color: #fff;
+		/* MIG-088 Phase 1 — Style-Setter-controllable (Frontmatter → Taxonomy pills); fallbacks = today's look. */
+		border-radius: var(--pe-taxo-radius, var(--pill-radius, 10px));
+		background: var(--pe-taxo-bg, var(--background-modifier-border-focus)); color: var(--pe-taxo-text-color, #fff);
 		font-size: calc(0.75rem * var(--rs-scale, 1)); font-weight: var(--pill-weight, 700);
 		line-height: 1; white-space: nowrap;
 		border-inline-start: 3px solid var(--taxo-color);

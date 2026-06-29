@@ -183,5 +183,15 @@ Boss, via the new "Style…" RC, opened the Style Setter and found gaps: the **f
 - **Key pattern:** ~half are repeated *cognitive-vocabulary* colour sets hardcoded per-surface — **Maturity / Confidence / Origin / Stage / Search-match-category** — to be CONSOLIDATED into shared controls (style once → everywhere) + the frontmatter Property tags + Taxonomy pills (Boss's trigger).
 - **Boss ruling:** build EVERYTHING (all 149), semantic consolidation first → per-surface tail. Multi-session.
 - **Plan:** `lab/reports/MIG-088-STYLESETTER-COMPLETENESS-PLAN.md` — 10 phases (1 Frontmatter+mechanism · 2 Shared semantic colours · 3 Editor · 4 Chrome · 5 Panels · 6 Search/Index · 7 Sky/Org/Map · 8 Calendar · 9 Dialogs/Global · 10 Audit). Each: new Setter element/control + preview case + component wired to the var with a fallback to today's value (byte-identical until edited; LL-032-safe — no `BUILTIN_THEMES`). i18n ×15 per label. svelte-check 0 + Boss test per phase.
-- **NEXT:** Phase 1 build (Property tags + Taxonomy pills) — establishes the add-an-element recipe (ELEMENTS entry + CATEGORY + preview + apply + wire). Then Phase 2 consolidation.
 - Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · Phase-4 audit · orientation v-bump at §F completion.
+
+### MIG-088 §Phase 1 BUILT (Properties category) — awaiting Boss test
+The add-an-element recipe, learned + applied:
+- **ELEMENTS** (StyleSetter.svelte): `pTags` (Property tags: `--pe-tag-bg`/`--pe-tag-text-color`/`--pe-tag-radius`/`--pe-tag-height`) + `pTaxo` (Taxonomy pills: `--pe-taxo-bg`/`--pe-taxo-text-color`/`--pe-taxo-radius`). Same control format as `cTags`.
+- **CATEGORIES**: new `{ key:'frontmatter', name:'Properties', surface:'editor', elements:['pTags','pTaxo'] }`.
+- **3-zone**: added `frontmatter` to the twoZone exception — KEY finding: `.ss-stage` lives inside `.ss-center`, which `.ss--twozone` hides (relies on live-behind), but the right-anchored panel would occlude the right-sidebar Properties panel → Properties needs a dedicated centre preview. (cTags/chrome `.ss-focus` previews are effectively dead in their twoZone categories — live-behind instead.)
+- **Preview**: `pk==='pTags'/'pTaxo'` → a mini Properties-panel card (`.ss-feprops` on `.ss-fcard`), `.ss-fep-hot` rings the selected row; pills read the same draft vars w/ same fallbacks → re-colour live. Fills the centre (Full-Center-Zone rule).
+- **Wire** (PropertyEditor): `.pe-tag` + `.pe-taxo-pill` now read the new vars, fallback-chained to today's exact values (`--background-modifier-border-focus`/#fff/`--pill-radius`/`--pill-height`) → byte-identical until edited.
+- **RC routing** (NotePane): `getEditorMenuItems(onLink, styleCat='editor')`; frontmatter menu passes `'frontmatter'` → "Style…" in the Properties RC opens the new category ("style the function in-hand"). Note-body "Style…" still → 'editor'.
+- **i18n**: category reuses existing `properties` slug (zero cost); 2 new labels `property_tags`/`taxonomy_pills` ×15 (Sonnet, consistent w/ each locale's tag/properties terms; "pills"=badge/chip, never pharmaceutical). control labels reuse existing slugs. LL-032-safe (no BUILTIN_THEMES). svelte-check 0.
+- **DEFERRED to Phase 1b:** taxonomy-pill TIER colours (`tierColorForId` is JS-computed per row) — wrap to user vars later.

@@ -3647,6 +3647,8 @@
       "tab_text": "Tab text",
       "tag": "Tag",
       "tag_background": "Tag background",
+      "property_tags": "Property tags",
+      "taxonomy_pills": "Taxonomy pills",
       "tag_radius": "Tag radius",
       "tag_text": "Tag text",
       "tags_callouts": "Tags & callouts",

@@ -3517,6 +3517,8 @@
       "tab_text": "Текст вкладки",
       "tag": "Тег",
       "tag_background": "Фон тега",
+      "property_tags": "Теги свойств",
+      "taxonomy_pills": "Значки таксономии",
       "tag_radius": "Радиус тега",
       "tag_text": "Текст тега",
       "tags_callouts": "Теги и выноски",

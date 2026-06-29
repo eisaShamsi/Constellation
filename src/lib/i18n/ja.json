@@ -3517,6 +3517,8 @@
       "tab_text": "タブのテキスト",
       "tag": "タグ",
       "tag_background": "タグの背景",
+      "property_tags": "プロパティタグ",
+      "taxonomy_pills": "分類バッジ",
       "tag_radius": "タグの角丸",
       "tag_text": "タグのテキスト",
       "tags_callouts": "タグとコールアウト",

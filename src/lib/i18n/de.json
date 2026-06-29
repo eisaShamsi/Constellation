@@ -3517,6 +3517,8 @@
       "tab_text": "Tab-Text",
       "tag": "Schlagwort",
       "tag_background": "Tag-Hintergrund",
+      "property_tags": "Eigenschaft-Tags",
+      "taxonomy_pills": "Taxonomie-Badges",
       "tag_radius": "Tag-Radius",
       "tag_text": "Tag-Text",
       "tags_callouts": "Tags & Hinweise",

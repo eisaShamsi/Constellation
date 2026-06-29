@@ -1007,7 +1007,7 @@
 				{ separator: true },
 			);
 		}
-		items.push(...getEditorMenuItems(false));
+		items.push(...getEditorMenuItems(false, 'frontmatter'));
 		return items;
 	}
 
@@ -1027,7 +1027,7 @@
 	// MIG-077 §F-Editor — the note's right-click menu, built for the SHARED <ContextMenu>
 	// (same chrome + icons + fly-out submenus as the file tree). Items reuse NotePane's
 	// own commands via the ecm* helpers below.
-	function getEditorMenuItems(onLink: boolean): MenuItem[] {
+	function getEditorMenuItems(onLink: boolean, styleCat: string = 'editor'): MenuItem[] {
 		const items: MenuItem[] = [];
 		if (onLink) {
 			items.push(
@@ -1089,7 +1089,7 @@
 			{ label: $t('contextMenu.pasteAsPlainText'), icon: '📄', action: () => ecmClipboard('pastePlain') },
 			{ label: $t('contextMenu.selectAll'), icon: '🔲', action: () => ecmClipboard('selectAll') },
 			{ separator: true },
-			{ label: $t('contextMenu.style'), icon: '🎨', action: () => openStyleSetterToCategory('editor') },
+			{ label: $t('contextMenu.style'), icon: '🎨', action: () => openStyleSetterToCategory(styleCat) },
 		);
 		return items;
 	}
