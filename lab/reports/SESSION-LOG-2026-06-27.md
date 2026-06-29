@@ -57,3 +57,40 @@ Heaviest note: **Ancient history** (533 outgoing links). Instrumentation = relea
 - Help/User Manual: no change — Item 7 is a performance fix; the Connect feature's usage is unchanged (just instant now).
 
 **THE 7-ITEM BACKLOG IS COMPLETE.**
+
+---
+
+# PJ-065 — The Structural (Parent / TOC) Link Type — /migration BUILD
+
+Boss picked PJ-065 first (of the 4 build candidates). Ultracode: Architect + Plan via Workflows; build by hand step-by-step with cargo/svelte-check gates.
+
+## Phase 1 — Architect (`docs/PJ-065-Architect-Parent-TOC-Link.md`)
+5 parallel territory-mappers + 1 synthesis (`wf_dc93fc64-478`). D1–D9 option tables, the LL-023 exclusion-surface invariant list, migration/rollback. Caught + corrected an agent fabrication (claimed `part-of` label = "Compositional hierarchy"; real label "Part Of", that string is its `desc`). **Boss ruled:** D1 distinct non-cognitive lane · D2 extend `note_links`+nullable `seq` · D3 support BOTH `parent:`/`contains:` (quoted `[[ ]]`), teal `#14B8A6` · D5 single-parent tree.
+
+## Phase 2 — Plan (`docs/PJ-065-Plan-Parent-TOC-Link.md`)
+Draft + 2 adversarial critics (`wf_c1920818-855`). Both "needs-changes"; folded every blocker: the §2→§4 **drift window** (reorder so exclusions install first as no-ops, registration/emission last), `seq` through the single diff-writer with **reorder detection**, the **missing read-path** exclusion (backlink/outgoing rows + the parity canary), deterministic single-parent, union acyclicity, DRY scanner fix. Storage **Model A** (two faces, union on read). Boss approved.
+
+## Build (each commit = one §; no-op-until-§5 safe ordering)
+- **§1** `c2113bf3` — nullable `note_links.seq` (idempotent ALTER, no backfill). cargo check clean.
+- **§2** `0535e9b8` — registry plumbing: `structural` flag + helpers + `STRUCTURAL_SEED_IDS` (empty) + merge-lock, all dormant. svelte-check 0 / cargo clean.
+- **§3** `b4056671` — ALL Rust cognitive exclusions (aggregates, MATURITY/STRATUM const→fn, sky triggers+backfill, read-path+boot-bundle, sight/tension/graph, strata/inspector360 via shared `structural_frontmatter_targets`). **cargo test 982/0** (no-op confirmed).
+- **§4** `bdeae977` — frontend cognitive enumerators + search-grammar pin to `cognitiveLinkTypes()`. svelte-check 0.
+- **§5** _(pending commit)_ — CORE: registered `parent`/`contains` (teal, locked, structural) + i18n×15 pill labels; `index_note` emits structural edges (frontmatter-only, `seq` on the `contains` face, reorder-detecting diff-writer, neutral living-link values via a structural INSERT branch). Added `cognitive_sentinel_rank()`. **Design refinement (per critics' determinism finding): single-parent + acyclicity resolved at READ time (§6), not write-time rejection** — order-independent, never rewrites the user's files. Tests: structural-exclusion (incoming) + graph vote-lock; fixed 7 seed-count/seq fixture fallouts.
+
+## Test book (`lab/PJ-065-test-book/`, committed `1e833728`)
+"The Atlas of Lost Places" (9 notes: both directions, ordering, 4-level depth, dedupe, no-inflation, rename target) + Guard Tests (cycle + contested-parent) + README. For the GATE Boss test.
+
+## Build complete §1–§7 (commits c2113bf3 · 0535e9b8 · b4056671 · bdeae977 · 47683b97 · 8eed6023 · c73a44d5)
+All seven steps shipped + green (cargo 989/0, svelte-check 0). Release .exe built + LL-028-verified.
+
+## GATE-A debugging (the empty-outline arc) — NOT a PJ-065 logic bug
+Boss linked the test-book → Structure tab showed empty + raw i18n keys.
+- **Raw keys** ("PANELS.STRUCTURE…"): the `$t()||fallback` pattern can't work ($t returns the key when missing). FIX: added panels.structure/structureChildren/structureEmpty/structureLoop ×15 (commit 118c4fec).
+- **Empty outline** — Reproduce-First: `tests_pj065_index_emission` proved `index_note` folds `contains:` into ordered structural edges (seq 1,2; 'structural'/1.0) — emission is CORRECT. Queried the live DB (`E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db`, 7670 notes, `seq` present): **0 test-book notes indexed**. Root cause: `add_library` only REGISTERS; no boot walk (LL-022); watcher only catches live edits → a linked folder's files never enter the index (LL-027/BUG-022 class).
+  - FIX 1 (118c4fec): `reindex_library` command + addLibrary fires it on fresh link.
+  - FIX 2 (1bf09743): boot-time gated auto-index — reindex_library(only_if_unindexed=true) per library after paint; Rust gate = one indexed COUNT (no walk for indexed libs → ZERO-BOOT-WALKS). Auto-heals the already-linked test-book + any future linked folder on relaunch.
+- 3rd release .exe building (with both fixes). Boss path is now just "relaunch."
+
+## Open / next
+- **Boss GATE test pending** (relaunch new build → test-book auto-indexes → Structure outline + breadcrumb + no-inflation + guard cases). i18n flag: native sanity-check Arabic `يحتوي`/`أصل` + البنية/المخطط.
+- §8 remainder: rename-cascade linked-probe (both faces) + docs/orientation v-bump + final 15-locale audit. Then Phase-4 Audit (3 agents) + /simplify + full PCS close-out.

@@ -1439,6 +1439,40 @@ Each right-sidebar panel has its **own** text size, set in the **Style Setter** 
 
 Panel placements are saved and restored with workspaces. Older workspaces (saved before this feature existed) leave the current layout unchanged when loaded.
 
+### Structure (structural links)
+
+The **Structure** panel shows where the open note sits inside a larger *work* — a book, a screenplay, a course, a Map of Content. It answers a different question from the Backlinks and Outgoing Links panels. Those answer *"how does this idea relate to another idea?"* (the thinking links — supports, contradicts, causes…). Structure answers *"where does this note sit in the whole work I'm composing?"* — Book → Part → Chapter → Scene.
+
+This is the **compositional spine** of a work: the table of contents, the ordered outline. It is deliberately kept **out of** every thinking, maturity, and connection measure — placing a note "under a Book" never changes that note's maturity, its connection counts, or its presence in Sky View. A table of contents is authorship, not a claim to be judged.
+
+**The two kinds of structural link** (you only ever type one side — Constellation works out the reverse for you):
+
+- **`parent`** — *this note's* place under one parent (e.g. a chapter declares the part it belongs to).
+- **`contains`** — *this note's* ordered list of children (e.g. a book lists its parts in reading order).
+
+**Authoring a structural link** — open the note's **Properties** (the Properties tab in the right sidebar, or the properties block at the top of the note):
+
+1. Click **+ Add property** and type the key `parent` or `contains`.
+2. In the value, type the **target note's name** — just the name, e.g. `Part I - The Cartographer`. Constellation wraps it into a `[[link]]` for you; you do **not** type the brackets. (If you paste a name that already has brackets, it still stores cleanly as a single `[[name]]` — never a double-wrap.)
+3. For `contains`, add each child as its own chip, in the order you want them to read — that order becomes the outline order.
+
+Structural links **rename safely**: rename a chapter and its place in the structure follows automatically, because the link points at the note, not at a frozen piece of text.
+
+**Reading the Structure panel** — open the **Structure** tab in the right sidebar (just after Backlinks):
+
+- The panel shows the **whole work** as an indented outline (teal bullets), headed **OUTLINE** with a count of the descendants — not just the open note's own children.
+- The note you're currently viewing is **highlighted** ("you are here") within that outline.
+- A **breadcrumb** along the top shows the path up the spine (e.g. *The Atlas of Lost Places › Part I › Chapter 1*). Click any crumb — or any outline row — to jump to that note.
+- A **Whole work ⇄ This note** toggle (top-right of the panel) switches between the entire work and just the open note's own subtree. It appears only when the note actually has a parent, so the two views differ.
+- If the structure accidentally loops back on itself (note A's parent is B, and B's parent is A), the outline draws the chain and then stops cleanly, marking the cut point with a small **↻**. It never hangs.
+
+**Resolving a conflict (Contested).** If two notes both claim the same child — one through the child's own `parent`, the other through a `contains` list — the panel flags that row as **Contested** (an amber ⚠ badge naming the other claimant) rather than silently dropping it. Two one-click buttons resolve it:
+
+- **Keep** — keep the child's own declared parent (this note releases its claim on the child).
+- **Move here** — accept this note as the parent (the child's `parent` switches to this note).
+
+Either button updates the note files directly and refreshes the outline. Nothing is ever changed without your click.
+
 ---
 
 ## 16. Settings
