@@ -25,8 +25,9 @@
 		libraryColorMap?: Record<string, string>;
 	} = $props();
 
+	// MIG-088 §2c — shared Origin colours (Style Setter → Cognitive colours); fallback = today's value.
 	function originColor(type: string): string {
-		return type === 'received' ? '#4A9EFF' : type === 'discovered' ? '#FFB347' : type === 'mixed' ? '#A78BFA' : '#9ca3af';
+		return type === 'received' ? 'var(--origin-received, #4A9EFF)' : type === 'discovered' ? 'var(--origin-discovered, #FFB347)' : type === 'mixed' ? 'var(--origin-mixed, #A78BFA)' : 'var(--origin-none, #9ca3af)';
 	}
 	function originLabel(type: string): string {
 		return type === 'received' ? ($t('provenancePanel.received') || 'Received')

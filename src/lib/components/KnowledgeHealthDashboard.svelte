@@ -115,15 +115,17 @@
 	// via linkTypeColor() for the bar fills + the shared LinkTypePill for the badges. The old
 	// hardcoded map drifted from the registry (supports was green here, blue everywhere else).
 
+	// MIG-088 §2b — shared Confidence colours (Style Setter → Cognitive colours); fallback = today's value.
 	const confidenceColors: Record<string, string> = {
-		hypothesis: '#94a3b8', evidence: '#3b82f6', established: '#16a34a', contested: '#ef4444',
+		hypothesis: 'var(--confidence-hypothesis, #94a3b8)', evidence: 'var(--confidence-evidence, #3b82f6)', established: 'var(--confidence-established, #16a34a)', contested: 'var(--confidence-contested, #ef4444)',
 	};
 
 	// MIG-014 §2F — Living Link 6-stage colours. Was missing `spark`; had
 	// `archived` instead of the canonical `archival`. Aligned now with the
 	// LIVING_LINK_BASELINE order.
+	// MIG-088 §2d — shared Stage colours (Style Setter → Cognitive colours); fallback = today's value.
 	const stageColors: Record<string, string> = {
-		spark: '#a78bfa', birth: '#94a3b8', growth: '#16a34a', maturity: '#7c3aed', dormancy: '#f59e0b', archival: '#ef4444',
+		spark: 'var(--stage-spark, #a78bfa)', birth: 'var(--stage-birth, #94a3b8)', growth: 'var(--stage-growth, #16a34a)', maturity: 'var(--stage-maturity, #7c3aed)', dormancy: 'var(--stage-dormancy, #f59e0b)', archival: 'var(--stage-archival, #ef4444)',
 	};
 
 	// i18n label resolvers — reactive to the UI locale via $t; each falls back

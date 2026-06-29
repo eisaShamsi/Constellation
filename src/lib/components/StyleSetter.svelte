@@ -364,6 +364,23 @@
 			{ label: 'Evergreen', type: 'color', var: '--maturity-evergreen' },
 			{ label: 'Canonical', type: 'color', var: '--maturity-canonical' },
 			{ label: 'Wilting', type: 'color', var: '--maturity-wilting' } ] },
+		cogConfidence: { name: 'Confidence', controls: [
+			{ label: 'Hypothesis', type: 'color', var: '--confidence-hypothesis' },
+			{ label: 'Evidence', type: 'color', var: '--confidence-evidence' },
+			{ label: 'Established', type: 'color', var: '--confidence-established' },
+			{ label: 'Contested', type: 'color', var: '--confidence-contested' } ] },
+		cogOrigin: { name: 'Origin', controls: [
+			{ label: 'Received', type: 'color', var: '--origin-received' },
+			{ label: 'Discovered', type: 'color', var: '--origin-discovered' },
+			{ label: 'Mixed', type: 'color', var: '--origin-mixed' },
+			{ label: 'None', type: 'color', var: '--origin-none' } ] },
+		cogStage: { name: 'Stage', controls: [
+			{ label: 'Spark', type: 'color', var: '--stage-spark' },
+			{ label: 'Birth', type: 'color', var: '--stage-birth' },
+			{ label: 'Growth', type: 'color', var: '--stage-growth' },
+			{ label: 'Maturity', type: 'color', var: '--stage-maturity' },
+			{ label: 'Dormancy', type: 'color', var: '--stage-dormancy' },
+			{ label: 'Archival', type: 'color', var: '--stage-archival' } ] },
 		// §C Phase 9 wiring-audit — "Width" removed: the sidebar is sized by its drag-resize handle
 		// (a JS inline width), which a CSS var can't override. Background is a per-sidebar override.
 		cSidebar: { name: 'Sidebar shell', controls: [
@@ -538,7 +555,7 @@
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity'] },
+		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
@@ -1233,6 +1250,32 @@
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-evergreen, #16a34a)"></span><span class="ss-cog-lbl">{L('Evergreen')}</span></div>
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-canonical, #f59e0b)"></span><span class="ss-cog-lbl">{L('Canonical')}</span></div>
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-wilting, rgba(22,163,74,0.4))"></span><span class="ss-cog-lbl">{L('Wilting')}</span></div>
+						</div>
+					{:else if pk === 'cogConfidence'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Confidence')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--confidence-hypothesis, color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent))"></span><span class="ss-cog-lbl">{L('Hypothesis')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--confidence-evidence, color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent))"></span><span class="ss-cog-lbl">{L('Evidence')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--confidence-established, var(--interactive-accent, #7c3aed))"></span><span class="ss-cog-lbl">{L('Established')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--confidence-contested, #d97706)"></span><span class="ss-cog-lbl">{L('Contested')}</span></div>
+						</div>
+					{:else if pk === 'cogOrigin'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Origin')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--origin-received, #4A9EFF)"></span><span class="ss-cog-lbl">{L('Received')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--origin-discovered, #FFB347)"></span><span class="ss-cog-lbl">{L('Discovered')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--origin-mixed, #A78BFA)"></span><span class="ss-cog-lbl">{L('Mixed')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--origin-none, #9ca3af)"></span><span class="ss-cog-lbl">{L('None')}</span></div>
+						</div>
+					{:else if pk === 'cogStage'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Stage')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-spark, #a78bfa)"></span><span class="ss-cog-lbl">{L('Spark')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-birth, #94a3b8)"></span><span class="ss-cog-lbl">{L('Birth')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-growth, #16a34a)"></span><span class="ss-cog-lbl">{L('Growth')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-maturity, #7c3aed)"></span><span class="ss-cog-lbl">{L('Maturity')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-dormancy, #f59e0b)"></span><span class="ss-cog-lbl">{L('Dormancy')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--stage-archival, #ef4444)"></span><span class="ss-cog-lbl">{L('Archival')}</span></div>
 						</div>
 					{:else if pk === 'cSidebar'}
 						<div class="ss-focus"><div class="ss-fsidebar"><span></span><span></span><span></span><span></span></div></div>

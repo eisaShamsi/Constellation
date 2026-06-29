@@ -115,10 +115,11 @@
 		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 		border: 1px solid var(--border);
 	}
-	.conf-dot-hypothesis { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); }
-	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
-	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
-	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
+	/* MIG-088 §2b — shared Confidence colours (Style Setter → Cognitive colours); fallback = today's value. */
+	.conf-dot-hypothesis { background: var(--confidence-hypothesis, color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent)); }
+	.conf-dot-evidence   { background: var(--confidence-evidence, color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent)); }
+	.conf-dot-established{ background: var(--confidence-established, var(--interactive-accent, #7c3aed)); border-color: var(--confidence-established, var(--interactive-accent, #7c3aed)); }
+	.conf-dot-contested  { background: var(--confidence-contested, #d97706); border-color: var(--confidence-contested, #d97706); }
 	.conf-menu-sep { height: 1px; margin: 4px 4px; background: var(--border-light, var(--border)); }
 	.conf-menu-archive { color: var(--text-muted); }
 	.conf-menu-archive:hover { color: #d97706; }

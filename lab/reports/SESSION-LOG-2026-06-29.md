@@ -203,3 +203,13 @@ The add-an-element recipe, learned + applied:
 - **Scope split:** CSS surfaces wire directly; **Sky** (PIXI, own `--skyview-maturity-*` control) KEPT separate; **Map/OrgChart** (D3) → Phase 7 via getComputedStyle.
 - **§2a Maturity BUILT:** wired file-tree (`.note.mat-*` FileTree.svelte:216), tabs (`.tab-maturity.mat-*` +layout:8737), Inspector360 (`MATURITY_COLORS` map) to `--maturity-{seed,sapling,evergreen,canonical,wilting}` (fallbacks = exact current). New Setter element `cogMaturity` (Maturity) in new category **"Cognitive colours"** (key `cognitive`, 3-zone, legend preview). i18n: 2 new slugs `seed`+`cognitive_colours` ×15 (reused each locale's existing maturity-seed + standard "cognitive"); Maturity/Sapling/Evergreen/Canonical/Wilting reuse existing slugs. svelte-check 0.
 - **Sub-steps queued:** §2b Confidence · §2c Origin · §2d Stage · §2e Match-category.
+- §2a Maturity Boss-validated (Pass) → COMMITTED `ea68a565`.
+
+### MIG-088 §2b+§2c+§2d BUILT (one batch) — awaiting test
+Concept refinements (Concept-Before-Function): EXCLUDED BacklinksPanel traversal-chip "tiers" from Confidence (link-weight tiers ≠ note confidence — belongs with link tiers later); EXCLUDED the note stage badge from Stage (it's `--text-muted` for all stages today — wiring would ADD colour, not consolidate).
+- **§2b Confidence** → `--confidence-{hypothesis,evidence,established,contested}`: ConfidencePicker `.conf-dot-*` (CSS, color-mix/accent fallbacks), KH `confidenceColors` map. Note: ConfidencePicker + KH use DIFFERENT palettes → per-surface fallback preserves both until unified.
+- **§2c Origin** → `--origin-{received,discovered,mixed,none}`: Inspector360 `ORIGIN_COLORS` map, ProvenancePanel `originColor()` fn. (No conflicts — identical hex across both.)
+- **§2d Stage** → `--stage-{spark,birth,growth,maturity,dormancy,archival}`: KH `stageColors` map (lifecycle cards).
+- **Setter:** 3 new elements (cogConfidence/cogOrigin/cogStage) added to "Cognitive colours" category + legend previews.
+- **i18n:** 13 new slugs ×15, reusing each locale's in-app vocab (`knowledgeHealth.confidence.*`, `notePane.stage.*`, `provenancePanel.mixed`) for state names + hand-translated group names (confidence/origin/stage). svelte-check 0.
+- **§2e Match-category** = next (CM6 editor-search + SearchHub; fiddlier — own sub-step).

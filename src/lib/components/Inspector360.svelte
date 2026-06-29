@@ -103,7 +103,7 @@
 		seed: 'var(--maturity-seed, #9ca3af)', sapling: 'var(--maturity-sapling, #4ade80)', evergreen: 'var(--maturity-evergreen, #16a34a)', canonical: 'var(--maturity-canonical, #f59e0b)', wilting: 'var(--maturity-wilting, #16a34a80)',
 	};
 	const ORIGIN_COLORS: Record<string, string> = {
-		received: '#4A9EFF', discovered: '#FFB347', mixed: '#A78BFA', none: '#9ca3af',
+		received: 'var(--origin-received, #4A9EFF)', discovered: 'var(--origin-discovered, #FFB347)', mixed: 'var(--origin-mixed, #A78BFA)', none: 'var(--origin-none, #9ca3af)',
 	};
 	// MIG-014 §1D — stage icons resolved through lookupStageEmoji
 	// (Living Link 6-stage baseline + per-Universe customs + legacy
