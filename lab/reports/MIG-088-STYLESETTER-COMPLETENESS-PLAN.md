@@ -24,11 +24,17 @@ Colour map: `lab/reports/MIG-088-PHASE2-COLOR-MAP.md` (wf_1c77386c-019). **KEY F
 **Scope split (canvas vs CSS):** CSS/inline-style surfaces wire directly. **Sky** (PIXI, `skyPalette.ts`) already has `--skyview-maturity-*` + its own Setter control → KEEP as-is (separate). **Map / OrgChart** (D3/JS hex) read via `getComputedStyle` → deferred to **Phase 7**. So Phase 2 wires the CSS surfaces only.
 
 Sub-steps (each landable + Boss-testable):
-- **§2a Maturity** (`--maturity-{seed,sapling,evergreen,canonical,wilting}`) → file-tree (`.note.mat-*`), tabs (`.tab-maturity.mat-*`), Inspector360 (`MATURITY_COLORS`). ✅ BUILT.
+- **§2a Maturity** (`--maturity-{seed,sapling,evergreen,canonical,wilting}`) → file-tree (`.note.mat-*`), tabs (`.tab-maturity.mat-*`), Inspector360 (`MATURITY_COLORS`). ✅ SHIPPED `ea68a565` (Boss Pass).
 - **§2b Confidence** (`--confidence-{hypothesis,evidence,established,contested}`) → ConfidencePicker (`.conf-dot`, color-mix), KH confidence bars, backlinks/outgoing traversal chips. NOTE: ConfidencePicker uses `color-mix(accent N%, transparent)` not flat hex — fallback must preserve the color-mix expression.
 - **§2c Origin** (`--origin-{received,discovered,mixed,none}`) → Provenance, Inspector360 (`ORIGIN_COLORS`).
 - **§2d Stage** (`--stage-{spark,birth,growth,maturity,dormancy,archival}`) → KH stage cards, note stage badge.
-- **§2e Match-category** (`--match-{title,content,tag,wikilink,property,semantic,structured}`) → editor search highlight (CSS), tab search-match badges, SearchHub badges. (OrgChart/Map/Sight = Phase 7.)
+- **§2b Confidence** → ConfidencePicker, KH confidenceColors. ✅ SHIPPED `2d7f1ac3` (Boss Pass). (Excluded BacklinksPanel traversal-chip tiers — link-weight, not confidence.)
+- **§2c Origin** → Inspector360 ORIGIN_COLORS, ProvenancePanel originColor(). ✅ SHIPPED `2d7f1ac3`.
+- **§2d Stage** → KH stageColors. ✅ SHIPPED `2d7f1ac3`. (Excluded note stage badge — `--text-muted` today.)
+- **§2e Match-category** (`--match-category-{title,content,tag,wikilink,property,semantic,structured}`) → editor search highlight (NotePane CM6), SearchHub. ✅ SHIPPED `605642d8` (awaiting test). (OrgChart/Map/Sight D3 = Phase 7.)
+- i18n fix (Boss Arabic review `372e1b29`): added missing `maturity` slug ×15 (was English-fallback in ALL locales) + ar `mixed` gender (مختلطة→مختلط, incl. source provenancePanel.mixed).
+
+**Phase 2 CSS surfaces complete.** Remaining for these sets: the D3/canvas surfaces (Map/OrgChart/Sight badges + Map maturity/stratum) in Phase 7; Sky already has its own controls.
 
 ## Phase 3 — Editor specifics **[GATE]**
 Callout type colours (9), search-highlight term badges, toolbar highlight, HTML mark, wikilink ×N chip, code-block language label, lens count badge, data-view block, frontmatter URL/fence syntax, typed-link label, image fallback.

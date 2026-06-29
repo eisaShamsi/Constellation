@@ -213,3 +213,11 @@ Concept refinements (Concept-Before-Function): EXCLUDED BacklinksPanel traversal
 - **Setter:** 3 new elements (cogConfidence/cogOrigin/cogStage) added to "Cognitive colours" category + legend previews.
 - **i18n:** 13 new slugs ×15, reusing each locale's in-app vocab (`knowledgeHealth.confidence.*`, `notePane.stage.*`, `provenancePanel.mixed`) for state names + hand-translated group names (confidence/origin/stage). svelte-check 0.
 - **§2e Match-category** = next (CM6 editor-search + SearchHub; fiddlier — own sub-step).
+
+### MIG-088 §2b-2d Boss-validated (Pass) + 2 Arabic fixes + §2e BUILT — Phase 2 complete (CSS surfaces)
+- §2b/§2c/§2d → COMMITTED `2d7f1ac3`. Boss Arabic review found 2 issues, both fixed (`372e1b29`):
+  - `styleSetter.labels.maturity` was NEVER defined → English fallback in ALL locales (rail element name + Stage maturity row). Added ×15 (reused `notePane.stage.maturity`; ar = "نضوج" per Boss).
+  - ar `mixed` "مختلطة"→"مختلط" in styleSetter.labels AND source provenancePanel.mixed.
+- **§2e Match-category** → COMMITTED `605642d8`: editor search-highlight (NotePane CM6 `.cm-hl-*` ×6), SearchHub `categoryColors`; `cogMatch` element + legend. `--match-category-{title,content,tag,wikilink,property,semantic,structured}`. i18n: structured + match_category ×15 (rest existed + translated). Sky badges kept; OrgChart/Map/Sight D3 → Phase 7. svelte-check 0.
+- **PHASE 2 COMPLETE on CSS surfaces** (all 5 cognitive sets: Maturity/Confidence/Origin/Stage/Match). Canvas/D3 surfaces deferred to Phase 7.
+- Combined Arabic+§2e binary rebuilding (bxpj76vm2) for one Boss test.
