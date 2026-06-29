@@ -338,7 +338,7 @@ pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> 
                  LIMIT 1) AS confidence_alpha,
                 CASE WHEN EXISTS (
                     SELECT 1 FROM note_links nl
-                    WHERE nl.target_path = nm.path
+                    WHERE (nl.target_path = nm.path OR nl.target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))
                       AND nl.link_type = 'contradicts'
                       AND nl.confidence != 'archived'
                 ) THEN 1 ELSE 0 END AS contested,
@@ -362,7 +362,7 @@ pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> 
                  ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
                 strftime('%s', 'now') * 1000 AS computed_at,
                 -- v6 additions (Architect §1.2):
-                (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                (SELECT COUNT(*) FROM note_links WHERE (target_path = nm.path OR target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))) AS link_in_count,
                 (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
                 CASE
                     WHEN nm.properties_json IS NULL OR nm.properties_json = ''
@@ -562,7 +562,7 @@ pub fn backfill_sight_v6_layout_progressive(
                      LIMIT 1) AS confidence_alpha,
                     CASE WHEN EXISTS (
                         SELECT 1 FROM note_links nl
-                        WHERE nl.target_path = nm.path
+                        WHERE (nl.target_path = nm.path OR nl.target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))
                           AND nl.link_type = 'contradicts'
                           AND nl.confidence != 'archived'
                     ) THEN 1 ELSE 0 END AS contested,
@@ -585,7 +585,7 @@ pub fn backfill_sight_v6_layout_progressive(
                      GROUP BY nl2.link_type
                      ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
                     strftime('%s', 'now') * 1000 AS computed_at,
-                    (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                    (SELECT COUNT(*) FROM note_links WHERE (target_path = nm.path OR target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))) AS link_in_count,
                     (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
                     CASE
                         WHEN nm.properties_json IS NULL OR nm.properties_json = ''
@@ -742,7 +742,7 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
                  LIMIT 1) AS confidence_alpha,
                 CASE WHEN EXISTS (
                     SELECT 1 FROM note_links nl
-                    WHERE nl.target_path = nm.path
+                    WHERE (nl.target_path = nm.path OR nl.target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))
                       AND nl.link_type = 'contradicts'
                       AND nl.confidence != 'archived'
                 ) THEN 1 ELSE 0 END AS contested,
@@ -765,7 +765,7 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
                  GROUP BY nl2.link_type
                  ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
                 strftime('%s', 'now') * 1000 AS computed_at,
-                (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                (SELECT COUNT(*) FROM note_links WHERE (target_path = nm.path OR target_name_lower = COALESCE(nm.name_lower, LOWER(nm.name)))) AS link_in_count,
                 (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
                 CASE
                     WHEN nm.properties_json IS NULL OR nm.properties_json = ''
@@ -870,10 +870,14 @@ pub fn sight_v6_get_link_set_for_notes(
         .take(paths.len())
         .collect::<Vec<_>>()
         .join(",");
+    // PJ-065 audit fix: note_links.target_path is NULL on every row by design — link targets
+    // are tracked by target_name and resolved at read time. Recover the real target path by
+    // joining note_meta on the folded name; both endpoints must be in the requested set.
     let sql = format!(
-        "SELECT source_path, target_path, link_type, confidence
-         FROM note_links
-         WHERE source_path IN ({}) AND target_path IN ({})",
+        "SELECT nl.source_path, m.path AS target_path, nl.link_type, nl.confidence
+         FROM note_links nl
+         JOIN note_meta m ON (m.path = nl.target_path OR m.name_lower = nl.target_name_lower)
+         WHERE nl.source_path IN ({}) AND m.path IN ({})",
         placeholders, placeholders
     );
 
@@ -1126,17 +1130,46 @@ mod tests {
         conn.execute_batch(
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY,
+                name_lower TEXT,
                 modified INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE note_links (
                 source_path TEXT NOT NULL,
-                target_path TEXT NOT NULL,
+                target_path TEXT,
+                target_name_lower TEXT,
                 link_type TEXT NOT NULL,
                 confidence TEXT NOT NULL DEFAULT 'hypothesis'
             );",
         )
         .unwrap();
         conn
+    }
+
+    #[test]
+    fn inbound_count_resolves_by_target_name_not_null_target_path() {
+        // PJ-065 audit fix: note_links.target_path is NULL by design — inbound links are
+        // counted by target_name_lower. The old `target_path = nm.path` query returned 0;
+        // the migrated name-based query returns the real count.
+        let conn = empty_universe_db();
+        conn.execute("INSERT INTO note_meta (path, name_lower) VALUES ('b.md', 'b')", []).unwrap();
+        // Two inbound links to B, by name, with NULL target_path (the real-world shape).
+        conn.execute("INSERT INTO note_links (source_path, target_name_lower, link_type) VALUES ('a.md', 'b', 'supports')", []).unwrap();
+        conn.execute("INSERT INTO note_links (source_path, target_name_lower, link_type) VALUES ('c.md', 'b', 'causes')", []).unwrap();
+        // OLD (the bug): matched by the always-NULL target_path → 0.
+        let old: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM note_links WHERE target_path = (SELECT path FROM note_meta WHERE path='b.md')",
+            [], |r| r.get(0)).unwrap();
+        assert_eq!(old, 0, "the old target_path query is empty (the column is NULL by design)");
+        // NEW (the fix): match by target_name_lower, mirroring the migrated build_sight_v6 query.
+        let new: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM note_links WHERE target_name_lower = COALESCE((SELECT name_lower FROM note_meta WHERE path='b.md'), '')",
+            [], |r| r.get(0)).unwrap();
+        assert_eq!(new, 2, "the migrated name-based query returns the real inbound count");
+        // The link-set JOIN recovers the real target path from the name.
+        let joined: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM note_links nl JOIN note_meta m ON m.name_lower = nl.target_name_lower WHERE nl.source_path IN ('a.md','c.md') AND m.path IN ('b.md')",
+            [], |r| r.get(0)).unwrap();
+        assert_eq!(joined, 2, "the link-set JOIN resolves target_path by name");
     }
 
     #[test]
@@ -1311,6 +1344,7 @@ mod tests {
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY,
                 name TEXT NOT NULL DEFAULT '',
+                name_lower TEXT,
                 library_name TEXT NOT NULL DEFAULT '',
                 modified INTEGER NOT NULL DEFAULT 0,
                 content_hash TEXT,
@@ -1327,6 +1361,7 @@ mod tests {
             CREATE TABLE note_links (
                 source_path TEXT NOT NULL,
                 target_path TEXT NOT NULL,
+                target_name_lower TEXT,
                 link_type TEXT NOT NULL,
                 confidence TEXT NOT NULL DEFAULT 'hypothesis'
             );
@@ -1604,6 +1639,7 @@ mod tests {
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY,
                 name TEXT NOT NULL DEFAULT '',
+                name_lower TEXT,
                 library_name TEXT NOT NULL DEFAULT '',
                 modified INTEGER NOT NULL DEFAULT 0,
                 properties_json TEXT DEFAULT '{}',
@@ -1614,6 +1650,7 @@ mod tests {
             CREATE TABLE note_links (
                 source_path TEXT NOT NULL,
                 target_path TEXT NOT NULL,
+                target_name_lower TEXT,
                 link_type TEXT NOT NULL,
                 confidence TEXT NOT NULL DEFAULT 'hypothesis'
             );
