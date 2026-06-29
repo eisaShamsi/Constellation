@@ -98,8 +98,9 @@
 		return value && value !== key ? value : fallback;
 	}
 
+	// MIG-088 §2a — shared Maturity colours (Style Setter → Cognitive colours); fallback = today's value.
 	const MATURITY_COLORS: Record<string, string> = {
-		seed: '#9ca3af', sapling: '#4ade80', evergreen: '#16a34a', canonical: '#f59e0b', wilting: '#16a34a80',
+		seed: 'var(--maturity-seed, #9ca3af)', sapling: 'var(--maturity-sapling, #4ade80)', evergreen: 'var(--maturity-evergreen, #16a34a)', canonical: 'var(--maturity-canonical, #f59e0b)', wilting: 'var(--maturity-wilting, #16a34a80)',
 	};
 	const ORIGIN_COLORS: Record<string, string> = {
 		received: '#4A9EFF', discovered: '#FFB347', mixed: '#A78BFA', none: '#9ca3af',

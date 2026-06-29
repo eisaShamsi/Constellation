@@ -3517,6 +3517,8 @@
       "tab_text": "Texto da aba",
       "tag": "Etiqueta",
       "tag_background": "Fundo da tag",
+      "seed": "Semente",
+      "cognitive_colours": "Cores cognitivas",
       "property_tags": "Tags de propriedades",
       "taxonomy_pills": "Emblemas de taxonomia",
       "tag_radius": "Raio da tag",

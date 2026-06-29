@@ -355,6 +355,15 @@
 			{ label: 'Background', type: 'color', var: '--pe-taxo-bg' },
 			{ label: 'Text', type: 'color', var: '--pe-taxo-text-color' },
 			{ label: 'Radius', type: 'range', var: '--pe-taxo-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
+		// MIG-088 §2 — Cognitive colours: the shared cognitive-vocabulary palettes (Maturity, Confidence,
+		// Origin, Stage, Match-category). "Unify on demand" (Boss 2026-06-29): each surface keeps its own
+		// colour as a fallback until the user sets the shared var here, then ALL surfaces snap to it.
+		cogMaturity: { name: 'Maturity', controls: [
+			{ label: 'Seed', type: 'color', var: '--maturity-seed' },
+			{ label: 'Sapling', type: 'color', var: '--maturity-sapling' },
+			{ label: 'Evergreen', type: 'color', var: '--maturity-evergreen' },
+			{ label: 'Canonical', type: 'color', var: '--maturity-canonical' },
+			{ label: 'Wilting', type: 'color', var: '--maturity-wilting' } ] },
 		// §C Phase 9 wiring-audit — "Width" removed: the sidebar is sized by its drag-resize handle
 		// (a JS inline width), which a CSS var can't override. Background is a per-sidebar override.
 		cSidebar: { name: 'Sidebar shell', controls: [
@@ -529,6 +538,7 @@
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
+		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
@@ -576,7 +586,7 @@
 	// MIG-088 Phase 1 — Properties (frontmatter) is THREE-zone: its dedicated centre preview shows the
 	// pill mimic. (Two-zone relies on the live app showing through behind the right-anchored panel — but
 	// the panel would occlude the right-sidebar Properties panel, so live-behind can't preview it.)
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'cognitive' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -1215,6 +1225,15 @@
 							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">domain</span><div class="ss-fep-vals"><span class="ss-petaxo">Botany</span><span class="ss-petaxo">Horticulture</span></div></div>
 							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">field</span><div class="ss-fep-vals"><span class="ss-petaxo">Pomology</span></div></div>
 						</div>
+					{:else if pk === 'cogMaturity'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Maturity')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-seed, #9ca3af)"></span><span class="ss-cog-lbl">{L('Seed')}</span><span class="ss-cog-note">360.3D</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-sapling, #4ade80)"></span><span class="ss-cog-lbl">{L('Sapling')}</span><span class="ss-cog-note">{L('File tree')} · {L('Top bar & tabs')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-evergreen, #16a34a)"></span><span class="ss-cog-lbl">{L('Evergreen')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-canonical, #f59e0b)"></span><span class="ss-cog-lbl">{L('Canonical')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-wilting, rgba(22,163,74,0.4))"></span><span class="ss-cog-lbl">{L('Wilting')}</span></div>
+						</div>
 					{:else if pk === 'cSidebar'}
 						<div class="ss-focus"><div class="ss-fsidebar"><span></span><span></span><span></span><span></span></div></div>
 					{:else if pk === 'global'}
@@ -1669,6 +1688,12 @@
 	.ss-fep-plain { color: var(--text-normal, #2e3338); font-size: 13px; }
 	.ss-petag { display: inline-flex; align-items: center; height: var(--pe-tag-height, 20px); padding: 0 8px; border-radius: var(--pe-tag-radius, 10px); background: var(--pe-tag-bg, var(--background-modifier-border-focus, #555)); color: var(--pe-tag-text-color, #fff); font-size: 12px; font-weight: 700; white-space: nowrap; }
 	.ss-petaxo { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--pe-taxo-radius, 10px); background: var(--pe-taxo-bg, var(--background-modifier-border-focus, #555)); color: var(--pe-taxo-text-color, #fff); font-size: 12px; font-weight: 700; white-space: nowrap; border-inline-start: 3px solid var(--interactive-accent, #7c3aed); }
+	/* MIG-088 §2 — Cognitive-colours legend preview: a swatch per state reading the shared draft var. */
+	.ss-fcog { gap: 7px; align-items: stretch; min-width: 360px; }
+	.ss-cog-row { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+	.ss-cog-bar { width: 34px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+	.ss-cog-lbl { color: var(--text-normal, #2e3338); font-size: 14px; font-weight: 600; min-width: 92px; text-align: start; }
+	.ss-cog-note { color: var(--text-muted, #888); font-size: 11.5px; }
 	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
 	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
 	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }

@@ -3517,6 +3517,8 @@
       "tab_text": "タブのテキスト",
       "tag": "タグ",
       "tag_background": "タグの背景",
+      "seed": "種",
+      "cognitive_colours": "認知カラー",
       "property_tags": "プロパティタグ",
       "taxonomy_pills": "分類バッジ",
       "tag_radius": "タグの角丸",

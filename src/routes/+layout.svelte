@@ -8734,10 +8734,11 @@
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 	.tab-maturity { font-size: 12px; flex-shrink: 0; margin-inline-end: 3px; }
-	.tab-maturity.mat-sapling { color: #4ade80; }
-	.tab-maturity.mat-evergreen { color: #16a34a; }
-	.tab-maturity.mat-canonical { color: #f59e0b; }
-	.tab-maturity.mat-wilting { color: #16a34a; opacity: 0.4; }
+	/* MIG-088 §2a — shared Maturity colours (Style Setter → Cognitive colours); fallback = today's value. */
+	.tab-maturity.mat-sapling { color: var(--maturity-sapling, #4ade80); }
+	.tab-maturity.mat-evergreen { color: var(--maturity-evergreen, #16a34a); }
+	.tab-maturity.mat-canonical { color: var(--maturity-canonical, #f59e0b); }
+	.tab-maturity.mat-wilting { color: var(--maturity-wilting, #16a34a); opacity: 0.4; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
 	.tab-pin { font-size: 0.65rem; flex-shrink: 0; pointer-events: none; }
 	.tab { cursor: grab; }

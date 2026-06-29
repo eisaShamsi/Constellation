@@ -3517,6 +3517,8 @@
       "tab_text": "탭 텍스트",
       "tag": "태그",
       "tag_background": "태그 배경",
+      "seed": "씨앗",
+      "cognitive_colours": "인지 색상",
       "property_tags": "속성 태그",
       "taxonomy_pills": "분류 배지",
       "tag_radius": "태그 모서리 반경",

@@ -213,10 +213,11 @@
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.note-stage { font-size: 0.7rem; flex-shrink: 0; margin-inline-end: 2px; }
 	/* CE Phase 3: Maturity left border */
-	.note.mat-sapling   { border-inline-start: 3px solid #4ade80 !important; }
-	.note.mat-evergreen  { border-inline-start: 3px solid #16a34a !important; }
-	.note.mat-canonical  { border-inline-start: 3px solid #f59e0b !important; }
-	.note.mat-wilting    { border-inline-start: 3px solid rgba(22, 163, 74, 0.4) !important; }
+	/* MIG-088 §2a — shared Maturity colours (Style Setter → Cognitive colours); fallback = today's value. */
+	.note.mat-sapling   { border-inline-start: 3px solid var(--maturity-sapling, #4ade80) !important; }
+	.note.mat-evergreen  { border-inline-start: 3px solid var(--maturity-evergreen, #16a34a) !important; }
+	.note.mat-canonical  { border-inline-start: 3px solid var(--maturity-canonical, #f59e0b) !important; }
+	.note.mat-wilting    { border-inline-start: 3px solid var(--maturity-wilting, rgba(22, 163, 74, 0.4)) !important; }
 	.note-status { font-size: 0.75rem; flex-shrink: 0; margin-inline-end: 1px; }
 
 	.base-file {

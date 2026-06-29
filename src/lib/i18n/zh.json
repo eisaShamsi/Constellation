@@ -3517,6 +3517,8 @@
       "tab_text": "标签文字",
       "tag": "标签",
       "tag_background": "标签背景",
+      "seed": "种子",
+      "cognitive_colours": "认知色彩",
       "property_tags": "属性标签",
       "taxonomy_pills": "分类徽章",
       "tag_radius": "标签圆角",

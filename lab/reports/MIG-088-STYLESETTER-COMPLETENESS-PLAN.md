@@ -16,14 +16,19 @@
 - **Taxonomy pills** (`.pe-taxo-pill`) → element: Background `--pe-taxo-pill-bg`, Text `--pe-taxo-pill-color`, tier colours `--pe-taxo-tier1/2/3-color`.
 - Category: a new **"Frontmatter"** group (or extend Components). Preview: a mimic property row with tags + taxonomy pill.
 
-## Phase 2 — Shared semantic colour sets (the consolidation; ~60 findings) **[GATE]**
-One shared control + var-set per concept, wired across EVERY surface (replace per-surface `--ft-/--tab-/--i360-/--cmap-/--kh-…` maturity/etc. with the shared var, fallback-chained):
-- **Maturity** (`--maturity-{seed,sapling,evergreen,canonical,wilting}`) → file-tree, tabs, Inspector360, KH, Sky, Map.
-- **Confidence** (`--confidence-{hypothesis,evidence,established,contested}`) → conf dots, ConfidencePicker, KH bars, Inspector360, backlinks.
-- **Origin** (`--origin-{received,discovered,mixed}`) → Provenance, Inspector360.
-- **Stage** (`--stage-{spark,birth,growth,maturity,dormancy,archival}`) → KH (+ note stage badge if colourable).
-- **Match-category** (`--match-{title,content,tag,wikilink,property,semantic,structured}`) → editor search highlight, tab/search/OrgChart/Map badges.
-- New Setter category **"Cognitive colours"** (or fold into Global) with these 5 control groups.
+## Phase 2 — Shared semantic colour sets ("Cognitive colours") **[GATE]**
+Colour map: `lab/reports/MIG-088-PHASE2-COLOR-MAP.md` (wf_1c77386c-019). **KEY FINDING:** every semantic state is drawn in DIFFERENT colours on different surfaces today (e.g. wilting = green@40% in file-tree, lime `#a3e635` on the Map, `#16a34a` in Sky). So "one shared colour" can't be byte-identical unless each surface keeps its own value as the fallback.
+
+**Boss ruling 2026-06-29 — "unify on demand" (per-surface fallback):** each surface wires `var(--<set>-<state>, <THIS surface's exact current value>)`. Until the user sets the shared var in the Setter → byte-identical (today's per-surface colours). Once set → ALL wired surfaces snap to it. New Setter category **"Cognitive colours"** (key `cognitive`, 3-zone, legend preview), one element per set.
+
+**Scope split (canvas vs CSS):** CSS/inline-style surfaces wire directly. **Sky** (PIXI, `skyPalette.ts`) already has `--skyview-maturity-*` + its own Setter control → KEEP as-is (separate). **Map / OrgChart** (D3/JS hex) read via `getComputedStyle` → deferred to **Phase 7**. So Phase 2 wires the CSS surfaces only.
+
+Sub-steps (each landable + Boss-testable):
+- **§2a Maturity** (`--maturity-{seed,sapling,evergreen,canonical,wilting}`) → file-tree (`.note.mat-*`), tabs (`.tab-maturity.mat-*`), Inspector360 (`MATURITY_COLORS`). ✅ BUILT.
+- **§2b Confidence** (`--confidence-{hypothesis,evidence,established,contested}`) → ConfidencePicker (`.conf-dot`, color-mix), KH confidence bars, backlinks/outgoing traversal chips. NOTE: ConfidencePicker uses `color-mix(accent N%, transparent)` not flat hex — fallback must preserve the color-mix expression.
+- **§2c Origin** (`--origin-{received,discovered,mixed,none}`) → Provenance, Inspector360 (`ORIGIN_COLORS`).
+- **§2d Stage** (`--stage-{spark,birth,growth,maturity,dormancy,archival}`) → KH stage cards, note stage badge.
+- **§2e Match-category** (`--match-{title,content,tag,wikilink,property,semantic,structured}`) → editor search highlight (CSS), tab search-match badges, SearchHub badges. (OrgChart/Map/Sight = Phase 7.)
 
 ## Phase 3 — Editor specifics **[GATE]**
 Callout type colours (9), search-highlight term badges, toolbar highlight, HTML mark, wikilink ×N chip, code-block language label, lens count badge, data-view block, frontmatter URL/fence syntax, typed-link label, image fallback.

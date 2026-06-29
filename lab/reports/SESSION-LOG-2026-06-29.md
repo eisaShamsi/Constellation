@@ -195,3 +195,11 @@ The add-an-element recipe, learned + applied:
 - **RC routing** (NotePane): `getEditorMenuItems(onLink, styleCat='editor')`; frontmatter menu passes `'frontmatter'` → "Style…" in the Properties RC opens the new category ("style the function in-hand"). Note-body "Style…" still → 'editor'.
 - **i18n**: category reuses existing `properties` slug (zero cost); 2 new labels `property_tags`/`taxonomy_pills` ×15 (Sonnet, consistent w/ each locale's tag/properties terms; "pills"=badge/chip, never pharmaceutical). control labels reuse existing slugs. LL-032-safe (no BUILTIN_THEMES). svelte-check 0.
 - **DEFERRED to Phase 1b:** taxonomy-pill TIER colours (`tierColorForId` is JS-computed per row) — wrap to user vars later.
+- Phase 1 Boss-validated (A/B/C Pass) → COMMITTED `dbf5507e`. Recipe banked to memory `project_stylesetter_add_element_recipe`.
+
+### MIG-088 §Phase 2 — colour map + design decision + §2a BUILT (awaiting test)
+- **Colour map** (wf_1c77386c-019): `lab/reports/MIG-088-PHASE2-COLOR-MAP.md`. KEY FINDING: every semantic state uses DIFFERENT colours per surface today (wilting = green@40% file-tree / lime `#a3e635` Map / `#16a34a` Sky, etc.).
+- **Boss ruling: "unify on demand"** (per-surface fallback) — `var(--<set>-<state>, <this surface's current value>)` → byte-identical until the user sets the shared var, then all surfaces snap. Alternative (canonical-now) rejected (would change current look).
+- **Scope split:** CSS surfaces wire directly; **Sky** (PIXI, own `--skyview-maturity-*` control) KEPT separate; **Map/OrgChart** (D3) → Phase 7 via getComputedStyle.
+- **§2a Maturity BUILT:** wired file-tree (`.note.mat-*` FileTree.svelte:216), tabs (`.tab-maturity.mat-*` +layout:8737), Inspector360 (`MATURITY_COLORS` map) to `--maturity-{seed,sapling,evergreen,canonical,wilting}` (fallbacks = exact current). New Setter element `cogMaturity` (Maturity) in new category **"Cognitive colours"** (key `cognitive`, 3-zone, legend preview). i18n: 2 new slugs `seed`+`cognitive_colours` ×15 (reused each locale's existing maturity-seed + standard "cognitive"); Maturity/Sapling/Evergreen/Canonical/Wilting reuse existing slugs. svelte-check 0.
+- **Sub-steps queued:** §2b Confidence · §2c Origin · §2d Stage · §2e Match-category.

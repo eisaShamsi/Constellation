@@ -3647,6 +3647,8 @@
       "tab_text": "Tab text",
       "tag": "Tag",
       "tag_background": "Tag background",
+      "seed": "Seed",
+      "cognitive_colours": "Cognitive colours",
       "property_tags": "Property tags",
       "taxonomy_pills": "Taxonomy pills",
       "tag_radius": "Tag radius",
