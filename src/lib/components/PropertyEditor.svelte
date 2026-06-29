@@ -124,13 +124,14 @@
 		{ key: 'content_type', label: 'content_type', labelAr: 'نوع المحتوى' },
 	];
 
-	// PJ-065 — structural link properties authored here. 'parent' is a SINGLE link (scalar
-	// [[ ]] → 'link' type, auto-wraps on input); 'contains' is a LIST of links ('list' type,
-	// each item auto-wrapped in [[ ]]). Canonical English keys (locale-independent).
-	const STRUCTURAL_LINK_KEYS = new Set(['parent', 'contains']);
-	const STRUCTURAL_LIST_LINK_KEYS = new Set(['contains']);
+	// PJ-065 — structural link properties author as 'list' types (clean chips), each item a
+	// [[wikilink]] (auto-wrapped if the user omits brackets; brackets stripped for display).
+	// BOTH 'parent' and 'contains' use 'list' so they render identically and avoid the
+	// link-input double-wrap (the [[[triple]]] the Boss hit); 'parent' is conceptually single
+	// (the reader takes the first item). Canonical English keys (the reader matches these).
+	const STRUCTURAL_LIST_LINK_KEYS = new Set(['parent', 'contains']);
 	const structuralKeyType = (key: string): PropertyType | null =>
-		key === 'parent' ? 'link' : key === 'contains' ? 'list' : null;
+		STRUCTURAL_LIST_LINK_KEYS.has(key) ? 'list' : null;
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
 	let saveTimeout: ReturnType<typeof setTimeout>;
@@ -341,10 +342,18 @@
 				editableProps = properties.map(p => {
 					// Apply registered type override if available
 					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
+					// PJ-065 — structural link keys ALWAYS render as 'list' chips, overriding any
+					// stale registered/inferred type (e.g. a parent once saved as a scalar 'link').
+					// Seed listItems from a scalar value so an existing single-link parent still shows.
+					const forced = structuralKeyType(p.key);
+					let listItems = p.listItems ? [...p.listItems] : undefined;
+					if (forced === 'list' && !listItems) {
+						listItems = p.value ? p.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+					}
 					return {
 						...p,
-						type: registeredType ?? p.type,
-						listItems: p.listItems ? [...p.listItems] : undefined
+						type: forced ?? registeredType ?? p.type,
+						listItems
 					};
 				});
 			}
@@ -615,11 +624,13 @@
 		if (!tag.trim()) return;
 		editableProps = editableProps.map((p, i) => {
 			if (i !== idx) return p;
-			// PJ-065 — a structural link-list (contains:) stores items as [[wikilinks]] so the
-			// structural reader registers them. Auto-wrap if the user didn't type the brackets.
+			// PJ-065 — a structural link-list (parent:/contains:) stores items as [[wikilinks]]
+			// so the structural reader registers them. Normalize to exactly [[name]]: strip any
+			// brackets the user typed, then wrap once — a typed name OR a pasted [[X]] both land
+			// as [[X]], never a double/triple wrap.
 			let item = tag.trim();
-			if (STRUCTURAL_LIST_LINK_KEYS.has(p.key) && !item.startsWith('[[')) {
-				item = `[[${item}]]`;
+			if (STRUCTURAL_LIST_LINK_KEYS.has(p.key) && item) {
+				item = `[[${item.replace(/^\[+|\]+$/g, '')}]]`;
 			}
 			const items = [...(p.listItems ?? []), item];
 			return { ...p, listItems: items, value: items.join(', ') };
@@ -1002,7 +1013,7 @@
 					{#if prop.listItems && prop.listItems.length > 0}
 						{#each prop.listItems as tag, tagIdx}
 							<span class="pe-tag" dir="auto">
-								{STRUCTURAL_LIST_LINK_KEYS.has(prop.key) ? tag.replace(/^\[\[|\]\]$/g, '') : tag}
+								{STRUCTURAL_LIST_LINK_KEYS.has(prop.key) ? tag.replace(/^\[+|\]+$/g, '') : tag}
 								<button class="pe-tag-x" onclick={() => removeTag(idx, tagIdx)}>&times;</button>
 							</span>
 						{/each}
