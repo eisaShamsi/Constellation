@@ -2372,6 +2372,8 @@
     "footnote": "각주",
     "externalLink": "외부 링크",
     "copyTarget": "대상 복사",
+    "copyValue": "값 복사",
+    "removeProperty": "속성 제거",
     "deleteFile": "파일 삭제",
     "selectAll": "모두 선택",
     "subscript": "아래 첨자",

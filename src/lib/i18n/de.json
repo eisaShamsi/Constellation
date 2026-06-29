@@ -1932,6 +1932,8 @@
     "footnote": "Fußnote",
     "externalLink": "Externer Link",
     "copyTarget": "Ziel kopieren",
+    "copyValue": "Wert kopieren",
+    "removeProperty": "Eigenschaft entfernen",
     "deleteFile": "Datei löschen",
     "selectAll": "Alles auswählen",
     "subscript": "Tiefgestellt",

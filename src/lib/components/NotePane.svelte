@@ -987,6 +987,30 @@
 	/* ─── MIG-077 §F-Editor: the note's right-click menu (NotePane is the live editor) ─── */
 	let editorCtxMenu = $state<{ x: number; y: number; onLink: boolean } | null>(null);
 
+	// MIG-077 §F-Editor — frontmatter (Properties panel) right-click. Boss: "all the
+	// above" → property actions + the editor menu + Style. NotePane owns the menu (it
+	// has the editor commands + view); PropertyEditor emits the row + exposes add/remove.
+	let propEditorRef = $state<any>(null);
+	let fmCtxMenu = $state<{ x: number; y: number; idx: number; key: string; value: string } | null>(null);
+	function handlePropContextMenu(prop: FrontmatterProperty, idx: number, x: number, y: number) {
+		fmCtxMenu = { x, y, idx, key: prop.key ?? '', value: String(prop.value ?? '') };
+	}
+	function getFrontmatterMenuItems(): MenuItem[] {
+		const fm = fmCtxMenu;
+		const items: MenuItem[] = [];
+		if (fm) {
+			items.push(
+				{ label: $t('contextMenu.copyValue'), icon: '📋', action: () => navigator.clipboard.writeText(fm.value).catch(() => {}) },
+				{ label: $t('contextMenu.copyName'), icon: '🏷', action: () => navigator.clipboard.writeText(fm.key).catch(() => {}) },
+				{ label: $t('contextMenu.removeProperty'), icon: '🗑️', danger: true, action: () => propEditorRef?.removeProperty?.(fm.idx) },
+				{ label: $t('contextMenu.addProperty'), icon: '➕', action: () => propEditorRef?.addProperty?.() },
+				{ separator: true },
+			);
+		}
+		items.push(...getEditorMenuItems(false));
+		return items;
+	}
+
 	function handleEditorContextMenu(e: MouseEvent) {
 		if (!view) return;
 		e.preventDefault();
@@ -1003,9 +1027,9 @@
 	// MIG-077 §F-Editor — the note's right-click menu, built for the SHARED <ContextMenu>
 	// (same chrome + icons + fly-out submenus as the file tree). Items reuse NotePane's
 	// own commands via the ecm* helpers below.
-	function getEditorMenuItems(): MenuItem[] {
+	function getEditorMenuItems(onLink: boolean): MenuItem[] {
 		const items: MenuItem[] = [];
-		if (editorCtxMenu?.onLink) {
+		if (onLink) {
 			items.push(
 				{ label: $t('contextMenu.openLink'), icon: '📂', action: () => ecmLinkAction('open') },
 				{ label: $t('contextMenu.copyTarget'), icon: '📋', action: () => ecmLinkAction('copyTarget') },
@@ -1310,6 +1334,7 @@
 				{/if}
 			{:else}
 				<PropertyEditor
+					bind:this={propEditorRef}
 					{properties}
 					body={value}
 					{tabId}
@@ -1320,6 +1345,7 @@
 					onToggle={() => propsCollapsed = !propsCollapsed}
 					onstagechange={(s) => { onpromote?.(s); }}
 					{onLiveProps}
+					onPropContextMenu={handlePropContextMenu}
 				/>
 			{/if}
 			<hr class="e-props-divider" />
@@ -1395,8 +1421,16 @@
 			<ContextMenu
 				x={editorCtxMenu.x}
 				y={editorCtxMenu.y}
-				items={getEditorMenuItems()}
+				items={getEditorMenuItems(editorCtxMenu.onLink)}
 				onClose={() => editorCtxMenu = null}
+			/>
+		{/if}
+		{#if fmCtxMenu}
+			<ContextMenu
+				x={fmCtxMenu.x}
+				y={fmCtxMenu.y}
+				items={getFrontmatterMenuItems()}
+				onClose={() => fmCtxMenu = null}
 			/>
 		{/if}
 	</div>

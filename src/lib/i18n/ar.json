@@ -2467,6 +2467,8 @@
     "footnote": "حاشية",
     "externalLink": "رابط خارجي",
     "copyTarget": "نسخ الوجهة",
+    "copyValue": "نسخ القيمة",
+    "removeProperty": "إزالة الخاصية",
     "deleteFile": "حذف الملف",
     "selectAll": "تحديد الكل",
     "subscript": "نص سفلي",

@@ -2372,6 +2372,8 @@
     "footnote": "Dipnot",
     "externalLink": "Harici bağlantı",
     "copyTarget": "Hedefi kopyala",
+    "copyValue": "Değeri kopyala",
+    "removeProperty": "Özelliği kaldır",
     "deleteFile": "Dosyayı sil",
     "selectAll": "Tümünü seç",
     "subscript": "Alt simge",

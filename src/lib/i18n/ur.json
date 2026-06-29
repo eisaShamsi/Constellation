@@ -1932,6 +1932,8 @@
     "footnote": "حاشیہ",
     "externalLink": "بیرونی لنک",
     "copyTarget": "ہدف کاپی کریں",
+    "copyValue": "قدر کاپی کریں",
+    "removeProperty": "خاصیت ہٹائیں",
     "deleteFile": "فائل حذف کریں",
     "selectAll": "سب منتخب کریں",
     "subscript": "ذیلی متن",

@@ -1932,6 +1932,8 @@
     "footnote": "Note de bas de page",
     "externalLink": "Lien externe",
     "copyTarget": "Copier la cible",
+    "copyValue": "Copier la valeur",
+    "removeProperty": "Supprimer la propriété",
     "deleteFile": "Supprimer le fichier",
     "selectAll": "Tout sélectionner",
     "subscript": "Indice",

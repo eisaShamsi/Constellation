@@ -2517,6 +2517,8 @@
     "footnote": "Footnote",
     "externalLink": "External link",
     "copyTarget": "Copy target",
+    "copyValue": "Copy value",
+    "removeProperty": "Remove property",
     "deleteFile": "Delete file",
     "selectAll": "Select All",
     "subscript": "Subscript",

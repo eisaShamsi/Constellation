@@ -2372,6 +2372,8 @@
     "footnote": "Сноска",
     "externalLink": "Внешняя ссылка",
     "copyTarget": "Копировать цель",
+    "copyValue": "Копировать значение",
+    "removeProperty": "Удалить свойство",
     "deleteFile": "Удалить файл",
     "selectAll": "Выбрать всё",
     "subscript": "Подстрочный",

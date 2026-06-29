@@ -144,6 +144,20 @@ Boss: Check 8 now shows Constellation's editor menu, BUT (1) Format/Paragraph/In
 ## Frontmatter RC — Boss ruling: "all the above" (NOT only property-specific)
 Boss wants the Properties-panel RC to include the property actions (Copy value/name, Remove, Add) **+** the editor menu **+** Style… — comprehensive. Build NEXT (needs PropertyEditor wiring), after the body-RC fix is Boss-confirmed.
 
+## §F-Editor — Boss re-test: Checks 8–11 PASS (committed 698da978); submenu truncation fixed
+- Check 8 (menu + consistent style) · 9 (commands) · 10 (wikilink) · 11 (Style…) **PASS**. Check 12 (Notes Navigator → native) = parked-as-designed.
+- **Submenu truncation (Boss finding):** the fly-out ran off the right viewport edge. Fixed in shared `ContextMenu` — `openSubmenu()` measures + flips the fly-out LEFT (`.ctx-submenu.flip`) when no room on the right. Space-based (LTR+RTL).
+
+## §F-Editor-Frontmatter — Boss ruling "all the above" → BUILT (in-tree, svelte-check 0)
+Frontmatter (Properties panel) RC = property actions + the full editor menu + Style. NotePane owns it (has the editor commands + view); PropertyEditor emits the row + exposes add/remove.
+- **PropertyEditor:** new `onPropContextMenu(prop, idx, x, y)` prop; `oncontextmenu` on `.pe-row`; `addProperty`/`removeProperty` now `export`ed (callable via `bind:this`).
+- **NotePane:** `bind:this={propEditorRef}`; `handlePropContextMenu` → `fmCtxMenu` state; `getFrontmatterMenuItems()` = Copy value · Copy property name (reuse `copyName`) · Remove property · Add property (reuse `addProperty`) · — · `getEditorMenuItems(false)` (editor menu + Style). `getEditorMenuItems` refactored to take `onLink`. Renders the shared `<ContextMenu>`.
+- i18n: 2 new en keys (`copyValue`, `removeProperty`); localizer `wf_bf4e9973-8a6` ×14 (in-flight).
+- Concept note: editor formatting commands from the frontmatter act on the note BODY (the property fields are inputs) — per Boss "all the above"; flag at test if undesired.
+
+## BLOCKER — binary locked by the running app (LL-028)
+The flip-fix cargo re-embed FAILED ("Access is denied"); `constellation.exe` (PID 50980) is running → can't overwrite. **Boss must close Constellation**, then ONE rebuild lands flip-fix + frontmatter RC + the ×14 i18n.
+
 ## NEXT
-- Rebuild → re-test Check 8 (submenus open + consistent style) + 9/10/11/12. Then build the comprehensive frontmatter RC (PropertyEditor). Then commit the §F-Editor/§F-Style/navigator-disable milestone. Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · audit · orientation v-bump.
+- Apply ×14 i18n → (Boss closes app) → rebuild → test truncation-gone + frontmatter RC. Commit frontmatter milestone. Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · Phase-4 audit · orientation v-bump (§F completion).
 - Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · Phase-4 audit · orientation v-bump at §F completion.

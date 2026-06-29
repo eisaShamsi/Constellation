@@ -2372,6 +2372,8 @@
     "footnote": "脚注",
     "externalLink": "外部リンク",
     "copyTarget": "リンク先をコピー",
+    "copyValue": "値をコピー",
+    "removeProperty": "プロパティを削除",
     "deleteFile": "ファイルを削除",
     "selectAll": "すべて選択",
     "subscript": "下付き",

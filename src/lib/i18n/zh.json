@@ -2372,6 +2372,8 @@
     "footnote": "脚注",
     "externalLink": "外部链接",
     "copyTarget": "复制目标",
+    "copyValue": "复制值",
+    "removeProperty": "删除属性",
     "deleteFile": "删除文件",
     "selectAll": "全选",
     "subscript": "下标",

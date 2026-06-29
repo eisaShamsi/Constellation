@@ -2372,6 +2372,8 @@
     "footnote": "Nota de rodapé",
     "externalLink": "Ligação externa",
     "copyTarget": "Copiar destino",
+    "copyValue": "Copiar valor",
+    "removeProperty": "Remover propriedade",
     "deleteFile": "Excluir arquivo",
     "selectAll": "Selecionar tudo",
     "subscript": "Subscrito",

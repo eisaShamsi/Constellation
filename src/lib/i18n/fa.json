@@ -1932,6 +1932,8 @@
     "footnote": "پانویس",
     "externalLink": "پیوند بیرونی",
     "copyTarget": "کپی هدف",
+    "copyValue": "کپی مقدار",
+    "removeProperty": "حذف ویژگی",
     "deleteFile": "حذف فایل",
     "selectAll": "انتخاب همه",
     "subscript": "زیرنویس",

@@ -2372,6 +2372,8 @@
     "footnote": "फ़ुटनोट",
     "externalLink": "बाहरी लिंक",
     "copyTarget": "लक्ष्य कॉपी करें",
+    "copyValue": "मान कॉपी करें",
+    "removeProperty": "गुण हटाएँ",
     "deleteFile": "फ़ाइल हटाएँ",
     "selectAll": "सभी चुनें",
     "subscript": "सबस्क्रिप्ट",

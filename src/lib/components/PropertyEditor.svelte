@@ -37,6 +37,7 @@
 		onToggle,
 		onstagechange,
 		onLiveProps,
+		onPropContextMenu,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -53,6 +54,8 @@
 		   property count on every edit; never writes back into editor content, so
 		   it sits outside the BUG-015 / §C-2 vector. The host debounces/uses it. */
 		onLiveProps?: (tabId: string, count: number) => void;
+		/** MIG-077 §F-Editor — right-click a property row; NotePane builds the menu. */
+		onPropContextMenu?: (prop: FrontmatterProperty, idx: number, x: number, y: number) => void;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -558,11 +561,12 @@
 		updateValue(idx, current ? 'false' : 'true');
 	}
 
-	function addProperty() {
+	// MIG-077 §F-Editor — exported so NotePane's frontmatter RC can call them via bind:this.
+	export function addProperty() {
 		editableProps = [...editableProps, { key: '', value: '', type: 'text' }];
 	}
 
-	function removeProperty(idx: number) {
+	export function removeProperty(idx: number) {
 		editableProps = editableProps.filter((_, i) => i !== idx);
 		debouncedSave();
 	}
@@ -824,7 +828,9 @@
 	{#each editableProps as prop, idx}
 		{@const iconInfo = getIcon(prop)}
 		{@const isEmpty = !prop.value || (prop.type === 'list' && (!prop.listItems || prop.listItems.length === 0))}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="pe-row"
+			oncontextmenu={(e) => { e.preventDefault(); onPropContextMenu?.(prop, idx, e.clientX, e.clientY); }}
 			class:pe-dragging={dragIdx === idx}
 			class:pe-drop-above={dropIdx === idx && dragIdx !== idx && dragIdx > idx}
 			class:pe-drop-below={dropIdx === idx && dragIdx !== idx && dragIdx < idx}
