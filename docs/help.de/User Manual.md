@@ -914,6 +914,40 @@ Der Seitenleisten-Abschnitt **Five Acts** (oberhalb von Workspace Bases) listet 
 
 Das aeltere Lens-Panel (Filterung nach Tags, Ordnern, Eigenschaften) ist weiterhin unter **Einstellungen → Panels → Lens** verfuegbar.
 
+### Struktur (strukturelle Links)
+
+Das **Struktur**-Panel zeigt, wo die geöffnete Notiz innerhalb eines größeren *Werks* sitzt — eines Buches, eines Drehbuchs, eines Kurses, einer Map of Content. Es beantwortet eine andere Frage als die Panels Backlinks und Outgoing Links. Diese beantworten *„wie verhält sich diese Idee zu einer anderen Idee?"* (die Denk-Links — supports, contradicts, causes …). Die Struktur beantwortet *„wo sitzt diese Notiz in dem ganzen Werk, das ich gerade verfasse?"* — Buch → Teil → Kapitel → Szene.
+
+Dies ist das **kompositorische Rückgrat** eines Werks: das Inhaltsverzeichnis, die geordnete Gliederung. Es wird bewusst **aus** jedem Denk-, Reife- und Verbindungsmaß **herausgehalten** — eine Notiz „unter ein Buch" zu setzen ändert niemals die Reife dieser Notiz, ihre Verbindungszahlen oder ihre Präsenz in der Sternenansicht. Ein Inhaltsverzeichnis ist Autorschaft, keine zu bewertende Behauptung.
+
+**Die zwei Arten von strukturellem Link** (Sie tippen immer nur eine Seite — Constellation ermittelt die Gegenseite für Sie):
+
+- **`parent`** — der Platz *dieser Notiz* unter einem Elternteil (z. B. ein Kapitel gibt an, zu welchem Teil es gehört).
+- **`contains`** — die geordnete Liste der Kinder *dieser Notiz* (z. B. ein Buch listet seine Teile in der Lesereihenfolge auf).
+
+**Einen strukturellen Link anlegen** — öffnen Sie die **Eigenschaften** der Notiz (den Eigenschaften-Tab in der rechten Seitenleiste oder den Eigenschaftenblock am Anfang der Notiz):
+
+1. Klicken Sie auf **+ Eigenschaft hinzufügen** und tippen Sie den Schlüssel `parent` oder `contains`.
+2. Tippen Sie als Wert den **Namen der Zielnotiz** — nur den Namen, z. B. `Part I - The Cartographer`. Constellation verpackt ihn für Sie in einen `[[link]]`; Sie tippen die eckigen Klammern **nicht**. (Wenn Sie einen Namen einfügen, der bereits Klammern enthält, wird er dennoch sauber als einzelner `[[name]]` gespeichert — niemals doppelt verpackt.)
+3. Für `contains` fügen Sie jedes Kind als eigenen Chip hinzu, in der Reihenfolge, in der sie gelesen werden sollen — diese Reihenfolge wird zur Gliederungsreihenfolge.
+
+Strukturelle Links **überstehen Umbenennungen sicher**: Benennen Sie ein Kapitel um, und sein Platz in der Struktur folgt automatisch, weil der Link auf die Notiz selbst zeigt, nicht auf ein eingefrorenes Stück Text.
+
+**Das Struktur-Panel lesen** — öffnen Sie den **Struktur**-Tab in der rechten Seitenleiste (direkt nach Backlinks):
+
+- Das Panel zeigt das **ganze Werk** als eingerückte Gliederung (blaugrüne Aufzählungspunkte), überschrieben mit **OUTLINE** und einer Zählung der Nachkommen — nicht nur die eigenen Kinder der geöffneten Notiz.
+- Die Notiz, die Sie gerade ansehen, ist innerhalb dieser Gliederung **hervorgehoben** („Sie sind hier").
+- Ein **Breadcrumb** am oberen Rand zeigt den Pfad das Rückgrat hinauf (z. B. *The Atlas of Lost Places › Part I › Chapter 1*). Klicken Sie auf einen beliebigen Breadcrumb — oder auf eine beliebige Gliederungszeile —, um zu dieser Notiz zu springen.
+- Ein Umschalter **Ganzes Werk ⇄ Diese Notiz** (oben rechts im Panel) wechselt zwischen dem gesamten Werk und nur dem eigenen Teilbaum der geöffneten Notiz. Er erscheint nur, wenn die Notiz tatsächlich einen Elternteil hat, sodass sich die beiden Ansichten unterscheiden.
+- Wenn die Struktur versehentlich auf sich selbst zurückläuft (Elternteil von Notiz A ist B, und Elternteil von B ist A), zeichnet die Gliederung die Kette und stoppt dann sauber, wobei sie die Schnittstelle mit einem kleinen **↻** markiert. Sie hängt sich niemals auf.
+
+**Einen Konflikt lösen (Umstritten).** Wenn zwei Notizen dasselbe Kind beanspruchen — eine über den eigenen `parent` des Kindes, die andere über eine `contains`-Liste —, kennzeichnet das Panel diese Zeile als **Umstritten** (ein bernsteinfarbenes ⚠-Badge, das den anderen Beanspruchenden benennt), anstatt sie stillschweigend zu verwerfen. Zwei Schaltflächen mit einem Klick lösen den Konflikt:
+
+- **Behalten** — den eigenen deklarierten Elternteil des Kindes behalten (diese Notiz gibt ihren Anspruch auf das Kind auf).
+- **Hierher verschieben** — diese Notiz als Elternteil akzeptieren (der `parent` des Kindes wechselt zu dieser Notiz).
+
+Beide Schaltflächen aktualisieren die Notizdateien direkt und aktualisieren die Gliederung. Nichts wird jemals ohne Ihren Klick geändert.
+
 ---
 
 ## 17. Einstellungen

@@ -914,6 +914,42 @@ El panel Lens anterior (filtrar por etiquetas, carpetas, propiedades) sigue disp
 
 ---
 
+### Estructura (enlaces estructurales)
+
+El panel **Estructura** muestra dónde se sitúa la nota abierta dentro de una *obra* más amplia: un libro, un guion, un curso, un Mapa de Contenido. Responde a una pregunta distinta de la de los paneles Retroenlaces (Backlinks) y Enlaces salientes (Outgoing Links). Aquellos responden a *"¿cómo se relaciona esta idea con otra idea?"* (los enlaces de pensamiento — apoya, contradice, causa…). Estructura responde a *"¿dónde se sitúa esta nota dentro de la obra completa que estoy componiendo?"* — Libro → Parte → Capítulo → Escena.
+
+Esta es la **columna vertebral compositiva** de una obra: el índice, el esquema ordenado. Se mantiene deliberadamente **fuera de** toda medida de pensamiento, madurez y conexión: colocar una nota "bajo un Libro" nunca cambia la madurez de esa nota, sus recuentos de conexiones ni su presencia en la Vista del Cielo (Sky View). Un índice es autoría, no una afirmación sujeta a juicio.
+
+**Los dos tipos de enlace estructural** (solo escribes uno de los lados — Constellation deduce el inverso por ti):
+
+- **`parent`** — el lugar de *esta nota* bajo un único progenitor (p. ej., un capítulo declara la parte a la que pertenece).
+- **`contains`** — la lista ordenada de hijos de *esta nota* (p. ej., un libro enumera sus partes en orden de lectura).
+
+**Crear un enlace estructural** — abre las **Propiedades** de la nota (la pestaña Propiedades en la barra lateral derecha, o el bloque de propiedades en la parte superior de la nota):
+
+1. Haz clic en **+ Añadir propiedad** y escribe la clave `parent` o `contains`.
+2. En el valor, escribe el **nombre de la nota de destino** — solo el nombre, p. ej. `Part I - The Cartographer`. Constellation lo envuelve en un `[[link]]` por ti; **no** escribas los corchetes. (Si pegas un nombre que ya tiene corchetes, igualmente se guarda de forma limpia como un único `[[name]]`, nunca con doble envoltura.)
+3. Para `contains`, añade cada hijo como su propia ficha, en el orden en que quieras que se lean — ese orden se convierte en el orden del esquema.
+
+Los enlaces estructurales **se renombran de forma segura**: renombra un capítulo y su lugar en la estructura se actualiza automáticamente, porque el enlace apunta a la nota, no a un fragmento de texto congelado.
+
+**Leer el panel Estructura** — abre la pestaña **Estructura** en la barra lateral derecha (justo después de Retroenlaces):
+
+- El panel muestra la **obra completa** como un esquema con sangría (viñetas en color verde azulado), encabezado **OUTLINE** con un recuento de los descendientes — no solo los hijos propios de la nota abierta.
+- La nota que estás viendo en ese momento aparece **resaltada** ("estás aquí") dentro de ese esquema.
+- Una **ruta de navegación** (breadcrumb) en la parte superior muestra el camino por la columna vertebral (p. ej. *The Atlas of Lost Places › Part I › Chapter 1*). Haz clic en cualquier migaja — o en cualquier fila del esquema — para saltar a esa nota.
+- Un conmutador **Obra completa ⇄ Esta nota** (en la esquina superior derecha del panel) alterna entre la obra entera y solo el subárbol propio de la nota abierta. Aparece únicamente cuando la nota tiene realmente un progenitor, de modo que las dos vistas difieren.
+- Si la estructura se enlaza accidentalmente sobre sí misma (el progenitor de la nota A es B, y el progenitor de B es A), el esquema dibuja la cadena y luego se detiene limpiamente, marcando el punto de corte con un pequeño **↻**. Nunca se cuelga.
+
+**Resolver un conflicto (Contested).** Si dos notas reclaman el mismo hijo — una a través del `parent` propio del hijo, la otra a través de una lista `contains` — el panel marca esa fila como **Contested** (una insignia ámbar ⚠ que nombra al otro reclamante) en lugar de descartarla en silencio. Dos botones de un solo clic lo resuelven:
+
+- **Keep** (Conservar) — conserva el progenitor declarado del propio hijo (esta nota renuncia a su reclamación sobre el hijo).
+- **Move here** (Mover aquí) — acepta esta nota como progenitor (el `parent` del hijo cambia a esta nota).
+
+Cualquiera de los botones actualiza los archivos de las notas directamente y refresca el esquema. Nada se cambia jamás sin tu clic.
+
+---
+
 ## 17. Configuracion
 
 Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctrl+,`.

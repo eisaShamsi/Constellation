@@ -911,6 +911,42 @@ L'ancien panneau Lens (filtrer par tags, dossiers, proprietes) reste disponible 
 
 ---
 
+### Structure (liens structurels)
+
+Le panneau **Structure** montre où la note ouverte se situe à l'intérieur d'une *œuvre* plus vaste — un livre, un scénario, un cours, une Carte de Contenu. Il répond à une question différente de celle des panneaux Rétroliens (Backlinks) et Liens sortants. Ceux-ci répondent à *« comment cette idée se rattache-t-elle à une autre idée ? »* (les liens de pensée — appuie, contredit, cause…). Structure répond à *« où cette note se situe-t-elle dans l'ensemble de l'œuvre que je compose ? »* — Livre → Partie → Chapitre → Scène.
+
+C'est la **colonne vertébrale compositionnelle** d'une œuvre : la table des matières, le plan ordonné. Elle est délibérément tenue **à l'écart** de toute mesure de pensée, de maturité et de connexion — placer une note « sous un Livre » ne change jamais la maturité de cette note, ses décomptes de connexions ni sa présence dans la Vue Étoiles. Une table des matières relève de l'écriture d'auteur, non d'une affirmation à juger.
+
+**Les deux sortes de lien structurel** (vous ne saisissez jamais qu'un seul côté — Constellation déduit l'inverse pour vous) :
+
+- **`parent`** — la place de *cette note* sous un parent unique (par exemple, un chapitre déclare la partie à laquelle il appartient).
+- **`contains`** — la liste ordonnée des enfants de *cette note* (par exemple, un livre énumère ses parties dans l'ordre de lecture).
+
+**Créer un lien structurel** — ouvrez les **Propriétés** de la note (l'onglet Propriétés dans la barre latérale de droite, ou le bloc de propriétés en haut de la note) :
+
+1. Cliquez sur **+ Ajouter une propriété** et saisissez la clé `parent` ou `contains`.
+2. Dans la valeur, saisissez le **nom de la note cible** — juste le nom, par exemple `Part I - The Cartographer`. Constellation l'enveloppe dans un `[[link]]` pour vous ; vous ne saisissez **pas** les crochets. (Si vous collez un nom qui comporte déjà des crochets, il est tout de même stocké proprement sous la forme d'un unique `[[name]]` — jamais un double encadrement.)
+3. Pour `contains`, ajoutez chaque enfant comme sa propre puce, dans l'ordre où vous voulez qu'ils se lisent — cet ordre devient l'ordre du plan.
+
+Les liens structurels **se renomment en toute sécurité** : renommez un chapitre et sa place dans la structure suit automatiquement, car le lien pointe vers la note, et non vers un morceau de texte figé.
+
+**Lire le panneau Structure** — ouvrez l'onglet **Structure** dans la barre latérale de droite (juste après Rétroliens) :
+
+- Le panneau affiche l'**œuvre entière** sous forme de plan indenté (puces sarcelle), coiffé du titre **OUTLINE** (Plan) avec un décompte des descendants — pas seulement les propres enfants de la note ouverte.
+- La note que vous consultez actuellement est **mise en évidence** (« vous êtes ici ») au sein de ce plan.
+- Un **fil d'Ariane** en haut affiche le chemin remontant la colonne vertébrale (par exemple *The Atlas of Lost Places › Part I › Chapter 1*). Cliquez sur n'importe quel maillon — ou n'importe quelle ligne du plan — pour sauter à cette note.
+- Une bascule **Whole work ⇄ This note** (Œuvre entière ⇄ Cette note), en haut à droite du panneau, alterne entre l'œuvre entière et la seule sous-arborescence de la note ouverte. Elle n'apparaît que lorsque la note possède réellement un parent, de sorte que les deux vues diffèrent.
+- Si la structure boucle accidentellement sur elle-même (le parent de la note A est B, et le parent de B est A), le plan dessine la chaîne puis s'arrête proprement, marquant le point de coupure par un petit **↻**. Il ne se bloque jamais.
+
+**Résoudre un conflit (Contested).** Si deux notes revendiquent le même enfant — l'une via le propre `parent` de l'enfant, l'autre via une liste `contains` — le panneau signale cette ligne comme **Contested** (En litige) (un badge ambre ⚠ nommant l'autre revendicateur) plutôt que de l'abandonner silencieusement. Deux boutons à un clic le résolvent :
+
+- **Keep** (Conserver) — conserver le parent déclaré par l'enfant lui-même (cette note renonce à sa revendication sur l'enfant).
+- **Move here** (Déplacer ici) — accepter cette note comme parent (le `parent` de l'enfant bascule vers cette note).
+
+L'un ou l'autre bouton met à jour les fichiers de notes directement et rafraîchit le plan. Rien n'est jamais modifié sans votre clic.
+
+---
+
 ## 17. Parametres
 
 Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctrl+,`.

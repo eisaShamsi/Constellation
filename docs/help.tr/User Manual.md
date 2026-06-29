@@ -914,6 +914,40 @@ Kenar çubuğunun **Five Acts** bölümü (Workspace Bases'ün üzerinde), `{uni
 
 Eski Lens paneli (etiketlere, klasörlere, özelliklere göre filtreleme) hâlâ **Ayarlar → Paneller → Lens** üzerinden kullanılabilir.
 
+### Yapı (yapısal bağlantılar)
+
+**Yapı** paneli, açık notun daha büyük bir *yapıtın* — bir kitap, bir senaryo, bir kurs, bir İçerik Haritası — içinde nerede durduğunu gösterir. Geri Bağlantılar ve Giden Bağlantılar panellerinden farklı bir soruya yanıt verir. Onlar *"bu fikir başka bir fikirle nasıl ilişkilidir?"* sorusuna yanıt verir (düşünme bağlantıları — destekler, çelişir, neden olur…). Yapı ise *"bu not, oluşturmakta olduğum bütün yapıtın içinde nerede durur?"* sorusuna yanıt verir — Kitap → Bölüm → Fasıl → Sahne.
+
+Bu, bir yapıtın **kompozisyon omurgasıdır**: içindekiler tablosu, sıralı taslak. Her düşünme, olgunluk ve bağlantı ölçüsünün **dışında** tutulması bilinçli bir tercihtir — bir notu "bir Kitabın altına" yerleştirmek, o notun olgunluğunu, bağlantı sayımlarını veya Sky View'daki varlığını asla değiştirmez. Bir içindekiler tablosu, yargılanacak bir iddia değil, yazarlıktır.
+
+**İki tür yapısal bağlantı** (yalnızca tek tarafı yazarsınız — Constellation tersini sizin için çözer):
+
+- **`parent`** — *bu notun* tek bir ebeveynin altındaki yeri (örneğin bir fasıl, ait olduğu bölümü beyan eder).
+- **`contains`** — *bu notun* sıralı çocuk listesi (örneğin bir kitap, bölümlerini okuma sırasıyla listeler).
+
+**Yapısal bir bağlantı oluşturma** — notun **Özellikler** bölümünü açın (sağ kenar çubuğundaki Özellikler sekmesi veya notun üstündeki özellikler bloğu):
+
+1. **+ Özellik ekle**'ye tıklayın ve `parent` ya da `contains` anahtarını yazın.
+2. Değer kısmına **hedef notun adını** yazın — yalnızca adı, örneğin `Part I - The Cartographer`. Constellation onu sizin için bir `[[link]]` içine sarar; köşeli parantezleri **siz yazmazsınız**. (Zaten parantezli bir ad yapıştırırsanız, yine tek bir `[[ad]]` olarak temiz biçimde saklanır — asla çift sarmalanmaz.)
+3. `contains` için her çocuğu, okunmasını istediğiniz sırayla kendi çipi olarak ekleyin — o sıra, taslak sırası olur.
+
+Yapısal bağlantılar **güvenle yeniden adlandırılır**: bir faslı yeniden adlandırın, yapıdaki yeri otomatik olarak takip eder, çünkü bağlantı dondurulmuş bir metin parçasına değil, notun kendisine işaret eder.
+
+**Yapı panelini okuma** — sağ kenar çubuğundaki **Yapı** sekmesini açın (Geri Bağlantılar'ın hemen ardından):
+
+- Panel, **bütün yapıtı** girintili bir taslak olarak (teal renkli madde imleriyle) gösterir; başlığında, alt öğelerin sayımıyla birlikte **TASLAK (OUTLINE)** yazar — yalnızca açık notun kendi çocukları değil.
+- Şu anda görüntülemekte olduğunuz not, o taslağın içinde **vurgulanır** ("buradasınız").
+- Üst kısımdaki bir **kırılma yolu (breadcrumb)** omurga boyunca yukarı giden yolu gösterir (örneğin *The Atlas of Lost Places › Part I › Chapter 1*). O nota atlamak için herhangi bir kırıntıya — veya herhangi bir taslak satırına — tıklayın.
+- Bir **Bütün yapıt ⇄ Bu not** anahtarı (panelin sağ üstünde), bütün yapıt ile yalnızca açık notun kendi alt ağacı arasında geçiş yapar. Yalnızca notun gerçekten bir ebeveyni olduğunda görünür, böylece iki görünüm farklılaşır.
+- Yapı yanlışlıkla kendi üzerine döngü oluşturursa (A notunun ebeveyni B, B'nin ebeveyni de A ise), taslak zinciri çizer ve ardından temiz biçimde durur, kesim noktasını küçük bir **↻** ile işaretler. Asla takılıp kalmaz.
+
+**Bir çatışmayı çözme (İtiraz edilen / Contested).** İki not da aynı çocuğu sahiplenirse — biri çocuğun kendi `parent` özelliği üzerinden, diğeri bir `contains` listesi üzerinden — panel, o satırı sessizce bırakmak yerine **İtiraz edilen (Contested)** olarak işaretler (diğer sahiplenen tarafı adlandıran amber renkli bir ⚠ rozeti). İki tek tıklamalık düğme bunu çözer:
+
+- **Tut (Keep)** — çocuğun kendi beyan ettiği ebeveyni koru (bu not, çocuk üzerindeki iddiasından vazgeçer).
+- **Buraya taşı (Move here)** — bu notu ebeveyn olarak kabul et (çocuğun `parent` değeri bu nota geçer).
+
+Her iki düğme de not dosyalarını doğrudan günceller ve taslağı yeniler. Sizin tıklamanız olmadan hiçbir şey asla değiştirilmez.
+
 ---
 
 ## 17. Ayarlar

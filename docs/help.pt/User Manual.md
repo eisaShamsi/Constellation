@@ -593,6 +593,40 @@ Todas as configuracoes visuais se propagam instantaneamente para a segunda tela 
 - **Editor**: Comprimento de linha legivel, numeros de linha, barra de ferramentas flutuante
 - **Cor de destaque**: Alteracoes na cor de destaque do tema
 
+### Estrutura (links estruturais)
+
+O painel **Estrutura** mostra onde a nota aberta se situa dentro de uma *obra* maior — um livro, um argumento, um curso, um Mapa de Conteúdo. Responde a uma pergunta diferente da dos painéis Backlinks e Links de Saída. Esses respondem *"como é que esta ideia se relaciona com outra ideia?"* (os links de pensamento — apoia, contradiz, causa…). A Estrutura responde *"onde é que esta nota se situa na obra inteira que estou a compor?"* — Livro → Parte → Capítulo → Cena.
+
+Esta é a **espinha compositiva** de uma obra: o índice, o esquema ordenado. É mantida deliberadamente **fora** de toda medida de pensamento, maturidade e conexão — colocar uma nota "sob um Livro" nunca altera a maturidade dessa nota, as suas contagens de conexões nem a sua presença na Vista Estelar. Um índice é autoria, não uma afirmação a ser julgada.
+
+**Os dois tipos de link estrutural** (você só digita um lado — o Constellation deduz o inverso por você):
+
+- **`parent`** — o lugar *desta nota* sob um único pai (por exemplo, um capítulo declara a parte a que pertence).
+- **`contains`** — a lista ordenada de filhos *desta nota* (por exemplo, um livro lista as suas partes na ordem de leitura).
+
+**Criar um link estrutural** — abra as **Propriedades** da nota (a aba Propriedades na barra lateral direita, ou o bloco de propriedades no topo da nota):
+
+1. Clique em **+ Adicionar propriedade** e digite a chave `parent` ou `contains`.
+2. No valor, digite o **nome da nota de destino** — apenas o nome, por exemplo `Part I - The Cartographer`. O Constellation envolve-o num `[[link]]` por você; você **não** digita os colchetes. (Se colar um nome que já tenha colchetes, ele ainda é armazenado de forma limpa como um único `[[name]]` — nunca com colchetes duplos.)
+3. Para `contains`, adicione cada filho como o seu próprio chip, na ordem em que quer que sejam lidos — essa ordem torna-se a ordem do esquema.
+
+Os links estruturais **renomeiam-se com segurança**: renomeie um capítulo e o seu lugar na estrutura acompanha automaticamente, porque o link aponta para a nota, não para um trecho de texto congelado.
+
+**Ler o painel Estrutura** — abra a aba **Estrutura** na barra lateral direita (logo após Backlinks):
+
+- O painel mostra a **obra inteira** como um esquema indentado (marcadores em verde-azulado), encabeçado por **OUTLINE** com uma contagem dos descendentes — não apenas os filhos da própria nota aberta.
+- A nota que está a visualizar atualmente é **realçada** ("você está aqui") dentro desse esquema.
+- Um **breadcrumb** ao longo do topo mostra o caminho ao longo da espinha (por exemplo, *The Atlas of Lost Places › Part I › Chapter 1*). Clique em qualquer migalha — ou em qualquer linha do esquema — para saltar para essa nota.
+- Um alternador **Whole work ⇄ This note** (no canto superior direito do painel) alterna entre a obra inteira e apenas a subárvore da própria nota aberta. Só aparece quando a nota tem de facto um pai, de modo que as duas vistas sejam diferentes.
+- Se a estrutura acidentalmente formar um ciclo sobre si mesma (o pai da nota A é B, e o pai de B é A), o esquema desenha a cadeia e depois para de forma limpa, marcando o ponto de corte com um pequeno **↻**. Nunca trava.
+
+**Resolver um conflito (Contested).** Se duas notas reivindicarem o mesmo filho — uma através do próprio `parent` do filho, a outra através de uma lista `contains` — o painel sinaliza essa linha como **Contested** (um selo âmbar ⚠ nomeando o outro reivindicante) em vez de descartá-la silenciosamente. Dois botões de um clique resolvem-no:
+
+- **Keep** — manter o pai declarado do próprio filho (esta nota abdica da sua reivindicação sobre o filho).
+- **Move here** — aceitar esta nota como o pai (o `parent` do filho passa para esta nota).
+
+Qualquer um dos botões atualiza os ficheiros das notas diretamente e atualiza o esquema. Nada é jamais alterado sem o seu clique.
+
 ---
 
 ## 10. Propriedades e Frontmatter
