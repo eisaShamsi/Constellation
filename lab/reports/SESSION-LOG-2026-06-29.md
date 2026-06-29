@@ -158,6 +158,30 @@ Frontmatter (Properties panel) RC = property actions + the full editor menu + St
 ## BLOCKER — binary locked by the running app (LL-028)
 The flip-fix cargo re-embed FAILED ("Access is denied"); `constellation.exe` (PID 50980) is running → can't overwrite. **Boss must close Constellation**, then ONE rebuild lands flip-fix + frontmatter RC + the ×14 i18n.
 
-## NEXT
-- Apply ×14 i18n → (Boss closes app) → rebuild → test truncation-gone + frontmatter RC. Commit frontmatter milestone. Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · Phase-4 audit · orientation v-bump (§F completion).
+## §F-Editor-Frontmatter — Boss-validated → COMMITTED 42b0a585
+Truncation fix + frontmatter RC (Copy value/name, Remove, Add, + editor menu + Style) all PASS. Editor surface COMPLETE.
+
+---
+
+## PIVOT (Boss 2026-06-29): MIG-077 PAUSED → MIG-088 "Style Setter Completeness"
+Boss, via the new "Style…" RC, opened the Style Setter and found gaps: the **frontmatter property tags** (`.pe-tag`) aren't styleable (they use `--pill-*` + a fixed `--background-modifier-border-focus`/white, NOT the Setter's `--tag-bg`/`--tag-color`/`--tag-radius` "Tags & callouts" control). Boss ruled: (1) give the property tags **their own Style Setter control**, and (2) **sweep the whole app** for every element NOT exposed in the Style Setter + add controls — a separate larger pass that pauses MIG-077's remaining surfaces.
+
+### SO #5 STATE-OF-STANDING — MIG-077 (App-Wide Right-Click Menus), paused 2026-06-29
+- **Verified-shipped + committed (this session):** §A4 ConfidencePicker fold · §RTL hardening · §F-sub submenu engine + **left-flip on overflow** · §F rich Note/Folder/Library menus (Bookmark, Copy path▸, Open-in-default-app, Show-in-explorer) · §F-Style "Style…" on file-tree/tabs/OrgChart/Index/**editor** · §F-Editor note body RC (NotePane via shared ContextMenu; Format▸/Paragraph▸/Insert▸; new commands math/footnote/external-link/select-all/copy-target) · **§F-Editor-Frontmatter** comprehensive Properties-panel RC. i18n: 14 new contextMenu keys ×15. Commits `fa98bf6b` · `698da978` · `42b0a585` (+ the Stage-1+2 milestone). All Boss-validated.
+- **Parked (in-tree, disabled):** Notes Navigator RC (B1) — Navigator is a separate data domain (silent-delete hazard); disabled; rework = task `task_fcc8396c`.
+- **REMAINING MIG-077 (not started):** B2 Search · B5 Sky View · B3 Tags · B4 Calendar · the diagnostic panels (Inspector360/KH/Review/Tasks/Forge/Federation/Universe-Lib-Mgmt — Boss chose "core + diagnostic") · A5 GraphMind fold · Phase-4 audit · orientation v-bump (§F completion). RESUME after MIG-088.
+- **Dead/cleanup:** `EditorContextMenu.svelte` now unused (NotePane uses the shared ContextMenu) — delete in cleanup. `CodeMirrorEditor.svelte` is dead (memory `project_editor_architecture_notepane`).
+- **Doc drift:** orientation v3.16 is 934 KB (over the 1500-line split threshold) — split pending.
+
+### MIG-088 plan
+- **Tag fix (decided):** new "Property tags" Style Setter element (background/text/radius/height) wired to `.pe-tag`.
+- **Completeness audit (Architect/discovery):** fan out across surfaces → list every user-visible element NOT exposed in the Style Setter + propose its control. Then Plan (prioritize) → Build (add controls + wire) → Audit. Treat as /migration (touches the Setter schema + many components).
+- Audit launched: `mig088-stylesetter-completeness-audit`.
+
+### MIG-088 audit DONE (wf_703dfdca-2e4) + Boss scope = "EVERYTHING (149)"
+- **149 worth-restyling elements (50 high)** across all surfaces; Setter covers 262 vars/13 cats. Full list: `lab/reports/MIG-088-STYLESETTER-AUDIT.md`.
+- **Key pattern:** ~half are repeated *cognitive-vocabulary* colour sets hardcoded per-surface — **Maturity / Confidence / Origin / Stage / Search-match-category** — to be CONSOLIDATED into shared controls (style once → everywhere) + the frontmatter Property tags + Taxonomy pills (Boss's trigger).
+- **Boss ruling:** build EVERYTHING (all 149), semantic consolidation first → per-surface tail. Multi-session.
+- **Plan:** `lab/reports/MIG-088-STYLESETTER-COMPLETENESS-PLAN.md` — 10 phases (1 Frontmatter+mechanism · 2 Shared semantic colours · 3 Editor · 4 Chrome · 5 Panels · 6 Search/Index · 7 Sky/Org/Map · 8 Calendar · 9 Dialogs/Global · 10 Audit). Each: new Setter element/control + preview case + component wired to the var with a fallback to today's value (byte-identical until edited; LL-032-safe — no `BUILTIN_THEMES`). i18n ×15 per label. svelte-check 0 + Boss test per phase.
+- **NEXT:** Phase 1 build (Property tags + Taxonomy pills) — establishes the add-an-element recipe (ELEMENTS entry + CATEGORY + preview + apply + wire). Then Phase 2 consolidation.
 - Then B2 Search · B5 Sky · B3 Tags · B4 Calendar · diagnostic panels · A5 GraphMind · Phase-4 audit · orientation v-bump at §F completion.

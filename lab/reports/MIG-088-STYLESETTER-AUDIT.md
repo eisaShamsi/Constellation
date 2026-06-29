@@ -1,0 +1,498 @@
+# MIG-088 — Style Setter Completeness — AUDIT (2026-06-29)
+
+> Boss-ruled sweep (wf_703dfdca-2e4). The Style Setter currently controls **262 CSS vars** across **13 categories**. The audit found **149 user-visible elements NOT yet styleable** (worth-restyling). Below, per surface, by priority.
+
+## Cross-surface SEMANTIC color sets (repeated — candidates to CONSOLIDATE into shared controls)
+
+- **maturity** — appears in 7 findings across: file-tree-navigator, right-sidebar-panels, sky-orgchart-map: LocalSkyView.svelte, GraphMindView.svelte, OrgChart.svelte, ConstellationMap.svelte, tabs-dock-chrome
+- **confidence** — appears in 5 findings across: global-primitives, right-sidebar-panels
+- **origin** — appears in 2 findings across: right-sidebar-panels
+- **stage** — appears in 1 findings across: file-tree-navigator
+- **search-match/category** — appears in 17 findings across: note-editor, search-index-switcher, sky-orgchart-map: LocalSkyView.svelte, GraphMindView.svelte, OrgChart.svelte, ConstellationMap.svelte, tabs-dock-chrome
+
+## note-editor (14)
+_Audit of NotePane.svelte and src/lib/editor/* identified 14 user-visible styled elements with non-Setter colors/styles. High-priority: callout type colors (9 types, hardcoded hex), search highlights (6 types), toolbar highlight button. Medium-priority: wikilink chip, code label, lens badge, mark ele_
+
+- **[HIGH] Callout type colors (9 types)** — `src/lib/editor/calloutPlugin.ts:393-418` → cat **editor**
+  - now: note/info #448aff, abstract/summary #00b0ff, tip/hint #00bfa5, success/check #00c853, warning/caution #ff9100, failure/fail #ff5252, danger/error #ff1744, examp
+  - add: text --callout-note-color, text --callout-abstract-color, text --callout-tip-color, text --callout-success-color, text --callout-warning-color, text --callout-failure-color, text --callout-danger-colo
+- **[MEDIUM] Search highlight term badges (6 types)** — `src/lib/components/NotePane.svelte:504-509` → cat **editor**
+  - now: Hardcoded colors: title #3b82f6, content #16a34a, tag #f472b6, property #f59e0b, wikilink #60a5fa, semantic #7c3aed; 25% opacity + outline
+  - add: background --editor-search-title-bg, text --editor-search-title-color, background --editor-search-content-bg, text --editor-search-content-color, background --editor-search-tag-bg, text --editor-searc
+- **[MEDIUM] Toolbar highlight button** — `src/lib/components/NotePane.svelte:1594` → cat **editor**
+  - now: background #fef08a, color #1a1a1a, border-radius 2px
+  - add: background --toolbar-highlight-bg, text --toolbar-highlight-color, radius --toolbar-highlight-radius
+- **[MEDIUM] HTML mark element background** — `src/lib/editor/livePreview.ts:1771` → cat **editor**
+  - now: backgroundColor #fef08a, borderRadius 2px
+  - add: background --editor-mark-bg, radius --editor-mark-radius
+- **[MEDIUM] Wikilink traversal chip (×N badge)** — `src/lib/editor/livePreview.ts:92-100` → cat **editor**
+  - now: height 15px, font-size 0.6rem, font-weight 700, border-radius 8px, inline styles
+  - add: height --editor-wikilink-chip-height, font-size --editor-wikilink-chip-size, font-weight --editor-wikilink-chip-weight, radius --editor-wikilink-chip-radius
+- **[MEDIUM] Code block language label** — `src/lib/editor/livePreview.ts:2033-2045` → cat **editor**
+  - now: fontSize 10px, fontWeight 600, borderRadius 3px, padding 1px 6px, marginLeft 8px
+  - add: background --editor-codeblock-label-bg, text --editor-codeblock-label-color, radius --editor-codeblock-label-radius, font-size --editor-codeblock-label-size, font-weight --editor-codeblock-label-weigh
+- **[MEDIUM] Lens count badge** — `src/lib/editor/livePreview.ts:1904-1911` → cat **editor**
+  - now: color #fff hardcoded white, borderRadius 10px, fontSize 0.75em, fontWeight 600
+  - add: text --editor-lens-count-color, radius --editor-lens-count-radius, font-size --editor-lens-count-size, font-weight --editor-lens-count-weight
+- **[MEDIUM] Data-view block container** — `src/lib/editor/livePreview.ts:1832-1841` → cat **editor**
+  - now: padding 10px 14px, margin 8px 0, fontSize 0.9em, borderRadius 8px
+  - add: background --editor-dataview-block-bg, border --editor-dataview-block-border, radius --editor-dataview-block-radius, font-size --editor-dataview-block-size
+- **[LOW] Frontmatter URL syntax color** — `src/lib/components/NotePane.svelte:57` → cat **editor**
+  - now: color #0891b2
+  - add: text --editor-frontmatter-url-color
+- **[LOW] Frontmatter fence/meta syntax color** — `src/lib/components/NotePane.svelte:58-59` → cat **editor**
+  - now: color #888
+  - add: text --editor-frontmatter-fence-color
+- **[LOW] Breadcrumb menu shadow** — `src/lib/components/NotePane.svelte:1522` → cat **components**
+  - now: box-shadow 0 4px 16px rgba(0,0,0,0.15)
+  - add: shadow --breadcrumb-menu-shadow
+- **[LOW] Toolbar menu shadow** — `src/lib/components/NotePane.svelte:1600` → cat **components**
+  - now: box-shadow 0 4px 12px rgba(0,0,0,0.12)
+  - add: shadow --toolbar-menu-shadow
+- **[LOW] Typed link label above link** — `src/lib/editor/livePreview.ts:1739-1752` → cat **editor**
+  - now: fontSize 0.62em, fontWeight 600, opacity 0.85, letterSpacing 0.01em
+  - add: font-size --editor-typed-link-label-size, font-weight --editor-typed-link-label-weight, opacity --editor-typed-link-label-opacity
+- **[LOW] Image widget fallback placeholder** — `src/lib/editor/livePreview.ts:2025-2032` → cat **editor**
+  - now: padding 4px 8px, fontSize 12px, borderRadius 4px
+  - add: background --editor-image-fallback-bg, text --editor-image-fallback-color, radius --editor-image-fallback-radius, font-size --editor-image-fallback-size
+
+## frontmatter-properties (10)
+_PropertyEditor.svelte audit found 10 user-visible unstyled elements across taxonomy pills (tier borders), property tags, and delete button text. Most critical: three taxonomy tier indicators (#0f6e56, #534ab7, #854f0b) and hardcoded white text (#fff) on pills that should adapt to the theme. Also: --_
+
+- **[HIGH] Taxonomy pill tier border (Tier 1 indicator)** — `src/lib/components/PropertyEditor.svelte:295` → cat **components**
+  - now: tierColorForId() returns hardcoded '#0f6e56' for tier 1
+  - add: background --pe-taxo-tier1-color
+- **[HIGH] Taxonomy pill tier border (Tier 2 indicator)** — `src/lib/components/PropertyEditor.svelte:296` → cat **components**
+  - now: tierColorForId() returns hardcoded '#534ab7' for tier 2
+  - add: background --pe-taxo-tier2-color
+- **[HIGH] Taxonomy pill tier border (Tier 3 indicator)** — `src/lib/components/PropertyEditor.svelte:297` → cat **components**
+  - now: tierColorForId() returns hardcoded '#854f0b' for tier 3
+  - add: background --pe-taxo-tier3-color
+- **[HIGH] Property tag pills (list items) background** — `src/lib/components/PropertyEditor.svelte:1333` → cat **components**
+  - now: hardcoded 'var(--background-modifier-border-focus); color: #fff' (white text is hardcoded #fff)
+  - add: background --pe-tag-bg (already exists), text --pe-tag-text-color (NEW), add --pe-tag-text-color to map to #fff for light theme, auto-contrast for dark
+- **[HIGH] Taxonomy pill background and text color** — `src/lib/components/PropertyEditor.svelte:1494` → cat **components**
+  - now: hardcoded 'background: var(--background-modifier-border-focus); color: #fff' (white text is hardcoded #fff)
+  - add: background --pe-taxo-pill-bg, text --pe-taxo-pill-color (NEW, currently hardcoded #fff)
+- **[MEDIUM] Special key icon colour (cssclasses/cssclass)** — `src/lib/components/PropertyEditor.svelte:95-96` → cat **components**
+  - now: hardcoded 'var(--color-orange)' (NOT in StyleSetter list; defined in theme.css)
+  - add: color --pe-special-key-cssclasses-color
+- **[MEDIUM] Property tag delete button text (hover)** — `src/lib/components/PropertyEditor.svelte:1342` → cat **components**
+  - now: hardcoded 'color: #fff' on .pe-tag-x:hover (white text)
+  - add: text --pe-tag-x-color-hover (or reuse --pe-tag-text-color with auto-contrast)
+- **[MEDIUM] Taxonomy pill delete button text (hover)** — `src/lib/components/PropertyEditor.svelte:1504` → cat **components**
+  - now: hardcoded 'color: #fff' on .pe-taxo-x:hover (white text)
+  - add: text --pe-taxo-x-color-hover (or reuse --pe-taxo-pill-color with auto-contrast)
+- **[MEDIUM] Tag/pill button text opacity (inactive state)** — `src/lib/components/PropertyEditor.svelte:1338` → cat **components**
+  - now: hardcoded 'rgba(255, 255, 255, 0.75)' on .pe-tag-x (white at 75% opacity)
+  - add: text --pe-tag-x-color (default rgba(255,255,255,0.75), automatically adjusts for theme)
+- **[MEDIUM] Taxonomy pill delete button text opacity (inactive state)** — `src/lib/components/PropertyEditor.svelte:1501` → cat **components**
+  - now: hardcoded 'rgba(255, 255, 255, 0.75)' on .pe-taxo-x (white at 75% opacity)
+  - add: text --pe-taxo-x-color (default rgba(255,255,255,0.75), automatically adjusts for theme)
+
+## file-tree-navigator (4)
+_The file-tree-navigator surface (FileTree.svelte + src/lib/components/navigator/* components) has 2 HIGH and 2 MEDIUM priority unstyled elements. The most significant gap is **maturity border colors** (sapling/evergreen/canonical/wilting) which are hardcoded hex values in FileTree.svelte:216–219. Th_
+
+- **[HIGH] Maturity border indicators (sapling/evergreen/canonical/wilting)** — `src/lib/components/FileTree.svelte:216-219` → cat **fileTree**
+  - now: #4ade80 (sapling), #16a34a (evergreen), #f59e0b (canonical), rgba(22, 163, 74, 0.4) (wilting) — hardcoded hex colors
+  - add: maturity-sapling-color, maturity-evergreen-color, maturity-canonical-color, maturity-wilting-color (4 color controls under a 'Maturity indicators' group) — OR a more compact approach: --ft-maturity-sa
+- **[MEDIUM] Batch delete button danger state hover** — `src/lib/components/navigator/NavBatchBar.svelte:56` → cat **NEW**
+  - now: #ef4444 (hardcoded danger red on hover)
+  - add: Create new category 'Navigator' or 'Batch actions' with control: danger button hover background --nav-batch-danger-hover
+- **[MEDIUM] Note stage emoji badge font size** — `src/lib/components/FileTree.svelte:214` → cat **fileTree**
+  - now: 0.7rem (hardcoded absolute size, not relative to --ft-master-font-size)
+  - add: Add control --ft-stage-badge-size (range 8px–16px, def 9px) to allow sizing stage emoji badges proportionally with file tree
+- **[MEDIUM] Note status icon margin** — `src/lib/components/FileTree.svelte:220` → cat **fileTree**
+  - now: font-size 0.75rem (hardcoded, controls status badge size), margin-inline-end 1px — sizes tied to hardcoded px values not in styleable set
+  - add: Add --ft-status-badge-size (range 9px–14px, def 10px) to allow user control of status icon sizing
+
+## tabs-dock-chrome (23)
+_Audit of +layout.svelte tab bar, dock, status bar, and window chrome. Found 22 unstyled elements with hardcoded colors—primarily tab styling (inactive/active backgrounds), search match badges (#3b82f6–#94a3b8 spectrum), and modal overlays. Tab bar fallbacks (#e8e8ec), new tab button (#4caf50 green),_
+
+- **[HIGH] Tab bar background (empty state)** — `src/routes/+layout.svelte:8657` → cat **interface/components**
+  - now: background: var(--topbar-bg, #e8e8ec) — hardcoded fallback #e8e8ec
+  - add: background --tabbar-bg
+- **[HIGH] Tab inactive background** — `src/routes/+layout.svelte:8701` → cat **interface/components**
+  - now: background: var(--tab-bg, #dcdce0) — hardcoded fallback #dcdce0
+  - add: background --tab-inactive-bg (update var/fallback)
+- **[HIGH] Tab active border (bottom edge)** — `src/routes/+layout.svelte:8710` → cat **interface/components**
+  - now: border: 1px solid var(--tab-border, #d0d0d0) — hardcoded fallback #d0d0d0
+  - add: border --tab-active-border (update var/fallback)
+- **[HIGH] Tab new button border** — `src/routes/+layout.svelte:8776` → cat **interface/components**
+  - now: border: 1px solid #4caf50, background transparent, hover: color #4caf50 (hardcoded green)
+  - add: border --tab-new-border, color --tab-new-color, hover --tab-new-hover (new)
+- **[HIGH] Search match badge — title** — `src/routes/+layout.svelte:8486` → cat **interface/components**
+  - now: background: #3b82f6 (hardcoded blue)
+  - add: background --search-match-title-bg (new)
+- **[HIGH] Search match badge — content** — `src/routes/+layout.svelte:8487` → cat **interface/components**
+  - now: background: #16a34a (hardcoded green)
+  - add: background --search-match-content-bg (new)
+- **[HIGH] Search match badge — semantic** — `src/routes/+layout.svelte:8488` → cat **interface/components**
+  - now: background: #7c3aed (hardcoded purple)
+  - add: background --search-match-semantic-bg (new)
+- **[HIGH] Search match badge — property** — `src/routes/+layout.svelte:8489` → cat **interface/components**
+  - now: background: #f59e0b (hardcoded orange)
+  - add: background --search-match-property-bg (new)
+- **[HIGH] Search match badge — tag** — `src/routes/+layout.svelte:8490` → cat **interface/components**
+  - now: background: #f472b6 (hardcoded pink)
+  - add: background --search-match-tag-bg (new)
+- **[HIGH] Search match badge — wikilink** — `src/routes/+layout.svelte:8491` → cat **interface/components**
+  - now: background: #60a5fa (hardcoded light blue)
+  - add: background --search-match-wikilink-bg (new)
+- **[HIGH] Search match badge — structured** — `src/routes/+layout.svelte:8492` → cat **interface/components**
+  - now: background: #94a3b8 (hardcoded slate)
+  - add: background --search-match-structured-bg (new)
+- **[MEDIUM] Tab library name label background** — `src/routes/+layout.svelte:8727` → cat **interface/components**
+  - now: background: #e8e8ec (hardcoded light gray)
+  - add: background --tab-libname-bg (new)
+- **[MEDIUM] Tab maturity indicator — sapling** — `src/routes/+layout.svelte:8737` → cat **interface/components**
+  - now: color: #4ade80 (hardcoded light green)
+  - add: color --tab-maturity-sapling (new)
+- **[MEDIUM] Tab maturity indicator — evergreen** — `src/routes/+layout.svelte:8738` → cat **interface/components**
+  - now: color: #16a34a (hardcoded darker green)
+  - add: color --tab-maturity-evergreen (new)
+- **[MEDIUM] Tab maturity indicator — canonical** — `src/routes/+layout.svelte:8739` → cat **interface/components**
+  - now: color: #f59e0b (hardcoded orange)
+  - add: color --tab-maturity-canonical (new)
+- **[MEDIUM] Tab scroll arrow button background** — `src/routes/+layout.svelte:8687` → cat **interface/components**
+  - now: background: rgba(0,0,0,0.08), hover: rgba(0,0,0,0.15) (hardcoded opacity-based)
+  - add: background --tabscroll-arrow-bg, hover --tabscroll-arrow-hover-bg (new)
+- **[MEDIUM] Sight v3 close button background** — `src/routes/+layout.svelte:8080` → cat **interface/components**
+  - now: background: rgba(250, 246, 232, 0.85) (hardcoded light beige), hover: rgba(201, 162, 39, 0.35) (warm gold)
+  - add: background --sight-close-bg, hover --sight-close-hover-bg, color --sight-close-color (new)
+- **[MEDIUM] Sight v3 close button text** — `src/routes/+layout.svelte:8085` → cat **interface/components**
+  - now: color: rgba(26, 26, 26, 0.7), hover: #1a1a1a (hardcoded dark gray)
+  - add: color --sight-close-color (new)
+- **[MEDIUM] Modal overlay scrim** — `src/routes/+layout.svelte:8232` → cat **interface/components**
+  - now: background: rgba(0, 0, 0, 0.7) (hardcoded black, 70% opacity)
+  - add: background --modal-overlay-bg (new)
+- **[MEDIUM] New Library dropdown shadow** — `src/routes/+layout.svelte:8400` → cat **interface/components**
+  - now: box-shadow: 0 4px 12px rgba(0,0,0,0.15) (hardcoded shadow)
+  - add: box-shadow --dropdown-shadow (new)
+- **[MEDIUM] Flank handle resize highlight** — `src/routes/+layout.svelte:8923` → cat **interface/components**
+  - now: background: var(--accent, #7c3aed); opacity: 0.5 — hardcoded fallback with opacity
+  - add: background --flank-handle-bg, opacity --flank-handle-opacity (new)
+- **[MEDIUM] WiW floating window shadow** — `src/routes/+layout.svelte:9112` → cat **interface/components**
+  - now: box-shadow: 0 8px 32px rgba(0,0,0,0.3) (hardcoded shadow)
+  - add: box-shadow --wiw-shadow (new)
+- **[LOW] Tab new button bulb icon** — `src/routes/+layout.svelte:8781` → cat **interface/components**
+  - now: color: #ff9800 (hardcoded orange, state indicator)
+  - add: color --tab-new-bulb (new, low priority)
+
+## right-sidebar-panels (19)
+_Audit of right-sidebar-panels surface (BacklinksPanel, OutgoingLinksPanel, TagsPanel, KnowledgeHealth, Tasks, Review, Provenance, Inspector360, and supporting components like LinkTypePill, ConfidencePicker). Found 26 user-visible styled elements with hardcoded colours or non-Setter CSS vars, concent_
+
+- **[HIGH] Confidence level dots (hypothesis/evidence/established/contested)** — `src/lib/components/ConfidencePicker.svelte:118-121` → cat **links**
+  - now: .conf-dot-hypothesis: color-mix(--interactive-accent 14%); .conf-dot-evidence: color-mix(--interactive-accent 40%); .conf-dot-established: --interactive-accent;
+  - add: background --conf-dot-hypothesis, --conf-dot-evidence, --conf-dot-established, --conf-dot-contested; border-color for established/contested
+- **[HIGH] Knowledge Health stage lifecycle cards (spark/birth/growth/maturity/dormancy/archival color dots)** — `src/lib/components/KnowledgeHealthDashboard.svelte:125-126` → cat **new**
+  - now: const stageColors hardcoded: spark #a78bfa, birth #94a3b8, growth #16a34a, maturity #7c3aed, dormancy #f59e0b, archival #ef4444
+  - add: background --kh-stage-spark, --kh-stage-birth, --kh-stage-growth, --kh-stage-maturity, --kh-stage-dormancy, --kh-stage-archival
+- **[HIGH] Knowledge Health confidence bar fills (hypothesis/evidence/established/contested)** — `src/lib/components/KnowledgeHealthDashboard.svelte:118-119, 211` → cat **new**
+  - now: const confidenceColors: hypothesis #94a3b8, evidence #3b82f6, established #16a34a, contested #ef4444
+  - add: background --kh-conf-hypothesis, --kh-conf-evidence, --kh-conf-established, --kh-conf-contested
+- **[HIGH] Provenance origin-type dots (received/discovered/mixed)** — `src/lib/components/ProvenancePanel.svelte:29-30, 51, 69` → cat **new**
+  - now: originColor() function: received #4A9EFF, discovered #FFB347, mixed #A78BFA, none #9ca3af (hardcoded)
+  - add: background --prov-origin-received, --prov-origin-discovered, --prov-origin-mixed, --prov-origin-none
+- **[HIGH] Tasks panel due-date badge: overdue** — `src/lib/components/TasksPanel.svelte:271-273` → cat **globalTasks**
+  - now: background rgba(239, 68, 68, 0.2), color #ef4444 (hardcoded red-based)
+  - add: background --task-due-overdue-bg, color --task-due-overdue-text
+- **[HIGH] Tasks panel due-date badge: due-today** — `src/lib/components/TasksPanel.svelte:275-277` → cat **globalTasks**
+  - now: background rgba(245, 158, 11, 0.2), color #f59e0b (hardcoded amber)
+  - add: background --task-due-today-bg, color --task-due-today-text
+- **[HIGH] Inspector360 maturity status colors (seed/sapling/evergreen/canonical/wilting)** — `src/lib/components/Inspector360.svelte:101-102` → cat **new**
+  - now: const MATURITY_COLORS: seed #9ca3af, sapling #4ade80, evergreen #16a34a, canonical #f59e0b, wilting #16a34a80 (hardcoded, wilting uses alpha)
+  - add: background --i360-maturity-seed, --i360-maturity-sapling, --i360-maturity-evergreen, --i360-maturity-canonical, --i360-maturity-wilting
+- **[HIGH] Inspector360 origin-type colors (received/discovered/mixed/none)** — `src/lib/components/Inspector360.svelte:104-105` → cat **new**
+  - now: const ORIGIN_COLORS: received #4A9EFF, discovered #FFB347, mixed #A78BFA, none #9ca3af (hardcoded)
+  - add: background --i360-origin-received, --i360-origin-discovered, --i360-origin-mixed, --i360-origin-none
+- **[MEDIUM] Knowledge Health total-links card number colour** — `src/lib/components/KnowledgeHealthDashboard.svelte:180` → cat **new**
+  - now: style:color="#7c3aed" (hardcoded purple)
+  - add: color --kh-card-accent-color
+- **[MEDIUM] Knowledge Health annotated-links card number colour** — `src/lib/components/KnowledgeHealthDashboard.svelte:184` → cat **new**
+  - now: style:color="#3b82f6" (hardcoded blue)
+  - add: color --kh-card-secondary-color
+- **[MEDIUM] Provenance external-source tag border + text** — `src/lib/components/ProvenancePanel.svelte:120-121` → cat **new**
+  - now: color: #4A9EFF (hardcoded blue), border: 1px solid #4A9EFF40 (hardcoded with alpha)
+  - add: color --prov-external-text, border-color --prov-external-border
+- **[MEDIUM] Tasks panel due-date badge: upcoming** — `src/lib/components/TasksPanel.svelte:279-281` → cat **globalTasks**
+  - now: background rgba(100, 100, 100, 0.2), color var(--text-faint, #888)
+  - add: background --task-due-upcoming-bg (currently not set, falls to rgba gray)
+- **[MEDIUM] Tasks panel tag pill background** — `src/lib/components/TasksPanel.svelte:287` → cat **globalTasks**
+  - now: background rgba(124, 58, 237, 0.15) (hardcoded purple, not using --accent)
+  - add: background --task-tag-bg
+- **[MEDIUM] Review status stale-badge background (error hover)** — `src/lib/components/ReviewStatusPanel.svelte:180` → cat **new**
+  - now: background var(--background-modifier-error-hover, rgba(220,80,80,0.12)) — the fallback is hardcoded
+  - add: background --review-stale-bg (currently missing from Setter, should add --background-modifier-error-hover if not present)
+- **[MEDIUM] Inspector360 typed-link untyped fallback color** — `src/lib/components/Inspector360.svelte:70` → cat **links**
+  - now: const TYPE_COLORS: untyped #888888 (hardcoded gray)
+  - add: color --i360-untyped-color
+- **[MEDIUM] Inspector360 tensions column warning (brown top-border)** — `src/lib/components/Inspector360.svelte:815-819` → cat **sky**
+  - now: border-top 3px solid #8b4513 (hardcoded brown), .theme-dark override #c89875 (hardcoded tan)
+  - add: border-color --i360-tensions-color, --i360-tensions-color-dark for theme override
+- **[MEDIUM] Inspector360 fragile column warning (yellow top-border)** — `src/lib/components/Inspector360.svelte:821-822` → cat **sky**
+  - now: border-top 3px solid var(--color-yellow, #e0ac00) — uses non-Setter var --color-yellow
+  - add: border-color --i360-fragile-border (currently falls back to --color-yellow which isn't exposed)
+- **[MEDIUM] Backlinks/Outgoing Links traversal-chip tier-stale (orange for aged links)** — `src/lib/components/BacklinksPanel.svelte:422-425, OutgoingLinksPanel.svelte:312-315` → cat **links**
+  - now: background color-mix(#d97706 14%), border-color color-mix(#d97706 30%), color #d97706 (hardcoded orange)
+  - add: background --link-tier-stale-bg, border-color --link-tier-stale-border, color --link-tier-stale-text
+- **[LOW] ConfidencePicker archive button hover color** — `src/lib/components/ConfidencePicker.svelte:124` → cat **links**
+  - now: .conf-menu-archive:hover { color: #d97706 } (hardcoded orange)
+  - add: color --conf-menu-archive-hover-color
+
+## search-index-switcher (10)
+_Audit of search-index-switcher surface (SearchHub.svelte result rows + searchBadges, IndexPanel.svelte term rows + via/≈ badges, quick switcher/command palette rows). Found 11 unstyled elements with hardcoded colors and badge styling that users would reasonably want to customize._
+
+- **[HIGH] Zero-link badge (incoming count)** — `SearchHub.svelte:688` → cat **components**
+  - now: color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent)
+  - add: background --sh-link-count-zero-bg, text --sh-link-count-zero-color
+- **[HIGH] Direction arrow - incoming (green)** — `SearchHub.svelte:751` → cat **components**
+  - now: color: #16a34a
+  - add: color --sh-arrow-incoming-color
+- **[HIGH] Direction arrow - outgoing (red)** — `SearchHub.svelte:752` → cat **components**
+  - now: color: #ef4444
+  - add: color --sh-arrow-outgoing-color
+- **[HIGH] Index letter header** — `IndexPanel.svelte:1591` → cat **index**
+  - now: background: var(--bg-secondary) [undefined var]
+  - add: background --index-letter-bg
+- **[HIGH] Semantic match badge (cyan accent)** — `IndexPanel.svelte:1798` → cat **index**
+  - now: background: color-mix(in srgb, var(--color-cyan, #06b6d4) 12%, transparent); uses undefined --color-cyan
+  - add: background --index-semantic-bg, text --index-semantic-color, border --index-semantic-border
+- **[HIGH] Cross-language via badge** — `IndexPanel.svelte:1816-1817` → cat **index**
+  - now: background/border: color-mix using --interactive-accent (12% & 24%)
+  - add: background --index-via-bg, border --index-via-border
+- **[MEDIUM] Category badge background (search result type indicator)** — `SearchHub.svelte:734` → cat **components**
+  - now: color: #fff (hardcoded white text on dynamic background)
+  - add: text color --sh-badge-text-color (add control to ensure contrast)
+- **[MEDIUM] Search highlight in tags (pink)** — `SearchHub.svelte:778` → cat **components**
+  - now: background: color-mix(in srgb, #f472b6 30%, transparent)
+  - add: background --sh-highlight-tag-bg, text --sh-highlight-tag-color
+- **[MEDIUM] Cooccurrence chip hover state** — `IndexPanel.svelte:1909` → cat **index**
+  - now: border-color: color-mix(in srgb, var(--interactive-accent) 35%, var(--border))
+  - add: border-color --index-cooccur-hover-border
+- **[MEDIUM] Compound term badge (2w)** — `IndexPanel.svelte:1717` → cat **index**
+  - now: background: color-mix(in srgb, var(--interactive-accent) 15%, transparent); color: var(--interactive-accent)
+  - add: background --index-compound-bg, text --index-compound-color
+
+## sky-orgchart-map: LocalSkyView.svelte, GraphMindView.svelte, OrgChart.svelte, ConstellationMap.svelte (17)
+_Audit of sky-orgchart-map surface found 20 user-visible styled elements with hardcoded colors not controllable via Style Setter vars. Primary gaps: (1) OrgChart category badges + close button (6 colors), (2) ConstellationMap maturity/stratum/depth palettes (18 colors), (3) folder icon states (4 colo_
+
+- **[HIGH] Search result category badge — Title (blue)** — `src/lib/components/OrgChart.svelte:1442` → cat **components**
+  - now: #3b82f6 (hardcoded blue)
+  - add: background --oc-cat-title-bg
+- **[HIGH] Search result category badge — Content (green)** — `src/lib/components/OrgChart.svelte:1443` → cat **components**
+  - now: #16a34a (hardcoded green)
+  - add: background --oc-cat-content-bg
+- **[HIGH] Search result category badge — Tag (pink)** — `src/lib/components/OrgChart.svelte:1444` → cat **components**
+  - now: #f472b6 (hardcoded pink)
+  - add: background --oc-cat-tag-bg
+- **[HIGH] Search result category badge — Wikilink (light blue)** — `src/lib/components/OrgChart.svelte:1445` → cat **components**
+  - now: #60a5fa (hardcoded light blue)
+  - add: background --oc-cat-wikilink-bg
+- **[HIGH] Search result category badge — Property (orange)** — `src/lib/components/OrgChart.svelte:1446` → cat **components**
+  - now: #f59e0b (hardcoded orange)
+  - add: background --oc-cat-property-bg
+- **[HIGH] ConstellationMap search category badges (color map)** — `src/lib/components/ConstellationMap.svelte:80-84` → cat **components**
+  - now: CAT_COLORS: T:#3b82f6, C:#16a34a, #:#f472b6, P:#f59e0b, S:#7c3aed, W:#94a3b8, empty:#64748b, M:#06b6d4, links-to:#16a34a, links-from:#ef4444, mutual:#8b5cf6, li
+  - add: background --cmap-cat-title, --cmap-cat-content, --cmap-cat-tag, --cmap-cat-property, --cmap-cat-semantic, --cmap-cat-wikilink, --cmap-cat-orphan, --cmap-cat-mention, --cmap-cat-links-to, --cmap-cat-l
+- **[HIGH] ConstellationMap maturity colors (5 states)** — `src/lib/components/ConstellationMap.svelte:140-146` → cat **sky**
+  - now: seed:#d1d5db, sapling:#86efac, evergreen:#16a34a, canonical:#f59e0b, wilting:#a3e635 (hardcoded)
+  - add: background --cmap-maturity-seed, --cmap-maturity-sapling, --cmap-maturity-evergreen, --cmap-maturity-canonical, --cmap-maturity-wilting
+- **[HIGH] ConstellationMap stratum colors (8 levels gradient)** — `src/lib/components/ConstellationMap.svelte:149` → cat **sky**
+  - now: #3b82f6 through #ef4444 (hardcoded 8-color cool-to-warm gradient)
+  - add: background --cmap-stratum-1 through --cmap-stratum-8
+- **[MEDIUM] Close button hover state (red background)** — `src/lib/components/OrgChart.svelte:1250, 1476` → cat **components**
+  - now: #ef4444 (hardcoded red)
+  - add: background --oc-close-hover-bg, color --oc-close-hover-color
+- **[MEDIUM] Child universe icon (inline style purple)** — `src/lib/components/OrgChart.svelte:1157` → cat **components**
+  - now: color:#6366f1 (hardcoded purple)
+  - add: color --oc-cuniverse-icon-color
+- **[MEDIUM] Folder icon expanded state (orange fill/stroke)** — `src/lib/components/OrgChart.svelte:1170` → cat **components**
+  - now: fill:#f59e0b stroke:#d97706 (hardcoded orange)
+  - add: fill --oc-folder-expanded-fill, stroke --oc-folder-expanded-stroke
+- **[MEDIUM] Folder icon collapsed state (yellow fill/stroke)** — `src/lib/components/OrgChart.svelte:1174` → cat **components**
+  - now: fill:#fbbf24 stroke:#d97706 (hardcoded yellow/brown)
+  - add: fill --oc-folder-collapsed-fill, stroke --oc-folder-collapsed-stroke
+- **[MEDIUM] ConstellationMap depth/folder fallback colors (library-independent)** — `src/lib/components/ConstellationMap.svelte:152` → cat **components**
+  - now: #7c3aed, #6366f1, #8b5cf6, #a78bfa, #c4b5fd (hardcoded purple gradient)
+  - add: background --cmap-depth-1 through --cmap-depth-5
+- **[MEDIUM] ConstellationMap arc highlight on search (stroke colors)** — `src/lib/components/ConstellationMap.svelte:526` → cat **components**
+  - now: #000000 (current), #3b82f6 (other match), #fff (normal) hardcoded
+  - add: stroke --cmap-arc-current-stroke, --cmap-arc-match-stroke, --cmap-arc-normal-stroke
+- **[LOW] No match found indicator (red text)** — `src/lib/components/OrgChart.svelte:1452` → cat **components**
+  - now: #ef4444 (hardcoded red)
+  - add: color --oc-no-match-color
+- **[LOW] ConstellationMap search badge text (white on colored)** — `src/lib/components/ConstellationMap.svelte:851, 923` → cat **components**
+  - now: #fff (hardcoded white)
+  - add: color --cmap-badge-text-color
+- **[LOW] ConstellationMap no results text (red)** — `src/lib/components/ConstellationMap.svelte:853` → cat **components**
+  - now: #ef4444 (hardcoded red)
+  - add: color --cmap-no-results-color
+
+## calendar (14)
+_The Calendar component has comprehensive CSS-var coverage for core elements (pills, dots, headers, cells) but lacks controls for several user-visible styled elements: header button chromes (Today/nav arrows), cell borders, today-cell sub-text color, hover effects, popover styling (shadows, popover r_
+
+- **[HIGH] Popover background** — `src/lib/components/CalendarPanel.svelte:320` → cat **calendar**
+  - now: background: var(--bg-secondary, #fff) (uses global var, not calendar-specific)
+  - add: background --cal-popover-bg
+- **[MEDIUM] Header buttons (Today, prev/next arrows)** — `src/lib/components/CalendarPanel.svelte:237-249` → cat **calendar**
+  - now: color: #fff; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); padding: 6px 14px; border-radius: 999px (Today) or 50% (nav)
+  - add: text --cal-header-btn-color, background --cal-header-btn-bg, border --cal-header-btn-border, hover-bg --cal-header-btn-hover-bg, padding-x --cal-header-btn-padding-x, padding-y --cal-header-btn-paddin
+- **[MEDIUM] Header white text color (hardcoded)** — `src/lib/components/CalendarPanel.svelte:233, 238, 247` → cat **calendar**
+  - now: color: #fff (hardcoded in header, buttons, nav arrows)
+  - add: text --cal-header-text-color
+- **[MEDIUM] Cell borders (grid lines)** — `src/lib/components/CalendarPanel.svelte:288, 275, 281` → cat **calendar**
+  - now: border: 1px solid var(--cal-grid-border, ...) (line width hardcoded to 1px)
+  - add: border-width --cal-grid-border-width
+- **[MEDIUM] Today cell sub-date/moon text color on today background** — `src/lib/components/CalendarPanel.svelte:297` → cat **calendar**
+  - now: color: rgba(255, 255, 255, 0.85) (hardcoded on today cell)
+  - add: text --cal-today-sub-color
+- **[MEDIUM] Popover (note/task picker) shadow** — `src/lib/components/CalendarPanel.svelte:321` → cat **calendar**
+  - now: box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18) (hardcoded)
+  - add: shadow --cal-popover-shadow
+- **[LOW] Header button hover state** — `src/lib/components/CalendarPanel.svelte:242, 249` → cat **calendar**
+  - now: background: rgba(255, 255, 255, 0.22) (hardcoded hover)
+  - add: hover-background --cal-header-btn-hover-bg
+- **[LOW] Weekday row background** — `src/lib/components/CalendarPanel.svelte:265` → cat **calendar**
+  - now: background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 8%, transparent) (derived from header color)
+  - add: background --cal-weekrow-bg
+- **[LOW] Cell hover background** — `src/lib/components/CalendarPanel.svelte:291` → cat **calendar**
+  - now: background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 6%, ...) (derived, not independently controllable)
+  - add: hover-background --cal-cell-hover-bg
+- **[LOW] Popover border radius** — `src/lib/components/CalendarPanel.svelte:320` → cat **calendar**
+  - now: border-radius: 8px (hardcoded)
+  - add: radius --cal-popover-radius
+- **[LOW] Popover row hover background** — `src/lib/components/CalendarPanel.svelte:326` → cat **calendar**
+  - now: background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 8%, transparent) (derived from header, not independent)
+  - add: row-hover-bg --cal-popover-row-hover-bg
+- **[LOW] Popover row text color** — `src/lib/components/CalendarPanel.svelte:325` → cat **calendar**
+  - now: color: var(--text, #1e293b) (uses global var, not calendar-specific)
+  - add: text --cal-popover-row-color
+- **[LOW] Popover badge (Daily note label)** — `src/lib/components/CalendarPanel.svelte:333` → cat **calendar**
+  - now: color: var(--cal-daily-dot, #d4a017); border: 1px solid var(--cal-daily-dot, #d4a017); border-radius: 4px (radius hardcoded)
+  - add: bg --cal-popover-badge-bg, text --cal-popover-badge-color, border --cal-popover-badge-border, radius --cal-popover-badge-radius
+- **[LOW] Pill radius** — `src/lib/components/CalendarPanel.svelte:251` → cat **calendar**
+  - now: border-radius: 14px (hardcoded)
+  - add: radius --cal-pill-radius
+
+## dialogs-dashboard-settings (16)
+_Audit identified 20 unstyled elements across dialogs/dashboard/settings using hardcoded hex colors, undefined CSS vars, or missing controls. High-priority: child-universe stats (#6366f1 indigo), structure panel accent (#14B8A6 teal). Medium: dashboard tags, settings status indicators. Low: dialog ra_
+
+- **[HIGH] Child Universe stat cards background and accent** — `DashboardView.svelte:446-449` → cat **components**
+  - now: #6366f1 hardcoded indigo for stat card background, text, and borders via color-mix(in srgb, #6366f1 18%, transparent)
+  - add: background --cu-stat-bg, text --cu-stat-color, border --cu-stat-border
+- **[HIGH] Child Universe header icon SVG stroke color** — `DashboardView.svelte:206` → cat **components**
+  - now: #6366f1 hardcoded directly in SVG stroke attribute for universe library icon
+  - add: color --cu-icon-color
+- **[HIGH] Structure panel breadcrumb links and accent buttons** — `StructuralOutlinePanel.svelte:243-271-285` → cat **components**
+  - now: #14B8A6 hardcoded teal used across .toc-crumb, .toc-scope-btn.active, .toc-bullet, and .toc-count span
+  - add: color --structure-accent-color, background --structure-accent-bg
+- **[MEDIUM] Structure panel loop truncation warning marker** — `StructuralOutlinePanel.svelte:290` → cat **components**
+  - now: #d97706 hardcoded amber color for the loop marker icon (.toc-loop)
+  - add: color --structure-warning-color
+- **[MEDIUM] Structure panel contested row resolve button hover states** — `StructuralOutlinePanel.svelte:314-315` → cat **components**
+  - now: #14B8A6 for Keep button hover, #d97706 for Move button hover (hardcoded teal and amber)
+  - add: color --structure-resolve-color, --structure-resolve-move-color
+- **[MEDIUM] Structure panel current-note highlight background** — `StructuralOutlinePanel.svelte:282` → cat **components**
+  - now: color-mix(in srgb, #14B8A6 14%, transparent) for .toc-row-current - teal-based highlight
+  - add: background --structure-current-bg
+- **[MEDIUM] Dashboard selected tag pill text and count backgrounds** — `DashboardView.svelte:494-495` → cat **components**
+  - now: white hardcoded for text, rgba(255,255,255,0.25) hardcoded for count badge when tag selected
+  - add: color --tag-selected-text, background --tag-selected-count-bg
+- **[MEDIUM] SettingsModal Debug status badge (PASS/FAIL backgrounds)** — `SettingsModal.svelte:3402-3403` → cat **components**
+  - now: var(--color-green, #4ade80) and var(--color-red, #ef4444) - undefined CSS vars with hardcoded hex fallbacks
+  - add: background --status-pass-bg, --status-fail-bg (consolidate color vars)
+- **[MEDIUM] SettingsModal Debug status badge foreground text colors** — `SettingsModal.svelte:3402-3403` → cat **components**
+  - now: #052e16 hardcoded dark green for PASS text, #fef2f2 hardcoded off-white for FAIL text
+  - add: color --status-pass-text, --status-fail-text
+- **[MEDIUM] SettingsModal security badge active indicator color** — `SettingsModal.svelte:3491-3492` → cat **components**
+  - now: color-mix(in srgb, var(--color-green, #4ade80) 15%, transparent) and var(--color-green, #4ade80) - undefined --color-green var
+  - add: Should use --text-success instead; define --status-active-bg and --status-active-color
+- **[MEDIUM] SettingsModal write-integrity OK status indicator color** — `SettingsModal.svelte:3505` → cat **components**
+  - now: var(--color-green, #4ade80) - undefined CSS variable with hardcoded fallback #4ade80
+  - add: color --wi-ok-color (map to existing --text-success var)
+- **[MEDIUM] SettingsModal write-integrity BAD status indicator color** — `SettingsModal.svelte:3506` → cat **components**
+  - now: var(--text-error, #e5484d) - --text-error NOT in controllable set, undefined fallback used
+  - add: Confirm --text-error is in controllable list or use existing --text-error var
+- **[MEDIUM] SettingsModal feature card active indicator dot color** — `SettingsModal.svelte:3316` → cat **components**
+  - now: background var(--color-green, #4ade80) - undefined --color-green var with hardcoded fallback
+  - add: color --status-active-color (consolidate with status indicator colors)
+- **[LOW] Dialog modal border radius (all dialog types)** — `ConfirmDialog.svelte:48, CreateItemDialog.svelte:236, MoveDialog.svelte:116, RenameDialog.svelte:79` → cat **components**
+  - now: border-radius: 8px hardcoded on .dialog containers across all modal types
+  - add: radius --dialog-radius (should use --radius-l or new modal-specific var)
+- **[LOW] Plugin switch toggle circle knob** — `SettingsModal.svelte:3345-3346` → cat **components**
+  - now: white hardcoded background for toggle knob, box-shadow 0 1px 3px rgba(0,0,0,0.2) hardcoded shadow
+  - add: background --toggle-knob-bg, shadow --toggle-knob-shadow
+- **[LOW] SettingsModal calendar correction remove button hover background** — `SettingsModal.svelte:2834` → cat **components**
+  - now: var(--background-modifier-error-hover, rgba(220,60,60,0.15)) - undefined var with hardcoded rgba fallback #dc3c3c with 15% opacity
+  - add: Define --error-hover-bg or use existing color vars with opacity
+
+## global-primitives (22)
+_Audit of unstyled global-primitives components in Constellation. Found 21 worth-restyling elements across shared buttons, inputs, dialogs, context menus, confidence picker, and emoji picker that use hardcoded colors, shadows, and radii not controllable via Style Setter. Priorities span high (core di_
+
+- **[HIGH] ConfirmDialog buttons (danger/cancel states)** — `src/lib/components/ConfirmDialog.svelte:80` → cat **components**
+  - now: background: var(--text-error); color: var(--text-on-accent); color-mix(in srgb, var(--text-error) 80%, black) on hover for danger; background: var(--background-
+  - add: background --pd-btn-danger-bg, hover --pd-btn-danger-hover, cancel background --pd-btn-cancel-bg, cancel hover --pd-btn-cancel-hover
+- **[HIGH] Dialog overlay (ConfirmDialog, CollisionDialog)** — `src/lib/components/ConfirmDialog.svelte:37-40` → cat **components**
+  - now: background: var(--background-modifier-cover); border-radius: 8px (hardcoded); box-shadow: var(--shadow-l); padding: 20px 24px
+  - add: radius --dialog-radius, padding --dialog-padding, background --dialog-overlay-bg
+- **[HIGH] CollisionDialog modal and buttons** — `src/lib/components/CollisionDialog.svelte:105-120` → cat **components**
+  - now: background: rgba(0, 0, 0, 0.6) overlay; border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); border: 2px solid var(--background-modifier-border)
+  - add: overlay-bg --modal-overlay-bg, radius --modal-radius, shadow --modal-shadow, option-border --modal-option-border
+- **[HIGH] ContextMenu (base context menu)** — `src/lib/components/ContextMenu.svelte:132-186` → cat **components**
+  - now: border-radius: 6px (hardcoded), box-shadow: var(--shadow-l), border: 1px solid var(--background-modifier-border)
+  - add: radius --menu-radius, padding --menu-padding, submenu-radius --submenu-radius, submenu-shadow --submenu-shadow
+- **[HIGH] EditorContextMenu shadow and radius** — `src/lib/components/EditorContextMenu.svelte:232` → cat **components**
+  - now: box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2) (hardcoded, different from --shadow-l); border-radius: 8px (hardcoded)
+  - add: shadow --editor-menu-shadow, radius --editor-menu-radius, submenu-shadow --editor-submenu-shadow
+- **[HIGH] Confidence Picker (link confidence popover)** — `src/lib/components/ConfidencePicker.svelte:121` → cat **components**
+  - now: contested dot: background: #d97706; border-color: #d97706 (hardcoded, not themeable). hover: color: #d97706 (hardcoded)
+  - add: contested-bg --conf-dot-contested-bg, contested-border --conf-dot-contested-border, contested-hover-color --conf-dot-contested-hover
+- **[MEDIUM] EmojiIconPicker backdrop overlay** — `src/lib/components/EmojiIconPicker.svelte:234` → cat **components**
+  - now: background: rgba(0,0,0,0.35) (hardcoded, different from --background-modifier-cover); box-shadow: 0 24px 48px rgba(0,0,0,0.25) (hardcoded)
+  - add: overlay-bg --picker-overlay-bg, picker-shadow --picker-shadow, picker-radius --picker-radius
+- **[MEDIUM] FormattingToolbar (inline editor toolbar)** — `src/lib/components/FormattingToolbar.svelte:111` → cat **components**
+  - now: box-shadow: 0 4px 16px rgba(0,0,0,0.18) (hardcoded, unique value); border-radius: 8px; border: 1px solid var(--background-modifier-border)
+  - add: shadow --toolbar-shadow, radius --toolbar-radius, border-color --toolbar-border
+- **[MEDIUM] Calendar popover (.cal-pop)** — `src/lib/components/CalendarPanel.svelte:321` → cat **calendar**
+  - now: box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18) (hardcoded); border-radius: 8px; border: 1px solid var(--cal-grid-border, var(--border))
+  - add: popover-shadow --cal-popover-shadow, popover-radius --cal-popover-radius, popover-border --cal-popover-border
+- **[MEDIUM] Backlinks/Outgoing Links warning badge** — `src/lib/components/BacklinksPanel.svelte:425` → cat **components**
+  - now: color: #d97706 (hardcoded); background: color-mix(in srgb, #d97706 14%, transparent) (hardcoded amber tint)
+  - add: warning-color --badge-warning-color, warning-bg --badge-warning-bg
+- **[MEDIUM] Confidence dots (hypothesis/evidence/established/contested)** — `src/lib/components/ConfidencePicker.svelte:114-121` → cat **components**
+  - now: hypothesis: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); evidence: 40% mix; established: accent; contested: #d97706 (only contested 
+  - add: dot-hypothesis-bg --conf-dot-hypothesis-bg, dot-evidence-bg --conf-dot-evidence-bg, dot-established-bg --conf-dot-established-bg, dot-contested-bg --conf-dot-contested-bg
+- **[MEDIUM] Input field focus border (Settings, CollisionDialog)** — `src/lib/components/CollisionDialog.svelte:165` → cat **components**
+  - now: border-color: var(--text-accent) on focus (not var(--interactive-accent)); should be consistent
+  - add: input-focus-border --input-focus-border, input-border --input-border, input-bg --input-bg
+- **[MEDIUM] DashboardView constellation stats value** — `src/lib/components/DashboardView.svelte:449` → cat **components**
+  - now: color: #6366f1 (hardcoded indigo); font-size: 18px; font-weight: 700
+  - add: stat-value-color --stat-value-color, stat-value-size --stat-value-size, stat-value-weight --stat-value-weight
+- **[LOW] EmojiIconPicker tab styles** — `src/lib/components/EmojiIconPicker.svelte:251-278` → cat **components**
+  - now: border-radius: 6px 6px 0 0 (hardcoded); emoji-cell: border-radius: 6px; icon-cell: border-radius varies; set-btn: border-radius: 4px (all hardcoded)
+  - add: tab-radius --picker-tab-radius, cell-radius --picker-cell-radius, set-btn-radius --picker-btn-radius
+- **[LOW] Disabled state opacity (ConfirmDialog buttons)** — `src/lib/components/CollisionDialog.svelte:190` → cat **components**
+  - now: opacity: 0.45 (hardcoded) for disabled buttons; cursor: not-allowed
+  - add: disabled-opacity --btn-disabled-opacity
+- **[LOW] Modal animation (colFadeIn keyframe)** — `src/lib/components/CollisionDialog.svelte:223` → cat **components**
+  - now: @keyframes colFadeIn { from { opacity: 0; } to { opacity: 1; } } (hardcoded timing, no var)
+  - add: modal-animation-duration --modal-fade-duration
+- **[LOW] Separator divider (.ctx-separator, .ecm-sep)** — `src/lib/components/ContextMenu.svelte:198-202` → cat **components**
+  - now: height: 1px; margin: 4px 6px; background: var(--background-modifier-border); (hardcoded margin and height)
+  - add: separator-height --sep-height, separator-margin --sep-margin, separator-color --sep-color
+- **[LOW] Search result error text color** — `src/lib/components/ConstellationSight2.svelte:1525` → cat **components**
+  - now: color: #ef4444 (hardcoded red error) for .sight2-search-none
+  - add: error-text-color --search-error-color
+- **[LOW] Focus pane backgrounds** — `src/lib/components/FocusPane.svelte:257-270` → cat **components**
+  - now: background: #e8e8ec (hardcoded light gray) and background: #ffffff (hardcoded white)
+  - add: focuspane-bg --focuspane-bg, focuspane-card-bg --focuspane-card-bg
+- **[LOW] Selection highlight color** — `src/lib/components/DashboardView.svelte:495` → cat **components**
+  - now: background: rgba(255,255,255,0.25) (hardcoded semi-transparent white); color: white on tag-selected .tag-count
+  - add: select-highlight-bg --select-highlight-bg, select-highlight-color --select-highlight-color
+- **[LOW] Scrollbar thumb styles** — `src/lib/components/GraphMindView.svelte:1618-1619` → cat **global**
+  - now: width: 4px (hardcoded); background: var(--background-modifier-border); border-radius: 2px (hardcoded)
+  - add: scrollbar-width --scrollbar-width, scrollbar-thumb-radius --scrollbar-thumb-radius
+- **[LOW] Checkbox / color input native browser styling** — `src/lib/components/LinkTypesEditor.svelte:319-320` → cat **global**
+  - now: ::-webkit-color-swatch-wrapper { padding: 0; } and ::-webkit-color-swatch { border: none; border-radius: 999px; } (browser pseudo-elements hardcoded)
+  - add: color-input-radius --color-input-radius, color-input-padding --color-input-padding
