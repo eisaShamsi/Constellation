@@ -39,6 +39,29 @@
 	const newStatus = $derived(newSlug ? slugStatus(newSlug) : 'empty');
 	const canAdd = $derived(newStatus === 'ok' && newName.trim().length > 0);
 
+	// Edit-an-existing-row state. editingSlug = the row's CURRENT slug being edited.
+	let editingSlug = $state<string | null>(null);
+	let editName = $state('');
+	let editTrigger = $state('');
+	const editSlug = $derived(sanitizeCalloutSlug(editTrigger || editName));
+	// slugStatus excludes the row itself (so an unchanged trigger isn't "duplicate").
+	const editStatus = $derived(editingSlug && editSlug ? slugStatus(editSlug, editingSlug) : 'empty');
+	const canSaveEdit = $derived(editStatus === 'ok' && editName.trim().length > 0);
+	const triggerChanged = $derived(!!editingSlug && editSlug !== editingSlug);
+
+	function startEdit(c: { slug: string; name: string }) {
+		editingSlug = c.slug;
+		editName = c.name;
+		editTrigger = c.slug;
+	}
+	function saveEdit() {
+		if (!editingSlug || !canSaveEdit) return;
+		// updateCustomCallout matches by the OLD slug and applies the patch (incl. a new slug).
+		updateCustomCallout(editingSlug, { slug: editSlug, name: editName.trim() });
+		editingSlug = null;
+	}
+	function cancelEdit() { editingSlug = null; }
+
 	// styleSetter.labels.<slug> with an English fallback on a miss (mirrors StyleSetter's L()).
 	function lbl(slug: string, fallback: string): string {
 		const key = 'styleSetter.labels.' + slug;
@@ -96,9 +119,26 @@
 					</button>
 					<!-- ColorField commits ONCE (saved-swatch click or native onchange) — no save/emit storm. -->
 					<ColorField value={c.color} title={lbl('colour', 'Colour')} onChange={(hex) => updateCustomCallout(c.slug, { color: hex })} />
-					<span class="cte-label">{c.name} <span class="cte-trig">[!{c.slug}]</span></span>
-					<button class="cte-reset cte-del" title={lbl('remove', 'Remove')} onclick={() => removeCustomCallout(c.slug)}>✕</button>
+					{#if editingSlug === c.slug}
+						<input class="cte-in" placeholder={lbl('name', 'Name')} bind:value={editName} dir="auto" />
+						<input class="cte-in cte-in-trig" placeholder={lbl('trigger', 'Trigger')} bind:value={editTrigger} dir="auto" />
+						<button class="cte-reset" disabled={!canSaveEdit} title={lbl('save', 'Save')} onclick={saveEdit}>✓</button>
+						<button class="cte-reset" title={lbl('cancel', 'Cancel')} onclick={cancelEdit}>✗</button>
+					{:else}
+						<span class="cte-label">{c.name} <span class="cte-trig">[!{c.slug}]</span></span>
+						<button class="cte-reset" title={lbl('edit', 'Edit')} onclick={() => startEdit(c)}>✎</button>
+						<button class="cte-reset cte-del" title={lbl('remove', 'Remove')} onclick={() => removeCustomCallout(c.slug)}>✕</button>
+					{/if}
 				</div>
+				{#if editingSlug === c.slug}
+					{#if editStatus === 'builtin'}
+						<div class="cte-warn">{lbl('callout_collision_builtin', "That's a built-in callout — recolour or re-icon it above instead.")}</div>
+					{:else if editStatus === 'duplicate'}
+						<div class="cte-warn">{lbl('callout_collision_dupe', 'You already have a custom callout with that trigger.')}</div>
+					{:else if triggerChanged}
+						<div class="cte-hint">{lbl('callout_trigger_edit_hint', "Changing the trigger won't restyle callouts you've already typed.")}</div>
+					{/if}
+				{/if}
 			{/each}
 		</div>
 	{/if}
@@ -107,7 +147,7 @@
 	<div class="cte-add">
 		<div class="cte-add-row">
 			<input class="cte-in" placeholder={lbl('name', 'Name')} bind:value={newName} dir="auto" />
-			<input class="cte-in cte-in-trig" placeholder={lbl('trigger', 'Trigger')} bind:value={newTrigger} />
+			<input class="cte-in cte-in-trig" placeholder={lbl('trigger', 'Trigger')} bind:value={newTrigger} dir="auto" />
 		</div>
 		<div class="cte-add-row">
 			<ColorField value={newColor} title={lbl('colour', 'Colour')} onChange={(hex) => (newColor = hex)} />
@@ -155,10 +195,14 @@
 	.cte-del:hover { color: var(--text-error, #e06666); }
 	.cte-add { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 	.cte-add-row { display: flex; align-items: center; gap: 8px; }
-	.cte-in { flex: 1; min-width: 0; padding: 5px 8px; font: inherit; font-size: 12px; border: 1px solid var(--background-modifier-border, #ddd); border-radius: 6px; background: var(--background-secondary, #f6f6f8); color: var(--c-text, var(--text-normal)); }
+	/* MIG-089 — bidi-correct caret/Home-End/double-click for Arabic (etc.): the same
+	   `unicode-bidi: plaintext` the editor uses on .cm-line, paired with dir="auto" on
+	   the inputs. text-align follows the resolved direction (not hard-coded left). */
+	.cte-in { flex: 1; min-width: 0; padding: 5px 8px; font: inherit; font-size: 12px; border: 1px solid var(--background-modifier-border, #ddd); border-radius: 6px; background: var(--background-secondary, #f6f6f8); color: var(--c-text, var(--text-normal)); unicode-bidi: plaintext; text-align: start; }
 	.cte-in-trig { flex: 0 0 110px; font-family: var(--font-monospace-theme, monospace); }
 	.cte-preview { flex: 1; min-width: 0; font-size: 11px; font-family: var(--font-monospace-theme, monospace); color: var(--c-muted, var(--text-muted)); overflow: hidden; text-overflow: ellipsis; }
 	.cte-addbtn { flex: none; font: inherit; font-size: 12px; padding: 5px 14px; border-radius: 6px; border: 1px solid var(--interactive-accent, #7c3aed); background: var(--interactive-accent, #7c3aed); color: #fff; cursor: pointer; }
 	.cte-addbtn:disabled { opacity: .4; cursor: default; }
 	.cte-warn { font-size: 11px; color: var(--text-error, #e06666); padding: 2px 2px; }
+	.cte-hint { font-size: 11px; color: var(--c-muted, var(--text-muted)); padding: 2px 2px; }
 </style>

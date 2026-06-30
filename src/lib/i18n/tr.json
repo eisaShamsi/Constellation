@@ -3649,7 +3649,11 @@
       "add": "Ekle",
       "callout_collision_builtin": "Bu yerleşik bir uyarı kutusu — bunun yerine yukarıdan rengini veya simgesini değiştirin.",
       "callout_collision_dupe": "Bu tetikleyiciye sahip bir özel uyarı kutunuz zaten var.",
-      "custom_colour": "Özel…"
+      "custom_colour": "Özel…",
+      "edit": "Düzenle",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "callout_trigger_edit_hint": "Tetikleyiciyi değiştirmek, daha önce yazdığınız uyarı kutularının stilini değiştirmez."
     }
   },
   "reviewer": {

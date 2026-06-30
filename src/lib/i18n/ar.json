@@ -3781,7 +3781,11 @@
       "add": "إضافة",
       "callout_collision_builtin": "هذا تنويه مُضمَّن — غيّر لونه أو أيقونته من الأعلى بدلاً من ذلك.",
       "callout_collision_dupe": "لديك بالفعل تنويه مخصص بهذا المُحفِّز.",
-      "custom_colour": "مخصص…"
+      "custom_colour": "مخصص…",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "callout_trigger_edit_hint": "تغيير المُحفِّز لن يُعيد تنسيق التنويهات التي كتبتها بالفعل."
     }
   },
   "reviewer": {

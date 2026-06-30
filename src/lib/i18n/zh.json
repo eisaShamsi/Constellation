@@ -3649,7 +3649,11 @@
       "add": "添加",
       "callout_collision_builtin": "这是内置标注——请改在上方为它重新设置颜色或图标。",
       "callout_collision_dupe": "你已有一个使用该触发词的自定义标注。",
-      "custom_colour": "自定义…"
+      "custom_colour": "自定义…",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "callout_trigger_edit_hint": "更改触发词不会重新设置你已经输入的标注的样式。"
     }
   },
   "reviewer": {

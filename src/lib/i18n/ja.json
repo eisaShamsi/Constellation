@@ -3649,7 +3649,11 @@
       "add": "追加",
       "callout_collision_builtin": "これは組み込みコールアウトです。上の一覧で色やアイコンを変更してください。",
       "callout_collision_dupe": "そのトリガー語のカスタムコールアウトはすでに存在します。",
-      "custom_colour": "カスタム…"
+      "custom_colour": "カスタム…",
+      "edit": "編集",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "callout_trigger_edit_hint": "トリガー語を変更しても、すでに入力したコールアウトのスタイルは変わりません。"
     }
   },
   "reviewer": {

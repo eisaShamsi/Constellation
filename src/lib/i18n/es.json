@@ -3649,7 +3649,11 @@
       "add": "Añadir",
       "callout_collision_builtin": "Es una nota destacada integrada: cámbiale el color o el icono arriba.",
       "callout_collision_dupe": "Ya tienes una nota destacada personalizada con ese disparador.",
-      "custom_colour": "Personalizado…"
+      "custom_colour": "Personalizado…",
+      "edit": "Editar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "callout_trigger_edit_hint": "Cambiar el disparador no reaplicará el estilo a las notas destacadas que ya hayas escrito."
     }
   },
   "reviewer": {

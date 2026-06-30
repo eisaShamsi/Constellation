@@ -3649,7 +3649,11 @@
       "add": "추가",
       "callout_collision_builtin": "기본 제공 콜아웃입니다. 위에서 색상이나 아이콘을 변경하세요.",
       "callout_collision_dupe": "해당 트리거의 사용자 정의 콜아웃이 이미 있습니다.",
-      "custom_colour": "사용자 정의…"
+      "custom_colour": "사용자 정의…",
+      "edit": "편집",
+      "save": "저장",
+      "cancel": "취소",
+      "callout_trigger_edit_hint": "트리거를 변경해도 이미 입력한 콜아웃의 스타일은 바뀌지 않습니다."
     }
   },
   "reviewer": {

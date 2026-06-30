@@ -3649,7 +3649,11 @@
       "add": "Ajouter",
       "callout_collision_builtin": "C'est un encadré intégré — recolorez-le ou changez son icône ci-dessus.",
       "callout_collision_dupe": "Vous avez déjà un encadré personnalisé avec ce déclencheur.",
-      "custom_colour": "Personnalisée…"
+      "custom_colour": "Personnalisée…",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "callout_trigger_edit_hint": "Modifier le déclencheur ne restylise pas les encadrés que vous avez déjà saisis."
     }
   },
   "reviewer": {
