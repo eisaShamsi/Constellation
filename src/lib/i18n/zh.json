@@ -3627,7 +3627,16 @@
       "border": "边框",
       "row_hover": "行悬停",
       "overdue_date": "逾期日期",
-      "due_today_date": "今日到期日期"
+      "due_today_date": "今日到期日期",
+      "callouts": "标注",
+      "note": "笔记",
+      "abstract": "摘要",
+      "tip": "提示",
+      "question": "问题",
+      "failure": "失败",
+      "danger": "危险",
+      "example": "示例",
+      "quote": "引用"
     }
   },
   "reviewer": {

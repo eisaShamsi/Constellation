@@ -3627,7 +3627,16 @@
       "border": "किनारा",
       "row_hover": "पंक्ति होवर",
       "overdue_date": "अतिदेय तिथि",
-      "due_today_date": "आज की देय तिथि"
+      "due_today_date": "आज की देय तिथि",
+      "callouts": "कॉलआउट",
+      "note": "नोट",
+      "abstract": "सार",
+      "tip": "सुझाव",
+      "question": "प्रश्न",
+      "failure": "विफलता",
+      "danger": "ख़तरा",
+      "example": "उदाहरण",
+      "quote": "उद्धरण"
     }
   },
   "reviewer": {

@@ -3627,7 +3627,16 @@
       "border": "کادر",
       "row_hover": "نشانگر روی سطر",
       "overdue_date": "تاریخ گذشته",
-      "due_today_date": "تاریخ امروز"
+      "due_today_date": "تاریخ امروز",
+      "callouts": "یادداشت‌های برجسته",
+      "note": "یادداشت",
+      "abstract": "چکیده",
+      "tip": "نکته",
+      "question": "پرسش",
+      "failure": "ناکامی",
+      "danger": "خطر",
+      "example": "نمونه",
+      "quote": "نقل‌قول"
     }
   },
   "reviewer": {

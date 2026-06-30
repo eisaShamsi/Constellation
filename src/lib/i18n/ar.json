@@ -3759,7 +3759,16 @@
       "border": "الحدّ",
       "row_hover": "تمرير الصف",
       "overdue_date": "تاريخ متأخّر",
-      "due_today_date": "تاريخ مستحقّ اليوم"
+      "due_today_date": "تاريخ مستحقّ اليوم",
+      "callouts": "التنويهات",
+      "note": "ملاحظة",
+      "abstract": "مُلخّص",
+      "tip": "نصيحة",
+      "question": "سؤال",
+      "failure": "إخفاق",
+      "danger": "خطر",
+      "example": "مثال",
+      "quote": "اقتباس"
     }
   },
   "reviewer": {

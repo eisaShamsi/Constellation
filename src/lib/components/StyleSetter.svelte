@@ -237,6 +237,20 @@
 		breadcrumb: { name: 'Breadcrumb', controls: [
 			{ label: 'Colour', type: 'color', var: '--breadcrumb-color' },
 			{ label: 'Text size', type: 'range', var: '--breadcrumb-size', min: 9, max: 18, step: 1, unit: 'px', def: 12 } ] },
+		// MIG-088 Phase 3 §3a — the 10 callout families (the coloured note boxes). Each colour writes a
+		// shared --callout-{family}-color var that calloutPlugin.ts reads with TODAY'S hex as the fallback
+		// (byte-identical until edited). question + warning are separate families that share #ff9100.
+		callouts: { name: 'Callouts', controls: [
+			{ label: 'Note', type: 'color', var: '--callout-note-color' },
+			{ label: 'Abstract', type: 'color', var: '--callout-abstract-color' },
+			{ label: 'Tip', type: 'color', var: '--callout-tip-color' },
+			{ label: 'Success', type: 'color', var: '--callout-success-color' },
+			{ label: 'Question', type: 'color', var: '--callout-question-color' },
+			{ label: 'Warning', type: 'color', var: '--callout-warning-color' },
+			{ label: 'Failure', type: 'color', var: '--callout-failure-color' },
+			{ label: 'Danger', type: 'color', var: '--callout-danger-color' },
+			{ label: 'Example', type: 'color', var: '--callout-example-color' },
+			{ label: 'Quote', type: 'color', var: '--callout-quote-color' } ] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
 		gBackgrounds: { name: 'Backgrounds', controls: [
 			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
@@ -559,7 +573,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
-		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
@@ -1209,6 +1223,20 @@
 								<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={() => selectEl('h5')}>H5</span>
 								<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={() => selectEl('h6')}>H6</span>
 							</span>
+						</div>
+					{:else if pk === 'callouts'}
+						<div class="ss-focus ss-fcard ss-fcog">
+							<div class="ss-fep-title">{L('Callouts')}</div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-note-color, #448aff)"></span><span class="ss-cog-lbl">{L('Note')}</span><span class="ss-cog-note">{L('Note')} · info</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-abstract-color, #00b0ff)"></span><span class="ss-cog-lbl">{L('Abstract')}</span><span class="ss-cog-note">summary · tldr</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-tip-color, #00bfa5)"></span><span class="ss-cog-lbl">{L('Tip')}</span><span class="ss-cog-note">hint · important</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-success-color, #00c853)"></span><span class="ss-cog-lbl">{L('Success')}</span><span class="ss-cog-note">check · done</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-question-color, #ff9100)"></span><span class="ss-cog-lbl">{L('Question')}</span><span class="ss-cog-note">help · faq</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-warning-color, #ff9100)"></span><span class="ss-cog-lbl">{L('Warning')}</span><span class="ss-cog-note">caution · attention</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-failure-color, #ff5252)"></span><span class="ss-cog-lbl">{L('Failure')}</span><span class="ss-cog-note">fail · missing</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-danger-color, #ff1744)"></span><span class="ss-cog-lbl">{L('Danger')}</span><span class="ss-cog-note">error · bug</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-example-color, #7c4dff)"></span><span class="ss-cog-lbl">{L('Example')}</span></div>
+							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-quote-color, #9e9e9e)"></span><span class="ss-cog-lbl">{L('Quote')}</span><span class="ss-cog-note">cite</span></div>
 						</div>
 					{:else if pk === 'tree'}
 						<div class="ss-focus ss-fcard ss-ftree">

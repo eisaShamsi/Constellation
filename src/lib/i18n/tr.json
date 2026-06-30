@@ -3627,7 +3627,16 @@
       "border": "Kenarlık",
       "row_hover": "Satır vurgusu",
       "overdue_date": "Geciken tarih",
-      "due_today_date": "Bugün biten tarih"
+      "due_today_date": "Bugün biten tarih",
+      "callouts": "Uyarı Kutuları",
+      "note": "Not",
+      "abstract": "Özet",
+      "tip": "İpucu",
+      "question": "Soru",
+      "failure": "Başarısızlık",
+      "danger": "Tehlike",
+      "example": "Örnek",
+      "quote": "Alıntı"
     }
   },
   "reviewer": {

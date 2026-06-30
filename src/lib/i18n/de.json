@@ -3627,7 +3627,16 @@
       "border": "Rahmen",
       "row_hover": "Zeile (Hover)",
       "overdue_date": "Überfälliges Datum",
-      "due_today_date": "Heute fälliges Datum"
+      "due_today_date": "Heute fälliges Datum",
+      "callouts": "Hinweise",
+      "note": "Notiz",
+      "abstract": "Zusammenfassung",
+      "tip": "Tipp",
+      "question": "Frage",
+      "failure": "Fehlschlag",
+      "danger": "Gefahr",
+      "example": "Beispiel",
+      "quote": "Zitat"
     }
   },
   "reviewer": {

@@ -3627,7 +3627,16 @@
       "border": "Bordure",
       "row_hover": "Survol de ligne",
       "overdue_date": "Date en retard",
-      "due_today_date": "Échéance aujourd’hui"
+      "due_today_date": "Échéance aujourd’hui",
+      "callouts": "Encadrés",
+      "note": "Note",
+      "abstract": "Résumé",
+      "tip": "Astuce",
+      "question": "Question",
+      "failure": "Échec",
+      "danger": "Danger",
+      "example": "Exemple",
+      "quote": "Citation"
     }
   },
   "reviewer": {

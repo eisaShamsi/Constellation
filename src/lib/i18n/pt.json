@@ -3627,7 +3627,16 @@
       "border": "Borda",
       "row_hover": "Linha ao passar",
       "overdue_date": "Data vencida",
-      "due_today_date": "Data de hoje"
+      "due_today_date": "Data de hoje",
+      "callouts": "Destaques",
+      "note": "Nota",
+      "abstract": "Resumo",
+      "tip": "Dica",
+      "question": "Pergunta",
+      "failure": "Falha",
+      "danger": "Perigo",
+      "example": "Exemplo",
+      "quote": "Citação"
     }
   },
   "reviewer": {

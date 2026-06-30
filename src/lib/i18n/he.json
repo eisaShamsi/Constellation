@@ -3627,7 +3627,16 @@
       "border": "מסגרת",
       "row_hover": "ריחוף על שורה",
       "overdue_date": "תאריך באיחור",
-      "due_today_date": "תאריך להיום"
+      "due_today_date": "תאריך להיום",
+      "callouts": "התראות",
+      "note": "הערה",
+      "abstract": "תקציר",
+      "tip": "טיפ",
+      "question": "שאלה",
+      "failure": "כשל",
+      "danger": "סכנה",
+      "example": "דוגמה",
+      "quote": "ציטוט"
     }
   },
   "reviewer": {

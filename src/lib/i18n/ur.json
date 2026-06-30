@@ -3627,7 +3627,16 @@
       "border": "کنارہ",
       "row_hover": "قطار ہوور",
       "overdue_date": "مقررہ تاریخ گزر گئی",
-      "due_today_date": "آج کی مقررہ تاریخ"
+      "due_today_date": "آج کی مقررہ تاریخ",
+      "callouts": "نمایاں نوٹس",
+      "note": "نوٹ",
+      "abstract": "خلاصہ",
+      "tip": "مشورہ",
+      "question": "سوال",
+      "failure": "ناکامی",
+      "danger": "خطرہ",
+      "example": "مثال",
+      "quote": "اقتباس"
     }
   },
   "reviewer": {

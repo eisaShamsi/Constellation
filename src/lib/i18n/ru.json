@@ -3627,7 +3627,16 @@
       "border": "Граница",
       "row_hover": "Наведение на строку",
       "overdue_date": "Просроченная дата",
-      "due_today_date": "Срок сегодня"
+      "due_today_date": "Срок сегодня",
+      "callouts": "Выноски",
+      "note": "Заметка",
+      "abstract": "Аннотация",
+      "tip": "Совет",
+      "question": "Вопрос",
+      "failure": "Неудача",
+      "danger": "Опасность",
+      "example": "Пример",
+      "quote": "Цитата"
     }
   },
   "reviewer": {

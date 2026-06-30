@@ -3757,7 +3757,16 @@
       "border": "Border",
       "row_hover": "Row hover",
       "overdue_date": "Overdue date",
-      "due_today_date": "Due-today date"
+      "due_today_date": "Due-today date",
+      "callouts": "Callouts",
+      "note": "Note",
+      "abstract": "Abstract",
+      "tip": "Tip",
+      "question": "Question",
+      "failure": "Failure",
+      "danger": "Danger",
+      "example": "Example",
+      "quote": "Quote"
     }
   },
   "reviewer": {

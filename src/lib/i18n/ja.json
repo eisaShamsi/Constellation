@@ -3627,7 +3627,16 @@
       "border": "枠線",
       "row_hover": "行ホバー",
       "overdue_date": "期限切れの日付",
-      "due_today_date": "本日期限の日付"
+      "due_today_date": "本日期限の日付",
+      "callouts": "コールアウト",
+      "note": "ノート",
+      "abstract": "概要",
+      "tip": "ヒント",
+      "question": "質問",
+      "failure": "失敗",
+      "danger": "危険",
+      "example": "例",
+      "quote": "引用"
     }
   },
   "reviewer": {
