@@ -27,11 +27,19 @@ export interface CustomCallout {
 	icon: string;
 }
 
-/** Sanitise a raw trigger word into a safe callout slug: lowercase, every run of
- *  non-[a-z0-9] collapses to a single hyphen, leading/trailing hyphens stripped.
- *  (The slug becomes a `data-callout` attribute value, so it must be DOM-safe.) */
+/** Sanitise a raw trigger word into a safe callout slug. Language-First: KEEP
+ *  Unicode letters/numbers/marks (Arabic فكرة, CJK 想法, Cyrillic идея, …) — only
+ *  spaces become hyphens and punctuation/brackets/quotes are dropped, so the slug
+ *  stays DOM-safe as a `data-callout` value AND matches the editor's `[!slug]` parse.
+ *  `toLowerCase()` is a no-op for caseless scripts; Latin is lowercased. */
 export function sanitizeCalloutSlug(raw: string): string {
-	return (raw || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+	return (raw || '')
+		.trim()
+		.toLowerCase()
+		.replace(/\s+/g, '-')                      // spaces → a single hyphen
+		.replace(/[^\p{L}\p{N}\p{M}_-]+/gu, '')    // drop anything not a letter/number/mark/_/-
+		.replace(/-+/g, '-')                        // collapse repeated hyphens
+		.replace(/^-+|-+$/g, '');                   // trim leading/trailing hyphens
 }
 
 /** Synchronous read of the whole registry (empty array if unset). */

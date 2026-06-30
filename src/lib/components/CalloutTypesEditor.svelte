@@ -33,7 +33,8 @@
 	let newTrigger = $state('');
 	let newColor = $state('#7c3aed');
 	let newIcon = $state('');           // ref: emoji char or "set:name", '' = default
-	const newSlug = $derived(sanitizeCalloutSlug(newTrigger));
+	// Slug from the explicit Trigger, or derived from the Name if Trigger is left blank.
+	const newSlug = $derived(sanitizeCalloutSlug(newTrigger || newName));
 	const newStatus = $derived(newSlug ? slugStatus(newSlug) : 'empty');
 	const canAdd = $derived(newStatus === 'ok' && newName.trim().length > 0);
 

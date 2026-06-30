@@ -95,6 +95,7 @@ class CalloutTitleWidget extends WidgetType {
 		readonly type: string,
 		readonly icon: string,
 		readonly title: string,
+		readonly displayName: string,   // MIG-089 — shown when there's no explicit title (the custom type's name)
 		readonly foldable: boolean,
 		readonly collapsed: boolean,
 		readonly lineNum: number,
@@ -102,7 +103,7 @@ class CalloutTitleWidget extends WidgetType {
 
 	toDOM() {
 		// Detect direction from title text (RTL scripts → rtl, else ltr)
-		const isRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(this.title);
+		const isRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(this.title || this.displayName);
 		const titleDir = isRtl ? 'rtl' : 'ltr';
 
 		const wrap = document.createElement('span');
@@ -129,7 +130,8 @@ class CalloutTitleWidget extends WidgetType {
 		// Title text
 		const titleEl = document.createElement('span');
 		titleEl.className = 'cm-callout-title-text';
-		titleEl.textContent = this.title ? ' ' + this.title : '';
+		const headerText = this.title || this.displayName;
+		titleEl.textContent = headerText ? ' ' + headerText : '';
 		wrap.appendChild(titleEl);
 
 		return wrap;
@@ -141,6 +143,7 @@ class CalloutTitleWidget extends WidgetType {
 			this.type === other.type &&
 			this.icon === other.icon &&   // MIG-089 — an icon override must re-render the widget
 			this.title === other.title &&
+			this.displayName === other.displayName &&
 			this.foldable === other.foldable &&
 			this.collapsed === other.collapsed &&
 			this.lineNum === other.lineNum
@@ -173,9 +176,11 @@ function findCalloutsInRange(
 
 	while (ln <= toLine) {
 		const text = doc.line(ln).text;
-		const m = text.match(/^>\s*\[!(\w+)\]([+-])?\s*/);
+		// MIG-089 — the type is any non-`]` run (Language-First: Arabic/CJK/… триггеры,
+		// not just Latin `\w`). Trimmed + lowercased to match the stored slug.
+		const m = text.match(/^>\s*\[!([^\]\n]+)\]([+-])?\s*/);
 		if (m) {
-			const type = m[1].toLowerCase();
+			const type = m[1].trim().toLowerCase();
 			const foldMarker = m[2] ?? '';
 
 			// Walk forward to find the last body line
@@ -183,7 +188,7 @@ function findCalloutsInRange(
 			let endLine = ln;
 			for (let l = ln + 1; l <= cap; l++) {
 				const t = doc.line(l).text;
-				if (!/^>\s?/.test(t) || /^>\s*\[!\w+\]/.test(t)) break;
+				if (!/^>\s?/.test(t) || /^>\s*\[![^\]\n]+\]/.test(t)) break;
 				endLine = l;
 			}
 
@@ -233,10 +238,15 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 
 			const titleLine = doc.line(callout.startLine);
 			const rawTitle = titleLine.text
-				.replace(/^>\s*\[!\w+\][+-]?\s*/, '')
+				.replace(/^>\s*\[![^\]\n]+\][+-]?\s*/, '')
 				.trim();
-			// Detect direction from title text content
-			const titleIsRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(rawTitle);
+			// MIG-089 \u2014 the header label shown when there is NO explicit title: a custom
+			// type shows its NAME (e.g. \u00AB\u0641\u0643\u0631\u0629\u00BB), so `> [!\u0641\u0643\u0631\u0629]` headers read \u00AB\u0641\u0643\u0631\u0629\u00BB (bold).
+			// Built-ins keep today's look (no default title). The widget shows rawTitle || displayName.
+			const displayName = custom ? custom.name : '';
+			const headerText = rawTitle || displayName;
+			// Detect direction from whatever the header will actually show.
+			const titleIsRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(headerText);
 			const titleDir = titleIsRtl ? 'rtl' : 'ltr';
 
 			// ── 1. Title line border + tint (always, even when cursor is on it) ──
@@ -255,7 +265,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 					to: titleLine.to,
 					deco: Decoration.replace({
 						widget: new CalloutTitleWidget(
-							callout.type, icon, rawTitle,
+							callout.type, icon, rawTitle, displayName,
 							foldable, isCollapsed, callout.startLine,
 						),
 					}),
@@ -405,7 +415,7 @@ export const calloutTheme = EditorView.theme({
 		userSelect: 'none',
 		verticalAlign: 'middle',
 	},
-	'.cm-callout-title-text': { fontWeight: '600' },
+	'.cm-callout-title-text': { fontWeight: '700' },   // MIG-089 — the callout header label is bold
 
 	// Per-type color variables — add any new type here, never in JS.
 	// MIG-088 Phase 3 §3a — each family reads a per-Universe Style Setter var
