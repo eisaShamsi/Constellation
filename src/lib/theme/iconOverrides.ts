@@ -86,17 +86,18 @@ export const ICON_SLOTS = [
 	{ group: 'Editor Toolbar', slot: 'editor.image', label: 'Image' },
 	{ group: 'Editor Toolbar', slot: 'editor.table', label: 'Table' },
 
-	// Callout types
+	// Callout types — the 10 families, aligned with the MIG-088 §3a colour families
+	// (canonical type per family; aliases inherit it via CALLOUT_FAMILY in calloutPlugin).
 	{ group: 'Callouts', slot: 'callout.note', label: 'Note' },
-	{ group: 'Callouts', slot: 'callout.info', label: 'Info' },
+	{ group: 'Callouts', slot: 'callout.abstract', label: 'Abstract' },
 	{ group: 'Callouts', slot: 'callout.tip', label: 'Tip' },
 	{ group: 'Callouts', slot: 'callout.success', label: 'Success' },
-	{ group: 'Callouts', slot: 'callout.warning', label: 'Warning' },
-	{ group: 'Callouts', slot: 'callout.danger', label: 'Danger' },
 	{ group: 'Callouts', slot: 'callout.question', label: 'Question' },
-	{ group: 'Callouts', slot: 'callout.quote', label: 'Quote' },
+	{ group: 'Callouts', slot: 'callout.warning', label: 'Warning' },
+	{ group: 'Callouts', slot: 'callout.failure', label: 'Failure' },
+	{ group: 'Callouts', slot: 'callout.danger', label: 'Danger' },
 	{ group: 'Callouts', slot: 'callout.example', label: 'Example' },
-	{ group: 'Callouts', slot: 'callout.abstract', label: 'Abstract' },
+	{ group: 'Callouts', slot: 'callout.quote', label: 'Quote' },
 ] as const;
 
 export type IconSlot = typeof ICON_SLOTS[number]['slot'];
@@ -138,6 +139,23 @@ export function peekOverride(slot: string): string | null {
 	const settings = get(appSettings);
 	return settings.iconOverrides?.[slot] ?? null;
 }
+
+/** Synchronous resolve for use inside a CM6 widget (no await): an emoji ref is
+ *  returned as-is; a namespaced icon ref ("lucide:heart") is expanded to its
+ *  <svg> ONLY if the icon cache is already warm (call {@link prewarmIcons} first),
+ *  otherwise null. Null means "caller falls back to its default icon" — so an
+ *  un-warmed SVG override shows the built-in icon until prewarm + a rebuild. */
+export function resolveOverrideSync(slot: string): string | null {
+	const ref = peekOverride(slot);
+	if (!ref) return null;
+	if (!ref.includes(':')) return ref;            // emoji — the ref IS the glyph
+	const icon = _iconMap?.get(ref);               // icon set — needs the warm cache
+	return icon ? wrapForInsertion(icon) : null;
+}
+
+/** Warm the icon-set cache so {@link resolveOverrideSync} can return SVGs.
+ *  Idempotent; cheap after the first call. */
+export async function prewarmIcons(): Promise<void> { await ensureIconsLoaded(); }
 
 export function setOverride(slot: string, ref: string | null) {
 	const settings = get(appSettings);

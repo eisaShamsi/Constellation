@@ -3639,7 +3639,10 @@
       "quote": "Alıntı",
       "reset_this_element": "Bu öğeyi sıfırla",
       "reset_this_element_to_the_theme_default": "Bu öğeyi tema varsayılanına sıfırla",
-      "nothing_to_reset_on_this_element": "Bu öğede sıfırlanacak bir şey yok"
+      "nothing_to_reset_on_this_element": "Bu öğede sıfırlanacak bir şey yok",
+      "callout_icons": "Uyarı kutusu simgeleri",
+      "change_icon": "Simgeyi değiştir",
+      "reset_icon": "Simgeyi sıfırla"
     }
   },
   "reviewer": {

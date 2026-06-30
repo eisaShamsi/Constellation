@@ -3769,7 +3769,10 @@
       "quote": "Quote",
       "reset_this_element": "Reset this element",
       "reset_this_element_to_the_theme_default": "Reset this element to the theme default",
-      "nothing_to_reset_on_this_element": "Nothing to reset on this element"
+      "nothing_to_reset_on_this_element": "Nothing to reset on this element",
+      "callout_icons": "Callout icons",
+      "change_icon": "Change icon",
+      "reset_icon": "Reset icon"
     }
   },
   "reviewer": {

@@ -3639,7 +3639,10 @@
       "quote": "اقتباس",
       "reset_this_element": "یہ عنصر ری سیٹ کریں",
       "reset_this_element_to_the_theme_default": "اس عنصر کو تھیم کے ڈیفالٹ پر ری سیٹ کریں",
-      "nothing_to_reset_on_this_element": "اس عنصر پر ری سیٹ کرنے کے لیے کچھ نہیں"
+      "nothing_to_reset_on_this_element": "اس عنصر پر ری سیٹ کرنے کے لیے کچھ نہیں",
+      "callout_icons": "کال آؤٹ آئیکنز",
+      "change_icon": "آئیکن بدلیں",
+      "reset_icon": "آئیکن ری سیٹ کریں"
     }
   },
   "reviewer": {

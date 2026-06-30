@@ -3639,7 +3639,10 @@
       "quote": "Citation",
       "reset_this_element": "Réinitialiser cet élément",
       "reset_this_element_to_the_theme_default": "Réinitialiser cet élément au thème par défaut",
-      "nothing_to_reset_on_this_element": "Rien à réinitialiser sur cet élément"
+      "nothing_to_reset_on_this_element": "Rien à réinitialiser sur cet élément",
+      "callout_icons": "Icônes des encadrés",
+      "change_icon": "Changer l'icône",
+      "reset_icon": "Réinitialiser l'icône"
     }
   },
   "reviewer": {

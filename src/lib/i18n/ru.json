@@ -3639,7 +3639,10 @@
       "quote": "Цитата",
       "reset_this_element": "Сбросить этот элемент",
       "reset_this_element_to_the_theme_default": "Сбросить этот элемент к значению темы по умолчанию",
-      "nothing_to_reset_on_this_element": "Нечего сбрасывать у этого элемента"
+      "nothing_to_reset_on_this_element": "Нечего сбрасывать у этого элемента",
+      "callout_icons": "Иконки выносок",
+      "change_icon": "Изменить иконку",
+      "reset_icon": "Сбросить иконку"
     }
   },
   "reviewer": {

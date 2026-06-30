@@ -51,3 +51,16 @@
 - **Discovery:** the app ALREADY has an **Emoji & Icon Library** core plug-in — `appSettings.iconOverrides: Map<slot, ref>` (ref = emoji char or `"lucide:heart"`-style id) + the `EmojiIconPicker.svelte` component. → ask #2 (per-type icons) reuses this: add `callout:<type>` slots, `calloutPlugin` reads the override (fallback = built-in `CALLOUT_ICONS`).
 - **ask #1 (custom callout types)** = a persisted registry `{trigger, name, color, icon}` + `calloutPlugin` recognising the trigger (sets `--callout-color` inline from the registry) + a Setter "Add callout type" UI. Cross-subsystem (editor ↔ settings ↔ Setter ↔ icon picker) → **/migration-class**; storage-scope (per-Universe vs global) is the open design Q. WA#5 cross-check: Obsidian does custom callouts via user CSS `--callout-color`; we give a GUI over the same var.
 - **Put to Boss:** sequencing — full callout feature now vs after the §3b–§3d colour sweep.
+- **Boss ruling:** **"Full callout feature now"** (AskUserQuestion) → MIG-089 via /migration before §3b–§3d. **Architect + Plan A/B/C presented + Boss APPROVED.**
+
+## MIG-089 Phase A — Built-in callout icons — BUILT (awaiting Boss test)
+
+**Concept (horse):** change the icon of any built-in callout family, from the app's existing Emoji & Icon Library.
+
+- **`iconOverrides.ts`:** aligned the `callout.<family>` slots to the 10 §3a families (removed `info`, added `failure`); new **`resolveOverrideSync(slot)`** (emoji as-is; SVG only if the icon cache is warm) + **`prewarmIcons()`**.
+- **`calloutPlugin.ts`:** `CALLOUT_FAMILY` map (type→family, aliases inherit) + exported `CALLOUT_FAMILIES`, `calloutDefaultIcon()`; build-time icon read = `resolveOverrideSync('callout.'+family) ?? CALLOUT_ICONS[type] ?? ℹ️`; widget `toDOM` branches emoji (textContent) vs SVG (innerHTML); **`eq()` now compares icon** (else stale icon on reuse); new exported **`refreshCallouts`** StateEffect honored in `update()`; `calloutTheme` sizes `.cm-callout-icon svg` to 1em (currentColor = callout colour).
+- **`NotePane.svelte`:** a guarded `$effect` keyed on the 10 callout icon-slot signature → `prewarmIcons()` → `view.dispatch(refreshCallouts)` so an open editor (incl. the second screen, which mounts NotePane) repaints live. (Colours already ride CSS live.)
+- **`CalloutTypesEditor.svelte` (new):** the bespoke `{#if selected==='callouts'}` block in the Setter (mirrors `{#if selected==='links'} <LinkTypesEditor>`); 10 family rows = SlotIcon preview + Change-icon (EmojiIconPicker, shortcode→ref normalize) + Reset-icon. **Reused** SlotIcon + EmojiIconPicker + setOverride (no parallel icon system).
+- **Scope:** `ConstellationEditor/` is a SEPARATE app with a different (HTML) callout renderer — NOT the live second screen (which is the main app's SecondScreenPage → NoteEditor → NotePane) → no mirror needed. z-index: picker (1000) is a descendant of the Setter overlay (9000) with no transform/filter clipping ancestor → paints above the panel (verified, no change).
+- **i18n:** 3 new labels (callout_icons/change_icon/reset_icon) ×15 (localizer `wf_c6abe57a-329`).
+- **Verify:** `svelte-check` 0 errors. Frontend build + binary: <pending>.

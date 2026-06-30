@@ -3639,7 +3639,10 @@
       "quote": "Zitat",
       "reset_this_element": "Element zurücksetzen",
       "reset_this_element_to_the_theme_default": "Dieses Element auf die Theme-Vorgabe zurücksetzen",
-      "nothing_to_reset_on_this_element": "An diesem Element gibt es nichts zurückzusetzen"
+      "nothing_to_reset_on_this_element": "An diesem Element gibt es nichts zurückzusetzen",
+      "callout_icons": "Hinweis-Symbole",
+      "change_icon": "Symbol ändern",
+      "reset_icon": "Symbol zurücksetzen"
     }
   },
   "reviewer": {

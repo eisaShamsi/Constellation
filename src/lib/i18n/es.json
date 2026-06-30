@@ -3639,7 +3639,10 @@
       "quote": "Cita",
       "reset_this_element": "Restablecer este elemento",
       "reset_this_element_to_the_theme_default": "Restablecer este elemento al valor predeterminado del tema",
-      "nothing_to_reset_on_this_element": "No hay nada que restablecer en este elemento"
+      "nothing_to_reset_on_this_element": "No hay nada que restablecer en este elemento",
+      "callout_icons": "Iconos de notas destacadas",
+      "change_icon": "Cambiar icono",
+      "reset_icon": "Restablecer icono"
     }
   },
   "reviewer": {

@@ -24,7 +24,8 @@
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 	import { search, openSearchPanel, searchKeymap, SearchQuery, setSearchQuery, findNext } from '@codemirror/search';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder, linkTraversalMapField, setLinkTraversalMap, baseLensField } from '$lib/editor/livePreview';
-	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
+	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout, refreshCallouts, CALLOUT_FAMILIES } from '$lib/editor/calloutPlugin';
+	import { prewarmIcons } from '$lib/theme/iconOverrides';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
@@ -841,6 +842,23 @@
 				)
 			});
 		}
+	});
+
+	/* ─── Callout icon overrides (MIG-089 Phase A) ─── */
+	// Callout COLOURS ride CSS vars (instant, no editor involvement). ICONS are baked
+	// into the widget DOM at decoration-build time, so a per-type icon override must
+	// force a rebuild. Guard on a signature of just the 10 callout icon slots (appSettings
+	// is a store — a bare $effect would fire on every setting). Warm the icon cache first
+	// so an SVG (Lucide/…) override resolves synchronously on the rebuild.
+	let _prevCalloutIconSig = '';
+	$effect(() => {
+		const ov = $appSettings.iconOverrides ?? {};
+		const sig = CALLOUT_FAMILIES.map((f) => ov['callout.' + f] ?? '').join('|');
+		if (sig === _prevCalloutIconSig) return;
+		_prevCalloutIconSig = sig;
+		const v = view;
+		if (!v) return;
+		prewarmIcons().then(() => { try { v.dispatch({ effects: refreshCallouts.of(null) }); } catch { /* view torn down */ } });
 	});
 
 	/* ─── Typed-link display mode (§E.2: colour-by-type / label-above) ─── */

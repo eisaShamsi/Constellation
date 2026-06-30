@@ -25,6 +25,7 @@
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
+	import CalloutTypesEditor from './CalloutTypesEditor.svelte';
 	// MIG-081 §C.2d — the real CalendarPanel as the Calendar category's centre preview. It reads
 	// the draft --cal-* (set on the .ss root) → recolours live; engine loads lazily on open.
 	import CalendarPanel from './CalendarPanel.svelte';
@@ -1451,6 +1452,9 @@
 					{/each}
 					{#if selected === 'links'}
 						<LinkTypesEditor embedded />
+					{/if}
+					{#if selected === 'callouts'}
+						<CalloutTypesEditor embedded />
 					{/if}
 					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel ss-rlabel-row">

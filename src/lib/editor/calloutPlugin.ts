@@ -38,6 +38,32 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
+import { resolveOverrideSync } from '$lib/theme/iconOverrides';
+
+// ─── Callout families ───────────────────────────────────────────────────────
+// MIG-089 — each callout type maps to one of 10 canonical FAMILIES. The Style
+// Setter colour controls (§3a --callout-<family>-color) and the icon overrides
+// (callout.<family> slots) both key on the family, so an alias (e.g. `hint`)
+// inherits its family's (`tip`) colour AND icon. The 10 families:
+export const CALLOUT_FAMILIES = ['note', 'abstract', 'tip', 'success', 'question', 'warning', 'failure', 'danger', 'example', 'quote'] as const;
+const CALLOUT_FAMILY: Record<string, string> = {
+	note: 'note', info: 'note',
+	abstract: 'abstract', summary: 'abstract', tldr: 'abstract',
+	tip: 'tip', hint: 'tip', important: 'tip',
+	success: 'success', check: 'success', done: 'success',
+	question: 'question', help: 'question', faq: 'question',
+	warning: 'warning', caution: 'warning', attention: 'warning',
+	failure: 'failure', fail: 'failure', missing: 'failure',
+	danger: 'danger', error: 'danger', bug: 'danger',
+	example: 'example',
+	quote: 'quote', cite: 'quote',
+};
+
+// MIG-089 Phase A — dispatch this to force a callout decoration rebuild (so a
+// per-type ICON override or a new custom type repaints an OPEN editor without the
+// user typing/scrolling). Colours ride CSS and need no rebuild; icons are baked
+// into the widget DOM at build time, so a settings change must re-trigger a build.
+export const refreshCallouts = StateEffect.define<null>();
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 const CALLOUT_ICONS: Record<string, string> = {
@@ -53,6 +79,10 @@ const CALLOUT_ICONS: Record<string, string> = {
 	quote: '💬',     cite: '💬',
 	abstract: '📋',  summary: '📋',    tldr: '📋',
 };
+
+/** The built-in default emoji for a callout family (used by the Style Setter's
+ *  callout icon picker as the "no override" preview). */
+export function calloutDefaultIcon(family: string): string { return CALLOUT_ICONS[family] ?? 'ℹ️'; }
 
 // ─── Fold state ───────────────────────────────────────────────────────────────
 // Dispatch toggleCallout.of(startLineNumber) to toggle a callout open/closed.
@@ -112,10 +142,11 @@ class CalloutTitleWidget extends WidgetType {
 		wrap.setAttribute('dir', titleDir);
 		wrap.setAttribute('data-callout', this.type);
 
-		// Icon
+		// Icon — an emoji glyph (textContent) or a resolved <svg> override (innerHTML).
 		const iconEl = document.createElement('span');
 		iconEl.className = 'cm-callout-icon';
-		iconEl.textContent = this.icon;
+		if (this.icon.startsWith('<svg')) iconEl.innerHTML = this.icon;
+		else iconEl.textContent = this.icon;
 		wrap.appendChild(iconEl);
 
 		// Fold chevron (only rendered if the callout has a +/- marker)
@@ -140,6 +171,7 @@ class CalloutTitleWidget extends WidgetType {
 	eq(other: CalloutTitleWidget): boolean {
 		return (
 			this.type === other.type &&
+			this.icon === other.icon &&   // MIG-089 — an icon override must re-render the widget
 			this.title === other.title &&
 			this.foldable === other.foldable &&
 			this.collapsed === other.collapsed &&
@@ -212,7 +244,10 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 		const endLine = doc.lineAt(to).number;
 
 		for (const callout of findCalloutsInRange(doc, startLine, endLine)) {
-			const icon = CALLOUT_ICONS[callout.type] ?? 'ℹ️';
+			// MIG-089 — per-type icon override (emoji or SVG) keyed on the family;
+			// falls back to the built-in emoji (and to ℹ️ for an unknown custom type).
+			const family = CALLOUT_FAMILY[callout.type] ?? callout.type;
+			const icon = resolveOverrideSync('callout.' + family) ?? CALLOUT_ICONS[callout.type] ?? 'ℹ️';
 			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 			const defaultCollapsed = callout.foldMarker === '-';
 
@@ -315,10 +350,10 @@ class CalloutDecoPlugin {
 
 	update(update: ViewUpdate) {
 		const hasToggle = update.transactions.some(
-			t => t.effects.some(e => e.is(toggleCallout))
+			t => t.effects.some(e => e.is(toggleCallout) || e.is(refreshCallouts))
 		);
 
-		// Full rebuild on: fold toggle, doc edit, or viewport scroll
+		// Full rebuild on: fold toggle, callout-settings refresh, doc edit, or viewport scroll
 		if (hasToggle || update.docChanged || update.viewportChanged) {
 			this.decorations = buildCalloutDecorations(update.view);
 			this.lastCursorLine = update.view.state.doc
@@ -379,6 +414,14 @@ export const calloutTheme = EditorView.theme({
 		fontSize: '0.95em',
 		verticalAlign: 'middle',
 		color: 'var(--callout-color, #448aff)',
+	},
+	// MIG-089 — an SVG icon override (Lucide/Phosphor/…) sizes to ~1em and inherits
+	// the callout colour via currentColor (the icon sets use stroke="currentColor").
+	'.cm-callout-icon svg': {
+		width: '1em',
+		height: '1em',
+		verticalAlign: 'middle',
+		display: 'inline-block',
 	},
 	'.cm-callout-chevron': {
 		cursor: 'pointer',

@@ -3639,7 +3639,10 @@
       "quote": "نقل‌قول",
       "reset_this_element": "بازنشانی این عنصر",
       "reset_this_element_to_the_theme_default": "بازنشانی این عنصر به پیش‌فرض زمینه",
-      "nothing_to_reset_on_this_element": "چیزی برای بازنشانی در این عنصر نیست"
+      "nothing_to_reset_on_this_element": "چیزی برای بازنشانی در این عنصر نیست",
+      "callout_icons": "آیکون‌های یادداشت برجسته",
+      "change_icon": "تغییر آیکون",
+      "reset_icon": "بازنشانی آیکون"
     }
   },
   "reviewer": {
