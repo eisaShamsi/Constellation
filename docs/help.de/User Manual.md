@@ -158,6 +158,18 @@ Erstellen Sie gestaltete Hinweisbloecke fuer Notizen, Warnungen, Tipps und ander
 
 Unterstuetzte Typen: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Jeder Typ hat eine eigene Farbe und ein eigenes Symbol. Fuegen Sie `-` nach dem Typ hinzu, um ihn einklappbar zu machen (startet eingeklappt), oder `+` (startet ausgeklappt).
 
+#### Callouts anpassen — Farben, Symbole und eigene Typen
+
+Die Farben und Symbole der Callouts gehoeren Ihnen, und Sie koennen eigene Callout-Typen erfinden. Oeffnen Sie den Style Setter (die Schaltflaeche 🎨 im Dock), waehlen Sie die Kategorie Editor und klicken Sie dann auf Callouts. In der Mitte oeffnet sich eine einzige Callouts-Verwaltung, in der jeder Callout eine Zeile ist, die seine Farbe, sein Symbol und seinen Namen zeigt.
+
+- Einen integrierten Callout umfaerben. Klicken Sie auf das Farbfeld in seiner Zeile. Eine kleine Palette oeffnet sich mit Ihren gespeicherten Farben (eine anklicken, um sie anzuwenden) sowie einer "Benutzerdefiniert…"-Auswahl fuer jede neue Farbe — eine von Ihnen gewaehlte Farbe wird zudem fuer das naechste Mal zu Ihrer Palette hinzugefuegt. Farbaenderungen an den integrierten Typen werden gespeichert, wenn Sie im Style Setter auf Behalten/Anwenden druecken.
+- Das Symbol eines integrierten Callouts aendern. Klicken Sie auf das Symbol in seiner Zeile. Die Emoji- & Symbolbibliothek oeffnet sich — waehlen Sie ein beliebiges Emoji oder Vektorsymbol. Es aendert sich sofort ueberall, in der Farbe dieses Callouts. Ein kleines ↺ erscheint, sodass Sie nur dieses Symbol zuruecksetzen koennen.
+- Die integrierten Typen zuruecksetzen. Die Schaltflaeche "↺ Dieses Element zuruecksetzen" oben in der Verwaltung setzt alle Farben und Symbole der integrierten Callouts auf ihre Standardwerte zurueck. (Ihre benutzerdefinierten Callouts bleiben unberuehrt — entfernen Sie diese einzeln.)
+- Einen eigenen Callout-Typ erstellen. Unter dem Trennstrich befindet sich die Hinzufuegen-Zeile. Geben Sie einen Namen ein (z. B. Decision oder فكرة), ein Ausloeser-Wort (das [!word], das Sie tippen werden — jede Sprache funktioniert, auch Arabisch), waehlen Sie eine Farbe und ein Symbol und klicken Sie auf Hinzufuegen. Wenn Sie nun in einer beliebigen Notiz > [!decision] (oder > [!فكرة]) tippen, wird Ihr Callout gerendert. Wenn Sie nach dem Ausloeser keinen Titel eingeben, zeigt die Callout-Kopfzeile den Namen Ihres Callouts in Fettschrift.
+- Einen benutzerdefinierten Callout bearbeiten oder entfernen. Verwenden Sie ✎ (Name/Ausloeser bearbeiten) und ✕ (entfernen) in seiner Zeile. Beim Entfernen eines Typs bleibt der [!…]-Text in Ihren Notizen unberuehrt — er kehrt einfach zum schlichten Notiz-Aussehen zurueck, bis Sie den Typ neu erstellen.
+
+Ihre benutzerdefinierten Callouts, Farben und Symbole werden mit diesem Universum gespeichert, sodass sie mit Ihrer Library mitreisen.
+
 ### Hervorhebungssyntax
 
 Umschliessen Sie Text mit doppelten Gleichheitszeichen, um ihn hervorzuheben:

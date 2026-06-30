@@ -158,6 +158,18 @@ Crea bloques de aviso estilizados para notas, advertencias, consejos y otras ind
 
 Tipos soportados: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Cada tipo tiene un color e icono distintivo. Agrega `-` despues del tipo para hacerlo plegable (inicia colapsado), o `+` (inicia expandido).
 
+#### Personalizar los callouts — colores, iconos y tus propios tipos
+
+Los colores y los iconos de los callouts son tuyos para cambiarlos, y puedes inventar tus propios tipos de callout. Abre el Configurador de Estilos (el boton 🎨 en el dock), elige la categoria Editor y luego haz clic en Callouts. El centro abre un unico gestor de Callouts donde cada callout es una fila que muestra su color, su icono y su nombre.
+
+- Recolorear un callout integrado. Haz clic en la muestra de color de su fila. Se abre una pequena paleta con tus colores guardados (haz clic en uno para aplicarlo) mas un selector "Personalizado…" para cualquier color nuevo — un color que elijas se anade tambien a tu paleta para la proxima vez. Los cambios de color de los tipos integrados se guardan cuando pulsas Conservar/Aplicar en el Configurador de Estilos.
+- Cambiar el icono de un callout integrado. Haz clic en el icono de su fila. Se abre la Biblioteca de Emojis e Iconos — elige cualquier emoji o icono vectorial. Cambia en todas partes de inmediato, en el color de ese callout. Aparece un pequeno ↺ para que puedas revertir solo ese icono.
+- Restablecer los integrados. El boton "↺ Restablecer este elemento" en la parte superior del gestor revierte todos los colores e iconos de los callouts integrados a sus valores predeterminados. (Tus callouts personalizados se quedan intactos — eliminalos individualmente.)
+- Crear tu propio tipo de callout. Debajo del separador esta la fila Anadir. Escribe un Nombre (por ejemplo, Decision, o فكرة), una palabra Disparadora (la [!palabra] que escribiras — cualquier idioma funciona, incluido el arabe), elige un color y un icono, y haz clic en Anadir. Ahora, al escribir > [!decision] (o > [!فكرة]) en cualquier nota se renderiza tu callout. Si no escribes un titulo despues del disparador, el encabezado del callout muestra el nombre de tu callout en negrita.
+- Editar o eliminar un callout personalizado. Usa el ✎ (editar el nombre/disparador) y el ✕ (eliminar) en su fila. Eliminar un tipo deja el texto [!…] de tus notas sin tocar — simplemente vuelve al aspecto de nota normal hasta que vuelvas a crear el tipo.
+
+Tus callouts, colores e iconos personalizados se guardan con este Universo, asi que viajan con tu biblioteca.
+
 ### Sintaxis de Resaltado
 
 Envuelve el texto con doble signo igual para resaltarlo:

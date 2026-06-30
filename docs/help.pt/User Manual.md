@@ -158,6 +158,18 @@ Crie blocos de destaque estilizados para notas, avisos, dicas e outras indicacoe
 
 Tipos suportados: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Cada tipo tem uma cor e icone distintos. Adicione `-` apos o tipo para torna-lo recolhivel (inicia recolhido), ou `+` (inicia expandido).
 
+#### Personalizar callouts — cores, icones e os seus proprios tipos
+
+As cores e os icones dos callouts sao seus para alterar, e voce pode inventar os seus proprios tipos de callout. Abra o Style Setter (o botao 🎨 no dock), escolha a categoria Editor e clique em Callouts. O centro abre um unico gerenciador de Callouts onde cada callout e uma linha mostrando a sua cor, o seu icone e o seu nome.
+
+- Recolorir um callout integrado. Clique na amostra de cor na sua linha. Abre-se uma pequena paleta com as suas cores guardadas (clique numa para aplicar) mais um seletor "Personalizar…" para qualquer cor nova — uma cor que voce escolha tambem e adicionada a sua paleta para a proxima vez. As alteracoes de cor dos tipos integrados sao guardadas quando voce pressiona Manter/Aplicar no Style Setter.
+- Mudar o icone de um callout integrado. Clique no icone na sua linha. Abre-se a Biblioteca de Emojis e Icones — escolha qualquer emoji ou icone vetorial. Ele muda em todo o lado imediatamente, na cor desse callout. Um pequeno ↺ aparece para que voce possa reverter apenas esse icone.
+- Restaurar os integrados. O botao "↺ Restaurar este elemento" no topo do gerenciador reverte todas as cores e icones dos callouts integrados para os seus padroes. (Os seus callouts personalizados ficam intactos — remova esses individualmente.)
+- Criar o seu proprio tipo de callout. Abaixo do divisor esta a linha Adicionar. Digite um Nome (por exemplo, Decisao, ou فكرة), uma palavra de Acionamento (o [!palavra] que voce vai digitar — qualquer idioma funciona, incluindo o arabe), escolha uma cor e um icone, e clique em Adicionar. Agora, digitar > [!decision] (ou > [!فكرة]) em qualquer nota renderiza o seu callout. Se voce nao digitar um titulo apos o acionamento, o cabecalho do callout mostra o nome do seu callout em negrito.
+- Editar ou remover um callout personalizado. Use o ✎ (editar o nome/acionamento) e o ✕ (remover) na sua linha. Remover um tipo deixa o texto [!…] nas suas notas intacto — ele simplesmente reverte para o aspeto de nota simples ate voce recriar o tipo.
+
+Os seus callouts, cores e icones personalizados sao guardados com este Universo, por isso viajam com a sua biblioteca.
+
 ### Sintaxe de Realce
 
 Envolva o texto com duplo sinal de igual para realca-lo:

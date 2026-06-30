@@ -158,6 +158,18 @@ Notlar, uyarılar, ipuçları ve diğer açıklamalar için stillendirilmiş bil
 
 Desteklenen türler: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Her türün kendine özgü bir rengi ve simgesi vardır. Daraltılabilir yapmak için türden sonra `-` ekleyin (daraltılmış başlar), veya `+` (genişletilmiş başlar).
 
+#### Bilgi kutularını özelleştirme — renkler, simgeler ve kendi türleriniz
+
+Bilgi kutusu renkleri ve simgeleri sizindir, dilediğiniz gibi değiştirebilirsiniz ve kendi bilgi kutusu türlerinizi de oluşturabilirsiniz. Stil Ayarlayıcı'yı (dock'taki 🎨 düğmesi) açın, Düzenleyici kategorisini seçin, ardından Bilgi Kutuları'na tıklayın. Merkez, her bilgi kutusunun rengini, simgesini ve adını gösteren tek bir satır olduğu birleşik bir Bilgi Kutuları yöneticisi açar.
+
+- Yerleşik bir bilgi kutusunu yeniden renklendirme. Satırındaki renk örneğine tıklayın. Kaydedilmiş renklerinizi içeren küçük bir palet açılır (uygulamak için birine tıklayın), ayrıca herhangi bir yeni renk için bir "Özel…" seçici bulunur — seçtiğiniz bir renk, bir sonraki sefer için paletinize de eklenir. Yerleşik türler için renk değişiklikleri, Stil Ayarlayıcı'da Sakla/Uygula düğmesine bastığınızda kaydedilir.
+- Yerleşik bir bilgi kutusunun simgesini değiştirme. Satırındaki simgeye tıklayın. Emoji ve Simge Kütüphanesi açılır — herhangi bir emoji veya vektör simge seçin. Her yerde anında, o bilgi kutusunun renginde değişir. Yalnızca o simgeyi geri almanızı sağlayan küçük bir ↺ görünür.
+- Yerleşikleri sıfırlama. Yöneticinin üst kısmındaki "↺ Bu öğeyi sıfırla" düğmesi, tüm yerleşik bilgi kutusu renklerini ve simgelerini varsayılanlarına döndürür. (Özel bilgi kutularınıza dokunulmaz — onları tek tek kaldırın.)
+- Kendi bilgi kutusu türünüzü oluşturma. Ayırıcının altında Ekle satırı bulunur. Bir Ad (örn. Karar veya فكرة), bir Tetikleyici sözcük (yazacağınız [!sözcük] — Arapça dahil her dil çalışır) yazın, bir renk ve bir simge seçin ve Ekle'ye tıklayın. Artık herhangi bir notta > [!decision] (veya > [!فكرة]) yazmak bilgi kutunuzu oluşturur. Tetikleyiciden sonra bir başlık yazmazsanız, bilgi kutusu başlığı bilgi kutunuzun adını kalın olarak gösterir.
+- Özel bir bilgi kutusunu düzenleme veya kaldırma. Satırındaki ✎ (adı/tetikleyiciyi düzenle) ve ✕ (kaldır) işaretlerini kullanın. Bir türü kaldırmak, notlarınızdaki [!…] metnine dokunmaz — türü yeniden oluşturana kadar yalnızca düz not görünümüne döner.
+
+Özel bilgi kutularınız, renkleriniz ve simgeleriniz bu Evren ile birlikte kaydedilir, böylece kütüphanenizle birlikte taşınır.
+
 ### Vurgulama Sözdizimi
 
 Metni vurgulamak için çift eşittir işaretiyle sarın:

@@ -158,6 +158,18 @@ Creez des blocs d'encadre stylises pour les notes, avertissements, astuces et au
 
 Types pris en charge : `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Chaque type a une couleur et une icone distinctes. Ajoutez `-` apres le type pour le rendre repliable (demarre replie), ou `+` (demarre deploye).
 
+#### Personnaliser les callouts — couleurs, icones et vos propres types
+
+Les couleurs et les icones des callouts vous appartiennent : vous pouvez les modifier, et meme inventer vos propres types de callout. Ouvrez le Style Setter (le bouton 🎨 dans la barre laterale), choisissez la categorie Editeur, puis cliquez sur Callouts. Le centre affiche un gestionnaire de Callouts unique ou chaque callout occupe une ligne montrant sa couleur, son icone et son nom.
+
+- Recolorer un callout integre. Cliquez sur la pastille de couleur de sa ligne. Une petite palette s'ouvre avec vos couleurs enregistrees (cliquez sur l'une d'elles pour l'appliquer) ainsi qu'un selecteur « Personnalise… » pour toute nouvelle couleur — une couleur que vous choisissez est aussi ajoutee a votre palette pour la prochaine fois. Les changements de couleur des types integres sont enregistres lorsque vous appuyez sur Conserver/Appliquer dans le Style Setter.
+- Changer l'icone d'un callout integre. Cliquez sur l'icone de sa ligne. La Bibliotheque d'emojis et d'icones s'ouvre — choisissez n'importe quel emoji ou icone vectorielle. Le changement s'applique partout immediatement, dans la couleur de ce callout. Un petit ↺ apparait pour vous permettre de revenir uniquement sur cette icone.
+- Reinitialiser les types integres. Le bouton « ↺ Reinitialiser cet element » en haut du gestionnaire retablit toutes les couleurs et icones des callouts integres a leurs valeurs par defaut. (Vos callouts personnalises ne sont pas touches — supprimez-les individuellement.)
+- Creer votre propre type de callout. Sous le separateur se trouve la ligne d'ajout. Saisissez un Nom (par exemple Decision, ou فكرة), un mot Declencheur (le [!mot] que vous taperez — toute langue fonctionne, y compris l'arabe), choisissez une couleur et une icone, puis cliquez sur Ajouter. Desormais, taper > [!decision] (ou > [!فكرة]) dans n'importe quelle note affiche votre callout. Si vous ne tapez pas de titre apres le declencheur, l'en-tete du callout affiche le nom de votre callout en gras.
+- Modifier ou supprimer un callout personnalise. Utilisez ✎ (modifier le nom/declencheur) et ✕ (supprimer) sur sa ligne. Supprimer un type laisse le texte [!…] de vos notes intact — il revient simplement a l'apparence d'une note ordinaire jusqu'a ce que vous recreiez le type.
+
+Vos callouts personnalises, couleurs et icones sont enregistres avec cet Univers, ils accompagnent donc votre bibliotheque.
+
 ### Syntaxe de surlignage
 
 Entourez le texte de doubles signes egaux pour le surligner :
