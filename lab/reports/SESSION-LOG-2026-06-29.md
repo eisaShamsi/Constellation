@@ -221,3 +221,8 @@ Concept refinements (Concept-Before-Function): EXCLUDED BacklinksPanel traversal
 - **§2e Match-category** → COMMITTED `605642d8`: editor search-highlight (NotePane CM6 `.cm-hl-*` ×6), SearchHub `categoryColors`; `cogMatch` element + legend. `--match-category-{title,content,tag,wikilink,property,semantic,structured}`. i18n: structured + match_category ×15 (rest existed + translated). Sky badges kept; OrgChart/Map/Sight D3 → Phase 7. svelte-check 0.
 - **PHASE 2 COMPLETE on CSS surfaces** (all 5 cognitive sets: Maturity/Confidence/Origin/Stage/Match). Canvas/D3 surfaces deferred to Phase 7.
 - Combined Arabic+§2e binary rebuilding (bxpj76vm2) for one Boss test.
+
+### MIG-088 §2e Boss-validated (All Pass) + 2 findings
+Phase 2 fully Boss-validated. Two findings on the §2e test:
+- **Finding 1 (FIXED → §2f, `c1bed90e`):** SearchHub result match-highlight was uniform (accent) except tags. Now per-category, reusing the Match-category colours (badge + editor + result highlight all unify on one control). Built; awaiting test.
+- **Finding 2 (QUEUED — Boss wants):** *search results need their own right-click menu.* This is MIG-077 **B2 (Search RC)** — a context menu on SearchHub result rows (open / open in new tab / copy link / reveal in tree / Style… etc.). Build when MIG-077 right-click resumes (after MIG-088), or as a focused item if Boss prioritises. Not started.
