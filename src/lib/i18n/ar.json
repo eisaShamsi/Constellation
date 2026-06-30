@@ -3780,7 +3780,8 @@
       "trigger": "المُحفِّز",
       "add": "إضافة",
       "callout_collision_builtin": "هذا تنويه مُضمَّن — غيّر لونه أو أيقونته من الأعلى بدلاً من ذلك.",
-      "callout_collision_dupe": "لديك بالفعل تنويه مخصص بهذا المُحفِّز."
+      "callout_collision_dupe": "لديك بالفعل تنويه مخصص بهذا المُحفِّز.",
+      "custom_colour": "مخصص…"
     }
   },
   "reviewer": {

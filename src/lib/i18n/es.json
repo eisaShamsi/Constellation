@@ -3648,7 +3648,8 @@
       "trigger": "Disparador",
       "add": "Añadir",
       "callout_collision_builtin": "Es una nota destacada integrada: cámbiale el color o el icono arriba.",
-      "callout_collision_dupe": "Ya tienes una nota destacada personalizada con ese disparador."
+      "callout_collision_dupe": "Ya tienes una nota destacada personalizada con ese disparador.",
+      "custom_colour": "Personalizado…"
     }
   },
   "reviewer": {

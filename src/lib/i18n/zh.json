@@ -3648,7 +3648,8 @@
       "trigger": "触发词",
       "add": "添加",
       "callout_collision_builtin": "这是内置标注——请改在上方为它重新设置颜色或图标。",
-      "callout_collision_dupe": "你已有一个使用该触发词的自定义标注。"
+      "callout_collision_dupe": "你已有一个使用该触发词的自定义标注。",
+      "custom_colour": "自定义…"
     }
   },
   "reviewer": {

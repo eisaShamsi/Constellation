@@ -3778,7 +3778,8 @@
       "trigger": "Trigger",
       "add": "Add",
       "callout_collision_builtin": "That's a built-in callout — recolour or re-icon it above instead.",
-      "callout_collision_dupe": "You already have a custom callout with that trigger."
+      "callout_collision_dupe": "You already have a custom callout with that trigger.",
+      "custom_colour": "Custom…"
     }
   },
   "reviewer": {

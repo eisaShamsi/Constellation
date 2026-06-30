@@ -3648,7 +3648,8 @@
       "trigger": "트리거",
       "add": "추가",
       "callout_collision_builtin": "기본 제공 콜아웃입니다. 위에서 색상이나 아이콘을 변경하세요.",
-      "callout_collision_dupe": "해당 트리거의 사용자 정의 콜아웃이 이미 있습니다."
+      "callout_collision_dupe": "해당 트리거의 사용자 정의 콜아웃이 이미 있습니다.",
+      "custom_colour": "사용자 정의…"
     }
   },
   "reviewer": {

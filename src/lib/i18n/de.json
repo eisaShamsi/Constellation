@@ -3648,7 +3648,8 @@
       "trigger": "Trigger",
       "add": "Hinzufügen",
       "callout_collision_builtin": "Das ist ein integrierter Hinweis – ändere oben stattdessen seine Farbe oder sein Symbol.",
-      "callout_collision_dupe": "Du hast bereits einen benutzerdefinierten Hinweis mit diesem Trigger."
+      "callout_collision_dupe": "Du hast bereits einen benutzerdefinierten Hinweis mit diesem Trigger.",
+      "custom_colour": "Benutzerdefiniert…"
     }
   },
   "reviewer": {

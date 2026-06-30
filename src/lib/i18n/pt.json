@@ -3648,7 +3648,8 @@
       "trigger": "Gatilho",
       "add": "Adicionar",
       "callout_collision_builtin": "Esse é um destaque interno — altere a cor ou o ícone dele acima.",
-      "callout_collision_dupe": "Você já tem um destaque personalizado com esse gatilho."
+      "callout_collision_dupe": "Você já tem um destaque personalizado com esse gatilho.",
+      "custom_colour": "Personalizada…"
     }
   },
   "reviewer": {

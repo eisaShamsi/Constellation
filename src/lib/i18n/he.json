@@ -3648,7 +3648,8 @@
       "trigger": "מילת הפעלה",
       "add": "הוספה",
       "callout_collision_builtin": "זו התראה מובנית — שנו לה את הצבע או הסמל למעלה במקום זאת.",
-      "callout_collision_dupe": "כבר יש לכם התראה מותאמת אישית עם מילת הפעלה זו."
+      "callout_collision_dupe": "כבר יש לכם התראה מותאמת אישית עם מילת הפעלה זו.",
+      "custom_colour": "מותאם אישית…"
     }
   },
   "reviewer": {

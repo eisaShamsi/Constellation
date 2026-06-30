@@ -17,6 +17,7 @@
 	import EmojiIconPicker from './EmojiIconPicker.svelte';
 	import SlotIcon from './SlotIcon.svelte';
 	import IconRef from './IconRef.svelte';
+	import ColorField from './ColorField.svelte';
 
 	let { embedded = false }: { embedded?: boolean } = $props();
 
@@ -93,8 +94,8 @@
 					<button class="cte-icon" title={lbl('change_icon', 'Change icon')} onclick={() => (picking = { kind: 'custom', slug: c.slug })}>
 						<IconRef ref={c.icon} fallback="ℹ️" />
 					</button>
-					<!-- onchange (commit), NOT oninput: avoid a settings-save + cross-window-emit storm while dragging the colour. -->
-					<input class="cte-swatch" type="color" value={c.color} title={lbl('colour', 'Colour')} onchange={(e) => updateCustomCallout(c.slug, { color: (e.currentTarget as HTMLInputElement).value })} />
+					<!-- ColorField commits ONCE (saved-swatch click or native onchange) — no save/emit storm. -->
+					<ColorField value={c.color} title={lbl('colour', 'Colour')} onChange={(hex) => updateCustomCallout(c.slug, { color: hex })} />
 					<span class="cte-label">{c.name} <span class="cte-trig">[!{c.slug}]</span></span>
 					<button class="cte-reset cte-del" title={lbl('remove', 'Remove')} onclick={() => removeCustomCallout(c.slug)}>✕</button>
 				</div>
@@ -109,7 +110,7 @@
 			<input class="cte-in cte-in-trig" placeholder={lbl('trigger', 'Trigger')} bind:value={newTrigger} />
 		</div>
 		<div class="cte-add-row">
-			<input class="cte-swatch" type="color" bind:value={newColor} title={lbl('colour', 'Colour')} />
+			<ColorField value={newColor} title={lbl('colour', 'Colour')} onChange={(hex) => (newColor = hex)} />
 			<button class="cte-icon" title={lbl('change_icon', 'Change icon')} onclick={() => (picking = { kind: 'new' })}>
 				<IconRef ref={newIcon} fallback="ℹ️" />
 			</button>
@@ -152,7 +153,6 @@
 	}
 	.cte-reset:hover { color: var(--c-text, var(--text-normal)); border-color: var(--background-modifier-border, #ddd); }
 	.cte-del:hover { color: var(--text-error, #e06666); }
-	.cte-swatch { width: 30px; height: 30px; flex: none; padding: 0; border: 1px solid var(--background-modifier-border, #ddd); border-radius: 6px; background: none; cursor: pointer; }
 	.cte-add { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 	.cte-add-row { display: flex; align-items: center; gap: 8px; }
 	.cte-in { flex: 1; min-width: 0; padding: 5px 8px; font: inherit; font-size: 12px; border: 1px solid var(--background-modifier-border, #ddd); border-radius: 6px; background: var(--background-secondary, #f6f6f8); color: var(--c-text, var(--text-normal)); }

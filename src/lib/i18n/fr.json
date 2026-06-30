@@ -3648,7 +3648,8 @@
       "trigger": "Déclencheur",
       "add": "Ajouter",
       "callout_collision_builtin": "C'est un encadré intégré — recolorez-le ou changez son icône ci-dessus.",
-      "callout_collision_dupe": "Vous avez déjà un encadré personnalisé avec ce déclencheur."
+      "callout_collision_dupe": "Vous avez déjà un encadré personnalisé avec ce déclencheur.",
+      "custom_colour": "Personnalisée…"
     }
   },
   "reviewer": {
