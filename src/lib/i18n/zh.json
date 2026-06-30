@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "此元素没有可重置的更改",
       "callout_icons": "标注图标",
       "change_icon": "更改图标",
-      "reset_icon": "重置图标"
+      "reset_icon": "重置图标",
+      "custom_callouts": "自定义标注",
+      "name": "名称",
+      "trigger": "触发词",
+      "add": "添加",
+      "callout_collision_builtin": "这是内置标注——请改在上方为它重新设置颜色或图标。",
+      "callout_collision_dupe": "你已有一个使用该触发词的自定义标注。"
     }
   },
   "reviewer": {

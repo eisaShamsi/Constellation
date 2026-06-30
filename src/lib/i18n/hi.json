@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "इस तत्व पर रीसेट करने को कुछ नहीं",
       "callout_icons": "कॉलआउट आइकन",
       "change_icon": "आइकन बदलें",
-      "reset_icon": "आइकन रीसेट करें"
+      "reset_icon": "आइकन रीसेट करें",
+      "custom_callouts": "कस्टम कॉलआउट",
+      "name": "नाम",
+      "trigger": "ट्रिगर",
+      "add": "जोड़ें",
+      "callout_collision_builtin": "यह एक बिल्ट-इन कॉलआउट है — इसके बजाय इसे ऊपर से दोबारा रंग या आइकन दें।",
+      "callout_collision_dupe": "इस ट्रिगर वाला एक कस्टम कॉलआउट पहले से मौजूद है।"
     }
   },
   "reviewer": {

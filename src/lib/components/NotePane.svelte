@@ -844,20 +844,28 @@
 		}
 	});
 
-	/* ─── Callout icon overrides (MIG-089 Phase A) ─── */
-	// Callout COLOURS ride CSS vars (instant, no editor involvement). ICONS are baked
-	// into the widget DOM at decoration-build time, so a per-type icon override must
-	// force a rebuild. Guard on a signature of just the 10 callout icon slots (appSettings
-	// is a store — a bare $effect would fire on every setting). Warm the icon cache first
-	// so an SVG (Lucide/…) override resolves synchronously on the rebuild.
-	let _prevCalloutIconSig = '';
+	/* ─── Callout customisation (MIG-089) — live repaint on a settings change ─── */
+	// Callout COLOURS for BUILT-INS ride CSS vars (instant, no editor involvement).
+	// ICONS (built-in + custom) are baked into the widget DOM at build time, and a
+	// CUSTOM type's colour is injected inline at build time — so an icon override or a
+	// custom-callout change must force a decoration rebuild. Guard on a signature of just
+	// the callout settings (appSettings is a store — a bare $effect fires on every setting).
+	// Warm the icon cache first so an SVG (Lucide/…) override resolves on the rebuild.
+	let _prevCalloutSig: string | null = null;
 	$effect(() => {
 		const ov = $appSettings.iconOverrides ?? {};
-		const sig = CALLOUT_FAMILIES.map((f) => ov['callout.' + f] ?? '').join('|');
-		if (sig === _prevCalloutIconSig) return;
-		_prevCalloutIconSig = sig;
+		const iconSig = CALLOUT_FAMILIES.map((f) => ov['callout.' + f] ?? '').join('|');
+		const custom = $appSettings.customCallouts ?? [];
+		const customSig = custom.map((c) => `${c.slug}${c.color}${c.icon}`).join('');
+		const sig = iconSig + '' + customSig;
+		if (sig === _prevCalloutSig) return;
+		const first = _prevCalloutSig === null;
+		const isEmpty = !iconSig.replace(/\|/g, '') && customSig === '';
+		_prevCalloutSig = sig;
 		const v = view;
 		if (!v) return;
+		// First run with nothing custom → the default render is already correct (no work).
+		if (first && isEmpty) return;
 		prewarmIcons().then(() => { try { v.dispatch({ effects: refreshCallouts.of(null) }); } catch { /* view torn down */ } });
 	});
 

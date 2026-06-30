@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "Nada para redefinir neste elemento",
       "callout_icons": "Ícones dos destaques",
       "change_icon": "Alterar ícone",
-      "reset_icon": "Redefinir ícone"
+      "reset_icon": "Redefinir ícone",
+      "custom_callouts": "Destaques personalizados",
+      "name": "Nome",
+      "trigger": "Gatilho",
+      "add": "Adicionar",
+      "callout_collision_builtin": "Esse é um destaque interno — altere a cor ou o ícone dele acima.",
+      "callout_collision_dupe": "Você já tem um destaque personalizado com esse gatilho."
     }
   },
   "reviewer": {

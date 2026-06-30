@@ -3772,7 +3772,13 @@
       "nothing_to_reset_on_this_element": "Nothing to reset on this element",
       "callout_icons": "Callout icons",
       "change_icon": "Change icon",
-      "reset_icon": "Reset icon"
+      "reset_icon": "Reset icon",
+      "custom_callouts": "Custom callouts",
+      "name": "Name",
+      "trigger": "Trigger",
+      "add": "Add",
+      "callout_collision_builtin": "That's a built-in callout — recolour or re-icon it above instead.",
+      "callout_collision_dupe": "You already have a custom callout with that trigger."
     }
   },
   "reviewer": {

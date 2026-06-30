@@ -38,51 +38,19 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
-import { resolveOverrideSync } from '$lib/theme/iconOverrides';
+import { resolveOverrideSync, resolveRefSync } from '$lib/theme/iconOverrides';
+import { CALLOUT_ICONS, CALLOUT_FAMILY } from '$lib/editor/calloutFamilies';
+import { peekCustomCallout } from '$lib/theme/customCallouts';
 
-// ─── Callout families ───────────────────────────────────────────────────────
-// MIG-089 — each callout type maps to one of 10 canonical FAMILIES. The Style
-// Setter colour controls (§3a --callout-<family>-color) and the icon overrides
-// (callout.<family> slots) both key on the family, so an alias (e.g. `hint`)
-// inherits its family's (`tip`) colour AND icon. The 10 families:
-export const CALLOUT_FAMILIES = ['note', 'abstract', 'tip', 'success', 'question', 'warning', 'failure', 'danger', 'example', 'quote'] as const;
-const CALLOUT_FAMILY: Record<string, string> = {
-	note: 'note', info: 'note',
-	abstract: 'abstract', summary: 'abstract', tldr: 'abstract',
-	tip: 'tip', hint: 'tip', important: 'tip',
-	success: 'success', check: 'success', done: 'success',
-	question: 'question', help: 'question', faq: 'question',
-	warning: 'warning', caution: 'warning', attention: 'warning',
-	failure: 'failure', fail: 'failure', missing: 'failure',
-	danger: 'danger', error: 'danger', bug: 'danger',
-	example: 'example',
-	quote: 'quote', cite: 'quote',
-};
+// The family data lives in calloutFamilies.ts (dependency-free; shared with the
+// customCallouts store + the Setter UI). Re-export for existing importers.
+export { CALLOUT_FAMILIES, calloutDefaultIcon } from '$lib/editor/calloutFamilies';
 
 // MIG-089 Phase A — dispatch this to force a callout decoration rebuild (so a
 // per-type ICON override or a new custom type repaints an OPEN editor without the
 // user typing/scrolling). Colours ride CSS and need no rebuild; icons are baked
 // into the widget DOM at build time, so a settings change must re-trigger a build.
 export const refreshCallouts = StateEffect.define<null>();
-
-// ─── Icon map ─────────────────────────────────────────────────────────────────
-const CALLOUT_ICONS: Record<string, string> = {
-	note: 'ℹ️',      info: 'ℹ️',
-	tip: '💡',       hint: '💡',       important: '💡',
-	success: '✅',   check: '✅',      done: '✅',
-	question: '❓',  help: '❓',       faq: '❓',
-	warning: '⚠️',   caution: '⚠️',    attention: '⚠️',
-	failure: '❌',   fail: '❌',       missing: '❌',
-	danger: '⛔',    error: '⛔',
-	bug: '🐛',
-	example: '📝',
-	quote: '💬',     cite: '💬',
-	abstract: '📋',  summary: '📋',    tldr: '📋',
-};
-
-/** The built-in default emoji for a callout family (used by the Style Setter's
- *  callout icon picker as the "no override" preview). */
-export function calloutDefaultIcon(family: string): string { return CALLOUT_ICONS[family] ?? 'ℹ️'; }
 
 // ─── Fold state ───────────────────────────────────────────────────────────────
 // Dispatch toggleCallout.of(startLineNumber) to toggle a callout open/closed.
@@ -246,8 +214,15 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 		for (const callout of findCalloutsInRange(doc, startLine, endLine)) {
 			// MIG-089 — per-type icon override (emoji or SVG) keyed on the family;
 			// falls back to the built-in emoji (and to ℹ️ for an unknown custom type).
-			const family = CALLOUT_FAMILY[callout.type] ?? callout.type;
-			const icon = resolveOverrideSync('callout.' + family) ?? CALLOUT_ICONS[callout.type] ?? 'ℹ️';
+			const isBuiltin = callout.type in CALLOUT_FAMILY;
+				const family = isBuiltin ? CALLOUT_FAMILY[callout.type] : callout.type;
+				// A CUSTOM type (not a built-in family) takes its icon + colour from the
+				// per-Universe customCallouts registry; its colour is injected inline below
+				// (built-in types get their colour from the CSS theme var instead).
+				const custom = isBuiltin ? null : peekCustomCallout(callout.type);
+				const customColor = custom && /^#[0-9a-fA-F]{3,8}$|^rgba?\(/.test(custom.color) ? custom.color : null;
+				const colorStyle = customColor ? { style: '--callout-color:' + customColor } : null;
+			const icon = (custom ? resolveRefSync(custom.icon) : resolveOverrideSync('callout.' + family)) ?? CALLOUT_ICONS[callout.type] ?? 'ℹ️';
 			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 			const defaultCollapsed = callout.foldMarker === '-';
 
@@ -269,7 +244,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
 					class: 'cm-callout-line cm-callout-title-line',
-					attributes: { 'data-callout': callout.type, dir: titleDir },
+					attributes: { 'data-callout': callout.type, dir: titleDir, ...colorStyle },
 				}),
 			});
 
@@ -299,7 +274,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 						from: line.from, to: line.from,
 						deco: Decoration.line({
 							class: 'cm-callout-line cm-callout-body-line',
-							attributes: { 'data-callout': callout.type, dir: bodyIsRtl ? 'rtl' : 'ltr' },
+							attributes: { 'data-callout': callout.type, dir: bodyIsRtl ? 'rtl' : 'ltr', ...colorStyle },
 						}),
 					});
 

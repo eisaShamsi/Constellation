@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "An diesem Element gibt es nichts zurückzusetzen",
       "callout_icons": "Hinweis-Symbole",
       "change_icon": "Symbol ändern",
-      "reset_icon": "Symbol zurücksetzen"
+      "reset_icon": "Symbol zurücksetzen",
+      "custom_callouts": "Benutzerdefinierte Hinweise",
+      "name": "Name",
+      "trigger": "Trigger",
+      "add": "Hinzufügen",
+      "callout_collision_builtin": "Das ist ein integrierter Hinweis – ändere oben stattdessen seine Farbe oder sein Symbol.",
+      "callout_collision_dupe": "Du hast bereits einen benutzerdefinierten Hinweis mit diesem Trigger."
     }
   },
   "reviewer": {

@@ -63,4 +63,17 @@
 - **`CalloutTypesEditor.svelte` (new):** the bespoke `{#if selected==='callouts'}` block in the Setter (mirrors `{#if selected==='links'} <LinkTypesEditor>`); 10 family rows = SlotIcon preview + Change-icon (EmojiIconPicker, shortcode→ref normalize) + Reset-icon. **Reused** SlotIcon + EmojiIconPicker + setOverride (no parallel icon system).
 - **Scope:** `ConstellationEditor/` is a SEPARATE app with a different (HTML) callout renderer — NOT the live second screen (which is the main app's SecondScreenPage → NoteEditor → NotePane) → no mirror needed. z-index: picker (1000) is a descendant of the Setter overlay (9000) with no transform/filter clipping ancestor → paints above the panel (verified, no change).
 - **i18n:** 3 new labels (callout_icons/change_icon/reset_icon) ×15 (localizer `wf_c6abe57a-329`).
-- **Verify:** `svelte-check` 0 errors. Frontend build + binary: <pending>.
+- **Verify:** `svelte-check` 0 errors. Frontend build ✓; embeds confirmed. Commit `6dee5887`. **Boss PASS.**
+
+## MIG-089 Phase B — Custom callout types — BUILT (awaiting Boss test)
+
+**Concept (horse):** a user defines their own `[!trigger]` callout type — trigger word + name + colour + icon — that travels with the Universe.
+
+- **`calloutFamilies.ts` (new):** extracted the dependency-free family data (CALLOUT_ICONS / CALLOUT_FAMILIES / CALLOUT_FAMILY / CALLOUT_BUILTIN_TYPES / calloutDefaultIcon / isBuiltinCalloutType) — shared by calloutPlugin + customCallouts (avoids a circular import). calloutPlugin re-exports CALLOUT_FAMILIES/calloutDefaultIcon for back-compat.
+- **`customCallouts.ts` (new):** the per-Universe registry — `CustomCallout {slug,name,color,icon}`; sync `peekCustomCallouts`/`peekCustomCallout`; `sanitizeCalloutSlug` (lowercase/hyphen/DOM-safe); `slugStatus` (empty/builtin/duplicate/ok); add/update/remove via `updateSettings` (cross-window). Storage: `appSettings.customCallouts` (inline-typed in store.ts; default `[]`).
+- **`iconOverrides.ts`:** `resolveRefSync(ref)` (resolve a raw emoji/SVG ref — for custom-type icons).
+- **`calloutPlugin.ts`:** build now branches builtin vs custom — a custom type takes its icon from the registry (`resolveRefSync`) and its colour **injected inline** as `--callout-color` on the line decorations (validated hex/rgb; built-ins still use the CSS theme var). The `[!word]` parser already accepts any word → a custom type renders styled; removing it reverts to the note look.
+- **`CalloutTypesEditor.svelte`:** Phase-B section — list of custom types (colour swatch [onchange, no save-storm] + IconRef preview + `[!slug]` + remove) + an **Add form** (Name + Trigger + colour + icon picker + Add) with live slug preview, built-in/duplicate collision warnings, and a unified picker target. New **`IconRef.svelte`** renders a raw icon ref (emoji/SVG) — SlotIcon untouched.
+- **`NotePane.svelte`:** the live-refresh hook now also watches `customCallouts` (signature) + an **empty-skip guard** (no prewarm/dispatch on first mount when nothing is customised).
+- **i18n ×15:** 6 new labels (custom_callouts/name/trigger/add + 2 collision warnings); reused `colour`/`remove`. svelte-check 0.
+- **Verify:** `svelte-check` 0. Frontend build ✓ (embeds: peekCustomCallout, ar تنويهات مخصصة, zh 自定义标注). Commit + binary next.

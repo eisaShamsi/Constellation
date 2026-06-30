@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "No hay nada que restablecer en este elemento",
       "callout_icons": "Iconos de notas destacadas",
       "change_icon": "Cambiar icono",
-      "reset_icon": "Restablecer icono"
+      "reset_icon": "Restablecer icono",
+      "custom_callouts": "Notas destacadas personalizadas",
+      "name": "Nombre",
+      "trigger": "Disparador",
+      "add": "Añadir",
+      "callout_collision_builtin": "Es una nota destacada integrada: cámbiale el color o el icono arriba.",
+      "callout_collision_dupe": "Ya tienes una nota destacada personalizada con ese disparador."
     }
   },
   "reviewer": {

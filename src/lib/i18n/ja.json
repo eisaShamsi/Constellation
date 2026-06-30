@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "この要素にリセットする変更はありません",
       "callout_icons": "コールアウトアイコン",
       "change_icon": "アイコンを変更",
-      "reset_icon": "アイコンをリセット"
+      "reset_icon": "アイコンをリセット",
+      "custom_callouts": "カスタムコールアウト",
+      "name": "名前",
+      "trigger": "トリガー語",
+      "add": "追加",
+      "callout_collision_builtin": "これは組み込みコールアウトです。上の一覧で色やアイコンを変更してください。",
+      "callout_collision_dupe": "そのトリガー語のカスタムコールアウトはすでに存在します。"
     }
   },
   "reviewer": {

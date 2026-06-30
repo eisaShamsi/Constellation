@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "اس عنصر پر ری سیٹ کرنے کے لیے کچھ نہیں",
       "callout_icons": "کال آؤٹ آئیکنز",
       "change_icon": "آئیکن بدلیں",
-      "reset_icon": "آئیکن ری سیٹ کریں"
+      "reset_icon": "آئیکن ری سیٹ کریں",
+      "custom_callouts": "اپنی مرضی کے نمایاں نوٹس",
+      "name": "نام",
+      "trigger": "ٹرگر لفظ",
+      "add": "شامل کریں",
+      "callout_collision_builtin": "یہ پہلے سے موجود نمایاں نوٹ ہے — اسے اوپر سے دوبارہ رنگ یا آئیکن دیں۔",
+      "callout_collision_dupe": "اِس ٹرگر لفظ والا ایک نمایاں نوٹ آپ کے پاس پہلے سے موجود ہے۔"
     }
   },
   "reviewer": {

@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "Rien à réinitialiser sur cet élément",
       "callout_icons": "Icônes des encadrés",
       "change_icon": "Changer l'icône",
-      "reset_icon": "Réinitialiser l'icône"
+      "reset_icon": "Réinitialiser l'icône",
+      "custom_callouts": "Encadrés personnalisés",
+      "name": "Nom",
+      "trigger": "Déclencheur",
+      "add": "Ajouter",
+      "callout_collision_builtin": "C'est un encadré intégré — recolorez-le ou changez son icône ci-dessus.",
+      "callout_collision_dupe": "Vous avez déjà un encadré personnalisé avec ce déclencheur."
     }
   },
   "reviewer": {

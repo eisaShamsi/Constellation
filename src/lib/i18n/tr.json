@@ -3642,7 +3642,13 @@
       "nothing_to_reset_on_this_element": "Bu öğede sıfırlanacak bir şey yok",
       "callout_icons": "Uyarı kutusu simgeleri",
       "change_icon": "Simgeyi değiştir",
-      "reset_icon": "Simgeyi sıfırla"
+      "reset_icon": "Simgeyi sıfırla",
+      "custom_callouts": "Özel uyarı kutuları",
+      "name": "Ad",
+      "trigger": "Tetikleyici",
+      "add": "Ekle",
+      "callout_collision_builtin": "Bu yerleşik bir uyarı kutusu — bunun yerine yukarıdan rengini veya simgesini değiştirin.",
+      "callout_collision_dupe": "Bu tetikleyiciye sahip bir özel uyarı kutunuz zaten var."
     }
   },
   "reviewer": {

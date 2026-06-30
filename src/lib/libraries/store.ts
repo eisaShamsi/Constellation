@@ -3597,6 +3597,10 @@ export interface AppSettings {
 	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
 	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
 	iconOverrides?: Record<string, string>;
+	/** MIG-089 — per-Universe user-defined callout types ([!slug] → colour + icon).
+	 *  See src/lib/theme/customCallouts.ts (CustomCallout). Inline type here to keep
+	 *  store.ts free of a circular import. */
+	customCallouts?: { slug: string; name: string; color: string; icon: string }[];
 	interfaceFont: string;
 	interfaceFontSize: number;
 	textFont: string;
@@ -4049,6 +4053,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	styleSwatches: [],
 	perScriptFonts: {},
 	iconOverrides: {},
+	customCallouts: [],
 	interfaceFont: '',
 	interfaceFontSize: 14,
 	textFont: '',

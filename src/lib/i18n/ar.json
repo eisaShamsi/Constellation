@@ -3774,7 +3774,13 @@
       "nothing_to_reset_on_this_element": "لا شيء لإعادة تعيينه في هذا العنصر",
       "callout_icons": "أيقونات التنويهات",
       "change_icon": "تغيير الأيقونة",
-      "reset_icon": "إعادة تعيين الأيقونة"
+      "reset_icon": "إعادة تعيين الأيقونة",
+      "custom_callouts": "تنويهات مخصصة",
+      "name": "الاسم",
+      "trigger": "المُحفِّز",
+      "add": "إضافة",
+      "callout_collision_builtin": "هذا تنويه مُضمَّن — غيّر لونه أو أيقونته من الأعلى بدلاً من ذلك.",
+      "callout_collision_dupe": "لديك بالفعل تنويه مخصص بهذا المُحفِّز."
     }
   },
   "reviewer": {

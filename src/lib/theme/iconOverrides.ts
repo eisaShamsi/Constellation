@@ -146,7 +146,13 @@ export function peekOverride(slot: string): string | null {
  *  otherwise null. Null means "caller falls back to its default icon" — so an
  *  un-warmed SVG override shows the built-in icon until prewarm + a rebuild. */
 export function resolveOverrideSync(slot: string): string | null {
-	const ref = peekOverride(slot);
+	return resolveRefSync(peekOverride(slot));
+}
+
+/** Synchronously resolve a raw icon ref (emoji char or "set:name") — emoji as-is,
+ *  an icon ref to its <svg> iff the cache is warm, else null. Used for custom
+ *  callout icons (whose ref lives in the customCallouts registry, not a slot). */
+export function resolveRefSync(ref: string | null | undefined): string | null {
 	if (!ref) return null;
 	if (!ref.includes(':')) return ref;            // emoji — the ref IS the glyph
 	const icon = _iconMap?.get(ref);               // icon set — needs the warm cache
