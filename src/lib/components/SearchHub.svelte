@@ -385,6 +385,11 @@
 		return raw.split(/[,،、\s]+/).map(s => s.trim()).filter(s => s.length > 1);
 	}
 
+	function hlClass(cat: string): string {
+		const m: Record<string, string> = { titles: 'title', contents: 'content', tags: 'tag', properties: 'property', wikilinks: 'wikilink', semantic: 'semantic', structured: 'structured' };
+		return 'sh-hl-' + (m[cat] ?? cat);
+	}
+
 	function highlightInText(text: string, cssClass: string = ''): string {
 		const terms = getSearchTerms();
 		if (!terms.length) return escapeHtml(text);
@@ -575,7 +580,7 @@
 										<button class="sh-item" class:sh-item-selected={selectedResultIdx >= 0 && allFlatResults[selectedResultIdx] === r}
 											onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
-												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+												<span class="sh-item-name">{@html highlightInText(r.name, hlClass(cat))}</span>
 												{#if r.match_via}
 													<span class="sh-match-via" dir={detectDir(r.match_via)} title="{$t('searchHub.matchVia')} {r.match_via}">
 														{$t('searchHub.matchVia')} {r.match_via}
@@ -586,12 +591,10 @@
 											{#if r.snippet}
 												<div class="sh-item-snippet">
 													{#if cat === 'contents'}
-														{@html highlightInText(r.snippet ?? '')}
-													{:else if cat === 'tags'}
-														{@html highlightInText(formatSnippetForCategory(cat, r), 'sh-hl-tag')}
-													{:else}
-														{@html highlightInText(formatSnippetForCategory(cat, r))}
-													{/if}
+											{@html highlightInText(r.snippet ?? '', hlClass(cat))}
+										{:else}
+											{@html highlightInText(formatSnippetForCategory(cat, r), hlClass(cat))}
+										{/if}
 												</div>
 											{/if}
 											{#if summaryHeadlines.get(r.path)}
@@ -771,14 +774,18 @@
 		font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4;
 	}
+	/* MIG-088 §2f — base highlight (names + uncategorised); per-category overrides below reuse the Match-category colours (styleable). */
 	.sh-item-snippet :global(mark) {
 		background: color-mix(in srgb, var(--interactive-accent) 25%, transparent);
 		color: var(--text-normal); border-radius: 2px; padding: 0 1px;
 	}
-	.sh-item-snippet :global(mark.sh-hl-tag) {
-		background: color-mix(in srgb, #f472b6 30%, transparent);
-		color: var(--text-normal);
-	}
+	.sh-item-snippet :global(mark.sh-hl-title), .sh-item-name :global(mark.sh-hl-title) { background: color-mix(in srgb, var(--match-category-title, #3b82f6) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-content), .sh-item-name :global(mark.sh-hl-content) { background: color-mix(in srgb, var(--match-category-content, #16a34a) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-tag), .sh-item-name :global(mark.sh-hl-tag) { background: color-mix(in srgb, var(--match-category-tag, #f472b6) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-wikilink), .sh-item-name :global(mark.sh-hl-wikilink) { background: color-mix(in srgb, var(--match-category-wikilink, #60a5fa) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-property), .sh-item-name :global(mark.sh-hl-property) { background: color-mix(in srgb, var(--match-category-property, #f59e0b) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-semantic), .sh-item-name :global(mark.sh-hl-semantic) { background: color-mix(in srgb, var(--match-category-semantic, #7c3aed) 28%, transparent); }
+	.sh-item-snippet :global(mark.sh-hl-structured), .sh-item-name :global(mark.sh-hl-structured) { background: color-mix(in srgb, var(--match-category-structured, #ef4444) 28%, transparent); }
 	/* MIG-043 Phase 1 — NSC summary headline (top-1 sentence) under each
 	 * result. Distinct from the snippet (query-context) by being italic +
 	 * faint. Single-line ellipsis keeps row height controlled. */
