@@ -1251,18 +1251,10 @@
 							</span>
 						</div>
 					{:else if pk === 'callouts'}
-						<div class="ss-focus ss-fcard ss-fcog">
-							<div class="ss-fep-title">{L('Callouts')}</div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-note-color, #448aff)"></span><span class="ss-cog-lbl">{L('Note')}</span><span class="ss-cog-note">{L('Note')} · info</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-abstract-color, #00b0ff)"></span><span class="ss-cog-lbl">{L('Abstract')}</span><span class="ss-cog-note">summary · tldr</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-tip-color, #00bfa5)"></span><span class="ss-cog-lbl">{L('Tip')}</span><span class="ss-cog-note">hint · important</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-success-color, #00c853)"></span><span class="ss-cog-lbl">{L('Success')}</span><span class="ss-cog-note">check · done</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-question-color, #ff9100)"></span><span class="ss-cog-lbl">{L('Question')}</span><span class="ss-cog-note">help · faq</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-warning-color, #ff9100)"></span><span class="ss-cog-lbl">{L('Warning')}</span><span class="ss-cog-note">caution · attention</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-failure-color, #ff5252)"></span><span class="ss-cog-lbl">{L('Failure')}</span><span class="ss-cog-note">fail · missing</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-danger-color, #ff1744)"></span><span class="ss-cog-lbl">{L('Danger')}</span><span class="ss-cog-note">error · bug</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-example-color, #7c4dff)"></span><span class="ss-cog-lbl">{L('Example')}</span></div>
-							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--callout-quote-color, #9e9e9e)"></span><span class="ss-cog-lbl">{L('Quote')}</span><span class="ss-cog-note">cite</span></div>
+						<!-- MIG-089 — the UNIFIED Callouts manager fills the centre zone (Full-Center-Zone
+						     rule): built-ins + divider + custom callouts, each row colour+icon+name. -->
+						<div class="ss-fcallouts">
+							<CalloutTypesEditor getDraftColor={curVal} setDraftColor={setVar} />
 						</div>
 					{:else if pk === 'tree'}
 						<div class="ss-focus ss-fcard ss-ftree">
@@ -1397,7 +1389,9 @@
 								</div>
 							</div>
 						{/if}
-						{#each sel.controls as c (c.label)}
+						<!-- MIG-089 — Callouts edits its colours in the centre manager, so the right
+						     rail skips the generic 10 colour controls (kept in ELEMENTS for the reset). -->
+						{#each (selected === 'callouts' ? [] : sel.controls) as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
 								<label for={'ss-' + c.var}>{L(c.label)}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
@@ -1453,10 +1447,7 @@
 					{#if selected === 'links'}
 						<LinkTypesEditor embedded />
 					{/if}
-					{#if selected === 'callouts'}
-						<CalloutTypesEditor embedded />
-					{/if}
-					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
+					{#if selected !== 'callouts' && ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel ss-rlabel-row">
 							<span>{L('Saved colours')}</span>
 							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title={L('Name, rename or remove saved colours')}>{managingSwatches ? L('Done') : L('Manage')}</button>
@@ -1531,7 +1522,7 @@
 		--c-muted: var(--text-muted, #8a8ba0); --c-border: var(--background-modifier-border, #2c2c3e); --c-accent: var(--interactive-accent, #7c6cff);
 		max-width: 97vw; max-height: 95vh; background: var(--c-bg); position: relative;
 		border: 1px solid var(--c-border); border-radius: 14px; overflow: hidden; color: var(--c-text);
-		display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 210px 1fr 248px;
+		display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 210px 1fr 300px;
 		grid-template-areas: "top top top" "left center right"; box-shadow: 0 30px 80px rgba(0,0,0,.55);
 		font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 	}
@@ -1778,6 +1769,9 @@
 	.ss-confirm-no { font: inherit; font-size: 11.5px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); cursor: pointer; flex: none; }
 	/* §C — focused per-element preview: the centre shows JUST the selected element (Eisa). */
 	.ss-focus { min-width: 460px; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+	/* MIG-089 — the unified Callouts manager fills the entire centre zone (Full-Center-Zone
+	   rule) and scrolls internally; align-self:stretch overrides the stage's centring. */
+	.ss-fcallouts { align-self: stretch; width: 100%; height: 100%; overflow-y: auto; padding: 8px 18px; box-sizing: border-box; }
 	.ss-focus-empty { color: var(--c-muted); font-size: 13px; }
 	.ss-fcard { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); border: 1px solid rgba(0,0,0,.18); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 22px 26px; display: flex; flex-direction: column; gap: 9px; min-width: 320px; max-width: 460px; text-align: start; align-items: stretch; }
 	.ss-fnote { font-family: var(--font-text-theme, inherit); }

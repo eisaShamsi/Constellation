@@ -44,6 +44,24 @@ export const CALLOUT_FAMILY: Record<string, string> = {
 // a custom callout from shadowing a built-in (MIG-089 D4).
 export const CALLOUT_BUILTIN_TYPES = new Set(Object.keys(CALLOUT_FAMILY));
 
+// Each family's default colour — the §3a `--callout-<family>-color` fallbacks. The
+// Style Setter's Callouts manager shows these as the swatch when no override is set.
+export const CALLOUT_FAMILY_COLOR: Record<string, string> = {
+	note: '#448aff', abstract: '#00b0ff', tip: '#00bfa5', success: '#00c853', question: '#ff9100',
+	warning: '#ff9100', failure: '#ff5252', danger: '#ff1744', example: '#7c4dff', quote: '#9e9e9e',
+};
+
+// Family → its alias trigger words (everything that maps to it except itself), for the
+// manager's "Note · info" hint. Order follows CALLOUT_FAMILY declaration order.
+export const CALLOUT_FAMILY_ALIASES: Record<string, string[]> = (() => {
+	const m: Record<string, string[]> = {};
+	for (const f of CALLOUT_FAMILIES) m[f] = [];
+	for (const [type, fam] of Object.entries(CALLOUT_FAMILY)) {
+		if (type !== fam && m[fam]) m[fam].push(type);
+	}
+	return m;
+})();
+
 /** The built-in default emoji for a callout family (the Setter's "no override" preview). */
 export function calloutDefaultIcon(family: string): string { return CALLOUT_ICONS[family] ?? 'ℹ️'; }
 

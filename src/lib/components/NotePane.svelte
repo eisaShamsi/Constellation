@@ -1636,6 +1636,11 @@
 	/* Lines with an explicit dir attribute (set by bidiPlugin) use isolate so dir='rtl'
 	   actually governs cursor placement — higher specificity overrides the plaintext above */
 	.e-editor :global(.cm-line[dir]) { unicode-bidi: isolate; }
+	/* MIG-089 A.2 — callout lines are ALWAYS non-empty mixed-bidi content (> [!type] …),
+	   so the editing caret (Home/End, double-click word-select) needs `plaintext`, not the
+	   `isolate` that dir-lines get (isolate exists for empty-line cursor placement, which
+	   never applies to a callout line). Higher specificity + !important beats the rule above. */
+	.e-editor :global(.cm-line.cm-callout-line[dir]) { unicode-bidi: plaintext !important; }
 	.e-editor :global(.cm-editor),
 	.e-editor :global(.cm-editor.cm-focused) { outline: none !important; border: none !important; }
 	/* Force cursor visibility — prevents invisible cursor on click */
