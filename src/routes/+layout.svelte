@@ -5138,6 +5138,31 @@
 		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
 	}
 
+	// MIG-077 B2 — Search-results right-click. Reuses the same note handlers as the file tree, but the
+	// SAFE, non-destructive subset only: open / open-in-new-tab / reveal / copy / bookmark /
+	// show-in-explorer / Style. NO rename/move/delete — a results list is a non-refreshing surface (the
+	// Navigator lesson), and search is for finding + operating, not destructive editing. Style → the
+	// Cognitive-colours category (the match-category colours that paint search results).
+	function handleSearchResultContextMenu(r: { path: string; name: string; library_name?: string }, x: number, y: number) {
+		const displayName = r.name.replace(/\.(md|base)$/, '');
+		const isMd = r.name.toLowerCase().endsWith('.md');
+		const target: ContextTarget = { kind: 'note', path: r.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(r.path) };
+		const lib = $libraryStats.find((l) => r.path.startsWith(l.path));
+		const actions: ContextActions = {
+			open: () => handleNoteClick(r.path, displayName, undefined),
+			openInNewTab: () => { if (lib) openNoteTab(r.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
+			bookmark: () => toggleBookmarkPath('note', r.path, displayName),
+			copyPath: () => navigator.clipboard.writeText(r.path).catch(() => {}),
+			copyPathRelative: () => copyRelativePath(r.path),
+			copyName: () => navigator.clipboard.writeText(displayName).catch(() => {}),
+			revealInTree: () => revealInTree(r.path),
+			openInDefaultApp: () => { invoke('open_path', { path: r.path }).catch(() => {}); },
+			showInExplorer: () => { invoke('constellation_show_in_folder', { path: r.path }).catch(() => {}); },
+			style: () => openStyleSetterToCategory('cognitive'),
+		};
+		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
+	}
+
 	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
 	// nested libraries; the bare startsWith elsewhere returns the first match).
 	function libIdForPath(path: string): string | null {
@@ -6833,6 +6858,7 @@
 				initialQuery={searchHubInitialQuery}
 				{allNotes}
 				linkCounts={searchLinkCounts}
+				onResultContextMenu={handleSearchResultContextMenu}
 				onNoteClick={(path: string, name: string, libraryName: string, hubQuery: string) => {
 					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 					// Strip operator syntax from query for clean highlighting

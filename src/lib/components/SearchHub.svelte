@@ -20,6 +20,8 @@
 		onNoteClick = (_path: string, _name: string, _libraryName: string, _query: string) => {},
 		onClose = () => {},
 		onResults = (_matchIds: Set<string>) => {},
+		// MIG-077 B2 — right-click a result row → the parent builds the (safe, non-destructive) note menu.
+		onResultContextMenu = (_r: ConstellationSearchResult, _x: number, _y: number) => {},
 	} = $props();
 
 	let query = $state(initialQuery);
@@ -270,6 +272,11 @@
 		requestAnimationFrame(() => searchInput?.focus());
 	}
 
+	function handleItemCtx(r: ConstellationSearchResult, e: MouseEvent) {
+		e.preventDefault();
+		onResultContextMenu(r, e.clientX, e.clientY);
+	}
+
 	function handleResultClick(r: ConstellationSearchResult) {
 		onNoteClick(r.path, r.name, r.library_name, query);
 	}
@@ -493,7 +500,7 @@
 							{#if !collapsed[group.query]}
 								<div class="sh-cat-items">
 									{#each group.results as r}
-										<button class="sh-item" onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
+										<button class="sh-item" onclick={() => handleResultClick(r)} oncontextmenu={(e) => handleItemCtx(r, e)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
 												{#if r.match_via}
@@ -525,7 +532,7 @@
 					{@const dir = rustDir ?? queryDirection(query)}
 					{@const rCounts = linkCounts.get(r.name.toLowerCase())}
 					{@const rIncoming = rCounts?.incoming ?? 0}
-					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
+					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} oncontextmenu={(e) => handleItemCtx(r, e)} dir={detectDir(r.name)}>
 						<div class="sh-item-top">
 							{#if dir}
 								{#if dir === '↑' || dir === '↑↓'}
@@ -578,7 +585,7 @@
 								<div class="sh-cat-items">
 									{#each items as r}
 										<button class="sh-item" class:sh-item-selected={selectedResultIdx >= 0 && allFlatResults[selectedResultIdx] === r}
-											onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
+											onclick={() => handleResultClick(r)} oncontextmenu={(e) => handleItemCtx(r, e)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name">{@html highlightInText(r.name, hlClass(cat))}</span>
 												{#if r.match_via}
