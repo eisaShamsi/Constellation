@@ -754,6 +754,7 @@
 	}
 	.i360-corner-stratum { color: var(--text-accent); font-weight: 600; }
 	.i360-corner-type { color: var(--color-blue); font-weight: 600; }
+	:global([dir="rtl"]) .i360-back-arrow { transform: scaleX(-1); }
 
 	/* §115: top-right corner shows the matrix grand total (Σ + count). */
 	.i360-rowtot-header {

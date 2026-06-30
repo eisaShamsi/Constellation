@@ -508,10 +508,10 @@
 														{$t('searchHub.matchVia')} {r.match_via}
 													</span>
 												{/if}
-												<span class="sh-item-lib">{r.library_name}</span>
+												<span class="sh-item-lib" dir="auto">{r.library_name}</span>
 											</div>
 											{#if r.snippet}
-												<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
+												<div class="sh-item-snippet" dir="auto">{@html highlightInText(r.snippet)}</div>
 											{/if}
 											{#if summaryHeadlines.get(r.path)}
 												<div class="sh-item-headline" dir="auto">{summaryHeadlines.get(r.path)}</div>
@@ -555,10 +555,10 @@
 								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
 								{rIncoming}
 							</span>
-							<span class="sh-item-lib">{r.library_name}</span>
+							<span class="sh-item-lib" dir="auto">{r.library_name}</span>
 						</div>
 						{#if r.snippet && !rustDir}
-							<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
+							<div class="sh-item-snippet" dir="auto">{@html highlightInText(r.snippet)}</div>
 						{/if}
 						{#if summaryHeadlines.get(r.path)}
 							<div class="sh-item-headline" dir="auto">{summaryHeadlines.get(r.path)}</div>
@@ -593,10 +593,10 @@
 														{$t('searchHub.matchVia')} {r.match_via}
 													</span>
 												{/if}
-												<span class="sh-item-lib">{r.library_name}</span>
+												<span class="sh-item-lib" dir="auto">{r.library_name}</span>
 											</div>
 											{#if r.snippet}
-												<div class="sh-item-snippet">
+												<div class="sh-item-snippet" dir="auto">
 													{#if cat === 'contents'}
 											{@html highlightInText(r.snippet ?? '', hlClass(cat))}
 										{:else}

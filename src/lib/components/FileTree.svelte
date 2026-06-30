@@ -96,7 +96,7 @@
 								onclick={(e) => e.stopPropagation()}
 							/>
 						{:else}
-							<span class="folder-name">{entry.name}</span>
+							<span class="folder-name" dir="auto">{entry.name}</span>
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
@@ -143,7 +143,7 @@
 							{@const _stageVal = stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase())!}
 							<span class="note-stage">{lookupStageEmoji(_stageVal)}</span>
 						{/if}
-						<span class="note-name">{entry.display_title || entry.name.replace(/\.(md|base)$/, '')}</span>
+						<span class="note-name" dir="auto">{entry.display_title || entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}
 			{/if}

@@ -196,9 +196,9 @@
 					title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{link.traversalCount}</span>
 			{/if}
 		</span>
-		<span class="ol-context">{link.context}</span>
+		<span class="ol-context" dir="auto">{link.context}</span>
 		{#if link.annotation}
-			<span class="ol-annotation" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
+			<span class="ol-annotation" dir="auto" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
 		{/if}
 		{#if summaryHeadlines.get(link.target)}
 			<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>

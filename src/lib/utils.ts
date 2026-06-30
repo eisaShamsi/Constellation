@@ -748,6 +748,17 @@ export const DEFAULT_SHORTCUTS: Record<string, string> = {
 	'select-next': 'Ctrl+D',
 };
 
+/** True when a keyboard event targets an editable surface (an <input>, <textarea>,
+ *  a contentEditable element, or the CodeMirror editor). Keydown handlers that
+ *  preventDefault() bare keys must early-return on this so a (possibly user-rebound)
+ *  shortcut never swallows a keystroke meant for the field. MIG-089 Language-First audit. */
+export function isEditableTarget(e: Event): boolean {
+	const t = e.target as HTMLElement | null;
+	if (!t) return false;
+	const tag = t.tagName;
+	return tag === 'INPUT' || tag === 'TEXTAREA' || t.isContentEditable === true || !!t.closest?.('.cm-editor');
+}
+
 /** Convert a KeyboardEvent into a normalized shortcut string like "Ctrl+Shift+N". */
 export function eventToShortcut(e: KeyboardEvent): string {
 	const parts: string[] = [];

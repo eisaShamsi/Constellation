@@ -16,7 +16,7 @@
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
-	import { detectDir } from '$lib/utils';
+	import { detectDir, isEditableTarget } from '$lib/utils';
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
 	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
@@ -443,20 +443,20 @@
 			if (settingsOpen) { settingsOpen = false; return; }
 		}
 		// Space — toggle local graph mode
-		if (e.key === ' ' && !searchVisible && !(e.target instanceof HTMLInputElement)) {
+		if (e.key === ' ' && !searchVisible && !isEditableTarget(e)) {
 			e.preventDefault();
 			engine?.toggleLocalGraph();
 			localGraph = engine?.getLocalGraphMode() ?? false;
 		}
 		// Ctrl+L removed — only organic layout mode used
 		// 0 key — reset rotation back to 2D
-		if (e.key === '0' && !(e.target instanceof HTMLInputElement) && isTilted) {
+		if (e.key === '0' && !isEditableTarget(e) && isTilted) {
 			e.preventDefault();
 			engine?.resetTilt();
 			isTilted = false;
 		}
 		// WASD / Arrow keys — fly through 3D star field (only when in 3D mode)
-		if (isTilted && !(e.target instanceof HTMLInputElement) && !e.ctrlKey && !e.metaKey) {
+		if (isTilted && !isEditableTarget(e) && !e.ctrlKey && !e.metaKey) {
 			const speed = 15;
 			switch (e.key.toLowerCase()) {
 				case 'w': case 'arrowup':    e.preventDefault(); engine?.moveCamera(0, 0, speed); break;

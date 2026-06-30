@@ -223,9 +223,9 @@
 				<span class="bl-library-label">{bl.libraryName}</span>
 			{/if}
 		</span>
-		<span class="bl-context">{bl.context}</span>
+		<span class="bl-context" dir="auto">{bl.context}</span>
 		{#if bl.annotation}
-			<span class="bl-annotation" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
+			<span class="bl-annotation" dir="auto" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
 		{/if}
 		{#if summaryHeadlines.get(bl.path)}
 			<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>

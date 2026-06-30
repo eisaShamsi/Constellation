@@ -192,10 +192,10 @@
 	{#if ancestors.length > 0}
 		<div class="toc-breadcrumb" dir="auto">
 			{#each ancestors as a (a.path)}
-				<button class="toc-crumb" onclick={(e) => open(a.path, e)}>{a.name}</button>
+				<button class="toc-crumb" dir="auto" onclick={(e) => open(a.path, e)}>{a.name}</button>
 				<span class="toc-sep">›</span>
 			{/each}
-			<span class="toc-crumb toc-crumb-current">{activeNoteName}</span>
+			<span class="toc-crumb toc-crumb-current" dir="auto">{activeNoteName}</span>
 		</div>
 	{/if}
 

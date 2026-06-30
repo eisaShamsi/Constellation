@@ -1881,8 +1881,8 @@
     cursor: help;
   }
   .srp-card.srp-split-regime {
-    border-left: 3px solid #c9a227;
-    padding-left: 8px;
+    border-inline-start: 3px solid #c9a227;
+    padding-inline-start: 8px;
   }
   .srp-trail-toggle {
     display: flex; align-items: center; gap: 8px;

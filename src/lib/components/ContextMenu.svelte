@@ -177,8 +177,8 @@
 	.ctx-submenu {
 		position: absolute;
 		inset-block-start: -4px;
-		left: 100%;
-		right: auto;
+		inset-inline-start: 100%;
+		inset-inline-end: auto;
 		min-width: 180px;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
@@ -191,8 +191,8 @@
 	}
 	/* Flip the fly-out to the left when there's no room on the right (set by JS). */
 	.ctx-submenu.flip {
-		left: auto;
-		right: 100%;
+		inset-inline-start: auto;
+		inset-inline-end: 100%;
 	}
 	/* MIG-077 A0 — separator + disabled */
 	.ctx-separator {

@@ -47,7 +47,7 @@
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
+	import { detectDir, eventToShortcut, isEditableTarget, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
 	import { createBase, listWorkspaceBases, createWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
@@ -3887,6 +3887,15 @@
 			return;
 		}
 
+		// Language-First audit — never let a (possibly user-rebound) bare-key shortcut swallow a
+		// keystroke meant for a focused input/textarea/contentEditable/editor. Modifier combos still
+		// flow through (Ctrl+P etc. work while typing); Escape was handled above (still closes overlays).
+		if (isEditableTarget(e)
+			&& (e.key.length === 1 || ['Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Backspace', 'Delete', 'Enter', 'Tab', ' '].includes(e.key))
+			&& !e.ctrlKey && !e.metaKey && !e.altKey) {
+			return;
+		}
+
 		// Build lookup from shortcut combo → action
 		const combo = eventToShortcut(e);
 		if (!combo) return;
@@ -6518,10 +6527,10 @@
 							{#if tab.pinned}
 								<span class="tab-pin" title={$t('layout.pinned')}>📌</span>
 							{:else if tab.libraryName}
-								<span class="tab-lib-name">{tab.libraryName}</span>
+								<span class="tab-lib-name" dir="auto">{tab.libraryName}</span>
 							{/if}
 							{#if (() => { const m = maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? ''); return m && m !== 'seed'; })()}<span class="tab-maturity" class:mat-sapling={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'sapling'} class:mat-evergreen={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'evergreen'} class:mat-canonical={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'canonical'} class:mat-wilting={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'wilting'}>●</span>{/if}
-							<span class="tab-title">{tab.name}</span>
+							<span class="tab-title" dir="auto">{tab.name}</span>
 							{#if !tab.pinned}
 								<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
 							{/if}
@@ -8166,9 +8175,9 @@
 	<div class="status-bar" data-style-target="statusbar">
 		<div class="sb-left">
 			{#if sidebarTab}
-				<span class="sb-item">{sidebarTab.libraryName}</span>
+				<span class="sb-item" dir="auto">{sidebarTab.libraryName}</span>
 				<span class="sb-dot">·</span>
-				<span class="sb-item">{sidebarTab.name}</span>
+				<span class="sb-item" dir="auto">{sidebarTab.name}</span>
 			{:else}
 				<span class="sb-item">{$t('libraryManager.manageLibraries')}</span>
 			{/if}

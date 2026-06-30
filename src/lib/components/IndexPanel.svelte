@@ -1303,7 +1303,7 @@
 								onclick={(e) => onNoteClick(mention.note_path, mention.note_name, r.term, e)}
 								onmouseenter={(e) => onNoteHover(mention.note_path, e)}
 								onmouseleave={() => onNoteLeave()}>
-								<span class="gp-ref-name">{mention.note_name}</span>
+								<span class="gp-ref-name" dir="auto">{mention.note_name}</span>
 								{#if mention.via_lemma}
 									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', mention.via_lemma)}</span>
 								{/if}

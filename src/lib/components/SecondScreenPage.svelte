@@ -1822,15 +1822,15 @@
 	.tags-layout.tags-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 	.tags-list-col { min-width: 0; }
 	.tags-notes-col {
-		min-width: 0; border-left: 1px solid var(--background-modifier-border);
-		padding-left: 20px; font-family: var(--font-interface-theme);
+		min-width: 0; border-inline-start: 1px solid var(--background-modifier-border);
+		padding-inline-start: 20px; font-family: var(--font-interface-theme);
 	}
 	.tags-notes-title {
 		display: flex; align-items: center; gap: 8px;
 		margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: var(--text-normal);
 	}
 	.tags-notes-close {
-		margin-left: auto; background: none; border: none; cursor: pointer;
+		margin-inline-start: auto; background: none; border: none; cursor: pointer;
 		color: var(--text-muted); padding: 2px; border-radius: 4px;
 		display: flex; align-items: center;
 	}
