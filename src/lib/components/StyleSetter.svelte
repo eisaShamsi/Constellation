@@ -256,6 +256,7 @@
 		// and the toolbar chip (each keeps its own fallback in the component → byte-identical until set).
 		highlight: { name: 'Highlight', controls: [
 			{ label: 'Background', type: 'color', var: '--highlight-bg' },
+			{ label: 'Text', type: 'color', var: '--highlight-text' },
 			{ label: 'Radius', type: 'range', var: '--highlight-radius', min: 0, max: 12, step: 1, unit: 'px', def: 2 } ] },
 		// MIG-088 §3c — Syntax tokens. URL colour + the frontmatter-fence/meta grey (one shared var).
 		syntax: { name: 'Syntax tokens', controls: [
@@ -1664,7 +1665,7 @@
 	/* MIG-088 §3b/§3c/§3d — editor-extras preview samples; each reads the SAME draft var as the real
 	   editor surface (with today's value as the fallback) so they re-colour live. */
 	.ss-synrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
-	.ss-hl { background: var(--highlight-bg, #fef08a); border-radius: var(--highlight-radius, 2px); padding: 1px 4px; }
+	.ss-hl { background: var(--highlight-bg, #fef08a); color: var(--highlight-text, inherit); border-radius: var(--highlight-radius, 2px); padding: 1px 4px; }
 	.ss-url { color: var(--url-color, #0891b2); text-decoration: underline; }
 	.ss-meta { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: 12px; color: var(--syntax-meta-color, #888); }
 	.ss-lensrow { display: inline-flex; align-self: flex-start; align-items: baseline; gap: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--background-modifier-border, #e0e0e0); }

@@ -1624,7 +1624,7 @@
 	/* MIG-088 §3b — shares the editor highlight bg + radius. Text colour MIRRORS the body highlight
 	   (.cm-md-highlight/.cm-html-mark set no colour → inherit --editor-text-color), so the chip stays
 	   readable on any user-chosen --highlight-bg (incl. a dark one) instead of a fixed dark literal. */
-	.e-tb-hl { background: var(--highlight-bg, #fef08a); padding: 0 3px; border-radius: var(--highlight-radius, 2px); color: var(--editor-text-color, var(--text-normal, #1a1a1a)); font-size: 12px; }
+	.e-tb-hl { background: var(--highlight-bg, #fef08a); padding: 0 3px; border-radius: var(--highlight-radius, 2px); color: var(--highlight-text, var(--editor-text-color, var(--text-normal, #1a1a1a))); font-size: 12px; }
 	.e-tb-sep { width: 1px; height: 18px; background: var(--background-modifier-border); margin: 0 4px; }
 	.e-tb.e-tb-off { opacity: 0.35; }
 	.e-toolbar[dir="rtl"] .e-tb-flip svg { transform: scaleX(-1); }

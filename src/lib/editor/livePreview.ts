@@ -1771,9 +1771,12 @@ export const livePreviewTheme = EditorView.theme({
 	// MIG-088 §3b — Highlight (unify-on-demand): HTML <mark>, markdown ==, and the toolbar chip
 	// (NotePane .e-tb-hl) all wire to one shared bg + radius, each keeping ITS exact current value
 	// as the fallback → byte-identical until the user sets the shared var, then all three snap to it.
-	'.cm-html-mark': { backgroundColor: 'var(--highlight-bg, #fef08a)', borderRadius: 'var(--highlight-radius, 2px)' },
+	// --highlight-text (Boss request): a paired TEXT colour so a dark --highlight-bg stays legible.
+	// Fallback `inherit` = today's look (these set no colour and inherit the editor text colour).
+	'.cm-html-mark': { backgroundColor: 'var(--highlight-bg, #fef08a)', color: 'var(--highlight-text, inherit)', borderRadius: 'var(--highlight-radius, 2px)' },
 	'.cm-md-highlight': {
 		backgroundColor: 'var(--highlight-bg, color-mix(in srgb, var(--color-yellow) 35%, transparent))',
+		color: 'var(--highlight-text, inherit)',
 		borderRadius: 'var(--highlight-radius, 2px)',
 		padding: '1px 0',
 	},
