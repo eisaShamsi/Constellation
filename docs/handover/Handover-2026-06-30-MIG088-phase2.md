@@ -14,7 +14,7 @@
 
 ## State of standing
 - **Verified-shipped + pushed:** everything above. svelte-check 0 throughout; CSS-vars only (no perf/IPC/schema impact); LL-032-safe (no `BUILTIN_THEMES`).
-- **In flight at close:** the help/manual ×15 localization (Workflow `wf_dac2be24-bdd`) — VERIFY its output landed cleanly and commit it (or finish/redo any locale it skipped). It documents the Properties + Cognitive-colours categories + the right-click menus.
+- **Help/User-Manual ×15 — DONE + pushed (`7d0317e3`):** the "Cognitive Colours and Right-Click Menus" topic + a User-Manual section in all 15 languages (Workflow `wf_dac2be24-bdd`; EN topic+manual + fa-normalize done by hand).
 - **Known-good build:** `src-tauri/target/release/constellation.exe` @ 2026-06-30 05:38 (has everything incl. search RC).
 
 ## What's next (priority order)
@@ -36,9 +36,7 @@
 ```
 Resume Constellation. First: `git pull origin main`, then read (in order) docs/Constellation Orientation & Onboarding v3.17.md (the "What changed in v3.17" entry), lab/reports/MIG-088-STYLESETTER-COMPLETENESS-PLAN.md, and lab/reports/MIG-088-STYLESETTER-AUDIT.md. Recall memory project_stylesetter_add_element_recipe.
 
-Status: MIG-077 §F (app-wide right-click: body + frontmatter + search-results) and MIG-088 Phases 1–2 (Properties + all 5 Cognitive-colour sets, "unify on demand") are SHIPPED + Boss-validated + pushed. Ultracode is on.
+Status: MIG-077 §F (app-wide right-click: body + frontmatter + search-results) and MIG-088 Phases 1–2 (Properties + all 5 Cognitive-colour sets, "unify on demand") are SHIPPED + Boss-validated + pushed (main @ 7d0317e3). Help/User-Manual ×15 are done too. Ultracode is on.
 
-First task: VERIFY the help/manual ×15 localization workflow (wf_dac2be24-bdd) output landed and commit it if not already.
-
-Then proceed to MIG-088 Phase 3 (Editor specifics) per the plan — same add-an-element recipe + "unify on demand" for any cross-surface colour. Build sub-step by sub-step, each landable + Boss-testable (tutorial-style test instructions). Honour the concept-before-function exclusions and the i18n slug-reuse pattern. SO #8 cross-check before starting.
+Proceed to MIG-088 Phase 3 (Editor specifics) per the plan — same add-an-element recipe + "unify on demand" for any cross-surface colour. Build sub-step by sub-step, each landable + Boss-testable (tutorial-style test instructions). Honour the concept-before-function exclusions and the i18n slug-reuse pattern. SO #8 cross-check before starting.
 ```
