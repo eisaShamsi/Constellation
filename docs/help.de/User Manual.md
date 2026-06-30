@@ -1415,3 +1415,33 @@ Constellation dient dem *Formulieren* von Wissen, und Wissen ist Verbindung. **V
 **So nutzen Sie es.** Unter der Überschrift **Vorgeschlagene Verknüpfungen** sehen Sie verwandte Notizen, gewichtet mit der nächstgelegenen zuerst, jeweils mit ihren gemeinsamen Begriffen. Klicken Sie bei einem Kandidaten auf die Schaltfläche **Verknüpfen** → wählen Sie im kleinen Menü **„Wie hängen sie zusammen?"** die Beziehungsart → die typisierte Verknüpfung wird **sofort** erstellt und der Vorschlag fällt aus der Liste. Sie lebt dann in den **Eigenschaften** der Notiz und erscheint in ihren Backlinks/ausgehenden Verknüpfungen sowie im gesamten Graphen. Wenn nichts wirklich passt, lassen Sie sie stehen — oder markieren Sie die Notiz in der Wiedervorlage als bewusst **eigenständig**. Vorgeschlagene Verknüpfungen schlägt vor; Sie entscheiden.
 
 **Lokal, privat, nicht blockierend.** Vorschläge werden auf Anfrage allein aus Ihrer Bibliothek berechnet — nichts verlässt Ihr Gerät — und ihr Zusammenstellen blockiert niemals Ihr Tippen (Sie sehen kurz „Verwandte Notizen werden gesucht…", während es arbeitet). Die Vorschläge, die Hinweise auf gemeinsame Begriffe und die Beziehungsarten erscheinen alle in Ihrer gewählten Sprache und werden für rechtsläufige Schriften korrekt gespiegelt.
+
+---
+
+## 24. Kognitive Farben und Rechtsklick-Menüs
+
+### Eigenschaften-Gestaltung (Stil-Gestalter)
+
+Öffnen Sie den **Stil-Gestalter** (Einstellungen → Darstellung → ✦ Stil-Gestalter öffnen, oder seinen eigenen Tab) und wählen Sie die Kategorie **Eigenschaften**, um die kleinen Tags im Frontmatter einer Notiz neu zu gestalten. Zwei Elemente: **Eigenschaft-Tags** (die gewöhnlichen `tags`-artigen Chips — Tag-Hintergrund, Tag-Text, Tag-Radius 0–20 px, Höhe 14–32 px) und **Taxonomie-Badges** (Hintergrund, Text, Radius 0–20 px). Eine Live-Vorschau in der Mitte aktualisiert sich, während Sie editieren; jeder Wert startet exakt mit dem heutigen Aussehen, sodass sich nichts ändert, bis Sie ein Steuerelement berühren. Klicken Sie auf **Behalten**, um für dieses Universum zu speichern.
+
+### Kognitive Farben (Stil-Gestalter)
+
+Die Kategorie **Kognitive Farben** gibt Ihnen **eine gemeinsame Farbe pro kognitivem Zustand**, sodass jede Oberfläche, die diesen Zustand anzeigt, übereinstimmt. Fünf Sätze:
+
+- **Reife** — Samen, Setzling, Immergrün, Kanonisch, Welkend.
+- **Konfidenz** — Hypothese, Beleg, Etabliert, Umstritten.
+- **Herkunft** — Empfangen, Entdeckt, Gemischt, Keine.
+- **Phase** — Funke, Geburt, Wachstum, Reife, Ruhephase, Archivierung.
+- **Treffer-Kategorie** (warum ein Suchergebnis ein Treffer war) — Titel, Inhalt, Tag, Wikilink, Eigenschaft, Semantisch, Strukturiert.
+
+Das Verhalten lautet **bei Bedarf vereinheitlichen**: nichts ändert sich, bis Sie eine Farbe wählen. Jede Oberfläche behält ihre aktuelle Farbe als Rückfallwert, und in dem Moment, in dem Sie hier die Farbe eines Zustands festlegen, schnappt **jede** Oberfläche, die diesen Zustand anzeigt — Dateibaum, Tabs, der Notiz-Inspektor, die Suchhervorhebung im Editor, das Treffer-Badge und die Hervorhebung des Suchergebnisses — auf einmal auf Ihre Farbe um. Lassen Sie einen Zustand unberührt, sieht er genau wie zuvor aus. Klicken Sie auf **Behalten**, um zu speichern.
+
+### Rechtsklick-Menüs
+
+Constellation gibt Ihnen an drei Stellen ein Kontextmenü, das jeweils nur die Aktionen bietet, die dort passen, wo Sie geklickt haben:
+
+- **Rechtsklick im Notiztext** — Link einfügen / Externer Link; **Format ▸** (Fett, Kursiv, Unterstreichen, Durchgestrichen, Hervorheben, Inline-Code, Inline-Mathe, Kommentar umschalten, Hochgestellt, Tiefgestellt, Formatierung löschen); **Absatz ▸** (Aufzählung/Nummerierte/Aufgabenliste, H1–H6, Absatz, Zitat); **Einfügen ▸** (Fußnote, Tabelle, Hinweis, Horizontale Linie, Codeblock, Matheblock, Bild); Ausschneiden / Kopieren / Einfügen / Als Text einfügen / Alles auswählen; und **Stil…** (öffnet den Stil-Gestalter auf der Kategorie **Editor**).
+- **Rechtsklick auf eine Frontmatter-Eigenschaftszeile** — Wert kopieren, Name kopieren, Eigenschaft entfernen, Eigenschaft hinzufügen; danach dasselbe Bearbeitungsmenü wie im Notiztext; und **Stil…** öffnet den Stil-Gestalter auf der Kategorie **Eigenschaften**.
+- **Rechtsklick auf ein Suchergebnis** — eine **sichere** Teilmenge: Öffnen, In neuem Tab öffnen, Im Dateibaum anzeigen, Link kopieren, Pfad kopieren, Lesezeichen, Im Datei-Explorer anzeigen, In Standard-App öffnen und **Stil…** (die Kategorie **Kognitive Farben**). Bewusst gibt es hier **kein Umbenennen, Verschieben oder Löschen** — das Suchpanel hält keine sekundengenaue Kopie des Dateibaums vor, sodass zerstörerische Aktionen im Dateibaum bleiben, wo die Ansicht stets aktuell ist.
+
+Jeder **Stil…**-Eintrag landet auf der Kategorie für das, worauf Sie rechtsgeklickt haben, sodass Sie nie nach den richtigen Steuerelementen suchen müssen. Jeder Menüeintrag, Kategoriename und jede Zustandsbeschriftung erscheint in Ihrer gewählten Oberflächensprache und spiegelt sich für Rechts-nach-links-Layouts.

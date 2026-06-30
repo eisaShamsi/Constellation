@@ -1412,3 +1412,33 @@ Constellation sert à *formuler* la connaissance, et la connaissance est connexi
 **Comment l'utiliser.** Sous le titre **Connexions suggérées**, vous verrez les notes apparentées classées de la plus proche à la plus éloignée, chacune avec ses termes en commun. Cliquez sur le bouton **Relier** d'un candidat → dans le petit menu **« Comment sont-ils liés ? »**, choisissez le type de relation → le lien typé est créé **instantanément** et la suggestion disparaît de la liste. Il figure alors dans les **propriétés** de la note et apparaît dans ses rétroliens/liens sortants et dans tout le graphe. Si rien ne convient vraiment, laissez-les — ou, dans le Réviseur, marquez la note comme **autonome** délibérée. Les Connexions suggérées proposent ; c'est vous qui décidez.
 
 **Locale, privée, sans blocage.** Les suggestions sont calculées à la demande à partir de votre seule Bibliothèque — rien ne quitte votre appareil — et leur constitution ne bloque jamais votre frappe (vous verrez un bref « Recherche de notes liées… » pendant le travail). Les suggestions, les indices de termes en commun et les types de relation apparaissent tous dans la langue que vous avez choisie et se reflètent correctement pour les écritures de droite à gauche.
+
+---
+
+## 24. Couleurs cognitives et menus clic droit
+
+### Style des propriétés (Concepteur de style)
+
+Ouvrez le **Concepteur de style** (Paramètres → Apparence → ✦ Ouvrir le Concepteur de style, ou son propre onglet) et choisissez la catégorie **Propriétés** pour restyler les petites étiquettes à l'intérieur du frontmatter d'une note. Deux éléments : **Étiquettes de propriétés** (les pastilles ordinaires de type `tags` — Fond de l'étiquette, Texte de l'étiquette, Rayon de l'étiquette 0–20 px, Hauteur 14–32 px) et **Badges de taxonomie** (Arrière-plan, Texte, Rayon 0–20 px). Un aperçu en direct au centre se met à jour au fil de votre édition ; chaque valeur démarre exactement sur l'apparence d'aujourd'hui, donc rien ne change tant que vous ne touchez pas à un contrôle. Cliquez sur **Conserver** pour enregistrer pour cet Univers.
+
+### Couleurs cognitives (Concepteur de style)
+
+La catégorie **Couleurs cognitives** vous donne **une couleur partagée par état cognitif**, de sorte que chaque surface qui affiche cet état s'accorde. Cinq ensembles :
+
+- **Maturité** — Graine, Jeune pousse, Persistante, Canonique, Flétrissante.
+- **Confiance** — Hypothèse, Preuve, Établi, Contesté.
+- **Origine** — Reçu, Découvert, Mixte, Aucune.
+- **Étape** — Étincelle, Naissance, Croissance, Maturité, Dormance, Archivage.
+- **Catégorie de correspondance** (pourquoi un résultat de recherche a correspondu) — Titre, Contenu, Étiquette, Wikilien, Propriété, Sémantique, Structuré.
+
+Le comportement est **unifier à la demande** : rien ne change tant que vous ne choisissez pas une couleur. Chaque surface conserve sa couleur actuelle comme repli, et dès l'instant où vous définissez la couleur d'un état ici, **toutes** les surfaces qui affichent cet état — arborescence, onglets, inspecteur de note, surbrillance de recherche dans l'éditeur, badge de correspondance et surbrillance du résultat de recherche — adoptent votre couleur d'un coup. Laissez un état intact et il a exactement l'apparence d'avant. Cliquez sur **Conserver** pour enregistrer.
+
+### Menus clic droit
+
+Constellation vous offre un menu contextuel à trois endroits, chacun ne proposant que les actions qui conviennent là où vous avez cliqué :
+
+- **Clic droit sur le corps de la note** — Lien / Lien externe ; **Format ▸** (Gras, Italique, Souligner, Barré, Surligné, Code en ligne, Math en ligne, Basculer commentaire, Exposant, Indice, Effacer le formatage) ; **Paragraphe ▸** (Liste à puces/numérotée/de tâches, H1–H6, Corps, Citation) ; **Insérer ▸** (Note de bas de page, Tableau, Encadré, Ligne horizontale, Bloc de code, Bloc mathématique, Image) ; Couper / Copier / Coller / Coller en texte brut / Tout sélectionner ; et **Style…** (ouvre le Concepteur de style sur la catégorie **Éditeur**).
+- **Clic droit sur une ligne de propriété du frontmatter** — Copier la valeur, Copier le nom, Supprimer la propriété, Ajouter une propriété ; puis le même menu d'édition que pour le corps ; et **Style…** ouvrant le Concepteur de style sur la catégorie **Propriétés**.
+- **Clic droit sur un résultat de recherche** — un sous-ensemble **sûr** : Ouvrir, Ouvrir dans un nouvel onglet, Révéler dans l'arborescence, Copier le lien, Copier le chemin, Ajouter un marque-page, Afficher dans l'explorateur, Ouvrir dans l'app par défaut, et **Style…** (la catégorie **Couleurs cognitives**). Par conception, il n'y a **ni Renommer, ni Déplacer, ni Supprimer** ici — le panneau de recherche ne conserve pas de copie à la seconde près de l'arborescence, donc les actions destructrices restent dans l'arborescence, où la vue est toujours à jour.
+
+Chaque entrée **Style…** atterrit sur la catégorie de la chose sur laquelle vous avez fait un clic droit, de sorte que vous n'avez jamais à chercher les bons contrôles. Chaque élément de menu, nom de catégorie et libellé d'état apparaît dans la langue d'interface que vous avez choisie et se reflète pour les mises en page de droite à gauche.

@@ -1415,3 +1415,33 @@ Constellation sirve para *formular* conocimiento, y el conocimiento es conexión
 **Cómo usarlo.** Bajo el encabezado **Conexiones sugeridas** verás notas relacionadas clasificadas de la más cercana a la más lejana, cada una con sus términos en común. Haz clic en el botón **Enlazar** de un candidato → en el pequeño menú **"¿Cómo se relacionan?"** elige el tipo de relación → el enlace tipado se crea **al instante** y la sugerencia desaparece de la lista. Después vive en las **propiedades** de la nota y aparece en sus retroenlaces/enlaces salientes y por todo el grafo. Si nada encaja de verdad, déjalas — o, en el Revisor, marca la nota como **independiente** deliberada. Las Conexiones sugeridas proponen; tú decides.
 
 **Local, privado, sin bloqueos.** Las sugerencias se calculan a demanda y solo a partir de tu Biblioteca — nada sale de tu dispositivo — y reunirlas nunca bloquea tu escritura (verás un breve "Buscando notas relacionadas…" mientras trabaja). Las sugerencias, las pistas de términos en común y los tipos de relación aparecen todos en el idioma que elijas y se reflejan correctamente en las escrituras de derecha a izquierda.
+
+---
+
+## 24. Colores cognitivos y menús de clic derecho
+
+### Estilo de Propiedades (Diseñador de estilo)
+
+Abre el **Diseñador de estilo (Style Setter)** (Configuración → Apariencia → ✦ Abrir Diseñador de estilo, o su propia pestaña) y elige la categoría **Propiedades** para reestilizar las pequeñas etiquetas dentro del frontmatter de una nota. Dos elementos: **Etiquetas de propiedades** (las fichas ordinarias de tipo `tags` — Fondo de etiqueta, Texto de etiqueta, Radio de etiqueta 0–20 px, Altura 14–32 px) e **Insignias de taxonomía** (Fondo, Texto, Radio 0–20 px). Una vista previa en vivo en el centro se actualiza mientras editas; cada valor empieza exactamente con el aspecto de hoy, así que nada cambia hasta que tocas un control. Haz clic en **Conservar (Keep)** para guardar en este Universo.
+
+### Colores cognitivos (Diseñador de estilo)
+
+La categoría **Colores cognitivos** te da **un color compartido por estado cognitivo**, de modo que cada superficie que muestra ese estado coincide. Cinco conjuntos:
+
+- **Madurez** — Semilla, Retoño, Perenne, Canónica, Marchita.
+- **Confianza** — Hipótesis, Evidencia, Establecido, Cuestionado.
+- **Origen** — Recibido, Descubierto, Mixto, Ninguno.
+- **Etapa** — Chispa, Nacimiento, Crecimiento, Madurez, Latencia, Archivado.
+- **Categoría de coincidencia** (por qué coincidió un resultado de búsqueda) — Título, Contenido, Etiqueta, Wikilink, Propiedad, Semántico, Estructurado.
+
+El comportamiento es **unificar bajo demanda**: nada cambia hasta que eliges un color. Cada superficie conserva su color actual como valor de reserva, y en el momento en que fijas aquí el color de un estado, **todas** las superficies que muestran ese estado — árbol de archivos, pestañas, el inspector de la nota, el resaltado de búsqueda dentro del editor, la insignia de coincidencia y el resaltado del resultado de búsqueda — adoptan tu color a la vez. Deja un estado sin tocar y se verá exactamente como antes. Haz clic en **Conservar (Keep)** para guardar.
+
+### Menús de clic derecho
+
+Constellation te da un menú contextual en tres lugares, cada uno ofreciendo solo las acciones que encajan donde hiciste clic:
+
+- **Clic derecho en el cuerpo de la nota** — Añadir enlace / Añadir enlace externo; **Formato ▸** (Negrita, Cursiva, Subrayar, Tachado, Resaltar, Código en línea, Matemática, Alternar comentario, Superíndice, Subíndice, Limpiar formato); **Párrafo ▸** (Lista con viñetas/numerada/de tareas, H1–H6, Cuerpo, Cita); **Insertar ▸** (Nota al pie, Tabla, Nota destacada, Línea horizontal, Bloque de código, Bloque matemático, Imagen); Cortar / Copiar / Pegar / Pegar como texto / Seleccionar todo; y **Estilo…** (abre el Diseñador de estilo en la categoría **Editor**).
+- **Clic derecho en una fila de propiedad del frontmatter** — Copiar valor, Copiar nombre, Eliminar propiedad, Añadir propiedad; luego el mismo menú de edición que el cuerpo; y **Estilo…** que abre el Diseñador de estilo en la categoría **Propiedades**.
+- **Clic derecho en un resultado de búsqueda** — un subconjunto **seguro**: Abrir, Abrir en una pestaña nueva, Revelar en árbol de archivos, Copiar enlace, Copiar ruta, Marcador, Mostrar en explorador del sistema, Abrir en app predeterminada, y **Estilo…** (la categoría **Colores cognitivos**). Por diseño **no hay Renombrar, Mover ni Eliminar** aquí — el panel de búsqueda no mantiene una copia al segundo del árbol de archivos, así que las acciones destructivas se quedan en el árbol de archivos, donde la vista siempre está actualizada.
+
+Cada entrada **Estilo…** aterriza en la categoría del elemento sobre el que hiciste clic derecho, así que nunca tienes que buscar los controles adecuados. Cada elemento de menú, nombre de categoría y etiqueta de estado aparece en el idioma de interfaz que hayas elegido y se refleja en los diseños de derecha a izquierda.

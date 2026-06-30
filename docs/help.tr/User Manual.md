@@ -1415,3 +1415,33 @@ Constellation bilgiyi *formüle etmek* içindir ve bilgi bağlantıdır. **Öner
 **Kullanımı.** **Önerilen Bağlantılar** başlığı altında, en yakın önce sıralanmış ilgili notları, her birini ortak terimleriyle birlikte göreceksiniz. Bir adayın **Bağla** düğmesine tıklayın → küçük **"Nasıl ilişkililer?"** menüsünde ilişki türünü seçin → türlü bağlantı **anında** oluşturulur ve öneri listeden düşer. Ardından notun **özelliklerinde** yaşar, geri bağlantılarında/giden bağlantılarında ve grafiğin her yerinde görünür. Hiçbiri gerçekten uymuyorsa onları olduğu gibi bırakın — ya da Gözden Geçirme'de notu bilinçli bir **bağımsız** olarak işaretleyin. Önerilen Bağlantılar önerir; kararı siz verirsiniz.
 
 **Yerel, gizli, engellemeyen.** Öneriler yalnızca kütüphanenizden talep üzerine hesaplanır — hiçbir şey cihazınızdan ayrılmaz — ve onların toplanması yazmanızı asla engellemez (çalışırken kısa bir "İlgili notlar bulunuyor…" göreceksiniz). Öneriler, ortak terim ipuçları ve ilişki türleri seçtiğiniz dilde görünür ve sağdan sola yazılar için doğru biçimde yansıtılır.
+
+---
+
+## 24. Bilişsel Renkler ve Sağ Tık Menüleri
+
+### Özellikler stillemesi (Stil Tasarımcısı)
+
+**Stil Tasarımcısı**'nı açın (Ayarlar → Görünüm → ✦ Stil Tasarımcısı'nı Aç ya da kendi sekmesi) ve bir notun frontmatter'ındaki küçük etiketleri yeniden stillemek için **Özellikler** kategorisini seçin. İki öğe: **Özellik etiketleri** (sıradan `tags` tarzı çipler — Etiket arka planı, Etiket metni, Etiket yarıçapı 0–20 px, Yükseklik 14–32 px) ve **Taksonomi rozetleri** (Arka plan, Metin, Yarıçap 0–20 px). Ortadaki canlı bir önizleme siz düzenledikçe güncellenir; her değer tam olarak bugünkü görünümden başlar, böylece bir kontrole dokununcaya kadar hiçbir şey değişmez. Bu Evren için kaydetmek üzere **Keep** tıklayın.
+
+### Bilişsel renkler (Stil Tasarımcısı)
+
+**Bilişsel renkler** kategorisi size **her bilişsel durum için tek bir paylaşılan renk** verir, böylece o durumu gösteren her yüzey uyum sağlar. Beş set:
+
+- **Olgunluk** — Tohum, Fidan, Her dem yeşil, Kanonik, Solan.
+- **Güven** — Hipotez, Kanıt, Yerleşik, Tartışmalı.
+- **Köken** — Alınan, Keşfedilen, Karma, Hiçbiri.
+- **Aşama** — Kıvılcım, Doğuş, Büyüme, Olgunluk, Uyku, Arşivleme.
+- **Eşleşme kategorisi** (bir arama sonucunun neden eşleştiği) — Başlık, İçerik, Etiket, Vikibağlantı, Özellik, Anlamsal, Yapılandırılmış.
+
+Davranış **istek üzerine birleştir**'dir: bir renk seçene kadar hiçbir şey değişmez. Her yüzey mevcut rengini yedek olarak korur ve bir durumun rengini burada belirlediğiniz an, o durumu gösteren **her** yüzey — dosya ağacı, sekmeler, not denetleyicisi, editör içi arama vurgusu, eşleşme rozeti ve arama sonucu vurgusu — aynı anda sizin renginize geçer. Bir durumu dokunulmadan bırakın, tam olarak eskisi gibi görünür. Kaydetmek için **Keep** tıklayın.
+
+### Sağ tık menüleri
+
+Constellation üç yerde bir bağlam menüsü sunar; her biri yalnızca tıkladığınız yere uyan eylemleri sunar:
+
+- **Not gövdesine sağ tıklayın** — Bağlantı ekle / Harici bağlantı; **Biçim ▸** (Kalın, İtalik, Altı Çizili, Üstü çizili, Vurgula, Satır içi kod, Satır içi matematik, Yorumu değiştir, Üst simge, Alt simge, Biçimlendirmeyi temizle); **Paragraf ▸** (Madde işaretli/Numaralı/Görev listesi, H1–H6, Gövde, Alıntı); **Ekle ▸** (Dipnot, Tablo, Uyarı kutusu, Yatay çizgi, Kod bloğu, Matematik bloğu, Resim); Kes / Kopyala / Yapıştır / Düz metin olarak yapıştır / Tümünü seç; ve **Stil…** (Stil Tasarımcısı'nı **Editör** kategorisinde açar).
+- **Bir frontmatter özellik satırına sağ tıklayın** — Değeri kopyala, Adı kopyala, Özelliği kaldır, Özellik ekle; ardından gövdedeki ile aynı düzenleme menüsü; ve Stil Tasarımcısı'nı **Özellikler** kategorisinde açan **Stil…**.
+- **Bir arama sonucuna sağ tıklayın** — **güvenli** bir alt küme: Aç, Yeni sekmede aç, Dosya ağacında göster, Bağlantıyı kopyala, Yolu kopyala, Yer imini ekle, Sistem gezgininde göster, Varsayılan uygulamada aç ve **Stil…** (**Bilişsel renkler** kategorisi). Tasarım gereği burada **Yeniden adlandır, Taşı veya Sil yoktur** — arama paneli dosya ağacının saniye saniye güncel bir kopyasını tutmaz, bu yüzden yıkıcı eylemler görünümün her zaman güncel olduğu dosya ağacında kalır.
+
+Her **Stil…** girişi, sağ tıkladığınız şeyin kategorisine iner, böylece doğru kontrolleri asla aramak zorunda kalmazsınız. Her menü öğesi, kategori adı ve durum etiketi seçtiğiniz arayüz dilinde görünür ve sağdan sola düzenler için yansır.

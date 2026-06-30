@@ -2230,3 +2230,30 @@ Constellation is for *formulating* knowledge, and knowledge is connection. **Sug
 **Using it.** Under the **Suggested connections** heading you'll see related notes ranked closest-first, each with its shared terms. Click a candidate's **Link** button → in the little **"How do they relate?"** menu pick the relationship type → the typed link is created **instantly** and the suggestion drops off the list. It then lives in the note's **properties** and appears in its backlinks/outgoing links and across the graph. If nothing truly fits, leave them — or, in the Reviewer, mark the note a deliberate **standalone**. Suggested Connections proposes; you decide.
 
 **Local, private, non-blocking.** Suggestions are computed on demand from your Library only — nothing leaves your device — and gathering them never blocks your typing (you'll see a brief "Finding related notes…" while it works). The suggestions, the shared-term hints, and the relationship types all appear in your chosen language and mirror correctly for right-to-left scripts.
+
+
+### Properties styling (Style Setter)
+
+Open the **Style Setter** (Settings → Appearance → ✦ Open Style Setter, or its own tab) and pick the **Properties** category to restyle the small tags inside a note's frontmatter. Two elements: **Property tags** (the ordinary `tags`-style chips — Tag background, Tag text, Tag radius 0–20 px, Height 14–32 px) and **Taxonomy pills** (Background, Text, Radius 0–20 px). A live preview in the centre updates as you edit; every value starts at exactly today's look, so nothing changes until you touch a control. Click **Keep** to save for this Universe.
+
+### Cognitive colours (Style Setter)
+
+The **Cognitive colours** category gives you **one shared colour per cognitive state**, so every surface that shows that state agrees. Five sets:
+
+- **Maturity** — Seed, Sapling, Evergreen, Canonical, Wilting.
+- **Confidence** — Hypothesis, Evidence, Established, Contested.
+- **Origin** — Received, Discovered, Mixed, None.
+- **Stage** — Spark, Birth, Growth, Maturity, Dormancy, Archival.
+- **Match category** (why a search result matched) — Title, Content, Tag, Wikilink, Property, Semantic, Structured.
+
+The behaviour is **unify on demand**: nothing changes until you pick a colour. Each surface keeps its current colour as a fallback, and the moment you set a state's colour here, **every** surface that shows that state — file tree, tabs, the note inspector, the in-editor search highlight, the match badge, and the search-result highlight — snaps to your colour at once. Leave a state untouched and it looks exactly as before. Click **Keep** to save.
+
+### Right-click menus
+
+Constellation gives you a context menu in three places, each offering only the actions that fit where you clicked:
+
+- **Right-click the note body** — Add link / Add external link; **Format ▸** (Bold, Italic, Underline, Strikethrough, Highlight, Inline code, Math, Toggle comment, Superscript, Subscript, Clear formatting); **Paragraph ▸** (Bullet/Numbered/Task list, H1–H6, Body, Blockquote); **Insert ▸** (Footnote, Table, Callout, Horizontal rule, Code block, Math block, Image); Cut / Copy / Paste / Paste as plain text / Select all; and **Style…** (opens the Style Setter on the **Editor** category).
+- **Right-click a frontmatter property row** — Copy value, Copy name, Remove property, Add property; then the same editing menu as the body; and **Style…** opening the Style Setter on the **Properties** category.
+- **Right-click a search result** — a **safe** subset: Open, Open in new tab, Reveal in tree, Copy link, Copy path, Bookmark, Show in explorer, Open in default app, and **Style…** (the **Cognitive colours** category). By design there is **no Rename, Move, or Delete** here — the search panel does not keep an up-to-the-second copy of the file tree, so destructive actions stay in the file tree where the view is always current.
+
+Each **Style…** entry lands on the category for the thing you right-clicked, so you never have to hunt for the right controls. Every menu item, category name, and state label appears in your chosen interface language and mirrors for right-to-left layouts.

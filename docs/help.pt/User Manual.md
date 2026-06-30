@@ -1413,5 +1413,33 @@ O Constellation serve para *formular* conhecimento, e o conhecimento é conexão
 
 ---
 
+### Estilização de propriedades (Designer de estilo)
+
+Abra o **Designer de estilo** (Configurações → Aparência → ✦ Abrir Designer de estilo, ou a sua própria aba) e escolha a categoria **Propriedades** para reestilizar as pequenas tags dentro do frontmatter de uma nota. Dois elementos: **Tags de propriedade** (as pílulas comuns no estilo `tags` — Fundo da tag, Texto da tag, Raio da tag 0–20 px, Altura 14–32 px) e **Pílulas de taxonomia** (Fundo, Texto, Raio 0–20 px). Uma pré-visualização ao vivo no centro se atualiza enquanto você edita; cada valor começa exatamente com a aparência de hoje, então nada muda até você tocar em um controle. Clique em **Manter** para salvar neste Universo.
+
+### Cores cognitivas (Designer de estilo)
+
+A categoria **Cores cognitivas** oferece **uma cor compartilhada por estado cognitivo**, de modo que toda superfície que mostra aquele estado concorde. Cinco conjuntos:
+
+- **Maturidade** — Semente, Broto, Perene, Canônica, Murcha.
+- **Confiança** — Hipótese, Evidência, Estabelecido, Contestado.
+- **Origem** — Recebido, Descoberto, Misto, Nenhum.
+- **Estágio** — Faísca, Nascimento, Crescimento, Maturidade, Dormência, Arquivamento.
+- **Categoria de correspondência** (por que um resultado de busca correspondeu) — Título, Conteúdo, Tag, Wikilink, Propriedade, Semântica, Estruturado.
+
+O comportamento é **unificar sob demanda**: nada muda até você escolher uma cor. Cada superfície mantém a sua cor atual como reserva, e no momento em que você define a cor de um estado aqui, **todas** as superfícies que mostram aquele estado — árvore de arquivos, abas, o inspetor da nota, o destaque de busca dentro do editor, o selo de correspondência e o destaque do resultado de busca — passam para a sua cor de uma só vez. Deixe um estado intocado e ele fica exatamente como antes. Clique em **Manter** para salvar.
+
+### Menus de clique direito
+
+O Constellation oferece um menu de contexto em três lugares, cada um oferecendo apenas as ações que se ajustam a onde você clicou:
+
+- **Clique direito no corpo da nota** — Adicionar link / Adicionar link externo; **Formatar ▸** (Negrito, Itálico, Sublinhado, Tachado, Realce, Código em linha, Matemática, Alternar comentário, Sobrescrito, Subscrito, Limpar formatação); **Parágrafo ▸** (Lista com marcadores/numerada/de tarefas, H1–H6, Corpo, Citação em bloco); **Inserir ▸** (Nota de rodapé, Tabela, Callout, Régua horizontal, Bloco de código, Bloco de matemática, Imagem); Recortar / Copiar / Colar / Colar como texto simples / Selecionar tudo; e **Estilo…** (abre o Designer de estilo na categoria **Editor**).
+- **Clique direito em uma linha de propriedade do frontmatter** — Copiar valor, Copiar nome, Remover propriedade, Adicionar propriedade; depois o mesmo menu de edição do corpo; e **Estilo…** abrindo o Designer de estilo na categoria **Propriedades**.
+- **Clique direito em um resultado de busca** — um subconjunto **seguro**: Abrir, Abrir em nova aba, Revelar na árvore, Copiar link, Copiar caminho, Marcar, Mostrar no explorador, Abrir no aplicativo padrão e **Estilo…** (a categoria **Cores cognitivas**). Por design **não há Renomear, Mover ou Excluir** aqui — o painel de busca não mantém uma cópia atualizada ao segundo da árvore de arquivos, então as ações destrutivas permanecem na árvore de arquivos, onde a visão está sempre atual.
+
+Cada entrada **Estilo…** cai na categoria do que você clicou com o botão direito, então você nunca precisa caçar os controles certos. Cada item de menu, nome de categoria e rótulo de estado aparece no idioma de interface escolhido e espelha para layouts da direita para a esquerda.
+
+---
+
 *Manual do Usuario do Constellation — Versao 0.1.0 — Marco 2026*
 *uconstellation.world*
