@@ -31,4 +31,17 @@
 - **Style Setter** (`src/lib/components/StyleSetter.svelte`): new `callouts` ELEMENTS entry (10 colour controls) + added to the `editor` category element list + a `pk==='callouts'` legend preview (mirrors the Phase-2 `cogMatch` legend; each swatch reads `var(--callout-X-color, hex)` so it re-colours live).
 - **i18n** (`wf_5962d918-6d4`, 14 native localizers): 9 new `styleSetter.labels` slugs (callouts/note/abstract/tip/question/failure/danger/example/quote) added ×15 (en + 14), each matched to its locale's existing `success`/`warning` siblings + the app's established callout term. Byte-identical JSON round-trip (verified en/ar/zh); +9 keys/file, clean diff.
 - **Verify:** `svelte-check` 0 errors (318 pre-existing CSS warnings, none from §3a). Frontend build ✓ (40.8s); embed confirmed (`callout-note-color`, ar `التنويهات`, fr `Encadrés` all in `build/`). Apply path confirmed: `+layout.svelte:1985` writes the Setter draft to `document.body.style` (single BUG-015 writer) → CM6 callout DOM inherits `--callout-*-color`.
-- **Commit:** `<§3a hash>` — awaiting Boss test (release binary building).
+- **Commit:** `d395673f` — **Boss PASS** (2026-06-30). Release binary `06:34:53` (mtime > source ✓).
+- **Boss follow-ups raised at the §3a test (3):**
+  1. **Custom callouts** — let a user ADD their own callout type (beyond the built-in 10).
+  2. **Per-type icons** — change/add each callout type's icon, from an icon database the user browses (→ reuse the existing `EmojiIconPicker`).
+  3. **DISCOVERY (safety gap):** the Setter has ONLY a universal Reset → resetting one element nukes the whole theme ("disaster"). Need a **per-element Reset** button. → Fix-what-you-discover: build FIRST (universal, protects every element).
+
+## §3b-pre — Per-element Reset (the discovery fix) — BUILT (awaiting Boss test)
+
+**Concept (horse):** a user tweaking ONE element must be able to revert *just that element* without nuking their whole theme. The lone universal Reset is a footgun (Eisa: "disaster").
+
+- **store.ts:** new `clearStyleOverrideKeys(keys[])` — batch-removes named vars from the per-Universe `styleOverride` (one update + save + emit). Sibling to the existing single-key `clearStyleOverride`.
+- **StyleSetter.svelte:** `selVars` ($derived) = the selected element's CSS-var keys, expanding `--interactive-accent` → its 5 decomposed keys (the Keep-time `mergedDraft` derivation). `selHasOverride` = any selVar set in draft OR saved `styleOverride`. `resetElement()` drops those keys from `draft` + calls `clearStyleOverrideKeys` → the +layout apply effect (styleOverride) and the live $effect (draft) both re-apply, reverting **only** that element. New **"↺ Reset this element"** button in the right-rail header (disabled when nothing's overridden; tooltip explains). Universal Reset untouched (still resets all). Settings-backed controls (appnum/toggle/scriptfont/pill*) are out of scope (they write appSettings, not the styleOverride layer).
+- **i18n ×15:** 3 new slugs (`reset_this_element` + 2 tooltips), each reusing its locale's existing `reset` term for consistency. Byte-identical round-trip, +3 keys/file.
+- **Verify:** `svelte-check` 0 errors. Frontend build + embed: <pending>. Commit: <pending>.

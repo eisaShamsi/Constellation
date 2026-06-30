@@ -21,7 +21,7 @@
 	// MIG-070 §C polish (Item A) — real font choices: the shared catalogue (curated floor + the user's
 	// installed fonts via queryLocalFonts), reused from Settings. Drives the font pickers + live preview.
 	import { systemFonts, ensureSystemFonts, fontFamilyValue } from '$lib/fonts';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, renameStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, clearStyleOverrideKeys, addStyleSwatch, removeStyleSwatch, renameStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
@@ -916,6 +916,31 @@
 		// MIG-070 §C — clear the persisted per-Universe override → back to the pure theme look.
 		clearAllStyleOverride();
 	}
+	// MIG-088 §3b-pre — PER-ELEMENT reset (Eisa: the universal Reset nuking the whole theme is a
+	// footgun). `--interactive-accent` is decomposed into 5 derived keys at Keep (mergedDraft), so an
+	// accent reset must clear those too. Settings-backed controls (appnum/toggle/scriptfont/pill*)
+	// write appSettings, not the styleOverride layer, so they're out of this CSS-var-only reset.
+	const ACCENT_DERIVED = ['--accent-h', '--accent-s', '--accent-l', '--text-accent', '--interactive-accent-hover'];
+	function elementVars(el: { controls: Ctrl[] }): string[] {
+		const vars = el.controls.flatMap((c) => ('var' in c && c.var ? [c.var] : []));
+		if (vars.includes('--interactive-accent')) vars.push(...ACCENT_DERIVED);
+		return vars;
+	}
+	// The selected element's CSS-var keys, and whether ANY is currently overridden (draft or saved).
+	const selVars = $derived(sel ? elementVars(sel) : []);
+	const selHasOverride = $derived(
+		selVars.some((v) => v in draft || (($appSettings.styleOverride ?? {})[v] !== undefined)),
+	);
+	// Reset ONLY this element: drop its vars from the draft + the persisted per-Universe override.
+	// The +layout apply effect (styleOverride) and the live $effect (draft) both re-apply, removing
+	// exactly these keys → that element reverts to the theme/fallback look; nothing else moves.
+	function resetElement() {
+		if (!selVars.length) return;
+		const next = { ...draft };
+		for (const v of selVars) delete next[v];
+		draft = next;
+		clearStyleOverrideKeys(selVars);
+	}
 
 	// MIG-070 §C Option E — LIVE preview: while the Setter is open on a non-Editor category, push the
 	// draft to the REAL app via the transient layer (the real chrome IS the preview). On the Editor
@@ -1347,7 +1372,12 @@
 			<aside class="ss-right">
 				{#if sel}
 					<div class="ss-rlabel">{L('Selected element')}</div>
-					<div class="ss-selname">{L(sel.name)}</div>
+					<div class="ss-selname-row">
+						<div class="ss-selname">{L(sel.name)}</div>
+						<!-- MIG-088 §3b-pre — reset ONLY this element (safe; never touches other elements). -->
+						<button class="ss-el-reset" disabled={!selHasOverride} onclick={resetElement}
+							title={selHasOverride ? L('Reset this element to the theme default') : L('Nothing to reset on this element')}>↺ {L('Reset this element')}</button>
+					</div>
 						{#if GLOBAL_ELS.has(selected ?? '')}
 							<!-- §C Option E item C — inline composite preview for the Global atoms. A sample card
 							     built from the Global CSS vars; the .ss wrapper carries the draft, so every shade /
@@ -1710,7 +1740,12 @@
 		color: var(--cns-label-text, #ffffff);
 	}
 	.ss-right { grid-area: right; border-left: 1px solid var(--c-border); background: var(--c-surface); padding: 14px; overflow-y: auto; }
-	.ss-selname { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+	.ss-selname { font-size: 16px; font-weight: 700; }
+	/* MIG-088 §3b-pre — element header row: name on the start, per-element Reset on the end. */
+	.ss-selname-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+	.ss-el-reset { flex: none; font: inherit; font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-muted); cursor: pointer; white-space: nowrap; }
+	.ss-el-reset:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-accent); }
+	.ss-el-reset:disabled { opacity: .4; cursor: default; }
 	.ss-ctrl { margin-bottom: 14px; }
 	.ss-ctrl label { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--c-muted); margin-bottom: 5px; }
 	.ss-rval { font-variant-numeric: tabular-nums; color: var(--c-text); font-weight: 600; }

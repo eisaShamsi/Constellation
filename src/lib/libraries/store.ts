@@ -4549,6 +4549,21 @@ export function clearStyleOverride(key: string) {
 	emit('screen:settings-changed', get(appSettings)).catch(() => {});
 }
 
+/** MIG-088 §3b-pre — clear MANY per-Universe overrides at once (the Style Setter's PER-ELEMENT
+ *  "Reset this element"): one settings update + one save + one emit. Reverts exactly the named
+ *  vars to the theme/fallback look, leaving every other element's overrides untouched. */
+export function clearStyleOverrideKeys(keys: string[]) {
+	appSettings.update(s => {
+		const cur = s.styleOverride ?? {};
+		if (!keys.some(k => k in cur)) return s;
+		const next = { ...cur };
+		for (const k of keys) delete next[k];
+		return { ...s, styleOverride: next };
+	});
+	saveSettings();
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
 /** MIG-070 §C — merge many overrides at once (the Style Setter's "Apply"): ONE settings
  *  update + one save + one emit, so applying a whole draft doesn't re-run the apply effect
  *  per key. */

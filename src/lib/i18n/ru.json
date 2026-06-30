@@ -3636,7 +3636,10 @@
       "failure": "Неудача",
       "danger": "Опасность",
       "example": "Пример",
-      "quote": "Цитата"
+      "quote": "Цитата",
+      "reset_this_element": "Сбросить этот элемент",
+      "reset_this_element_to_the_theme_default": "Сбросить этот элемент к значению темы по умолчанию",
+      "nothing_to_reset_on_this_element": "Нечего сбрасывать у этого элемента"
     }
   },
   "reviewer": {

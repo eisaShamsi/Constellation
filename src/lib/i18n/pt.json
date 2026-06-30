@@ -3636,7 +3636,10 @@
       "failure": "Falha",
       "danger": "Perigo",
       "example": "Exemplo",
-      "quote": "Citação"
+      "quote": "Citação",
+      "reset_this_element": "Redefinir este elemento",
+      "reset_this_element_to_the_theme_default": "Redefinir este elemento para o padrão do tema",
+      "nothing_to_reset_on_this_element": "Nada para redefinir neste elemento"
     }
   },
   "reviewer": {

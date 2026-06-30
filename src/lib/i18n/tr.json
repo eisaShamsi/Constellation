@@ -3636,7 +3636,10 @@
       "failure": "Başarısızlık",
       "danger": "Tehlike",
       "example": "Örnek",
-      "quote": "Alıntı"
+      "quote": "Alıntı",
+      "reset_this_element": "Bu öğeyi sıfırla",
+      "reset_this_element_to_the_theme_default": "Bu öğeyi tema varsayılanına sıfırla",
+      "nothing_to_reset_on_this_element": "Bu öğede sıfırlanacak bir şey yok"
     }
   },
   "reviewer": {

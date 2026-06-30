@@ -3636,7 +3636,10 @@
       "failure": "失败",
       "danger": "危险",
       "example": "示例",
-      "quote": "引用"
+      "quote": "引用",
+      "reset_this_element": "重置此元素",
+      "reset_this_element_to_the_theme_default": "将此元素重置为主题默认值",
+      "nothing_to_reset_on_this_element": "此元素没有可重置的更改"
     }
   },
   "reviewer": {

@@ -3636,7 +3636,10 @@
       "failure": "विफलता",
       "danger": "ख़तरा",
       "example": "उदाहरण",
-      "quote": "उद्धरण"
+      "quote": "उद्धरण",
+      "reset_this_element": "यह तत्व रीसेट करें",
+      "reset_this_element_to_the_theme_default": "यह तत्व थीम डिफ़ॉल्ट पर रीसेट करें",
+      "nothing_to_reset_on_this_element": "इस तत्व पर रीसेट करने को कुछ नहीं"
     }
   },
   "reviewer": {

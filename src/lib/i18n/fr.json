@@ -3636,7 +3636,10 @@
       "failure": "Échec",
       "danger": "Danger",
       "example": "Exemple",
-      "quote": "Citation"
+      "quote": "Citation",
+      "reset_this_element": "Réinitialiser cet élément",
+      "reset_this_element_to_the_theme_default": "Réinitialiser cet élément au thème par défaut",
+      "nothing_to_reset_on_this_element": "Rien à réinitialiser sur cet élément"
     }
   },
   "reviewer": {

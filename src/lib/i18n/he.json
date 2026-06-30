@@ -3636,7 +3636,10 @@
       "failure": "כשל",
       "danger": "סכנה",
       "example": "דוגמה",
-      "quote": "ציטוט"
+      "quote": "ציטוט",
+      "reset_this_element": "איפוס אלמנט זה",
+      "reset_this_element_to_the_theme_default": "איפוס אלמנט זה לברירת המחדל של ערכת הנושא",
+      "nothing_to_reset_on_this_element": "אין מה לאפס באלמנט זה"
     }
   },
   "reviewer": {

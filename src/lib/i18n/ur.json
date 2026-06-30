@@ -3636,7 +3636,10 @@
       "failure": "ناکامی",
       "danger": "خطرہ",
       "example": "مثال",
-      "quote": "اقتباس"
+      "quote": "اقتباس",
+      "reset_this_element": "یہ عنصر ری سیٹ کریں",
+      "reset_this_element_to_the_theme_default": "اس عنصر کو تھیم کے ڈیفالٹ پر ری سیٹ کریں",
+      "nothing_to_reset_on_this_element": "اس عنصر پر ری سیٹ کرنے کے لیے کچھ نہیں"
     }
   },
   "reviewer": {

@@ -3768,7 +3768,10 @@
       "failure": "إخفاق",
       "danger": "خطر",
       "example": "مثال",
-      "quote": "اقتباس"
+      "quote": "اقتباس",
+      "reset_this_element": "إعادة تعيين هذا العنصر",
+      "reset_this_element_to_the_theme_default": "إعادة تعيين هذا العنصر إلى افتراضي السمة",
+      "nothing_to_reset_on_this_element": "لا شيء لإعادة تعيينه في هذا العنصر"
     }
   },
   "reviewer": {

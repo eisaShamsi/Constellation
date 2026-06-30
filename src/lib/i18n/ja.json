@@ -3636,7 +3636,10 @@
       "failure": "失敗",
       "danger": "危険",
       "example": "例",
-      "quote": "引用"
+      "quote": "引用",
+      "reset_this_element": "この要素をリセット",
+      "reset_this_element_to_the_theme_default": "この要素をテーマのデフォルトにリセット",
+      "nothing_to_reset_on_this_element": "この要素にリセットする変更はありません"
     }
   },
   "reviewer": {
