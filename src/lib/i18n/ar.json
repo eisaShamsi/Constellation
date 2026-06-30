@@ -3381,6 +3381,14 @@
   },
   "styleSetter": {
     "labels": {
+      "highlight": "تمييز",
+      "syntax_tokens": "رموز البنية",
+      "editor_badges": "شارات المحرر",
+      "url": "URL",
+      "punctuation": "علامات الترقيم",
+      "lens_count_text": "نص عدد العدسة",
+      "badge_radius": "انحناء الشارة",
+      "recent_ideas": "الأفكار الحديثة",
       "3d_gizmo": "أداة 3D",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "فاكهة تفّاحية مقرمشة — حلوة، لاذعة، ولا غنى عنها أبدًا.",
       "a_day_pairs_with_a": "في اليوم تقترن بـ",

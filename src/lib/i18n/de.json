@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "highlight": "Hervorhebung",
+      "syntax_tokens": "Syntaxmarkierungen",
+      "editor_badges": "Editor-Badges",
+      "url": "URL",
+      "punctuation": "Satzzeichen",
+      "lens_count_text": "Linsen-Anzahltext",
+      "badge_radius": "Badge-Radius",
+      "recent_ideas": "Aktuelle Ideen",
       "3d_gizmo": "3D-Gizmo",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Eine knackige Kernobstfrucht — süß, säuerlich und unendlich vielseitig.",
       "a_day_pairs_with_a": "pro Tag passt zu einer",

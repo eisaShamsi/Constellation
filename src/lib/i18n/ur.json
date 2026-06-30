@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "highlight": "نمایاں کاری",
+      "syntax_tokens": "نحوی نشانات",
+      "editor_badges": "ایڈیٹر بیجز",
+      "url": "URL",
+      "punctuation": "رموزِ اوقاف",
+      "lens_count_text": "عدسے کی گنتی",
+      "badge_radius": "بیج کا گولائی",
+      "recent_ideas": "حالیہ خیالات",
       "3d_gizmo": "3D گیزمو",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "ایک کرارا سیب — میٹھا، کھٹا، اور بے حد کارآمد۔",
       "a_day_pairs_with_a": "روزانہ ساتھ دیتا ہے ایک",

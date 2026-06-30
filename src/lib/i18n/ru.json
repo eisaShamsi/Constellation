@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "highlight": "Выделение",
+      "syntax_tokens": "Токены синтаксиса",
+      "editor_badges": "Значки редактора",
+      "url": "URL",
+      "punctuation": "Пунктуация",
+      "lens_count_text": "Текст счётчика линзы",
+      "badge_radius": "Скругление значков",
+      "recent_ideas": "Недавние идеи",
       "3d_gizmo": "3D-гизмо",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Хрусткий семечковый плод — сладкий, кисловатый и бесконечно полезный.",
       "a_day_pairs_with_a": "в день сочетается с",

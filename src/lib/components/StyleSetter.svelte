@@ -252,6 +252,20 @@
 			{ label: 'Danger', type: 'color', var: '--callout-danger-color' },
 			{ label: 'Example', type: 'color', var: '--callout-example-color' },
 			{ label: 'Quote', type: 'color', var: '--callout-quote-color' } ] },
+		// MIG-088 §3b — Highlight (unify-on-demand). One bg + radius shared by <mark>, markdown ==,
+		// and the toolbar chip (each keeps its own fallback in the component → byte-identical until set).
+		highlight: { name: 'Highlight', controls: [
+			{ label: 'Background', type: 'color', var: '--highlight-bg' },
+			{ label: 'Radius', type: 'range', var: '--highlight-radius', min: 0, max: 12, step: 1, unit: 'px', def: 2 } ] },
+		// MIG-088 §3c — Syntax tokens. URL colour + the frontmatter-fence/meta grey (one shared var).
+		syntax: { name: 'Syntax tokens', controls: [
+			{ label: 'URL', type: 'color', var: '--url-color' },
+			{ label: 'Punctuation', type: 'color', var: '--syntax-meta-color' } ] },
+		// MIG-088 §3d — Editor badges. Lens-count text colour (the last hardcoded editor colour) + the
+		// shared badge radius (lens count + the wikilink ×N traversal chip).
+		badges: { name: 'Editor badges', controls: [
+			{ label: 'Lens count text', type: 'color', var: '--lens-count-color' },
+			{ label: 'Badge radius', type: 'range', var: '--editor-badge-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
 		gBackgrounds: { name: 'Backgrounds', controls: [
 			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
@@ -574,7 +588,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
-		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'caret'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'badges', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
@@ -634,7 +648,7 @@
 	// §C — the centre preview replicates the EXACT selected element (Eisa). Note/tree/global
 	// elements share a sample shape; chrome widgets each have their own. (Heavy surfaces —
 	// sky/org/index — keep their own alt preview, keyed on activeSurface below.)
-	const NOTE_ELS = new Set(['noteBg', 'text', 'breadcrumb', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent']);
+	const NOTE_ELS = new Set(['noteBg', 'text', 'breadcrumb', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent', 'highlight', 'syntax', 'badges']);
 	const TREE_ELS = new Set(['interface', 'fileTree', 'library', 'folder', 'cuniverse']);
 	const GLOBAL_ELS = new Set(['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape']);
 	const pk = $derived(
@@ -1249,6 +1263,18 @@
 								<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={() => selectEl('h5')}>H5</span>
 								<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={() => selectEl('h6')}>H6</span>
 							</span>
+							<!-- MIG-088 §3b/§3c — Highlight chip + Syntax tokens (URL cyan + frontmatter/meta grey),
+							     each reading the same draft vars as the real editor so they re-colour live. -->
+							<span class="ss-synrow">
+								<span class="ss-hl ss-hot2" class:ss-sel={selected === 'highlight'} onclick={() => selectEl('highlight')}>{L('highlight')}</span>
+								<span class="ss-url ss-hot2" class:ss-sel={selected === 'syntax'} onclick={() => selectEl('syntax')}>https://constellation.app</span>
+								<span class="ss-meta ss-hot2" class:ss-sel={selected === 'syntax'} onclick={() => selectEl('syntax')}>--- tags: idea ---</span>
+							</span>
+							<!-- MIG-088 §3d — Editor badges: a lens block header mimic (name + count pill). -->
+							<span class="ss-lensrow ss-hot2" class:ss-sel={selected === 'badges'} onclick={() => selectEl('badges')}>
+								<span class="ss-lensname">{L('Recent ideas')}</span>
+								<span class="ss-lenscount">12</span>
+							</span>
 						</div>
 					{:else if pk === 'callouts'}
 						<!-- MIG-089 — the UNIFIED Callouts manager fills the centre zone (Full-Center-Zone
@@ -1635,6 +1661,15 @@
 	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: var(--link-decoration, underline); }
 	.ss-pill { display: inline-flex; align-items: center; background: var(--interactive-accent, #4a9eff); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 9px; text-transform: lowercase; }
 	.ss-quote { display: block; color: var(--blockquote-text-color, var(--text-muted, #8a8a8a)); font-style: italic; border-inline-start: 3px solid color-mix(in srgb, var(--blockquote-text-color, var(--text-muted, #8a8a8a)) 60%, transparent); padding-inline-start: 9px; }
+	/* MIG-088 §3b/§3c/§3d — editor-extras preview samples; each reads the SAME draft var as the real
+	   editor surface (with today's value as the fallback) so they re-colour live. */
+	.ss-synrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+	.ss-hl { background: var(--highlight-bg, #fef08a); border-radius: var(--highlight-radius, 2px); padding: 1px 4px; }
+	.ss-url { color: var(--url-color, #0891b2); text-decoration: underline; }
+	.ss-meta { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: 12px; color: var(--syntax-meta-color, #888); }
+	.ss-lensrow { display: inline-flex; align-self: flex-start; align-items: baseline; gap: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--background-modifier-border, #e0e0e0); }
+	.ss-lensname { font-size: 0.95em; font-weight: 600; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
+	.ss-lenscount { font-size: 0.75em; font-weight: 600; color: var(--lens-count-color, #fff); background: var(--interactive-accent, var(--library-accent, #6c5ce7)); padding: 1px 8px; border-radius: var(--editor-badge-radius, 10px); }
 	/* Hover/selected rings drawn INSIDE the element (inset box-shadow) so they're never clipped
 	   by the preview's overflow:hidden — that was why the edge-touching sidebar/note showed nothing. */
 	.ss-hot { cursor: pointer; } .ss-hot:hover { box-shadow: inset 0 0 0 2px #9d8dff; }

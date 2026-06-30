@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "highlight": "ハイライト",
+      "syntax_tokens": "構文トークン",
+      "editor_badges": "エディタバッジ",
+      "url": "URL",
+      "punctuation": "記号・区切り",
+      "lens_count_text": "レンズ件数テキスト",
+      "badge_radius": "バッジの角丸",
+      "recent_ideas": "最近のアイデア",
       "3d_gizmo": "3D ギズモ",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "パリッとした仁果——甘くて、酸っぱくて、使い道は無限。",
       "a_day_pairs_with_a": "は",

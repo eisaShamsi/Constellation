@@ -91,7 +91,7 @@ class WikilinkTraversalChipWidget extends WidgetType {
 		el.setAttribute('style',
 			'display:inline-flex;align-items:center;margin:0 3px;padding:0 6px;' +
 			'font-size:0.6rem;font-weight:700;line-height:1;height:15px;' +
-			'border-radius:8px;font-variant-numeric:tabular-nums;' +
+			'border-radius:var(--editor-badge-radius, 8px);font-variant-numeric:tabular-nums;' + /* MIG-088 §3d — shared editor-badge radius */
 			'letter-spacing:0.02em;vertical-align:middle;' +
 			'color:' + WIKILINK_CHIP_ACCENT + ';' +
 			'background:color-mix(in srgb,' + WIKILINK_CHIP_ACCENT + ' 14%, transparent);' +
@@ -1768,10 +1768,13 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-html-u':    { textDecoration: 'underline' },
 	'.cm-html-sub':  { fontSize: '0.75em', verticalAlign: 'sub' },
 	'.cm-html-sup':  { fontSize: '0.75em', verticalAlign: 'super' },
-	'.cm-html-mark': { backgroundColor: '#fef08a', borderRadius: '2px' },
+	// MIG-088 §3b — Highlight (unify-on-demand): HTML <mark>, markdown ==, and the toolbar chip
+	// (NotePane .e-tb-hl) all wire to one shared bg + radius, each keeping ITS exact current value
+	// as the fallback → byte-identical until the user sets the shared var, then all three snap to it.
+	'.cm-html-mark': { backgroundColor: 'var(--highlight-bg, #fef08a)', borderRadius: 'var(--highlight-radius, 2px)' },
 	'.cm-md-highlight': {
-		backgroundColor: 'color-mix(in srgb, var(--color-yellow) 35%, transparent)',
-		borderRadius: '2px',
+		backgroundColor: 'var(--highlight-bg, color-mix(in srgb, var(--color-yellow) 35%, transparent))',
+		borderRadius: 'var(--highlight-radius, 2px)',
 		padding: '1px 0',
 	},
 	'.cm-md-hr': {
@@ -1904,10 +1907,12 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-lens-count': {
 		fontSize: '0.75em',
 		fontWeight: '600',
-		color: '#fff',
+		// MIG-088 §3d — Editor badges: the last hardcoded editor colour (#fff) + the badge radius
+		// become Style-Setter vars; the badge radius is shared with the wikilink ×N traversal chip.
+		color: 'var(--lens-count-color, #fff)',
 		background: 'var(--interactive-accent, var(--library-accent, #6c5ce7))',
 		padding: '1px 8px',
-		borderRadius: '10px',
+		borderRadius: 'var(--editor-badge-radius, 10px)',
 	},
 	'.cm-lens-empty': {
 		color: 'var(--text-muted)',

@@ -55,9 +55,12 @@
 		{ tag: tags.strikethrough, textDecoration: 'line-through', textDecorationColor: 'var(--strikethrough-color, currentColor)', textDecorationThickness: 'var(--strikethrough-thickness, auto)' },
 		{ tag: tags.monospace, color: 'var(--code-normal, #16a34a)' },
 		{ tag: tags.link, color: 'var(--link-color, #2563eb)' },
-		{ tag: tags.url, color: '#0891b2' },
-		{ tag: tags.processingInstruction, color: '#888' }, /* frontmatter fences */
-		{ tag: tags.meta, color: '#888' },
+		/* MIG-088 §3c — Syntax tokens: the URL colour + the frontmatter-fence / meta grey become
+		   Style-Setter vars (fence + meta share one var — same colour, same structural-punctuation
+		   family). Byte-identical fallbacks; this HighlightStyle wins over the theme so it owns them. */
+		{ tag: tags.url, color: 'var(--url-color, #0891b2)' },
+		{ tag: tags.processingInstruction, color: 'var(--syntax-meta-color, #888)' }, /* frontmatter fences */
+		{ tag: tags.meta, color: 'var(--syntax-meta-color, #888)' },
 	]);
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
@@ -1618,7 +1621,10 @@
 	.e-tb { display: flex; align-items: center; justify-content: center; gap: 2px; width: 28px; height: 28px; border: none; background: none; border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-family: inherit; }
 	.e-tb:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 	.e-tb.mono { font-family: var(--font-monospace-theme, monospace); font-size: 11px; }
-	.e-tb-hl { background: #fef08a; padding: 0 3px; border-radius: 2px; color: #1a1a1a; font-size: 12px; }
+	/* MIG-088 §3b — shares the editor highlight bg + radius. Text colour MIRRORS the body highlight
+	   (.cm-md-highlight/.cm-html-mark set no colour → inherit --editor-text-color), so the chip stays
+	   readable on any user-chosen --highlight-bg (incl. a dark one) instead of a fixed dark literal. */
+	.e-tb-hl { background: var(--highlight-bg, #fef08a); padding: 0 3px; border-radius: var(--highlight-radius, 2px); color: var(--editor-text-color, var(--text-normal, #1a1a1a)); font-size: 12px; }
 	.e-tb-sep { width: 1px; height: 18px; background: var(--background-modifier-border); margin: 0 4px; }
 	.e-tb.e-tb-off { opacity: 0.35; }
 	.e-toolbar[dir="rtl"] .e-tb-flip svg { transform: scaleX(-1); }
