@@ -186,6 +186,7 @@
 					class="dialog-input"
 					class:dialog-input-error={validationError && name.length > 0}
 					type="text"
+					dir="auto"
 					bind:value={name}
 					bind:this={inputEl}
 					autocomplete="off"

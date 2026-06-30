@@ -169,3 +169,20 @@
   --accent-bg:      var(--background-secondary-alt);
   --danger:         var(--text-error);
 }
+
+/* ═══════════════════════════════════════════════════════
+   Language-First — global bidi correctness for text inputs
+   ───────────────────────────────────────────────────────
+   MIG-089 audit (wf_463a3f8c-047): the editor body uses
+   `unicode-bidi: plaintext` on .cm-line for correct caret /
+   Home-End / double-click on mixed Arabic-Latin text — but NO
+   plain <input>/<textarea> had it, so every field re-introduced
+   the bug. This zero-specificity default (:where) gives every
+   text field the same caret-repair; any component rule still
+   wins. Pairs with dir="auto" on the inputs for base direction.
+   Excludes color/range/checkbox/number/date/file (not text). */
+input:where([type="text"], [type="search"], [type="url"], [type="email"], [type="tel"], [type="password"], :not([type])),
+textarea {
+  unicode-bidi: plaintext;
+  text-align: start;
+}

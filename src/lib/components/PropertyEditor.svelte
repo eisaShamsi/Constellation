@@ -870,7 +870,7 @@
 				<span class="pe-key pe-key-special">{prop.key}</span>
 			{:else}
 				<div class="pe-key-wrap">
-					<input class="pe-key" type="text" value={prop.key}
+					<input class="pe-key" type="text" dir="auto" value={prop.key}
 						placeholder={$t('propertyEditor.keyPlaceholder')}
 						oninput={(e) => { updateKey(idx, (e.target as HTMLInputElement).value); suggestHighlight = 0; }}
 						onfocus={() => { focusedKeyIdx = idx; suggestHighlight = 0; }}
@@ -971,6 +971,7 @@
 					<input
 						class="pe-val pe-stage-input"
 						type="text"
+						dir="auto"
 						value={prop.value}
 						placeholder={$t('propertyEditor.stagePlaceholder')}
 						oninput={(e) => { updateValue(idx, (e.target as HTMLInputElement).value); stageUserNavigated = false; stageMenuOpen = idx; }}
@@ -1024,7 +1025,7 @@
 							</span>
 						{/each}
 					{/if}
-					<input class="pe-tag-input" type="text"
+					<input class="pe-tag-input" type="text" dir="auto"
 						placeholder={isEmpty ? $t('propertyEditor.empty') : $t('propertyEditor.addPlaceholder')}
 						value={tagInputs[idx] ?? ''}
 						oninput={(e) => { tagInputs = { ...tagInputs, [idx]: (e.target as HTMLInputElement).value }; }}
@@ -1041,7 +1042,7 @@
 						</button>
 					{:else}
 						<span class="pe-link-bracket">[[</span>
-						<input class="pe-val pe-link-input" type="text"
+						<input class="pe-val pe-link-input" type="text" dir="auto"
 							size={Math.max((linkName?.length ?? 0) + 1, 5)}
 							placeholder={$t('propertyEditor.empty')}
 							value={linkName}
@@ -1092,7 +1093,7 @@
 					</button>
 				</div>
 			{:else}
-				<input class="pe-val" type="text" value={prop.value}
+				<input class="pe-val" type="text" dir="auto" value={prop.value}
 					placeholder={$t('propertyEditor.empty')}
 					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
 			{/if}

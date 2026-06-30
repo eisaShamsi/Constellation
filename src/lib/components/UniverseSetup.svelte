@@ -394,6 +394,7 @@
 					<span class="us-label">{$t('universe.setup.nameLabel')}</span>
 					<input
 						type="text"
+						dir="auto"
 						bind:this={nameInput}
 						bind:value={universeName}
 						placeholder={$t('universe.setup.namePlaceholder')}
@@ -555,7 +556,7 @@
 			<div class="us-form">
 				<label class="us-field">
 					<span class="us-label">{$t('universe.setup.nameLabel')}</span>
-					<input type="text" bind:value={universeName} placeholder={$t('universe.setup.namePlaceholder')} />
+					<input type="text" dir="auto" bind:value={universeName} placeholder={$t('universe.setup.namePlaceholder')} />
 				</label>
 
 				<label class="us-field">

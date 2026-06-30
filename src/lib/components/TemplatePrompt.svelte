@@ -43,6 +43,7 @@
 			bind:this={inputEl}
 			type="text"
 			class="tpl-prompt-input"
+			dir="auto"
 			bind:value={value}
 			onkeydown={handleKeydown}
 			placeholder={defaultValue || ''}

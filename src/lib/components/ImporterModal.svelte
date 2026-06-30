@@ -121,7 +121,7 @@
 					</label>
 					<label class="import-label">
 						{$t('importer.subfolder')}
-						<input type="text" bind:value={subfolder} placeholder="Imported" />
+						<input type="text" dir="auto" bind:value={subfolder} placeholder="Imported" />
 					</label>
 				</div>
 

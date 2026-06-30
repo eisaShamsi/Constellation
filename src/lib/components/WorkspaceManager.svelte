@@ -55,6 +55,7 @@
 		<div class="ws-save">
 			<input
 				type="text"
+				dir="auto"
 				bind:value={newName}
 				placeholder={$t('workspacesPanel.namePlaceholder')}
 				onkeydown={(e) => { if (e.key === 'Enter') handleSave(); }}

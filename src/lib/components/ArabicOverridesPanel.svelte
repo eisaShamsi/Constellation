@@ -311,6 +311,7 @@
 				<input
 					id="aop-note"
 					type="text"
+					dir="auto"
 					bind:value={formNote}
 					placeholder={$t('settings.arabicOverrides.notePlaceholder') ||
 						'Why does this override exist? (optional)'}

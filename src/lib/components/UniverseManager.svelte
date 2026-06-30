@@ -210,6 +210,7 @@
 				<div class="um-create-form">
 					<input
 						type="text"
+						dir="auto"
 						bind:value={newName}
 						placeholder={$t('universe.setup.namePlaceholder')}
 					/>

@@ -87,6 +87,7 @@
 							<input
 								class="rename-input"
 								type="text"
+								dir="auto"
 								bind:value={renameValue}
 								onblur={() => finishRename(entry)}
 								onkeydown={(e) => handleRenameKeydown(e, entry)}
@@ -109,6 +110,7 @@
 						<input
 							class="rename-input"
 							type="text"
+							dir="auto"
 							bind:value={renameValue}
 							onblur={() => finishRename(entry)}
 							onkeydown={(e) => handleRenameKeydown(e, entry)}

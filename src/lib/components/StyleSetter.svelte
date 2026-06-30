@@ -1022,7 +1022,7 @@
 			<header class="ss-top">
 				<span class="ss-brand"><span class="ss-star">✦</span> {L('Style Setter')}</span>
 				{#if twoZone}<span class="ss-livetag" title={L('Your edits show on the real app live — Keep to save, Discard to revert')}>● {L('live')}</span>{/if}
-				<span class="ss-draft">{L('draft')}: <input class="ss-dname" bind:value={draftName} /></span>
+				<span class="ss-draft">{L('draft')}: <input class="ss-dname" dir="auto" bind:value={draftName} /></span>
 				<span class="ss-spacer"></span>
 				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title={L('Inspect — hover the real app and click a part to jump to its controls')}>⌖ {L('Inspect')}</button>
 				<button class="ss-btn" onclick={resetDraft} title={L('Clear all overrides — back to the theme default')}>{L('Reset')}</button>
