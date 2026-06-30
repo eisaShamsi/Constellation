@@ -1017,7 +1017,7 @@
 		{/if}
 	{/if}
 	<div class="ss-overlay" class:ss-overlay--live={twoZone} class:ss-overlay--inspect={inspecting} role="dialog" aria-label={L('Style Setter')}>
-		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
+		<div class="ss" class:ss--twozone={twoZone} class:ss--norail={selected === 'callouts'} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
 				<span class="ss-brand"><span class="ss-star">✦</span> {L('Style Setter')}</span>
@@ -1254,7 +1254,7 @@
 						<!-- MIG-089 — the UNIFIED Callouts manager fills the centre zone (Full-Center-Zone
 						     rule): built-ins + divider + custom callouts, each row colour+icon+name. -->
 						<div class="ss-fcallouts">
-							<CalloutTypesEditor getDraftColor={curVal} setDraftColor={setVar} />
+							<CalloutTypesEditor getDraftColor={curVal} setDraftColor={setVar} resetColours={resetElement} coloursOverridden={selHasOverride} />
 						</div>
 					{:else if pk === 'tree'}
 						<div class="ss-focus ss-fcard ss-ftree">
@@ -1533,6 +1533,10 @@
 	.ss--twozone .ss-right { padding: 18px 22px; }
 	.ss--twozone .ss-ctrl, .ss--twozone .ss-selname, .ss--twozone .ss-rlabel, .ss--twozone .ss-swatches { max-width: 560px; }
 	.ss--twozone .ss-right :global(.lte) { max-width: 620px; }
+	/* MIG-089 — the Callouts manager is self-contained in the centre, so the right rail
+	   is dropped (its header + reset move into the manager): left rail + full-width centre. */
+	.ss--norail { grid-template-columns: 210px 1fr; grid-template-areas: "top top" "left center"; }
+	.ss--norail .ss-right { display: none; }
 	/* Resize grip (bottom-right corner) — drag to resize the whole panel; the size persists. */
 	.ss-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; padding: 0; border: none; background: none; cursor: nwse-resize; z-index: 6; touch-action: none; opacity: .5; }
 	.ss-resize:hover { opacity: .9; }

@@ -26,9 +26,13 @@
 	let {
 		getDraftColor = (_: string) => '',
 		setDraftColor = (_: string, __: string) => {},
+		resetColours = () => {},
+		coloursOverridden = false,
 	}: {
 		getDraftColor?: (cssVar: string) => string;
 		setDraftColor?: (cssVar: string, hex: string) => void;
+		resetColours?: () => void;       // clears the 10 --callout-<family>-color draft vars
+		coloursOverridden?: boolean;     // any of those colour vars currently set
 	} = $props();
 
 	// One picker drives every icon button — target says where the chosen ref goes.
@@ -37,6 +41,16 @@
 
 	const overrides = $derived($appSettings.iconOverrides ?? {});
 	const customList = $derived($appSettings.customCallouts ?? []);
+
+	// "Reset built-ins" reverts the 10 built-in families' COLOURS + ICONS to default. It's
+	// active when any built-in colour or icon is overridden. Custom callouts are NOT touched
+	// (they have their own ✕ remove — deleting them would be data loss).
+	const iconOverridden = $derived(CALLOUT_FAMILIES.some((f) => overrides['callout.' + f]));
+	const builtinsOverridden = $derived(coloursOverridden || iconOverridden);
+	function resetBuiltins() {
+		resetColours();
+		for (const f of CALLOUT_FAMILIES) setOverride('callout.' + f, null);
+	}
 	const families = CALLOUT_FAMILIES.map((f) => ({ family: f, defaultIcon: calloutDefaultIcon(f), aliases: CALLOUT_FAMILY_ALIASES[f] ?? [] }));
 
 	// A built-in family's current colour = its draft override, else its §3a default hex.
@@ -97,7 +111,10 @@
 </script>
 
 <div class="cte">
-	<div class="cte-title">{lbl('callouts', 'Callouts')}</div>
+	<div class="cte-titlerow">
+		<div class="cte-title">{lbl('callouts', 'Callouts')}</div>
+		<button class="cte-resetall" disabled={!builtinsOverridden} title={lbl('reset_this_element', 'Reset this element')} onclick={resetBuiltins}>↺ {lbl('reset_this_element', 'Reset this element')}</button>
+	</div>
 
 	<!-- ── Built-in families ── -->
 	<div class="cte-rows">
@@ -181,7 +198,11 @@
 
 <style>
 	.cte { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-	.cte-title { font-size: 18px; font-weight: 700; color: var(--c-text, var(--text-normal)); margin: 0 2px 8px; }
+	.cte-titlerow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 10px; }
+	.cte-title { font-size: 18px; font-weight: 700; color: var(--c-text, var(--text-normal)); }
+	.cte-resetall { flex: none; font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 6px; border: 1px solid var(--c-border, var(--background-modifier-border, #ddd)); background: var(--background-secondary, #f6f6f8); color: var(--c-muted, var(--text-muted)); cursor: pointer; white-space: nowrap; }
+	.cte-resetall:hover:not(:disabled) { color: var(--c-text, var(--text-normal)); border-color: var(--interactive-accent, #7c3aed); }
+	.cte-resetall:disabled { opacity: .4; cursor: default; }
 	.cte-rows { display: flex; flex-direction: column; gap: 5px; }
 	.cte-row { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 7px; background: var(--background-secondary, #f6f6f8); }
 	.cte-addrow { background: none; }
