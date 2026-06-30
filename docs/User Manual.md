@@ -363,6 +363,18 @@ Create styled callout blocks for notes, warnings, tips, and other admonitions:
 
 Supported types: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Each type has a distinct color and icon. Add `-` after the type to make it collapsible (starts collapsed), or `+` (starts expanded).
 
+#### Customising callouts — colours, icons, and your own types
+
+The callout colours and icons are **yours to change**, and you can invent your own callout types. Open the **Style Setter** (the 🎨 button in the dock), choose the **Editor** category, then click **Callouts**. The centre opens a single **Callouts manager** where every callout is one row showing its colour, its icon, and its name.
+
+- **Recolour a built-in callout.** Click the colour swatch on its row. A small palette opens with your saved colours (click one to apply) plus a **Custom…** picker for any new colour — a colour you pick is also added to your palette for next time. *Colour changes for the built-in types are saved when you press **Keep/Apply** in the Style Setter.*
+- **Change a built-in callout's icon.** Click the icon on its row. The Emoji & Icon Library opens — pick any emoji or vector icon. It changes everywhere immediately, in the colour of that callout. A small **↺** appears so you can revert just that icon.
+- **Reset the built-ins.** The **↺ Reset this element** button at the top of the manager reverts all built-in callout colours and icons to their defaults. (Your custom callouts are left alone — remove those individually.)
+- **Create your own callout type.** Below the divider is the **Add** row. Type a **Name** (e.g. `Decision`, or `فكرة`), a **Trigger** word (the `[!word]` you'll type — any language works, including Arabic), pick a **colour** and an **icon**, and click **Add**. Now typing `> [!decision]` (or `> [!فكرة]`) in any note renders your callout. If you don't type a title after the trigger, the callout header shows your callout's name in bold.
+- **Edit or remove a custom callout.** Use the **✎** (edit the name/trigger) and **✕** (remove) on its row. Removing a type leaves the `[!…]` text in your notes untouched — it simply reverts to the plain note look until you re-create the type.
+
+Your custom callouts, colours, and icons are saved **with this Universe**, so they travel with your library.
+
 ### Highlight Syntax
 
 Wrap text in double equals to highlight it:
