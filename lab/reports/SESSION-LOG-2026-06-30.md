@@ -23,6 +23,19 @@
 
 ---
 
+## CLOSE-OUT (state of standing) — 2026-06-30
+
+**Shipped + Boss-validated (protected):** MIG-088 §3a (callout colours `d395673f`) · §3b-pre (per-element reset `9c9d412f`) · MIG-089 §A (icons) + §B (custom types + Unicode/bold/saved-colours/edit fixes + unified centre-zone manager + rail-drop + in-manager reset) · Language-First audit Pass 1 (global input rule + dir, Boss PASS) + Passes 2–4 (display dir / keyboard guard / RTL layout). svelte-check 0 throughout; invariant audit clean (inline).
+**Docs done:** Orientation **v3.18** (committed `7118e35b`) · User Manual EN + ×14 (`8429cdf7`,`042dda42`) · MoCh `MoCh-2026-06-30-0600`.
+**Deferred / flagged (honest, not parked):**
+- **A.2 known-issue** — Arabic callout **End/Home caret in the editor** still wrong (CM6 RTL-caret on callout lines; speculative fix reverted; Boss ruled "defer"). Likely the `Decoration.replace` ranges × RTL; needs a structural fix + a real reproduction.
+- **Help TOPIC ×15** — the callout-customisation help *topic folders* (the User Manual ×15 IS done; the topic folders are a secondary surface) — optional follow-up.
+- **`/simplify`** on the MIG-089 diff — deferred (transient server rate-limit during Phase C; re-run next session).
+**Paused (pre-detour):** **MIG-088 §3b** (Highlight, unify-on-demand) · **§3c** (Syntax tokens: frontmatter URL `#0891b2` + fence/meta `#888` inside `markdownHighlightStyle.define`) · **§3d** (Editor badges: lens-count `#fff` + decoration radii). Then MIG-088 Phases 4–10.
+**Unpushed:** 15 commits on `main` (offer push at session close).
+
+---
+
 ## §3a — Callout colours — BUILT (awaiting Boss test)
 
 **Concept (horse):** recolour the 10 callout families — the coloured note boxes — from the Style Setter. Today their hues are hardcoded in `calloutPlugin.ts`; a user can't reach them.
