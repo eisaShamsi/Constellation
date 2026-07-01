@@ -8719,12 +8719,13 @@
 	.tab-scroll-arrow {
 		flex-shrink: 0; width: 28px; height: 32px;
 		display: flex; align-items: center; justify-content: center;
-		border: none; background: rgba(0,0,0,0.08); border-radius: 6px;
+		/* MIG-088 §4a — Tab bar extras: scroll-arrow bg + hover become Style-Setter vars (byte-identical). */
+		border: none; background: var(--tab-scroll-arrow-bg, rgba(0,0,0,0.08)); border-radius: 6px;
 		color: var(--text-normal); cursor: pointer;
 	}
 	.tab-scroll-end { margin-inline-end: 8px; }
 	.tab-scroll-arrow svg { width: 16px; height: 16px; }
-	.tab-scroll-arrow:hover { background: rgba(0,0,0,0.15); }
+	.tab-scroll-arrow:hover { background: var(--tab-scroll-arrow-bg-hover, rgba(0,0,0,0.15)); }
 	:global([dir="rtl"]) .tab-scroll-arrow svg { transform: scaleX(-1); }
 	.tab-scroll.no-tabs { margin-inline-start: 0; padding: 0; }
 	.tab {
@@ -8759,7 +8760,7 @@
 		/* MIG-070 §3B — the library label above the tab is chrome → follows the interface
 		   text colour (--text-normal), not the note (it had no colour, so it inherited the tab's). */
 		color: var(--text-normal, var(--text));
-		background: #e8e8ec;
+		background: var(--topbar-bg, #e8e8ec); /* MIG-088 §4a — inherit the top-bar bg (was hardcoded #e8e8ec) */
 		padding: 0 5px;
 		border-radius: 3px 3px 0 0;
 		border: none;
@@ -8808,15 +8809,16 @@
 	.tab-new {
 		min-width: 32px !important; max-width: 32px;
 		padding: 4px 0 !important; justify-content: center;
-		background: transparent !important; color: var(--text-muted);
-		border: 1px solid #4caf50 !important; border-bottom: none !important; border-radius: 6px 6px 0 0;
+		/* MIG-088 §4a — Tab bar extras: the new-tab "+" button colours become Style-Setter vars (byte-identical). */
+		background: var(--tab-new-bg, transparent) !important; color: var(--text-muted);
+		border: 1px solid var(--tab-new-border, #4caf50) !important; border-bottom: none !important; border-radius: 6px 6px 0 0;
 		cursor: pointer; position: relative;
 	}
 	.tab-bulb-icon {
 		position: absolute; opacity: 0;
-		color: #ff9800;
+		color: var(--tab-new-bulb-color, #ff9800);
 	}
-	.tab-new:hover { background: color-mix(in srgb, #4caf50 10%, transparent) !important; color: #4caf50; }
+	.tab-new:hover { background: var(--tab-new-bg-hover, color-mix(in srgb, #4caf50 10%, transparent)) !important; color: var(--tab-new-color-hover, #4caf50); }
 
 	/* When no tabs open: full circle centered in bar */
 	.tab-scroll.no-tabs {

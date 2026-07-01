@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Extras de la barra de pestañas",
+      "new_tab_border": "Borde de nueva pestaña",
+      "new_tab_background": "Fondo de nueva pestaña",
+      "new_tab_hover": "Hover de nueva pestaña",
+      "new_tab_hover_text": "Texto en hover de nueva pestaña",
+      "bulb_icon": "Icono de bombilla",
+      "scroll_arrow_background": "Fondo de flecha de desplazamiento",
+      "scroll_arrow_hover": "Hover de flecha de desplazamiento",
       "link_chip": "Insignia de enlace",
       "markup_marks": "Marcas de formato",
       "highlight": "Resaltado",

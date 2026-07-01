@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "タブバーのその他",
+      "new_tab_border": "新規タブの枠線",
+      "new_tab_background": "新規タブの背景",
+      "new_tab_hover": "新規タブのホバー",
+      "new_tab_hover_text": "新規タブのホバーテキスト",
+      "bulb_icon": "電球アイコン",
+      "scroll_arrow_background": "スクロール矢印の背景",
+      "scroll_arrow_hover": "スクロール矢印のホバー",
       "link_chip": "リンクバッジ",
       "markup_marks": "記法記号",
       "highlight": "ハイライト",

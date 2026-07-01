@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Extras da barra de abas",
+      "new_tab_border": "Borda de nova aba",
+      "new_tab_background": "Fundo de nova aba",
+      "new_tab_hover": "Realce de nova aba",
+      "new_tab_hover_text": "Texto no realce de nova aba",
+      "bulb_icon": "Ícone de lâmpada",
+      "scroll_arrow_background": "Fundo da seta de rolagem",
+      "scroll_arrow_hover": "Realce da seta de rolagem",
       "link_chip": "Selo de link",
       "markup_marks": "Marcas de formatação",
       "highlight": "Destaque",

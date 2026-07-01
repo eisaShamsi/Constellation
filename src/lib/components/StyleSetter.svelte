@@ -347,6 +347,16 @@
 			{ label: 'Tab height', type: 'range', var: '--tab-height', min: 22, max: 48, step: 1, unit: 'px', def: 26 },
 			{ label: 'Tab radius', type: 'range', var: '--tab-radius', min: 0, max: 16, step: 1, unit: 'px', def: 6 },
 			{ label: 'Tab left offset', type: 'range', var: '--tab-bar-offset', min: 0, max: 64, step: 1, unit: 'px', def: 32 } ] },
+		// MIG-088 §4a — Tab bar extras: the previously-hardcoded new-tab "+" button + the tab-scroll arrows.
+		// 2-zone (Components surface) so the real tab bar recolours live behind the panel. Byte-identical.
+		cTabExtras: { name: 'Tab bar extras', controls: [
+			{ label: 'New-tab border', type: 'color', var: '--tab-new-border' },
+			{ label: 'New-tab background', type: 'color', var: '--tab-new-bg' },
+			{ label: 'New-tab hover', type: 'color', var: '--tab-new-bg-hover' },
+			{ label: 'New-tab hover text', type: 'color', var: '--tab-new-color-hover' },
+			{ label: 'Bulb icon', type: 'color', var: '--tab-new-bulb-color' },
+			{ label: 'Scroll arrow background', type: 'color', var: '--tab-scroll-arrow-bg' },
+			{ label: 'Scroll arrow hover', type: 'color', var: '--tab-scroll-arrow-bg-hover' } ] },
 		cRightSidebar: { name: 'Right sidebar', controls: [
 			{ label: 'Background', type: 'color', var: '--right-sidebar-bg' },
 			{ label: 'Tab row background', type: 'color', var: '--rs-tabs-bg' },
@@ -592,7 +602,7 @@
 	// the heavy plugins are their own preview surfaces.
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
-		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
+		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cTabExtras', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'linkChip', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },

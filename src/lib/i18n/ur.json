@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "ٹیب بار کے اضافی",
+      "new_tab_border": "نئے ٹیب کی سرحد",
+      "new_tab_background": "نئے ٹیب کی پس منظر",
+      "new_tab_hover": "نئے ٹیب کا ہوور",
+      "new_tab_hover_text": "نئے ٹیب کا ہوور متن",
+      "bulb_icon": "بلب آئیکن",
+      "scroll_arrow_background": "اسکرول تیر کی پس منظر",
+      "scroll_arrow_hover": "اسکرول تیر کا ہوور",
       "link_chip": "لنک بیج",
       "markup_marks": "مارک اَپ نشانیاں",
       "highlight": "نمایاں کاری",

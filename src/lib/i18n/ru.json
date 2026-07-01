@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Доп. элементы панели вкладок",
+      "new_tab_border": "Граница кнопки новой вкладки",
+      "new_tab_background": "Фон кнопки новой вкладки",
+      "new_tab_hover": "Наведение на новую вкладку",
+      "new_tab_hover_text": "Текст при наведении на новую вкладку",
+      "bulb_icon": "Иконка лампочки",
+      "scroll_arrow_background": "Фон стрелки прокрутки",
+      "scroll_arrow_hover": "Наведение на стрелку прокрутки",
       "link_chip": "Счётчик переходов",
       "markup_marks": "Символы разметки",
       "highlight": "Выделение",

@@ -178,3 +178,16 @@
 - **Altitude:** renamed the leftover element key `badges` → `linkChip` (ELEMENTS key + editor CATEGORY + NOTE_ELS + preview `selected`/`selectEl`) so the internal key matches the "Link chip" name/slug/vars/class.
 
 **Skipped (correctly intentional):** `.ss-meta` monospace stack (consistent with sibling `.ss-code`); `.ss-badgechip` widget mimicry (the accepted preview-mimicry pattern); highlight radius `2px` fallback (byte-identical requirement — `--radius-s` is 3px, reusing it would regress). svelte-check 0.
+
+---
+
+## MIG-088 Phase 4 — Chrome (Boss: "keep going → Phase 4"; then "also consolidate shadows + scrims")
+
+**SO #8 discovery** (`wf_ba6db77c-a00`, 3 Explore agents): **most chrome is ALREADY styleable** — tabs (bg/text/active/border via cTabs), dock, layout bar, right sidebar, **status bar** (a `statusbar` element exists), flank handle + collapse btn, all pane/dock dividers (via --border/--border-width), and the shared ContextMenu shadow (--shadow-l). Sight close = n-a (disabled Wing). The genuinely-hardcoded remainder splits into: **(1) a few visible tab-bar bits**, and **(2) a surprise — shadows + dialog backdrops hardcoded INCONSISTENTLY across ~20 components** (dialogs 0.4, popovers 0.18, dropdowns 0.12, scrims at 0.3/0.35/0.4/0.6). **Boss ruling (AskUserQuestion): do both** — tab bits + the shadow/scrim consolidation (unify-on-demand).
+
+**Sub-steps:** §4a tab-bar extras · §4b shadow tokens (modal/popover/dropdown/tooltip) · §4c dialog-scrim token.
+
+### §4a — Tab bar extras — BUILT (awaiting Boss test)
+- **Wiring (`src/routes/+layout.svelte`):** the new-tab "+" button (`.tab-new` border `#4caf50`, bg transparent, hover bg/text; `.tab-bulb-icon` `#ff9800`) + the tab-scroll arrows (`.tab-scroll-arrow` bg `rgba(0,0,0,.08)` + hover `.15`) → 7 new vars (`--tab-new-border/-bg/-bg-hover/-color-hover`, `--tab-new-bulb-color`, `--tab-scroll-arrow-bg/-bg-hover`), byte-identical fallbacks. Consistency fix: `.tab-lib-name` bg `#e8e8ec` → `var(--topbar-bg, #e8e8ec)` (reads the existing cTabs control).
+- **Style Setter:** new `cTabExtras` element ("Tab bar extras", 7 colour controls) in the **Components** category (2-zone → the real tab bar recolours live behind the panel; no centre preview needed).
+- **i18n:** 8 new slugs ×15 (native localizers `wf_ca1ceebd-60b`).

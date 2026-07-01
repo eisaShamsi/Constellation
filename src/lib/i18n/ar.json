@@ -3381,6 +3381,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "إضافات شريط التبويب",
+      "new_tab_border": "حدود تبويب جديد",
+      "new_tab_background": "خلفية تبويب جديد",
+      "new_tab_hover": "تمرير مؤشر تبويب جديد",
+      "new_tab_hover_text": "نص تمرير تبويب جديد",
+      "bulb_icon": "أيقونة المصباح",
+      "scroll_arrow_background": "خلفية سهم التمرير",
+      "scroll_arrow_hover": "تمرير مؤشر سهم التمرير",
       "link_chip": "شارة الرابط",
       "markup_marks": "علامات التنسيق",
       "highlight": "تمييز",

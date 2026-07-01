@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "标签栏附加控件",
+      "new_tab_border": "新建标签边框",
+      "new_tab_background": "新建标签背景",
+      "new_tab_hover": "新建标签悬停",
+      "new_tab_hover_text": "新建标签悬停文字",
+      "bulb_icon": "灯泡图标",
+      "scroll_arrow_background": "滚动箭头背景",
+      "scroll_arrow_hover": "滚动箭头悬停",
       "link_chip": "链接计数徽章",
       "markup_marks": "标记符号",
       "highlight": "高亮",

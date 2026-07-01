@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "תוספות סרגל לשוניות",
+      "new_tab_border": "מסגרת לשונית חדשה",
+      "new_tab_background": "רקע לשונית חדשה",
+      "new_tab_hover": "ריחוף על לשונית חדשה",
+      "new_tab_hover_text": "טקסט ריחוף לשונית חדשה",
+      "bulb_icon": "סמל נורה",
+      "scroll_arrow_background": "רקע חץ גלילה",
+      "scroll_arrow_hover": "ריחוף חץ גלילה",
       "link_chip": "תג קישור",
       "markup_marks": "סימני עיצוב",
       "highlight": "הדגשה",

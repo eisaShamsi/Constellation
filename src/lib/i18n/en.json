@@ -3379,6 +3379,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Tab bar extras",
+      "new_tab_border": "New-tab border",
+      "new_tab_background": "New-tab background",
+      "new_tab_hover": "New-tab hover",
+      "new_tab_hover_text": "New-tab hover text",
+      "bulb_icon": "Bulb icon",
+      "scroll_arrow_background": "Scroll arrow background",
+      "scroll_arrow_hover": "Scroll arrow hover",
       "link_chip": "Link chip",
       "markup_marks": "Markup marks",
       "highlight": "Highlight",

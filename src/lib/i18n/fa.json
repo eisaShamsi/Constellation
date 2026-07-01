@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "افزونه‌های نوار برگه",
+      "new_tab_border": "حاشیه برگه جدید",
+      "new_tab_background": "پس‌زمینه برگه جدید",
+      "new_tab_hover": "هاور برگه جدید",
+      "new_tab_hover_text": "متن هاور برگه جدید",
+      "bulb_icon": "آیکون لامپ",
+      "scroll_arrow_background": "پس‌زمینه پیکان اسکرول",
+      "scroll_arrow_hover": "هاور پیکان اسکرول",
       "link_chip": "تراشه پیوند",
       "markup_marks": "نشانه‌های قالب‌بندی",
       "highlight": "برجسته‌سازی",

@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Extras de la barre d'onglets",
+      "new_tab_border": "Bordure du nouvel onglet",
+      "new_tab_background": "Arrière-plan du nouvel onglet",
+      "new_tab_hover": "Survol du nouvel onglet",
+      "new_tab_hover_text": "Texte au survol du nouvel onglet",
+      "bulb_icon": "Icône ampoule",
+      "scroll_arrow_background": "Arrière-plan des flèches de défilement",
+      "scroll_arrow_hover": "Survol des flèches de défilement",
       "link_chip": "Pastille de lien",
       "markup_marks": "Signes de balisage",
       "highlight": "Surlignage",

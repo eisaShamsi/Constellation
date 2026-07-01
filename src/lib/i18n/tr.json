@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "Sekme çubuğu ek öğeleri",
+      "new_tab_border": "Yeni sekme kenarlığı",
+      "new_tab_background": "Yeni sekme arka planı",
+      "new_tab_hover": "Yeni sekme üzerine gelme",
+      "new_tab_hover_text": "Yeni sekme üzerine gelme metni",
+      "bulb_icon": "Ampul simgesi",
+      "scroll_arrow_background": "Kaydırma oku arka planı",
+      "scroll_arrow_hover": "Kaydırma oku üzerine gelme",
       "link_chip": "Bağlantı rozeti",
       "markup_marks": "Biçimlendirme işaretleri",
       "highlight": "Vurgulama",

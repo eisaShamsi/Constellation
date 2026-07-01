@@ -3249,6 +3249,14 @@
   },
   "styleSetter": {
     "labels": {
+      "tab_bar_extras": "टैब बार अतिरिक्त",
+      "new_tab_border": "नया टैब बॉर्डर",
+      "new_tab_background": "नया टैब पृष्ठभूमि",
+      "new_tab_hover": "नया टैब होवर",
+      "new_tab_hover_text": "नया टैब होवर टेक्स्ट",
+      "bulb_icon": "बल्ब आइकन",
+      "scroll_arrow_background": "स्क्रॉल तीर पृष्ठभूमि",
+      "scroll_arrow_hover": "स्क्रॉल तीर होवर",
       "link_chip": "लिंक चिप",
       "markup_marks": "मार्कअप चिह्न",
       "highlight": "हाइलाइट",
