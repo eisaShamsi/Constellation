@@ -267,7 +267,7 @@
 		// MIG-088 §3d — Link chip (Boss ruling "link chip only"). The ×N link-traversal count badge — the
 		// only editor badge exposed. Background fills the chip solid when set; text + radius follow. Byte-
 		// identical unset. (The lens-count pill was reverted to its hardcoded look — out of scope.)
-		badges: { name: 'Link chip', controls: [
+		linkChip: { name: 'Link chip', controls: [
 			{ label: 'Background', type: 'color', var: '--link-chip-bg' },
 			{ label: 'Text', type: 'color', var: '--link-chip-text' },
 			{ label: 'Radius', type: 'range', var: '--link-chip-radius', min: 0, max: 20, step: 1, unit: 'px', def: 8 } ] },
@@ -593,7 +593,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
-		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'badges', 'caret'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'linkChip', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
@@ -653,7 +653,7 @@
 	// §C — the centre preview replicates the EXACT selected element (Eisa). Note/tree/global
 	// elements share a sample shape; chrome widgets each have their own. (Heavy surfaces —
 	// sky/org/index — keep their own alt preview, keyed on activeSurface below.)
-	const NOTE_ELS = new Set(['noteBg', 'text', 'breadcrumb', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent', 'highlight', 'syntax', 'badges']);
+	const NOTE_ELS = new Set(['noteBg', 'text', 'breadcrumb', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent', 'highlight', 'syntax', 'linkChip']);
 	const TREE_ELS = new Set(['interface', 'fileTree', 'library', 'folder', 'cuniverse']);
 	const GLOBAL_ELS = new Set(['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape']);
 	const pk = $derived(
@@ -1276,8 +1276,8 @@
 								<span class="ss-meta ss-hot2" class:ss-sel={selected === 'syntax'} onclick={() => selectEl('syntax')}>--- tags: idea ---</span>
 							</span>
 							<!-- MIG-088 §3d — Link chip: a wikilink with its ×N traversal-count chip. -->
-							<span class="ss-linkchiprow ss-hot2" class:ss-sel={selected === 'badges'} onclick={() => selectEl('badges')}>
-								<span class="ss-linkish">[[{L('Banana')}]]</span><span class="ss-badgechip">×2</span>
+							<span class="ss-linkchiprow ss-hot2" class:ss-sel={selected === 'linkChip'} onclick={() => selectEl('linkChip')}>
+								<span class="ss-link">[[{L('Banana')}]]</span><span class="ss-badgechip">×2</span>
 							</span>
 						</div>
 					{:else if pk === 'callouts'}
@@ -1672,7 +1672,6 @@
 	.ss-url { color: var(--url-color, #0891b2); text-decoration: underline; }
 	.ss-meta { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: 12px; color: var(--syntax-meta-color, #888); }
 	.ss-linkchiprow { display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; }
-	.ss-linkish { color: var(--link-color, var(--interactive-accent, #2f6fed)); }
 	/* the wikilink ×N traversal-count chip mimic (§3d "Link chip"). Background fills SOLID when set, else
 	   today's translucent accent. */
 	.ss-badgechip { font-size: 0.6rem; font-weight: 700; line-height: 1; height: 15px; padding: 0 6px; display: inline-flex; align-items: center; box-sizing: border-box; border-radius: var(--link-chip-radius, 8px); color: var(--link-chip-text, var(--interactive-accent, #7c3aed)); background: var(--link-chip-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent)); border: 1px solid var(--link-chip-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent)); }

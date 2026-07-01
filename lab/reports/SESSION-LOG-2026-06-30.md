@@ -160,3 +160,21 @@
 - **Preview:** lens row replaced with a `[[Banana]] ×2` link+chip row (`.ss-linkish` + `.ss-badgechip`); removed the now-dead `.ss-lensrow/.ss-lensname/.ss-lenscount` CSS.
 - **i18n:** swapped `editor_badges` → `link_chip` ×15 (native localizers `wf_b01f4bf5-d92`); removed the now-orphaned `badge_radius` + `recent_ideas` slugs ×15 (radius reuses "Radius"; lens name gone). Net live slugs from §3b–§3d: highlight · syntax_tokens · url · markup_marks · link_chip. No dangling `--editor-badge-*` / dead-slug refs.
 - **Verify:** i18n audit ✓ (5 live, 5 dead removed); svelte-check + frontend build pending this commit.
+
+### ✅ MIG-088 §3b–§3d — COMPLETE (all Boss-validated 2026-07-01)
+
+- **§3b Highlight** — Background + Text + Radius across `==` / `<mark>` / toolbar chip. Boss PASS (incl. the Text follow-up for dark-bg legibility). Commits `fc18fa00`, `9b1c484b`.
+- **§3c Syntax tokens** — URL (PASS) + **Markup marks** (relabelled from "Punctuation"; PASS on a heading `#` on the active line). Commit `963cfd15`.
+- **§3d Link chip** — reworked twice at Boss test (badge bg+text → "why two badges?" → **Link chip only**, solid background). Boss PASS. Commits `97d6d6ce`, `c7f185b8`.
+- **Net new Style-Setter controls (Editor category):** Highlight (Background/Text/Radius) · Syntax tokens (URL/Markup marks) · Link chip (Background/Text/Radius). i18n live slugs: highlight · syntax_tokens · url · markup_marks · link_chip (all ×15).
+- **Shelved (flagged, Boss-aware):** the 8 typed-link type colours (`livePreview.ts:181-182`) — a cross-surface cognitive colour set (mini Phase-2), NOT an editor stray; its own future step.
+- **Remaining in MIG-088:** Phases 4–10 (chrome · panels · search/index · Sky/OrgChart/Map D3 · calendar · dialogs/global · audit).
+- **Unpushed on `main`:** the §3b–§3d stack (`fc18fa00`..`c7f185b8`) + prior session's stack — offer push at close.
+
+### /simplify — §3b–§3d diff (SO #4 quality gate)
+
+`wf_77b331a6-1a1`, 4 cleanup angles. Efficiency: clean. **2 fixes applied** (no behavior change):
+- **Reuse/altitude:** dropped the near-duplicate `.ss-linkish` preview class → the §3d chip-row `[[Banana]]` now reuses the existing `.ss-link` (one source of truth; both wikilink samples render consistently).
+- **Altitude:** renamed the leftover element key `badges` → `linkChip` (ELEMENTS key + editor CATEGORY + NOTE_ELS + preview `selected`/`selectEl`) so the internal key matches the "Link chip" name/slug/vars/class.
+
+**Skipped (correctly intentional):** `.ss-meta` monospace stack (consistent with sibling `.ss-code`); `.ss-badgechip` widget mimicry (the accepted preview-mimicry pattern); highlight radius `2px` fallback (byte-identical requirement — `--radius-s` is 3px, reusing it would regress). svelte-check 0.
