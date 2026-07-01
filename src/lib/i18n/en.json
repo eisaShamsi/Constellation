@@ -3379,13 +3379,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "Link chip",
       "markup_marks": "Markup marks",
       "highlight": "Highlight",
       "syntax_tokens": "Syntax tokens",
-      "editor_badges": "Editor badges",
       "url": "URL",
-      "badge_radius": "Badge radius",
-      "recent_ideas": "Recent ideas",
       "3d_gizmo": "3D gizmo",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "A crisp pome fruit — sweet, tart, and endlessly useful.",
       "a_day_pairs_with_a": "a day pairs with a",

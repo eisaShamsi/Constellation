@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "링크 횟수 뱃지",
       "markup_marks": "마크업 기호",
       "highlight": "하이라이트",
       "syntax_tokens": "구문 토큰",
-      "editor_badges": "편집기 배지",
       "url": "URL",
-      "badge_radius": "배지 모서리 반경",
-      "recent_ideas": "최근 아이디어",
       "3d_gizmo": "3D 기즈모",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "아삭한 인과류 — 달콤하고, 새콤하며, 쓰임새가 끝이 없습니다.",
       "a_day_pairs_with_a": "는 아삭한",

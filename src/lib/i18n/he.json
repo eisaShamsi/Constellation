@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "תג קישור",
       "markup_marks": "סימני עיצוב",
       "highlight": "הדגשה",
       "syntax_tokens": "אסימוני תחביר",
-      "editor_badges": "תגיות עורך",
       "url": "URL",
-      "badge_radius": "רדיוס תגית",
-      "recent_ideas": "רעיונות אחרונים",
       "3d_gizmo": "כלי תלת-ממד",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "פרי תפוח פריך — מתוק, חמצמץ ושימושי לאין קץ.",
       "a_day_pairs_with_a": "ביום משתלב עם",

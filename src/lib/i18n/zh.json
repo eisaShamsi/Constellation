@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "链接计数徽章",
       "markup_marks": "标记符号",
       "highlight": "高亮",
       "syntax_tokens": "语法标记",
-      "editor_badges": "编辑器徽章",
       "url": "URL",
-      "badge_radius": "徽章圆角",
-      "recent_ideas": "近期想法",
       "3d_gizmo": "3D 控件",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "一种爽脆的仁果——香甜、微酸，用途无穷。",
       "a_day_pairs_with_a": "每天都搭配一根",

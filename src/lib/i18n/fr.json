@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "Pastille de lien",
       "markup_marks": "Signes de balisage",
       "highlight": "Surlignage",
       "syntax_tokens": "Tokens de syntaxe",
-      "editor_badges": "Badges de l'éditeur",
       "url": "URL",
-      "badge_radius": "Rayon des badges",
-      "recent_ideas": "Idées récentes",
       "3d_gizmo": "Gizmo 3D",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Un fruit à pépins croquant — sucré, acidulé et infiniment utile.",
       "a_day_pairs_with_a": "par jour va de pair avec une",

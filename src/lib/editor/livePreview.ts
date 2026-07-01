@@ -91,13 +91,13 @@ class WikilinkTraversalChipWidget extends WidgetType {
 		el.setAttribute('style',
 			'display:inline-flex;align-items:center;margin:0 3px;padding:0 6px;' +
 			'font-size:0.6rem;font-weight:700;line-height:1;height:15px;' +
-			'border-radius:var(--editor-badge-radius, 8px);font-variant-numeric:tabular-nums;' + /* MIG-088 §3d — shared editor-badge radius */
+			'border-radius:var(--link-chip-radius, 8px);font-variant-numeric:tabular-nums;' + /* MIG-088 §3d — Link chip radius */
 			'letter-spacing:0.02em;vertical-align:middle;' +
-			/* MIG-088 §3d — Editor badges: Text + Background shared with the lens count pill (fallback =
-			   the accent-derived look, so byte-identical until the user sets --editor-badge-text/-bg). */
-			'color:var(--editor-badge-text, ' + WIKILINK_CHIP_ACCENT + ');' +
-			'background:color-mix(in srgb, var(--editor-badge-bg, ' + WIKILINK_CHIP_ACCENT + ') 14%, transparent);' +
-			'border:1px solid color-mix(in srgb, var(--editor-badge-bg, ' + WIKILINK_CHIP_ACCENT + ') 30%, transparent);' +
+			/* MIG-088 §3d — Link chip (Boss ruling: the only editor badge exposed). Background fills the chip
+			   SOLID when set; the fallback is today's translucent accent look, so byte-identical until set. */
+			'color:var(--link-chip-text, ' + WIKILINK_CHIP_ACCENT + ');' +
+			'background:var(--link-chip-bg, color-mix(in srgb, ' + WIKILINK_CHIP_ACCENT + ' 14%, transparent));' +
+			'border:1px solid var(--link-chip-bg, color-mix(in srgb, ' + WIKILINK_CHIP_ACCENT + ' 30%, transparent));' +
 			'box-sizing:border-box;'
 		);
 		return el;
@@ -1912,12 +1912,10 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-lens-count': {
 		fontSize: '0.75em',
 		fontWeight: '600',
-		// MIG-088 §3d — Editor badges: Background + Text + Radius, shared with the wikilink ×N traversal
-		// chip (unify-on-demand; each badge keeps its own fallback → byte-identical until the user sets it).
-		color: 'var(--editor-badge-text, #fff)',
-		background: 'var(--editor-badge-bg, var(--interactive-accent, var(--library-accent, #6c5ce7)))',
+		color: '#fff',
+		background: 'var(--interactive-accent, var(--library-accent, #6c5ce7))',
 		padding: '1px 8px',
-		borderRadius: 'var(--editor-badge-radius, 10px)',
+		borderRadius: '10px',
 	},
 	'.cm-lens-empty': {
 		color: 'var(--text-muted)',

@@ -151,3 +151,12 @@
   - **Preview:** `.ss-lenscount` rewired + a new `.ss-badgechip` (×2) mimic added to the lens row so BOTH badges respond live.
 - **i18n:** ZERO new slugs — Background/Text/Radius already exist ×15. Removed the now-orphaned `lens_count_text` slug ×15; retired the `--lens-count-color` var (→ `--editor-badge-text`). No dangling refs.
 - **Verify:** svelte-check + frontend build (pending this commit).
+
+### §3d re-rework — "Editor badges" → "Link chip" only (Boss ruling)
+
+**Boss §3d re-test:** "Why two kinds of badges? It only affects the right text color." The two-badge design (solid lens '12' pill + translucent '×N' chip under one control) was confusing, and the chip's 14% translucency made a Background change nearly invisible. **Boss ruling (AskUserQuestion): "Link chip only."**
+- **`.cm-lens-count` REVERTED** to its original hardcoded look (#fff / accent bg / 10px) — the lens count is out of scope now.
+- **"Editor badges" → "Link chip"** — styles ONLY the ×N link-traversal chip. Vars renamed `--editor-badge-*` → `--link-chip-*`. **Background now fills the chip SOLID when set** (fallback = today's translucent accent, so byte-identical unset): `background: var(--link-chip-bg, color-mix(ACCENT 14%))`, `border: var(--link-chip-bg, color-mix(ACCENT 30%))`, `color: var(--link-chip-text, ACCENT)`, `border-radius: var(--link-chip-radius, 8px)`. So a chosen Background shows clearly, not as a faint tint.
+- **Preview:** lens row replaced with a `[[Banana]] ×2` link+chip row (`.ss-linkish` + `.ss-badgechip`); removed the now-dead `.ss-lensrow/.ss-lensname/.ss-lenscount` CSS.
+- **i18n:** swapped `editor_badges` → `link_chip` ×15 (native localizers `wf_b01f4bf5-d92`); removed the now-orphaned `badge_radius` + `recent_ideas` slugs ×15 (radius reuses "Radius"; lens name gone). Net live slugs from §3b–§3d: highlight · syntax_tokens · url · markup_marks · link_chip. No dangling `--editor-badge-*` / dead-slug refs.
+- **Verify:** i18n audit ✓ (5 live, 5 dead removed); svelte-check + frontend build pending this commit.

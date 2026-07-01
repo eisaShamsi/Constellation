@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "Selo de link",
       "markup_marks": "Marcas de formatação",
       "highlight": "Destaque",
       "syntax_tokens": "Tokens de sintaxe",
-      "editor_badges": "Emblemas do editor",
       "url": "URL",
-      "badge_radius": "Raio dos emblemas",
-      "recent_ideas": "Ideias recentes",
       "3d_gizmo": "Gizmo 3D",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Uma fruta pomácea crocante — doce, ácida e infinitamente útil.",
       "a_day_pairs_with_a": "por dia combina com uma",

@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "تراشه پیوند",
       "markup_marks": "نشانه‌های قالب‌بندی",
       "highlight": "برجسته‌سازی",
       "syntax_tokens": "نشانه‌های نحوی",
-      "editor_badges": "نشان‌های ویرایشگر",
       "url": "URL",
-      "badge_radius": "شعاع نشان",
-      "recent_ideas": "ایده‌های اخیر",
       "3d_gizmo": "ابزار 3D",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "میوه‌ای دانه‌دار و ترد — شیرین، ترش و بی‌نهایت سودمند.",
       "a_day_pairs_with_a": "در روز همراه می‌شود با",

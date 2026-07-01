@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "Insignia de enlace",
       "markup_marks": "Marcas de formato",
       "highlight": "Resaltado",
       "syntax_tokens": "Tokens de sintaxis",
-      "editor_badges": "Insignias del editor",
       "url": "URL",
-      "badge_radius": "Radio de insignia",
-      "recent_ideas": "Ideas recientes",
       "3d_gizmo": "Gizmo 3D",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "Una fruta de pepita crujiente — dulce, ácida e infinitamente útil.",
       "a_day_pairs_with_a": "al día se combina con un",

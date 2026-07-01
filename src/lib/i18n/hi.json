@@ -3249,13 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "link_chip": "लिंक चिप",
       "markup_marks": "मार्कअप चिह्न",
       "highlight": "हाइलाइट",
       "syntax_tokens": "सिंटैक्स टोकन",
-      "editor_badges": "एडिटर बैज",
       "url": "URL",
-      "badge_radius": "बैज त्रिज्या",
-      "recent_ideas": "हाल के विचार",
       "3d_gizmo": "3D गिज़्मो",
       "a_crisp_pome_fruit_sweet_tart_and_endlessly_useful": "एक कुरकुरा सेब-फल — मीठा, खट्टा, और असीम रूप से उपयोगी।",
       "a_day_pairs_with_a": "रोज़ का साथ देता है एक",

@@ -264,12 +264,13 @@
 		syntax: { name: 'Syntax tokens', controls: [
 			{ label: 'URL', type: 'color', var: '--url-color' },
 			{ label: 'Markup marks', type: 'color', var: '--syntax-meta-color' } ] },
-		// MIG-088 §3d — Editor badges. Background + Text + Radius, wired to BOTH count badges — the lens
-		// count pill AND the wikilink ×N traversal chip (unify-on-demand; each keeps its own fallback).
-		badges: { name: 'Editor badges', controls: [
-			{ label: 'Background', type: 'color', var: '--editor-badge-bg' },
-			{ label: 'Text', type: 'color', var: '--editor-badge-text' },
-			{ label: 'Radius', type: 'range', var: '--editor-badge-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
+		// MIG-088 §3d — Link chip (Boss ruling "link chip only"). The ×N link-traversal count badge — the
+		// only editor badge exposed. Background fills the chip solid when set; text + radius follow. Byte-
+		// identical unset. (The lens-count pill was reverted to its hardcoded look — out of scope.)
+		badges: { name: 'Link chip', controls: [
+			{ label: 'Background', type: 'color', var: '--link-chip-bg' },
+			{ label: 'Text', type: 'color', var: '--link-chip-text' },
+			{ label: 'Radius', type: 'range', var: '--link-chip-radius', min: 0, max: 20, step: 1, unit: 'px', def: 8 } ] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
 		gBackgrounds: { name: 'Backgrounds', controls: [
 			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
@@ -1274,11 +1275,9 @@
 								<span class="ss-url ss-hot2" class:ss-sel={selected === 'syntax'} onclick={() => selectEl('syntax')}>https://constellation.app</span>
 								<span class="ss-meta ss-hot2" class:ss-sel={selected === 'syntax'} onclick={() => selectEl('syntax')}>--- tags: idea ---</span>
 							</span>
-							<!-- MIG-088 §3d — Editor badges: a lens block header mimic (name + count pill). -->
-							<span class="ss-lensrow ss-hot2" class:ss-sel={selected === 'badges'} onclick={() => selectEl('badges')}>
-								<span class="ss-lensname">{L('Recent ideas')}</span>
-								<span class="ss-lenscount">12</span>
-								<span class="ss-badgechip">×2</span>
+							<!-- MIG-088 §3d — Link chip: a wikilink with its ×N traversal-count chip. -->
+							<span class="ss-linkchiprow ss-hot2" class:ss-sel={selected === 'badges'} onclick={() => selectEl('badges')}>
+								<span class="ss-linkish">[[{L('Banana')}]]</span><span class="ss-badgechip">×2</span>
 							</span>
 						</div>
 					{:else if pk === 'callouts'}
@@ -1672,11 +1671,11 @@
 	.ss-hl { background: var(--highlight-bg, #fef08a); color: var(--highlight-text, inherit); border-radius: var(--highlight-radius, 2px); padding: 1px 4px; }
 	.ss-url { color: var(--url-color, #0891b2); text-decoration: underline; }
 	.ss-meta { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: 12px; color: var(--syntax-meta-color, #888); }
-	.ss-lensrow { display: inline-flex; align-self: flex-start; align-items: baseline; gap: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--background-modifier-border, #e0e0e0); }
-	.ss-lensname { font-size: 0.95em; font-weight: 600; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
-	.ss-lenscount { font-size: 0.75em; font-weight: 600; color: var(--editor-badge-text, #fff); background: var(--editor-badge-bg, var(--interactive-accent, var(--library-accent, #6c5ce7))); padding: 1px 8px; border-radius: var(--editor-badge-radius, 10px); }
-	/* the wikilink ×N traversal chip mimic — the OTHER editor badge, sharing --editor-badge-bg/-text/-radius */
-	.ss-badgechip { font-size: 0.6rem; font-weight: 700; line-height: 1; height: 15px; padding: 0 6px; display: inline-flex; align-items: center; box-sizing: border-box; border-radius: var(--editor-badge-radius, 8px); color: var(--editor-badge-text, var(--interactive-accent, #7c3aed)); background: color-mix(in srgb, var(--editor-badge-bg, var(--interactive-accent, #7c3aed)) 14%, transparent); border: 1px solid color-mix(in srgb, var(--editor-badge-bg, var(--interactive-accent, #7c3aed)) 30%, transparent); }
+	.ss-linkchiprow { display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; }
+	.ss-linkish { color: var(--link-color, var(--interactive-accent, #2f6fed)); }
+	/* the wikilink ×N traversal-count chip mimic (§3d "Link chip"). Background fills SOLID when set, else
+	   today's translucent accent. */
+	.ss-badgechip { font-size: 0.6rem; font-weight: 700; line-height: 1; height: 15px; padding: 0 6px; display: inline-flex; align-items: center; box-sizing: border-box; border-radius: var(--link-chip-radius, 8px); color: var(--link-chip-text, var(--interactive-accent, #7c3aed)); background: var(--link-chip-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent)); border: 1px solid var(--link-chip-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent)); }
 	/* Hover/selected rings drawn INSIDE the element (inset box-shadow) so they're never clipped
 	   by the preview's overflow:hidden — that was why the edge-touching sidebar/note showed nothing. */
 	.ss-hot { cursor: pointer; } .ss-hot:hover { box-shadow: inset 0 0 0 2px #9d8dff; }
