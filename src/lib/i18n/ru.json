@@ -3252,7 +3252,6 @@
       "shadows": "Тени",
       "modal_shadow": "Тень модального окна",
       "popover_shadow": "Тень всплывающего окна",
-      "dropdown_shadow": "Тень выпадающего меню",
       "tooltip_shadow": "Тень подсказки",
       "soft": "Мягкая",
       "medium": "Средняя",

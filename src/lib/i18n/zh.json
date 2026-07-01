@@ -3252,7 +3252,6 @@
       "shadows": "阴影",
       "modal_shadow": "模态框阴影",
       "popover_shadow": "弹出层阴影",
-      "dropdown_shadow": "下拉菜单阴影",
       "tooltip_shadow": "提示框阴影",
       "soft": "柔和",
       "medium": "适中",

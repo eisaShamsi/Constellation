@@ -3252,7 +3252,6 @@
       "shadows": "그림자",
       "modal_shadow": "모달 그림자",
       "popover_shadow": "팝오버 그림자",
-      "dropdown_shadow": "드롭다운 그림자",
       "tooltip_shadow": "툴팁 그림자",
       "soft": "부드럽게",
       "medium": "보통",

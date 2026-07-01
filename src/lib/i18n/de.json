@@ -3252,7 +3252,6 @@
       "shadows": "Schatten",
       "modal_shadow": "Dialogschatten",
       "popover_shadow": "Popover-Schatten",
-      "dropdown_shadow": "Dropdown-Schatten",
       "tooltip_shadow": "Tooltip-Schatten",
       "soft": "Weich",
       "medium": "Mittel",

@@ -3252,7 +3252,6 @@
       "shadows": "Sombras",
       "modal_shadow": "Sombra de modal",
       "popover_shadow": "Sombra de popover",
-      "dropdown_shadow": "Sombra de menú",
       "tooltip_shadow": "Sombra de tooltip",
       "soft": "Suave",
       "medium": "Media",

@@ -229,7 +229,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 8px;
-		box-shadow: var(--popover-shadow, 0 6px 24px rgba(0, 0, 0, 0.2));
+		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 		padding: 4px;
 		display: flex;
 		flex-direction: column;
@@ -293,7 +293,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
-		box-shadow: var(--popover-shadow, 0 4px 16px rgba(0, 0, 0, 0.18));
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 		padding: 4px;
 		display: flex;
 		flex-direction: column;

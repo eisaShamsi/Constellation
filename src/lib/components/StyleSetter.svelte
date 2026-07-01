@@ -317,7 +317,6 @@
 		gShadows: { name: 'Shadows', controls: [
 			{ label: 'Modal shadow', type: 'select', var: '--modal-shadow', options: SHADOW_ELEV_OPTS },
 			{ label: 'Popover shadow', type: 'select', var: '--popover-shadow', options: SHADOW_ELEV_OPTS },
-			{ label: 'Dropdown shadow', type: 'select', var: '--dropdown-shadow', options: SHADOW_ELEV_OPTS },
 			{ label: 'Tooltip shadow', type: 'select', var: '--tooltip-shadow', options: SHADOW_ELEV_OPTS } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
 		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).

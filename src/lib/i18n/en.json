@@ -3382,7 +3382,6 @@
       "shadows": "Shadows",
       "modal_shadow": "Modal shadow",
       "popover_shadow": "Popover shadow",
-      "dropdown_shadow": "Dropdown shadow",
       "tooltip_shadow": "Tooltip shadow",
       "soft": "Soft",
       "medium": "Medium",
