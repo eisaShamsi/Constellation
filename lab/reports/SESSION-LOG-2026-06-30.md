@@ -141,3 +141,13 @@
 
 **Boss §3c test:** URL colour **PASS**. **"Punctuation" reported "does not change."** Diagnosed (not a bug — URL proves the var/apply path): `--syntax-meta-color` colours the in-editor markdown FORMATTING MARKS (`#`/`**`/`==`/`>`/`` ` ``, `tags.processingInstruction`/`meta`) which livePreview **hides off the active line** (`livePreview.ts:1262`); and Constellation **folds frontmatter into the Properties panel**, so there are no `---`/key fences in the editor body. The inherited `/* frontmatter fences */` comment was wrong; the real target is the markup marks. The Boss's actual "style the frontmatter" desire → the **Properties** category (MIG-088 Phase 1), not this.
 - **Boss ruling (AskUserQuestion): "Keep + relabel 'Markup marks'"** + a visible re-test. Relabel `Punctuation`→`Markup marks` (`.cm-md-heading1` sets no colour → a heading's `#` on the active line reliably shows `--syntax-meta-color` while the heading text keeps `--h1-color` = a clean visible demo). i18n: swap `punctuation`→`markup_marks` ×15 (native localizers `wf_3b8b31d5-ca9`).
+
+### §3d rework — Editor badges = Background + Text + Radius (Boss finding at test)
+
+**Boss §3d test:** looking at the wikilink **×N traversal chip** (light-accent bg + accent text), the Boss noted a badge has BOTH a background AND a text colour, and my single "Lens count text" control (a) only touched the *lens* count pill, not the chip he was styling, and (b) missed the background entirely.
+- **Rework (Boss-directed):** "Editor badges" now exposes **Background** (`--editor-badge-bg`) · **Text** (`--editor-badge-text`) · **Radius** (`--editor-badge-radius`), wired to BOTH count badges (unify-on-demand, byte-identical fallbacks):
+  - **Lens count pill** (`.cm-lens-count`): bg `var(--editor-badge-bg, accent)`, text `var(--editor-badge-text, #fff)`.
+  - **Wikilink ×N chip** (`.cm-living-link-chip` inline): text `var(--editor-badge-text, ACCENT)`, bg `color-mix(var(--editor-badge-bg, ACCENT) 14%)`, border `color-mix(var(--editor-badge-bg, ACCENT) 30%)` — so the chip keeps its translucent character but takes the chosen hue; the border tracks the bg (no accent-purple clash).
+  - **Preview:** `.ss-lenscount` rewired + a new `.ss-badgechip` (×2) mimic added to the lens row so BOTH badges respond live.
+- **i18n:** ZERO new slugs — Background/Text/Radius already exist ×15. Removed the now-orphaned `lens_count_text` slug ×15; retired the `--lens-count-color` var (→ `--editor-badge-text`). No dangling refs.
+- **Verify:** svelte-check + frontend build (pending this commit).

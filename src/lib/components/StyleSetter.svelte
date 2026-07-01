@@ -264,11 +264,12 @@
 		syntax: { name: 'Syntax tokens', controls: [
 			{ label: 'URL', type: 'color', var: '--url-color' },
 			{ label: 'Markup marks', type: 'color', var: '--syntax-meta-color' } ] },
-		// MIG-088 §3d — Editor badges. Lens-count text colour (the last hardcoded editor colour) + the
-		// shared badge radius (lens count + the wikilink ×N traversal chip).
+		// MIG-088 §3d — Editor badges. Background + Text + Radius, wired to BOTH count badges — the lens
+		// count pill AND the wikilink ×N traversal chip (unify-on-demand; each keeps its own fallback).
 		badges: { name: 'Editor badges', controls: [
-			{ label: 'Lens count text', type: 'color', var: '--lens-count-color' },
-			{ label: 'Badge radius', type: 'range', var: '--editor-badge-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
+			{ label: 'Background', type: 'color', var: '--editor-badge-bg' },
+			{ label: 'Text', type: 'color', var: '--editor-badge-text' },
+			{ label: 'Radius', type: 'range', var: '--editor-badge-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
 		gBackgrounds: { name: 'Backgrounds', controls: [
 			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
@@ -1277,6 +1278,7 @@
 							<span class="ss-lensrow ss-hot2" class:ss-sel={selected === 'badges'} onclick={() => selectEl('badges')}>
 								<span class="ss-lensname">{L('Recent ideas')}</span>
 								<span class="ss-lenscount">12</span>
+								<span class="ss-badgechip">×2</span>
 							</span>
 						</div>
 					{:else if pk === 'callouts'}
@@ -1672,7 +1674,9 @@
 	.ss-meta { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: 12px; color: var(--syntax-meta-color, #888); }
 	.ss-lensrow { display: inline-flex; align-self: flex-start; align-items: baseline; gap: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--background-modifier-border, #e0e0e0); }
 	.ss-lensname { font-size: 0.95em; font-weight: 600; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
-	.ss-lenscount { font-size: 0.75em; font-weight: 600; color: var(--lens-count-color, #fff); background: var(--interactive-accent, var(--library-accent, #6c5ce7)); padding: 1px 8px; border-radius: var(--editor-badge-radius, 10px); }
+	.ss-lenscount { font-size: 0.75em; font-weight: 600; color: var(--editor-badge-text, #fff); background: var(--editor-badge-bg, var(--interactive-accent, var(--library-accent, #6c5ce7))); padding: 1px 8px; border-radius: var(--editor-badge-radius, 10px); }
+	/* the wikilink ×N traversal chip mimic — the OTHER editor badge, sharing --editor-badge-bg/-text/-radius */
+	.ss-badgechip { font-size: 0.6rem; font-weight: 700; line-height: 1; height: 15px; padding: 0 6px; display: inline-flex; align-items: center; box-sizing: border-box; border-radius: var(--editor-badge-radius, 8px); color: var(--editor-badge-text, var(--interactive-accent, #7c3aed)); background: color-mix(in srgb, var(--editor-badge-bg, var(--interactive-accent, #7c3aed)) 14%, transparent); border: 1px solid color-mix(in srgb, var(--editor-badge-bg, var(--interactive-accent, #7c3aed)) 30%, transparent); }
 	/* Hover/selected rings drawn INSIDE the element (inset box-shadow) so they're never clipped
 	   by the preview's overflow:hidden — that was why the edge-touching sidebar/note showed nothing. */
 	.ss-hot { cursor: pointer; } .ss-hot:hover { box-shadow: inset 0 0 0 2px #9d8dff; }

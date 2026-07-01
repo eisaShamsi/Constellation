@@ -93,9 +93,11 @@ class WikilinkTraversalChipWidget extends WidgetType {
 			'font-size:0.6rem;font-weight:700;line-height:1;height:15px;' +
 			'border-radius:var(--editor-badge-radius, 8px);font-variant-numeric:tabular-nums;' + /* MIG-088 §3d — shared editor-badge radius */
 			'letter-spacing:0.02em;vertical-align:middle;' +
-			'color:' + WIKILINK_CHIP_ACCENT + ';' +
-			'background:color-mix(in srgb,' + WIKILINK_CHIP_ACCENT + ' 14%, transparent);' +
-			'border:1px solid color-mix(in srgb,' + WIKILINK_CHIP_ACCENT + ' 30%, transparent);' +
+			/* MIG-088 §3d — Editor badges: Text + Background shared with the lens count pill (fallback =
+			   the accent-derived look, so byte-identical until the user sets --editor-badge-text/-bg). */
+			'color:var(--editor-badge-text, ' + WIKILINK_CHIP_ACCENT + ');' +
+			'background:color-mix(in srgb, var(--editor-badge-bg, ' + WIKILINK_CHIP_ACCENT + ') 14%, transparent);' +
+			'border:1px solid color-mix(in srgb, var(--editor-badge-bg, ' + WIKILINK_CHIP_ACCENT + ') 30%, transparent);' +
 			'box-sizing:border-box;'
 		);
 		return el;
@@ -1910,10 +1912,10 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-lens-count': {
 		fontSize: '0.75em',
 		fontWeight: '600',
-		// MIG-088 §3d — Editor badges: the last hardcoded editor colour (#fff) + the badge radius
-		// become Style-Setter vars; the badge radius is shared with the wikilink ×N traversal chip.
-		color: 'var(--lens-count-color, #fff)',
-		background: 'var(--interactive-accent, var(--library-accent, #6c5ce7))',
+		// MIG-088 §3d — Editor badges: Background + Text + Radius, shared with the wikilink ×N traversal
+		// chip (unify-on-demand; each badge keeps its own fallback → byte-identical until the user sets it).
+		color: 'var(--editor-badge-text, #fff)',
+		background: 'var(--editor-badge-bg, var(--interactive-accent, var(--library-accent, #6c5ce7)))',
 		padding: '1px 8px',
 		borderRadius: 'var(--editor-badge-radius, 10px)',
 	},
