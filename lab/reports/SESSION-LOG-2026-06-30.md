@@ -210,3 +210,18 @@
 - **Fix:** `git checkout HEAD^ --` reverted the 6 dead wirings (CodeMirrorEditor/EditorContextMenu/FormattingToolbar); **removed the `--dropdown-shadow` control** (its only consumer was stale → no live surface) + its slug ×15.
 - **Remaining tokens have ONLY live consumers:** `--modal-shadow` ×6 (CollisionDialog, CanonicalChoiceDialog, LibraryManager, LibraryPicker, ImporterModal, EmojiIconPicker — all via +layout/CalloutTypesEditor/IconOverrideSettings), `--popover-shadow` ×4 (ConfidencePicker [Backlinks/Outgoing], LinkTypePicker [RelatedCandidates], CalendarPanel, ColorField [callout colours]), `--tooltip-shadow` ×1 (HelpTip [Inspector360]).
 - **Lesson:** the "add-a-styleable-element" recipe needs an **is-the-component-mounted** check — a hardcoded value in dead code is not a Phase target. Corrected Boss test targets standalone live surfaces (a dialog + a confidence popover), not the stale editor toolbar.
+
+---
+
+## CLOSE-OUT (session end) — 2026-07-01
+
+**Shipped + Boss-validated + pushed (`main` tip `c543046c`):**
+- MIG-088 **§3b Highlight** (+Text) `fc18fa00`/`9b1c484b` · **§3c Syntax tokens** (URL + "Markup marks") `963cfd15` · **§3d Link chip** `97d6d6ce`/`c7f185b8` · **/simplify** `07436595`.
+- MIG-088 Phase 4 **§4a Tab bar extras** `b2e7f487` · **§4b Shadows** `dd08026a`/`c543046c` (fix reverted stale-component wirings + dead Dropdown control).
+- svelte-check 0 throughout; every var byte-identical (verified); all i18n ×15.
+
+**Docs (this close-out):** Orientation **v3.19** (new file) · MoCh `MoCh-2026-07-01-0900` · Handover `Handover-2026-07-01-MIG088-phase3-4.md` (incl. next-session prompt) · User Manual EN reference list updated (Shadows + Tab-bar extras + Editor highlight/URL/markup/link-chip).
+
+**Deferred (honest):** §4c dialog-scrim (needs opacity control) · disabled-Wing shadows · 8 typed-link colours · Arabic callout-caret known-issue · help-topic folders ×15 · User Manual ×14 translations of the new reference lines (EN done; controls self-descriptive via localized UI labels).
+
+**NEXT:** MIG-088 §4c (scrim opacity) or Phase 5 (right-sidebar panel badges) — Boss's pick.

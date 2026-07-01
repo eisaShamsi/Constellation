@@ -1511,8 +1511,9 @@ The standalone **Style Settings** tab has been **retired** — every control it 
 - **Colors** — background, surfaces, text (normal/muted/faint), accent, borders, state colors
 - **Typography** — interface / note / code font sizes, H1–H6 sizes, heading weight, line heights, paragraph spacing
 - **Layout & Shape** — small/medium/large corner radii, border widths, shadows, editor readable line length, side margins
-- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip, status bar, right sidebar (inspector), file explorer (Universe notes, child universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
-- **Editor** — link color/hover/decoration, inline code color/background/radius, blockquote bar width/color, cursor color, selection background
+- **Shadows** — the drop-shadow depth for **modal dialogs**, **pop-up menus/pickers**, and **tooltips**, each a preset (None / Soft / Medium / Strong / Dramatic); set one and every surface of that class matches
+- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip **(plus tab-bar extras: the new-tab “+” button, its bulb icon, and the tab-scroll arrows)**, status bar, right sidebar (inspector), file explorer (Universe notes, child universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
+- **Editor** — link color/hover/decoration, inline code color/background/radius, blockquote bar width/color, cursor color, selection background, **highlight (background · text · radius, shared across `==`, `<mark>`, and the toolbar H)**, **URL color**, **markup-mark color** (the in-editor `#`/`**`/`==` syntax marks), and the **link-traversal (×N) chip** (background · text · radius)
 
 **Import / Export** — toolbar at top of the tab:
 - Paste from clipboard (one-click)
