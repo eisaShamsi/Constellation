@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "मार्कअप चिह्न",
       "highlight": "हाइलाइट",
       "syntax_tokens": "सिंटैक्स टोकन",
       "editor_badges": "एडिटर बैज",
       "url": "URL",
-      "punctuation": "विराम चिह्न",
       "lens_count_text": "लेंस गिनती पाठ",
       "badge_radius": "बैज त्रिज्या",
       "recent_ideas": "हाल के विचार",

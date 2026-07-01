@@ -135,4 +135,9 @@
 
 - **New var `--highlight-text`** — a paired TEXT colour for the highlight, wired to all four surfaces with a byte-identical **`inherit`** fallback (today these set no colour and inherit the editor text colour, so nothing changes until set): `.cm-html-mark` + `.cm-md-highlight` (livePreview.ts), the `.ss-hl` preview sample, and the toolbar chip `.e-tb-hl` (NotePane — fallback chains `var(--highlight-text, var(--editor-text-color, var(--text-normal, #1a1a1a)))`).
 - **Style Setter:** new **"Text"** control in the Highlight element (Background · **Text** · Radius). **Zero new i18n** — the `text` slug already exists ×15 ("Text"/«نص»/…). Per-element Reset covers it automatically.
-- **Verify:** svelte-check + frontend build (pending this commit). Commit: `__PENDING2__`.
+- **Verify:** svelte-check 0; frontend build ✓. Commit: `9b1c484b`.
+
+### §3c re-test — URL PASS; "Punctuation" → relabel "Markup marks" (Boss ruling)
+
+**Boss §3c test:** URL colour **PASS**. **"Punctuation" reported "does not change."** Diagnosed (not a bug — URL proves the var/apply path): `--syntax-meta-color` colours the in-editor markdown FORMATTING MARKS (`#`/`**`/`==`/`>`/`` ` ``, `tags.processingInstruction`/`meta`) which livePreview **hides off the active line** (`livePreview.ts:1262`); and Constellation **folds frontmatter into the Properties panel**, so there are no `---`/key fences in the editor body. The inherited `/* frontmatter fences */` comment was wrong; the real target is the markup marks. The Boss's actual "style the frontmatter" desire → the **Properties** category (MIG-088 Phase 1), not this.
+- **Boss ruling (AskUserQuestion): "Keep + relabel 'Markup marks'"** + a visible re-test. Relabel `Punctuation`→`Markup marks` (`.cm-md-heading1` sets no colour → a heading's `#` on the active line reliably shows `--syntax-meta-color` while the heading text keeps `--h1-color` = a clean visible demo). i18n: swap `punctuation`→`markup_marks` ×15 (native localizers `wf_3b8b31d5-ca9`).

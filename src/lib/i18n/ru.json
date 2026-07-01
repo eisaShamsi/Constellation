@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Символы разметки",
       "highlight": "Выделение",
       "syntax_tokens": "Токены синтаксиса",
       "editor_badges": "Значки редактора",
       "url": "URL",
-      "punctuation": "Пунктуация",
       "lens_count_text": "Текст счётчика линзы",
       "badge_radius": "Скругление значков",
       "recent_ideas": "Недавние идеи",

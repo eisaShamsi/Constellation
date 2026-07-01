@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "記法記号",
       "highlight": "ハイライト",
       "syntax_tokens": "構文トークン",
       "editor_badges": "エディタバッジ",
       "url": "URL",
-      "punctuation": "記号・区切り",
       "lens_count_text": "レンズ件数テキスト",
       "badge_radius": "バッジの角丸",
       "recent_ideas": "最近のアイデア",

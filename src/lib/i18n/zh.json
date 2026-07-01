@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "标记符号",
       "highlight": "高亮",
       "syntax_tokens": "语法标记",
       "editor_badges": "编辑器徽章",
       "url": "URL",
-      "punctuation": "标点符号",
       "lens_count_text": "视图计数文字",
       "badge_radius": "徽章圆角",
       "recent_ideas": "近期想法",

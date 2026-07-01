@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Biçimlendirme işaretleri",
       "highlight": "Vurgulama",
       "syntax_tokens": "Sözdizimi öğeleri",
       "editor_badges": "Düzenleyici rozetleri",
       "url": "URL",
-      "punctuation": "Noktalama işaretleri",
       "lens_count_text": "Lens sayım metni",
       "badge_radius": "Rozet köşe yarıçapı",
       "recent_ideas": "Son fikirler",

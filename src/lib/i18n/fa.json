@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "نشانه‌های قالب‌بندی",
       "highlight": "برجسته‌سازی",
       "syntax_tokens": "نشانه‌های نحوی",
       "editor_badges": "نشان‌های ویرایشگر",
       "url": "URL",
-      "punctuation": "نشانه‌گذاری",
       "lens_count_text": "متن شمارش عدسی",
       "badge_radius": "شعاع نشان",
       "recent_ideas": "ایده‌های اخیر",

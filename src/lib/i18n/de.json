@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Formatierungszeichen",
       "highlight": "Hervorhebung",
       "syntax_tokens": "Syntaxmarkierungen",
       "editor_badges": "Editor-Badges",
       "url": "URL",
-      "punctuation": "Satzzeichen",
       "lens_count_text": "Linsen-Anzahltext",
       "badge_radius": "Badge-Radius",
       "recent_ideas": "Aktuelle Ideen",

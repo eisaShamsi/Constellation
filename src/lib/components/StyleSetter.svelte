@@ -258,10 +258,12 @@
 			{ label: 'Background', type: 'color', var: '--highlight-bg' },
 			{ label: 'Text', type: 'color', var: '--highlight-text' },
 			{ label: 'Radius', type: 'range', var: '--highlight-radius', min: 0, max: 12, step: 1, unit: 'px', def: 2 } ] },
-		// MIG-088 §3c — Syntax tokens. URL colour + the frontmatter-fence/meta grey (one shared var).
+		// MIG-088 §3c — Syntax tokens. URL colour + the grey of the in-editor markdown FORMATTING MARKS
+		// (# ** == > ` etc., processingInstruction/meta — visible on the active line). NB: this is NOT the
+		// frontmatter (Constellation folds that into the Properties panel, styled via the Properties category).
 		syntax: { name: 'Syntax tokens', controls: [
 			{ label: 'URL', type: 'color', var: '--url-color' },
-			{ label: 'Punctuation', type: 'color', var: '--syntax-meta-color' } ] },
+			{ label: 'Markup marks', type: 'color', var: '--syntax-meta-color' } ] },
 		// MIG-088 §3d — Editor badges. Lens-count text colour (the last hardcoded editor colour) + the
 		// shared badge radius (lens count + the wikilink ×N traversal chip).
 		badges: { name: 'Editor badges', controls: [

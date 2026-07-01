@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Signes de balisage",
       "highlight": "Surlignage",
       "syntax_tokens": "Tokens de syntaxe",
       "editor_badges": "Badges de l'éditeur",
       "url": "URL",
-      "punctuation": "Ponctuation",
       "lens_count_text": "Texte du compteur de loupe",
       "badge_radius": "Rayon des badges",
       "recent_ideas": "Idées récentes",

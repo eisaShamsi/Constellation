@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "مارک اَپ نشانیاں",
       "highlight": "نمایاں کاری",
       "syntax_tokens": "نحوی نشانات",
       "editor_badges": "ایڈیٹر بیجز",
       "url": "URL",
-      "punctuation": "رموزِ اوقاف",
       "lens_count_text": "عدسے کی گنتی",
       "badge_radius": "بیج کا گولائی",
       "recent_ideas": "حالیہ خیالات",

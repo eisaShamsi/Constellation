@@ -3379,11 +3379,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Markup marks",
       "highlight": "Highlight",
       "syntax_tokens": "Syntax tokens",
       "editor_badges": "Editor badges",
       "url": "URL",
-      "punctuation": "Punctuation",
       "lens_count_text": "Lens count text",
       "badge_radius": "Badge radius",
       "recent_ideas": "Recent ideas",

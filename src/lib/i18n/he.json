@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "סימני עיצוב",
       "highlight": "הדגשה",
       "syntax_tokens": "אסימוני תחביר",
       "editor_badges": "תגיות עורך",
       "url": "URL",
-      "punctuation": "פיסוק",
       "lens_count_text": "טקסט ספירת עדשה",
       "badge_radius": "רדיוס תגית",
       "recent_ideas": "רעיונות אחרונים",

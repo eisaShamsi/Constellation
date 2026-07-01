@@ -3249,11 +3249,11 @@
   },
   "styleSetter": {
     "labels": {
+      "markup_marks": "Marcas de formato",
       "highlight": "Resaltado",
       "syntax_tokens": "Tokens de sintaxis",
       "editor_badges": "Insignias del editor",
       "url": "URL",
-      "punctuation": "Puntuación",
       "lens_count_text": "Texto del contador de lupa",
       "badge_radius": "Radio de insignia",
       "recent_ideas": "Ideas recientes",
