@@ -318,7 +318,7 @@
 	.cal-pop {
 		position: fixed; z-index: 1001; min-width: 180px; max-width: 340px; max-height: 50vh; overflow-y: auto;
 		background: var(--bg-secondary, #fff); border: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
-		border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); padding: 4px;
+		border-radius: 8px; box-shadow: var(--popover-shadow, 0 6px 24px rgba(0, 0, 0, 0.18)); padding: 4px;
 		display: flex; flex-direction: column; gap: 2px;
 		font-family: var(--cal-font, 'Amiri', 'Cairo', var(--text-font, inherit));
 	}

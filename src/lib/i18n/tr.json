@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Gölgeler",
+      "modal_shadow": "Modal gölgesi",
+      "popover_shadow": "Açılır kutu gölgesi",
+      "dropdown_shadow": "Açılır liste gölgesi",
+      "tooltip_shadow": "İpucu gölgesi",
+      "soft": "Hafif",
+      "medium": "Orta",
+      "strong": "Güçlü",
+      "dramatic": "Belirgin",
       "tab_bar_extras": "Sekme çubuğu ek öğeleri",
       "new_tab_border": "Yeni sekme kenarlığı",
       "new_tab_background": "Yeni sekme arka planı",

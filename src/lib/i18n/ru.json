@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Тени",
+      "modal_shadow": "Тень модального окна",
+      "popover_shadow": "Тень всплывающего окна",
+      "dropdown_shadow": "Тень выпадающего меню",
+      "tooltip_shadow": "Тень подсказки",
+      "soft": "Мягкая",
+      "medium": "Средняя",
+      "strong": "Сильная",
+      "dramatic": "Выраженная",
       "tab_bar_extras": "Доп. элементы панели вкладок",
       "new_tab_border": "Граница кнопки новой вкладки",
       "new_tab_background": "Фон кнопки новой вкладки",

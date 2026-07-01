@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "छाया",
+      "modal_shadow": "मॉडल छाया",
+      "popover_shadow": "पॉपओवर छाया",
+      "dropdown_shadow": "ड्रॉपडाउन छाया",
+      "tooltip_shadow": "टूलटिप छाया",
+      "soft": "हल्की",
+      "medium": "मध्यम",
+      "strong": "गहरी",
+      "dramatic": "प्रभावशाली",
       "tab_bar_extras": "टैब बार अतिरिक्त",
       "new_tab_border": "नया टैब बॉर्डर",
       "new_tab_background": "नया टैब पृष्ठभूमि",

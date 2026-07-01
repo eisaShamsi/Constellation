@@ -114,7 +114,7 @@
 		padding: 30px 34px;
 		max-width: 520px;
 		width: 92vw;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+		box-shadow: var(--modal-shadow, 0 20px 60px rgba(0, 0, 0, 0.4));
 	}
 	.col-header {
 		display: flex;

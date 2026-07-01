@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Sombras",
+      "modal_shadow": "Sombra de modal",
+      "popover_shadow": "Sombra de popover",
+      "dropdown_shadow": "Sombra de menú",
+      "tooltip_shadow": "Sombra de tooltip",
+      "soft": "Suave",
+      "medium": "Media",
+      "strong": "Intensa",
+      "dramatic": "Dramática",
       "tab_bar_extras": "Extras de la barra de pestañas",
       "new_tab_border": "Borde de nueva pestaña",
       "new_tab_background": "Fondo de nueva pestaña",

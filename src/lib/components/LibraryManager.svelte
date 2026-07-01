@@ -133,7 +133,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 12px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--modal-shadow, 0 8px 32px rgba(0, 0, 0, 0.2));
 		display: flex; flex-direction: column;
 		overflow: hidden;
 	}

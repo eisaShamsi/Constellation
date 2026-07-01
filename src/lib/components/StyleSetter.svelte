@@ -109,6 +109,13 @@
 		['Default', '0 4px 16px rgba(0,0,0,0.12)'], ['None', 'none'],
 		['Soft', '0 6px 20px rgba(0,0,0,0.16)'], ['Medium', '0 8px 28px rgba(0,0,0,0.2)'], ['Strong', '0 12px 36px rgba(0,0,0,0.26)'],
 	];
+	// MIG-088 §4b — elevation presets for the consolidated shadow tokens (modal/popover/dropdown/tooltip).
+	// Unify-on-demand: each surface wires var(--<token>, <its own current shadow>) so it's byte-identical
+	// until the user picks a preset here, which then applies to every surface of that class.
+	const SHADOW_ELEV_OPTS: [string, string][] = [
+		['None', 'none'], ['Soft', '0 2px 8px rgba(0,0,0,0.12)'], ['Medium', '0 6px 20px rgba(0,0,0,0.18)'],
+		['Strong', '0 12px 36px rgba(0,0,0,0.26)'], ['Dramatic', '0 20px 60px rgba(0,0,0,0.4)'],
+	];
 	// §C Phase 4.2 — per-script font choices (each script its own face). The interface LANGUAGE
 	// stays in Settings → Language (a locale setting, not styling) — Eisa's call.
 	const AR_FONTS: [string, string][] = [['System default', ''], ['Noto Naskh Arabic', '"Noto Naskh Arabic"'], ['Amiri', 'Amiri'], ['Scheherazade New', '"Scheherazade New"'], ['Cairo', 'Cairo'], ['Dubai', 'Dubai'], ['Tahoma', 'Tahoma'], ['Segoe UI', '"Segoe UI"'], ['Traditional Arabic', '"Traditional Arabic"']];
@@ -304,6 +311,14 @@
 			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 96, step: 4, unit: 'px', def: 48 },
 			{ label: 'Small shadow', type: 'select', var: '--shadow-s', options: SHADOW_S_OPTS },
 			{ label: 'Large shadow', type: 'select', var: '--shadow-l', options: SHADOW_L_OPTS } ] },
+		// MIG-088 §4b — consolidated Shadows. The 4 tiers unify the ~scattered hardcoded box-shadows across
+		// dialogs/popovers/dropdowns/tooltips (each keeps its own fallback → byte-identical until a preset is
+		// picked, which then applies to every surface of that class). (§4c scrim = a separate opacity control.)
+		gShadows: { name: 'Shadows', controls: [
+			{ label: 'Modal shadow', type: 'select', var: '--modal-shadow', options: SHADOW_ELEV_OPTS },
+			{ label: 'Popover shadow', type: 'select', var: '--popover-shadow', options: SHADOW_ELEV_OPTS },
+			{ label: 'Dropdown shadow', type: 'select', var: '--dropdown-shadow', options: SHADOW_ELEV_OPTS },
+			{ label: 'Tooltip shadow', type: 'select', var: '--tooltip-shadow', options: SHADOW_ELEV_OPTS } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
 		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).
 		fonts: { name: 'Per-script fonts', controls: [
@@ -605,7 +620,7 @@
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cTabExtras', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'linkChip', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
-		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
+		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'gShadows', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage', 'cogMatch'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },

@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "سایه‌ها",
+      "modal_shadow": "سایه مودال",
+      "popover_shadow": "سایه پاپ‌اور",
+      "dropdown_shadow": "سایه کشویی",
+      "tooltip_shadow": "سایه راهنما",
+      "soft": "ملایم",
+      "medium": "متوسط",
+      "strong": "قوی",
+      "dramatic": "چشمگیر",
       "tab_bar_extras": "افزونه‌های نوار برگه",
       "new_tab_border": "حاشیه برگه جدید",
       "new_tab_background": "پس‌زمینه برگه جدید",

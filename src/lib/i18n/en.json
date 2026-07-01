@@ -3379,6 +3379,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Shadows",
+      "modal_shadow": "Modal shadow",
+      "popover_shadow": "Popover shadow",
+      "dropdown_shadow": "Dropdown shadow",
+      "tooltip_shadow": "Tooltip shadow",
+      "soft": "Soft",
+      "medium": "Medium",
+      "strong": "Strong",
+      "dramatic": "Dramatic",
       "tab_bar_extras": "Tab bar extras",
       "new_tab_border": "New-tab border",
       "new_tab_background": "New-tab background",

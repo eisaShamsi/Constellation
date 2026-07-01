@@ -3381,6 +3381,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "ظلال",
+      "modal_shadow": "ظل النافذة",
+      "popover_shadow": "ظل البطاقة المنبثقة",
+      "dropdown_shadow": "ظل القائمة المنسدلة",
+      "tooltip_shadow": "ظل التلميح",
+      "soft": "خفيف",
+      "medium": "متوسط",
+      "strong": "قوي",
+      "dramatic": "عميق",
       "tab_bar_extras": "إضافات شريط التبويب",
       "new_tab_border": "حدود تبويب جديد",
       "new_tab_background": "خلفية تبويب جديد",

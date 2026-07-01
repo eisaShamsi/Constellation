@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "سائے",
+      "modal_shadow": "ماڈل سایہ",
+      "popover_shadow": "پاپ اوور سایہ",
+      "dropdown_shadow": "ڈراپ ڈاؤن سایہ",
+      "tooltip_shadow": "ٹول ٹپ سایہ",
+      "soft": "ہلکا",
+      "medium": "درمیانہ",
+      "strong": "گہرا",
+      "dramatic": "شدید",
       "tab_bar_extras": "ٹیب بار کے اضافی",
       "new_tab_border": "نئے ٹیب کی سرحد",
       "new_tab_background": "نئے ٹیب کی پس منظر",

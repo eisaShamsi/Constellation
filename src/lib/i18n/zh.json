@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "阴影",
+      "modal_shadow": "模态框阴影",
+      "popover_shadow": "弹出层阴影",
+      "dropdown_shadow": "下拉菜单阴影",
+      "tooltip_shadow": "提示框阴影",
+      "soft": "柔和",
+      "medium": "适中",
+      "strong": "强烈",
+      "dramatic": "深重",
       "tab_bar_extras": "标签栏附加控件",
       "new_tab_border": "新建标签边框",
       "new_tab_background": "新建标签背景",

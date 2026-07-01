@@ -73,7 +73,7 @@
 		padding: 32px 36px;
 		max-width: 540px;
 		width: 92vw;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+		box-shadow: var(--modal-shadow, 0 20px 60px rgba(0, 0, 0, 0.4));
 	}
 	.ccd-header {
 		display: flex;

@@ -71,7 +71,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 10px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--modal-shadow, 0 8px 32px rgba(0, 0, 0, 0.2));
 		width: 280px;
 		max-height: 60vh;
 		overflow: hidden;

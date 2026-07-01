@@ -108,7 +108,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+		box-shadow: var(--popover-shadow, 0 4px 16px rgba(0,0,0,0.18));
 		padding: 3px 4px;
 		transform: translateX(-50%);
 		pointer-events: auto;
@@ -169,7 +169,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		box-shadow: var(--popover-shadow, 0 4px 12px rgba(0,0,0,0.15));
 		padding: 4px;
 		display: flex;
 		flex-direction: column;

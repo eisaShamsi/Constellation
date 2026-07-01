@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "그림자",
+      "modal_shadow": "모달 그림자",
+      "popover_shadow": "팝오버 그림자",
+      "dropdown_shadow": "드롭다운 그림자",
+      "tooltip_shadow": "툴팁 그림자",
+      "soft": "부드럽게",
+      "medium": "보통",
+      "strong": "강하게",
+      "dramatic": "강렬하게",
       "tab_bar_extras": "탭 바 기타",
       "new_tab_border": "새 탭 테두리",
       "new_tab_background": "새 탭 배경",

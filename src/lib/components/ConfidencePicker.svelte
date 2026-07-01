@@ -95,7 +95,7 @@
 		position: fixed; z-index: 100;
 		background: var(--bg-secondary, #fff);
 		border: 1px solid var(--border); border-radius: 6px;
-		box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+		box-shadow: var(--popover-shadow, 0 8px 20px rgba(0,0,0,0.18));
 		padding: 4px; min-width: 160px;
 		font-size: calc(0.78rem * var(--rs-scale, 1));
 	}

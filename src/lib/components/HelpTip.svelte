@@ -152,7 +152,7 @@
 		min-width: 240px;
 		z-index: 9999;
 		pointer-events: none;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+		box-shadow: var(--tooltip-shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
 		white-space: normal;
 	}
 	.help-tooltip[data-position='top'] {

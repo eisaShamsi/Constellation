@@ -238,7 +238,7 @@
 		width: min(520px, 92vw); max-height: 72vh;
 		background: var(--background-primary); color: var(--text-normal);
 		border: 1px solid var(--background-modifier-border);
-		border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+		border-radius: 12px; box-shadow: var(--modal-shadow, 0 24px 48px rgba(0,0,0,0.25));
 		display: flex; flex-direction: column;
 		font-size: 13px;
 	}

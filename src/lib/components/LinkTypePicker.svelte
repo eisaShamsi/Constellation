@@ -130,7 +130,7 @@
 		border-radius: 10px;
 		background: var(--background-primary, #fff);
 		border: 1px solid var(--background-modifier-border, #ccc);
-		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+		box-shadow: var(--popover-shadow, 0 8px 28px rgba(0, 0, 0, 0.22));
 		display: flex;
 		flex-direction: column;
 		gap: 2px;

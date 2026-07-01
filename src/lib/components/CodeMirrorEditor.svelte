@@ -1870,7 +1870,7 @@
 	.cm-dropdown-menu {
 		position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+		border-radius: 8px; box-shadow: var(--dropdown-shadow, 0 8px 24px rgba(0,0,0,0.15));
 		padding: 4px; min-width: 180px; max-height: 320px; overflow-y: auto;
 		font-family: var(--font-interface-theme);
 	}
@@ -1912,7 +1912,7 @@
 	.cm-script-panel {
 		position: absolute; top: 100%; left: 0; z-index: 100;
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+		border-radius: 8px; box-shadow: var(--dropdown-shadow, 0 4px 16px rgba(0,0,0,0.15));
 		padding: 8px; min-width: 280px; max-width: 400px;
 	}
 	.cm-script-section { margin-bottom: 6px; }

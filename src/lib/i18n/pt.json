@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Sombras",
+      "modal_shadow": "Sombra do modal",
+      "popover_shadow": "Sombra do popover",
+      "dropdown_shadow": "Sombra do menu",
+      "tooltip_shadow": "Sombra da dica",
+      "soft": "Suave",
+      "medium": "Média",
+      "strong": "Forte",
+      "dramatic": "Dramática",
       "tab_bar_extras": "Extras da barra de abas",
       "new_tab_border": "Borda de nova aba",
       "new_tab_background": "Fundo de nova aba",

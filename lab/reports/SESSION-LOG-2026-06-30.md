@@ -191,3 +191,15 @@
 - **Wiring (`src/routes/+layout.svelte`):** the new-tab "+" button (`.tab-new` border `#4caf50`, bg transparent, hover bg/text; `.tab-bulb-icon` `#ff9800`) + the tab-scroll arrows (`.tab-scroll-arrow` bg `rgba(0,0,0,.08)` + hover `.15`) → 7 new vars (`--tab-new-border/-bg/-bg-hover/-color-hover`, `--tab-new-bulb-color`, `--tab-scroll-arrow-bg/-bg-hover`), byte-identical fallbacks. Consistency fix: `.tab-lib-name` bg `#e8e8ec` → `var(--topbar-bg, #e8e8ec)` (reads the existing cTabs control).
 - **Style Setter:** new `cTabExtras` element ("Tab bar extras", 7 colour controls) in the **Components** category (2-zone → the real tab bar recolours live behind the panel; no centre preview needed).
 - **i18n:** 8 new slugs ×15 (native localizers `wf_ca1ceebd-60b`).
+
+### §4a — Tab bar extras — Boss PASS (2026-07-01). Commit `b2e7f487`.
+
+### §4b — Shadow consolidation — BUILT (awaiting Boss test)
+- **4 shadow tokens** (`--modal-shadow` / `--popover-shadow` / `--dropdown-shadow` / `--tooltip-shadow`), unify-on-demand: each surface wires `box-shadow: var(--<token>, <its EXACT current shadow>)` → byte-identical until a preset is picked, then every surface of that class snaps together.
+- **Wiring (`wf_b3a8552f-7ce`, 3 parallel general-purpose agents, distinct files; ALL 17 verified byte-identical via `git diff` — box-shadow-only, fallback == original char-for-char):**
+  - **Modal** (6): CollisionDialog `.col-modal`, CanonicalChoiceDialog `.ccd-modal`, LibraryPicker `.vp-modal`, LibraryManager `.vm-modal`, ImporterModal `.importer-modal`, EmojiIconPicker `.picker`.
+  - **Popover** (8): ConfidencePicker `.conf-menu`, ColorField `.cf-pop`, CalendarPanel `.cal-pop`, LinkTypePicker `.ltp-menu`, FormattingToolbar `.formatting-toolbar`+`.heading-dropdown`, EditorContextMenu `.ecm`+`.ecm-sub`.
+  - **Dropdown** (2): CodeMirrorEditor `.cm-dropdown-menu`+`.cm-script-panel`. **Tooltip** (1): HelpTip `.help-tooltip`.
+- **Style Setter:** new `gShadows` element ("Shadows", 4 `select` controls with `SHADOW_ELEV_OPTS` presets None/Soft/Medium/Strong/Dramatic) in the **Global** category.
+- **i18n:** 9 new slugs ×15 (`wf_5822cc99-ebb`) — incl. soft/medium/strong (which the EXISTING shadow controls had left English-fallback → bonus localization).
+- **DEFERRED (honest, noted):** (a) **§4c dialog scrims** — the 4 inconsistent backdrops (0.3/0.35/0.4/0.6) need an OPACITY-based control (a plain colour picker can't express a semi-transparent scrim; picking black → opaque). Its own micro-step. (b) **Disabled-Wing shadows** (Sight v6 OFF, Map, GraphMind, SenseMakingCanvas, Inspector360 panel, tour) — not user-visible now; wire when those surfaces ship.

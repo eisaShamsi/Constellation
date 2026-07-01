@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "Ombres",
+      "modal_shadow": "Ombre de modal",
+      "popover_shadow": "Ombre de popover",
+      "dropdown_shadow": "Ombre de menu",
+      "tooltip_shadow": "Ombre d'infobulle",
+      "soft": "Légère",
+      "medium": "Moyenne",
+      "strong": "Marquée",
+      "dramatic": "Prononcée",
       "tab_bar_extras": "Extras de la barre d'onglets",
       "new_tab_border": "Bordure du nouvel onglet",
       "new_tab_background": "Arrière-plan du nouvel onglet",

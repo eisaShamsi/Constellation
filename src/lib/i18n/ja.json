@@ -3249,6 +3249,15 @@
   },
   "styleSetter": {
     "labels": {
+      "shadows": "シャドウ",
+      "modal_shadow": "モーダルの影",
+      "popover_shadow": "ポップオーバーの影",
+      "dropdown_shadow": "ドロップダウンの影",
+      "tooltip_shadow": "ツールチップの影",
+      "soft": "ソフト",
+      "medium": "ミディアム",
+      "strong": "ストロング",
+      "dramatic": "ドラマティック",
       "tab_bar_extras": "タブバーのその他",
       "new_tab_border": "新規タブの枠線",
       "new_tab_background": "新規タブの背景",

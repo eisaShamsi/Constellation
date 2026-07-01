@@ -72,7 +72,7 @@
 	.cf-pop {
 		position: fixed; z-index: 41;
 		background: var(--background-primary, #fff); border: 1px solid var(--background-modifier-border, #ddd);
-		border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 8px; width: 184px;
+		border-radius: 8px; box-shadow: var(--popover-shadow, 0 6px 24px rgba(0,0,0,.18)); padding: 8px; width: 184px;
 	}
 	.cf-saved-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 0 2px 5px; }
 	.cf-saved { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
