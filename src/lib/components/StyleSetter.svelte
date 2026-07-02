@@ -318,6 +318,14 @@
 			{ label: 'Modal shadow', type: 'select', var: '--modal-shadow', options: SHADOW_ELEV_OPTS },
 			{ label: 'Popover shadow', type: 'select', var: '--popover-shadow', options: SHADOW_ELEV_OPTS },
 			{ label: 'Tooltip shadow', type: 'select', var: '--tooltip-shadow', options: SHADOW_ELEV_OPTS } ] },
+		// MIG-088 §4c — the dialog scrim (the dim behind every modal). ONE opacity control unifies the
+		// scattered backdrops: the shared --background-modifier-cover theme token (Settings/Rename/Move/
+		// Create/Command Palette/Quick Switcher/Workspace/Templates/generic confirms) + the hardcoded rogues
+		// (Collision/CanonicalChoice/LibraryPicker/LibraryManager/EmojiIconPicker/UniverseManager/Importer/
+		// canonical-migration/this StyleSetter) all read rgba(0,0,0,var(--modal-overlay-alpha, <own>)). Byte-
+		// identical until dragged; a colour picker can't express a see-through veil, so this is a % opacity.
+		gScrim: { name: 'Overlays', controls: [
+			{ label: 'Dimmed opacity', type: 'range', var: '--modal-overlay-alpha', min: 0, max: 100, step: 5, unit: '%', def: 40 } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
 		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).
 		fonts: { name: 'Per-script fonts', controls: [
@@ -413,6 +421,39 @@
 			{ label: 'Background', type: 'color', var: '--pe-taxo-bg' },
 			{ label: 'Text', type: 'color', var: '--pe-taxo-text-color' },
 			{ label: 'Radius', type: 'range', var: '--pe-taxo-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
+		// MIG-088 §5a — right-sidebar PANEL chrome (Phase 5). Each surface keeps its exact current value as
+		// the var() fallback → byte-identical until edited (unify-on-demand). Task badges use color-mix so ONE
+		// colour control drives each state's tint + text (color-mix 20%/15% == the old rgba tint, verified).
+		pKhCard: { name: 'Health cards', controls: [
+			{ label: 'Background', type: 'color', var: '--kh-card-bg' },
+			{ label: 'Label text', type: 'color', var: '--kh-card-label-color' },
+			{ label: 'Radius', type: 'range', var: '--kh-card-radius', min: 0, max: 20, step: 1, unit: 'px', def: 10 } ] },
+		pProvTag: { name: 'Provenance tag', controls: [
+			{ label: 'Text', type: 'color', var: '--prov-tag-color' },
+			{ label: 'Border', type: 'color', var: '--prov-tag-border' },
+			{ label: 'Radius', type: 'range', var: '--prov-tag-radius', min: 0, max: 12, step: 1, unit: 'px', def: 3 } ] },
+		pTaskBadge: { name: 'Task badges', controls: [
+			{ label: 'Overdue', type: 'color', var: '--task-overdue' },
+			{ label: 'Due today', type: 'color', var: '--task-today' },
+			{ label: 'Tag', type: 'color', var: '--task-tag' } ] },
+		// MIG-088 §5b — Review stale badge, Inspector-360 markers, Backlinks/Outgoing traversal-chip tiers.
+		// Tension/fragile/blind drive BOTH the column-flag border and the warn icon; the chip Accent drives
+		// the whole tier gradient (14/26/100% mixes encode the tiers — Form-Aligns-To-Purpose, steps stay).
+		pReviewStale: { name: 'Stale badge', controls: [
+			{ label: 'Background', type: 'color', var: '--review-stale-bg' },
+			{ label: 'Radius', type: 'range', var: '--review-stale-radius', min: 0, max: 16, step: 1, unit: 'px', def: 6 } ] },
+		pI360: { name: '360 markers', controls: [
+			{ label: 'Tensions', type: 'color', var: '--i360-tension' },
+			{ label: 'Fragile', type: 'color', var: '--i360-fragile' },
+			{ label: 'Blind spots', type: 'color', var: '--i360-blind' },
+			{ label: 'Card border', type: 'color', var: '--i360-border' },
+			{ label: 'Card radius', type: 'range', var: '--i360-radius', min: 0, max: 24, step: 1, unit: 'px', def: 12 } ] },
+		pLinkTiers: { name: 'Traversal chips', controls: [
+			{ label: 'Accent', type: 'color', var: '--link-tier-accent' },
+			{ label: 'Emerging', type: 'color', var: '--link-tier-emerging' },
+			{ label: 'Established', type: 'color', var: '--link-tier-established' },
+			{ label: 'Load-bearing', type: 'color', var: '--link-tier-loadbearing' },
+			{ label: 'Stale', type: 'color', var: '--link-tier-stale' } ] },
 		// MIG-088 §2 — Cognitive colours: the shared cognitive-vocabulary palettes (Maturity, Confidence,
 		// Origin, Stage, Match-category). "Unify on demand" (Boss 2026-06-29): each surface keeps its own
 		// colour as a fallback until the user sets the shared var here, then ALL surfaces snap to it.
@@ -619,9 +660,10 @@
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cTabExtras', 'cRightSidebar', 'cRsText', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'callouts', 'highlight', 'syntax', 'linkChip', 'caret'] },
 		{ key: 'frontmatter', name: 'Properties', surface: 'editor', elements: ['pTags', 'pTaxo'] },
-		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'gShadows', 'fonts'] },
+		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'gShadows', 'gScrim', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage', 'cogMatch'] },
+		{ key: 'panels', name: 'Panels', surface: 'editor', elements: ['pKhCard', 'pProvTag', 'pTaskBadge', 'pReviewStale', 'pI360', 'pLinkTiers'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
@@ -669,7 +711,7 @@
 	// MIG-088 Phase 1 — Properties (frontmatter) is THREE-zone: its dedicated centre preview shows the
 	// pill mimic. (Two-zone relies on the live app showing through behind the right-anchored panel — but
 	// the panel would occlude the right-sidebar Properties panel, so live-behind can't preview it.)
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'cognitive' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'cognitive' && activeCategory !== 'panels' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -1350,7 +1392,49 @@
 							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">domain</span><div class="ss-fep-vals"><span class="ss-petaxo">Botany</span><span class="ss-petaxo">Horticulture</span></div></div>
 							<div class="ss-fep-row ss-fep-hot"><span class="ss-fep-key">field</span><div class="ss-fep-vals"><span class="ss-petaxo">Pomology</span></div></div>
 						</div>
-					{:else if pk === 'cogMaturity'}
+					{:else if pk === 'pKhCard'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Knowledge Health')}</div>
+								<div class="ss-khcards">
+									<div class="ss-khcard"><div class="ss-khnum">128</div><div class="ss-khlbl">{L('Total links')}</div></div>
+									<div class="ss-khcard"><div class="ss-khnum">34</div><div class="ss-khlbl">{L('Annotated')}</div></div>
+								</div>
+							</div>
+						{:else if pk === 'pProvTag'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Provenance')}</div>
+								<div class="ss-provrow" dir="auto">{L('Ibn Khaldun')} <span class="ss-provtag">{L('External')}</span></div>
+							</div>
+						{:else if pk === 'pTaskBadge'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Tasks')}</div>
+								<div class="ss-taskrow"><span class="ss-tasklbl" dir="auto">{L('Review draft')}</span><span class="ss-taskbadge ss-task-od">{L('Overdue')}</span></div>
+								<div class="ss-taskrow"><span class="ss-tasklbl" dir="auto">{L('Send email')}</span><span class="ss-taskbadge ss-task-td">{L('Today')}</span></div>
+								<div class="ss-taskrow"><span class="ss-tasklbl" dir="auto">{L('Outline draft')}</span><span class="ss-tasktag">#writing</span></div>
+							</div>
+						{:else if pk === 'pReviewStale'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Review')}</div>
+								<div class="ss-stalebadge">🥀 <span dir="auto">{L('Stale')} — {L('Apple (Fruit)')} · 2026-06-12</span></div>
+							</div>
+						{:else if pk === 'pI360'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">360.3D</div>
+								<div class="ss-i360grid">
+									<div class="ss-i360col ss-i360-tension"><span class="ss-i360warn ss-iw-tension">⚡</span><span class="ss-i360name">{L('Tensions')}</span></div>
+									<div class="ss-i360col ss-i360-fragile"><span class="ss-i360warn ss-iw-fragile">⚠</span><span class="ss-i360name">{L('Fragile')}</span></div>
+									<div class="ss-i360col ss-i360-blind"><span class="ss-i360warn ss-iw-blind">0</span><span class="ss-i360name">{L('Blind spots')}</span></div>
+								</div>
+							</div>
+						{:else if pk === 'pLinkTiers'}
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Traversal chips')}</div>
+								<div class="ss-tierrow"><span class="ss-tierchip">×2</span><span class="ss-tierlbl">{L('Emerging')}</span></div>
+								<div class="ss-tierrow"><span class="ss-tierchip ss-tier-est">×7</span><span class="ss-tierlbl">{L('Established')}</span></div>
+								<div class="ss-tierrow"><span class="ss-tierchip ss-tier-load">×19</span><span class="ss-tierlbl">{L('Load-bearing')}</span></div>
+								<div class="ss-tierrow"><span class="ss-tierchip ss-tier-stale">×4</span><span class="ss-tierlbl">{L('Stale')}</span></div>
+							</div>
+						{:else if pk === 'cogMaturity'}
 						<div class="ss-focus ss-fcard ss-fcog">
 							<div class="ss-fep-title">{L('Maturity')}</div>
 							<div class="ss-cog-row"><span class="ss-cog-bar" style="background:var(--maturity-seed, #9ca3af)"></span><span class="ss-cog-lbl">{L('Seed')}</span><span class="ss-cog-note">360.3D</span></div>
@@ -1548,7 +1632,7 @@
 <style>
 	.ss-overlay {
 		position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center;
-		background: rgba(6, 6, 12, 0.62); backdrop-filter: blur(2px); padding: 16px;
+		background: rgba(6, 6, 12, var(--modal-overlay-alpha, 0.62)); backdrop-filter: blur(2px); padding: 16px; /* MIG-088 §4c — shared dialog-backdrop opacity (keeps this modal's distinct 6,6,12 tint) */
 	}
 	/* §C Option E — LIVE mode (non-Editor categories): the overlay no longer dims or blocks the app, so
 	   the real chrome shows AND stays interactive; the panel docks to the right, faintly translucent, so
@@ -1885,6 +1969,39 @@
 	.ss-cog-bar { width: 34px; height: 16px; border-radius: 4px; flex-shrink: 0; }
 	.ss-cog-lbl { color: var(--text-normal, #2e3338); font-size: 14px; font-weight: 600; min-width: 92px; text-align: start; }
 	.ss-cog-note { color: var(--text-muted, #888); font-size: 11.5px; }
+	/* MIG-088 §5a — Panels centre preview: mini mimics of the right-sidebar surfaces, reading the SAME
+	   draft vars with the SAME byte-identical fallbacks so they re-colour live as the user edits. */
+	.ss-fpanel { gap: 10px; align-items: stretch; min-width: 340px; }
+	.ss-khcards { display: flex; gap: 10px; }
+	.ss-khcard { flex: 1; background: var(--kh-card-bg, var(--background-secondary, #f1f1ef)); border-radius: var(--kh-card-radius, 10px); padding: 14px; text-align: center; }
+	.ss-khnum { font-size: 1.6rem; font-weight: 700; color: var(--text-normal, #2e3338); }
+	.ss-khlbl { font-size: 11px; color: var(--kh-card-label-color, var(--text-muted, #888)); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+	.ss-provrow { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-normal, #2e3338); }
+	.ss-provtag { font-size: 11px; color: var(--prov-tag-color, #4A9EFF); border: 1px solid var(--prov-tag-border, #4A9EFF40); border-radius: var(--prov-tag-radius, 3px); padding: 1px 5px; font-weight: 500; }
+	.ss-taskrow { display: flex; align-items: center; gap: 10px; min-height: 26px; font-size: 13px; color: var(--text-normal, #2e3338); }
+	.ss-tasklbl { flex: 1; text-align: start; }
+	.ss-taskbadge { font-size: 11px; padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+	.ss-task-od { background: color-mix(in srgb, var(--task-overdue, #ef4444) 20%, transparent); color: var(--task-overdue, #ef4444); }
+	.ss-task-td { background: color-mix(in srgb, var(--task-today, #f59e0b) 20%, transparent); color: var(--task-today, #f59e0b); }
+	.ss-tasktag { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: color-mix(in srgb, var(--task-tag, #7c3aed) 15%, transparent); color: var(--task-tag, var(--accent, #7c3aed)); }
+	/* MIG-088 §5b previews — stale badge / 360 markers / traversal-chip tiers, same vars + fallbacks. */
+	.ss-stalebadge { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; color: var(--text-normal, #2e3338); border-radius: var(--review-stale-radius, 6px); background: var(--review-stale-bg, var(--background-modifier-error-hover, rgba(220,80,80,0.12))); }
+	.ss-i360grid { display: flex; gap: 1px; background: var(--i360-border, var(--background-modifier-border, #ccc)); border: 1px solid var(--i360-border, var(--background-modifier-border, #ccc)); border-radius: var(--i360-radius, 12px); overflow: hidden; }
+	.ss-i360col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; background: var(--background-primary, #fff); }
+	.ss-i360-tension { border-top: 3px solid var(--i360-tension, #8b4513); }
+	.ss-i360-fragile { border-top: 3px solid var(--i360-fragile, var(--color-yellow, #e0ac00)); }
+	.ss-i360-blind { border-top: 3px solid var(--i360-blind, var(--text-error, #ef4444)); background: linear-gradient(180deg, color-mix(in srgb, var(--i360-blind, var(--text-error, #ef4444)) 14%, transparent), var(--background-primary, #fff) 90%); }
+	.ss-i360warn { font-size: 18px; font-weight: 700; line-height: 1; }
+	.ss-iw-tension { color: var(--i360-tension, #8b4513); }
+	.ss-iw-fragile { color: var(--i360-fragile, var(--color-yellow, #e0ac00)); }
+	.ss-iw-blind { color: var(--i360-blind, var(--text-error, #ef4444)); }
+	.ss-i360name { font-size: 11px; font-weight: 600; color: var(--text-muted, #888); }
+	.ss-tierrow { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+	.ss-tierchip { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 0 8px; height: 20px; border-radius: var(--pill-radius, 10px); color: var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); background: color-mix(in srgb, var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 14%, transparent); border: 1px solid color-mix(in srgb, var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 30%, transparent); font-variant-numeric: tabular-nums; }
+	.ss-tier-est { color: var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); background: color-mix(in srgb, var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 26%, transparent); border-color: color-mix(in srgb, var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 55%, transparent); }
+	.ss-tier-load { background: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); border-color: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); color: #fff; }
+	.ss-tier-stale { background: color-mix(in srgb, var(--link-tier-stale, #d97706) 14%, transparent); border-color: color-mix(in srgb, var(--link-tier-stale, #d97706) 30%, transparent); color: var(--link-tier-stale, #d97706); }
+	.ss-tierlbl { font-size: 13px; font-weight: 600; color: var(--text-normal, #2e3338); }
 	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
 	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
 	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }

@@ -292,27 +292,33 @@
 		font-size: calc(0.65rem * var(--rs-scale, 1)); font-weight: var(--pill-weight, 700); line-height: 1;
 		padding: 0 8px; height: var(--pill-height, 20px);
 		border-radius: var(--pill-radius, 10px); white-space: nowrap; flex-shrink: 0;
-		color: var(--interactive-accent, #7c3aed);
-		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
-		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
+		color: var(--link-tier-accent, var(--interactive-accent, #7c3aed)); /* MIG-088 §5b — mirrors BacklinksPanel */
+		background: color-mix(in srgb, var(--link-tier-accent, var(--interactive-accent, #7c3aed)) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--link-tier-accent, var(--interactive-accent, #7c3aed)) 30%, transparent);
 		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
 		box-sizing: border-box;
 	}
 	/* P5 slice 3 — per-tier gradient, mirrors BacklinksPanel. */
-	.ol-tier-emerging { /* default */ }
+	.ol-tier-emerging {
+		/* §5b Boss ruling: one colour per tier — mirrors BacklinksPanel */
+		color: var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed)));
+		background: color-mix(in srgb, var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 14%, transparent);
+		border-color: color-mix(in srgb, var(--link-tier-emerging, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 30%, transparent);
+	}
 	.ol-tier-established {
-		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 26%, transparent);
-		border-color: color-mix(in srgb, var(--interactive-accent, #7c3aed) 55%, transparent);
+		color: var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed)));
+		background: color-mix(in srgb, var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 26%, transparent);
+		border-color: color-mix(in srgb, var(--link-tier-established, var(--link-tier-accent, var(--interactive-accent, #7c3aed))) 55%, transparent);
 	}
 	.ol-tier-load-bearing {
-		background: var(--interactive-accent, #7c3aed);
-		border-color: var(--interactive-accent, #7c3aed);
+		background: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed)));
+		border-color: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed)));
 		color: #fff;
 	}
 	.ol-tier-stale {
-		background: color-mix(in srgb, #d97706 14%, transparent);
-		border-color: color-mix(in srgb, #d97706 30%, transparent);
-		color: #d97706;
+		background: color-mix(in srgb, var(--link-tier-stale, #d97706) 14%, transparent); /* MIG-088 §5b */
+		border-color: color-mix(in srgb, var(--link-tier-stale, #d97706) 30%, transparent);
+		color: var(--link-tier-stale, #d97706);
 	}
 
 </style>

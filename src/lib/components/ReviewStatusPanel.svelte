@@ -176,8 +176,8 @@
 	.rsp-badge { margin-inline-start: auto; font-size: calc(0.8rem * var(--rs-scale, 1)); }
 	.rsp-sub { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-faint); }
 	.rsp-stale {
-		display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 6px;
-		background: var(--background-modifier-error-hover, rgba(220,80,80,0.12));
+		display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: var(--review-stale-radius, 6px);
+		background: var(--review-stale-bg, var(--background-modifier-error-hover, rgba(220,80,80,0.12))); /* MIG-088 §5b — styleable stale badge */
 		font-size: calc(0.8rem * var(--rs-scale, 1)); color: var(--text-normal); line-height: 1.35;
 	}
 	.rsp-priority { display: flex; align-items: center; gap: 8px; margin-top: 6px; }

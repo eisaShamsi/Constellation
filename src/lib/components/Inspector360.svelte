@@ -736,9 +736,9 @@
 		grid-template-columns: 220px repeat(8, minmax(96px, 1fr)) 76px;
 		grid-auto-rows: minmax(78px, 1fr);
 		gap: 1px;
-		background: var(--background-modifier-border);
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 12px;
+		background: var(--i360-border, var(--background-modifier-border)); /* MIG-088 §5b — grid lines follow the card-border control */
+		border: 1px solid var(--i360-border, var(--background-modifier-border));
+		border-radius: var(--i360-radius, 12px);
 		overflow: hidden;
 		flex: 1;
 	}
@@ -794,9 +794,9 @@
 	.i360-col-header.blind-spot {
 		background:
 			linear-gradient(180deg,
-				color-mix(in srgb, var(--text-error, #ef4444) 14%, transparent),
+				color-mix(in srgb, var(--i360-blind, var(--text-error, #ef4444)) 14%, transparent),
 				var(--background-primary-alt) 90%);
-		border-bottom-color: var(--text-error, #ef4444);
+		border-bottom-color: var(--i360-blind, var(--text-error, #ef4444)); /* MIG-088 §5b */
 	}
 	/* §124/§125: column-header warning treatment.
 	 *
@@ -815,13 +815,13 @@
 	 * Brown isn't in the theme palette, so it's hardcoded with a
 	 * .theme-dark cascade override for visibility on both themes. */
 	.i360-col-header.tensions-flag {
-		border-top: 3px solid #8b4513;
+		border-top: 3px solid var(--i360-tension, #8b4513); /* MIG-088 §5b — one control, per-theme fallback */
 	}
 	:global(.theme-dark) .i360-col-header.tensions-flag {
-		border-top-color: #c89875;
+		border-top-color: var(--i360-tension, #c89875);
 	}
 	.i360-col-header.fragile-flag {
-		border-top: 3px solid var(--color-yellow, #e0ac00);
+		border-top: 3px solid var(--i360-fragile, var(--color-yellow, #e0ac00)); /* MIG-088 §5b */
 	}
 	.i360-col-warn {
 		font-size: calc(18px * var(--rs-scale, 1));
@@ -829,10 +829,10 @@
 		font-weight: 700;
 		text-align: center;
 	}
-	.i360-col-warn.warn-blind { color: var(--text-error, #ef4444); }
-	.i360-col-warn.warn-fragile { color: var(--color-yellow, #e0ac00); }
-	.i360-col-warn.warn-tensions { color: #8b4513; }
-	:global(.theme-dark) .i360-col-warn.warn-tensions { color: #c89875; }
+	.i360-col-warn.warn-blind { color: var(--i360-blind, var(--text-error, #ef4444)); } /* MIG-088 §5b — warn icons ride the same vars as the flag borders */
+	.i360-col-warn.warn-fragile { color: var(--i360-fragile, var(--color-yellow, #e0ac00)); }
+	.i360-col-warn.warn-tensions { color: var(--i360-tension, #8b4513); }
+	:global(.theme-dark) .i360-col-warn.warn-tensions { color: var(--i360-tension, #c89875); }
 	.i360-col-name {
 		font-size: calc(14px * var(--rs-scale, 1)); font-weight: 700; letter-spacing: 1px;
 		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));

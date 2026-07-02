@@ -124,7 +124,7 @@
 	}
 	.vm-backdrop {
 		position: absolute; inset: 0;
-		background: rgba(0, 0, 0, 0.4);
+		background: rgba(0, 0, 0, var(--modal-overlay-alpha, 0.4)); /* MIG-088 §4c — shared dialog-backdrop opacity */
 	}
 	.vm-modal {
 		position: relative;
@@ -219,7 +219,7 @@
 	/* Confirm dialog */
 	.vm-confirm-overlay {
 		position: absolute; inset: 0;
-		background: rgba(0, 0, 0, 0.3);
+		background: rgba(0, 0, 0, var(--modal-overlay-alpha, 0.3)); /* MIG-088 §4c — shared dialog-backdrop opacity */
 		display: flex; align-items: center; justify-content: center;
 		z-index: 10;
 	}

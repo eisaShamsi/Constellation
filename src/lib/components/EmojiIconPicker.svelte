@@ -231,7 +231,7 @@
 
 <style>
 	.picker-backdrop {
-		position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+		position: fixed; inset: 0; background: rgba(0,0,0,var(--modal-overlay-alpha, 0.35)); /* MIG-088 §4c — shared dialog-backdrop opacity */
 		display: flex; align-items: center; justify-content: center; z-index: 1000;
 	}
 	.picker {

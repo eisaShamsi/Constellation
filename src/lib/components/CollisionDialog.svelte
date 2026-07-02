@@ -102,7 +102,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 100000; /* above the create dialog / canonical dialog (99998) so it stacks on top */
-		background: rgba(0, 0, 0, 0.6);
+		background: rgba(0, 0, 0, var(--modal-overlay-alpha, 0.6)); /* MIG-088 §4c — shared dialog-backdrop opacity */
 		display: flex;
 		align-items: center;
 		justify-content: center;

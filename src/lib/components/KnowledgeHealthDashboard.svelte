@@ -338,8 +338,8 @@
 		   cards equal regardless of content); flex-wrap handles overflow. */
 		flex: 1 1 auto;
 		min-width: 100px;
-		background: var(--background-secondary);
-		border-radius: 10px;
+		background: var(--kh-card-bg, var(--background-secondary)); /* MIG-088 §5a — styleable Health-card chrome */
+		border-radius: var(--kh-card-radius, 10px);
 		padding: 16px;
 		text-align: center;
 	}
@@ -350,7 +350,7 @@
 	}
 	.khd-card-label {
 		font-size: 0.72rem;
-		color: var(--text-muted);
+		color: var(--kh-card-label-color, var(--text-muted)); /* MIG-088 §5a */
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		margin-top: 4px;

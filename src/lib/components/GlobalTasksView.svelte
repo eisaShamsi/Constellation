@@ -496,12 +496,14 @@
 		font-weight: 500;
 	}
 	.gt-due.overdue {
-		background: rgba(239, 68, 68, 0.2);
-		color: var(--gt-overdue, #ef4444);
+		/* MIG-088 §5a — the shared Panels→Task-badges control reaches this view too (§C.3 layering:
+		   the view's own Overdue-date override still wins); tint rides the same var as the text. */
+		background: color-mix(in srgb, var(--gt-overdue, var(--task-overdue, #ef4444)) 20%, transparent);
+		color: var(--gt-overdue, var(--task-overdue, #ef4444));
 	}
 	.gt-due.due-today {
-		background: rgba(245, 158, 11, 0.2);
-		color: var(--gt-today, #f59e0b);
+		background: color-mix(in srgb, var(--gt-today, var(--task-today, #f59e0b)) 20%, transparent); /* MIG-088 §5a */
+		color: var(--gt-today, var(--task-today, #f59e0b));
 	}
 	.gt-due.upcoming {
 		background: rgba(100, 100, 100, 0.2);
@@ -511,8 +513,8 @@
 		font-size: calc(0.68rem * var(--gt-scale, 1));
 		padding: 1px 5px;
 		border-radius: 3px;
-		background: rgba(124, 58, 237, 0.15);
-		color: var(--gt-accent, var(--accent, #7c3aed));
+		background: color-mix(in srgb, var(--gt-accent, var(--task-tag, var(--accent, #7c3aed))) 15%, transparent); /* MIG-088 §5a — shared Tag control */
+		color: var(--gt-accent, var(--task-tag, var(--accent, #7c3aed)));
 	}
 	.gt-file-link {
 		display: flex;

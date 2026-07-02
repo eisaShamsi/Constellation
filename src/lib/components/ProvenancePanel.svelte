@@ -118,7 +118,7 @@
 		padding: 0 4px; min-width: 16px; text-align: center;
 	}
 	.prov-external-tag {
-		font-size: calc(0.62rem * var(--rs-scale, 1)); color: #4A9EFF; font-weight: 500;
-		border: 1px solid #4A9EFF40; border-radius: 3px; padding: 0 3px;
+		font-size: calc(0.62rem * var(--rs-scale, 1)); color: var(--prov-tag-color, #4A9EFF); font-weight: 500; /* MIG-088 §5a — styleable external-source tag */
+		border: 1px solid var(--prov-tag-border, #4A9EFF40); border-radius: var(--prov-tag-radius, 3px); padding: 0 3px;
 	}
 </style>
