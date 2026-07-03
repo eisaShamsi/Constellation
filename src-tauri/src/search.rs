@@ -8316,6 +8316,25 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             return Ok(());
         }
     }
+    // MIG-078 §B1 audit (P2-3) — capture the federation generation BEFORE the
+    // slow init_db. A universe switch during init_db bumps this (via
+    // invalidate_search_state, which also sets state.db = None); without a
+    // re-check we would store THIS now-stale universe's connection, and the
+    // next ensure call for the NEW universe would fast-path on db.is_some() and
+    // read the WRONG universe's data until restart. Serializing init made that
+    // outcome deterministic, so we guard it (the federation thread already does
+    // the same generation dance for its own connection).
+    //
+    // Batch-2 §B2-5 epoch fix: the capture moved ABOVE `db_path(app)` (it used
+    // to sit just before init_db). A switch landing between db_path() and the
+    // old capture point published the NEW generation before we read it — so
+    // the stale-path connection passed the generation check and was stored as
+    // current (reading the WRONG universe until restart). Capturing first
+    // closes the hole: any switch after this line changes the generation and
+    // the post-init check discards our connection.
+    let init_gen = state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst);
     let path = db_path(app)?;
     let version_path = path.with_extension("version");
     let current_version = "7";
@@ -8331,17 +8350,6 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // the outgoing-aggregate triggers init_db creates carry the right rank CASE +
     // IN-list. Cheap; reloads on universe-switch (this fn re-runs when state.db resets).
     crate::link_types::load_active(app);
-    // MIG-078 §B1 audit (P2-3) — capture the federation generation BEFORE the
-    // slow init_db. A universe switch during init_db bumps this (via
-    // invalidate_search_state, which also sets state.db = None); without a
-    // re-check we would store THIS now-stale universe's connection, and the
-    // next ensure call for the NEW universe would fast-path on db.is_some() and
-    // read the WRONG universe's data until restart. Serializing init made that
-    // outcome deterministic, so we guard it (the federation thread already does
-    // the same generation dance for its own connection).
-    let init_gen = state
-        .federation_generation
-        .load(std::sync::atomic::Ordering::SeqCst);
     let conn = init_db(&path)?;
     // Stamp the schema version now that init_db (incl. any rebuild) succeeded —
     // before the store/discard decision below, so a discarded-stale rebuild is

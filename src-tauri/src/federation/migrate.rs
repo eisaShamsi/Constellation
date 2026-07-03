@@ -28,7 +28,7 @@
 //!
 //! 4. **Audit log** — every migrate attempt writes a structured line
 //!    to `{parent_universe}/.constellation/federation-audit.log`:
-//!    ```
+//!    ```text
 //!    2026-05-26T19:32:18Z  AUTO_MIGRATE         cuniverse=...  result=OK
 //!    2026-05-26T19:42:18Z  AUTO_MIGRATE_FAILED  cuniverse=...  result=<msg>
 //!    ```

@@ -40,12 +40,20 @@ struct UniverseRegistry {
 /// Tauri managed state — holds the active universe path.
 pub struct UniverseState {
     pub active_path: Mutex<Option<PathBuf>>,
+    /// Batch-2 §B2-5 — serializes whole universe switches. While
+    /// `set_active_universe` was SYNC, the single IPC dispatch thread
+    /// serialized concurrent activations (main-window boot restore + the
+    /// second screen both call it) for free; as `(async)` they would
+    /// interleave the teardown/heal/migrate sequence. Every switch runs
+    /// under this lock, with the already-active check re-run under it.
+    pub switch_lock: Mutex<()>,
 }
 
 impl UniverseState {
     pub fn new() -> Self {
         Self {
             active_path: Mutex::new(None),
+            switch_lock: Mutex::new(()),
         }
     }
 }
@@ -597,8 +605,21 @@ pub fn create_universe(
 }
 
 /// Set the active universe by ID. Auto-migrates old format if needed.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-5 (2026-07-03): `(async)` — a universe switch
+// waits on the DB writer lock (invalidate_search_state) and can sit behind a
+// mid-flight backfill/reindex; as SYNC that wait froze the whole app. The body
+// stays a blocking fn (std Mutex guards — no .await may cross them); the
+// switch_lock below restores, off the main thread, the whole-switch
+// serialization SYNC dispatch used to provide (double-checked with the §A
+// already-active guard, which re-runs under the lock).
+#[tauri::command(async)]
 pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    // Batch-2 §B2-5 — one switch at a time (poison-tolerant like init_lock).
+    let switch_state = app.state::<UniverseState>();
+    let _switch_guard = switch_state
+        .switch_lock
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     // MIG-079 §A — idempotent activation guard. Re-activating the universe that is
     // ALREADY active is a no-op: do NOT tear down + rebuild the search DB. Without
     // this, the main window's boot restore AND the second screen both call this for
