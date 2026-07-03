@@ -1591,7 +1591,11 @@ fn remove_frontmatter_contains_item(content: &str, child: &str) -> String {
 /// reloads from disk (no BUG-015 stale-buffer stomp). Explicit user action — never silent.
 ///   field "parent"   → set this note's `parent:` to `[[target_name]]` (the child takes the claimant).
 ///   field "contains" → remove `[[target_name]]` from this note's `contains:` (the claimant releases).
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` + the read→edit→write
+// cycle moved inside `gate_rmw` (per-path lock across the WHOLE cycle) — a
+// debounced editor save can land before or after the resolve, never inside it.
+// Reindex + emit stay OUTSIDE the lock (no DB waits under a path lock).
+#[tauri::command(async)]
 pub fn resolve_structural_conflict(
     app: tauri::AppHandle,
     note_path: String,
@@ -1603,16 +1607,21 @@ pub fn resolve_structural_conflict(
     if !path.exists() {
         return Err("Note does not exist.".to_string());
     }
-    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read note: {}", e))?;
-    let updated = match field.as_str() {
-        "parent" => set_frontmatter_parent(&content, &target_name),
-        "contains" => remove_frontmatter_contains_item(&content, &target_name),
-        other => return Err(format!("resolve_structural_conflict: unknown field '{}'", other)),
-    };
-    if updated == content {
-        return Ok(()); // no-op (already resolved)
+    let outcome = crate::write_gate::gate_rmw(path, "resolve_structural_conflict", |content| {
+        let updated = match field.as_str() {
+            "parent" => set_frontmatter_parent(content, &target_name),
+            "contains" => remove_frontmatter_contains_item(content, &target_name),
+            other => return Err(format!("resolve_structural_conflict: unknown field '{}'", other)),
+        };
+        if updated == content {
+            Ok(None) // no-op (already resolved) — nothing written
+        } else {
+            Ok(Some(updated))
+        }
+    })?;
+    if outcome == crate::write_gate::WriteOutcome::OkUnchecked {
+        return Ok(()); // no-op — skip reindex + emit, as before
     }
-    crate::write_gate::gate_write(path, &updated, None, "resolve_structural_conflict")?;
 
     {
         use tauri::Manager;

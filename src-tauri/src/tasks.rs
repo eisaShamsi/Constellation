@@ -436,7 +436,12 @@ pub fn scan_note_tasks(
 
 /// Toggle a task's completion status at a specific line in a file.
 /// Returns the updated file content so the frontend can refresh the editor.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` + the read→toggle→write
+// cycle moved inside `gate_rmw` — the per-path lock now covers the WHOLE cycle,
+// so a debounced editor save can land before or after the toggle but never
+// inside its window (the lost-update hazard SYNC dispatch used to mask).
+// The reindex stays OUTSIDE the lock (hard rule: no DB waits under a path lock).
+#[tauri::command(async)]
 pub fn toggle_task(
     app: tauri::AppHandle,
     file_path: String,
@@ -451,53 +456,56 @@ pub fn toggle_task(
         _ => return Err("Can only modify .md files.".to_string()),
     }
 
-    let content = fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+    // MIG-076 §A2 + Batch-2: read-modify-write as ONE gated critical section.
+    let mut toggled: Option<String> = None;
+    crate::write_gate::gate_rmw(path, "task_toggle", |content| {
+        let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
 
-    let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
-
-    if line_number == 0 || line_number > lines.len() {
-        return Err(format!("Line number {} out of range (1-{})", line_number, lines.len()));
-    }
-
-    let idx = line_number - 1;
-    let line = &lines[idx];
-
-    // Find and toggle the checkbox
-    if let Some(bracket_pos) = line.find("[ ]") {
-        let mut new_line = String::new();
-        new_line.push_str(&line[..bracket_pos]);
-        new_line.push_str("[x]");
-        new_line.push_str(&line[bracket_pos + 3..]);
-        // Add completion date if not present
-        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
-        if !new_line.contains('\u{2705}') {
-            new_line.push_str(&format!(" \u{2705} {}", today));
+        if line_number == 0 || line_number > lines.len() {
+            return Err(format!("Line number {} out of range (1-{})", line_number, lines.len()));
         }
-        lines[idx] = new_line;
-    } else if let Some(bracket_pos) = line.find("[x]").or_else(|| line.find("[X]")) {
-        let mut new_line = String::new();
-        new_line.push_str(&line[..bracket_pos]);
-        new_line.push_str("[ ]");
-        new_line.push_str(&line[bracket_pos + 3..]);
-        // Remove completion date if present (✅ YYYY-MM-DD)
-        let re = regex::Regex::new(r"\s*\u{2705}\s*\d{4}-\d{2}-\d{2}").unwrap();
-        let new_line = re.replace(&new_line, "").to_string();
-        lines[idx] = new_line;
-    } else {
-        return Err("No task checkbox found on this line.".to_string());
-    }
 
-    let new_content = lines.join("\n");
-    // Preserve trailing newline if original had one
-    let final_content = if content.ends_with('\n') {
-        format!("{}\n", new_content)
-    } else {
-        new_content
+        let idx = line_number - 1;
+        let line = &lines[idx];
+
+        // Find and toggle the checkbox
+        if let Some(bracket_pos) = line.find("[ ]") {
+            let mut new_line = String::new();
+            new_line.push_str(&line[..bracket_pos]);
+            new_line.push_str("[x]");
+            new_line.push_str(&line[bracket_pos + 3..]);
+            // Add completion date if not present
+            let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+            if !new_line.contains('\u{2705}') {
+                new_line.push_str(&format!(" \u{2705} {}", today));
+            }
+            lines[idx] = new_line;
+        } else if let Some(bracket_pos) = line.find("[x]").or_else(|| line.find("[X]")) {
+            let mut new_line = String::new();
+            new_line.push_str(&line[..bracket_pos]);
+            new_line.push_str("[ ]");
+            new_line.push_str(&line[bracket_pos + 3..]);
+            // Remove completion date if present (✅ YYYY-MM-DD)
+            let re = regex::Regex::new(r"\s*\u{2705}\s*\d{4}-\d{2}-\d{2}").unwrap();
+            let new_line = re.replace(&new_line, "").to_string();
+            lines[idx] = new_line;
+        } else {
+            return Err("No task checkbox found on this line.".to_string());
+        }
+
+        let new_content = lines.join("\n");
+        // Preserve trailing newline if original had one
+        let final_content = if content.ends_with('\n') {
+            format!("{}\n", new_content)
+        } else {
+            new_content
+        };
+        toggled = Some(final_content.clone());
+        Ok(Some(final_content))
+    })?;
+    let Some(final_content) = toggled else {
+        return Err("Task toggle produced no content.".to_string());
     };
-
-    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
-    crate::write_gate::gate_write(path, &final_content, None, "task_toggle")?;
 
     // MIG-080 §C (Debt Register E.2) — refresh the search index after the toggle.
     // Before, toggle_task wrote via the gate but NEVER reindexed → the FTS/body

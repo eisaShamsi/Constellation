@@ -708,7 +708,11 @@ pub fn save_base_file(app: tauri::AppHandle, file_path: String, definition: Base
         .map_err(|e| format!("Failed to write base file: {}", e))
 }
 
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` + the read→rewrite→write
+// cycle moved inside `gate_rmw` — the per-path lock covers the WHOLE cycle, so a
+// debounced editor save can land before or after the cell edit but never inside
+// its window. Reindex stays OUTSIDE the lock (no DB waits under a path lock).
+#[tauri::command(async)]
 pub fn update_note_property(
     app: tauri::AppHandle,
     file_path: String,
@@ -729,13 +733,10 @@ pub fn update_note_property(
         return Err("Access denied: file is not in a registered library.".to_string());
     };
 
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read note: {}", e))?;
-
-    let new_content = update_frontmatter_property(&content, &key, &value);
-
-    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
-    crate::write_gate::gate_write(Path::new(&file_path), &new_content, None, "base_edit_cell")?;
+    // MIG-076 §A2 + Batch-2: read-modify-write as ONE gated critical section.
+    crate::write_gate::gate_rmw(Path::new(&file_path), "base_edit_cell", |content| {
+        Ok(Some(update_frontmatter_property(content, &key, &value)))
+    })?;
 
     // MIG-065 §H — refresh the search index so the Base table (and any later
     // sort / add-column re-query, which reads `note_meta` — not the file)

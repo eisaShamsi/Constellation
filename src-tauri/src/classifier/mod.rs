@@ -302,7 +302,10 @@ pub fn cece_record_correction_for_card(
 /// the card stays in place showing only the remaining axis. The command
 /// returns the updated record (Some) when the card should stay, or None when
 /// both axes are decided and the card should be removed.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// The note-file frontmatter rewrite inside runs through gate_rmw (whole read→rewrite→write
+// under the per-path lock), so it can no longer interleave with a debounced editor save.
+#[tauri::command(async)]
 pub fn cece_resolve_disambiguation(
     app: tauri::AppHandle,
     note_path: String,

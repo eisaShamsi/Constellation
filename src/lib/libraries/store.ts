@@ -3343,10 +3343,26 @@ export async function updateLinksOnRename(libraryPath: string, libraryName: stri
 
 // PJ-065 §D9 — one-click resolution of a contested structural parent. Edits ONE frontmatter
 // field on `notePath` (field 'parent' → set `parent: [[targetName]]`; field 'contains' → remove
-// `[[targetName]]` from `contains:`) via the proven gate_write path; the backend emits
+// `[[targetName]]` from `contains:`) via the gated RMW path; the backend emits
 // cascade:rewrote so any open tab reloads from disk.
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): the command is `(async)` + gate_rmw now; this
+// wrapper gains the proven toggleTaskReconciled recipe — if the note is open AND dirty, FLUSH
+// its model to disk first (so the resolve reads the latest keystrokes, which no lock can
+// recover from editor memory), gate the window with markCascading (so the armed autosave can't
+// revert the resolve), then reload the model from disk.
 export async function resolveStructuralConflict(notePath: string, field: 'parent' | 'contains', targetName: string): Promise<void> {
-	await invoke('resolve_structural_conflict', { notePath, field, targetName });
+	const openTab = get(openTabs).find((t) => t.path === notePath);
+	if (openTab) markCascading(openTab.path);
+	try {
+		if (openTab && isNoteDirty(openTab.id)) {
+			markRecentWrite(openTab.path);
+			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'structural_resolve_flush'), 'structural_resolve_flush');
+		}
+		await invoke('resolve_structural_conflict', { notePath, field, targetName });
+		await reloadTabsFromDisk([notePath]); // model ADOPTS the resolved disk + {#key} remount
+	} finally {
+		if (openTab) clearCascading(openTab.path);
+	}
 }
 
 // ─── Quick Capture ───

@@ -114,9 +114,30 @@ export async function updateBaseOrder(filePath: string, order: LensSort[]): Prom
  * consistent. Only `prop.<key>` (frontmatter) columns are editable; registered
  * cognitive dimensions are read-only. Reuses the MVP's `update_note_property`
  * command (kept; the only other caller was the orphaned BaseView).
+ *
+ * Note-open-freeze Batch-2 §B2-3 (2026-07-03): the command is `(async)` +
+ * gate_rmw now; this wrapper gains the proven toggleTaskReconciled recipe —
+ * if the edited row's note is OPEN and dirty, flush its model to disk first
+ * (the RMW reads disk; unsaved keystrokes live only in editor memory), gate
+ * the window with markCascading (so the armed autosave can't revert the
+ * property edit), then reload the model from disk.
  */
 export async function updateNoteProperty(filePath: string, key: string, value: string): Promise<void> {
-	await invoke('update_note_property', { filePath, key, value });
+	const { openTabs, markCascading, clearCascading, markRecentWrite, writeNote, reloadTabsFromDisk } = await import('$lib/libraries/store');
+	const { save: saveNoteSession, isDirty: isNoteDirty } = await import('$lib/editor/noteSession');
+	const { get } = await import('svelte/store');
+	const openTab = get(openTabs).find((t) => t.path === filePath);
+	if (openTab) markCascading(openTab.path);
+	try {
+		if (openTab && isNoteDirty(openTab.id)) {
+			markRecentWrite(openTab.path);
+			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'base_edit_flush'), 'base_edit_flush');
+		}
+		await invoke('update_note_property', { filePath, key, value });
+		if (openTab) await reloadTabsFromDisk([filePath]); // model ADOPTS the edited disk
+	} finally {
+		if (openTab) clearCascading(openTab.path);
+	}
 }
 
 /**

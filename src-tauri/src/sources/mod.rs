@@ -526,21 +526,19 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
 // ─── Disk I/O for IPC ─────────────────────────────────────────────
 
 /// Helper used by the manual-set IPC: read a note's content from disk,
-/// rewrite the `sources:` frontmatter, write back. Atomic via a
-/// temp-file rename in the `tempfile` style of MIG-006 §9 (deferred
-/// — for now uses direct write; concurrent writes during user-set
-/// are extremely unlikely given the UI flow).
+/// rewrite the `sources:` frontmatter, write back.
+/// Note-open-freeze Batch-2 §B2-3 (2026-07-03): the whole read→rewrite→write
+/// cycle now runs inside `gate_rmw` (per-path lock held across it — MIG-076
+/// §A2 upgraded), so a debounced editor save can never land inside the rewrite
+/// window once the calling commands are `(async)`.
 fn rewrite_note_sources_on_disk(note_path: &str, sources: &[String]) -> Result<(), String> {
     let path = Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read {}: {}", note_path, e))?;
-    let rewritten = rewrite_frontmatter_sources(&content, sources);
-    // MIG-076 §A2 — gated: this is a programmatic frontmatter rewrite of a
-    // possibly-open note (the exact class the gate serializes).
-    crate::write_gate::gate_write(path, &rewritten, None, "sources_rewrite")?;
+    crate::write_gate::gate_rmw(path, "sources_rewrite", |content| {
+        Ok(Some(rewrite_frontmatter_sources(content, sources)))
+    })?;
     Ok(())
 }
 
@@ -573,7 +571,10 @@ pub fn sources_get_for_note(
 /// MIG-021v2 §1G2': records every override in the per-library
 /// correction log (NDJSON). Best-effort — log failures don't block
 /// the user's save.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// The note-file frontmatter rewrite inside runs through gate_rmw (whole read→rewrite→write
+// under the per-path lock), so it can no longer interleave with a debounced editor save.
+#[tauri::command(async)]
 pub fn sources_set_manual(
     app: tauri::AppHandle,
     note_path: String,
@@ -1039,6 +1040,8 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
     out
 }
 
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): read→rewrite→write as ONE gated
+// critical section (`gate_rmw`) — see rewrite_note_sources_on_disk.
 fn rewrite_note_content_type_on_disk(
     note_path: &str,
     content_type: &[String],
@@ -1047,11 +1050,9 @@ fn rewrite_note_content_type_on_disk(
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read {}: {}", note_path, e))?;
-    let rewritten = rewrite_frontmatter_content_type(&content, content_type);
-    // MIG-076 §A2 — gated (programmatic frontmatter rewrite).
-    crate::write_gate::gate_write(path, &rewritten, None, "content_type_rewrite")?;
+    crate::write_gate::gate_rmw(path, "content_type_rewrite", |content| {
+        Ok(Some(rewrite_frontmatter_content_type(content, content_type)))
+    })?;
     Ok(())
 }
 
@@ -1069,7 +1070,10 @@ pub fn content_type_get_for_note(
     read_content_type_for_note(conn, &note_path)
 }
 
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// The note-file frontmatter rewrite inside runs through gate_rmw (whole read→rewrite→write
+// under the per-path lock), so it can no longer interleave with a debounced editor save.
+#[tauri::command(async)]
 pub fn content_type_set_manual(
     app: tauri::AppHandle,
     note_path: String,
