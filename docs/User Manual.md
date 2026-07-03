@@ -2188,7 +2188,7 @@ There are two ways to open the Inspector for whichever note you have active.
 - The matrix's strength is at-a-glance pattern reading. Don't try to memorise individual dots — read the shape of each row, each column, and the empty regions.
 - A row that is fully empty (no connections at that stratum) is a stratum your thinking has not reached. A column that is fully empty (no connections of that type) is a typed direction you have never used for this note.
 - The "Open a note to see its 360.3D view" empty state means the Inspector is open but no note is in focus. Open any note in the editor (or click in your library) and the matrix will fill in.
-- On large libraries (thousands of notes), the first open of the Inspector for a given note takes a moment while it computes. Subsequent opens are faster.
+- On large libraries (thousands of notes), the first open of the Inspector for a given note takes a moment while it computes. During that moment you'll see a brief **"Loading 360° view…"** spinner, and — importantly — **the rest of the app stays responsive** (you can keep clicking, scrolling and typing); the computation runs in the background rather than freezing the window. When you switch notes you'll see the spinner again for the new note rather than the previous note's data lingering. Subsequent opens of a note you've already viewed are instant.
 
 ---
 

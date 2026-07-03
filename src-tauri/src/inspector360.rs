@@ -88,7 +88,18 @@ pub struct Note360View {
 }
 
 /// Get the complete 360° view for a single note.
-#[tauri::command]
+//
+// PJ-066 rule — `(async)` moves the heavy SYNC full-library disk re-walk
+// (`scan_all_notes` + `precompute_all_strata`, measured ~2.8 s cold / ~0.35 s
+// warm on a 550-note library) OFF the WebView2/IPC dispatch thread onto a Tokio
+// worker, so it can no longer freeze the whole app while a 360 tab / the 360
+// panel fetches. The body has no `.await` (pure thread-offload); the invoke/
+// Promise contract is unchanged and the sole caller already awaits it with a
+// sequence guard (+layout.svelte). Same idiom as `constellation_embed_notes`,
+// `scan_unlinked_mentions`, `save_universe_link_types`. The disk-walk COST is
+// unchanged — only its thread. The Rule-8 write-time-derivation fix (read the
+// index instead of re-walking) is a separate, queued /migration.
+#[tauri::command(async)]
 pub fn get_360_view(
     app: tauri::AppHandle,
     library_path: String,

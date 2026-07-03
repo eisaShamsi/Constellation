@@ -1499,6 +1499,7 @@
     "help_hud_tensions": "Tensions — désaccords actifs avec cette note (liens Contredit pointant vers elle). Les tensions ne sont pas des problèmes à résoudre ; ce sont des connaissances à développer. Une note comportant plusieurs tensions est une note où votre pensée est vivante.",
     "title": "360.3D",
     "noData": "Ouvrez une note pour voir sa vue 360°",
+    "loading": "Chargement de la vue 360°…",
     "gaps": "lacunes",
     "blindSpots": "angles morts",
     "tensions": "tensions",

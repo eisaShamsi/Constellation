@@ -1499,6 +1499,7 @@
     "help_hud_tensions": "Tensiones — desacuerdos activos con esta nota (enlaces Contradice que apuntan hacia ella). Las tensiones no son problemas que resolver; son conocimiento por desarrollar. Una nota con varias tensiones es una nota donde tu pensamiento está vivo.",
     "title": "360.3D",
     "noData": "Abre una nota para ver su vista 360°",
+    "loading": "Cargando la vista 360°…",
     "gaps": "brechas",
     "blindSpots": "puntos ciegos",
     "tensions": "tensiones",

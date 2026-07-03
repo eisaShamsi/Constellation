@@ -2028,6 +2028,7 @@
   "inspector360": {
     "title": "360.3D",
     "noData": "Open a note to see its 360° view",
+    "loading": "Loading 360° view…",
     "gaps": "gaps",
     "blindSpots": "blind spots",
     "tensions": "tensions",

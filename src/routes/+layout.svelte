@@ -460,6 +460,10 @@
 	let showInspector360 = $state(false);
 	let inspector360EverOpened = $state(false); // LL-022 lazy-mount sticky flag
 	let inspector360Data = $state<any>(null);    // Note360View
+	// get_360_view is now async (off the IPC thread) — so a note-switch fetch no
+	// longer blocks. This flag lets the panel show a LOADING state instead of the
+	// PREVIOUS note's data during the in-flight fetch (settled-vs-loading isolation).
+	let inspector360Loading = $state(false);
 	let inspector360FetchTimer: ReturnType<typeof setTimeout> | null = null;
 	let inspector360RequestSeq = 0;
 	let lastFetchedInspectorKey: string | null = null;
@@ -1435,10 +1439,17 @@
 		const libPath = inspector360LibPath;
 		if (!shouldFetch || !path || !libPath) {
 			if (!shouldFetch && inspector360Data !== null) inspector360Data = null;
+			inspector360Loading = false;
 			return;
 		}
 		const key = `${libPath}::${path}`;
 		if (key === lastFetchedInspectorKey && inspector360Data) return;
+		// New note (key differs) — the fetch is async so the UI stays live; drop the
+		// previous note's data and show a loading state so the panel never renders a
+		// DIFFERENT note's 360 view during the in-flight fetch. Bare writes (not read
+		// in this effect) → no $effect self-trigger (Perf Rule 2).
+		inspector360Data = null;
+		inspector360Loading = true;
 		const seq = ++inspector360RequestSeq;
 		if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
 		inspector360FetchTimer = setTimeout(async () => {
@@ -1447,10 +1458,11 @@
 				if (seq === inspector360RequestSeq) {
 					inspector360Data = data;
 					lastFetchedInspectorKey = key;
+					inspector360Loading = false;
 				}
 			} catch (e) {
 				console.error('Inspector 360 fetch failed:', e);
-				if (seq === inspector360RequestSeq) inspector360Data = null;
+				if (seq === inspector360RequestSeq) { inspector360Data = null; inspector360Loading = false; }
 			}
 		}, 200);
 		return () => {
@@ -6741,6 +6753,7 @@
 			<div class="inspector360-overlay" class:inspector360-visible={showInspector360}>
 				<Inspector360
 					data={inspector360Data}
+					loading={inspector360Loading}
 					compact={false}
 					previousNoteName={inspector360BackStack.length > 0 ? inspector360BackStack[inspector360BackStack.length - 1].name : null}
 					onNoteClick={(path, name) => {
@@ -7757,6 +7770,7 @@
 					<div class="rs-section rs-full-height">
 						<Inspector360
 							data={inspector360Data}
+							loading={inspector360Loading}
 							compact={true}
 							previousNoteName={inspector360BackStack.length > 0 ? inspector360BackStack[inspector360BackStack.length - 1].name : null}
 							onNoteClick={(path, name) => {

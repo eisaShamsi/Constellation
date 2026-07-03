@@ -21,6 +21,7 @@
 
 	let {
 		data = null as Note360View | null,
+		loading = false,
 		compact = false,
 		onNoteClick,
 		onClose,
@@ -28,6 +29,7 @@
 		onBack,
 	}: {
 		data?: Note360View | null;
+		loading?: boolean;
 		compact?: boolean;
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
@@ -269,7 +271,12 @@
 				<span class="i360-back-name" dir="auto">{truncName(previousNoteName, 22)}</span>
 			</button>
 		{/if}
-		{#if !data || !compactBars}
+		{#if loading}
+			<div class="i360-empty">
+				<div class="i360-spinner" aria-hidden="true"></div>
+				<div class="i360-empty-text">{$t('inspector360.loading') || 'Loading 360° view…'}</div>
+			</div>
+		{:else if !data || !compactBars}
 			<div class="i360-empty">
 				<div class="i360-empty-icon">{'\u{1F52E}'}</div>
 				<div class="i360-empty-text">{$t('inspector360.noData') || 'Open a note to see its 360° view'}</div>
@@ -327,7 +334,12 @@
 {:else}
 	<!-- ===== FULL-WINDOW — Stratification Matrix ===== -->
 	<div class="i360-full">
-		{#if !data || !matrix}
+		{#if loading}
+			<div class="i360-empty-full">
+				<div class="i360-spinner i360-spinner-lg" aria-hidden="true"></div>
+				<div class="i360-empty-text-lg">{$t('inspector360.loading') || 'Loading 360° view…'}</div>
+			</div>
+		{:else if !data || !matrix}
 			<div class="i360-empty-full">
 				<div class="i360-empty-icon-lg">{'\u{1F52E}'}</div>
 				<div class="i360-empty-text-lg">{$t('inspector360.noData') || 'Open a note to see its 360° view'}</div>
@@ -562,6 +574,18 @@
 	.i360-empty { text-align: center; padding: 32px 16px; }
 	.i360-empty-icon { font-size: calc(3.5rem * var(--rs-scale, 1)); margin-bottom: 12px; }
 	.i360-empty-text { font-size: calc(1.5rem * var(--rs-scale, 1)); color: var(--text-muted); }
+	/* Loading state — shown while the (now async) get_360_view fetch is in flight,
+	   so the panel never renders the previous note's data during a note-switch. */
+	.i360-spinner {
+		width: calc(2.4rem * var(--rs-scale, 1)); height: calc(2.4rem * var(--rs-scale, 1));
+		margin: 0 auto 14px; border-radius: 50%;
+		border: 3px solid var(--background-modifier-border, rgba(128,128,128,0.3));
+		border-top-color: var(--interactive-accent, #7c3aed);
+		animation: i360-spin 0.8s linear infinite;
+	}
+	.i360-spinner-lg { width: calc(3.6rem * var(--rs-scale, 1)); height: calc(3.6rem * var(--rs-scale, 1)); border-width: 4px; margin-bottom: 20px; }
+	@keyframes i360-spin { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { .i360-spinner { animation-duration: 2s; } }
 
 	.i360-card { display: flex; flex-direction: column; gap: 14px; }
 	.i360-card-name {

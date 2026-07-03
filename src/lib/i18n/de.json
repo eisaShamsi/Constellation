@@ -1499,6 +1499,7 @@
     "help_hud_tensions": "Spannungen — aktive Meinungsverschiedenheiten mit dieser Notiz (Widerspricht-Links, die auf sie zeigen). Spannungen sind keine Probleme, die behoben werden müssen; sie sind Wissen, das es zu entwickeln gilt. Eine Notiz mit mehreren Spannungen ist eine Notiz, in der Ihr Denken lebendig ist.",
     "title": "360.3D",
     "noData": "Öffnen Sie eine Notiz für die 360°-Ansicht",
+    "loading": "360°-Ansicht wird geladen…",
     "gaps": "Lücken",
     "blindSpots": "blinde Flecken",
     "tensions": "Spannungen",

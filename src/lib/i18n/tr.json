@@ -1928,6 +1928,7 @@
     "help_hud_tensions": "Gerilimler — bu notla etkin anlaşmazlıklar (ona yönelen Çelişir bağlantıları). Gerilimler giderilecek sorunlar değil; geliştirilecek bilgidir. Birçok gerilimi olan bir not, düşüncenizin canlı olduğu bir nottur.",
     "title": "360.3D",
     "noData": "360° görünümü görmek için bir not açın",
+    "loading": "360° görünümü yükleniyor…",
     "gaps": "boşluklar",
     "blindSpots": "kör noktalar",
     "tensions": "gerilimler",
