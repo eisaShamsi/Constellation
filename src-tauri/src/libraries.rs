@@ -1013,6 +1013,44 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     }
     let old_title = old_title_out.unwrap_or_default();
 
+    // §B2-4 stall fix (2026-07-03, Boss-reproduced ×2 + 3-tracer/verifier
+    // convergence): the DB tail below parks on the UNBOUNDED SearchState
+    // writer mutex whenever anything holds it long — and with the command now
+    // `(async)` that park is INVISIBLE: the invoke promise never settles, so
+    // the frontend's whole post-rename orchestration (tab migration, tree
+    // refresh, THE LINK CASCADE) silently never runs. The fs+journal state is
+    // FINAL at this point, and every statement in the tail is already
+    // best-effort (`let _ =`), so the tail is detached to a worker: the IPC
+    // settles the moment the file state is final, unconditionally. This is
+    // the PJ-066 rule (an awaited IPC surface must never include an unbounded
+    // writer-lock wait) applied to rename_item's own tail.
+    let tail_app = app.clone();
+    let tail_old_path = old_path.clone();
+    let tail_new_path = new_path.clone();
+    let tail_old_title = old_title.clone();
+    let tail_new_title = new_title.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        rename_item_db_tail(&tail_app, &tail_old_path, &tail_new_path, &tail_old_title, &tail_new_title);
+    });
+
+    // Journal marker (stall forensics): the command RETURNED — any future
+    // "renamed but nothing followed" report is journal-decidable at a glance.
+    crate::write_gate::journal_marker(new_p, "rename_return");
+
+    Ok(new_path)
+}
+
+/// The rename's DB bookkeeping (Steps 4–6), detached from the awaited IPC
+/// surface (§B2-4 stall fix — see rename_item). Every operation is
+/// best-effort; the fs state (already final) is the source of truth and the
+/// watcher / next reindex heals any miss.
+fn rename_item_db_tail(
+    app: &tauri::AppHandle,
+    old_path: &str,
+    new_path: &str,
+    old_title: &str,
+    new_title: &str,
+) {
     // Steps 4+5: DB cascade + 'rename' alias stamp.
     {
         use tauri::Manager;
@@ -1084,13 +1122,11 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        let libs = load_all_libraries(&app);
+        let libs = load_all_libraries(app);
         if let Some(lib) = libs.iter().find(|l| new_path.starts_with(&l.path)) {
-            let _ = crate::search::reindex_single_note(&search_state, &new_path, &lib.name);
+            let _ = crate::search::reindex_single_note(&search_state, new_path, &lib.name);
         }
     }
-
-    Ok(new_path)
 }
 
 /// MIG-003 Step 0 — Convert a note title into a safe filename
@@ -5194,6 +5230,9 @@ pub fn update_links_on_rename(
 ) -> Result<CascadeResult, String> {
     use tauri::Emitter;
     validate_path_in_any_library(&app, &library_path)?;
+    // §B2-4 stall forensics — the cascade was ENTERED (pairs with the
+    // rename's "rename_return" marker; see write_gate::journal_marker).
+    crate::write_gate::journal_marker(Path::new(&library_path), "cascade_enter");
     // §2: compile the regex once per cascade, reuse it across every file
     // visited. `regex::escape` keeps titles with metacharacters safe
     // (`§2 Round3`, `Foo (bar)`, `a.b`, etc.).
@@ -5226,14 +5265,27 @@ pub fn update_links_on_rename(
     // Per-call transactions: `index_note` already wraps each call in
     // `BEGIN IMMEDIATE`/COMMIT. Wrapping a batch transaction here would
     // collide. WAL stays bounded by the per-file commit cycles.
+    //
+    // §B2-4 stall fix (same class as rename_item's tail): each reindex
+    // acquires the UNBOUNDED writer mutex — N sequential acquisitions inside
+    // the awaited IPC surface = the same invisible-park shape that stalled
+    // rename_item. The rewrites are already on disk (the frontend's reload
+    // pipeline keys off `result.rewritten`, not the reindex); detach the
+    // best-effort reindex loop to a worker so the IPC settles when the FILE
+    // work is done.
     if !result.rewritten.is_empty() {
-        use tauri::Manager;
-        let search_state = app.state::<crate::search::SearchState>();
-        for path in &result.rewritten {
-            if let Err(e) = crate::search::reindex_single_note(&search_state, path, &library_name) {
-                eprintln!("[update_links_on_rename] reindex skipped path={} err={}", path, e);
+        let reindex_app = app.clone();
+        let reindex_paths = result.rewritten.clone();
+        let reindex_lib = library_name.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            use tauri::Manager;
+            let search_state = reindex_app.state::<crate::search::SearchState>();
+            for path in &reindex_paths {
+                if let Err(e) = crate::search::reindex_single_note(&search_state, path, &reindex_lib) {
+                    eprintln!("[update_links_on_rename] reindex skipped path={} err={}", path, e);
+                }
             }
-        }
+        });
     }
 
     // §3-redo.3 — emit the cascade:rewrote event so the frontend can reload

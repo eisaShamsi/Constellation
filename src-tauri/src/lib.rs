@@ -498,6 +498,7 @@ pub fn run() {
             libraries::move_to_trash,
             libraries::delete_path,
             write_gate::read_write_journal_stats,
+            write_gate::journal_frontend_marker,
             libraries::scan_library_index,
             libraries::read_index_entries,
             libraries::read_term_mentions,

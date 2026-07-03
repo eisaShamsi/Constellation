@@ -5018,6 +5018,10 @@
 		}
 	}
 	let renamingPath = $state('');
+	// Batch-2 §B2-4 fix — reentrancy guard: at most one rename flow per source
+	// path in flight (see handleRenameComplete). Plain Set (control state, no
+	// reactivity needed).
+	const renamesInFlight = new Set<string>();
 
 	function handleContextMenu(entry: FileEntry, x: number, y: number, libraryId: string) {
 		contextMenu = { x, y, entry, libraryId };
@@ -5559,6 +5563,21 @@
 	async function handleRenameComplete(oldPath: string, newName: string, force = false) {
 		renamingPath = '';
 		if (!oldPath || !newName) return;
+		// Batch-2 §B2-4 fix: the tree rename input DOUBLE-COMMITS — pressing Enter
+		// runs finishRename, which tears down the input, whose blur fires
+		// finishRename AGAIN with the same (oldPath, newName). Harmless while
+		// rename_item was SYNC (the 2nd call hit refused_exists after the 1st had
+		// fully finished in order); once rename_item is (async), the two full
+		// orchestration flows run CONCURRENTLY and corrupt each other — an
+		// unbalanced cascadingPaths refcount leaves the renamed tab permanently
+		// "cascading" (unswitchable), and the 2nd flow's collision-check aborts the
+		// 1st flow's [[link]] cascade. Guard: one rename flow per source path; the
+		// duplicate returns as a no-op. Released in `finally` so the collision
+		// dialog's re-invoke (onChangeName/onOverwrite, user-triggered later) and
+		// any subsequent rename of the same path are never blocked.
+		if (renamesInFlight.has(oldPath)) return;
+		renamesInFlight.add(oldPath);
+		try {
 
 		const isDir = !oldPath.endsWith('.md');
 		const parentDir = oldPath.substring(0, oldPath.lastIndexOf('\\') === -1 ? oldPath.lastIndexOf('/') : oldPath.lastIndexOf('\\'));
@@ -5605,7 +5624,21 @@
 				? (oldPath.split(/[\\/]/).pop() ?? '')
 				: await getOldTitleForCascade(oldPath);
 
-			const effectivePath = await renameItem(oldPath, newPath);
+			// §B2-4 stall watchdog — defense-in-depth behind the Rust-side fix
+			// (rename_item now settles the moment the FILE state is final; its
+			// DB tail is detached). If a future regression ever parks the
+			// invoke again, this race converts an invisible forever-pending
+			// promise into a loud error after 30 s: the catch below refreshes
+			// the tree (the fs rename HAS happened by the journal's evidence
+			// shape) and the finally releases renamesInFlight — no permanently
+			// stuck tree row, no silently-dead retries.
+			const effectivePath = await Promise.race([
+				renameItem(oldPath, newPath),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error(`rename watchdog: rename_item did not settle in 30s (${oldPath})`)), 30000)),
+			]);
+			// §B2-4 forensics marker — the JS chain RESUMED after the rename invoke.
+			invoke('journal_frontend_marker', { surface: 'rename_chain_resume', detail: effectivePath }).catch(() => {});
 			markOrgChartDirty(); // MIG-077 A3-R3 follow-up — reload the chart if open
 			// §137 (Rule 8 — Write-Time Derivation): every reactive Map keyed
 			// by a file path must follow that path in the same transaction as
@@ -5661,6 +5694,8 @@
 					for (const t of tabs) markCascading(t.path);
 					try {
 						await flushAllTabsInLibrary(lib.path);
+						// §B2-4 forensics marker — about to DISPATCH the cascade IPC.
+						invoke('journal_frontend_marker', { surface: 'cascade_dispatch', detail: `${oldName} -> ${newName}` }).catch(() => {});
 						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName);
 						await reloadTabsFromDisk(result.rewritten);
 						// §144 (supersedes §143's targeted update — the targeted
@@ -5715,6 +5750,18 @@
 			}
 		} catch (e) {
 			console.error('Failed to rename:', e);
+			// §B2-4 forensics marker — the swallowed exception's TEXT, journal-visible
+			// in the release build (where the console is not).
+			invoke('journal_frontend_marker', { surface: 'rename_catch', detail: String(e) }).catch(() => {});
+			// §B2-4 hardening: whatever failed, the fs rename may already be
+			// final (the gate journals it before anything can stall) — refresh
+			// the tree so no stale row is left pointing at a dead path (the
+			// "displayed as the old name / cannot switch" trap).
+			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			if (lib) { try { await refreshLibraryTree(lib.library_id); } catch { /* best-effort */ } }
+		}
+		} finally {
+			renamesInFlight.delete(oldPath);
 		}
 	}
 

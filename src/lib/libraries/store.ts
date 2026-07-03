@@ -1426,7 +1426,13 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	const _fromNotePath = fromNotePath;
 
 	const resolved = await resolveNoteContent(filePath);
-	if (resolved === null) return; // File unreadable
+	if (resolved === null) {
+		// §B2-4 forensics: this silent return is what "I click the note and
+		// nothing happens" looks like when a stale tree row points at a dead
+		// path (e.g. a rename whose tree refresh never ran). Log it loudly.
+		console.warn('[openNoteTab] unreadable path — stale tree row?', filePath);
+		return;
+	}
 	let content = resolved.content;
 	const cursorPos = resolved.cursorPos;
 	const scrollTop = resolved.scrollTop;

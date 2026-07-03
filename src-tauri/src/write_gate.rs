@@ -767,6 +767,25 @@ pub fn gate_delete(path: &Path, mode: DeleteMode, surface: &str) -> Result<Write
     Ok(WriteOutcome::Deleted)
 }
 
+/// §B2-4 stall forensics — append a zero-byte marker line to the journal
+/// (surface names the checkpoint, e.g. "rename_return" / "cascade_enter").
+/// Makes "the fs work happened but the flow died afterwards" journal-decidable:
+/// a rename with `renamed` but no `rename_return` = the command's tail stalled;
+/// `rename_return` but no `cascade_enter` = the frontend chain died in between.
+pub fn journal_marker(path: &Path, surface: &str) {
+    journal(path, surface, WriteOutcome::OkUnchecked, 0, 0);
+}
+
+/// §B2-4 stall forensics, frontend side — lets the JS orchestration journal
+/// its own checkpoints (and, crucially, the TEXT of a caught exception that
+/// would otherwise die invisibly in a release build's console). The `detail`
+/// string rides in the journal line's path field.
+#[tauri::command]
+pub fn journal_frontend_marker(surface: String, detail: String) {
+    let d: String = detail.chars().take(300).collect();
+    journal(Path::new(&d), &surface, WriteOutcome::OkUnchecked, 0, 0);
+}
+
 /// Escape hatch for compound destructive sequences that must run under the
 /// source path's lock but don't fit `gate_delete`'s single-call shape (the
 /// `delete_path` trash fallback's copy+remove pair). SAME TWO HARD RULES as
