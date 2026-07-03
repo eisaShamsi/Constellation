@@ -793,7 +793,10 @@ pub fn remove_arabic_override(
 ///
 /// The heavy lifting lives in `search::reindex_notes_matching_text`;
 /// this wrapper just exposes it through the Tauri IPC surface.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn reindex_arabic_overrides(
     app: tauri::AppHandle,
     surface: String,

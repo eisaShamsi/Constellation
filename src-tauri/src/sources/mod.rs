@@ -769,7 +769,10 @@ pub fn sources_list_pending_suggestions(
 
 /// Reject a suggestion: clear the queue entry without writing anything
 /// to `sources:`. The classifier's next scan can re-propose.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn sources_reject_suggestion(
     app: tauri::AppHandle,
     note_path: String,

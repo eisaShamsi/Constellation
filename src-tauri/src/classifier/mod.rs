@@ -36,7 +36,10 @@ use tauri::Manager;
 ///
 /// Returns an error if the note can't be read, the embedding engine
 /// fails to initialize, or the database write fails.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn classifier_suggest_for_note(
     app: tauri::AppHandle,
     note_path: String,

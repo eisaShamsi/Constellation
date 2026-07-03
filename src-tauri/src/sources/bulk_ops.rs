@@ -346,7 +346,10 @@ fn has_split_regime(composite_json: &str) -> bool {
 /// Reversible in the loose sense that the user can re-run the
 /// classifier scan to regenerate suggestions; not reversible in the
 /// strict sense (the originally-suggested IDs are gone).
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn sources_reject_all_pending(app: AppHandle) -> Result<usize, String> {
     crate::search::ensure_search_db_ready(&app)?;
     let search_state = app.state::<crate::search::SearchState>();

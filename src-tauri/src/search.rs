@@ -7802,7 +7802,10 @@ pub fn constellation_ccs_snapshot(app: tauri::AppHandle) -> Result<serde_json::V
 }
 
 /// Update a link's confidence level.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn constellation_link_set_confidence(
     app: tauri::AppHandle,
     source_path: String,
@@ -7863,7 +7866,10 @@ pub fn constellation_link_backfill_confidence(
 }
 
 /// Archive a link (soft delete — preserved in history).
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn constellation_link_archive(
     app: tauri::AppHandle,
     source_path: String,
@@ -7914,7 +7920,10 @@ pub(crate) fn unarchive_link_rows(
     Ok(rows.len())
 }
 
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
+// all callers await. See SESSION-LOG-2026-07-03 (Architect findings).
+#[tauri::command(async)]
 pub fn constellation_link_unarchive(
     app: tauri::AppHandle,
     source_path: String,
