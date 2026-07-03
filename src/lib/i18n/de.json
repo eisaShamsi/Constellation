@@ -63,8 +63,7 @@
       "showLabel": "Typnamen über jeder Verbindung anzeigen",
       "showLabelDesc": "Zeigt den Verbindungstyp (z. B. „widerspricht“) als kleine Beschriftung über jeder typisierten Verbindung an, damit seine Bedeutung unmissverständlich ist.",
       "colourByType": "Verbindungen nach Typ einfärben",
-      "colourByTypeDesc": "Färbt jede typisierte Verbindung in der Farbe ihres Typs. Wenn deaktiviert, verwenden typisierte Verbindungen die Standardfarbe, und der Typ wird allein durch die Beschriftung angezeigt.",
-      "resetColours": "Farben auf Standard zurücksetzen"
+      "colourByTypeDesc": "Färbt jede typisierte Verbindung in der Farbe ihres Typs. Wenn deaktiviert, verwenden typisierte Verbindungen die Standardfarbe, und der Typ wird allein durch die Beschriftung angezeigt."
     },
     "title": "Einstellungen",
     "sections": {

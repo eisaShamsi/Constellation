@@ -63,8 +63,7 @@
       "showLabel": "Tür adını her bağlantının üstünde göster",
       "showLabelDesc": "Bağlantı türünü (örneğin \"Çelişen\") her tipli bağlantının üstünde küçük bir etiket olarak göster, böylece anlamı şüpheye yer bırakmaz.",
       "colourByType": "Bağlantıları türe göre renklendir",
-      "colourByTypeDesc": "Her tipli bağlantıyı kendi türünün rengiyle boya. Kapalıyken tipli bağlantılar standart bağlantı rengini kullanır ve tür yalnızca etiketle gösterilir.",
-      "resetColours": "Renkleri varsayılana sıfırla"
+      "colourByTypeDesc": "Her tipli bağlantıyı kendi türünün rengiyle boya. Kapalıyken tipli bağlantılar standart bağlantı rengini kullanır ve tür yalnızca etiketle gösterilir."
     },
     "title": "Ayarlar",
     "sections": {

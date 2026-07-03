@@ -76,6 +76,19 @@ export function toLinkTypeDeltas(types: LinkTypeDef[]): LinkTypeDef[] {
 	});
 }
 
+/** True when any built-in seed's colour differs from its default — the Style Setter's
+ *  per-element "Reset this element" enable-state for the Links element. */
+export function seedColorsDiffer(): boolean {
+	return cognitiveLinkTypes().some((t) => SEED_DEFAULTS[t.id] && t.color !== SEED_DEFAULTS[t.id].color);
+}
+
+/** Reset every built-in seed's colour to its default; custom types keep theirs (they
+ *  have no default). Persists via the normal §G save path, so every consumer refreshes. */
+export async function resetSeedColors(): Promise<void> {
+	const cur = cognitiveLinkTypes().map((t) => (SEED_DEFAULTS[t.id] ? { ...t, color: SEED_DEFAULTS[t.id].color } : t));
+	await saveLinkTypes(toLinkTypeDeltas(cur));
+}
+
 /** Resolved, ordered list (top-level types each followed by their children). */
 let cache: LinkTypeDef[] = [];
 /** id → def, for O(1) lookups built alongside the cache. */

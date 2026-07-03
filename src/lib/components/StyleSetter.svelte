@@ -25,6 +25,9 @@
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
+	// Boss ruling 2026-07-02 — ONE reset per element: the Links element's registry colours
+	// hang off the standard "Reset this element" button (the editor's own link was removed).
+	import { linkTypesStore, seedColorsDiffer, resetSeedColors } from '$lib/libraries/linkTypeRegistry';
 	import CalloutTypesEditor from './CalloutTypesEditor.svelte';
 	// MIG-081 §C.2d — the real CalendarPanel as the Calendar category's centre preview. It reads
 	// the draft --cal-* (set on the .ss root) → recolours live; engine loads lazily on open.
@@ -1014,13 +1017,33 @@
 	}
 	// The selected element's CSS-var keys, and whether ANY is currently overridden (draft or saved).
 	const selVars = $derived(sel ? elementVars(sel) : []);
+	// Links is settings/registry-backed (no CSS vars): dirty when a seed colour, a toggle,
+	// or the pill shape differs from its default. `void $linkTypesStore` keeps it live.
+	const LINK_SHAPE_DEFAULTS = { radius: 10, height: 20, fontWeight: 700 } as const;
+	const linksDirty = $derived.by(() => {
+		void $linkTypesStore;
+		const sh = $appSettings.linkPills?.shape ?? LINK_SHAPE_DEFAULTS;
+		return seedColorsDiffer()
+			|| $appSettings.colourTypedLinks !== true || $appSettings.showTypedLinkLabels !== true
+			|| sh.radius !== LINK_SHAPE_DEFAULTS.radius || sh.height !== LINK_SHAPE_DEFAULTS.height
+			|| sh.fontWeight !== LINK_SHAPE_DEFAULTS.fontWeight;
+	});
 	const selHasOverride = $derived(
-		selVars.some((v) => v in draft || (($appSettings.styleOverride ?? {})[v] !== undefined)),
+		selVars.some((v) => v in draft || (($appSettings.styleOverride ?? {})[v] !== undefined))
+		|| (selected === 'links' && linksDirty),
 	);
 	// Reset ONLY this element: drop its vars from the draft + the persisted per-Universe override.
 	// The +layout apply effect (styleOverride) and the live $effect (draft) both re-apply, removing
 	// exactly these keys → that element reverts to the theme/fallback look; nothing else moves.
 	function resetElement() {
+		// Links: whole-element semantics — seed colours → defaults (custom types keep theirs),
+		// toggles → on, pill shape → default. One updateSettings; the registry save refreshes
+		// every consumer (pills, editor, 360) via the store.
+		if (selected === 'links') {
+			void resetSeedColors();
+			const lp = get(appSettings).linkPills;
+			updateSettings({ colourTypedLinks: true, showTypedLinkLabels: true, linkPills: { ...lp, shape: { ...LINK_SHAPE_DEFAULTS } } });
+		}
 		if (!selVars.length) return;
 		const next = { ...draft };
 		for (const v of selVars) delete next[v];

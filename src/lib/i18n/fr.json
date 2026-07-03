@@ -63,8 +63,7 @@
       "showLabel": "Afficher le nom du type au-dessus de chaque lien",
       "showLabelDesc": "Affiche le type de lien (p. ex. « contredit ») sous forme de petite étiquette au-dessus de chaque lien typé, pour que son sens soit sans ambiguïté.",
       "colourByType": "Colorer les liens par type",
-      "colourByTypeDesc": "Teinte chaque lien typé avec la couleur de son type. Lorsque l'option est désactivée, les liens typés utilisent la couleur de lien standard et le type est indiqué par la seule étiquette.",
-      "resetColours": "Réinitialiser les couleurs par défaut"
+      "colourByTypeDesc": "Teinte chaque lien typé avec la couleur de son type. Lorsque l'option est désactivée, les liens typés utilisent la couleur de lien standard et le type est indiqué par la seule étiquette."
     },
     "title": "Paramètres",
     "sections": {

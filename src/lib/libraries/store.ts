@@ -3689,13 +3689,10 @@ export interface AppSettings {
 	// Custom keyboard shortcut overrides (command ID → shortcut string, empty = unbound)
 	customShortcuts: Record<string, string>;
 
-	// Living Link pill appearance — per-type fill + text colors and shared
-	// shape. Consumed reactively by BacklinksPanel + OutgoingLinksPanel so
-	// the user can tune the sidebar pills without editing CSS. Defaults
-	// mirror the palette that shipped with P3/P4.1.
+	// Living Link pill SHAPE (radius/height/weight), shared by every LinkTypePill.
+	// Per-type COLOURS moved to the Link-Type Registry (MIG-067 — linkTypeRegistry.ts,
+	// user-edited via Style Setter → Links); the old fill/text maps here had no readers.
 	linkPills: {
-		fill: Record<string, string>;    // type name → fill hex
-		text: Record<string, string>;    // type name → text hex
 		shape: {
 			radius: number;              // px border-radius
 			height: number;              // px explicit pill height
@@ -4205,32 +4202,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 	customShortcuts: {},
 	linkPills: {
-		fill: {
-			supports:       '#4A9EFF',
-			contradicts:    '#FF4A4A',
-			causes:         '#FF8C42',
-			exemplifies:    '#4AFF88',
-			generalizes:    '#A44AFF',
-			'derives-from': '#FFD700',
-			'part-of':      '#AAAAAA',
-			associative:    '#888888',
-			// MIG-022 §A.2 (D-A1.β) — `supersedes` color: slate
-			// blue-gray, distinct from all eight existing pills,
-			// suggesting "this replaces something older". User can
-			// override via Settings → Link pills color picker.
-			supersedes:     '#5B7A8A',
-		},
-		text: {
-			supports:       '#ffffff',
-			contradicts:    '#ffffff',
-			causes:         '#ffffff',
-			exemplifies:    '#000000',
-			generalizes:    '#ffffff',
-			'derives-from': '#000000',
-			'part-of':      '#ffffff',
-			associative:    '#ffffff',
-			supersedes:     '#ffffff',  // MIG-022 §A.2 — white text on slate-blue fill
-		},
 		shape: { radius: 10, height: 20, fontWeight: 700 },
 	},
 	linkLifecycle: {

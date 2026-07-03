@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, tn } from '$lib/i18n';
 	import { lookupStageEmoji, libraryStats } from '$lib/libraries/store';
-	import { cognitiveLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { cognitiveLinkTypes, linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 
@@ -61,21 +61,31 @@
 	// boot-seeded before this panel can open.
 	// PJ-065 — the 360 matrix is the cognitive grammar; the structural (parent/TOC)
 	// lane is excluded so it never becomes a matrix column or a "missing" cognitive type.
-	const REG_TYPES = cognitiveLinkTypes();
+	// `void $linkTypesStore` (the LinkTypePill pattern) keeps these live: a §G recolour or a
+	// custom-type add/remove mid-session updates the open matrix — no remount needed.
+	const REG_TYPES = $derived.by(() => { void $linkTypesStore; return cognitiveLinkTypes(); });
 	type LinkType = string;
-	const TYPE_ORDER: LinkType[] = [...REG_TYPES.map((t) => t.id), 'untyped'];
+	// The ordered cognitive ids as a PRIMITIVE key — changes only when the VOCABULARY changes
+	// (add/remove/reorder a type), NOT on a colour edit. Svelte memoizes a derived string by
+	// value, so a colour-only recolour leaves this identical → TYPE_ORDER/TYPE_LABEL_KEYS (and the
+	// heavy `matrix` $derived that reads them) do NOT recompute. Colours still update live because
+	// the template reads the reactive TYPE_COLORS[type] directly. (ids are [a-z0-9-] slugs -> a comma is a safe join/split separator.)
+	const typeIdsKey = $derived(REG_TYPES.map((t) => t.id).join(','));
+	const TYPE_ORDER: LinkType[] = $derived([...typeIdsKey.split(','), 'untyped']);
 
-	const TYPE_COLORS: Record<string, string> = {
+	// COLOURS are the only per-tick-reactive bit (read as TYPE_COLORS[type] in the template) so the
+	// matrix re-tints live without its structure recomputing.
+	const TYPE_COLORS: Record<string, string> = $derived({
 		...Object.fromEntries(REG_TYPES.map((t): [string, string] => [t.id, t.color])),
 		untyped: '#888888',
-	};
+	});
 
-	// i18n key per type: built-ins keep their `link_<id>` keys; 'untyped' its own.
-	// Custom types have no key → typeLabels falls back to the registry label.
-	const TYPE_LABEL_KEYS: Record<string, string> = {
-		...Object.fromEntries(REG_TYPES.map((t): [string, string] => [t.id, `link_${t.id.replace(/-/g, '_')}`])),
-		untyped: 'untyped',
-	};
+	// i18n key per type: built-ins keep their `link_<id>` keys; 'untyped' its own. Custom types have
+	// no key → typeLabels falls back to the registry label. Derived from the STABLE TYPE_ORDER (id
+	// set), not REG_TYPES, so a recolour doesn't churn it.
+	const TYPE_LABEL_KEYS: Record<string, string> = $derived(
+		Object.fromEntries(TYPE_ORDER.map((id) => [id, id === 'untyped' ? 'untyped' : `link_${id.replace(/-/g, '_')}`])),
+	);
 
 	// Stratum order: highest (Worldview) at top, lowest (Datum) at bottom — so
 	// the user reads "altitude" from top-down naturally.

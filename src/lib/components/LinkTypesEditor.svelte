@@ -20,7 +20,7 @@
 	import { t, locale } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
-		cognitiveLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
+		cognitiveLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
 	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
 	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
@@ -136,13 +136,6 @@
 		if (activeTypeId) recolor(activeTypeId, hex);
 	}
 
-	/** Reset every built-in (seed) type's colour to its original default — "go back to
-	 *  the original colour scheme". Custom types keep their colours (they have no default). */
-	function resetColors() {
-		types = types.map((tp) => (SEED_DEFAULTS[tp.id] ? { ...tp, color: SEED_DEFAULTS[tp.id].color } : tp));
-		persist();
-	}
-
 	// §C — keep the swatches reactive to the registry so applying a Style (or any external
 	// recolour) updates them LIVE in Settings, not on reopen. The store mirrors the registry.
 	$effect(() => {
@@ -204,8 +197,6 @@
 				</div>
 			{/each}
 		</div>
-
-		<button class="lte-reset" onclick={resetColors}>{$t('settings.linkTypes.resetColours') || 'Reset colours to default'}</button>
 
 		{#if embedded && ($appSettings.styleSwatches ?? []).length}
 			<!-- §C Phase 5 — the universal saved-colour palette (shared with the interface elements):
@@ -302,11 +293,6 @@
 	.lte-hint code { font-family: var(--font-monospace, monospace); color: var(--text-normal); }
 	.lte-warn { color: var(--text-error, #e53e3e); }
 	.lte-state { color: var(--text-muted); font-size: 0.82rem; padding: 8px 2px; }
-	.lte-reset {
-		background: none; border: none; cursor: pointer; color: var(--text-muted);
-		font-size: 0.76rem; padding: 5px 2px; text-decoration: underline; text-underline-offset: 2px;
-	}
-	.lte-reset:hover { color: var(--text-normal); }
 	/* MIG-070 §C Phase 5 — self-contained colour swatch: a fixed PILL, identical in Settings AND the
 	   Style Setter. SettingsModal's `.color-input` is scoped and never reached the embedded editor,
 	   so the native input took varying widths in the flex row (Eisa remark 1). `flex: none` + a fixed

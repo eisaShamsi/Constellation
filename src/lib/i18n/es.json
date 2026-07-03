@@ -63,8 +63,7 @@
       "showLabel": "Mostrar el nombre del tipo sobre cada enlace",
       "showLabelDesc": "Muestra el tipo de enlace (p. ej. «contradice») como una pequeña etiqueta sobre cada enlace tipado, para que su significado sea inconfundible.",
       "colourByType": "Colorear los enlaces por tipo",
-      "colourByTypeDesc": "Tiñe cada enlace tipado con el color de su tipo. Cuando está desactivado, los enlaces tipados usan el color de enlace estándar y el tipo se indica solo mediante la etiqueta.",
-      "resetColours": "Restablecer los colores predeterminados"
+      "colourByTypeDesc": "Tiñe cada enlace tipado con el color de su tipo. Cuando está desactivado, los enlaces tipados usan el color de enlace estándar y el tipo se indica solo mediante la etiqueta."
     },
     "title": "Ajustes",
     "sections": {

@@ -63,8 +63,7 @@
       "showLabel": "Mostrar o nome do tipo sobre cada ligação",
       "showLabelDesc": "Apresenta o tipo de ligação (p. ex. «contradiz») como uma pequena etiqueta sobre cada ligação tipada, para que o seu significado seja inequívoco.",
       "colourByType": "Colorir as ligações por tipo",
-      "colourByTypeDesc": "Tinge cada ligação tipada com a cor do seu tipo. Quando desativado, as ligações tipadas usam a cor de ligação padrão e o tipo é indicado apenas pela etiqueta.",
-      "resetColours": "Repor cores predefinidas"
+      "colourByTypeDesc": "Tinge cada ligação tipada com a cor do seu tipo. Quando desativado, as ligações tipadas usam a cor de ligação padrão e o tipo é indicado apenas pela etiqueta."
     },
     "title": "Configurações",
     "sections": {

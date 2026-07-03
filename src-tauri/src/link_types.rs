@@ -523,17 +523,28 @@ pub fn read_universe_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef
     Ok(read_deltas(&app))
 }
 
-#[tauri::command]
+// MIG-088 (Boss 2026-07-02, ~10s freeze on colour reset): `(async)` so the command
+// runs off the IPC dispatch thread — a writer-lock wait (a background reindex/embed
+// holding it) no longer freezes the UI (the PJ-066 rule: multi-second/lock-touching
+// commands must be async, never SYNC on the IPC thread). The `#[tauri::command]`
+// entry was the last piece of the reset path still able to block the whole app.
+#[tauri::command(async)]
 pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>) -> Result<(), String> {
     let path = link_types_path(&app)?;
     let json = serde_json::to_string_pretty(&deltas).map_err(|e| e.to_string())?;
     std::fs::write(&path, json).map_err(|e| format!("Failed to save link types: {}", e))?;
+    let before_fp = snapshot().fingerprint();
     set_active(deltas); // reflect immediately (parser + SQL generators see it now)
-    // MIG-067 §B — re-materialize the outgoing-link aggregates under the new
-    // vocabulary: recreate the triggers (so live edge writes use the new rank) and
-    // schedule the background re-materialize of existing rows (gated, batched,
-    // never blocks). No-op cost when the vocabulary did not actually change.
-    crate::search::on_link_vocabulary_changed(&app);
+    // MIG-067 §B — re-materialize the outgoing-link aggregates ONLY when the VOCABULARY
+    // (ordered ids) actually changed. `fingerprint()` is over ids, so a colour/label edit
+    // (recolour, or "reset colours to default") leaves it identical → the triggers' rank
+    // CASE + IN-list and the materialized aggregates are already correct, and we SKIP the
+    // trigger recreation + backfill schedule that each grab the writer lock. This is what
+    // made a colour-only save free; the earlier code claimed "no-op when unchanged" but had
+    // no such guard, so every recolour needlessly took (and could wait on) the writer lock.
+    if snapshot().fingerprint() != before_fp {
+        crate::search::on_link_vocabulary_changed(&app);
+    }
     Ok(())
 }
 
