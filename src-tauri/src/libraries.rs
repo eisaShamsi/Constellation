@@ -926,7 +926,17 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 ///
 /// For folders, the legacy fs::rename-only flow stays in place (folder
 /// rename DB cascade is its own concern; pre-existing behavior).
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-4 (2026-07-03): `(async)` + the read→title-rewrite
+// →write→rename sequence moved inside `gate_rmw_rename` — ONE critical section
+// under BOTH paths' locks (sorted order). Before, the per-path lock was released
+// between the read (:963), the title write (:988) and the rename (:993); a
+// debounced editor save landing in either gap either lost the user's last
+// keystrokes or carried stale-title content to the new path (the BUG-023-class
+// windows the SYNC dispatch used to mask). The dest-exists check now happens
+// UNDER the lock (closes the :953 TOCTOU). The DB cascade + reindex stay OUTSIDE
+// the path locks (hard rule: no SearchState.db waits under a path lock — a SYNC
+// write_note parking on the path lock would re-freeze the dispatch thread).
+#[tauri::command(async)]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &old_path)?;
     let old = Path::new(&old_path);
@@ -951,6 +961,8 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     validate_path_in_any_library(&app, &new_path)?;
     let new_p = Path::new(&new_path);
     if new_p.exists() && new_p != old {
+        // Fast-path pre-check (user-facing collision error). The authoritative
+        // check re-runs UNDER the lock inside gate_rmw_rename.
         return Err("A file with this name already exists.".to_string());
     }
 
@@ -960,38 +972,46 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         .to_string_lossy()
         .to_string();
 
-    let content = fs::read_to_string(old)
-        .map_err(|e| format!("Failed to read note: {}", e))?;
-    let old_title = extract_frontmatter_title(&content).unwrap_or_else(|| {
-        old.file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string()
-    });
+    // Steps 1–3 as ONE dual-locked critical section: read fresh disk content,
+    // extract the old title FROM THAT read (never a stale pre-read), rewrite
+    // the frontmatter title, atomic-write, rename — no gap a save can enter.
+    let mut old_title_out: Option<String> = None;
+    let mut idempotent_noop = false;
+    let outcome = crate::write_gate::gate_rmw_rename(old, new_p, "rename_item", |content| {
+        let old_title = extract_frontmatter_title(content).unwrap_or_else(|| {
+            old.file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
+        });
 
-    // Idempotency guard: same title AND same path — nothing to do.
-    // Without this, a stale `titleValue` in the frontend (display-sync
-    // bug) firing a blur event would pass old_title == new_title to
-    // update_frontmatter_title, which would append the title to its
-    // own aliases list — producing entries like
-    // [Untitled, TestBug001, TestBug001].
-    if old_title == new_title && old == new_p {
+        // Idempotency guard: same title AND same path — nothing to do.
+        // Without this, a stale `titleValue` in the frontend (display-sync
+        // bug) firing a blur event would pass old_title == new_title to
+        // update_frontmatter_title, which would append the title to its
+        // own aliases list — producing entries like
+        // [Untitled, TestBug001, TestBug001].
+        if old_title == new_title && old == new_p {
+            idempotent_noop = true;
+            old_title_out = Some(old_title);
+            return Ok(None);
+        }
+
+        let updated = if old_title != new_title {
+            Some(update_frontmatter_title(content, &new_title, &old_title))
+        } else {
+            None // title unchanged — pure move; the primitive still renames
+        };
+        old_title_out = Some(old_title);
+        Ok(updated)
+    })?;
+    if outcome == crate::write_gate::WriteOutcome::RefusedExists {
+        return Err("A file with this name already exists.".to_string());
+    }
+    if idempotent_noop {
         return Ok(old_path);
     }
-
-    // Step 1+2: update frontmatter title (and append old title to
-    // aliases). Skipped when title is unchanged but file is being
-    // moved.
-    if old_title != new_title {
-        let updated = update_frontmatter_title(&content, &new_title, &old_title);
-        // MIG-076 §A2 — gated (serialized with any in-flight editor flush).
-        crate::write_gate::gate_write(old, &updated, None, "rename_title")?;
-    }
-
-    // Step 3: rename on disk — gated under BOTH paths' locks.
-    if old != new_p {
-        crate::write_gate::gate_rename(old, new_p, "rename_item")?;
-    }
+    let old_title = old_title_out.unwrap_or_default();
 
     // Steps 4+5: DB cascade + 'rename' alias stamp.
     {
@@ -1639,7 +1659,10 @@ pub fn resolve_structural_conflict(
 }
 
 /// Move a file or folder to a different directory within any registered library.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-4 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// The destructive/rename steps run under path locks (gate_rename/gate_delete); the DB
+// cascade + reindex run after the locks release. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &source_path)?;
     validate_path_in_any_library(&app, &target_folder)?;
@@ -1779,37 +1802,12 @@ fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &m
     }
 }
 
-/// Delete a file or folder (permanent delete).
-#[tauri::command]
-pub fn delete_item(app: tauri::AppHandle, path: String, permanent: Option<bool>) -> Result<(), String> {
-    validate_path_in_any_library(&app, &path)?;
-    let target = Path::new(&path);
-    if !target.exists() {
-        return Err("Item does not exist.".to_string());
-    }
-
-    let _ = permanent; // For now, always permanent delete
-    let path_str = path.clone();
-    let result = if target.is_dir() {
-        fs::remove_dir_all(target)
-            .map_err(|e| format!("Failed to delete folder: {}", e))
-    } else {
-        fs::remove_file(target)
-            .map_err(|e| format!("Failed to delete file: {}", e))
-    };
-
-    // Clean up note_links and note_meta for deleted items
-    if result.is_ok() {
-        // Clean up search index + link data for deleted note
-        use tauri::Manager;
-        {
-            let search_state = app.state::<crate::search::SearchState>();
-            let _ = crate::search::reindex_delete_note(&search_state, &path_str);
-        }
-    }
-
-    result
-}
+// `delete_item` RETIRED (Batch-2 §B2-4, Boss-ruled 2026-07-03). It was the
+// pre-trash-era always-permanent delete with the family's worst unprotected
+// write path, superseded by `delete_path` (trash-backed modes + gate_delete)
+// — its frontend wrapper had zero component callers (deleteWithSetting /
+// deletePath replaced it, MIG-076 §E-follow-up). Predecessor → Replacement
+// entry: SESSION-LOG-2026-07-03.
 
 /// Resolve a wikilink target to an actual file path within a library.
 #[tauri::command]
@@ -5181,7 +5179,12 @@ pub struct CascadeResult {
 const MAX_FAILED_REPORTED: usize = 100;
 
 /// Update all links in a library when a note is renamed.
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-4 (2026-07-03): `(async)` — the full-library
+// cascade walk + its per-file reindex loop (each a writer-lock acquisition)
+// run off the IPC dispatch thread. Per-file RMW is gated (gate_rmw in
+// update_links_recursive); the caller (handleRenameComplete) awaits the whole
+// chain, so cascade ordering vs the tab reload is preserved by the awaits.
+#[tauri::command(async)]
 pub fn update_links_on_rename(
     app: tauri::AppHandle,
     library_path: String,
@@ -5259,26 +5262,36 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result:
         if path.is_dir() {
             update_links_recursive(&path, re, new_name, result);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            if let Ok(content) = fs::read_to_string(&path) {
-                let updated = rewrite_wikilinks_in_text(&content, re, new_name);
+            // A file that vanished mid-walk (concurrent move/delete) is
+            // silently skipped — same semantics as the old `if let Ok(read)`.
+            if !path.exists() { continue; }
+            // Note-open-freeze Batch-2 §B2-4 (2026-07-03): the per-file
+            // read→rewrite→write now runs as ONE gated critical section
+            // (gate_rmw — the per-path lock held across the WHOLE cycle), so
+            // an editor save of THIS file can land before or after its
+            // rewrite but never inside it (the lost-update window the SYNC
+            // dispatch used to mask). The lock is held per FILE (bounded ms),
+            // released before the walker moves on — never across the walk.
+            let mut changed = false;
+            match crate::write_gate::gate_rmw(&path, "cascade", |content| {
+                let updated = rewrite_wikilinks_in_text(content, re, new_name);
                 if updated != content {
-                    // MIG-076 §A2 — through the WriteGate, which serializes
-                    // against any in-flight editor flush on this path, writes
-                    // atomically, and marks watcher_suppress itself (the
-                    // §3-redo.2 F3-watcher-loop suppression now lives in the
-                    // gate for every writer, not just the cascade).
-                    match crate::write_gate::gate_write(&path, &updated, None, "cascade") {
-                        Ok(_) => result.rewritten.push(path.to_string_lossy().to_string()),
-                        Err(e) => {
-                            if result.failed.len() < MAX_FAILED_REPORTED {
-                                result.failed.push((
-                                    path.to_string_lossy().to_string(),
-                                    e.to_string(),
-                                ));
-                            } else {
-                                result.failed_truncated += 1;
-                            }
-                        }
+                    changed = true;
+                    Ok(Some(updated))
+                } else {
+                    Ok(None)
+                }
+            }) {
+                Ok(_) if changed => result.rewritten.push(path.to_string_lossy().to_string()),
+                Ok(_) => {} // unchanged — nothing to record
+                Err(e) => {
+                    if result.failed.len() < MAX_FAILED_REPORTED {
+                        result.failed.push((
+                            path.to_string_lossy().to_string(),
+                            e.to_string(),
+                        ));
+                    } else {
+                        result.failed_truncated += 1;
                     }
                 }
             }
@@ -5645,7 +5658,10 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
 ///   - "system"    → move to the OS Recycle Bin (the `trash` crate).
 /// Every mode drops the note from the search index — it no longer lives at its
 /// indexed path (gone, or in an excluded `.trash`/OS-trash dir).
-#[tauri::command]
+// Note-open-freeze Batch-2 §B2-4 (2026-07-03): `(async)` — off the IPC dispatch thread.
+// The destructive/rename steps run under path locks (gate_rename/gate_delete); the DB
+// cascade + reindex run after the locks release. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn delete_path(
     app: tauri::AppHandle,
     path: String,
@@ -5658,16 +5674,23 @@ pub fn delete_path(
         return Err("Item does not exist.".to_string());
     }
 
+    // Note-open-freeze Batch-2 §B2-4 (2026-07-03): every destructive step runs
+    // under the path lock (gate_delete / with_path_lock) so a debounced editor
+    // save serializes against the delete — it lands before (deleted with the
+    // note) or after (legitimately recreates), never DURING the removal.
     match mode.as_str() {
         "permanent" => {
-            if target.is_dir() {
-                fs::remove_dir_all(target).map_err(|e| format!("Failed to delete folder: {}", e))?;
+            let dm = if target.is_dir() {
+                crate::write_gate::DeleteMode::DirAll
             } else {
-                fs::remove_file(target).map_err(|e| format!("Failed to delete file: {}", e))?;
-            }
+                crate::write_gate::DeleteMode::File
+            };
+            crate::write_gate::gate_delete(target, dm, "delete_permanent")?;
         }
         "system" => {
-            trash::delete(target).map_err(|e| format!("Failed to move to system trash: {}", e))?;
+            crate::write_gate::with_path_lock(target, || {
+                trash::delete(target).map_err(|e| format!("Failed to move to system trash: {}", e))
+            })?;
         }
         "trash" => {
             let root = trash_root.ok_or("No trash root provided for a .trash-folder delete.")?;
@@ -5716,16 +5739,24 @@ fn move_into_trash_folder(source: &Path, trash_root: &Path) -> Result<(), String
     }
     // Gate against an in-flight editor flush of the same file, then move.
     // On a cross-device failure, fall back to copy + remove.
+    // Batch-2 §B2-4: the fallback pair runs under the SOURCE path lock — a
+    // save landing between the copy and the remove used to be silently lost
+    // (written to a file that is removed a moment later); now it serializes.
+    // (gate_rename has already RELEASED its locks by the time the fallback
+    // runs, so taking the source lock here cannot self-deadlock.)
     if crate::write_gate::gate_rename(source, &dest, "delete_trash").is_err() {
-        if source.is_dir() {
-            copy_dir_recursive(source, &dest)?;
-            fs::remove_dir_all(source)
-                .map_err(|e| format!("Failed to remove source folder after copy: {}", e))?;
-        } else {
-            fs::copy(source, &dest).map_err(|e| format!("Failed to copy to trash: {}", e))?;
-            fs::remove_file(source)
-                .map_err(|e| format!("Failed to remove source file after copy: {}", e))?;
-        }
+        crate::write_gate::with_path_lock(source, || -> Result<(), String> {
+            if source.is_dir() {
+                copy_dir_recursive(source, &dest)?;
+                fs::remove_dir_all(source)
+                    .map_err(|e| format!("Failed to remove source folder after copy: {}", e))?;
+            } else {
+                fs::copy(source, &dest).map_err(|e| format!("Failed to copy to trash: {}", e))?;
+                fs::remove_file(source)
+                    .map_err(|e| format!("Failed to remove source file after copy: {}", e))?;
+            }
+            Ok(())
+        })?;
     }
     Ok(())
 }

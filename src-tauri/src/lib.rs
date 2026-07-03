@@ -353,7 +353,6 @@ pub fn run() {
             libraries::resolve_structural_conflict,
             libraries::move_item,
             libraries::list_universe_folders,
-            libraries::delete_item,
             libraries::resolve_wikilink,
             libraries::resolve_wikilink_cross_library,
             libraries::read_library_appearance,

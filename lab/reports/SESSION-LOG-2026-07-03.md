@@ -153,6 +153,32 @@ Boss chose (AskUserQuestion) the **360 freeze** over MIG-088 Phase 6 / Arabic-ca
 - **`with_path_lock(path, f)`** — documented escape hatch for `delete_path`'s copy+remove trash fallback (§B2-4).
 - **Two hard caller rules documented at the primitives:** (1) no gate_* on the same path inside a closure (non-reentrant Mutex = self-deadlock); (2) **no SearchState.db waits inside any path lock** (a SYNC `write_note` parking on a path lock that waits on the DB writer would re-freeze the dispatch thread through the back door).
 - **8 new concurrency `#[test]`s** (the proofs the single-threaded JS harness cannot express): 8-thread increment counts exactly to 8 (lost-update property); a `gate_write` dispatched inside an RMW window lands strictly after it; crossing renames (a→b ∥ b→a) return without deadlock and lose no bytes; dest-exists refused under the lock; same-path = title-only; missing-file errors; `Ok(None)` writes nothing; delete is idempotent + serializes with RMW.
+- **Verified + committed `38f9e255`** — write_gate suite **22 passed / 0 failed**.
+
+## §B2-2 — the 7 async-only-safe flips (committed)
+`constellation_link_set_confidence`/`archive`/`unarchive`, `sources_reject_suggestion`, `sources_reject_all_pending`, `classifier_suggest_for_note` (ONNX inference off the IPC thread — the family's biggest single win), `reindex_arabic_overrides`. cargo check clean.
+
+## §B2-3 — the RMW family onto gate_rmw + (async) (committed)
+- **toggle_task** (tasks.rs): the read→toggle→write moved inside `gate_rmw` (was: read :454 → gate_write :500 unprotected); reindex stays outside the lock; `(async)`. Frontend already had `toggleTaskReconciled` (markCascading + flush-if-dirty + reload).
+- **update_note_property** (bases.rs): same conversion; `(async)`. **+ WA#6 catch applied:** the lens `updateNoteProperty` wrapper gained the toggleTaskReconciled recipe (the discovery flagged BaseTab.commitEdit's missing flush — editing a cell of the OPEN dirty note read stale disk + the armed autosave could revert the edit; now: markCascading → flush-if-dirty → invoke → reloadTabsFromDisk). Imports verified: `save`/`isDirty` live in `$lib/editor/noteSession` (not libraries/store — first draft corrected after an export check).
+- **sources_set_manual / content_type_set_manual / cece_resolve_disambiguation**: the two disk-rewrite helpers (`rewrite_note_sources_on_disk`, `rewrite_note_content_type_on_disk`) converted to `gate_rmw` — every path through them is covered (cece inherits); all three commands `(async)`.
+- **resolve_structural_conflict** (libraries.rs): read→edit→write inside `gate_rmw` (no-op preserved via `OkUnchecked` → skip reindex+emit, as before); `(async)`; the `resolveStructuralConflict` wrapper gained the flush-first recipe.
+- **Verify:** cargo check clean; svelte-check **0 errors** (324 baseline); **mig-076 harness 3 files / 28 tests passed**. Binary rebuilt Jul 3 14:30 (freshness-verified before the tutorial).
+- **Boss test point #1: PASS** (2026-07-03) — task checkbox on the open just-edited note: no freeze, typed words survive, no revert; un-tick clean. (Base cell edit = Part B optional.)
+
+### Boss DISCOVERY at test (banked, NOT Batch-2 scope — new features):
+1. **Base needs RC (right-click) functionality** — joins the MIG-077 right-click program (safe note-menu subset). → task chip `task_dc0ff9b0`.
+2. **Base needs its own search function** — → task chip `task_7b423dd5` (combined with #3).
+3. **Base note-title letter-index sort** — thousands of notes → A–Z/أ–ي letter rail on top/side to jump by letter (Language-First, RTL-aware). → same chip.
+
+## §B2-4 — the rename/cascade family (BUILT; verification running)
+- **rename_item** → `gate_rmw_rename` + `(async)`: the read→title-rewrite→write→rename sequence is ONE dual-locked critical section; `old_title` extracted from the FRESH under-lock read (never a stale pre-read); the idempotency guard moved inside the closure; dest-exists re-checked UNDER the lock (`RefusedExists` → the same user-facing collision message, preserving the MIG-076 §E1b dialog contract); DB cascade + alias stamp + reindex unchanged, AFTER the locks release. Folder branch unchanged (gate_rename).
+- **update_links_on_rename** → per-file `gate_rmw` in `update_links_recursive` (read:5253→write:5261 window closed; lock held per FILE, released between files; vanished-file mid-walk = silent skip preserving the old `if let Ok(read)` semantics; read-failures now land in `failed` — better visibility) + `(async)`.
+- **move_item** → `(async)` flip only (gate_rename already both-locks; TOCTOUs degrade to errors — discovery-verified).
+- **delete_path** → `permanent` mode via **`gate_delete`**; `system` mode wrapped in `with_path_lock`; the trash fallback's **copy+remove pair** (the corruption-class window — a save landing between copy and remove was silently lost) now runs under the SOURCE path lock (gate_rename has released its locks by then — no self-deadlock); `(async)`.
+- **delete_item — RETIRED** (Boss-ruled): fn removed from libraries.rs (tombstone comment + Predecessor→Replacement pointer), `lib.rs` registration removed, the zero-caller `deleteItem` store wrapper removed (tombstone). `deleteWithSetting`/`deletePath` are the live surface.
+- **Frontend flush-before-rename** — in the ONE `renameItem` store wrapper both callers share (main-window handleRenameComplete + second-screen title fallback): markCascading(oldPath) → flush-if-dirty (saveNoteSession → `rename_flush` surface) → invoke → clear in finally. Closes the ≤1.5 s lost-keystroke window (which was PRE-EXISTING — the ★Stage-1 tab re-seed from disk dropped unsaved keystrokes even under sync dispatch) and prevents an autosave racing the now-async rename (a post-rename `CreatedByWrite` old-path resurrection). Deliberately NOT the cascadeFreeze overlay (bisection-proven to abort the cascade if raised pre-rename) — markCascading is the toggleTaskReconciled-proven mechanism.
+- Honest scope note: cross-WINDOW flush (main-window dirty note renamed from the second screen) is not covered — each Tauri window has its own JS context; the Rust path locks protect disk integrity; display adoption rides the existing events. Same status as toggle (pre-existing).
 
 ### CLASS STATUS after this pass
 - **Closed:** every high-frequency everyday action (navigate, search, review, panels, sidebar, suggestions, provenance, embeds).

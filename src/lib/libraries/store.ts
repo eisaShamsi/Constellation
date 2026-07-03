@@ -2387,12 +2387,33 @@ export async function createFolder(parentPath: string, folderName: string): Prom
 }
 
 export async function renameItem(oldPath: string, newPath: string): Promise<string> {
-	// Rust returns the EFFECTIVE path. For canonical notes, rename updates
-	// the frontmatter title in-place and the file stays at oldPath — so the
-	// returned path equals oldPath even though we requested newPath. Trusting
-	// the requested newPath would point the tab at a non-existent file and
-	// the next write_note call would create a phantom duplicate (BUG-001).
-	const effectivePath = await invoke<string>('rename_item', { oldPath, newPath });
+	// Note-open-freeze Batch-2 §B2-4 (2026-07-03) — flush-before-rename. The
+	// (now async + dual-locked) rename reads DISK; a dirty open tab's last
+	// ≤1.5 s of typing lives only in the editor model, and the ★Stage-1 tab
+	// re-seed below replaces the tab with fresh disk content — so unsaved
+	// keystrokes were dropped (pre-existing) and, once async, could race the
+	// rename. Cure (the toggleTaskReconciled recipe): markCascading gates the
+	// armed autosave, flush the model to disk, THEN rename — the rename's
+	// locked read sees the user's latest keystrokes. Applied HERE in the one
+	// wrapper both callers share (main-window handleRenameComplete + the
+	// second-screen title fallback).
+	const renamedTab = get(openTabs).find((t) => t.path === oldPath);
+	if (renamedTab) markCascading(renamedTab.path);
+	let effectivePath: string;
+	try {
+		if (renamedTab && isNoteDirty(renamedTab.id)) {
+			markRecentWrite(renamedTab.path);
+			await saveNoteSession(renamedTab.id, renamedTab.path, (p, c) => writeNote(p, c, 'rename_flush'), 'rename_flush');
+		}
+		// Rust returns the EFFECTIVE path. For canonical notes, rename updates
+		// the frontmatter title in-place and the file stays at oldPath — so the
+		// returned path equals oldPath even though we requested newPath. Trusting
+		// the requested newPath would point the tab at a non-existent file and
+		// the next write_note call would create a phantom duplicate (BUG-001).
+		effectivePath = await invoke<string>('rename_item', { oldPath, newPath });
+	} finally {
+		if (renamedTab) clearCascading(renamedTab.path);
+	}
 	// §140: migrate write-ahead-buffer + recent-writes from oldPath to
 	// effectivePath. Without this, a stale wab entry under oldPath survives
 	// the rename and a future note created at the same path on
@@ -2474,19 +2495,9 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 	return newPath;
 }
 
-export async function deleteItem(path: string, permanent = false): Promise<void> {
-	await invoke('delete_item', { path, permanent });
-	// §140: drop the path's wab + recentWrites entries (and any descendants
-	// for a folder delete). Without this, a future note created at the same
-	// path hits the dead entry and loads the deleted note's content.
-	clearPathKeyedAuxStateOnDelete(path);
-	// Close any tabs with this path or under this folder
-	openTabs.update(tabs => tabs.filter(t => {
-		if (t.path === path) return false;
-		if (t.path.startsWith(path + '/') || t.path.startsWith(path + '\\')) return false;
-		return true;
-	}));
-}
+// `deleteItem` wrapper RETIRED with its `delete_item` command (Batch-2 §B2-4,
+// Boss-ruled 2026-07-03) — zero component callers; `deleteWithSetting` /
+// `deletePath` are the live delete surface (MIG-076 §E-follow-up).
 
 /** MIG-076 §E-follow-up — the raw routing command (see `delete_path` in
  *  libraries.rs). Most callers want `deleteWithSetting`. */
