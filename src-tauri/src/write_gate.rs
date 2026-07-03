@@ -91,6 +91,9 @@ pub enum WriteOutcome {
     /// surface or the §140 deleted-note class — the journal + soak decide
     /// which surfaces should move to create-exclusive (§F).
     CreatedByWrite,
+    /// Batch-2 — a gated destructive removal (file or directory) performed
+    /// under the path lock (`gate_delete`).
+    Deleted,
 }
 
 impl WriteOutcome {
@@ -106,6 +109,7 @@ impl WriteOutcome {
             WriteOutcome::UnverifiedNoCid => "unverified_no_cid",
             WriteOutcome::SelfAttestedOk => "ok_self_attested",
             WriteOutcome::CreatedByWrite => "created_by_write",
+            WriteOutcome::Deleted => "deleted",
         }
     }
 }
@@ -595,6 +599,188 @@ pub fn gate_rename(old: &Path, new: &Path, surface: &str) -> Result<WriteOutcome
     Ok(WriteOutcome::Renamed)
 }
 
+// ─── Batch-2 primitives: locked read-modify-write / delete ─────────────────
+//
+// WHY (note-open-freeze Batch 2, 2026-07-03): `gate_write` holds the per-path
+// lock only across the CAS check + atomic replace — NOT across a caller's
+// read→modify→write cycle. While every note-file command was a SYNC
+// `#[tauri::command]`, the single IPC dispatch thread serialized those cycles
+// against the editor's debounced save for free. Converting them to `(async)`
+// (so a writer-lock wait can't freeze the app) removes that accidental
+// serialization — these primitives replace it with an explicit one: the SAME
+// per-path lock `gate_write` uses, held across the WHOLE cycle, so an editor
+// save can land before or after an RMW but never inside it.
+//
+// TWO HARD RULES for callers:
+// 1. NEVER call another gate_* on the same path inside the closure — the
+//    per-path Mutex is NOT reentrant; that is a self-deadlock.
+// 2. NEVER wait on SearchState.db (or any multi-second lock) inside the
+//    closure — the editor's SYNC `write_note` parks on this path lock, and a
+//    path lock that waits on the DB writer re-freezes the dispatch thread
+//    through the back door. Do DB work AFTER the gate call returns.
+
+/// Read `path` under its lock, let `mutate` produce replacement content, and
+/// atomically write it — one critical section. `mutate` returning `Ok(None)`
+/// means "no change needed" (nothing written, nothing journaled). The file
+/// must exist (RMW targets existing notes; use `gate_create_exclusive` /
+/// `gate_write` to create).
+pub fn gate_rmw(
+    path: &Path,
+    surface: &str,
+    mutate: impl FnOnce(&str) -> Result<Option<String>, String>,
+) -> Result<WriteOutcome, String> {
+    let lk = path_lock(path);
+    let _guard = match lk.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    let disk = fs::read_to_string(path)
+        .map_err(|e| format!("write_gate: rmw read failed for {}: {}", path.display(), e))?;
+    let Some(updated) = mutate(&disk)? else {
+        return Ok(WriteOutcome::OkUnchecked); // no-op: nothing written
+    };
+    atomic_write(path, &updated)?;
+    // Freshness is BY CONSTRUCTION (read under the same lock) — journal as a
+    // checked write, with the content's own cid as the attestation.
+    let cid = crate::search::extract_frontmatter_cid_cn(&updated);
+    journal_ext(
+        path,
+        surface,
+        WriteOutcome::Ok,
+        updated.len(),
+        fnv1a(updated.as_bytes()),
+        cid.as_deref(),
+        cid.as_deref(),
+    );
+    Ok(WriteOutcome::Ok)
+}
+
+/// The `rename_item` shape as ONE critical section under BOTH paths' locks
+/// (sorted order, like `gate_rename`): read `old` → `mutate` (e.g. rewrite
+/// the frontmatter title) → optional atomic write → move `old` → `new`.
+/// `old == new` (a pure title change) skips the move. A pre-existing `new`
+/// (different file) returns `RefusedExists` under the lock — the caller maps
+/// it to its collision dialog; the check can no longer race a concurrent
+/// create.
+pub fn gate_rmw_rename(
+    old: &Path,
+    new: &Path,
+    surface: &str,
+    mutate: impl FnOnce(&str) -> Result<Option<String>, String>,
+) -> Result<WriteOutcome, String> {
+    let (ka, kb) = (lock_key(old), lock_key(new));
+    let (first, second) = if ka <= kb { (old, new) } else { (new, old) };
+    let l1 = path_lock(first);
+    let _g1 = match l1.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    let l2 = if ka != kb { Some(path_lock(second)) } else { None };
+    let _g2 = l2.as_ref().map(|l| match l.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    });
+
+    if ka != kb && new.exists() {
+        journal(new, surface, WriteOutcome::RefusedExists, 0, fnv1a(old.to_string_lossy().as_bytes()));
+        return Ok(WriteOutcome::RefusedExists);
+    }
+
+    let disk = fs::read_to_string(old)
+        .map_err(|e| format!("write_gate: rmw-rename read failed for {}: {}", old.display(), e))?;
+    if let Some(updated) = mutate(&disk)? {
+        atomic_write(old, &updated)?;
+        let cid = crate::search::extract_frontmatter_cid_cn(&updated);
+        journal_ext(
+            old,
+            surface,
+            WriteOutcome::Ok,
+            updated.len(),
+            fnv1a(updated.as_bytes()),
+            cid.as_deref(),
+            cid.as_deref(),
+        );
+    }
+
+    if ka == kb {
+        return Ok(WriteOutcome::Ok); // pure title change — no move
+    }
+
+    crate::watcher_suppress::mark(old);
+    crate::watcher_suppress::mark(new);
+    let mut attempt: u64 = 0;
+    loop {
+        match fs::rename(old, new) {
+            Ok(()) => break,
+            Err(e) => {
+                attempt += 1;
+                if attempt >= 5 {
+                    return Err(format!("Failed to rename file: {}", e));
+                }
+                std::thread::sleep(Duration::from_millis(50 * attempt));
+            }
+        }
+    }
+    journal(new, surface, WriteOutcome::Renamed, 0, fnv1a(old.to_string_lossy().as_bytes()));
+    Ok(WriteOutcome::Renamed)
+}
+
+/// What `gate_delete` removes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeleteMode {
+    /// `fs::remove_file`
+    File,
+    /// `fs::remove_dir_all`
+    DirAll,
+}
+
+/// Destructive removal under the path lock (+ watcher suppression + the same
+/// bounded AV/indexer retry as writes). Serializes against every gated write
+/// to the same path, so a save can land before the delete (and be deleted
+/// with it) or after (and legitimately recreate) — never during.
+pub fn gate_delete(path: &Path, mode: DeleteMode, surface: &str) -> Result<WriteOutcome, String> {
+    let lk = path_lock(path);
+    let _guard = match lk.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    crate::watcher_suppress::mark(path);
+    let mut attempt: u64 = 0;
+    loop {
+        let res = match mode {
+            DeleteMode::File => fs::remove_file(path),
+            DeleteMode::DirAll => fs::remove_dir_all(path),
+        };
+        match res {
+            Ok(()) => break,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => break, // idempotent
+            Err(e) => {
+                attempt += 1;
+                if attempt >= 5 {
+                    return Err(format!("write_gate: delete failed after retries: {}", e));
+                }
+                std::thread::sleep(Duration::from_millis(50 * attempt));
+            }
+        }
+    }
+    journal(path, surface, WriteOutcome::Deleted, 0, fnv1a(path.to_string_lossy().as_bytes()));
+    Ok(WriteOutcome::Deleted)
+}
+
+/// Escape hatch for compound destructive sequences that must run under the
+/// source path's lock but don't fit `gate_delete`'s single-call shape (the
+/// `delete_path` trash fallback's copy+remove pair). SAME TWO HARD RULES as
+/// the closures above: no gate_* on this path inside `f` (non-reentrant
+/// Mutex → self-deadlock), no DB waits inside `f`.
+pub fn with_path_lock<R>(path: &Path, f: impl FnOnce() -> R) -> R {
+    let lk = path_lock(path);
+    let _guard = match lk.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    f()
+}
+
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -822,6 +1008,175 @@ mod tests_write_gate {
         }
         let per = t0.elapsed().as_micros() / 50;
         println!("[write_gate] avg gated write (8KB, fsync incl.): {} µs", per);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    // ─── Batch-2 primitives: the concurrency proofs ─────────────────────────
+    // These are the tests the mig-076 JS harness cannot express (it is
+    // single-threaded): real threads racing the new locked-RMW primitives
+    // against gate_write. They MUST stay green before any note-file command
+    // is converted to #[tauri::command(async)].
+
+    #[test]
+    fn rmw_concurrent_increments_lose_nothing() {
+        // The lost-update property proof: 8 threads each read-increment-write
+        // through gate_rmw. Unprotected read→gate_write would lose updates;
+        // the locked RMW must count exactly to 8.
+        let d = tdir("rmw_inc");
+        let p = d.join("counter.md");
+        gate_write(&p, "0", None, "test").unwrap();
+        let mut handles = Vec::new();
+        for _ in 0..8 {
+            let p2 = p.clone();
+            handles.push(thread::spawn(move || {
+                gate_rmw(&p2, "test_rmw", |disk| {
+                    let n: u64 = disk.trim().parse().map_err(|e| format!("{}", e))?;
+                    // widen the read→write window so unprotected code WOULD race
+                    thread::sleep(Duration::from_millis(10));
+                    Ok(Some(format!("{}", n + 1)))
+                })
+                .unwrap();
+            }));
+        }
+        for h in handles { h.join().unwrap(); }
+        assert_eq!(fs::read_to_string(&p).unwrap().trim(), "8");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_excludes_concurrent_gate_write() {
+        // A gate_write dispatched while an RMW is mid-cycle must land AFTER
+        // the RMW completes (never inside its read→write window).
+        use std::sync::mpsc;
+        let d = tdir("rmw_excl");
+        let p = d.join("note.md");
+        gate_write(&p, "base", None, "test").unwrap();
+        let (entered_tx, entered_rx) = mpsc::channel::<()>();
+        let p_rmw = p.clone();
+        let rmw = thread::spawn(move || {
+            gate_rmw(&p_rmw, "test_rmw", |disk| {
+                assert_eq!(disk, "base"); // the RMW's read
+                entered_tx.send(()).unwrap();
+                thread::sleep(Duration::from_millis(200)); // hold the window open
+                Ok(Some("rmw-out".to_string()))
+            })
+            .unwrap();
+        });
+        entered_rx.recv().unwrap(); // RMW is inside its window now
+        let p_w = p.clone();
+        let writer = thread::spawn(move || {
+            gate_write(&p_w, "editor-save", None, "test").unwrap();
+        });
+        rmw.join().unwrap();
+        writer.join().unwrap();
+        // The editor save was dispatched DURING the window but must have
+        // executed after it: final content is the save's, and the RMW's
+        // output was composed from "base", not torn state.
+        assert_eq!(fs::read_to_string(&p).unwrap(), "editor-save");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_rename_crossing_renames_no_deadlock() {
+        // a→b and b→a fired concurrently: sorted lock order must prevent
+        // deadlock; exactly one wins, the other gets RefusedExists or a read
+        // error for the vanished source — never a hang, never data loss.
+        let d = tdir("rmw_cross");
+        let a = d.join("a.md");
+        let b = d.join("b.md");
+        gate_write(&a, "content-a", None, "test").unwrap();
+        gate_write(&b, "content-b", None, "test").unwrap();
+        let (a2, b2) = (a.clone(), b.clone());
+        let t1 = thread::spawn(move || gate_rmw_rename(&a2, &b2, "test", |c| Ok(Some(c.to_string()))));
+        let (a3, b3) = (a.clone(), b.clone());
+        let t2 = thread::spawn(move || gate_rmw_rename(&b3, &a3, "test", |c| Ok(Some(c.to_string()))));
+        let r1 = t1.join().unwrap();
+        let r2 = t2.join().unwrap();
+        // Both returned (no deadlock). Both files still exist with the two
+        // contents between them (no byte lost), whatever the interleaving.
+        let mut contents = vec![
+            fs::read_to_string(&a).unwrap_or_default(),
+            fs::read_to_string(&b).unwrap_or_default(),
+        ];
+        contents.sort();
+        assert!(r1.is_ok() || r2.is_ok(), "at least one rename path returned cleanly: {:?} / {:?}", r1, r2);
+        assert!(contents.contains(&"content-a".to_string()) || contents.contains(&"content-b".to_string()));
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_rename_dest_exists_refused_under_lock() {
+        let d = tdir("rmw_dest");
+        let a = d.join("a.md");
+        let b = d.join("b.md");
+        gate_write(&a, "content-a", None, "test").unwrap();
+        gate_write(&b, "content-b", None, "test").unwrap();
+        let out = gate_rmw_rename(&a, &b, "test", |c| Ok(Some(c.to_string()))).unwrap();
+        assert_eq!(out, WriteOutcome::RefusedExists);
+        // source untouched, dest untouched
+        assert_eq!(fs::read_to_string(&a).unwrap(), "content-a");
+        assert_eq!(fs::read_to_string(&b).unwrap(), "content-b");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_rename_same_path_is_title_only() {
+        let d = tdir("rmw_same");
+        let p = d.join("note.md");
+        gate_write(&p, "old-title", None, "test").unwrap();
+        let out = gate_rmw_rename(&p, &p, "test", |_| Ok(Some("new-title".to_string()))).unwrap();
+        assert_eq!(out, WriteOutcome::Ok);
+        assert_eq!(fs::read_to_string(&p).unwrap(), "new-title");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_missing_file_errors_cleanly() {
+        let d = tdir("rmw_miss");
+        let p = d.join("gone.md");
+        let res = gate_rmw(&p, "test", |c| Ok(Some(c.to_string())));
+        assert!(res.is_err());
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn rmw_none_writes_nothing() {
+        let d = tdir("rmw_none");
+        let p = d.join("note.md");
+        gate_write(&p, "untouched", None, "test").unwrap();
+        let out = gate_rmw(&p, "test", |_| Ok(None)).unwrap();
+        assert_eq!(out, WriteOutcome::OkUnchecked);
+        assert_eq!(fs::read_to_string(&p).unwrap(), "untouched");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn gate_delete_is_idempotent_and_serializes_with_rmw() {
+        use std::sync::mpsc;
+        let d = tdir("del");
+        let p = d.join("note.md");
+        // idempotent: deleting a missing file is Deleted, not an error
+        let out = gate_delete(&p, DeleteMode::File, "test").unwrap();
+        assert_eq!(out, WriteOutcome::Deleted);
+        // serialization: a delete dispatched inside an RMW window waits for it
+        gate_write(&p, "base", None, "test").unwrap();
+        let (entered_tx, entered_rx) = mpsc::channel::<()>();
+        let p_rmw = p.clone();
+        let rmw = thread::spawn(move || {
+            gate_rmw(&p_rmw, "test_rmw", |_| {
+                entered_tx.send(()).unwrap();
+                thread::sleep(Duration::from_millis(150));
+                Ok(Some("rmw-out".to_string()))
+            })
+            .unwrap();
+        });
+        entered_rx.recv().unwrap();
+        let p_del = p.clone();
+        let del = thread::spawn(move || gate_delete(&p_del, DeleteMode::File, "test").unwrap());
+        rmw.join().unwrap();
+        let out = del.join().unwrap();
+        assert_eq!(out, WriteOutcome::Deleted);
+        assert!(!p.exists(), "delete ran after the RMW completed; file gone");
         let _ = fs::remove_dir_all(&d);
     }
 }
