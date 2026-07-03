@@ -167,6 +167,7 @@
 	let showChips = $state(false);
 	let showHistory = $state(false);
 	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+	let sightSearchSeq = 0; // stale-result guard — async Rust commands can resolve out of order
 	let searchMatchSet = $state<Set<string>>(new Set());
 
 	// Settings — persisted across remounts via module-level storage
@@ -426,6 +427,7 @@
 
 	// ─── Search ───────────────────────────────────────────────
 	async function executeSearch() {
+		const mySeq = ++sightSearchSeq; // increments before the early return too — invalidates older in-flight calls
 		if (!searchQuery.trim()) { searchResults = []; searchIdx = 0; searchMatchSet = new Set(); searchMatchCats = new Map(); requestDraw(); return; }
 		addSearchHistory(searchQuery);
 		historyItems = readSearchHistory();
@@ -444,6 +446,7 @@
 			try {
 				const req = parseSearchQuery(canonicalized);
 				const results = await constellationSearch(req);
+				if (mySeq !== sightSearchSeq) return; // stale — a newer search superseded this one
 				for (const r of results) {
 					const id = r.name.toLowerCase();
 					const node = nodeMap.get(id);
@@ -489,6 +492,7 @@
 						try { qEmbed = await embedText(canonicalized); } catch {}
 					}
 					const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+					if (mySeq !== sightSearchSeq) return; // stale — a newer search superseded this one
 					if (searchScope === 'all' || searchScope === 'content') {
 						for (const r of resp?.contents ?? []) contentMatchIds.add(r.name.toLowerCase());
 					}
@@ -523,6 +527,7 @@
 		}
 
 		matches.sort((a, b) => (b.matchCategories?.length ?? 0) - (a.matchCategories?.length ?? 0));
+		if (mySeq !== sightSearchSeq) return; // stale — covers the local-title-only path too
 		searchResults = matches;
 		searchIdx = 0;
 		searchMatchSet = new Set(matches.map(m => m.node.id));

@@ -32,6 +32,7 @@
 	let selectedResultIdx = $state(-1);
 	let loading = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
+	let searchSeq = 0; // stale-result guard — async Rust commands can resolve out of order
 	let showHistory = $state(false);
 	let showChips = $state(false);
 	let history = $state(readSearchHistory());
@@ -144,9 +145,10 @@
 	function triggerSearch(q: string) {
 		clearTimeout(searchTimeout);
 		// q is already clean — stripInvisibleChars applied in handleInput
-		if (!q.trim()) { response = null; filteredResults = []; isAdvancedMode = false; return; }
+		if (!q.trim()) { searchSeq++; response = null; filteredResults = []; isAdvancedMode = false; return; }
 		loading = true;
 		searchTimeout = setTimeout(async () => {
+			const mySeq = ++searchSeq;
 			try {
 				if (hasAdvancedSyntax(q)) {
 					// Advanced mode: split by commas, parse each sub-query
@@ -162,6 +164,7 @@
 							const req = parseSearchQuery(sub);
 							req.limit = 200; // MIG-071 audit HIGH (PA) — cap rows painted (backend default 0 = up to 100k)
 							const results = await constellationSearch(req);
+							if (mySeq !== searchSeq) return; // stale — a newer search superseded this one
 							advancedGroups.push({ query: sub, results });
 						}
 						filteredResults = [];
@@ -171,6 +174,7 @@
 						const req = parseSearchQuery(canonicalized);
 						req.limit = 200; // MIG-071 audit HIGH (PA) — cap rows painted (backend default 0 = up to 100k)
 						const raw = await constellationSearch(req);
+						if (mySeq !== searchSeq) return; // stale — a newer search superseded this one
 					filteredResults = raw.sort((a, b) => {
 						const sd = b.score - a.score;
 						if (Math.abs(sd) > 0.001) return sd;
@@ -185,7 +189,9 @@
 					if ($appSettings.enabledFeatures?.semanticSearch) {
 						try { qEmbed = await embedText(q); } catch {}
 					}
-					response = await universalSearch(q, qEmbed, 200); // MIG-071 audit HIGH (PA) — cap rows painted (was 0 = up to 100k)
+					const resp = await universalSearch(q, qEmbed, 200); // MIG-071 audit HIGH (PA) — cap rows painted (was 0 = up to 100k)
+					if (mySeq !== searchSeq) return; // stale — a newer search superseded this one
+					response = resp;
 				}
 				addSearchHistory(q);
 				history = readSearchHistory();
@@ -201,8 +207,8 @@
 				}
 				onResults(ids);
 				selectedResultIdx = -1;
-			} catch { response = null; filteredResults = []; }
-			loading = false;
+			} catch { if (mySeq !== searchSeq) return; response = null; filteredResults = []; }
+			if (mySeq === searchSeq) loading = false;
 		}, 300);
 	}
 

@@ -591,6 +591,7 @@
 	// Search → engine (one-way) + async hybrid search
 	let prevSearch = '';
 	let searchDebounce: ReturnType<typeof setTimeout>;
+	let searchSeq = 0; // stale-result guard: async search commands can resolve out of order
 	let searchMatches = $state<{ name: string; match_type: string; path: string; libraryName: string }[]>([]);
 	let searchTotalHits = $state(0);
 	let searchCategoryCounts = $state<Record<string, number>>({});
@@ -606,6 +607,7 @@
 			clearTimeout(searchDebounce);
 			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
+					const mySeq = ++searchSeq;
 					try {
 						const { universalSearch, constellationSearch, parseSearchQuery, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars } = await import('$lib/libraries/store');
 						const q_clean = stripInvisibleChars(q); // Strip bidi marks from RTL inputs
@@ -622,6 +624,7 @@
 							const req = parseSearchQuery(canonicalizeSearchQuery(q_clean, ops));
 							req.limit = 0;
 							const results = await constellationSearch(req);
+							if (mySeq !== searchSeq) return; // stale response — a newer search superseded this one
 							for (const r of results) {
 								const id = r.name.toLowerCase();
 								allIds.add(id);
@@ -639,6 +642,7 @@
 								try { qEmbed = await embedText(q); } catch {}
 							}
 							const resp = await universalSearch(q, qEmbed, 0);
+							if (mySeq !== searchSeq) return; // stale response — a newer search superseded this one
 							const categoryTypes: [string, string][] = [
 								['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
 								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
@@ -690,6 +694,7 @@
 					} catch (e) { console.error('[SV Search]', e); }
 				}, 300);
 			} else {
+				searchSeq++; // invalidate any in-flight search resolves on clear/short query
 				searchMatches = [];
 			}
 		}

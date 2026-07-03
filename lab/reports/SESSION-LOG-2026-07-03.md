@@ -55,5 +55,61 @@ Boss chose (AskUserQuestion) the **360 freeze** over MIG-088 Phase 6 / Arabic-ca
 
 ## QUEUED (honest, deferred)
 - **`get_360_view` index-read rewrite** — its own `/migration` (Architect input = the verdict-parity findings above: cross-library scope? DISTINCT-vs-occurrence? add has_external/trail-kind index surfaces? align strata.rs + neighbour strata). Makes 360 ~ms; the proper Rule-8 write-time-derivation fix.
-- **The dominant note-open indexing freeze** — separate reproduce-first pass.
 - MIG-088 Phases 6–10; Arabic callout End/Home caret known-issue.
+
+---
+
+# Function in hand (pivot, Boss-directed): the NOTE-OPEN FREEZE
+
+**Concept (the horse):** opening a note is the single most frequent act in a knowledge tool — it must never cost the user control of the app. Background derivation may take as long as it needs; the user's hand on the app may not be taken hostage by it.
+
+**Boss context:** Boss didn't recall "facing" a note-open freeze — correct, he never experienced it under that name; he experienced it as the "reset freeze" (10s→39s rounds, 2026-07-02/03). The mechanism was proven then: *note-open background work holds the DB writer lock; any SYNC command on the IPC dispatch thread that needs the lock (or is slow) freezes the whole app.* Two victims already fixed: the reset save (`save_universe_link_types`, last session) + the 360 view (`get_360_view`, this session). Boss: "proceed with this issue. Fix it."
+
+**Approach (Solve-the-Class, not the instance):** the class = *SYNC `#[tauri::command]` + writer-lock touch, callable during normal use*. Sizing: **227 SYNC commands vs 21 async**; writer-lock touches concentrate in `search.rs` (44), `sources/mod.rs` (11), `review.rs` (4), `libraries.rs` (3), `tension.rs` (2)… Discovery workflow `wf_2d6ff3e5-edb` (4 agents): note-open call graph · full SYNC+lock sweep · writer-lock holders at note-open · user-action vectors. Fix design after synthesis (per the PJ-066 canonical rule: async + route pure reads via `with_read_conn`), with a per-command race check before any write command goes async.
+
+## Discovery synthesis (wf_2d6ff3e5-edb — 4 agents, 209 tool uses)
+
+**THE MECHANISM (all four agents converge, verified):**
+- **Note-open itself is writer-lock-clean (ms-scale).** No reindex/embed/backfill fires on a plain open. `ensure_cid_cn_cmd` = no DB lock; panel reads ride the PJ-066 §C3 read-only reader; `get_360_view` async since this morning.
+- **The multi-second continuous lock holder is the SAVE path:** leaving a *dirty* note (edited within its 1500 ms debounce) fires the teardown flush → `constellation_search_reindex` (async, background) holds the writer mutex **CONTINUOUSLY 2.5 s warm / 11 s cold** (measured, 533-link note) across index_note + CTSE + maintain_incoming + maintain_sky. The embed's ~32 s ONNX inference is lock-free (engine mutex; writer grabs are ms-scale) since MIG-076 §D.
+- **The freeze = composition:** any of the **59 remaining SYNC writer-lock commands** dispatched during that 2.5–11 s window parks the single WebView2 IPC dispatch thread on the mutex → the ENTIRE app freezes (including the next note's `read_note`). This — not any note-open job — is the felt "note-open freeze" and was the "reset freeze" (then-SYNC `save_universe_link_types` was the waiter).
+- **The reproducible recipe (by construction):** edit note A → click a wikilink to navigate → flush reindex A (lock held 2.5–11 s) + `constellation_link_traverse` (SYNC + writer lock, fired at that exact moment, store.ts:1477) → app frozen for the reindex remainder.
+
+**THE SWEEP (59 SYNC writer-lock vectors: 14 high / 21 medium / 9 low / 15 dormant-no-callers):**
+- High (freeze during normal use): `constellation_search` + `constellation_search_universal` (every debounced search keystroke), `constellation_link_traverse` (every wikilink click), `get_note_review_status` (note switch w/ Review tab), `get_due_notes` (Reviewer open), `compute_note_maturity` (sidebar library expand), `ctse_search_terms_by_concept` (Index concept filter), `toggle_task`, `update_note_property`, `rename_item`, `move_item`, `delete_item`, `delete_path`, `update_links_on_rename`.
+- Also flagged (SYNC + multi-second body, no lock): `constellation_embed_text`/`embed_texts` (e5 inference on the IPC thread — the un-fixed sibling of PJ-066's embed_notes), `resolve_wikilink_cross_library` (recursive FS walk on the nav path), `get_provenance_chain` (SYNC full-library FS walk — the un-migrated sibling of get_360_view), `suggest_related_notes` (BM25 on the dispatch thread), `cache_full_links` (legacy flag-off path, 234k-row read).
+- Verified NON-vectors: job-starters lock only inside `thread::spawn`; `ensure_search_db_ready` fast path is lock-free (db_ready atomic); `get_backlink_rows`/`get_outgoing_rows`/structural trio ride with_read_conn; backfills are chunked (500/1000-row batches + 50 ms sleeps).
+
+**BATCH DESIGN:**
+- **Batch 1 (this pass):** ~22 safe `(async)` conversions — pure reads + self-contained DB writes touching NO note file (review actions write review_schedule only) + stale-result **seq guards** on search callers that lack one (SearchHub confirmed guard-less; QuickSwitcher already has MIG-058/059 stale-discard). Caller-verification workflow `wf_7ba74bfc-7b7` (4 agents) runs the WA#4 per-caller ordering check before any edit.
+- **Batch 2 (DEFERRED, explicit — needs the Editor-Surface Gate / BUG-023 harness):** commands that write note files: `rename_item`/`move_item`/`delete_item`/`delete_path`/`update_links_on_rename`, `toggle_task`, `update_note_property`, `resolve_structural_conflict`, `constellation_link_set_confidence`/`archive`/`unarchive` (dual-layer), sources/CECE accepts (may write frontmatter), `set_active_universe` (global teardown). Sync→async changes ordering vs the debounced save — content-integrity class, not this pass.
+- **Queued optimization (later):** route the pure-read conversions through `with_read_conn` (kills the wait itself, not just the freeze — search results during a reindex window would be instant instead of delayed); chunk the reindex's continuous 2.5–11 s hold. Both deeper changes, own passes.
+
+## BUILT — Batch 1 (caller-verification `wf_7ba74bfc-7b7`, 4 agents, then applied)
+
+**Caller verification results (WA#4):** all 24 Rust bodies confirmed `pub fn`, no `.await`, Send params, no note-file writes. Frontend: 9 already-safe callers (QuickSwitcher MIG-058/059 value guard; ReviewStatusPanel/ReviewerView monotonic `gen` tokens; IndexPanel `semanticFetchToken`; SourceReviewPanel `_srpLoadSeq`; RelatedCandidates `cancelled` flag; maturity/strata keyed-by-path writes; link_traverse fire-and-forget nothing-consumes-result; resolve_wikilink inline-click flows). **9 hazard callers needed guards** + **1 Rust-side hazard found**: mark_reviewed/snooze_note/dismiss_note do an UNLOCKED whole-file RMW of `review-pulse.json` — safe only under sync dispatch serialization → needs a lock once async.
+
+**Applied:**
+1. **24 × `#[tauri::command(async)]`** (uniform 3-line rationale comment): search.rs ×7 (constellation_search, _search_universal, _link_traverse, _ccs_snapshot, _knowledge_health_snapshot, _link_archived, _search_link_counts) · embeddings.rs ×3 (_embed_text, _embed_texts, _embedding_status) · review.rs ×6 (get_due_notes, get_note_review_status, set_review_priority, mark_reviewed, snooze_note, dismiss_note) · libraries.rs ×2 (resolve_wikilink_cross_library, suggest_related_notes) · provenance.rs ×1 (get_provenance_chain) · maturity.rs ×1 · strata.rs ×1 · ctse/search.rs ×1 · sources/mod.rs ×2 (get_suggestions, list_pending_suggestions). *(First scripted attempt mangled the files — doubled attrs + clipped comments; caught by spot-check, `git checkout` reverted, redone line-based clean.)*
+2. **`PULSE_LOCK`** static mutex in review.rs serializing the review-pulse.json RMW in all three action commands.
+3. **Stale-result seq guards ×9 files** (3 parallel edit agents, each spec from the verification): SearchHub (`searchSeq`, incl. guarded spinner clear) · ConstellationMap (`mapSearchSeq` ×3 checks) · ConstellationSight2 (`sightSearchSeq` ×3) · GraphMindView (`searchSeq` ×2, downstream-synchronicity verified) · OrgChart (`orgSearchSeq` ×1, single-await verified) · CatalogerView (`pickerSeq` + stuck-spinner hole closed on the clear path) · CCSView (`_snapSeq`) · KnowledgeHealthDashboard (`_snapSeq`) · +layout.svelte (provenance `reqPath` gate on then+catch; `_linkCountsSeq` on the cache-reconciled listener).
+
+**Verify:** cargo check --release clean (pre-existing warnings only); svelte-check **0 errors** (324 warnings = exact baseline). Frontend rebuilt (39 s) + release binary rebuilt **Jul 3 11:17** (freshness-verified BEFORE test instructions, per the standing rule).
+
+**Boss test — PASS ×2 (2026-07-03):**
+- **Stage 1 (the collision recipe): PASS.** Edit a large link-dense note → immediately click a wikilink to hop → navigation instant, app fully alive; repeated hops all clean. (Before: this exact sequence froze the whole app 2.5–11 s per hop.)
+- **Stage 2 (busy-window actions): PASS.** Typing in search during the background window = every keystroke instant, results match the final query (seq guards working); Review tab + "✓ Reviewed" during the window = responsive; panels fill smoothly.
+- Honest known-interim: during the ~2.5–11 s background reindex, search *results* can arrive delayed (the async read waits for the writer lock off-thread) — the app never freezes. The `with_read_conn` routing that removes even the wait is the queued follow-up.
+
+### /simplify (SO #4 gate) — 4 agents. 1 fix applied; 1 characterized risk banked; rest clean.
+- **Applied:** CatalogerView — removed the redundant `pickerSeq++` in the empty-query early-return (the function-top `++pickerSeq` already invalidates in-flight requests; the early return skips the await). svelte-check re-run 0 errors; frontend + binary rebuilt after (shipped binary == committed source).
+- **Reuse CLEAN:** hand-rolled per-component seq guards = the repo convention (inspector360RequestSeq / gen tokens / `_srpLoadSeq` all predate this diff; no shared helper exists or is justified). `PULSE_LOCK` matches the `write_gate::journal_lock()` idiom; per-path gate doesn't apply (single shared file).
+- **Simplification:** the uniform 3-line comment ×24 judged acceptable for a uniform batch (detail lives in this log); SearchHub const→guard→assign is minimal; PULSE_LOCK placement correct.
+- **Efficiency — the one substantive finding, VERIFIED against Tauri 2.10.3 SOURCE (not guessed):** `tauri-macros::wrapper` maps a sync-bodied `(async)` command to the "sync_threadpool" kind whose generated body goes through `respond_async_serialized` → **`async_runtime::spawn` on the CORE Tokio pool** (ipc/mod.rs:375) — NOT `spawn_blocking`. So lock-waiters park core workers for the wait duration. Honest severity: **bounded degradation, never a freeze** — a pathological window (cold 11 s reindex + rapid typing + several panels) could park ~8+ workers of an N-core pool, briefly queueing OTHER async work (360 fetch, embeds); it self-heals the instant the lock frees, and it is strictly better than the pre-fix state (the same waiters parked the ONE UI-critical thread). Superseded searches also keep their worker parked until the lock frees (guards discard results, not the in-flight call). **Consequence: the queued `with_read_conn` routing pass is now evidence-prioritized** — routing the pure reads to the read-only WAL connection removes both the parking AND the result delay.
+- **Altitude CLEAN:** per-command flips are Tauri's only mechanism (no global async switch — verified); host-level guards right for Svelte 5; PULSE_LOCK at the right weight.
+
+### CLASS STATUS after this pass
+- **Closed:** every high-frequency everyday action (navigate, search, review, panels, sidebar, suggestions, provenance, embeds).
+- **Deferred explicitly (Batch 2, gated):** note-file-writing commands (rename/move/delete family, toggle_task, update_note_property, resolve_structural_conflict, link-confidence trio, sources/CECE accepts, set_active_universe) — Editor-Surface-Gate territory; still freeze if clicked during a reindex window (rare, deliberate actions).
+- **Queued follow-ups:** `with_read_conn` routing (evidence-prioritized by the Tokio finding) · chunking the reindex's continuous 2.5–11 s hold · the `get_360_view` index-read `/migration`.
+- **Dormant:** 15 no-caller SYNC lock-takers (convert if revived); Sight Wings when re-enabled.

@@ -77,7 +77,10 @@ struct NoteRecord {
 }
 
 /// Compute the knowledge stratum for every note in a library.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn compute_note_strata(
     app: tauri::AppHandle,
     library_path: String,

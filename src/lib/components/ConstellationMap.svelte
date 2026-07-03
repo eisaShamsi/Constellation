@@ -76,6 +76,7 @@
 	let searchIdx = $state(0);
 	let showHistory = $state(false);
 	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+	let mapSearchSeq = 0; // stale-result guard — async Rust commands can resolve out of order
 
 	const CAT_COLORS: Record<string, string> = {
 		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
@@ -438,6 +439,7 @@
 	}
 
 	async function executeMapSearch() {
+		const mySeq = ++mapSearchSeq; // increments before the early return too — invalidates older in-flight calls
 		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; searchCats = new Map(); highlightAllResults(); return; }
 
 		addSearchHistory(searchQuery);
@@ -457,6 +459,7 @@
 			try {
 				const req = parseSearchQuery(canonicalized);
 				const results = await constellationSearch(req);
+				if (mySeq !== mapSearchSeq) return; // stale — a newer search superseded this one
 				const CAT_MAP: Record<string, string> = { links_to: 'LT', links_from: 'LF', mutual: '⇄', links_between: 'LB', links_all: 'LA', mentions: 'M', orphan: '∅', wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C', structured: '∅' };
 				for (const r of results) {
 					const node = nameMap.get(r.name.toLowerCase());
@@ -487,6 +490,7 @@
 					try { qEmbed = await embedText(canonicalized); } catch {}
 				}
 				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+				if (mySeq !== mapSearchSeq) return; // stale — a newer search superseded this one
 				for (const r of resp?.titles ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { titleMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
 				for (const r of resp?.contents ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { contentMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
 				for (const r of resp?.tags ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { tagMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
@@ -506,6 +510,7 @@
 			}
 		}
 
+		if (mySeq !== mapSearchSeq) return; // stale — covers the local-title-only path too
 		searchResults = matchedNodes;
 		searchCats = cats;
 		searchIdx = 0;

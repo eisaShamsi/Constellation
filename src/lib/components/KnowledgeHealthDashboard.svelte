@@ -49,6 +49,7 @@
 	// topology and live in CNS's Hubs register now; same cached data.)
 	let weakFoundations = $state<FormulationInsight[]>([]);
 	let loading = $state(true);
+	let _snapSeq = 0; // stale-result guard — snapshot IPC is async; responses can land out of order
 
 	// MIG-073 — the panel reads ONE cached snapshot (6 tiny rows) instead of
 	// firing six live aggregates at note_links on every open (the old path
@@ -67,7 +68,9 @@
 	}
 
 	async function loadSnapshot(): Promise<boolean> {
+		const seq = ++_snapSeq;
 		const snap = await invoke<KhSnapshot>('constellation_knowledge_health_snapshot');
+		if (seq !== _snapSeq) return false;
 		if (!snap.ready) return false;
 		stats = snap.stats ?? null;
 		lifecycle = snap.lifecycle ?? null;

@@ -41,7 +41,10 @@ pub struct NoteOrigin {
 const EXTERNAL_KEYS: &[&str] = &["url", "author", "source", "doi", "isbn", "reference"];
 
 /// Get the provenance chain for a single note.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn get_provenance_chain(
     app: tauri::AppHandle,
     library_path: String,

@@ -6812,7 +6812,10 @@ pub(crate) fn earned_link_weight(traversal_count: i64) -> f64 {
 /// Record a link traversal: user followed a link from source to target.
 /// Updates last_traversed, increments traversal_count, recalculates weight.
 /// Weight formula: 1.0 + ln(1 + traversal_count) — logarithmic, early traversals matter most.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_link_traverse(
     app: tauri::AppHandle,
     source_path: String,
@@ -7711,7 +7714,10 @@ fn take_cached(payloads: &mut std::collections::HashMap<String, String>, k: &str
 /// returned instantly, with a background refresh kicked for the next read
 /// (stale-while-revalidate). Completeness is judged on the 6 KH keys ONLY —
 /// missing MIG-074 `ccs_*` keys can never push this panel to not-ready.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let Some((mut payloads, max_age_minutes)) = read_link_stats_cache(&app)? else {
         spawn_kh_cache_recompute(&app, false);
@@ -7754,7 +7760,10 @@ pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<
 /// completeness is judged on the 8 CCS keys — on the first boot after
 /// MIG-074 the 6 `ccs_*` keys are absent, so CCS reports `{ ready: false }`
 /// and self-populates while KH (whose 6 keys exist) stays ready.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_ccs_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let Some((mut payloads, max_age_minutes)) = read_link_stats_cache(&app)? else {
         spawn_kh_cache_recompute(&app, false);
@@ -7922,7 +7931,10 @@ pub fn constellation_link_unarchive(
 }
 
 /// List archived links for the Link Dashboard's Archived tab.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_link_archived(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
@@ -8963,7 +8975,10 @@ pub fn reindex_single_note(
 }
 
 /// Main search command — supports lexical, structured, and combined modes.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_search(
     app: tauri::AppHandle,
     request: SearchRequest,
@@ -9292,7 +9307,10 @@ pub struct UniversalSearchResponse {
     pub semantic: Vec<SearchResult>,
 }
 
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_search_universal(
     app: tauri::AppHandle,
     query: String,
@@ -9637,7 +9655,10 @@ pub fn reindex_notes_matching_text(
 }
 
 /// Return incoming link counts for all notes from the search database.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_search_link_counts(
     app: tauri::AppHandle,
 ) -> Result<std::collections::HashMap<String, u32>, String> {

@@ -92,20 +92,25 @@
   let pickerClassifying = $state(false);
   let pickerError = $state<string | null>(null);
   let pickerDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let pickerSeq = 0; // stale-result guard: async constellation_search can resolve out of order
 
   async function searchPickerNotes(query: string) {
-    if (!query.trim()) { pickerResults = []; return; }
+    const mySeq = ++pickerSeq;
+    // The ++ above already invalidates any in-flight request; the early return skips the await.
+    if (!query.trim()) { pickerResults = []; pickerLoading = false; return; }
     pickerLoading = true;
     try {
       const results = await invoke<Array<{ name: string; path: string }>>('constellation_search', {
         request: { query, mode: 'lexical', limit: 10, include_snippet: false },
       });
+      if (mySeq !== pickerSeq) return; // stale response — a newer search superseded this one
       pickerResults = results.map(r => ({ name: r.name, path: r.path }));
     } catch (e) {
       console.error('[Cataloger picker] search failed:', e);
+      if (mySeq !== pickerSeq) return; // stale failure — don't clobber a newer request's results
       pickerResults = [];
     } finally {
-      pickerLoading = false;
+      if (mySeq === pickerSeq) pickerLoading = false; // only the current request clears the spinner
     }
   }
 

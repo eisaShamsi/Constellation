@@ -676,7 +676,10 @@ pub fn sources_set_manual(
 /// Read the current suggestion record for a single note. Returns None
 /// if no classifier suggestion is queued for this note.
 /// Used by the Source Review panel when scrolling to a specific entry.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn sources_get_suggestions(
     app: tauri::AppHandle,
     note_path: String,
@@ -693,7 +696,10 @@ pub fn sources_get_suggestions(
 /// List all pending suggestion records across the active Universe,
 /// ordered by `created_at` ascending (oldest first — review FIFO).
 /// Used by the Source Review panel to populate its queue view.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn sources_list_pending_suggestions(
     app: tauri::AppHandle,
 ) -> Result<Vec<SuggestionRecord>, String> {

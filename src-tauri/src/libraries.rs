@@ -1838,7 +1838,10 @@ pub struct ResolvedLink {
 /// Resolve a wikilink across all libraries. Searches current library first, then others.
 /// Supports `library_name:note` syntax to target a specific library.
 /// Supports `note#heading` and `note#^block-id` — fragment is stripped before resolution and returned separately.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn resolve_wikilink_cross_library(
     libraries: Vec<(String, String, String)>, // (library_id, library_name, library_path)
     current_library_path: String,
@@ -4342,7 +4345,10 @@ fn tokenize_tf(
 ///
 /// Returns `[]` (never an error / never a full scan) when the note is too short / all-stopword
 /// or nothing clears the bar — the caller renders an honest empty state.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn suggest_related_notes(
     app: tauri::AppHandle,
     library_path: String,

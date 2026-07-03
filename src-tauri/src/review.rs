@@ -62,7 +62,10 @@ pub struct DueNote {
 }
 
 /// Get all notes due for review in a library.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn get_due_notes(
     app: tauri::AppHandle,
     library_path: String,
@@ -511,7 +514,10 @@ pub struct NoteReviewStatus {
 /// MIG-083 §D / MIG-080 §F — one note's Review-Pulse status: the O(1) `review_schedule`
 /// PK lookup (Mode 1/3) PLUS the per-note Mode-2 staleness probe. Read-only, keyed by an
 /// already-open note's path (no fs access; the frontend only asks for notes it opened).
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn get_note_review_status(
     app: tauri::AppHandle,
     note_path: String,
@@ -621,7 +627,10 @@ pub fn get_note_review_status(
 /// (the Reset-to-computed action). A user-owned lever on `note_meta` (survives
 /// re-indexing — index_note's conflict-update omits this column). The Reviewer detail
 /// pane + the note's Review tab both call this.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn set_review_priority(
     app: tauri::AppHandle,
     note_path: String,
@@ -643,13 +652,24 @@ pub fn set_review_priority(
     Err("database not ready".to_string())
 }
 
+// Note-open-freeze class fix (2026-07-03): the three review actions each do a
+// whole-file read-modify-write of review-pulse.json (load_pulse_data →
+// save_pulse_data). As SYNC commands the single IPC dispatch thread serialized
+// them; as `(async)` they can interleave on Tokio workers — two concurrent RMWs
+// would lose the earlier write. PULSE_LOCK serializes the RMW critical section.
+static PULSE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// Mark a note as reviewed. Advances to the next interval on the 1·3·7·14·30 ladder.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn mark_reviewed(
     app: tauri::AppHandle,
     note_path: String,
 ) -> Result<(), String> {
     let cdir = crate::universe::active_constellation_dir(&app)?;
+    let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
     let today = today_str();
 
@@ -670,13 +690,17 @@ pub fn mark_reviewed(
 }
 
 /// Snooze a note for N days.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn snooze_note(
     app: tauri::AppHandle,
     note_path: String,
     days: u32,
 ) -> Result<(), String> {
     let cdir = crate::universe::active_constellation_dir(&app)?;
+    let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
 
     let snooze_until = add_days(&today_str(), days as i64);
@@ -690,12 +714,16 @@ pub fn snooze_note(
 }
 
 /// Dismiss a note from the review queue permanently.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn dismiss_note(
     app: tauri::AppHandle,
     note_path: String,
 ) -> Result<(), String> {
     let cdir = crate::universe::active_constellation_dir(&app)?;
+    let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
 
     if !pulse.dismissed.contains(&note_path) {

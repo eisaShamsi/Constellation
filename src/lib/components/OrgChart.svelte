@@ -528,6 +528,7 @@
 	let showSearchHistory = $state(false);
 	let searchHistoryItems = $state<{ query: string; timestamp: number }[]>([]);
 	let searchCategoryCounts = $state<Record<string, number>>({});
+	let orgSearchSeq = 0; // stale-result guard: async constellation_search can resolve out of order
 
 	const syntaxChips = $derived.by(() => {
 		const _locale = $t('searchHub.linksTo');
@@ -577,6 +578,7 @@
 
 	/** Execute search on Enter: Rust full-text search + tree walk to find matches. */
 	async function executeSearch() {
+		const mySeq = ++orgSearchSeq; // increment first: also invalidates in-flight calls on clear
 		if (!mapRoot || !fsSearchQuery.trim()) {
 			searchMatches = []; searchMatchPaths = new Set();
 			searchVisiblePaths = new Set(); searchMatchIdx = 0;
@@ -595,6 +597,7 @@
 			req.limit = 200;
 			req.include_snippet = true;
 			const results = await constellationSearch(req);
+			if (mySeq !== orgSearchSeq) return; // stale response — a newer search superseded this one
 			// Track category counts
 			const cats: Record<string, number> = {};
 			for (const r of results) {

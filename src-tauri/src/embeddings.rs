@@ -370,7 +370,10 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle) -> Result<(), String> {
 
 /// Embed a single text (for query embedding in search).
 /// Uses "query: " prefix for e5 models. Auto-inits engine if needed.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_embed_text(
     app: tauri::AppHandle,
     text: String,
@@ -388,7 +391,10 @@ pub fn constellation_embed_text(
 /// RETURN the vectors (not stored). Lets the Sky-View "compute semantic links" feature run fully
 /// offline through the same local model as search, instead of @xenova/transformers (which fetched
 /// the model from the HuggingFace CDN at runtime). Caller passes already-summarised note texts.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_embed_texts(
     app: tauri::AppHandle,
     texts: Vec<String>,
@@ -473,7 +479,10 @@ pub fn constellation_embed_notes(
 }
 
 /// Get embedding status.
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn constellation_embedding_status(
     app: tauri::AppHandle,
 ) -> Result<EmbeddingStatus, String> {

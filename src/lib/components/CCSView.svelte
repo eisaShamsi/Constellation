@@ -65,9 +65,12 @@
 	let tiers = $state<CcsTiers | null>(null);
 	let retired = $state<CcsList>({ total: 0, rows: [] });
 	let loading = $state(true);
+	let _snapSeq = 0; // stale-result guard — snapshot IPC is async; responses can land out of order
 
 	async function loadSnapshot(): Promise<boolean> {
+		const seq = ++_snapSeq;
 		const snap = await invoke<CcsSnapshot>('constellation_ccs_snapshot');
+		if (seq !== _snapSeq) return false;
 		if (!snap.ready) return false;
 		totalLinks = snap.stats?.total_links ?? 0;
 		byType = snap.stats?.by_type ?? {};

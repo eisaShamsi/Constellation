@@ -485,6 +485,7 @@
 	let _tensionSaveTimer: ReturnType<typeof setTimeout> | null = null; // §E-fix #2 — debounce the save-driven re-detect
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
+	let _linkCountsSeq = 0; // stale-result guard — cache-reconciled link-counts fetch (async command; responses can land out of order)
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(300);
@@ -3169,8 +3170,10 @@
 		// the cache-reconciled event fires; we load link counts then.
 		const unlistenSearchReady = await listen('cache-reconciled', async () => {
 			searchEngineReady = true;
+			const seq = ++_linkCountsSeq; // stale-result guard — only the newest fetch may write
 			try {
 				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
+				if (seq !== _linkCountsSeq) return;
 				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
 			} catch {}
 			// (Living Link decay-on-startup REMOVED 2026-06-10 — decay is display-only; no boot job.)
@@ -7551,8 +7554,10 @@
 						const tab = $focusedTab;
 						if (tab?.path && tab?.libraryPath) {
 							_lastProvenancePath = tab.path;
+							const reqPath = tab.path; // stale-result guard — async command; a newer click re-assigns _lastProvenancePath
 							invoke<any>('get_provenance_chain', { libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10 })
-								.then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
+								.then(chain => { if (_lastProvenancePath !== reqPath) return; provenanceChain = chain; })
+								.catch(() => { if (_lastProvenancePath !== reqPath) return; provenanceChain = null; });
 						}
 					}} title={$t('panels.provenance') || 'Provenance'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>

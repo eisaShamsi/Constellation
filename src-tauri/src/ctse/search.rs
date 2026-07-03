@@ -140,7 +140,10 @@ fn stopwords_cached() -> &'static HashSet<String> {
 /// `≈ similar` annotations.
 ///
 /// Per-keystroke callers MUST debounce (≥300 ms — CLAUDE.md Rule 3).
-#[tauri::command]
+// Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
+// dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
+// Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+#[tauri::command(async)]
 pub fn ctse_search_terms_by_concept(
     app: tauri::AppHandle,
     query: String,
