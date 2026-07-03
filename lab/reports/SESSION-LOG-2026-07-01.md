@@ -122,3 +122,20 @@ Orientation bumped **v3.19 → v3.20** IN THIS COMMIT (SO #6 top principal). NOT
 
 ### §_ Inspector360 reactivity — TIGHTENED (Boss: "tighten the 360 nit, then commit")
 - The typed-link fix made `TYPE_ORDER`/`TYPE_LABEL_KEYS` reactive to `$linkTypesStore`, producing a fresh array per tick → the heavy `matrix` $derived recomputed on every colour change (a few ms — not the freeze, but a reactivity-rule violation I introduced). Fix: `typeIdsKey = $derived(ids.join(','))` (a PRIMITIVE, memoized by value → identical on a colour-only recolour) feeds `TYPE_ORDER`/`TYPE_LABEL_KEYS`, so they recompute ONLY when the vocabulary id-set changes. `TYPE_COLORS` stays reactive (read as `TYPE_COLORS[type]` in the template) → colours still update live WITHOUT the matrix structure recomputing. svelte-check 0; frontend + binary rebuilt 2026-07-03 09:08.
+
+---
+
+## SESSION CLOSE-OUT — PCS (2026-07-03)
+**Pushed to `origin/main`** — tip `732afeeb`. Two commits this session:
+- `d137c3e8` — MIG-088 §4c (dialog-scrim opacity) + Phase 5 (right-sidebar panel controls). Orientation v3.19→v3.20.
+- `732afeeb` — typed-link colours (SO#8: already shipped) + 2 fixes (Inspector360 live-recolour + dead-data removal) + Links reset consolidation + `save_universe_link_types` async+guard + Inspector360 reactivity tightening. Orientation v3.20→v3.21.
+
+**Docs (this close-out):** Orientation **v3.21** (new file). User Manual + `Appearance and Themes` help topic: fixed the stale "Reset colours to default" line → the consolidated "↺ Reset this element"; added the **Panels** category + **Global → Overlays (Dimmed opacity)** scrim to the Style-Setter section. MoCh `MoCh-2026-07-03-*`. Handover `Handover-2026-07-03-*`. (×14 translated help follows the self-descriptive-UI pattern — new controls localized in-app; not per-control retranslated.)
+
+**Boss-validated this session:** §4c scrim (full unification), Phase 5 §5a+§5b (all six panel elements, incl. Global-Tasks parity + per-tier chips), Links reset consolidation (instant on a settled note), reset-freeze resolved as phantom.
+
+**Open / deferred (honest):**
+- **`get_360_view` note-open freeze** — SYNC full-library FS re-scan (Rule 8 debt) freezes the UI for tens of seconds when opening a link-dense note (or a 360 tab). Its own reproduce-first pass (likely: `#[tauri::command(async)]` + read the index instead of re-walking disk). **The one real perf bug this session surfaced.**
+- MIG-088 **Phases 6–10**: search/index badges · Sky/OrgChart/Map D3 colours · calendar · dialogs/global · audit.
+- Arabic callout End/Home caret known-issue (from v3.18, reproduction-driven).
+- 8 disabled-Wing scrims/shadows; help-topic folders ×15 for callout customisation.

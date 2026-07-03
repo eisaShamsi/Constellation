@@ -206,7 +206,7 @@ The type label and the panel pills appear in the **note's own main language**, n
 1. Open the **Style Setter → Links** category.
 2. Each type shows its name and a colour swatch. Click a swatch to pick a new colour.
 3. The change reflects **live** everywhere — the editor links and the Backlinks / Outgoing pills update as you pick.
-4. **Reset colours to default** restores the original eight colours.
+4. The **↺ Reset this element** button (top-right of the Links controls) resets the whole Links element at once — the eight built-in colours back to their defaults, both display switches back on, and the pill shape back to standard. Your own custom link types keep their colours.
 
 ## The Style Setter
 
