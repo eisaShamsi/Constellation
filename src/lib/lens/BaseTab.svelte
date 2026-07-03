@@ -18,6 +18,7 @@
 	 * `columns:` save path (`update_base_columns`). Filter/sort + resize/reorder
 	 * are §G.2; edit-in-place is §H.
 	 */
+	import { untrack } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
@@ -45,6 +46,7 @@
 	let {
 		path,
 		content,
+		onRowContextMenu,
 	}: {
 		/** Absolute path of the `.base` file. The source of truth — BaseTab
 		 *  (re-)reads it from disk keyed on this, so an in-tab column edit isn't
@@ -53,6 +55,11 @@
 		/** Raw `.base` YAML, loaded by `openNoteTab` — used only as an initial
 		 *  seed (avoids a flash before the disk read returns). */
 		content: string;
+		/** Base RC (2026-07-03, Boss request) — a Base row IS a note: right-click
+		 *  acts on it where the user sees it. The host wires this to the shared
+		 *  ContextMenu with the MIG-077 B2 SAFE note subset (open/bookmark/copy/
+		 *  reveal/style — no rename/move/delete from a non-refreshing list). */
+		onRowContextMenu?: (row: { path: string; name: string; library_name?: string }, x: number, y: number) => void;
 	} = $props();
 
 	let result = $state<LensResult | null>(null);
@@ -372,17 +379,85 @@
 	// still returns every row over IPC; the engine-side LIMIT/COUNT split is a
 	// separate PJ.) Rows are single-line (uniform height), so one measured
 	// row-height drives exact top/bottom spacer math.
+	// ─── Base search (2026-07-03, Boss request) ───
+	// Concept: find a row among thousands INSTANTLY. All rows are already in
+	// memory (execute_lens returns them), so this is a pure in-memory filter —
+	// zero IPC per keystroke (CLAUDE.md Rule 3). Matches the note name AND the
+	// rendered text of every visible column (what the user SEES is searchable).
+	let filterQuery = $state('');
+	const visibleRows = $derived.by(() => {
+		if (!result) return [] as LensRow[];
+		const q = filterQuery.trim().toLocaleLowerCase();
+		if (!q) return result.rows;
+		return result.rows.filter(
+			(r) =>
+				r.name.toLocaleLowerCase().includes(q) ||
+				cols.some((c) => (renderCellValue(r.dimensions[c], c) ?? '').toLocaleLowerCase().includes(q)),
+		);
+	});
+
 	let scrollEl: HTMLDivElement | undefined = $state();
 	let scrollTop = $state(0);
 	let viewportH = $state(600);
 	let rowH = $state(32);
 	const OVERSCAN = 12;
-	const totalRows = $derived(result ? result.rows.length : 0);
+	// Virtualization operates on the FILTERED list (search narrows the window).
+	const totalRows = $derived(visibleRows.length);
 	const startIndex = $derived(Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN));
 	const endIndex = $derived(Math.min(totalRows, Math.ceil((scrollTop + viewportH) / rowH) + OVERSCAN));
-	const windowRows = $derived(result ? result.rows.slice(startIndex, endIndex) : []);
+	const windowRows = $derived(visibleRows.slice(startIndex, endIndex));
 	const topPad = $derived(startIndex * rowH);
 	const botPad = $derived(Math.max(0, (totalRows - endIndex) * rowH));
+
+	// ─── Letter-index rail (2026-07-03, Boss request) ───
+	// Concept: jump through thousands of name-sorted titles by INITIAL LETTER.
+	// The letters come from the DATA itself (any script — Arabic yields أ ب ت…,
+	// Latin A B C…), collator-ordered; clicking a letter applies the name sort
+	// first if the table isn't name-sorted ("sort them, if needed, by letter" —
+	// Boss), then jumps the virtualized scroll to that initial's first row.
+	const LETTER_RAIL_MIN_ROWS = 50;
+	function initialLetter(name: string): string {
+		const ch = [...name.trim()][0] ?? '#';
+		// Arabic hamza/alef forms group under bare alef (contact-list practice).
+		const folded = ch.replace(/[أإآٱ]/u, 'ا');
+		const up = folded.toLocaleUpperCase();
+		return /\p{L}/u.test(up) ? up : '#';
+	}
+	const letterRail = $derived.by(() => {
+		if (visibleRows.length < LETTER_RAIL_MIN_ROWS) return [] as string[];
+		const seen = new Set<string>();
+		for (const r of visibleRows) seen.add(initialLetter(r.name));
+		const collator = new Intl.Collator();
+		return [...seen].sort((a, b) => {
+			if (a === '#') return 1; // non-letters last
+			if (b === '#') return -1;
+			return collator.compare(a, b);
+		});
+	});
+	let pendingJump: string | null = $state(null);
+	function doJump(letter: string) {
+		const idx = visibleRows.findIndex((r) => initialLetter(r.name) === letter);
+		if (idx >= 0 && scrollEl) scrollEl.scrollTop = idx * rowH;
+	}
+	function jumpToLetter(letter: string) {
+		if (sortDir('note.name')) {
+			doJump(letter); // already name-sorted (asc or desc) — jump directly
+		} else {
+			// Not name-sorted: apply the name sort first; the jump completes when
+			// the re-executed rows land (the $effect below).
+			pendingJump = letter;
+			void persistOrder([{ dimension: 'note.name', direction: 'asc' }]);
+		}
+	}
+	// Completes a pending rail jump once the re-sorted rows arrive. Reads
+	// visibleRows + pendingJump, writes pendingJump (null) — the write makes the
+	// next run a no-op, so it settles in 2 runs (Rule-2-safe via untrack).
+	$effect(() => {
+		if (!pendingJump || visibleRows.length === 0) return;
+		const letter = pendingJump;
+		untrack(() => { pendingJump = null; });
+		doJump(letter);
+	});
 
 	let rafPending = false;
 	function onTableScroll() {
@@ -460,7 +535,15 @@
 	{:else if result}
 		<div class="base-header">
 			<h2 class="base-name" dir={detectDir(result.lens_name)}>{result.lens_name}</h2>
-			<span class="base-count">{result.total_count}</span>
+			<span class="base-count">{filterQuery.trim() ? `${visibleRows.length}/${result.total_count}` : result.total_count}</span>
+			<input
+				class="base-search"
+				type="search"
+				dir="auto"
+				placeholder={$t('lensBlock.searchRows') || 'Search this base…'}
+				aria-label={$t('lensBlock.searchRows') || 'Search this base…'}
+				bind:value={filterQuery}
+			/>
 			<div class="base-actions">
 				<div class="sort-wrap">
 					<button
@@ -505,7 +588,10 @@
 
 		{#if result.rows.length === 0}
 			<div class="base-state">{$t('lensBlock.empty') || 'No notes match this base.'}</div>
+		{:else if visibleRows.length === 0}
+			<div class="base-state">{$t('lensBlock.noMatches') || 'No rows match your search.'}</div>
 		{:else}
+			<div class="base-body">
 			<div
 				class="base-table-scroll"
 				class:reordering={dragCol !== null}
@@ -577,7 +663,14 @@
 								<tr aria-hidden="true" class="v-spacer"><td colspan={cols.length + 1} style="height:{topPad}px"></td></tr>
 							{/if}
 							{#each windowRows as row (row.note_path)}
-							<tr class="base-trow">
+							<tr
+								class="base-trow"
+								oncontextmenu={(e) => {
+									if (!onRowContextMenu) return;
+									e.preventDefault();
+									onRowContextMenu({ path: row.note_path, name: row.name, library_name: row.library_name }, e.clientX, e.clientY);
+								}}
+							>
 								<td class="cell-name" dir={detectDir(row.name)}>
 									<button
 										type="button"
@@ -643,6 +736,14 @@
 						</tbody>
 				</table>
 			</div>
+			{#if letterRail.length > 1}
+				<nav class="letter-rail" aria-label={$t('lensBlock.letterJump') || 'Jump to letter'}>
+					{#each letterRail as letter (letter)}
+						<button class="letter-rail-btn" onclick={() => jumpToLetter(letter)}>{letter}</button>
+					{/each}
+				</nav>
+			{/if}
+			</div>
 		{/if}
 
 		<div class="base-footer">
@@ -690,6 +791,57 @@
 		font-size: 0.78rem;
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* 2026-07-03 — in-Base search (Boss request). Sits between the count and
+	   the actions; grows into the free header space. */
+	.base-search {
+		flex: 0 1 260px;
+		min-width: 90px;
+		margin-inline-start: 10px;
+		padding: 4px 10px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		font-size: 0.85rem;
+	}
+	.base-search:focus {
+		outline: none;
+		border-color: var(--interactive-accent);
+	}
+
+	/* 2026-07-03 — table + letter rail live side by side (Boss request).
+	   Logical flex order keeps the rail at the inline-end in RTL too. */
+	.base-body {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: row;
+	}
+	.letter-rail {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		overflow-y: auto;
+		padding: 4px 2px;
+		gap: 1px;
+		scrollbar-width: none; /* the rail IS the index — its own bar is noise */
+	}
+	.letter-rail-btn {
+		border: none;
+		background: none;
+		color: var(--text-muted);
+		font-size: 0.72rem;
+		line-height: 1.25;
+		padding: 0 6px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+	.letter-rail-btn:hover {
+		color: var(--interactive-accent);
+		background: var(--background-modifier-hover);
 	}
 
 	/* §G/§G.2 — header action buttons (Sort · + Add column) + popover anchors */

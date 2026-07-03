@@ -5191,6 +5191,13 @@
 		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
 	}
 
+	// Base RC (2026-07-03, Boss request) — a Base row IS a note: the same SAFE
+	// note-menu subset as Search results (MIG-077 B2 precedent — open/bookmark/
+	// copy/reveal/style; NO rename/move/delete from a non-refreshing list).
+	function handleBaseRowContextMenu(r: { path: string; name: string; library_name?: string }, x: number, y: number) {
+		handleSearchResultContextMenu(r, x, y); // identical target shape + safe subset
+	}
+
 	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
 	// nested libraries; the bare startsWith elsewhere returns the first match).
 	function libIdForPath(path: string): string | null {
@@ -7173,7 +7180,7 @@
 							{#if tab.path && tab.path.endsWith('.base')}
 								<!-- MIG-065 §F.2 — a standalone `.base` file renders as a
 								     full-tab table on the unified `execute_lens` engine. -->
-								<BaseTab path={tab.path} content={tab.content ?? ''} />
+								<BaseTab path={tab.path} content={tab.content ?? ''} onRowContextMenu={handleBaseRowContextMenu} />
 							{:else if tab.path}
 								<NoteEditor
 									{tab}
@@ -7211,7 +7218,7 @@
 						{#if $activeTab.path.endsWith('.base')}
 							<!-- MIG-065 §F.2 — standalone `.base` → full-tab table (no
 							     note-flanks/focus; it's a base, not a note). -->
-							<BaseTab path={$activeTab.path} content={$activeTab.content ?? ''} />
+							<BaseTab path={$activeTab.path} content={$activeTab.content ?? ''} onRowContextMenu={handleBaseRowContextMenu} />
 						{:else if focusMode}
 							{@const _parsed = parseFrontmatter($activeTab.content || '')}
 							<FocusPane
