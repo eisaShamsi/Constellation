@@ -2357,6 +2357,10 @@ export function timeAgo(timestamp: number): string {
 // ─── File operations ───
 export async function createNote(folderPath: string, fileName: string, initialFrontmatter?: string): Promise<string> {
 	const newPath: string = await invoke('create_note', { folderPath, fileName, initialFrontmatter: initialFrontmatter ?? null });
+	// F2′ — gated creates are watcher-suppressed (write_gate marks the path),
+	// so the file tree never hears about them; announce the birth explicitly.
+	// A Tauri emit reaches the main window from any window's JS context.
+	emit('note-created', { path: newPath }).catch(() => {});
 	return newPath;
 }
 

@@ -10,7 +10,7 @@
 	}: {
 		onClose: () => void;
 		libraries: { name: string; path: string }[];
-		onImportComplete?: () => void;
+		onImportComplete?: (targetLibraryPath?: string) => void;
 	} = $props();
 
 	type Step = 'format' | 'source' | 'preview' | 'importing' | 'done';
@@ -64,6 +64,9 @@
 		try {
 			result = await importWithCanonical(sourcePath, selectedFormat, targetLibrary, subfolder);
 			step = 'done';
+			// F2′ — fire on completion, not on the Done button: Escape / ✕ /
+			// backdrop exits from the done screen must not skip the refresh.
+			onImportComplete?.(targetLibrary);
 		} catch (e: any) {
 			error = e?.toString() ?? 'Import failed';
 			step = 'preview';
@@ -78,7 +81,6 @@
 	}
 
 	function handleDone() {
-		onImportComplete?.();
 		onClose();
 	}
 </script>

@@ -717,6 +717,16 @@
 		});
 		unlisteners.push(u5);
 
+		// F2′ — the app's own gated creates are watcher-suppressed, so
+		// `library-changed` never fires for them; `note-created` (emitted by
+		// the store's createNote, any window) keeps this screen's note list
+		// and dashboard in step. Same debounced reload as u5.
+		const u5b = await listen<{ path: string }>('note-created', async () => {
+			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
+			libraryChangeTimer = setTimeout(async () => { await loadAllData(); await loadDashboardData(); }, 3000);
+		});
+		unlisteners.push(u5b);
+
 		// Listen for state request from main (workspace save)
 		const u6 = await onStateRequest(() => {
 			const tabs = get(openTabs).map(t => ({

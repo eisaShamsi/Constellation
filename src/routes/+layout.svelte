@@ -3048,13 +3048,8 @@
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
 		let pendingTabReloads: Set<string> = new Set();
-		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
-			const { libraryId, paths } = event.payload;
-			pendingTreeRefresh.add(libraryId);
-			for (const p of paths) {
-				if (!wasRecentlyWritten(p)) pendingTabReloads.add(p);
-			}
-			// Batch rapid file changes (300ms window)
+		// Batch rapid file changes (300ms window)
+		const scheduleWatcherFlush = () => {
 			clearTimeout(watcherDebounce);
 			watcherDebounce = setTimeout(async () => {
 				const libraryIds = [...pendingTreeRefresh];
@@ -3090,6 +3085,25 @@
 				clearTimeout(cacheRefreshDebounce);
 				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 5000);
 			}, 300);
+		};
+		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
+			const { libraryId, paths } = event.payload;
+			pendingTreeRefresh.add(libraryId);
+			for (const p of paths) {
+				if (!wasRecentlyWritten(p)) pendingTabReloads.add(p);
+			}
+			scheduleWatcherFlush();
+		});
+
+		// F2′ — the app's own gated creates are watcher-suppressed (write_gate
+		// marks the path), so `library-changed` never fires for them; creation
+		// announces itself via `note-created` (emitted by the store's createNote,
+		// from any window — second-screen wikilink-create included).
+		const unlistenNoteCreated = await listen<{ path: string }>('note-created', (event) => {
+			const libId = libraryIdForPath(event.payload.path);
+			if (!libId) return;
+			pendingTreeRefresh.add(libId);
+			scheduleWatcherFlush();
 		});
 
 		// §3-redo.4 — wikilink rename cascade reload listener.
@@ -3223,6 +3237,7 @@
 		cleanupFns.push(
 			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
 			unlistenWatcher,
+			unlistenNoteCreated,
 			unlistenScreenNote,
 			unlistenScreenClosed,
 			unlistenNoteSaved,
@@ -5772,6 +5787,20 @@
 		}
 	}
 
+	// F2′ — longest matching prefix wins: the universe-root library's path
+	// prefixes every note in the universe, including other libraries' notes.
+	// The match must end at a path separator, or a library named "Research"
+	// would steal notes living in a sibling folder named "Research Notes".
+	function libraryIdForPath(p: string): string | null {
+		let best: { id: string; len: number } | null = null;
+		for (const s of $libraryStats) {
+			const base = s.path.replace(/[\\/]+$/, '');
+			const bounded = p === base || (p.startsWith(base) && (p[base.length] === '\\' || p[base.length] === '/'));
+			if (bounded && (!best || base.length > best.len)) best = { id: s.library_id, len: base.length };
+		}
+		return best?.id ?? null;
+	}
+
 	async function refreshLibraryTree(libraryId: string) {
 		const lib = $libraryStats.find(v => v.library_id === libraryId);
 		if (lib) {
@@ -8047,7 +8076,12 @@
 		<ImporterModal
 			libraries={$libraries.map(v => ({ name: v.name, path: v.path }))}
 			onClose={() => showImporter = false}
-			onImportComplete={refreshLibraryCaches}
+			onImportComplete={(libPath?: string) => {
+				// F2′ — import writes are watcher-suppressed; surface the new notes.
+				const libId = libPath ? libraryIdForPath(libPath) : null;
+				if (libId) refreshLibraryTree(libId);
+				refreshLibraryCaches();
+			}}
 		/>
 	{/if}
 
