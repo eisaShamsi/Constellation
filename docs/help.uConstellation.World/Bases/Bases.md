@@ -73,6 +73,26 @@ You rarely need to edit this by hand — the table's own controls (below) write 
 
 ---
 
+## Finding a note in the table
+
+### Search this base
+
+The **search box** in the header filters the table as you type. It matches a note's **name** *and* the text of **every visible column**, so you can find a row by any value you can see. The count badge next to the title shows **`matching / total`** while you filter (for example `4/7684`), and returns to the plain total when you clear it.
+
+Search works in **every script** — type Arabic to find Arabic titles, and so on. Because every row is already in memory, filtering is instant even on a Base of thousands of notes.
+
+### The letter rail
+
+When a Base has **50 or more rows**, a slim strip of letters appears along the table's edge. Its letters are built from the **first letters of your actual note titles** — so it shows **A–Z** for English titles, **أ ب ت …** for Arabic, and the correct letters for any other script you have. (In right-to-left interfaces the rail sits on the correct side automatically.)
+
+**Click a letter to jump** to the first note that starts with it. If the table isn't already sorted by Name, clicking a letter **sorts it by Name first**, then jumps — so the letters always mean what you expect.
+
+### Right-click a row
+
+**Right-click any row** for the standard note menu: **Open**, **Open in new tab**, **Bookmark**, **Copy path** / **Copy name**, **Reveal in file tree**, **Open in default app**, **Show in system explorer**, and **Style…**. Renaming, moving, and deleting are deliberately *not* offered here — do those from the file tree, where the list refreshes safely.
+
+---
+
 ## Columns — add, remove, reorder
 
 ### Add a column
@@ -146,6 +166,9 @@ Bases hold no data of their own. Every value you see comes from a real `.md` fil
 
 | Action | What it does |
 |--------|--------------|
+| **Type** in the search box | Filter rows by name and any visible column (any script) |
+| **Click** a letter on the rail | Jump to the first note starting with it (name-sorts first if needed) |
+| **Right-click** a row | Note menu: open · bookmark · copy · reveal · style |
 | **Click** a column header | Sort by it (ascending → descending → off) |
 | **Drag** a column header | Reorder that column |
 | **Click** the × on a header | Remove that column |
