@@ -614,6 +614,11 @@ pub fn create_universe(
 // already-active guard, which re-runs under the lock).
 #[tauri::command(async)]
 pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    // App-freeze audit R2 (2026-07-04): phase timing measured this command at
+    // ~5ms end-to-end on a settled switch (journal `uswitch:*` markers, since
+    // removed) — the switch command is NOT the felt lag. The residual "switch
+    // back before it settles" contention is the DEPARTING universe's still-
+    // running async boot warming, not this body; its own reproduce-first pass.
     // Batch-2 §B2-5 — one switch at a time (poison-tolerant like init_lock).
     let switch_state = app.state::<UniverseState>();
     let _switch_guard = switch_state
@@ -769,6 +774,7 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
         }
     }
 
+
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
@@ -824,6 +830,7 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
             crate::arabic::overrides::clear_active();
         }
     }
+
 
     // Update registry
     registry.active_id = Some(id);

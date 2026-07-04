@@ -47,6 +47,9 @@
 
 	async function handleSwitch(id: string) {
 		if (id === activeId) return;
+		// App-freeze audit R2 (2026-07-04): measured ~9ms end-to-end on a settled
+		// switch — the switch handler is not the felt lag (that was the departing
+		// universe's still-warming background boot; its own reproduce-first pass).
 		try {
 			await setActiveUniverse(id);
 			activeId = id;

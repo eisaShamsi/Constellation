@@ -248,6 +248,19 @@ Boss: "It switches, but after a while. The app freezes first, then the switch ha
 - **Batch D — 3 spawners:** `ensure_search_db_ready` moved INSIDE the worker closures (`.and_then(run_*)` — the existing error paths [last_error + error event + flag resets] cover ensure failures): classifier_scan_start (kills the boot+5 s auto-fire landmine), nsc_backfill_start, sources_accept_all_pending.
 - Deferred to next sessions per the verifier's ordering: F2 (create-path verification mandatory), W, L, F1 (harness-gated, alone), F3.
 
+### Batch S+D Boss re-test (2026-07-04): freeze ELIMINATED; two named residuals
+- **Step 3 cold switch to SMALL universe: near-instant. Step 5 warm switch (both directions): instant.**
+- **Step 4 cold switch to the BIG universe, note open: the app is ALIVE (clicks register — the dead-window freeze is GONE, mandate met) BUT** the Switch button "has no effect" for a few seconds, then triggers; Boss re-clicked several times before it visibly switched.
+- **Diagnosis (evidence: `UniverseManager.handleSwitch` awaits `setActiveUniverse` with NO pending-state feedback; §A guard + switch_lock dedupe the re-clicks safely):** the freeze is fixed; the residual is (R1) **no "Switching…" feedback** during the awaited `set_active_universe` → the button looks dead → re-clicks (harmless — deduped); (R2) **`set_active_universe`'s own body takes a few seconds returning for the big universe** (its registry heal / fs consolidation / teardown-lock-wait on the just-departed universe's still-warming async boot commands — UNMEASURED; do not guess).
+- **NEXT (lead item):** (R1) small safe frontend gate — a `switching` state that disables the switcher + shows "Switching…" (kills the re-click confusion; low risk, no write path). (R2) instrument `set_active_universe`'s phases + the first-ensure timing on a cold big-universe switch (its own reproduce-first pass; pairs with the audit's unmeasured init_db profiling). Both are DESIGNED items, not hotfixes.
+- **Verdict: the universe-switch FREEZE (dead app) is resolved; the residual is switch-command latency + missing feedback.**
+
+### R2 MEASURED (2026-07-04) — the switch command is NOT the lag (hypothesis refuted by instrumentation)
+Added 9 timing checkpoints (6 Rust `uswitch:*` phase markers in set_active_universe + 3 frontend `uswitch_fe:*` around the awaited call). Boss measurement run (fresh app → open note → switch small, **settle a few s** → switch back to big): **RESULT — instant.** Journal:
+- **Rust `set_active_universe` end-to-end: ~5 ms** (heal/migrate 1 ms · invalidate_search 3 ms · arabic <1 ms · done 5 ms).
+- **Frontend handler before→after: ~9 ms.**
+**Conclusion:** the switch command + handler are provably instant (5–9 ms); **R2 "switch-command latency" is REFUTED by measurement.** The earlier felt lag correlates with switching back BEFORE the departing universe's async boot warming settled (my measurement steps said "let it settle a few seconds" → it was instant) — a transient contention (likely the Tokio blocking-pool / departing-universe init still in flight), NOT this command body. Per Reproduce-First: no fix invented for the unreproduced-when-settled lag; it gets its own pass (deliberately switch-back-fast to reproduce) IF pursued. Instrumentation REMOVED (universe.rs `sw_mark`, UniverseManager `mk`); `journal_frontend_marker` command kept (permanent rename forensics). **Switch freeze = closed; switch command = measured-instant.**
+
 ### CLASS STATUS after this pass
 - **Closed:** every high-frequency everyday action (navigate, search, review, panels, sidebar, suggestions, provenance, embeds).
 - **Deferred explicitly (Batch 2, gated):** note-file-writing commands (rename/move/delete family, toggle_task, update_note_property, resolve_structural_conflict, link-confidence trio, sources/CECE accepts, set_active_universe) — Editor-Surface-Gate territory; still freeze if clicked during a reindex window (rare, deliberate actions).

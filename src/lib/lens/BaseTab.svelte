@@ -385,15 +385,25 @@
 	// zero IPC per keystroke (CLAUDE.md Rule 3). Matches the note name AND the
 	// rendered text of every visible column (what the user SEES is searchable).
 	let filterQuery = $state('');
+	// Precompute one lowercased search blob per row (name + every visible cell's
+	// rendered text), ONCE per result/column change — so filtering is O(rows)
+	// substring checks per keystroke, not O(rows × cols) renderCellValue calls
+	// (the latter was ~6-28ms/keystroke on the 7,684-row base — /simplify catch).
+	const rowSearchBlobs = $derived.by(() => {
+		const m = new Map<string, string>();
+		if (!result) return m;
+		for (const r of result.rows) {
+			let blob = r.name.toLocaleLowerCase();
+			for (const c of cols) blob += '' + (renderCellValue(r.dimensions[c], c) ?? '').toLocaleLowerCase();
+			m.set(r.note_path, blob);
+		}
+		return m;
+	});
 	const visibleRows = $derived.by(() => {
 		if (!result) return [] as LensRow[];
 		const q = filterQuery.trim().toLocaleLowerCase();
 		if (!q) return result.rows;
-		return result.rows.filter(
-			(r) =>
-				r.name.toLocaleLowerCase().includes(q) ||
-				cols.some((c) => (renderCellValue(r.dimensions[c], c) ?? '').toLocaleLowerCase().includes(q)),
-		);
+		return result.rows.filter((r) => rowSearchBlobs.get(r.note_path)?.includes(q));
 	});
 
 	let scrollEl: HTMLDivElement | undefined = $state();
