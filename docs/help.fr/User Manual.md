@@ -893,6 +893,16 @@ Le Calendrier sert pleinement les notes quotidiennes : cliquez sur n'importe que
 
 Une **Lens** est une requete enregistree qui affiche une liste filtree et triee de notes avec les proprietes qui vous interessent. Constellation offre deux modes :
 
+### La Base en onglet entier
+
+Ouvrez un fichier `.base` et il remplit l'onglet sous forme de tableau interactif : une ligne par note, une colonne par propriété, sans limite de lignes (le tableau est virtualisé, donc des milliers de notes défilent sans à-coups). Trois façons de retrouver une note dans un grand tableau :
+
+- **Rechercher dans cette base** — le champ de recherche de l'en-tête filtre les lignes au fur et à mesure de votre saisie, en correspondant au nom d'une note *et* au texte de chaque colonne visible. Le badge de comptage affiche `correspondances / total` pendant que vous filtrez (par exemple `4/7684`). Il cherche dans toutes les écritures — tapez en arabe pour trouver des titres arabes. Le filtrage est instantané, même sur des milliers de lignes.
+- **Barre alphabétique** — sur une base de 50 lignes ou plus, une fine bande de lettres apparaît le long du bord du tableau, construite à partir des premières lettres des titres réels de vos notes (elle affiche donc A–Z pour l'anglais, أ ب ت… pour l'arabe, et les lettres appropriées pour toute autre écriture). Cliquez sur une lettre pour sauter directement à la première note qui commence par elle — si le tableau n'est pas déjà trié par Nom, il se trie d'abord par Nom, puis saute.
+- **Clic droit sur une ligne** — ouvre le menu de note standard : Ouvrir, Ouvrir dans un nouvel onglet, Marque-page, Copier le chemin / le nom, Révéler dans l'arborescence des fichiers, Ouvrir dans l'application par défaut, Afficher dans l'explorateur système, Style… (Renommer, déplacer et supprimer ne sont délibérément pas proposés ici — faites-le depuis l'arborescence des fichiers.)
+
+(Voir le sujet d'aide **Bases** dans l'application pour la présentation complète.)
+
 ### Constellation Base — blocs Lens integres
 
 Vous pouvez integrer une Lens directement dans le corps de toute note Markdown via un bloc de code ` ```base ` :

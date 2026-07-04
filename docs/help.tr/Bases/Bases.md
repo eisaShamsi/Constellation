@@ -87,6 +87,26 @@ Bunu elle düzenlemeniz nadiren gerekir — tablonun kendi denetimleri (aşağı
 
 ---
 
+## Tablodaki bir notu bulma
+
+### Bu Temel'de ara
+
+Başlıktaki **arama kutusu**, siz yazdıkça tabloyu süzer. Bir notun **adıyla** *ve* **görünen her sütunun** metniyle eşleşir; böylece gördüğünüz herhangi bir değere göre bir satır bulabilirsiniz. Süzme sırasında, başlığın yanındaki sayı rozeti **`eşleşen / toplam`** değerini gösterir (örneğin `4/7684`) ve kutuyu temizlediğinizde yeniden yalın toplama döner.
+
+Arama **her yazıda** çalışır — Arapça başlıkları bulmak için Arapça yazın, ve benzeri. Her satır zaten bellekte olduğundan, binlerce notluk bir Temel'de bile süzme anında gerçekleşir.
+
+### Harf rayı
+
+Bir Temel'de **50 veya daha fazla satır** olduğunda, tablonun kenarı boyunca ince bir harf şeridi belirir. Harfleri **gerçek not başlıklarınızın ilk harflerinden** oluşturulur — böylece İngilizce başlıklar için **A–Z**, Arapça için **أ ب ت …** ve sahip olduğunuz başka herhangi bir yazı için de doğru harfleri gösterir. (Sağdan sola arayüzlerde ray otomatik olarak doğru tarafa yerleşir.)
+
+**Bir harfe tıklayarak** o harfle başlayan ilk nota atlayın. Tablo henüz Ad'a göre sıralı değilse, bir harfe tıklamak önce **onu Ad'a göre sıralar**, sonra atlar — böylece harfler her zaman beklediğiniz anlama gelir.
+
+### Bir satıra sağ tıklayın
+
+**Herhangi bir satıra sağ tıklayın** ve standart not menüsünü açın: **Aç**, **Yeni sekmede aç**, **Yer İmi**, **Yolu kopyala** / **Adı kopyala**, **Dosya ağacında göster**, **Varsayılan uygulamada aç**, **Sistem gezgininde göster** ve **Stil…**. Yeniden adlandırma, taşıma ve silme burada bilinçli olarak *sunulmaz* — bunları, listenin güvenle yenilendiği dosya ağacından yapın.
+
+---
+
 ## Sütunlar — ekle, kaldır, yeniden sırala
 
 ### Bir sütun ekleyin
@@ -160,6 +180,9 @@ Temellerin kendine ait verisi yoktur. Gördüğünüz her değer, diskinizdeki g
 
 | Eylem | Ne yapar |
 |--------|--------------|
+| Arama kutusuna **Yaz** | Satırları ad ve görünen herhangi bir sütuna göre süz (her yazıda) |
+| Raydaki bir harfe **Tıkla** | O harfle başlayan ilk nota atla (gerekirse önce Ad'a göre sıralar) |
+| Bir satıra **Sağ tıkla** | Not menüsü: aç · yer imi · kopyala · göster · stil |
 | Bir sütun başlığına **Tıkla** | Ona göre sırala (artan → azalan → kapalı) |
 | Bir sütun başlığını **Sürükle** | O sütunu yeniden sırala |
 | Bir başlıktaki ×'e **Tıkla** | O sütunu kaldır |

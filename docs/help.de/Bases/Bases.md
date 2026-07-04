@@ -73,6 +73,26 @@ Du musst dies selten von Hand bearbeiten — die eigenen Bedienelemente der Tabe
 
 ---
 
+## Eine Notiz in der Tabelle finden
+
+### Diese Basis durchsuchen
+
+Das **Suchfeld** in der Kopfzeile filtert die Tabelle, während du tippst. Es passt sowohl auf den **Namen** einer Notiz *als auch* auf den Text **jeder sichtbaren Spalte**, sodass du eine Zeile über jeden Wert finden kannst, den du sehen kannst. Der Zähler neben dem Titel zeigt beim Filtern **`Treffer / Gesamt`** an (zum Beispiel `4/7684`) und kehrt zur schlichten Gesamtzahl zurück, sobald du ihn leerst.
+
+Die Suche funktioniert in **jeder Schrift** — tippe Arabisch, um arabische Titel zu finden, und so weiter. Da jede Zeile bereits im Speicher liegt, ist das Filtern selbst bei einer Basis mit Tausenden von Notizen sofort da.
+
+### Die Buchstabenleiste
+
+Wenn eine Basis **50 oder mehr Zeilen** hat, erscheint am Rand der Tabelle ein schmaler Streifen mit Buchstaben. Seine Buchstaben werden aus den **Anfangsbuchstaben deiner tatsächlichen Notiztitel** gebildet — sie zeigt also **A–Z** für englische Titel, **أ ب ت …** für arabische und die richtigen Buchstaben für jede andere Schrift, die du hast. (In Rechts-nach-links-Oberflächen sitzt die Leiste automatisch auf der richtigen Seite.)
+
+**Klicke auf einen Buchstaben, um zur ersten Notiz zu springen**, die mit ihm beginnt. Ist die Tabelle nicht bereits nach Namen sortiert, **sortiert ein Klick auf einen Buchstaben sie zuerst nach Namen** und springt dann — so bedeuten die Buchstaben immer das, was du erwartest.
+
+### Rechtsklick auf eine Zeile
+
+**Klicke mit der rechten Maustaste auf eine beliebige Zeile** für das Standard-Notizmenü: **Öffnen**, **In neuem Tab öffnen**, **Lesezeichen**, **Pfad kopieren** / **Namen kopieren**, **Im Dateibaum anzeigen**, **In Standard-App öffnen**, **Im Datei-Explorer anzeigen** und **Stil…**. Umbenennen, Verschieben und Löschen werden hier bewusst *nicht* angeboten — erledige diese im Dateibaum, wo sich die Liste sicher aktualisiert.
+
+---
+
 ## Spalten — hinzufügen, entfernen, neu anordnen
 
 ### Eine Spalte hinzufügen
@@ -146,6 +166,9 @@ Basen enthalten keine eigenen Daten. Jeder Wert, den du siehst, stammt aus einer
 
 | Aktion | Was sie bewirkt |
 |--------|--------------|
+| **Tippen** ins Suchfeld | Zeilen nach Namen und jeder sichtbaren Spalte filtern (jede Schrift) |
+| **Klick** auf einen Buchstaben der Leiste | Zur ersten Notiz springen, die mit ihm beginnt (sortiert bei Bedarf zuerst nach Namen) |
+| **Rechtsklick** auf eine Zeile | Notizmenü: öffnen · Lesezeichen · kopieren · anzeigen · Stil |
 | **Klick** auf eine Spaltenüberschrift | Danach sortieren (aufsteigend → absteigend → aus) |
 | **Ziehen** einer Spaltenüberschrift | Diese Spalte neu anordnen |
 | **Klick** auf das × in einer Überschrift | Diese Spalte entfernen |

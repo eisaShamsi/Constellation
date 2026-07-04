@@ -896,6 +896,22 @@ El Calendario sirve plenamente a las notas diarias: haz clic en cualquier día p
 
 Una **Lens** es una consulta guardada que muestra una lista filtrada y ordenada de notas junto con las propiedades que te interesen. Constellation ofrece dos modos:
 
+### La Base a pestaña completa
+
+Abre un archivo `.base` y llenará la pestaña como una tabla interactiva:
+
+- **Columna Nombre primero** — haz clic en el nombre de una nota para abrirla. Cada nota coincidente es una fila, **sin límite de filas** (la tabla está virtualizada, así que miles de notas se desplazan con fluidez).
+- **+ Añadir columna** — elige entre **Tus campos** (propiedades de frontmatter encontradas en tus notas) o **Constellation** (integradas: Nombre, Ruta, Creado, Resumen).
+- **Ordenar** — haz clic en un encabezado para recorrer ascendente → descendente → desactivado; usa el panel **Orden** para ordenar por varias columnas a la vez.
+- **Buscar en esta base** — la casilla de búsqueda del encabezado filtra las filas a medida que escribes, coincidiendo con el nombre de una nota *y* con el texto de cada columna visible. La insignia de recuento muestra `coincidentes / total` mientras filtras (por ejemplo `4/7684`). Busca en cualquier escritura — escribe en árabe para encontrar títulos en árabe. El filtrado es instantáneo incluso con miles de filas.
+- **Barra de letras** — en una base con más de 50 filas, aparece una tira estrecha de letras en el borde de la tabla, construida a partir de las primeras letras de los títulos reales de tus notas (así muestra A–Z para inglés, أ ب ت… para árabe, y las letras correctas para cualquier otra escritura). Haz clic en una letra para saltar directamente a la primera nota que empieza por ella — si la tabla no está ya ordenada por Nombre, primero la ordena por Nombre y luego salta.
+- **Clic derecho en una fila** — abre el menú estándar de la nota: Abrir, Abrir en pestaña nueva, Marcar, Copiar ruta / nombre, Mostrar en el árbol de archivos, Abrir en la app predeterminada, Mostrar en el explorador del sistema, Estilo… (Renombrar, mover y eliminar no se ofrecen aquí de forma deliberada — haz esas acciones desde el árbol de archivos.)
+- **Editar en el sitio** — haz doble clic en una de tus celdas de frontmatter para cambiarla (los campos de lista como `maturity` muestran un menú desplegable de valores válidos en su orden natural); el cambio se escribe en el YAML de la nota en el disco. Nombre y Creado son de solo lectura.
+- **Reordenar** — arrastra un encabezado de columna hacia los lados para moverlo.
+- **Convertir bases antiguas** — una `.base` de Obsidian o de una versión anterior de Constellation se detecta y se deja intacta, con una oferta de un clic para **Convertir a Base de Constelación**.
+
+(Consulta el tema de ayuda dentro de la app **Bases** para el recorrido completo.)
+
 ### Constellation Base — bloques de Lens incrustados
 
 Puedes incrustar una Lens directamente en el cuerpo de cualquier nota Markdown usando un bloque de codigo ` ```base `:

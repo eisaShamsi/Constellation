@@ -918,6 +918,14 @@ Notu görüntülediğinizde, kod bloğu eşleşen notları gösteren etkileşiml
 
 **Federasyon:** varsayılan olarak Lens blokları aktif evren VE bağlı her cUniverse'den okur. Yalnızca aktif evrenle sınırlamak için YAML'da `federation: active` ayarlayın.
 
+### Tam sekme Temel
+
+Bir `.base` dosyasını açın; sekmeyi etkileşimli bir tablo olarak doldurur — her not için bir satır, her özellik için bir sütun. Ad sütunu her zaman ilk sıradadır; bir notu açmak için adına tıklayın. Bu tam sekme tablosunda, bir notu hızla bulmanın üç yolu vardır:
+
+- **Bu Temel'de ara** — başlıktaki arama kutusu, siz yazdıkça satırları süzer; bir notun adıyla *ve* görünen her sütunun metniyle eşleşir. Süzme sırasında sayı rozeti `eşleşen / toplam` değerini gösterir (örneğin `4/7684`). Her yazıda arar — Arapça başlıkları bulmak için Arapça yazın. Binlerce satırda bile süzme anında gerçekleşir.
+- **Harf rayı** — 50 veya daha fazla satırlı bir Temel'de, tablonun kenarında ince bir harf şeridi belirir; gerçek not başlıklarınızın ilk harflerinden oluşturulur (böylece İngilizce için A–Z, Arapça için أ ب ت… ve sahip olduğunuz başka herhangi bir yazı için doğru harfleri gösterir). O harfle başlayan ilk nota doğrudan atlamak için bir harfe tıklayın — tablo henüz Ad'a göre sıralı değilse, önce Ad'a göre sıralar, sonra atlar.
+- **Bir satıra sağ tıklayın** — standart not menüsünü açar: Aç, Yeni sekmede aç, Yer İmi, Yolu / adı kopyala, Dosya ağacında göster, Varsayılan uygulamada aç, Sistem gezgininde göster, Stil… (Yeniden adlandırma, taşıma ve silme burada bilinçli olarak sunulmaz — bunları dosya ağacından yapın.)
+
 ### Beş Eylem (Five Acts) — yerleşik Lens'ler
 
 Kenar çubuğunun **Five Acts** bölümü (Workspace Bases'ün üzerinde), `{universe}/Five Acts/*.md` altında Constellation tarafından düzenlenmiş ana notları listeler. v1 birini içerir: **Observation — Recent Captures** (en son yakalanan 20 notun federasyonel listesi). Bu notları serbestçe düzenleyebilirsiniz — Constellation düzenlemelerinizin üzerine yazmaz.

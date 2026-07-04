@@ -918,6 +918,14 @@ Beim Anzeigen der Notiz wird der Codeblock durch eine interaktive Tabelle mit pa
 
 **Foederation:** Standardmaessig lesen Lens-Bloecke ueber das aktive Universum UND jedes verlinkte cUniverse. Setzen Sie `federation: active` im YAML, um nur das aktive Universum zu durchsuchen.
 
+### Constellation Base — vollständiger Tab
+
+Öffnen Sie eine `.base`-Datei, und sie füllt den Tab als interaktive Tabelle: eine Zeile pro Notiz, eine Spalte pro Eigenschaft. Über die eingebettete Form hinaus bietet der vollständige Tab drei Wege, eine Notiz in der Tabelle zu finden:
+
+- **Diese Basis durchsuchen** — das Suchfeld in der Kopfzeile filtert die Zeilen, während Sie tippen, und passt sowohl auf den Namen einer Notiz *als auch* auf den Text jeder sichtbaren Spalte. Der Zähler neben dem Titel zeigt beim Filtern `Treffer / Gesamt` an (z. B. `4/7684`). Die Suche funktioniert in jeder Schrift — tippen Sie Arabisch, um arabische Titel zu finden. Das Filtern ist selbst bei Tausenden von Zeilen sofort da.
+- **Buchstabenleiste** — bei einer Basis mit 50 oder mehr Zeilen erscheint am Rand der Tabelle ein schmaler Streifen mit Buchstaben, gebildet aus den Anfangsbuchstaben Ihrer tatsächlichen Notiztitel (also A–Z für englische Titel, أ ب ت … für arabische und die richtigen Buchstaben für jede andere Schrift). Klicken Sie auf einen Buchstaben, um direkt zur ersten Notiz zu springen, die mit ihm beginnt — ist die Tabelle noch nicht nach Namen sortiert, sortiert sie zuerst nach Namen und springt dann.
+- **Rechtsklick auf eine Zeile** — öffnet das Standard-Notizmenü: Öffnen, In neuem Tab öffnen, Lesezeichen, Pfad kopieren / Namen kopieren, Im Dateibaum anzeigen, In Standard-App öffnen, Im Datei-Explorer anzeigen und Stil… (Umbenennen, Verschieben und Löschen werden hier bewusst nicht angeboten — erledigen Sie diese im Dateibaum, wo sich die Liste sicher aktualisiert.)
+
 ### Fuenf Akte (Five Acts) — eingebaute Lenses
 
 Der Seitenleisten-Abschnitt **Five Acts** (oberhalb von Workspace Bases) listet von Constellation kuratierte Host-Notizen unter `{universe}/Five Acts/*.md`. v1 enthaelt eine: **Observation — Recent Captures** (foederierte Liste der 20 zuletzt erfassten Notizen). Sie koennen diese Notizen frei bearbeiten — Constellation ueberschreibt Ihre Aenderungen nicht.

@@ -73,6 +73,26 @@ Rara vez necesitas editar esto a mano — los propios controles de la tabla (má
 
 ---
 
+## Encontrar una nota en la tabla
+
+### Buscar en esta base
+
+La **casilla de búsqueda** del encabezado filtra la tabla a medida que escribes. Coincide con el **nombre** de una nota *y* con el texto de **cada columna visible**, así que puedes encontrar una fila por cualquier valor que veas. La insignia de recuento junto al título muestra **`coincidentes / total`** mientras filtras (por ejemplo `4/7684`), y vuelve al total simple cuando la borras.
+
+La búsqueda funciona en **cualquier escritura** — escribe en árabe para encontrar títulos en árabe, y así con el resto. Como cada fila ya está en memoria, el filtrado es instantáneo incluso en una Base con miles de notas.
+
+### La barra de letras
+
+Cuando una Base tiene **50 filas o más**, aparece una tira estrecha de letras a lo largo del borde de la tabla. Sus letras se construyen a partir de las **primeras letras de los títulos reales de tus notas** — así muestra **A–Z** para títulos en inglés, **أ ب ت …** para árabe, y las letras correctas para cualquier otra escritura que tengas. (En interfaces de derecha a izquierda, la barra se sitúa automáticamente en el lado correcto.)
+
+**Haz clic en una letra para saltar** a la primera nota que empieza por ella. Si la tabla no está ya ordenada por Nombre, al hacer clic en una letra **primero la ordena por Nombre** y luego salta — de modo que las letras siempre significan lo que esperas.
+
+### Clic derecho en una fila
+
+**Haz clic derecho en cualquier fila** para abrir el menú estándar de la nota: **Abrir**, **Abrir en pestaña nueva**, **Marcar**, **Copiar ruta** / **Copiar nombre**, **Mostrar en el árbol de archivos**, **Abrir en la app predeterminada**, **Mostrar en el explorador del sistema** y **Estilo…**. Renombrar, mover y eliminar no se ofrecen aquí de forma deliberada — haz esas acciones desde el árbol de archivos, donde la lista se actualiza de forma segura.
+
+---
+
 ## Columnas — añadir, quitar, reordenar
 
 ### Añadir una columna
@@ -146,6 +166,9 @@ Las Bases no contienen datos propios. Cada valor que ves proviene de un archivo 
 
 | Acción | Qué hace |
 |--------|----------|
+| **Escribir** en la casilla de búsqueda | Filtrar filas por el nombre y cualquier columna visible (cualquier escritura) |
+| **Clic** en una letra de la barra | Saltar a la primera nota que empieza por ella (ordena por nombre primero si hace falta) |
+| **Clic derecho** en una fila | Menú de la nota: abrir · marcar · copiar · mostrar · estilo |
 | **Clic** en un encabezado de columna | Ordenar por él (ascendente → descendente → desactivado) |
 | **Arrastrar** un encabezado de columna | Reordenar esa columna |
 | **Clic** en la × de un encabezado | Quitar esa columna |

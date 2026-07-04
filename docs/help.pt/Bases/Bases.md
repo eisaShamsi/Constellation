@@ -76,6 +76,26 @@ Você raramente precisa editar isto à mão — os próprios controles da tabela
 
 ---
 
+## Encontrando uma nota na tabela
+
+### Pesquisar nesta base
+
+A **caixa de pesquisa** no cabeçalho filtra a tabela conforme você digita. Ela corresponde tanto ao **nome** de uma nota *quanto* ao texto de **cada coluna visível**, de modo que você pode encontrar uma linha por qualquer valor que consiga ver. O selo de contagem ao lado do título mostra **`correspondentes / total`** enquanto você filtra (por exemplo `4/7684`), e volta ao total simples quando você a limpa.
+
+A pesquisa funciona em **qualquer escrita** — digite em árabe para encontrar títulos em árabe, e assim por diante. Como cada linha já está na memória, a filtragem é instantânea mesmo em uma Base de milhares de notas.
+
+### O trilho de letras
+
+Quando uma Base tem **50 linhas ou mais**, uma faixa fina de letras aparece ao longo da borda da tabela. Suas letras são construídas a partir das **primeiras letras dos títulos reais das suas notas** — assim ela mostra **A–Z** para títulos em português e inglês, **أ ب ت …** para o árabe, e as letras corretas para qualquer outra escrita que você tenha. (Em interfaces da direita para a esquerda, o trilho fica automaticamente no lado correto.)
+
+**Clique em uma letra para saltar** para a primeira nota que começa com ela. Se a tabela ainda não estiver ordenada por Nome, clicar em uma letra a **ordena por Nome primeiro** e depois salta — de modo que as letras sempre significam o que você espera.
+
+### Clicar com o botão direito em uma linha
+
+**Clique com o botão direito em qualquer linha** para abrir o menu padrão da nota: **Abrir**, **Abrir em nova aba**, **Marcar**, **Copiar caminho** / **Copiar nome**, **Revelar na árvore de arquivos**, **Abrir no app padrão**, **Mostrar no explorador do sistema** e **Estilo…**. Renomear, mover e excluir *não* são oferecidos aqui de propósito — faça isso pela árvore de arquivos, onde a lista se atualiza com segurança.
+
+---
+
 ## Colunas — adicionar, remover, reordenar
 
 ### Adicionar uma coluna
@@ -149,6 +169,9 @@ As Bases não guardam dados próprios. Cada valor que você vê vem de um arquiv
 
 | Ação | O que faz |
 |------|-----------|
+| **Digitar** na caixa de pesquisa | Filtrar as linhas por nome e qualquer coluna visível (qualquer escrita) |
+| **Clicar** em uma letra no trilho | Saltar para a primeira nota que começa com ela (ordena por nome primeiro, se preciso) |
+| **Clicar com o botão direito** em uma linha | Menu da nota: abrir · marcar · copiar · revelar · estilo |
 | **Clicar** em um cabeçalho de coluna | Ordenar por ele (crescente → decrescente → desligado) |
 | **Arrastar** um cabeçalho de coluna | Reordenar essa coluna |
 | **Clicar** no × de um cabeçalho | Remover essa coluna |

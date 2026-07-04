@@ -77,6 +77,26 @@ Vous avez rarement besoin de modifier ceci à la main — les commandes du table
 
 ---
 
+## Retrouver une note dans le tableau
+
+### Rechercher dans cette base
+
+Le **champ de recherche** dans l'en-tête filtre le tableau au fur et à mesure de votre saisie. Il correspond au **nom** d'une note *et* au texte de **chaque colonne visible**, ce qui vous permet de retrouver une ligne par n'importe quelle valeur que vous voyez. Le badge de comptage à côté du titre affiche **`correspondances / total`** pendant que vous filtrez (par exemple `4/7684`), et revient au total simple lorsque vous l'effacez.
+
+La recherche fonctionne dans **toutes les écritures** — tapez en arabe pour trouver des titres arabes, et ainsi de suite. Comme chaque ligne est déjà en mémoire, le filtrage est instantané, même sur une Base de milliers de notes.
+
+### La barre alphabétique
+
+Lorsqu'une Base compte **50 lignes ou plus**, une fine bande de lettres apparaît le long du bord du tableau. Ses lettres sont construites à partir des **premières lettres des titres réels de vos notes** — elle affiche donc **A–Z** pour les titres anglais, **أ ب ت …** pour l'arabe, et les lettres appropriées pour toute autre écriture que vous avez. (Dans les interfaces de droite à gauche, la barre se place automatiquement du bon côté.)
+
+**Cliquez sur une lettre pour sauter** à la première note qui commence par elle. Si le tableau n'est pas déjà trié par Nom, cliquer sur une lettre **le trie d'abord par Nom**, puis saute — ainsi les lettres signifient toujours ce que vous attendez.
+
+### Clic droit sur une ligne
+
+**Faites un clic droit sur n'importe quelle ligne** pour ouvrir le menu de note standard : **Ouvrir**, **Ouvrir dans un nouvel onglet**, **Marque-page**, **Copier le chemin** / **Copier le nom**, **Révéler dans l'arborescence des fichiers**, **Ouvrir dans l'application par défaut**, **Afficher dans l'explorateur système** et **Style…**. Renommer, déplacer et supprimer ne sont délibérément *pas* proposés ici — faites-le depuis l'arborescence des fichiers, où la liste se rafraîchit en toute sécurité.
+
+---
+
 ## Colonnes — ajouter, retirer, réordonner
 
 ### Ajouter une colonne
@@ -150,6 +170,9 @@ Les Bases ne détiennent aucune donnée propre. Chaque valeur que vous voyez pro
 
 | Action | Ce qu'elle fait |
 |--------|-----------------|
+| **Taper** dans le champ de recherche | Filtrer les lignes par nom et toute colonne visible (toutes écritures) |
+| **Cliquer** sur une lettre de la barre | Sauter à la première note qui commence par elle (trie d'abord par nom si nécessaire) |
+| **Clic droit** sur une ligne | Menu de note : ouvrir · marque-page · copier · révéler · style |
 | **Cliquer** sur un en-tête de colonne | Trier selon celle-ci (croissant → décroissant → désactivé) |
 | **Glisser** un en-tête de colonne | Réordonner cette colonne |
 | **Cliquer** sur le × d'un en-tête | Retirer cette colonne |

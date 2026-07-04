@@ -932,6 +932,14 @@ O Calendário serve plenamente as notas diárias: clique em qualquer dia para a 
 
 Uma **Lens** e uma consulta salva que exibe uma lista filtrada e ordenada de notas junto com as propriedades de seu interesse. Constellation oferece dois modos:
 
+### A Base em aba completa
+
+Abra um arquivo `.base` e ele preenche a aba como uma tabela interativa. Além de ordenar e editar, três recursos ajudam você a encontrar uma nota depressa:
+
+- **Pesquisar nesta base** — a caixa de pesquisa no cabeçalho filtra as linhas conforme você digita, correspondendo tanto ao **nome** da nota *quanto* ao texto de **cada coluna visível**. O selo de contagem ao lado do título mostra `correspondentes / total` enquanto você filtra (por exemplo `4/7684`). A pesquisa funciona em **qualquer escrita** — digite em árabe para encontrar títulos em árabe. A filtragem é instantânea, mesmo em milhares de linhas.
+- **Trilho de letras** — em uma base com **50 ou mais linhas**, uma faixa fina de letras aparece na borda da tabela, construída a partir das **primeiras letras dos títulos reais das suas notas** (assim ela mostra **A–Z** para o português e o inglês, **أ ب ت …** para o árabe, e as letras corretas para qualquer outra escrita). Em interfaces da direita para a esquerda, o trilho fica automaticamente no lado correto. **Clique em uma letra para saltar** direto para a primeira nota que começa com ela — se a tabela ainda não estiver ordenada por Nome, ela **ordena por Nome primeiro** e depois salta.
+- **Clicar com o botão direito em uma linha** — abre o menu padrão da nota: **Abrir**, **Abrir em nova aba**, **Marcar**, **Copiar caminho** / **Copiar nome**, **Revelar na árvore de arquivos**, **Abrir no app padrão**, **Mostrar no explorador do sistema** e **Estilo…** Renomear, mover e excluir *não* são oferecidos aqui de propósito — faça isso pela árvore de arquivos.
+
 ### Constellation Base — blocos Lens incorporados
 
 Voce pode incorporar uma Lens diretamente no corpo de qualquer nota Markdown usando um bloco de codigo ` ```base `:
