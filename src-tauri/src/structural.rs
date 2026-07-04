@@ -221,7 +221,12 @@ fn descendants_rec(
 }
 
 /// The ordered children of one note (one level). Lazy; user-gesture only.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn get_structural_children(
     app: tauri::AppHandle,
     note_path: String,
@@ -236,7 +241,12 @@ pub fn get_structural_children(
 
 /// The breadcrumb: the deterministic single-parent chain from the root down to (but
 /// not including) this note. Visited-set on paths breaks any cycle.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn get_structural_ancestors(
     app: tauri::AppHandle,
     note_path: String,
@@ -270,7 +280,12 @@ pub fn get_structural_ancestors(
 }
 
 /// The descendant outline subtree of one note (recursive children, cycle/depth-bounded).
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn get_structural_descendants(
     app: tauri::AppHandle,
     note_path: String,

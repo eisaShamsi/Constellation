@@ -156,7 +156,12 @@ pub struct FiveActsNoteEntry {
 /// the canonical Observation — Recent Captures host note plus any
 /// future Five Acts host notes that ship later (Connection, Tension,
 /// Synthesis, Conviction).
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn list_five_acts_notes(app: AppHandle) -> Result<Vec<FiveActsNoteEntry>, String> {
     let universe_dir = crate::universe::active_universe_dir(&app)?;
     // Active universe — universe_name = None.

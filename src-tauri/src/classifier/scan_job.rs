@@ -91,9 +91,14 @@ pub fn classifier_scan_cancel(app: AppHandle) -> Result<(), String> {
 /// Kick off the background scan. Idempotent: returns an error if a
 /// scan is already running. Spawns a worker thread; the main thread
 /// returns immediately.
+// App-freeze audit Batch-D (2026-07-03): ensure_search_db_ready moved INSIDE
+// the spawned worker — as the command's first statement it parked the dispatch
+// thread for the whole 20-40s cold init (and this command AUTO-FIRES at boot+5s
+// when cece.backgroundScan='on_startup' → a guaranteed mid-boot freeze). The
+// worker's existing error path (last_error + error event + flag reset) now
+// covers an ensure failure too.
 #[tauri::command]
 pub fn classifier_scan_start(app: AppHandle) -> Result<(), String> {
-    crate::search::ensure_search_db_ready(&app)?;
     let state = app.state::<ScanState>();
 
     // swap returns the previous value — if it was already true,
@@ -110,7 +115,8 @@ pub fn classifier_scan_start(app: AppHandle) -> Result<(), String> {
 
     let app_clone = app.clone();
     thread::spawn(move || {
-        let result = run_scan(app_clone.clone());
+        let result = crate::search::ensure_search_db_ready(&app_clone)
+            .and_then(|_| run_scan(app_clone.clone()));
         let state = app_clone.state::<ScanState>();
         if let Err(e) = result {
             if let Ok(mut g) = state.last_error.lock() {

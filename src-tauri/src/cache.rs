@@ -163,7 +163,12 @@ pub struct BootSnapshotGraph {
 /// On a 7,600-note Universe this query returns in low-millis because
 /// `note_meta` is indexed and the row projection is three narrow `TEXT`
 /// columns.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
     // Stamp command-body entry FIRST — before any work. Paired with a JS-side
     // `Date.now()` captured immediately before `invoke()`, the delta is pure
@@ -226,7 +231,12 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
 /// tag read is a `tag_counts` summary lookup (~ms) and aliases are ~1.4k
 /// rows, so this command returns sub-second even cold. `links` is returned
 /// as an empty vec for back-compat with the field's existing consumers.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
     // Stamp command-body entry FIRST. See `cache_boot_snapshot_core` for
     // rationale — this is the queue-time diagnostic.
@@ -354,7 +364,12 @@ pub struct BootLinks {
     pub server_start_unix_ms: u128,
 }
 
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
     let server_start_unix_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -549,7 +564,12 @@ fn map_note_link_row(row: &rusqlite::Row) -> rusqlite::Result<NoteLink> {
 /// are the note's alias set (the frontend passes `notePathToAliases`); the
 /// match is name + aliases, lowercased + de-duplicated. Replaces the frontend
 /// `getBacklinks(allLibraryLinks, …)` array filter with a per-note indexed read.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn get_backlink_rows(
     app: tauri::AppHandle,
     note_name: String,
@@ -595,7 +615,12 @@ pub fn get_backlink_rows(
 
 /// MIG-079 §C.2c — outgoing rows for the active note (federated). Replaces the
 /// frontend `getOutgoingLinks(allLibraryLinks, notePath)` array filter.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn get_outgoing_rows(
     app: tauri::AppHandle,
     note_path: String,
@@ -1158,7 +1183,12 @@ fn read_sky_links_raw(
 /// original single-response shape. Kept so ambient callers (second screen,
 /// tests, any external invocation) keep working; no longer on the boot
 /// critical path.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
     // Shim: the per-phase timings produced by the split commands are not
     // included in the merged shape. Ambient callers (second screen, tests)
@@ -1426,7 +1456,12 @@ pub fn cache_is_populated(app: tauri::AppHandle) -> Result<bool, String> {
 ///
 /// This is effectively a thin wrapper around `constellation_search_init` that
 /// makes the reconcile step an explicit, named step in the boot pipeline.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
     use tauri::Emitter;
     // Ensure the schema exists + state's query connection is ready BEFORE
@@ -1468,7 +1503,12 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
 /// it belongs only to the live watcher or an explicit Settings → Rebuild Index.
 /// (A §B-era boot `cache_reconcile` re-introduced the walk and was the audible
 /// background thrash; this replaces it.)
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn cache_mark_search_ready(app: tauri::AppHandle) -> Result<(), String> {
     use tauri::Emitter;
     crate::search::ensure_search_db_ready(&app)?;

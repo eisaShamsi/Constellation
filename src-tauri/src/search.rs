@@ -8787,7 +8787,12 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
 /// Kept for backward compatibility with callers that want the legacy
 /// "open + walk" behavior. The boot path now uses `ensure_search_db_ready`
 /// (instant) and `reconcile_filesystem` (on a background thread) separately.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexStats, String> {
     ensure_search_db_ready(&app)?;
     reconcile_filesystem(&app)

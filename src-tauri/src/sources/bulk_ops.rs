@@ -105,9 +105,11 @@ pub fn sources_bulk_accept_cancel(app: AppHandle) -> Result<(), String> {
 /// auto-applying the top suggestion would defeat the Sibling
 /// Disambiguation design. They stay in the queue for the user to
 /// resolve via the radio-chip form.
+// App-freeze audit Batch-D (2026-07-03): ensure_search_db_ready moved INSIDE
+// the spawned worker (it parked the dispatch thread for the whole cold init);
+// the worker's error path covers an ensure failure.
 #[tauri::command]
 pub fn sources_accept_all_pending(app: AppHandle, skip_split: Option<bool>) -> Result<(), String> {
-    crate::search::ensure_search_db_ready(&app)?;
     let state = app.state::<BulkAcceptState>();
     if state.running.swap(true, Ordering::Relaxed) {
         return Err("Bulk accept already running".into());
@@ -122,7 +124,8 @@ pub fn sources_accept_all_pending(app: AppHandle, skip_split: Option<bool>) -> R
     let skip_split_flag = skip_split.unwrap_or(true);
     let app_clone = app.clone();
     thread::spawn(move || {
-        let result = run_bulk_accept(app_clone.clone(), skip_split_flag);
+        let result = crate::search::ensure_search_db_ready(&app_clone)
+            .and_then(|_| run_bulk_accept(app_clone.clone(), skip_split_flag));
         let state = app_clone.state::<BulkAcceptState>();
         if let Err(e) = result {
             if let Ok(mut g) = state.last_error.lock() {

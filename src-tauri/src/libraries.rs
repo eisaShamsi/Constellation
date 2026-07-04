@@ -277,7 +277,12 @@ pub fn remove_library(app: tauri::AppHandle, library_id: String) -> Result<(), S
 }
 
 /// Read the file tree of a library (up to 2 levels deep for performance).
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<u32>) -> Result<Vec<FileEntry>, String> {
     // Validate the path is a registered library (including child universe libraries)
     let libraries = load_all_libraries(&app);
@@ -3887,7 +3892,12 @@ fn scan_index_words_recursive(
 ///
 /// Performance: a single forward scan over the FTS5 dictionary segments.
 /// Measured ~350ms for 50k rows on a 7,600-note Arabic-heavy Universe.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, String> {
     use rusqlite::{Connection, OpenFlags};
 

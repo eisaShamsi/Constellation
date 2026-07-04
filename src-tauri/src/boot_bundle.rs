@@ -56,7 +56,12 @@ pub struct BootBundle {
 /// Also emits per-step timings (`timings_ms`) so cold-boot attribution is
 /// possible without rebuilding — each step is wall-clock-measured with
 /// `Instant::now()` and shipped alongside the payload.
-#[tauri::command]
+// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
+// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
+// WebView2 dispatch thread for the whole 20-40s cold init after a universe
+// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
+// still runs exactly once (init_lock) but the app stays responsive.
+#[tauri::command(async)]
 pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, String> {
     let mut timings: Vec<(String, u64)> = Vec::new();
 
