@@ -6814,7 +6814,7 @@
 		     Reviewer so it hydrates fresh on open (workbench_hydrate is a cheap
 		     indexed read). Flag default-off (Settings → Plug-ins → Workbench). -->
 		{#if showWorkbench}
-			<div class="workbench-overlay">
+			<div class="workbench-overlay workbench-visible">
 				<WorkbenchView
 					onNoteClick={(path, libraryName, newTab) => {
 						openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed', undefined, newTab === true);
@@ -9172,7 +9172,7 @@
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible, .reviewer-overlay.reviewer-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible, .reviewer-overlay.reviewer-visible, .workbench-overlay.workbench-visible { display: flex; flex-direction: column; }
 
 
 	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
