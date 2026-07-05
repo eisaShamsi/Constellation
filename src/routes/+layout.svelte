@@ -27,7 +27,7 @@
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
-		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
+		loadBookmarks, bookmarks, isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
@@ -4598,15 +4598,14 @@
 		}
 	}
 
+	// MIG-092 — the sidebar "Bookmarks" section renders the Starred collection.
+	const starredItems = $derived($collectionSets.find(c => c.id === STARRED_ID)?.items ?? []);
+
 	function handleToggleBookmark() {
 		const tab = get(focusedTab);
 		if (!tab) return;
-		if (isBookmarked(tab.path)) {
-			const bm = get(bookmarks).find(b => b.path === tab.path);
-			if (bm) removeBookmark(bm.id);
-		} else {
-			addBookmark({ type: 'note', path: tab.path, name: tab.name, libraryName: tab.libraryName });
-		}
+		// MIG-092 — ⭐ toggles the note's membership in the Starred collection.
+		toggleStarred({ type: 'note', path: tab.path, name: tab.name, libraryName: tab.libraryName });
 	}
 
 	function handleRandomNote() {
@@ -5296,13 +5295,9 @@
 
 	// MIG-077 §F — shared menu-action helpers (reuse existing ops; no reinvention).
 	function toggleBookmarkPath(type: 'note' | 'folder', path: string, name: string) {
-		if (isBookmarked(path)) {
-			const bm = get(bookmarks).find(b => b.path === path);
-			if (bm) removeBookmark(bm.id);
-		} else {
-			const lib = $libraryStats.find(l => path.startsWith(l.path));
-			addBookmark({ type, path, name, libraryName: lib?.name ?? '' });
-		}
+		// MIG-092 — bookmark ≡ Starred-collection membership (the unified shelf).
+		const libraryName = $libraryStats.find(l => path.startsWith(l.path))?.name ?? '';
+		toggleStarred({ type, path, name, libraryName });
 	}
 	function copyRelativePath(path: string) {
 		const lib = $libraryStats.find(l => path.startsWith(l.path));
@@ -5342,7 +5337,7 @@
 		const isMd = !entry.is_dir && entry.name.toLowerCase().endsWith('.md');
 		const kind: NodeKind = isLibraryRoot ? 'library' : entry.is_dir ? 'folder' : 'note';
 		const displayName = entry.is_dir ? entry.name : (entry.display_title || entry.name.replace(/\.(md|base)$/, ''));
-		const target: ContextTarget = { kind, path: entry.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(entry.path) };
+		const target: ContextTarget = { kind, path: entry.path, name: displayName, isMarkdown: isMd, bookmarked: isInStarred(entry.path) };
 		const showInExplorer = () => { invoke('constellation_show_in_folder', { path: entry.path }).catch(() => {}); };
 		const actions: ContextActions = {};
 		if (kind === 'library') {
@@ -5401,7 +5396,7 @@
 	function handleSearchResultContextMenu(r: { path: string; name: string; library_name?: string }, x: number, y: number) {
 		const displayName = r.name.replace(/\.(md|base)$/, '');
 		const isMd = r.name.toLowerCase().endsWith('.md');
-		const target: ContextTarget = { kind: 'note', path: r.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(r.path) };
+		const target: ContextTarget = { kind: 'note', path: r.path, name: displayName, isMarkdown: isMd, bookmarked: isInStarred(r.path) };
 		const lib = $libraryStats.find((l) => r.path.startsWith(l.path));
 		const actions: ContextActions = {
 			open: () => handleNoteClick(r.path, displayName, undefined),
@@ -6459,13 +6454,13 @@
 						{stageMap}
 					/>
 				{:else}
-					<!-- Bookmarks section -->
-					{#if $bookmarks.length > 0}
+					<!-- Bookmarks section — the Starred collection (MIG-092 unify) -->
+					{#if starredItems.length > 0}
 						<div class="section-label">{$t('sidebar.bookmarks')}</div>
-						{#each $bookmarks as bm}
-							<button class="s-result" onclick={(e) => handleNoteClick(bm.path, bm.name, undefined, e)}>
-								<div class="s-name">⭐ {bm.name}</div>
-								<div class="s-meta"><span class="s-lib-name">{bm.libraryName}</span></div>
+						{#each starredItems as it}
+							<button class="s-result" onclick={(e) => handleNoteClick(it.path, it.name ?? it.path, undefined, e)}>
+								<div class="s-name">⭐ {it.name ?? it.path}</div>
+								<div class="s-meta"><span class="s-lib-name">{it.libraryName ?? ''}</span></div>
 							</button>
 						{/each}
 					{/if}

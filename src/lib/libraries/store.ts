@@ -1046,6 +1046,15 @@ export function removeFromStarred(key: string) {
 export function isInStarred(path: string): boolean {
 	return get(collectionSets).some(c => c.id === CL.STARRED_ID && c.items.some(i => i.path === path));
 }
+/** Toggle a target's Starred membership by PATH (the ⭐ / bookmark gesture).
+ *  Removes by the existing item's key (cid or path) so cid-adopted notes still
+ *  toggle off correctly. */
+export function toggleStarred(item: { type?: CL.CollectionItemType; path: string; name?: string; libraryName?: string }) {
+	const starred = get(collectionSets).find(c => c.id === CL.STARRED_ID);
+	const existing = starred?.items.find(i => i.path === item.path);
+	if (existing) removeFromCollection(CL.STARRED_ID, CL.collectionKey(existing));
+	else addToStarred(item);
+}
 
 /** Hydration returned authoritative rows: adopt cids for path-keyed NOTE items
  *  (self-upgrade to rename-proof identity) and refresh moved paths. Saves only
