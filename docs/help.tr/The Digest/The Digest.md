@@ -19,7 +19,7 @@ description: Evren Özeti, bilgi tabanınızdaki her notu özet-başlık seviyes
 
 **Evren Özeti**, tüm bilgi tabanınızı *anlam* seviyesinde göz gezdirme yeridir. Dosya ağacı (sadece isimler) veya Sky View (sadece şekiller) yerine, Özet her notun altında size **notun ne hakkında olduğunu söyleyen tek cümleyi** gösterir. Bir satıra dokunun ve çok cümleli tam özet satır içinde genişler. Bir tane bile açmadan, bir dakikada elli notluk özü okuyabilirsiniz.
 
-**Sol dock**'unuzda Dosya ağacı, Notes Navigator ve Sky View ile birlikte yaşar — Constellation'ın navigasyon için sunduğu dört yoldan biri.
+**Sol dock**'unuzda Dosya ağacı ve Sky View ile birlikte yaşar — Constellation'ın navigasyon için sunduğu yollardan biri.
 
 ---
 
@@ -38,7 +38,7 @@ Bu, **Note Summary Creator (NSC)** Core Plug-In'in üçüncü sütunudur:
 
 ## Özeti açma
 
-**Sol kenar çubuğunda**, **Evren Özeti simgesine** tıklayın (köşesinde daire olan küçük bir liste) — sıradaki dördüncü simgedir, Dosya ağacı / Notes Navigator / Sky View'in yanında. Kenar çubuğu Özet paneline geçer.
+**Sol kenar çubuğunda**, **Evren Özeti simgesine** tıklayın (köşesinde daire olan küçük bir liste) — Dosya ağacı ve Sky View simgelerinin yanında. Kenar çubuğu Özet paneline geçer.
 
 Geri dönmek için, diğer üç simgeden herhangi birine tıklayın (veya **Escape**'e basın).
 

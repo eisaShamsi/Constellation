@@ -125,7 +125,7 @@ Arama panelindeki bir sonuca sağ tıklayarak **güvenli** bir not eylemleri set
 - **Varsayılan uygulamada aç** — dosyayı sisteminizin Markdown için kullandığı uygulamada açar.
 - **Stil…** — Stil Tasarımcısı'nı **Bilişsel renkler** kategorisine odaklanarak açar (arama eşleşme renklerinin yaşadığı yer).
 
-> **Tasarım gereği, arama sonucu menüsünde Yeniden adlandır, Taşı veya Sil yoktur.** Bir arama paneli, tüm Evreninizdeki sonuçları gösterir ve dosya ağacının saniye saniye güncel kendi kopyasını tutmaz; bu yüzden oradaki yıkıcı bir eylem eskimiş bir görünüm üzerinde iş görebilir. Constellation bu işlemleri görünümün her zaman güncel olduğu dosya ağacında (ve Not Gezgini'nde) tutar. Arama menüsü, bir nota güvenli biçimde *ulaşmak* içindir, kütüphanenizi yeniden yapılandırmak için değil.
+> **Tasarım gereği, arama sonucu menüsünde Yeniden adlandır, Taşı veya Sil yoktur.** Bir arama paneli, tüm Evreninizdeki sonuçları gösterir ve dosya ağacının saniye saniye güncel kendi kopyasını tutmaz; bu yüzden oradaki yıkıcı bir eylem eskimiş bir görünüm üzerinde iş görebilir. Constellation bu işlemleri görünümün her zaman güncel olduğu dosya ağacında tutar. Arama menüsü, bir nota güvenli biçimde *ulaşmak* içindir, kütüphanenizi yeniden yapılandırmak için değil.
 
 ---
 

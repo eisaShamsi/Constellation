@@ -19,7 +19,7 @@ description: Das Universum-Digest ist ein Panel in der linken Andockleiste, das 
 
 Das **Universum-Digest** ist der Ort, an dem Sie Ihre gesamte Wissensbasis auf der Ebene der *Bedeutung* überfliegen. Statt eines Dateibaums (nur Namen) oder der Himmelsansicht (nur Formen) zeigt Ihnen das Digest unter jeder Notiz **den einen Satz, der sagt, worum es in der Notiz geht**. Klicken Sie eine Zeile an und die volle mehrsätzige Zusammenfassung klappt inline aus. Sie können den Inhalt von fünfzig Notizen in einer Minute lesen, ohne auch nur eine zu öffnen.
 
-Es lebt in Ihrer **linken Andockleiste**, neben dem Dateibaum, dem Notizen-Navigator und der Himmelsansicht — eine der vier Möglichkeiten, mit denen Constellation Ihnen die Navigation erlaubt.
+Es lebt in Ihrer **linken Andockleiste**, neben dem Dateibaum und der Himmelsansicht — eine der drei Möglichkeiten, mit denen Constellation Ihnen die Navigation erlaubt.
 
 ---
 
@@ -38,9 +38,9 @@ Es ist die dritte Säule des **Note Summary Creator (NSC)** Core Plug-Ins:
 
 ## Das Digest öffnen
 
-Klicken Sie in der **linken Seitenleiste** auf das **Symbol des Universum-Digest** (eine kleine Liste mit einem Kreis in der Ecke) — es ist das vierte Symbol in der Reihe, neben Dateibaum / Notizen-Navigator / Himmelsansicht. Die Seitenleiste schaltet auf das Digest-Panel um.
+Klicken Sie in der **linken Seitenleiste** auf das **Symbol des Universum-Digest** (eine kleine Liste mit einem Kreis in der Ecke) — es ist das dritte Symbol in der Reihe, neben Dateibaum / Himmelsansicht. Die Seitenleiste schaltet auf das Digest-Panel um.
 
-Um zurückzuschalten, klicken Sie auf eines der drei anderen Symbole (oder drücken Sie **Escape**).
+Um zurückzuschalten, klicken Sie auf eines der beiden anderen Symbole (oder drücken Sie **Escape**).
 
 ---
 

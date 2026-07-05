@@ -10,6 +10,7 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 
 1. [Erste Schritte](#erste-schritte)
 2. [Universum und Bibliotheken](#universum-und-bibliotheken)
+2b. [Der Datei-Explorer](#2b-der-datei-explorer)
 3. [Notizen erstellen und bearbeiten](#notizen-erstellen-und-bearbeiten)
 4. [Suche](#suche)
 5. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
@@ -100,6 +101,52 @@ So verschieben Sie ein Universum:
 5. Alle Notizen und Bibliotheken erscheinen sofort — Pfade werden automatisch korrigiert
 
 Die Ordnerstruktur des Universums folgt dem Obsidian-Modell: Notizen befinden sich direkt im Stammordner, die Konfiguration befindet sich in `.constellation/`.
+
+---
+
+## 2b. Der Datei-Explorer
+
+Der **Datei-Explorer** ist der Dateibaum in der linken Seitenleiste — Ihr Zuhause für die Dateiverwaltung. Er zeigt Ihre Bibliotheken, Ordner und Notizen genau so, wie sie auf der Festplatte liegen, und ist der eine Ort, an dem Sie Notizen anlegen, umbenennen, verschieben und löschen. Er kümmert sich ausschließlich um das Dateisystem: Er durchsucht *Namen*, niemals den Inhalt einer Notiz — die Volltextsuche im Notiztext gehört zum **Suchzentrum** (`Ctrl+Shift+F`).
+
+Über das reine Durchstöbern hinaus bietet der Datei-Explorer vier Werkzeuge, die aus ihm ein vollwertiges Verwaltungswerkzeug machen: einen Filter, eine Sortierung, Mehrfachauswahl und eine Stapelleiste.
+
+### Filtern nach Namen
+
+Über dem Baum steht ein **Filterfeld**. Tippen Sie einige Zeichen ein, und der Baum zeigt nur noch die Notizen und Ordner, deren *Name* auf das Getippte passt; die übergeordneten Ordner bleiben sichtbar, damit Sie erkennen, wo ein Treffer liegt.
+
+- Der Filter durchsucht **alle Bibliotheken** — auch die eingeklappten. Eine eingeklappte Bibliothek wird geladen und aufgeklappt, um ihre Treffer zu zeigen; sobald Sie den Filter löschen, wird der vorherige Aufklappzustand exakt wiederhergestellt.
+- Der Filter passt **nur auf Namen**, nie auf den Notizinhalt. Für die Suche im Text einer Notiz verwenden Sie das Suchzentrum.
+- Das Filtern funktioniert in jeder Schrift — tippen Sie Arabisch, um arabische Namen zu finden.
+
+### Sortieren
+
+Ein **Sortier-Umschalter** über dem Baum durchläuft acht Ordnungen. Ordner stehen dabei immer oben, die Notizen darunter werden in der gewählten Reihenfolge angezeigt:
+
+- **Name** — A→Z oder Z→A
+- **Geändert** — neueste oder älteste zuerst
+- **Erstellt** — neueste oder älteste zuerst
+- **Größe** — größte oder kleinste zuerst
+
+### Mehrfachauswahl
+
+Sie können mehrere Notizen und Ordner auf einmal auswählen:
+
+- **Strg-Klick** (⌘-Klick auf dem Mac) schaltet eine einzelne Notiz oder einen Ordner an oder ab.
+- **Umschalt-Klick** wählt einen zusammenhängenden Bereich zwischen der zuletzt angeklickten und der jetzt angeklickten Zeile aus.
+- Ein **einfacher Klick** öffnet die Notiz weiterhin wie gewohnt (bzw. klappt einen Ordner auf oder zu).
+- **Escape** hebt die Auswahl wieder auf.
+
+Ausgewählte Zeilen werden hervorgehoben, sodass Sie jederzeit sehen, was Teil Ihrer Auswahl ist.
+
+### Die Stapelleiste
+
+Sobald mindestens ein Element ausgewählt ist, erscheint eine **Stapelleiste**. Sie zeigt die Anzahl der ausgewählten Elemente und bietet drei Aktionen, die auf die gesamte Auswahl auf einmal wirken:
+
+- **Tag hinzufügen** — vergibt einen Tag an alle ausgewählten Notizen.
+- **Verschieben** — verschiebt die Auswahl in einen anderen Ordner.
+- **Löschen** — verschiebt die Auswahl in den Papierkorb (nichts wird endgültig gelöscht; jede Löschung ist umkehrbar).
+
+Jede Stapelaktion läuft über genau dieselben sicheren, abgesicherten Abläufe, die auch eine einzelne Notiz verwendet — dieselben Schutzmechanismen, nur auf viele Notizen zugleich angewandt. Notizen, die schreibgeschützt aus einem verlinkten Kind-Universum stammen, werden dabei übersprungen.
 
 ---
 
@@ -566,7 +613,6 @@ Der zweite Bildschirm aendert seinen Inhalt basierend auf dem aktiven Seitenleis
 | Hauptseitenleistenmodus | Zweiter Bildschirm zeigt |
 |---|---|
 | **Datei-Explorer** | Universum-Dashboard — Statistiken, Bibliotheksaufschluesselung, Kind-Universen, Tags, zuletzt bearbeitete/geoeffnete Notizen |
-| **Navigator** | Vollstaendige Navigator-Ansicht zum Durchsuchen von Notizen |
 | **Himmelsansicht** | Himmelsansicht-Baum mit Verzeichnisstruktur |
 | **Sternenansicht** | Sternenansicht-Begleiter mit Rueckverweisen, Vorwaertsverweisen, Tags und lokalem Graph |
 

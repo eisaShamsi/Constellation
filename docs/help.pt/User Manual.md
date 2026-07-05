@@ -101,6 +101,48 @@ Para mover um universo:
 
 A estrutura de pastas do universo segue o modelo Obsidian: as notas ficam diretamente na pasta raiz, a configuracao reside em `.constellation/`.
 
+### Explorador de Arquivos (Árvore de Arquivos)
+
+A **Árvore de Arquivos** na barra lateral (a aba **Árvore**) é a forma principal de navegar e organizar suas notas e pastas. Ela carrega toda a força de gerenciamento de arquivos, mesmo em bibliotecas grandes.
+
+> O antigo "Navegador de Notas" de painel duplo (o Modo de Lista) foi aposentado. Seus pontos fortes de gerenciamento de arquivos — filtro, ordenação mais rica, multisseleção e operações em lote — agora vivem diretamente no Explorador de Arquivos; a navegação por facetas é atendida pelo painel de Tags e pela Central de Busca (Search Hub).
+
+#### Filtrar por nome
+
+Uma caixa de filtro fica no topo da árvore. Digite qualquer fragmento de um nome de nota ou de pasta (em qualquer idioma) e a árvore se estreita para as correspondências, abrindo automaticamente as pastas que as contêm. O filtro busca em **todas** as bibliotecas — as que estão recolhidas são carregadas e reveladas, e depois restauradas ao estado em que você as deixou quando o filtro é limpo. Ele corresponde **apenas a nomes**, nunca ao conteúdo das notas (buscar *dentro* das notas é tarefa da Central de Busca).
+
+#### Ordenar
+
+O botão de ordenação alterna entre oito ordens: **Nome** (A→Z / Z→A), **Modificação** (mais recentes / mais antigas), **Criação** (mais recentes / mais antigas) e **Tamanho** (maiores / menores). As pastas sempre ficam no topo; passe o mouse sobre o botão para ver a ordenação atual.
+
+#### Multisseleção
+
+- **Ctrl+clique** (⌘+clique no Mac) — adiciona ou remove uma nota ou pasta da seleção
+- **Shift+clique** — seleciona um intervalo inteiro
+- **Clique simples** — continua apenas abrindo a nota; a seleção permanece até você pressionar **Escape** ou limpá-la
+- As linhas selecionadas são destacadas com uma barra de destaque; tanto notas quanto pastas podem ser selecionadas
+
+#### Operações em lote
+
+Com um ou mais itens selecionados, uma barra aparece na parte inferior da barra lateral mostrando a contagem:
+
+- **Adicionar tag** — adiciona uma tag a cada nota selecionada
+- **Mover** — move a seleção para uma única pasta (um seletor que abrange todo o universo)
+- **Excluir** — exclui a seleção (com respaldo na lixeira e uma confirmação com a contagem)
+
+Cada ação em lote passa pelas mesmas operações seguras e protegidas que uma única nota usa — então marcar em lote nunca corrompe uma nota. Notas de universos secundários vinculados (somente leitura) são ignoradas automaticamente.
+
+### Abas de modo da barra lateral
+
+A barra lateral oferece dois modos de exibição, alternados pelas abas de modo:
+
+| Aba | Descrição |
+|-----|-----------|
+| **Árvore** | Explorador de Arquivos — navegue, filtre, ordene, selecione em lote e organize suas notas e pastas |
+| **Organograma** | Vista Estelar — visualização interativa da hierarquia em árvore |
+
+Sua seleção e a posição de rolagem são preservadas ao alternar entre as abas.
+
 ---
 
 ## 3. Criar e Editar Notas

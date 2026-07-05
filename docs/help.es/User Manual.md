@@ -101,6 +101,20 @@ Para mover un universo:
 
 La estructura de carpetas del universo sigue el modelo de Obsidian: las notas van directamente en la carpeta raiz, la configuracion reside en `.constellation/`.
 
+### El Explorador de Archivos
+
+El **Explorador de Archivos** (el árbol de archivos de la barra lateral) es la forma principal de explorar **y organizar** tus notas y carpetas. Más allá del árbol clásico, ahora reúne la potencia de gestión de archivos que necesitas para una biblioteca grande.
+
+> El antiguo **Navegador de Notas** de dos paneles (modo Lista) se ha **retirado**. Sus puntos fuertes de gestión de archivos — filtro, ordenación más rica, selección múltiple y operaciones por lotes — viven ahora directamente en el Explorador de Archivos, donde pertenecen al propio sistema de archivos. Su exploración por facetas ya la cubren superficies que se ocupan de ese trabajo (el panel de Etiquetas y el Search Hub), así que deja de ser un modo aparte.
+
+**Filtrar por nombre.** En la parte superior del árbol hay una caja de filtro. Escribe cualquier fragmento del nombre de una nota o carpeta (en cualquier idioma) y el árbol se reduce a las coincidencias, abriendo las carpetas que las contienen para que nada quede oculto. El filtro busca en **todas** las bibliotecas — las que están colapsadas se cargan y se revelan automáticamente, y luego se restauran exactamente como las tenías al limpiar el filtro. Coincide **solo con nombres**, nunca con el contenido de las notas (buscar *dentro* de las notas es tarea del Search Hub).
+
+**Ordenar de ocho maneras.** El botón de orden recorre ocho estados: **Nombre** (A→Z / Z→A), **Modificado** (más reciente / más antiguo), **Creado** (más reciente / más antiguo) y **Tamaño** (mayor / menor); las carpetas siempre quedan arriba. Pasa el cursor por el botón para ver el orden actual.
+
+**Selección múltiple.** **Ctrl+clic** (⌘+clic en Mac) añade o quita una nota o carpeta de la selección; **Mayús+clic** selecciona un rango completo. Un clic normal sigue simplemente abriendo la nota — la selección permanece hasta que pulsas **Escape** o la limpias. Las filas seleccionadas se resaltan con una barra de acento; puedes seleccionar tanto notas como carpetas.
+
+**Operaciones por lotes.** Con elementos seleccionados, en la parte inferior de la barra lateral aparece una barra que muestra el recuento, con **Mover**, **Añadir etiqueta** y **Eliminar**. Cada acción se aplica a toda la selección mediante las mismas operaciones seguras y protegidas que usa una sola nota — así el etiquetado por lotes nunca corrompe una nota, y la eliminación va respaldada por la papelera. Las notas de universos hijos vinculados (de solo lectura) se omiten automáticamente.
+
 ---
 
 ## 3. Crear y Editar Notas
@@ -566,7 +580,6 @@ La segunda pantalla cambia su contenido segun el modo activo de la barra lateral
 | Modo de barra lateral | La segunda pantalla muestra |
 |---|---|
 | **Explorador de archivos** | Panel del universo — estadisticas, desglose de bibliotecas, universos hijos, etiquetas, notas editadas/abiertas recientemente |
-| **Navegador** | Vista completa del Navegador para explorar notas |
 | **Vista del cielo** | Arbol de Vista del cielo con estructura de directorios |
 | **Vista estelar** | Complemento de Vista estelar con retroenlaces, enlaces hacia adelante, etiquetas y grafo local |
 

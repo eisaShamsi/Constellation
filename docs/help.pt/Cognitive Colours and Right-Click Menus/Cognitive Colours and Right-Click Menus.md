@@ -124,7 +124,7 @@ Clique com o botão direito em um resultado no painel de busca para um conjunto 
 - **Abrir no aplicativo padrão** — abre o arquivo no aplicativo que o seu sistema usa para Markdown.
 - **Estilo…** — abre o Designer de estilo focado na categoria **Cores cognitivas** (onde vivem as cores de correspondência de busca).
 
-> **Por design, o menu de resultado de busca não tem Renomear, Mover ou Excluir.** Um painel de busca mostra resultados de todo o seu Universo e não mantém a sua própria cópia atualizada ao segundo da árvore de arquivos, então uma ação destrutiva ali poderia agir sobre uma visão desatualizada. O Constellation mantém essas operações na árvore de arquivos (e no Navegador de Notas), onde a visão está sempre atual. O menu de busca serve para *chegar até* uma nota com segurança, não para reestruturar a sua biblioteca.
+> **Por design, o menu de resultado de busca não tem Renomear, Mover ou Excluir.** Um painel de busca mostra resultados de todo o seu Universo e não mantém a sua própria cópia atualizada ao segundo da árvore de arquivos, então uma ação destrutiva ali poderia agir sobre uma visão desatualizada. O Constellation mantém essas operações na árvore de arquivos (o Explorador de Arquivos), onde a visão está sempre atual. O menu de busca serve para *chegar até* uma nota com segurança, não para reestruturar a sua biblioteca.
 
 ---
 

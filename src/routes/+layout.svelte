@@ -2688,6 +2688,16 @@
 		indexLoadedKey = null;
 		libraryTrees = {};
 		expandedLibraries = new Set();
+		// MIG-091 (audit P2, data-safety): clear the file-tree selection + filter
+		// on a universe switch. A multi-selection holds ABSOLUTE paths from the
+		// prior universe — a batch move/delete after a switch would act on the
+		// old universe's real files. Also resets the filter's snapshot so a
+		// filter active across a switch doesn't restore stale expansion.
+		selectedTreePaths = new Set();
+		selectionAnchor = null;
+		treeFilter = '';
+		expansionSnapshot = null;
+		expandedChildUniverses = new Set();
 		editingTabIds.set(new Set());
 		libraryAppearances.set({});
 		bookmarks.set([]);
@@ -4306,15 +4316,22 @@
 		for (const child of childUniverses) for (const lib of getChildUniverseLibs(child.path)) allLibs.push(lib);
 		expandedChildUniverses = new Set([...expandedChildUniverses, ...childUniverses.map(c => c.path)]);
 		expandedLibraries = new Set([...expandedLibraries, ...allLibs.map(l => l.library_id)]);
-		await Promise.all(allLibs.map(async (lib) => {
-			if (!libraryTrees[lib.library_id]) {
+		// MIG-091 (audit P2, perf): load the unloaded libraries CONCURRENCY-CAPPED
+		// (4 at a time) rather than one uncapped Promise.all burst over all ~19 —
+		// each read_library_tree reads every .md's frontmatter. Incremental
+		// libraryTrees reassignment reveals matches as each batch lands.
+		const toLoad = allLibs.filter(l => !libraryTrees[l.library_id]);
+		const CONC = 4;
+		for (let i = 0; i < toLoad.length; i += CONC) {
+			const batch = toLoad.slice(i, i + CONC);
+			await Promise.all(batch.map(async (lib) => {
 				try {
 					const tree: FileEntry[] = await invoke('read_library_tree', { path: lib.path, maxDepth: 4 });
 					libraryTrees[lib.library_id] = tree;
 				} catch { /* unreadable library — skip */ }
-			}
-		}));
-		libraryTrees = { ...libraryTrees };
+			}));
+			libraryTrees = { ...libraryTrees };
+		}
 	}
 
 	// ─── MIG-091 §B — file-tree multi-select ───

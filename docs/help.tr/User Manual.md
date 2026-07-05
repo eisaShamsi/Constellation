@@ -57,10 +57,24 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 | Öğe | Açıklama |
 |-----|----------|
 | **Kenar Çubuğu (Şerit)** | Gezinme düğmeleri: Dosya ağacı, Arama, Sky View, Takvim, Şablonlar, Ayarlar |
-| **Dosya Ağacı** | Kütüphanelerinizdeki notları ve klasörleri tarayın |
+| **Dosya Ağacı (Dosya Gezgini)** | Kütüphanelerinizdeki notları ve klasörleri tarayın — ada göre süzün, sekiz düzende sıralayın, birden fazla öğe seçin ve toplu işlemler uygulayın |
 | **Düzenleyici** | Markdown notlarınızı okuyun ve düzenleyin |
 | **Sekme Çubuğu** | Birden fazla notu sekmelerde açın |
 | **Durum Çubuğu** | Kelime sayısı, karakter sayısı, okuma süresi |
+
+---
+
+### Dosya Gezgini (Dosya Ağacı)
+
+Dosya Gezgini, notlarınızın *yaşadığı* yerdir — kütüphanelerinizin ve klasörlerinizin dosya sistemi görünümü. Bir notu açmak için adına tıklamanın yanı sıra, notlarınızı yönetmenin dört yolunu sunar; hepsi dosya sistemi üzerinde çalışır, notların içeriği üzerinde değil (içeriği aramak için Search Hub'ı kullanın).
+
+**Süzme (ada göre).** Ağacın üstündeki süzme kutusuna yazmaya başlayın; ağaç anında, yalnızca *adı* aradığınız metinle eşleşen notlara ve klasörlere daralır (bir klasör eşleşirse, alt öğeleri korunur). Süzme yalnızca adlar üzerinde çalışır — not içeriğinde asla arama yapmaz (o Search Hub'ın işidir). Süzme **tüm kütüphanelerinizi** kapsar: daraltılmış bir kütüphane bile aranabilir — bir süzme yazdığınızda Constellation her kütüphaneyi yükler ve eşleşmeleri ortaya çıkarır, süzmeyi temizlediğinizde de önceki genişletme durumunu geri yükler. Süzme kutusunu temizlemek için metni silin.
+
+**Sıralama (sekiz düzen).** Ağacın üstündeki sıralama düğmesi ağacın sırasını değiştirir. Sekiz düzen arasında geçiş yapar: **Ad** (A→Z / Z→A), **Değiştirilme tarihi** (en yeni / en eski), **Oluşturulma tarihi** (en yeni / en eski) ve **Boyut** (en büyük / en küçük). Hangi düzeni seçerseniz seçin, **klasörler her zaman üstte** kalır.
+
+**Çoklu seçim.** Bir notu veya klasörü seçime eklemek/çıkarmak için `Ctrl` (macOS'ta `⌘`) tuşunu basılı tutarak tıklayın. Bir aralığı seçmek için `Shift` tuşunu basılı tutarak tıklayın — ilk seçilen öğe ile en son tıklanan öğe arasındaki her şey seçilir. Düz bir tıklama, her zaman olduğu gibi notu açar. Seçili satırlar vurgulanır. Seçimi temizlemek için `Escape` tuşuna basın.
+
+**Toplu işlem çubuğu.** En az bir öğe seçtiğinizde, ağacın üstünde seçilen öğe sayısını gösteren bir çubuk belirir ve üç eylem sunar: **Etiket ekle**, **Taşı** ve **Sil** (silme çöp kutusu destekli — geri alınabilir). Her eylem, tek bir not için kullandığınız aynı güvenli, korumalı işlemlerin üzerinden çalışır — bu yüzden toplu bir etiket ekleme, açık bir notu bozmaz ve toplu bir silme, çöp kutusuna gider. Bağlı bir alt evrenden gelen salt okunur notlar her toplu işlemden atlanır.
 
 ---
 
@@ -566,7 +580,6 @@ O gelenegin cipine gecin → notunuz varsayilanin yerine adlandirilmis sektorune
 | Kenar Çubuğu Modu | İkinci Ekran Gösterir |
 |---|---|
 | **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, alt evrenler, etiketler, son düzenlenen/açılan notlar |
-| **Gezgin** | Notlara göz atmak için tam Gezgin görünümü |
 | **Gökyüzü Görünümü** | Dizin yapısıyla Gökyüzü Görünümü ağacı |
 | **Sky View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Sky View eşliği |
 

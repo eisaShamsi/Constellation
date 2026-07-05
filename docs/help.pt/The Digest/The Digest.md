@@ -19,7 +19,7 @@ description: O Resumo do Universo é um painel no dock esquerdo que mostra cada 
 
 O **Resumo do Universo** é o lugar para percorrer toda a sua base de conhecimento no nível do *significado*. Em vez de uma árvore de arquivos (apenas nomes) ou a Vista Estelar (apenas formas), o Resumo mostra a você, sob cada nota, **a única frase que diz do que se trata a nota**. Toque em uma linha e o resumo completo de várias frases se expande em linha. Você pode ler o conteúdo de cinquenta notas em um minuto, sem nunca abrir uma.
 
-Ele vive no seu **dock esquerdo**, ao lado da árvore de Arquivos, do Navegador de Notas e da Vista Estelar — uma das quatro maneiras que o Constellation lhe oferece para navegar.
+Ele vive no seu **dock esquerdo**, ao lado da árvore de Arquivos (o Explorador de Arquivos) e da Vista Estelar — uma das maneiras que o Constellation lhe oferece para navegar.
 
 ---
 
@@ -38,9 +38,9 @@ Quando o seu Universo cresce além de algumas centenas de notas, "abrir cada uma
 
 ## Abrir o Resumo
 
-Na **barra lateral esquerda**, clique no **ícone do Resumo do Universo** (uma pequena lista com um círculo no canto) — é o quarto ícone da fila, ao lado da árvore de Arquivos / Navegador de Notas / Vista Estelar. A barra lateral muda para o painel do Resumo.
+Na **barra lateral esquerda**, clique no **ícone do Resumo do Universo** (uma pequena lista com um círculo no canto) — na fila, ao lado da árvore de Arquivos (o Explorador de Arquivos) / Vista Estelar. A barra lateral muda para o painel do Resumo.
 
-Para voltar, clique em qualquer um dos outros três ícones (ou pressione **Escape**).
+Para voltar, clique em qualquer um dos outros ícones (ou pressione **Escape**).
 
 ---
 

@@ -124,7 +124,7 @@ Klicken Sie mit der rechten Maustaste auf ein Ergebnis im Suchpanel fuer einen *
 - **In Standard-App oeffnen** — die Datei in der App oeffnen, die Ihr System fuer Markdown verwendet.
 - **Stil…** — den Stil-Gestalter fokussiert auf die Kategorie **Kognitive Farben** oeffnen (wo die Treffer-Farben der Suche leben).
 
-> **Bewusst hat das Suchergebnis-Menue kein Umbenennen, Verschieben oder Loeschen.** Ein Suchpanel zeigt Ergebnisse aus Ihrem gesamten Universum und haelt keine sekundengenaue eigene Kopie des Dateibaums vor, sodass eine zerstoererische Aktion dort auf einer veralteten Ansicht arbeiten koennte. Constellation belaesst diese Operationen im Dateibaum (und im Notizen-Navigator), wo die Ansicht stets aktuell ist. Das Suchmenue dient dazu, *sicher zu einer Notiz zu gelangen*, nicht dazu, Ihre Bibliothek umzustrukturieren.
+> **Bewusst hat das Suchergebnis-Menue kein Umbenennen, Verschieben oder Loeschen.** Ein Suchpanel zeigt Ergebnisse aus Ihrem gesamten Universum und haelt keine sekundengenaue eigene Kopie des Dateibaums vor, sodass eine zerstoererische Aktion dort auf einer veralteten Ansicht arbeiten koennte. Constellation belaesst diese Operationen im Dateibaum, wo die Ansicht stets aktuell ist. Das Suchmenue dient dazu, *sicher zu einer Notiz zu gelangen*, nicht dazu, Ihre Bibliothek umzustrukturieren.
 
 ---
 

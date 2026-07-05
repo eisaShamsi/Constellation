@@ -246,7 +246,7 @@ When you first open Constellation, the **Universe Setup Wizard** guides you thro
 | Element | Description |
 |---------|-------------|
 | **Sidebar (Ribbon)** | Navigation buttons: Notes Management, Search, Calendar, Templates, Settings |
-| **Notes Management** | Unified sidebar with mode tabs: Tree (File Explorer), List (Notes Navigator), OrgChart (Sky View) |
+| **Notes Management** | Unified sidebar with mode tabs: Tree (File Explorer — with filter, sort, multi-select, batch), Digest (Universe Digest), OrgChart (Sky View) |
 | **Editor** | Read and edit your Markdown notes |
 | **Tab Bar** | Open multiple notes in tabs |
 | **Status Bar** | Word count, character count, reading time |
@@ -476,15 +476,17 @@ The top row of the sidebar always shows the **Elements toolbar** with quick-acti
 
 ### Mode Tabs
 
-The second row contains three mode tabs to switch how your notes are displayed:
+The second row contains mode tabs to switch how your notes are displayed:
 
 | Tab | Icon | Description |
 |-----|------|-------------|
-| **Tree** | Folder tree icon | Classic File Explorer — browse your libraries as a folder hierarchy |
-| **List** | List icon | Notes Navigator — dual-pane file browser with folder, tag, and property browsing |
+| **Tree** | Folder tree icon | File Explorer — browse, filter, sort, multi-select, and batch-organize your notes and folders |
+| **Digest** | Lines icon | Universe Digest — an at-a-glance summary of your active universe |
 | **OrgChart** | Tree diagram icon | Sky View — interactive hierarchy tree visualization |
 
-Click a tab to switch modes. Your selection and scroll position are preserved when switching back.
+Click a tab to switch modes.
+
+> The former dual-pane "Notes Navigator" (List mode) has been **retired** — its file-management strengths (filter, richer sort, multi-select, and batch operations) now live directly in the **File Explorer** below, where they belong to the file system itself. Its facet-browsing overlapped surfaces that already own those jobs (the Tags panel, Search Hub), so it is no longer a separate mode.
 
 ### Adaptive Sidebar Width
 
@@ -497,7 +499,7 @@ Across all three modes, content is organized with consistent grouping:
 1. **Child universes first** — each child universe appears as a collapsible group with its libraries nested inside
 2. **Own libraries below** — the parent universe's own libraries appear below a visual separator
 
-This grouping is consistent across Tree, List, and OrgChart modes.
+This grouping is consistent across Tree, Digest, and OrgChart modes.
 
 ### Cross-Mode Selection Sync
 
@@ -509,8 +511,17 @@ When Sky View is open and you click a child universe, library, or folder in the 
 
 ### Tree Mode (File Explorer)
 
-The classic file tree for browsing notes and folders:
+The file tree for browsing **and organizing** your notes and folders. Beyond the classic tree, it now carries the file-management muscle you need for a large library:
 
+**Filter by name.** A filter box sits at the top of the tree. Type any fragment of a note or folder name (in any language) and the tree narrows to matches, opening the folders that contain them so nothing is buried. The filter searches **every** library — collapsed ones are loaded and revealed automatically, then restored to exactly how you had them when you clear the filter. It matches **names only**, never note contents (searching *inside* notes is Search Hub's job).
+
+**Sort eight ways.** The sort button cycles through **Name** (A→Z / Z→A), **Modified** (newest / oldest), **Created** (newest / oldest), and **Size** (largest / smallest); folders always stay on top. Hover the button to see the current sort.
+
+**Multi-select.** **Ctrl-click** (⌘-click on Mac) to add or remove a note or folder from the selection; **Shift-click** to select a whole range. Plain-clicking a note still just opens it — the selection stays put until you press **Escape** or clear it. Selected rows are highlighted with an accent bar.
+
+**Batch operations.** With items selected, a bar appears at the bottom of the sidebar showing the count, with **Move**, **Add tag**, and **Delete**. Each applies to the whole selection through the same safe, gated operations a single note uses — so batch-tagging never corrupts a note, and delete is trash-backed. Notes from linked child-universes (read-only) are skipped automatically.
+
+**The basics remain:**
 - Expand/collapse folders with click or arrow keys
 - Right-click for context menu — **notes:** Open, Open in new tab, Rename, Move, Add tag, Copy path, Copy name, Reveal in tree, Suggest sources, Delete; **folders:** New note, New folder, New base, Rename, Move, Delete; **library roots:** New note, New folder, New base
 - Drag and drop to move notes between folders
@@ -520,20 +531,7 @@ The classic file tree for browsing notes and folders:
 
 **Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to its library's `.trash` first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered), or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
 
-**Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in List mode — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or a **`.trash` folder** kept either inside the note's own library or at the universe root (your choice, in the same setting). Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
-
-### List Mode (Notes Navigator)
-
-A dual-pane browser for advanced note browsing:
-
-| Pane | Content |
-|------|---------|
-| **Left pane** | Folder tree, tag browser, or property browser (switchable) |
-| **Right pane** | Matching notes with title, preview snippet, tags, and date |
-
-Sorting options: Name (alphabetical), Last modified, File size.
-
-Batch operations: Select multiple files with checkboxes, then tag, move, or delete.
+**Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in the File Explorer's batch bar — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or a **`.trash` folder** kept either inside the note's own library or at the universe root (your choice, in the same setting). Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
 
 ### OrgChart Mode (Sky View)
 
