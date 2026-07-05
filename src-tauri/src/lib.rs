@@ -568,6 +568,9 @@ pub fn run() {
             universe::save_universe_settings,
             universe::read_universe_bookmarks,
             universe::save_universe_bookmarks,
+            // MIG-090 §1 — the Workbench's working-set persistence.
+            universe::read_universe_workbench,
+            universe::save_universe_workbench,
             universe::read_universe_workspaces,
             universe::save_universe_workspaces,
             universe::read_universe_property_types,

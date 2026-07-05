@@ -170,3 +170,16 @@ Whole-entity map returned (40 canon + 42 live surfaces; overlap ledgers: tags ×
 - **3. Search boundary CONFIRMED:** Search Hub = the formulated-query power tool; the Navigator = grammar-free intent + the held set.
 - **4. PJ-069 filed** (Pending Jobs **v1.16**): the entity-wide deduplication pass (the pre-existing debt above), per-cluster owner rulings → /migration; coordinate with MIG-090's shared note-list primitive.
 - **Next:** Architect delta for Form C (launched) → Plan → Boss approval → build. Old Navigator untouched until the validated swap.
+
+## Form C Architect delta DONE + Plan written + BOSS APPROVED
+- Architect `wf_e6c033e2-d9d` (4 designers + verifier; spine upheld; corrections: chips fold the Reviewer's SIX reasons; comma-split refuted — verbatim-phrase-only v1; cid_cn coverage overstated → mandatory non-writing path-keyed fallback; NavFileList is NOT a VirtualList consumer — the shared-VirtualList six are Backlinks/Outgoing/Reviewer/Index/Digest/StructuralOutline; hybrid union-append landmine VERIFIED → chips must be client-side intersection, pinned test; DISCOVERED DEFECT confirmed: addLinkToNote closed-branch missing the isCascading guard → plan §9).
+- **Plan** `docs/MIG-090-Plan-Workbench-v1.md` (`f751877f`): v1 = Workbench center surface (flag default-OFF, adds-never-removes) + Intent Bar front door (verbatim → hybrid engine, honest semantic degradation) + ONE set (workbench.json, cid_cn-keyed + path fallback, cap 100) + read-only verbs + NoteRow/NoteList over the existing VirtualList + 4 client-side chips + event liveness; ALL writing verbs cut to v2 → **v1 writes no note content, the Editor-Surface Gate is not triggered**. 10 commit-sized steps; Boss test §6. **Boss: "Plan Approved!"**
+
+## PRE-EXISTING DEFECT: cid_cn UNIQUE collision — Boss-directed verification → CONFIRMED by repro → FIXED (`69afb8c2`)
+- **Hypothesis (Boss, precise):** post-backfill external notes index with `cid_cn=''`; the FULL unique index + path-only upsert conflict target ⇒ the SECOND such note fails and stays invisible to search.
+- **Verified chain:** index falls back to `''` (search.rs:~5353); `ensure_cid_cn` runs only at creation + the ONCE-ONLY stamped backfill (init_db short-circuits after stamping — the "boot-time soft re-backfill" comment was STALE/false); the lazy injection happens only at first OPEN (`ensure_cid_cn_cmd` in openNoteTab, store.ts:1445); the index was FULL (search.rs:2404); upsert = `ON CONFLICT(path)` only.
+- **Reproduced RED:** test drove two `''` upserts through the REAL index fn + the REAL conflict shape → `SQLITE_CONSTRAINT_UNIQUE` (extended 2067) on the second — exactly the predicted failure.
+- **Fix (the non-writing option):** the index is now **PARTIAL** (`WHERE cid_cn != ''`); `''` = sentinel, not identity; **self-migrating** — init_db calls the ensure fn UNCONDITIONALLY (idempotent, one sqlite_master read; a legacy FULL variant detected via DDL is dropped + rebuilt partial on next boot). Real-cid uniqueness unchanged. Stale comment corrected. **Doc-banked rule:** any future parameterized cid lookup needs `AND cid_cn != ''` to use the partial index (binds MIG-090 §2's `workbench_hydrate`).
+- **GREEN:** 3 pinned tests (coexisting `''` rows / real-cid dup still errors / legacy→partial migration); full suite **1010/0**. Pushed.
+
+## MIG-090 Workbench v1 build cascade — BEGUN

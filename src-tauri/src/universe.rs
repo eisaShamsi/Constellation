@@ -161,6 +161,7 @@ fn migrate_to_constellation(universe_root: &Path) -> Result<(), String> {
         "bookmarks.json",
         "workspaces.json",
         "property-types.json",
+        "workbench.json",
     ];
     for file in &files_to_move {
         let src = universe_root.join(file);
@@ -585,6 +586,8 @@ pub fn create_universe(
         .map_err(|e| format!("Failed to write workspaces.json: {}", e))?;
     fs::write(cdir.join("property-types.json"), "{}")
         .map_err(|e| format!("Failed to write property-types.json: {}", e))?;
+    fs::write(cdir.join("workbench.json"), "[]")
+        .map_err(|e| format!("Failed to write workbench.json: {}", e))?;
 
     // Add to registry (path = universe ROOT, not .constellation/)
     let entry = UniverseEntry {
@@ -1114,6 +1117,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
     fs::write(cdir.join("settings.json"), "{}").ok();
     fs::write(cdir.join("workspaces.json"), "[]").ok();
     fs::write(cdir.join("property-types.json"), "{}").ok();
+    fs::write(cdir.join("workbench.json"), "[]").ok();
 
     // Register in global registry
     let entry = UniverseEntry {
@@ -1393,6 +1397,32 @@ pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::V
     let json = serde_json::to_string_pretty(&workspaces).map_err(|e| e.to_string())?;
     fs::write(dir.join("workspaces.json"), json)
         .map_err(|e| format!("Failed to save workspaces: {}", e))
+}
+
+/// MIG-090 §1 — read workbench.json from the active universe (the Workbench's
+/// working sets: membership only — cid_cn/path keys + per-item done flags;
+/// every displayed fact is re-read from the index at hydration, never cached
+/// here). Missing file → empty array, same contract as bookmarks.
+#[tauri::command]
+pub fn read_universe_workbench(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let dir = active_constellation_dir(&app)?;
+    let path = dir.join("workbench.json");
+    if path.exists() {
+        let data = fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read workbench: {}", e))?;
+        serde_json::from_str(&data).map_err(|e| format!("Failed to parse workbench: {}", e))
+    } else {
+        Ok(serde_json::Value::Array(vec![]))
+    }
+}
+
+/// MIG-090 §1 — save workbench.json to the active universe.
+#[tauri::command]
+pub fn save_universe_workbench(app: tauri::AppHandle, workbench: serde_json::Value) -> Result<(), String> {
+    let dir = active_constellation_dir(&app)?;
+    let json = serde_json::to_string_pretty(&workbench).map_err(|e| e.to_string())?;
+    fs::write(dir.join("workbench.json"), json)
+        .map_err(|e| format!("Failed to save workbench: {}", e))
 }
 
 /// Read property-types.json from the active universe.
