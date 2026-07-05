@@ -29,6 +29,7 @@
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
+	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import {
@@ -1665,6 +1666,23 @@
 						<p>{$t('secondScreen.skyviewHint') || 'Hover over a node in Sky View to see its details here'}</p>
 					</div>
 				{/if}
+			</div>
+
+		{:else if mainSidebarMode === 'list'}
+			<!-- Notes Navigator companion -->
+			<div class="navigator-fullscreen">
+				<NotebookNavigator
+					mode="second"
+					{libraryColorMap}
+					onNoteClick={(path, name, lib) => {
+						const libObj = $libraries.find(v => v.name === lib);
+						const color = libraryColorMap[lib] || '#7c3aed';
+						openNoteTab(path, lib, color);
+					}}
+					onNoteDoubleClick={(path, name, lib) => {
+						sendNoteToMain({ path, name: name + '.md', libraryName: lib, libraryPath: '', libraryColor: '' });
+					}}
+				/>
 			</div>
 
 		{:else if mainSidebarMode === 'skyview'}
