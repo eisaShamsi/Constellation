@@ -28,7 +28,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadWorkbench, migrateWorkbenchPath, addToWorkbench,
+		loadCollections, migrateCollectionPath,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
@@ -108,7 +108,6 @@
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewStatusPanel from '$lib/components/ReviewStatusPanel.svelte';
 	import ReviewerView from '$lib/components/ReviewerView.svelte';
-	import WorkbenchView from '$lib/components/WorkbenchView.svelte';
 	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
@@ -2248,12 +2247,6 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			// MIG-090 — the Workbench (flag default-off): open the desk, and the
-			// "hold the current note" quick action.
-			...($appSettings.enabledFeatures?.workbench === true ? [
-				{ id: 'workbench', name: $t('workbench.title') || 'Workbench', icon: '🗂️', action: () => { showCommandPalette = false; showWorkbench = true; showReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-				{ id: 'workbench-add-current', name: $t('workbench.addCurrent') || 'Add current note to Workbench', icon: '🗂️', action: () => { showCommandPalette = false; const tab = get(focusedTab); if (tab?.path) addToWorkbench(tab.path); }, category: 'Note' },
-			] : []),
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showWorkbench = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
@@ -2491,11 +2484,11 @@
 			]);
 		}
 
-		// MIG-090 §3 — the Workbench's working sets: fire-and-forget, OFF the
-		// boot critical path (membership only; hydration happens at first desk
-		// open). Runs on both the bundle and fallback paths + every universe
-		// switch (this initializer re-runs per switch).
-		loadWorkbench().catch(() => {});
+		// MIG-092 §2 — Collections membership + the one-time Bookmarks→Starred
+		// migration: fire-and-forget, OFF the boot critical path (membership
+		// only; note facts hydrate at first Search-Hub Collections-tab open).
+		// Runs on both the bundle and fallback paths + every universe switch.
+		loadCollections().catch(() => {});
 
 		librariesLoaded = true;
 		performance.mark('boot:libraries-loaded');
@@ -5366,8 +5359,6 @@
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, displayName);
 			actions.bookmark = () => toggleBookmarkPath('note', entry.path, displayName);
-			// MIG-090 — hold on the Workbench desk (flag-gated; membership only).
-			if ($appSettings.enabledFeatures?.workbench === true) actions.addToWorkbench = () => addToWorkbench(entry.path);
 			actions.addTag = () => { tagDialog = { path: entry.path, name: displayName }; };
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
 			actions.copyPathRelative = () => copyRelativePath(entry.path);
@@ -5401,8 +5392,6 @@
 			open: () => handleNoteClick(r.path, displayName, undefined),
 			openInNewTab: () => { if (lib) openNoteTab(r.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
 			bookmark: () => toggleBookmarkPath('note', r.path, displayName),
-			// MIG-090 — hold on the Workbench desk (flag-gated; membership only).
-			...($appSettings.enabledFeatures?.workbench === true ? { addToWorkbench: () => addToWorkbench(r.path) } : {}),
 			copyPath: () => navigator.clipboard.writeText(r.path).catch(() => {}),
 			copyPathRelative: () => copyRelativePath(r.path),
 			copyName: () => navigator.clipboard.writeText(displayName).catch(() => {}),
@@ -5912,10 +5901,10 @@
 			if (aliasNext) notePathToAliases = aliasNext;
 			const linkCountNext = migratePathKeyedMap(searchLinkCounts, oldPath, effectivePath);
 			if (linkCountNext) searchLinkCounts = linkCountNext;
-			// MIG-090 §3 — path-keyed Workbench membership + display caches
-			// follow in-app renames/moves (cid-keyed items self-heal via
-			// hydration; this covers notes that have no cid yet).
-			migrateWorkbenchPath(oldPath, effectivePath);
+			// MIG-092 §2 — path-keyed Collection membership + display caches
+			// follow in-app renames/moves (cid-keyed note items self-heal via
+			// hydration; this covers notes that have no cid yet + folder members).
+			migrateCollectionPath(oldPath, effectivePath);
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
 				const willCascade = $appSettings.autoUpdateLinks && !isDir;
@@ -6207,17 +6196,6 @@
 			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; reviewerReturnPath = null;showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('reviewer.title') || 'Reviewer'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
-			{#if $appSettings.enabledFeatures?.workbench === true}
-			<!-- MIG-090 — the Workbench (default-off flag; Settings → Plug-ins) -->
-			<button class="dock-btn" class:active={showWorkbench} onclick={() => {
-				showWorkbench = !showWorkbench;
-				if (showWorkbench) {
-					showReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false;
-				}
-			}} title={$t('workbench.title') || 'Workbench'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="18" height="7" rx="1"/><path d="M8 13V7a4 4 0 0 1 8 0v6"/></svg>
-			</button>
-			{/if}
 			{#if $appSettings.enabledFeatures?.cece !== false}
 			<button class="dock-btn" class:active={showCataloger} onclick={() => {
 				showCataloger = !showCataloger;
@@ -7035,20 +7013,6 @@
 						}
 					}}
 					onClose={() => { showReviewer = false; }}
-				/>
-			</div>
-		{/if}
-
-		<!-- MIG-090 — the Workbench (Form C v1): conditionally mounted like the
-		     Reviewer so it hydrates fresh on open (workbench_hydrate is a cheap
-		     indexed read). Flag default-off (Settings → Plug-ins → Workbench). -->
-		{#if showWorkbench}
-			<div class="workbench-overlay workbench-visible">
-				<WorkbenchView
-					onNoteClick={(path, libraryName, newTab) => {
-						openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed', undefined, newTab === true);
-					}}
-					onClose={() => { showWorkbench = false; }}
 				/>
 			</div>
 		{/if}

@@ -7,6 +7,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { normalizePathKey } from '$lib/utils';
 import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
+import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reducers
 // MIG-076 §C — single content ownership. noteModel/noteSession use this
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
@@ -960,143 +961,135 @@ export async function loadBookmarks() {
 	} catch { /* ignore */ }
 }
 
-// ─── MIG-090 — the Workbench (working sets) ───
-// Membership ONLY lives here (the MIG-077 B1 stale-snapshot cure): every
-// displayed fact is re-read from the index via workbench_hydrate. Items are
-// added path-keyed (callers only have a path) and SELF-UPGRADE to cid-keyed
-// on first hydration (adoptWorkbenchCids) — cid_cn survives renames AND
-// folder moves; adding a note NEVER writes its file. The schema nests sets[]
-// from day one so multiple named sets (v2) need no file migration; v1
-// operates on the single default set.
+// ─── MIG-092 — Collections (persistent hand-picked working sets) ───
+// The ONE hand-picked-set mechanism (unifies the former Bookmarks as the
+// pinned "Starred" collection). Membership ONLY lives here (the MIG-077 B1
+// stale-snapshot cure): every displayed NOTE fact is re-read from the index
+// via collections_hydrate. Note members are added path-keyed and SELF-UPGRADE
+// to cid-keyed on first hydration (adoptCollectionIdentities) — cid_cn
+// survives renames AND folder moves; adding a note NEVER writes its file.
+// Folder / saved-search members (from the former Bookmarks) carry inline
+// facts and are never hydrated. The pure reducers live in ./collectionsLogic
+// (unit-tested there); this shell adds the writable + save-on-change IPC.
+export type { CollectionItemType, CollectionItem, Collection } from './collectionsLogic';
+export { STARRED_ID, COLLECTION_ITEM_CAP, collectionKey } from './collectionsLogic';
 
-export interface WorkbenchItem {
-	/** The stable canonical id once known — membership survives renames/moves. */
-	cid?: string;
-	/** Display path; the membership key ONLY while the note has no cid. */
-	path: string;
-	addedAt: number;
-	done?: boolean;
-}
-export interface WorkbenchSet {
-	id: string;
-	name: string;
-	created: number;
-	items: WorkbenchItem[];
-}
+export const collectionSets = writable<CL.Collection[]>([]);
 
-export const workbenchSets = writable<WorkbenchSet[]>([]);
-export const WORKBENCH_ITEM_CAP = 100;
-
-function workbenchDefaultSet(list: WorkbenchSet[]): WorkbenchSet[] {
-	if (list.length > 0) return list;
-	return [{ id: `ws_${Date.now()}`, name: 'Desk', created: Date.now(), items: [] }];
-}
-
-/** The item's membership identity: cid when known, else its path. */
-export function workbenchKey(item: WorkbenchItem): string {
-	return item.cid || item.path;
-}
-
-/** Add a note to the (default) working set. Dedupes by path OR cid; capped. */
-export function addToWorkbench(path: string): boolean {
-	let added = false;
-	workbenchSets.update(list => {
-		const sets = workbenchDefaultSet(list);
-		const set = sets[0];
-		if (set.items.some(i => i.path === path)) return sets;
-		if (set.items.length >= WORKBENCH_ITEM_CAP) return sets;
-		set.items = [...set.items, { path, addedAt: Date.now() }];
-		added = true;
-		return [...sets];
-	});
-	if (added) saveWorkbench();
-	return added;
-}
-
-export function removeFromWorkbench(key: string) {
-	workbenchSets.update(list => {
-		for (const set of list) set.items = set.items.filter(i => workbenchKey(i) !== key);
-		return [...list];
-	});
-	saveWorkbench();
-}
-
-export function toggleWorkbenchDone(key: string) {
-	workbenchSets.update(list => {
-		for (const set of list) {
-			set.items = set.items.map(i => (workbenchKey(i) === key ? { ...i, done: !i.done } : i));
-		}
-		return [...list];
-	});
-	saveWorkbench();
-}
-
-export function sweepWorkbenchDone() {
-	workbenchSets.update(list => {
-		for (const set of list) set.items = set.items.filter(i => !i.done);
-		return [...list];
-	});
-	saveWorkbench();
-}
-
-export function isOnWorkbench(path: string): boolean {
-	return get(workbenchSets).some(s => s.items.some(i => i.path === path));
-}
-
-/** Hydration returned authoritative rows: adopt cids for path-keyed items
- *  (the self-upgrade to rename-proof identity) and refresh display paths for
- *  cid-keyed items whose note moved. Saves only when something changed. */
-export function adoptWorkbenchIdentities(rows: { key: string; path: string; cid_cn: string }[]) {
-	let changed = false;
-	workbenchSets.update(list => {
-		for (const set of list) {
-			set.items = set.items.map(i => {
-				const row = rows.find(r => r.key === workbenchKey(i));
-				if (!row) return i;
-				const cid = row.cid_cn && row.cid_cn !== '' ? row.cid_cn : i.cid;
-				if (i.cid !== cid || i.path !== row.path) {
-					changed = true;
-					return { ...i, cid, path: row.path };
-				}
-				return i;
-			});
-		}
-		return changed ? [...list] : list;
-	});
-	if (changed) saveWorkbench();
-}
-
-/** Rename hook — keeps path-keyed membership + display caches current for
- *  in-app renames/moves (wired in handleRenameComplete beside the other
- *  path-keyed migrations). cid-keyed items self-heal via hydration anyway. */
-export function migrateWorkbenchPath(oldPath: string, newPath: string) {
-	let changed = false;
-	workbenchSets.update(list => {
-		for (const set of list) {
-			set.items = set.items.map(i => {
-				if (i.path === oldPath) {
-					changed = true;
-					return { ...i, path: newPath };
-				}
-				return i;
-			});
-		}
-		return changed ? [...list] : list;
-	});
-	if (changed) saveWorkbench();
-}
-
-function saveWorkbench() {
-	invoke('save_universe_workbench', { workbench: get(workbenchSets) }).catch(e =>
-		console.error('[save] workbench failed:', e)
+function saveCollections() {
+	invoke('save_universe_collections', { collections: get(collectionSets) }).catch(e =>
+		console.error('[save] collections failed:', e)
 	);
 }
 
-export async function loadWorkbench() {
+/** Create a new named collection; returns its id. */
+export function createCollection(name: string): string {
+	const id = `col_${Date.now()}`;
+	collectionSets.update(list => CL.createSet(list, id, name, Date.now()));
+	saveCollections();
+	return id;
+}
+
+export function renameCollection(id: string, name: string) {
+	collectionSets.update(list => CL.renameSet(list, id, name));
+	saveCollections();
+}
+
+/** Delete a collection. The pinned Starred collection cannot be deleted. */
+export function deleteCollection(id: string) {
+	collectionSets.update(list => CL.deleteSet(list, id));
+	saveCollections();
+}
+
+/** Add an item to a collection. Dedupes by (type,path); capped. Returns true if added. */
+export function addToCollection(
+	setId: string,
+	item: { type?: CL.CollectionItemType; path: string; name?: string; libraryName?: string }
+): boolean {
+	let added = false;
+	collectionSets.update(list => {
+		const r = CL.addItem(list, setId, item, Date.now());
+		added = r.added;
+		return r.list;
+	});
+	if (added) saveCollections();
+	return added;
+}
+
+export function removeFromCollection(setId: string, key: string) {
+	collectionSets.update(list => CL.removeItem(list, setId, key));
+	saveCollections();
+}
+
+export function toggleCollectionDone(setId: string, key: string) {
+	collectionSets.update(list => CL.toggleDone(list, setId, key));
+	saveCollections();
+}
+
+export function sweepCollectionDone(setId: string) {
+	collectionSets.update(list => CL.sweepDone(list, setId));
+	saveCollections();
+}
+
+// ── Starred (the former Bookmarks) — the quick-add favorites shelf ──
+export function addToStarred(item: {
+	type?: CL.CollectionItemType;
+	path: string;
+	name?: string;
+	libraryName?: string;
+}): boolean {
+	return addToCollection(CL.STARRED_ID, item);
+}
+export function removeFromStarred(key: string) {
+	removeFromCollection(CL.STARRED_ID, key);
+}
+export function isInStarred(path: string): boolean {
+	return get(collectionSets).some(c => c.id === CL.STARRED_ID && c.items.some(i => i.path === path));
+}
+
+/** Hydration returned authoritative rows: adopt cids for path-keyed NOTE items
+ *  (self-upgrade to rename-proof identity) and refresh moved paths. Saves only
+ *  when something changed. */
+export function adoptCollectionIdentities(rows: { key: string; path: string; cid_cn: string }[]) {
+	let changed = false;
+	collectionSets.update(list => {
+		const r = CL.adoptIdentities(list, rows);
+		changed = r.changed;
+		return r.list;
+	});
+	if (changed) saveCollections();
+}
+
+/** Rename hook — path-keyed membership follows in-app renames/moves (wired in
+ *  handleRenameComplete beside the other path-keyed migrations). cid-keyed note
+ *  items self-heal via hydration anyway. */
+export function migrateCollectionPath(oldPath: string, newPath: string) {
+	let changed = false;
+	collectionSets.update(list => {
+		const r = CL.migratePath(list, oldPath, newPath);
+		changed = r.changed;
+		return r.list;
+	});
+	if (changed) saveCollections();
+}
+
+/** Load collections membership post-paint. One-time migration: when there is no
+ *  Starred collection yet, seed it from the former bookmarks.json (preserving
+ *  note/folder/search targets) — idempotent (CL.migrateBookmarks no-ops when
+ *  Starred exists); the legacy bookmarks.json is left intact as a backup. */
+export async function loadCollections() {
 	try {
-		const data = await invoke<unknown[]>('read_universe_workbench');
-		if (data && Array.isArray(data) && data.length > 0) workbenchSets.set(data as WorkbenchSet[]);
-	} catch { /* ignore — empty desk until first save */ }
+		const data = await invoke<unknown[]>('read_universe_collections');
+		const base = (Array.isArray(data) ? data : []) as CL.Collection[];
+		let bms: Array<{ type?: CL.CollectionItemType; path: string; name?: string; libraryName?: string }> = [];
+		try {
+			const b = await invoke<typeof bms>('read_universe_bookmarks');
+			if (Array.isArray(b)) bms = b;
+		} catch { /* no bookmarks to migrate */ }
+		const r = CL.migrateBookmarks(base, bms, Date.now());
+		collectionSets.set(r.list);
+		if (r.migrated) saveCollections(); // persist the seeded Starred so it never re-runs
+	} catch { /* ignore — empty until first save */ }
 }
 
 // ─── Frontmatter parsing ───

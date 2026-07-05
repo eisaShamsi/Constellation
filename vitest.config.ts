@@ -52,6 +52,9 @@ export default defineConfig({
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection
 			// (chips narrow, never expand — the hybrid union-append landmine pin).
 			'tests/mig-090/chips.test.ts',
+			// MIG-092 §2 (2026-07-05) — Collections membership reducers +
+			// Bookmarks→Starred migration (idempotent, type-preserving, pinned).
+			'tests/mig-092/collections.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
