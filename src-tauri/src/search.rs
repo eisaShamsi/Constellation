@@ -4292,7 +4292,12 @@ pub(crate) fn body_after_frontmatter(content: &str) -> &str {
 }
 
 /// Parse frontmatter properties from YAML block.
-fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, String) {
+// 2026-07-05 tag-click fix: pub(crate) — this is THE tag-extraction authority.
+// libraries.rs (notes_by_tag / scan_library_tags) must use the SAME definition
+// the indexer writes into note_meta.tags_json, or the Dashboard chips (counted
+// from the index) and the click-through (scanned from disk) disagree — the
+// Boss-found "127 notes counted, 0 listed" defect.
+pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, String) {
     let mut properties = HashMap::new();
     let mut tags = Vec::new();
     let mut body = content.to_string();
@@ -4320,7 +4325,12 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
                 }
                 if in_tags {
                     if trimmed.starts_with("- ") {
-                        let tag = trimmed[2..].trim().to_lowercase();
+                        // Strip quotes like the inline-array arm above does —
+                        // `- "wiki-tag"` must index as `wiki-tag`, not `"wiki-tag"`
+                        // (quoted tags split the population and render as #"…" chips).
+                        let tag = trimmed[2..].trim()
+                            .trim_matches(|c| c == '"' || c == '\'')
+                            .to_lowercase();
                         if !tag.is_empty() { tags.push(tag); }
                     } else if !trimmed.is_empty() && !trimmed.starts_with('#') {
                         in_tags = false;
@@ -4338,7 +4348,9 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     }
 
     // Also extract inline #hashtags from body text
-    let tag_re = regex::Regex::new(r"(?:^|\s)#([\w\p{L}\p{N}_/-]+)").unwrap();
+    // (compiled once — this fn runs per-file inside whole-library loops)
+    static TAG_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let tag_re = TAG_RE.get_or_init(|| regex::Regex::new(r"(?:^|\s)#([\w\p{L}\p{N}_/-]+)").unwrap());
     for cap in tag_re.captures_iter(&body) {
         if let Some(m) = cap.get(1) {
             let tag = m.as_str().trim().to_lowercase();

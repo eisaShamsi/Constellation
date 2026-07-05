@@ -2698,12 +2698,16 @@ pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<
         return Err("Access denied: not a registered library.".to_string());
     }
     let mut tags: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
-    let re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").unwrap();
-    scan_tags_recursive(Path::new(&library_path), &re, &mut tags);
+    scan_tags_recursive(Path::new(&library_path), &mut tags);
     Ok(tags)
 }
 
-fn scan_tags_recursive(dir: &Path, re: &regex::Regex, tags: &mut std::collections::HashMap<String, u32>) {
+// 2026-07-05 tag-click fix: counts via search::parse_frontmatter — the SAME
+// tag definition the indexer and notes_by_tag use (frontmatter lists + inline
+// #hashtags, quote-stripped, lowercased), counted ONCE PER NOTE to match the
+// boot-snapshot chip semantics. The old version counted inline OCCURRENCES
+// only, and its YAML branch was dead code that never counted anything.
+fn scan_tags_recursive(dir: &Path, tags: &mut std::collections::HashMap<String, u32>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -2715,41 +2719,27 @@ fn scan_tags_recursive(dir: &Path, re: &regex::Regex, tags: &mut std::collection
             continue;
         }
         if path.is_dir() {
-            scan_tags_recursive(&path, re, tags);
+            scan_tags_recursive(&path, tags);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                // Inline tags
-                for cap in re.captures_iter(&content) {
-                    let tag = cap[1].to_string();
+                let (_, note_tags, _) = crate::search::parse_frontmatter(&content);
+                // Dedupe within the note (a tag listed twice in YAML counts once).
+                let unique: std::collections::HashSet<String> = note_tags.into_iter().collect();
+                for tag in unique {
                     *tags.entry(tag).or_insert(0) += 1;
-                }
-                // YAML tags
-                if content.starts_with("---") {
-                    if let Some(end) = content[3..].find("---") {
-                        let yaml = &content[3..3+end];
-                        for line in yaml.lines() {
-                            let trimmed = line.trim();
-                            if trimmed.starts_with("- ") {
-                                // Check if inside tags: block
-                                let tag = trimmed.trim_start_matches("- ").trim().trim_matches('"').trim_matches('\'');
-                                if !tag.is_empty() && !tag.contains(':') && !tag.contains(' ') {
-                                    // Only count if it looks like a tag
-                                    if tag.chars().all(|c| c.is_alphanumeric() || c == '/' || c == '-' || c == '_') {
-                                        // We'll count it if there was a tags: line before
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
     }
 }
 
-/// Return notes that contain a given tag (inline `#tag` or YAML frontmatter).
+/// Return notes that contain a given tag (inline `#tag` OR YAML frontmatter —
+/// the SAME definition the indexer writes into `note_meta.tags_json`).
 // App-freeze audit Batch-W (2026-07-04): `(async)` — whole-library tag scan.
 // Callers carry tagLoadSeq stale-result guards (DashboardView, SecondScreenPage).
+// 2026-07-05 tag-click fix: matching now delegates to search::parse_frontmatter
+// (the single tag authority). The old inline-only regex could never match a
+// frontmatter tag — Dashboard chips counted 127 notes, the click listed 0.
 #[tauri::command(async)]
 pub fn notes_by_tag(app: tauri::AppHandle, library_path: String, tag: String) -> Result<Vec<StarInfo>, String> {
     let libraries = load_all_libraries(&app);
@@ -2757,14 +2747,16 @@ pub fn notes_by_tag(app: tauri::AppHandle, library_path: String, tag: String) ->
         return Err("Access denied: not a registered library.".to_string());
     }
     let lib = libraries.iter().find(|v| v.path == library_path).unwrap();
-    let re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").unwrap();
+    // Normalize the incoming chip label: pre-fix index rows may still carry
+    // literal quotes ("wiki-tag") until their note is next reindexed.
+    let wanted = tag.trim().trim_matches(|c| c == '"' || c == '\'').to_lowercase();
     let mut results = Vec::new();
-    collect_notes_with_tag(Path::new(&library_path), &lib.id, &lib.name, &re, &tag, &mut results);
+    collect_notes_with_tag(Path::new(&library_path), &lib.id, &lib.name, &wanted, &mut results);
     results.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(results)
 }
 
-fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, re: &regex::Regex, tag: &str, results: &mut Vec<StarInfo>) {
+fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, wanted: &str, results: &mut Vec<StarInfo>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -2774,10 +2766,13 @@ fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, re: &regex::
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            collect_notes_with_tag(&path, lib_id, lib_name, re, tag, results);
+            collect_notes_with_tag(&path, lib_id, lib_name, wanted, results);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let has_tag = re.captures_iter(&content).any(|cap| cap[1].eq_ignore_ascii_case(tag));
+                // parse_frontmatter lowercases + quote-strips every tag
+                // (frontmatter lists, inline arrays, and body #hashtags).
+                let (_, tags, _) = crate::search::parse_frontmatter(&content);
+                let has_tag = tags.iter().any(|t| t == wanted);
                 if has_tag {
                     let modified = fs::metadata(&path)
                         .and_then(|m| m.modified())
