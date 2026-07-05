@@ -15,6 +15,8 @@
 		onRenameComplete,
 		allExpanded = true,
 		forceExpand = false,
+		selectedPaths = new Set<string>(),
+		onSelect,
 		maturityMap = new Map() as Map<string, string>,
 		stageMap = new Map() as Map<string, string>,
 	}: {
@@ -32,6 +34,9 @@
 		/** MIG-091 §A — when a name filter is active, open EVERY folder (at any
 		 *  depth) so pruned matches are visible, not buried in collapsed disclosures. */
 		forceExpand?: boolean;
+		/** MIG-091 §B — multi-select membership (paths) + the modifier-click handler. */
+		selectedPaths?: Set<string>;
+		onSelect?: (entry: FileEntry, e: MouseEvent) => void;
 		maturityMap?: Map<string, string>;
 		stageMap?: Map<string, string>;
 	} = $props();
@@ -41,9 +46,26 @@
 	};
 
 	function handleClick(entry: FileEntry, e: MouseEvent) {
+		// MIG-091 §B — a modifier click is a SELECT gesture, not an open.
+		if (e.ctrlKey || e.metaKey || e.shiftKey) {
+			e.preventDefault();
+			onSelect?.(entry, e);
+			return;
+		}
 		if (!entry.is_dir && onNoteClick) {
 			onNoteClick(entry.path, entry.name.replace(/\.(md|base)$/, ''), undefined, e);
 		}
+	}
+
+	// MIG-091 §B — folder summary: a modifier click selects (and must NOT toggle
+	// the native <details>); a plain click keeps today's expand behavior.
+	function handleFolderClick(entry: FileEntry, e: MouseEvent) {
+		if (e.ctrlKey || e.metaKey || e.shiftKey) {
+			e.preventDefault();
+			onSelect?.(entry, e);
+			return;
+		}
+		onFolderClick?.(entry.path);
 	}
 
 	function handleRightClick(e: MouseEvent, entry: FileEntry) {
@@ -82,7 +104,7 @@
 			{#if entry.is_dir}
 				<details open={forceExpand || (allExpanded && depth < 2)}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<summary class="folder" data-style-target="folder" data-tree-path={entry.path} oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
+					<summary class="folder" class:selected={selectedPaths.has(entry.path)} data-style-target="folder" data-tree-path={entry.path} oncontextmenu={(e) => handleRightClick(e, entry)} onclick={(e) => handleFolderClick(entry, e)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
@@ -104,7 +126,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} {forceExpand} {maturityMap} {stageMap} />
+						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} {forceExpand} {selectedPaths} {onSelect} {maturityMap} {stageMap} />
 					{/if}
 				</details>
 			{:else}
@@ -128,6 +150,7 @@
 						class="note"
 						data-tree-path={entry.path}
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
+						class:selected={selectedPaths.has(entry.path)}
 						class:base-file={entry.name.endsWith('.base')}
 						class:mat-sapling={entryMat === 'sapling'}
 						class:mat-evergreen={entryMat === 'evergreen'}
@@ -215,6 +238,11 @@
 	}
 	.note:hover { background: var(--background-modifier-hover); }
 	.note.active { background: color-mix(in srgb, var(--library-color) 8%, transparent); color: var(--library-color); }
+	/* MIG-091 §B — multi-select highlight (distinct from .active's library tint). */
+	.note.selected, .folder.selected {
+		background: color-mix(in srgb, var(--interactive-accent) 20%, transparent);
+		box-shadow: inset 2px 0 0 var(--interactive-accent);
+	}
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.note-stage { font-size: 0.7rem; flex-shrink: 0; margin-inline-end: 2px; }

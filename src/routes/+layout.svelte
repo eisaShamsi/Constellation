@@ -3948,6 +3948,9 @@
 			if (showSettings) { showSettings = false; return; }
 			if (showImporter) { showImporter = false; return; }
 			if (showPicker) { showPicker = false; return; }
+			// MIG-091 §B — Escape clears a file-tree multi-selection (after all
+			// overlays have had their turn).
+			if (selectedTreePaths.size > 0) { clearTreeSelection(); return; }
 			return;
 		}
 
@@ -4312,6 +4315,51 @@
 			}
 		}));
 		libraryTrees = { ...libraryTrees };
+	}
+
+	// ─── MIG-091 §B — file-tree multi-select ───
+	// Sticky selection built via Ctrl/⌘-click (toggle) + Shift-click (range over
+	// the flattened tree order). Plain click opens a note / expands a folder and
+	// leaves the selection alone. Cleared by Escape, the batch bar's clear (§C).
+	let selectedTreePaths = $state<Set<string>>(new Set());
+	let selectionAnchor: string | null = null;
+
+	// Flatten the rendered libraries' feeds to an ordered path list (Shift-range).
+	function flatTreeOrder(): string[] {
+		const out: string[] = [];
+		const walk = (entries: FileEntry[]) => {
+			for (const e of entries) { out.push(e.path); if (e.is_dir && e.children) walk(e.children); }
+		};
+		if (universeNotesStats && libraryTrees[universeNotesStats.library_id]) walk(treeFeed(libraryTrees[universeNotesStats.library_id]));
+		for (const child of childUniverses) for (const lib of getChildUniverseLibs(child.path)) if (libraryTrees[lib.library_id]) walk(treeFeed(libraryTrees[lib.library_id]));
+		for (const lib of ownLibraries) if (libraryTrees[lib.library_id]) walk(treeFeed(libraryTrees[lib.library_id]));
+		return out;
+	}
+
+	function handleTreeSelect(entry: FileEntry, e: MouseEvent) {
+		const path = entry.path;
+		if (e.shiftKey && selectionAnchor) {
+			const order = flatTreeOrder();
+			const a = order.indexOf(selectionAnchor);
+			const b = order.indexOf(path);
+			if (a >= 0 && b >= 0) {
+				const [lo, hi] = a <= b ? [a, b] : [b, a];
+				const next = new Set(selectedTreePaths);
+				for (let i = lo; i <= hi; i++) next.add(order[i]);
+				selectedTreePaths = next;
+			}
+			return;
+		}
+		// Ctrl/⌘-click → toggle this row.
+		const next = new Set(selectedTreePaths);
+		if (next.has(path)) next.delete(path); else next.add(path);
+		selectedTreePaths = next;
+		selectionAnchor = path;
+	}
+
+	function clearTreeSelection() {
+		if (selectedTreePaths.size > 0) selectedTreePaths = new Set();
+		selectionAnchor = null;
 	}
 
 	// The filter's single entry point (input + the clear button) — manages the
@@ -6532,6 +6580,8 @@
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
 									forceExpand={treeFilterActive}
+									selectedPaths={selectedTreePaths}
+									onSelect={handleTreeSelect}
 								/>
 								</div>
 							{/if}
@@ -6587,6 +6637,8 @@
 													onRenameComplete={handleRenameComplete}
 													{allExpanded}
 									forceExpand={treeFilterActive}
+									selectedPaths={selectedTreePaths}
+									onSelect={handleTreeSelect}
 												/>
 												</div>
 											{/if}
@@ -6622,6 +6674,8 @@
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
 									forceExpand={treeFilterActive}
+									selectedPaths={selectedTreePaths}
+									onSelect={handleTreeSelect}
 								/>
 								</div>
 							{/if}
