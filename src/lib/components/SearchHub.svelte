@@ -3,6 +3,7 @@
 	import {
 		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
 		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars,
+		collectionSets,
 		type UniversalSearchResponse,
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
@@ -12,6 +13,9 @@
 	// hit shows what the note IS ABOUT (alongside the snippet, which shows why
 	// it matched). Cache-first + batched via the shared store; zero per-row IPC.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
+	// MIG-092 — the Collections tab (hand-picked working sets); pick-up lives on
+	// the result rows, the held set + management lives in this panel.
+	import CollectionsPanel from './CollectionsPanel.svelte';
 
 	let {
 		initialQuery = '',
@@ -22,7 +26,16 @@
 		onResults = (_matchIds: Set<string>) => {},
 		// MIG-077 B2 — right-click a result row → the parent builds the (safe, non-destructive) note menu.
 		onResultContextMenu = (_r: ConstellationSearchResult, _x: number, _y: number) => {},
+		// MIG-092 — reveal a folder member of a collection in the file tree.
+		onRevealPath = (_path: string) => {},
 	} = $props();
+
+	// MIG-092 — Results | Collections tabs. The Collections tab holds hand-picked
+	// working sets; the Results tab is the existing search. `L` shows an English
+	// fallback while non-EN keys land at close-out (§10).
+	let activeTab = $state<'results' | 'collections'>('results');
+	const collectionCount = $derived($collectionSets.reduce((n, c) => n + c.items.length, 0));
+	const L = (key: string, fb: string): string => { const v = $t(key); return v === key ? fb : v; };
 
 	let query = $state(initialQuery);
 	let response = $state<UniversalSearchResponse | null>(null);
@@ -460,6 +473,22 @@
 		{/if}
 	</div>
 
+	<!-- MIG-092 — Results | Collections tabs -->
+	<div class="sh-tabs" role="tablist">
+		<button class="sh-tab" class:active={activeTab === 'results'} role="tab" aria-selected={activeTab === 'results'} onclick={() => activeTab = 'results'}>{L('searchHub.tabResults', 'Results')}</button>
+		<button class="sh-tab" class:active={activeTab === 'collections'} role="tab" aria-selected={activeTab === 'collections'} onclick={() => activeTab = 'collections'}>
+			{L('searchHub.tabCollections', 'Collections')}{#if collectionCount > 0}<span class="sh-tab-count">{collectionCount}</span>{/if}
+		</button>
+	</div>
+
+	{#if activeTab === 'collections'}
+		<CollectionsPanel
+			onNoteClick={(p, n, l) => onNoteClick(p, n, l, '')}
+			onRunSearch={(q) => { query = q; activeTab = 'results'; triggerSearch(q); }}
+			onRevealPath={(p) => onRevealPath(p)}
+		/>
+	{:else}
+
 	<!-- Syntax helper chips -->
 	{#if showChips}
 		<div class="sh-chips-bar">
@@ -629,12 +658,33 @@
 			{/if}
 		</div>
 	</div>
+	{/if}
 </div>
 
 <style>
 	.sh-root {
 		display: flex; flex-direction: column; height: 100%; width: 100%;
 		background: var(--background-primary, #fff); color: var(--text);
+	}
+
+	/* MIG-092 — Results | Collections tab strip */
+	.sh-tabs {
+		display: flex; gap: 4px; flex-shrink: 0;
+		padding: 6px 16px 0; border-bottom: 1px solid var(--border);
+	}
+	.sh-tab {
+		display: inline-flex; align-items: center; gap: 6px;
+		padding: 6px 14px; border: none; background: transparent;
+		color: var(--text-muted); cursor: pointer;
+		font-family: var(--font-interface-theme); font-size: 13px;
+		border-bottom: 2px solid transparent; margin-bottom: -1px;
+	}
+	.sh-tab:hover { color: var(--text-normal); }
+	.sh-tab.active { color: var(--text-normal); border-bottom-color: var(--interactive-accent); }
+	.sh-tab-count {
+		min-width: 18px; padding: 0 5px; border-radius: 9px;
+		background: color-mix(in srgb, var(--interactive-accent) 16%, transparent);
+		color: var(--interactive-accent); font-size: 11px; line-height: 16px; text-align: center;
 	}
 
 	/* Header */
