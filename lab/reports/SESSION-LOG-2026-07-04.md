@@ -76,3 +76,26 @@ svelte-check 0 errors ×2 (pre- and post-review-fixes). Binary rebuilt (19:35:48
 - **Fix:** `'Digit2' → '2'` normalization, same branch shape and same non-Latin-layout rationale as letters. svelte-check 0.
 - **Honest caveat (logged in commit):** a custom shortcut previously *recorded* as a shifted symbol (e.g. `Ctrl+Shift+@`) would stop matching; post-fix recordings store the digit form. Pre-release, acceptable.
 - Second-screen concept check: the F2′ `u5b` listener adds NO operations to the second screen (displays-not-domains intact) — it only lets the extension's mirrored surfaces hear about creations, which an extension must, or it diverges from the main screen it extends.
+
+## F2′ Test 4 re-run (Boss, second monitor connected): **PASS** — F2′ fully closed
+Second screen picked up the app-created note; the `Ctrl+Shift+2` fix live. **Boss issued two governing SS design rulings at the pass:** (1) *"The SS should be contextual to the main screen."* (2) *"It shouldn't replicate what is already displayed on the main screen."* + ordered: read the entire SS history/concept, write a paper, park the rework in the PJ list.
+
+## PJ-068 filed — Second Screen contextual-companion rework (PARKED)
+- **Concept paper written:** `docs/concept-papers/PJ-068-Second-Screen-Contextual-Companion-Concept-Paper.md` — full history (birth `48eb3f01` 2026-03-13 → today), the ratified concept + the two rulings as governing law, the **replication audit** (Navigator companion REPLICATES; OrgChart mode REPLICATES + UNREACHABLE; Map/Index-term/Dashboard MIXED; fallback tab-strip editor NON-CONTEXTUAL; Sky-graph/Split/Editor-panels/Index-compare COMPLEMENT — keep), structural riders (editor-panels mode shadowing [static read], dead `screen:open-note` wire, Rule-8 re-walks, alias-blind buildSkyData, hardcoded English, no RC), and 5 doc-drift items. Source: history-dig workflow `wf_42ec73f0-794` (5 readers, 172 tool uses).
+- **Pending Jobs v1.15** created (new file alongside v1.14) with the PJ-068 entry. Rework needs per-mode Boss rulings at reopen → /migration.
+
+---
+
+# Function in hand: Batch W — the panel fs-walk sweep (Boss: "If it passes, let's proceed to W" — Test 4 passed)
+
+**Concept:** the user's hand on the app is never taken hostage — panel data loads must not park the dispatch thread.
+
+## WA#4 caller verification FIRST (workflow `wf_b16f99ec-b6b`: 11 per-command walks + adversarial verifier, ~992k tokens)
+Verifier corrected two agent verdicts before build: (1) `resolve_embed` "flip bare" REFUTED — post-flip, N cold embeds would run N CONCURRENT full-library walks (sync dispatch used to serialize them into 1 walk + N−1 cache hits) → Rust single-flight required; (2) `notes_by_tag` guard spec had a hole — the catch path also writes, so a stale FAILED call could blank a newer call's results → guards must cover try AND catch. Upheld: both writer analyses, all four dead-code claims, the skyviewGeneration token already correct.
+
+## Batch W BUILT (commit `d9f8bd80`) — 11 commands off the dispatch thread
+- **Bare flips:** `execute_dataview_query` (dataview.rs) · `repair_external_libraries_on_startup` (canonical.rs — one-shot boot caller, gated writes).
+- **Flips + frontend stale-result seq guards** (repo convention; catch paths covered): `scan_library_tasks` + `scan_library_note_dates` (+layout `_calRefreshSeq`; GlobalTasksView `_loadSeq`) · `collect_library_notes_with_metadata` (NotebookNavigator `navLoadSeq`, onMount + refreshData) · `scan_library_links` (SecondScreenPage `epGeneration`/`scGeneration`) · `notes_by_tag` (DashboardView + SecondScreenPage `tagLoadSeq`) · `search_by_property` (NotebookNavigator `propSearchSeq` + onModeChange bump — also closes a pre-existing late-repopulation race) · `search_stars` (store.ts `_searchStarsSeq`; empty-query clear invalidates in-flight).
+- **Flips + Rust serialization:** `resolve_embed` + `BUILD_LOCK` double-checked single-flight in `get_or_build_vault_index` (embeds.rs) · `cece_record_correction_for_card` + `RELIABILITY_LOCK` around the reliability.json RMW (reliability.rs, PULSE_LOCK idiom — also closes the pre-existing race via already-async `cece_resolve_disambiguation`).
+- **Verification:** svelte-check 0 errors · cargo check green · 12 reliability tests pass (no lock re-entrancy). Binary rebuild in progress → Boss test (staged) next.
+- Batch W status after this: the audit's W list is DONE. Remaining ranked: **L′** (6 canonical.rs walkers + federated hold hygiene) → **F1** (Focus, gated, alone) → **F3**.
