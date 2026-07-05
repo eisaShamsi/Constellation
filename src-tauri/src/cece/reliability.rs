@@ -302,12 +302,21 @@ pub fn cece_get_active_library_root(
 ///
 /// `axis_str` is "horizontal" or "vertical" (the string form used by
 /// the existing IPC layer; converted internally to the Axis enum).
+// Batch-W (2026-07-04): the load→record→save cycle below is an unlocked
+// whole-file RMW of cataloger_reliability.json — safe only while every
+// caller ran on the single sync dispatch thread. With the callers `(async)`
+// (cece_record_correction_for_card here; cece_resolve_disambiguation was
+// already async), two concurrent corrections could lose updates. Same
+// idiom as review.rs PULSE_LOCK.
+static RELIABILITY_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub fn update_reliability_from_correction(
     library_path: &str,
     composite_json: &str,
     axis_str: &str,
     user_pick: &[String],
 ) {
+    let _guard = RELIABILITY_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let axis = match axis_str {
         "horizontal" => Axis::Horizontal,
         "vertical" => Axis::Vertical,

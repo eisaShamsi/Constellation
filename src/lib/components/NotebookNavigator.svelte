@@ -84,8 +84,15 @@
 
 	function normalizePath(p: string): string { return p.replace(/\\/g, '/').toLowerCase(); }
 
+	// Batch-W — collect_library_notes_with_metadata is `(async)`: two
+	// refreshData calls can be in flight together (batch action → refresh →
+	// second batch action → refresh); only the newest may write, or a stale
+	// snapshot resurrects just-deleted rows.
+	let navLoadSeq = 0;
+
 	// Load data — process 2 libraries at a time to avoid IPC flooding
 	onMount(async () => {
+		const seq = ++navLoadSeq;
 		try {
 			const libs = $libraries;
 			const allNotes: NoteWithMeta[] = [];
@@ -174,6 +181,7 @@
 			for (const n of allNotes) {
 				if (!seen.has(n.path)) { seen.add(n.path); deduped.push(n); }
 			}
+			if (seq !== navLoadSeq) return; // a newer load owns the write
 			allNotesWithMeta = deduped;
 			// Use boot-snapshot tags when available — eliminates the filesystem scan cost.
 			// Fall back to the locally-merged scan result (allTags) only when
@@ -199,10 +207,17 @@
 		}
 	}
 
+	// Batch-W — search_by_property is `(async)`: back-to-back searches (the
+	// button is never disabled) must resolve to the LAST query; a mode switch
+	// bumps the seq so a late resolve can't repopulate a cleared list.
+	let propSearchSeq = 0;
+
 	async function handlePropertySearch(key: string, value: string) {
 		if (!key) return;
+		const seq = ++propSearchSeq;
 		try {
 			const results = await invoke<any[]>('search_by_property', { key, value: value || '' });
+			if (seq !== propSearchSeq) return; // a newer search owns the write
 			propertyResults = results.map((r: any) => ({
 				name: r.name || '',
 				path: r.path || '',
@@ -214,6 +229,7 @@
 				libraryName: r.library_name || '',
 			}));
 		} catch {
+			if (seq !== propSearchSeq) return; // a newer search owns the write
 			propertyResults = [];
 		}
 	}
@@ -304,6 +320,7 @@
 	}
 
 	async function refreshData() {
+		const seq = ++navLoadSeq;
 		const libs = $libraries;
 		const allNotes: NoteWithMeta[] = [];
 		const allTags: Record<string, number> = {};
@@ -316,6 +333,7 @@
 				allTags[tag] = (allTags[tag] || 0) + count;
 			}
 		}
+		if (seq !== navLoadSeq) return; // a newer load owns the write
 		allNotesWithMeta = allNotes;
 		tagMap = allTags;
 	}
@@ -361,7 +379,7 @@
 					{selectedTag}
 					{propertyKey}
 					{propertyValue}
-					onModeChange={(m) => { browseMode = m; selectedFolder = null; selectedTag = null; propertyResults = []; }}
+					onModeChange={(m) => { browseMode = m; selectedFolder = null; selectedTag = null; propSearchSeq++; propertyResults = []; }}
 					onFolderSelect={(p) => {
 						selectedFolder = p; focusedIndex = -1;
 						// Propagate to Star View

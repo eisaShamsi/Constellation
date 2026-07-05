@@ -45,7 +45,13 @@
 	let loadingTagNotes = $state(false);
 	let loaded = $state(false);
 
+	// Batch-W — notes_by_tag is `(async)`: clicking tag B (or deselecting)
+	// while tag A's scan is in flight must invalidate A's resolve, success
+	// AND failure (a stale failure would blank B's fresh results).
+	let tagLoadSeq = 0;
+
 	async function selectTag(tag: string) {
+		const seq = ++tagLoadSeq;
 		if (selectedTag === tag) {
 			selectedTag = null;
 			selectedTagNotes = [];
@@ -59,8 +65,10 @@
 				const results = await invoke<any[]>('notes_by_tag', { libraryPath: lib.path, tag });
 				notes.push(...results.map((n: any) => ({ name: n.name, path: n.path, libraryName: n.library_name || lib.name })));
 			}
+			if (seq !== tagLoadSeq) return; // a newer selection owns the write
 			selectedTagNotes = notes.sort((a, b) => a.name.localeCompare(b.name));
 		} catch {
+			if (seq !== tagLoadSeq) return; // a newer selection owns the write
 			selectedTagNotes = [];
 		}
 		loadingTagNotes = false;

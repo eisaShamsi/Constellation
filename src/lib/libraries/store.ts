@@ -1719,13 +1719,20 @@ export async function removeLibraryWithCleanup(libraryId: string) {
 	await removeLibrary(libraryId);
 }
 
+// Batch-W — search_stars is `(async)`: an extended/cleared query must
+// invalidate the in-flight one (the empty-query clear bumps the seq too,
+// so a late resolve can't repopulate a cleared list).
+let _searchStarsSeq = 0;
+
 /** Search across all libraries. */
 export async function searchAllStars(query: string) {
+	const seq = ++_searchStarsSeq;
 	if (!query.trim()) {
 		searchResults.set([]);
 		return;
 	}
 	const results: StarInfo[] = await invoke('search_stars', { query });
+	if (seq !== _searchStarsSeq) return; // a newer query owns the write
 	searchResults.set(results);
 }
 

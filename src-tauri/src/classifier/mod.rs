@@ -236,7 +236,10 @@ fn library_root_for_note(app: &tauri::AppHandle, note_path: &str) -> Option<Stri
 ///
 /// `horizontal_pick` and `vertical_pick` are the user's final IDs on
 /// each axis. Either may be empty (no update on that axis).
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — the reliability RMW is
+// file IO off the dispatch thread; RELIABILITY_LOCK (reliability.rs)
+// serializes concurrent corrections.
+#[tauri::command(async)]
 pub fn cece_record_correction_for_card(
     app: tauri::AppHandle,
     note_path: String,

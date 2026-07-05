@@ -44,4 +44,35 @@ The handover's ranked batches were minted BEFORE Batch S/D landed; the cross-che
 5. F3 — unchanged (FileTree virtualization, Louvain worker, sky parse, second-screen reads).
 - Unchanged also open: get_360_view index-read /migration; init_db phase-profiling MIG; switch-back-fast residual; MIG-088 Phases 6–10; Arabic callout End/Home caret.
 
-*Awaiting Boss batch pick.*
+*Boss pick: **F2′ then W**.*
+
+---
+
+# Function in hand: F2′ — notes created by the app must surface in the file tree
+
+**Concept (the horse):** a note you create must appear where notes live — the file tree reflects creation instantly, from every creation door.
+
+## Built (commit `9dc6f193`)
+- **Class fix, not instance:** all frontend creation flows funnel through the ONE store `createNote` wrapper (exactly 4 callers: wikilink-create `NoteEditor.svelte:415`, Forge `ExpressionForge.svelte:143`, Canvas promote `SenseMakingCanvas.svelte:270`, createNoteWithTemplate `+layout:3991`). The wrapper now **emits `note-created`** after a successful create; nothing changes at the call sites — any future creation door gets tree visibility for free.
+- **+layout:** the watcher's 300 ms coalescing flush extracted to `scheduleWatcherFlush` (same closure/sets — behavior-identical); a new `note-created` listener maps path→library via new `libraryIdForPath` (longest prefix WITH separator-boundary) and joins the same flush (tree refresh + loadAllStats + OrgChart dirty + 5 s cache refresh — correct for creations). Unlisten in cleanupFns (Rule 4).
+- **Cross-window by construction:** Tauri `emit` crosses windows; the second screen mounts via `screen-entry.ts` (no +layout), so the main-window listener is the only tree owner — and a second-screen wikilink-create refreshes the MAIN tree.
+- **Import leg:** `ImporterModal` now fires `onImportComplete(targetLibrary)` at import COMPLETION (not the Done button — Escape/✕/backdrop exits skipped it); +layout refreshes that library's tree + caches.
+- **Second screen:** its own `note-created` listener (u5b) joins the existing u5 debounced reload — note list/dashboard stay in step (it never hears `library-changed` for gated creates).
+
+## Adversarial review (wf_197b07af-29d — 3 lenses → per-finding verify): 4 confirmed, ALL fixed in-pass (WA#6)
+1. P3 `libraryIdForPath` had no separator boundary — library `Research` would steal notes in sibling folder `Research Notes` → refresh targets the wrong tree (found by 2 lenses). Fixed (boundary check + trailing-separator trim).
+2. P3 import refresh tied to the Done button only. Fixed (fires on completion).
+3. P2 second screen blind to gated creates. Fixed (u5b listener).
+4. One verifier CONTRADICTION adjudicated honestly: a refuter proved empirically that Windows parent-directory Modified events (never suppressed, pass the watcher's `is_dir()` filter) often fire during subfolder writes — so the watcher *sometimes* rescues subfolder creates. Non-blocking for F2′: the daily-note gap (MIG-080 §A.2, Boss-validated) proves the class is real at least at library roots; `note-created` makes appearance DETERMINISTIC instead of configuration-dependent. Noted, no code change needed.
+
+svelte-check 0 errors ×2 (pre- and post-review-fixes). Binary rebuilt (19:35:48) + freshness-verified (`note-created` present in main chunks AND the second-screen bundle).
+
+## Boss test — F2′
+- **Stage 1 (wikilink-create, top-level + subfolder): PASS** ("Perfectly passed").
+- **Stage 2: Test 1 Forge PASS** (screenshot: `Forge Birth Test` at Eisa Cognitive Knowledge top level, correctly alpha-sorted) · **Test 2 Canvas promote PASS** · **Test 3 import + Escape exit PASS** · **Test 4 second screen: BLOCKED — `Ctrl+Shift+2` doesn't work** + Boss design reminder: the second screen is an *extension* of the main screen (displays-not-domains).
+
+## Boss-found defect: ALL Shift+digit shortcuts dead since birth (fixed, commit `1676a28f`)
+- **Mechanism (utils.ts `eventToShortcut`):** physical-code normalization existed only for `'Key*'` (letters); a Ctrl+Shift+2 press carries `e.key === '@'` (layout's shifted char), producing `'Ctrl+Shift+@'` which can never match the stored `'Ctrl+Shift+2'` — on ANY layout. The `second-screen` default was the only Shift+digit default → dead since introduction; the Command-Palette/dock-button doors always worked.
+- **Fix:** `'Digit2' → '2'` normalization, same branch shape and same non-Latin-layout rationale as letters. svelte-check 0.
+- **Honest caveat (logged in commit):** a custom shortcut previously *recorded* as a shifted symbol (e.g. `Ctrl+Shift+@`) would stop matching; post-fix recordings store the digit form. Pre-release, acceptable.
+- Second-screen concept check: the F2′ `u5b` listener adds NO operations to the second screen (displays-not-domains intact) — it only lets the extension's mirrored surfaces hear about creations, which an extension must, or it diverges from the main screen it extends.

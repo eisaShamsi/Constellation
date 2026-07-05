@@ -109,7 +109,13 @@
 		return Array.from(groups.entries()).map(([key, tasks]) => ({ key, tasks }));
 	});
 
+	// Batch-W — scan_library_tasks is `(async)`: the ↻ button and a task
+	// toggle can each start a refresh while another is in flight; only the
+	// newest may write (a stale resolve would resurrect a toggled task).
+	let _loadSeq = 0;
+
 	async function loadAllTasks() {
+		const seq = ++_loadSeq;
 		loading = true;
 		const start = performance.now();
 		const libraryList = get(libraries);
@@ -117,12 +123,13 @@
 			const results = await Promise.all(
 				libraryList.map(v => scanLibraryTasks(v.path, v.name))
 			);
+			if (seq !== _loadSeq) return; // a newer refresh owns the write
 			allTasks = results.flatMap(r => r.tasks);
 			scanTime = Math.round(performance.now() - start);
 		} catch (e) {
 			console.error('Failed to scan tasks:', e);
 		}
-		loading = false;
+		if (seq === _loadSeq) loading = false;
 	}
 
 	async function handleToggle(filePath: string, lineNumber: number) {

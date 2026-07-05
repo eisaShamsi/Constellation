@@ -376,7 +376,10 @@ fn timestamp_to_date(secs: u64) -> String {
 // ─── Tauri Commands ───
 
 /// Scan an entire library for tasks.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — recursive whole-library
+// walk off the dispatch thread. Callers carry stale-result seq guards
+// (+layout refreshCalendarData, GlobalTasksView loadAllTasks).
+#[tauri::command(async)]
 pub fn scan_library_tasks(
     app: tauri::AppHandle,
     library_path: String,
@@ -535,7 +538,10 @@ pub fn toggle_task(
 
 /// Scan a library for note dates (modified + frontmatter date/created).
 /// Returns a map of YYYY-MM-DD -> list of notes for that date.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — recursive whole-library
+// walk off the dispatch thread. Sole caller (+layout refreshCalendarData)
+// carries a stale-result seq guard.
+#[tauri::command(async)]
 pub fn scan_library_note_dates(
     app: tauri::AppHandle,
     library_path: String,

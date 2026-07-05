@@ -135,7 +135,12 @@
 	let selectedTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let loadingTagNotes = $state(false);
 
+	// Batch-W — same stale-result shape as DashboardView.selectTag (notes_by_tag
+	// is `(async)`; success AND failure of a stale call must not write).
+	let tagLoadSeq = 0;
+
 	async function selectTag(tag: string) {
+		const seq = ++tagLoadSeq;
 		if (selectedTag === tag) {
 			selectedTag = null;
 			selectedTagNotes = [];
@@ -149,8 +154,10 @@
 				const results = await invoke<any[]>('notes_by_tag', { libraryPath: lib.path, tag });
 				notes.push(...results.map((n: any) => ({ name: n.name, path: n.path, libraryName: n.library_name || lib.name })));
 			}
+			if (seq !== tagLoadSeq) return; // a newer selection owns the write
 			selectedTagNotes = notes.sort((a, b) => a.name.localeCompare(b.name));
 		} catch {
+			if (seq !== tagLoadSeq) return; // a newer selection owns the write
 			selectedTagNotes = [];
 		}
 		loadingTagNotes = false;
@@ -386,8 +393,13 @@
 	});
 
 	// ─── Load editor panels data for a note ───
+	// Batch-W — scan_library_links is `(async)`: rapid main-window tab
+	// switches can leave an older note's slow scan resolving after a newer
+	// note's fast one; only the newest load may write the panels.
+	let epGeneration = 0;
 	/** Check if any descendant of a node is in the search match set. */
 	async function loadEditorPanelsData(data: EditorPanelsData) {
+		const gen = ++epGeneration;
 		if (!data.notePath || !data.libraryPath) {
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
 			epLocalSkyNodes = []; epLocalSkyLinks = [];
@@ -402,6 +414,7 @@
 
 			// Scan links
 			const links = await scanLibraryLinks(data.libraryPath, data.libraryName || '').catch(() => []);
+			if (gen !== epGeneration) return; // a newer note owns the panels
 			const noteName = data.noteName?.replace(/\.md$/, '').toLowerCase() || '';
 
 			// Backlinks
@@ -442,19 +455,24 @@
 		// Tasks
 			if (data.notePath && data.libraryPath) {
 				const taskResult = await scanNoteTasks(data.notePath, data.libraryName || '', data.libraryPath).catch(() => null);
+				if (gen !== epGeneration) return; // a newer note owns the panels
 				epTasks = taskResult?.tasks ?? [];
 			} else {
 				epTasks = [];
 			}
 		} catch (e) {
+			if (gen !== epGeneration) return; // a stale failure must not blank a newer note's panels
 			console.error('[SS] loadEditorPanelsData failed:', e);
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
 			epLocalSkyNodes = []; epLocalSkyLinks = []; epTasks = [];
 		}
 	}
 
+	// Batch-W — same stale-result shape as epGeneration, for the split view.
+	let scGeneration = 0;
 	/** Load panel data for all split notes in parallel. */
 	async function loadSplitCompanionPanelData(data: SplitCompanionData) {
+		const gen = ++scGeneration;
 		const notes = data.notes ?? [];
 		if (notes.length === 0) { scPanels = []; return; }
 
@@ -508,6 +526,7 @@
 			} catch (e) { console.error('[SS] loadSplitPanel failed for', note.noteName, e); }
 			return entry;
 		}));
+		if (gen !== scGeneration) return; // a newer split set owns the write
 		scPanels = results;
 	}
 

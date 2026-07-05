@@ -214,7 +214,22 @@ fn walk<F: FnMut(&Path, usize)>(root: &Path, callback: &mut F) {
     inner(root, 0, callback);
 }
 
+// Batch-W (2026-07-04): single-flight guard for the cold build. With
+// resolve_embed `(async)`, N embeds mounting cold would otherwise run N
+// CONCURRENT full-library walks (the sync dispatch thread used to serialize
+// them into 1 walk + N−1 cache hits). Held only across the cold build, on
+// Tokio blocking threads — never on the dispatch thread.
+static BUILD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub fn get_or_build_vault_index(library_path: &str) -> HashMap<String, PathBuf> {
+    if let Ok(c) = vault_index_cache().lock() {
+        if let Some(idx) = c.get(library_path) {
+            return idx.files.clone();
+        }
+    }
+    let _build_guard = BUILD_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    // Double-check: another builder may have populated the cache while we
+    // waited for the lock.
     if let Ok(c) = vault_index_cache().lock() {
         if let Some(idx) = c.get(library_path) {
             return idx.files.clone();
@@ -492,7 +507,10 @@ fn resolve_path(
 }
 
 /// Main entry point. Resolves an embed target to a URL the frontend can render.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — a cold/invalidated call
+// walks the whole library (get_or_build_vault_index); BUILD_LOCK above keeps
+// concurrent cold embeds to one walk.
+#[tauri::command(async)]
 pub fn resolve_embed(
     library_path: String,
     note_path: String,

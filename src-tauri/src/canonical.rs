@@ -1305,7 +1305,12 @@ fn library_has_canonical_md(lib_path: &Path) -> bool {
 /// mode flag is not reliable, the filesystem is. If a library contains
 /// files in canonical format (20260410T153045Z_NOTE_XXXX.md) AND those
 /// files carry restore metadata in their frontmatter, revert them.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — walks EVERY registered
+// library (collect_files_recursive per library) on the boot path; sync it
+// parked the dispatch thread for the whole scan. Single fire-and-forget
+// caller behind a one-shot localStorage gate (+layout ~2880); writes are
+// gate_write/gate_rename per file — safe off-thread.
+#[tauri::command(async)]
 pub fn repair_external_libraries_on_startup(
     app: tauri::AppHandle,
 ) -> Result<Vec<String>, String> {

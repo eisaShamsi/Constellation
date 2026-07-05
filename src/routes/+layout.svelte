@@ -1786,9 +1786,13 @@
 	// (was the right-rail Calendar tab, removed in §A). Populates the highlighted
 	// events on the full-page month grid.
 	let _calTimer: ReturnType<typeof setTimeout> | undefined;
+	// Batch-W — the scans are `(async)` now, so two refreshes can be in flight
+	// together (open-calendar + task-toggle); only the newest may write.
+	let _calRefreshSeq = 0;
 	// MIG-082 §A.1/§A.3 — scan the libraries for the calendar's per-date note/task entries.
 	// Extracted so a task toggle (§A.3) can LIVE-REFRESH the dots, not just on calendar reopen.
 	async function refreshCalendarData() {
+		const seq = ++_calRefreshSeq;
 		try {
 			const libraryList = get(libraries);
 			const fmt = $appSettings.dailyNoteFormat;
@@ -1800,6 +1804,7 @@
 			const results = await Promise.all(
 				libraryList.map(v => scanLibraryNoteDates(v.path, v.name, fmt, folder))
 			);
+			if (seq !== _calRefreshSeq) return; // a newer refresh owns the write
 			for (const dateMap of results) {
 				for (const [date, entries] of Object.entries(dateMap)) {
 					const m = (byKey[date] ??= new Map<string, NoteDateEntry>());
@@ -1817,6 +1822,7 @@
 			const taskResults = await Promise.all(
 				libraryList.map(v => scanLibraryTasks(v.path, v.name))
 			);
+			if (seq !== _calRefreshSeq) return; // a newer refresh owns the write
 			for (const result of taskResults) {
 				for (const task of result.tasks) {
 					if (task.due_date && !task.completed) {

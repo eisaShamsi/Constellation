@@ -286,7 +286,9 @@ fn tokenize_dql(input: &str) -> Vec<String> {
 ///
 /// `query_text` is the raw DQL query string.
 /// `library_paths` is a list of (library_name, library_path) tuples.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — the per-library folder
+// scan is a multi-second fs walk that parked the WebView2 dispatch thread.
+#[tauri::command(async)]
 pub fn execute_dataview_query(
     _app: tauri::AppHandle,
     query_text: String,

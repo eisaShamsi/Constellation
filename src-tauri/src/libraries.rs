@@ -590,7 +590,9 @@ pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
 }
 
 /// Search across all libraries for notes matching a query.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — walks ALL libraries.
+// Sole caller (store.ts searchAllStars) carries _searchStarsSeq.
+#[tauri::command(async)]
 pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
     let libraries = load_all_libraries(&app);
     let mut results = Vec::new();
@@ -794,7 +796,9 @@ fn is_library_canonical(library_path: &str) -> bool {
 }
 
 /// Search notes by property key/value across all libraries.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — walks ALL libraries.
+// Sole caller (NotebookNavigator handlePropertySearch) carries propSearchSeq.
+#[tauri::command(async)]
 pub fn search_by_property(app: tauri::AppHandle, key: String, value: String) -> Vec<StarInfo> {
     let libraries = load_all_libraries(&app);
     let key_lower = key.to_lowercase();
@@ -2375,7 +2379,10 @@ pub struct NoteLink {
 fn default_weight() -> f64 { 1.0 }
 
 /// Scan all notes in a library and extract wikilinks from each.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — reads every note in the
+// library. Second-screen callers carry epGeneration/scGeneration stale-result
+// guards (SecondScreenPage).
+#[tauri::command(async)]
 pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_name: String) -> Result<Vec<NoteLink>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
@@ -2741,7 +2748,9 @@ fn scan_tags_recursive(dir: &Path, re: &regex::Regex, tags: &mut std::collection
 }
 
 /// Return notes that contain a given tag (inline `#tag` or YAML frontmatter).
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — whole-library tag scan.
+// Callers carry tagLoadSeq stale-result guards (DashboardView, SecondScreenPage).
+#[tauri::command(async)]
 pub fn notes_by_tag(app: tauri::AppHandle, library_path: String, tag: String) -> Result<Vec<StarInfo>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
@@ -4976,7 +4985,10 @@ pub fn read_note_title(app: tauri::AppHandle, file_path: String) -> Result<Optio
 
 /// Collect all notes with rich metadata (name, path, modified, size, preview, tags, folder).
 /// Used by the Notebook Navigator for fast file listing without N+1 calls.
-#[tauri::command]
+// App-freeze audit Batch-W (2026-07-04): `(async)` — reads EVERY .md in the
+// library (content, for preview+tags); multi-second on a big library. Callers
+// carry the navLoadSeq stale-result guard (NotebookNavigator).
+#[tauri::command(async)]
 pub fn collect_library_notes_with_metadata(app: tauri::AppHandle, library_path: String) -> Result<Vec<serde_json::Value>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
