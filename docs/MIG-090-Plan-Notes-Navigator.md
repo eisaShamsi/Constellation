@@ -1,5 +1,7 @@
 # MIG-090 — Plan: the All-Notes Base (Notes Navigator restructure)
 
+> **SUPERSEDED (2026-07-05, Boss correction after §2):** *"if I want to have something similar I would use the Bases, the way I wanted. Let's re-write the Navigator concept, based on the original 'Note Navigator'… upgrade it to be smart, fast, and to launch from where others ended."* — Option B revoked. **§1 (the three lens dimensions) KEPT** (engine upgrade for all Bases, Boss-ruled); **§2 REVERTED** (`d03e2fd0` — the old Navigator restored, both mounts); §3–§5 cancelled. The rework restarts research-first from the ORIGINAL two-pane paradigm — frontier research `wf_50227623-e2e`; new concept paper to follow. This document remains as the historical record of the revoked direction.
+
 **Date:** 2026-07-05 · **Phase:** 2 of 4 (Plan) · **Architect:** [MIG-090-Architect-Notes-Navigator.md](MIG-090-Architect-Notes-Navigator.md)
 **Boss rulings (2026-07-05, all banked):** Direction = **Option B** (rebuild the list mode on the Base engine) · Batch ops = **PORT** through proper write paths · SS Navigator branch = **RETIRE in this MIG** (single reopened PJ-068 line; rest of PJ-068 stays parked).
 

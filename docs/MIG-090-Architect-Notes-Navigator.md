@@ -1,5 +1,7 @@
 # MIG-090 — Architect: the Notes Navigator Restructure
 
+> **DIRECTION SUPERSEDED (2026-07-05):** the Boss revoked Option B after §2 shipped — a table of notes is what *Bases* are for; the Navigator must be rewritten from its ORIGINAL two-pane paradigm, "smart, fast, launching from where others ended" (research-first, `wf_50227623-e2e`). §1 kept; §2 reverted (`d03e2fd0`). **The diagnosis in this document (§§1–5) remains valid and feeds the new concept** — only §6's options and the recommendation are superseded.
+
 **Date:** 2026-07-05 · **Phase:** 1 of 4 (Architect) · **Trigger (Boss, verbatim):** *"I want to restructure the 'Note Navigator', either to merge it with the 'File Explorer', or redesign it to match Constellation philosophy. Today, it is slow and dumb, and it feels like a foreign body within the Constellation ecosystem."*
 **Discovery:** workflow `wf_971f71e2-913` (4 mappers + adversarial verifier — all findings upheld; 3 precision corrections applied below). Every claim cites file:line.
 
