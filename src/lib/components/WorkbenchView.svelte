@@ -14,13 +14,15 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import { t } from '$lib/i18n';
 	import {
 		workbenchSets, workbenchKey, addToWorkbench, removeFromWorkbench,
 		toggleWorkbenchDone, sweepWorkbenchDone, adoptWorkbenchIdentities,
-		constellationSearch, embedText, appSettings, splitStage,
+		constellationSearch, embedText, appSettings,
 		type ConstellationSearchResult, type WorkbenchItem,
 	} from '$lib/libraries/store';
+	import { filterByChips, isContested, isForming, isUnlinked } from './workbenchChips';
 	import NoteRow, { NOTE_ROW_HEIGHT } from './NoteRow.svelte';
 	import NoteList from './NoteList.svelte';
 
@@ -66,6 +68,27 @@
 	}
 	onMount(hydrate);
 
+	// ─── §8 liveness — the desk hears the EXISTING mutation events only and
+	//     re-hydrates debounced (≥500 ms; a cascade storm batches into one).
+	//     Membership never changes here — only the displayed facts refresh. ───
+	let livenessTimer: ReturnType<typeof setTimeout> | undefined;
+	let unlisteners: UnlistenFn[] = [];
+	function scheduleRehydrate() {
+		clearTimeout(livenessTimer);
+		livenessTimer = setTimeout(hydrate, 500);
+	}
+	onMount(async () => {
+		for (const ev of ['note-created', 'cascade:rewrote', 'cache-reconciled', 'screen:note-saved']) {
+			try {
+				unlisteners.push(await listen(ev, scheduleRehydrate));
+			} catch { /* event system unavailable — desk stays open-time fresh */ }
+		}
+	});
+	onDestroy(() => {
+		clearTimeout(livenessTimer);
+		for (const u of unlisteners) u();
+	});
+
 	// ─── The held desk (membership order: newest first; missing = no row) ───
 	const held = $derived.by(() => {
 		const set = $workbenchSets[0];
@@ -76,41 +99,20 @@
 			.map(item => ({ item, row: byKey.get(workbenchKey(item)) ?? null }));
 	});
 
-	// ─── The four v1 chips — client-side intersection ONLY (they narrow the
-	//     held set; they never query — the pinned-test invariant). ───
+	// ─── The four v1 chips — the PURE intersection filter (workbenchChips.ts,
+	//     pinned by tests/mig-090: chips narrow the held set client-side and
+	//     never query). ───
 	let chipDue = $state(false);
 	let chipUnlinked = $state(false);
 	let chipContested = $state(false);
 	let chipForming = $state(false);
 
-	function isContested(r: HydratedRow): boolean {
-		for (const j of [r.incoming_link_types_json, r.outgoing_link_types_json]) {
-			try {
-				const o = JSON.parse(j || '{}');
-				if ((o['contradicts'] ?? 0) > 0) return true;
-			} catch { /* malformed json → not contested */ }
-		}
-		return false;
-	}
-	function isForming(r: HydratedRow): boolean {
-		if (!r.stage) return false; // honest: unstaged notes are not "forming"
-		const { lifecycle } = splitStage(r.stage);
-		return lifecycle === 'spark' || lifecycle === 'birth' || lifecycle === 'growth';
-	}
-	function isUnlinked(r: HydratedRow): boolean {
-		return r.incoming_count === 0 && r.outgoing_count === 0;
-	}
-
 	const anyChip = $derived(chipDue || chipUnlinked || chipContested || chipForming);
-	const visible = $derived(held.filter(h => {
-		if (!anyChip) return true;
-		if (!h.row) return false; // missing rows carry no state to match
-		if (chipDue && !h.row.review_due) return false;
-		if (chipUnlinked && !isUnlinked(h.row)) return false;
-		if (chipContested && !isContested(h.row)) return false;
-		if (chipForming && !isForming(h.row)) return false;
-		return true;
-	}));
+	const visible = $derived(filterByChips(
+		held,
+		h => h.row,
+		{ due: chipDue, unlinked: chipUnlinked, contested: chipContested, forming: chipForming }
+	));
 	const doneCount = $derived(($workbenchSets[0]?.items ?? []).filter(i => i.done).length);
 
 	// ─── The Intent Bar (§5) — QuickSwitcher conventions: IME guard, 300 ms

@@ -629,6 +629,12 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 		// CLOSED: gated writeNote + reindex; index_note derives the note_links row (and
 		// bumps the target's incoming_count). Adding a frontmatter property necessarily
 		// re-serializes the frontmatter — the SAME proven path addTagToNote uses for tags.
+		// MIG-090 §9 (discovered defect, fix-what-we-discover): the OPEN branch
+		// inherits the cascade gate via saveTabContent; this branch reached
+		// writeNote WITHOUT it — a connect fired mid-rename-cascade could write
+		// a pre-cascade read back over the walker's rewrite. Same guard, same
+		// refusal shape as NoteEditor.handlePromote.
+		if (isCascading(sourcePath)) return;
 		const content = await readNote(sourcePath);
 		const { properties, body } = parseFrontmatter(content);
 		const updated = addTypedLinkToProps(properties, type, wikilink);

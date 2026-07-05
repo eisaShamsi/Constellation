@@ -49,6 +49,9 @@ export default defineConfig({
 			'tests/mig-076/currentBugRepro.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
+			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection
+			// (chips narrow, never expand — the hybrid union-append landmine pin).
+			'tests/mig-090/chips.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
