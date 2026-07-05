@@ -803,6 +803,11 @@
     "cataloger": "Классификатор"
   },
   "sidebar": {
+    "filterPlaceholder": "Фильтр по имени…",
+    "sortCreatedDesc": "Сортировка: Создано (новые)",
+    "sortCreatedAsc": "Сортировка: Создано (старые)",
+    "sortSizeDesc": "Сортировка: Размер (большие)",
+    "sortSizeAsc": "Сортировка: Размер (малые)",
     "searchPlaceholder": "Поиск...",
     "results": "результатов",
     "noResults": "Результатов не найдено",

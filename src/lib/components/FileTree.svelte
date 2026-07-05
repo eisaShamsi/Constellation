@@ -14,6 +14,7 @@
 		renamingPath = '',
 		onRenameComplete,
 		allExpanded = true,
+		forceExpand = false,
 		maturityMap = new Map() as Map<string, string>,
 		stageMap = new Map() as Map<string, string>,
 	}: {
@@ -28,6 +29,9 @@
 		renamingPath?: string;
 		onRenameComplete?: (oldPath: string, newName: string) => void;
 		allExpanded?: boolean;
+		/** MIG-091 §A — when a name filter is active, open EVERY folder (at any
+		 *  depth) so pruned matches are visible, not buried in collapsed disclosures. */
+		forceExpand?: boolean;
 		maturityMap?: Map<string, string>;
 		stageMap?: Map<string, string>;
 	} = $props();
@@ -76,7 +80,7 @@
 	{#each entries as entry}
 		<li>
 			{#if entry.is_dir}
-				<details open={allExpanded && depth < 2}>
+				<details open={forceExpand || (allExpanded && depth < 2)}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<summary class="folder" data-style-target="folder" data-tree-path={entry.path} oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
@@ -100,7 +104,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} {maturityMap} {stageMap} />
+						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} {forceExpand} {maturityMap} {stageMap} />
 					{/if}
 				</details>
 			{:else}

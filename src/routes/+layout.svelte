@@ -357,7 +357,11 @@
 	let canonicalProgress = $state({ current: 0, total: 0, currentFile: '', libraryName: '', phase: '' });
 	let showCanonicalChoice = $state(false);
 	let pendingLibraryPath = $state('');
-	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
+	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc' | 'created-desc' | 'created-asc' | 'size-desc' | 'size-asc'>('name-asc');
+	// MIG-091 §A — the file-tree name filter (narrows loaded/expanded library
+	// trees; folders force-open to reveal matches). File-system-scoped: matches
+	// note/folder NAMES only — never content (that stays Search Hub's line).
+	let treeFilter = $state('');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
 
@@ -4211,7 +4215,7 @@
 	}
 
 	function cycleSortOrder() {
-		const orders: typeof sortOrder[] = ['name-asc', 'name-desc', 'modified-desc', 'modified-asc'];
+		const orders: typeof sortOrder[] = ['name-asc', 'name-desc', 'modified-desc', 'modified-asc', 'created-desc', 'created-asc', 'size-desc', 'size-asc'];
 		const idx = orders.indexOf(sortOrder);
 		sortOrder = orders[(idx + 1) % orders.length];
 	}
@@ -4222,6 +4226,10 @@
 			case 'name-desc': return $t('sidebar.sortNameDesc');
 			case 'modified-desc': return $t('sidebar.sortModifiedDesc');
 			case 'modified-asc': return $t('sidebar.sortModifiedAsc');
+			case 'created-desc': return $t('sidebar.sortCreatedDesc') || 'Created (newest first)';
+			case 'created-asc': return $t('sidebar.sortCreatedAsc') || 'Created (oldest first)';
+			case 'size-desc': return $t('sidebar.sortSizeDesc') || 'Size (largest first)';
+			case 'size-asc': return $t('sidebar.sortSizeAsc') || 'Size (smallest first)';
 		}
 	}
 
@@ -4234,11 +4242,47 @@
 				case 'name-desc': return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' });
 				case 'modified-desc': return (b.modified ?? 0) - (a.modified ?? 0);
 				case 'modified-asc': return (a.modified ?? 0) - (b.modified ?? 0);
+				case 'created-desc': return (b.created ?? 0) - (a.created ?? 0);
+				case 'created-asc': return (a.created ?? 0) - (b.created ?? 0);
+				case 'size-desc': return (b.size ?? 0) - (a.size ?? 0);
+				case 'size-asc': return (a.size ?? 0) - (b.size ?? 0);
 				default: return 0;
 			}
 		});
 		return sorted.map(e => e.children ? { ...e, children: sortEntries(e.children) } : e);
 	}
+
+	// MIG-091 §A — narrow a loaded tree to entries whose NAME (or display title)
+	// matches, keeping ancestor folders of any match so hits stay reachable. A
+	// folder whose OWN name matches keeps its whole subtree; otherwise it appears
+	// only when it contains matches, showing just those. Name-only, never content.
+	function filterEntries(entries: FileEntry[], q: string): FileEntry[] {
+		const query = q.trim().toLowerCase();
+		if (!query) return entries;
+		const out: FileEntry[] = [];
+		for (const e of entries) {
+			const label = (e.display_title || e.name).toLowerCase();
+			const selfMatch = label.includes(query) || e.name.toLowerCase().includes(query);
+			if (e.is_dir) {
+				if (selfMatch) {
+					out.push(e); // folder name matches → keep the whole subtree
+				} else {
+					const kids = e.children ? filterEntries(e.children, q) : [];
+					if (kids.length > 0) out.push({ ...e, children: kids });
+				}
+			} else if (selfMatch) {
+				out.push(e);
+			}
+		}
+		return out;
+	}
+
+	// The composed tree feed for one library: hide the system folder → filter →
+	// sort. Single-sourced so every FileTree mount stays consistent.
+	function treeFeed(entries: FileEntry[] | undefined): FileEntry[] {
+		return sortEntries(filterEntries(hideFiveActsFolder(entries), treeFilter));
+	}
+	const treeFilterActive = $derived(treeFilter.trim().length > 0);
 
 	// MIG-062 §E.2 — hide the system "Five Acts" folder from library file trees.
 	// Per Boss: the Observation note is surfaced via the dedicated top "Five
@@ -6218,6 +6262,26 @@
 				</div>
 
 			<div class="sidebar-content">
+				<!-- MIG-091 §A — the file-tree name filter (tree mode only). Narrows
+				     the loaded/expanded libraries by name; folders force-open to
+				     reveal matches. Name-only — never content (that stays Search). -->
+				{#if sidebarMode === 'tree'}
+					<div class="tree-filter">
+						<svg class="tree-filter-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+						<input
+							class="tree-filter-input"
+							type="search"
+							dir="auto"
+							placeholder={$t('sidebar.filterPlaceholder') || 'Filter by name…'}
+							bind:value={treeFilter}
+						/>
+						{#if treeFilterActive}
+							<button class="tree-filter-clear" onclick={() => treeFilter = ''} title={$t('dialogs.cancel') || 'Clear'} aria-label="Clear filter">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+							</button>
+						{/if}
+					</div>
+				{/if}
 				{#if sidebarMode === 'list'}
 					<NotebookNavigator
 						mode="main"
@@ -6408,7 +6472,7 @@
 							{#if expandedLibraries.has(universeNotesStats.library_id) && libraryTrees[universeNotesStats.library_id]}
 								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(hideFiveActsFolder(libraryTrees[universeNotesStats.library_id]))}
+									entries={treeFeed(libraryTrees[universeNotesStats.library_id])}
 									libraryId={universeNotesStats.library_id}
 									libraryName={universeNotesStats.name}
 									color={libraryColorMap[universeNotesStats.name] || 'var(--interactive-accent)'}
@@ -6420,6 +6484,7 @@
 									{renamingPath}
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
+									forceExpand={treeFilterActive}
 								/>
 								</div>
 							{/if}
@@ -6462,7 +6527,7 @@
 											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
 												<div class="library-tree">
 													<FileTree
-													entries={sortEntries(hideFiveActsFolder(libraryTrees[lib.library_id]))}
+													entries={treeFeed(libraryTrees[lib.library_id])}
 													libraryId={lib.library_id}
 													libraryName={lib.name}
 													color={libraryColorMap[lib.name]}
@@ -6474,6 +6539,7 @@
 													{renamingPath}
 													onRenameComplete={handleRenameComplete}
 													{allExpanded}
+									forceExpand={treeFilterActive}
 												/>
 												</div>
 											{/if}
@@ -6496,7 +6562,7 @@
 							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
 								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(hideFiveActsFolder(libraryTrees[lib.library_id]))}
+									entries={treeFeed(libraryTrees[lib.library_id])}
 									libraryId={lib.library_id}
 									libraryName={lib.name}
 									color={libraryColorMap[lib.name]}
@@ -6508,6 +6574,7 @@
 									{renamingPath}
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
+									forceExpand={treeFilterActive}
 								/>
 								</div>
 							{/if}
@@ -8669,6 +8736,42 @@
 	.search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
 
 	.sidebar-content { flex: 1; overflow-y: auto; padding: 2px 0; }
+
+	/* MIG-091 §A — the file-tree name filter */
+	.tree-filter {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 2px 6px 4px;
+		padding: 3px 8px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-secondary);
+	}
+	.tree-filter:focus-within { border-color: var(--interactive-accent); }
+	.tree-filter-icon { flex-shrink: 0; color: var(--text-faint); }
+	.tree-filter-input {
+		flex: 1;
+		min-width: 0;
+		border: none;
+		background: none;
+		outline: none;
+		color: var(--text-normal);
+		font-size: 0.8rem;
+		font-family: var(--font-interface-theme, inherit);
+	}
+	.tree-filter-clear {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: var(--text-muted);
+		padding: 1px;
+		border-radius: 3px;
+	}
+	.tree-filter-clear:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 	.section-label { padding: 4px 12px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 	.s-result {
 		display: block; width: 100%; padding: 4px 12px;

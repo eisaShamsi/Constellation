@@ -803,6 +803,11 @@
     "cataloger": "分类器"
   },
   "sidebar": {
+    "filterPlaceholder": "按名称筛选…",
+    "sortCreatedDesc": "排序：创建时间（最新）",
+    "sortCreatedAsc": "排序：创建时间（最早）",
+    "sortSizeDesc": "排序：大小（最大）",
+    "sortSizeAsc": "排序：大小（最小）",
     "searchPlaceholder": "搜索...",
     "results": "个结果",
     "noResults": "未找到结果",

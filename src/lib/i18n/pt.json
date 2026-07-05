@@ -803,6 +803,11 @@
     "cataloger": "Classificador"
   },
   "sidebar": {
+    "filterPlaceholder": "Filtrar por nome…",
+    "sortCreatedDesc": "Ordenar: Criado (mais recente)",
+    "sortCreatedAsc": "Ordenar: Criado (mais antigo)",
+    "sortSizeDesc": "Ordenar: Tamanho (maior)",
+    "sortSizeAsc": "Ordenar: Tamanho (menor)",
     "searchPlaceholder": "Pesquisar...",
     "results": "resultados",
     "noResults": "Nenhum resultado encontrado",

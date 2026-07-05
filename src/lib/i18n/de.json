@@ -803,6 +803,11 @@
     "cataloger": "Klassifikator"
   },
   "sidebar": {
+    "filterPlaceholder": "Nach Name filtern…",
+    "sortCreatedDesc": "Sortierung: Erstellt (neueste)",
+    "sortCreatedAsc": "Sortierung: Erstellt (älteste)",
+    "sortSizeDesc": "Sortierung: Größe (größte)",
+    "sortSizeAsc": "Sortierung: Größe (kleinste)",
     "searchPlaceholder": "Suchen...",
     "addLibrary": "Bibliothek hinzufügen",
     "results": "Ergebnisse",

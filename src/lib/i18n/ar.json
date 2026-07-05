@@ -804,6 +804,11 @@
     "cataloger": "المُصنِّف"
   },
   "sidebar": {
+    "filterPlaceholder": "تصفية بالاسم…",
+    "sortCreatedDesc": "ترتيب: الإنشاء (الأحدث)",
+    "sortCreatedAsc": "ترتيب: الإنشاء (الأقدم)",
+    "sortSizeDesc": "ترتيب: الحجم (الأكبر)",
+    "sortSizeAsc": "ترتيب: الحجم (الأصغر)",
     "searchPlaceholder": "بحث...",
     "addLibrary": "إضافة مكتبة",
     "newLibrary": "مكتبة جديدة",

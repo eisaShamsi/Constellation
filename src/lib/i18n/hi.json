@@ -803,6 +803,11 @@
     "cataloger": "वर्गीकारक"
   },
   "sidebar": {
+    "filterPlaceholder": "नाम से फ़िल्टर करें…",
+    "sortCreatedDesc": "क्रम: निर्मित (नवीनतम)",
+    "sortCreatedAsc": "क्रम: निर्मित (पुराना)",
+    "sortSizeDesc": "क्रम: आकार (सबसे बड़ा)",
+    "sortSizeAsc": "क्रम: आकार (सबसे छोटा)",
     "searchPlaceholder": "खोजें...",
     "results": "परिणाम",
     "noResults": "कोई परिणाम नहीं मिला",

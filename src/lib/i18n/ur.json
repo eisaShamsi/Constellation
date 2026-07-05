@@ -803,6 +803,11 @@
     "cataloger": "درجہ بند"
   },
   "sidebar": {
+    "filterPlaceholder": "نام سے فلٹر کریں…",
+    "sortCreatedDesc": "ترتیب: تخلیق (تازہ ترین)",
+    "sortCreatedAsc": "ترتیب: تخلیق (قدیم ترین)",
+    "sortSizeDesc": "ترتیب: سائز (سب سے بڑا)",
+    "sortSizeAsc": "ترتیب: سائز (سب سے چھوٹا)",
     "searchPlaceholder": "تلاش...",
     "results": "نتائج",
     "noResults": "کوئی نتائج نہیں ملے",

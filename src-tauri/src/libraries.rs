@@ -26,6 +26,14 @@ pub struct FileEntry {
     pub children: Option<Vec<FileEntry>>,
     pub extension: Option<String>,
     pub modified: Option<u64>,
+    // MIG-091 §A — created + size for the File Explorer's richer sort. Both
+    // read from the SAME metadata call as `modified` (zero extra IO). `created`
+    // is best-effort (unsupported on some filesystems → None); `size` is None
+    // for folders.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<u64>,
     pub status: Option<String>,
     /// For canonical files: the human-readable title from frontmatter.
     /// Null for non-canonical files or folders.
@@ -2273,9 +2281,15 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             continue;
         }
 
-        let modified = entry.metadata().ok().and_then(|m| {
+        // MIG-091 §A — one metadata read for modified + created + size.
+        let meta = entry.metadata().ok();
+        let modified = meta.as_ref().and_then(|m| {
             m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok().map(|d| d.as_secs()))
         });
+        let created = meta.as_ref().and_then(|m| {
+            m.created().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok().map(|d| d.as_secs()))
+        });
+        let size = if is_dir { None } else { meta.as_ref().map(|m| m.len()) };
 
         let children = if is_dir && current_depth < max_depth {
             Some(read_dir_recursive(&path, current_depth + 1, max_depth))
@@ -2311,6 +2325,8 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             children,
             extension,
             modified,
+            created,
+            size,
             status,
             display_title,
         });

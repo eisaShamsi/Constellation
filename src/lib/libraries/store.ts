@@ -52,6 +52,9 @@ export interface FileEntry {
 	children: FileEntry[] | null;
 	extension: string | null;
 	modified: number | null;
+	/** MIG-091 §A — created + size for the File Explorer's richer sort. */
+	created?: number | null;
+	size?: number | null;
 	status: string | null;
 	isCUniverse?: boolean;
 	/** For canonical files: human-readable title from frontmatter. */

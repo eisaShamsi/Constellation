@@ -803,6 +803,11 @@
     "cataloger": "دسته‌بند"
   },
   "sidebar": {
+    "filterPlaceholder": "فیلتر بر اساس نام…",
+    "sortCreatedDesc": "مرتب‌سازی: ایجاد (جدیدترین)",
+    "sortCreatedAsc": "مرتب‌سازی: ایجاد (قدیمی‌ترین)",
+    "sortSizeDesc": "مرتب‌سازی: اندازه (بزرگ‌ترین)",
+    "sortSizeAsc": "مرتب‌سازی: اندازه (کوچک‌ترین)",
     "searchPlaceholder": "جستجو...",
     "addLibrary": "افزودن کتابخانه",
     "results": "نتیجه",

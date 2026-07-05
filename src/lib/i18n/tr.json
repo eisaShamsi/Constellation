@@ -803,6 +803,11 @@
     "cataloger": "Sınıflandırıcı"
   },
   "sidebar": {
+    "filterPlaceholder": "Ada göre süz…",
+    "sortCreatedDesc": "Sırala: Oluşturma (en yeni)",
+    "sortCreatedAsc": "Sırala: Oluşturma (en eski)",
+    "sortSizeDesc": "Sırala: Boyut (en büyük)",
+    "sortSizeAsc": "Sırala: Boyut (en küçük)",
     "searchPlaceholder": "Ara...",
     "results": "sonuç",
     "noResults": "Sonuç bulunamadı",

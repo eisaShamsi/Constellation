@@ -867,6 +867,11 @@
     }
   },
   "sidebar": {
+    "filterPlaceholder": "Filter by name…",
+    "sortCreatedDesc": "Sort: Created (newest)",
+    "sortCreatedAsc": "Sort: Created (oldest)",
+    "sortSizeDesc": "Sort: Size (largest)",
+    "sortSizeAsc": "Sort: Size (smallest)",
     "searchPlaceholder": "Search...",
     "addLibrary": "Add library",
     "newLibrary": "New Library",

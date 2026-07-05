@@ -803,6 +803,11 @@
     "cataloger": "分類器"
   },
   "sidebar": {
+    "filterPlaceholder": "名前で絞り込み…",
+    "sortCreatedDesc": "並べ替え: 作成日（新しい順）",
+    "sortCreatedAsc": "並べ替え: 作成日（古い順）",
+    "sortSizeDesc": "並べ替え: サイズ（大きい順）",
+    "sortSizeAsc": "並べ替え: サイズ（小さい順）",
     "searchPlaceholder": "検索...",
     "results": "件の結果",
     "noResults": "結果が見つかりません",
