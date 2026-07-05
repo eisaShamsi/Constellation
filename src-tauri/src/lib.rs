@@ -88,6 +88,8 @@ mod tasks;
 mod universe;
 mod watcher;
 mod watcher_suppress;
+// MIG-090 §2 — the Workbench's batched hydration read (membership → live facts).
+mod workbench;
 pub mod write_gate;
 
 use tauri::{Emitter, Manager};
@@ -571,6 +573,8 @@ pub fn run() {
             // MIG-090 §1 — the Workbench's working-set persistence.
             universe::read_universe_workbench,
             universe::save_universe_workbench,
+            // MIG-090 §2 — the Workbench's hydration read.
+            workbench::workbench_hydrate,
             universe::read_universe_workspaces,
             universe::save_universe_workspaces,
             universe::read_universe_property_types,
