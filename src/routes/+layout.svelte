@@ -4284,6 +4284,52 @@
 	}
 	const treeFilterActive = $derived(treeFilter.trim().length > 0);
 
+	// MIG-091 §A follow-up (Boss): a filter searches EVERY library, not just the
+	// expanded ones. Typing a filter snapshots the current expansion, then
+	// reveals + loads all libraries so matches surface anywhere; a no-match
+	// library shows no tree (the match-gate on each mount). Clearing the filter
+	// restores exactly the expansion the user had.
+	let expansionSnapshot: { libs: Set<string>; cus: Set<string> } | null = null;
+
+	function libHasMatches(id: string): boolean {
+		const tree = libraryTrees[id];
+		return !!tree && treeFeed(tree).length > 0;
+	}
+
+	async function revealAllLibrariesForFilter() {
+		const allLibs: { library_id: string; path: string }[] = [];
+		if (universeNotesStats) allLibs.push(universeNotesStats);
+		for (const lib of ownLibraries) allLibs.push(lib);
+		for (const child of childUniverses) for (const lib of getChildUniverseLibs(child.path)) allLibs.push(lib);
+		expandedChildUniverses = new Set([...expandedChildUniverses, ...childUniverses.map(c => c.path)]);
+		expandedLibraries = new Set([...expandedLibraries, ...allLibs.map(l => l.library_id)]);
+		await Promise.all(allLibs.map(async (lib) => {
+			if (!libraryTrees[lib.library_id]) {
+				try {
+					const tree: FileEntry[] = await invoke('read_library_tree', { path: lib.path, maxDepth: 4 });
+					libraryTrees[lib.library_id] = tree;
+				} catch { /* unreadable library — skip */ }
+			}
+		}));
+		libraryTrees = { ...libraryTrees };
+	}
+
+	// The filter's single entry point (input + the clear button) — manages the
+	// snapshot/reveal/restore on the empty↔active transitions.
+	async function setTreeFilter(v: string) {
+		const wasActive = treeFilter.trim().length > 0;
+		const nowActive = v.trim().length > 0;
+		treeFilter = v;
+		if (nowActive && !wasActive) {
+			expansionSnapshot = { libs: new Set(expandedLibraries), cus: new Set(expandedChildUniverses) };
+			await revealAllLibrariesForFilter();
+		} else if (!nowActive && wasActive && expansionSnapshot) {
+			expandedLibraries = expansionSnapshot.libs;
+			expandedChildUniverses = expansionSnapshot.cus;
+			expansionSnapshot = null;
+		}
+	}
+
 	// MIG-062 §E.2 — hide the system "Five Acts" folder from library file trees.
 	// Per Boss: the Observation note is surfaced via the dedicated top "Five
 	// Acts" sidebar section (+ federated cUniverse groups), so the folder in
@@ -6273,10 +6319,11 @@
 							type="search"
 							dir="auto"
 							placeholder={$t('sidebar.filterPlaceholder') || 'Filter by name…'}
-							bind:value={treeFilter}
+							value={treeFilter}
+							oninput={(e) => setTreeFilter(e.currentTarget.value)}
 						/>
 						{#if treeFilterActive}
-							<button class="tree-filter-clear" onclick={() => treeFilter = ''} title={$t('dialogs.cancel') || 'Clear'} aria-label="Clear filter">
+							<button class="tree-filter-clear" onclick={() => setTreeFilter('')} title={$t('dialogs.cancel') || 'Clear'} aria-label="Clear filter">
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 							</button>
 						{/if}
@@ -6469,7 +6516,7 @@
 									<span class="child-universe-count">{universeNotesStats.star_count}</span>
 								{/if}
 							</button>
-							{#if expandedLibraries.has(universeNotesStats.library_id) && libraryTrees[universeNotesStats.library_id]}
+							{#if expandedLibraries.has(universeNotesStats.library_id) && libraryTrees[universeNotesStats.library_id] && (!treeFilterActive || libHasMatches(universeNotesStats.library_id))}
 								<div class="library-tree">
 									<FileTree
 									entries={treeFeed(libraryTrees[universeNotesStats.library_id])}
@@ -6524,7 +6571,7 @@
 												</svg>
 												<span class="library-name">{lib.name}</span>
 											</button>
-											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
+											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id] && (!treeFilterActive || libHasMatches(lib.library_id))}
 												<div class="library-tree">
 													<FileTree
 													entries={treeFeed(libraryTrees[lib.library_id])}
@@ -6559,7 +6606,7 @@
 								</svg>
 								<span class="library-name">{lib.name}</span>
 							</button>
-							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
+							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id] && (!treeFilterActive || libHasMatches(lib.library_id))}
 								<div class="library-tree">
 									<FileTree
 									entries={treeFeed(libraryTrees[lib.library_id])}
