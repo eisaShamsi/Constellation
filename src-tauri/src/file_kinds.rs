@@ -321,11 +321,6 @@ fn classify_markdown(file_path: &Path) -> String {
             return "BASE".to_string();
         }
     }
-    // Dataview blocks in body
-    if body.contains("```dataview") || body.contains("```dataviewjs") {
-        return "BASE".to_string();
-    }
-
     // Priority 7: CANVAS — JSON with nodes/edges (rare for .md, but possible)
     if body.trim_start().starts_with('{') {
         if body.contains("\"nodes\"") && body.contains("\"edges\"") {

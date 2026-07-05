@@ -1695,19 +1695,6 @@
     "switching": "Cambiando universo...",
     "migrating": "Migrando tus datos..."
   },
-  "dataview": {
-    "label": "Vista de datos",
-    "loading": "Cargando consulta...",
-    "noResults": "Sin resultados",
-    "results": "resultados",
-    "of": "de",
-    "total": "total",
-    "refresh": "Actualizar",
-    "unsupportedType": "Tipo de consulta no soportado",
-    "queryError": "Error de consulta",
-    "queryFailed": "Consulta fallida",
-    "file": "Archivo"
-  },
   "templates": {
     "pickerTitle": "Insertar plantilla",
     "searchTemplates": "Buscar plantillas...",

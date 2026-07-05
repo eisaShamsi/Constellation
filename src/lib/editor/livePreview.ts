@@ -1159,15 +1159,13 @@ class LensBlockWidget extends WidgetType {
  *
  * ## Why we always render (no cursor-aware reveal in v1)
  *
- * The existing dataview-block pattern in this file hides its widget
- * when the cursor is inside the block (so the user can edit the
- * query). That pattern is also broken per the CM6-source authority
- * (a ViewPlugin can't provide block-replace decorations either way).
- * v1 of the lens block always renders the widget; to edit the YAML,
- * toggle livePreview off via the editor's "Source mode" menu
- * (NotePane already has this toggle). Future enhancement: a
- * selection-aware variant that does NOT throw — see the dataview
- * issue ticket for that broader migration.
+ * A cursor-aware reveal (hide the widget while the cursor is inside the
+ * block so the YAML can be edited in place) cannot be built on a
+ * ViewPlugin: per the CM6-source authority above, a ViewPlugin can't
+ * provide multi-line block-replace decorations at all. v1 of the lens
+ * block always renders the widget; to edit the YAML, toggle livePreview
+ * off via the editor's "Source mode" menu (NotePane already has this
+ * toggle). Future enhancement: a selection-aware StateField variant.
  */
 export const baseLensField = StateField.define<DecorationSet>({
 	create(state) {
@@ -1205,29 +1203,6 @@ function buildBaseLensDecorations(state: EditorState): DecorationSet {
 		},
 	});
 	return builder.finish();
-}
-
-/** Widget shown for dataview code blocks when cursor is outside */
-class DataviewLabelWidget extends WidgetType {
-	query: string;
-	constructor(query: string) {
-		super();
-		this.query = query;
-	}
-	toDOM() {
-		const wrap = document.createElement('div');
-		wrap.className = 'cm-dv-label-widget';
-		const badge = document.createElement('span');
-		badge.className = 'cm-dv-badge';
-		badge.textContent = 'Dataview';
-		wrap.appendChild(badge);
-		const preview = document.createElement('code');
-		preview.className = 'cm-dv-query-preview';
-		preview.textContent = this.query.length > 80 ? this.query.slice(0, 80) + '…' : this.query;
-		wrap.appendChild(preview);
-		return wrap;
-	}
-	eq(other: DataviewLabelWidget) { return this.query === other.query; }
 }
 
 function buildDecorations(view: EditorView): DecorationSet {
@@ -1338,31 +1313,19 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const firstLine = doc.lineAt(node.from);
 					const info = firstLine.text.trim();
 
-					if (!cursorInBlock) {
-						// Dataview — show label widget
-						if (/^```+\s*dataview\s*$/i.test(info)) {
-							const innerFrom = firstLine.to + 1;
-							const lastLine = doc.lineAt(node.to);
-							const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
-							const queryText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo).trim() : '';
-							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-								widget: new DataviewLabelWidget(queryText),
-							}) });
-						}
-						// MIG-055 §H.3 — `base` lens blocks are NO LONGER handled here.
-						// CM6's `view/dist/index.js:2719-2723` rejects multi-line
-						// block-replace decorations sourced from a ViewPlugin (which
-						// `livePreviewPlugin` is). The throw fires in rAF and is
-						// silently swallowed in release builds. The lens-block
-						// decoration is now provided by the `baseLensField`
-						// StateField defined below — see its docstring for the
-						// CM6-source authority chain.
-					}
+					// MIG-055 §H.3 — `base` lens blocks are NOT handled here.
+					// CM6's `view/dist/index.js:2719-2723` rejects multi-line
+					// block-replace decorations sourced from a ViewPlugin (which
+					// `livePreviewPlugin` is). The throw fires in rAF and is
+					// silently swallowed in release builds. The lens-block
+					// decoration is provided by the `baseLensField` StateField
+					// defined below — see its docstring for the CM6-source
+					// authority chain.
 
-					// Language label for non-dataview / non-base code blocks
+					// Language label for non-base code blocks
 					if (!cursorInBlock) {
 						const langMatch = info.match(/^```+\s*(\S+)/);
-						if (langMatch && !/^dataview$/i.test(langMatch[1]) && !/^base$/i.test(langMatch[1])) {
+						if (langMatch && !/^base$/i.test(langMatch[1])) {
 							ranges.push({ from: firstLine.to, to: firstLine.to, deco: Decoration.widget({
 								widget: new CodeBlockLabelWidget(langMatch[1]),
 								side: 1,
@@ -1805,36 +1768,6 @@ export const livePreviewTheme = EditorView.theme({
 		marginInlineEnd: '4px',
 		cursor: 'pointer',
 		accentColor: 'var(--library-accent, var(--interactive-accent))',
-	},
-	'.cm-dv-label-widget': {
-		display: 'flex',
-		alignItems: 'center',
-		gap: '8px',
-		padding: '6px 10px',
-		margin: '4px 0',
-		border: '1px solid var(--background-modifier-border)',
-		borderRadius: '6px',
-		background: 'var(--background-secondary)',
-		cursor: 'pointer',
-		userSelect: 'none',
-	},
-	'.cm-dv-badge': {
-		fontSize: '11px',
-		fontWeight: '600',
-		color: 'var(--interactive-accent)',
-		textTransform: 'uppercase',
-		letterSpacing: '0.5px',
-		flexShrink: '0',
-	},
-	'.cm-dv-query-preview': {
-		fontSize: '11px',
-		color: 'var(--text-muted)',
-		overflow: 'hidden',
-		textOverflow: 'ellipsis',
-		whiteSpace: 'nowrap',
-		background: 'none',
-		padding: '0',
-		fontFamily: 'var(--font-monospace-theme)',
 	},
 	// ─── MIG-055 §D — Lens block widget (Constellation Base renderer) ───
 	'.cm-lens-block': {

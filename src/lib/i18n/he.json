@@ -1684,19 +1684,6 @@
     "switching": "מחליף יקום...",
     "migrating": "מעביר את הנתונים שלך..."
   },
-  "dataview": {
-    "label": "תצוגת נתונים",
-    "loading": "טוען שאילתה...",
-    "noResults": "אין תוצאות",
-    "results": "תוצאות",
-    "of": "מתוך",
-    "total": "סה\"כ",
-    "refresh": "רענן",
-    "unsupportedType": "סוג שאילתה לא נתמך",
-    "queryError": "שגיאת שאילתה",
-    "queryFailed": "השאילתה נכשלה",
-    "file": "קובץ"
-  },
   "templates": {
     "pickerTitle": "הוספת תבנית",
     "searchTemplates": "חיפוש תבניות...",

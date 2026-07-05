@@ -1684,19 +1684,6 @@
     "switching": "کائنات تبدیل ہو رہی ہے...",
     "migrating": "آپ کا ڈیٹا منتقل ہو رہا ہے..."
   },
-  "dataview": {
-    "label": "ڈیٹا منظر",
-    "loading": "استفسار لوڈ ہو رہا ہے...",
-    "noResults": "کوئی نتائج نہیں",
-    "results": "نتائج",
-    "of": "میں سے",
-    "total": "کل",
-    "refresh": "ریفریش",
-    "unsupportedType": "غیر معاون استفسار کی قسم",
-    "queryError": "استفسار میں خرابی",
-    "queryFailed": "استفسار ناکام",
-    "file": "فائل"
-  },
   "templates": {
     "pickerTitle": "ٹیمپلیٹ داخل کریں",
     "searchTemplates": "ٹیمپلیٹس تلاش کریں...",

@@ -2124,19 +2124,6 @@
     "switching": "Trocando universo...",
     "migrating": "Migrando seus dados..."
   },
-  "dataview": {
-    "label": "Vista de dados",
-    "loading": "Carregando consulta...",
-    "noResults": "Sem resultados",
-    "results": "resultados",
-    "of": "de",
-    "total": "total",
-    "refresh": "Atualizar",
-    "unsupportedType": "Tipo de consulta não suportado",
-    "queryError": "Erro na consulta",
-    "queryFailed": "Consulta falhou",
-    "file": "Arquivo"
-  },
   "templates": {
     "pickerTitle": "Inserir modelo",
     "searchTemplates": "Pesquisar modelos...",

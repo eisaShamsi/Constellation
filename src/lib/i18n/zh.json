@@ -2124,19 +2124,6 @@
     "switching": "切换宇宙中...",
     "migrating": "正在迁移数据..."
   },
-  "dataview": {
-    "label": "数据视图",
-    "loading": "正在加载查询...",
-    "noResults": "无结果",
-    "results": "条结果",
-    "of": "/",
-    "total": "共计",
-    "refresh": "刷新",
-    "unsupportedType": "不支持的查询类型",
-    "queryError": "查询错误",
-    "queryFailed": "查询失败",
-    "file": "文件"
-  },
   "templates": {
     "pickerTitle": "插入模板",
     "searchTemplates": "搜索模板...",

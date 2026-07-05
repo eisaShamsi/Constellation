@@ -2124,19 +2124,6 @@
     "switching": "Evren değiştiriliyor...",
     "migrating": "Verileriniz taşınıyor..."
   },
-  "dataview": {
-    "label": "Veri Görünümü",
-    "loading": "Sorgu yükleniyor...",
-    "noResults": "Sonuç yok",
-    "results": "sonuç",
-    "of": "/",
-    "total": "toplam",
-    "refresh": "Yenile",
-    "unsupportedType": "Desteklenmeyen sorgu türü",
-    "queryError": "Sorgu hatası",
-    "queryFailed": "Sorgu başarısız",
-    "file": "Dosya"
-  },
   "templates": {
     "pickerTitle": "Şablon ekle",
     "searchTemplates": "Şablon ara...",

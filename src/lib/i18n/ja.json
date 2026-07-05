@@ -2124,19 +2124,6 @@
     "switching": "ユニバースを切替中...",
     "migrating": "データを移行中..."
   },
-  "dataview": {
-    "label": "データビュー",
-    "loading": "クエリを読み込み中...",
-    "noResults": "結果なし",
-    "results": "件",
-    "of": "/",
-    "total": "合計",
-    "refresh": "更新",
-    "unsupportedType": "未対応のクエリタイプ",
-    "queryError": "クエリエラー",
-    "queryFailed": "クエリ失敗",
-    "file": "ファイル"
-  },
   "templates": {
     "pickerTitle": "テンプレートを挿入",
     "searchTemplates": "テンプレートを検索...",

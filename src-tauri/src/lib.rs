@@ -21,7 +21,6 @@ pub mod ctse;
 // purely additive: in-crate access paths are unchanged.
 pub mod embeddings;
 mod embeds;
-mod dataview;
 mod file_kinds;
 mod fts5_tokenizer;
 mod inspector360;
@@ -595,7 +594,6 @@ pub fn run() {
             arabic::overrides::reindex_arabic_overrides,
             libraries::get_file_metadata,
             libraries::notes_by_tag,
-            dataview::execute_dataview_query,
             tasks::scan_library_tasks,
             tasks::scan_note_tasks,
             tasks::toggle_task,

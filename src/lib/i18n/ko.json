@@ -2124,19 +2124,6 @@
     "switching": "유니버스 전환 중...",
     "migrating": "데이터 마이그레이션 중..."
   },
-  "dataview": {
-    "label": "데이터 보기",
-    "loading": "쿼리 로딩 중...",
-    "noResults": "결과 없음",
-    "results": "결과",
-    "of": "/",
-    "total": "전체",
-    "refresh": "새로고침",
-    "unsupportedType": "지원되지 않는 쿼리 유형",
-    "queryError": "쿼리 오류",
-    "queryFailed": "쿼리 실패",
-    "file": "파일"
-  },
   "templates": {
     "pickerTitle": "템플릿 삽입",
     "searchTemplates": "템플릿 검색...",

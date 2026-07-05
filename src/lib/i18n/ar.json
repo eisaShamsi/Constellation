@@ -2230,19 +2230,6 @@
     "switching": "جارٍ تبديل الكون...",
     "migrating": "جارٍ ترحيل بياناتك..."
   },
-  "dataview": {
-    "label": "عرض البيانات",
-    "loading": "جارٍ تحميل الاستعلام...",
-    "noResults": "لا توجد نتائج",
-    "results": "نتائج",
-    "of": "من",
-    "total": "الإجمالي",
-    "refresh": "تحديث",
-    "unsupportedType": "نوع استعلام غير مدعوم",
-    "queryError": "خطأ في الاستعلام",
-    "queryFailed": "فشل الاستعلام",
-    "file": "ملف"
-  },
   "templates": {
     "pickerTitle": "إدراج قالب",
     "searchTemplates": "البحث في القوالب...",
