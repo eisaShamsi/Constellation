@@ -2396,14 +2396,117 @@ pub(crate) fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
     None
 }
 
-/// MIG-003 Step 1 — Add the UNIQUE index on `note_meta.cid_cn` after
-/// the backfill has populated every row. Idempotent — `IF NOT EXISTS`
-/// makes re-running safe across boots.
+/// MIG-003 Step 1 — the UNIQUE index on `note_meta.cid_cn`.
+///
+/// 2026-07-05 (Boss-directed fix, reproduced red→green): the index is
+/// PARTIAL — `WHERE cid_cn != ''`. `index_note` stores `''` for any note
+/// whose frontmatter lacks a cid (externally-created notes get theirs only
+/// LAZILY, at first open, via `ensure_cid_cn_cmd` in `openNoteTab`). Under
+/// the old FULL unique index the SECOND such note's upsert failed with
+/// SQLITE_CONSTRAINT_UNIQUE — `ON CONFLICT(path)` does not absorb a cid_cn
+/// violation — leaving the note invisible to search until it was opened.
+/// `''` is a sentinel, not an identity; uniqueness is only meaningful for
+/// real cids. Idempotent + self-migrating: a legacy FULL variant (every DB
+/// stamped before this fix) is detected via its DDL and rebuilt partial.
+/// NOTE for future cid lookups: a parameterized `WHERE cid_cn = ?` must add
+/// `AND cid_cn != ''` for the planner to use this partial index.
 fn ensure_note_meta_mig003_unique_index(conn: &Connection) -> rusqlite::Result<()> {
+    let existing_sql: Option<String> = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_note_meta_cid_cn'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    if let Some(sql) = &existing_sql {
+        if !sql.to_lowercase().contains("where") {
+            conn.execute_batch("DROP INDEX idx_note_meta_cid_cn;")?;
+        }
+    }
     conn.execute_batch(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_note_meta_cid_cn ON note_meta(cid_cn);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_note_meta_cid_cn \
+         ON note_meta(cid_cn) WHERE cid_cn != '';",
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests_cid_cn_unique_collision {
+    //! 2026-07-05 Boss-directed reproduction: externally-created notes index
+    //! with cid_cn='' (the lazy injection happens only at first OPEN via
+    //! ensure_cid_cn_cmd); the SECOND such note must not be rejected by the
+    //! cid_cn unique index — index_note's upsert only absorbs path conflicts.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn minimal_note_meta(conn: &Connection) {
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                cid_cn TEXT NOT NULL DEFAULT ''
+             );",
+        )
+        .unwrap();
+    }
+
+    /// The exact conflict shape index_note uses: ON CONFLICT(path) ONLY —
+    /// a cid_cn uniqueness violation is NOT absorbed and errors the upsert.
+    fn upsert(conn: &Connection, path: &str, cid: &str) -> rusqlite::Result<usize> {
+        conn.execute(
+            "INSERT INTO note_meta (path, name, cid_cn) VALUES (?1, ?2, ?3)
+             ON CONFLICT(path) DO UPDATE SET name = excluded.name, cid_cn = excluded.cid_cn",
+            rusqlite::params![path, "n", cid],
+        )
+    }
+
+    #[test]
+    fn second_external_cid_less_note_indexes_fine() {
+        let conn = Connection::open_in_memory().unwrap();
+        minimal_note_meta(&conn);
+        ensure_note_meta_mig003_unique_index(&conn).unwrap();
+        upsert(&conn, "a.md", "").expect("first cid-less note");
+        upsert(&conn, "b.md", "").expect(
+            "second cid-less note must index — '' is a sentinel, not an identity \
+             (the pre-fix FULL unique index rejected it: SQLITE_CONSTRAINT_UNIQUE)",
+        );
+    }
+
+    #[test]
+    fn real_cid_uniqueness_still_enforced() {
+        let conn = Connection::open_in_memory().unwrap();
+        minimal_note_meta(&conn);
+        ensure_note_meta_mig003_unique_index(&conn).unwrap();
+        upsert(&conn, "a.md", "20260101T000000Z_NOTE_AAAA").unwrap();
+        let dup = upsert(&conn, "b.md", "20260101T000000Z_NOTE_AAAA");
+        assert!(dup.is_err(), "duplicate REAL cids must still violate uniqueness");
+    }
+
+    #[test]
+    fn legacy_full_index_migrates_to_partial() {
+        let conn = Connection::open_in_memory().unwrap();
+        minimal_note_meta(&conn);
+        // Seed the LEGACY (pre-fix) full unique index, as every stamped DB has.
+        conn.execute_batch(
+            "CREATE UNIQUE INDEX idx_note_meta_cid_cn ON note_meta(cid_cn);",
+        )
+        .unwrap();
+        ensure_note_meta_mig003_unique_index(&conn).unwrap();
+        let sql: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_note_meta_cid_cn'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(
+            sql.to_lowercase().contains("where"),
+            "the legacy FULL index must be upgraded to the partial form, got: {}",
+            sql
+        );
+        upsert(&conn, "a.md", "").unwrap();
+        upsert(&conn, "b.md", "").expect("post-migration, two '' rows coexist");
+    }
 }
 
 /// MIG-002: ensure `sky_nodes` has the `enrichment_dirty` column plus
@@ -2976,6 +3079,12 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             NOTE_META_SCHEMA_VERSION,
         ));
     }
+    // 2026-07-05 cid_cn-collision fix — run UNCONDITIONALLY (idempotent, one
+    // sqlite_master read): every DB stamped before the fix carries the legacy
+    // FULL unique index and never re-enters the backfill branch above; this
+    // call is what migrates it to the partial form (WHERE cid_cn != '').
+    ensure_note_meta_mig003_unique_index(&conn)
+        .map_err(|e| format!("Failed to ensure partial cid_cn unique index: {}", e))?;
 
     // MIG-021 §1A — Sources subsystem schema. Idempotent ALTER for the
     // `sources` column on `note_meta` + `CREATE TABLE IF NOT EXISTS`
@@ -5357,11 +5466,13 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         .cloned()
         .unwrap_or_else(|| file_stem.clone());
 
-    // MIG-003 Step 3: cid_cn from frontmatter — already injected by
-    // canonical::ensure_cid_cn during note creation. Falls back to ''
-    // (the schema default) for any legacy file that escaped the
-    // backfill; the boot-time soft re-backfill in init_db will repair
-    // such rows on the next launch.
+    // MIG-003 Step 3: cid_cn from frontmatter — injected by
+    // canonical::ensure_cid_cn at note creation. Falls back to '' for any
+    // file that lacks it — notably notes created EXTERNALLY (e.g. Obsidian
+    // on a linked library) after the one-time backfill stamped; their cid
+    // is injected lazily at first OPEN (ensure_cid_cn_cmd in openNoteTab).
+    // Multiple '' rows are legal: the cid_cn unique index is PARTIAL
+    // (WHERE cid_cn != '' — the 2026-07-05 collision fix).
     let cid_cn = properties.get("cid_cn")
         .cloned()
         .unwrap_or_default();
