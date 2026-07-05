@@ -3205,6 +3205,9 @@
     "buildNowTitle": "Berechnet im Hintergrund für jede Notiz ohne Zusammenfassung eine. Fortschritt in der Statusleiste; jederzeit abbrechbar."
   },
   "lensBlock": {
+    "colLibrary": "Bibliothek",
+    "colModified": "Geändert",
+    "colTags": "Tags",
     "loading": "Linse wird geladen…",
     "errorLabel": "Linsenfehler",
     "empty": "Keine Notizen entsprechen dieser Linse.",

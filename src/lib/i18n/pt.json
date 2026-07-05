@@ -3205,6 +3205,9 @@
     "buildNowTitle": "Pré-calcula um resumo para cada nota que não tem um. Executa em segundo plano; o progresso aparece na barra de status; pode cancelar a qualquer momento."
   },
   "lensBlock": {
+    "colLibrary": "Biblioteca",
+    "colModified": "Modificado",
+    "colTags": "Etiquetas",
     "loading": "Carregando lente…",
     "errorLabel": "Erro de lente",
     "empty": "Nenhuma nota corresponde a esta lente.",

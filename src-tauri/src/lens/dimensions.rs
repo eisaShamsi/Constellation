@@ -15,8 +15,11 @@
 //! | `note.headline`       | Text      | no       | no         | `note_summaries.headline` via LEFT JOIN |
 //! | `note.outgoing_count` | Number    | yes      | no         | `note_meta.outgoing_count` (MIG-066 §A) |
 //! | `note.link_types`     | Text      | yes      | no         | `note_meta.outgoing_link_types` (§A)    |
+//! | `note.library`        | Text      | yes      | yes        | `note_meta.library_name` (MIG-090 §1)   |
+//! | `note.modified`       | Timestamp | yes      | yes        | `note_meta.modified` (MIG-090 §1)       |
+//! | `note.tags`           | List      | no       | no         | `note_meta.tags_json` (MIG-090 §1)      |
 //!
-//! Filter ops for `note.created_at`: `after` / `before` / `between` / `within`.
+//! Filter ops for `note.created_at` / `note.modified`: `after` / `before` / `between` / `within`.
 
 /// The kind of value a dimension yields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,6 +137,39 @@ const REGISTRY: &[DimensionDef] = &[
         sql_expression: "note_meta.outgoing_link_types",
         requires_join: None,
         sortable: true,
+        filterable: false,
+        filter_ops: &[],
+    },
+    // ─── MIG-090 §1 — the All-Notes Base columns ───
+    // Plain note_meta column reads (Rule 8): the working-set list needs the
+    // note's home library, its last-touch time, and its tags.
+    DimensionDef {
+        name: "note.library",
+        kind: DimensionKind::Text,
+        sql_expression: "note_meta.library_name",
+        requires_join: None,
+        sortable: true,
+        filterable: true,
+        filter_ops: &["is", "is_not", "contains", "does_not_contain", "is_empty", "is_not_empty"],
+    },
+    DimensionDef {
+        name: "note.modified",
+        kind: DimensionKind::Timestamp,
+        sql_expression: "note_meta.modified",
+        requires_join: None,
+        sortable: true,
+        filterable: true,
+        filter_ops: &["after", "before", "between", "within"],
+    },
+    DimensionDef {
+        name: "note.tags",
+        kind: DimensionKind::List,
+        sql_expression: "note_meta.tags_json",
+        requires_join: None,
+        // v1: not sortable (ordering by a JSON array string is noise —
+        // Form-Aligns-To-Purpose) and not filterable (exact-tag matching
+        // needs a custom `tags_json LIKE '%\"?\"%'` op — deferred).
+        sortable: false,
         filterable: false,
         filter_ops: &[],
     },
@@ -281,13 +317,39 @@ mod tests {
     #[test]
     fn dimension_registry_includes_v1_plus_links_dimensions() {
         let names = dimension_names();
-        assert_eq!(names.len(), 6, "registry = 4 MIG-055 v1 dims + 2 MIG-066 Living-Links dims");
+        assert_eq!(names.len(), 9, "registry = 4 MIG-055 v1 dims + 2 MIG-066 Living-Links dims + 3 MIG-090 All-Notes dims");
         assert!(names.contains(&"note.name"));
         assert!(names.contains(&"note.path"));
         assert!(names.contains(&"note.created_at"));
         assert!(names.contains(&"note.headline"));
         assert!(names.contains(&"note.outgoing_count"));
         assert!(names.contains(&"note.link_types"));
+        assert!(names.contains(&"note.library"));
+        assert!(names.contains(&"note.modified"));
+        assert!(names.contains(&"note.tags"));
+    }
+
+    #[test]
+    fn all_notes_dimensions_read_note_meta_columns() {
+        // MIG-090 §1 — plain note_meta column reads (Rule 8), no JOIN.
+        let l = lookup_dimension("note.library").expect("note.library registered");
+        assert_eq!(l.kind, DimensionKind::Text);
+        assert_eq!(l.sql_expression, "note_meta.library_name");
+        assert!(l.requires_join.is_none());
+        assert!(l.sortable && l.filterable);
+
+        let m = lookup_dimension("note.modified").expect("note.modified registered");
+        assert_eq!(m.kind, DimensionKind::Timestamp);
+        assert_eq!(m.sql_expression, "note_meta.modified");
+        assert!(m.requires_join.is_none());
+        assert!(m.sortable && m.filterable);
+        assert_eq!(m.filter_ops, &["after", "before", "between", "within"]);
+
+        let t = lookup_dimension("note.tags").expect("note.tags registered");
+        assert_eq!(t.kind, DimensionKind::List);
+        assert_eq!(t.sql_expression, "note_meta.tags_json");
+        assert!(t.requires_join.is_none());
+        assert!(!t.sortable && !t.filterable);
     }
 
     #[test]
@@ -393,6 +455,7 @@ mod tests {
             vec![
                 "note.name", "note.path", "note.created_at", "note.headline",
                 "note.outgoing_count", "note.link_types",
+                "note.library", "note.modified", "note.tags",
             ]
         );
     }

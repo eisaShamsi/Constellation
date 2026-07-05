@@ -61,6 +61,10 @@ const REGISTERED_LABELS: Record<string, { key: string; en: string }> = {
 	// across all 15 locales in §F; the English fallback shows until then.
 	'note.outgoing_count': { key: 'lensBlock.colOutgoingCount', en: 'Outgoing links' },
 	'note.link_types': { key: 'lensBlock.colLinkTypes', en: 'Link types' },
+	// MIG-090 §1 — the All-Notes Base columns.
+	'note.library': { key: 'lensBlock.colLibrary', en: 'Library' },
+	'note.modified': { key: 'lensBlock.colModified', en: 'Modified' },
+	'note.tags': { key: 'lensBlock.colTags', en: 'Tags' },
 };
 
 /**
@@ -87,14 +91,19 @@ export const ADDABLE_REGISTERED_DIMS: readonly string[] = [
 	// NON_SORTABLE_REGISTERED); link_types' sort becomes rank-aware in §D.
 	'note.outgoing_count',
 	'note.link_types',
+	// MIG-090 §1 — the All-Notes Base columns.
+	'note.library',
+	'note.modified',
+	'note.tags',
 ];
 
 /** Registered dimensions that are NOT sortable in v1 (mirrors `dimensions.rs`:
- *  `note.path` = arbitrary strings, `note.headline` = JOIN-sourced display-only).
+ *  `note.path` = arbitrary strings, `note.headline` = JOIN-sourced display-only,
+ *  `note.tags` = a JSON array string — ordering it is noise).
  *  Everything else — `note.name`, `note.created_at`, and every `prop.<key>`
  *  frontmatter column — is sortable. Used by the §G.2 click-header sort to
  *  decide which headers respond. */
-const NON_SORTABLE_REGISTERED = new Set(['note.path', 'note.headline']);
+const NON_SORTABLE_REGISTERED = new Set(['note.path', 'note.headline', 'note.tags']);
 
 /** Whether a column dimension can be sorted (click-header / multi-sort). */
 export function isSortable(dim: string): boolean {
@@ -138,7 +147,7 @@ export function columnLabel(dim: string, translate: (key: string) => string): st
 export function renderCellValue(val: DimensionValue | undefined, dim: string): string {
 	if (val === null || val === undefined) return '';
 	if (typeof val === 'number') {
-		if (dim === 'note.created_at') {
+		if (dim === 'note.created_at' || dim === 'note.modified') {
 			try {
 				return new Date(val * 1000).toLocaleDateString();
 			} catch {
@@ -148,5 +157,13 @@ export function renderCellValue(val: DimensionValue | undefined, dim: string): s
 		return String(val);
 	}
 	if (typeof val === 'boolean') return val ? '✓' : '';
+	// MIG-090 §1 — `note.tags` arrives as the raw tags_json array string;
+	// render as a separator-joined tag list (empty array → empty cell).
+	if (dim === 'note.tags') {
+		try {
+			const arr = JSON.parse(val as string);
+			if (Array.isArray(arr)) return arr.join(' · ');
+		} catch { /* fall through to the raw string */ }
+	}
 	return String(val);
 }

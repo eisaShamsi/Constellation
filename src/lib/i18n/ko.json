@@ -3205,6 +3205,9 @@
     "buildNowTitle": "요약이 없는 각 노트의 요약을 미리 계산합니다. 백그라운드에서 실행되며 진행 상황은 상태 표시줄에 표시되고 언제든지 취소할 수 있습니다."
   },
   "lensBlock": {
+    "colLibrary": "라이브러리",
+    "colModified": "수정됨",
+    "colTags": "태그",
     "loading": "렌즈 로딩 중…",
     "errorLabel": "렌즈 오류",
     "empty": "이 렌즈에 일치하는 노트가 없습니다.",

@@ -3205,6 +3205,9 @@
     "buildNowTitle": "为每条没有摘要的笔记预先计算摘要。在后台运行；进度显示在状态栏；可随时取消。"
   },
   "lensBlock": {
+    "colLibrary": "库",
+    "colModified": "修改时间",
+    "colTags": "标签",
     "loading": "正在加载视角…",
     "errorLabel": "视角错误",
     "empty": "没有笔记匹配此视角。",

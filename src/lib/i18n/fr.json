@@ -3205,6 +3205,9 @@
     "buildNowTitle": "Précalcule un résumé pour chaque note qui n’en a pas. S’exécute en arrière-plan ; progression dans la barre d’état ; annulable à tout moment."
   },
   "lensBlock": {
+    "colLibrary": "Bibliothèque",
+    "colModified": "Modifié",
+    "colTags": "Étiquettes",
     "loading": "Chargement de la lentille…",
     "errorLabel": "Erreur de lentille",
     "empty": "Aucune note ne correspond à cette lentille.",
