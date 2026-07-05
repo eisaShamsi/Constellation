@@ -528,6 +528,8 @@ pub fn run() {
             bases::convert_base,
             bases::list_workspace_bases,
             bases::create_workspace_base,
+            // MIG-090 §2 — the built-in All-Notes Base (idempotent ensure+path).
+            bases::ensure_all_notes_base,
             bases::save_workspace_base,
             bases::delete_workspace_base,
             // MIG-055 §C — Constellation Base (lens) execute command.

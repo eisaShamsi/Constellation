@@ -226,7 +226,9 @@ export function onSkyViewClick(callback: (node: SkyViewNodeInfo) => void): Promi
 /*  Sidebar mode sync events                                            */
 /* ------------------------------------------------------------------ */
 
-export type SidebarMode = 'tree' | 'list' | 'skyview' | 'digest';
+// MIG-090 §2 — 'list' removed: the Notes-list surface is the All-Notes Base
+// tab now; no window emits or branches on a 'list' sidebar mode anymore.
+export type SidebarMode = 'tree' | 'skyview' | 'digest';
 
 /** Main → Second Screen: sidebar mode changed */
 export async function emitSidebarModeChanged(mode: SidebarMode): Promise<void> {

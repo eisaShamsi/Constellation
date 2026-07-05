@@ -47,3 +47,12 @@ export async function createWorkspaceBase(
 export async function deleteWorkspaceBase(filePath: string): Promise<void> {
 	return await invoke('delete_workspace_base', { filePath });
 }
+
+/**
+ * MIG-090 §2 — the built-in All-Notes Base: create `All Notes.base` (whole
+ * universe, newest first) if missing and return its path. Never overwrites —
+ * the file is the user's artifact once created.
+ */
+export async function ensureAllNotesBase(): Promise<string> {
+	return await invoke('ensure_all_notes_base');
+}

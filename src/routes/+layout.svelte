@@ -48,7 +48,7 @@
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { detectDir, eventToShortcut, isEditableTarget, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
-	import { createBase, listWorkspaceBases, createWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
+	import { createBase, listWorkspaceBases, createWorkspaceBase, deleteWorkspaceBase, ensureAllNotesBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
 	import { listFiveActsNotes, type FiveActsNoteEntry } from '$lib/lens/store';
@@ -57,7 +57,6 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	// MIG-045 Phase 3 — Universe Digest left-dock pane.
 	import DigestPane from '$lib/components/DigestPane.svelte';
-	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
@@ -304,7 +303,9 @@
 		];
 	}
 	// searchMode removed — Search Hub is the single search experience
-	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest'>('tree');
+	// MIG-090 §2 — 'list' removed from the union: the list button now opens the
+	// All-Notes Base tab instead of switching the sidebar mode.
+	let sidebarMode = $state<'tree' | 'skyview' | 'digest'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
 	let activeLensId = $state('');
@@ -4089,6 +4090,21 @@
 		}
 	}
 
+	// MIG-090 §2 — the sidebar "list" button now opens the built-in All-Notes
+	// Base as a center tab (the working-set table over the whole universe).
+	// Replaces the retired NotebookNavigator sidebar mount; the .base file is
+	// created on first use and never overwritten (the user's artifact).
+	async function openAllNotesBase() {
+		try {
+			const path = await ensureAllNotesBase();
+			await openNoteTab(path, activeUniverseName || 'Constellation', '#7c3aed');
+			// Surface the (possibly just-created) base in the sidebar Bases list.
+			workspaceBases = await listWorkspaceBases();
+		} catch (e) {
+			console.error('All Notes base failed:', e);
+		}
+	}
+
 	// MIG-008 §Build.4 — workspace base creation. Opens the shared dialog with
 	// hideLocation (workspace bases always live in the workspace dir, no parent
 	// to pick) and the library multi-select rendered via the extras snippet.
@@ -6149,7 +6165,10 @@
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 					</button>
 					{#if $appSettings.enabledFeatures?.notesNavigator !== false}
-					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
+					<!-- MIG-090 §2 — same button, same flag: opens the All-Notes Base
+					     tab (was: the retired NotebookNavigator sidebar mode + its
+					     450px width-force). -->
+					<button class="mode-tab" onclick={openAllNotesBase} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
 					{/if}
@@ -6175,20 +6194,7 @@
 				</div>
 
 			<div class="sidebar-content">
-				{#if sidebarMode === 'list'}
-					<NotebookNavigator
-						mode="main"
-						{libraryColorMap}
-						initialTags={allLibraryTags}
-						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
-						onFolderSelect={(path) => { skyViewSelectedPath = path; }}
-					/>
-					<!-- MIG-077 B1 PARKED (Boss 2026-06-29): the Notes Navigator RC is disabled
-					     (onNoteContextMenu intentionally NOT passed) because the Navigator is a
-					     separate data domain that doesn't refresh on delete/move/rename — a data
-					     hazard. handleListNoteContextMenu is kept ready to re-wire once the
-					     Navigator is reworked into a display over shared data. -->
-				{:else if sidebarMode === 'skyview'}
+				{#if sidebarMode === 'skyview'}
 					<OrgChart
 						{libraryColorMap}
 						universeName={activeUniverseName}

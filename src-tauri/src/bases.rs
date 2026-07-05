@@ -942,6 +942,49 @@ pub fn create_workspace_base(
     Ok(file_path.to_string_lossy().to_string())
 }
 
+/// MIG-090 §2 — the built-in All-Notes Base: ensure `All Notes.base` exists in
+/// the active universe's workspace bases dir and return its path. Idempotent —
+/// an existing file (user-edited or renamed content) is NEVER overwritten; it
+/// is the user's artifact like any Base (file-over-app). Scope = ALL libraries
+/// (federated cUniverses included — `execute_lens` resolves the whole universe,
+/// the ONE-universe ruling). Columns: name · library · modified · tags ·
+/// outgoing links; newest-modified first.
+#[tauri::command(async)]
+pub fn ensure_all_notes_base(app: tauri::AppHandle) -> Result<String, String> {
+    let dir = workspace_bases_dir(&app)?;
+    let file_path = dir.join("All Notes.base");
+    if file_path.exists() {
+        return Ok(file_path.to_string_lossy().to_string());
+    }
+    let def = LensDefinition {
+        schema: 1,
+        lens: "All Notes".to_string(),
+        template: None,
+        scope: LensScope {
+            libraries: LibrariesSelector::All,
+            federation: FederationMode::Auto,
+        },
+        where_clauses: vec![],
+        order: vec![LensSort {
+            dimension: "note.modified".to_string(),
+            direction: SortDirection::Desc,
+        }],
+        columns: vec![
+            LensColumn { dimension: "note.name".to_string() },
+            LensColumn { dimension: "note.library".to_string() },
+            LensColumn { dimension: "note.modified".to_string() },
+            LensColumn { dimension: "note.tags".to_string() },
+            LensColumn { dimension: "note.outgoing_count".to_string() },
+        ],
+        view: LensView::Table,
+    };
+    let content =
+        serde_yaml::to_string(&def).map_err(|e| format!("Failed to serialize base: {}", e))?;
+    fs::write(&file_path, &content)
+        .map_err(|e| format!("Failed to create All Notes base: {}", e))?;
+    Ok(file_path.to_string_lossy().to_string())
+}
+
 #[tauri::command]
 pub fn save_workspace_base(
     app: tauri::AppHandle,
