@@ -193,6 +193,15 @@ Whole-entity map returned (40 canon + 42 live surfaces; overlap ledgers: tags ×
 ### MIG-091 §A BUILT (`6112f62b`) — filter box + created/size sort
 - Rust: `FileEntry` += `created` + `size` (same metadata read; size None for dirs). Sort cycle → 8 states (name/modified/created/size × asc/desc); tooltips + i18n ×15. Filter: name-only `filterEntries` (prunes loaded trees, keeps ancestor folders; matched folder keeps subtree) + FileTree `forceExpand` to reveal matches; `treeFeed()` single-sources hide-system→filter→sort across all 3 mounts. Scoped to loaded/expanded libraries (file-system lane; never content). svelte-check 0 · cargo check green · no write paths. Binary building → **§A Boss test next**.
 
+### §A Boss test PASS + follow-up
+- Test 2 (created/size sort) PASS. Test 1 (filter) PASS but Boss: "even the collapsed libraries should be searchable." Shipped (`71a1376a`): typing a filter snapshots expansion, reveals + loads ALL libraries (parallel read_library_tree), match-gates hide no-match libs; clearing restores exact prior expansion (loaded trees stay cached). Boss re-test: PASS.
+
+### §B BUILT (`2737fe45`) - multi-select (no test; interaction only)
+Sticky selection: Ctrl/Cmd-click toggle, Shift-click range over the flattened tree order; plain click still opens/expands. Files AND folders. Accent highlight + inset bar. Escape clears (after overlays). FileTree += selectedPaths+onSelect (recursed; modifier clicks preventDefault so folder details doesn't toggle). 3 mounts wired. svelte-check 0.
+
+### §C BUILT (`61e75deb`) - the batch bar (write paths; harness-gated)
+Bar (tree mode, >=1 selected): count + Move / Add tag / Delete + clear. Each verb LOOPS the existing gated single-item handler over the writable selection - Move->moveItem, Delete->deleteWithSetting (trash, plural confirm x15), Add-tag->addTagToNote (gated open->model / closed->gated-writeNote; NO YAML splice; notes only). Federated cUniverse members EXCLUDED from every write (isFederatedTreePath); buttons disable when nothing writable. refreshAllLoadedTrees + clearTreeSelection after move/delete. svelte-check 0 - content-integrity harness tests/mig-076 28/28 (batch-tag rides the proven model path). Binary building -> §C Boss test next (plan's second stop). Then §D (measure/defer) + retire old Navigator + close-out.
+
 ## MIG-090 Workbench v1 build cascade — §1–§9 BUILT (SUPERSEDED by the correction above; flag-off, inert; → Collections repurpose) (commits `bca2c808` → `dbd08d18`, pushed)
 - **§1** (`bca2c808`): `read/save_universe_workbench` (bookmarks-pattern clone), workbench.json in ensure-on-init ×2 + files_to_move; registered. cargo check ✓.
 - **§2** (`64252f29`): `workbench.rs::workbench_hydrate` — ONE read-only `(async)` batched lookup: cid keys (WITH `AND cid_cn != ''` per the fresh partial-index rule) + path keys → note_meta ⋈ review_schedule; the Reviewer's exact due predicate; honest empties unstamped; missing-by-omission; cap 512. 2 tests.
