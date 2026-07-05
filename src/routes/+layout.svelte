@@ -5318,6 +5318,57 @@
 		actions.addToCollection = (_t, setId) => addToCollection(setId, item);
 		actions.createCollectionAndAdd = () => { const id = createCollection('New collection'); addToCollection(id, item); };
 	}
+	// MIG-092 — right-click a sidebar Bookmarks (Starred) row → the note menu
+	// (Open / Reveal / Remove bookmark / Add to collection / Copy). Previously the
+	// rows had no handler, so the browser's default menu showed (Boss finding).
+	function handleBookmarkContextMenu(it: { type?: string; path: string; name?: string }, e: MouseEvent) {
+		e.preventDefault();
+		const displayName = it.name ?? it.path;
+		const isMd = it.path.toLowerCase().endsWith('.md');
+		const kind: NodeKind = it.type === 'folder' ? 'folder' : 'note';
+		const target: ContextTarget = { kind, path: it.path, name: displayName, isMarkdown: isMd, bookmarked: true };
+		const actions: ContextActions = {};
+		if (kind === 'folder') {
+			actions.revealInTree = () => { revealInTree(it.path); };
+			actions.bookmark = () => toggleBookmarkPath('folder', it.path, displayName);
+			actions.copyPath = () => navigator.clipboard.writeText(it.path).catch(() => {});
+		} else {
+			actions.open = () => handleNoteClick(it.path, displayName, undefined);
+			actions.openInNewTab = () => {
+				const lib = $libraryStats.find(l => it.path.startsWith(l.path));
+				if (lib) openNoteTab(it.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true);
+			};
+			actions.revealInTree = () => { revealInTree(it.path); };
+			actions.bookmark = () => toggleBookmarkPath('note', it.path, displayName);
+			actions.copyPath = () => navigator.clipboard.writeText(it.path).catch(() => {});
+			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
+			wireCollectionPickup(actions, it.path, displayName);
+		}
+		listCtxMenu = { x: e.clientX, y: e.clientY, items: buildContextMenu(target, actions) };
+	}
+	// MIG-092 — a bookmark's location shown on the right of its row: the
+	// breadcrumb "cUniverse / library / folder…" (cUniverse only when the note's
+	// library is federated; folders appended after the library). Empty when the
+	// path resolves to no library (e.g. a saved-search bookmark).
+	function bookmarkLocation(path: string): string {
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+		const fp = path.replace(/\\/g, '/');
+		const np = norm(path);
+		let lib: (typeof $libraryStats)[number] | null = null;
+		for (const l of $libraryStats) {
+			if (np.startsWith(norm(l.path)) && (!lib || l.path.length > lib.path.length)) lib = l;
+		}
+		if (!lib) return '';
+		const segs: string[] = [];
+		const cu = childUniverses.find(c => childUniverseLibPaths.get(c.path)?.has(norm(lib!.path)));
+		if (cu) segs.push(cu.name);
+		segs.push(lib.name);
+		const rel = fp.slice(lib.path.replace(/\\/g, '/').length).replace(/^\/+/, '');
+		const parts = rel.split('/');
+		parts.pop(); // drop the note/folder filename — show its container
+		for (const p of parts) if (p) segs.push(p);
+		return segs.join(' / ');
+	}
 
 	function getContextMenuItems(entry: FileEntry, libraryId: string, isLibraryRoot = false) {
 		// Workspace bases keep their simplified menu (just Delete).
@@ -6458,9 +6509,10 @@
 					{#if starredItems.length > 0}
 						<div class="section-label">{$t('sidebar.bookmarks')}</div>
 						{#each starredItems as it}
-							<button class="s-result" onclick={(e) => handleNoteClick(it.path, it.name ?? it.path, undefined, e)}>
-								<div class="s-name">⭐ {it.name ?? it.path}</div>
-								<div class="s-meta"><span class="s-lib-name">{it.libraryName ?? ''}</span></div>
+							{@const loc = bookmarkLocation(it.path)}
+							<button class="s-bookmark" title={loc} onclick={(e) => handleNoteClick(it.path, it.name ?? it.path, undefined, e)} oncontextmenu={(e) => handleBookmarkContextMenu(it, e)}>
+								<span class="s-bm-name" dir="auto">⭐ {it.name ?? it.path}</span>
+								{#if loc}<span class="s-bm-loc" dir="auto">{loc}</span>{/if}
 							</button>
 						{/each}
 					{/if}
@@ -8969,9 +9021,22 @@
 	}
 	.s-result:hover { background: var(--bg-hover); }
 	.s-result.active { background: var(--accent-bg); }
-	.s-name { font-size: 0.82rem; font-weight: 500; }
-	.s-meta { display: flex; gap: 4px; font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
-	.s-lib-name { color: var(--accent); flex-shrink: 0; }
+	/* MIG-092 — bookmark row: name on the start side, cUniverse/library/folder on
+	   the end side (a flat list, no repeated library sub-label). */
+	.s-bookmark {
+		display: flex; align-items: baseline; gap: 8px; width: 100%;
+		padding: 4px 12px; background: none; border: none; color: var(--text);
+		font-family: inherit; cursor: pointer; text-align: start;
+	}
+	.s-bookmark:hover { background: var(--bg-hover); }
+	.s-bm-name {
+		flex: 1 1 auto; min-width: 0; font-size: 0.82rem; font-weight: 500;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.s-bm-loc {
+		flex: 0 1 auto; max-width: 48%; font-size: 0.7rem; color: var(--text-muted);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-result-top { display: flex; align-items: center; gap: 4px; }
 	.s-result.s-selected { background: var(--bg-hover); outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
