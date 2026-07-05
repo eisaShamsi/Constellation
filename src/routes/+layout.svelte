@@ -28,6 +28,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
+		loadWorkbench, migrateWorkbenchPath,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
@@ -2469,6 +2470,12 @@
 				loadLibraries().catch(() => {}),
 			]);
 		}
+
+		// MIG-090 §3 — the Workbench's working sets: fire-and-forget, OFF the
+		// boot critical path (membership only; hydration happens at first desk
+		// open). Runs on both the bundle and fallback paths + every universe
+		// switch (this initializer re-runs per switch).
+		loadWorkbench().catch(() => {});
 
 		librariesLoaded = true;
 		performance.mark('boot:libraries-loaded');
@@ -5686,6 +5693,10 @@
 			if (aliasNext) notePathToAliases = aliasNext;
 			const linkCountNext = migratePathKeyedMap(searchLinkCounts, oldPath, effectivePath);
 			if (linkCountNext) searchLinkCounts = linkCountNext;
+			// MIG-090 §3 — path-keyed Workbench membership + display caches
+			// follow in-app renames/moves (cid-keyed items self-heal via
+			// hydration; this covers notes that have no cid yet).
+			migrateWorkbenchPath(oldPath, effectivePath);
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
 				const willCascade = $appSettings.autoUpdateLinks && !isDir;

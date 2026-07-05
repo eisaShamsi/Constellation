@@ -951,6 +951,145 @@ export async function loadBookmarks() {
 	} catch { /* ignore */ }
 }
 
+// ─── MIG-090 — the Workbench (working sets) ───
+// Membership ONLY lives here (the MIG-077 B1 stale-snapshot cure): every
+// displayed fact is re-read from the index via workbench_hydrate. Items are
+// added path-keyed (callers only have a path) and SELF-UPGRADE to cid-keyed
+// on first hydration (adoptWorkbenchCids) — cid_cn survives renames AND
+// folder moves; adding a note NEVER writes its file. The schema nests sets[]
+// from day one so multiple named sets (v2) need no file migration; v1
+// operates on the single default set.
+
+export interface WorkbenchItem {
+	/** The stable canonical id once known — membership survives renames/moves. */
+	cid?: string;
+	/** Display path; the membership key ONLY while the note has no cid. */
+	path: string;
+	addedAt: number;
+	done?: boolean;
+}
+export interface WorkbenchSet {
+	id: string;
+	name: string;
+	created: number;
+	items: WorkbenchItem[];
+}
+
+export const workbenchSets = writable<WorkbenchSet[]>([]);
+export const WORKBENCH_ITEM_CAP = 100;
+
+function workbenchDefaultSet(list: WorkbenchSet[]): WorkbenchSet[] {
+	if (list.length > 0) return list;
+	return [{ id: `ws_${Date.now()}`, name: 'Desk', created: Date.now(), items: [] }];
+}
+
+/** The item's membership identity: cid when known, else its path. */
+export function workbenchKey(item: WorkbenchItem): string {
+	return item.cid || item.path;
+}
+
+/** Add a note to the (default) working set. Dedupes by path OR cid; capped. */
+export function addToWorkbench(path: string): boolean {
+	let added = false;
+	workbenchSets.update(list => {
+		const sets = workbenchDefaultSet(list);
+		const set = sets[0];
+		if (set.items.some(i => i.path === path)) return sets;
+		if (set.items.length >= WORKBENCH_ITEM_CAP) return sets;
+		set.items = [...set.items, { path, addedAt: Date.now() }];
+		added = true;
+		return [...sets];
+	});
+	if (added) saveWorkbench();
+	return added;
+}
+
+export function removeFromWorkbench(key: string) {
+	workbenchSets.update(list => {
+		for (const set of list) set.items = set.items.filter(i => workbenchKey(i) !== key);
+		return [...list];
+	});
+	saveWorkbench();
+}
+
+export function toggleWorkbenchDone(key: string) {
+	workbenchSets.update(list => {
+		for (const set of list) {
+			set.items = set.items.map(i => (workbenchKey(i) === key ? { ...i, done: !i.done } : i));
+		}
+		return [...list];
+	});
+	saveWorkbench();
+}
+
+export function sweepWorkbenchDone() {
+	workbenchSets.update(list => {
+		for (const set of list) set.items = set.items.filter(i => !i.done);
+		return [...list];
+	});
+	saveWorkbench();
+}
+
+export function isOnWorkbench(path: string): boolean {
+	return get(workbenchSets).some(s => s.items.some(i => i.path === path));
+}
+
+/** Hydration returned authoritative rows: adopt cids for path-keyed items
+ *  (the self-upgrade to rename-proof identity) and refresh display paths for
+ *  cid-keyed items whose note moved. Saves only when something changed. */
+export function adoptWorkbenchIdentities(rows: { key: string; path: string; cid_cn: string }[]) {
+	let changed = false;
+	workbenchSets.update(list => {
+		for (const set of list) {
+			set.items = set.items.map(i => {
+				const row = rows.find(r => r.key === workbenchKey(i));
+				if (!row) return i;
+				const cid = row.cid_cn && row.cid_cn !== '' ? row.cid_cn : i.cid;
+				if (i.cid !== cid || i.path !== row.path) {
+					changed = true;
+					return { ...i, cid, path: row.path };
+				}
+				return i;
+			});
+		}
+		return changed ? [...list] : list;
+	});
+	if (changed) saveWorkbench();
+}
+
+/** Rename hook — keeps path-keyed membership + display caches current for
+ *  in-app renames/moves (wired in handleRenameComplete beside the other
+ *  path-keyed migrations). cid-keyed items self-heal via hydration anyway. */
+export function migrateWorkbenchPath(oldPath: string, newPath: string) {
+	let changed = false;
+	workbenchSets.update(list => {
+		for (const set of list) {
+			set.items = set.items.map(i => {
+				if (i.path === oldPath) {
+					changed = true;
+					return { ...i, path: newPath };
+				}
+				return i;
+			});
+		}
+		return changed ? [...list] : list;
+	});
+	if (changed) saveWorkbench();
+}
+
+function saveWorkbench() {
+	invoke('save_universe_workbench', { workbench: get(workbenchSets) }).catch(e =>
+		console.error('[save] workbench failed:', e)
+	);
+}
+
+export async function loadWorkbench() {
+	try {
+		const data = await invoke<unknown[]>('read_universe_workbench');
+		if (data && Array.isArray(data) && data.length > 0) workbenchSets.set(data as WorkbenchSet[]);
+	} catch { /* ignore — empty desk until first save */ }
+}
+
 // ─── Frontmatter parsing ───
 export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string; rawYaml?: string } {
 	const lines = content.split('\n');
