@@ -120,10 +120,15 @@ describe('Sight v6 channel isolation (Plan §14.1)', () => {
 			expect(remapped.length).toBe(def.length);
 
 			// Non-identity traditions actually move stars (otherwise the
-			// tradition's geometric vocabulary is a lie). Aristotelian +
-			// Polanyi are the known identity-remap shapes (Polanyi only
-			// modulates opacity via gradient, not position).
-			const identityIds = new Set(['aristotelian', 'polanyi']);
+			// tradition's geometric vocabulary is a lie). The known
+			// identity-remap shapes:
+			//   - aristotelian — identity today (pivots to pure-radial in the
+			//     MIG-037 Phase 2 split);
+			//   - polanyi — modulates opacity via gradient, not position;
+			//   - time-dome (MIG-037 P1) — NAMES the time-aware default grammar
+			//     as a first-class view; remapStarPosition returns defaultPos by
+			//     design (there is no transform on top of the default).
+			const identityIds = new Set(['aristotelian', 'polanyi', 'time-dome']);
 			if (!identityIds.has(id as string)) {
 				expect(fingerprintXY(remapped)).not.toBe(fingerprintXY(def));
 			}
