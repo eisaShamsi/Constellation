@@ -1,12 +1,17 @@
-//! MIG-090 §2 — the Workbench's hydration read.
+//! MIG-092 §3 — Collections' hydration read (repurposed from the MIG-090
+//! Workbench, `collections_hydrate`).
 //!
-//! ONE batched, read-only lookup for the held working set: membership keys
-//! (cid_cn preferred; path fallback for notes that lack a cid) → the live
+//! ONE batched, read-only lookup for a collection's NOTE members: membership
+//! keys (cid_cn preferred; path fallback for notes that lack a cid) → the live
 //! row facts, all from write-time-maintained indexes (`note_meta` LEFT JOIN
 //! `review_schedule`). Zero filesystem access; O(set size) via the partial
-//! UNIQUE cid index + the path PK. `workbench.json` stores membership ONLY —
+//! UNIQUE cid index + the path PK. `collections.json` stores membership ONLY —
 //! this command is where every displayed fact is re-read on each surface
 //! open / liveness event (the MIG-077 B1 stale-snapshot cure).
+//!
+//! Folder / saved-search members (unified from the former Bookmarks) are NOT
+//! hydrated here — they carry no `note_meta` row; the frontend renders them
+//! from their inline stored facts and never sends them to this command.
 //!
 //! Missing members (a key with no row — the note was deleted externally or
 //! its universe detached) simply return no row; the frontend diffs sent keys
@@ -20,7 +25,7 @@ use tauri::Manager;
 /// the MIG-083 review schema hasn't been stamped yet on this universe — the
 /// same gate the Reviewer itself uses (`review::is_stamped`).
 #[derive(Debug, Clone, Serialize)]
-pub struct WorkbenchRow {
+pub struct CollectionRow {
     /// The key the caller sent for this row (a cid_cn or a path) — lets the
     /// frontend re-associate rows with its membership items directly.
     pub key: String,
@@ -75,7 +80,7 @@ fn query_rows(
     review_stamped: bool,
     today_days: i64,
     today: &str,
-    out: &mut Vec<WorkbenchRow>,
+    out: &mut Vec<CollectionRow>,
 ) -> Result<(), String> {
     if keys.is_empty() {
         return Ok(());
@@ -87,7 +92,7 @@ fn query_rows(
     let sql = hydrate_sql(key_col, &placeholders);
     let mut stmt = conn
         .prepare(&sql)
-        .map_err(|e| format!("workbench_hydrate prepare ({}): {}", key_col, e))?;
+        .map_err(|e| format!("collections_hydrate prepare ({}): {}", key_col, e))?;
     let rows = stmt
         .query_map(rusqlite::params_from_iter(keys.iter()), |r| {
             Ok((
@@ -108,14 +113,14 @@ fn query_rows(
                 r.get::<_, Option<String>>(14)?, // snoozed_until
             ))
         })
-        .map_err(|e| format!("workbench_hydrate query ({}): {}", key_col, e))?;
+        .map_err(|e| format!("collections_hydrate query ({}): {}", key_col, e))?;
 
     for row in rows {
         let (
             key, path, cid_cn, name, library_name, modified, word_count, stage,
             incoming_count, outgoing_count, in_types, out_types, reason, due_days,
             snoozed_until,
-        ) = row.map_err(|e| format!("workbench_hydrate row: {}", e))?;
+        ) = row.map_err(|e| format!("collections_hydrate row: {}", e))?;
         // The Reviewer's exact due predicate (review.rs Lens 1): due_days has
         // arrived AND the note isn't snoozed past today. Honest false when the
         // review schema isn't stamped (rows absent → due_days None anyway).
@@ -123,7 +128,7 @@ fn query_rows(
         let review_due = review_stamped
             && !snoozed
             && matches!(due_days, Some(d) if d <= today_days);
-        out.push(WorkbenchRow {
+        out.push(CollectionRow {
             key,
             path,
             cid_cn,
@@ -144,23 +149,24 @@ fn query_rows(
     Ok(())
 }
 
-/// MIG-090 §2 — hydrate the held working set. `(async)` per the near-universal
-/// rule (touches `state.db`); ms-class (indexed, O(set), capped) so the writer
-/// lock is held only briefly — the same access shape as `get_due_notes`.
-/// Returns whatever resolves; the frontend derives "missing" from the diff.
+/// MIG-092 §3 — hydrate a collection's note members. `(async)` per the
+/// near-universal rule (touches `state.db`); ms-class (indexed, O(set), capped)
+/// so the writer lock is held only briefly — the same access shape as
+/// `get_due_notes`. Returns whatever resolves; the frontend derives "missing"
+/// from the diff. Folder/search members are never sent here.
 #[tauri::command(async)]
-pub fn workbench_hydrate(
+pub fn collections_hydrate(
     app: tauri::AppHandle,
     cids: Vec<String>,
     paths: Vec<String>,
-) -> Result<Vec<WorkbenchRow>, String> {
+) -> Result<Vec<CollectionRow>, String> {
     if cids.len() + paths.len() > 512 {
-        return Err("workbench_hydrate: key cap exceeded (512)".to_string());
+        return Err("collections_hydrate: key cap exceeded (512)".to_string());
     }
     let today = crate::review::today_str();
     let today_days = crate::review::date_to_days(&today);
 
-    let mut out: Vec<WorkbenchRow> = Vec::new();
+    let mut out: Vec<CollectionRow> = Vec::new();
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
