@@ -1,6 +1,6 @@
 # The Navigator — Concept Paper (MIG-090 · Revision 2, concept-led)
 
-**Date:** 2026-07-05 · **Status:** DRAFT — awaiting Boss ratification of the horse and choice of form
+**Date:** 2026-07-05 · **Status:** **RATIFIED (Boss, 2026-07-05)** — the horse ratified verbatim; **Form C (the blend: Workbench + Intent Bar front door)** chosen; the Search boundary confirmed (Search Hub = formulated-query power tool; Navigator = grammar-free intent + the held set); the entity-wide duplication debt filed as its own backlog entry (**PJ-069**, Pending Jobs v1.16). Next: Architect delta → Plan → build.
 **Revision note:** Revision 1 locked the two-pane form on page one. The Boss corrected the order: *"let the concept (the horse) lead the design, not the other way around… easy, simple, yet state-of-the-art, and powerful enough to translate what is in the user's mind… avoid duplication among all Constellation's core plugins/functions. They all should complement each other as a whole entity."* This revision is rebuilt in that order: the whole entity → the gap → the horse → forms derived from it.
 **Inputs:** whole-entity map `wf_1d470cb8-9e8` (40 canon + 42 live surfaces, both overlap ledgers) · frontier research `wf_50227623-e2e` · the Architect diagnosis (§§1–5 remain valid).
 
