@@ -92,6 +92,24 @@ Frontend rebuilt (`npm run build`; "This collection is empty" confirmed in
 covers: sidebar bookmarks survived as Starred; ⭐ round-trip; Collections tab
 create/add-from-search/switch/rename/delete/done/remove; restart persistence.
 
+### Boss test Stage 1 — findings + fixes
+Binary built 20:05; Eisa tested. **Test 3 (create + add from search) PASS. Test 4
+(restart persistence) PASS.** Two findings on the sidebar Bookmarks (now Starred):
+- **Test 1** — the per-row library label repeated (all bookmarks in one library
+  showed "Eisa Test" twice). Ruling: flat list, each row shows its location
+  breadcrumb **cUniverse / library / folder** on the END side. Fixed — commit
+  `b934d91d`: `bookmarkLocation()` (longest-prefix lib + `childUniverseLibPaths`
+  federation lookup + relative folders); removed dead `.s-name/.s-meta/.s-lib-name`.
+- **Test 2** — sidebar bookmark rows had no right-click menu (browser default
+  showed). Fixed — same commit: `handleBookmarkContextMenu` → shared note menu
+  (Open / Open-in-new-tab / Reveal / **Remove bookmark** / Add-to-collection ▸ / Copy).
+Rebuilt frontend + release binary for Stage-1 re-test.
+
+### Side task (Boss-routed) — Sight-v6 test — commit `eb3d34b0`
+`tests/sight-v6/tradition-isolation.test.ts` stale assertion: `time-dome` is a
+THIRD intentional identity remap (MIG-037 P1) omitted from `identityIds`. Added
+it (renderer correct). Full suite now **224/224**.
+
 ### Remaining after Boss validation
 §7 chips (reuse workbenchChips) · §8 liveness · §9b cleanup (dead `showWorkbench` +
 `.workbench-overlay`/`.w-*` CSS + `enabledFeatures.workbench` flag + Settings toggle
