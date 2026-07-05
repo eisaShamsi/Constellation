@@ -182,7 +182,18 @@ Whole-entity map returned (40 canon + 42 live surfaces; overlap ledgers: tags ×
 - **Fix (the non-writing option):** the index is now **PARTIAL** (`WHERE cid_cn != ''`); `''` = sentinel, not identity; **self-migrating** — init_db calls the ensure fn UNCONDITIONALLY (idempotent, one sqlite_master read; a legacy FULL variant detected via DDL is dropped + rebuilt partial on next boot). Real-cid uniqueness unchanged. Stale comment corrected. **Doc-banked rule:** any future parameterized cid lookup needs `AND cid_cn != ''` to use the partial index (binds MIG-090 §2's `workbench_hydrate`).
 - **GREEN:** 3 pinned tests (coexisting `''` rows / real-cid dup still errors / legacy→partial migration); full suite **1010/0**. Pushed.
 
-## MIG-090 Workbench v1 build cascade — §1–§9 BUILT (commits `bca2c808` → `dbd08d18`, pushed)
+## COURSE CORRECTION (Boss, 2026-07-05 evening) — Workbench rejected; File Explorer empowerment
+- Boss, on seeing the Workbench: *"It is nothing but another search engine. Why should I have an additional one? When we are referring to a file tree management system, it should be limited to the file system. It was my mistake to approve such a plan."* → Workbench build STOPPED (flag-off, inert). The Navigator's true answer: **empower the File Explorer** (its keepable file-management muscle moves to the tree; no separate surface, no retrieval/cognition).
+- Assessment delivered (Note Navigator characteristics + File Explorer gaps + recommendation). Boss rulings:
+  1. **Parked Workbench → Collections on Search Hub** (APPROVED): the Intent-Bar-as-search + standalone page get DELETED; the durable-basket machinery (workbench.json + workbench_hydrate + NoteRow primitive) repurposes into "gather search results into a task-scoped basket." Queued.
+  2. **Empower the File Explorer** (APPROVED): MIG-091, /migration.
+  3. **Simple title search** → resolved to NOT a new engine: Ctrl+O (Quick Switcher) already does title search; the ask became "make it FASTER at title retrieval." Queued as a reproduce-first Quick Switcher speed pass.
+- **MIG-091 Architect+Plan** (`docs/MIG-091-Architect-Plan-File-Explorer.md`, `5be3692d`): 4 phases — A filter+sort (additive) · B multi-select (interaction) · C batch bar via gated handlers (write paths, harness) · D virtualize (reproduce-first, likely deferred). Old NotebookNavigator retires after validation. **Boss: "Approved."**
+
+### MIG-091 §A BUILT (`6112f62b`) — filter box + created/size sort
+- Rust: `FileEntry` += `created` + `size` (same metadata read; size None for dirs). Sort cycle → 8 states (name/modified/created/size × asc/desc); tooltips + i18n ×15. Filter: name-only `filterEntries` (prunes loaded trees, keeps ancestor folders; matched folder keeps subtree) + FileTree `forceExpand` to reveal matches; `treeFeed()` single-sources hide-system→filter→sort across all 3 mounts. Scoped to loaded/expanded libraries (file-system lane; never content). svelte-check 0 · cargo check green · no write paths. Binary building → **§A Boss test next**.
+
+## MIG-090 Workbench v1 build cascade — §1–§9 BUILT (SUPERSEDED by the correction above; flag-off, inert; → Collections repurpose) (commits `bca2c808` → `dbd08d18`, pushed)
 - **§1** (`bca2c808`): `read/save_universe_workbench` (bookmarks-pattern clone), workbench.json in ensure-on-init ×2 + files_to_move; registered. cargo check ✓.
 - **§2** (`64252f29`): `workbench.rs::workbench_hydrate` — ONE read-only `(async)` batched lookup: cid keys (WITH `AND cid_cn != ''` per the fresh partial-index rule) + path keys → note_meta ⋈ review_schedule; the Reviewer's exact due predicate; honest empties unstamped; missing-by-omission; cap 512. 2 tests.
 - **§3** (`446bcfbd`): `workbenchSets` store — path-keyed adds that SELF-UPGRADE to cid keys on hydration (`adoptWorkbenchIdentities`); `migrateWorkbenchPath` in the rename cluster; post-paint `loadWorkbench` (both boot paths + switches). svelte-check ✓.
