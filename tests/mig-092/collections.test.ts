@@ -26,7 +26,28 @@ import {
 	adoptIdentities,
 	migratePath,
 	migrateBookmarks,
+	noteHydrationKeys,
+	buildDisplayRows,
+	type HydratedNoteRow,
 } from '$lib/libraries/collectionsLogic';
+
+const hydrated = (over: Partial<HydratedNoteRow> & { key: string }): HydratedNoteRow => ({
+	path: over.key,
+	cid_cn: '',
+	name: over.key,
+	library_name: 'Lib',
+	modified: 0,
+	word_count: 0,
+	stage: null,
+	incoming_count: 0,
+	outgoing_count: 0,
+	incoming_link_types_json: '{}',
+	outgoing_link_types_json: '{}',
+	review_reason: null,
+	review_due: false,
+	snoozed: false,
+	...over,
+});
 
 const NOW = 1_700_000_000_000;
 
@@ -154,5 +175,34 @@ describe('MIG-092 §2 — identity: rename-proof notes, inline folders', () => {
 		const { list: next, changed } = migratePath(list, 'old.md', 'new.md');
 		expect(changed).toBe(true);
 		expect(next.find(c => c.id === 'A')!.items[0].path).toBe('new.md');
+	});
+});
+
+describe('MIG-092 §3 — mixed-member hydration (notes live, folder/search inline)', () => {
+	const items = [
+		{ cid: 'CID_A', path: 'a.md', type: 'note' as const, addedAt: NOW },
+		{ path: 'b.md', type: 'note' as const, addedAt: NOW }, // no cid yet → path key
+		{ path: 'sub', type: 'folder' as const, name: 'sub', libraryName: 'Lib', addedAt: NOW },
+		{ path: '#tag topic', type: 'search' as const, name: '#tag topic', addedAt: NOW },
+	];
+
+	it('noteHydrationKeys sends only note members (cid preferred, else path)', () => {
+		const { cids, paths } = noteHydrationKeys(items);
+		expect(cids).toEqual(['CID_A']);
+		expect(paths).toEqual(['b.md']); // folder/search excluded
+	});
+
+	it('buildDisplayRows merges live note facts, flags missing, and inlines folder/search — order preserved', () => {
+		const rows = [hydrated({ key: 'CID_A', name: 'Alpha', library_name: 'L1', stage: 'growth' })];
+		const display = buildDisplayRows(items, rows);
+		expect(display.map(d => d.type)).toEqual(['note', 'note', 'folder', 'search']);
+		// note a: hydrated live facts
+		expect(display[0]).toMatchObject({ name: 'Alpha', libraryName: 'L1', missing: false });
+		expect(display[0].hydrated?.stage).toBe('growth');
+		// note b: no row returned → missing, falls back to inline path
+		expect(display[1]).toMatchObject({ missing: true, name: 'b.md', hydrated: null });
+		// folder + search: inline name, never missing, never hydrated
+		expect(display[2]).toMatchObject({ name: 'sub', libraryName: 'Lib', missing: false, hydrated: null });
+		expect(display[3]).toMatchObject({ name: '#tag topic', missing: false, hydrated: null });
 	});
 });

@@ -169,3 +169,85 @@ export function migrateBookmarks(
 	}));
 	return { list: [{ id: STARRED_ID, name: 'Starred', created: now, items }, ...list], migrated: true };
 }
+
+// ── Mixed-member hydration (§3) ──
+// Notes carry live facts (re-read from the index); folder / saved-search
+// members carry inline facts and are never hydrated. These pure helpers split
+// the note keys for the `collections_hydrate` command and merge the returned
+// rows back into ordered display rows.
+
+/** The note-fact row returned by the `collections_hydrate` Tauri command. */
+export interface HydratedNoteRow {
+	key: string;
+	path: string;
+	cid_cn: string;
+	name: string;
+	library_name: string;
+	modified: number;
+	word_count: number;
+	stage: string | null;
+	incoming_count: number;
+	outgoing_count: number;
+	incoming_link_types_json: string;
+	outgoing_link_types_json: string;
+	review_reason: string | null;
+	review_due: boolean;
+	snoozed: boolean;
+}
+
+/** One ordered row for display: a note (live or missing) or an inline folder/search. */
+export interface CollectionDisplayRow {
+	key: string;
+	item: CollectionItem;
+	type: CollectionItemType;
+	name: string;
+	libraryName: string;
+	/** A note member with no hydrated row (deleted externally / universe detached). */
+	missing: boolean;
+	hydrated: HydratedNoteRow | null;
+}
+
+/** Split ONLY note members into hydration keys (cid preferred, else path).
+ *  Folder/search members are excluded — they have no note_meta row. */
+export function noteHydrationKeys(items: CollectionItem[]): { cids: string[]; paths: string[] } {
+	const cids: string[] = [];
+	const paths: string[] = [];
+	for (const i of items) {
+		if ((i.type ?? 'note') !== 'note') continue;
+		if (i.cid) cids.push(i.cid);
+		else paths.push(i.path);
+	}
+	return { cids, paths };
+}
+
+/** Merge membership items + hydrated note rows into ordered display rows.
+ *  Note members resolve to live facts (or `missing` when absent); folder/search
+ *  members render from their inline stored facts. Preserves item order. */
+export function buildDisplayRows(items: CollectionItem[], rows: HydratedNoteRow[]): CollectionDisplayRow[] {
+	const byKey = new Map(rows.map(r => [r.key, r]));
+	return items.map(item => {
+		const key = collectionKey(item);
+		const type = item.type ?? 'note';
+		if (type !== 'note') {
+			return {
+				key,
+				item,
+				type,
+				name: item.name ?? item.path,
+				libraryName: item.libraryName ?? '',
+				missing: false,
+				hydrated: null,
+			};
+		}
+		const hydrated = byKey.get(key) ?? null;
+		return {
+			key,
+			item,
+			type,
+			name: hydrated?.name ?? item.name ?? item.path,
+			libraryName: hydrated?.library_name ?? item.libraryName ?? '',
+			missing: !hydrated,
+			hydrated,
+		};
+	});
+}

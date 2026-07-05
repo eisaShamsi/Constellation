@@ -1092,6 +1092,23 @@ export async function loadCollections() {
 	} catch { /* ignore — empty until first save */ }
 }
 
+/** Hydrate a collection's NOTE members' live facts (folder/search members are
+ *  skipped — they render from inline facts). Adopts cids for path-keyed notes
+ *  as a side effect (rename-proof self-upgrade). Empty on any failure. */
+export async function hydrateCollectionNotes(items: CL.CollectionItem[]): Promise<CL.HydratedNoteRow[]> {
+	const { cids, paths } = CL.noteHydrationKeys(items);
+	if (cids.length === 0 && paths.length === 0) return [];
+	try {
+		const rows = await invoke<CL.HydratedNoteRow[]>('collections_hydrate', { cids, paths });
+		if (Array.isArray(rows) && rows.length > 0) {
+			adoptCollectionIdentities(rows.map(r => ({ key: r.key, path: r.path, cid_cn: r.cid_cn })));
+		}
+		return Array.isArray(rows) ? rows : [];
+	} catch {
+		return [];
+	}
+}
+
 // ─── Frontmatter parsing ───
 export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string; rawYaml?: string } {
 	const lines = content.split('\n');
