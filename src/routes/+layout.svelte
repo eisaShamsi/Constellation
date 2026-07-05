@@ -58,7 +58,6 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	// MIG-045 Phase 3 — Universe Digest left-dock pane.
 	import DigestPane from '$lib/components/DigestPane.svelte';
-	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
@@ -306,7 +305,8 @@
 		];
 	}
 	// searchMode removed — Search Hub is the single search experience
-	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest'>('tree');
+	// MIG-091 — 'list' (the retired two-pane Navigator) removed from the union.
+	let sidebarMode = $state<'tree' | 'skyview' | 'digest'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
 	let activeLensId = $state('');
@@ -5366,35 +5366,9 @@
 		return buildContextMenu(target, actions);
 	}
 
-	// MIG-077 B1 — build + show the List-mode note menu. Reuses the same underlying
-	// handlers as the file tree / OrgChart surfaces (rename dialog, move dialog, safe
-	// add-tag dialog, delete confirm, reveal-in-tree, suggest sources) — nothing
-	// reinvented. Deliberately NOT routed through handleOrgNodeMenuAction, whose
-	// open/reveal cases carry OrgChart-only side-effects (showOrgChart /
-	// orgChartReturnPending) that would misfire from the always-present sidebar list.
-	function handleListNoteContextMenu(note: { path: string; name: string }, x: number, y: number) {
-		const displayName = note.name.replace(/\.(md|base)$/, '');
-		const isMd = note.name.toLowerCase().endsWith('.md');
-		const target: ContextTarget = { kind: 'note', path: note.path, name: displayName, isMarkdown: isMd, bookmarked: isBookmarked(note.path) };
-		const lib = $libraryStats.find((l) => note.path.startsWith(l.path));
-		const actions: ContextActions = {
-			open: () => handleNoteClick(note.path, displayName, undefined),
-			openInNewTab: () => { if (lib) openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
-			rename: () => { renameDialog = { path: note.path, name: displayName }; },
-			move: () => openMoveDialog(note.path, displayName),
-			bookmark: () => toggleBookmarkPath('note', note.path, displayName),
-			addTag: () => { tagDialog = { path: note.path, name: displayName }; },
-			copyPath: () => navigator.clipboard.writeText(note.path).catch(() => {}),
-			copyPathRelative: () => copyRelativePath(note.path),
-			copyName: () => navigator.clipboard.writeText(displayName).catch(() => {}),
-			revealInTree: () => revealInTree(note.path),
-			openInDefaultApp: () => { invoke('open_path', { path: note.path }).catch(() => {}); },
-			showInExplorer: () => { invoke('constellation_show_in_folder', { path: note.path }).catch(() => {}); },
-			delete: () => { confirmDelete = { path: note.path, name: note.name }; },
-		};
-		if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(note.path);
-		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
-	}
+	// MIG-091 — handleListNoteContextMenu (the retired two-pane Navigator's row
+	// menu) removed with the Navigator. The empowered File Explorer uses the
+	// file-tree menu (handleContextMenu) + the batch bar.
 
 	// MIG-077 B2 — Search-results right-click. Reuses the same note handlers as the file tree, but the
 	// SAFE, non-destructive subset only: open / open-in-new-tab / reveal / copy / bookmark /
@@ -6398,11 +6372,9 @@
 					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 					</button>
-					{#if $appSettings.enabledFeatures?.notesNavigator !== false}
-					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
-					</button>
-					{/if}
+					<!-- MIG-091 — the old two-pane Notes Navigator ('list' mode) is
+					     RETIRED; its file-management muscle (filter · sort · multi-
+					     select · batch) now lives in the empowered File Explorer above. -->
 					<!-- MIG-045 Phase 3 — Universe Digest mode tab. Reads through the
 					     same summaryStore as every other Phase 1/2 surface; no new IPC. -->
 					<button class="mode-tab" class:active={sidebarMode === 'digest'} onclick={() => { if (sidebarMode !== 'digest') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'digest'; leftSidebarWidth = Math.max(leftSidebarWidth, 360); emitSidebarModeChanged('digest'); } }} title={$t('navigator.digest') || 'Universe Digest'}>
@@ -6446,20 +6418,7 @@
 						{/if}
 					</div>
 				{/if}
-				{#if sidebarMode === 'list'}
-					<NotebookNavigator
-						mode="main"
-						{libraryColorMap}
-						initialTags={allLibraryTags}
-						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
-						onFolderSelect={(path) => { skyViewSelectedPath = path; }}
-					/>
-					<!-- MIG-077 B1 PARKED (Boss 2026-06-29): the Notes Navigator RC is disabled
-					     (onNoteContextMenu intentionally NOT passed) because the Navigator is a
-					     separate data domain that doesn't refresh on delete/move/rename — a data
-					     hazard. handleListNoteContextMenu is kept ready to re-wire once the
-					     Navigator is reworked into a display over shared data. -->
-				{:else if sidebarMode === 'skyview'}
+				{#if sidebarMode === 'skyview'}
 					<OrgChart
 						{libraryColorMap}
 						universeName={activeUniverseName}

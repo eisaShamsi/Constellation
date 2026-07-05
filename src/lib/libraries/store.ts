@@ -2519,10 +2519,8 @@ export async function createNote(folderPath: string, fileName: string, initialFr
 	return newPath;
 }
 
-/** Search notes by property key/value across all libraries */
-export async function searchByProperty(key: string, value: string): Promise<any[]> {
-	return await invoke('search_by_property', { key, value });
-}
+// MIG-091 — searchByProperty removed with the retired Notes Navigator (its
+// sole caller). Property search lives in Search Hub's `properties` category.
 
 /** Build default frontmatter YAML for new notes (auto-dates + user-defined defaults) */
 export function buildDefaultFrontmatter(settings: AppSettings): string {
@@ -3377,21 +3375,9 @@ export async function clearIndexHistory(): Promise<void> {
 	return await invoke('clear_index_history');
 }
 
-// ─── Navigator data ───
-export interface NoteWithMeta {
-	name: string;
-	path: string;
-	modified: number; // epoch ms
-	size: number; // bytes
-	preview: string; // first 200 chars, frontmatter stripped
-	tags: string[];
-	folder: string; // relative folder path within library
-	libraryName?: string; // set by frontend after loading
-}
-
-export async function collectLibraryNotesWithMeta(libraryPath: string): Promise<NoteWithMeta[]> {
-	return await invoke<NoteWithMeta[]>('collect_library_notes_with_metadata', { libraryPath });
-}
+// MIG-091 — NoteWithMeta + collectLibraryNotesWithMeta removed with the retired
+// Notes Navigator (their sole consumer). The empowered File Explorer reads the
+// tree via read_library_tree; note lists elsewhere read the write-time index.
 
 // ─── Graph data ───
 export interface SkyNode {
@@ -4002,7 +3988,6 @@ export interface AppSettings {
 		workspaces: boolean;
 		index: boolean;
 		semanticSearch: boolean;
-		notesNavigator: boolean;
 		/** MIG-090 — the Workbench (Intent Bar + working-set desk). Default OFF until Boss-validated. */
 		workbench: boolean;
 		orgChart: boolean;
@@ -4332,7 +4317,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		workspaces: true,
 		index: true,
 		semanticSearch: false,
-		notesNavigator: true,
 		workbench: false,
 		orgChart: true,
 		aiSkills: true,

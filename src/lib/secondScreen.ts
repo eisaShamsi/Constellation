@@ -226,7 +226,8 @@ export function onSkyViewClick(callback: (node: SkyViewNodeInfo) => void): Promi
 /*  Sidebar mode sync events                                            */
 /* ------------------------------------------------------------------ */
 
-export type SidebarMode = 'tree' | 'list' | 'skyview' | 'digest';
+// MIG-091 — 'list' (the retired two-pane Navigator) removed.
+export type SidebarMode = 'tree' | 'skyview' | 'digest';
 
 /** Main → Second Screen: sidebar mode changed */
 export async function emitSidebarModeChanged(mode: SidebarMode): Promise<void> {

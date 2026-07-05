@@ -194,7 +194,6 @@
 			category: $t('settings.plugins.navigation') || 'Navigation',
 			icon: 'compass',
 			features: [
-				{ id: 'notesNavigator', name: $t('settings.plugins.notesNavigator') || 'Notes Navigator', desc: $t('settings.plugins.notesNavigatorDesc') || 'Browse and filter notes by folder, tag, or property', icon: '📋' },
 				{ id: 'workbench', name: $t('settings.plugins.workbench') || 'Workbench', desc: $t('settings.plugins.workbenchDesc') || 'Ask for notes in your own words and hold a working set while you work it', icon: '🗂️' },
 				{ id: 'quickSwitcher', name: $t('settings.plugins.quickSwitcher') || 'Quick Switcher', desc: $t('settings.plugins.quickSwitcherDesc') || 'Quickly navigate between notes', icon: '⚡' },
 				{ id: 'commandPalette', name: $t('settings.plugins.commandPalette') || 'Command Palette', desc: $t('settings.plugins.commandPaletteDesc') || 'Quick access to all commands', icon: '🎯' },
