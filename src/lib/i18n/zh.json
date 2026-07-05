@@ -3855,5 +3855,9 @@
     "mentions": {
       "other": "{count}处提及"
     }
+  },
+  "embeds": {
+    "notFound": "库中未找到文件",
+    "lookupDetails": "显示查找详情"
   }
 }

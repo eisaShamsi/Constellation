@@ -541,30 +541,30 @@ class UniversalEmbedWidget extends WidgetType {
 	}
 
 	private _renderMissing(wrap: HTMLDivElement, res?: EmbedResolution) {
-		const card = this._card('⚠️', this.target, 'File not found in vault');
+		const card = this._card('⚠️', this.target, get(t)('embeds.notFound') || 'File not found in library');
 		card.classList.add('cm-embed-missing');
 		if (res && (res.tried_paths?.length || res.similar_files?.length)) {
 			const details = document.createElement('details');
 			details.className = 'cm-embed-missing-details';
 			const summary = document.createElement('summary');
-			summary.textContent = 'Show lookup details';
+			summary.textContent = get(t)('embeds.lookupDetails') || 'Show lookup details';
 			details.appendChild(summary);
 			const info = document.createElement('div');
 			info.className = 'cm-embed-missing-info';
 			const af = res.attachment_folder ? `attachmentFolderPath: "${res.attachment_folder}"` : '(.obsidian/app.json not read or empty)';
 			const tried = `Looked for:\n  ${(res.tried_paths ?? []).join('\n  ')}`;
 			const fc = res.vault_file_count ?? 0;
-			const count = `\n\nVault index: ${fc.toLocaleString()} file${fc === 1 ? '' : 's'} scanned`;
+			const count = `\n\nLibrary index: ${fc.toLocaleString()} file${fc === 1 ? '' : 's'} scanned`;
 			const folderListingBlock = res.attachment_folder_listing?.length
 				? `\n\nAttachment folder on disk (${res.attachment_folder_resolved}):\n  ${res.attachment_folder_listing.join('\n  ')}`
 				: res.attachment_folder_resolved
 					? `\n\nAttachment folder on disk (${res.attachment_folder_resolved}): (folder does not exist or is empty)`
 					: '';
 			const similar = res.similar_files?.length
-				? `\n\nSimilar files in vault:\n  ${res.similar_files.join('\n  ')}`
+				? `\n\nSimilar files in library:\n  ${res.similar_files.join('\n  ')}`
 				: fc === 0
-					? '\n\nThe vault index is empty — the library path may not be readable (permission issue) or points to the wrong folder.'
-					: '\n\nNo similar filenames found in the vault — the file may not exist, or it was moved/renamed.';
+					? '\n\nThe library index is empty — the library path may not be readable (permission issue) or points to the wrong folder.'
+					: '\n\nNo similar filenames found in the library — the file may not exist, or it was moved/renamed.';
 			info.textContent = `${af}${count}\n\n${tried}${folderListingBlock}${similar}`;
 			details.appendChild(info);
 			wrap.appendChild(details);

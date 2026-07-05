@@ -4012,5 +4012,9 @@
       "one": "{count} mention",
       "other": "{count} mentions"
     }
+  },
+  "embeds": {
+    "notFound": "File not found in library",
+    "lookupDetails": "Show lookup details"
   }
 }

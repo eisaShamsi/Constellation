@@ -4095,5 +4095,9 @@
       "many": "{count} إشارة",
       "other": "{count} إشارة"
     }
+  },
+  "embeds": {
+    "notFound": "الملف غير موجود في المكتبة",
+    "lookupDetails": "عرض تفاصيل البحث"
   }
 }

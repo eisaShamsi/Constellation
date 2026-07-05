@@ -464,36 +464,13 @@ fn resolve_path(
 
     // 5. Vault-wide filename index (Obsidian's default — finds the file regardless
     //    of how deeply it's nested). Rebuild on miss so newly-added files are seen.
-    //    Try the target under both the original lowercased form AND the
-    //    digit-normalized form — the index stores both forms for files whose
-    //    names contain any non-ASCII digits.
     if !target.contains('/') && !target.contains('\\') {
-        let key = target.to_lowercase();
-        let normalized_key = normalize_digits(&key);
-        let try_keys: Vec<&str> = if normalized_key != key { vec![&key, &normalized_key] } else { vec![&key] };
-
-        let lookup = |index: &HashMap<String, PathBuf>| -> Option<PathBuf> {
-            for k in &try_keys {
-                if let Some(p) = index.get(*k) { if p.is_file() { return Some(p.clone()); } }
-            }
-            // Transclusion without .md extension
-            if Path::new(target).extension().is_none() {
-                for k in &try_keys {
-                    let k_md = format!("{}.md", k);
-                    if let Some(p) = index.get(&k_md) { if p.is_file() { return Some(p.clone()); } }
-                }
-            }
-            None
-        };
-
-        let index = get_or_build_vault_index(library_path);
-        if let Some(p) = lookup(&index) {
+        if let Some(p) = lookup_in_library_index(library_path, target) {
             return ResolutionResult { matched: Some(p), tried };
         }
         // Miss — force a fresh index and retry (handles files added since last scan)
         invalidate_vault_index(library_path);
-        let index = get_or_build_vault_index(library_path);
-        if let Some(p) = lookup(&index) {
+        if let Some(p) = lookup_in_library_index(library_path, target) {
             return ResolutionResult { matched: Some(p), tried };
         }
     }
@@ -506,12 +483,36 @@ fn resolve_path(
     ResolutionResult { matched: None, tried }
 }
 
+/// Look a bare `![[target]]` filename up in one library's cached index —
+/// both the original lowercased key AND the digit-normalized key (the index
+/// stores both forms for names containing non-ASCII digits), with the `.md`
+/// fallback for extensionless note transclusions. Cache-through: builds the
+/// index on first use (BUILD_LOCK single-flight).
+fn lookup_in_library_index(library_path: &str, target: &str) -> Option<PathBuf> {
+    let key = target.to_lowercase();
+    let normalized_key = normalize_digits(&key);
+    let try_keys: Vec<&str> = if normalized_key != key { vec![&key, &normalized_key] } else { vec![&key] };
+    let index = get_or_build_vault_index(library_path);
+    for k in &try_keys {
+        if let Some(p) = index.get(*k) { if p.is_file() { return Some(p.clone()); } }
+    }
+    // Transclusion without .md extension
+    if Path::new(target).extension().is_none() {
+        for k in &try_keys {
+            let k_md = format!("{}.md", k);
+            if let Some(p) = index.get(&k_md) { if p.is_file() { return Some(p.clone()); } }
+        }
+    }
+    None
+}
+
 /// Main entry point. Resolves an embed target to a URL the frontend can render.
 // App-freeze audit Batch-W (2026-07-04): `(async)` — a cold/invalidated call
 // walks the whole library (get_or_build_vault_index); BUILD_LOCK above keeps
 // concurrent cold embeds to one walk.
 #[tauri::command(async)]
 pub fn resolve_embed(
+    app: tauri::AppHandle,
     library_path: String,
     note_path: String,
     target: String,
@@ -520,7 +521,21 @@ pub fn resolve_embed(
     let cfg = read_vault_config(Path::new(&library_path));
 
     let res = resolve_path(&library_path, &note_path, &parsed.path, &cfg);
-    let Some(abs) = res.matched else {
+    let mut matched = res.matched;
+    // Cross-library fallback (Boss-found 2026-07-05): the `![[` picker offers
+    // notes from EVERY registered library — mirroring wikilink resolution —
+    // so a bare target that misses in the note's own library is looked up in
+    // the other libraries' indexes before being declared missing.
+    if matched.is_none() && !parsed.path.contains('/') && !parsed.path.contains('\\') {
+        for lib in crate::libraries::load_all_libraries(&app) {
+            if lib.path == library_path { continue; }
+            if let Some(p) = lookup_in_library_index(&lib.path, &parsed.path) {
+                matched = Some(p);
+                break;
+            }
+        }
+    }
+    let Some(abs) = matched else {
         // Miss: compute "did you mean" suggestions from the vault index so the
         // user can see what files ARE present that might be a near-match.
         let similar = find_similar_in_index(&library_path, &parsed.path);

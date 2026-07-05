@@ -3909,5 +3909,9 @@
       "two": "{count} אזכורים",
       "other": "{count} אזכורים"
     }
+  },
+  "embeds": {
+    "notFound": "הקובץ לא נמצא בספרייה",
+    "lookupDetails": "הצג פרטי חיפוש"
   }
 }

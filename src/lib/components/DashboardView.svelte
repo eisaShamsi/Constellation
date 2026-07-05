@@ -459,11 +459,14 @@
 	.cu-libs { padding: 0 14px 10px; margin-top: 0; display: flex; flex-direction: column; gap: 8px; }
 
 	.tags-layout { display: block; }
-	.tags-layout.tags-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-	.tags-list-col { min-width: 0; }
+	.tags-layout.tags-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+	/* Boss 2026-07-05 — the tag cloud and the selected tag's note list scroll
+	   INDEPENDENTLY (each column bounded + own scrollbar), not with the page. */
+	.tags-list-col { min-width: 0; max-height: 70vh; overflow-y: auto; }
 	.tags-notes-col {
 		min-width: 0; border-inline-start: 1px solid var(--background-modifier-border);
 		padding-inline-start: 20px; font-family: var(--font-interface-theme);
+		max-height: 70vh; overflow-y: auto; position: sticky; top: 0;
 	}
 	.tags-notes-title {
 		display: flex; align-items: center; gap: 8px;

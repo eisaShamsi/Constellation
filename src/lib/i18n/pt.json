@@ -3882,5 +3882,9 @@
       "one": "{count} menção",
       "other": "{count} menções"
     }
+  },
+  "embeds": {
+    "notFound": "Arquivo não encontrado na biblioteca",
+    "lookupDetails": "Mostrar detalhes da busca"
   }
 }

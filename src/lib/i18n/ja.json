@@ -3855,5 +3855,9 @@
     "mentions": {
       "other": "{count}件の言及"
     }
+  },
+  "embeds": {
+    "notFound": "ライブラリ内にファイルが見つかりません",
+    "lookupDetails": "検索の詳細を表示"
   }
 }

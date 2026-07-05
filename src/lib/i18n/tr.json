@@ -3882,5 +3882,9 @@
       "one": "{count} değinme",
       "other": "{count} değinme"
     }
+  },
+  "embeds": {
+    "notFound": "Dosya kütüphanede bulunamadı",
+    "lookupDetails": "Arama ayrıntılarını göster"
   }
 }

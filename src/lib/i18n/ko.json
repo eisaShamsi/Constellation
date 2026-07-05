@@ -3855,5 +3855,9 @@
     "mentions": {
       "other": "언급 {count}개"
     }
+  },
+  "embeds": {
+    "notFound": "라이브러리에서 파일을 찾을 수 없습니다",
+    "lookupDetails": "조회 세부정보 표시"
   }
 }

@@ -3882,5 +3882,9 @@
       "one": "{count} mention",
       "other": "{count} mentions"
     }
+  },
+  "embeds": {
+    "notFound": "Fichier introuvable dans la bibliothèque",
+    "lookupDetails": "Afficher les détails de la recherche"
   }
 }
