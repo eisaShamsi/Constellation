@@ -803,6 +803,7 @@
     "cataloger": "वर्गीकारक"
   },
   "sidebar": {
+    "confirmDeleteBatch": "{count} चयनित आइटम हटाएँ? उन्हें ट्रैश में ले जाया जाएगा।",
     "filterPlaceholder": "नाम से फ़िल्टर करें…",
     "sortCreatedDesc": "क्रम: निर्मित (नवीनतम)",
     "sortCreatedAsc": "क्रम: निर्मित (पुराना)",

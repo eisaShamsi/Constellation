@@ -4362,6 +4362,51 @@
 		selectionAnchor = null;
 	}
 
+	// ─── MIG-091 §C — the batch bar ───
+	// Move · Delete · Add tag over the selection, each LOOPING the existing gated
+	// single-item handler (moveItem / deleteWithSetting / addTagToNote) — never a
+	// hand-rolled write (the old NavBatchBar YAML-splice corruption stays dead).
+	// Federated (read-only cUniverse) members are excluded from every write verb.
+	function isFederatedTreePath(p: string): boolean {
+		const np = p.replace(/\\/g, '/').toLowerCase();
+		for (const paths of childUniverseLibPaths.values()) {
+			for (const lp of paths) {
+				const base = lp.endsWith('/') ? lp : lp + '/';
+				if (np === lp || np.startsWith(base)) return true;
+			}
+		}
+		return false;
+	}
+	// Selected paths we may WRITE to (own-universe only).
+	const writableSelection = $derived([...selectedTreePaths].filter(p => !isFederatedTreePath(p)));
+	const writableNoteSelection = $derived(writableSelection.filter(p => /\.md$/i.test(p)));
+
+	async function refreshAllLoadedTrees() {
+		for (const libId of Object.keys(libraryTrees)) {
+			try { await refreshLibraryTree(libId); } catch { /* skip */ }
+		}
+		await loadAllStats();
+		markOrgChartDirty();
+	}
+
+	async function batchMove() {
+		if (writableSelection.length === 0) return;
+		// Load the folder picker via the single-item path (using the first item to
+		// seed it), then flip it to batch — handleMoveConfirm loops the selection.
+		await openMoveDialog(writableSelection[0], String(writableSelection.length));
+		if (moveDialog) moveDialog = { ...moveDialog, batch: true };
+	}
+
+	function batchDelete() {
+		if (writableSelection.length === 0) return;
+		confirmDelete = { path: '', name: String(writableSelection.length), batch: true };
+	}
+
+	function batchTag() {
+		if (writableNoteSelection.length === 0) return;
+		tagDialog = { path: '', name: String(writableNoteSelection.length), batch: true };
+	}
+
 	// The filter's single entry point (input + the clear button) — manages the
 	// snapshot/reveal/restore on the empty↔active transitions.
 	async function setTreeFilter(v: string) {
@@ -5122,12 +5167,12 @@
 	// Reveal-in-tree (it IS the tree); the List-mode note is NoteWithMeta-based and
 	// ADDS Reveal-in-tree (jump from the flat list to the tree location).
 	let listCtxMenu = $state<{ x: number; y: number; items: ReturnType<typeof buildContextMenu> } | null>(null);
-	let confirmDelete = $state<{ path: string; name: string } | null>(null);
+	let confirmDelete = $state<{ path: string; name: string; batch?: boolean } | null>(null);
 	// MIG-077 A3-R — rename driven from a full-page surface (OrgChart etc.) where
 	// there is no inline tree row; hands the new name to handleRenameComplete.
 	let renameDialog = $state<{ path: string; name: string } | null>(null);
 	// MIG-077 A3-R3 — Move destination-folder picker (universe-wide).
-	let moveDialog = $state<{ path: string; name: string; libraryId: string; loading: boolean; folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] } | null>(null);
+	let moveDialog = $state<{ path: string; name: string; libraryId: string; loading: boolean; folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[]; batch?: boolean } | null>(null);
 	// MIG-077 A3-R3 follow-up — the fullscreen OrgChart caches the universe tree
 	// and never reloaded, so a move/delete/rename left stale nodes (acting on one
 	// failed with "doesn't exist"). Bump refreshKey to reload it; gate on "dirty"
@@ -5135,7 +5180,7 @@
 	let orgChartRefreshKey = $state(0);
 	let orgChartDirty = $state(false);
 	// MIG-077 A3-R4 — Add-tag input (reuses the single-input RenameDialog).
-	let tagDialog = $state<{ path: string; name: string } | null>(null);
+	let tagDialog = $state<{ path: string; name: string; batch?: boolean } | null>(null);
 	function markOrgChartDirty() {
 		if (showOrgChart) orgChartRefreshKey++; // reload in place
 		else orgChartDirty = true; // defer to next open
@@ -5579,6 +5624,18 @@
 
 	async function handleMoveConfirm(targetFolder: string) {
 		if (!moveDialog) return;
+		// MIG-091 §C — batch: move every writable selected item into the target,
+		// each via the gated moveItem; refresh all loaded trees once at the end.
+		if (moveDialog.batch) {
+			const items = writableSelection;
+			moveDialog = null;
+			for (const p of items) {
+				try { await moveItem(p, targetFolder); } catch (e) { console.error('[batch move] failed for', p, e); }
+			}
+			await refreshAllLoadedTrees();
+			clearTreeSelection();
+			return;
+		}
 		const { path, libraryId } = moveDialog;
 		await moveItem(path, targetFolder); // throws on collision -> shown inline by MoveDialog
 		// refresh BOTH the source and the (possibly different) target library
@@ -5742,6 +5799,18 @@
 
 	async function handleDeleteConfirm() {
 		if (!confirmDelete) return;
+		// MIG-091 §C — batch: delete every writable selected item (trash-backed),
+		// each via the gated deleteWithSetting; one tree refresh at the end.
+		if (confirmDelete.batch) {
+			const items = writableSelection;
+			confirmDelete = null;
+			for (const p of items) {
+				try { await deleteWithSetting(p); } catch (e) { console.error('[batch delete] failed for', p, e); }
+			}
+			await refreshAllLoadedTrees();
+			clearTreeSelection();
+			return;
+		}
 		try {
 			const lib = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
 			await deleteWithSetting(confirmDelete.path);
@@ -6694,6 +6763,22 @@
 					{/if}
 				{/if}
 			</div>
+
+			<!-- MIG-091 §C — the batch bar (tree mode, ≥1 selected). Every verb loops
+			     the existing gated single-item handler; federated members excluded. -->
+			{#if sidebarMode === 'tree' && selectedTreePaths.size > 0}
+				<div class="tree-batch-bar">
+					<span class="tbb-count">{$tn('plurals.selected', selectedTreePaths.size)}</span>
+					<div class="tbb-actions">
+						<button class="tbb-act" onclick={batchMove} disabled={writableSelection.length === 0} title={$t('contextMenu.move')}>{$t('contextMenu.move')}</button>
+						<button class="tbb-act" onclick={batchTag} disabled={writableNoteSelection.length === 0} title={$t('contextMenu.addTag')}>{$t('contextMenu.addTag')}</button>
+						<button class="tbb-act tbb-danger" onclick={batchDelete} disabled={writableSelection.length === 0} title={$t('actions.delete')}>{$t('actions.delete')}</button>
+					</div>
+					<button class="tbb-clear" onclick={clearTreeSelection} title={$t('dialogs.cancel') || 'Clear'} aria-label="Clear selection">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+					</button>
+				</div>
+			{/if}
 
 			{#if error}
 				<div class="sidebar-error">{error}</div>
@@ -8402,7 +8487,9 @@
 
 	{#if confirmDelete}
 		<ConfirmDialog
-			message={$t('dialogs.confirmDelete', { name: confirmDelete.name })}
+			message={confirmDelete.batch
+				? ($t('sidebar.confirmDeleteBatch', { count: confirmDelete.name }) || `Delete ${confirmDelete.name} selected items? (moved to trash)`)
+				: $t('dialogs.confirmDelete', { name: confirmDelete.name })}
 			confirmLabel={$t('dialogs.delete')}
 			cancelLabel={$t('dialogs.cancel')}
 			onConfirm={handleDeleteConfirm}
@@ -8438,13 +8525,29 @@
 	{#if tagDialog}
 		<RenameDialog
 			initialValue=""
-			title={`${$t('contextMenu.addTag')} — ${tagDialog.name}`}
+			title={tagDialog.batch
+				? `${$t('contextMenu.addTag')} — ${$tn('plurals.selected', Number(tagDialog.name))}`
+				: `${$t('contextMenu.addTag')} — ${tagDialog.name}`}
 			confirmLabel={$t('contextMenu.addTag')}
 			cancelLabel={$t('dialogs.cancel')}
 			onConfirm={(tag) => {
 				const d = tagDialog;
 				tagDialog = null;
-				if (d && tag.trim()) addTagToNote(d.path, tag);
+				if (!d || !tag.trim()) return;
+				// MIG-091 §C — batch: add the tag to every writable selected NOTE via
+				// the gated addTagToNote (open→model, closed→gated writeNote; NO YAML
+				// splice). Folders are excluded (tags are a note property).
+				if (d.batch) {
+					const notes = writableNoteSelection;
+					(async () => {
+						for (const p of notes) {
+							try { await addTagToNote(p, tag); } catch (e) { console.error('[batch tag] failed for', p, e); }
+						}
+						clearTreeSelection();
+					})();
+				} else {
+					addTagToNote(d.path, tag);
+				}
 			}}
 			onCancel={() => tagDialog = null}
 		/>
@@ -8873,6 +8976,39 @@
 		border-radius: 3px;
 	}
 	.tree-filter-clear:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+
+	/* MIG-091 §C — the batch bar */
+	.tree-batch-bar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		margin: 0 4px 4px;
+		border: 1px solid var(--interactive-accent);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-secondary));
+	}
+	.tbb-count { font-size: 11px; font-weight: 600; color: var(--interactive-accent); flex-shrink: 0; }
+	.tbb-actions { display: flex; gap: 4px; flex: 1; min-width: 0; flex-wrap: wrap; }
+	.tbb-act {
+		font-size: 11px;
+		padding: 2px 8px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		cursor: pointer;
+		font-family: var(--font-interface-theme, inherit);
+	}
+	.tbb-act:hover:not(:disabled) { background: var(--background-modifier-hover); border-color: var(--interactive-accent); }
+	.tbb-act:disabled { opacity: 0.4; cursor: not-allowed; }
+	.tbb-danger { color: var(--text-error, #ef4444); }
+	.tbb-clear {
+		flex-shrink: 0; display: flex; align-items: center;
+		background: none; border: none; cursor: pointer;
+		color: var(--text-muted); padding: 2px; border-radius: 3px;
+	}
+	.tbb-clear:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 	.section-label { padding: 4px 12px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 	.s-result {
 		display: block; width: 100%; padding: 4px 12px;

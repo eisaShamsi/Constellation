@@ -803,6 +803,7 @@
     "cataloger": "המסווג"
   },
   "sidebar": {
+    "confirmDeleteBatch": "למחוק {count} פריטים נבחרים? הם יועברו לפח.",
     "filterPlaceholder": "סינון לפי שם…",
     "sortCreatedDesc": "מיון: נוצר (החדש ביותר)",
     "sortCreatedAsc": "מיון: נוצר (הישן ביותר)",

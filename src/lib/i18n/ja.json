@@ -803,6 +803,7 @@
     "cataloger": "分類器"
   },
   "sidebar": {
+    "confirmDeleteBatch": "選択した {count} 件を削除しますか？ ゴミ箱に移動します。",
     "filterPlaceholder": "名前で絞り込み…",
     "sortCreatedDesc": "並べ替え: 作成日（新しい順）",
     "sortCreatedAsc": "並べ替え: 作成日（古い順）",

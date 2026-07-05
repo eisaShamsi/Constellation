@@ -803,6 +803,7 @@
     "cataloger": "Sınıflandırıcı"
   },
   "sidebar": {
+    "confirmDeleteBatch": "Seçili {count} öğe silinsin mi? Çöp kutusuna taşınacaklar.",
     "filterPlaceholder": "Ada göre süz…",
     "sortCreatedDesc": "Sırala: Oluşturma (en yeni)",
     "sortCreatedAsc": "Sırala: Oluşturma (en eski)",

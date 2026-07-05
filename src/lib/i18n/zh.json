@@ -803,6 +803,7 @@
     "cataloger": "分类器"
   },
   "sidebar": {
+    "confirmDeleteBatch": "删除选中的 {count} 项？它们将被移到回收站。",
     "filterPlaceholder": "按名称筛选…",
     "sortCreatedDesc": "排序：创建时间（最新）",
     "sortCreatedAsc": "排序：创建时间（最早）",

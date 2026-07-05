@@ -804,6 +804,7 @@
     "cataloger": "المُصنِّف"
   },
   "sidebar": {
+    "confirmDeleteBatch": "حذف {count} عنصرًا محددًا؟ سيتم نقلها إلى سلة المهملات.",
     "filterPlaceholder": "تصفية بالاسم…",
     "sortCreatedDesc": "ترتيب: الإنشاء (الأحدث)",
     "sortCreatedAsc": "ترتيب: الإنشاء (الأقدم)",

@@ -867,6 +867,7 @@
     }
   },
   "sidebar": {
+    "confirmDeleteBatch": "Delete {count} selected items? They will be moved to the trash.",
     "filterPlaceholder": "Filter by name…",
     "sortCreatedDesc": "Sort: Created (newest)",
     "sortCreatedAsc": "Sort: Created (oldest)",

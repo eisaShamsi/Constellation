@@ -803,6 +803,7 @@
     "cataloger": "دسته‌بند"
   },
   "sidebar": {
+    "confirmDeleteBatch": "حذف {count} مورد انتخاب‌شده؟ به سطل زباله منتقل می‌شوند.",
     "filterPlaceholder": "فیلتر بر اساس نام…",
     "sortCreatedDesc": "مرتب‌سازی: ایجاد (جدیدترین)",
     "sortCreatedAsc": "مرتب‌سازی: ایجاد (قدیمی‌ترین)",

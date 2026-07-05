@@ -803,6 +803,7 @@
     "cataloger": "Clasificador"
   },
   "sidebar": {
+    "confirmDeleteBatch": "¿Eliminar {count} elementos seleccionados? Se moverán a la papelera.",
     "filterPlaceholder": "Filtrar por nombre…",
     "sortCreatedDesc": "Orden: Creado (más reciente)",
     "sortCreatedAsc": "Orden: Creado (más antiguo)",

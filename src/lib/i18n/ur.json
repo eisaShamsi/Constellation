@@ -803,6 +803,7 @@
     "cataloger": "درجہ بند"
   },
   "sidebar": {
+    "confirmDeleteBatch": "{count} منتخب آئٹمز حذف کریں؟ انہیں ردی میں منتقل کر دیا جائے گا۔",
     "filterPlaceholder": "نام سے فلٹر کریں…",
     "sortCreatedDesc": "ترتیب: تخلیق (تازہ ترین)",
     "sortCreatedAsc": "ترتیب: تخلیق (قدیم ترین)",

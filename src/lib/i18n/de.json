@@ -803,6 +803,7 @@
     "cataloger": "Klassifikator"
   },
   "sidebar": {
+    "confirmDeleteBatch": "{count} ausgewählte Elemente löschen? Sie werden in den Papierkorb verschoben.",
     "filterPlaceholder": "Nach Name filtern…",
     "sortCreatedDesc": "Sortierung: Erstellt (neueste)",
     "sortCreatedAsc": "Sortierung: Erstellt (älteste)",

@@ -803,6 +803,7 @@
     "cataloger": "Classificateur"
   },
   "sidebar": {
+    "confirmDeleteBatch": "Supprimer {count} éléments sélectionnés ? Ils seront déplacés vers la corbeille.",
     "filterPlaceholder": "Filtrer par nom…",
     "sortCreatedDesc": "Tri : Créé (plus récent)",
     "sortCreatedAsc": "Tri : Créé (plus ancien)",

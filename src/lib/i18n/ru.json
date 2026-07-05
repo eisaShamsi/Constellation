@@ -803,6 +803,7 @@
     "cataloger": "Классификатор"
   },
   "sidebar": {
+    "confirmDeleteBatch": "Удалить {count} выбранных элементов? Они будут перемещены в корзину.",
     "filterPlaceholder": "Фильтр по имени…",
     "sortCreatedDesc": "Сортировка: Создано (новые)",
     "sortCreatedAsc": "Сортировка: Создано (старые)",
