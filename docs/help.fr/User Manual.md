@@ -62,6 +62,20 @@ Lors de la premiere ouverture de Constellation, l'**Assistant de configuration d
 | **Barre d'onglets** | Ouvrir plusieurs notes dans des onglets |
 | **Barre d'etat** | Nombre de mots, nombre de caracteres, temps de lecture |
 
+### L'Arborescence (Explorateur de fichiers)
+
+L'**Arborescence** est l'Explorateur de fichiers de Constellation : elle sert a parcourir **et a organiser** vos notes et dossiers. En plus de l'arbre classique, elle porte desormais les outils de gestion de fichiers dont vous avez besoin pour une grande bibliotheque.
+
+**Filtrer par nom.** Un champ de filtre se trouve en haut de l'arborescence. Tapez n'importe quel fragment d'un nom de note ou de dossier (dans n'importe quelle langue) et l'arbre se reduit aux correspondances, en ouvrant les dossiers qui les contiennent pour que rien ne reste cache. Le filtre parcourt **toutes** les bibliotheques — celles qui sont repliees sont chargees et deployees automatiquement, puis restaurees exactement comme vous les aviez laissees quand vous effacez le filtre. Il ne cherche que dans les **noms**, jamais dans le contenu des notes (chercher *a l'interieur* des notes est le role du Search Hub).
+
+**Trier de huit facons.** Le bouton de tri fait defiler **Nom** (A → Z / Z → A), **Modifie** (plus recent / plus ancien), **Cree** (plus recent / plus ancien) et **Taille** (plus grand / plus petit) ; les dossiers restent toujours en haut. Survolez le bouton pour voir le tri actuel.
+
+**Selection multiple.** **Ctrl-clic** (⌘-clic sur Mac) pour ajouter ou retirer une note ou un dossier de la selection ; **Maj-clic** pour selectionner une plage entiere. Un simple clic sur une note l'ouvre toujours — la selection reste en place jusqu'a ce que vous appuyiez sur **Echap** ou que vous l'effaciez. Les lignes selectionnees sont surlignees par une barre d'accentuation.
+
+**Operations par lot.** Lorsque des elements sont selectionnes, une barre apparait en bas de la barre laterale et affiche leur nombre, avec **Deplacer**, **Ajouter une etiquette** et **Supprimer**. Chaque action s'applique a toute la selection via les memes operations sures et controlees qu'une note isolee — l'etiquetage par lot ne corrompt donc jamais une note, et la suppression passe par la corbeille. Les notes provenant d'univers enfants lies (en lecture seule) sont ignorees automatiquement.
+
+**Les bases restent :** deplier/replier les dossiers au clic ou avec les fleches, clic droit pour le menu contextuel (Ouvrir, Renommer, Deplacer, Ajouter une etiquette, Supprimer…), et glisser-deposer pour deplacer des notes entre dossiers.
+
 ---
 
 ## 2. Univers et bibliotheques
@@ -566,7 +580,6 @@ Le second ecran modifie son contenu en fonction du mode actif de la barre latera
 | Mode de la barre laterale | Le second ecran affiche |
 |---|---|
 | **Explorateur de fichiers** | Tableau de bord de l'univers — statistiques, repartition des bibliotheques, univers enfants, etiquettes, notes recemment modifiees/ouvertes |
-| **Navigateur** | Vue complete du Navigateur pour parcourir les notes |
 | **Vue du ciel** | Arbre de la Vue du ciel avec structure des repertoires |
 | **Vue Etoiles** | Complementaire Vue Etoiles avec retroliens, liens avant, etiquettes et graphe local |
 
