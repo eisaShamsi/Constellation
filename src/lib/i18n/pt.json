@@ -475,6 +475,8 @@
       "pressKeys": "Pressione teclas..."
     },
     "plugins": {
+      "workbench": "Bancada",
+      "workbenchDesc": "Peça notas com suas palavras e mantenha um conjunto de trabalho enquanto trabalha",
       "intro": "Ative ou desative plug-ins. Plug-ins desativados ficam ocultos da interface.",
       "on": "Ativado",
       "off": "Desativado",
@@ -2297,6 +2299,7 @@
     "description": "Notas e índices entre bibliotecas"
   },
   "contextMenu": {
+    "addToWorkbench": "Adicionar à bancada",
     "openInNewTab": "Abrir em nova aba",
     "move": "Mover",
     "addTag": "Adicionar etiqueta",
@@ -3876,5 +3879,26 @@
   "embeds": {
     "notFound": "Arquivo não encontrado na biblioteca",
     "lookupDetails": "Mostrar detalhes da busca"
+  },
+  "workbench": {
+    "title": "Bancada",
+    "empty": "A bancada está livre.",
+    "emptyHint": "Pergunte acima com suas palavras, ou clique com o botão direito numa nota → Adicionar à bancada.",
+    "askPlaceholder": "Peça notas com suas próprias palavras…",
+    "searching": "Buscando…",
+    "holdHint": "clique para segurar · Ctrl+clique para abrir",
+    "backToDesk": "Voltar à bancada",
+    "semanticOff": "busca semântica desligada — apenas correspondência de palavras",
+    "sweepDone": "Varrer concluídos",
+    "done": "Concluído",
+    "setDown": "Soltar",
+    "missing": "ausente — o arquivo se foi; solte quando quiser",
+    "alreadyHeld": "Na bancada",
+    "close": "Fechar",
+    "chipDue": "a revisar",
+    "chipUnlinked": "sem vínculos",
+    "chipContested": "contestada",
+    "chipForming": "em formação",
+    "addCurrent": "Adicionar a nota atual à bancada"
   }
 }

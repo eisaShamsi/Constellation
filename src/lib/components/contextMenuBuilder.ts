@@ -69,6 +69,9 @@ export interface ContextActions {
 	toggleExpand?: (target: ContextTarget) => void;
 	// MIG-077 §F — richer items (all reuse existing ops):
 	bookmark?: (target: ContextTarget) => void;
+	/** MIG-090 — hold this note on the Workbench desk (pass only when the
+	 *  workbench flag is on; membership only, never writes the note). */
+	addToWorkbench?: (target: ContextTarget) => void;
 	/** Copy the path relative to the Library root. Pairs with `copyPath` (absolute)
 	 *  → the builder emits a "Copy path ▸" submenu when BOTH are provided. */
 	copyPathRelative?: (target: ContextTarget) => void;
@@ -127,6 +130,9 @@ export function buildContextMenu(target: ContextTarget, a: ContextActions): Menu
 		if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
 		const bm = bookmarkItem($t, target, a);
 		if (bm) orgGroup.push(bm);
+		// MIG-090 — auto-surfaces in every consumer that wires the callback
+		// (the bookmark precedent).
+		if (a.addToWorkbench && target.isMarkdown) orgGroup.push({ label: $t('contextMenu.addToWorkbench'), icon: '🗂️', action: () => a.addToWorkbench!(target) });
 		if (a.addTag) orgGroup.push({ label: $t('contextMenu.addTag'), icon: '🏷️', action: () => a.addTag!(target) });
 
 		const pathGroup: MenuItem[] = [];

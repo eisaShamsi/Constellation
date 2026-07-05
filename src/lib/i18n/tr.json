@@ -475,6 +475,8 @@
       "pressKeys": "Tuşlara basın..."
     },
     "plugins": {
+      "workbench": "Çalışma Masası",
+      "workbenchDesc": "Notları kendi sözlerinle iste ve üzerinde çalışırken bir çalışma kümesini elinde tut",
       "intro": "Eklentileri açın veya kapatın. Devre dışı bırakılan eklentiler arayüzden gizlenir.",
       "on": "Açık",
       "off": "Kapalı",
@@ -2297,6 +2299,7 @@
     "description": "Kütüphaneler arası notlar ve dizinler"
   },
   "contextMenu": {
+    "addToWorkbench": "Çalışma Masasına ekle",
     "openInNewTab": "Yeni sekmede aç",
     "move": "Taşı",
     "addTag": "Etiket ekle",
@@ -3876,5 +3879,26 @@
   "embeds": {
     "notFound": "Dosya kütüphanede bulunamadı",
     "lookupDetails": "Arama ayrıntılarını göster"
+  },
+  "workbench": {
+    "title": "Çalışma Masası",
+    "empty": "Masa boş.",
+    "emptyHint": "Yukarıda kendi sözlerinle sor, ya da bir nota sağ tıkla → Çalışma Masasına ekle.",
+    "askPlaceholder": "Notları kendi sözlerinle iste…",
+    "searching": "Aranıyor…",
+    "holdHint": "tutmak için tıkla · açmak için Ctrl+tık",
+    "backToDesk": "Masaya dön",
+    "semanticOff": "anlamsal arama kapalı — yalnızca sözcük eşleşmesi",
+    "sweepDone": "Bitenleri süpür",
+    "done": "Bitti",
+    "setDown": "Bırak",
+    "missing": "kayıp — dosya artık yok; istediğinde bırak",
+    "alreadyHeld": "Masada",
+    "close": "Kapat",
+    "chipDue": "vadesi geldi",
+    "chipUnlinked": "bağlantısız",
+    "chipContested": "çelişkili",
+    "chipForming": "oluşum halinde",
+    "addCurrent": "Geçerli notu Çalışma Masasına ekle"
   }
 }

@@ -377,6 +377,8 @@
       "pressKeys": "Press keys..."
     },
     "plugins": {
+      "workbench": "Workbench",
+      "workbenchDesc": "Ask for notes in your own words and hold a working set while you work it",
       "intro": "Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.",
       "on": "On",
       "off": "Off",
@@ -1444,6 +1446,7 @@
   },
   "sources": {
     "contextMenu": {
+      "addToWorkbench": "Add to Workbench",
       "suggest": "Suggest sources & content type"
     },
     "label": {
@@ -4006,5 +4009,26 @@
   "embeds": {
     "notFound": "File not found in library",
     "lookupDetails": "Show lookup details"
+  },
+  "workbench": {
+    "title": "Workbench",
+    "empty": "The desk is clear.",
+    "emptyHint": "Ask above in your own words, or right-click any note → Add to Workbench.",
+    "askPlaceholder": "Ask for notes in your own words…",
+    "searching": "Searching…",
+    "holdHint": "click to hold · Ctrl+click to open",
+    "backToDesk": "Back to desk",
+    "semanticOff": "semantic search off — matching words only",
+    "sweepDone": "Sweep done",
+    "done": "Done",
+    "setDown": "Set down",
+    "missing": "missing — the file is gone; set it down when ready",
+    "alreadyHeld": "On the desk",
+    "close": "Close",
+    "chipDue": "due",
+    "chipUnlinked": "unlinked",
+    "chipContested": "contested",
+    "chipForming": "forming",
+    "addCurrent": "Add current note to Workbench"
   }
 }

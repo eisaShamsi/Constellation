@@ -3994,6 +3994,8 @@ export interface AppSettings {
 		index: boolean;
 		semanticSearch: boolean;
 		notesNavigator: boolean;
+		/** MIG-090 — the Workbench (Intent Bar + working-set desk). Default OFF until Boss-validated. */
+		workbench: boolean;
 		orgChart: boolean;
 		aiSkills: boolean;
 		secondScreen: boolean;
@@ -4322,6 +4324,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		index: true,
 		semanticSearch: false,
 		notesNavigator: true,
+		workbench: false,
 		orgChart: true,
 		aiSkills: true,
 		secondScreen: true,

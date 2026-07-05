@@ -28,7 +28,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadWorkbench, migrateWorkbenchPath,
+		loadWorkbench, migrateWorkbenchPath, addToWorkbench,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
@@ -109,6 +109,7 @@
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewStatusPanel from '$lib/components/ReviewStatusPanel.svelte';
 	import ReviewerView from '$lib/components/ReviewerView.svelte';
+	import WorkbenchView from '$lib/components/WorkbenchView.svelte';
 	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
@@ -630,6 +631,7 @@
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
 	let showReviewer = $state(false); // MIG-080 §F — left-dock universe Review reviewer
+	let showWorkbench = $state(false); // MIG-090 — the Workbench (Intent Bar + working-set desk)
 	let cameFromReviewer = $state(false); // MIG-084 §F.2 — show a "← Reviewer" return chip
 	let reviewerReturnPath = $state<string | null>(null); // the note opened FROM the reviewer (restore on return)
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
@@ -1354,12 +1356,12 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
+	const fullPageActive = $derived(showWorkbench || showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
 	// MIG-080 §A.2 — the Calendar page is a full-page overlay; if another full-page
 	// overlay opens while it's up, close the Calendar (the dock buttons close it the
 	// other direction). Settles: once false, the guard is inert (no loop).
 	$effect(() => {
-		if (showCalendarPage && (showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible)) {
+		if (showCalendarPage && (showWorkbench || showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible)) {
 			showCalendarPage = false;
 		}
 	});
@@ -1368,8 +1370,16 @@
 	// showReviewer), close the reviewer. Settles in one tick; no loop (once false,
 	// inert). NOT gated on isDashboardVisible — the reviewer overlays the home dashboard.
 	$effect(() => {
-		if (showReviewer && (showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || showCalendarPage)) {
+		if (showReviewer && (showWorkbench || showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || showCalendarPage)) {
 			showReviewer = false;
+		}
+	});
+	// MIG-090 — mirror the same guard for the Workbench: another full-page
+	// surface opening (via its own dock button) closes the desk. Settles in
+	// one tick; inert once false.
+	$effect(() => {
+		if (showWorkbench && (showReviewer || showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || showCalendarPage)) {
+			showWorkbench = false;
 		}
 	});
 
@@ -2215,8 +2225,8 @@
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
-			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
+			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
@@ -2234,8 +2244,14 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
+			// MIG-090 — the Workbench (flag default-off): open the desk, and the
+			// "hold the current note" quick action.
+			...($appSettings.enabledFeatures?.workbench === true ? [
+				{ id: 'workbench', name: $t('workbench.title') || 'Workbench', icon: '🗂️', action: () => { showCommandPalette = false; showWorkbench = true; showReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+				{ id: 'workbench-add-current', name: $t('workbench.addCurrent') || 'Add current note to Workbench', icon: '🗂️', action: () => { showCommandPalette = false; const tab = get(focusedTab); if (tab?.path) addToWorkbench(tab.path); }, category: 'Note' },
+			] : []),
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showWorkbench = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; showCCS = false; }, category: 'View' },
 			...($appSettings.enabledFeatures?.ccs !== false ? [{ id: 'ccs', name: $t('ccs.title') || 'Constellation Circulatory System', icon: '🫀', action: () => { showCommandPalette = false; showCCS = true; showKnowledgeHealth = false; }, category: 'View' }] : []),
@@ -2759,7 +2775,7 @@
 		document.addEventListener('constellation:open-ccs', () => {
 			if ($appSettings.enabledFeatures?.ccs === false) return;
 			showCCS = true;
-			showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+			showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
 		});
 
 		// Universal Embed: "open this note" (from transclusion header click,
@@ -2816,7 +2832,7 @@
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showCataloger = false;
 					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
-					showExpressionForge = false; showSenseMakingCanvas = false;
+					showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false;
 					lensActive = false; sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
 					showInspector360 = true;
@@ -2831,7 +2847,7 @@
 					showConstellationMap = false; showOrgChart = false; showCataloger = false;
 					showInspector360 = false;
 					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
-					showExpressionForge = false; showSenseMakingCanvas = false;
+					showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false;
 					sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
 					// MIG-060 §C-fix — set the focus target BEFORE toggleLens()
@@ -2846,7 +2862,7 @@
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showInspector360 = false;
 					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
-					showExpressionForge = false; showSenseMakingCanvas = false;
+					showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false;
 					lensActive = false; sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
 					showCataloger = true;
@@ -3921,6 +3937,7 @@
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (sidebarMode === 'digest') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
+			if (showWorkbench) { showWorkbench = false; return; }
 			if (showIndex) { showIndex = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
@@ -5149,6 +5166,8 @@
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, displayName);
 			actions.bookmark = () => toggleBookmarkPath('note', entry.path, displayName);
+			// MIG-090 — hold on the Workbench desk (flag-gated; membership only).
+			if ($appSettings.enabledFeatures?.workbench === true) actions.addToWorkbench = () => addToWorkbench(entry.path);
 			actions.addTag = () => { tagDialog = { path: entry.path, name: displayName }; };
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
 			actions.copyPathRelative = () => copyRelativePath(entry.path);
@@ -5208,6 +5227,8 @@
 			open: () => handleNoteClick(r.path, displayName, undefined),
 			openInNewTab: () => { if (lib) openNoteTab(r.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
 			bookmark: () => toggleBookmarkPath('note', r.path, displayName),
+			// MIG-090 — hold on the Workbench desk (flag-gated; membership only).
+			...($appSettings.enabledFeatures?.workbench === true ? { addToWorkbench: () => addToWorkbench(r.path) } : {}),
 			copyPath: () => navigator.clipboard.writeText(r.path).catch(() => {}),
 			copyPathRelative: () => copyRelativePath(r.path),
 			copyName: () => navigator.clipboard.writeText(displayName).catch(() => {}),
@@ -5506,7 +5527,7 @@
 		showSkyView = false; showGlobalTasks = false; showIndex = false;
 		showConstellationMap = false; showOrgChart = false; showInspector360 = false;
 		showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
-		showExpressionForge = false; showSenseMakingCanvas = false;
+		showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false;
 		lensActive = false; sightV3Active = false; sightV4Active = false;
 		sightV5Active = false; sightV6Active = false;
 		showCataloger = true;
@@ -5957,7 +5978,7 @@
 			<button class="dock-btn" class:active={showCalendarPage} onclick={() => {
 				showCalendarPage = !showCalendarPage;
 				if (showCalendarPage) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
 				}
 			}} title={$t('panels.calendar')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="0.6" fill="currentColor" stroke="none"/></svg>
@@ -5968,7 +5989,7 @@
 			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => {
 				showGlobalTasks = !showGlobalTasks;
 				if (showGlobalTasks) {
-					showSkyView = false; showCalendarPage = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
+					showSkyView = false; showCalendarPage = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
 				}
 			}} title={$t('commands.globalTasks') || 'Tasks'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
@@ -5985,14 +6006,25 @@
 			{/if}
 			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
 			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
-			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; reviewerReturnPath = null;showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('reviewer.title') || 'Reviewer'}>
+			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; reviewerReturnPath = null;showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('reviewer.title') || 'Reviewer'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
+			{#if $appSettings.enabledFeatures?.workbench === true}
+			<!-- MIG-090 — the Workbench (default-off flag; Settings → Plug-ins) -->
+			<button class="dock-btn" class:active={showWorkbench} onclick={() => {
+				showWorkbench = !showWorkbench;
+				if (showWorkbench) {
+					showReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false;
+				}
+			}} title={$t('workbench.title') || 'Workbench'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="18" height="7" rx="1"/><path d="M8 13V7a4 4 0 0 1 8 0v6"/></svg>
+			</button>
+			{/if}
 			{#if $appSettings.enabledFeatures?.cece !== false}
 			<button class="dock-btn" class:active={showCataloger} onclick={() => {
 				showCataloger = !showCataloger;
 				if (showCataloger) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('ribbon.cataloger') || 'The Cataloger'}>
@@ -6025,7 +6057,7 @@
 			<button class="dock-btn" class:active={showCCS} onclick={() => {
 				showCCS = !showCCS;
 				if (showCCS) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
 				}
 			}} title={$t('ccs.title') || 'Constellation Circulatory System'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-6 4 12 2-6h2"/><path d="M19.5 12a2.5 2.5 0 1 0 0-.01"/></svg>
@@ -6103,7 +6135,7 @@
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false;
 					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
-					showExpressionForge = false; showSenseMakingCanvas = false;
+					showExpressionForge = false; showSenseMakingCanvas = false; showWorkbench = false;
 				}
 			}} title={$t('inspector360.title') || '360° Inspector'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
@@ -6774,6 +6806,20 @@
 						}
 					}}
 					onClose={() => { showReviewer = false; }}
+				/>
+			</div>
+		{/if}
+
+		<!-- MIG-090 — the Workbench (Form C v1): conditionally mounted like the
+		     Reviewer so it hydrates fresh on open (workbench_hydrate is a cheap
+		     indexed read). Flag default-off (Settings → Plug-ins → Workbench). -->
+		{#if showWorkbench}
+			<div class="workbench-overlay">
+				<WorkbenchView
+					onNoteClick={(path, libraryName, newTab) => {
+						openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed', undefined, newTab === true);
+					}}
+					onClose={() => { showWorkbench = false; }}
 				/>
 			</div>
 		{/if}
@@ -9121,7 +9167,7 @@
 		overflow: hidden;
 	}
 
-	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay, .calendar-overlay, .reviewer-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay, .calendar-overlay, .reviewer-overlay, .workbench-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;

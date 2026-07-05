@@ -475,6 +475,8 @@
       "pressKeys": "Appuyez sur les touches..."
     },
     "plugins": {
+      "workbench": "Établi",
+      "workbenchDesc": "Demandez des notes avec vos mots et retenez un ensemble de travail pendant que vous y travaillez",
       "intro": "Activez ou désactivez les plug-ins. Les plug-ins désactivés sont masqués.",
       "on": "Activé",
       "off": "Désactivé",
@@ -1857,6 +1859,7 @@
     "description": "Notes et index inter-bibliothèques"
   },
   "contextMenu": {
+    "addToWorkbench": "Ajouter à l'établi",
     "openInNewTab": "Ouvrir dans un nouvel onglet",
     "move": "Déplacer",
     "addTag": "Ajouter une étiquette",
@@ -3876,5 +3879,26 @@
   "embeds": {
     "notFound": "Fichier introuvable dans la bibliothèque",
     "lookupDetails": "Afficher les détails de la recherche"
+  },
+  "workbench": {
+    "title": "Établi",
+    "empty": "L'établi est dégagé.",
+    "emptyHint": "Demandez ci-dessus avec vos mots, ou clic droit sur une note → Ajouter à l'établi.",
+    "askPlaceholder": "Demandez des notes avec vos propres mots…",
+    "searching": "Recherche…",
+    "holdHint": "clic pour retenir · Ctrl+clic pour ouvrir",
+    "backToDesk": "Retour à l'établi",
+    "semanticOff": "recherche sémantique désactivée — correspondance de mots seulement",
+    "sweepDone": "Balayer le terminé",
+    "done": "Terminé",
+    "setDown": "Reposer",
+    "missing": "introuvable — le fichier a disparu ; reposez-la quand vous voulez",
+    "alreadyHeld": "Sur l'établi",
+    "close": "Fermer",
+    "chipDue": "à revoir",
+    "chipUnlinked": "sans lien",
+    "chipContested": "contestée",
+    "chipForming": "en formation",
+    "addCurrent": "Ajouter la note actuelle à l'établi"
   }
 }
