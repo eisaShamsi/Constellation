@@ -28,7 +28,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadCollections, migrateCollectionPath,
+		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
@@ -5309,6 +5309,20 @@
 		const rel = lib ? path.slice(lib.path.length).replace(/^[\\/]+/, '') : path;
 		navigator.clipboard.writeText(rel).catch(() => {});
 	}
+	// MIG-092 — hand-pick a NOTE into a collection ("Add to collection ▸" submenu).
+	// Membership only — never writes the note. Surfaces in any consumer that wires it.
+	function collectionPicks(): { id: string; name: string }[] {
+		const s = $t('collections.starred');
+		const starredLabel = s === 'collections.starred' ? 'Starred' : s;
+		return get(collectionSets).map(c => ({ id: c.id, name: c.id === STARRED_ID ? starredLabel : c.name }));
+	}
+	function wireCollectionPickup(actions: ContextActions, path: string, name: string) {
+		const libraryName = $libraryStats.find(l => path.startsWith(l.path))?.name ?? '';
+		const item = { type: 'note' as const, path, name, libraryName };
+		actions.collectionsForPicker = collectionPicks();
+		actions.addToCollection = (_t, setId) => addToCollection(setId, item);
+		actions.createCollectionAndAdd = () => { const id = createCollection('New collection'); addToCollection(id, item); };
+	}
 
 	function getContextMenuItems(entry: FileEntry, libraryId: string, isLibraryRoot = false) {
 		// Workspace bases keep their simplified menu (just Delete).
@@ -5360,6 +5374,7 @@
 			actions.move = () => openMoveDialog(entry.path, displayName);
 			actions.bookmark = () => toggleBookmarkPath('note', entry.path, displayName);
 			actions.addTag = () => { tagDialog = { path: entry.path, name: displayName }; };
+			wireCollectionPickup(actions, entry.path, displayName);
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
 			actions.copyPathRelative = () => copyRelativePath(entry.path);
 			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
@@ -5400,6 +5415,7 @@
 			showInExplorer: () => { invoke('constellation_show_in_folder', { path: r.path }).catch(() => {}); },
 			style: () => openStyleSetterToCategory('cognitive'),
 		};
+		wireCollectionPickup(actions, r.path, displayName);
 		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
 	}
 
@@ -7243,6 +7259,7 @@
 					searchHubReturnPending = false;
 				}}
 				onResults={(ids: Set<string>) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
+				onRevealPath={(path: string) => { revealInTree(path); }}
 			/>
 		</div>
 

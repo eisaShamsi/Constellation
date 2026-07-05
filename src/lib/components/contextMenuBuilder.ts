@@ -69,9 +69,15 @@ export interface ContextActions {
 	toggleExpand?: (target: ContextTarget) => void;
 	// MIG-077 §F — richer items (all reuse existing ops):
 	bookmark?: (target: ContextTarget) => void;
-	/** MIG-090 — hold this note on the Workbench desk (pass only when the
-	 *  workbench flag is on; membership only, never writes the note). */
-	addToWorkbench?: (target: ContextTarget) => void;
+	/** MIG-092 — hand-pick this note into a collection (membership only, never
+	 *  writes the note). Emits an "Add to collection ▸" submenu when the picker
+	 *  list is also provided. */
+	addToCollection?: (target: ContextTarget, setId: string) => void;
+	/** The collections offered in the "Add to collection ▸" submenu (id + already
+	 *  resolved display name). Data, not a callback. */
+	collectionsForPicker?: { id: string; name: string }[];
+	/** "New collection…" tail item of the submenu — create + add in one step. */
+	createCollectionAndAdd?: (target: ContextTarget) => void;
 	/** Copy the path relative to the Library root. Pairs with `copyPath` (absolute)
 	 *  → the builder emits a "Copy path ▸" submenu when BOTH are provided. */
 	copyPathRelative?: (target: ContextTarget) => void;
@@ -117,6 +123,8 @@ function bookmarkItem($t: (k: string) => string, target: ContextTarget, a: Conte
 
 export function buildContextMenu(target: ContextTarget, a: ContextActions): MenuItem[] {
 	const $t = get(t);
+	// MIG-092 — English fallback for keys that land in all 15 locales at §10.
+	const tl = (k: string, fb: string): string => { const v = $t(k); return v === k ? fb : v; };
 
 	if (target.kind === 'note') {
 		// Group order follows Obsidian's Note menu (MIG-077 §F): open · organize ·
@@ -130,9 +138,18 @@ export function buildContextMenu(target: ContextTarget, a: ContextActions): Menu
 		if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
 		const bm = bookmarkItem($t, target, a);
 		if (bm) orgGroup.push(bm);
-		// MIG-090 — auto-surfaces in every consumer that wires the callback
-		// (the bookmark precedent).
-		if (a.addToWorkbench && target.isMarkdown) orgGroup.push({ label: $t('contextMenu.addToWorkbench'), icon: '🗂️', action: () => a.addToWorkbench!(target) });
+		// MIG-092 — "Add to collection ▸" submenu; auto-surfaces in every consumer
+		// that wires the callback + picker list (the bookmark precedent).
+		if (a.addToCollection && a.collectionsForPicker) {
+			const picks: MenuItem[] = a.collectionsForPicker.map(c => ({
+				label: c.name, icon: '🗂️', action: () => a.addToCollection!(target, c.id),
+			}));
+			if (a.createCollectionAndAdd) {
+				picks.push({ separator: true });
+				picks.push({ label: tl('contextMenu.newCollection', 'New collection…'), icon: '＋', action: () => a.createCollectionAndAdd!(target) });
+			}
+			orgGroup.push({ label: tl('contextMenu.addToCollection', 'Add to collection'), icon: '🗂️', submenu: picks });
+		}
 		if (a.addTag) orgGroup.push({ label: $t('contextMenu.addTag'), icon: '🏷️', action: () => a.addTag!(target) });
 
 		const pathGroup: MenuItem[] = [];
