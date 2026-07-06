@@ -3,6 +3,7 @@
 	import { untrack } from 'svelte';
 	import ContextMenu from './ContextMenu.svelte';
 	import { openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-077 §F — RC "Style…"
+	import { stemArabicLight10 } from '$lib/searchFold'; // MIG-093 §B
 	import {
 		SNIPPET_MARK_START,
 		SNIPPET_MARK_END,
@@ -418,61 +419,12 @@
 	// and match on either the raw query or its stem. Other scripts rely
 	// on write-time stemming; query-side mirrors can follow as needed.
 
-	const ARABIC_DIACRITICS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
-	const ARABIC_ALEF_VARIANTS_RE = /[\u0622\u0623\u0625\u0671]/g;   // آ أ إ ٱ → ا
-	const ARABIC_ALEF_MAKSURA_RE = /[\u0649]/g;                       // ى → ي
-	const ARABIC_TA_MARBUTA_RE = /[\u0629]/g;                         // ة → ه
-
-	/** Exact JS port of the backend `stem_arabic_light10` (libraries.rs):
-	 *  normalize + sequential 3/2/1-char prefix strip + 2/1-char suffix
-	 *  strip. Sequential so "والمعرفة" → "معرف" in one pass. */
-	function normalizeArabicForFilter(s: string): string {
-		let t = s.replace(ARABIC_DIACRITICS_RE, '');
-		t = t.replace(ARABIC_ALEF_VARIANTS_RE, '\u0627');
-		t = t.replace(ARABIC_ALEF_MAKSURA_RE, '\u064A');
-		t = t.replace(ARABIC_TA_MARBUTA_RE, '\u0647');
-
-		let chars = Array.from(t);
-		let len = chars.length;
-
-		if (len >= 6) {
-			const p = chars[0] + chars[1] + chars[2];
-			if (p === 'وال' || p === 'بال' || p === 'كال' || p === 'فال') {
-				chars = chars.slice(3);
-				len = chars.length;
-			}
-		}
-		if (len >= 4) {
-			const p = chars[0] + chars[1];
-			if (p === 'ال' || p === 'لل') {
-				chars = chars.slice(2);
-				len = chars.length;
-			}
-		}
-		if (len >= 4 && chars[0] === 'و') {
-			chars = chars.slice(1);
-			len = chars.length;
-		}
-
-		if (len >= 4) {
-			const s2 = chars[len - 2] + chars[len - 1];
-			if (
-				s2 === 'ها' || s2 === 'ان' || s2 === 'ات' || s2 === 'ون' ||
-				s2 === 'ين' || s2 === 'يه' || s2 === 'يت' || s2 === 'ته'
-			) {
-				chars = chars.slice(0, len - 2);
-				len = chars.length;
-			}
-		}
-		if (len >= 3) {
-			const last = chars[len - 1];
-			if (last === 'ه' || last === 'ي') {
-				chars = chars.slice(0, len - 1);
-			}
-		}
-
-		return chars.join('');
-	}
+	// MIG-093 §B — the inline fold+stem moved to the shared $lib/searchFold
+	// (the Quick Switcher reuses the fold; ONE source of truth, no drift).
+	// Behavior identical: stemArabicLight10 = the same diacritic-strip +
+	// variant-unify + sequential Light10 prefix/suffix strip (plus an
+	// idempotent NFC+lowercase — queries reach here already lowercased).
+	const normalizeArabicForFilter = stemArabicLight10;
 
 	/** A filter sub-query prepared once per filter pass: lower-cased form
 	 *  plus its Arabic stem (if the query is Arabic and stemming would

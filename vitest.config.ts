@@ -55,6 +55,9 @@ export default defineConfig({
 			// MIG-092 §2 (2026-07-05) — Collections membership reducers +
 			// Bookmarks→Starred migration (idempotent, type-preserving, pinned).
 			'tests/mig-092/collections.test.ts',
+			// MIG-093 §B (2026-07-06) — the shared frontend fold (parity-pinned)
+			// + the Light10 stem port the Index filter re-points to.
+			'tests/mig-093/searchFold.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
