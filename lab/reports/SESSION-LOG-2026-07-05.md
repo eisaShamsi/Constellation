@@ -105,6 +105,13 @@ Binary built 20:05; Eisa tested. **Test 3 (create + add from search) PASS. Test 
   (Open / Open-in-new-tab / Reveal / **Remove bookmark** / Add-to-collection ▸ / Copy).
 Rebuilt frontend + release binary for Stage-1 re-test.
 
+**Re-test round 2** (commit `b934d91d` binary): Re-test 1 (location breadcrumb) +
+Re-test 2 (right-click menu) PASS. Two RTL/tooltip refinements → commit `b52f2d3f→next`:
+- Bookmark row now takes its **own title's** direction (`dir={detectDir(title)}`):
+  RTL title → fully-RTL row (⭐+name at reading start, location at reading end);
+  LTR title → LTR row — independent of app language (Language-First).
+- Dropped the native `title` tooltip (it overlapped the right-click menu).
+
 ### Side task (Boss-routed) — Sight-v6 test — commit `eb3d34b0`
 `tests/sight-v6/tradition-isolation.test.ts` stale assertion: `time-dome` is a
 THIRD intentional identity remap (MIG-037 P1) omitted from `identityIds`. Added
