@@ -607,6 +607,18 @@ Search history is stored locally on your device and persists across app restarts
 
 The Search Hub is a full-screen search experience. Click the magnifying glass icon in the dock bar to open it. Both sidebars collapse to give maximum space. Type any term and Constellation searches everywhere simultaneously, grouping results into 5 categories: Titles, Contents, Tags, Properties, and Wikilinks. Each category has a collapsible section with a count badge. Click any result to open it in the editor with all occurrences highlighted. A "Return to Search Hub" button appears so you can go back without re-searching.
 
+Under the search box are two tabs: **Results** and **Collections**.
+
+### Collections
+
+A **Collection** is a named, saved basket of notes you hand-pick — the working set for a task. Search normally throws its results away when you close it; a Collection is your decision about *which of those results matter*, kept across restarts. It's different from its neighbours on purpose: **Search** finds notes (temporary), **Bases** build a live table from a rule (auto-filled), the **File Explorer** shows where notes live (one home each). A Collection is none of those — it's your judgement, saved: any note can sit in as many collections as you like, hand-placed.
+
+**Making one, and filling it.** Open the Search Hub → **Collections** tab → **+ New**, type a name, press Enter. Then run a search on the **Results** tab, **right-click** any result → **Add to collection ▸** and pick your collection (or **New collection…**). You can also right-click a note in the file tree the same way.
+
+**Working with a collection.** The dropdown at the top switches between your collections. Each note shows its live details (title, library) and opens when you click it; the **✕** on the right takes a note out of the collection (it never deletes the note itself). You can **rename** (✎) or **delete** (🗑) any collection you made. Four filter chips — **Due**, **Unlinked**, **Contested**, **Forming** — *narrow* the view to notes in that state (they never add notes; combine them for AND). A collection stays current automatically: edit a note elsewhere and its row updates within a moment.
+
+**Starred (your bookmarks).** Bookmarks are now a special, permanent collection called **Starred** — it can't be deleted, and it's also shown in the sidebar's "Bookmarks" section for quick access. The ⭐ star button works exactly as before; anything you star lands in Starred. Everything you had bookmarked before is migrated in automatically the first time you open this version (your old bookmarks file is kept untouched as a backup). In the sidebar, each bookmark now shows *where it lives* — cUniverse / library / folder — on the far side of its row, and a right-click there gives you Open, Reveal in tree, Remove bookmark, Add to collection, and Copy.
+
 ### Cross-universe federation
 
 When your active universe has one or more cUniverses linked, search results span the federated set — you'll see notes from BOTH your active universe AND each linked cUniverse in the same result list. The status-bar note count reflects the federated total (e.g. "8751 notes" instead of just the active universe's count). Sidebar library badges show per-library counts including cUniverse libraries.
