@@ -3018,6 +3018,16 @@
 					}
 				}
 			} catch {}
+			// MIG-093 §A — refresh the title cache with federated titles (the
+			// boot core snapshot ran before the cUniverses attached, so
+			// allNotes held main-only). Shrink-overwrite guarded: a mid-race
+			// main-only payload never clobbers a bigger federated list.
+			try {
+				const core = await invoke<{ notes: Array<{ name: string; path: string; library_name: string }>; is_cold: boolean }>('cache_boot_snapshot_core');
+				if (core && !core.is_cold && core.notes.length >= allNotes.length) {
+					allNotes = core.notes.map(n => ({ name: n.name, path: n.path, libraryName: n.library_name }));
+				}
+			} catch {}
 			// MIG-079 §C.2b — re-fetch the edge list now cUniverses are attached
 			// (force resets the memo; ensureFullLinks's empty-overwrite guard keeps
 			// prior edges if a race returns empty).

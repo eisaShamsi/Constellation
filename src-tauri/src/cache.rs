@@ -210,8 +210,33 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
     // Phase 3: the actual row scan — `SELECT name, path, library_name FROM note_meta`.
     // This is the suspect phase on cold boot; `note_meta` is a row-store with
     // wide columns (body_text, *_json) that force full-page reads.
+    //
+    // MIG-093 §A — federate the title read (the graph-payload pattern above):
+    // with cUniverses attached, loop every schema on federated_conn so the
+    // Quick Switcher's title source spans the ONE universe. federated_conn
+    // not ready yet (boot races the background attach) → main-only via the
+    // bare reader; the frontend re-fetches on `federation:ready`.
     let t2 = Instant::now();
-    let notes = read_notes(&conn)?;
+    let schemas = get_federated_schemas(&app);
+    let notes = if schemas.len() > 1 {
+        let state = app.state::<crate::search::SearchState>();
+        let fed_guard = state
+            .federated_conn
+            .lock()
+            .map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        match fed_guard.as_ref() {
+            Some(fc) => {
+                let mut all = Vec::new();
+                for schema in &schemas {
+                    all.extend(read_notes_in_schema(fc, schema)?);
+                }
+                all
+            }
+            None => read_notes(&conn)?,
+        }
+    } else {
+        read_notes(&conn)?
+    };
     timings.push(("read_notes".into(), t2.elapsed().as_millis() as u64));
 
     let is_cold = notes.is_empty();
@@ -1210,10 +1235,20 @@ pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String
 
 /// Project `note_meta` → `BootNote`. Single prepared statement, one scan.
 fn read_notes(conn: &Connection) -> Result<Vec<BootNote>, String> {
+    read_notes_in_schema(conn, "main")
+}
+
+/// MIG-093 §A — schema-parameterized variant (the read_links_in_schema
+/// pattern). The Quick Switcher's title source (`allNotes`) must span the
+/// WHOLE universe including attached cUniverses — the ONE-universe ruling
+/// (2026-07-05): every name resolver spans all libraries, never one schema.
+fn read_notes_in_schema(conn: &Connection, schema: &str) -> Result<Vec<BootNote>, String> {
     let mut notes = Vec::new();
-    let mut stmt = conn
-        .prepare("SELECT name, path, library_name FROM note_meta")
-        .map_err(|e| e.to_string())?;
+    let sql = format!(
+        "SELECT name, path, library_name FROM {schema}.note_meta",
+        schema = schema
+    );
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |row| {
             Ok(BootNote {
