@@ -43,9 +43,9 @@
 <!-- MIG-092 — per-title row direction (Language-First): an RTL title mirrors the
      whole row (name at the reading start, trailing actions at the reading end). -->
 <div class="nr" class:nr-selected={selected} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px">
-	<button class="nr-main" onclick={onActivate} onauxclick={onActivate} dir="auto">
-		<span class="nr-name" dir="auto">{name}</span>
-		<span class="nr-meta" dir="auto">
+	<button class="nr-main" onclick={onActivate} onauxclick={onActivate}>
+		<span class="nr-name">{name}</span>
+		<span class="nr-meta">
 			{#if chips.length > 0}
 				{#each chips as c}<span class="nr-chip">{c}</span>{/each}
 			{/if}
