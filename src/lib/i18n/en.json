@@ -2368,11 +2368,6 @@
     "errors": "Errors",
     "done": "Done"
   },
-  "nav": {
-    "home": "Home",
-    "libraries": "Libraries",
-    "skills": "Skills"
-  },
   "tabs": {
     "newTab": "New Tab",
     "closeTab": "Close tab",

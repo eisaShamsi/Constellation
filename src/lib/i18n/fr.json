@@ -1783,11 +1783,6 @@
     "errors": "Erreurs",
     "done": "Terminé"
   },
-  "nav": {
-    "home": "Accueil",
-    "libraries": "Bibliothèques",
-    "skills": "Compétences"
-  },
   "tabs": {
     "newTab": "Nouvel onglet",
     "closeTab": "Fermer l'onglet",

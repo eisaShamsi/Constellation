@@ -2223,11 +2223,6 @@
     "noLibraries": "没有已注册的保险库",
     "openLibrary": "+ 打开保险库"
   },
-  "nav": {
-    "home": "主页",
-    "libraries": "库",
-    "skills": "技能"
-  },
   "tabs": {
     "newTab": "新建标签页",
     "closeTab": "关闭标签页",

@@ -2223,11 +2223,6 @@
     "noLibraries": "Kayıtlı kasa yok",
     "openLibrary": "+ Kasa aç"
   },
-  "nav": {
-    "home": "Ana Sayfa",
-    "libraries": "Kütüphaneler",
-    "skills": "Beceriler"
-  },
   "tabs": {
     "newTab": "Yeni Sekme",
     "closeTab": "Sekmeyi kapat",

@@ -2223,11 +2223,6 @@
     "noLibraries": "登録されたボールトがありません",
     "openLibrary": "+ ボールトを開く"
   },
-  "nav": {
-    "home": "ホーム",
-    "libraries": "ライブラリ",
-    "skills": "スキル"
-  },
   "tabs": {
     "newTab": "新規タブ",
     "closeTab": "タブを閉じる",

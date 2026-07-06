@@ -190,7 +190,6 @@ function detectPropertyType(key: string, value: string): PropertyType {
 // ─── Core state ───
 export const libraries = writable<LibraryInfo[]>([]);
 export const libraryStats = writable<LibraryStats[]>([]);
-export const searchResults = writable<StarInfo[]>([]);
 export const universeNotesLibrary = derived(libraries, ($libs) =>
 	$libs.find(l => l.is_universe_notes) ?? null
 );
@@ -829,12 +828,6 @@ export const focusedTab = derived(
 		if (!$split) return $active;
 		return $tabs.find(t => t.id === $fid) ?? $active;
 	}
-);
-
-// Backward compat: selectedNote derived from activeTab
-export const selectedNote = derived(
-	activeTab,
-	($tab) => $tab ? { path: $tab.path, content: $tab.content, libraryName: $tab.libraryName } : null
 );
 
 export const libraryCount = derived(libraries, ($v) => $v.length);
@@ -1844,23 +1837,6 @@ export async function removeLibraryWithCleanup(libraryId: string) {
 	await removeLibrary(libraryId);
 }
 
-// Batch-W — search_stars is `(async)`: an extended/cleared query must
-// invalidate the in-flight one (the empty-query clear bumps the seq too,
-// so a late resolve can't repopulate a cleared list).
-let _searchStarsSeq = 0;
-
-/** Search across all libraries. */
-export async function searchAllStars(query: string) {
-	const seq = ++_searchStarsSeq;
-	if (!query.trim()) {
-		searchResults.set([]);
-		return;
-	}
-	const results: StarInfo[] = await invoke('search_stars', { query });
-	if (seq !== _searchStarsSeq) return; // a newer query owns the write
-	searchResults.set(results);
-}
-
 // ─── Constellation Search Engine (Phase 1) ───
 
 export interface ConstellationSearchRequest {
@@ -2473,17 +2449,6 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 export function closeNote() {
 	const id = get(activeTabId);
 	if (id) closeTab(id);
-}
-
-/** Format a timestamp to relative time. */
-export function timeAgo(timestamp: number): string {
-	const now = Math.floor(Date.now() / 1000);
-	const diff = now - timestamp;
-	if (diff < 60) return 'just now';
-	if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-	if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-	if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-	return new Date(timestamp * 1000).toLocaleDateString();
 }
 
 // ─── File operations ───

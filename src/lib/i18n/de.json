@@ -1783,11 +1783,6 @@
     "errors": "Fehler",
     "done": "Fertig"
   },
-  "nav": {
-    "home": "Start",
-    "libraries": "Bibliotheken",
-    "skills": "Fähigkeiten"
-  },
   "tabs": {
     "newTab": "Neuer Tab",
     "closeTab": "Tab schließen",

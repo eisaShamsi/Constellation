@@ -2223,11 +2223,6 @@
     "noLibraries": "등록된 볼트 없음",
     "openLibrary": "+ 볼트 열기"
   },
-  "nav": {
-    "home": "홈",
-    "libraries": "라이브러리",
-    "skills": "스킬"
-  },
   "tabs": {
     "newTab": "새 탭",
     "closeTab": "탭 닫기",

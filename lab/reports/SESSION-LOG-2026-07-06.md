@@ -176,3 +176,18 @@ aliases searchable · recents on empty · create + search hand-off rows.
     removed All/This-note toggle). Minimal diffs (files are `stringify(obj,null,2)+\n`).
   - **Verify:** `npm run check` → 0 ERRORS (324 pre-existing unused-CSS warnings); all
     15 locales parse; grep of the removed symbols/keys = 0 in the primary tree.
+
+- **§0b — /libraries route + NavBar cascade + orphaned store exports + nav i18n:**
+  - DELETED the unreachable legacy `/libraries` route (`src/routes/libraries/+page.svelte`
+    + the dir), `NavBar.svelte` (imported by zero components), and `LanguageSwitcher.svelte`
+    (imported only by NavBar) — a 3-file cascade the MIG-091 §retire sweep missed.
+  - Removed the 4 store exports whose ONLY consumer was that route: `timeAgo`,
+    `selectedNote` (derived), `searchResults` (writable), `searchAllStars` (+ its
+    `_searchStarsSeq` guard). Re-verified route-only first: every other `searchResults`
+    hit is a component-local `$state` in ConstellationMap/Sight2 (name-collision, not the
+    store import); the live `relativeTime()` in searchHistory.ts is a different symbol, kept.
+  - i18n ×15: removed the whole `nav` namespace (home/libraries/skills, NavBar-owned).
+  - **Discovery (WA#6):** removing `searchAllStars` orphaned the `search_stars` Rust
+    command (its only invoker) → folded into §0c.
+  - **Verify:** `npm run check` → 0 ERRORS (warnings 324→320 = the route's CSS gone;
+    file count −3); all 15 locales parse.

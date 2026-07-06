@@ -1783,11 +1783,6 @@
     "errors": "Errores",
     "done": "Listo"
   },
-  "nav": {
-    "home": "Inicio",
-    "libraries": "Bibliotecas",
-    "skills": "Habilidades"
-  },
   "tabs": {
     "newTab": "Nueva pestaña",
     "closeTab": "Cerrar pestaña",

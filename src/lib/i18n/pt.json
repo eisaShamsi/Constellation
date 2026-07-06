@@ -2223,11 +2223,6 @@
     "noLibraries": "Nenhum cofre registrado",
     "openLibrary": "+ Abrir cofre"
   },
-  "nav": {
-    "home": "Início",
-    "libraries": "Bibliotecas",
-    "skills": "Competências"
-  },
   "tabs": {
     "newTab": "Novo separador",
     "closeTab": "Fechar aba",
