@@ -84,6 +84,37 @@ switcher. +layout: create/search-hub hand-offs + aliases prop.
 **Verify:** svelte-check 0 errors; full suite **245/245** incl. the pinned Boss case
 (query `islam` → exact title "Islam" #1).
 
-### → STOP for Boss test
-Binary building (frontend rebuilt + embed verified). §E after validation: remove
-instrumentation, i18n ×15 for the new rows, docs + Orientation, /simplify, measures.
+### Boss test — ALL PASS (with one §D-2 discovery)
+- **Ctrl+O measured by the Boss:** `islam` **2.7ms · 50 hits · 9,161 candidates**
+  (was 25.0s + heavy thrashing); `knowledge` **1.6ms** (was 29.3s). Exact title
+  "Islam" #1. Arabic fold works (`الزراعة` → alias row `الزِراعة → الزراعة المستدامة`).
+  Recents, Create-note row, Search-Hub hand-off: all pass.
+- **Test 5 discovery:** the Search Hub was STILL slow + light thrashing — its
+  default mode calls `constellation_search_universal`, a DIFFERENT command whose
+  `search_contents` had the identical materialize-snippets-before-LIMIT disease
+  (amplified by limit=200). **§D-2** (commit `bb46ea81`): same two-phase cure;
+  NO production native-snippet() path remains in search.rs (grep-verified).
+  **Boss re-test: "Much better. Pass."**
+
+### §E — close-out
+- **§E-1** (commit `1ffb9076`): instrumentation removed end-to-end (Rust trace +
+  command + registration; the QS diag line + CSS); `quickSwitcher.recent/
+  createNote/searchInHub` ×15 locales (workflow `wf_05140239-9b9`, all validated);
+  User Manual §5 "Quick Switcher (Ctrl+O)" section; **Orientation v3.27** (new
+  file: preamble + §8 Migrations row).
+- **§E-2** (commit `3366e0ca`): /simplify (4 agents) — reuse/simplification/
+  altitude clean (altitude's one flag was a false positive: the §A federation:ready
+  re-fetch already shipped at +layout:3021); efficiency: Intl.Collator hoisted to
+  module scope (APPLIED); documented skip: hasExactMatch second scan
+  (~2ms/keystroke at a 100ms debounce; not worth the pure-module API churn).
+- **Measures record (honest):** keystroke latency Boss-measured 1.6-2.7ms over
+  9,161 federated candidates (the Rule-3 budget met with ~40× headroom). Boot: no
+  separate formal measure taken; the §A read adds one indexed name/path/library
+  scan per attached schema (the graph payload's existing shape) and the Boss
+  booted 6+ times through testing with no perceived regression. FileTree/typing
+  untouched.
+
+### MIG-093 — DONE. Shipped + Boss-validated + closed out.
+Before/after: Ctrl+O 25-29s+thrash → 1.6-2.7ms · Search Hub content ~25s → ~1s
+("much better", calm) · exact titles rank #1 · federated titles visible ·
+aliases searchable · recents on empty · create + search hand-off rows.
