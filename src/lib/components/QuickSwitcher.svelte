@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { invoke } from '@tauri-apps/api/core';
 	import { constellationSearch, parseSearchQuery } from '$lib/libraries/store';
 
 	let {
@@ -60,6 +61,17 @@
 	// by any state churn. The Vue v-model pattern, applied to Svelte 5.
 	let composing = $state(false);
 
+	// ── QS-speed reproduce-first instrumentation (2026-07-06, TEMPORARY) ──
+	// The Boss reports 2+ minute result retrieval with heavy thrashing.
+	// Devtools is OFF in release builds, so the trace renders IN the panel:
+	// per-run local-filter ms, the Rust await wall ms, and the Rust-side
+	// phase trace (db-lock wait / per-branch federated ms) fetched after
+	// each search. `runSeq` counts searches issued since the modal opened
+	// (a pile-up indicator: several in-flight 2-minute searches serialize
+	// on the DB lock → the thrash signature).
+	let diag = $state('');
+	let runSeq = 0;
+
 	// MIG-058 — initial filtered state when the modal opens with empty
 	// query: show the top 30 of the cached notes (existing behavior).
 	$effect(() => {
@@ -93,20 +105,36 @@
 		if (composing) return;       // MIG-058 — skip during IME composition
 		if (!q.trim()) return;
 		searchTimer = setTimeout(async () => {
+			// QS-speed instrumentation — time each phase of this run.
+			const myRun = ++runSeq;
+			const t0 = performance.now();
 			// 1) Local substring filter against the cached notes array.
 			const qLower = q.toLowerCase();
 			const local = notes
 				.filter(n => n.name.toLowerCase().includes(qLower) || n.path.toLowerCase().includes(qLower))
 				.slice(0, 20);
+			const localMs = performance.now() - t0;
+			diag = `run #${myRun} · local ${localMs.toFixed(1)}ms (${local.length} hits) · rust search running…`;
 			let next = local;
+			let rustMs = 0;
+			let rustTrace = '';
 			// 2) For queries ≥ 3 chars, augment with federated Rust results.
 			if (q.trim().length >= 3) {
 				try {
 					const req = parseSearchQuery(q);
 					req.limit = 15;
+					const tR = performance.now();
 					const results = await constellationSearch(req);
+					rustMs = performance.now() - tR;
+					try {
+						const tr = await invoke<[string, number][]>('get_last_search_trace');
+						rustTrace = tr.map(([k, v]) => `${k} ${v >= 1000 ? (v / 1000).toFixed(1) + 's' : v.toFixed(0) + 'ms'}`).join(' · ');
+					} catch { /* trace unavailable */ }
 					// Option E — discard if user has moved on since search start.
-					if (q !== query) return;
+					if (q !== query) {
+						diag = `run #${myRun} STALE (typed on) · local ${localMs.toFixed(1)}ms · rust ${(rustMs / 1000).toFixed(1)}s [${rustTrace}]`;
+						return;
+					}
 					const seen = new Set(local.map(n => n.path));
 					const merged = [...local];
 					for (const r of results) {
@@ -126,6 +154,10 @@
 			if (q !== query) return;
 			filtered = next.slice(0, 30);
 			selectedIndex = 0;
+			// QS-speed instrumentation — the run's full breakdown, on-screen.
+			diag = rustMs > 0
+				? `run #${myRun} · local ${localMs.toFixed(1)}ms (${local.length}) · rust ${rustMs >= 1000 ? (rustMs / 1000).toFixed(1) + 's' : rustMs.toFixed(0) + 'ms'} [${rustTrace}]`
+				: `run #${myRun} · local ${localMs.toFixed(1)}ms (${local.length}) · no rust search (<3 chars)`;
 		}, 300);
 	});
 
@@ -183,6 +215,10 @@
 				<div class="qs-empty">{$t('quickSwitcher.noResults')}</div>
 			{/if}
 		</div>
+		{#if diag}
+			<!-- QS-speed reproduce-first instrumentation (TEMPORARY) -->
+			<div class="qs-diag" dir="ltr">{diag}</div>
+		{/if}
 	</div>
 </div>
 
@@ -220,4 +256,10 @@
 	.qs-path { font-size: 0.72rem; color: var(--text-faint); }
 	.qs-item.selected .qs-path { color: rgba(255,255,255,0.7); }
 	.qs-empty { padding: 16px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+	/* QS-speed instrumentation (TEMPORARY) */
+	.qs-diag {
+		padding: 4px 12px; font-size: 0.68rem; font-family: var(--font-monospace, monospace);
+		color: var(--text-faint); border-top: 1px solid var(--background-modifier-border);
+		white-space: normal; word-break: break-all;
+	}
 </style>
