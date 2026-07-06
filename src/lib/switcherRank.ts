@@ -53,6 +53,9 @@ export const BAND_EXACT = 1 << 18;
 export const BAND_PREFIX = 1 << 17;
 export const BAND_WORDB = 1 << 16;
 const ALIAS_PENALTY = 8;
+// /simplify (efficiency): Intl.Collator construction is not cheap (ICU data
+// load) — build the default ONCE at module scope, never per rank call.
+const DEFAULT_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' });
 
 /** Word boundary = start, or the previous char is not a letter/digit. */
 function isSep(ch: string): boolean {
@@ -146,7 +149,7 @@ export function rankSwitcher(
 	const multi = words.length > 1;
 	const limit = opts?.limit ?? 50;
 	const recency = opts?.recencyIndex;
-	const collator = opts?.collator ?? new Intl.Collator(undefined, { sensitivity: 'base' });
+	const collator = opts?.collator ?? DEFAULT_COLLATOR;
 
 	const hits: RankedHit[] = [];
 	for (const c of candidates) {
