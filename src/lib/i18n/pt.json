@@ -475,8 +475,6 @@
       "pressKeys": "Pressione teclas..."
     },
     "plugins": {
-      "workbench": "Bancada",
-      "workbenchDesc": "Peça notas com suas palavras e mantenha um conjunto de trabalho enquanto trabalha",
       "intro": "Ative ou desative plug-ins. Plug-ins desativados ficam ocultos da interface.",
       "on": "Ativado",
       "off": "Desativado",
@@ -838,6 +836,8 @@
   },
   "searchHub": {
     "title": "Centro de Pesquisa",
+    "tabResults": "Resultados",
+    "tabCollections": "Coleções",
     "syntaxHelpers": "Sintaxe de pesquisa",
     "linksTo": "Liga a",
     "linksFrom": "Ligado de",
@@ -2279,7 +2279,8 @@
     "description": "Notas e índices entre bibliotecas"
   },
   "contextMenu": {
-    "addToWorkbench": "Adicionar à bancada",
+    "addToCollection": "Adicionar à coleção",
+    "newCollection": "Nova coleção…",
     "openInNewTab": "Abrir em nova aba",
     "move": "Mover",
     "addTag": "Adicionar etiqueta",
@@ -3860,25 +3861,23 @@
     "notFound": "Arquivo não encontrado na biblioteca",
     "lookupDetails": "Mostrar detalhes da busca"
   },
-  "workbench": {
-    "title": "Bancada",
-    "empty": "A bancada está livre.",
-    "emptyHint": "Pergunte acima com suas palavras, ou clique com o botão direito numa nota → Adicionar à bancada.",
-    "askPlaceholder": "Peça notas com suas próprias palavras…",
-    "searching": "Buscando…",
-    "holdHint": "clique para segurar · Ctrl+clique para abrir",
-    "backToDesk": "Voltar à bancada",
-    "semanticOff": "busca semântica desligada — apenas correspondência de palavras",
-    "sweepDone": "Varrer concluídos",
-    "done": "Concluído",
-    "setDown": "Soltar",
-    "missing": "ausente — o arquivo se foi; solte quando quiser",
-    "alreadyHeld": "Na bancada",
-    "close": "Fechar",
-    "chipDue": "a revisar",
-    "chipUnlinked": "sem vínculos",
-    "chipContested": "contestada",
-    "chipForming": "em formação",
-    "addCurrent": "Adicionar a nota atual à bancada"
+  "collections": {
+    "starred": "Favoritos",
+    "new": "Nova",
+    "newCollection": "Nova coleção",
+    "newPlaceholder": "Nome da coleção…",
+    "rename": "Renomear",
+    "delete": "Excluir",
+    "remove": "Remover",
+    "empty": "Esta coleção está vazia",
+    "emptyHint": "Pesquise e depois adicione resultados a uma coleção para guardá-los.",
+    "noneMatch": "Nenhum membro corresponde aos filtros ativos.",
+    "typeFolder": "Pasta",
+    "typeSearch": "Pesquisa",
+    "missing": "ausente",
+    "chipDue": "A revisar",
+    "chipUnlinked": "Sem vínculos",
+    "chipContested": "Contestada",
+    "chipForming": "Em formação"
   }
 }

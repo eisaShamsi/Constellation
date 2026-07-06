@@ -475,8 +475,6 @@
       "pressKeys": "Appuyez sur les touches..."
     },
     "plugins": {
-      "workbench": "Établi",
-      "workbenchDesc": "Demandez des notes avec vos mots et retenez un ensemble de travail pendant que vous y travaillez",
       "intro": "Activez ou désactivez les plug-ins. Les plug-ins désactivés sont masqués.",
       "on": "Activé",
       "off": "Désactivé",
@@ -837,6 +835,8 @@
     "fiveActs": "Cinq actes"
   },
   "searchHub": {
+    "tabResults": "Résultats",
+    "tabCollections": "Collections",
     "title": "Centre de recherche",
     "syntaxHelpers": "Syntaxe de recherche",
     "linksTo": "Liens vers",
@@ -1839,7 +1839,8 @@
     "description": "Notes et index inter-bibliothèques"
   },
   "contextMenu": {
-    "addToWorkbench": "Ajouter à l'établi",
+    "addToCollection": "Ajouter à la collection",
+    "newCollection": "Nouvelle collection…",
     "openInNewTab": "Ouvrir dans un nouvel onglet",
     "move": "Déplacer",
     "addTag": "Ajouter une étiquette",
@@ -3860,25 +3861,23 @@
     "notFound": "Fichier introuvable dans la bibliothèque",
     "lookupDetails": "Afficher les détails de la recherche"
   },
-  "workbench": {
-    "title": "Établi",
-    "empty": "L'établi est dégagé.",
-    "emptyHint": "Demandez ci-dessus avec vos mots, ou clic droit sur une note → Ajouter à l'établi.",
-    "askPlaceholder": "Demandez des notes avec vos propres mots…",
-    "searching": "Recherche…",
-    "holdHint": "clic pour retenir · Ctrl+clic pour ouvrir",
-    "backToDesk": "Retour à l'établi",
-    "semanticOff": "recherche sémantique désactivée — correspondance de mots seulement",
-    "sweepDone": "Balayer le terminé",
-    "done": "Terminé",
-    "setDown": "Reposer",
-    "missing": "introuvable — le fichier a disparu ; reposez-la quand vous voulez",
-    "alreadyHeld": "Sur l'établi",
-    "close": "Fermer",
-    "chipDue": "à revoir",
-    "chipUnlinked": "sans lien",
-    "chipContested": "contestée",
-    "chipForming": "en formation",
-    "addCurrent": "Ajouter la note actuelle à l'établi"
+  "collections": {
+    "starred": "Favoris",
+    "new": "Nouvelle",
+    "newCollection": "Nouvelle collection",
+    "newPlaceholder": "Nom de la collection…",
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "remove": "Retirer",
+    "empty": "Cette collection est vide",
+    "emptyHint": "Recherchez, puis ajoutez des résultats à une collection pour les conserver.",
+    "noneMatch": "Aucun élément ne correspond aux filtres actifs.",
+    "typeFolder": "Dossier",
+    "typeSearch": "Recherche",
+    "missing": "introuvable",
+    "chipDue": "À revoir",
+    "chipUnlinked": "Sans lien",
+    "chipContested": "Contestée",
+    "chipForming": "En formation"
   }
 }

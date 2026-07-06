@@ -377,8 +377,6 @@
       "pressKeys": "Press keys..."
     },
     "plugins": {
-      "workbench": "Workbench",
-      "workbenchDesc": "Ask for notes in your own words and hold a working set while you work it",
       "intro": "Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.",
       "on": "On",
       "off": "Off",
@@ -901,6 +899,8 @@
     "fiveActs": "Five Acts"
   },
   "searchHub": {
+    "tabResults": "Results",
+    "tabCollections": "Collections",
     "title": "Search Hub",
     "syntaxHelpers": "Search syntax",
     "linksTo": "Links to",
@@ -1450,7 +1450,6 @@
   },
   "sources": {
     "contextMenu": {
-      "addToWorkbench": "Add to Workbench",
       "suggest": "Suggest sources & content type"
     },
     "label": {
@@ -2425,6 +2424,8 @@
     "description": "Cross-library notes and indexes"
   },
   "contextMenu": {
+    "addToCollection": "Add to collection",
+    "newCollection": "New collection…",
     "openInNewTab": "Open in new tab",
     "move": "Move",
     "addTag": "Add tag",
@@ -3990,25 +3991,23 @@
     "notFound": "File not found in library",
     "lookupDetails": "Show lookup details"
   },
-  "workbench": {
-    "title": "Workbench",
-    "empty": "The desk is clear.",
-    "emptyHint": "Ask above in your own words, or right-click any note → Add to Workbench.",
-    "askPlaceholder": "Ask for notes in your own words…",
-    "searching": "Searching…",
-    "holdHint": "click to hold · Ctrl+click to open",
-    "backToDesk": "Back to desk",
-    "semanticOff": "semantic search off — matching words only",
-    "sweepDone": "Sweep done",
-    "done": "Done",
-    "setDown": "Set down",
-    "missing": "missing — the file is gone; set it down when ready",
-    "alreadyHeld": "On the desk",
-    "close": "Close",
-    "chipDue": "due",
-    "chipUnlinked": "unlinked",
-    "chipContested": "contested",
-    "chipForming": "forming",
-    "addCurrent": "Add current note to Workbench"
+  "collections": {
+    "starred": "Starred",
+    "new": "New",
+    "newCollection": "New collection",
+    "newPlaceholder": "Collection name…",
+    "rename": "Rename",
+    "delete": "Delete",
+    "remove": "Remove",
+    "empty": "This collection is empty",
+    "emptyHint": "Search, then add results to a collection to keep them.",
+    "noneMatch": "No members match the active filters.",
+    "typeFolder": "Folder",
+    "typeSearch": "Search",
+    "missing": "missing",
+    "chipDue": "Due",
+    "chipUnlinked": "Unlinked",
+    "chipContested": "Contested",
+    "chipForming": "Forming"
   }
 }

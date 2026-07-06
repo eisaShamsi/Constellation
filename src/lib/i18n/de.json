@@ -475,8 +475,6 @@
       "pressKeys": "Tasten drücken..."
     },
     "plugins": {
-      "workbench": "Werkbank",
-      "workbenchDesc": "Frage in eigenen Worten nach Notizen und halte einen Arbeitsbestand, während du daran arbeitest",
       "intro": "Plug-Ins ein- oder ausschalten. Deaktivierte Plug-Ins werden ausgeblendet.",
       "on": "An",
       "off": "Aus",
@@ -868,7 +866,9 @@
     "derivesFrom": "Abgeleitet von",
     "partOf": "Teil von",
     "matchVia": "über",
-    "concept": "Konzept"
+    "concept": "Konzept",
+    "tabResults": "Ergebnisse",
+    "tabCollections": "Sammlungen"
   },
   "layout": {
     "leftSidebar": "Linke Seitenleiste",
@@ -1839,7 +1839,8 @@
     "description": "Bibliotheksübergreifende Notizen und Verzeichnisse"
   },
   "contextMenu": {
-    "addToWorkbench": "Zur Werkbank hinzufügen",
+    "addToCollection": "Zur Sammlung hinzufügen",
+    "newCollection": "Neue Sammlung…",
     "openInNewTab": "In neuem Tab öffnen",
     "move": "Verschieben",
     "addTag": "Tag hinzufügen",
@@ -3860,25 +3861,23 @@
     "notFound": "Datei nicht in der Bibliothek gefunden",
     "lookupDetails": "Suchdetails anzeigen"
   },
-  "workbench": {
-    "title": "Werkbank",
-    "empty": "Die Werkbank ist leer.",
-    "emptyHint": "Frage oben in deinen eigenen Worten, oder Rechtsklick auf eine Notiz → Zur Werkbank hinzufügen.",
-    "askPlaceholder": "Nach Notizen in eigenen Worten fragen…",
-    "searching": "Suche…",
-    "holdHint": "Klick zum Halten · Strg+Klick zum Öffnen",
-    "backToDesk": "Zurück zur Werkbank",
-    "semanticOff": "semantische Suche aus — nur Wortabgleich",
-    "sweepDone": "Erledigtes entfernen",
-    "done": "Erledigt",
-    "setDown": "Ablegen",
-    "missing": "fehlt — die Datei ist weg; bei Gelegenheit ablegen",
-    "alreadyHeld": "Auf der Werkbank",
-    "close": "Schließen",
-    "chipDue": "fällig",
-    "chipUnlinked": "unverknüpft",
-    "chipContested": "strittig",
-    "chipForming": "im Entstehen",
-    "addCurrent": "Aktuelle Notiz zur Werkbank hinzufügen"
+  "collections": {
+    "starred": "Mit Stern",
+    "new": "Neu",
+    "newCollection": "Neue Sammlung",
+    "newPlaceholder": "Sammlungsname…",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "remove": "Entfernen",
+    "empty": "Diese Sammlung ist leer",
+    "emptyHint": "Suche und füge Ergebnisse einer Sammlung hinzu, um sie zu behalten.",
+    "noneMatch": "Keine Mitglieder entsprechen den aktiven Filtern.",
+    "typeFolder": "Ordner",
+    "typeSearch": "Suche",
+    "missing": "fehlt",
+    "chipDue": "Fällig",
+    "chipUnlinked": "Unverknüpft",
+    "chipContested": "Strittig",
+    "chipForming": "Im Entstehen"
   }
 }

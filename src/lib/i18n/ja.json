@@ -475,8 +475,6 @@
       "pressKeys": "キーを押してください..."
     },
     "plugins": {
-      "workbench": "ワークベンチ",
-      "workbenchDesc": "自分の言葉でノートを探し、作業中のセットを保持します",
       "intro": "プラグインのオン/オフを切り替えます。無効にしたプラグインはインターフェースから非表示になります。",
       "on": "オン",
       "off": "オフ",
@@ -838,6 +836,8 @@
   },
   "searchHub": {
     "title": "検索ハブ",
+    "tabResults": "結果",
+    "tabCollections": "コレクション",
     "syntaxHelpers": "検索構文",
     "linksTo": "リンク先",
     "linksFrom": "リンク元",
@@ -2279,7 +2279,8 @@
     "description": "ライブラリ横断ノートとインデックス"
   },
   "contextMenu": {
-    "addToWorkbench": "ワークベンチに追加",
+    "addToCollection": "コレクションに追加",
+    "newCollection": "新しいコレクション…",
     "openInNewTab": "新しいタブで開く",
     "move": "移動",
     "addTag": "タグを追加",
@@ -3833,25 +3834,23 @@
     "notFound": "ライブラリ内にファイルが見つかりません",
     "lookupDetails": "検索の詳細を表示"
   },
-  "workbench": {
-    "title": "ワークベンチ",
-    "empty": "デスクは空です。",
-    "emptyHint": "上で自分の言葉で尋ねるか、ノートを右クリック → ワークベンチに追加。",
-    "askPlaceholder": "自分の言葉でノートを探す…",
-    "searching": "検索中…",
-    "holdHint": "クリックで保持 · Ctrl+クリックで開く",
-    "backToDesk": "デスクに戻る",
-    "semanticOff": "セマンティック検索オフ — 単語一致のみ",
-    "sweepDone": "完了を一掃",
-    "done": "完了",
-    "setDown": "置く",
-    "missing": "見つかりません — ファイルが存在しません。任意で外してください",
-    "alreadyHeld": "デスクにあります",
-    "close": "閉じる",
+  "collections": {
+    "starred": "スター付き",
+    "new": "新規",
+    "newCollection": "新しいコレクション",
+    "newPlaceholder": "コレクション名…",
+    "rename": "名前を変更",
+    "delete": "削除",
+    "remove": "削除",
+    "empty": "このコレクションは空です",
+    "emptyHint": "検索してから、結果をコレクションに追加して保管しましょう。",
+    "noneMatch": "有効なフィルターに一致するメンバーはありません。",
+    "typeFolder": "フォルダ",
+    "typeSearch": "検索",
+    "missing": "見つかりません",
     "chipDue": "要復習",
     "chipUnlinked": "未リンク",
     "chipContested": "矛盾あり",
-    "chipForming": "形成中",
-    "addCurrent": "現在のノートをワークベンチに追加"
+    "chipForming": "形成中"
   }
 }

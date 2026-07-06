@@ -475,8 +475,6 @@
       "pressKeys": "按下按键..."
     },
     "plugins": {
-      "workbench": "工作台",
-      "workbenchDesc": "用自己的话查找笔记，并在处理期间保留一个工作集",
       "intro": "开启或关闭插件。禁用的插件将从界面中隐藏。",
       "on": "开启",
       "off": "关闭",
@@ -868,7 +866,9 @@
     "derivesFrom": "源自",
     "partOf": "一部分",
     "matchVia": "经由",
-    "concept": "概念"
+    "concept": "概念",
+    "tabResults": "结果",
+    "tabCollections": "收藏集"
   },
   "layout": {
     "leftSidebar": "左侧边栏",
@@ -2279,7 +2279,8 @@
     "description": "跨库笔记和索引"
   },
   "contextMenu": {
-    "addToWorkbench": "加入工作台",
+    "addToCollection": "添加到收藏集",
+    "newCollection": "新建收藏集…",
     "openInNewTab": "在新标签页中打开",
     "move": "移动",
     "addTag": "添加标签",
@@ -3833,25 +3834,23 @@
     "notFound": "库中未找到文件",
     "lookupDetails": "显示查找详情"
   },
-  "workbench": {
-    "title": "工作台",
-    "empty": "工作台已清空。",
-    "emptyHint": "在上方用自己的话提问，或右键任意笔记 → 加入工作台。",
-    "askPlaceholder": "用自己的话找笔记…",
-    "searching": "搜索中…",
-    "holdHint": "点击暂存 · Ctrl+点击打开",
-    "backToDesk": "返回工作台",
-    "semanticOff": "语义搜索已关闭 — 仅匹配文字",
-    "sweepDone": "清除已完成",
-    "done": "完成",
-    "setDown": "放下",
-    "missing": "缺失 — 文件已不存在；随时放下即可",
-    "alreadyHeld": "已在工作台",
-    "close": "关闭",
+  "collections": {
+    "starred": "已加星标",
+    "new": "新建",
+    "newCollection": "新建收藏集",
+    "newPlaceholder": "收藏集名称…",
+    "rename": "重命名",
+    "delete": "删除",
+    "remove": "移除",
+    "empty": "此收藏集为空",
+    "emptyHint": "先搜索，再将结果添加到收藏集以便保存。",
+    "noneMatch": "没有成员符合当前筛选条件。",
+    "typeFolder": "文件夹",
+    "typeSearch": "搜索",
+    "missing": "缺失",
     "chipDue": "待复看",
     "chipUnlinked": "无链接",
     "chipContested": "有矛盾",
-    "chipForming": "成形中",
-    "addCurrent": "将当前笔记加入工作台"
+    "chipForming": "成形中"
   }
 }

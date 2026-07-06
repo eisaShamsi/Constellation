@@ -475,8 +475,6 @@
       "pressKeys": "לחץ על מקשים..."
     },
     "plugins": {
-      "workbench": "שולחן העבודה",
-      "workbenchDesc": "בקש פתקים במילים שלך והחזק סט עבודה בזמן שאתה עובד עליו",
       "intro": "הפעל או כבה תוספים. תוספים מושבתים מוסתרים מהממשק.",
       "on": "פעיל",
       "off": "כבוי",
@@ -868,7 +866,9 @@
     "derivesFrom": "נגזר",
     "partOf": "חלק",
     "matchVia": "דרך",
-    "concept": "מושג"
+    "concept": "מושג",
+    "tabResults": "תוצאות",
+    "tabCollections": "אוספים"
   },
   "layout": {
     "leftSidebar": "סרגל צד שמאלי",
@@ -1839,7 +1839,8 @@
     "description": "הערות ואינדקסים חוצי ספריות"
   },
   "contextMenu": {
-    "addToWorkbench": "הוסף לשולחן העבודה",
+    "addToCollection": "הוסף לאוסף",
+    "newCollection": "אוסף חדש…",
     "openInNewTab": "פתח בכרטיסייה חדשה",
     "move": "הזז",
     "addTag": "הוסף תגית",
@@ -3887,25 +3888,23 @@
     "notFound": "הקובץ לא נמצא בספרייה",
     "lookupDetails": "הצג פרטי חיפוש"
   },
-  "workbench": {
-    "title": "שולחן העבודה",
-    "empty": "השולחן פנוי.",
-    "emptyHint": "שאל למעלה במילים שלך, או לחץ ימני על פתק ← הוסף לשולחן העבודה.",
-    "askPlaceholder": "בקש פתקים במילים שלך…",
-    "searching": "מחפש…",
-    "holdHint": "לחיצה להחזקה · Ctrl+לחיצה לפתיחה",
-    "backToDesk": "חזרה לשולחן",
-    "semanticOff": "חיפוש סמנטי כבוי — התאמת מילים בלבד",
-    "sweepDone": "נקה שהושלם",
-    "done": "הושלם",
-    "setDown": "הנח בצד",
-    "missing": "חסר — הקובץ נעלם; הנח בצד כשתרצה",
-    "alreadyHeld": "על השולחן",
-    "close": "סגור",
+  "collections": {
+    "starred": "מסומן בכוכב",
+    "new": "חדש",
+    "newCollection": "אוסף חדש",
+    "newPlaceholder": "שם האוסף…",
+    "rename": "שנה שם",
+    "delete": "מחק",
+    "remove": "הסר",
+    "empty": "האוסף הזה ריק",
+    "emptyHint": "חפש, ואז הוסף תוצאות לאוסף כדי לשמור אותן.",
+    "noneMatch": "אף פריט אינו תואם את המסננים הפעילים.",
+    "typeFolder": "תיקייה",
+    "typeSearch": "חיפוש",
+    "missing": "חסר",
     "chipDue": "לבדיקה",
     "chipUnlinked": "ללא קישור",
     "chipContested": "שנוי במחלוקת",
-    "chipForming": "בהתהוות",
-    "addCurrent": "הוסף את הפתק הנוכחי לשולחן"
+    "chipForming": "בהתהוות"
   }
 }

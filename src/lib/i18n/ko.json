@@ -475,8 +475,6 @@
       "pressKeys": "키를 누르세요..."
     },
     "plugins": {
-      "workbench": "워크벤치",
-      "workbenchDesc": "자신의 말로 노트를 찾고 작업하는 동안 작업 세트를 보관합니다",
       "intro": "플러그인을 켜거나 끕니다. 비활성화된 플러그인은 인터페이스에서 숨겨집니다.",
       "on": "켜기",
       "off": "끄기",
@@ -837,6 +835,8 @@
     "fiveActs": "다섯 가지 행위"
   },
   "searchHub": {
+    "tabResults": "결과",
+    "tabCollections": "컬렉션",
     "title": "검색 허브",
     "syntaxHelpers": "검색 구문",
     "linksTo": "나가는 링크",
@@ -2279,7 +2279,8 @@
     "description": "라이브러리 간 노트 및 색인"
   },
   "contextMenu": {
-    "addToWorkbench": "워크벤치에 추가",
+    "addToCollection": "컬렉션에 추가",
+    "newCollection": "새 컬렉션…",
     "openInNewTab": "새 탭에서 열기",
     "move": "이동",
     "addTag": "태그 추가",
@@ -3833,25 +3834,23 @@
     "notFound": "라이브러리에서 파일을 찾을 수 없습니다",
     "lookupDetails": "조회 세부정보 표시"
   },
-  "workbench": {
-    "title": "워크벤치",
-    "empty": "책상이 비어 있습니다.",
-    "emptyHint": "위에서 자신의 말로 묻거나, 노트를 우클릭 → 워크벤치에 추가.",
-    "askPlaceholder": "자신의 말로 노트 요청…",
-    "searching": "검색 중…",
-    "holdHint": "클릭하여 보관 · Ctrl+클릭으로 열기",
-    "backToDesk": "책상으로 돌아가기",
-    "semanticOff": "시맨틱 검색 꺼짐 — 단어 일치만",
-    "sweepDone": "완료 정리",
-    "done": "완료",
-    "setDown": "내려놓기",
-    "missing": "없음 — 파일이 사라졌습니다. 원할 때 내려놓으세요",
-    "alreadyHeld": "책상 위에 있음",
-    "close": "닫기",
+  "collections": {
+    "starred": "즐겨찾기",
+    "new": "새로 만들기",
+    "newCollection": "새 컬렉션",
+    "newPlaceholder": "컬렉션 이름…",
+    "rename": "이름 바꾸기",
+    "delete": "삭제",
+    "remove": "제거",
+    "empty": "이 컬렉션은 비어 있습니다",
+    "emptyHint": "검색한 뒤 결과를 컬렉션에 추가하면 보관할 수 있습니다.",
+    "noneMatch": "활성 필터와 일치하는 항목이 없습니다.",
+    "typeFolder": "폴더",
+    "typeSearch": "검색",
+    "missing": "없음",
     "chipDue": "검토 예정",
     "chipUnlinked": "연결 없음",
     "chipContested": "상충",
-    "chipForming": "형성 중",
-    "addCurrent": "현재 노트를 워크벤치에 추가"
+    "chipForming": "형성 중"
   }
 }

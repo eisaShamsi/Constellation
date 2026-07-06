@@ -475,8 +475,6 @@
       "pressKeys": "Presiona teclas..."
     },
     "plugins": {
-      "workbench": "Mesa de trabajo",
-      "workbenchDesc": "Pide notas con tus palabras y retén un conjunto de trabajo mientras trabajas",
       "intro": "Activa o desactiva los plug-ins. Los plug-ins desactivados se ocultan de la interfaz.",
       "on": "Activado",
       "off": "Desactivado",
@@ -868,7 +866,9 @@
     "derivesFrom": "Deriva de",
     "partOf": "Parte de",
     "matchVia": "vía",
-    "concept": "Concepto"
+    "concept": "Concepto",
+    "tabResults": "Resultados",
+    "tabCollections": "Colecciones"
   },
   "layout": {
     "leftSidebar": "Barra lateral izquierda",
@@ -1839,7 +1839,8 @@
     "description": "Notas e índices entre bibliotecas"
   },
   "contextMenu": {
-    "addToWorkbench": "Añadir a la mesa de trabajo",
+    "addToCollection": "Añadir a la colección",
+    "newCollection": "Nueva colección…",
     "openInNewTab": "Abrir en una pestaña nueva",
     "move": "Mover",
     "addTag": "Añadir etiqueta",
@@ -3860,25 +3861,23 @@
     "notFound": "Archivo no encontrado en la biblioteca",
     "lookupDetails": "Mostrar detalles de búsqueda"
   },
-  "workbench": {
-    "title": "Mesa de trabajo",
-    "empty": "La mesa está despejada.",
-    "emptyHint": "Pregunta arriba con tus palabras, o clic derecho en una nota → Añadir a la mesa.",
-    "askPlaceholder": "Pide notas con tus propias palabras…",
-    "searching": "Buscando…",
-    "holdHint": "clic para retener · Ctrl+clic para abrir",
-    "backToDesk": "Volver a la mesa",
-    "semanticOff": "búsqueda semántica desactivada — solo coincidencia de palabras",
-    "sweepDone": "Barrer lo hecho",
-    "done": "Hecho",
-    "setDown": "Soltar",
-    "missing": "perdida — el archivo ya no existe; suéltala cuando quieras",
-    "alreadyHeld": "En la mesa",
-    "close": "Cerrar",
-    "chipDue": "pendiente",
-    "chipUnlinked": "sin enlaces",
-    "chipContested": "en disputa",
-    "chipForming": "en formación",
-    "addCurrent": "Añadir la nota actual a la mesa"
+  "collections": {
+    "starred": "Destacados",
+    "new": "Nueva",
+    "newCollection": "Nueva colección",
+    "newPlaceholder": "Nombre de la colección…",
+    "rename": "Cambiar nombre",
+    "delete": "Eliminar",
+    "remove": "Quitar",
+    "empty": "Esta colección está vacía",
+    "emptyHint": "Busca y luego añade resultados a una colección para conservarlos.",
+    "noneMatch": "Ningún elemento coincide con los filtros activos.",
+    "typeFolder": "Carpeta",
+    "typeSearch": "Búsqueda",
+    "missing": "no encontrado",
+    "chipDue": "Pendiente",
+    "chipUnlinked": "Sin enlaces",
+    "chipContested": "En disputa",
+    "chipForming": "En formación"
   }
 }
