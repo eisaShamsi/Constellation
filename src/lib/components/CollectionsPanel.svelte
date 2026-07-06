@@ -17,6 +17,7 @@
 		hydrateCollectionNotes, STARRED_ID,
 	} from '$lib/libraries/store';
 	import { buildDisplayRows, collectionKey, type CollectionDisplayRow, type HydratedNoteRow } from '$lib/libraries/collectionsLogic';
+	import { filterByChips, type ChipToggles } from './collectionChips';
 	import NoteList from './NoteList.svelte';
 	import NoteRow from './NoteRow.svelte';
 	import { detectDir } from '$lib/utils';
@@ -64,6 +65,11 @@
 	});
 
 	const displayRows = $derived(buildDisplayRows(items, hydratedRows));
+	// §7 — four state chips NARROW the shown members (pure client-side
+	// intersection over the one hydration read — zero IPC; folder/search members
+	// carry no state facts, so any active chip drops them).
+	let chips = $state<ChipToggles>({ due: false, unlinked: false, contested: false, forming: false });
+	const filteredRows = $derived(filterByChips(displayRows, d => d.hydrated, chips));
 	const hasDone = $derived(items.some(i => i.done));
 	const label = (c: { id: string; name: string }) => (c.id === STARRED_ID ? L('collections.starred', 'Starred') : c.name);
 
@@ -139,7 +145,19 @@
 			<div class="cp-empty-hint">{L('collections.emptyHint', 'Search, then add results to a collection to keep them.')}</div>
 		</div>
 	{:else}
-		<NoteList items={displayRows} scrollResetKey={activeId} row={memberRow} />
+		<div class="cp-chips">
+			<button class="cp-chip" class:on={chips.due} onclick={() => (chips = { ...chips, due: !chips.due })}>{L('collections.chipDue', 'Due')}</button>
+			<button class="cp-chip" class:on={chips.unlinked} onclick={() => (chips = { ...chips, unlinked: !chips.unlinked })}>{L('collections.chipUnlinked', 'Unlinked')}</button>
+			<button class="cp-chip" class:on={chips.contested} onclick={() => (chips = { ...chips, contested: !chips.contested })}>{L('collections.chipContested', 'Contested')}</button>
+			<button class="cp-chip" class:on={chips.forming} onclick={() => (chips = { ...chips, forming: !chips.forming })}>{L('collections.chipForming', 'Forming')}</button>
+		</div>
+		{#if filteredRows.length === 0}
+			<div class="cp-empty">
+				<div class="cp-empty-hint">{L('collections.noneMatch', 'No members match the active filters.')}</div>
+			</div>
+		{:else}
+			<NoteList items={filteredRows} scrollResetKey={activeId} row={memberRow} />
+		{/if}
 	{/if}
 </div>
 
@@ -221,6 +239,28 @@
 		line-height: 1;
 	}
 	.cp-act:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.cp-chips {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+		padding: 6px 12px;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.cp-chip {
+		padding: 3px 10px;
+		border-radius: 12px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		cursor: pointer;
+		font-size: 11px;
+	}
+	.cp-chip:hover { color: var(--text-normal); }
+	.cp-chip.on {
+		background: color-mix(in srgb, var(--interactive-accent) 16%, transparent);
+		border-color: var(--interactive-accent);
+		color: var(--interactive-accent);
+	}
 	.cp-empty {
 		flex: 1;
 		display: flex;

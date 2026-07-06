@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	filterByChips, isContested, isForming, isUnlinked, anyChipOn,
 	type ChipFacts, type ChipToggles,
-} from '$lib/components/workbenchChips';
+} from '$lib/components/collectionChips';
 
 const facts = (over: Partial<ChipFacts> = {}): ChipFacts => ({
 	stage: null,

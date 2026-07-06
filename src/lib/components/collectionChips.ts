@@ -1,5 +1,5 @@
 /**
- * MIG-090 §7 — the Workbench's four v1 state chips as PURE predicates + one
+ * MIG-092 §7 (was MIG-090) — a Collection's four state chips as PURE predicates + one
  * pure intersection filter. Extracted from the component so the invariant is
  * pinned by test forever: **chips NARROW the held set client-side and never
  * query** — guarding the verified engine landmine where hybrid-mode
