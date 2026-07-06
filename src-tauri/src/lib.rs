@@ -37,6 +37,9 @@ mod nsc;
 // Cataloger Ensemble Architecture. See lab/reports/MIG-021v3-EPISTEMIC-
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
 pub mod cece;
+// MIG-094 (PJ-069 Step 1) — the ONE home for the named structural-connectivity
+// predicates (unreferenced / isolated / fragile) read from note_meta columns.
+pub mod connectivity;
 // MIG-055 §A — Constellation Base, the lens module (clean rebuild post-MIG-054 revert).
 pub mod lens;
 // MIG-056 §A — Cross-Universe Federation module. Provides FederationContext +
