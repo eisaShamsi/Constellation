@@ -6510,8 +6510,11 @@
 						<div class="section-label">{$t('sidebar.bookmarks')}</div>
 						{#each starredItems as it}
 							{@const loc = bookmarkLocation(it.path)}
-							<button class="s-bookmark" title={loc} onclick={(e) => handleNoteClick(it.path, it.name ?? it.path, undefined, e)} oncontextmenu={(e) => handleBookmarkContextMenu(it, e)}>
-								<span class="s-bm-name" dir="auto">⭐ {it.name ?? it.path}</span>
+							<!-- MIG-092 — per-title row direction (Language-First): an RTL title
+							     gives a fully-RTL row (⭐+name at the reading start, location at
+							     the reading end); an LTR title an LTR row — in either app language. -->
+							<button class="s-bookmark" dir={detectDir(it.name ?? it.path)} onclick={(e) => handleNoteClick(it.path, it.name ?? it.path, undefined, e)} oncontextmenu={(e) => handleBookmarkContextMenu(it, e)}>
+								<span class="s-bm-name">⭐ {it.name ?? it.path}</span>
 								{#if loc}<span class="s-bm-loc" dir="auto">{loc}</span>{/if}
 							</button>
 						{/each}
