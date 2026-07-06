@@ -261,3 +261,28 @@ aliases searchable · recents on empty · create + search hand-off rows.
   - **Verify:** `cargo check` green; `npm run check` → 0 ERRORS (warnings 320→316 = lens CSS gone).
 
 ### Step 0 — DONE (§0a–§0f, all build-green). Cull total: −1,992 lines of dead code, 5 files deleted.
+
+**PCS:** pushed `b7e4a867..cd18cdf3` (9 commits). Orientation v3.28, Pending Jobs v1.17, MoCh
+1700, session log. Help/manual: no-op (the cull removed only dead code — grep confirmed zero
+user-facing references). No handover/close-out (Boss instruction).
+
+## PJ-069 Step 1 — orphan/fragile (MIG-094 Architect)
+- **Architect delivered** (`docs/MIG-094-Orphan-Fragile-Vocabulary-Architect.md`; workflow
+  `wf_86d66ad7-c11` — 2 mappers + 2 WA#5 researchers + 1 synthesizer).
+- **The finding, sharpened:** not "5 defs of one thing" — it's THREE distinct graph concepts +
+  a substance axis + one higher-order concept. ORPHAN class: DEF-1 (no-incoming + word>20),
+  DEF-2 (no-incoming, no floor — Sky/CNS; the sky payload's link_count is INCOMING-degree, not
+  total), DEF-3 (fully isolated in==0&&out==0 — Search/Collections). FRAGILE/SPOF: one concept,
+  FOUR copy-pasted impls; the derives support is already a write-time column
+  (`outgoing_link_types_json`). FALSE members excluded (cataloger degree<2 abstain; livePreview
+  membership gate; weak_foundations link-confidence; CNS community gaps).
+- **WA#5 research:** graph-theory canon (isolated vertex / source node / sink / leaf /
+  hub-authority); Obsidian's own CLI-vs-GraphView "orphan" disagreement is a FILED BUG (the exact
+  analog); "orphan" is fatally overloaded → don't use it as a shared computation label. Split
+  verdict: unify same-question drift, name genuinely-different questions.
+- **Recommendation: Option B — a named vocabulary** (UNREFERENCED = in-degree 0 · ISOLATED =
+  degree 0 · FRAGILE = many dependents + thin foundation), one shared `note_meta`-backed helper
+  per concept; each surface declares which it shows + AND-s its own substance floor. Migration
+  path P0 (verdict-parity harness) → P6.
+- **STOPPED at the Architect + the §8 Boss ruling (Q1 one-vs-two orphan concepts · Q3 word_count
+  floor · Q4 approve the 4 verdict-change correctness fixes). Awaiting ratification before the Plan.**
