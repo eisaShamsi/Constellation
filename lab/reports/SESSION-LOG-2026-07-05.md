@@ -148,7 +148,29 @@ create / rename / delete; per-member done + Clear-done + remove; open-from-colle
 the four state chips; live auto-refresh on an edit; and a Settings check (no
 "Workbench" toggle).
 
+### §7-fix — NoteRow per-title direction — commit `<rtl>` · §7-simplify — drop "done" — commit `e87eddbc`
+Boss Stage-2: RTL member rows (NoteRow `dir={detectDir(name)}`); "done"/Clear-done
+dropped per Boss ruling (a note is in a collection or you ✕ it out).
+
+### §10 — Close-out (in progress)
+- **i18n** — commit `9fe04bf7`: `collections.*` (17 keys) + `searchHub.tab*` +
+  `contextMenu.addToCollection/newCollection` added to **all 15 locales** (native
+  translations via a 14-agent workflow); `workbench.*` + `settings.plugins.workbench*`
+  + orphaned `contextMenu.addToWorkbench` removed. All 15 validated as parseable JSON.
+- **Docs** — commit `52699e92`: User Manual §5 Collections section + a help topic
+  (docs/help.uConstellation.World/Collections/Collections.md). Orientation v3.26 (NEW
+  file) — preamble + version done; BODY subsystem update via agent (in flight).
+- **AUDIT TRIO — CLEAN, zero confirmed findings.** Invariants: all 8 design rules
+  upheld (membership-only writes, ONE-universe, cid_cn guard, boot-untouched,
+  Write-Time-Derivation, zero-keystroke-IPC, chips-narrow, idempotent migration).
+  Drift: no violations (one cosmetic: boot bundle still fetches unused `bookmarks`).
+  Migration-path: all 6 paths SAFE (first-boot / upgrade[note+folder+search] /
+  legacy-workbench.json / mid-migration-interrupt[idempotent re-seed] / cross-window
+  [Starred-exists guard] / rollback[both backups retained]).
+- **/simplify** — 4 cleanup agents running (reuse/simplification/efficiency/altitude).
+
 ### Remaining
-§10 close-out: help topic + User Manual ×15 + full 15-locale `collections.*`/context-menu
-i18n (− `workbench.*`) + Orientation v-bump (same commit) + `/simplify` + boot re-measure
-on the 7,600-note universe + audit trio (invariants / drift / migration-path).
+Process /simplify findings + orientation-body agent → commit orientation v3.26 →
+boot-time note (Collections adds no boot-path work by design) → final binary →
+handover + MoCh + full PCS. **Trivial follow-up:** drop the unused `bookmarks` fetch
+from the boot bundle (boot_bundle.rs) — negligible, not touched at close-out (WA#4).

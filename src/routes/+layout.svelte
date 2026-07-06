@@ -4586,6 +4586,13 @@
 
 	// MIG-092 — the sidebar "Bookmarks" section renders the Starred collection.
 	const starredItems = $derived($collectionSets.find(c => c.id === STARRED_ID)?.items ?? []);
+	// /simplify (efficiency): compute each bookmark's location breadcrumb ONCE per
+	// membership/library change — not per row on every render.
+	const bookmarkLocations = $derived.by(() => {
+		const m = new Map<string, string>();
+		for (const it of starredItems) if (!m.has(it.path)) m.set(it.path, bookmarkLocation(it.path));
+		return m;
+	});
 
 	function handleToggleBookmark() {
 		const tab = get(focusedTab);
@@ -6495,7 +6502,7 @@
 					{#if starredItems.length > 0}
 						<div class="section-label">{$t('sidebar.bookmarks')}</div>
 						{#each starredItems as it}
-							{@const loc = bookmarkLocation(it.path)}
+							{@const loc = bookmarkLocations.get(it.path) ?? ''}
 							<!-- MIG-092 — per-title row direction (Language-First): an RTL title
 							     gives a fully-RTL row (⭐+name at the reading start, location at
 							     the reading end); an LTR title an LTR row — in either app language. -->
