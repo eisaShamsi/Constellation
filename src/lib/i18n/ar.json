@@ -1590,7 +1590,10 @@
   },
   "quickSwitcher": {
     "placeholder": "ابحث عن ملاحظة...",
-    "noResults": "لا توجد نتائج"
+    "noResults": "لا توجد نتائج",
+    "recent": "المفتوحة مؤخرًا",
+    "createNote": "إنشاء ملاحظة",
+    "searchInHub": "البحث في مركز البحث"
   },
   "backlinksPanel": {
     "linkedMentions": "الروابط الواردة",

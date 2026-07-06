@@ -1056,7 +1056,10 @@
   },
   "quickSwitcher": {
     "placeholder": "Trouver une note...",
-    "noResults": "Aucune note correspondante"
+    "noResults": "Aucune note correspondante",
+    "recent": "Ouvertes récemment",
+    "createNote": "Créer une note",
+    "searchInHub": "Rechercher dans le Centre de recherche"
   },
   "backlinksPanel": {
     "linkedMentions": "Mentions liées",

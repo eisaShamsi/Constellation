@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "Bir not bul...",
-    "noResults": "Eşleşen not bulunamadı"
+    "noResults": "Eşleşen not bulunamadı",
+    "recent": "Son açılanlar",
+    "createNote": "Not oluştur",
+    "searchInHub": "Arama Merkezi'nde ara"
   },
   "backlinksPanel": {
     "linkedMentions": "Bağlantılı bahsetmeler",

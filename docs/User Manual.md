@@ -603,6 +603,16 @@ Click on the search field when it is empty to see your recent searches (last 20 
 
 Search history is stored locally on your device and persists across app restarts.
 
+### Quick Switcher (Ctrl+O)
+
+The Quick Switcher is the **jump-to-note-by-name** command — press `Ctrl+O`, type part of a title, press Enter. It searches **titles and aliases only** (never note contents — that's the Search Hub's job below), entirely from memory, so results appear instantly as you type, in any language.
+
+Results are **ranked by how well the title matches**: an exact title always comes first, then titles that *start with* your words, then titles containing them at a word boundary, then looser matches — so typing `islam` puts the note titled *Islam* above *"Abraham in Islam"*. Arabic matching ignores diacritics and hamza variants (typing `اسلام` finds `إسلام`). Notes whose **alias** matches appear as *alias → real title* rows. Titles from **linked cUniverses** are included — the switcher spans your whole universe.
+
+- **Empty Ctrl+O** shows your recently-opened notes — Enter re-opens the last one.
+- **Create note "…"** — when nothing matches your text exactly, a bottom row lets you create a note with that name on the spot (it lands in your universe root and opens immediately).
+- **Search "…" in Search Hub** — the last row hands your query to the full content search.
+
 ### Search Hub
 
 The Search Hub is a full-screen search experience. Click the magnifying glass icon in the dock bar to open it. Both sidebars collapse to give maximum space. Type any term and Constellation searches everywhere simultaneously, grouping results into 5 categories: Titles, Contents, Tags, Properties, and Wikilinks. Each category has a collapsible section with a count badge. Click any result to open it in the editor with all occurrences highlighted. A "Return to Search Hub" button appears so you can go back without re-searching.

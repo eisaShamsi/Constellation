@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "Найти заметку...",
-    "noResults": "Подходящих заметок не найдено"
+    "noResults": "Подходящих заметок не найдено",
+    "recent": "Недавно открытые",
+    "createNote": "Создать заметку",
+    "searchInHub": "Искать в Центре поиска"
   },
   "backlinksPanel": {
     "linkedMentions": "Связанные упоминания",

@@ -50,8 +50,6 @@
 		| { kind: 'create'; name: string }
 		| { kind: 'searchhub'; query: string };
 	let rows = $state<Row[]>([]);
-	/** QS-speed instrumentation (TEMPORARY, removed at §E): last rank ms. */
-	let diag = $state('');
 
 	// Fold ONCE per cache refresh (never per keystroke): title candidates +
 	// one candidate per alias. ~8k folds in a few ms, re-run only when the
@@ -113,11 +111,9 @@
 		if (!q.trim()) {
 			rows = recentRows;
 			selectedIndex = 0;
-			diag = '';
 			return;
 		}
 		searchTimer = setTimeout(() => {
-			const t0 = performance.now();
 			const hits = rankSwitcher(q, candidates, { recencyIndex, limit: 50 });
 			const next: Row[] = hits.map(h => ({
 				kind: 'note' as const,
@@ -132,7 +128,6 @@
 			next.push({ kind: 'searchhub', query: q.trim() });
 			rows = next;
 			selectedIndex = 0;
-			diag = `rank ${(performance.now() - t0).toFixed(1)}ms · ${hits.length} hits · ${candidates.length} candidates`;
 		}, 100);
 	});
 
@@ -221,10 +216,6 @@
 				<div class="qs-empty">{$t('quickSwitcher.noResults')}</div>
 			{/if}
 		</div>
-		{#if diag}
-			<!-- QS-speed instrumentation (TEMPORARY, §E removes) -->
-			<div class="qs-diag" dir="ltr">{diag}</div>
-		{/if}
 	</div>
 </div>
 
@@ -277,9 +268,4 @@
 	}
 	.qs-pinned.selected { color: var(--text-on-accent); }
 	.qs-empty { padding: 16px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
-	/* QS-speed instrumentation (TEMPORARY) */
-	.qs-diag {
-		padding: 4px 12px; font-size: 0.68rem; font-family: var(--font-monospace, monospace);
-		color: var(--text-faint); border-top: 1px solid var(--background-modifier-border);
-	}
 </style>

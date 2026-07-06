@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "노트 찾기...",
-    "noResults": "일치하는 노트 없음"
+    "noResults": "일치하는 노트 없음",
+    "recent": "최근에 연 노트",
+    "createNote": "노트 만들기",
+    "searchInHub": "검색 허브에서 검색"
   },
   "backlinksPanel": {
     "linkedMentions": "링크된 언급",

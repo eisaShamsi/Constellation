@@ -1056,7 +1056,10 @@
   },
   "quickSwitcher": {
     "placeholder": "نوٹ تلاش کریں...",
-    "noResults": "کوئی ملتے جلتے نوٹس نہیں"
+    "noResults": "کوئی ملتے جلتے نوٹس نہیں",
+    "recent": "حال ہی میں کھولے گئے",
+    "createNote": "نوٹ بنائیں",
+    "searchInHub": "تلاش مرکز میں تلاش کریں"
   },
   "backlinksPanel": {
     "linkedMentions": "لنک شدہ حوالے",

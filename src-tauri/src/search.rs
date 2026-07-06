@@ -6260,10 +6260,7 @@ fn federated_lexical_search_or_fallback(
         // No attached cUniverses (or federation not yet ready). Fall
         // back to single-schema lexical_search on state.db — existing
         // MIG-055 behavior.
-        let t = std::time::Instant::now();
-        let r = lexical_search(conn, query, limit, want_snippet);
-        trace_push("lexical(single,no-federation)", t.elapsed().as_secs_f64() * 1000.0);
-        return r;
+        return lexical_search(conn, query, limit, want_snippet);
     }
 
     // MIG-058/MIG-059 v3 (Option C) — drop the standalone-Connection
@@ -6285,7 +6282,6 @@ fn federated_lexical_search_or_fallback(
     // longer have a Connection that's "fresh" relative to the
     // federation context: there's only ONE Connection, and it gets
     // warmed by libraryStats during boot.
-    let t_fed_lock = std::time::Instant::now();
     let fed_guard = match state.federated_conn.lock() {
         Ok(g) => g,
         Err(_) => {
@@ -6293,7 +6289,6 @@ fn federated_lexical_search_or_fallback(
             return lexical_search(conn, query, limit, want_snippet);
         }
     };
-    trace_push("federated_conn_lock_wait", t_fed_lock.elapsed().as_secs_f64() * 1000.0);
     let fed_conn = match fed_guard.as_ref() {
         Some(c) => c,
         None => {
@@ -6302,10 +6297,7 @@ fn federated_lexical_search_or_fallback(
             // writes ctx + conn in close succession but the window
             // exists). Fall back so the user still gets results
             // from main while we wait.
-            let t = std::time::Instant::now();
-            let r = lexical_search(conn, query, limit, want_snippet);
-            trace_push("lexical(single,conn-race)", t.elapsed().as_secs_f64() * 1000.0);
-            return r;
+            return lexical_search(conn, query, limit, want_snippet);
         }
     };
 
@@ -6335,15 +6327,11 @@ fn federated_lexical_search_or_fallback(
     // and that's the dominant cost in federated mode (segment merge
     // didn't fix it because the cost is per-row, not per-segment).
     // Rust-side substring snippet from raw body_text is much faster.
-    let t_b = std::time::Instant::now();
     branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap, want_snippet));
-    trace_push("branch:main", t_b.elapsed().as_secs_f64() * 1000.0);
 
     // Branches 1..N — one per cUniverse schema alias (cu0, cu1, ...).
     for alias in &federated_aliases {
-        let t_b = std::time::Instant::now();
         branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap, want_snippet));
-        trace_push(&format!("branch:{}", alias), t_b.elapsed().as_secs_f64() * 1000.0);
     }
 
     // GATHER — RRF merge. Each branch's results are already ranked
@@ -9136,38 +9124,6 @@ pub fn reindex_single_note(
     Ok(())
 }
 
-// ── QS-speed reproduce-first instrumentation (2026-07-06) ──
-// The Boss reports 2+ MINUTE result retrieval with heavy thrashing on the
-// Quick Switcher (a plain lexical query). Per the Reproduce-First rule the
-// ONLY shippable work is instrumentation: capture the last search's phase
-// timings so the delay's mechanism can be read off a real trace. Candidates
-// this separates: (a) state.db lock WAIT (contention/pile-up — the thrash
-// signature), (b) per-branch federated FTS5 query time (which cUniverse),
-// (c) the RRF merge. Read back via `get_last_search_trace` — devtools is
-// OFF in release builds, so the frontend renders these in the QS panel.
-// TEMPORARY: removed once the diagnosis lands.
-static LAST_SEARCH_TRACE: std::sync::Mutex<Vec<(String, f64)>> = std::sync::Mutex::new(Vec::new());
-
-fn trace_reset() {
-    if let Ok(mut g) = LAST_SEARCH_TRACE.lock() {
-        g.clear();
-    }
-}
-fn trace_push(label: &str, ms: f64) {
-    if let Ok(mut g) = LAST_SEARCH_TRACE.lock() {
-        g.push((label.to_string(), ms));
-    }
-}
-
-/// QS-speed instrumentation — the last `constellation_search`'s phase timings.
-#[tauri::command]
-pub fn get_last_search_trace() -> Vec<(String, f64)> {
-    LAST_SEARCH_TRACE
-        .lock()
-        .map(|g| g.clone())
-        .unwrap_or_default()
-}
-
 /// Main search command — supports lexical, structured, and combined modes.
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
@@ -9177,12 +9133,8 @@ pub fn constellation_search(
     app: tauri::AppHandle,
     request: SearchRequest,
 ) -> Result<Vec<SearchResult>, String> {
-    trace_reset();
-    let t_lock = std::time::Instant::now();
     let state = app.state::<SearchState>();
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    trace_push("db_lock_wait", t_lock.elapsed().as_secs_f64() * 1000.0);
-    let t_exec = std::time::Instant::now(); // closed on both return paths below
 
     let conn = match db_guard.as_ref() {
         Some(c) => c,
@@ -9197,18 +9149,14 @@ pub fn constellation_search(
             ensure_search_db_ready(&app)?;
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-            let r = match db_guard.as_ref() {
+            return match db_guard.as_ref() {
                 Some(c) => execute_search(&app, c, &request),
                 None => Err("Search index not available".to_string()),
             };
-            trace_push("execute(lazy-open)", t_exec.elapsed().as_secs_f64() * 1000.0);
-            return r;
         }
     };
 
-    let r = execute_search(&app, conn, &request);
-    trace_push("execute", t_exec.elapsed().as_secs_f64() * 1000.0);
-    r
+    execute_search(&app, conn, &request)
 }
 
 fn execute_search(

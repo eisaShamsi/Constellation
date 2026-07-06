@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "查找笔记...",
-    "noResults": "未找到匹配的笔记"
+    "noResults": "未找到匹配的笔记",
+    "recent": "最近打开",
+    "createNote": "创建笔记",
+    "searchInHub": "在搜索中心搜索"
   },
   "backlinksPanel": {
     "linkedMentions": "已链接的提及",

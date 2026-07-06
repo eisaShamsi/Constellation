@@ -1056,7 +1056,10 @@
   },
   "quickSwitcher": {
     "placeholder": "Notiz suchen...",
-    "noResults": "Keine passenden Notizen"
+    "noResults": "Keine passenden Notizen",
+    "recent": "Zuletzt geöffnet",
+    "createNote": "Notiz erstellen",
+    "searchInHub": "In der Suchzentrale suchen"
   },
   "backlinksPanel": {
     "linkedMentions": "Verknüpfte Erwähnungen",

@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "Encontrar uma nota...",
-    "noResults": "Nenhuma nota correspondente"
+    "noResults": "Nenhuma nota correspondente",
+    "recent": "Abertas recentemente",
+    "createNote": "Criar nota",
+    "searchInHub": "Pesquisar no Centro de Pesquisa"
   },
   "backlinksPanel": {
     "linkedMentions": "Menções vinculadas",

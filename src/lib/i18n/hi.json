@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "नोट खोजें...",
-    "noResults": "कोई मिलते-जुलते नोट नहीं"
+    "noResults": "कोई मिलते-जुलते नोट नहीं",
+    "recent": "हाल ही में खोले गए",
+    "createNote": "नोट बनाएँ",
+    "searchInHub": "खोज केंद्र में खोजें"
   },
   "backlinksPanel": {
     "linkedMentions": "लिंक किए गए उल्लेख",

@@ -461,8 +461,6 @@ pub fn run() {
             cache::read_boot_perf_report,
             search::constellation_search_init,
             search::constellation_search,
-            // QS-speed reproduce-first instrumentation (2026-07-06, TEMPORARY).
-            search::get_last_search_trace,
             search::constellation_search_reindex,
             search::diag_log_line,
             search::constellation_search_store_embedding,

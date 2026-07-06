@@ -1056,7 +1056,10 @@
   },
   "quickSwitcher": {
     "placeholder": "جستجوی یادداشت...",
-    "noResults": "یادداشت مطابقی یافت نشد"
+    "noResults": "یادداشت مطابقی یافت نشد",
+    "recent": "اخیراً بازشده",
+    "createNote": "ایجاد یادداشت",
+    "searchInHub": "جستجو در مرکز جست‌وجو"
   },
   "backlinksPanel": {
     "linkedMentions": "اشاره‌های لینک‌شده",

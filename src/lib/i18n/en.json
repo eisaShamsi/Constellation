@@ -1654,6 +1654,9 @@
     "noResults": "No results"
   },
   "quickSwitcher": {
+    "recent": "Recently opened",
+    "createNote": "Create note",
+    "searchInHub": "Search in Search Hub",
     "placeholder": "Find a note...",
     "noResults": "No matching notes"
   },

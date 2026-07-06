@@ -1056,7 +1056,10 @@
   },
   "quickSwitcher": {
     "placeholder": "מצא פתק...",
-    "noResults": "לא נמצאו פתקים תואמים"
+    "noResults": "לא נמצאו פתקים תואמים",
+    "recent": "נפתחו לאחרונה",
+    "createNote": "צור פתק",
+    "searchInHub": "חפש במרכז החיפוש"
   },
   "backlinksPanel": {
     "linkedMentions": "אזכורים מקושרים",

@@ -1496,7 +1496,10 @@
   },
   "quickSwitcher": {
     "placeholder": "ノートを検索...",
-    "noResults": "一致するノートがありません"
+    "noResults": "一致するノートがありません",
+    "recent": "最近開いたノート",
+    "createNote": "ノートを作成",
+    "searchInHub": "検索ハブで検索"
   },
   "backlinksPanel": {
     "linkedMentions": "リンクされた言及",
