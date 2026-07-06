@@ -5934,8 +5934,8 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
 /// Uses FTS5 native `snippet()` — the active-mode path is fast on
 /// state.db because libraryStats / boot operations have already
 /// warmed the relevant pages.
-fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
-    lexical_search_in_schema(conn, "main", query, limit, /* skip_fts5_snippet */ false)
+fn lexical_search(conn: &Connection, query: &str, limit: u32, want_snippet: bool) -> Vec<SearchResult> {
+    lexical_search_in_schema(conn, "main", query, limit, want_snippet)
 }
 
 /// MIG-058/MIG-059 v3 (Option C) — single-schema FTS5 search against
@@ -5983,7 +5983,7 @@ fn lexical_search_in_schema(
     schema: &str,
     query: &str,
     limit: u32,
-    skip_fts5_snippet: bool,
+    want_snippet: bool,
 ) -> Vec<SearchResult> {
     // Normalize query for Arabic consistency (same normalization as indexed text)
     let normalized = normalize_arabic_for_search(query);
@@ -6017,111 +6017,115 @@ fn lexical_search_in_schema(
         .map(|e| e.bridge_terms_lower.as_slice())
         .unwrap_or(&[]);
 
-    // MIG-058/MIG-059 Option H — `skip_fts5_snippet` switches the
-    // snippet-generation strategy. Active-mode (skip_fts5_snippet=false)
-    // uses FTS5 native `snippet()` which is fast on a warm Connection.
-    // Federated mode (skip_fts5_snippet=true) selects raw `body_text`
-    // and synthesizes snippets in Rust via `synth_snippet_for_body`.
+    // ── QS-speed two-phase rewrite (2026-07-06) ──
+    // The reproduced pathology (Boss trace: 26.9s for ONE word, LIMIT 15):
+    // the old single query computed FTS5 native `snippet()` — which, on an
+    // external-content table, calls back into note_meta and RE-TOKENIZES the
+    // whole body_text through the custom constellation tokenizer — for EVERY
+    // matching row (SQLite materializes the SELECT list before ORDER BY +
+    // LIMIT). A common term + the M12 cross-language expansion matches a
+    // large slice of a 7,600-note corpus → thousands of full-body tokenizer
+    // passes per keystroke. Federated mode dodged this in MIG-058 Option H;
+    // the single-schema path never got the fix.
     //
-    // Why: for FTS5 with `content='note_meta'` (external content),
-    // `snippet()` calls back into the content table for each matching
-    // row AND re-tokenizes its body_text via the custom constellation
-    // tokenizer (which does Arabic normalization, diacritic stripping,
-    // stopword filtering). For 30 result rows × kilobytes of body_text
-    // × custom tokenizer overhead, this is expensive — and it scales
-    // with result count, not with index size, which is why Option G's
-    // segment merge didn't help.
+    // The fix is the standard FTS5/Lucene shape — rank first, THEN fetch:
+    //   PHASE 1: index-only bm25 scan (no join, no aux-function callbacks)
+    //            → the top-`limit` rowids. Cost scales with match count but
+    //            each row is ~free (no content-table callback).
+    //   PHASE 2: ≤ limit PK lookups on note_meta for the details; snippets
+    //            (when wanted) synthesized in Rust from raw body_text
+    //            (`synth_snippet_for_body` — the proven Option-H path).
+    //            `want_snippet=false` (the Quick Switcher — it displays
+    //            name+library only) skips body_text entirely.
+    // FTS5 native snippet() is gone from this path entirely; per-row cost is
+    // now bounded by LIMIT, never by the match count.
     //
-    // The Rust-side path skips the FTS5 tokenizer pass entirely; it
-    // just substring-matches the query in body_text. Snippets are
-    // slightly less precise (we match raw substring not stemmed
-    // tokens) but the FEDERATED federated_lexical_search_or_fallback's
-    // RRF merge doesn't care — only `path`, `name`, `score`, and
-    // `match_type` matter for ranking and display.
-    let sql = if skip_fts5_snippet {
+    // Schema-qualified FROM; unqualified bm25/MATCH (per the option_c_* tests).
+    let p1_sql = format!(
+        "SELECT notes_fts.rowid, bm25(notes_fts, 10.0, 1.0) AS score \
+         FROM {schema}.notes_fts \
+         WHERE notes_fts MATCH ?1 \
+         ORDER BY score \
+         LIMIT ?2",
+        schema = schema,
+    );
+    let mut p1 = match conn.prepare(&p1_sql) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let ranked: Vec<(i64, f64)> = p1
+        .query_map(params![fts_query, limit], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default();
+    if ranked.is_empty() {
+        return Vec::new();
+    }
+
+    let query_lower = normalized.to_lowercase();
+    let p2_sql = if want_snippet {
         format!(
-            "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
-                    bm25(notes_fts, 10.0, 1.0) as score, \
-                    note_meta.body_text as body \
-             FROM {schema}.notes_fts \
-             JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
-             WHERE notes_fts MATCH ?1 \
-             ORDER BY score \
-             LIMIT ?2",
+            "SELECT path, name, library_name, modified, body_text \
+             FROM {schema}.note_meta WHERE rowid = ?1",
             schema = schema,
         )
     } else {
-        // Schema-qualified FROM/JOIN; unqualified columns + aux functions
-        // (per the option_c_* tests).
         format!(
-            "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
-                    bm25(notes_fts, 10.0, 1.0) as score, \
-                    snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
-             FROM {schema}.notes_fts \
-             JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
-             WHERE notes_fts MATCH ?1 \
-             ORDER BY score \
-             LIMIT ?2",
+            "SELECT path, name, library_name, modified \
+             FROM {schema}.note_meta WHERE rowid = ?1",
             schema = schema,
         )
     };
-
-    let mut stmt = match conn.prepare(&sql) {
+    let mut p2 = match conn.prepare(&p2_sql) {
         Ok(s) => s,
         Err(_) => return Vec::new(),
     };
 
-    let query_lower = normalized.to_lowercase();
-
-    let results = stmt.query_map(params![fts_query, limit], |row| {
-        let name: String = row.get(1)?;
+    let mut out: Vec<SearchResult> = Vec::with_capacity(ranked.len());
+    for (rowid, score) in ranked {
+        let fetched = p2.query_row(params![rowid], |row| {
+            let path: String = row.get(0)?;
+            let name: String = row.get(1)?;
+            let library_name: String = row.get(2)?;
+            let modified: u64 = row.get(3)?;
+            let body: Option<String> = if want_snippet { row.get(4).ok() } else { None };
+            Ok((path, name, library_name, modified, body))
+        });
+        let (path, name, library_name, modified, body) = match fetched {
+            Ok(r) => r,
+            Err(_) => continue, // row vanished mid-read — skip, never fail the search
+        };
         let name_lower = name.to_lowercase();
         let title_hit = name_lower.contains(&query_lower);
+        let snippet = body
+            .as_deref()
+            .and_then(|b| synth_snippet_for_body(b, &query_lower, bridge_terms));
 
-        let snippet: Option<String> = if skip_fts5_snippet {
-            // Read raw body_text; synthesize snippet in Rust.
-            let body: Option<String> = row.get(5).ok();
-            body.as_deref()
-                .and_then(|b| synth_snippet_for_body(b, &query_lower, bridge_terms))
-        } else {
-            // FTS5 returned the snippet directly.
-            row.get(5).ok()
-        };
-        let body_hit = snippet.as_ref().map_or(false, |s| s.contains("<mark>"));
+        let match_type = if title_hit { "title" } else { "content" }.to_string();
 
-        let match_type = if title_hit && body_hit {
-            "title".to_string() // prioritize title when both match
-        } else if title_hit {
-            "title".to_string()
-        } else {
-            "content".to_string()
-        };
-
-        // M13: report "via {lemma}" only when a cross-language lemma
-        // was actually highlighted by FTS5. Title hits short-circuit —
-        // a filename match is never a translation event.
+        // M13: report "via {lemma}" only when a cross-language lemma was
+        // actually highlighted. Title hits short-circuit — a filename match
+        // is never a translation event.
         let match_via = if title_hit {
             None
         } else {
-            snippet
-                .as_deref()
-                .and_then(|s| find_match_via(s, bridge_terms))
+            snippet.as_deref().and_then(|s| find_match_via(s, bridge_terms))
         };
 
-        Ok(SearchResult {
-            path: row.get(0)?,
+        out.push(SearchResult {
+            path,
             name,
-            library_name: row.get(2)?,
-            modified: row.get(3)?,
-            score: row.get::<_, f64>(4)?.abs(),
+            library_name,
+            modified,
+            score: score.abs(),
             snippet,
             match_type,
             heading_breadcrumb: None,
             match_via,
-        })
-    }).ok();
-
-    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+        });
+    }
+    out
 }
 
 /// MIG-058/MIG-059 Option H — Rust-side snippet synthesis from raw
@@ -6242,6 +6246,7 @@ fn federated_lexical_search_or_fallback(
     conn: &Connection,
     query: &str,
     limit: u32,
+    want_snippet: bool,
 ) -> Vec<SearchResult> {
     let state = app.state::<SearchState>();
     let federated_aliases: Vec<String> = match state.federation.lock() {
@@ -6256,7 +6261,7 @@ fn federated_lexical_search_or_fallback(
         // back to single-schema lexical_search on state.db — existing
         // MIG-055 behavior.
         let t = std::time::Instant::now();
-        let r = lexical_search(conn, query, limit);
+        let r = lexical_search(conn, query, limit, want_snippet);
         trace_push("lexical(single,no-federation)", t.elapsed().as_secs_f64() * 1000.0);
         return r;
     }
@@ -6285,7 +6290,7 @@ fn federated_lexical_search_or_fallback(
         Ok(g) => g,
         Err(_) => {
             eprintln!("[federation] federated_conn Mutex poisoned — single-schema fallback");
-            return lexical_search(conn, query, limit);
+            return lexical_search(conn, query, limit, want_snippet);
         }
     };
     trace_push("federated_conn_lock_wait", t_fed_lock.elapsed().as_secs_f64() * 1000.0);
@@ -6298,7 +6303,7 @@ fn federated_lexical_search_or_fallback(
             // exists). Fall back so the user still gets results
             // from main while we wait.
             let t = std::time::Instant::now();
-            let r = lexical_search(conn, query, limit);
+            let r = lexical_search(conn, query, limit, want_snippet);
             trace_push("lexical(single,conn-race)", t.elapsed().as_secs_f64() * 1000.0);
             return r;
         }
@@ -6331,13 +6336,13 @@ fn federated_lexical_search_or_fallback(
     // didn't fix it because the cost is per-row, not per-segment).
     // Rust-side substring snippet from raw body_text is much faster.
     let t_b = std::time::Instant::now();
-    branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap, true));
+    branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap, want_snippet));
     trace_push("branch:main", t_b.elapsed().as_secs_f64() * 1000.0);
 
     // Branches 1..N — one per cUniverse schema alias (cu0, cu1, ...).
     for alias in &federated_aliases {
         let t_b = std::time::Instant::now();
-        branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap, true));
+        branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap, want_snippet));
         trace_push(&format!("branch:{}", alias), t_b.elapsed().as_secs_f64() * 1000.0);
     }
 
@@ -9221,7 +9226,15 @@ fn execute_search(
                     // MIG-056 §G — federate FTS5 lexical search across
                     // active universe + cUniverses when ready. Falls back
                     // to single-schema lexical_search when not.
-                    results = federated_lexical_search_or_fallback(app, conn, q, limit);
+                    // MIG-093 §D — include_snippet honored (was declared but
+                    // never read); false skips body_text fetch entirely.
+                    results = federated_lexical_search_or_fallback(
+                        app,
+                        conn,
+                        q,
+                        limit,
+                        request.include_snippet.unwrap_or(true),
+                    );
                 }
             }
         }
@@ -9291,7 +9304,13 @@ fn execute_search(
                     // lexical (the FTS portion). Semantic + structured stay
                     // active-only in v1 (out of scope for §G v1; documented
                     // gap — future MIG can federate them too).
-                    lexical_results = federated_lexical_search_or_fallback(app, conn, q, limit * 2);
+                    lexical_results = federated_lexical_search_or_fallback(
+                        app,
+                        conn,
+                        q,
+                        limit * 2,
+                        request.include_snippet.unwrap_or(true),
+                    );
                 }
             }
 
@@ -11049,12 +11068,12 @@ mod m14_bench {
         samples: usize,
     ) -> Vec<u64> {
         for _ in 0..warmup {
-            black_box(lexical_search(conn, query, 25));
+            black_box(lexical_search(conn, query, 25, true));
         }
         let mut ns: Vec<u64> = Vec::with_capacity(samples);
         for _ in 0..samples {
             let t = Instant::now();
-            let r = lexical_search(conn, query, 25);
+            let r = lexical_search(conn, query, 25, true);
             ns.push(t.elapsed().as_nanos() as u64);
             black_box(r);
         }
@@ -11129,7 +11148,7 @@ mod m14_bench {
         for (label, q) in shape_a {
             // One-shot hit count (measured separately so the per-call
             // measurement stays untainted by Vec<SearchResult> drop).
-            let hits = lexical_search(&conn, q, 25).len();
+            let hits = lexical_search(&conn, q, 25, true).len();
             let s = measure(&conn, q, WARMUP, SAMPLES);
             report_stats(label, &s, hits);
             worst_a_p99 = worst_a_p99.max(percentile(&s, 0.99));
@@ -11150,7 +11169,7 @@ mod m14_bench {
         ];
         let mut worst_b_p99: u64 = 0;
         for (label, q) in shape_b {
-            let hits = lexical_search(&conn, q, 25).len();
+            let hits = lexical_search(&conn, q, 25, true).len();
             let s = measure(&conn, q, WARMUP, SAMPLES);
             report_stats(label, &s, hits);
             worst_b_p99 = worst_b_p99.max(percentile(&s, 0.99));
@@ -11172,7 +11191,7 @@ mod m14_bench {
         ];
         let mut worst_c_p99: u64 = 0;
         for (label, q) in shape_c {
-            let hits = lexical_search(&conn, q, 25).len();
+            let hits = lexical_search(&conn, q, 25, true).len();
             let s = measure(&conn, q, WARMUP, SAMPLES);
             report_stats(label, &s, hits);
             worst_c_p99 = worst_c_p99.max(percentile(&s, 0.99));
