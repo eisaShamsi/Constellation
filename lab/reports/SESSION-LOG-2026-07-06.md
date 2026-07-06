@@ -284,5 +284,15 @@ user-facing references). No handover/close-out (Boss instruction).
   degree 0 · FRAGILE = many dependents + thin foundation), one shared `note_meta`-backed helper
   per concept; each surface declares which it shows + AND-s its own substance floor. Migration
   path P0 (verdict-parity harness) → P6.
-- **STOPPED at the Architect + the §8 Boss ruling (Q1 one-vs-two orphan concepts · Q3 word_count
-  floor · Q4 approve the 4 verdict-change correctness fixes). Awaiting ratification before the Plan.**
+- **Ruling (Boss 2026-07-06):** Q1 = **two named concepts** (Unreferenced ≠ Isolated) · Q3 =
+  **per-surface stub filter** · Q4 = **approve the 4 verdict-change fixes with before/after tests**.
+  All three as-recommended. **Plan** (`MIG-094-…-Plan.md`, 7 steps §1–§7) **approved.**
+- **§2 SHIPPED (`connectivity.rs`, dormant):** the 3 shared predicates over `note_meta`
+  (`is_unreferenced`/`is_isolated`/`is_fragile` + alias-qualified WHERE builders + row fns +
+  `derives_from_support` JSON reader). **Build-gate PASSED** — `fragile_json_equals_subquery`
+  proves the JSON-map derives count == the legacy `note_links COUNT(*)` subquery on a
+  trigger-faithful fixture (the fragile `<=1` boundary is preserved). `cargo test connectivity`
+  3/3; `cargo check` green. No call site switched yet.
+- **NEXT (cascade continues):** §1 harness (folds into §4's before/after) → §3 byte-parity
+  re-points (review.rs ×3 + collectionChips + the frontend predicate module) → **§4 first Boss
+  test** (360 + Tension verdict change) → §5 Search → §6 Sky → §7 close.
