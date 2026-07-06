@@ -4842,6 +4842,30 @@
 		await openNoteTab(path, libraryName, libraryColor);
 	}
 
+	// MIG-093 §C — the switcher's "Create note ‹q›" pinned row (the Obsidian
+	// Enter-creates convention). Routes through the standard createNote funnel
+	// (F2′ note-created event; Rust-side name handling), targeting the
+	// universe-notes root; opens the new note on success.
+	async function handleQuickSwitchCreate(name: string) {
+		const lib = universeNotesStats ?? $libraryStats[0];
+		if (!lib) return;
+		try {
+			const path = await createNote(lib.path, name);
+			await openNoteTab(path, lib.name, libraryColorMap[lib.name] ?? '#7c3aed');
+		} catch (e) {
+			console.error('[quick-switcher] create failed:', e);
+		}
+	}
+
+	// MIG-093 §C — the "Search ‹q› in Search Hub" escape row: content search
+	// is the Hub's owned question; the switcher hands the query over.
+	function handleQuickSwitchSearchHub(q: string) {
+		searchHubInitialQuery = q;
+		showSearchHub = true;
+		searchHubReturnPending = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
+	}
+
 	async function handleSkyNodeClick(path: string, libraryName: string, highlightTerm?: string) {
 		const lib = $libraries.find(v => v.name === libraryName);
 		const color = libraryColorMap[libraryName] ?? '#7c3aed';
@@ -8240,7 +8264,10 @@
 	{#if showQuickSwitcher}
 		<QuickSwitcher
 			notes={allSwitcherNotes}
+			aliases={notePathToAliases}
 			onSelect={handleQuickSwitchSelect}
+			onCreateNote={handleQuickSwitchCreate}
+			onOpenSearchHub={handleQuickSwitchSearchHub}
 			onClose={() => showQuickSwitcher = false}
 		/>
 	{/if}

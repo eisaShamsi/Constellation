@@ -58,6 +58,9 @@ export default defineConfig({
 			// MIG-093 §B (2026-07-06) — the shared frontend fold (parity-pinned)
 			// + the Light10 stem port the Index filter re-points to.
 			'tests/mig-093/searchFold.test.ts',
+			// MIG-093 §C (2026-07-06) — the switcher banded-ranking model (the
+			// pinned Boss case: 'islam' ranks the exact title #1).
+			'tests/mig-093/switcherRank.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
