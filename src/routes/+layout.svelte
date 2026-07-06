@@ -2328,12 +2328,11 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// One IPC call returns everything: libraries, settings, bookmarks,
-		// workspaces, property types, workspace bases, child universes.
+		// One IPC call returns everything: libraries, settings, workspaces,
+		// property types, workspace bases, child universes.
 		type BootBundle = {
 			libraries: any[];
 			settings: Record<string, unknown>;
-			bookmarks: unknown[];
 			workspaces: unknown[];
 			property_types: Record<string, unknown>;
 			link_types?: unknown[];
@@ -2394,7 +2393,8 @@
 			} catch { /* settings schema mismatch — fall through with defaults */ }
 
 			// Workspaces — array set directly. (Bookmarks are migrated into the
-			// Starred collection by loadCollections; the bundle field is ignored.)
+			// Starred collection by loadCollections, which reads read_universe_bookmarks
+			// directly — the boot bundle no longer carries a bookmarks field.)
 			if (Array.isArray(bundle.workspaces) && bundle.workspaces.length > 0) {
 				workspaces.set(bundle.workspaces as any);
 			}

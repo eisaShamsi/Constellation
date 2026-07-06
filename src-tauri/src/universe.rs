@@ -1355,9 +1355,9 @@ pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value
 }
 
 /// Read bookmarks.json from the active universe. MIG-092: READ-ONLY now — the
-/// only reader is the one-time Bookmarks→Starred migration (loadCollections)
-/// + the boot bundle; nothing writes bookmarks.json anymore (it is retained as
-/// a backup). Missing file → empty array.
+/// only reader is the one-time Bookmarks→Starred migration (loadCollections);
+/// nothing writes bookmarks.json anymore (it is retained as a backup).
+/// Missing file → empty array.
 #[tauri::command]
 pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let dir = active_constellation_dir(&app)?;

@@ -31,7 +31,6 @@ use crate::universe::ChildUniverseInfo;
 pub struct BootBundle {
     pub libraries: Vec<LibraryInfo>,
     pub settings: serde_json::Value,
-    pub bookmarks: serde_json::Value,
     pub workspaces: serde_json::Value,
     pub property_types: serde_json::Value,
     /// MIG-067 §C — the resolved Link-Type Registry (8 seeds + custom, ordered +
@@ -90,11 +89,6 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         crate::universe::read_universe_settings(app.clone())
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
     );
-    let bookmarks = time_step!(
-        "read_universe_bookmarks",
-        crate::universe::read_universe_bookmarks(app.clone())
-            .unwrap_or(serde_json::Value::Array(vec![]))
-    );
     let workspaces = time_step!(
         "read_universe_workspaces",
         crate::universe::read_universe_workspaces(app.clone())
@@ -140,7 +134,6 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
     Ok(BootBundle {
         libraries,
         settings,
-        bookmarks,
         workspaces,
         property_types,
         link_types,

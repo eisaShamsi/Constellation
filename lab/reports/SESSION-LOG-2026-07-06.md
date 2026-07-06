@@ -210,3 +210,18 @@ aliases searchable · recents on empty · create + search hand-off rows.
   - **Verify:** `cargo check` green (39.5s); **zero NEW dead-code warnings** — none of the
     54 pre-existing warnings names any deleted symbol (proves the whole dead cluster went, no
     orphan left). Frontend already clean from §0b; no `invoke` of any deleted command remains.
+  - **§0c orphan caught in §0d compile:** `query_base` was the only user of `use std::time::
+    Instant` (bases.rs:5) → removed the now-unused import (folded into §0d).
+
+- **§0d — boot_bundle bookmarks dead fetch (the migration command KEPT):**
+  - `boot_bundle.rs`: removed the `BootBundle.bookmarks` field, its `read_universe_bookmarks`
+    fetch, and its struct-literal entry — the value nothing reads post-MIG-092 (Bookmarks
+    unified into the Starred collection).
+  - Frontend parity: dropped `bookmarks: unknown[]` from the local `BootBundle` type +
+    updated the two comments.
+  - `universe.rs`: corrected the `read_universe_bookmarks` docstring (loadCollections is now
+    its sole reader).
+  - **KEPT (verified):** the `read_universe_bookmarks` command + its `lib.rs:567` registration
+    + the `readUniverseBookmarks` wrapper + `store.ts:1046`'s migration invoke — the one-time
+    Bookmarks→Starred migration still needs them.
+  - **Verify:** `cargo check` green (11.7s, Instant warning gone); `npm run check` → 0 ERRORS.

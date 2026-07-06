@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 // MIG-065 §I-b — base CREATION now writes a minimal LensDefinition YAML (the
 // unified engine's format), not the old BaseDefinition JSON.
 use crate::lens::definition::{
