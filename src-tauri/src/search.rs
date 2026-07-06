@@ -9669,33 +9669,69 @@ fn search_contents(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResu
         Some(escaped) => format!("body_text:{}*", escaped),
         None => return Vec::new(),
     };
-    let mut stmt = match conn.prepare(
-        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
-                bm25(notes_fts, 0.0, 1.0) as score,
-                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip
+    // MIG-093 §D-2 (Boss re-test: the Search Hub still slow after the lexical
+    // fix) — the SAME materialize-before-LIMIT disease as lexical: FTS5
+    // native snippet() re-tokenized the FULL body of EVERY matching row.
+    // Same cure — rank first (index-only bm25), then fetch + Rust-synthesize
+    // snippets for ONLY the ≤limit winners. Cost bounded by LIMIT, never by
+    // the match count.
+    let mut p1 = match conn.prepare(
+        "SELECT notes_fts.rowid, bm25(notes_fts, 0.0, 1.0) AS score
          FROM notes_fts
-         JOIN note_meta ON notes_fts.rowid = note_meta.rowid
          WHERE notes_fts MATCH ?1
          ORDER BY score
-         LIMIT ?2"
+         LIMIT ?2",
     ) {
         Ok(s) => s,
         Err(_) => return Vec::new(),
     };
-    let results = stmt.query_map(params![fts_query, limit], |row| {
-        Ok(SearchResult {
-            path: row.get(0)?,
-            name: row.get(1)?,
-            library_name: row.get(2)?,
-            modified: row.get(3)?,
-            score: row.get::<_, f64>(4)?.abs(),
-            snippet: row.get(5).ok(),
+    let ranked: Vec<(i64, f64)> = p1
+        .query_map(params![fts_query, limit], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default();
+    if ranked.is_empty() {
+        return Vec::new();
+    }
+    let mut p2 = match conn.prepare(
+        "SELECT path, name, library_name, modified, body_text FROM note_meta WHERE rowid = ?1",
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let query_lower = query.to_lowercase();
+    let mut out = Vec::with_capacity(ranked.len());
+    for (rowid, score) in ranked {
+        let fetched = p2.query_row(params![rowid], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, u64>(3)?,
+                row.get::<_, Option<String>>(4)?,
+            ))
+        });
+        let (path, name, library_name, modified, body) = match fetched {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        let snippet = body
+            .as_deref()
+            .and_then(|b| synth_snippet_for_body(b, &query_lower, &[]));
+        out.push(SearchResult {
+            path,
+            name,
+            library_name,
+            modified,
+            score: score.abs(),
+            snippet,
             match_type: "content".to_string(),
             heading_breadcrumb: None,
             match_via: None,
-        })
-    }).ok();
-    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+        });
+    }
+    out
 }
 
 fn search_tags(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
