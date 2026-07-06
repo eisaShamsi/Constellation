@@ -305,31 +305,6 @@
 	// searchMode removed — Search Hub is the single search experience
 	// MIG-091 — 'list' (the retired two-pane Navigator) removed from the union.
 	let sidebarMode = $state<'tree' | 'skyview' | 'digest'>('tree');
-	// CE Phase 9: Multi-Lens Views
-	let availableLenses = $state<any[]>([]);
-	let activeLensId = $state('');
-	let lensGroups = $state<any[]>([]); // LensGroup[] when a lens is active
-	let lensEntries = $derived.by(() => {
-		if (!activeLensId || lensGroups.length === 0) return null;
-		// Build virtual FileEntry tree from lens groups
-		return lensGroups.map((g: any) => ({
-			name: g.name,
-			path: '',
-			is_dir: true,
-			children: g.notes.map((n: any) => ({
-				name: n.name + '.md',
-				path: n.path,
-				is_dir: false,
-				children: null,
-				extension: 'md',
-				modified: null,
-				status: null,
-			})),
-			extension: null,
-			modified: null,
-			status: null,
-		}));
-	});
 	let preTreeWidth = 240; // Saved sidebar width before wider modes expanded it
 
 	/** Measure the pixel width needed to display the longest cUniverse/library name */
@@ -2236,7 +2211,6 @@
 					}
 				} catch {}
 			}, category: 'Navigation' },
-			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
@@ -3794,11 +3768,10 @@
 		// §139: SvelteMap — replace contents in-place (see maturityMap above).
 		stageMap.clear();
 		for (const [k, v] of newStageMap) stageMap.set(k, v);
-		// Lenses (cheap, once). The tension load that used to sit here was
-		// re-homed to loadTensionReport() — tab-activated, active-note-scoped
-		// (this function only runs from the on-demand Sky View enrichment, so
-		// a boot-era tension load here left the health tab "Loading…" forever).
-		try { availableLenses = await invoke('list_lenses'); } catch { availableLenses = []; }
+		// The tension load that used to sit here was re-homed to
+		// loadTensionReport() — tab-activated, active-note-scoped (this function
+		// only runs from the on-demand Sky View enrichment, so a boot-era tension
+		// load here left the health tab "Loading…" forever).
 		skyVersion++;
 	}
 
@@ -6519,17 +6492,6 @@
 						libraries={$libraries}
 						onNoteClick={(path, libName) => handleNoteClick(path, libName)}
 					/>
-				{:else if activeLensId && lensEntries}
-					<!-- CE Phase 9: Lens view -->
-					<div class="section-label">🔍 {availableLenses.find((l: any) => l.id === activeLensId)?.name ?? 'Lens'}</div>
-					<FileTree
-						entries={lensEntries}
-						libraryName={get(libraries)[0]?.name ?? ''}
-						color={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
-						onNoteClick={(path, name, ht, e) => handleNoteClick(path, name, ht, e)}
-						{maturityMap}
-						{stageMap}
-					/>
 				{:else}
 					<!-- Bookmarks section — the Starred collection (MIG-092 unify) -->
 					{#if starredItems.length > 0}
@@ -8950,12 +8912,6 @@
 	}
 	.mode-tab:hover { background: var(--background-modifier-hover); }
 	.mode-tab.active { background: color-mix(in srgb, var(--interactive-accent) 15%, transparent); color: var(--interactive-accent); font-weight: 600; }
-	.lens-select {
-		font-size: 10px; padding: 2px 4px; border: 1px solid var(--background-modifier-border);
-		border-radius: 4px; background: var(--background-primary); color: var(--text-muted);
-		cursor: pointer; outline: none; max-width: 100px; font-family: inherit;
-	}
-	.lens-select:hover { border-color: var(--interactive-accent); }
 
 	.search-box {
 		display: flex; align-items: center; gap: 4px; width: 100%;

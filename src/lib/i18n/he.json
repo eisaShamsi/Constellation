@@ -83,7 +83,6 @@
       "templates": "תבניות",
       "styleSettings": "הגדרות סגנון",
       "styleSetter": "מעצב סגנון",
-      "knowledge": "ניהול ידע",
       "arabicOverrides": "דריסות ערבית",
       "panels": "פאנלים",
       "iconOverrides": "אייקוני האפליקציה",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "בורר Ctrl+. לאמוג'י ואייקוני וקטור — הוסף להערות או עקוף אייקוני אפליקציה"
     },
     "knowledge": {
-      "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",
-      "lensDesc": "צפה בספרייה שלך דרך סכמות סיווג שונות — לפי נושא, שלב או כל מאפיין מותאם אישית.",
-      "loadLenses": "טען עדשות",
-      "lensName": "שם העדשה",
-      "groupByProperty": "קבץ לפי מאפיין",
-      "groupByTags": "קבץ לפי תגיות",
-      "propertyKey": "מפתח מאפיין (למשל stage, certainty, priority)",
-      "propertyValues": "ערכים (מופרדים בפסיקים)",
-      "rootTags": "תגיות שורש (מופרדות בפסיקים, השאר ריק לכולם)",
-      "save": "שמור",
-      "create": "צור",
-      "cancel": "ביטול"
+      "create": "צור"
     },
     "panels": {
       "intro": "בחר היכן יוצג כל פאנל — ליד הפתק או בסרגל הצד הימני.",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "סקור פתקים שהגיע מועדם",
     "openTrail": "פתח שביל",
     "openLens": "החלף עדשה",
-    "createLens": "צור עדשה",
     "expressionForge": "מפעל ביטוי",
     "senseMakingCanvas": "קנבס יצירת משמעות",
     "inspector360": "מפקח 360.3D",
@@ -1378,14 +1365,6 @@
     "noteOf": "מתוך",
     "prev": "הקודם",
     "next": "הבא"
-  },
-  "lensPanel": {
-    "default": "תיקיות",
-    "byStage": "לפי שלב",
-    "byTopic": "לפי נושא",
-    "unclassified": "לא מסווג",
-    "untagged": "ללא תגית",
-    "switchLens": "החלף תצוגה"
   },
   "expressionForge": {
     "titlePlaceholder": "כותרת ההרכב...",

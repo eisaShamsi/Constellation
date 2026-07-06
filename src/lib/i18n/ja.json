@@ -83,7 +83,6 @@
       "templates": "テンプレート",
       "styleSettings": "スタイル設定",
       "styleSetter": "スタイルセッター",
-      "knowledge": "ナレッジ管理",
       "arabicOverrides": "アラビア語オーバーライド",
       "panels": "パネル",
       "iconOverrides": "アプリアイコン",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "絵文字とベクターアイコン用のCtrl+.ピッカー — ノートに挿入またはアプリアイコンを上書き"
     },
     "knowledge": {
-      "intro": "知識の整理、表示、分析の方法を設定します。",
-      "lensDesc": "トピック、ステージ、またはカスタムプロパティなど、さまざまな分類スキームでライブラリを表示します。",
-      "loadLenses": "レンズを読み込む",
-      "lensName": "レンズ名",
-      "groupByProperty": "プロパティでグループ化",
-      "groupByTags": "タグでグループ化",
-      "propertyKey": "プロパティキー（例：stage, certainty, priority）",
-      "propertyValues": "値（カンマ区切り）",
-      "rootTags": "ルートタグ（カンマ区切り、すべての場合は空白）",
-      "save": "保存",
-      "create": "作成",
-      "cancel": "キャンセル"
+      "create": "作成"
     },
     "panels": {
       "intro": "各パネルの表示場所を選択してください — ノートの横または右サイドバー。",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "期限のノートを確認",
     "openTrail": "トレイルを開く",
     "openLens": "レンズ切替",
-    "createLens": "レンズ作成",
     "expressionForge": "表現フォージ",
     "senseMakingCanvas": "センスメイキングキャンバス",
     "inspector360": "360.3Dインスペクター",
@@ -1818,14 +1805,6 @@
     "noteOf": "の",
     "prev": "前へ",
     "next": "次へ"
-  },
-  "lensPanel": {
-    "default": "フォルダ",
-    "byStage": "ステージ別",
-    "byTopic": "トピック別",
-    "unclassified": "未分類",
-    "untagged": "タグなし",
-    "switchLens": "ビュー切替"
   },
   "expressionForge": {
     "titlePlaceholder": "作品タイトル...",

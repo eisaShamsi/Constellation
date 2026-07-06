@@ -83,7 +83,6 @@
       "templates": "模板",
       "styleSettings": "样式设置",
       "styleSetter": "样式设计器",
-      "knowledge": "知识管理",
       "arabicOverrides": "阿拉伯语覆盖",
       "panels": "面板",
       "iconOverrides": "应用图标",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "Ctrl+. 选择器，用于表情符号和矢量图标——插入笔记或替换应用图标"
     },
     "knowledge": {
-      "intro": "配置知识的组织、查看和分析方式。",
-      "lensDesc": "通过不同的分类方案查看您的库——按主题、阶段或任何自定义属性。",
-      "loadLenses": "加载镜头",
-      "lensName": "镜头名称",
-      "groupByProperty": "按属性分组",
-      "groupByTags": "按标签分组",
-      "propertyKey": "属性键（如 stage, certainty, priority）",
-      "propertyValues": "值（逗号分隔）",
-      "rootTags": "根标签（逗号分隔，留空表示全部）",
-      "save": "保存",
-      "create": "创建",
-      "cancel": "取消"
+      "create": "创建"
     },
     "panels": {
       "intro": "选择每个面板的显示位置 — 笔记旁边或右侧边栏。",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "复习到期笔记",
     "openTrail": "打开路径",
     "openLens": "切换镜头",
-    "createLens": "创建镜头",
     "expressionForge": "表达锻造",
     "senseMakingCanvas": "意义构建画布",
     "inspector360": "360.3D检查器",
@@ -1818,14 +1805,6 @@
     "noteOf": "/",
     "prev": "上一个",
     "next": "下一个"
-  },
-  "lensPanel": {
-    "default": "文件夹",
-    "byStage": "按阶段",
-    "byTopic": "按主题",
-    "unclassified": "未分类",
-    "untagged": "无标签",
-    "switchLens": "切换视图"
   },
   "expressionForge": {
     "titlePlaceholder": "作品标题...",

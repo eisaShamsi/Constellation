@@ -36,7 +36,6 @@
       "styleSettings": "Style Settings",
       "styleSetter": "Style Setter",
       "iconOverrides": "App Icons",
-      "knowledge": "Knowledge Management",
       "arabicOverrides": "Arabic Overrides",
       "debug": "Debug",
       "panels": "Panels",
@@ -518,18 +517,7 @@
       }
     },
     "knowledge": {
-      "intro": "Configure how your knowledge is organized, viewed, and analyzed.",
-      "lensDesc": "View your library through different classification schemes — by topic, stage, or any custom property.",
-      "loadLenses": "Load Lenses",
-      "lensName": "Lens name",
-      "groupByProperty": "Group by property",
-      "groupByTags": "Group by tags",
-      "propertyKey": "Property key (e.g., stage, certainty, priority)",
-      "propertyValues": "Values (comma-separated)",
-      "rootTags": "Root tags (comma-separated, leave empty for all)",
-      "save": "Save",
-      "create": "Create",
-      "cancel": "Cancel"
+      "create": "Create"
     },
     "debug": {
       "intro": "Read-only diagnostic view. The boot-performance scorecard evaluates the five ship-gate criteria defined in lab/boot-perf/BOOT-BUDGET.md against the last launch on the active Universe.",
@@ -722,7 +710,6 @@
     "reviewDueNotes": "Review due notes",
     "openTrail": "Open Trail",
     "openLens": "Switch Lens",
-    "createLens": "Create Lens",
     "expressionForge": "Expression Forge",
     "senseMakingCanvas": "Sense-Making Canvas",
     "inspector360": "360.3D Inspector",
@@ -1988,14 +1975,6 @@
     "noteOf": "of",
     "prev": "Previous",
     "next": "Next"
-  },
-  "lensPanel": {
-    "default": "Folders",
-    "byStage": "By Stage",
-    "byTopic": "By Topic",
-    "unclassified": "Unclassified",
-    "untagged": "Untagged",
-    "switchLens": "Switch view"
   },
   "expressionForge": {
     "titlePlaceholder": "Composition title...",

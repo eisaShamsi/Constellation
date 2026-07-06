@@ -83,7 +83,6 @@
       "templates": "قالب‌ها",
       "styleSettings": "تنظیمات سبک",
       "styleSetter": "طراح سبک",
-      "knowledge": "مدیریت دانش",
       "arabicOverrides": "بازنویسی‌های عربی",
       "panels": "پانل‌ها",
       "iconOverrides": "آیکون‌های برنامه",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "انتخابگر Ctrl+. برای ایموجی و آیکون‌های برداری — درج در یادداشت‌ها یا جایگزینی آیکون‌های برنامه"
     },
     "knowledge": {
-      "intro": "نحوه سازماندهی، نمایش و تحلیل دانش خود را تنظیم کنید.",
-      "lensDesc": "کتابخانه خود را از طریق طرح‌های طبقه‌بندی مختلف ببینید — بر اساس موضوع، مرحله یا هر ویژگی دلخواه.",
-      "loadLenses": "بارگذاری عدسی‌ها",
-      "lensName": "نام عدسی",
-      "groupByProperty": "گروه‌بندی بر اساس ویژگی",
-      "groupByTags": "گروه‌بندی بر اساس برچسب‌ها",
-      "propertyKey": "کلید ویژگی (مثلاً stage, certainty, priority)",
-      "propertyValues": "مقادیر (جدا شده با کاما)",
-      "rootTags": "برچسب‌های ریشه (جدا شده با کاما، برای همه خالی بگذارید)",
-      "save": "ذخیره",
-      "create": "ایجاد",
-      "cancel": "لغو"
+      "create": "ایجاد"
     },
     "panels": {
       "intro": "انتخاب کنید هر پانل کجا نمایش داده شود — کنار یادداشت یا در نوار کناری راست.",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "بازبینی یادداشت‌های موعد",
     "openTrail": "باز کردن مسیر",
     "openLens": "تغییر عدسی",
-    "createLens": "ایجاد عدسی",
     "expressionForge": "کارگاه بیان",
     "senseMakingCanvas": "بوم معنایابی",
     "inspector360": "بازرس کروی",
@@ -1389,14 +1376,6 @@
     "noteOf": "از",
     "prev": "قبلی",
     "next": "بعدی"
-  },
-  "lensPanel": {
-    "default": "پوشه‌ها",
-    "byStage": "بر اساس مرحله",
-    "byTopic": "بر اساس موضوع",
-    "unclassified": "طبقه‌بندی نشده",
-    "untagged": "بدون برچسب",
-    "switchLens": "تغییر نما"
   },
   "expressionForge": {
     "titlePlaceholder": "عنوان ترکیب...",

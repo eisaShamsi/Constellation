@@ -83,7 +83,6 @@
       "templates": "ٹیمپلیٹس",
       "styleSettings": "اسٹائل سیٹنگز",
       "styleSetter": "اسٹائل سیٹر",
-      "knowledge": "علم کا انتظام",
       "arabicOverrides": "عربی اوور رائڈز",
       "panels": "پینلز",
       "iconOverrides": "ایپ آئیکنز",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "ایموجی اور ویکٹر آئیکنز کے لیے Ctrl+. پکر — نوٹس میں داخل کریں یا ایپ آئیکنز بدلیں"
     },
     "knowledge": {
-      "intro": "ترتیب دیں کہ آپ کا علم کیسے منظم، دکھایا اور تجزیہ کیا جائے۔",
-      "lensDesc": "اپنی لائبریری کو مختلف درجہ بندی اسکیموں سے دیکھیں — موضوع، مرحلے، یا کسی بھی حسب ضرورت خاصیت کے مطابق۔",
-      "loadLenses": "لینز لوڈ کریں",
-      "lensName": "لینز کا نام",
-      "groupByProperty": "خاصیت کے مطابق گروپ",
-      "groupByTags": "ٹیگز کے مطابق گروپ",
-      "propertyKey": "خاصیت کی کلید (مثلاً stage, certainty, priority)",
-      "propertyValues": "اقدار (کاما سے الگ)",
-      "rootTags": "جڑ ٹیگز (کاما سے الگ، سب کے لیے خالی چھوڑیں)",
-      "save": "محفوظ کریں",
-      "create": "بنائیں",
-      "cancel": "منسوخ"
+      "create": "بنائیں"
     },
     "panels": {
       "intro": "ہر پینل کہاں ظاہر ہو یہ منتخب کریں — نوٹ کے ساتھ یا دائیں سائیڈبار میں۔",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
     "openTrail": "پگڈنڈی کھولیں",
     "openLens": "لینز تبدیل کریں",
-    "createLens": "لینز بنائیں",
     "expressionForge": "اظہار فورج",
     "senseMakingCanvas": "معنی سازی کینوس",
     "inspector360": "360.3D معائنہ کار",
@@ -1378,14 +1365,6 @@
     "noteOf": "میں سے",
     "prev": "پچھلا",
     "next": "اگلا"
-  },
-  "lensPanel": {
-    "default": "فولڈرز",
-    "byStage": "مرحلے کے مطابق",
-    "byTopic": "موضوع کے مطابق",
-    "unclassified": "غیر درجہ بند",
-    "untagged": "بغیر ٹیگ",
-    "switchLens": "نظارہ تبدیل کریں"
   },
   "expressionForge": {
     "titlePlaceholder": "تحریر کا عنوان...",

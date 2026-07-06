@@ -37,7 +37,6 @@ mod nsc;
 // Cataloger Ensemble Architecture. See lab/reports/MIG-021v3-EPISTEMIC-
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
 pub mod cece;
-mod lenses;
 // MIG-055 §A — Constellation Base, the lens module (clean rebuild post-MIG-054 revert).
 pub mod lens;
 // MIG-056 §A — Cross-Universe Federation module. Provides FederationContext +
@@ -488,9 +487,6 @@ pub fn run() {
             canvas::read_canvas,
             canvas::write_canvas,
             canvas::create_canvas,
-            lenses::list_lenses,
-            lenses::save_lenses,
-            lenses::apply_lens,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::delete_path,

@@ -83,7 +83,6 @@
       "templates": "Modèles",
       "styleSettings": "Paramètres de style",
       "styleSetter": "Concepteur de style",
-      "knowledge": "Gestion des connaissances",
       "arabicOverrides": "Surcharges arabes",
       "panels": "Panneaux",
       "iconOverrides": "Icônes de l'app",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "Sélecteur Ctrl+. pour emojis et icônes vectorielles — insérer dans les notes ou remplacer les icônes de l'app"
     },
     "knowledge": {
-      "intro": "Configurez l'organisation, l'affichage et l'analyse de vos connaissances.",
-      "lensDesc": "Visualisez votre bibliothèque selon différents schémas de classification — par sujet, étape ou propriété personnalisée.",
-      "loadLenses": "Charger les lentilles",
-      "lensName": "Nom de la lentille",
-      "groupByProperty": "Grouper par propriété",
-      "groupByTags": "Grouper par étiquettes",
-      "propertyKey": "Clé de propriété (ex. stage, certainty, priority)",
-      "propertyValues": "Valeurs (séparées par des virgules)",
-      "rootTags": "Tags racines (séparés par des virgules, laisser vide pour tous)",
-      "save": "Enregistrer",
-      "create": "Créer",
-      "cancel": "Annuler"
+      "create": "Créer"
     },
     "panels": {
       "intro": "Choisissez où apparaît chaque panneau — à côté de la note ou dans la barre latérale droite.",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "Réviser les notes dues",
     "openTrail": "Ouvrir un parcours",
     "openLens": "Changer de lentille",
-    "createLens": "Créer une lentille",
     "expressionForge": "Forge d'expression",
     "senseMakingCanvas": "Canevas de sens",
     "inspector360": "Inspecteur 360.3D",
@@ -1389,14 +1376,6 @@
     "noteOf": "de",
     "prev": "Précédent",
     "next": "Suivant"
-  },
-  "lensPanel": {
-    "default": "Dossiers",
-    "byStage": "Par étape",
-    "byTopic": "Par sujet",
-    "unclassified": "Non classé",
-    "untagged": "Sans étiquette",
-    "switchLens": "Changer de vue"
   },
   "expressionForge": {
     "titlePlaceholder": "Titre de la composition...",

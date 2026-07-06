@@ -83,7 +83,6 @@
       "templates": "القوالب",
       "styleSettings": "إعدادات الأسلوب",
       "styleSetter": "منسق المظهر",
-      "knowledge": "إدارة المعرفة",
       "arabicOverrides": "تجاوزات المحرك العربي",
       "panels": "اللوحات",
       "iconOverrides": "أيقونات التطبيق",
@@ -549,18 +548,7 @@
       }
     },
     "knowledge": {
-      "intro": "اضبط كيفية تنظيم معرفتك وعرضها وتحليلها.",
-      "lensDesc": "اعرض مكتبتك من خلال مخططات تصنيف مختلفة — حسب الموضوع أو المرحلة أو أي خاصية مخصصة.",
-      "loadLenses": "تحميل العدسات",
-      "lensName": "اسم العدسة",
-      "groupByProperty": "تجميع حسب الخاصية",
-      "groupByTags": "تجميع حسب الوسوم",
-      "propertyKey": "مفتاح الخاصية (مثل: stage, certainty, priority)",
-      "propertyValues": "القيم (مفصولة بفواصل)",
-      "rootTags": "الوسوم الجذرية (مفصولة بفواصل، اتركها فارغة للكل)",
-      "save": "حفظ",
-      "create": "إنشاء",
-      "cancel": "إلغاء"
+      "create": "إنشاء"
     },
     "panels": {
       "intro": "اختر مكان ظهور كل لوحة — بجانب الملاحظة أو في الشريط الجانبي الأيمن.",
@@ -753,7 +741,6 @@
     "reviewDueNotes": "مراجعة الملاحظات المستحقة",
     "openTrail": "فتح مسار",
     "openLens": "تبديل العدسة",
-    "createLens": "إنشاء عدسة",
     "expressionForge": "مصنع التعبير",
     "senseMakingCanvas": "لوحة الإدراك",
     "inspector360": "المنظار الكروي",
@@ -1923,14 +1910,6 @@
     "noteOf": "من",
     "prev": "السابق",
     "next": "التالي"
-  },
-  "lensPanel": {
-    "default": "المجلدات",
-    "byStage": "حسب المرحلة",
-    "byTopic": "حسب الموضوع",
-    "unclassified": "غير مصنف",
-    "untagged": "بدون وسم",
-    "switchLens": "تبديل العرض"
   },
   "expressionForge": {
     "titlePlaceholder": "عنوان التأليف...",

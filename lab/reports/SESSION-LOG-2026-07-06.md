@@ -235,3 +235,29 @@ aliases searchable · recents on empty · create + search hand-off rows.
   (shared with the live `convert_base`), `workspace_bases_dir` (5 live commands), `format_yaml_value`
   (used by `convert_base`), `minimal_base_yaml`, `convert_filter_op`.
   - **Verify:** `cargo check` green (31.2s); all 4 dead-command warnings gone, zero new warnings.
+
+### Step 0 — Boss gate rulings (2026-07-06)
+- **TagsPanel.svelte → KEEP** (Boss) as the tags-cluster seed. It's dead now (zero imports since
+  2026-06-20) but is the only hierarchical tag-tree builder left; the tags /migration decides its
+  fate. NOT deleted.
+- **lenses.rs → DELETE confirmed** (Boss) — execute the parked 2026-05-09 Option-A ruling.
+
+- **§0f — lenses.rs full CE-Phase-9 Multi-Lens delete (Boss-confirmed gate):**
+  - Rust: DELETED `src-tauri/src/lenses.rs` (276 lines) + `mod lenses` + the `list_lenses`/
+    `save_lenses`/`apply_lens` registrations. `cargo check` green (38.7s).
+  - Frontend `+layout.svelte`: removed the never-populated lens view (`availableLenses`/
+    `activeLensId`/`lensGroups`/`lensEntries` derived + the `list_lenses` invoke + the dead
+    sidebar render branch — if/else chain rejoined to `{:else}` (Bookmarks) + the create-lens
+    command-palette entry + the `.lens-select` CSS).
+  - Frontend `SettingsModal.svelte`: the Lenses UI was the **entire** "Knowledge Management"
+    settings section → removed the whole section + its nav tab (an empty tab would be a defect;
+    flagged to Boss). Removed the lens state + `loadLenses`/`saveLensItem`/`deleteLens`.
+  - i18n ×15: removed `lensPanel.*`, `commands.createLens`, `settings.sections.knowledge`, and
+    `settings.knowledge.*` — **KEPT `settings.knowledge.create`** (shared with SenseMakingCanvas).
+  - **Line drawn (verified, untouched):** the LIVE `lens/` Bases engine (`src/lib/lens/`,
+    `LensBlockWidget`, `bases.rs` imports `crate::lens::definition`) and `sight.rs` (CNS analytics)
+    — both share the word "lens" but have zero dependency on the deleted `lenses.rs`.
+  - Memory `project_lenses_apply_lens_dead_code` updated to "executed."
+  - **Verify:** `cargo check` green; `npm run check` → 0 ERRORS (warnings 320→316 = lens CSS gone).
+
+### Step 0 — DONE (§0a–§0f, all build-green). Cull total: −1,992 lines of dead code, 5 files deleted.

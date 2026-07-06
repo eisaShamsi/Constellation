@@ -83,7 +83,6 @@
       "templates": "Plantillas",
       "styleSettings": "Ajustes de estilo",
       "styleSetter": "Diseñador de estilo",
-      "knowledge": "Gestión del conocimiento",
       "arabicOverrides": "Anulaciones del árabe",
       "panels": "Paneles",
       "iconOverrides": "Iconos de la app",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "Selector Ctrl+. para emojis e iconos vectoriales — insertar en notas o reemplazar iconos de la app"
     },
     "knowledge": {
-      "intro": "Configure cómo se organiza, visualiza y analiza su conocimiento.",
-      "lensDesc": "Vea su biblioteca a través de diferentes esquemas de clasificación — por tema, etapa o cualquier propiedad personalizada.",
-      "loadLenses": "Cargar lentes",
-      "lensName": "Nombre del lente",
-      "groupByProperty": "Agrupar por propiedad",
-      "groupByTags": "Agrupar por etiquetas",
-      "propertyKey": "Clave de propiedad (ej., stage, certainty, priority)",
-      "propertyValues": "Valores (separados por comas)",
-      "rootTags": "Etiquetas raíz (separadas por comas, dejar vacío para todas)",
-      "save": "Guardar",
-      "create": "Crear",
-      "cancel": "Cancelar"
+      "create": "Crear"
     },
     "panels": {
       "intro": "Elige dónde aparece cada panel — junto a la nota o en la barra lateral derecha.",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "Revisar notas pendientes",
     "openTrail": "Abrir ruta",
     "openLens": "Cambiar lente",
-    "createLens": "Crear lente",
     "expressionForge": "Fragua de expresión",
     "senseMakingCanvas": "Lienzo de sentido",
     "inspector360": "Inspector 360.3D",
@@ -1389,14 +1376,6 @@
     "noteOf": "de",
     "prev": "Anterior",
     "next": "Siguiente"
-  },
-  "lensPanel": {
-    "default": "Carpetas",
-    "byStage": "Por etapa",
-    "byTopic": "Por tema",
-    "unclassified": "Sin clasificar",
-    "untagged": "Sin etiqueta",
-    "switchLens": "Cambiar vista"
   },
   "expressionForge": {
     "titlePlaceholder": "Título de la composición...",

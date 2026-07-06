@@ -83,7 +83,6 @@
       "templates": "Şablonlar",
       "styleSettings": "Stil Ayarları",
       "styleSetter": "Stil Tasarımcısı",
-      "knowledge": "Bilgi Yönetimi",
       "arabicOverrides": "Arapça Geçersiz Kılmalar",
       "panels": "Paneller",
       "iconOverrides": "Uygulama simgeleri",
@@ -525,18 +524,7 @@
       "emojiIconPickerDesc": "Emoji ve vektör simgeler için Ctrl+. seçici — notlara ekle veya uygulama simgelerini geçersiz kıl"
     },
     "knowledge": {
-      "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",
-      "lensDesc": "Kütüphanenizi farklı sınıflandırma şemalarıyla görüntüleyin — konuya, aşamaya veya herhangi bir özel özelliğe göre.",
-      "loadLenses": "Lensleri yükle",
-      "lensName": "Lens adı",
-      "groupByProperty": "Özelliğe göre grupla",
-      "groupByTags": "Etiketlere göre grupla",
-      "propertyKey": "Özellik anahtarı (ör. stage, certainty, priority)",
-      "propertyValues": "Değerler (virgülle ayrılmış)",
-      "rootTags": "Kök etiketler (virgülle ayrılmış, hepsi için boş bırakın)",
-      "save": "Kaydet",
-      "create": "Oluştur",
-      "cancel": "İptal"
+      "create": "Oluştur"
     },
     "panels": {
       "intro": "Her panesin nerede görüneceğini seçin — notun yanında veya sağ kenar çubuğunda.",
@@ -752,7 +740,6 @@
     "reviewDueNotes": "Vadesi gelen notları gözden geçir",
     "openTrail": "Yolu aç",
     "openLens": "Lens değiştir",
-    "createLens": "Lens oluştur",
     "expressionForge": "İfade Dökümhanesi",
     "senseMakingCanvas": "Anlam Oluşturma Tuvali",
     "inspector360": "360.3D Denetçi",
@@ -1818,14 +1805,6 @@
     "noteOf": "/",
     "prev": "Önceki",
     "next": "Sonraki"
-  },
-  "lensPanel": {
-    "default": "Klasörler",
-    "byStage": "Aşamaya göre",
-    "byTopic": "Konuya göre",
-    "unclassified": "Sınıflandırılmamış",
-    "untagged": "Etiketsiz",
-    "switchLens": "Görünüm değiştir"
   },
   "expressionForge": {
     "titlePlaceholder": "Kompozisyon başlığı...",
