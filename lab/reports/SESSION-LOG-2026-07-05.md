@@ -117,9 +117,38 @@ Re-test 2 (right-click menu) PASS. Two RTL/tooltip refinements → commit `b52f2
 THIRD intentional identity remap (MIG-037 P1) omitted from `identityIds`. Added
 it (renderer correct). Full suite now **224/224**.
 
-### Remaining after Boss validation
-§7 chips (reuse workbenchChips) · §8 liveness · §9b cleanup (dead `showWorkbench` +
-`.workbench-overlay`/`.w-*` CSS + `enabledFeatures.workbench` flag + Settings toggle
-+ retire `save_universe_bookmarks` write + legacy `bookmarks` store + `workbench.*`
-i18n) · §10 close-out (help + User Manual ×15 + full 15-locale `collections.*` i18n +
-Orientation v-bump + /simplify + boot re-measure + audit trio).
+### §7 — State chips — commit `596adf97`
+- Renamed `workbenchChips.ts`→`collectionChips.ts` (+ pinned test import). Four
+  toggle chips (due/unlinked/contested/forming) NARROW the shown members via
+  `filterByChips` over the SAME hydration read — **zero IPC** (hydration $effect
+  depends on keySig/activeId only, never chips). Folder/search drop under any chip.
+- **Verify:** svelte-check 0 errors; pinned subset test + collections → 22/22.
+
+### §8 — Liveness — commit `19d33d17`
+- CollectionsPanel debounced (500ms) re-hydrate on the existing mutation events
+  (note-created / cascade:rewrote / cache-reconciled / screen:note-saved);
+  listeners + timer cleaned on destroy (no leak). Display-only; membership never
+  changes here. **Verify:** svelte-check 0 errors.
+
+### §9b — Retire Workbench flag + legacy bookmarks store — commit `0a29f01c`
+- +layout: removed the always-false `showWorkbench` + every ref (fullPageActive,
+  2 guards, the guard $effect, Esc branch, ~15 reset-chain no-ops) + `.workbench-overlay`
+  CSS. store.ts: removed `enabledFeatures.workbench` flag + the vestigial `bookmarks`
+  store. SettingsModal: removed the dead "Workbench" toggle. Rust: removed
+  `save_universe_bookmarks` (read kept for boot bundle + migration).
+- **Verify:** svelte-check 0 errors (warnings **326→324**); cargo check clean;
+  content-integrity + collections + chips → **50/50**.
+- *(Deferred to §10: `workbench.*` i18n removal, batched with the `collections.*`
+  15-locale additions.)*
+
+### → STOP for Boss test (Stage 2)
+Stage-2 binary building (frontend rebuilt; `cp-chip`/"This collection is empty"
+confirmed in `build/_app/immutable/`). Stage-2 tutorial: multi-collection switch /
+create / rename / delete; per-member done + Clear-done + remove; open-from-collection;
+the four state chips; live auto-refresh on an edit; and a Settings check (no
+"Workbench" toggle).
+
+### Remaining
+§10 close-out: help topic + User Manual ×15 + full 15-locale `collections.*`/context-menu
+i18n (− `workbench.*`) + Orientation v-bump (same commit) + `/simplify` + boot re-measure
+on the 7,600-note universe + audit trio (invariants / drift / migration-path).
