@@ -567,7 +567,6 @@ pub fn run() {
             universe::read_universe_settings,
             universe::save_universe_settings,
             universe::read_universe_bookmarks,
-            universe::save_universe_bookmarks,
             // MIG-092 §1 — Collections' membership persistence (was Workbench).
             universe::read_universe_collections,
             universe::save_universe_collections,

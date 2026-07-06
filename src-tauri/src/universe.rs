@@ -1354,7 +1354,10 @@ pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value
         .map_err(|e| format!("Failed to save settings: {}", e))
 }
 
-/// Read bookmarks.json from the active universe.
+/// Read bookmarks.json from the active universe. MIG-092: READ-ONLY now — the
+/// only reader is the one-time Bookmarks→Starred migration (loadCollections)
+/// + the boot bundle; nothing writes bookmarks.json anymore (it is retained as
+/// a backup). Missing file → empty array.
 #[tauri::command]
 pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let dir = active_constellation_dir(&app)?;
@@ -1366,15 +1369,6 @@ pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Valu
     } else {
         Ok(serde_json::Value::Array(vec![]))
     }
-}
-
-/// Save bookmarks.json to the active universe.
-#[tauri::command]
-pub fn save_universe_bookmarks(app: tauri::AppHandle, bookmarks: serde_json::Value) -> Result<(), String> {
-    let dir = active_constellation_dir(&app)?;
-    let json = serde_json::to_string_pretty(&bookmarks).map_err(|e| e.to_string())?;
-    fs::write(dir.join("bookmarks.json"), json)
-        .map_err(|e| format!("Failed to save bookmarks: {}", e))
 }
 
 /// Read workspaces.json from the active universe.

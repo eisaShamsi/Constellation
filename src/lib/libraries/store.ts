@@ -924,42 +924,10 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 	} catch { /* file may have been deleted */ }
 }
 
-// ─── Bookmarks ───
-export interface Bookmark {
-	id: string;
-	type: 'note' | 'folder' | 'search';
-	path: string;
-	name: string;
-	libraryName: string;
-}
-
-export const bookmarks = writable<Bookmark[]>([]);
-
-export function addBookmark(bm: Omit<Bookmark, 'id'>) {
-	const id = `bm_${Date.now()}`;
-	bookmarks.update(list => [...list, { ...bm, id }]);
-	saveBookmarks();
-}
-
-export function removeBookmark(id: string) {
-	bookmarks.update(list => list.filter(b => b.id !== id));
-	saveBookmarks();
-}
-
-export function isBookmarked(path: string): boolean {
-	return get(bookmarks).some(b => b.path === path);
-}
-
-function saveBookmarks() {
-	invoke('save_universe_bookmarks', { bookmarks: get(bookmarks) }).catch(e => console.error('[save] bookmarks failed:', e));
-}
-
-export async function loadBookmarks() {
-	try {
-		const data = await invoke<unknown[]>('read_universe_bookmarks');
-		if (data && Array.isArray(data) && data.length > 0) bookmarks.set(data as Bookmark[]);
-	} catch { /* ignore */ }
-}
+// ─── Bookmarks ─── (MIG-092: unified into Collections as the pinned "Starred"
+// collection — see collectionSets / toggleStarred below. The legacy
+// bookmarks.json is read once by loadCollections for the one-time migration and
+// then retained as a backup; nothing writes it anymore.)
 
 // ─── MIG-092 — Collections (persistent hand-picked working sets) ───
 // The ONE hand-picked-set mechanism (unifies the former Bookmarks as the
@@ -4007,8 +3975,6 @@ export interface AppSettings {
 		workspaces: boolean;
 		index: boolean;
 		semanticSearch: boolean;
-		/** MIG-090 — the Workbench (Intent Bar + working-set desk). Default OFF until Boss-validated. */
-		workbench: boolean;
 		orgChart: boolean;
 		aiSkills: boolean;
 		secondScreen: boolean;
@@ -4336,7 +4302,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		workspaces: true,
 		index: true,
 		semanticSearch: false,
-		workbench: false,
 		orgChart: true,
 		aiSkills: true,
 		secondScreen: true,
