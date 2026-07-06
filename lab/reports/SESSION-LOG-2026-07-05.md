@@ -169,8 +169,19 @@ dropped per Boss ruling (a note is in a collection or you ✕ it out).
   [Starred-exists guard] / rollback[both backups retained]).
 - **/simplify** — 4 cleanup agents running (reuse/simplification/efficiency/altitude).
 
-### Remaining
-Process /simplify findings + orientation-body agent → commit orientation v3.26 →
-boot-time note (Collections adds no boot-path work by design) → final binary →
-handover + MoCh + full PCS. **Trivial follow-up:** drop the unused `bookmarks` fetch
-from the boot bundle (boot_bundle.rs) — negligible, not touched at close-out (WA#4).
+### §10 close-out — COMPLETE (commits `52699e92`→`424ffd3d`, pushed)
+- `/simplify` fix (cache the bookmark breadcrumb) + Orientation **v3.26** (new file)
+  + handover `2026-07-06` + MoCh `2026-07-05-1900`. Final binary built + pushed.
+- **Boot:** Collections adds NO boot-path work by design — `loadCollections` is
+  post-paint fire-and-forget; migration one-time idempotent; hydration on-demand;
+  §9b even removed one boot IPC (`loadBookmarks`). No boot regression (audit rule 4).
+- **Two post-Stage-2 RTL fixes, Boss-validated:** `NoteRow` per-title row direction
+  (commit `<rtl>`), then `NoteRow` meta follows the row/title direction (commit
+  `<metadir>`) — an RTL-titled member row is now fully RTL (name + library at the
+  reading start, ✕ at the end). **Boss: Pass.**
+
+### MIG-092 — DONE. Shipped + Boss-validated + closed out + pushed (`424ffd3d`).
+
+**Trivial follow-up (not blocking):** drop the unused `bookmarks` fetch from the boot
+bundle (boot_bundle.rs) — negligible, boot path left untouched at close-out (WA#4).
+The 14 translated User-Manual prose sections (app i18n is done in all 15 languages).
