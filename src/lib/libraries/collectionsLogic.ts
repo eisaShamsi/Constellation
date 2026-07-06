@@ -27,7 +27,6 @@ export interface CollectionItem {
 	/** Inline library for folder/search members. */
 	libraryName?: string;
 	addedAt: number;
-	done?: boolean;
 }
 export interface Collection {
 	id: string;
@@ -93,18 +92,6 @@ export function addItem(
 
 export function removeItem(list: Collection[], setId: string, key: string): Collection[] {
 	return list.map(c => (c.id === setId ? { ...c, items: c.items.filter(i => collectionKey(i) !== key) } : c));
-}
-
-export function toggleDone(list: Collection[], setId: string, key: string): Collection[] {
-	return list.map(c =>
-		c.id === setId
-			? { ...c, items: c.items.map(i => (collectionKey(i) === key ? { ...i, done: !i.done } : i)) }
-			: c
-	);
-}
-
-export function sweepDone(list: Collection[], setId: string): Collection[] {
-	return list.map(c => (c.id === setId ? { ...c, items: c.items.filter(i => !i.done) } : c));
 }
 
 /** Adopt cids for path-keyed NOTE items (self-upgrade to rename-proof identity)

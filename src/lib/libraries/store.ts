@@ -989,16 +989,6 @@ export function removeFromCollection(setId: string, key: string) {
 	saveCollections();
 }
 
-export function toggleCollectionDone(setId: string, key: string) {
-	collectionSets.update(list => CL.toggleDone(list, setId, key));
-	saveCollections();
-}
-
-export function sweepCollectionDone(setId: string) {
-	collectionSets.update(list => CL.sweepDone(list, setId));
-	saveCollections();
-}
-
 // ── Starred (the former Bookmarks) — the quick-add favorites shelf ──
 export function addToStarred(item: {
 	type?: CL.CollectionItemType;

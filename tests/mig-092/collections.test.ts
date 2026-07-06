@@ -21,8 +21,6 @@ import {
 	deleteSet,
 	addItem,
 	removeItem,
-	toggleDone,
-	sweepDone,
 	adoptIdentities,
 	migratePath,
 	migrateBookmarks,
@@ -142,13 +140,11 @@ describe('MIG-092 §2 — named sets add/remove/rename/delete independently', ()
 		expect(list.some(c => c.id === STARRED_ID)).toBe(true);
 	});
 
-	it('remove + done + sweep operate per-set', () => {
+	it('remove takes a single member out of its set', () => {
 		let list = createSet(ensureStarred([], NOW), 'A', 'A', NOW);
 		list = addItem(list, 'A', { path: 'keep.md' }, NOW).list;
 		list = addItem(list, 'A', { path: 'drop.md' }, NOW).list;
-		list = toggleDone(list, 'A', 'drop.md');
-		expect(list.find(c => c.id === 'A')!.items.find(i => i.path === 'drop.md')!.done).toBe(true);
-		list = sweepDone(list, 'A');
+		list = removeItem(list, 'A', 'drop.md');
 		expect(list.find(c => c.id === 'A')!.items.map(i => i.path)).toEqual(['keep.md']);
 		list = removeItem(list, 'A', 'keep.md');
 		expect(list.find(c => c.id === 'A')!.items).toHaveLength(0);

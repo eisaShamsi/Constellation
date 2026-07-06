@@ -23,7 +23,6 @@
 		meta = '',
 		chips = [],
 		selected = false,
-		done = false,
 		missing = false,
 		onActivate,
 		trailing,
@@ -34,17 +33,16 @@
 		/** Small state pills (already-localized labels). */
 		chips?: string[];
 		selected?: boolean;
-		done?: boolean;
 		missing?: boolean;
 		onActivate: (e: MouseEvent) => void;
-		/** Host-owned trailing actions (hold/done/remove buttons). */
+		/** Host-owned trailing actions (remove/other buttons). */
 		trailing?: Snippet;
 	} = $props();
 </script>
 
 <!-- MIG-092 — per-title row direction (Language-First): an RTL title mirrors the
      whole row (name at the reading start, trailing actions at the reading end). -->
-<div class="nr" class:nr-selected={selected} class:nr-done={done} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px">
+<div class="nr" class:nr-selected={selected} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px">
 	<button class="nr-main" onclick={onActivate} onauxclick={onActivate} dir="auto">
 		<span class="nr-name" dir="auto">{name}</span>
 		<span class="nr-meta" dir="auto">
@@ -68,7 +66,6 @@
 	}
 	.nr:hover { background: var(--background-modifier-hover); }
 	.nr-selected { background: var(--background-modifier-hover); }
-	.nr-done .nr-name { text-decoration: line-through; color: var(--text-muted); }
 	.nr-missing .nr-name { color: var(--text-muted); font-style: italic; }
 	.nr-main {
 		flex: 1;

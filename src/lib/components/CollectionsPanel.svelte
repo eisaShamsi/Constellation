@@ -14,8 +14,7 @@
 	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import {
 		collectionSets, createCollection, renameCollection, deleteCollection,
-		removeFromCollection, toggleCollectionDone, sweepCollectionDone,
-		hydrateCollectionNotes, STARRED_ID,
+		removeFromCollection, hydrateCollectionNotes, STARRED_ID,
 	} from '$lib/libraries/store';
 	import { buildDisplayRows, collectionKey, type CollectionDisplayRow, type HydratedNoteRow } from '$lib/libraries/collectionsLogic';
 	import { filterByChips, type ChipToggles } from './collectionChips';
@@ -96,7 +95,6 @@
 	// carry no state facts, so any active chip drops them).
 	let chips = $state<ChipToggles>({ due: false, unlinked: false, contested: false, forming: false });
 	const filteredRows = $derived(filterByChips(displayRows, d => d.hydrated, chips));
-	const hasDone = $derived(items.some(i => i.done));
 	const label = (c: { id: string; name: string }) => (c.id === STARRED_ID ? L('collections.starred', 'Starred') : c.name);
 
 	function memberMeta(d: CollectionDisplayRow): string {
@@ -159,9 +157,6 @@
 				<button class="cp-btn" title={L('collections.rename', 'Rename')} onclick={startRename} aria-label={L('collections.rename', 'Rename')}>✎</button>
 				<button class="cp-btn cp-btn-danger" title={L('collections.delete', 'Delete')} onclick={doDelete} aria-label={L('collections.delete', 'Delete')}>🗑</button>
 			{/if}
-			{#if hasDone}
-				<button class="cp-btn" title={L('collections.sweepDone', 'Clear done')} onclick={() => active && sweepCollectionDone(active.id)}>{L('collections.sweepDone', 'Clear done')}</button>
-			{/if}
 		{/if}
 	</div>
 
@@ -192,14 +187,9 @@
 		name={d.name}
 		meta={memberMeta(d)}
 		missing={d.missing}
-		done={d.item.done ?? false}
 		onActivate={() => activate(d)}
 	>
 		{#snippet trailing()}
-			{#if d.type === 'note'}
-				<button class="cp-act" title={L('collections.done', 'Done')} aria-label={L('collections.done', 'Done')}
-					onclick={(e) => { e.stopPropagation(); active && toggleCollectionDone(active.id, d.key); }}>✓</button>
-			{/if}
 			<button class="cp-act" title={L('collections.remove', 'Remove')} aria-label={L('collections.remove', 'Remove')}
 				onclick={(e) => { e.stopPropagation(); active && removeFromCollection(active.id, d.key); }}>×</button>
 		{/snippet}
