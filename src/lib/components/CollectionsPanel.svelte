@@ -10,7 +10,8 @@
 	 * sweep-done. Membership only — nothing here writes note content.
 	 */
 	import { t, dir } from '$lib/i18n';
-	import { untrack } from 'svelte';
+	import { untrack, onMount } from 'svelte';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import {
 		collectionSets, createCollection, renameCollection, deleteCollection,
 		removeFromCollection, toggleCollectionDone, sweepCollectionDone,
@@ -62,6 +63,31 @@
 		activeId;
 		const snapshot = untrack(() => items);
 		hydrateCollectionNotes(snapshot).then(rows => { hydratedRows = rows; });
+	});
+
+	// §8 — liveness: when notes change elsewhere (edit / rename cascade / cross-
+	// window save / cache reconcile), re-read the active collection's facts. One
+	// debounced re-hydrate on the EXISTING mutation events (membership unchanged
+	// → the display-only stale-snapshot cure). Listeners unlistened on destroy.
+	let rehydrateTimer: ReturnType<typeof setTimeout> | null = null;
+	function scheduleRehydrate() {
+		if (rehydrateTimer) clearTimeout(rehydrateTimer);
+		rehydrateTimer = setTimeout(() => {
+			hydrateCollectionNotes(items).then(rows => { hydratedRows = rows; });
+		}, 500);
+	}
+	onMount(() => {
+		const events = ['note-created', 'cascade:rewrote', 'cache-reconciled', 'screen:note-saved'];
+		const unlistens: UnlistenFn[] = [];
+		let alive = true;
+		for (const ev of events) {
+			listen(ev, scheduleRehydrate).then(un => { if (alive) unlistens.push(un); else un(); });
+		}
+		return () => {
+			alive = false;
+			if (rehydrateTimer) clearTimeout(rehydrateTimer);
+			for (const un of unlistens) un();
+		};
 	});
 
 	const displayRows = $derived(buildDisplayRows(items, hydratedRows));
