@@ -118,3 +118,61 @@ switcher. +layout: create/search-hub hand-offs + aliases prop.
 Before/after: Ctrl+O 25-29s+thrash → 1.6-2.7ms · Search Hub content ~25s → ~1s
 ("much better", calm) · exact titles rank #1 · federated titles visible ·
 aliases searchable · recents on empty · create + search hand-off rows.
+
+---
+
+## PJ-069 — The whole-entity deduplication pass (concept-paper-first)
+
+### Kickoff — SO#8 cross-check + adversarial re-audit
+- **SO#8 cross-check ran BEFORE any work** (workflow `wf_2ae0f8c0-d59`, 18 agents:
+  3 context readers + 7 cluster finders + 7 adversarial verifiers + 1 completeness
+  critic; ~2.3M tokens). Every 2026-07-05-map count was re-verified against the LIVE
+  tree — the map was drawn the same day the Navigator was deleted and predates
+  MIG-092/093, so it was stale.
+- **Recomposed counts (map → today):** tags 6→6 (a *different* six), folders 4→5,
+  recents 3→2 hand-rolls, orphan/fragile 5→9 surfaces / 5 divergent definitions,
+  hubs 3→6 in-degree substrates, note-lists 9→26 live (NoteRow/NoteList shipped, 1
+  adopter), **confidence 2→0** (already unified by the shared ConfidencePicker,
+  MIG-077 §F `fa98bf6b`, six days before the map).
+- **Load-bearing corrections:** "Sight is disabled" is over-broad — CNS v2
+  (ConstellationSight2 + SightPanel) is LIVE core; only Sight v3/v4/v6/v7 + the
+  Constellation *Map* frontend are off. `map.rs`'s hierarchy builder is LIVE via the
+  default-on OrgChart (the reachable OrgChart runs `constellation_map_universe`, not
+  `read_library_tree`). Confidence cluster already at 0.
+
+### Concept paper + ratification
+- **Concept paper:** `docs/concept-papers/PJ-069-Whole-Entity-Deduplication-Concept-Paper.md`.
+- **Boss rulings (2026-07-06):** horse = **"one home per capability"** (structural
+  framing, not the semantic single-answer one) · priority = **answer-duplication
+  first** · scope = **the 7 clusters + the 9 newly-found cross-cluster families** ·
+  first step = **the dead-code cull**.
+- **Pending Jobs → v1.17** (`docs/Constellation Pending Jobs v1.17.md`; v1.16
+  preserved below the new preamble): the PJ-069 entry recomposed, its four stale
+  parts corrected (dead surfaces in the counts, obsolete MIG-090 coordination clause,
+  overstated confidence-menu ×2, events it predates).
+
+### Step 0 — dead-code cull (verified before any deletion)
+- **Deletion-safety verification** (workflow `wf_4a972c1a-736`, 9 adversarial
+  verifiers + an assembler) produced the exact bounded edit set per item, the
+  do-not-touch live-sibling list, and flagged **two Boss gates** (TagsPanel
+  delete-vs-revive; the `lenses.rs` full-delete that executes the parked 2026-05-09
+  Option-A decision). Caught name-collisions that look deletable but are live
+  (`crate::lens` Bases engine vs dead `crate::lenses`; live `store.ts::scanLibraryTags`
+  vs dead `tagUtils::scanAllLibraryTags`) and 3 cascade-dead files.
+
+- **§0a — frontend dead components + orphan i18n:**
+  - DELETED `src/lib/components/NoteGrid.svelte` (259 lines, never mounted) + its dead
+    import at `+layout.svelte:95`.
+  - Removed the dead `scanLibraryTags` import token at `+layout.svelte:24` (imported,
+    never called; siblings kept).
+  - `tagUtils.ts`: removed `scanAllLibraryTags()` (fs-walk retired by MIG-080 §B) + its
+    now-unused imports; KEPT the `DashboardTag` interface (used by DashboardView).
+  - `utils.ts`: removed the zero-caller `extractTags()`.
+  - `libraries.rs`: corrected the stale `scan_library_tags` docstring (its boot-path
+    claim about `DashboardView.onMount → scanAllLibraryTags` is false since MIG-080 §B).
+  - i18n ×15: removed `secondScreen.{searchNotes,allLibraries,sortName,sortLibrary,
+    noResults,noNotes}` (NoteGrid-owned), `lens.tagEdges` (the verifier mislabeled its
+    parent as `skyview` — corrected on the fly), `panels.{tagsAll,tagsThisNote}` (the
+    removed All/This-note toggle). Minimal diffs (files are `stringify(obj,null,2)+\n`).
+  - **Verify:** `npm run check` → 0 ERRORS (324 pre-existing unused-CSS warnings); all
+    15 locales parse; grep of the removed symbols/keys = 0 in the primary tree.

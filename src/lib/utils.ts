@@ -628,18 +628,6 @@ export function extractWikilinks(md: string): string[] {
 	return links;
 }
 
-/** Collect all tags from markdown text */
-export function extractTags(md: string): string[] {
-	const tags: string[] = [];
-	// Inline tags: #tag (not in code blocks or URLs)
-	const regex = /(?:^|\s)#([a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/\-]*)/g;
-	let match;
-	while ((match = regex.exec(md)) !== null) {
-		if (!tags.includes(match[1])) tags.push(match[1]);
-	}
-	return tags;
-}
-
 /** Get all note names from a library tree (for autocomplete) */
 export function collectNoteNames(entries: any[]): { name: string; path: string }[] {
 	const notes: { name: string; path: string }[] = [];

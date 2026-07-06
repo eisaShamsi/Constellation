@@ -21,7 +21,7 @@
 		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
-		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
+		scanLibraryLinks, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
@@ -92,7 +92,6 @@
 	import SlotIcon from '$lib/components/SlotIcon.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
-	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import StructuralOutlinePanel from '$lib/components/StructuralOutlinePanel.svelte';
 

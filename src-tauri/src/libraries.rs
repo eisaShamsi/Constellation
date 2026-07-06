@@ -2596,15 +2596,15 @@ pub fn scan_unlinked_mentions(
 /// On the 7,600-note trial Universe this is ~7,600 file reads per library —
 /// seconds of wall-clock work.
 ///
-/// Boot path: `DashboardView.onMount` (src/lib/components/DashboardView.svelte)
-/// calls `scanAllLibraryTags()` (src/lib/libraries/tagUtils.ts) which issues
-/// **one `invoke('scan_library_tags')` per library, sequentially** (16 calls
-/// on the trial Universe). DashboardView mounts the instant
-/// `libraries.set(bundle.libraries)` fires in `refreshLibraryCaches` — which
-/// happens **before** `cache_boot_snapshot_core` returns. Without `(async)`
-/// all 16 invocations queue on the WebView2 UI thread (see `watcher.rs`
-/// docstring for the full dispatch chain), pushing `core_queue_ms` to ~19.5 s
-/// on Round 4 measurements (docs/LESSONS-LEARNED.md LL-021 Round 5).
+/// Live caller: the second-screen dashboard's per-library tag merge
+/// (`SecondScreenPage.svelte` → store wrapper `scanLibraryTags`), the one
+/// not-yet-migrated surface still doing a read-time fs-walk. The main-window
+/// Dashboard no longer calls this — since MIG-080 §B it reads the write-time
+/// `tag_counts` snapshot via the `allLibraryTags` prop (the former
+/// `DashboardView.onMount → scanAllLibraryTags()` boot path was retired).
+/// Historically this per-library fan-out queued 16 sync invocations on the
+/// WebView2 UI thread, pushing `core_queue_ms` to ~19.5 s on Round 4
+/// measurements (docs/LESSONS-LEARNED.md LL-021 Round 5) — the reason for `(async)`.
 ///
 /// `#[tauri::command(async)]` routes each scan through `respond_async_serialized`
 /// → `tauri::async_runtime::spawn`, so the UI thread pays only spawn cost per
