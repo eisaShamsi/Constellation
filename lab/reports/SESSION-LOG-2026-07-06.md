@@ -225,3 +225,13 @@ aliases searchable · recents on empty · create + search hand-off rows.
     + the `readUniverseBookmarks` wrapper + `store.ts:1046`'s migration invoke — the one-time
     Bookmarks→Starred migration still needs them.
   - **Verify:** `cargo check` green (11.7s, Instant warning gone); `npm run check` → 0 ERRORS.
+
+- **§0e — bases dead-command sweep (WA#6, the pending 2026-05-29 physical sweep):**
+  The §0d compile surfaced 4 known-dead unregistered `bases.rs` commands (SESSION-LOG-2026-05-29
+  §337 listed them as "uncallable but present (cargo warns). Physical sweep pending"; MIG-055
+  replaced the family). This §0 cull IS that sweep. Removed `parse_base_file`, its exclusive
+  helper `parse_base_yaml`, `save_base_file`, and `parse_workspace_base` (62 lines) — all
+  unregistered, zero frontend invoke. KEPT the shared helpers verified live: `validate_base_path`
+  (shared with the live `convert_base`), `workspace_bases_dir` (5 live commands), `format_yaml_value`
+  (used by `convert_base`), `minimal_base_yaml`, `convert_filter_op`.
+  - **Verify:** `cargo check` green (31.2s); all 4 dead-command warnings gone, zero new warnings.

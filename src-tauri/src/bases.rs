@@ -197,32 +197,6 @@ pub fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
 
 // ─── Tauri Commands ───
 
-#[tauri::command]
-pub fn parse_base_file(app: tauri::AppHandle, file_path: String) -> Result<BaseDefinition, String> {
-    // Security: validate path is within a library or the active universe bases dir
-    validate_base_path(&app, &file_path)?;
-
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read base file: {}", e))?;
-
-    // Parse YAML
-    serde_json::from_str::<BaseDefinition>(&content)
-        .or_else(|_| {
-            // Try parsing as YAML (simple key: value format)
-            parse_base_yaml(&content)
-        })
-        .map_err(|e| format!("Failed to parse base file: {}", e))
-}
-
-/// Simple YAML-like parser for .base files.
-/// For MVP, we use serde_json after converting YAML to JSON.
-/// In production, add serde_yaml dependency.
-fn parse_base_yaml(content: &str) -> Result<BaseDefinition, String> {
-    // For now, try to parse as JSON first (the frontend will save as JSON)
-    serde_json::from_str(content)
-        .map_err(|e| format!("Invalid base file format: {}", e))
-}
-
 /// MIG-065 §I-b — the minimal `LensDefinition` a freshly-created `.base` holds:
 /// one clickable name column, table view, the chosen scope (all libraries, or a
 /// subset). Serialized to the canonical YAML the unified engine (`execute_lens`
@@ -387,17 +361,6 @@ pub fn create_base(
         .map_err(|e| format!("Failed to create base file: {}", e))?;
 
     Ok(file_path.to_string_lossy().to_string())
-}
-
-#[tauri::command]
-pub fn save_base_file(app: tauri::AppHandle, file_path: String, definition: BaseDefinition) -> Result<(), String> {
-    // Security: validate path is within a library or the active universe bases dir
-    validate_base_path(&app, &file_path)?;
-
-    let content = serde_json::to_string_pretty(&definition)
-        .map_err(|e| format!("Failed to serialize base: {}", e))?;
-    fs::write(&file_path, content)
-        .map_err(|e| format!("Failed to write base file: {}", e))
 }
 
 // Note-open-freeze Batch-2 §B2-3 (2026-07-03): `(async)` + the read→rewrite→write
@@ -688,31 +651,6 @@ pub fn delete_workspace_base(
 
     fs::remove_file(&file_path)
         .map_err(|e| format!("Failed to delete workspace base: {}", e))
-}
-
-#[tauri::command]
-pub fn parse_workspace_base(
-    app: tauri::AppHandle,
-    file_path: String,
-) -> Result<BaseDefinition, String> {
-    let bases_dir = workspace_bases_dir(&app)?;
-    let target = Path::new(&file_path);
-
-    // Validate path is inside workspace bases directory
-    let canon_target = fs::canonicalize(target)
-        .map_err(|_| "File does not exist.".to_string())?;
-    let canon_dir = fs::canonicalize(&bases_dir)
-        .map_err(|_| "Workspace directory not found.".to_string())?;
-
-    if !canon_target.starts_with(&canon_dir) {
-        return Err("Access denied: path is not within workspace bases directory.".to_string());
-    }
-
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read workspace base: {}", e))?;
-
-    serde_json::from_str::<BaseDefinition>(&content)
-        .map_err(|e| format!("Failed to parse workspace base: {}", e))
 }
 
 /// Format a value for YAML output.
