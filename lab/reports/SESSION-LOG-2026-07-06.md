@@ -33,8 +33,57 @@ MIG-058's own comment records "10+s on cold federated FTS5" — the Boss sees 2+
   report too (pile-up visibility).
 - No retrieval behavior changed. cargo check + svelte-check clean.
 
-### Next
-Boss reproduces on the instrumented binary (Ctrl+O → type `knowledge`) → read the
-trace → THEN design the fix (likely shape, unconfirmed: show local title hits
-immediately; make the federated search non-blocking/cancellable; fix whatever the
-trace fingers — but the trace decides).
+### Reproduction + diagnosis (Boss traces ×2)
+- `knowledge`: local 3.5ms (20) · rust 29.3s; `islam`: local 3.6ms (20) · rust 25.0s.
+  Both show TWO serialized runs (stale searches never cancelled; `db_lock_wait`
+  2.4s/5.9s) on `lexical(single,no-federation)`. **Mechanism (code-confirmed):**
+  FTS5 native `snippet()` on the external-content table re-tokenizes the FULL body
+  of EVERY matching row (SELECT list materialized before ORDER BY+LIMIT); common
+  term + M12 expansion → thousands of full-body tokenizer passes per keystroke-pause.
+  `include_snippet` declared but never read. Federated mode dodged this (Option H);
+  the single-schema path never got the fix.
+- **Boss rulings:** *"Ctrl+O is useless… should focus ONLY on the titles. Do your
+  research on how other apps process this kind of plain search."* Stop-On-Correction
+  honored (in-flight §1 threading frozen; state summarized; research run).
+- **Expected-hit finding:** the wanted note had the term in its TITLE — the old local
+  filter (name+path, cache order, cap 20) buried/dropped exact title matches
+  (library literally named "Eisa Cognitive Knowledge" floods path matches).
+
+### Research (workflow `wf_7786efda-5db`, Boss-directed)
+Obsidian Ctrl+O = names+aliases ONLY (never content; Enter-creates; empty=recents) ·
+VS Code Ctrl+P = names only, banded fuzzyScorer (identity 1<<18 / prefix 1<<17 /
+label 1<<16) · fzf/fzy = subsequence + position bonuses + gap penalties · peers that
+mix (Notion/Logseq/Roam) always DEMOTE content. **Local gaps:** allNotes read main
+schema only (ONE-universe violation); aliases unsearchable; no shared frontend fold;
+recents list already exists.
+
+## MIG-093 — Ctrl+O the pure title jumper (Boss "go") — docs/MIG-093-Architect-Plan-Quick-Switcher.md
+
+### §D — two-phase lexical search — commit `32550fd0`
+Rank-first (index-only bm25, no join/aux) → fetch details for ONLY the ≤limit
+winners; snippets Rust-synthesized (Option-H path); FTS5 native snippet() GONE;
+`include_snippet` honored end-to-end. **Verify:** cargo suite **1012/1012**.
+
+### §A — federated titles — commit `1f0fe817`
+`read_notes` → `read_notes_in_schema` looped over `get_federated_schemas` on
+`federated_conn` (graceful main-only when the boot races the attach); the
+`federation:ready` handler now re-fetches the core snapshot into `allNotes`
+(shrink-overwrite guarded). **Verify:** cargo check + svelte-check clean.
+
+### §B — shared fold utility — commit `407af8e6`
+`$lib/searchFold.ts` (`foldForMatch` + `stemArabicLight10`, Rust-parity documented);
+IndexPanel's 55-line inline copy re-pointed. **Verify:** tests 10/10.
+
+### §C — the switcher rewrite — commit `02579dde`
+`$lib/switcherRank.ts` banded ranking (exact>prefix>word-boundary>fuzzy; recency/
+compactness/shorter/collator tie-breaks; alias penalty+dedupe; 1-2-char fuzzy skip;
+multi-word all-match) + QuickSwitcher.svelte rewritten (titles+aliases only, folded
+once per cache refresh, MIG-058 debounce kept at 100ms, empty=recents, pinned
+Create-note + Search-in-Hub rows, per-title dir). Content search DELETED from the
+switcher. +layout: create/search-hub hand-offs + aliases prop.
+**Verify:** svelte-check 0 errors; full suite **245/245** incl. the pinned Boss case
+(query `islam` → exact title "Islam" #1).
+
+### → STOP for Boss test
+Binary building (frontend rebuilt + embed verified). §E after validation: remove
+instrumentation, i18n ×15 for the new rows, docs + Orientation, /simplify, measures.
