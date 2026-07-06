@@ -191,3 +191,22 @@ aliases searchable · recents on empty · create + search hand-off rows.
     command (its only invoker) → folded into §0c.
   - **Verify:** `npm run check` → 0 ERRORS (warnings 324→320 = the route's CSS gone;
     file count −3); all 15 locales parse.
+
+- **§0c — Rust dead IPC (map.rs zombie + bases.rs live-scan path + search_stars):**
+  - `map.rs`: removed the registered-but-never-invoked single-library `constellation_map_data`
+    (101 lines) + its `lib.rs` registration. KEPT `constellation_map_universe` (LIVE via the
+    default-on OrgChart) and every shared helper (`build_library_node`, `build_tree`,
+    `collect_notes_recursive`, `compute_*`, `load_alias_map`, `MapNode`); fixed 2 stale
+    comments that named the deleted command.
+  - `bases.rs`: removed the retired live-scan cluster — `query_base` (unregistered) +
+    `scan_folder`/`scan_by_tag`/`apply_filters`/`apply_sorts_fixed` + the now-orphaned
+    `BaseRow`/`BaseQueryResult` structs (307 lines). The live replacement is
+    `lens::query::execute_lens` (MIG-065 §I); the frontend already calls it. KEPT the LIVE
+    `parse_frontmatter`, `parse_base_file`, `minimal_base_yaml`, and every registered command.
+  - `libraries.rs`: removed `search_stars` (orphaned by §0b's `searchAllStars` removal —
+    WA#6) + its private `search_notes_recursive` helper (117 lines) + the `lib.rs`
+    registration. KEPT `StarInfo` (LIVE via `notes_by_tag` + the `recent_stars` field) and
+    `safe_truncate` (5 live callers); fixed a stale `query_base` comment.
+  - **Verify:** `cargo check` green (39.5s); **zero NEW dead-code warnings** — none of the
+    54 pre-existing warnings names any deleted symbol (proves the whole dead cluster went, no
+    orphan left). Frontend already clean from §0b; no `invoke` of any deleted command remains.

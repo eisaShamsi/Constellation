@@ -170,107 +170,6 @@ struct NoteRecord {
     created: u64,                // unix timestamp
 }
 
-/// Compute the Constellation Map tree for a library.
-#[tauri::command]
-pub fn constellation_map_data(
-    app: tauri::AppHandle,
-    library_path: String,
-    max_depth: Option<u32>,
-) -> Result<MapNode, String> {
-    // Security: validate library access
-    let libraries = crate::libraries::load_all_libraries(&app);
-    if !libraries.iter().any(|v| v.path == library_path) {
-        return Err("Access denied: not a registered library.".to_string());
-    }
-
-    let root = Path::new(&library_path);
-    if !root.is_dir() {
-        return Err("Library path is not a directory.".to_string());
-    }
-
-    let depth_limit = max_depth.unwrap_or(5);
-
-    // Pass 1: Collect all notes with metadata
-    let mut all_notes: Vec<NoteRecord> = Vec::new();
-    collect_notes_recursive(root, &mut all_notes);
-
-    // MIG-005 §1: load the alias resolution map once for this command.
-    // Renamed notes still have wikilinks under their old titles in other
-    // notes; without this lookup those wikilinks are silently dropped from
-    // the renamed note's inbound count and the bubble shrinks visibly.
-    let alias_to_path = load_alias_map(&app);
-
-    // Build note name → path map for link resolution
-    let mut name_to_path: HashMap<String, String> = HashMap::new();
-    let mut path_to_name: HashMap<String, String> = HashMap::new();
-    for note in &all_notes {
-        let name_lower = note.name.to_lowercase();
-        name_to_path.insert(name_lower.clone(), note.path.clone());
-        path_to_name.insert(note.path.clone(), name_lower);
-    }
-
-    // Build inbound link count map keyed by canonical lowercased note name.
-    // 3-tier resolution per cache.rs::read_sky_links_raw (MIG-004 §8):
-    //   1. target is a current note name → count toward that name.
-    //   2. target is an alias of a current note → resolve to canonical
-    //      path → look up canonical name → count toward THAT name.
-    //   3. unresolved (broken link) → skip; don't pollute inbound_map.
-    let mut inbound_map: HashMap<String, usize> = HashMap::new();
-    for note in &all_notes {
-        for target in &note.outgoing_links {
-            let canonical_name = if name_to_path.contains_key(target) {
-                target.clone()
-            } else if let Some(canonical_path) = alias_to_path.get(target) {
-                match path_to_name.get(canonical_path) {
-                    Some(n) => n.clone(),
-                    None => continue,
-                }
-            } else {
-                continue;
-            };
-            *inbound_map.entry(canonical_name).or_insert(0) += 1;
-        }
-    }
-
-    // Build note metadata map: path_lower → (word_count, link_count, inbound, maturity, stratum, modified)
-    let now_secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-
-    // MIG-008 Step 1: trailing String is the display name (frontmatter title
-    // with file_stem fallback) that build_tree threads into MapNode.name so
-    // the sunburst's hover/breadcrumb labels never expose the canonical
-    // filename to the user.
-    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64, String)> = HashMap::new();
-    for note in &all_notes {
-        let key = note.path.replace('\\', "/").to_lowercase();
-        let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
-
-        // Maturity (reuse logic from maturity.rs)
-        let days_since_created = (now_secs.saturating_sub(note.created)) / 86400;
-        let days_since_modified = (now_secs.saturating_sub(note.modified)) / 86400;
-        let maturity = compute_maturity(inbound, days_since_created, days_since_modified);
-
-        // Simplified stratum (1-8 based on word count + links)
-        let stratum = compute_simple_stratum(note.word_count, note.outgoing_links.len(), inbound);
-
-        note_meta.insert(key, (
-            note.word_count,
-            note.outgoing_links.len() as u32,
-            maturity,
-            Some(stratum),
-            note.modified,
-            note.name.clone(),
-        ));
-    }
-
-    // Pass 2: Build the MapNode tree
-    let mut tree = build_tree(root, &note_meta, 0, depth_limit);
-    tree.node_type = "library".to_string();
-
-    Ok(tree)
-}
 
 /// MIG-078 §A′ — when true, the universe Map/OrgChart tree is assembled from
 /// the indexed `note_meta` records (the folder hierarchy is derived from each
@@ -280,8 +179,8 @@ pub fn constellation_map_data(
 /// incidental `loadData()` FS-cache warm-up was removed). Flip to `false` to
 /// fall back to the legacy disk-walk path for one rollback cycle. The legacy
 /// `build_tree`/`collect_notes_recursive` remain in use by
-/// `constellation_map_data` (single-library command), so this const only
-/// switches the universe-level path.
+/// `build_library_node`'s disk-walk fallback branch (when this const is `false`),
+/// so this const only switches the universe-level path.
 const MAP_TREE_FROM_INDEX: bool = true;
 
 /// Build a library MapNode from a library path — reusable for both top-level and child universe libs.
@@ -316,8 +215,7 @@ fn build_library_node(
         collect_notes_recursive(root, &mut all_notes);
     }
 
-    // Build name ↔ path maps for 3-tier alias resolution (mirrors
-    // constellation_map_data above).
+    // Build name ↔ path maps for 3-tier alias resolution (MIG-005 §1).
     let mut name_to_path: HashMap<String, String> = HashMap::new();
     let mut path_to_name: HashMap<String, String> = HashMap::new();
     for note in &all_notes {

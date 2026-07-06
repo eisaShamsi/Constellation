@@ -92,7 +92,7 @@ static LIBRARIES_CACHE: std::sync::Mutex<Option<(std::path::PathBuf, Vec<Library
     std::sync::Mutex::new(None);
 
 /// Load ALL libraries: own + child universe libraries (recursive, deduplicated).
-/// This is what the frontend and query_base should use.
+/// This is the universe-spanning library resolver every command should use.
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     let active = crate::universe::active_universe_dir(app).ok();
 
@@ -597,72 +597,6 @@ pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     }).collect()
 }
 
-/// Search across all libraries for notes matching a query.
-// App-freeze audit Batch-W (2026-07-04): `(async)` — walks ALL libraries.
-// Sole caller (store.ts searchAllStars) carries _searchStarsSeq.
-#[tauri::command(async)]
-pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
-    let libraries = load_all_libraries(&app);
-    let mut results = Vec::new();
-
-    // Parse search operators: file:, tag:, path:
-    let mut file_filter: Option<String> = None;
-    let mut tag_filter: Option<String> = None;
-    let mut path_filter: Option<String> = None;
-    let mut text_query = String::new();
-
-    for part in query.split_whitespace() {
-        let lower = part.to_lowercase();
-        if let Some(val) = lower.strip_prefix("file:") {
-            file_filter = Some(val.to_string());
-        } else if let Some(val) = lower.strip_prefix("tag:") {
-            tag_filter = Some(val.trim_start_matches('#').to_string());
-        } else if let Some(val) = lower.strip_prefix("path:") {
-            path_filter = Some(val.to_string());
-        } else {
-            if !text_query.is_empty() { text_query.push(' '); }
-            text_query.push_str(&lower);
-        }
-    }
-
-    for lib in &libraries {
-        search_notes_recursive(
-            Path::new(&lib.path),
-            &lib.id,
-            &lib.name,
-            &text_query,
-            &mut results,
-            0,
-        );
-    }
-
-    // Apply operator filters
-    if let Some(ref ff) = file_filter {
-        results.retain(|r| r.name.to_lowercase().contains(ff));
-    }
-    if let Some(ref pf) = path_filter {
-        results.retain(|r| r.path.to_lowercase().replace('\\', "/").contains(pf));
-    }
-    if let Some(ref tf) = tag_filter {
-        results.retain(|r| {
-            // Read file content and check for tag
-            let content = fs::read_to_string(&r.path).unwrap_or_default().to_lowercase();
-            content.contains(&format!("#{}", tf))
-                || content.contains(&format!("- {}", tf)) // YAML tags list
-        });
-    }
-
-    // Sort by relevance (name match first, then content match)
-    let query_lower = text_query.clone();
-    results.sort_by(|a, b| {
-        let a_name_match = a.name.to_lowercase().contains(&query_lower);
-        let b_name_match = b.name.to_lowercase().contains(&query_lower);
-        b_name_match.cmp(&a_name_match).then(b.modified.cmp(&a.modified))
-    });
-
-    results.truncate(200); // Limit results
-    results
-}
 
 /// Safely truncate a string to approximately `max_len` characters.
 fn safe_truncate(s: &str, max_len: usize) -> String {
@@ -679,57 +613,6 @@ fn _collect_notes_recursive_unused(_dir: &Path, _library_id: &str, _library_name
     // Superseded by get_recent_notes metadata-first + top-N preview read.
 }
 
-fn search_notes_recursive(dir: &Path, library_id: &str, library_name: &str, query: &str, results: &mut Vec<StarInfo>, depth: u32) {
-    if depth > 20 { return; }
-    let read_dir = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return,
-    };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') { continue; }
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
-
-        if path.is_dir() {
-            search_notes_recursive(&path, library_id, library_name, query, results, depth + 1);
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let name_clean = name.trim_end_matches(".md").to_string();
-            let content = fs::read_to_string(&path).unwrap_or_default();
-            let name_match = name_clean.to_lowercase().contains(query);
-            let content_match = content.to_lowercase().contains(query);
-
-            if name_match || content_match {
-                let modified = entry.metadata()
-                    .and_then(|m| m.modified())
-                    .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
-                    .unwrap_or(0);
-
-                let preview = if content_match {
-                    content.lines()
-                        .find(|l| l.to_lowercase().contains(query))
-                        .unwrap_or("")
-                        .to_string()
-                } else {
-                    content.lines()
-                        .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
-                        .take(1)
-                        .collect::<String>()
-                };
-                let preview = safe_truncate(&preview, 120);
-
-                results.push(StarInfo {
-                    name: name_clean,
-                    path: path.to_string_lossy().to_string(),
-                    library_id: library_id.to_string(),
-                    library_name: library_name.to_string(),
-                    modified,
-                    preview,
-                });
-            }
-        }
-    }
-}
 
 /// Create a new markdown note inside a library folder.
 /// `initial_frontmatter` is optional YAML content (without delimiters) to insert between `---` markers.
