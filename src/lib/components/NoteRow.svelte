@@ -16,6 +16,7 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { detectDir } from '$lib/utils';
 
 	let {
 		name,
@@ -41,7 +42,9 @@
 	} = $props();
 </script>
 
-<div class="nr" class:nr-selected={selected} class:nr-done={done} class:nr-missing={missing} style="height: {NOTE_ROW_HEIGHT}px">
+<!-- MIG-092 — per-title row direction (Language-First): an RTL title mirrors the
+     whole row (name at the reading start, trailing actions at the reading end). -->
+<div class="nr" class:nr-selected={selected} class:nr-done={done} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px">
 	<button class="nr-main" onclick={onActivate} onauxclick={onActivate} dir="auto">
 		<span class="nr-name" dir="auto">{name}</span>
 		<span class="nr-meta" dir="auto">
