@@ -69,6 +69,26 @@ pub(crate) fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
         };
         serde_json::from_str(&data).unwrap_or_else(|e| {
             eprintln!("[libraries] Corrupt JSON in {}: {}", path.display(), e);
+            // Safety Audit G6 (W1-8): a corrupt/truncated libraries.json must NOT be
+            // silently treated as "no libraries" and then OVERWRITTEN by the next
+            // save (permanent loss of every registration). Preserve a timestamped
+            // backup so recovery is always possible; the original also stays in place.
+            // (With the atomic write above, crash-corruption can no longer occur; this
+            // guards external corruption — a manual edit, a disk error, sync glitch.)
+            let secs = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let backup = path.with_file_name(format!(
+                "{}.corrupt-{}",
+                path.file_name().and_then(|n| n.to_str()).unwrap_or("libraries.json"),
+                secs
+            ));
+            if let Err(be) = fs::copy(&path, &backup) {
+                eprintln!("[libraries] Failed to back up corrupt config to {}: {}", backup.display(), be);
+            } else {
+                eprintln!("[libraries] Backed up corrupt config to {}", backup.display());
+            }
             vec![]
         })
     } else {
@@ -138,7 +158,22 @@ pub fn load_libraries_pub(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;
     let data = serde_json::to_string_pretty(libraries).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))?;
+    // Safety Audit G6 (W1-8): ATOMIC write — write to a temp file, then rename over
+    // the target. A plain truncate-then-write `fs::write` leaves libraries.json
+    // truncated/partial if the app crashes or loses power mid-write, and the loader
+    // then reads that as an EMPTY library list — silently dropping EVERY library
+    // registration. The rename is atomic (same directory / filesystem), so a reader
+    // always sees either the complete old file or the complete new one; a failed
+    // rename leaves the old file intact (never truncated). Errors are surfaced.
+    let tmp = path.with_file_name(format!(
+        "{}.tmp",
+        path.file_name().and_then(|n| n.to_str()).unwrap_or("libraries.json")
+    ));
+    fs::write(&tmp, &data).map_err(|e| format!("Failed to write libraries config (tmp): {}", e))?;
+    fs::rename(&tmp, &path).map_err(|e| {
+        let _ = fs::remove_file(&tmp); // don't leave a stray temp on a failed commit
+        format!("Failed to commit libraries config: {}", e)
+    })?;
     // Invalidate the in-memory cache so subsequent reads see the new list.
     invalidate_libraries_cache();
     Ok(())
@@ -3260,7 +3295,10 @@ pub(crate) fn build_stopwords() -> std::collections::HashSet<String> {
 
 /// CE Phase 6: Scan all notes for `stage:` frontmatter property.
 /// Returns a map of note_path → stage value (fleeting|literature|permanent|synthesis).
-#[tauri::command]
+// Safety Audit G8 (W3-1): `(async)` moves this off the WebView2 IPC dispatch thread
+// so the full-library frontmatter walk (7,600+ files) can never freeze the UI. Body
+// has no `.await` (pure thread-offload); invoke contract unchanged. Mirrors get_360_view.
+#[tauri::command(async)]
 pub fn scan_note_stages(app: tauri::AppHandle, library_path: String) -> Result<Vec<(String, String)>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {

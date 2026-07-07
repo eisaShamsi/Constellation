@@ -70,7 +70,11 @@ pub enum DimensionValue {
 
 /// The Tauri command. Frontend calls this with the YAML text from a
 /// ` ```base ` code block.
-#[tauri::command]
+// Safety Audit G8 (W3-2): `(async)` moves this off the IPC dispatch thread so the
+// federated note_meta query (fired from a live-preview widget's toDOM on every
+// lens-block edit) can never freeze the UI. Body has no `.await`; mirrors its
+// (async) siblings (bases.rs, lens/system_notes.rs).
+#[tauri::command(async)]
 pub fn execute_lens(app: tauri::AppHandle, lens_yaml: String) -> Result<LensResult, String> {
     let start = Instant::now();
 

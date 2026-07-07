@@ -1006,6 +1006,12 @@
     }, 1500);
   }
 
+  // Safety Audit G9 (W3-3): unmount-during-async-load guard. onMount awaits the
+  // taxonomy load + a dynamic import + the listen() calls; if the panel is
+  // destroyed during those awaits, the listeners would register AFTER onDestroy
+  // ran (with the unlisten refs still null) and leak forever (Rule 4). This flag
+  // makes a post-await registration immediately unlisten instead.
+  let destroyed = false;
   onMount(async () => {
     loadTrustCalCount(); // V3-§8.r5.3
     try {
@@ -1030,7 +1036,7 @@
         scheduleQueueReload();
       }
     });
-    scanUnlisten = unlisten;
+    if (destroyed) unlisten(); else scanUnlisten = unlisten;
 
     // MIG-021v2 §1F'.b — bulk-accept progress events drive the inline
     // progress bar + auto-reload the queue when it finishes.
@@ -1056,10 +1062,11 @@
         }
       },
     );
-    bulkUnlisten = unlistenBulk;
+    if (destroyed) unlistenBulk(); else bulkUnlisten = unlistenBulk;
   });
 
   onDestroy(() => {
+    destroyed = true;
     window.removeEventListener('constellation:classify-and-show', handleClassifyAndShow);
     if (highlightTimeout) clearTimeout(highlightTimeout);
     if (scanReloadTimer) clearTimeout(scanReloadTimer);
