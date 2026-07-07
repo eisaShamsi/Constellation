@@ -659,7 +659,12 @@ fn _collect_notes_recursive_unused(_dir: &Path, _library_id: &str, _library_name
 
 /// Create a new markdown note inside a library folder.
 /// `initial_frontmatter` is optional YAML content (without delimiters) to insert between `---` markers.
-#[tauri::command]
+// MIG-099 §3: `(async)` — this now reindexes the new note synchronously (below),
+// which takes the writer lock; moving it off the WebView2 IPC dispatch thread
+// keeps create responsive if a background reindex briefly holds the lock (the
+// note-open-freeze pattern). Body has no `.await`; the JS invoke contract and
+// `await createNote(...)` ordering are unchanged.
+#[tauri::command(async)]
 pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>) -> Result<String, String> {
     validate_path_in_any_library(&app, &folder_path)?;
     let folder = Path::new(&folder_path);
@@ -720,6 +725,37 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         }
         _ => {}
     }
+
+    // MIG-099 §3 — index the new note SYNCHRONOUSLY so note_meta.name_lower is
+    // authoritative the instant the file exists. The §2 index-backed collision
+    // check trusts an index miss as "does not exist"; without indexing here, a
+    // same-session second create of a DIVERGENT-title note (reserved chars rewrite
+    // the stem — e.g. title "Ratio A/B" → stem "Ratio A B") would miss the
+    // just-created first note (stem differs, row not yet present) and silently
+    // create a duplicate title, defeating MIG-076 §E1b. The file is the source of
+    // truth and was written successfully, so a reindex failure is SURFACED
+    // (diag_log, release-safe) but does NOT fail the create — the watcher / next
+    // open re-indexes. (Not `let _ =`: an index failure must be visible.)
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let ps = file_path.to_string_lossy().to_string();
+        match load_all_libraries(&app).iter().find(|l| ps.starts_with(&l.path)) {
+            Some(lib) => {
+                if let Err(e) = crate::search::reindex_single_note(&search_state, &ps, &lib.name) {
+                    if let Ok(p) = crate::search::db_path(&app) {
+                        crate::search::diag_log(&p, &format!("[create_note] reindex FAILED for {}: {}", ps, e));
+                    }
+                }
+            }
+            None => {
+                if let Ok(p) = crate::search::db_path(&app) {
+                    crate::search::diag_log(&p, &format!("[create_note] NO LIBRARY matched {} — reindex SKIPPED", ps));
+                }
+            }
+        }
+    }
+
     Ok(file_path.to_string_lossy().to_string())
 }
 
@@ -1763,64 +1799,171 @@ pub fn resolve_wikilink_cross_library(
     current_library_path: String,
     target: String,
 ) -> Result<Option<ResolvedLink>, String> {
-    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the
-    // collision/alias resolver, which (per the trace) reads every .md across ALL
-    // libraries when the name matches nothing (the brand-new-note case on create).
-    // `app` is Tauri-injected; the JS invoke contract is unchanged. diag_log is
-    // release-safe. Removed once the fix lands.
+    use tauri::Manager;
+    // Perf probe (MIG-099, 2026-07-07) — kept through the fix so the Boss re-test
+    // can confirm the 13.6 s → sub-10 ms drop. `app` is Tauri-injected; the JS
+    // invoke contract is unchanged. diag_log is release-safe. Removed in §5.
     let __t = std::time::Instant::now();
-    let r = resolve_wikilink_cross_library_impl(libraries, current_library_path, target);
+
+    // MIG-099 §2 — OWN vs FEDERATED authority. `load_libraries` returns ONLY the
+    // active universe's own registrations (NON-recursive) — the exact set whose
+    // rows are authoritatively maintained in this universe's note_meta. That is
+    // the correct own/federated boundary (adversarial C1): it survives the
+    // flatten+dedup in resolve_libraries_recursive, and — unlike a path-under-root
+    // heuristic — correctly classifies external own libraries (paths outside the
+    // universe root) as OWN and cUniverses nested under the root as FEDERATED.
+    let own_paths: std::collections::HashSet<String> = load_libraries(&app)
+        .iter()
+        .map(|l| norm_lib_path(&l.path))
+        .collect();
+
+    let state = app.state::<crate::search::SearchState>();
+    // Run resolution with the READ-ONLY reader connection available so OWN
+    // libraries resolve title/alias via an indexed seek. If the DB isn't ready
+    // (pre-init / mid universe-switch) with_read_conn errors → fall back to the
+    // pure filesystem walk for everything (correct, just not accelerated — the
+    // exact pre-MIG-099 behavior).
+    let r: Option<ResolvedLink> = match crate::search::with_read_conn(state.inner(), |conn| {
+        let ctx = ResolveCtx { own_paths: &own_paths, conn: Some(conn) };
+        Ok(resolve_wikilink_cross_library_impl(&libraries, &current_library_path, &target, &ctx))
+    }) {
+        Ok(v) => v,
+        Err(_) => {
+            let ctx = ResolveCtx { own_paths: &own_paths, conn: None };
+            resolve_wikilink_cross_library_impl(&libraries, &current_library_path, &target, &ctx)
+        }
+    };
+
     if let Ok(p) = crate::search::db_path(&app) {
-        crate::search::diag_log(&p, &format!("[perf] resolve_wikilink_cross_library took {} ms (matched={:?})", __t.elapsed().as_millis(), r.as_ref().ok().map(|o| o.is_some())));
+        crate::search::diag_log(&p, &format!("[perf] resolve_wikilink_cross_library took {} ms (matched={})", __t.elapsed().as_millis(), r.is_some()));
     }
-    r
+    Ok(r)
+}
+
+/// MIG-099 §2 — resolution context threaded through the impl: the set of OWN
+/// (active-universe, index-authoritative) library paths + the read connection
+/// (None when the DB isn't ready → walk fallback).
+struct ResolveCtx<'a> {
+    own_paths: &'a std::collections::HashSet<String>,
+    conn: Option<&'a rusqlite::Connection>,
+}
+
+/// Resolve `raw_target` within a single library, preserving the two-stage
+/// precedence of the original walk:
+///   stage 1 — filename STEM match (`find_note_by_name`, no file reads) — kept
+///             UNCHANGED, so stem-first precedence and stem-with-distinct-title
+///             resolvability are byte-for-byte the old behavior.
+///   stage 2 — title/alias: OWN library + reader ready → indexed seek on
+///             note_meta.name_lower + note_aliases.alias_lower (13.6 s → sub-10 ms),
+///             scoped to this library and dot-dir-filtered; the index miss is
+///             AUTHORITATIVE (returns "not here" without a scan). FEDERATED, or
+///             reader unavailable, or a SQL error → the bounded filesystem walk
+///             of THIS library only (always correct on live disk).
+/// Pushes ALL hits into `matches`; the caller applies the byte-shortest tie-break.
+fn resolve_in_library(
+    library_dir: &Path,
+    raw_target: &str,
+    ctx: &ResolveCtx,
+    matches: &mut Vec<PathBuf>,
+) {
+    let target_lower = raw_target.to_lowercase();
+
+    // Stage 1 — filename stem (cheap, no reads). Unchanged.
+    find_note_by_name(library_dir, &target_lower, matches, 0);
+    if !matches.is_empty() {
+        return;
+    }
+
+    // Stage 2 — title/alias.
+    let norm = norm_lib_path(&library_dir.to_string_lossy());
+    let is_own = ctx.own_paths.contains(&norm);
+    if is_own {
+        if let Some(conn) = ctx.conn {
+            // Fold the target with the SAME functions the write path uses so the
+            // key matches the stored column (adversarial C4). fold the RAW target
+            // (not the pre-lowercased form) so NFC/lowercase compose identically
+            // to index_note's fold_match_key(name).
+            let folded_name = crate::search::fold_match_key(raw_target);
+            let folded_alias = crate::search::normalize_alias_for_match(raw_target);
+            match query_index_candidates(conn, &folded_name, &folded_alias) {
+                Ok(cands) => {
+                    for p in cands {
+                        // Scope to THIS library (preserves current-first / Vec-order),
+                        // drop .trash/.constellation rows the walk would skip, AND
+                        // stat-guard against a stale row (MIG-099 §3): an orphan
+                        // note_aliases row that reindex_delete_note doesn't purge, a
+                        // note under a temporarily-unmounted library, or a
+                        // moved/trashed-but-not-yet-reindexed path. The filesystem
+                        // walk never returns a nonexistent path — require the same.
+                        if path_under_library(&p, &norm)
+                            && !has_dot_segment(&p)
+                            && Path::new(&p).exists()
+                        {
+                            matches.push(PathBuf::from(p));
+                        }
+                    }
+                    // Authoritative for an OWN library: trust the index result
+                    // (even empty) — no filesystem scan.
+                    return;
+                }
+                Err(_) => {
+                    // SQL failure → degrade THIS library to the bounded walk.
+                    matches.clear();
+                }
+            }
+        }
+        // is_own but reader not ready → fall through to the walk (safe, slow).
+    }
+
+    // Federated library, or own-but-index-unavailable → bounded walk of THIS
+    // library only (never the 2 GB own universe — federated trees are small).
+    find_note_by_title_or_alias(library_dir, &target_lower, matches, 0);
 }
 
 fn resolve_wikilink_cross_library_impl(
-    libraries: Vec<(String, String, String)>, // (library_id, library_name, library_path)
-    current_library_path: String,
-    target: String,
-) -> Result<Option<ResolvedLink>, String> {
+    libraries: &[(String, String, String)], // (library_id, library_name, library_path)
+    current_library_path: &str,
+    target: &str,
+    ctx: &ResolveCtx,
+) -> Option<ResolvedLink> {
     // Strip fragment (#heading or #^block-id)
     let (base_target, fragment) = if let Some(hash_pos) = target.find('#') {
         (target[..hash_pos].to_string(), Some(target[hash_pos + 1..].to_string()))
     } else {
-        (target.clone(), None)
+        (target.to_string(), None)
     };
 
     // Check for library:note syntax
     if let Some(colon_pos) = base_target.find(':') {
         let library_prefix = base_target[..colon_pos].trim().to_lowercase();
-        let note_target = base_target[colon_pos + 1..].trim().to_lowercase();
+        let note_target = base_target[colon_pos + 1..].trim(); // RAW (fold inside resolve_in_library)
         if !note_target.is_empty() {
-            for (_id, name, path) in &libraries {
+            for (_id, name, path) in libraries.iter() {
                 if name.to_lowercase() == library_prefix {
                     let library_dir = Path::new(path);
                     if !library_dir.exists() { continue; }
                     let mut matches: Vec<PathBuf> = Vec::new();
-                    find_note_by_name_or_alias(library_dir, &note_target, &mut matches, 0);
+                    resolve_in_library(library_dir, note_target, ctx, &mut matches);
                     if !matches.is_empty() {
                         matches.sort_by_key(|p| p.to_string_lossy().len());
-                        return Ok(Some(ResolvedLink {
+                        return Some(ResolvedLink {
                             path: matches[0].to_string_lossy().to_string(),
                             library_name: name.clone(),
                             library_path: path.clone(),
                             fragment,
-                        }));
+                        });
                     }
-                    return Ok(None);
+                    return None;
                 }
             }
         }
     }
 
-    let target_lower = base_target.to_lowercase();
-
     // Search current library first
-    let current_dir = Path::new(&current_library_path);
+    let current_dir = Path::new(current_library_path);
     if current_dir.exists() {
         let mut matches: Vec<PathBuf> = Vec::new();
-        find_note_by_name_or_alias(current_dir, &target_lower, &mut matches, 0);
+        resolve_in_library(current_dir, &base_target, ctx, &mut matches);
         if !matches.is_empty() {
             matches.sort_by_key(|p| p.to_string_lossy().len());
             // Normalize both sides: strict `==` drops to "" on Windows
@@ -1830,39 +1973,39 @@ fn resolve_wikilink_cross_library_impl(
             // branch entirely on the next click, picking the wrong
             // same-named note from another library).
             let norm = |s: &str| s.replace('\\', "/").trim_end_matches('/').to_lowercase();
-            let current_norm = norm(&current_library_path);
+            let current_norm = norm(current_library_path);
             let library_name = libraries.iter()
                 .find(|(_, _, p)| norm(p) == current_norm)
                 .map(|(_, n, _)| n.clone())
                 .unwrap_or_default();
-            return Ok(Some(ResolvedLink {
+            return Some(ResolvedLink {
                 path: matches[0].to_string_lossy().to_string(),
                 library_name,
-                library_path: current_library_path,
+                library_path: current_library_path.to_string(),
                 fragment,
-            }));
+            });
         }
     }
 
     // Search other libraries
-    for (_id, name, path) in &libraries {
-        if *path == current_library_path { continue; }
+    for (_id, name, path) in libraries.iter() {
+        if path == current_library_path { continue; }
         let library_dir = Path::new(path);
         if !library_dir.exists() { continue; }
         let mut matches: Vec<PathBuf> = Vec::new();
-        find_note_by_name_or_alias(library_dir, &target_lower, &mut matches, 0);
+        resolve_in_library(library_dir, &base_target, ctx, &mut matches);
         if !matches.is_empty() {
             matches.sort_by_key(|p| p.to_string_lossy().len());
-            return Ok(Some(ResolvedLink {
+            return Some(ResolvedLink {
                 path: matches[0].to_string_lossy().to_string(),
                 library_name: name.clone(),
                 library_path: path.clone(),
                 fragment,
-            }));
+            });
         }
     }
 
-    Ok(None)
+    None
 }
 
 fn find_note_by_name(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
@@ -5637,7 +5780,9 @@ pub fn export_note_html(app: tauri::AppHandle, file_path: String) -> Result<Stri
 }
 
 /// Move item to system trash (or ".trash" folder inside library)
-#[tauri::command]
+// MIG-099 §3: `(async)` — now drops the index row (below), which takes the writer
+// lock; off the WebView2 IPC dispatch thread, matching delete_path.
+#[tauri::command(async)]
 pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) -> Result<(), String> {
     // Verify the file is within a registered library (not just any caller-supplied library_path)
     validate_path_in_any_library(&app, &path)?;
@@ -5683,6 +5828,24 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
     // MIG-076 §A2 — gated: a trash move serializes against any in-flight
     // editor flush of the same file (delete-vs-save race).
     crate::write_gate::gate_rename(source, &dest, "trash")?;
+
+    // MIG-099 §3 — drop the moved note from the search index. Without this the
+    // note_meta row lingered at the pre-trash path (index↔disk divergence): the
+    // note kept showing in search at a now-dead path, AND the §2 index-backed
+    // collision check would surface it as a PHANTOM collision on a later same-name
+    // create. `delete_path` already drops the row for every mode; this standalone
+    // trash move (the createNoteWithTemplate Overwrite path) did not. Delete by the
+    // ORIGINAL path — the row was never updated to the .trash destination. Surfaced
+    // (diag_log) on failure, not swallowed.
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        if let Err(e) = crate::search::reindex_delete_note(&search_state, &path) {
+            if let Ok(p) = crate::search::db_path(&app) {
+                crate::search::diag_log(&p, &format!("[move_to_trash] reindex_delete FAILED for {}: {}", path, e));
+            }
+        }
+    }
 
     Ok(())
 }
