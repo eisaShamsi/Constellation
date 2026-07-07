@@ -72,20 +72,20 @@ fn under(path_norm: &str, root_norm: &str) -> bool {
 /// Called from `ensure_search_db_ready` after the connection is live.
 pub fn maybe_schedule(app: tauri::AppHandle) {
     thread::spawn(move || match run(&app) {
-        Ok((0, 0)) => {}
-        Ok((relocated, removed)) => diag(
+        Ok((0, 0, 0)) => {}
+        Ok((relocated, readopted, removed)) => diag(
             &app,
             &format!(
-                "[reconcile] healed index drift: {} row(s) relocated to their current file (by cid_cn), {} stale row(s) removed (note truly gone)",
-                relocated, removed
+                "[reconcile] healed index drift: {} relocated + {} re-adopted (by cid_cn), {} removed (note truly gone)",
+                relocated, readopted, removed
             ),
         ),
         Err(e) => diag(&app, &format!("[reconcile] FAILED (non-fatal): {}", e)),
     });
 }
 
-/// Returns `(relocated, removed)`.
-fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
+/// Returns `(relocated, readopted, removed)`.
+fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     // 1. Accessible library roots (name, path). If NONE are accessible (e.g. the
     //    universe drive is offline), do nothing — never touch rows on a bad mount.
     let libs = crate::libraries::load_all_libraries(app);
@@ -95,7 +95,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
         .map(|l| (l.name.clone(), l.path.clone()))
         .collect();
     if roots.is_empty() {
-        return Ok((0, 0));
+        return Ok((0, 0, 0));
     }
     let roots_norm: Vec<String> = roots.iter().map(|(_, p)| norm(p)).collect();
 
@@ -114,12 +114,14 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     };
     let total = rows.len();
     if total == 0 {
-        return Ok((0, 0));
+        return Ok((0, 0, 0)); // empty index — the initial reindex owns population.
     }
     let known: HashSet<String> = rows.iter().map(|(p, _)| norm(p)).collect();
 
-    // 3. Compute the stale set LOCK-FREE (disk stats outside the mutex). A row is a
-    //    candidate only when it lives under an accessible root and its file is gone.
+    // 3. Dead rows — LOCK-FREE per-path stat. Stat each note_meta path INDIVIDUALLY
+    //    (never infer "dead" from a walk's completeness — a read_dir error on one
+    //    subdir would then make its files look dead and get removed). Only rows
+    //    under an accessible root are candidates (never touch a bad mount).
     let mut stale: Vec<(String, String)> = Vec::new();
     for (p, cid) in &rows {
         if p.is_empty() {
@@ -133,33 +135,51 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
             stale.push((p.clone(), cid.clone()));
         }
     }
-    if stale.is_empty() {
-        return Ok((0, 0));
+
+    // 4. Orphan files — walk the accessible roots (lock-free) for `.md` files NOT in
+    //    note_meta: the surviving half of a lost-tail rename whose dead row a prior
+    //    reconcile already removed. Directory listing is cheap; frontmatter (the
+    //    cid) is read only for orphans.
+    let mut orphans: Vec<(String, String)> = Vec::new(); // (actual path, cid_cn)
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut walk_complete = true; // false if any subtree failed to list (→ don't remove)
+    for (_, root) in &roots {
+        // Walk only TOP-LEVEL roots — skip a root nested under another (universe_notes
+        // at the root + a sub-folder library): the parent walk already covers it, so
+        // we don't read_dir the overlap twice. lib_for still attributes via ALL roots.
+        let rn = norm(root);
+        if roots.iter().any(|(_, other)| { let on = norm(other); on != rn && under(&rn, &on) }) {
+            continue;
+        }
+        collect_md(Path::new(root), &known, &mut orphans, &mut seen, &mut walk_complete, 0);
     }
 
-    // 4. Safety cap — refuse a suspiciously large set (transient mount/sync).
+    if stale.is_empty() && orphans.is_empty() {
+        return Ok((0, 0, 0)); // index matches disk — nothing to do.
+    }
+
+    // 5. Safety caps (WA#4) — a suspiciously large set in EITHER direction means a
+    //    transient mount/sync or a mid-initial-index race, not steady-state drift.
     let cap = MAX_STALE_ABSOLUTE.max((total as f64 * MAX_STALE_FRACTION) as usize);
     if stale.len() > cap {
-        diag(
-            app,
-            &format!(
-                "[reconcile] ABORTED: {} of {} rows look stale (> cap {}). Refusing to touch — likely an offline drive or sync in progress.",
-                stale.len(), total, cap
-            ),
-        );
-        return Ok((0, 0));
+        diag(app, &format!("[reconcile] ABORTED: {} of {} rows look stale (> cap {}). Refusing to touch — offline drive or sync in progress.", stale.len(), total, cap));
+        return Ok((0, 0, 0));
     }
 
-    // 5. Build cid_cn → current-file map from ORPHAN files (on disk, not in
-    //    note_meta) — the other half of a lost-tail rename. Walk only now (drift
-    //    exists); read frontmatter only for orphan files (few). Lock-free.
+    // 6. cid_cn → orphan path (first wins), for relocating a STILL-present dead row
+    //    onto its current file.
     let mut orphan_by_cid: HashMap<String, String> = HashMap::new();
-    for (_, root) in &roots {
-        collect_orphans(Path::new(root), &known, &mut orphan_by_cid, 0);
+    for (p, cid) in &orphans {
+        if !cid.is_empty() {
+            orphan_by_cid.entry(cid.clone()).or_insert_with(|| p.clone());
+        }
     }
+    let mut consumed: HashSet<String> = HashSet::new(); // orphan paths taken by a relocate
 
-    // 6. Relocate each dead row whose cid_cn has a live orphan file (preserves the
-    //    row's aux data — review history, links); collect the rest for removal.
+    // 7. Relocate each dead row whose cid_cn has a live orphan file (preserves the
+    //    row's aux data — review history, links). A relocate that FAILS is LEFT for
+    //    next boot — NEVER falls to remove: falling to remove would destroy exactly
+    //    the aux relocate exists to preserve, for a note that still exists. [audit]
     let mut relocated = 0usize;
     let mut remove: Vec<String> = Vec::new();
     for (dead, cid) in &stale {
@@ -172,31 +192,69 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
                     relocate_row(conn, dead, &new_path).is_ok()
                 };
                 if ok {
-                    // Reindex the new path to refresh name/body/etc. (re-locks
-                    // internally, so it runs AFTER the relocate lock is released).
                     let np = norm(&new_path);
-                    if let Some((lib_name, _)) = roots.iter().find(|(_, rp)| under(&np, &norm(rp))) {
+                    // Reindex the new path to refresh name/body (re-locks internally,
+                    // so it runs AFTER the relocate lock is released).
+                    if let Some(lib_name) = lib_for(&roots, &np) {
                         let _ = reindex_single_note(&state, &new_path, lib_name);
                     }
+                    consumed.insert(np); // this orphan is the relocated row — don't re-adopt it
                     relocated += 1;
                 } else {
-                    remove.push(dead.clone());
+                    // Target busy (a concurrent writer already indexed it) or contended
+                    // → keep the dead row + its aux; a later boot relocates or the
+                    //   duplicate resolves. Do NOT remove.
+                    diag(app, &format!("[reconcile] relocate deferred (target busy/contended), kept for retry: {}", dead));
                 }
             }
-            None => remove.push(dead.clone()),
+            None => remove.push(dead.clone()), // no orphan with this cid — removal CANDIDATE
         }
     }
 
-    // 7. De-index the truly-gone via the canonical delete path (FTS / sky cascade,
-    //    CTSE term cleanup). Per-row locking is fine for the capped set.
+    // 8. De-index the truly-gone — but ONLY when the walk was COMPLETE (an
+    //    incomplete walk could hide a renamed note's moved file, turning a relocate
+    //    into a destructive remove) AND a fresh re-stat still shows the file gone
+    //    (guards a transient stat error that falsely marked a live note dead). Both
+    //    guard against destroying review history for a note that isn't actually gone.
+    //    [audit HIGH + MED]
     let mut removed = 0usize;
-    for p in &remove {
-        match reindex_delete_note(&state, p) {
-            Ok(_) => removed += 1,
-            Err(e) => diag(app, &format!("[reconcile] failed to remove {}: {}", p, e)),
+    if walk_complete {
+        for p in &remove {
+            if Path::new(p).exists() {
+                continue; // transient stat earlier — the file is there; keep the row.
+            }
+            match reindex_delete_note(&state, p) {
+                Ok(_) => removed += 1,
+                Err(e) => diag(app, &format!("[reconcile] failed to remove {}: {}", p, e)),
+            }
         }
+    } else if !remove.is_empty() {
+        diag(app, &format!("[reconcile] walk INCOMPLETE (a subtree failed to list) — skipping {} removal(s) to protect aux; phantoms left for a clean pass.", remove.len()));
     }
-    Ok((relocated, removed))
+
+    // 9. RE-ADOPT orphans NOT consumed by a relocate — index the file fresh. Its
+    //    note_meta row was already deleted by a prior reconcile, so there was
+    //    nothing to relocate; the file on disk is the source of truth (File-Over-
+    //    App). Capped: a huge orphan set is a mid-initial-index race, not drift —
+    //    the initial reindex owns that, so skip re-adopt there.
+    let mut readopted = 0usize;
+    if orphans.len() <= cap {
+        for (p, _cid) in &orphans {
+            let np = norm(p);
+            if consumed.contains(&np) {
+                continue;
+            }
+            if let Some(lib_name) = lib_for(&roots, &np) {
+                if reindex_single_note(&state, p, lib_name).is_ok() {
+                    readopted += 1;
+                }
+            }
+        }
+    } else {
+        diag(app, &format!("[reconcile] {} orphan files (> cap {}) — skipping re-adopt (a full reindex is the right tool).", orphans.len(), cap));
+    }
+
+    Ok((relocated, readopted, removed))
 }
 
 /// Migrate a `note_meta` row + its path-keyed aux rows from `old` to `new` — a
@@ -237,16 +295,45 @@ fn relocate_row(conn: &rusqlite::Connection, old: &str, new: &str) -> rusqlite::
     }
 }
 
-/// Recursively collect `.md` files under `dir` that are NOT already in `known`
-/// (note_meta) — the orphan half of a lost-tail rename — mapping cid_cn → path.
-/// Reads frontmatter only for orphans (files already indexed are skipped).
-fn collect_orphans(dir: &Path, known: &HashSet<String>, out: &mut HashMap<String, String>, depth: u32) {
+/// The most-specific (longest-path) accessible library whose root contains the
+/// normalized path `np`, or None. Longest wins so a note in a nested library is
+/// attributed to THAT library, not its parent (e.g. universe_notes at the root).
+fn lib_for<'a>(roots: &'a [(String, String)], np: &str) -> Option<&'a str> {
+    roots
+        .iter()
+        .filter(|(_, rp)| under(np, &norm(rp)))
+        .max_by_key(|(_, rp)| rp.len())
+        .map(|(name, _)| name.as_str())
+}
+
+/// Recursively walk `.md` files under `dir`, pushing `(path, cid_cn)` for files
+/// NOT in `known` (note_meta) to `orphans` (→ relocate a surviving dead row, or
+/// re-adopt). Frontmatter (for the cid) is read only for orphan files. Skips
+/// hidden entries (`.trash`, `.constellation`).
+///
+/// `seen` dedupes across OVERLAPPING roots (universe_notes at the root + a nested
+/// registered library) so a file is visited once. `complete` is set false on ANY
+/// read_dir error or depth cutoff — the caller must NOT remove dead rows from an
+/// incomplete walk (a hidden subtree could hold a renamed note's moved file, and
+/// removing its row would destroy aux the walk simply failed to surface). [audit]
+fn collect_md(
+    dir: &Path,
+    known: &HashSet<String>,
+    orphans: &mut Vec<(String, String)>,
+    seen: &mut HashSet<String>,
+    complete: &mut bool,
+    depth: u32,
+) {
     if depth > 20 {
+        *complete = false; // truncated — a deeper file is unseen; don't trust removal.
         return;
     }
     let rd = match std::fs::read_dir(dir) {
         Ok(rd) => rd,
-        Err(_) => return,
+        Err(_) => {
+            *complete = false; // this subtree is unseen; don't trust removal for it.
+            return;
+        }
     };
     for entry in rd.flatten() {
         let path = entry.path();
@@ -255,18 +342,20 @@ fn collect_orphans(dir: &Path, known: &HashSet<String>, out: &mut HashMap<String
             continue;
         }
         if path.is_dir() {
-            collect_orphans(&path, known, out, depth + 1);
+            collect_md(&path, known, orphans, seen, complete, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let ps = path.to_string_lossy().to_string();
-            if known.contains(&norm(&ps)) {
-                continue; // already indexed — not an orphan
+            let pn = norm(&ps);
+            if !seen.insert(pn.clone()) {
+                continue; // already visited via an overlapping root
             }
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                if let Some(cid) = extract_frontmatter_cid_cn(&content) {
-                    if !cid.is_empty() {
-                        out.entry(cid).or_insert(ps); // first file for a cid wins
-                    }
-                }
+            if !known.contains(&pn) {
+                // Orphan — read its cid_cn (empty for a cid-free note).
+                let cid = std::fs::read_to_string(&path)
+                    .ok()
+                    .and_then(|c| extract_frontmatter_cid_cn(&c))
+                    .unwrap_or_default();
+                orphans.push((ps, cid));
             }
         }
     }
@@ -339,11 +428,12 @@ mod tests {
         assert_eq!(cnt, 2, "no row lost on refused relocate");
     }
 
-    /// The orphan walk maps cid_cn → path for on-disk files NOT already indexed,
-    /// and skips known (already-indexed) files.
+    /// The disk walk pushes (path, cid) for files NOT in `known` to `orphans`
+    /// (→ relocate / re-adopt), skipping already-indexed files. This is what lets
+    /// the reconcile recover a note whose dead row a prior pass already removed.
     #[test]
-    fn collect_orphans_maps_unknown_md_by_cid() {
-        let dir = std::env::temp_dir().join(format!("mig097_orphan_{}", std::process::id()));
+    fn collect_md_finds_orphans_skips_indexed() {
+        let dir = std::env::temp_dir().join(format!("mig098_md_{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let orphan = dir.join("relocated note.md");
@@ -353,11 +443,28 @@ mod tests {
 
         let mut known = HashSet::new();
         known.insert(norm(&known_file.to_string_lossy()));
-        let mut out = HashMap::new();
-        collect_orphans(&dir, &known, &mut out, 0);
+        let mut orphans: Vec<(String, String)> = Vec::new();
+        let mut seen = HashSet::new();
+        let mut complete = true;
+        collect_md(&dir, &known, &mut orphans, &mut seen, &mut complete, 0);
 
-        assert_eq!(out.get("CIDNEW").map(|p| norm(p)), Some(norm(&orphan.to_string_lossy())), "orphan mapped by cid");
-        assert!(!out.contains_key("CIDOLD"), "already-indexed file skipped");
+        assert!(complete, "a clean walk reports complete");
+        assert_eq!(orphans.len(), 1, "only the unindexed file is an orphan");
+        assert_eq!(orphans[0].1, "CIDNEW", "orphan carries its cid_cn for relocate/re-adopt");
+        assert_eq!(norm(&orphans[0].0), norm(&orphan.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// `lib_for` attributes a path to the MOST-SPECIFIC (longest) containing root,
+    /// so a note in a nested library isn't mis-attributed to the universe_notes root.
+    #[test]
+    fn lib_for_prefers_the_nested_library() {
+        let roots = vec![
+            ("universe_notes".to_string(), "E:/U".to_string()),
+            ("Nested".to_string(), "E:/U/Nested".to_string()),
+        ];
+        assert_eq!(lib_for(&roots, &norm("E:/U/Nested/note.md")), Some("Nested"));
+        assert_eq!(lib_for(&roots, &norm("E:/U/top.md")), Some("universe_notes"));
+        assert_eq!(lib_for(&roots, &norm("E:/Other/x.md")), None);
     }
 }
