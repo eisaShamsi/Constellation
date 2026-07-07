@@ -5471,14 +5471,19 @@
 		bookmarked?: boolean;
 		styleCategory?: string;
 		revealInTree?: boolean;
+		/** MIG-096 §2 — a full-page-overlay surface (Reviewer, fullscreen OrgChart)
+		 *  supplies its own open so "Open" / "Open in new tab" ALSO dismisses the
+		 *  overlay (else the note opens hidden behind it). Omit → the default opens
+		 *  the note in place (correct for sidebar/panel surfaces with no overlay). */
+		onOpen?: (path: string, name: string, newTab: boolean) => void;
 	}
 	function buildNoteActions(path: string, name: string, ctx: NoteActionCtx = {}): ContextActions {
-		const { allowMutate = true, styleCategory, revealInTree: doReveal = true } = ctx;
+		const { allowMutate = true, styleCategory, revealInTree: doReveal = true, onOpen } = ctx;
 		const isMd = path.toLowerCase().endsWith('.md');
 		const lib = $libraryStats.find(l => path.startsWith(l.path));
 		const actions: ContextActions = {
-			open: () => handleNoteClick(path, name, undefined),
-			openInNewTab: () => { if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
+			open: () => onOpen ? onOpen(path, name, false) : handleNoteClick(path, name, undefined),
+			openInNewTab: () => { if (onOpen) onOpen(path, name, true); else if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
 			bookmark: () => toggleBookmarkPath('note', path, name),
 			copyPath: () => navigator.clipboard.writeText(path).catch(() => {}),
 			copyPathRelative: () => copyRelativePath(path),
@@ -5507,6 +5512,23 @@
 		const isMd = path.toLowerCase().endsWith('.md');
 		const target: ContextTarget = { kind: 'note', path, name, isMarkdown: isMd, bookmarked: ctx.bookmarked ?? isInStarred(path) };
 		listCtxMenu = { x, y, items: buildContextMenu(target, buildNoteActions(path, name, ctx)) };
+	}
+	// MIG-096 §2 — open-from-overlay helpers: opening a note from a full-page
+	// surface must ALSO dismiss that surface (else the note opens hidden behind it,
+	// audit finding). Passed as ctx.onOpen so the shared menu's Open / Open-in-new-
+	// tab match each surface's direct node-click open.
+	function openNoteFromReviewer(path: string, _name: string, newTab = false) {
+		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, newTab);
+		showReviewer = false;
+		cameFromReviewer = true;
+		reviewerReturnPath = path;
+	}
+	function openNoteFromOrgChart(path: string, _name: string, newTab = false) {
+		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, newTab);
+		showOrgChart = false;
+		orgChartReturnPending = true;
 	}
 
 	// MIG-091 — handleListNoteContextMenu (the retired two-pane Navigator's row
@@ -5569,8 +5591,12 @@
 			case 'openInNewTab': {
 				const lib = $libraryStats.find(l => path.startsWith(l.path));
 				if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, action === 'openInNewTab');
+				// MIG-096 §2 — offer "Return to OrgChart" ONLY if it was actually open.
+				// A second-screen-forwarded open (main's OrgChart closed) must not
+				// conjure the button. The fullscreen chart now opens notes via its own
+				// onOpen (below), so this path is reached mainly by the SS forward.
+				orgChartReturnPending = showOrgChart;
 				showOrgChart = false;
-				orgChartReturnPending = true;
 				break;
 			}
 			case 'copyPath':
@@ -7164,7 +7190,7 @@
 						}
 					}}
 					onClose={() => { showReviewer = false; }}
-					onContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY); }}
+					onContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY, { onOpen: openNoteFromReviewer }); }}
 				/>
 			</div>
 		{/if}
@@ -7284,7 +7310,7 @@
 						orgChartReturnPending = true;
 					}}
 					onNodeMenuAction={handleOrgNodeMenuAction}
-					onNoteContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY); }}
+					onNoteContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY, { onOpen: openNoteFromOrgChart }); }}
 					refreshKey={orgChartRefreshKey}
 					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>

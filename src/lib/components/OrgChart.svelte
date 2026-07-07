@@ -1144,6 +1144,7 @@
 							ondragleave={onDragLeave}
 							ondrop={(e) => onDrop(e, node)}
 							ondragend={onDragEnd}
+							oncontextmenu={(e) => { if (node.isNote) onNoteContext?.(node.path, node.name, e); }}
 							onclick={() => {
 								if (node.isDir || node.isLibrary || node.isRoot || node.isCUniverse) {
 									toggleNode(node);

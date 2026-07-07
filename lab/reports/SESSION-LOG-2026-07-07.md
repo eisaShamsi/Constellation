@@ -60,4 +60,11 @@ Per the Predecessor Lookup Rule (top principal) — written BEFORE the §1 edits
 - **Refresh** — `onNoteMutation({onAnyChange})` re-runs the last panel scan (`loadSplitCompanionPanelData`/`loadEditorPanelsData`), leak-safe (destroy-before-resolve guarded). A stale 2nd-screen row is only ever a dead click (the 2nd screen never writes), so best-effort re-scan suffices.
 - **Deferred to §3:** the 2nd-screen `DashboardView` menu (shared component — host-routed with Dashboard in §3).
 
-**Verify:** svelte-check **0 errors** across all §2 files. §2 adversarial audit + release-binary build pending before the staged Boss test.
+**Verify:** svelte-check **0 errors** across all §2 files.
+
+**§2 adversarial audit** (workflow `wf_d23bf978-ecd`, 4 high-effort skeptics): reviewer-refresh **SAFE**, write-path/invariants **SAFE**, OrgChart **RISK ×2**, Second-Screen **RISK ×1**. All three fixed same pass (WA#6):
+- **[MED] OrgChart fullscreen right-click → Open opened the note HIDDEN behind the chart** — the shared menu's `open` used `handleNoteClick`, which (unlike the old `handleOrgNodeMenuAction('open')`) never set `showOrgChart=false`. The Reviewer had the identical latent bug (`{#if showReviewer}`). **Fix:** added `NoteActionCtx.onOpen` — a full-page-overlay surface supplies its own open that dismisses the overlay; wired `openNoteFromReviewer` / `openNoteFromOrgChart` on the two `onContext` props.
+- **[MED] Second-screen "Open" forwarded to main set `orgChartReturnPending=true`** unconditionally → spurious "Return to OrgChart" button for a chart never open. **Fix:** `orgChartReturnPending = showOrgChart` (only if it was actually open).
+- **[LOW] Embedded (sidebar) OrgChart's `onNoteContext` was inert** — the sidebar tree-node span had no `oncontextmenu`. **Fix:** added `oncontextmenu` firing `onNoteContext` for note nodes.
+
+svelte-check re-run **0 errors**. Release-binary build pending before the staged Boss test.
