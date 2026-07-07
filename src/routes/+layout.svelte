@@ -85,6 +85,7 @@
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import { buildContextMenu, type ContextTarget, type ContextActions, type NodeKind } from '$lib/components/contextMenuBuilder';
+	import { emitNoteRenamed, emitNoteMoved, emitNoteDeleted, type NoteMovedEvent } from '$lib/noteMutations';
 	import RenameDialog from '$lib/components/RenameDialog.svelte';
 	import MoveDialog from '$lib/components/MoveDialog.svelte';
 	import CatalogerView from '$lib/components/CatalogerView.svelte';
@@ -5441,6 +5442,63 @@
 		return buildContextMenu(target, actions);
 	}
 
+	// MIG-096 §1 — the shared note-actions builder for LIST surfaces (Reviewer,
+	// Search, Backlinks, Starred, trees … — the ~26 surfaces of the note-lists
+	// cluster). ONE source of truth for the full note menu, replacing the
+	// near-duplicate inline bags below as each surface is migrated (§2–§5). The
+	// file tree keeps its OWN getContextMenuItems (inline rename + folder/library
+	// kinds are tree-specific — a standing exemption). Contextual via ctx:
+	//   - allowMutate=false → omit Rename/Move/Delete; the menu degrades to the
+	//     safe subset automatically (no separate builder) — Five Acts host-notes,
+	//     unresolved wikilink targets, navigate-only surfaces.
+	//   - styleCategory → the Style Setter category this surface styles (omit → none).
+	//   - revealInTree=false → drop "Reveal in tree" (a surface that IS a tree).
+	// List-surface Rename uses the DIALOG (renameDialog → handleRenameComplete),
+	// never the tree's inline edit. Every mutating action routes through the ONE
+	// gated write path via the shared handlers — no new write path (invariant 1).
+	interface NoteActionCtx {
+		allowMutate?: boolean;
+		bookmarked?: boolean;
+		styleCategory?: string;
+		revealInTree?: boolean;
+	}
+	function buildNoteActions(path: string, name: string, ctx: NoteActionCtx = {}): ContextActions {
+		const { allowMutate = true, styleCategory, revealInTree: doReveal = true } = ctx;
+		const isMd = path.toLowerCase().endsWith('.md');
+		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const actions: ContextActions = {
+			open: () => handleNoteClick(path, name, undefined),
+			openInNewTab: () => { if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
+			bookmark: () => toggleBookmarkPath('note', path, name),
+			copyPath: () => navigator.clipboard.writeText(path).catch(() => {}),
+			copyPathRelative: () => copyRelativePath(path),
+			copyName: () => navigator.clipboard.writeText(name).catch(() => {}),
+			openInDefaultApp: () => { invoke('open_path', { path }).catch(() => {}); },
+			showInExplorer: () => { invoke('constellation_show_in_folder', { path }).catch(() => {}); },
+		};
+		if (doReveal) actions.revealInTree = () => revealInTree(path);
+		if (isMd) {
+			actions.addTag = () => { tagDialog = { path, name }; };
+			actions.suggestSources = () => handleSuggestSourcesForNote(path);
+		}
+		wireCollectionPickup(actions, path, name);
+		if (styleCategory) actions.style = () => openStyleSetterToCategory(styleCategory);
+		if (allowMutate) {
+			actions.rename = () => { renameDialog = { path, name }; };
+			actions.move = () => openMoveDialog(path, name);
+			actions.delete = () => { confirmDelete = { path, name }; };
+		}
+		return actions;
+	}
+	// MIG-096 §1 — build the note target + open the shared list context menu at
+	// (x,y). The single entry point every note-list surface routes its onContext
+	// to (invariant 6 — the menu is built ONCE in the host).
+	function showNoteContextMenu(path: string, name: string, x: number, y: number, ctx: NoteActionCtx = {}) {
+		const isMd = path.toLowerCase().endsWith('.md');
+		const target: ContextTarget = { kind: 'note', path, name, isMarkdown: isMd, bookmarked: ctx.bookmarked ?? isInStarred(path) };
+		listCtxMenu = { x, y, items: buildContextMenu(target, buildNoteActions(path, name, ctx)) };
+	}
+
 	// MIG-091 — handleListNoteContextMenu (the retired two-pane Navigator's row
 	// menu) removed with the Navigator. The empowered File Explorer uses the
 	// file-tree menu (handleContextMenu) + the batch bar.
@@ -5677,15 +5735,19 @@
 		if (moveDialog.batch) {
 			const items = writableSelection;
 			moveDialog = null;
+			const moved: NoteMovedEvent[] = [];
 			for (const p of items) {
-				try { await moveItem(p, targetFolder); } catch (e) { console.error('[batch move] failed for', p, e); }
+				try { moved.push({ oldPath: p, newPath: await moveItem(p, targetFolder) }); } catch (e) { console.error('[batch move] failed for', p, e); }
 			}
 			await refreshAllLoadedTrees();
 			clearTreeSelection();
+			// MIG-096 §1 — announce each successful move once at the tail (after the
+			// single heavy tree refresh) so every list splices/re-runs exactly once.
+			for (const m of moved) emitNoteMoved(m);
 			return;
 		}
 		const { path, libraryId } = moveDialog;
-		await moveItem(path, targetFolder); // throws on collision -> shown inline by MoveDialog
+		const newPath = await moveItem(path, targetFolder); // throws on collision -> shown inline by MoveDialog
 		// refresh BOTH the source and the (possibly different) target library
 		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
 		const nt = norm(targetFolder);
@@ -5702,6 +5764,7 @@
 		if (targetLibId && targetLibId !== libraryId) await refreshLibraryTree(targetLibId);
 		await loadAllStats();
 		markOrgChartDirty();
+		emitNoteMoved({ oldPath: path, newPath }); // MIG-096 §1 — refresh-after-mutate
 		moveDialog = null;
 	}
 
@@ -5852,19 +5915,24 @@
 		if (confirmDelete.batch) {
 			const items = writableSelection;
 			confirmDelete = null;
+			const deleted: string[] = [];
 			for (const p of items) {
-				try { await deleteWithSetting(p); } catch (e) { console.error('[batch delete] failed for', p, e); }
+				try { await deleteWithSetting(p); deleted.push(p); } catch (e) { console.error('[batch delete] failed for', p, e); }
 			}
 			await refreshAllLoadedTrees();
 			clearTreeSelection();
+			// MIG-096 §1 — announce each successful delete once at the tail.
+			for (const p of deleted) emitNoteDeleted({ path: p });
 			return;
 		}
 		try {
+			const deletedPath = confirmDelete.path;
 			const lib = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
 			await deleteWithSetting(confirmDelete.path);
 			if (lib) await refreshLibraryTree(lib.library_id);
 			await loadAllStats();
 			markOrgChartDirty();
+			emitNoteDeleted({ path: deletedPath }); // MIG-096 §1 — refresh-after-mutate
 		} catch (e) {
 			console.error('Failed to delete:', e);
 		}
@@ -6063,6 +6131,13 @@
 					if (willCascade) cascadeFreeze.set(new Set()); // §D1 — lift the freeze
 				}
 			}
+			// MIG-096 §1 — refresh-after-mutate. Emitted HERE, on the success path,
+			// only after renameItem AND the wikilink cascade have fully settled (the
+			// freeze is lifted, tabs reloaded) — NEVER from inside renameItem — so no
+			// list re-runs its IPC against a half-rewritten universe (invariant 2 /
+			// BUG-023). `effectivePath` equals oldPath for canonical-filename notes
+			// (title-only rename), so `newName` carries the new display title.
+			emitNoteRenamed({ oldPath, newPath: effectivePath, newName });
 		} catch (e) {
 			console.error('Failed to rename:', e);
 			// §B2-4 forensics marker — the swallowed exception's TEXT, journal-visible

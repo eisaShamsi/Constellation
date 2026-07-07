@@ -25,6 +25,7 @@
 		selected = false,
 		missing = false,
 		onActivate,
+		onContext,
 		trailing,
 	}: {
 		name: string;
@@ -35,6 +36,11 @@
 		selected?: boolean;
 		missing?: boolean;
 		onActivate: (e: MouseEvent) => void;
+		/** MIG-096 §1 — host-owned right-click handler. The host forwards
+		 *  (path, name, event) up and builds the note menu via `buildNoteActions`
+		 *  (data + actions stay host-owned — invariant 6). Optional: rows without
+		 *  it keep the browser's default menu, exactly as before. */
+		onContext?: (e: MouseEvent) => void;
 		/** Host-owned trailing actions (remove/other buttons). */
 		trailing?: Snippet;
 	} = $props();
@@ -42,7 +48,7 @@
 
 <!-- MIG-092 — per-title row direction (Language-First): an RTL title mirrors the
      whole row (name at the reading start, trailing actions at the reading end). -->
-<div class="nr" class:nr-selected={selected} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px">
+<div class="nr" class:nr-selected={selected} class:nr-missing={missing} dir={detectDir(name)} style="height: {NOTE_ROW_HEIGHT}px" oncontextmenu={onContext}>
 	<button class="nr-main" onclick={onActivate} onauxclick={onActivate}>
 		<span class="nr-name">{name}</span>
 		<span class="nr-meta">
