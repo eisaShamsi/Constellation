@@ -1417,7 +1417,7 @@ mod tests {
     fn read_db() -> rusqlite::Connection {
         let c = rusqlite::Connection::open_in_memory().unwrap();
         c.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER, word_count INTEGER NOT NULL DEFAULT 0, review_priority INTEGER);
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, cid_cn TEXT, modified INTEGER, content_changed_at INTEGER, content_hash TEXT, tags_json TEXT DEFAULT '[]', body_text TEXT DEFAULT '', incoming_count INTEGER NOT NULL DEFAULT 0, outgoing_count INTEGER NOT NULL DEFAULT 0, outgoing_link_types_json TEXT NOT NULL DEFAULT '{}', created_at INTEGER, word_count INTEGER NOT NULL DEFAULT 0, review_priority INTEGER);
              CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
              CREATE TABLE note_links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, target_name TEXT, target_cid_cn TEXT, link_type TEXT, status TEXT DEFAULT 'active', weight REAL DEFAULT 1.0);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL, due_days INTEGER NOT NULL,
