@@ -1031,11 +1031,12 @@ class LensBlockWidget extends WidgetType {
 		actions.appendChild(btn360);
 
 		// ─── CNS gesture — gated by (1) the user-settings flag AND
-		// (2) orphan check (MIG-060 §C-fix-2).
+		// (2) a graph-MEMBERSHIP check (MIG-060 §C-fix-2; NOT an orphan verdict —
+		//     this is render-eligibility, not the connectivity vocabulary).
 		// (1) Architect Q4 / lock §D: hide entirely when CNS is disabled.
-		// (2) Orphan check: CNS shows the linked subgraph only; a note
+		// (2) Membership check: CNS shows the linked subgraph only; a note
 		//     not in `skyNodePathSet` has no SimNode to focus on, so the
-		//     gesture would silently no-op. Hide the icon for orphans.
+		//     gesture would silently no-op. Hide the icon for notes not in the graph.
 		//     Edge case — when `skyNodePathSet` is still empty (boot not
 		//     finished), permissively show the icon; the §C-fix listener
 		//     handles a no-match case gracefully (default fit-to-screen).

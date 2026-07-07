@@ -339,5 +339,21 @@ user-facing references). No handover/close-out (Boss instruction).
     hard constraint forbids boot regression. The only residual it would close is the small edge case of
     a note whose ONLY incoming link is structural (PJ-065): `incoming_count` excludes it, sky `linkCount`
     may not. Ruling belongs to the hubs cluster with a measured cache.rs pass.
-- **NEXT: §7 — rename the false members (cataloger degree<2; livePreview membership gate) + close-out
-  (orientation v-bump, /simplify, audit trio).**
+- **§7 SHIPPED (rename the false members + close-out).**
+  - `cece/catalogers/graph.rs`: the doc comment "orphan notes (degree < 2)" → "sparsely-linked notes
+    (degree < 2)" + a note that this voting-signal floor is NOT the connectivity ORPHAN verdict.
+  - `livePreview.ts`: the CNS-gesture gate comments "orphan check" → "graph-MEMBERSHIP check" (it tests
+    `skyNodePathSet` membership / render-eligibility, not degree). Variable `inGraphOrBooting` already
+    non-"orphan". Both behavior-identical (comment-only).
+  - **`buildSkyData` NOT deleted** — the audit's own hubs verifier found it LIVE (invoked by the Second
+    Screen local-star view, `SecondScreenPage.svelte:317/444/515`). Deleting live code would be wrong;
+    the "dead fallback" premise was itself stale.
+  - **Invariant met:** no user-facing surface labels a non-degree threshold "orphan"; each named concept
+    (UNREFERENCED / ISOLATED / FRAGILE) has one implementation in `connectivity.rs`.
+
+### MIG-094 — CODE COMPLETE (§1–§7). First PJ-069 answer-duplication cluster consolidated.
+Shared `note_meta`-backed predicates; five drifted orphan impls + four fragile copies → one home per
+named concept; every read-time re-walk in the cluster (Search temp-table, Tension in-memory graph scan,
+four fragile re-counts, two `note_links` subqueries) deleted (Rule-8 wins). 360/Tension/Search now agree
+with the Reviewer (approved verdict changes). Sky self-contradiction fixed. Boss validates §4/§5/§6 on
+the final binary. Remaining close-out: Orientation v-bump, /simplify, /migration audit trio.

@@ -8,7 +8,9 @@
 //!
 //! Per Architect §2.3 + §4 Rule of Authority Control:
 //!   Strong on: densely-linked notes; authority-control via consensus
-//!   Weak on:   orphan notes (degree < 2); abstain
+//!   Weak on:   sparsely-linked notes (degree < 2); abstain
+//!   (NB: "degree < 2" here is a voting-signal floor — NOT the connectivity
+//!    vocabulary's ORPHAN/UNREFERENCED verdict, which lives in crate::connectivity.)
 //!   Latency:   ~10–30 ms (one DB query for typed neighbors + their
 //!              classifications)
 //!
