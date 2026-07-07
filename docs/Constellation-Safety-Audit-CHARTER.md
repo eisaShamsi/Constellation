@@ -145,3 +145,39 @@ Consolidated into **root-cause fix-groups** (remediation units):
 - **Re-confirmed (existing groups):** NoteEditor `handleSave`/`saveTabContent` markSaved-before-write (G2) · store.ts nav-loss + two-tabs-one-note (G2) · parseFrontmatter/reconstruct loss+corruption (G4) · SecondScreenPage adopt-without-remount (G3).
 
 **Deep `/migration` fixes remaining (worst-first):** **G4** frontmatter (real YAML round-trip) → **G2** save/model-ownership (flush-before-nav + one-model-per-note + write-then-mark) → **G3** cross-window → **G5** durable rename + the index cascades → **G7** write-gate staleness. Each its own `/migration` with an Audit-phase inspection.
+
+---
+
+## Per-cycle whole-app sweep — 2026-07-07 (MIG-099 close) — `wf_a7d5e452-16d`
+
+44-agent adversarial hunt→verify, **25 confirmed** (7 HIGH · 10 MED · 8 LOW). Run at the MIG-099 (create-latency) close as the cycle-boundary sweep. **MIG-099's own diff is CLEAN — zero confirmed findings in the changed resolver/create/trash code.** The 25 are the standing backlog; most re-confirm G2/G3/G4, several are NEW.
+
+| # | Sev | Site | Class | Group | Note |
+|---|-----|------|-------|-------|------|
+| 1 | HIGH | `store.ts:1669` | silent-data-loss | **G2** | in-place tab-reuse nav (`openNoteModel` unconditional `models.set`) discards the outgoing note's dirty model; teardown flush bails on path-mismatch → sub-1500 ms edit lost, no error/crumb. (re-confirm: nav-loss) |
+| 2 | HIGH | `NoteEditor.svelte:238` | swallowed-write | **G2** | `handleSave` autosave `.catch(()=>{})` with NO write-ahead (unlike `handleFlush`); dirty already false → no retry → transient write-fail silently loses the edit. |
+| 3 | HIGH | `SecondScreenPage.svelte:1069` | cross-window-clobber | **G3** | rename cascade freeze/`markCascading` is per-window; SS editable NoteEditor keeps `[[Foo]]`, its `isCascading` guard is inert → SS autosave overwrites the walker's `[[Foo v2]]` rewrite; disk↔index diverge. **NEW.** |
+| 4 | HIGH | `SecondScreenPage.svelte:722` | cross-window-clobber | **G3** | SS `screen:note-saved` refreshes only read-only panels, never its editable NoteEditors → stale companion editor clobbers a main-window save. **NEW.** |
+| 5 | HIGH | `store.ts:1096` | content-loss | **G4** | `parseFrontmatter` drops nested-map / block-scalar (`\|`/`>`) keys; next save persists the note WITHOUT them — silent frontmatter loss. (re-confirm) |
+| 6 | HIGH | `review.rs:762` | silent-data-loss | **G6** | `review-pulse.json` (all review history: last_reviewed/intervals/snooze/dismiss) saved via plain non-atomic `fs::write` → crash mid-write loses/corrupts the whole review history. **NEW.** |
+| 7 | HIGH | `store.ts:761` | false-success | **G2** | `saveTabContent` calls `markNoteSaved` BEFORE `await writeNote` → model clean before disk write; a failed write leaves a false-saved model. (re-confirm) |
+| 8 | MED | `libraries.rs:840` | index-divergence | **G5** | folder rename = bare `fs::rename`, NO index cascade for descendant `.md` → every descendant's `note_meta`/`note_links`/`note_aliases` row points at the old path. (known: folder-cascade) |
+| 9 | MED | `libraries.rs:5908` | index-divergence | **G5** | `delete_path` DirAll removes the tree but `reindex_delete_note`s only the folder path → descendant notes keep index rows at destroyed paths. **NEW.** |
+| 10 | MED | `search.rs:9103` | index-divergence | **G5** | `reindex_single_note` returns `Ok(())` when conn is None → `constellation_search_reindex` reports success while `note_meta`/`notes_fts` never update. **NEW** (weakens MIG-099 §3's freshness in the DB-not-ready edge). |
+| 11 | MED | `store.ts:761` | swallowed-write | **G2** | `saveTabContent` (PropertyEditor/typed-link connect) markSaved-before-write, no write-ahead. (re-confirm) |
+| 12 | MED | `NoteEditor.svelte:233` | false-success | **G2** | `handleSave` `markSaved` synchronously before `writeNote` resolves → `isDirty()` false even on write failure. (re-confirm) |
+| 13 | MED | `search.rs:7991` | index-divergence | **G5** | `constellation_link_archive` flips `note_links.status` but never recomputes the TARGET's incoming aggregates. (known) |
+| 14 | MED | `search.rs:8023` | index-divergence | **G5** | `constellation_link_unarchive` — same target-recompute gap as archive. **NEW** (unarchive counterpart). |
+| 15 | MED | `store.ts:1290` | content-corruption | **G4** | `reconstructFrontmatter` escapes `"`→`\"` but `parseFrontmatter` only strips outer quotes → embedded-quote asymmetry corrupts on round-trip. (re-confirm) |
+| 16 | MED | `universe.rs:795` | swallowed-write | **G6** | the "fix stale library paths on activation" path writes `libraries.json` via non-atomic `let _ = fs::write` — **bypasses the G6 atomic_write remediation**. **NEW** (G6 gap). |
+| 17 | MED | `ReviewerView.svelte:286` | swallowed-write | **G6** | `commitPriority`/`resetPriority` `catch {}` swallow a failed `set_review_priority` write to the review_schedule source-of-truth. **NEW.** |
+| 18 | LOW | `search.rs:8968` | index-divergence | **G5** | `reindex_delete_note` never deletes `note_aliases`/`note_embeddings` → orphan rows. (known; MIG-099 exists()-guards the read side) |
+| 19 | LOW | `cece/reliability.rs:95` | concurrency-race | new | unlocked sync read → `sweep_tmp_orphans` can delete a concurrent writer's in-flight NamedTempFile. **NEW.** |
+| 20 | LOW | `cece/reliability.rs:102` | content-loss | new | `load_or_default` returns empty on parse-fail; next `save()` overwrites with near-empty → silent reliability-data wipe. **NEW.** |
+| 21 | LOW | `ReviewStatusPanel.svelte:97` | swallowed-write | **G6** | `commitPriority` `catch {}` swallows a failed review_schedule write. **NEW.** |
+| 22 | LOW | `tasks.rs:532` | false-success | **G5** | `toggle_task` `let _ = reindex_single_note(...)` no `ensure_search_db_ready` → FTS drift (its own comment warns of this). **NEW.** |
+| 23 | LOW | `watcher.rs:78` | toctou | new | `atomic_write` now `mark()`s on EVERY gated write; watcher suppression was cascade-only → a real external edit during the window can be suppressed. **NEW.** |
+| 24 | LOW | `provenance.rs:100` | freeze-hang | **G8** | `compute_note_origins` sync command, full recursive walk+regex of every `.md` on the dispatch thread. **NEW.** |
+| 25 | LOW | `libraries.rs:5148` | freeze-hang | **G8** | `collect_library_notes` sync command, recursive walk + `read_to_string` every canonical `.md` on the dispatch thread. **NEW.** |
+
+**Triage:** the HIGH cluster (1,2,3,4,5,7) is the already-planned **G2 (save/model-ownership)** + **G3 (cross-window)** deep `/migration`s — this sweep sharpens their reproduction recipes. NEW additions to the register: **G6** gaps (#6 review-pulse.json, #16 libraries.json activation path, #17/#21 swallowed priority writes), **G5** (#9 folder-delete descendants, #10 reindex silent-skip, #14 unarchive recompute, #22 toggle_task), **G8** (#24/#25 sync-command walks), and standalone LOW (#19/#20 cece reliability, #23 watcher TOCTOU). None block MIG-099. Remediation continues on the G-plan order (G4 next, per Boss).
