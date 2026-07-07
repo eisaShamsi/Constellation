@@ -303,5 +303,19 @@ user-facing references). No handover/close-out (Boss instruction).
     `isUnlinked` delegates to the shared `isIsolated`.
   - **Verify:** `cargo check` + `npm run check` green (0 errors); the MIG-090 chips + MIG-092
     collections pinned tests **22/22 pass** (behavior preserved).
-- **NEXT: §4 — the first Boss test** (360 + Tension → canonical column; the verdict-alignment
-  fixes become visible) with the §1 parity harness for the before/after → §5 Search → §6 Sky → §7 close.
+- **§4 SHIPPED (VERDICT CHANGE — Boss-approved correctness fixes; validated on the final binary).**
+  - `inspector360.rs`: `read_connection_counts` → `read_connection_facts` (also reads word_count +
+    outgoing_link_types_json); orphan now reads `note_meta.word_count` (not the fs-walk NoteInfo)
+    + SPOF reads the JSON derives map (not the in-memory edge count) via the shared helpers.
+    Unindexed-note fallback preserved.
+  - `tension.rs`: `NoteInfo` gained `incoming_count` + `derives_support` from note_meta; the whole
+    in-memory alias-UNAWARE Phase-2 inbound/derives maps **deleted**; orphan → `is_unreferenced`
+    (alias-aware `incoming_count`), SPOF → `is_fragile` (canonical + JSON derives), `total_linked`
+    from the canonical column; single_points now stably sorted.
+  - **Effect (the approved change):** 360 + Tension now agree with the Reviewer on orphan/SPOF —
+    alias-linked notes and word_count-source edge cases flip (correctness). No user-facing help
+    references these predicates (grep-confirmed) → no help change.
+  - **Verify:** `cargo check` green, zero new warnings; **7/7 tension tests pass** (fixtures gained
+    `sync_counts` mimicking the write-time triggers so the DB-sourced pipeline reads canonical counts).
+- **NEXT: §5 Search (drop the temp-table re-walk) → §6 Sky → §7 close.** Boss validates §4-§6 on the
+  final binary.

@@ -69,6 +69,11 @@ struct NoteInfo {
     path: String,
     name: String,
     word_count: usize,
+    // MIG-094 — the canonical write-time connectivity facts from note_meta, so the
+    // orphan/SPOF verdicts read the SAME alias-aware, DISTINCT-source count as the
+    // Reviewer/360 instead of tension's old alias-UNAWARE in-memory name-match tally.
+    incoming_count: usize,
+    derives_support: usize, // active outgoing derives-from, from outgoing_link_types_json
     outgoing: Vec<(String, Option<String>)>, // (target_name_lower, link_type)
     tags: HashSet<String>,
 }
@@ -171,7 +176,7 @@ fn load_notes_from_db(
 
     {
         let mut stmt = conn
-            .prepare("SELECT name, path, word_count FROM note_meta WHERE library_name = ?1")
+            .prepare("SELECT name, path, word_count, incoming_count, outgoing_link_types_json FROM note_meta WHERE library_name = ?1")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(rusqlite::params![library_name], |row| {
@@ -179,11 +184,13 @@ fn load_notes_from_db(
                     row.get::<_, String>(0)?,
                     row.get::<_, String>(1)?,
                     row.get::<_, i64>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, String>(4)?,
                 ))
             })
             .map_err(|e| e.to_string())?;
         for row in rows.flatten() {
-            let (name, path, word_count) = row;
+            let (name, path, word_count, incoming_count, oltj) = row;
             let key = name.to_lowercase();
             path_to_key.insert(path.clone(), key.clone());
             // Duplicate titles within a library collapse to one entry
@@ -193,6 +200,8 @@ fn load_notes_from_db(
                 path,
                 name,
                 word_count: word_count.max(0) as usize,
+                incoming_count: incoming_count.max(0) as usize,
+                derives_support: crate::connectivity::derives_from_support(&oltj) as usize,
                 outgoing: Vec::new(),
                 tags: HashSet::new(),
             });
@@ -258,30 +267,12 @@ fn load_notes_from_db(
 /// The four detections — unchanged from the pre-MIG-075 walk; pure so
 /// the fixture tests can exercise it without an AppHandle.
 fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
-    let note_names: HashSet<String> = notes.keys().cloned().collect();
-
-    // Phase 2: Build inbound map + each note's OUTGOING derives-from count.
-    let mut inbound_count: HashMap<String, usize> = HashMap::new();
-    let mut inbound_sources: HashMap<String, HashSet<String>> = HashMap::new();
-    // MIG-085 — a single point of failure is a note MANY depend on that itself rests on
-    // ≤1 derives-from support (OUTGOING). Count the note's own outgoing derives-from, to
-    // match the Reviewer's fragile lens + inspector360's SPOF (one canonical definition).
-    let mut out_derives: HashMap<String, usize> = HashMap::new();
-
-    for (key, info) in &notes {
-        for (target, link_type) in &info.outgoing {
-            if link_type.as_deref() == Some("derives-from") {
-                *out_derives.entry(key.clone()).or_insert(0) += 1;
-            }
-            if note_names.contains(target) {
-                *inbound_count.entry(target.clone()).or_insert(0) += 1;
-                inbound_sources.entry(target.clone()).or_default().insert(info.name.clone());
-            }
-        }
-    }
-
+    // MIG-094 — the orphan/SPOF verdicts and the linked-count now read the canonical
+    // write-time note_meta facts carried on each NoteInfo (incoming_count is alias-aware
+    // + DISTINCT-source; derives_support from outgoing_link_types_json), not tension's old
+    // alias-UNAWARE in-memory name-match tally — so a note reads the SAME on every surface.
     let total_notes = notes.len();
-    let total_linked = inbound_count.len();
+    let total_linked = notes.values().filter(|i| i.incoming_count > 0).count();
 
     // Earned complexity check
     if total_linked < 50 {
@@ -359,8 +350,7 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
     // Detection 2: Orphans (0 inbound links, has content)
     let mut orphans: Vec<TensionItem> = Vec::new();
     for info in notes.values() {
-        let inbound = inbound_count.get(&info.name.to_lowercase()).copied().unwrap_or(0);
-        if inbound == 0 && info.word_count > 20 {
+        if crate::connectivity::is_unreferenced(info.incoming_count as i64) && info.word_count > 20 {
             let severity = if info.word_count > 500 { "high" }
                 else if info.word_count > 100 { "medium" }
                 else { "low" };
@@ -433,25 +423,23 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
 
     // Detection 4: Single points of failure
     let mut single_points: Vec<TensionItem> = Vec::new();
-    for (name_lower, sources) in &inbound_sources {
-        if sources.len() >= 5 {
-            // OUTGOING derives-from — what THIS note rests on (matches the Reviewer/360).
-            let derives_count = out_derives.get(name_lower).copied().unwrap_or(0);
-            if derives_count <= 1 {
-                if let Some(info) = notes.get(name_lower) {
-                    single_points.push(TensionItem {
-                        note_name: info.name.clone(),
-                        note_path: info.path.clone(),
-                        severity: if sources.len() >= 10 { "high".to_string() }
-                            else { "medium".to_string() },
-                        detail: format!("{} notes depend on this; it rests on only {} support", sources.len(), derives_count),
-                        detail_kind: "single_point".to_string(),
-                        detail_args: vec![sources.len().to_string(), derives_count.to_string()],
-                    });
-                }
-            }
+    // MIG-094 — the shared FRAGILE predicate over canonical note_meta facts (incoming_count
+    // is the alias-aware DISTINCT-source dependent count; derives_support from the JSON map).
+    for info in notes.values() {
+        if crate::connectivity::is_fragile(info.incoming_count as i64, info.derives_support as i64) {
+            single_points.push(TensionItem {
+                note_name: info.name.clone(),
+                note_path: info.path.clone(),
+                severity: if info.incoming_count >= 10 { "high".to_string() }
+                    else { "medium".to_string() },
+                detail: format!("{} notes depend on this; it rests on only {} support", info.incoming_count, info.derives_support),
+                detail_kind: "single_point".to_string(),
+                detail_args: vec![info.incoming_count.to_string(), info.derives_support.to_string()],
+            });
         }
     }
+    // Stable order (HashMap iteration is per-run random): most-depended-on first, then name.
+    single_points.sort_by(|a, b| a.note_name.cmp(&b.note_name));
 
     TensionReport {
         contradictions,
@@ -479,7 +467,9 @@ mod tests_mig075_tension {
         conn.execute_batch(
             "CREATE TABLE note_meta (
                  path TEXT PRIMARY KEY, name TEXT, library_name TEXT,
-                 word_count INTEGER DEFAULT 0, tags_json TEXT DEFAULT '[]');
+                 word_count INTEGER DEFAULT 0, tags_json TEXT DEFAULT '[]',
+                 incoming_count INTEGER DEFAULT 0, outgoing_count INTEGER DEFAULT 0,
+                 outgoing_link_types_json TEXT DEFAULT '{}');
              CREATE TABLE note_links (
                  source_path TEXT, target_name TEXT, link_type TEXT,
                  status TEXT DEFAULT 'active', library_name TEXT);",
@@ -493,6 +483,24 @@ mod tests_mig075_tension {
             "INSERT INTO note_meta (path, name, library_name, word_count, tags_json)
              VALUES (?1, ?2, ?3, ?4, ?5)",
             rusqlite::params![format!("/{lib}/{name}.md"), name, lib, words, tags],
+        )
+        .unwrap();
+    }
+
+    /// MIG-094 — populate the write-time connectivity columns from note_links, mimicking
+    /// the real triggers, so the DB-sourced tension pipeline reads canonical alias-aware
+    /// counts (incoming_count = DISTINCT active source; the outgoing type map for derives).
+    /// Call AFTER all add_link()s, BEFORE load_notes_from_db().
+    fn sync_counts(conn: &Connection) {
+        conn.execute_batch(
+            "UPDATE note_meta SET
+               incoming_count = (SELECT COUNT(DISTINCT nl.source_path) FROM note_links nl
+                                 WHERE lower(nl.target_name) = lower(note_meta.name) AND nl.status = 'active'),
+               outgoing_count = (SELECT COUNT(*) FROM note_links nl
+                                 WHERE nl.source_path = note_meta.path AND nl.status = 'active'),
+               outgoing_link_types_json = (SELECT COALESCE(json_group_object(link_type, cnt), '{}') FROM
+                   (SELECT link_type, COUNT(*) cnt FROM note_links
+                    WHERE source_path = note_meta.path AND status = 'active' GROUP BY link_type));",
         )
         .unwrap();
     }
@@ -539,6 +547,7 @@ mod tests_mig075_tension {
         add_note(&conn, "A", "x", 30, "[]");
         add_note(&conn, "A", "y", 30, "[]");
         add_link(&conn, "A", "x", "y", "associative", "active");
+        sync_counts(&conn);
         let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
         assert!(!report.active);
         assert_eq!(report.total_linked_notes, 1);
@@ -549,6 +558,7 @@ mod tests_mig075_tension {
         let conn = mem_db();
         add_chain(&conn, "A");
         add_link(&conn, "A", "n0", "n5", "contradicts", "active");
+        sync_counts(&conn);
         let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
         assert!(report.active);
         // MIG-080 §E — TWO rows per pair: the SOURCE ("contradicts") and the TARGET
@@ -589,6 +599,7 @@ mod tests_mig075_tension {
         for i in 10..15 {
             add_link(&conn, "A", &format!("n{i}"), "hub", "supports", "active");
         }
+        sync_counts(&conn);
         let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
         assert!(report.active);
         assert!(report.orphans.iter().any(|o| o.note_name == "Lonely"), "orphan found");
@@ -627,6 +638,7 @@ mod tests_mig075_tension {
         let conn = mem_db();
         add_chain(&conn, "A");
         add_link(&conn, "A", "n0", "n0", "contradicts", "active"); // self-link
+        sync_counts(&conn);
         let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
         // One row (the "contradicts" source perspective), NOT a duplicate "contradicted by".
         let n0_rows: Vec<_> = report.contradictions.iter().filter(|r| r.note_name == "n0").collect();

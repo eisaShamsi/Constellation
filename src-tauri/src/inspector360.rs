@@ -18,17 +18,25 @@ use tauri::Manager;
 /// the note has no row yet (caller falls back to the FS occurrence counts). Single-sourcing
 /// BOTH so the 360 header (↑ out · ↓ in) matches the Backlinks panel and the badge — the
 /// FS scan counts raw `[[link]]` occurrences (duplicates + reds), which over-counts.
-fn read_connection_counts(app: &tauri::AppHandle, note_path: &str) -> Option<(usize, usize)> {
+/// MIG-094 — the note's write-time connectivity facts: incoming/outgoing counts
+/// (DISTINCT, alias-aware) + word_count + the derives-from support (from the
+/// outgoing_link_types_json map). Returning all four lets 360's orphan/SPOF verdicts
+/// read the SAME canonical values as the Reviewer (`crate::connectivity`) instead of
+/// the FS-walk word_count / in-memory derives edge count. None → the note has no row
+/// yet; the caller falls back to the FS occurrence counts + in-memory derives.
+fn read_connection_facts(app: &tauri::AppHandle, note_path: &str) -> Option<(usize, usize, i64, i64)> {
     let state = app.state::<crate::search::SearchState>();
     let guard = state.db.lock().ok()?;
     let conn = guard.as_ref()?;
     conn.query_row(
-        "SELECT incoming_count, outgoing_count FROM note_meta WHERE path = ?1",
+        "SELECT incoming_count, outgoing_count, word_count, outgoing_link_types_json FROM note_meta WHERE path = ?1",
         [note_path],
-        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)),
+        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?)),
     )
     .ok()
-    .map(|(inc, out)| (inc.max(0) as usize, out.max(0) as usize))
+    .map(|(inc, out, wc, oltj)| {
+        (inc.max(0) as usize, out.max(0) as usize, wc, crate::connectivity::derives_from_support(&oltj))
+    })
 }
 
 /// A note connected to the inspected note.
@@ -218,7 +226,8 @@ pub fn get_360_view(
     // counts raw `[[link]]` occurrences (duplicates + red links), which over-counts both
     // directions (Boss-caught: 360 ↑34 vs Backlinks 16). Falls back to the FS counts only
     // if the row is absent (a note not yet indexed).
-    if let Some((inc, out)) = read_connection_counts(&app, &note_path) {
+    let meta_facts = read_connection_facts(&app, &note_path);
+    if let Some((inc, out, _, _)) = meta_facts {
         total_inbound = inc;
         total_outbound = out;
     }
@@ -233,9 +242,20 @@ pub fn get_360_view(
     let contradictions: Vec<String> = typed_links.get("contradicts")
         .map(|v| v.iter().map(|n| n.name.clone()).collect())
         .unwrap_or_default();
-    let is_orphan = total_inbound == 0 && target_info.map(|i| i.word_count > 20).unwrap_or(false);
-    // OUTGOING derives-from only (what this note rests on) — matches the Reviewer's fragile lens.
-    let single_point_of_failure = total_inbound >= 5 && out_derives <= 1;
+    // MIG-094 — the shared UNREFERENCED/FRAGILE predicates over note_meta columns, so
+    // 360's orphan/SPOF verdicts match the Reviewer exactly. When the note is indexed we
+    // read word_count + derives-support from note_meta (canonical); if it has no row yet
+    // we fall back to the FS-walk word_count + in-memory out_derives.
+    let (is_orphan, single_point_of_failure) = match meta_facts {
+        Some((inc, _out, wc, derives)) => (
+            crate::connectivity::is_unreferenced(inc as i64) && wc > 20,
+            crate::connectivity::is_fragile(inc as i64, derives),
+        ),
+        None => (
+            total_inbound == 0 && target_info.map(|i| i.word_count > 20).unwrap_or(false),
+            total_inbound >= 5 && out_derives <= 1,
+        ),
+    };
 
     // ─── Phase 5: Provenance ───
     let (origin_type, trust_depth) = compute_provenance_for_note(&note_lower, &all_notes);
