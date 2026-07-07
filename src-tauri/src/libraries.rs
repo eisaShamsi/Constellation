@@ -1758,6 +1758,25 @@ pub struct ResolvedLink {
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
 #[tauri::command(async)]
 pub fn resolve_wikilink_cross_library(
+    app: tauri::AppHandle,
+    libraries: Vec<(String, String, String)>, // (library_id, library_name, library_path)
+    current_library_path: String,
+    target: String,
+) -> Result<Option<ResolvedLink>, String> {
+    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the
+    // collision/alias resolver, which (per the trace) reads every .md across ALL
+    // libraries when the name matches nothing (the brand-new-note case on create).
+    // `app` is Tauri-injected; the JS invoke contract is unchanged. diag_log is
+    // release-safe. Removed once the fix lands.
+    let __t = std::time::Instant::now();
+    let r = resolve_wikilink_cross_library_impl(libraries, current_library_path, target);
+    if let Ok(p) = crate::search::db_path(&app) {
+        crate::search::diag_log(&p, &format!("[perf] resolve_wikilink_cross_library took {} ms (matched={:?})", __t.elapsed().as_millis(), r.as_ref().ok().map(|o| o.is_some())));
+    }
+    r
+}
+
+fn resolve_wikilink_cross_library_impl(
     libraries: Vec<(String, String, String)>, // (library_id, library_name, library_path)
     current_library_path: String,
     target: String,
