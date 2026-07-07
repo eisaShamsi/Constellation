@@ -54,4 +54,10 @@ Per the Predecessor Lookup Rule (top principal) — written BEFORE the §1 edits
 
 **Verify:** svelte-check **0 errors**. Committed pending the Second-Screen ruling.
 
-**Second-Screen — genuine fork (Boss ruling requested):** its "host" is `SecondScreenPage`, which lacks `buildNoteActions`/`showNoteContextMenu` (+layout-local). A mutating menu there means the menu shows on the 2nd screen but the rename/move/delete **dialog opens on the MAIN screen** (Display-not-Domain — the 2nd screen never owns the write path). Options put to the Boss: (a) full forwarding menu now, (b) SAFE menu only (open/reveal/copy/star — no dialog-on-main), (c) refresh-only (companion re-renders on any mutation; no menu). Reviewer + OrgChart are testable independently of this.
+**Second-Screen — fork RULED: "Full menu (mutations forward to main)" (Boss, 2026-07-07). DONE:**
+- **Forward channel** — `secondScreen.ts::requestNoteActionOnMain(action,path,name)` emits `screen:request-note-action`; `+layout` listens (registered in `cleanupFns`) and dispatches via the existing `handleOrgNodeMenuAction` — so rename/move/delete open their dialogs on the MAIN window. Added a `bookmark` case to `handleOrgNodeMenuAction` (star, forwarded).
+- **`SecondScreenPage.svelte`** — `showSSNoteMenu(path,name,e)` builds the menu via the SAME shared `buildContextMenu` (no bespoke copy): open/openInNewTab/reveal/star/addTag/rename/move/delete/suggest all `fwd()` to main; copy-path/copy-name act LOCALLY (pure clipboard read). Wired on all 4 `sc-link-item` sites (split + editor-panel backlinks/forward-links) + the embedded OrgChart (`onNoteContext`). `<ContextMenu>` rendered.
+- **Refresh** — `onNoteMutation({onAnyChange})` re-runs the last panel scan (`loadSplitCompanionPanelData`/`loadEditorPanelsData`), leak-safe (destroy-before-resolve guarded). A stale 2nd-screen row is only ever a dead click (the 2nd screen never writes), so best-effort re-scan suffices.
+- **Deferred to §3:** the 2nd-screen `DashboardView` menu (shared component — host-routed with Dashboard in §3).
+
+**Verify:** svelte-check **0 errors** across all §2 files. §2 adversarial audit + release-binary build pending before the staged Boss test.

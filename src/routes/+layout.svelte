@@ -3247,6 +3247,15 @@
 		// Global keyboard shortcuts — capture phase to beat browser defaults
 		document.addEventListener('keydown', handleGlobalKeydown, true);
 
+		// MIG-096 §2 — the second screen forwards its right-click note actions here
+		// (Display-not-Domain: the 2nd screen never writes). Dispatched through the
+		// SAME contextual handler the OrgChart uses, so rename / move / delete open
+		// their dialogs on this (main) window.
+		const unlistenScreenNoteAction = await listen<{ action: string; path: string; name: string }>('screen:request-note-action', (ev) => {
+			const { action, path, name } = ev.payload;
+			handleOrgNodeMenuAction(action, { kind: 'note', path, name, isMarkdown: path.toLowerCase().endsWith('.md') });
+		});
+
 		// Cleanup on destroy
 		cleanupFns.push(
 			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
@@ -3255,6 +3264,7 @@
 			unlistenScreenNote,
 			unlistenScreenClosed,
 			unlistenNoteSaved,
+			unlistenScreenNoteAction,
 		);
 	});
 
@@ -5581,6 +5591,10 @@
 				break;
 			case 'addTag':
 				tagDialog = { path, name: target.name };
+				break;
+			case 'bookmark':
+				// MIG-096 §2 — forwarded from the second screen's note menu (star).
+				toggleBookmarkPath('note', path, target.name);
 				break;
 			case 'revealInTree':
 				showOrgChart = false;

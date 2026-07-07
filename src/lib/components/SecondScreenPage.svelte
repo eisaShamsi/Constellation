@@ -31,6 +31,9 @@
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
+	import ContextMenu from '$lib/components/ContextMenu.svelte';
+	import { buildContextMenu, type ContextTarget, type ContextActions } from '$lib/components/contextMenuBuilder';
+	import { onNoteMutation } from '$lib/noteMutations';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
@@ -40,7 +43,7 @@
 		onIndexTermSelected, onIndexCompare,
 		onMapCompanion, onEditorPanels,
 		listMonitors,
-		sendNoteToMain, notifyScreenClosed, sendScreenState, emitScreenReady,
+		sendNoteToMain, requestNoteActionOnMain, notifyScreenClosed, sendScreenState, emitScreenReady,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
 		type IndexTermData, type IndexCompareData,
@@ -101,6 +104,49 @@
 	let epLocalSkyNodes = $state<SkyNode[]>([]);
 	let epLocalSkyLinks = $state<SkyLink[]>([]);
 	let epTasks = $state<TaskItem[]>([]);
+
+	// ─── MIG-096 §2 — the second screen's note right-click menu ───
+	// Display-not-Domain: the menu is SHOWN here, but every mutating action is
+	// PERFORMED by the main window (requestNoteActionOnMain → main's
+	// handleOrgNodeMenuAction; the rename/move/delete dialog opens on main). Only
+	// copy-path/copy-name act locally (a pure clipboard read). The menu is built
+	// once via the SAME shared builder every other surface uses — no bespoke copy.
+	let ssCtxMenu = $state<{ x: number; y: number; items: ReturnType<typeof buildContextMenu> } | null>(null);
+	function showSSNoteMenu(path: string, name: string, e: MouseEvent) {
+		e.preventDefault();
+		const isMd = path.toLowerCase().endsWith('.md');
+		const target: ContextTarget = { kind: 'note', path, name, isMarkdown: isMd };
+		const fwd = (action: string) => () => { requestNoteActionOnMain(action, path, name); };
+		const actions: ContextActions = {
+			open: fwd('open'),
+			openInNewTab: fwd('openInNewTab'),
+			revealInTree: fwd('revealInTree'),
+			bookmark: fwd('bookmark'),
+			addTag: fwd('addTag'),
+			copyPath: () => { navigator.clipboard.writeText(path).catch(() => {}); },
+			copyName: () => { navigator.clipboard.writeText(name).catch(() => {}); },
+			rename: fwd('rename'),
+			move: fwd('move'),
+			delete: fwd('delete'),
+		};
+		if (isMd) actions.suggestSources = fwd('suggestSources');
+		ssCtxMenu = { x: e.clientX, y: e.clientY, items: buildContextMenu(target, actions) };
+	}
+
+	// Refresh-after-mutate: the companion lists derive from a scan of the
+	// displayed note(s); after any rename/move/delete (here-forwarded or from the
+	// main window), re-run the last panel scan so no stale name/dead row lingers.
+	// Coalesced (onAnyChange, 300 ms). A stale 2nd-screen row is only ever a dead
+	// click — the 2nd screen never writes — so best-effort re-scan is sufficient.
+	let unlistenSSMutations: (() => void) | null = null;
+	let ssMutationsDestroyed = false;
+	onNoteMutation({
+		onAnyChange: () => {
+			if (splitCompanionData) loadSplitCompanionPanelData(splitCompanionData);
+			if (editorPanelsData) loadEditorPanelsData(editorPanelsData);
+		},
+	}).then(u => { if (ssMutationsDestroyed) u(); else unlistenSSMutations = u; }).catch(() => {});
+	onDestroy(() => { ssMutationsDestroyed = true; unlistenSSMutations?.(); });
 
 	// Split companion — comparison panel data for all notes
 	interface SplitPanelEntry {
@@ -1313,7 +1359,7 @@
 										<ul class="sc-link-list">
 											{#each panel.backlinks as bl}
 												<li>
-													<button class="sc-link-item" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
+													<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(bl.path, bl.name, e)} onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
 														<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
 														{bl.name}
 													</button>
@@ -1328,7 +1374,7 @@
 										<ul class="sc-link-list">
 											{#each panel.forwardLinks as fl}
 												<li>
-													<button class="sc-link-item" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
+													<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(fl.path, fl.name, e)} onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
 														<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
 														{fl.name}
 													</button>
@@ -1442,7 +1488,7 @@
 									<ul class="sc-link-list">
 										{#each epBacklinks as bl}
 											<li>
-												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
+												<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(bl.path, bl.name, e)} onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
 													<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
 													{bl.name}
 												</button>
@@ -1457,7 +1503,7 @@
 									<ul class="sc-link-list">
 										{#each epForwardLinks as fl}
 											<li>
-												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
+												<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(fl.path, fl.name, e)} onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
 													<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
 													{fl.name}
 												</button>
@@ -1680,6 +1726,7 @@
 						const color = note ? libraryColorMap[note.libraryName] || '#7c3aed' : '#7c3aed';
 						openNoteTab(path, note?.libraryName ?? '', color);
 					}}
+					onNoteContext={(path, name, e) => showSSNoteMenu(path, name, e)}
 				/>
 			</div>
 
@@ -1739,6 +1786,12 @@
 		<span class="status-linked">{$t('secondScreen.linked')}</span>
 	</div>
 </div>
+
+<!-- MIG-096 §2 — the second screen's shared note menu. The mutating items
+     (rename/move/delete) forward to the main window (Display-not-Domain). -->
+{#if ssCtxMenu}
+	<ContextMenu x={ssCtxMenu.x} y={ssCtxMenu.y} items={ssCtxMenu.items} onClose={() => ssCtxMenu = null} />
+{/if}
 
 <style>
 	/* ─── Dashboard ─── */

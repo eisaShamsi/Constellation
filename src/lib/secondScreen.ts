@@ -111,6 +111,16 @@ export async function sendNoteToMain(note: ScreenNote): Promise<void> {
 	await emit('screen:open-in-main', note);
 }
 
+/** MIG-096 §2 — Display-not-Domain: a right-click note action on the second
+ *  screen never mutates HERE; it asks the MAIN window to perform it (rename /
+ *  move / delete dialogs open on main). One generic channel, dispatched on main
+ *  via the existing handleOrgNodeMenuAction switch. `action` is a contextMenu
+ *  action id (open / openInNewTab / revealInTree / addTag / bookmark / rename /
+ *  move / delete / suggestSources). */
+export async function requestNoteActionOnMain(action: string, path: string, name: string): Promise<void> {
+	await emit('screen:request-note-action', { action, path, name });
+}
+
 /** Notify main that the second screen was closed */
 export async function notifyScreenClosed(): Promise<void> {
 	await emit('screen:closed');
