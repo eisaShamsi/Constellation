@@ -317,5 +317,12 @@ user-facing references). No handover/close-out (Boss instruction).
     references these predicates (grep-confirmed) → no help change.
   - **Verify:** `cargo check` green, zero new warnings; **7/7 tension tests pass** (fixtures gained
     `sync_counts` mimicking the write-time triggers so the DB-sourced pipeline reads canonical counts).
-- **NEXT: §5 Search (drop the temp-table re-walk) → §6 Sky → §7 close.** Boss validates §4-§6 on the
+- **§5 SHIPPED (Search "Orphans" filter → shared ISOLATED; VERDICT CHANGE — alias-flip).**
+  `search.rs` structured_search: the orphans filter's whole `_incoming_targets` temp-table +
+  O(n) re-walk of every note's `outgoing_links_json` **deleted**, replaced by
+  `connectivity::ISOLATED_WHERE` (`incoming_count = 0 AND outgoing_count = 0`) — a pure indexed
+  column check that agrees with the Collections "Unlinked" chip. Semantics preserved
+  (in==0 && out==0); the change is alias-unaware→alias-aware (approved). Perf strictly better
+  (no temp table, no full scan). No help reference (grep). `cargo check` green.
+- **NEXT: §6 Sky (reconcile ring/filter + re-source the payload) → §7 close.** Boss validates on the
   final binary.

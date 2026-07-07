@@ -6670,35 +6670,14 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         }
     }
 
-    // Orphans filter: notes with no incoming or outgoing links
-    // Pre-compute incoming link targets in ONE pass (O(n) instead of O(n²))
+    // Orphans filter → the shared ISOLATED predicate (MIG-094): no links in EITHER
+    // direction, read from the write-time note_meta counts (incoming_count is alias-aware
+    // + DISTINCT-source; outgoing_count is the active-cognitive-edge count). This replaces
+    // the old per-query re-walk of every note's outgoing_links_json into a temp table
+    // (an O(n) read-time scan, Rule-8 violation, alias-UNAWARE) with a pure indexed column
+    // check that agrees with the Collections "Unlinked" chip.
     if filters.orphans.unwrap_or(false) {
-        // No outgoing links
-        conditions.push("(outgoing_links_json IS NULL OR outgoing_links_json = '[]')".to_string());
-
-        // Build set of all notes that have incoming links (single scan of outgoing_links_json)
-        let mut has_incoming: std::collections::HashSet<String> = std::collections::HashSet::new();
-        if let Ok(mut stmt) = conn.prepare("SELECT outgoing_links_json FROM note_meta WHERE outgoing_links_json IS NOT NULL AND outgoing_links_json != '[]'") {
-            if let Ok(rows) = stmt.query_map([], |row| row.get::<_, String>(0)) {
-                for row in rows.flatten() {
-                    if let Ok(targets) = serde_json::from_str::<Vec<String>>(&row) {
-                        for t in targets {
-                            has_incoming.insert(t);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Use temp table for efficient SQL NOT IN check
-        let _ = conn.execute("CREATE TEMP TABLE IF NOT EXISTS _incoming_targets (name TEXT PRIMARY KEY)", []);
-        let _ = conn.execute("DELETE FROM _incoming_targets", []);
-        if let Ok(mut ins) = conn.prepare("INSERT OR IGNORE INTO _incoming_targets (name) VALUES (?1)") {
-            for name in &has_incoming {
-                let _ = ins.execute(params![name]);
-            }
-        }
-        conditions.push("LOWER(name) NOT IN (SELECT name FROM _incoming_targets)".to_string());
+        conditions.push(format!("({})", crate::connectivity::ISOLATED_WHERE));
     }
 
     // Links-between filter: notes that link to BOTH X and Y
