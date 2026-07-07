@@ -320,10 +320,15 @@ user-facing references). No handover/close-out (Boss instruction).
 - **§5 SHIPPED (Search "Orphans" filter → shared ISOLATED; VERDICT CHANGE — alias-flip).**
   `search.rs` structured_search: the orphans filter's whole `_incoming_targets` temp-table +
   O(n) re-walk of every note's `outgoing_links_json` **deleted**, replaced by
-  `connectivity::ISOLATED_WHERE` (`incoming_count = 0 AND outgoing_count = 0`) — a pure indexed
-  column check that agrees with the Collections "Unlinked" chip. Semantics preserved
-  (in==0 && out==0); the change is alias-unaware→alias-aware (approved). Perf strictly better
-  (no temp table, no full scan). No help reference (grep). `cargo check` green.
+  `connectivity::isolated_where("")` (`incoming_count = 0 AND outgoing_count = 0`) — a pure indexed
+  column check that agrees with the Collections "Unlinked" chip. Perf strictly better (no temp
+  table, no full scan). No help reference (grep). `cargo check` green.
+  - **Verdict change is broader than "alias-flip" (audit-honest, /simplify §5 finding):** the OUTGOING
+    side moved from `outgoing_links_json` (raw wikilink JSON) to `outgoing_count` (the active
+    **cognitive-edge** count). Beyond alias-awareness, this also reclassifies a note whose ONLY outgoing
+    wikilink is a *body-authored structural* typed link (`[[parent::X]]`) from non-orphan → ISOLATED —
+    correct-direction (body-structural links are non-cognitive per PJ-065 §5), rare. Enumerated here so
+    invariant-6's approved set is complete.
 - **§6 SHIPPED (Sky internal reconciliation).** `graphEngine.ts`: the "hide orphans" filter used
   total-degree presence (`linkedIds`) while the orphan RING used `linkCount === 0` (incoming) — so a
   note linking out with no backlinks was rendered yet ringed as an orphan (Sky contradicting itself).
@@ -351,7 +356,25 @@ user-facing references). No handover/close-out (Boss instruction).
   - **Invariant met:** no user-facing surface labels a non-degree threshold "orphan"; each named concept
     (UNREFERENCED / ISOLATED / FRAGILE) has one implementation in `connectivity.rs`.
 
-### MIG-094 — CODE COMPLETE (§1–§7). First PJ-069 answer-duplication cluster consolidated.
+### MIG-094 — /simplify + /migration audit (workflow `wf_b11d7e60-5ac`, 9 agents, adversarial verify)
+5 findings, all CONFIRMED, **all fixed** (WA#6 — no deferral):
+- **[MED] `connectivity.rs` single-source violation:** the alias fns re-hardcoded the same SQL as three
+  bare consts (`UNREFERENCED_WHERE`/`ISOLATED_WHERE`/`FRAGILE_WHERE`) — reintroducing the drift the module
+  exists to kill (the fragile threshold/JSON-key lived as two literals). **Fixed:** deleted the consts;
+  each concept's SQL is now ONE literal in its builder fn (`col_prefix("")` → bare column, `"nm"` →
+  qualified); `search.rs` calls `isolated_where("")`. Connectivity 3/3 + parity gate still green.
+- **[LOW] Tension `single_points` order:** comment said "most-depended-on first" but it sorted by name.
+  **Fixed:** now sorts `incoming_count` DESC then name — matches the Reviewer's fragile-lens order (same
+  set reads the same way on both surfaces). Tension 7/7 still green.
+- **[LOW] Search verdict change broader than "alias-flip":** the outgoing source moved to the cognitive-
+  edge count, also reclassifying body-authored-structural-only notes → ISOLATED (correct-direction, rare).
+  **Fixed:** enumerated in §5 above so invariant-6's approved set is honest (no code change — behavior correct).
+- **[LOW] `connectivity.ts` single live consumer:** `isUnreferenced`/`isFragile`/`derivesFromSupport`
+  unused today. **Resolved:** documented as the deliberate parity mirror + hubs-cluster seed (the finding
+  allows keep-if-near-term-consumer; the hubs cluster IS next). Not silent parking.
+- Efficiency + invariants lenses: **CLEAN** (no findings) — the 7 invariants hold; no read-time re-walk remains.
+
+### MIG-094 — CODE COMPLETE (§1–§7) + audited. First PJ-069 answer-duplication cluster consolidated.
 Shared `note_meta`-backed predicates; five drifted orphan impls + four fragile copies → one home per
 named concept; every read-time re-walk in the cluster (Search temp-table, Tension in-memory graph scan,
 four fragile re-counts, two `note_links` subqueries) deleted (Rule-8 wins). 360/Tension/Search now agree

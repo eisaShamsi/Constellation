@@ -422,12 +422,12 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
     structural_gaps.truncate(20); // limit to top 20 gaps
 
     // Detection 4: Single points of failure
-    let mut single_points: Vec<TensionItem> = Vec::new();
     // MIG-094 — the shared FRAGILE predicate over canonical note_meta facts (incoming_count
     // is the alias-aware DISTINCT-source dependent count; derives_support from the JSON map).
+    let mut sp: Vec<(usize, TensionItem)> = Vec::new();
     for info in notes.values() {
         if crate::connectivity::is_fragile(info.incoming_count as i64, info.derives_support as i64) {
-            single_points.push(TensionItem {
+            sp.push((info.incoming_count, TensionItem {
                 note_name: info.name.clone(),
                 note_path: info.path.clone(),
                 severity: if info.incoming_count >= 10 { "high".to_string() }
@@ -435,11 +435,14 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
                 detail: format!("{} notes depend on this; it rests on only {} support", info.incoming_count, info.derives_support),
                 detail_kind: "single_point".to_string(),
                 detail_args: vec![info.incoming_count.to_string(), info.derives_support.to_string()],
-            });
+            }));
         }
     }
-    // Stable order (HashMap iteration is per-run random): most-depended-on first, then name.
-    single_points.sort_by(|a, b| a.note_name.cmp(&b.note_name));
+    // Most-depended-on first, then name — matches the Reviewer's fragile lens ordering
+    // (review.rs sorts descending on incoming_count) so the same set reads the same way on
+    // both surfaces; deterministic (HashMap iteration is otherwise per-run random).
+    sp.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.note_name.cmp(&b.1.note_name)));
+    let single_points: Vec<TensionItem> = sp.into_iter().map(|(_, item)| item).collect();
 
     TensionReport {
         contradictions,

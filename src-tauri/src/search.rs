@@ -6677,7 +6677,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     // (an O(n) read-time scan, Rule-8 violation, alias-UNAWARE) with a pure indexed column
     // check that agrees with the Collections "Unlinked" chip.
     if filters.orphans.unwrap_or(false) {
-        conditions.push(format!("({})", crate::connectivity::ISOLATED_WHERE));
+        conditions.push(format!("({})", crate::connectivity::isolated_where("")));
     }
 
     // Links-between filter: notes that link to BOTH X and Y

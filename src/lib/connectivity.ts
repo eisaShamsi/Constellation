@@ -12,6 +12,12 @@
  *     (support read from outgoing_link_types_json, the write-time {type:count} map).
  *
  * Pure module — no imports that could carry an IPC (Collections' pinned invariant).
+ *
+ * Deliberate parity surface: today only `isIsolated` has a caller (Collections' Unlinked
+ * chip). `isUnreferenced` / `isFragile` / `derivesFromSupport` are kept as the named
+ * frontend vocabulary for the imminent hubs cluster (which re-points the CNS/Sky orphan
+ * surfaces frontend-side); the Rust module is the authoritative parity anchor. This is an
+ * intentional seed, not accidental dead surface — trim only if that consumer never lands.
  */
 
 /** UNREFERENCED — nothing points here (in-degree 0). */

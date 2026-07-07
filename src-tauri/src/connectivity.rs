@@ -30,35 +30,33 @@
 //! `SELECT COUNT(*) FROM note_links WHERE source_path=? AND link_type='derives-from'
 //! AND status='active'` subquery (proven by the §2 parity test below).
 
-/// SQL `WHERE` fragment for UNREFERENCED, over unqualified `note_meta` columns.
-/// Prefix each column with the table alias at the call site if needed.
-pub const UNREFERENCED_WHERE: &str = "incoming_count = 0";
+// The SQL `WHERE` fragments are single-sourced through these builders: each
+// concept's threshold / column / JSON-key exists as exactly ONE literal (the whole
+// point of this module). Pass "" for bare unqualified columns, or a table alias
+// (e.g. "nm") for a scan site that qualifies `note_meta`.
+
+/// Column prefix for an optional table alias ("" → bare column, "nm" → "nm.").
+fn col_prefix(alias: &str) -> String {
+    if alias.is_empty() { String::new() } else { format!("{alias}.") }
+}
+
+/// SQL `WHERE` fragment for UNREFERENCED.
+pub fn unreferenced_where(alias: &str) -> String {
+    let p = col_prefix(alias);
+    format!("{p}incoming_count = 0")
+}
 
 /// SQL `WHERE` fragment for ISOLATED.
-pub const ISOLATED_WHERE: &str = "incoming_count = 0 AND outgoing_count = 0";
-
-/// SQL `WHERE` fragment for FRAGILE. Reads the derives-from support from the
-/// write-time `outgoing_link_types_json` map — no `note_links` subquery.
-pub const FRAGILE_WHERE: &str =
-    "incoming_count >= 5 AND COALESCE(json_extract(outgoing_link_types_json, '$.\"derives-from\"'), 0) <= 1";
-
-/// Alias-qualified `WHERE` fragment for UNREFERENCED, e.g. `unreferenced_where("nm")`
-/// → `"nm.incoming_count = 0"`. For scan sites that alias `note_meta`.
-pub fn unreferenced_where(alias: &str) -> String {
-    format!("{alias}.incoming_count = 0")
-}
-
-/// Alias-qualified `WHERE` fragment for ISOLATED.
 pub fn isolated_where(alias: &str) -> String {
-    format!("{alias}.incoming_count = 0 AND {alias}.outgoing_count = 0")
+    let p = col_prefix(alias);
+    format!("{p}incoming_count = 0 AND {p}outgoing_count = 0")
 }
 
-/// Alias-qualified `WHERE` fragment for FRAGILE (derives-from support from the
-/// write-time JSON map — no `note_links` subquery).
+/// SQL `WHERE` fragment for FRAGILE — derives-from support from the write-time
+/// `outgoing_link_types_json` map (no `note_links` subquery).
 pub fn fragile_where(alias: &str) -> String {
-    format!(
-        "{alias}.incoming_count >= 5 AND COALESCE(json_extract({alias}.outgoing_link_types_json, '$.\"derives-from\"'), 0) <= 1"
-    )
+    let p = col_prefix(alias);
+    format!("{p}incoming_count >= 5 AND COALESCE(json_extract({p}outgoing_link_types_json, '$.\"derives-from\"'), 0) <= 1")
 }
 
 /// Row-predicate: UNREFERENCED (nothing points here).
@@ -82,7 +80,7 @@ pub fn is_fragile(incoming_count: i64, derives_from_support: i64) -> bool {
 /// The active `derives-from` support count, read from a note's
 /// `outgoing_link_types_json` (`{"type":count}`). Returns 0 when the note has no
 /// `derives-from` edges (the key is absent). Occurrence-count-equivalent to the
-/// legacy `COUNT(*)` subquery — see `FRAGILE_WHERE` and the §2 parity test.
+/// legacy `COUNT(*)` subquery — see `fragile_where` and the §2 parity test.
 pub fn derives_from_support(outgoing_link_types_json: &str) -> i64 {
     // Cheap, allocation-light parse: the map is small ({type:count} over ≤9 cognitive
     // types). serde_json is already a dependency; use it for correctness.
