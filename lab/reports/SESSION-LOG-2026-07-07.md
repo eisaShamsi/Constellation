@@ -68,3 +68,17 @@ Per the Predecessor Lookup Rule (top principal) — written BEFORE the §1 edits
 - **[LOW] Embedded (sidebar) OrgChart's `onNoteContext` was inert** — the sidebar tree-node span had no `oncontextmenu`. **Fix:** added `oncontextmenu` firing `onNoteContext` for note nodes.
 
 svelte-check re-run **0 errors**. Release-binary build pending before the staged Boss test.
+
+---
+
+## MIG-097 — index rename-drift self-heal (interrupt during §2 Boss test)
+
+**Trigger:** §2 Stage-1 Part B — Boss renamed a note in the Reviewer; on reopen the row reverted to the OLD name and opening it hit an empty Dashboard, while the file tree showed the new name.
+
+**Diagnosis (Reproduce-First — confirmed against the live DB + disk):** `get_due_notes` reads `note_meta.name`/`.path`. For this one note, `note_meta` pointed at `…التجربة الثانية_إعادة تسمية.md` (**gone from disk**) with the old name, while disk had `التجربة الثانية ن2.md` (correct title). A rename writes the file immediately (gated) but updates the index in a **detached best-effort tail** (`rename_item_db_tail`, §B2-4 — detached to avoid a freeze on large libraries); on the Boss's 2 GB / 7,713-note library that tail was lost, and gated renames suppress the watcher, so nothing healed it. **Severity: 1 of 7,713 rows drifted** — not systemic; the §2 feature wrote disk correctly. **Boss ruling: fix now (safe self-heal), then resume §2.**
+
+**Fix (`src-tauri/src/reconcile.rs`):** enhanced the existing MIG-078 boot reconcile (which only *removed* dead rows) to first **RELOCATE** a dead-path row to the note's current file, matched by the stable **`cid_cn`** (the orphan half of a lost-tail rename), preserving the row's aux data (review history, links, aliases, embeddings) via `relocate_row` (transactional, never overwrites an existing row); only rows whose note is genuinely gone fall back to removal. `collect_orphans` walks the library only when drift exists and reads frontmatter only for orphan files. Same WA#4 safety (accessible-roots-only, 10 %/200-row abort cap, lock-free stat/walk). Runs on every universe-open (`ensure_search_db_ready` → `reconcile::maybe_schedule`), so the Boss's next launch heals the drifted note.
+
+**Verify:** 3 Rust tests green — `relocate_row_migrates_note_and_aux_by_path` (cid preserved, all aux migrated), `relocate_row_refuses_occupied_target` (no row lost), `collect_orphans_maps_unknown_md_by_cid` (skips already-indexed). Full lib compiles clean. Only `reconcile.rs` touched (private `run()` signature; `maybe_schedule` unchanged) → no other-module risk.
+
+**Known limitation (logged, not a blocker):** drift heals on next universe-open, so a lost-tail rename shows stale in note_meta readers until the next launch (rare event; Boss chose the boot self-heal over hardening the async rename path).
