@@ -374,6 +374,23 @@ user-facing references). No handover/close-out (Boss instruction).
   allows keep-if-near-term-consumer; the hubs cluster IS next). Not silent parking.
 - Efficiency + invariants lenses: **CLEAN** (no findings) — the 7 invariants hold; no read-time re-walk remains.
 
+## MIG-095 — Note Health tab shows per-note health regardless of the 50-link gate (Boss #3, 2026-07-07)
+Boss Stage-1 finding: opening a note's Knowledge Health tab in a small library shows "Add more links…
+19/50 linked notes" instead of the note's health. **Root cause:** the note tab slices the LIBRARY-wide
+`detect_tensions` report, which returns empty + inactive below the 50-linked-notes "earned complexity"
+floor. **Concept (MIG-094-enabled):** a note's Health tab answers "how healthy is THIS note?" — so it
+shows the note's OWN orphan/fragile/contested (a per-note canonical read), ungated; the 50-floor gates
+only the library-wide monitor (contradiction-pairs, tag-cluster gaps that need critical mass).
+- **Backend `tension.rs`:** `NoteTensionStatus` enriched with `is_orphan`/`is_fragile`/`is_contested` +
+  counts + `contested_with`; `compute_note_tension_status` computes them from the canonical note_meta
+  columns (shared `connectivity` helpers) + a two-direction `contradicts` lookup — ungated. New test
+  `note_tension_status_own_verdicts_are_ungated` (orphan/fragile/stub-floor/contested both directions)
+  — **8/8 tension tests pass.**
+- **Frontend `TensionPanel.svelte` + `+layout`:** in note-scoped mode when the library monitor is
+  inactive, render the note's own health from the enriched `noteStatus` (orphan/fragile/contested badges
+  or a healthy state), not the "add more links" empty-state. Active-mode note view (Boss-validated in
+  Stage 1) untouched. `svelte-check` 0 errors.
+
 ### MIG-094 — CODE COMPLETE (§1–§7) + audited. First PJ-069 answer-duplication cluster consolidated.
 Shared `note_meta`-backed predicates; five drifted orphan impls + four fragile copies → one home per
 named concept; every read-time re-walk in the cluster (Search temp-table, Tension in-memory graph scan,

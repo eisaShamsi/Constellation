@@ -26,6 +26,20 @@
 		total_notes: number;
 		active: boolean;
 	}
+	// MIG-095 — the note's OWN health (per-note canonical verdicts, ungated by the
+	// library-wide 50-link monitor). Mirrors the Rust NoteTensionStatus.
+	interface NoteStatus {
+		indexed: boolean;
+		ambiguous_title: boolean;
+		is_orphan: boolean;
+		is_fragile: boolean;
+		is_contested: boolean;
+		incoming_count: number;
+		outgoing_count: number;
+		word_count: number;
+		derives_support: number;
+		contested_with: string[];
+	}
 
 	let {
 		report = null as TensionReport | null,
@@ -33,7 +47,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		onNoteClick,
 		noteContext = null as string | null,
-		noteStatus = null as { indexed: boolean; ambiguous_title: boolean } | null,
+		noteStatus = null as NoteStatus | null,
 		notePath = null as string | null,     // MIG-086 §D — the open note's path (for <RelatedCandidates>)
 		libraryPath = null as string | null,  // MIG-086 §D — the open note's library path
 	}: {
@@ -51,9 +65,30 @@
 		/** MIG-080 §E — reliability of the note-scoped verdict. `indexed:false` →
 		 *  the note isn't in the analysed set (new / still indexing); `ambiguous_title`
 		 *  → another note shares its title (name-keyed detection can't attribute
-		 *  reliably). Either gates the positive "healthy" state into an honest one. */
-		noteStatus?: { indexed: boolean; ambiguous_title: boolean } | null;
+		 *  reliably). Either gates the positive "healthy" state into an honest one.
+		 *  MIG-095 — now also carries the note's OWN verdicts (orphan/fragile/contested)
+		 *  so the note tab shows this note's health regardless of the library-wide gate. */
+		noteStatus?: NoteStatus | null;
 	} = $props();
+
+	// MIG-095 — the open note's own health, from the ungated per-note verdicts. Drives the
+	// note tab even when the library-wide monitor is inactive (< 50 linked notes).
+	const noteOwnFlags = $derived(
+		noteContext && noteStatus?.indexed
+			? {
+				orphan: noteStatus.is_orphan,
+				fragile: noteStatus.is_fragile,
+				contested: noteStatus.is_contested,
+				contestedWith: noteStatus.contested_with ?? [],
+				incoming: noteStatus.incoming_count,
+				derives: noteStatus.derives_support,
+				words: noteStatus.word_count,
+			}
+			: null,
+	);
+	const noteOwnHealthy = $derived(
+		!!noteOwnFlags && !noteOwnFlags.orphan && !noteOwnFlags.fragile && !noteOwnFlags.contested,
+	);
 
 	// MIG-080 §E — does this (note-scoped) report carry any tension at all?
 	const noteHasTensions = $derived(
@@ -116,6 +151,44 @@
 		<!-- Distinct from `analyzing`: the load finished without a report
 		     (error or no run yet). Never an eternal "Loading…". -->
 		<div class="tp-empty">{$t('tensionPanel.unavailable') || 'Analysis unavailable — switch tabs and back to retry.'}</div>
+	{:else if noteContext && noteStatus?.indexed && !report.active}
+		<!-- MIG-095 — the library-wide tension monitor activates at 50 linked notes, but THIS
+		     note's own health (orphan / fragile / contested) is a per-note canonical read
+		     (MIG-094) and is always shown, regardless of the library's link count. -->
+		{#if noteStatus.ambiguous_title}
+			<div class="tp-caveat">⚠ {$t('tensionPanel.noteAmbiguous') || 'This note shares its title with another — its health can’t be reliably assessed.'}</div>
+		{/if}
+		{#if noteOwnHealthy}
+			<div class="tp-healthy">
+				<div class="tp-healthy-icon">✓</div>
+				<div class="tp-healthy-text">{$t('tensionPanel.noteHealthy') || 'No tensions detected for this note — it’s well-connected.'}</div>
+			</div>
+		{:else}
+			<div class="tp-section">
+				{#if noteOwnFlags?.orphan}
+					<div class="tp-item tp-self">
+						<span class="tp-dot" style="background:#f59e0b"></span>
+						<span class="tp-name">{$t('tensionPanel.orphans') || 'Orphan Notes'}</span>
+						<span class="tp-detail">{($t('tensionPanel.detail.orphan') || '{0} words, no inbound links').replace('{0}', String(noteOwnFlags?.words ?? 0))}</span>
+					</div>
+				{/if}
+				{#if noteOwnFlags?.fragile}
+					<div class="tp-item tp-self">
+						<span class="tp-dot" style="background:#ef4444"></span>
+						<span class="tp-name">{$t('tensionPanel.singlePoints') || 'Single Points of Failure'}</span>
+						<span class="tp-detail">{($t('tensionPanel.detail.singlePoint') || 'referenced by {0} notes, only {1} source').replace('{0}', String(noteOwnFlags?.incoming ?? 0)).replace('{1}', String(noteOwnFlags?.derives ?? 0))}</span>
+					</div>
+				{/if}
+				{#if noteOwnFlags?.contested}
+					<div class="tp-item tp-self">
+						<span class="tp-dot" style="background:#ef4444"></span>
+						<span class="tp-name">{$t('tensionPanel.contradictions') || 'Contradictions'}</span>
+						<span class="tp-detail" dir="auto">{(noteOwnFlags?.contestedWith ?? []).join(', ')}</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
+		<div class="tp-inactive-count" style="margin-top:12px;">{report.total_linked_notes} / 50 {$t('tensionPanel.linkedNotes') || 'linked notes'}</div>
 	{:else if !report.active}
 		<div class="tp-inactive">
 			<div class="tp-inactive-icon">🩺</div>

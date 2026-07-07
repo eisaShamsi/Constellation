@@ -114,6 +114,18 @@ pub fn detect_tensions(
 pub struct NoteTensionStatus {
     pub indexed: bool,        // the note has a note_meta row (it was indexed)
     pub ambiguous_title: bool, // another note in the library shares its (case-insensitive) title
+    // MIG-095 (PJ-069 follow-on) — the note's OWN health verdicts, computed per-note from the
+    // canonical note_meta columns (crate::connectivity, MIG-094). UNGATED: a note's own
+    // orphan/fragile/contested status is always meaningful, independent of the library-wide
+    // 50-linked-notes "earned complexity" floor that gates the cross-library tension monitor.
+    pub is_orphan: bool,       // UNREFERENCED + has substance (incoming_count == 0 && word_count > 20)
+    pub is_fragile: bool,      // FRAGILE (incoming_count >= 5 && derives-from support <= 1)
+    pub is_contested: bool,    // has an active `contradicts` link (either direction)
+    pub incoming_count: i64,
+    pub outgoing_count: i64,
+    pub word_count: i64,
+    pub derives_support: i64,
+    pub contested_with: Vec<String>, // note names this one contradicts / is contradicted by
 }
 
 #[tauri::command(async)]
@@ -134,32 +146,82 @@ fn compute_note_tension_status(
     library_name: &str,
     note_path: &str,
 ) -> Result<NoteTensionStatus, String> {
-    let name: Option<String> = match conn.query_row(
-        "SELECT name FROM note_meta WHERE path = ?1",
+    // The note's canonical row (name + the MIG-094 connectivity columns). None → not indexed.
+    let row: Option<(String, i64, i64, i64, String)> = match conn.query_row(
+        "SELECT name, incoming_count, outgoing_count, word_count, outgoing_link_types_json FROM note_meta WHERE path = ?1",
         rusqlite::params![note_path],
-        |r| r.get::<_, String>(0),
+        |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?, r.get::<_, String>(4)?)),
     ) {
-        Ok(n) => Some(n),
+        Ok(v) => Some(v),
         Err(rusqlite::Error::QueryReturnedNoRows) => None,
         Err(e) => return Err(e.to_string()),
     };
 
-    let ambiguous_title = if let Some(ref n) = name {
+    let (name, incoming_count, outgoing_count, word_count, oltj) = match row {
+        Some(v) => v,
+        None => {
+            return Ok(NoteTensionStatus {
+                indexed: false, ambiguous_title: false,
+                is_orphan: false, is_fragile: false, is_contested: false,
+                incoming_count: 0, outgoing_count: 0, word_count: 0, derives_support: 0,
+                contested_with: Vec::new(),
+            });
+        }
+    };
+
+    let ambiguous_title = {
         let cnt: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM note_meta WHERE library_name = ?1 AND LOWER(name) = LOWER(?2)",
-                rusqlite::params![library_name, n],
+                rusqlite::params![library_name, name],
                 |r| r.get(0),
             )
             .map_err(|e| e.to_string())?;
         cnt > 1
-    } else {
-        false
     };
 
+    // MIG-095 — the note's OWN verdicts from the canonical columns (shared connectivity
+    // helpers, MIG-094). Ungated — no library-wide 50-link floor.
+    let derives_support = crate::connectivity::derives_from_support(&oltj);
+    let is_orphan = crate::connectivity::is_unreferenced(incoming_count) && word_count > 20;
+    let is_fragile = crate::connectivity::is_fragile(incoming_count, derives_support);
+
+    // Contested — active `contradicts` links in EITHER direction (this note contradicts X,
+    // or Y contradicts this note). Two indexed lookups; the structural lane is irrelevant
+    // (contradicts is a cognitive type).
+    let mut contested_with: Vec<String> = Vec::new();
+    {
+        let mut stmt = conn
+            .prepare(
+                "SELECT target_name FROM note_links \
+                 WHERE source_path = ?1 AND link_type = 'contradicts' AND status = 'active' \
+                 UNION \
+                 SELECT nm.name FROM note_links jl JOIN note_meta nm ON nm.path = jl.source_path \
+                 WHERE LOWER(jl.target_name) = LOWER(?2) AND jl.link_type = 'contradicts' AND jl.status = 'active'",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(rusqlite::params![note_path, name], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        for r in rows.flatten() {
+            if !contested_with.iter().any(|x| x.eq_ignore_ascii_case(&r)) {
+                contested_with.push(r);
+            }
+        }
+    }
+    let is_contested = !contested_with.is_empty();
+
     Ok(NoteTensionStatus {
-        indexed: name.is_some(),
+        indexed: true,
         ambiguous_title,
+        is_orphan,
+        is_fragile,
+        is_contested,
+        incoming_count,
+        outgoing_count,
+        word_count,
+        derives_support,
+        contested_with,
     })
 }
 
@@ -634,6 +696,39 @@ mod tests_mig075_tension {
 
         let dup = compute_note_tension_status(&conn, "A", "/A/dup1.md").unwrap();
         assert!(dup.indexed && dup.ambiguous_title, "shared title within library → ambiguous");
+    }
+
+    /// MIG-095 — the note's OWN orphan/fragile/contested verdicts are computed per-note and
+    /// are UNGATED: they hold in a tiny library far below the 50-linked-notes monitor floor.
+    #[test]
+    fn note_tension_status_own_verdicts_are_ungated() {
+        let conn = mem_db();
+        add_note(&conn, "A", "Orphan", 120, "[]"); // >20 words, no inbound → orphan
+        add_note(&conn, "A", "Hub", 30, "[]");      // 6 inbound, 0 derives-from → fragile
+        add_note(&conn, "A", "Stub", 5, "[]");      // <20 words, no inbound → NOT orphan (substance floor)
+        add_note(&conn, "A", "Contested", 40, "[]");
+        add_note(&conn, "A", "Rival", 40, "[]");
+        for i in 0..6 { add_note(&conn, "A", &format!("dep{i}"), 30, "[]"); }
+        for i in 0..6 { add_link(&conn, "A", &format!("dep{i}"), "hub", "supports", "active"); }
+        add_link(&conn, "A", "Contested", "rival", "contradicts", "active");
+        sync_counts(&conn); // tiny library — total_linked ≈ 2, far under the 50-note monitor floor
+
+        let orphan = compute_note_tension_status(&conn, "A", "/A/Orphan.md").unwrap();
+        assert!(orphan.is_orphan && !orphan.is_fragile && !orphan.is_contested, "orphan (ungated): {orphan:?}");
+
+        let hub = compute_note_tension_status(&conn, "A", "/A/Hub.md").unwrap();
+        assert!(hub.is_fragile && !hub.is_orphan, "fragile: 6 inbound, 0 derives-from: {hub:?}");
+        assert_eq!(hub.incoming_count, 6, "alias-aware DISTINCT-source inbound");
+
+        let stub = compute_note_tension_status(&conn, "A", "/A/Stub.md").unwrap();
+        assert!(!stub.is_orphan, "<20-word note is NOT an orphan (per-surface substance floor)");
+
+        let contested = compute_note_tension_status(&conn, "A", "/A/Contested.md").unwrap();
+        assert!(contested.is_contested && contested.contested_with.iter().any(|n| n.eq_ignore_ascii_case("rival")),
+            "Contested → contradicts → Rival: {:?}", contested.contested_with);
+
+        let rival = compute_note_tension_status(&conn, "A", "/A/Rival.md").unwrap();
+        assert!(rival.is_contested, "Rival is contradicted BY Contested (reverse direction): {:?}", rival.contested_with);
     }
 
     #[test]

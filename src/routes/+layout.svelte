@@ -459,7 +459,14 @@
 	// MIG-080 §E — O(1) reliability status for the open note (indexed? title shared?).
 	// Gates the positive "healthy" state so an unindexed or duplicate-titled note shows
 	// an honest "not analyzed / shared title" state instead of a false clean bill.
-	let tensionNoteStatus = $state<{ indexed: boolean; ambiguous_title: boolean } | null>(null);
+	// MIG-095 — enriched with the note's OWN health verdicts (orphan/fragile/contested +
+	// counts) so the note Health tab shows this note's health regardless of the library gate.
+	let tensionNoteStatus = $state<{
+		indexed: boolean; ambiguous_title: boolean;
+		is_orphan: boolean; is_fragile: boolean; is_contested: boolean;
+		incoming_count: number; outgoing_count: number; word_count: number;
+		derives_support: number; contested_with: string[];
+	} | null>(null);
 	let _tensionStatusSeq = 0;
 	let _tensionSaveTimer: ReturnType<typeof setTimeout> | null = null; // §E-fix #2 — debounce the save-driven re-detect
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -3841,7 +3848,7 @@
 		try {
 			const s = await invoke('note_tension_status', { libraryName: lib.name, notePath });
 			if (seq !== _tensionStatusSeq) return;
-			tensionNoteStatus = s as { indexed: boolean; ambiguous_title: boolean };
+			tensionNoteStatus = s as typeof tensionNoteStatus;
 		} catch (e) {
 			if (seq !== _tensionStatusSeq) return;
 			console.error('note_tension_status failed:', e);
