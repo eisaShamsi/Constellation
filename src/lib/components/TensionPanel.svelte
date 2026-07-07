@@ -194,7 +194,6 @@
 				{/if}
 			</div>
 		{/if}
-		<div class="tp-inactive-count" style="margin-top:12px;">{report.total_linked_notes} / 50 {$t('tensionPanel.linkedNotes') || 'linked notes'}</div>
 	{:else if !report.active}
 		<div class="tp-inactive">
 			<div class="tp-inactive-icon">🩺</div>
