@@ -107,10 +107,31 @@ fn load_registry(app: &tauri::AppHandle) -> UniverseRegistry {
     }
 }
 
+/// Safety Audit G6 — ATOMIC write for persisted-state files: write to a temp then
+/// rename over the target. A plain `fs::write` truncates-then-writes, so a crash or
+/// power loss mid-write leaves the file partial — and every loader here swallows the
+/// parse error and falls back to empty (silently dropping the user's registry /
+/// settings / workspaces / collections / property-types). The rename is atomic on
+/// the same directory; a failed rename leaves the old file intact (never truncated).
+pub(crate) fn atomic_write(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    let tmp = path.with_file_name(format!(
+        "{}.tmp",
+        path.file_name().and_then(|n| n.to_str()).unwrap_or("state.json")
+    ));
+    std::fs::write(&tmp, contents)?;
+    match std::fs::rename(&tmp, path) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            let _ = std::fs::remove_file(&tmp);
+            Err(e)
+        }
+    }
+}
+
 fn save_registry(app: &tauri::AppHandle, registry: &UniverseRegistry) -> Result<(), String> {
     let path = registry_path(app)?;
     let data = serde_json::to_string_pretty(registry).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| format!("Failed to save universe registry: {}", e))
+    atomic_write(&path, data.as_bytes()).map_err(|e| format!("Failed to save universe registry: {}", e))
 }
 
 // ─── Active Universe Helper ───
@@ -1350,7 +1371,7 @@ pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value
 pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    fs::write(dir.join("settings.json"), json)
+    atomic_write(&dir.join("settings.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save settings: {}", e))
 }
 
@@ -1390,7 +1411,7 @@ pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Val
 pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&workspaces).map_err(|e| e.to_string())?;
-    fs::write(dir.join("workspaces.json"), json)
+    atomic_write(&dir.join("workspaces.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save workspaces: {}", e))
 }
 
@@ -1414,8 +1435,22 @@ pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Va
         let legacy = dir.join("workbench.json");
         if legacy.exists() {
             if let Ok(data) = fs::read_to_string(&legacy) {
-                let _ = fs::write(&path, &data);
-                let _ = fs::rename(&legacy, dir.join("workbench.json.migrated"));
+                // Safety Audit G6 (W1-9): atomic adopt + surfaced errors. The old
+                // `let _ =` on BOTH the write and the rename could leave a truncated
+                // collections.json (a crash mid-write) that then BLOCKS re-adoption
+                // (the `!path.exists()` gate is satisfied by the partial file). Write
+                // to a temp then rename; only retire the legacy backup if the adopt
+                // committed (else the legacy stays and re-adoption retries next boot).
+                let tmp = dir.join("collections.json.tmp");
+                match fs::write(&tmp, &data).and_then(|_| fs::rename(&tmp, &path)) {
+                    Ok(_) => {
+                        let _ = fs::rename(&legacy, dir.join("workbench.json.migrated"));
+                    }
+                    Err(e) => {
+                        let _ = fs::remove_file(&tmp);
+                        eprintln!("[collections] legacy adoption failed (will retry next boot): {}", e);
+                    }
+                }
                 return serde_json::from_str(&data)
                     .map_err(|e| format!("Failed to parse collections (from legacy workbench): {}", e));
             }
@@ -1432,7 +1467,7 @@ pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Va
 pub fn save_universe_collections(app: tauri::AppHandle, collections: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&collections).map_err(|e| e.to_string())?;
-    fs::write(dir.join("collections.json"), json)
+    atomic_write(&dir.join("collections.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save collections: {}", e))
 }
 
@@ -1455,7 +1490,7 @@ pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json:
 pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&types).map_err(|e| e.to_string())?;
-    fs::write(dir.join("property-types.json"), json)
+    atomic_write(&dir.join("property-types.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save property types: {}", e))
 }
 

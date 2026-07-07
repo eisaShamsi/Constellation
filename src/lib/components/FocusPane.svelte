@@ -15,6 +15,7 @@
 		onchange,
 		ontitlechange,
 		onexit,
+		onflush,
 	}: {
 		value: string;
 		title?: string;
@@ -23,6 +24,10 @@
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
 		onexit?: () => void;
+		// Safety Audit G1 — fired on destroy/exit for an IMMEDIATE (non-debounced)
+		// persist of the FINAL buffer, so a fast exit/tab-switch never loses the last
+		// edit that the debounced onchange had not yet written.
+		onflush?: (value: string) => void;
 	} = $props();
 
 	let editorEl: HTMLDivElement;
@@ -206,7 +211,10 @@
 		if (pauseTimer) clearTimeout(pauseTimer);
 		if (view) {
 			const text = view.state.doc.toString();
-			onchange?.(text);
+			// Safety Audit G1 — flush the final buffer IMMEDIATELY on teardown (tab/mode
+			// switch, close). onchange only debounces; onflush persists now so the last
+			// keystrokes before a fast exit are never lost.
+			onflush?.(text);
 			view.destroy();
 		}
 	});

@@ -1474,6 +1474,33 @@
 	// note focus was opened for, even as the active tab changes underneath.
 	let focusSessionId = $state('');
 	let focusSessionPath = $state('');
+	// Safety Audit G1 — the focus session's DEBOUNCED disk save. Keystrokes update
+	// the in-memory model instantly (editNoteBody); this commits it to disk on a
+	// 1500 ms pause OR on flush (exit/destroy), NEVER per keystroke (Rule 3 — the
+	// per-build inspection caught a per-keystroke write+reindex regression here).
+	// A write-ahead buffer makes a failed write recoverable (W1-2); the reindex
+	// keeps focus-captured text findable/backlinked (W1-1); the error is surfaced (W1-5).
+	let focusSaveTimer: ReturnType<typeof setTimeout> | null = null;
+	function commitFocusSave() {
+		if (focusSaveTimer) { clearTimeout(focusSaveTimer); focusSaveTimer = null; }
+		if (!focusSessionId) return;
+		const r = composeNoteModel(focusSessionId, focusSessionPath);
+		if (!r.ok) return; // identity refusal — never write under another note's path
+		markNoteSaved(focusSessionId, r.version);
+		const ft = get(openTabs).find(x => x.id === focusSessionId);
+		if (ft) ft.content = r.content;
+		const path = focusSessionPath;
+		const libName = ft?.libraryName ?? '';
+		setWriteAhead(path, r.content, 0, 0);
+		markRecentWrite(path);
+		writeNote(path, r.content, 'focus_pane')
+			.then(() => {
+				clearWriteAhead(path);
+				if (secondScreenOpen) broadcastNoteSaved(path);
+				reindexNote(path, libName).catch(() => {});
+			})
+			.catch((e) => { console.error('[focus save] write failed (kept in write-ahead for recovery):', e); });
+	}
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; linkTypes?: string[]; traversalCount?: number }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string; linkTypes?: string[] }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
@@ -7691,22 +7718,16 @@
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								onchange={(text) => {
-									// MIG-076 §C — push the body to the model for the note FOCUS
-									// WAS OPENED FOR (captured session id/path), never the live
-									// $activeTab. The save composes from the model and is REFUSED on
-									// a path mismatch, so a tab switch while in focus can never write
-									// this body under another note's identity (the in-focus-switch
-									// cross-note write, closed structurally).
+									// MIG-076 §C — push the body to the model for the note FOCUS WAS OPENED
+									// FOR (captured session id/path), never the live $activeTab (compose is
+									// path-refused). Safety Audit G1: the keystroke updates the in-memory model
+									// INSTANTLY; the disk write+reindex is DEBOUNCED (commitFocusSave, 1500 ms)
+									// and flushed on exit/destroy — never per keystroke (Rule 3).
 									if (SINGLE_OWNERSHIP) {
 										if (!focusSessionId) return;
 										editNoteBody(focusSessionId, text, focusSessionPath);
-										const r = composeNoteModel(focusSessionId, focusSessionPath);
-										if (!r.ok) return;
-										markNoteSaved(focusSessionId, r.version);
-										const ft = get(openTabs).find(x => x.id === focusSessionId);
-										if (ft) ft.content = r.content;
-										markRecentWrite(focusSessionPath);
-										writeNote(focusSessionPath, r.content, 'focus_pane').catch(() => {});
+										if (focusSaveTimer) clearTimeout(focusSaveTimer);
+										focusSaveTimer = setTimeout(commitFocusSave, 1500);
 									} else {
 										const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
 										const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
@@ -7716,6 +7737,7 @@
 										writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 									}
 								}}
+								onflush={(text) => { if (SINGLE_OWNERSHIP && focusSessionId) editNoteBody(focusSessionId, text, focusSessionPath); commitFocusSave(); }}
 								onexit={() => { focusMode = false; }}
 							/>
 						{:else}

@@ -41,7 +41,11 @@ export function seedFromBundle(data: unknown): void {
 function persistPropertyTypes() {
 	if (saveTimer) clearTimeout(saveTimer);
 	saveTimer = setTimeout(() => {
-		invoke('save_universe_property_types', { types: cache }).catch(() => {});
+		// Safety Audit G6 (W1-12): surface a failed persist (was .catch(()=>{}), so a
+		// save failure silently lost the user's property-type assignment).
+		invoke('save_universe_property_types', { types: cache }).catch((e) => {
+			console.error('[propertyTypes] persist failed — type assignment not saved to disk:', e);
+		});
 	}, 500);
 }
 

@@ -128,3 +128,20 @@ Consolidated into **root-cause fix-groups** (remediation units):
 | **G9** listener leak | 🟠 MED | post-await unguarded listen | W3-3 | destroyed-flag guard |
 
 **Remediation order (worst-silent-knowledge-loss first):** G4 → G2 → G1 → G3 → G5 → G6 → G7 → G8 → G9. Deep groups (G2/G3/G4, and G5's durable fix) each rate a `/migration`; G6/G8/G9 are direct fixes. P4 remediation begins now.
+
+---
+
+## P4 — Remediation progress
+
+**Quick-wins batch (direct fixes) — LANDED:**
+- **G8 ✅** (`90ba3829`) — `scan_note_stages` + `execute_lens` → `(async)` (off the dispatch thread; no more full-library/lens-query UI freeze).
+- **G9 ✅** (`90ba3829`) — SourceReviewPanel listeners guarded with a `destroyed` flag (no post-await leak).
+- **G6 ✅** — atomic writes for the persisted-state class: `libraries.json` (`90ba3829`) + a shared `universe::atomic_write` applied to `save_registry` / `save_universe_settings` / `_workspaces` / `_collections` / `_property_types`; corrupt `libraries.json` preserved as a backup; the legacy-collections adoption made atomic; **swallowed writes surfaced** (W1-9 collections adoption, W1-10 cece co-write, W1-12 property-types persist). *(Remaining in-class: `universe.json` saves + the federation `let _ = fs::write` sites — REGISTERED below.)*
+- **G1 ✅** — FocusPane save rewritten to NoteEditor's discipline: **debounced** (1500 ms) write + reindex (was per-keystroke — a regression the per-build inspection caught), **write-ahead recovery net**, **`onflush`** for an immediate persist on exit/destroy, error surfaced. Fixes W1-1 / W1-2 / W1-5. *(Boss test pending: focus-capture round-trip — type in Focus, exit, confirm the note is findable in search + survives a forced-quit.)*
+
+**Per-build inspection (first live run, `wf_012f1593`, 49 agents, whole-app fallback) — new findings added to the register:**
+- **NEW → G5/index:** `libraries.rs:1614` move_item drops the moved note's `review_schedule` row (MED) · `search.rs:7991` `constellation_link_archive` mutates `note_links.status` but never recomputes the target's incoming aggregates (MED) · `review.rs:1056` `sync_action_to_row` silently drops a ✓Reviewed/snooze/dismiss into `review_schedule` (MED).
+- **NEW → G6 (registered, not yet fixed):** `universe.rs` `universe.json` saves (1189/1205/etc.) + the federation `let _ = fs::write` sites are still plain `fs::write` — apply `atomic_write` in the G6 follow-up.
+- **Re-confirmed (existing groups):** NoteEditor `handleSave`/`saveTabContent` markSaved-before-write (G2) · store.ts nav-loss + two-tabs-one-note (G2) · parseFrontmatter/reconstruct loss+corruption (G4) · SecondScreenPage adopt-without-remount (G3).
+
+**Deep `/migration` fixes remaining (worst-first):** **G4** frontmatter (real YAML round-trip) → **G2** save/model-ownership (flush-before-nav + one-model-per-note + write-then-mark) → **G3** cross-window → **G5** durable rename + the index cascades → **G7** write-gate staleness. Each its own `/migration` with an Audit-phase inspection.

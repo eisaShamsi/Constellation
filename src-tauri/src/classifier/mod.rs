@@ -399,12 +399,19 @@ pub fn cece_resolve_disambiguation(
     // Co-write the other axis's settled primary, if it had one.
     let other_id_for_reliability = other_axis_settled.clone();
     if let Some(other_id) = other_axis_settled {
+        // Safety Audit G6 (W1-10): surface the co-write result instead of `let _ =`.
+        // (The value being re-affirmed was already written when its axis settled, so
+        // a failure loses no data — but it must not be silent.)
         match axis.as_str() {
             "horizontal" => {
-                let _ = crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![other_id]);
+                if let Err(e) = crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![other_id]) {
+                    eprintln!("[cece] co-write content_type failed for {}: {}", note_path, e);
+                }
             }
             "vertical" => {
-                let _ = crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![other_id]);
+                if let Err(e) = crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![other_id]) {
+                    eprintln!("[cece] co-write sources failed for {}: {}", note_path, e);
+                }
             }
             _ => {}
         }
