@@ -338,14 +338,7 @@ pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<
     }
 
     let depth = max_depth.unwrap_or(2);
-    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the recursive
-    // disk walk that (per the trace) reads every note's WHOLE file for its title.
-    // diag_log is release-safe. Removed once the fix lands.
-    let __t = std::time::Instant::now();
     let tree = read_dir_recursive(library_path, 0, depth);
-    if let Ok(p) = crate::search::db_path(&app) {
-        crate::search::diag_log(&p, &format!("[perf] read_library_tree took {} ms (depth={}, top-level={})", __t.elapsed().as_millis(), depth, tree.len()));
-    }
     Ok(tree)
 }
 
@@ -1794,8 +1787,8 @@ pub struct ResolvedLink {
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
 /// MIG-099 — shared driver for both the wikilink resolver (`skip_stem=false`)
 /// and the title-collision check (`skip_stem=true`, §6). Builds the OWN-library
-/// authority set, runs the impl with the read connection (walk fallback if the
-/// DB isn't ready), and logs the perf line.
+/// authority set and runs the impl with the read connection (walk fallback if
+/// the DB isn't ready).
 ///
 /// OWN vs FEDERATED (adversarial C1): `load_libraries` returns ONLY the active
 /// universe's own registrations (NON-recursive) — the exact set whose rows are
@@ -1809,10 +1802,8 @@ fn run_cross_library_resolution(
     current_library_path: &str,
     target: &str,
     skip_stem: bool,
-    label: &str,
 ) -> Option<ResolvedLink> {
     use tauri::Manager;
-    let __t = std::time::Instant::now();
     let own_paths: std::collections::HashSet<String> = load_libraries(app)
         .iter()
         .map(|l| norm_lib_path(&l.path))
@@ -1822,7 +1813,7 @@ fn run_cross_library_resolution(
     // Reader connection available → OWN libraries resolve via indexed seek. If the
     // DB isn't ready (pre-init / mid universe-switch) with_read_conn errors →
     // pure filesystem walk for everything (correct, just not accelerated).
-    let r: Option<ResolvedLink> = match crate::search::with_read_conn(state.inner(), |conn| {
+    match crate::search::with_read_conn(state.inner(), |conn| {
         let ctx = ResolveCtx { own_paths: &own_paths, conn: Some(conn), skip_stem };
         Ok(resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx))
     }) {
@@ -1831,12 +1822,7 @@ fn run_cross_library_resolution(
             let ctx = ResolveCtx { own_paths: &own_paths, conn: None, skip_stem };
             resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx)
         }
-    };
-
-    if let Ok(p) = crate::search::db_path(app) {
-        crate::search::diag_log(&p, &format!("[perf] {} took {} ms (matched={})", label, __t.elapsed().as_millis(), r.is_some()));
     }
-    r
 }
 
 #[tauri::command(async)]
@@ -1846,7 +1832,7 @@ pub fn resolve_wikilink_cross_library(
     current_library_path: String,
     target: String,
 ) -> Result<Option<ResolvedLink>, String> {
-    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, false, "resolve_wikilink_cross_library"))
+    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, false))
 }
 
 /// MIG-099 §6 — the create/rename TITLE-collision check (MIG-076 §E1b). Answers
@@ -1864,7 +1850,7 @@ pub fn resolve_title_collision(
     current_library_path: String,
     target: String,
 ) -> Result<Option<ResolvedLink>, String> {
-    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, true, "resolve_title_collision"))
+    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, true))
 }
 
 /// MIG-099 §2 — resolution context threaded through the impl: the set of OWN
@@ -5409,13 +5395,7 @@ pub fn update_links_on_rename(
         failed: Vec::new(),
         failed_truncated: 0,
     };
-    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the cascade
-    // walk that (per the trace) reads every .md file to regex-match [[oldName]].
-    let __t = std::time::Instant::now();
     update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
-    if let Ok(p) = crate::search::db_path(&app) {
-        crate::search::diag_log(&p, &format!("[perf] update_links_on_rename walk took {} ms ({} rewritten)", __t.elapsed().as_millis(), result.rewritten.len()));
-    }
 
     // §4 — reindex each rewritten source so `note_meta.outgoing_links_json`
     // and `note_links.target_name` reflect the new wikilink targets. Without
