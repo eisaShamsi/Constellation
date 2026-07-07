@@ -236,6 +236,28 @@ Definition and agent briefs: `.claude/skills/migration.md`.
 
 ---
 
+## The Safety Inspection (standing order — Boss-mandated 2026-07-07)
+
+> "Create an inspection team to audit every code build… to ensure our app is safe and secure. We will also conduct an inspection once every cycle." — Eisa, 2026-07-07
+
+A standing, repeatable safety audit — the institutionalized form of the 2026-07-07 Safety & Integrity Audit that found **30 hidden silent-failure bugs** (including the MIG-098 rename app-killer that hid for ~9 days). Its target is the **app-killer class**: a *silent* failure that loses/corrupts the user's knowledge or the index with **no surfaced error** (silent data-loss, false-success, content-integrity, index↔disk divergence, init-ordering, freeze, leaks — full taxonomy + method in `docs/Constellation-Safety-Audit-CHARTER.md` and `LL-033`).
+
+The inspection team is the saved workflow **`safety-inspection`** (`.claude/workflows/safety-inspection.js`): a multi-agent adversarial hunt where **every candidate is refuted before it is confirmed** (no crying wolf), findings ranked APP-KILLER-first. It runs diff-scoped (per build) or whole-app (per cycle).
+
+**Two cadences (Claude runs these automatically — the Boss should not have to ask):**
+
+1. **Per-build inspection — every code build.** Before committing any change that touches a **source-of-truth or its derived index/state** — a write path, save/compose, index/reconcile, the editor lifecycle, cross-window sync, persisted JSON, or frontmatter — run the inspection **diff-scoped** over the changed files:
+   `Workflow({ name: 'safety-inspection', args: { files: [<the changed source files>] } })`
+   It runs alongside `/simplify` in the build's verification, and **every confirmed finding is fixed BEFORE the commit** (WA#6 — never ship a known silent-failure). Exempt: docs, i18n, and pure-UI tweaks with no write/index/lifecycle path.
+
+2. **Per-cycle full inspection — once every cycle.** A **cycle = the close of each `/migration`** (fold it into the migration's Audit phase); in a migration-free stretch, **each session-close PCS** is the cycle boundary. At the boundary, run the **whole-app** sweep:
+   `Workflow({ name: 'safety-inspection' })`
+   The confirmed register is appended to the Charter; confirmed app-killers are remediated Reproduce-First with proven patterns (WA#5) before the cycle is declared closed.
+
+**Non-negotiable:** an inspection finding is never "logged and shipped" — it is fixed, or (if it genuinely needs a separate migration) explicitly ruled on by the Boss (WA#6 + Working Agreement #6). The purpose is that a bug like MIG-098 can never again hide for weeks: it is caught at the build that introduces it, or at the next cycle sweep at the latest.
+
+---
+
 ## Standing Order (SO)
 After every phase, step, or significant commit:
 1. Update `lab/reports/SESSION-LOG-YYYY-MM-DD.md` with: phase name, commit hash, test results, bugs fixed, open items.

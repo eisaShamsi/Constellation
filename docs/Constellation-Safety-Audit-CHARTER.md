@@ -2,6 +2,8 @@
 
 **Opened:** 2026-07-07 · **Mandate (Eisa):** *"Stop everything and put the app under inspection to find and fix those app-killing bugs. I don't care how long it will take or how much effort — what matters is declaring the app safe and secure."*
 
+**Now a STANDING process (Eisa, 2026-07-07):** *"Create an inspection team to audit every code build… conduct an inspection once every cycle."* Institutionalized as the saved workflow **`safety-inspection`** (`.claude/workflows/safety-inspection.js`) + the CLAUDE.md "The Safety Inspection" standing order — run **diff-scoped on every build**, **whole-app once per cycle** (cycle = each `/migration` close, or a session-close PCS). This Charter is the durable Findings Register for every run.
+
 **Trigger:** the rename→index durability bug (MIG-098) — a silent, source-of-truth-corrupting failure that hid for ~9 days and surfaced only by accident during unrelated tests. That is the signature of the most dangerous defect class, and the mandate is to hunt the whole class across the app, not just this instance.
 
 ## Definition — an "app-killer"
