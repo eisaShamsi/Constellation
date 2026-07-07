@@ -52,12 +52,16 @@ Each adoption is a small, independently-testable swap (the row's data/actions st
 
 Every step obeys the hard constraint: virtualize lists >50 rows (they already do), zero new per-keystroke IPC, per-title RTL (NoteRow already carries it).
 
-## 6. Boss decisions
+## 6. Boss decisions — RULED (2026-07-07)
 
-1. **Ratify the horse** (§1) — the right-click and the note-lists dedup are one move via the shared row.
-2. **The menu contents** (§3.2) — confirm the SAFE subset (Open / Open-in-new-tab / Reveal / Star / Add-to-collection / Copy), *excluding* Rename/Move/Delete on computed lists. Add/remove any action?
-3. **Scope of the first pass** — the full 26-surface adoption, or the Boss's priority order (Reviewer first, then the highest-value lists)?
-4. **One migration or fold into PJ-069's note-lists cluster?** — this IS the note-lists cluster; ship it as that cluster's `/migration` (it doubles as the dedup), or a narrower "right-click-only" pass first?
+1. **Horse ratified** (§1) — the right-click and the note-lists dedup are one move via the shared row.
+2. **Menu = FULL, not the SAFE subset** — include **Rename / Move / Delete** alongside Open / Open-in-new-tab / Reveal / Star / Add-to-collection / Copy. **⇒ Load-bearing consequence:** a computed list does NOT re-run when a note is renamed/moved/deleted, so the migration **must** give every surface a **refresh-after-mutate** so the list never shows a stale/dangling row. This is the single hardest design problem in the cluster and the Architect's central task (see §7). This overrides the MIG-077 SAFE-subset precedent by explicit Boss ruling.
+3. **Scope = ALL 26 surfaces in one pass** (not Reviewer-first-then-staged). One large adoption. *(Build will still be committed surface-by-surface with per-group Boss tests — "all at once" is the scope, not one un-testable mega-commit.)*
+4. **ONE migration** — adopting `NoteRow` delivers the right-click AND retires each hand-rolled row; ship as the note-lists cluster's `/migration`, no double-work.
+
+## 7. The central design problem (from Decision 2) — refresh-after-mutate
+
+Because the menu now mutates files (Rename / Move / Delete) from lists that are *results of a computation*, each surface must update after the mutation so it never points at a moved/renamed/deleted note. The Architect must inventory, per surface: **how it re-runs** (Constellation already emits `note-created` (MIG-091) + rename-cascade + delete events — the lists can listen and re-run or splice the row), **its re-run cost** (some computed lists are IPC-heavy; a blanket re-run on every mutation could regress responsiveness — so the mechanism may be splice-the-row for cheap cases, event-driven re-run for others), and **the rename cascade interaction** (a rename rewrites wikilinks across the universe — the BUG-023 / Editor-Surface-Gate territory; the menu must route through the *same* gated `renameItem`/`moveItem`/`deleteWithSetting` handlers the File Explorer uses, never a new write path). This is why Decision 2 turns a UI feature into a genuine `/migration`, not a cosmetic pass.
 
 ---
 
