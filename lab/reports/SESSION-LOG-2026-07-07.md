@@ -102,3 +102,21 @@ svelte-check re-run **0 errors**. Release-binary build pending before the staged
 - **[LOW perf]** nested/overlapping roots walked twice + orphans double-counted. **Fix:** walk only top-level roots (skip a root nested under another; `lib_for` still attributes via ALL roots) + a `seen` dedup set + `lib_for` longest-root match (correct library attribution).
 
 **Step 2 (root cause) — DEFERRED to a failing trace.** The tail works uncontended; a *failing* trace (rename under contention / rename-then-quick-quit) is needed before designing the root fix (Reproduce-First — don't fix an unreproduced mechanism). Instrumentation stays in to catch it. Part A makes drift self-heal on boot regardless; Step 2 will reduce/eliminate the drift + the mid-session window.
+
+**Step 2 FAILING TRACE captured (2026-07-07, Boss provoke-the-drift: rename within 5 s of launch + quick close).** `Apple Tree Fruit`→`Apple Tree Fruit drift`: `scheduling` → `START` → **_[no "note_meta path UPDATE" line]_** → `reindex OK` → `END`. Live-DB confirm: note_meta has ONLY the dead old-path row; NO new-path row; disk has the renamed file. **Root cause (empirically confirmed): the detached best-effort tail ran while the search DB connection was `None` (still initializing — the Boss renamed during boot), so BOTH the path UPDATE (guarded by `if let Some(conn)`) AND the reindex silently no-op'd. `reindex_single_note` returns `Ok(())` on a `None` connection — a false-success that logged "reindex OK" while doing nothing.** General mechanism: the rename's note_meta update is a fire-and-forget task with NO durability + NO retry that silently no-ops on conn-`None` / contention / app-close. This is the trigger for the full safety audit.
+
+---
+
+## PIVOT — Constellation Safety & Integrity Audit (Eisa directive, 2026-07-07)
+
+**Directive:** *"Stop everything and put the app under inspection to find and fix those app-killing bugs… declare the app safe and secure."* Feature work HALTS; a systematic hunt for the whole **silent-app-killer** class begins. Charter: `docs/Constellation-Safety-Audit-CHARTER.md`.
+
+### State-of-standing (SO #5) — before the pivot
+
+- **(a) Verified-shipped + protected (committed on `main`):** MIG-096 §0/§1 (dormant right-click primitives, audited) · §2 Reviewer + OrgChart + Second-Screen (audited, Boss-tested PASS for Reviewer) — commits `6278d6e4`, `c02b3fbd`, `7deb0d82`, `a8c413fa`. MIG-097 relocate self-heal (`eab166d2`). MIG-098 §1 instrumentation (`22f79bf1`) + §3-A reconcile re-adopt, WA#4-audited (`501537fe`). Tree clean.
+- **(b) In-flight / paused:** MIG-096 §2 Boss tests for **OrgChart + Second-Screen NOT done** (paused mid-test). MIG-096 §3–§6 (Groups B/C/D + audit + PCS) **not started** (Plan approved, queued). MIG-098 §2 rename-durability **root fix not built** (root cause now confirmed; investigation workflow `wf_870c2b89` synthesizing prior-art fix). Rename-tail **instrumentation still in the binary** (remove when the fix lands).
+- **(c) Known-broken:** the rename→index durability bug (confirmed above) — MITIGATED by the boot reconcile self-heal (recovers drift every launch; 12 notes recovered 2026-07-07) but the source-of-truth write is still non-durable mid-session. This is remediation item #1 of the audit.
+- **(d) Pending / not-started:** the audit itself (P1→P5); MIG-096 remaining groups; MIG-098 §2 fix.
+- **(e) Doc drift:** Orientation NOT yet bumped for MIG-096/097/098 (mid-flight; bump when the audit closes or they land). Pending-Jobs not updated for the pivot.
+
+Resume path after the audit: MIG-098 §2 fix (item #1) → remaining audit remediation → MIG-096 §2 tests (OrgChart/Second-Screen) → §3–§6.

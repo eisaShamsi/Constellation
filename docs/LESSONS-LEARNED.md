@@ -656,7 +656,25 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-06-05 (LL-032 added + strengthened — MIG-070 §C Phase 6 reintroduced the
+## LL-033: A Fire-and-Forget Background Task Is NEVER a Durability Mechanism for a Source-of-Truth Write
+
+**Symptom (2026-07-07, MIG-098 — an app-killer hidden ~9 days):** renaming a note wrote the `.md` file correctly but sometimes left the search index (`note_meta`) pointing at the OLD, now-dead path — the note drifted OUT of the index (Reviewer showed the old name; opening it hit an empty page), while the file on disk was correct. ~12 notes silently drifted over ~9 days on a 2 GB / 7,711-note universe. It surfaced **only by accident** during unrelated right-click tests — no error, no crash, nothing a test caught.
+
+**Root cause (Reproduce-First, confirmed against the live DB + an instrumented trace):** the 2026-07-03 §B2-4 change moved `rename_item_db_tail` (the note_meta path/name update + reindex) to a **detached `tauri::async_runtime::spawn_blocking` fire-and-forget task** — to cure a real freeze (the awaited IPC parked on the unbounded SearchState writer mutex). But a fire-and-forget task has **no durability and no retry**, and it **silently no-ops** in three states: (1) the DB connection is `None` (a rename during boot, before `ensure_search_db_ready` sets it — the `if let Some(conn)` guard is skipped); (2) the writer lock is contended (the task parks); (3) the app closes before the task runs. Compounding it, `reindex_single_note` **returns `Ok(())` when the connection is `None`** — a *false-success* that even logged "reindex OK" while doing nothing. Net: one missed task = permanent, invisible index drift.
+
+**Rule:** **Never make a fire-and-forget background task the mechanism of record for a source-of-truth write.** If a write must be detached for responsiveness (a valid goal — the §B2-4 freeze was real), durability MUST come from EITHER (a) a **persisted intent that is reliably replayed** (the transactional-outbox / WAL / translog pattern — record the intent atomically, process async, replay on restart), OR (b) the **File-Over-App reconcile**: the `.md` on disk IS the durable intent, and a reliable disk↔index reconcile (MIG-097/098 `reconcile.rs`) is the replay. A detached task is an *optimization on top of* one of those, never a substitute. Corollary: **a function must never return success for work it skipped** — `reindex_single_note`-on-`None` returning `Ok(())` turned a detectable failure into a silent one; a skip is an `Err` (or an explicit, logged no-op), never `Ok`.
+
+**The class (why this triggered the Safety Audit):** this is the archetype of an **app-killer** — a silent, source-of-truth-corrupting failure that surfaces no error and is found only by luck. The whole class (fire-and-forget writes, `let _ =` on fallible DB/FS writes, `Ok()`/resolved-promise on skipped work, `.catch(()=>{})` on writes) is the primary hunt target of the Constellation Safety & Integrity Audit (`docs/Constellation-Safety-Audit-CHARTER.md`).
+
+---
+
+*Last updated: 2026-07-07 (LL-033 added — MIG-098: the rename→index update was a detached
+fire-and-forget task with no durability/retry that silently no-op'd on conn-`None`/contention/
+app-close, drifting notes out of the index invisibly for ~9 days; `reindex_single_note` returned
+`Ok(())` on a `None` conn — a false-success. A fire-and-forget task is never a durability mechanism
+for a source-of-truth write; use persisted-intent replay or a File-Over-App reconcile, and never
+return success for skipped work. Triggered the Safety & Integrity Audit).*
+*Earlier: 2026-06-05 (LL-032 added + strengthened — MIG-070 §C Phase 6 reintroduced the
 documented Style-Setter freeze (orientation v2.49 / LL-014): first the `unifiedStyleList`/heavy-card
 gallery, then — same day, after the fix — a plain `<select>` over `BUILTIN_THEMES` re-froze it. The
 Setter render path must touch NO themes at all; built-in/custom themes live only in Settings).*
