@@ -166,24 +166,30 @@
 		{:else}
 			<div class="tp-section">
 				{#if noteOwnFlags?.orphan}
-					<div class="tp-item tp-self">
+					<div class="tp-self-item">
 						<span class="tp-dot" style="background:#f59e0b"></span>
-						<span class="tp-name">{$t('tensionPanel.orphans') || 'Orphan Notes'}</span>
-						<span class="tp-detail">{($t('tensionPanel.detail.orphan') || '{0} words, no inbound links').replace('{0}', String(noteOwnFlags?.words ?? 0))}</span>
+						<div class="tp-self-body">
+							<div class="tp-self-label">{$t('tensionPanel.orphans') || 'Orphan'}</div>
+							<div class="tp-self-detail">{($t('tensionPanel.detail.orphan') || '{0} words, no inbound links').replace('{0}', String(noteOwnFlags?.words ?? 0))}</div>
+						</div>
 					</div>
 				{/if}
 				{#if noteOwnFlags?.fragile}
-					<div class="tp-item tp-self">
+					<div class="tp-self-item">
 						<span class="tp-dot" style="background:#ef4444"></span>
-						<span class="tp-name">{$t('tensionPanel.singlePoints') || 'Single Points of Failure'}</span>
-						<span class="tp-detail">{($t('tensionPanel.detail.singlePoint') || 'referenced by {0} notes, only {1} source').replace('{0}', String(noteOwnFlags?.incoming ?? 0)).replace('{1}', String(noteOwnFlags?.derives ?? 0))}</span>
+						<div class="tp-self-body">
+							<div class="tp-self-label">{$t('tensionPanel.singlePoints') || 'Single Point of Failure'}</div>
+							<div class="tp-self-detail">{($t('tensionPanel.detail.singlePoint') || 'referenced by {0} notes, only {1} source').replace('{0}', String(noteOwnFlags?.incoming ?? 0)).replace('{1}', String(noteOwnFlags?.derives ?? 0))}</div>
+						</div>
 					</div>
 				{/if}
 				{#if noteOwnFlags?.contested}
-					<div class="tp-item tp-self">
+					<div class="tp-self-item">
 						<span class="tp-dot" style="background:#ef4444"></span>
-						<span class="tp-name">{$t('tensionPanel.contradictions') || 'Contradictions'}</span>
-						<span class="tp-detail" dir="auto">{(noteOwnFlags?.contestedWith ?? []).join(', ')}</span>
+						<div class="tp-self-body">
+							<div class="tp-self-label">{$t('tensionPanel.contradictions') || 'Contradictions'}</div>
+							<div class="tp-self-detail" dir="auto">{(noteOwnFlags?.contestedWith ?? []).join(', ')}</div>
+						</div>
 					</div>
 				{/if}
 			</div>
@@ -371,4 +377,11 @@
 	.tp-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
 	.tp-tag { color: var(--interactive-accent); font-weight: 500; white-space: nowrap; }
 	.tp-detail { font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* MIG-095 — the note's OWN health verdict shows in FULL (a verdict label + explanation,
+	   not a note name), so it wraps instead of truncating like the .tp-name/.tp-detail rows. */
+	.tp-self-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; }
+	.tp-self-item .tp-dot { margin-top: 5px; flex-shrink: 0; }
+	.tp-self-body { flex: 1; min-width: 0; }
+	.tp-self-label { font-weight: 600; font-size: calc(0.82rem * var(--rs-scale, 1)); color: var(--text-normal); }
+	.tp-self-detail { font-size: calc(0.75rem * var(--rs-scale, 1)); color: var(--text-muted); line-height: 1.4; overflow-wrap: anywhere; }
 </style>

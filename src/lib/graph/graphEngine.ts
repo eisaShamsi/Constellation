@@ -127,6 +127,9 @@ export class GraphEngine {
 
 	// Data (plain arrays — Law 1)
 	private nodes: EngineNode[] = [];
+	// MIG-094 — the WHOLE graph's node count (not the filtered/rendered set), so the
+	// count-aware size damping is stable when "hide orphans" shrinks the visible set.
+	private rawNodeCount = 0;
 	private colorMap: Record<string, string> = {};
 	private links: EngineLink[] = []; // explicit links
 	private semanticLinks: EngineLink[] = []; // AI-detected links (Phase 2)
@@ -367,12 +370,16 @@ export class GraphEngine {
 		// now returns ALL cUniverse nodes (e.g. 8 751 on Eisa Universe), and
 		// §K finally delivers real `stratum` to the strata-sizing branch — so
 		// foundational nodes render large and crowd the federated view.
-		// Shrink node radius as the rendered set grows past ~1500. Single-
+		// Shrink node radius as the TOTAL graph grows past ~1500. Single-
 		// universe graphs (≤1500 nodes; Eisa Cognitive Knowledge ≈ 987) are
 		// UNCHANGED — countDamp = 1. Floor 0.10; exponent 1.2 (PJ-10 r3, ~0.12x at 8751 nodes).
-		const countDamp = filteredNodes.length <= 1500
+		// MIG-094 — key off rawNodes (the whole graph), NOT filteredNodes: toggling
+		// "hide orphans" must never resize the surviving nodes (a shrinking rendered set
+		// would otherwise un-damp them and they'd balloon).
+		this.rawNodeCount = rawNodes.length;
+		const countDamp = rawNodes.length <= 1500
 			? 1
-			: Math.max(0.10, Math.pow(1500 / filteredNodes.length, 1.2));
+			: Math.max(0.10, Math.pow(1500 / rawNodes.length, 1.2));
 		this.nodes = filteredNodes.map((n, i) => {
 			nodeIdMap.set(n.id, i);
 			const hexStr = this.config.colorByLibrary ? (colorMap[n.libraryName] || '#a78bfa') : '#a78bfa';
@@ -525,10 +532,11 @@ export class GraphEngine {
 		// Update node sizes if nodeSize changed
 		if ('nodeSize' in partial) {
 			const sizeMul = this.config.nodeSize / 4;
-			// PJ-10: same count-aware damping as the build path.
-			const countDamp = this.nodes.length <= 1500
+			// PJ-10: same count-aware damping as the build path — MIG-094: key off the
+			// WHOLE graph (rawNodeCount), not the filtered/rendered set, so sizes are stable.
+			const countDamp = this.rawNodeCount <= 1500
 				? 1
-				: Math.max(0.10, Math.pow(1500 / this.nodes.length, 1.2));
+				: Math.max(0.10, Math.pow(1500 / this.rawNodeCount, 1.2));
 			for (const n of this.nodes) {
 				n.r = Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul * countDamp);
 			}

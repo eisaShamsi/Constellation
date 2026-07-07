@@ -391,6 +391,18 @@ only the library-wide monitor (contradiction-pairs, tag-cluster gaps that need c
   or a healthy state), not the "add more links" empty-state. Active-mode note view (Boss-validated in
   Stage 1) untouched. `svelte-check` 0 errors.
 
+### Boss Stage-2 findings (2026-07-07) — Health tab / Search / Sky all PASS; two polish bugs fixed
+- **Test A (Health tab) polish:** the note-health verdict text truncated ("Single Points of Fail…",
+  "referenced by 5 notes, only 0 sou…") because MIG-095's block reused `.tp-name`/`.tp-detail` (which
+  ellipsis-truncate at 140px — they're built for note NAMES). **Fixed:** a wrapping `.tp-self-item`
+  layout (label + explanation show in full, `overflow-wrap: anywhere`).
+- **Test C (Sky View) regression:** unchecking "Show orphan notes" made the remaining nodes EXPLODE in
+  size. **Root cause (pre-existing, exposed by §6):** `countDamp` (the size damping for large graphs)
+  keyed off `filteredNodes.length` — hiding orphans shrinks the rendered set → less damping → nodes
+  balloon. **Fixed:** `countDamp` now keys off the WHOLE graph (`rawNodes.length` / a stored
+  `rawNodeCount`) in BOTH the build path and the nodeSize-change handler, so a filter toggle never
+  resizes surviving nodes. `svelte-check` 0 errors.
+
 ### MIG-094 — CODE COMPLETE (§1–§7) + audited. First PJ-069 answer-duplication cluster consolidated.
 Shared `note_meta`-backed predicates; five drifted orphan impls + four fragile copies → one home per
 named concept; every read-time re-walk in the cluster (Search temp-table, Tension in-memory graph scan,
