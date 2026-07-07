@@ -338,7 +338,15 @@ pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<
     }
 
     let depth = max_depth.unwrap_or(2);
-    Ok(read_dir_recursive(library_path, 0, depth))
+    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the recursive
+    // disk walk that (per the trace) reads every note's WHOLE file for its title.
+    // diag_log is release-safe. Removed once the fix lands.
+    let __t = std::time::Instant::now();
+    let tree = read_dir_recursive(library_path, 0, depth);
+    if let Ok(p) = crate::search::db_path(&app) {
+        crate::search::diag_log(&p, &format!("[perf] read_library_tree took {} ms (depth={}, top-level={})", __t.elapsed().as_millis(), depth, tree.len()));
+    }
+    Ok(tree)
 }
 
 /// Read the content of a file inside a library.
@@ -5001,7 +5009,13 @@ pub fn update_links_on_rename(
         failed: Vec::new(),
         failed_truncated: 0,
     };
+    // Perf probe (create/rename latency diagnosis, 2026-07-07) — time the cascade
+    // walk that (per the trace) reads every .md file to regex-match [[oldName]].
+    let __t = std::time::Instant::now();
     update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
+    if let Ok(p) = crate::search::db_path(&app) {
+        crate::search::diag_log(&p, &format!("[perf] update_links_on_rename walk took {} ms ({} rewritten)", __t.elapsed().as_millis(), result.rewritten.len()));
+    }
 
     // §4 — reindex each rewritten source so `note_meta.outgoing_links_json`
     // and `note_links.target_name` reflect the new wikilink targets. Without
