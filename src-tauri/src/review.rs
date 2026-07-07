@@ -338,19 +338,21 @@ pub(crate) fn query_due_notes_indexed(
     }
 
     // ── Lens: Orphan (MIG-084 §C) — a note with real content that NOTHING links to
-    // yet (incoming_count == 0 AND word_count > 20 — the inspector360 `is_orphan`
-    // thresholds). An orphan is an ALARM ("connect me"), NEVER disposable (Eisa
-    // 2026-06-23): surfaced regardless of review schedule, oldest-first (days_overdue
-    // = age). A note dismissed from review is excluded (LEFT JOIN). All from write-time
-    // note_meta columns — no FS walk (Rule 8). ──
+    // yet: the shared UNREFERENCED predicate (crate::connectivity, MIG-094) AND this
+    // surface's own substance floor (word_count > 20 — a per-surface lens, not baked
+    // into the shared definition). An orphan is an ALARM ("connect me"), NEVER
+    // disposable (Eisa 2026-06-23): surfaced regardless of review schedule, oldest-first
+    // (days_overdue = age). A note dismissed from review is excluded (LEFT JOIN). All
+    // from write-time note_meta columns — no FS walk (Rule 8). ──
     {
         let sql = format!(
             "SELECT nm.path, nm.name, nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified, rs.last_reviewed
              FROM note_meta nm
              LEFT JOIN review_schedule rs ON rs.path = nm.path
-             WHERE nm.incoming_count = 0 AND nm.word_count > 20
+             WHERE {unreferenced} AND nm.word_count > 20
                AND (rs.reason IS NULL OR rs.reason != 'dismissed')
                AND {scope}",
+            unreferenced = crate::connectivity::unreferenced_where("nm"),
             scope = scope_clause("?1", "nm.path"),
         );
         let mut stmt = conn.prepare(&sql).map_err(|e| format!("orphan lens prepare: {}", e))?;
@@ -374,20 +376,20 @@ pub(crate) fn query_due_notes_indexed(
     }
 
     // ── Lens: Fragile / single-point-of-failure (MIG-084 §C) — many notes depend on
-    // this one but it rests on ≤1 `derives-from` support (inspector360 SPOF:
-    // incoming_count >= 5 AND derives_count <= 1). "Shore me up." Most-depended-on
-    // first (days_overdue = incoming_count). The derives count is a subquery over the
-    // SMALL inbound>=5 candidate set only, so it stays cheap. Dismissed-excluded. ──
+    // this one but it rests on ≤1 `derives-from` support: the shared FRAGILE predicate
+    // (crate::connectivity, MIG-094), reading the derives support from the write-time
+    // outgoing_link_types_json map instead of a per-row note_links subquery (proven
+    // occurrence-count-equivalent by the §2 parity test). "Shore me up." Most-depended-on
+    // first (days_overdue = incoming_count). Dismissed-excluded. All note_meta (Rule 8). ──
     {
         let sql = format!(
             "SELECT nm.path, nm.name, nm.incoming_count, nm.outgoing_count, nm.created_at, nm.modified, rs.last_reviewed
              FROM note_meta nm
              LEFT JOIN review_schedule rs ON rs.path = nm.path
-             WHERE nm.incoming_count >= 5
-               AND (SELECT COUNT(*) FROM note_links jl
-                    WHERE jl.source_path = nm.path AND jl.link_type = 'derives-from' AND jl.status = 'active') <= 1
+             WHERE {fragile}
                AND (rs.reason IS NULL OR rs.reason != 'dismissed')
                AND {scope}",
+            fragile = crate::connectivity::fragile_where("nm"),
             scope = scope_clause("?1", "nm.path"),
         );
         let mut stmt = conn.prepare(&sql).map_err(|e| format!("fragile lens prepare: {}", e))?;
@@ -533,27 +535,26 @@ pub fn get_note_review_status(
                 // unscheduled orphan.
                 let today_days = date_to_days(&today_str());
                 let now_secs = day_midnight_secs(today_days);
-                let (priority_override, word_count, incoming_count, outgoing_count, maturity) = conn
+                let (priority_override, word_count, incoming_count, outgoing_count, maturity, oltj) = conn
                     .query_row(
-                        "SELECT review_priority, word_count, incoming_count, outgoing_count, created_at, modified FROM note_meta WHERE path = ?1",
+                        "SELECT review_priority, word_count, incoming_count, outgoing_count, created_at, modified, outgoing_link_types_json FROM note_meta WHERE path = ?1",
                         rusqlite::params![note_path],
                         |r| Ok((
                             r.get::<_, Option<i64>>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?,
                             maturity_label(r.get::<_, i64>(2)?, r.get::<_, Option<i64>>(4)?, r.get::<_, i64>(5)?, now_secs),
+                            r.get::<_, String>(6)?,
                         )),
                     )
-                    .unwrap_or((None, 0, 0, 0, "seed".to_string()));
-                // §F.2 — the connection-health lens flags (same thresholds as the Reviewer's
-                // orphan/fragile lenses) so alarm_reason matches the queue exactly.
-                let derives_count: i64 = conn
-                    .query_row(
-                        "SELECT COUNT(*) FROM note_links WHERE source_path = ?1 AND link_type = 'derives-from' AND status = 'active'",
-                        rusqlite::params![note_path],
-                        |r| r.get(0),
-                    )
-                    .unwrap_or(0);
-                let is_orphan = incoming_count == 0 && word_count > 20;
-                let is_fragile = incoming_count >= 5 && derives_count <= 1;
+                    .unwrap_or((None, 0, 0, 0, "seed".to_string(), "{}".to_string()));
+                // §F.2 — the connection-health lens flags via the shared connectivity
+                // predicates (MIG-094) so alarm_reason matches the queue exactly. The
+                // derives support is read from the write-time outgoing_link_types_json map
+                // (same value as the old note_links COUNT(*) subquery — §2 parity test).
+                let is_orphan = crate::connectivity::is_unreferenced(incoming_count) && word_count > 20;
+                let is_fragile = crate::connectivity::is_fragile(
+                    incoming_count,
+                    crate::connectivity::derives_from_support(&oltj),
+                );
                 let row: Option<(String, i64, Option<String>, i64)> = conn
                     .query_row(
                         "SELECT reason, due_days, last_reviewed, is_checkpoint FROM review_schedule WHERE path = ?1",

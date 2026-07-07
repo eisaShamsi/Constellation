@@ -8,6 +8,7 @@
  * one; the pinned test asserts the filter is a pure array intersection).
  */
 import { splitStage } from '$lib/libraries/store';
+import { isIsolated } from '$lib/connectivity';
 
 export interface ChipFacts {
 	stage: string | null;
@@ -43,8 +44,9 @@ export function isForming(r: ChipFacts): boolean {
 	return lifecycle === 'spark' || lifecycle === 'birth' || lifecycle === 'growth';
 }
 
+/** The Collections "Unlinked" chip = the shared ISOLATED predicate (MIG-094). */
 export function isUnlinked(r: ChipFacts): boolean {
-	return r.incoming_count === 0 && r.outgoing_count === 0;
+	return isIsolated(r.incoming_count, r.outgoing_count);
 }
 
 export function anyChipOn(c: ChipToggles): boolean {

@@ -293,6 +293,15 @@ user-facing references). No handover/close-out (Boss instruction).
   proves the JSON-map derives count == the legacy `note_links COUNT(*)` subquery on a
   trigger-faithful fixture (the fragile `<=1` boundary is preserved). `cargo test connectivity`
   3/3; `cargo check` green. No call site switched yet.
-- **NEXT (cascade continues):** §1 harness (folds into §4's before/after) → §3 byte-parity
-  re-points (review.rs ×3 + collectionChips + the frontend predicate module) → **§4 first Boss
-  test** (360 + Tension verdict change) → §5 Search → §6 Sky → §7 close.
+- **§3 SHIPPED (byte-parity re-points — no verdict change).** *(Cascade continues past midnight
+  into 2026-07-07; kept in this log for the MIG-094 arc's coherence.)*
+  - `review.rs` ×3: orphan lens → `unreferenced_where("nm")` + own `word_count>20`; fragile lens
+    → `fragile_where("nm")` (JSON read replaces the per-row `note_links` subquery); note-tab badge
+    → `is_unreferenced`/`is_fragile` reading `outgoing_link_types_json` (drops the separate
+    derives subquery). All byte-parity (identical SQL + the §2 parity gate).
+  - Frontend: new `src/lib/connectivity.ts` (mirror of the Rust module, pure); `collectionChips.ts`
+    `isUnlinked` delegates to the shared `isIsolated`.
+  - **Verify:** `cargo check` + `npm run check` green (0 errors); the MIG-090 chips + MIG-092
+    collections pinned tests **22/22 pass** (behavior preserved).
+- **NEXT: §4 — the first Boss test** (360 + Tension → canonical column; the verdict-alignment
+  fixes become visible) with the §1 parity harness for the before/after → §5 Search → §6 Sky → §7 close.
