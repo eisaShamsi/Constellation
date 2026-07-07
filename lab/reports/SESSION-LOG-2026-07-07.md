@@ -165,3 +165,17 @@ Plan approved (all 4 defaults). Architect: `docs/MIG-099-Create-Latency-Index-Re
 - **Where it lives now:** `createNoteWithTemplate` (`+layout.svelte:4042`) and `handleRenameComplete` (`+layout.svelte:6040`) call `resolveWikilinkCrossLibrary(lib.path, name)` (`store.ts:2692` → `resolve_wikilink_cross_library`, `libraries.rs:1760`) — the FULL resolver (stem stage-1 + title/alias stage-2). Introduced by MIG-076 §E1b.
 - **Where the replacement lives:** the SAME two call sites (same place, no relocation). A new purpose-built command `resolve_title_collision` (index-only for own libs: `name_lower`+`alias_lower`, NO stem `read_dir`; bounded title/alias walk for federated) + JS wrapper `resolveTitleCollision`. Implemented as the shared resolution impl with a `skip_stem` flag (ResolveCtx) — the 6 wikilink-resolution callers keep `resolveWikilinkCrossLibrary` (stem stage intact) unchanged.
 - **Cut / kept:** the create/rename collision check stops paying the stem `read_dir`; the 6 read-path wikilink callers are untouched. **Behavior nuance (flagged to Boss):** the collision warning now keys on TITLE/alias match (its actual purpose), not on a bare filename-stem match when titles differ (that case auto-suffixes the filename as before). §3's synchronous create-reindex is load-bearing for §6 (index-only check requires the just-created note be indexed immediately — it is).
+
+### MIG-099 COMPLETE — Boss-validated, closed
+
+§1–§3, §5, §6 shipped; §4 (federated fast path via attached cuN schemas) deferred by Boss default. Commits: 5db3e162 (§1) · d4b05410 (§2+§3) · c06876d5 (§6) · eb218d7a (§5). Boss speed test: create duplicate-name check 13,575 ms → §2 324 ms → §6 22 ms (~620×); `matched=true` on a real duplicate (dialog fires). **Boss ruling: KEEP the §6 index-trust** (bounded, no data loss; the index-staleness source is the standing audit's fix at the source).
+
+- **§5 alias-shape parity — PASS.** `extract_aliases` (write → `note_aliases`) covers inline-array / scalar / block `- item`; the only divergence is `has_alias` over-matching non-alias `- item` lines (e.g. a `tags:` list item), which the index correctly excludes — index is stricter/more-correct, no fix.
+- **§6 focused adversarial review** (1 agent, 6 hunt categories): 5 clean; 1 bounded finding (index-trust widening — the on-disk-but-unindexed same-title case) → Boss-ruled KEEP.
+- **Perf probes removed (§5)** — the 3 `diag_log [perf]` probes; the resolution one was logging on every wikilink resolve (release-log spam).
+- **Help/manual:** no change — MIG-099 is a pure performance fix (no new/changed user-facing workflow or string; "creation is now instant" is a behavior improvement only). SO#2 judgment logged.
+- **Orientation:** bumped to **v3.31** (SO#6, this commit). MoCh block written.
+- **Latent app-killer fixed in passing (WA#6):** `move_to_trash` stale-row index-drift (now `reindex_delete_note`).
+- **Pre-existing test-fixture fix (Boss-requested):** 10 `review::tests` green (`outgoing_link_types_json` added to the stale fixture, `a4b826c9`).
+
+**Cycle boundary:** MIG-099 close = the per-cycle safety-inspection boundary — whole-app sweep ran (`wf_a7d5e452-16d`, 25 confirmed, Charter-appended). **NEXT:** resume Safety Audit remediation → **G4** (frontmatter parser), then G2 → G3 → G5 → G7.
