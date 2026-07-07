@@ -356,6 +356,7 @@ pub fn run() {
             libraries::list_universe_folders,
             libraries::resolve_wikilink,
             libraries::resolve_wikilink_cross_library,
+            libraries::resolve_title_collision,
             libraries::read_library_appearance,
             libraries::scan_library_links,
             libraries::reindex_library,

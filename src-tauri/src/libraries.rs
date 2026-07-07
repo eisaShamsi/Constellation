@@ -1792,6 +1792,53 @@ pub struct ResolvedLink {
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+/// MIG-099 — shared driver for both the wikilink resolver (`skip_stem=false`)
+/// and the title-collision check (`skip_stem=true`, §6). Builds the OWN-library
+/// authority set, runs the impl with the read connection (walk fallback if the
+/// DB isn't ready), and logs the perf line.
+///
+/// OWN vs FEDERATED (adversarial C1): `load_libraries` returns ONLY the active
+/// universe's own registrations (NON-recursive) — the exact set whose rows are
+/// authoritatively maintained in this universe's note_meta. It survives the
+/// flatten+dedup in resolve_libraries_recursive and — unlike a path-under-root
+/// heuristic — classifies external own libraries (paths outside the universe
+/// root) as OWN and cUniverses nested under the root as FEDERATED.
+fn run_cross_library_resolution(
+    app: &tauri::AppHandle,
+    libraries: &[(String, String, String)],
+    current_library_path: &str,
+    target: &str,
+    skip_stem: bool,
+    label: &str,
+) -> Option<ResolvedLink> {
+    use tauri::Manager;
+    let __t = std::time::Instant::now();
+    let own_paths: std::collections::HashSet<String> = load_libraries(app)
+        .iter()
+        .map(|l| norm_lib_path(&l.path))
+        .collect();
+
+    let state = app.state::<crate::search::SearchState>();
+    // Reader connection available → OWN libraries resolve via indexed seek. If the
+    // DB isn't ready (pre-init / mid universe-switch) with_read_conn errors →
+    // pure filesystem walk for everything (correct, just not accelerated).
+    let r: Option<ResolvedLink> = match crate::search::with_read_conn(state.inner(), |conn| {
+        let ctx = ResolveCtx { own_paths: &own_paths, conn: Some(conn), skip_stem };
+        Ok(resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx))
+    }) {
+        Ok(v) => v,
+        Err(_) => {
+            let ctx = ResolveCtx { own_paths: &own_paths, conn: None, skip_stem };
+            resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx)
+        }
+    };
+
+    if let Ok(p) = crate::search::db_path(app) {
+        crate::search::diag_log(&p, &format!("[perf] {} took {} ms (matched={})", label, __t.elapsed().as_millis(), r.is_some()));
+    }
+    r
+}
+
 #[tauri::command(async)]
 pub fn resolve_wikilink_cross_library(
     app: tauri::AppHandle,
@@ -1799,45 +1846,25 @@ pub fn resolve_wikilink_cross_library(
     current_library_path: String,
     target: String,
 ) -> Result<Option<ResolvedLink>, String> {
-    use tauri::Manager;
-    // Perf probe (MIG-099, 2026-07-07) — kept through the fix so the Boss re-test
-    // can confirm the 13.6 s → sub-10 ms drop. `app` is Tauri-injected; the JS
-    // invoke contract is unchanged. diag_log is release-safe. Removed in §5.
-    let __t = std::time::Instant::now();
+    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, false, "resolve_wikilink_cross_library"))
+}
 
-    // MIG-099 §2 — OWN vs FEDERATED authority. `load_libraries` returns ONLY the
-    // active universe's own registrations (NON-recursive) — the exact set whose
-    // rows are authoritatively maintained in this universe's note_meta. That is
-    // the correct own/federated boundary (adversarial C1): it survives the
-    // flatten+dedup in resolve_libraries_recursive, and — unlike a path-under-root
-    // heuristic — correctly classifies external own libraries (paths outside the
-    // universe root) as OWN and cUniverses nested under the root as FEDERATED.
-    let own_paths: std::collections::HashSet<String> = load_libraries(&app)
-        .iter()
-        .map(|l| norm_lib_path(&l.path))
-        .collect();
-
-    let state = app.state::<crate::search::SearchState>();
-    // Run resolution with the READ-ONLY reader connection available so OWN
-    // libraries resolve title/alias via an indexed seek. If the DB isn't ready
-    // (pre-init / mid universe-switch) with_read_conn errors → fall back to the
-    // pure filesystem walk for everything (correct, just not accelerated — the
-    // exact pre-MIG-099 behavior).
-    let r: Option<ResolvedLink> = match crate::search::with_read_conn(state.inner(), |conn| {
-        let ctx = ResolveCtx { own_paths: &own_paths, conn: Some(conn) };
-        Ok(resolve_wikilink_cross_library_impl(&libraries, &current_library_path, &target, &ctx))
-    }) {
-        Ok(v) => v,
-        Err(_) => {
-            let ctx = ResolveCtx { own_paths: &own_paths, conn: None };
-            resolve_wikilink_cross_library_impl(&libraries, &current_library_path, &target, &ctx)
-        }
-    };
-
-    if let Ok(p) = crate::search::db_path(&app) {
-        crate::search::diag_log(&p, &format!("[perf] resolve_wikilink_cross_library took {} ms (matched={})", __t.elapsed().as_millis(), r.is_some()));
-    }
-    Ok(r)
+/// MIG-099 §6 — the create/rename TITLE-collision check (MIG-076 §E1b). Answers
+/// "does a note with this TITLE already exist anywhere in the one-universe?"
+/// INDEX-ONLY for own libraries (name_lower + alias_lower, NO stem read_dir →
+/// sub-10 ms vs the full resolver's 324 ms filename scan); bounded title/alias
+/// walk for federated libraries. Returns the same ResolvedLink shape (path +
+/// library) so the collision dialog + Overwrite (moveToTrash) work unchanged.
+/// Depends on MIG-099 §3's synchronous create-reindex: an index-only check is
+/// only authoritative if the just-created note is already indexed (it is).
+#[tauri::command(async)]
+pub fn resolve_title_collision(
+    app: tauri::AppHandle,
+    libraries: Vec<(String, String, String)>, // (library_id, library_name, library_path)
+    current_library_path: String,
+    target: String,
+) -> Result<Option<ResolvedLink>, String> {
+    Ok(run_cross_library_resolution(&app, &libraries, &current_library_path, &target, true, "resolve_title_collision"))
 }
 
 /// MIG-099 §2 — resolution context threaded through the impl: the set of OWN
@@ -1846,6 +1873,13 @@ pub fn resolve_wikilink_cross_library(
 struct ResolveCtx<'a> {
     own_paths: &'a std::collections::HashSet<String>,
     conn: Option<&'a rusqlite::Connection>,
+    // MIG-099 §6 — when true, SKIP the stage-1 filename-stem read_dir and resolve
+    // by TITLE/alias only. Used by the create/rename title-collision check
+    // (resolve_title_collision): it answers "does a note with this TITLE exist?"
+    // (MIG-076 §E1b title-ambiguity), which name_lower + alias_lower answer as a
+    // pure index seek on own libs — no directory walk (324 ms → sub-10 ms). The
+    // wikilink-RESOLUTION callers keep skip_stem=false (stem stage intact).
+    skip_stem: bool,
 }
 
 /// Resolve `raw_target` within a single library, preserving the two-stage
@@ -1868,10 +1902,15 @@ fn resolve_in_library(
 ) {
     let target_lower = raw_target.to_lowercase();
 
-    // Stage 1 — filename stem (cheap, no reads). Unchanged.
-    find_note_by_name(library_dir, &target_lower, matches, 0);
-    if !matches.is_empty() {
-        return;
+    // Stage 1 — filename stem (cheap, no reads). Unchanged for wikilink
+    // resolution. MIG-099 §6 — SKIPPED for the title-collision check, which
+    // resolves by title/alias only (a duplicate TITLE, not a filename, is what
+    // MIG-076 §E1b guards); this is what removes the residual read_dir cost.
+    if !ctx.skip_stem {
+        find_note_by_name(library_dir, &target_lower, matches, 0);
+        if !matches.is_empty() {
+            return;
+        }
     }
 
     // Stage 2 — title/alias.

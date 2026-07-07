@@ -32,6 +32,7 @@
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
+		resolveTitleCollision,
 		buildDefaultFrontmatter,
 		linkTraversalBumps, clearLinkTraversalBumps,
 		skyNodePathSet,
@@ -4039,7 +4040,9 @@
 		// `force` skips it (the Overwrite re-attempt, after the existing note has
 		// been moved to .trash).
 		if (!force) {
-			const existing = await resolveWikilinkCrossLibrary(lib.path, name);
+			// MIG-099 §6 — purpose-built index-only TITLE-collision check (no filename
+			// read_dir): "does a note with this title already exist anywhere?" → sub-10 ms.
+			const existing = await resolveTitleCollision(lib.path, name);
 			if (existing) {
 				collisionDialog = {
 					existingName: name,
@@ -6037,7 +6040,8 @@
 		// resolving back to the note being renamed — e.g. an alias).
 		if (!force && !isDir) {
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
-			const existing = await resolveWikilinkCrossLibrary(lib?.path ?? parentDir, newName);
+			// MIG-099 §6 — index-only TITLE-collision check (self-match excluded below).
+			const existing = await resolveTitleCollision(lib?.path ?? parentDir, newName);
 			if (existing && normPathLC(existing.path) !== normPathLC(oldPath)) {
 				collisionDialog = {
 					existingName: newName,

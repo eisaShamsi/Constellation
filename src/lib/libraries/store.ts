@@ -2694,6 +2694,17 @@ export async function resolveWikilinkCrossLibrary(currentLibraryPath: string, ta
 	return await invoke('resolve_wikilink_cross_library', { libraries: libraryList, currentLibraryPath, target });
 }
 
+// MIG-099 §6 — purpose-built create/rename TITLE-collision check (MIG-076 §E1b).
+// Index-only for own libraries (no filename read_dir) → sub-10 ms vs the full
+// resolver. Same ResolvedLink shape so the collision dialog + Overwrite are
+// unchanged. Use ONLY for the "does this title already exist?" guard — to
+// open/navigate a [[wikilink]] use resolveWikilinkCrossLibrary (that keeps the
+// filename-stem stage link resolution needs).
+export async function resolveTitleCollision(currentLibraryPath: string, target: string): Promise<ResolvedLink | null> {
+	const libraryList = get(libraries).map(v => [v.id, v.name, v.path] as [string, string, string]);
+	return await invoke('resolve_title_collision', { libraries: libraryList, currentLibraryPath, target });
+}
+
 export async function getNoteHeadings(filePath: string): Promise<string[]> {
 	return await invoke('get_note_headings', { filePath });
 }
