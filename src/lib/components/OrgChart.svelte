@@ -18,6 +18,7 @@
 		onNoteClick,
 		onClose,
 		onNodeMenuAction,
+		onNoteContext,
 		refreshKey = 0,
 	}: {
 		libraryColorMap?: Record<string, string>;
@@ -31,6 +32,10 @@
 		// Expand/Collapse (local tree state); every other op is performed by the
 		// host (+layout) which owns the operations. One callback, host dispatches.
 		onNodeMenuAction?: (action: string, target: ContextTarget) => void;
+		// MIG-096 §2 — when set, NOTE nodes route to the host's shared note menu
+		// (the full set incl. Star + Add-to-collection — the dedup) instead of the
+		// internal note bag. Folder/library nodes keep the internal menu.
+		onNoteContext?: (path: string, name: string, e: MouseEvent) => void;
 		// MIG-077 A3-R3 follow-up — bumped by the host when the universe tree
 		// changed (a move/delete/rename/create, or on re-open after such). Triggers
 		// a reload so the chart never shows a stale node (acting on a stale node
@@ -733,6 +738,13 @@
 
 	function handleContextMenu(e: MouseEvent, node: MapNode) {
 		e.preventDefault();
+		// MIG-096 §2 — a NOTE node routes to the host's shared note menu (full set,
+		// incl. Star + Add-to-collection). Folder/library nodes keep the internal
+		// create/expand menu (management ops the shared note menu doesn't carry).
+		if (node.node_type === 'note' && onNoteContext) {
+			onNoteContext(node.path, node.name, e);
+			return;
+		}
 		ctxMenu = { x: e.clientX, y: e.clientY, node };
 	}
 

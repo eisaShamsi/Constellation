@@ -37,3 +37,21 @@ Per the Predecessor Lookup Rule (top principal) — written BEFORE the §1 edits
 **Adversarial §1 audit** (workflow `wf_a692c3e6-f93`, 4 high-effort skeptics): cascade-ordering **SAFE**, dormancy **SAFE**, NoteRow-integration **SAFE**, module-correctness **RISK ×1 (LOW)**. Finding: `onNoteMutation` registered its 3 listeners in an array literal — if the 2nd/3rd `await listen()` rejected, the already-registered listener leaked (array literal aborts atomically) and the caller got no unlisten handle (Rule 4). **Fixed same pass (WA#6):** push each listener into the set as it resolves, `try/catch` → `cleanup()` unwinds the registered ones + clears the timer, then re-throw. svelte-check re-run **0 errors**. §1 committed after fix.
 
 **Runtime note:** §1 is dormant (no menu appears anywhere yet) — the meaningful Editor-Surface-Gate round-trip test arrives at §2 (Reviewer), the first surface where the full menu goes live.
+
+**Committed:** `6278d6e4` MIG-096 §0+§1.
+
+---
+
+## §2 — Group A (Reviewer + OrgChart done; Second-Screen forked)
+
+**Reviewer (`ReviewerView.svelte`) — the headline surface, DONE:**
+- `onContext?` prop; both master-row variants (virtualized >80 + plain ≤80) gain `oncontextmenu` → selects the row + forwards `(path,name,e)` to the host's `showNoteContextMenu` (full menu). Host wires it with `e.preventDefault()`.
+- Refresh via `onNoteMutation` (leak-safe: destroy-before-resolve guarded): rename/move **re-title/re-path in place** (review membership is rename/move-invariant — cheap, no IPC, no loading flash), delete **splices** from every lens; `selectedKey` (which embeds `note_path` as `reason|path`) migrates alongside via `migrateSelectedKey`, mirroring the existing `act()`/`refreshAfterConnect()` re-point pattern.
+
+**OrgChart (`OrgChart.svelte`) — the refresh template, DONE:**
+- New `onNoteContext?` prop. `handleContextMenu`: a **note** node routes to the host's shared menu (gaining Star + Add-to-collection — the dedup win); **folder/library** nodes keep the internal create/expand menu. Wired on BOTH mounts (fullscreen overlay + embedded sidebar). Refresh already handled by the existing `markOrgChartDirty()` calls in every host mutation handler.
+- **Flagged for §6 /simplify:** the internal `getOrgNodeMenuItems` note branch is now a graceful fallback (both live mounts route notes away from it) — dead for the live mounts, kept for degradation; the /simplify pass decides removal.
+
+**Verify:** svelte-check **0 errors**. Committed pending the Second-Screen ruling.
+
+**Second-Screen — genuine fork (Boss ruling requested):** its "host" is `SecondScreenPage`, which lacks `buildNoteActions`/`showNoteContextMenu` (+layout-local). A mutating menu there means the menu shows on the 2nd screen but the rename/move/delete **dialog opens on the MAIN screen** (Display-not-Domain — the 2nd screen never owns the write path). Options put to the Boss: (a) full forwarding menu now, (b) SAFE menu only (open/reveal/copy/star — no dialog-on-main), (c) refresh-only (companion re-renders on any mutation; no menu). Reviewer + OrgChart are testable independently of this.

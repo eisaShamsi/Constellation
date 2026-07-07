@@ -13,6 +13,8 @@
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 	import VirtualList from './VirtualList.svelte';
 	import RelatedCandidates from './RelatedCandidates.svelte';
+	import { onNoteMutation } from '$lib/noteMutations';
+	import { onDestroy } from 'svelte';
 
 	interface DueNote {
 		note_path: string;
@@ -39,6 +41,7 @@
 		onNoteClick,
 		onClose,
 		onOpenWithTab,   // (path, name, rightSidebarTab) — hand-off to 360 / Source Review
+		onContext,       // MIG-096 §2 — right-click a queue row → the shared note menu (host-built)
 	}: {
 		libraryPath?: string | null;
 		staleGraceDays?: number;
@@ -46,6 +49,7 @@
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
 		onOpenWithTab?: (path: string, name: string, tab: string) => void;
+		onContext?: (path: string, name: string, e: MouseEvent) => void;
 	} = $props();
 
 	let dueNotes = $state<DueNote[]>([]);
@@ -241,6 +245,39 @@
 		if (!ranked.some(x => keyOf(x) === selectedKey)) selectedKey = ranked[0] ? keyOf(ranked[0]) : null;
 	}
 
+	// MIG-096 §2 — refresh-after-mutate: keep the queue current when a note is
+	// renamed / moved / deleted from the right-click menu (here or ANY surface,
+	// via the broadcast). Rename/move do NOT change review membership, so we
+	// re-title / re-path in place — cheap, no IPC, no loading flash; delete
+	// removes the note from every lens. `selectedKey` embeds note_path
+	// (`reason|path`), so it migrates alongside a rename/move or falls back on a
+	// delete — mirroring the act()/refreshAfterConnect() re-point pattern above.
+	function migrateSelectedKey(oldPath: string, newPath: string) {
+		if (selectedKey && selectedKey.endsWith(`|${oldPath}`)) {
+			selectedKey = selectedKey.slice(0, selectedKey.length - oldPath.length) + newPath;
+		}
+	}
+	let unlistenMutations: (() => void) | null = null;
+	let mutationsDestroyed = false;
+	onNoteMutation({
+		onDeleted: ({ path }) => {
+			if (!dueNotes.some(d => d.note_path === path)) return;
+			dueNotes = dueNotes.filter(d => d.note_path !== path);
+			if (!ranked.some(x => keyOf(x) === selectedKey)) selectedKey = ranked[0] ? keyOf(ranked[0]) : null;
+		},
+		onRenamed: ({ oldPath, newPath, newName }) => {
+			if (!dueNotes.some(d => d.note_path === oldPath)) return;
+			dueNotes = dueNotes.map(d => d.note_path === oldPath ? { ...d, note_path: newPath, note_name: newName } : d);
+			migrateSelectedKey(oldPath, newPath);
+		},
+		onMoved: ({ oldPath, newPath }) => {
+			if (!dueNotes.some(d => d.note_path === oldPath)) return;
+			dueNotes = dueNotes.map(d => d.note_path === oldPath ? { ...d, note_path: newPath } : d);
+			migrateSelectedKey(oldPath, newPath);
+		},
+	}).then(u => { if (mutationsDestroyed) u(); else unlistenMutations = u; }).catch(() => {});
+	onDestroy(() => { mutationsDestroyed = true; unlistenMutations?.(); });
+
 	// Priority override: dragging commits an explicit override; Reset clears it (NULL =
 	// use computed). Either reloads so the queue re-ranks by the new effective priority.
 	const isManual = $derived(selected != null && selected.priority_override != null);
@@ -311,7 +348,7 @@
 							<div class="rv-vlist">
 								<VirtualList items={items} getItemHeight={() => 46} overscan={8}>
 									{#snippet row(n, _i)}
-										<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)}>
+										<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)} oncontextmenu={(e) => { selectedKey = keyOf(n); onContext?.(n.note_path, n.note_name, e); }}>
 											<span class="rv-row-name" dir="auto">{n.note_name}</span>
 											<span class="rv-row-why" dir="auto">{whyNow(n)}</span>
 										</button>
@@ -320,7 +357,7 @@
 							</div>
 						{:else}
 							{#each items as n (n.note_path)}
-								<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)}>
+								<button class="rv-row" class:sel={keyOf(n) === selectedKey} onclick={() => selectedKey = keyOf(n)} oncontextmenu={(e) => { selectedKey = keyOf(n); onContext?.(n.note_path, n.note_name, e); }}>
 									<span class="rv-row-name" dir="auto">{n.note_name}</span>
 									<span class="rv-row-why" dir="auto">{whyNow(n)}</span>
 								</button>

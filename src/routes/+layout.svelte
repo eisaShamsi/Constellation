@@ -6563,6 +6563,7 @@
 						bind:selectedPath={skyViewSelectedPath}
 						onNoteClick={(path, name) => handleNoteClick(path, name)}
 						onClose={() => sidebarMode = 'tree'}
+						onNoteContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY); }}
 						embedded={true}
 					/>
 				{:else if sidebarMode === 'digest'}
@@ -7149,6 +7150,7 @@
 						}
 					}}
 					onClose={() => { showReviewer = false; }}
+					onContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY); }}
 				/>
 			</div>
 		{/if}
@@ -7268,6 +7270,7 @@
 						orgChartReturnPending = true;
 					}}
 					onNodeMenuAction={handleOrgNodeMenuAction}
+					onNoteContext={(path, name, e) => { e.preventDefault(); showNoteContextMenu(path, name, e.clientX, e.clientY); }}
 					refreshKey={orgChartRefreshKey}
 					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>
