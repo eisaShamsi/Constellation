@@ -120,3 +120,7 @@ svelte-check re-run **0 errors**. Release-binary build pending before the staged
 - **(e) Doc drift:** Orientation NOT yet bumped for MIG-096/097/098 (mid-flight; bump when the audit closes or they land). Pending-Jobs not updated for the pivot.
 
 Resume path after the audit: MIG-098 §2 fix (item #1) → remaining audit remediation → MIG-096 §2 tests (OrgChart/Second-Screen) → §3–§6.
+
+### Audit FIND phase COMPLETE (P1–P2, Waves 1–3) — 30 confirmed silent-failure defects
+
+Three adversarial-verify workflows (`wf_c4054ac3` durability/false-success · `wf_4c7d9c3a` content-integrity/index-divergence · `wf_858afde9` concurrency/freeze/leaks) — 75 agents total, every candidate refuted-or-confirmed. **Reactivity-loops + concurrency-TOCTOU came back CLEAN.** Full register in `docs/Constellation-Safety-Audit-CHARTER.md`. 30 defects consolidate to **9 root-cause fix-groups**: G1 FocusPane save (HIGH) · G2 save/model-ownership (HIGH — nav discards unsaved edits, 2-tabs-1-note clobber) · G3 cross-window integrity (HIGH) · **G4 frontmatter parser lossy (HIGH — drops block-scalars/nested-maps + corrupts quotes on EVERY save)** · G5 index cascade + MIG-098 durability (MED) · G6 persisted-state writes (MED — non-atomic libraries.json) · G7 write-gate staleness inert (MED) · G8 sync-command freeze (HIGH/MED) · G9 listener leak (MED). Remediation order (worst-silent-loss first): G4 → G2 → G1 → G3 → G5 → G6 → G7 → G8 → G9; deep groups each rate a `/migration`. **P4 remediation begins next.**
