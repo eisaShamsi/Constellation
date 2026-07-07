@@ -834,6 +834,12 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     let tail_new_path = new_path.clone();
     let tail_old_title = old_title.clone();
     let tail_new_title = new_title.clone();
+    // MIG-098 instrumentation (Reproduce-First): mark the SCHEDULE point. If this
+    // logs but "[rename-tail] START" never does, the spawn_blocking task never ran
+    // (starved/dropped) — vs. running-but-failing, which the tail logs distinguish.
+    if let Ok(p) = crate::search::db_path(&app) {
+        crate::search::diag_log(&p, &format!("[rename-tail] scheduling tail old={} new={}", old_path, new_path));
+    }
     tauri::async_runtime::spawn_blocking(move || {
         rename_item_db_tail(&tail_app, &tail_old_path, &tail_new_path, &tail_old_title, &tail_new_title);
     });
@@ -856,6 +862,13 @@ fn rename_item_db_tail(
     old_title: &str,
     new_title: &str,
 ) {
+    // MIG-098 instrumentation (Reproduce-First): trace WHY the note_meta rename
+    // update can be lost on a large/busy universe. diag_log lands in the universe's
+    // diagnostics.log — release-safe (no devtools). Removed once the root cause is
+    // fixed + verified.
+    let dbp = crate::search::db_path(app).ok();
+    let log = |m: &str| { if let Some(p) = &dbp { crate::search::diag_log(p, m); } };
+    log(&format!("[rename-tail] START old={} new={} title '{}'->'{}'", old_path, new_path, old_title, new_title));
     // Steps 4+5: DB cascade + 'rename' alias stamp.
     {
         use tauri::Manager;
@@ -864,10 +877,13 @@ fn rename_item_db_tail(
         if let Ok(guard) = db_lock {
             if let Some(conn) = guard.as_ref() {
                 if old_path != new_path {
-                    let _ = conn.execute(
+                    match conn.execute(
                         "UPDATE note_meta SET path = ?2 WHERE path = ?1",
                         rusqlite::params![&old_path, &new_path],
-                    );
+                    ) {
+                        Ok(n) => log(&format!("[rename-tail] note_meta path UPDATE affected {} row(s)", n)),
+                        Err(e) => log(&format!("[rename-tail] note_meta path UPDATE ERROR: {}", e)),
+                    }
                     let _ = conn.execute(
                         "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
                         rusqlite::params![&old_path, &new_path],
@@ -909,6 +925,8 @@ fn rename_item_db_tail(
                             rusqlite::params![&old_path, &new_path],
                         );
                     }
+                } else {
+                    log("[rename-tail] old==new path (canonical title-only rename); no note_meta path update");
                 }
                 // 'rename' alias — durable safety net for old title
                 // lookups regardless of any later frontmatter edits.
@@ -929,9 +947,15 @@ fn rename_item_db_tail(
         let search_state = app.state::<crate::search::SearchState>();
         let libs = load_all_libraries(app);
         if let Some(lib) = libs.iter().find(|l| new_path.starts_with(&l.path)) {
-            let _ = crate::search::reindex_single_note(&search_state, new_path, &lib.name);
+            match crate::search::reindex_single_note(&search_state, new_path, &lib.name) {
+                Ok(_) => log(&format!("[rename-tail] reindex OK for {} (lib {})", new_path, lib.name)),
+                Err(e) => log(&format!("[rename-tail] reindex ERROR: {}", e)),
+            }
+        } else {
+            log(&format!("[rename-tail] NO LIBRARY matched new_path={} — reindex SKIPPED", new_path));
         }
     }
+    log("[rename-tail] END");
 }
 
 /// MIG-003 Step 0 — Convert a note title into a safe filename
