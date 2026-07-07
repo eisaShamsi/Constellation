@@ -324,5 +324,20 @@ user-facing references). No handover/close-out (Boss instruction).
   column check that agrees with the Collections "Unlinked" chip. Semantics preserved
   (in==0 && out==0); the change is alias-unaware→alias-aware (approved). Perf strictly better
   (no temp table, no full scan). No help reference (grep). `cargo check` green.
-- **NEXT: §6 Sky (reconcile ring/filter + re-source the payload) → §7 close.** Boss validates on the
-  final binary.
+- **§6 SHIPPED (Sky internal reconciliation).** `graphEngine.ts`: the "hide orphans" filter used
+  total-degree presence (`linkedIds`) while the orphan RING used `linkCount === 0` (incoming) — so a
+  note linking out with no backlinks was rendered yet ringed as an orphan (Sky contradicting itself).
+  Fixed: the filter now uses `n.linkCount > 0`, matching the ring; the dead `linkedIds` set removed.
+  Sky ring, filter, AND the CNS orphan stat (`ConstellationSight2:1391`, already `linkCount===0`) now
+  read ONE source. **Verdict equivalence:** `linkCount===0` (alias-aware incoming edges) ⟺
+  `incoming_count===0` for the ==0 boundary, so Sky/CNS's orphan verdict already matches the canonical
+  UNREFERENCED. `svelte-check` 0 errors.
+  - **Part (b) DEFERRED to the hubs cluster (flagged, not parked):** re-sourcing Sky's count *values*
+    from `note_meta.incoming_count/outgoing_count` in `cache.rs` is the degree-SUBSTRATE unification —
+    that's the hubs cluster's core job (the 6 in-degree substrates), not the orphan verdict. It also
+    carries an unmeasurable-here boot-regression risk against the ~17s SKY read (MIG-079 §C.2d), and the
+    hard constraint forbids boot regression. The only residual it would close is the small edge case of
+    a note whose ONLY incoming link is structural (PJ-065): `incoming_count` excludes it, sky `linkCount`
+    may not. Ruling belongs to the hubs cluster with a measured cache.rs pass.
+- **NEXT: §7 — rename the false members (cataloger degree<2; livePreview membership gate) + close-out
+  (orientation v-bump, /simplify, audit trio).**

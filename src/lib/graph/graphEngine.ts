@@ -355,16 +355,9 @@ export class GraphEngine {
 			this.worker = null;
 		}
 
-		// Filter orphans if needed
-		const linkedIds = new Set<string>();
-		for (const l of rawLinks) {
-			linkedIds.add(l.source);
-			linkedIds.add(l.target);
-		}
-
 		const filteredNodes = this.config.showOrphans
 			? rawNodes
-			: rawNodes.filter((n) => linkedIds.has(n.id));
+			: rawNodes.filter((n) => n.linkCount > 0);
 
 		const nodeIdMap = new Map<string, number>();
 
