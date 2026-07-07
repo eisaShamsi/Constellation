@@ -1980,6 +1980,205 @@ fn has_alias(content: &str, target: &str) -> bool {
     false
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// MIG-099 — Index-backed name/alias resolution (Rule 8, Write-Time Derivation)
+//
+// The former stage-2 resolver (`find_note_by_title_or_alias`) fs::read_to_string'd
+// EVERY .md across EVERY library to answer "does a note with this title/alias
+// exist, and where?". On the live 2 GB / ~7,700-note universe a brand-new create
+// name (matches no filename stem) forced a full COLD read = 13,575 ms (measured,
+// diagnostics.log 2026-07-07). The always-current index already holds the answer:
+// note_meta.name_lower (= fold_match_key(name)) + note_aliases.alias_lower
+// (= normalize_alias_for_match). These helpers turn the scan into an indexed seek
+// (idx_note_name_lower / idx_note_aliases_lookup) → 13.6 s becomes sub-10 ms.
+//
+// Correctness contract (MIG-099 adversarial review — every clause is a fix for a
+// concrete refuted failure scenario):
+//  • FOLD PARITY — the query key MUST pass through the SAME folds the write path
+//    uses (fold_match_key for name, normalize_alias_for_match for alias); never
+//    plain to_lowercase / COLLATE NOCASE (ASCII-only → silently breaks Arabic).
+//  • NULL name_lower — pre-MIG-085 rows → two index-seeking arms
+//    (name_lower = ?1  UNION  name_lower IS NULL AND LOWER(name) = ?1); a single
+//    COALESCE would defeat idx_note_name_lower and full-scan (21 s, PJ-066).
+//  • BYTE tie-break — the shortest-path winner is chosen by the CALLER in Rust
+//    (to_string_lossy().len() = UTF-8 BYTES), NOT SQL length() (CHARACTERS —
+//    inverts for Arabic paths, flipping which note a link opens).
+//  • DOT-DIR EXCLUSION — the index DOES hold .trash / .constellation rows; the
+//    filesystem walk skips any `.`-prefixed segment, so index hits are filtered
+//    to match (has_dot_segment).
+//  • OWN-ONLY authority — these query the ACTIVE universe's own note_meta; the
+//    caller routes only OWN-library lookups here (load_libraries), keeping the
+//    live bounded walk for federated cUniverse libraries (their rows are not
+//    authoritatively maintained in the active DB).
+// ─────────────────────────────────────────────────────────────────────────
+
+/// Normalize a library / note path for prefix comparison: forward-slash, no
+/// trailing slash, lowercased. Mirrors the `norm` closure used at the
+/// current-library ResolvedLink build site so both sides compare identically.
+fn norm_lib_path(s: &str) -> String {
+    s.replace('\\', "/").trim_end_matches('/').to_lowercase()
+}
+
+/// True when `path` lives under the library directory `norm_lib` (both compared
+/// in normalized form). Scopes global index matches back to the single library
+/// the resolver loop is currently visiting — preserving current-library-first,
+/// other-library Vec-declaration order, and `library:note` prefix scoping.
+fn path_under_library(path: &str, norm_lib: &str) -> bool {
+    let np = norm_lib_path(path);
+    np == norm_lib || np.starts_with(&format!("{}/", norm_lib))
+}
+
+/// True when any path segment starts with '.', i.e. the note lives inside a
+/// dot-directory (.trash, .constellation, .obsidian). The filesystem walk skips
+/// these (`name.starts_with('.')`); the index does not, so index results MUST be
+/// filtered through this to preserve the trashed/system-note exclusion invariant.
+fn has_dot_segment(path: &str) -> bool {
+    path.split(['/', '\\']).any(|seg| seg.starts_with('.'))
+}
+
+/// Query the active-universe index for every note path whose folded name OR
+/// folded alias equals the target. Returns ALL matches across the active DB;
+/// the caller filters by library prefix + dot-dir exclusion and applies the
+/// byte-shortest tie-break. `folded_name`/`folded_alias` MUST already be folded
+/// with fold_match_key / normalize_alias_for_match respectively (the write-side
+/// folds). Errs only on a genuine SQL failure — the caller then degrades that
+/// library to the bounded walk (correctness over speed).
+fn query_index_candidates(
+    conn: &rusqlite::Connection,
+    folded_name: &str,
+    folded_alias: &str,
+) -> rusqlite::Result<Vec<String>> {
+    let mut out: Vec<String> = Vec::new();
+    {
+        let mut stmt = conn.prepare(
+            "SELECT path FROM note_meta WHERE name_lower = ?1 \
+             UNION \
+             SELECT path FROM note_meta WHERE name_lower IS NULL AND LOWER(name) = ?1",
+        )?;
+        let rows = stmt.query_map([folded_name], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            out.push(r?);
+        }
+    }
+    if !folded_alias.is_empty() {
+        let mut stmt = conn.prepare("SELECT path FROM note_aliases WHERE alias_lower = ?1")?;
+        let rows = stmt.query_map([folded_alias], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            out.push(r?);
+        }
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests_mig099_index_resolve {
+    use super::*;
+
+    fn seed() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);",
+        )
+        .unwrap();
+        // Plain titled note (stem == title).
+        conn.execute(
+            "INSERT INTO note_meta (path,name,name_lower) VALUES (?1,?2,?3)",
+            rusqlite::params!["E:\\Lib\\Foo.md", "Foo", "foo"],
+        )
+        .unwrap();
+        // Canonical-filename note whose display name IS a human title (accented).
+        conn.execute(
+            "INSERT INTO note_meta (path,name,name_lower) VALUES (?1,?2,?3)",
+            rusqlite::params!["E:\\Lib\\20260101T000000Z_NOTE_ab12.md", "Île-de-France", "île-de-france"],
+        )
+        .unwrap();
+        // Pre-MIG-085 row: NULL name_lower, ASCII name (LOWER() fallback arm).
+        conn.execute(
+            "INSERT INTO note_meta (path,name,name_lower) VALUES (?1,?2,NULL)",
+            rusqlite::params!["E:\\Lib\\Bar.md", "Bar"],
+        )
+        .unwrap();
+        // Trashed row — same folded name as Foo; caller's dot filter must drop it.
+        conn.execute(
+            "INSERT INTO note_meta (path,name,name_lower) VALUES (?1,?2,?3)",
+            rusqlite::params!["E:\\Lib\\.trash\\Foo.md", "Foo", "foo"],
+        )
+        .unwrap();
+        // Alias row.
+        conn.execute(
+            "INSERT INTO note_aliases (path,alias_lower) VALUES (?1,?2)",
+            rusqlite::params!["E:\\Lib\\Foo.md", "nickname"],
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn name_match_returns_path() {
+        let c = seed();
+        let hits = query_index_candidates(&c, "foo", "foo").unwrap();
+        assert!(hits.iter().any(|p| p == "E:\\Lib\\Foo.md"));
+    }
+
+    #[test]
+    fn folded_title_match_for_canonical_note() {
+        // fold_match_key("Île-de-France") == "île-de-france" — the canonical note
+        // is findable by its human title WITHOUT reading the file.
+        let key = crate::search::fold_match_key("Île-de-France");
+        let c = seed();
+        let hits = query_index_candidates(&c, &key, &key).unwrap();
+        assert_eq!(hits.iter().filter(|p| p.contains("NOTE_ab12")).count(), 1);
+    }
+
+    #[test]
+    fn null_name_lower_falls_back_to_ascii_lower() {
+        let c = seed();
+        let hits = query_index_candidates(&c, "bar", "bar").unwrap();
+        assert!(hits.iter().any(|p| p == "E:\\Lib\\Bar.md"));
+    }
+
+    #[test]
+    fn alias_match_returns_path() {
+        let c = seed();
+        let hits = query_index_candidates(&c, "nickname", "nickname").unwrap();
+        assert!(hits.iter().any(|p| p == "E:\\Lib\\Foo.md"));
+    }
+
+    #[test]
+    fn dot_segment_excludes_trashed_note() {
+        assert!(has_dot_segment("E:\\Lib\\.trash\\Foo.md"));
+        assert!(!has_dot_segment("E:\\Lib\\Foo.md"));
+        let c = seed();
+        let hits = query_index_candidates(&c, "foo", "foo").unwrap();
+        let visible: Vec<&String> = hits.iter().filter(|p| !has_dot_segment(p)).collect();
+        assert!(visible.iter().all(|p| !p.contains(".trash")));
+        assert!(visible.iter().any(|p| *p == "E:\\Lib\\Foo.md"));
+    }
+
+    #[test]
+    fn path_under_library_scopes_correctly() {
+        let norm = norm_lib_path("E:\\Lib");
+        assert!(path_under_library("E:\\Lib\\Foo.md", &norm));
+        assert!(path_under_library("E:\\Lib\\sub\\Foo.md", &norm));
+        assert!(!path_under_library("E:\\Other\\Foo.md", &norm));
+        // Sibling with a shared textual prefix but not a real subdirectory.
+        assert!(!path_under_library("E:\\Library2\\Foo.md", &norm));
+    }
+
+    #[test]
+    fn byte_shortest_tie_break_not_char_count() {
+        // The walk picks the shortest BYTE path. An Arabic folder (2 bytes/char)
+        // must not be mis-ranked shorter by CHARACTER count (the SQLite length()
+        // trap). Sorting by String::len() (bytes) picks the ASCII sibling.
+        let a = "E:/Lib/علم/n1.md"; // 19 bytes / 16 chars
+        let b = "E:/Lib/abcde/n2.md"; // 18 bytes / 18 chars
+        let mut v = vec![a.to_string(), b.to_string()];
+        v.sort_by_key(|p| p.len()); // BYTE length
+        assert_eq!(v[0], b, "byte sort must pick the ASCII sibling, not the Arabic one");
+    }
+}
+
 /// Read Obsidian's appearance.json for a library.
 ///
 /// `(async)` because this fires 16× in the boot fan-out (one per library) and
