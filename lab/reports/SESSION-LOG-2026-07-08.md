@@ -118,3 +118,19 @@ The `/migration` is complete and Boss-validated end-to-end. Closeout:
 - **Audit (migration Phase 4):** satisfied by the per-cycle whole-app safety sweep (diff CLEAN, `wf_8a41970f-36d`) + the 8 invariants + 10 tests + the 3 Boss stages. No schema change / no backfill / no migration-state → trivial migration-path (rollback = revert the commits; the command + wiring carry no persisted state).
 
 **NEXT (recommended, awaiting Boss go):** the 2 pre-existing APP-KILLERs from the sweep — `NoteEditor.svelte:233` (save-before-write) and `store.ts:1693` (same-tab-nav model clobber) — Reproduce-First, one at a time. Both are top of the active Safety Audit.
+
+---
+
+## Docs: sync-note translated to 14 languages (Boss-requested, done)
+
+Workflow `wf_67cb0d21-01f` (14 agents) propagated the "Syncing and External Changes" User Manual subsection into all 14 `docs/help.{lang}/User Manual.md` — inserted in the English slot (§2, after "Managing Libraries"), native technical vocabulary reusing each file's existing feature-name translations, RTL-natural for ar/fa/he/ur. All 14 = exactly +1 `###` heading. Committed `b48bceba`, pushed. *(Prose-only; no UI strings / i18n locale changes. NOTE: a redundant spawned chip-session `task_f0f1a01b` may also be doing this in a separate worktree — this session's commit on `main` is authoritative; the spawned branch is a duplicate to ignore. The AR/EN `.docx` manual exports were not touched — regenerate from the `.md` when convenient.)*
+
+## APP-KILLER #1 — save-before-write (Safety Audit G2) — STARTED (Reproduce-First)
+
+Boss go: "start with the first one." Function in hand: the NotePane **debounced-save path** (`NoteEditor.svelte` `handleSave` → `markSaved` → `writeNote`).
+
+**Mechanism confirmed from code:** `handleSave` (219) calls `markSaved(tab.id, r.version)` at :233 — marking the model CLEAN — BEFORE the awaited `writeNote` at :238, whose rejection is swallowed by `.catch(()=>{})` at :280, and (unlike `handleFlush`:308) with NO `setWriteAhead` net. A transient `.md` write failure (sync/AV lock) → model falsely clean, edit silently lost; `flushAllTabsInLibrary` (`store.ts:695` `if (!isNoteDirty) continue`) then SKIPS the falsely-clean tab and the rename cascade rewrites stale disk (the F2 loss the code claims to prevent). **It's a CLASS:** `handleFlush`:297 + `handlePromote`:194 + `saveTabContent` (`store.ts:765`) + focus-save (`+layout.svelte:1490`) all `markSaved`-before-durable-write.
+
+**Key lever (Solve-the-Class):** the CORRECT shared primitive already exists — `noteSession.ts:84 save()` does `compose → await write → markSaved` (clean only if the await didn't throw). The component sites BYPASS it with an inlined wrong order + no net. Fix direction: consolidate every save onto one correct primitive (net-before-write → await → mark-clean-only-on-success + clear-net; on failure keep dirty + retain net + SURFACE the error, never silent).
+
+Adversarial Architect workflow `wf_16260085-719` running (census · WA#5 · design/refute) — plan to Boss for approval before build (full `/migration`, feedback_bug023 — save/lifecycle/cross-window).
