@@ -1470,7 +1470,16 @@
 	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
 	let focusMode = $state(false);
 	let _focusModeTabId = '';
-	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
+	// APP-KILLER #2 — _focusModeTabId now holds "id|path": exit Focus when the active tab
+		// changes id (tab switch) OR path (in-place nav/reuse — wikilink / Quick Switcher /
+		// file-tree click). Without the path check an in-place nav left Focus ON with
+		// focusSessionPath frozen on the OLD note, so every keystroke on the new note was
+		// refused by the model identity guard and lost on exit. Exiting drops the user into
+		// NotePane on the new note; the outgoing note's edits were already flushed by the nav.
+		$effect(() => {
+			const key = ($activeTab?.id ?? '') + '|' + ($activeTab?.path ?? '');
+			if (key !== _focusModeTabId) { _focusModeTabId = key; focusMode = false; }
+		});
 	// MIG-076 §C — the focus note's identity, captured at focus entry and held
 	// for the whole session so FocusPane's body push + save always target the
 	// note focus was opened for, even as the active tab changes underneath.
