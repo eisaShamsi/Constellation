@@ -343,3 +343,85 @@ describe('Save-Durability — clean only trails a durable write', () => {
 		expect(nets.get('/n.md')).toBe('NEWER-NET'); // the newer net survived the older write's clear
 	});
 });
+
+/**
+ * APP-KILLER #2 (2026-07-08) — NoteModel-Ownership silent nav-loss. A navigation is
+ * a DEPARTURE, and a departure must FLUSH the outgoing dirty model to disk BEFORE its
+ * id-slot is re-seeded with the next note (openNoteModel). The reproduction proves
+ * (I) flush-before-replace persists the outgoing edit, (J) a FAILED flush ABORTS the
+ * nav (never a silent discard), and (K) a late-resolving save cannot poison a model
+ * that was swapped in under its id (markSaved's path-lineage guard). Drives the REAL
+ * noteSession.flushIfDirty + noteModel.markSaved with the in-memory fake disk.
+ */
+describe('Recipe I — nav-away-while-dirty flushes the outgoing model', () => {
+	it('RED baseline — replacing the model WITHOUT a flush loses the outgoing edit (the bug)', () => {
+		S.open('t', '/a.md', note('NA', 'A body'));
+		S.editBody('t', 'A body + just typed'); // dirty, inside the 1.5 s debounce window
+		// The CURRENT nav: openNoteModel re-seeds the id with B and NO flush runs first.
+		S.open('t', '/b.md', note('NB', 'B body'));
+		expect(S.bodyForView('t')).toBe('B body');
+		expect(disk.has('/a.md')).toBe(false); // A's just-typed text never reached disk — THE APP-KILLER
+	});
+
+	it('GREEN — flushIfDirty persists the outgoing edit BEFORE the replace, then B seeds cleanly', async () => {
+		S.open('t', '/a.md', note('NA', 'A body'));
+		S.editBody('t', 'A body + just typed');
+		expect(S.isDirty('t')).toBe(true);
+
+		const r = await S.flushIfDirty('t', write); // the nav flush — sources A's path FROM THE MODEL
+		expect(r.ok).toBe(true);
+		expect(diskBody('/a.md')).toBe('A body + just typed'); // durable before any replace
+		expect(S.isDirty('t')).toBe(false);
+
+		S.open('t', '/b.md', note('NB', 'B body')); // now the replace is safe
+		expect(S.bodyForView('t')).toBe('B body');
+		expect(diskBody('/a.md')).toBe('A body + just typed'); // A intact on disk
+		expect(diskCid('/a.md')).toBe('NA');
+	});
+
+	it('a clean outgoing model is a NO-OP flush (no spurious write)', async () => {
+		S.open('t', '/a.md', note('NA', 'A body')); // never edited → clean
+		const r = await S.flushIfDirty('t', write);
+		expect(r.ok).toBe(true);
+		expect(disk.has('/a.md')).toBe(false); // nothing written for a clean note
+	});
+});
+
+describe('Recipe J — a failed nav-flush ABORTS (never a silent discard)', () => {
+	it('a throwing writer keeps the model DIRTY, retains the net, signals !ok — the caller must not replace', async () => {
+		S.open('t', '/a.md', note('NA', 'A body'));
+		S.editBody('t', 'edit that must survive');
+		const net = new Map<string, string>();
+		const r = await S.flushIfDirty('t', {
+			write: () => { throw new Error('EBUSY: file locked'); },
+			setNet: (p, c) => net.set(p, c),
+			clearNetIf: (p, c) => { if (net.get(p) === c) net.delete(p); },
+		});
+		expect(r.ok).toBe(false); // abort signal — the store keeps the user on A
+		expect(S.isDirty('t')).toBe(true); // NOT falsely clean
+		expect(net.get('/a.md')).toContain('edit that must survive'); // recovery net retained
+		expect(disk.has('/a.md')).toBe(false); // nothing durable
+	});
+});
+
+describe('Recipe K — a late save cannot poison a swapped-in model (markSaved path-guard)', () => {
+	it('markSaved for the OLD path no-ops after the id was re-seeded to a new note', () => {
+		M.openModel('t', '/a.md', note('NA', 'A'));
+		M.setBody('t', 'A edited', '/a.md');
+		const rA = M.compose('t', '/a.md');
+		expect(rA.ok).toBe(true);
+		const verA = rA.ok ? rA.version : -1;
+
+		// openNoteTab reuse re-seeds the id to B while A's autosave is still in flight:
+		M.openModel('t', '/b.md', note('NB', 'B')); // version/savedVersion reset to 0
+		expect(M.isDirty('t')).toBe(false);
+
+		// A's in-flight save resolves LATE and marks its version clean — addressed to A's path.
+		// The guard must REFUSE it because the model now holds /b.md (without the guard it would
+		// set B.savedVersion = verA and silently hide B's first edits from autosave).
+		M.markSaved('t', verA, '/a.md');
+
+		M.setBody('t', 'B first edit', '/b.md'); // B.version → 1
+		expect(M.isDirty('t')).toBe(true); // guarded: dirty (poison would make this false)
+	});
+});
