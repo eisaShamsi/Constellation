@@ -70,6 +70,11 @@ export default defineConfig({
 			// `tests/g4/frontmatterRoundtrip.test.ts` remains as the RED Reproduce-
 			// First repro of the legacy bug (run manually; out of the curated suite).
 			'tests/g4/yamlDoc.test.ts',
+			// G4 Phase 2 (2026-07-08, unified) — the LIVE noteModel save path proves
+			// the review's app-killers are fixed: editing one field preserves block
+			// scalars / quoted values / lists in every OTHER key (same parseFrontmatter
+			// projection for base + current → no diff → byte-perfect).
+			'tests/g4/noteModelRoundtrip.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

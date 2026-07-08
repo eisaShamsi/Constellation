@@ -49,12 +49,16 @@ export function splitFrontmatter(content: string): { yaml: string; body: string;
 		return { yaml: '', body: content, hadFence: false };
 	}
 	const rest = content.slice(nl + 1);
-	// Find the closing fence: a line that is exactly `---` (or `...`).
+	// Find the closing fence: a line that is exactly `---`. NOTE: do NOT accept a
+	// `...` YAML end-marker — the legacy parseFrontmatter (store.ts) closes ONLY on
+	// `---`, and the noteModel diff relies on both parsers agreeing on the frontmatter
+	// region. Accepting `...` here (but not there) made base.rawYaml and base.props
+	// describe different regions → frontmatter duplication (G4 review Finding #1).
 	const lines = rest.split('\n');
 	let closeIdx = -1;
 	for (let i = 0; i < lines.length; i++) {
 		const t = lines[i].trim();
-		if (t === '---' || t === '...') { closeIdx = i; break; }
+		if (t === '---') { closeIdx = i; break; }
 	}
 	if (closeIdx === -1) {
 		// No closing fence — treat the whole thing as body (no frontmatter). Matches
@@ -168,23 +172,48 @@ export function composeContent(
 	newProps: FrontmatterProperty[],
 	bodyOverride?: string,
 ): string {
-	const body = bodyOverride ?? fm.body;
-	if (!fm.hadFence) {
-		// A note that had NO frontmatter fence. If properties were added (e.g. via the
-		// PropertyEditor on a plain .md), CREATE a fresh fenced block from them —
-		// matching the legacy buildFullContent, which would build a block from props.
-		// With no props, it stays fenceless (body only).
+	return composeFrontmatter(fm.rawYaml, fm.hadFence, oldProps, newProps, bodyOverride ?? fm.body);
+}
+
+/**
+ * The core byte-perfect write. Applies the diff between `oldProps` (the base
+ * projection) and `newProps` (after edits) onto a FRESH CST re-parse of `rawYaml`,
+ * then re-attaches `body`. Untouched keys stay byte-perfect.
+ *
+ * THE UNIFICATION (G4 Phase 2): the projection need not be lossless, only
+ * CONSISTENT — the noteModel supplies BOTH oldProps and newProps from the SAME
+ * `parseFrontmatter` projection the PropertyEditor uses, so an unedited key
+ * (block scalar, quoted value, nested map) projects identically on both sides →
+ * no diff → the CST preserves the REAL value untouched. Only keys the user
+ * actually edited are written, via `serializeLine` (correct quoting).
+ *
+ * H1: on parse errors, pass the original frontmatter bytes through verbatim.
+ */
+export function composeFrontmatter(
+	rawYaml: string,
+	hadFence: boolean,
+	oldProps: FrontmatterProperty[],
+	newProps: FrontmatterProperty[],
+	body: string,
+): string {
+	// G4 review #2 — match the note's dominant line ending on the FENCE lines (the
+	// CST/rawYaml/body already preserve their own EOL); hardcoding `---\n` on a
+	// CRLF note produced mixed EOL + a spurious diff on the first save.
+	const eol = (rawYaml || body).includes('\r\n') ? '\r\n' : '\n';
+	if (!hadFence) {
+		// No frontmatter fence. If properties were added (PropertyEditor on a plain
+		// .md), CREATE a fenced block from them (legacy buildFullContent parity).
 		if (newProps.length === 0) return body;
-		const yamlText = newProps.map((p) => serializeLine(p.key, p)).join('');
-		return `---\n${yamlText}---\n${body}`;
+		const yamlText = newProps.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol)).join('');
+		return `---${eol}${yamlText}---${eol}${body}`;
 	}
-	if (fm.hasErrors) return `---\n${fm.rawYaml}---\n${body}`; // H1
+	if (parseDocument(rawYaml).errors.length) return `---${eol}${rawYaml}---${eol}${body}`; // H1
 
 	let cst: CST.Document | null = null;
-	for (const tok of new Parser().parse(fm.rawYaml)) {
+	for (const tok of new Parser().parse(rawYaml)) {
 		if (tok.type === 'document') { cst = tok; break; }
 	}
-	if (!cst) return `---\n${fm.rawYaml}---\n${body}`;
+	if (!cst) return `---${eol}${rawYaml}---${eol}${body}`;
 
 	const oldByKey = new Map(oldProps.map((p) => [p.key, p]));
 	const newByKey = new Map(newProps.map((p) => [p.key, p]));
@@ -206,7 +235,7 @@ export function composeContent(
 		const op = oldByKey.get(key);
 		if (op && op.value === np.value && op.type === np.type &&
 			JSON.stringify(op.listItems ?? null) === JSON.stringify(np.listItems ?? null)) {
-			continue; // unchanged
+			continue; // unchanged — never rewrite a key the user did not edit
 		}
 		const item = findItem(cst, key);
 		if (item && item.value && 'type' in item.value && item.value.type === 'scalar' && np.type !== 'list') {
@@ -219,7 +248,11 @@ export function composeContent(
 	}
 
 	let yamlText = CST.stringify(cst);
-	if (!yamlText.endsWith('\n')) yamlText += '\n';
-	for (const line of addLines) yamlText += line.endsWith('\n') ? line : line + '\n';
-	return `---\n${yamlText}---\n${body}`;
+	if (!yamlText.endsWith('\n')) yamlText += eol;
+	// Appended (added-key) lines use the note's EOL for consistency.
+	for (const line of addLines) {
+		const l = line.replace(/\r?\n/g, eol);
+		yamlText += l.endsWith(eol) ? l : l + eol;
+	}
+	return `---${eol}${yamlText}---${eol}${body}`;
 }

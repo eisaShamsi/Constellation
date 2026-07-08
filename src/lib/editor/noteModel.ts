@@ -42,6 +42,19 @@
  */
 import { Text } from '@codemirror/state';
 import { parseFrontmatter, buildFullContent, type FrontmatterProperty } from '$lib/libraries/store';
+import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc';
+
+/**
+ * G4 Phase 2 — the model's WRITE goes through the round-trip-safe yamlDoc CST
+ * (byte-perfect: only edited keys change; nested maps, block scalars, quoted
+ * values, comments in untouched keys are preserved verbatim) instead of the
+ * hand-rolled buildFullContent that drops/corrupts them. THE UNIFICATION: the
+ * model diffs base→current using the SAME `parseFrontmatter` projection the
+ * PropertyEditor uses, so an unedited key projects identically on both sides →
+ * no diff → its real value is preserved untouched (consistency, not losslessness,
+ * is what makes it safe). One const toggle → instant revert if a Boss test fails.
+ */
+const USE_YAML_DOC = true;
 
 export interface NoteModel {
 	/** Open-note session id (today this equals the tab id). */
@@ -58,6 +71,14 @@ export interface NoteModel {
 	version: number;
 	/** The version last composed for a successful disk save — drives isDirty. */
 	savedVersion: number;
+	/**
+	 * G4 — the byte-perfect write base: the ORIGINAL frontmatter bytes (`rawYaml`)
+	 * + the `parseFrontmatter` projection of them (`props`). compose diffs
+	 * base.props → props and applies to a fresh re-parse of base.rawYaml, so an
+	 * unedited key stays byte-perfect. Same projection as `props`/the PropertyEditor.
+	 * Null on the legacy path (USE_YAML_DOC off).
+	 */
+	base: { rawYaml: string; hadFence: boolean; props: FrontmatterProperty[] } | null;
 }
 
 const models = new Map<string, NoteModel>();
@@ -79,6 +100,22 @@ function cidOf(props: FrontmatterProperty[]): string | null {
 	return p?.value ? String(p.value) : null;
 }
 
+/** G4 — capture the byte-perfect write base from a note's disk content (or null on legacy). */
+function baseOf(content: string, props: FrontmatterProperty[]): NoteModel['base'] {
+	if (!USE_YAML_DOC) return null;
+	const { yaml, hadFence } = splitFrontmatter(content);
+	return { rawYaml: yaml, hadFence, props: cloneProps(props) };
+}
+
+/** G4 — the ONE serialize (I4). Byte-perfect diff-apply via yamlDoc when the base is
+ *  present, else the legacy rebuild. Every reader/writer of the model composes here. */
+function composeModel(m: NoteModel): string {
+	if (USE_YAML_DOC && m.base) {
+		return composeFrontmatter(m.base.rawYaml, m.base.hadFence, m.base.props, m.props, m.body.toString());
+	}
+	return buildFullContent(m.props, m.body.toString());
+}
+
 /** Open (create) the model for a note from its on-disk content. */
 export function openModel(id: string, path: string, content: string): NoteModel {
 	const { properties, body } = parseFrontmatter(content);
@@ -90,6 +127,7 @@ export function openModel(id: string, path: string, content: string): NoteModel 
 		body: toText(body),
 		version: 0,
 		savedVersion: 0,
+		base: baseOf(content, properties),
 	};
 	models.set(id, m);
 	return m;
@@ -169,7 +207,7 @@ export function compose(id: string, expectPath: string): ComposeResult {
 	if (expectPath && m.path !== expectPath) return { ok: false, reason: 'path_mismatch', modelPath: m.path };
 	return {
 		ok: true,
-		content: buildFullContent(m.props, m.body.toString()),
+		content: composeModel(m),
 		path: m.path,
 		cid: m.cid,
 		version: m.version,
@@ -204,11 +242,12 @@ export function adoptDisk(id: string, diskContent: string): boolean {
 	const m = models.get(id);
 	if (!m) return false;
 	if (isDirty(id)) return false;
-	if (buildFullContent(m.props, m.body.toString()) === diskContent) return false; // our own echo
+	if (composeModel(m) === diskContent) return false; // our own echo
 	const { properties, body } = parseFrontmatter(diskContent);
 	m.props = cloneProps(properties);
 	m.cid = cidOf(m.props);
 	m.body = toText(body);
+	m.base = baseOf(diskContent, properties);
 	m.version++;
 	m.savedVersion = m.version; // disk IS the saved state
 	return true;
