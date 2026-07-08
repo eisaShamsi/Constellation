@@ -23,12 +23,10 @@
  *
  * This module is dark until the noteModel swap (G4 Phase 2, behind `useYamlDoc`).
  */
-import { Parser, CST, parseDocument, stringify as yamlStringify } from 'yaml';
+import { Parser, CST, parseDocument, stringify as yamlStringify, isSeq, isMap, isScalar } from 'yaml';
 import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 
 export interface FmDoc {
-	/** The CST document token — the byte-perfect WRITE authority (null if no frontmatter). */
-	cst: CST.Document | null;
 	/** Everything after the closing `---` fence (the note body), verbatim. */
 	body: string;
 	/** The original YAML block text (between the fences), for passthrough + errors. */
@@ -85,20 +83,26 @@ function inferType(node: unknown): PropertyType {
  *  preserve + read-only for now); compose applies a diff to the CST so they are never lost. */
 function projectProps(yaml: string): FrontmatterProperty[] {
 	const doc = parseDocument(yaml);
-	if (doc.errors.length || !doc.contents || !(doc.contents as { items?: unknown }).items) return [];
+	if (doc.errors.length || !isMap(doc.contents)) return [];
 	const out: FrontmatterProperty[] = [];
-	for (const pair of (doc.contents as { items: Array<{ key: unknown; value: unknown }> }).items) {
-		const keyNode = pair.key as { value?: unknown };
-		const key = keyNode && typeof keyNode.value === 'string' ? keyNode.value : String((keyNode as { value?: unknown })?.value ?? '');
+	for (const pair of doc.contents.items) {
+		const keyNode = pair.key;
+		const key = isScalar(keyNode) && keyNode.value != null ? String(keyNode.value) : '';
 		if (!key) continue;
-		const raw = doc.get(key, true) as { value?: unknown; items?: unknown } | undefined;
-		const jsVal = doc.get(key) as unknown;
-		if (Array.isArray(jsVal) && jsVal.every((v) => typeof v !== 'object' || v === null)) {
-			out.push({ key, value: jsVal.map(String).join(', '), type: 'list', listItems: jsVal.map(String) });
-		} else if (raw && (raw.items !== undefined || (typeof jsVal === 'object' && jsVal !== null))) {
-			// Nested map / seq-of-maps / structured — preserved in the CST, not editable here.
+		const node = pair.value; // the value NODE (not a materialized JS value)
+		if (isSeq(node)) {
+			// A sequence of SCALARS → editable list; a seq of maps → preserved in CST (skip).
+			if (node.items.every((it) => isScalar(it))) {
+				const items = node.items.map((it) => String((it as { value?: unknown }).value ?? ''));
+				out.push({ key, value: items.join(', '), type: 'list', listItems: items });
+			}
+			// else: seq-of-maps → not projected (preserved by the CST diff).
+		} else if (isMap(node)) {
+			// Nested map → preserved in the CST, not editable here (Boss decision).
 			continue;
 		} else {
+			// Scalar (or null/empty).
+			const jsVal = isScalar(node) ? node.value : node == null ? null : node;
 			out.push({ key, value: jsVal == null ? '' : String(jsVal), type: inferType(jsVal) });
 		}
 	}
@@ -109,17 +113,11 @@ function projectProps(yaml: string): FrontmatterProperty[] {
 export function parseFrontmatterDoc(content: string): FmDoc {
 	const { yaml, body, hadFence } = splitFrontmatter(content);
 	if (!hadFence) {
-		return { cst: null, body: content, rawYaml: '', props: [], hasErrors: false, hadFence: false };
+		return { body: content, rawYaml: '', props: [], hasErrors: false, hadFence: false };
 	}
 	const doc = parseDocument(yaml);
 	const hasErrors = doc.errors.length > 0;
-	let cst: CST.Document | null = null;
-	if (!hasErrors) {
-		for (const tok of new Parser().parse(yaml)) {
-			if (tok.type === 'document') { cst = tok; break; }
-		}
-	}
-	return { cst, body, rawYaml: yaml, props: hasErrors ? [] : projectProps(yaml), hasErrors, hadFence: true };
+	return { body, rawYaml: yaml, props: hasErrors ? [] : projectProps(yaml), hasErrors, hadFence: true };
 }
 
 /** Index of the top-level map-item whose key scalar === `key`, or -1. */
@@ -151,36 +149,58 @@ function serializeLine(key: string, prop: FrontmatterProperty): string {
 }
 
 /**
- * Compose the full note content by applying the diff between `oldProps` (what the
- * projection showed) and `newProps` (after the user's edit) onto the CST authority,
- * then re-attaching the body. Untouched keys — including preserved nested maps,
- * block scalars, comments — stay byte-perfect.
+ * Compose the full note content by applying the diff between `oldProps` (the base
+ * projection as parsed) and `newProps` (after the user's edit) onto a FRESH CST
+ * re-parsed from the original frontmatter, then re-attaching the body. Untouched
+ * keys — nested maps, block scalars, comments — stay byte-perfect.
  *
- * H1: if the source had parse errors, we do NOT drive the CST (it is null); we
- * pass the original frontmatter through verbatim so no content is ever lost.
+ * PURE: it never mutates `fm`; it re-parses `fm.rawYaml` each call. Because the
+ * diff is always base→current applied to the base bytes, repeated composes (even
+ * after intermediate saves) stay correct and byte-stable. `bodyOverride` lets the
+ * noteModel supply the live edited body (the model owns body separately).
+ *
+ * H1: on parse errors, pass the original frontmatter bytes through verbatim — no
+ * content is ever lost.
  */
-export function composeContent(fm: FmDoc, oldProps: FrontmatterProperty[], newProps: FrontmatterProperty[]): string {
-	if (!fm.hadFence) return fm.body;
-	if (fm.hasErrors || !fm.cst) {
-		// H1 — malformed YAML: preserve the exact original frontmatter bytes + body.
-		return `---\n${fm.rawYaml}---\n${fm.body}`;
+export function composeContent(
+	fm: FmDoc,
+	oldProps: FrontmatterProperty[],
+	newProps: FrontmatterProperty[],
+	bodyOverride?: string,
+): string {
+	const body = bodyOverride ?? fm.body;
+	if (!fm.hadFence) {
+		// A note that had NO frontmatter fence. If properties were added (e.g. via the
+		// PropertyEditor on a plain .md), CREATE a fresh fenced block from them —
+		// matching the legacy buildFullContent, which would build a block from props.
+		// With no props, it stays fenceless (body only).
+		if (newProps.length === 0) return body;
+		const yamlText = newProps.map((p) => serializeLine(p.key, p)).join('');
+		return `---\n${yamlText}---\n${body}`;
 	}
+	if (fm.hasErrors) return `---\n${fm.rawYaml}---\n${body}`; // H1
+
+	let cst: CST.Document | null = null;
+	for (const tok of new Parser().parse(fm.rawYaml)) {
+		if (tok.type === 'document') { cst = tok; break; }
+	}
+	if (!cst) return `---\n${fm.rawYaml}---\n${body}`;
 
 	const oldByKey = new Map(oldProps.map((p) => [p.key, p]));
 	const newByKey = new Map(newProps.map((p) => [p.key, p]));
 
 	// REMOVE — keys present before, gone now: splice their CST map item.
-	const coll = fm.cst.value as CST.BlockMap | undefined;
+	const coll = cst.value as CST.BlockMap | undefined;
 	if (coll && 'items' in coll) {
 		for (const key of oldByKey.keys()) {
 			if (!newByKey.has(key)) {
-				const idx = findItemIndex(fm.cst, key);
+				const idx = findItemIndex(cst, key);
 				if (idx !== -1) coll.items.splice(idx, 1);
 			}
 		}
 	}
 
-	// SET — existing scalar keys whose value changed: byte-perfect in-place edit.
+	// SET (existing scalar → byte-perfect in-place) or ADD (new key / shape change → append).
 	const addLines: string[] = [];
 	for (const [key, np] of newByKey) {
 		const op = oldByKey.get(key);
@@ -188,22 +208,18 @@ export function composeContent(fm: FmDoc, oldProps: FrontmatterProperty[], newPr
 			JSON.stringify(op.listItems ?? null) === JSON.stringify(np.listItems ?? null)) {
 			continue; // unchanged
 		}
-		const item = findItem(fm.cst, key);
+		const item = findItem(cst, key);
 		if (item && item.value && 'type' in item.value && item.value.type === 'scalar' && np.type !== 'list') {
-			// scalar → scalar edit: byte-perfect
-			CST.setScalarValue(item.value as CST.FlowScalar, np.type === 'number' && np.value.trim() !== '' ? np.value : np.value);
+			CST.setScalarValue(item.value as CST.FlowScalar, np.value);
 		} else {
-			// new key, or a shape change (scalar↔list) — remove the old item (if any) and append.
-			const idx = findItemIndex(fm.cst, key);
-			if (idx !== -1) (fm.cst.value as CST.BlockMap).items.splice(idx, 1);
+			const idx = findItemIndex(cst, key);
+			if (idx !== -1) (cst.value as CST.BlockMap).items.splice(idx, 1);
 			addLines.push(serializeLine(key, np));
 		}
 	}
 
-	let yamlText = CST.stringify(fm.cst);
+	let yamlText = CST.stringify(cst);
 	if (!yamlText.endsWith('\n')) yamlText += '\n';
-	for (const line of addLines) {
-		yamlText += line.endsWith('\n') ? line : line + '\n';
-	}
-	return `---\n${yamlText}---\n${fm.body}`;
+	for (const line of addLines) yamlText += line.endsWith('\n') ? line : line + '\n';
+	return `---\n${yamlText}---\n${body}`;
 }

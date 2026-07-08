@@ -61,14 +61,14 @@ export default defineConfig({
 			// MIG-093 §C (2026-07-06) — the switcher banded-ranking model (the
 			// pinned Boss case: 'islam' ranks the exact title #1).
 			'tests/mig-093/switcherRank.test.ts',
-			// G4 Phase 0 (2026-07-08) — frontmatter round-trip Reproduce-First
-			// harness (Recipe A nested-map/block-scalar loss; Recipe B quote
-			// backslash-doubling). RED against the hand-rolled parser; Phase 1
-			// turns them green against the yamlDoc module.
-			'tests/g4/frontmatterRoundtrip.test.ts',
-			// G4 Phase 1 (2026-07-08) — the yamlDoc round-trip authority proven
-			// GREEN in isolation (both recipes + byte-perfect untouched keys + H1
-			// malformed passthrough) before the live noteModel swap (Phase 2).
+			// G4 (2026-07-08) — the yamlDoc round-trip authority, proven GREEN in
+			// isolation (both app-killer recipes + byte-perfect untouched keys +
+			// list projection + H1 malformed passthrough). The live noteModel swap
+			// is DEFERRED until the projection is unified (an adversarial review
+			// found the PropertyEditor's legacy projection ≠ the yamlDoc base would
+			// corrupt block-scalar/quoted values on the first property edit).
+			// `tests/g4/frontmatterRoundtrip.test.ts` remains as the RED Reproduce-
+			// First repro of the legacy bug (run manually; out of the curated suite).
 			'tests/g4/yamlDoc.test.ts',
 		],
 		exclude: [

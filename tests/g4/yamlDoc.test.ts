@@ -96,6 +96,41 @@ describe('G4 H1 — malformed YAML never loses content', () => {
 	});
 });
 
+describe('G4 projectProps — sequences are projected as editable lists (Finding 3)', () => {
+	it('a block-list tags key projects to a list prop with listItems (not skipped)', () => {
+		const fm = parseFrontmatterDoc(['---', 'title: T', 'tags:', '  - history', '  - science', '---', 'b', ''].join('\n'));
+		const tags = fm.props.find((p) => p.key === 'tags');
+		expect(tags?.type).toBe('list');
+		expect(tags?.listItems).toEqual(['history', 'science']);
+	});
+	it('editing one scalar leaves an unedited list byte-perfect (no reorder/restyle churn)', () => {
+		const src = ['---', 'title: Old', 'tags: [alpha, beta]', 'cid_cn: NOTE_1', '---', 'body', ''].join('\n');
+		const fm = parseFrontmatterDoc(src);
+		const newProps = fm.props.map((p) => (p.key === 'title' ? { ...p, value: 'New' } : p));
+		const out = composeContent(fm, fm.props, newProps);
+		expect(out).toContain('title: New');
+		expect(out).toContain('tags: [alpha, beta]'); // flow list untouched, in place
+		expect(out).toContain('cid_cn: NOTE_1'); // order preserved (tags NOT moved to end)
+	});
+});
+
+describe('G4 fenceless notes — adding a property creates a frontmatter block (no drop)', () => {
+	it('a plain .md gaining a property gets a valid fenced block', () => {
+		const fm = parseFrontmatterDoc('just body text\nsecond line\n');
+		expect(fm.hadFence).toBe(false);
+		const added: FrontmatterProperty = { key: 'title', value: 'New', type: 'text' };
+		const out = composeContent(fm, [], [added]);
+		expect(out).toMatch(/^---\ntitle: New\n---\n/);
+		expect(out).toContain('just body text');
+		// round-trips: the new block parses back with the property
+		expect(parseFrontmatterDoc(out).props.find((p) => p.key === 'title')?.value).toBe('New');
+	});
+	it('a plain .md with no properties stays fenceless (body only)', () => {
+		const fm = parseFrontmatterDoc('body only\n');
+		expect(composeContent(fm, [], [])).toBe('body only\n');
+	});
+});
+
 describe('G4 splitFrontmatter — fence detection', () => {
 	it('a note with no frontmatter is all body', () => {
 		const r = splitFrontmatter('just a body\nno fence');
