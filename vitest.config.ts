@@ -61,6 +61,11 @@ export default defineConfig({
 			// MIG-093 §C (2026-07-06) — the switcher banded-ranking model (the
 			// pinned Boss case: 'islam' ranks the exact title #1).
 			'tests/mig-093/switcherRank.test.ts',
+			// G4 Phase 0 (2026-07-08) — frontmatter round-trip Reproduce-First
+			// harness (Recipe A nested-map/block-scalar loss; Recipe B quote
+			// backslash-doubling). RED against the hand-rolled parser; Phase 1
+			// turns them green against the yamlDoc module.
+			'tests/g4/frontmatterRoundtrip.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
