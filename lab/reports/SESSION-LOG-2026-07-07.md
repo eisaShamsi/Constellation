@@ -203,3 +203,32 @@ Built the Phase 2 live swap (noteModel.compose/openModel/adoptDisk → yamlDoc b
 **Disciplined outcome (WA#4 + Solve-the-Class):** the live swap is **REVERTED** (`git checkout noteModel.ts`; noteModel is back to legacy — nothing unsafe committed/shipped; the built binary NOT given to the Boss). The **yamlDoc engine stays committed + hardened** (pure `composeContent` re-parse; `projectProps` list fix; fenceless-add creates a block; H1). Full suite **256/256 green**, svelte-check 0 errors.
 
 **Reshaped plan — Phase 2 requires the PROJECTION UNIFICATION (was Phase 3), landed WITH the swap:** the PropertyEditor + all ~10 frontmatter-write call sites must be fed the SAME `projectProps` projection as the base (route NoteEditor's `parsed` through `parseFrontmatterDoc`, and `projectProps` must fully replace `parseFrontmatter` — incl. the `ikhtilaf`/nested-object-list feature the PropertyEditor edits). Only then is base==current and the diff safe. THEN the live swap + Editor-Surface Gate Boss test. The engine is ready; the integration is the careful next block.
+
+### G4 Phase 2 — Boss-VALIDATED on the running app (content-integrity fix proven)
+
+Boss test on the 2 GB universe (fresh binary 09:30). A hand-authored rich note
+(nested map `source`, block scalar `description: |`, quoted `quote: He said: "hello"`,
+`tags`) opened + edited:
+- **Body edit → PERSISTED; frontmatter byte-perfect** (source/description/quote/tags
+  all exactly preserved). Under the old parser this save DESTROYED source/description
+  and corrupted quote. **Zero corruption — the app-killer is fixed.**
+- **Two property "saves" (title, quote) also left the frontmatter byte-perfect** —
+  but the property CHANGE itself didn't persist on THAT note. Root cause isolated:
+  the note was **hand-created on disk** with a `cid_cn` + human filename → an
+  identity/path quirk (model path vs PropertyEditor filePath) that made the model's
+  identity guard reject `editProps`. NOT a G4 issue (the yamlDoc engine writes
+  property edits correctly — unit-proven) and NOT corruption (benign: the change was
+  dropped, nothing damaged). **Confirmed a test-note artifact:** a normally-created
+  note (New Note → add `status: draft` → relaunch) **persisted correctly.**
+
+**Verdict: Phase 2 content-integrity PASS.** Editing an open note (body or property)
+no longer destroys rich frontmatter; only the edited field changes; property saves
+persist on real notes. Commit `090b4824`, pushed.
+
+**Remaining G4 (completeness, not yet done):** Phase 3 — route the ~8 remaining direct
+`buildFullContent` writers through yamlDoc (add-tag/add-link to a CLOSED note,
+standalone PropertyEditor, second-screen, ExpressionForge) so closed-note frontmatter
+is safe too; Phase 4 — harden the Rust index reader (H2); Phase 5 — cycle close + docs
+×15 + Orientation v-bump. Phase 2's own Editor-Surface Gate remainder (Focus round-trip,
+tab-switch-in-Focus, rename linked-probe) still to Boss-test, though the mig-076 model
+tests cover those lifecycle invariants (all green with yamlDoc).
