@@ -469,6 +469,18 @@ Type `[[` to open the note autocomplete. Start typing a note name and select fro
 
 You can also link to specific headings: `[[Note Name#Heading]]`.
 
+### Saving and Recovery
+
+Constellation **saves automatically** as you type — there is no Save button. Your edits are written to the `.md` file a moment after you pause (and whenever you switch notes or close a tab). A note is marked "saved" only once it is genuinely written to disk.
+
+If a save ever **fails** — for example a sync tool (iCloud / OneDrive / Syncthing) or antivirus briefly locks the file — Constellation does **not** lose your work:
+
+- A banner appears at the top: *"Couldn't save {note} — your edit is safe and will retry."* Your typing stays on screen and is held safely in memory (and in a recovery buffer that survives a restart).
+- Constellation **auto-retries every few seconds**, so once the file frees up your edit is written on its own — even if you have walked away.
+- You can also click **Retry now** on the banner to save immediately. The banner disappears once the note saves.
+
+You never have to worry about a locked or briefly-unavailable file costing you an edit.
+
 ---
 
 ## 4. Notes Management Sidebar

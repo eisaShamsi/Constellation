@@ -164,4 +164,20 @@ All five now go through `saveNoteSession` + `standardSaveEnv` (mark clean only o
 
 The other 22 are the standing G2–G8 backlog (appended to the Charter). **Highest-priority remaining = the 2nd APP-KILLER, still open:** `store.ts:1787` (`openNoteTab` in-place reuse discards the outgoing dirty model, no flush → ~30 s nav-loss) + `+layout.svelte:3320` (two-tab same-note clobber) → the **next migration** (notemodel-ownership: flush-before-replace). Surfaced to Eisa.
 
-**`write_note` verified already atomic + fsync-durable** (`write_gate::atomic_write`), and `replace_file` (Windows `ReplaceFileW`) fails on a read-only target → a Boss-reproducible way to force a save failure for the Editor-Surface Gate test. Rebuilding the binary with all fixes → Boss test.
+**`write_note` verified already atomic + fsync-durable** (`write_gate::atomic_write`), and `replace_file` (Windows `ReplaceFileW`) fails on a read-only target → a Boss-reproducible way to force a save failure for the Editor-Surface Gate test.
+
+### Boss Editor-Surface Gate test — release binary `constellation.exe` (18:35, fresh, all fixes)
+
+Release build clean; frontend re-embedded (saveLocks fix + banner confirmed in `build/`). All commits pushed (`cd65044d..d4d9f218`).
+
+- **Stage A (no regression — normal editing still saves) — PASS (Boss-validated 2026-07-08).** Type-burst, Focus round-trip, property edit, type-then-tab-switch, stage change — all persist across switch-away + relaunch. The 5-site reroute onto the durability primitive did NOT break the save path.
+- **Stage B (forced write failure → banner + recovery) — PASS (Boss-validated 2026-07-08).** Read-only `.md` → edit in Constellation → the save-health banner appeared, the edit survived on screen; un-read-only + Retry → banner cleared, edit persisted. The `NoteEditor.svelte:233` **APP-KILLER is FIXED end-to-end** — no false-clean, no silent loss, visible + recoverable.
+
+### Save-Durability migration — CLOSED (both Boss stages pass)
+
+The `/migration` is complete and Boss-validated. Remediation #1 of the Safety Audit (the mark-clean-before-durable-write app-killer) is shipped. Closeout:
+- **Orientation v-bump (SO #6):** `docs/Constellation Orientation & Onboarding v3.33.md` (NEW file; v3.32 retained). Same-day as the ship.
+- **User Manual (SO #2):** "Saving and Recovery" note (the save-health banner + auto-retry) + 14-language propagation.
+- **Audit (migration Phase 4):** satisfied by the per-cycle whole-app sweep (diff CLEAN, `wf_5f9b257d-a99`) + the 7 invariants + 16 harness tests + the 2 Boss stages. No schema change / no backfill → trivial migration-path (rollback = revert commits; no persisted state).
+
+**NEXT (recommended, awaiting Boss go):** the **2nd APP-KILLER** — `store.ts:1787` `openNoteTab` in-place reuse discards the outgoing dirty model (~30 s nav-loss on a mid-typing wikilink/file-tree click) + `+layout.svelte:3320` two-tab same-note clobber. Its own `/migration` (notemodel-ownership: flush-before-replace + sibling reconcile), Reproduce-First.
