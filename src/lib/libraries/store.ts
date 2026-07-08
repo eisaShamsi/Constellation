@@ -12,7 +12,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, type SaveEnv } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, type SaveEnv } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -207,6 +207,13 @@ export function toggleEditMode(tabId: string) {
 	});
 }
 
+// APP-KILLER #2 (2026-07-08) — the nav-flush safety valve. When true, a navigation
+// that reuses a tab (wikilink / file-tree click, Alt+←/→) flushes the OUTGOING dirty
+// model to disk through the durability gate BEFORE re-seeding the tab's model, so
+// in-debounce edits are never silently discarded. One-line revert to the prior
+// (defective) behavior. Frontend-only; models are ephemeral, so toggling is safe.
+const NAV_FLUSH_ENABLED = true;
+
 // ─── Centralized save with lock ───
 const saveLocks = new Map<string, boolean>();
 const recentWrites = new Map<string, number>();
@@ -345,6 +352,31 @@ export async function retrySaveFailure(path: string): Promise<void> {
 			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
 		},
 	}), 'retry_save');
+}
+
+/**
+ * APP-KILLER #2 — the SaveEnv for a nav-flush of the OUTGOING note (the note the user is
+ * navigating away from). A bare flush (like flushAllTabsInLibrary / rename_flush) omits the
+ * onSaved side effects, which would leave the just-flushed note's SEARCH INDEX stale
+ * (index↔disk divergence) and the second screen un-notified. This mirrors NoteEditor's
+ * handleSave onSaved: broadcast (second-screen sync) + FTS5/note_meta reindex + re-embed.
+ */
+function navFlushEnv(tab: { id: string; name: string; libraryName: string }): SaveEnv {
+	return standardSaveEnv({
+		origin: 'nav_flush',
+		name: tab.name,
+		onSaved: (savedPath) => {
+			emit('screen:note-saved', { path: savedPath }).catch(() => {});
+			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+			if (get(appSettings).enabledFeatures?.semanticSearch) {
+				const body = getNoteModel(tab.id)?.body.toString() ?? '';
+				invoke('constellation_embed_notes', {
+					notes: [{ path: savedPath, name: tab.name, content: body }],
+					force: true,
+				}).catch(() => {});
+			}
+		},
+	});
 }
 
 /**
@@ -974,6 +1006,19 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 	const myToken = (_navTokens.get(tabId) ?? 0) + 1;
 	_navTokens.set(tabId, myToken);
 	try {
+		// APP-KILLER #2 — Alt+←/→ is a DEPARTURE: flush the OUTGOING dirty model to disk
+		// before this tab's id-slot is re-seeded below (openNoteModel). Sources the old
+		// path from the model. A failed flush ABORTS the nav (user stays on the note +
+		// save-health banner); a nav that superseded us during the flush also bails.
+		if (NAV_FLUSH_ENABLED) {
+			const outgoing = get(openTabs).find(t => t.id === tabId);
+			if (outgoing && isNoteDirty(tabId)) {
+				markRecentWrite(outgoing.path);
+				const f = await flushOutgoingModel(tabId, navFlushEnv(outgoing), 'nav_flush');
+				if (!f.ok) { _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
+				if (_navTokens.get(tabId) !== myToken) return;
+			}
+		}
 		const content: string = await invoke('read_note', { filePath });
 		// If a later nav has superseded this one, don't stomp its result.
 		if (_navTokens.get(tabId) !== myToken) return;
@@ -1757,6 +1802,20 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 
 	// Default: replace active tab content
 	if (!newTab && currentTab) {
+		// APP-KILLER #2 — this in-place reuse is a DEPARTURE from currentTab's note. Flush
+		// its OUTGOING dirty model to disk BEFORE the openTabs.update + openNoteModel below
+		// re-seed the tab to the new note (the old path is sourced from the model, which
+		// still holds it here). A failed flush ABORTS the nav — keep the user on the note +
+		// the save-health banner (never a silent discard). Shares _navTokens with
+		// loadTabHistoryEntry so a click-nav and an Alt-nav on this tab supersede each other.
+		if (NAV_FLUSH_ENABLED && isNoteDirty(currentTab.id)) {
+			const navToken = (_navTokens.get(currentTab.id) ?? 0) + 1;
+			_navTokens.set(currentTab.id, navToken);
+			markRecentWrite(currentTab.path);
+			const f = await flushOutgoingModel(currentTab.id, navFlushEnv(currentTab), 'nav_flush');
+			if (!f.ok) { _traceNav('openNoteTab:flushAbort', currentTab.id, filePath); return; }
+			if (_navTokens.get(currentTab.id) !== navToken) { _traceNav('openNoteTab:superseded', currentTab.id, filePath); return; }
+		}
 		// Push to tab's history (trim forward history)
 		const trimmedHistory = currentTab.history.slice(0, currentTab.historyIndex + 1);
 		trimmedHistory.push(filePath);
