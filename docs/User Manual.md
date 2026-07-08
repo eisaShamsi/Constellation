@@ -270,6 +270,17 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 - **Remove a library**: open the Library Manager and click the trash icon next to the library. Your files are not deleted — Constellation only forgets about the library.
 - **Library settings**: Each library can have its own appearance settings (fonts, colors).
 
+### Syncing and External Changes
+
+Constellation follows **File Over App** — your notes are plain `.md` files on disk, and the app watches them for changes. If a note arrives or changes from *outside* Constellation while the app is open — an Obsidian sync from another device, a `git pull`, a cloud-sync tool (iCloud / Syncthing / OneDrive), or a file you drop into a library folder — Constellation picks it up **automatically**, within about a second, with **no restart**:
+
+- The note appears in the **file tree**.
+- It becomes findable in **Quick Switcher** (`Ctrl+O`), **Search**, the **Index**, **backlinks**, and the library **note count** — all update on their own.
+- If you rename a folder from outside the app, its notes stay findable at the new location and the old entries are cleaned up.
+- A large batch (a `git pull` of many notes, or a first sync) is indexed in the background — typing stays instant while search catches up.
+
+You don't need to do anything: Constellation keeps its search index in step with your files as they change on disk. *(One detail: renaming a folder from **outside** the app resets those notes' review-schedule and link-weight history — the note text itself is untouched. Renaming folders **inside** Constellation preserves everything.)*
+
 ### Universe Notes Folder
 
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.

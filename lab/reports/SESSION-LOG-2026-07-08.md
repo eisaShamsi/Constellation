@@ -100,3 +100,21 @@ Diff self-review found one latent app-killer + two robustness gaps in `delete_ro
 - The other 21 are the **standing G2–G8 Safety-Audit backlog, mostly re-confirms of the 2026-07-07 register** (nothing between the sweeps touched those paths). 2 APP-KILLERs are pre-existing G2 content-loss (`NoteEditor.svelte:233` save-before-write; `store.ts:1693` same-tab-nav model clobber). NEW: `yamlDoc.ts:150/254` nested-object-list flatten (a G4 gap), `link_types.rs`/`universe.rs` non-atomic JSON (G6), `bulk_ops.rs:305` TOCTOU, `FocusPane` no-net. Full register appended to `docs/Constellation-Safety-Audit-CHARTER.md`. **Surfaced to Eisa for sequencing — NOT fixed in this build** (pre-existing; would muddle the clean watcher-freshness change; each needs its own Reproduce-First remediation).
 
 Full lib suite: **1039 passed** (pre-guard). Watcher-freshness module: **10 passed** (pre-guard); db-ready guard is a 1-line command-only addition (compiled; doesn't touch the helper tests).
+
+### Boss test — release binary `constellation.exe` (15:06, verified fresh)
+
+Release build clean (`cargo build --release`, 2m04s); frontend re-embedded (`npm run build` first; `reindex_changed_paths` confirmed in `build/`). All 7 phase commits pushed to `origin/main` (`293e77ca..ac87d62d`).
+
+- **Stage 1 (single external note add) — PASS (Boss-validated 2026-07-08).** An `.md` created in Explorer while the app runs became Ctrl+O-jumpable + searchable within ~1s, no restart. The reported bug is fixed.
+- **Stage 2 (external folder rename) — PASS (Boss-validated 2026-07-08).** Renamed `OldName`→`NewName` in Explorer; notes findable at the new location, exactly one Search result (old-side ghost rows purged). The Windows one-event-per-folder gap (Phase 3) is closed.
+- **Stage 3 (bulk external sync) — PASS (Boss-validated 2026-07-08).** Dropped a batch of `.md` files while typing; typing stayed instant, files appeared immediately, search caught up. Burst handling (Phase 4) validated.
+
+### Watcher-Index-Freshness migration — CLOSED (all 3 Boss stages pass)
+
+The `/migration` is complete and Boss-validated end-to-end. Closeout:
+- **Orientation v-bump (SO #6):** `docs/Constellation Orientation & Onboarding v3.32.md` (NEW file; v3.31 retained) — v3.32 changelog block + a migration-index table row. Landed same-day as the migration close.
+- **User Manual (SO #2):** added a "Syncing and External Changes" subsection to `docs/User Manual.md` (§2 Universe and Libraries) — plain-language description of the auto-freshness behavior + the external-folder-rename aux-reset caveat.
+- **Follow-up (flagged, not silently dropped):** propagate the manual note to the 14 `docs/help.{lang}/` translations. No UI strings changed (no i18n locale-file edits needed) — this is a prose-help propagation only. Spawned as a background task.
+- **Audit (migration Phase 4):** satisfied by the per-cycle whole-app safety sweep (diff CLEAN, `wf_8a41970f-36d`) + the 8 invariants + 10 tests + the 3 Boss stages. No schema change / no backfill / no migration-state → trivial migration-path (rollback = revert the commits; the command + wiring carry no persisted state).
+
+**NEXT (recommended, awaiting Boss go):** the 2 pre-existing APP-KILLERs from the sweep — `NoteEditor.svelte:233` (save-before-write) and `store.ts:1693` (same-tab-nav model clobber) — Reproduce-First, one at a time. Both are top of the active Safety Audit.
