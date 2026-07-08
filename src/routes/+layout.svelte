@@ -3107,25 +3107,34 @@
 				pendingTabReloads.clear();
 				pendingReindex.clear();
 
-				// Reindex the externally-changed .md paths into note_meta FIRST, so
-				// every note_meta reader below (loadAllStats, and refreshLibraryCaches
-				// → allNotes/Quick Switcher/Search Hub) sees them. AWAITED: the
-				// (async) command's Promise resolves only once note_meta is committed.
-				// Scoped + off the UI thread; the app's own writes are already
-				// watcher-suppressed, so this fires only for genuine external changes.
-				if (reindexPaths.length) {
-					try { await invoke('reindex_changed_paths', { paths: reindexPaths }); } catch {}
-				}
-
-				// Refresh trees for changed libraries
+				// Refresh the file tree FIRST — it reads the filesystem, so the
+				// new/renamed files show in the sidebar immediately, regardless of how
+				// large the reindex batch is (a git pull / bulk import). MIG-077
+				// A3-R3: any on-disk change also makes the cached OrgChart tree stale.
 				for (const vid of libraryIds) {
 					await refreshLibraryTree(vid);
 				}
-				await loadAllStats();
-				// MIG-077 A3-R3 follow-up — any on-disk change (create/move/delete/
-				// external) makes the cached OrgChart tree stale; reload it if open,
-				// else mark dirty for the next open.
 				markOrgChartDirty();
+
+				// Reindex the externally-changed paths into note_meta so Quick
+				// Switcher / Search Hub / Index / backlinks / counts go current.
+				// A NORMAL change (a handful of files): AWAIT so the note_meta readers
+				// below see the committed rows within ~1s ((async) Promise resolves on
+				// completion; off the UI thread; app's own writes are already
+				// watcher-suppressed). A LARGE BURST (> cap): run in the BACKGROUND so
+				// the flush never stalls on minutes of indexing — the tree is already
+				// fresh; allNotes/counts refresh via .then() when the reindex settles.
+				const BURST_AWAIT_CAP = 250;
+				if (reindexPaths.length) {
+					if (reindexPaths.length <= BURST_AWAIT_CAP) {
+						try { await invoke('reindex_changed_paths', { paths: reindexPaths }); } catch {}
+					} else {
+						invoke('reindex_changed_paths', { paths: reindexPaths })
+							.then(() => { void loadAllStats(); void refreshLibraryCaches(); })
+							.catch(() => {});
+					}
+				}
+				await loadAllStats();
 
 				// Reload open tabs whose files changed
 				const tabs = get(openTabs);
