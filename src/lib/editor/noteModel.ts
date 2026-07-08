@@ -214,10 +214,20 @@ export function compose(id: string, expectPath: string): ComposeResult {
 	};
 }
 
-/** Record that `version` was persisted to disk (clears dirty up to that point). */
-export function markSaved(id: string, version: number): void {
+/**
+ * Record that `version` was persisted to disk (clears dirty up to that point).
+ * `expectPath` (APP-KILLER #2, 2026-07-08) path-guards the mark-clean exactly as
+ * compose/setBody guard the read-out / write-in: a save that RESOLVES after its id-slot
+ * was re-seeded to a DIFFERENT note (nav / reuse) must not stamp its old version onto the
+ * new model — that would poison savedVersion and hide the new note's first edits from
+ * autosave (a silent loss). A path mismatch is a no-op; omitting expectPath keeps the
+ * legacy unguarded behavior for callers that never swap under an id.
+ */
+export function markSaved(id: string, version: number, expectPath?: string): void {
 	const m = models.get(id);
-	if (m && version > m.savedVersion) m.savedVersion = version;
+	if (!m) return;
+	if (expectPath !== undefined && m.path !== expectPath) return;
+	if (version > m.savedVersion) m.savedVersion = version;
 }
 
 /** Unsaved edits exist beyond the last persisted version. */

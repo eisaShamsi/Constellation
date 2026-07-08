@@ -131,10 +131,44 @@ export async function save(
 		e.onError?.({ path: r.path, content: r.content, version: r.version, error });
 		return { ok: false, reason: 'write_failed', path: r.path, version: r.version, error };
 	}
-	M.markSaved(id, r.version); // clean trails durability — reached only if the write resolved
+	M.markSaved(id, r.version, r.path); // clean trails durability — path-guarded so a save that resolves after an id-swap can't poison the new model (APP-KILLER #2)
 	e.clearNetIf?.(r.path, r.content); // compare-and-clear: never wipe a newer edit's net
 	e.onSuccess?.({ path: r.path, content: r.content, version: r.version });
 	return r;
+}
+
+/** flushIfDirty outcome. `ok:true` = safe to proceed with the nav/replace; `ok:false` =
+ *  ABORT (keep the user on the outgoing note) — a durable write could not be proven. */
+export type FlushResult = { ok: true } | { ok: false; reason: string; error?: unknown };
+
+/**
+ * APP-KILLER #2 (2026-07-08) — the ONE nav-flush choke point. Before the store re-seeds a
+ * tab's id-slot with the next note (openNoteModel), it flushes the OUTGOING dirty model to
+ * disk through the shipped durability gate (`save`), so a navigation (a DEPARTURE) never
+ * discards in-debounce edits. The old path is read FROM THE MODEL (never the tab — the caller
+ * has already rewritten tab.path to the new note by the time it replaces the model).
+ *   - no model / not dirty → {ok:true} immediately (no spurious write) → proceed.
+ *   - write failure → {ok:false} → ABORT: the caller keeps the user on the note; the net is
+ *     retained and the save-health banner is surfaced by `save`'s onError (never a silent loss).
+ *   - still dirty after a bounded loop → {ok:false, still_dirty} → ABORT.
+ * The bounded loop re-composes each pass, so a keystroke that lands during the awaited write
+ * (the await-window race) is caught by the next flush instead of being lost to the swap.
+ */
+export async function flushIfDirty(
+	id: string,
+	env: DiskWriter | SaveEnv,
+	origin = 'nav_flush',
+): Promise<FlushResult> {
+	const m = M.getModel(id);
+	if (!m || !M.isDirty(id)) return { ok: true }; // nothing to flush → safe to proceed
+	const oldPath = m.path; // the model's OWN identity (setBody never moves it; only rename does)
+	const MAX = 4;
+	for (let i = 0; i < MAX && M.isDirty(id); i++) {
+		const r = await save(id, oldPath, env, origin);
+		if (!r.ok) return { ok: false, reason: r.reason, error: (r as { error?: unknown }).error };
+	}
+	if (M.isDirty(id)) return { ok: false, reason: 'still_dirty' };
+	return { ok: true };
 }
 
 /** Rename / move: update identity; the next save targets the new path. */
