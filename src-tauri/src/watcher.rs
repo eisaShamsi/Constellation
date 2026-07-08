@@ -67,17 +67,16 @@ pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -
                 .iter()
                 // Watcher index-freshness (2026-07-08): also pass paths that no
                 // longer exist (a removed / renamed-away file or DIRECTORY). A
-                // renamed-away folder's OLD path fails `is_dir()` (it's gone) and
-                // isn't `.md`, so without this the old-side signal is lost and the
-                // frontend reindex can't purge that folder's stale note_meta rows.
-                // Still emit-only — the reindex runs off-thread via the frontend's
-                // `reindex_changed_paths`; existing non-`.md` files stay ignored.
-                .filter(|p| {
-                    !p.exists()
-                        || p.is_dir()
-                        || p.extension()
-                            .map(|e| e == "md")
-                            .unwrap_or(false)
+                // renamed-away folder's OLD path is gone, so without this the
+                // old-side signal is lost and the frontend reindex can't purge that
+                // folder's stale note_meta rows. Still emit-only — the reindex runs
+                // off-thread via the frontend's `reindex_changed_paths`. ONE stat
+                // per path (kept cheap on the notify watch thread): gone → pass
+                // (removed); existing dir → pass; existing `.md` → pass; existing
+                // non-`.md` file → ignored.
+                .filter(|p| match p.metadata() {
+                    Err(_) => true,
+                    Ok(m) => m.is_dir() || p.extension().map(|e| e == "md").unwrap_or(false),
                 })
                 // §3-redo.2: skip paths just written by the wikilink rename
                 // cascade. Without this, the cascade's fs::write bubbles back

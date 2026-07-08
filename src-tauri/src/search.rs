@@ -9458,7 +9458,7 @@ fn reindex_md_descendants(
 fn delete_rows_under_prefix(state: &SearchState, dir_path: &str) -> usize {
     let norm = |p: &str| p.replace('\\', "/").to_lowercase();
     let prefix = format!("{}/", norm(dir_path).trim_end_matches('/'));
-    let victims: Vec<String> = {
+    let (victims, total): (Vec<String>, usize) = {
         let db = match state.db.lock() {
             Ok(g) => g,
             Err(_) => return 0,
@@ -9475,12 +9475,36 @@ fn delete_rows_under_prefix(state: &SearchState, dir_path: &str) -> usize {
             Ok(i) => i,
             Err(_) => return 0,
         };
-        it.flatten()
-            .filter(|p| norm(p).starts_with(&prefix))
-            .collect()
+        let all: Vec<String> = it.flatten().collect();
+        let total = all.len();
+        let victims: Vec<String> = all.into_iter().filter(|p| norm(p).starts_with(&prefix)).collect();
+        (victims, total)
     };
+    // Offline-drive / transient-unmount guard (mirrors reconcile's stale cap): if
+    // "this folder vanished" would purge MORE THAN HALF the whole index, it is far
+    // more likely a transient unmount / drive-offline than a real folder delete.
+    // Refuse — never a silent mass index-wipe. (The command processes ADDS before
+    // DELETES, so a folder RENAME's new rows already exist in `total` here → a
+    // rename is ≤50% and passes; only a genuine near-whole-universe vanish trips
+    // this. A real >50% folder delete self-heals at the next boot reconcile, which
+    // has its own offline guard.)
+    if total > 0 && victims.len() * 2 > total {
+        eprintln!(
+            "[watcher-freshness] delete_rows_under_prefix REFUSED: {} of {} note_meta rows under '{}' (>50%) — likely a transient unmount; deferred to boot reconcile.",
+            victims.len(),
+            total,
+            dir_path
+        );
+        return 0;
+    }
     let mut n = 0usize;
     for p in &victims {
+        // Per-path re-stat: only purge a row whose file is ACTUALLY gone. A spurious
+        // 'folder removed' event while the files are still on disk (a sync glitch)
+        // must keep its rows — reconcile's re-stat-before-remove discipline.
+        if std::path::Path::new(p).exists() {
+            continue;
+        }
         if reindex_delete_note(state, p).is_ok() {
             n += 1;
         }
@@ -9499,36 +9523,51 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
     // paths; per-path load would re-walk the federation tree each time).
     let libs = crate::libraries::load_all_libraries(&app);
     let mut done = 0usize;
+    // Pass 1 — ADDS (existing dirs + `.md` files). Run BEFORE deletes so a folder
+    // rename's new rows already exist when the old-side prefix-purge runs its
+    // offline-drive guard (a legit rename then reads as ≤50% of the index, not a
+    // near-total vanish).
     for p in &paths {
         let pb = std::path::Path::new(p);
-        let is_md = pb
-            .extension()
-            .map(|e| e.eq_ignore_ascii_case("md"))
-            .unwrap_or(false);
         if pb.is_dir() {
             // Existing directory — NEW side of an external folder rename/move, or a
             // bulk folder add. Index every not-yet-known `.md` descendant.
             done += reindex_md_descendants(&state, &libs, p);
-        } else if pb.exists() {
-            if is_md {
-                // Existing `.md`: (re)index it. If no registered library owns the
-                // path it has no note_meta identity, so skip.
-                if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
-                    if reindex_single_note(&state, p, &lib).is_ok() {
-                        done += 1;
-                    }
+        } else if pb.exists()
+            && pb
+                .extension()
+                .map(|e| e.eq_ignore_ascii_case("md"))
+                .unwrap_or(false)
+        {
+            // Existing `.md`: (re)index it. If no registered library owns the path
+            // it has no note_meta identity, so skip.
+            if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
+                if reindex_single_note(&state, p, &lib).is_ok() {
+                    done += 1;
                 }
             }
-            // Existing non-`.md` file → not part of the note index; skip.
-        } else if is_md {
+        }
+        // Existing non-`.md` file → not part of the note index; skip.
+    }
+    // Pass 2 — DELETES (vanished paths).
+    for p in &paths {
+        let pb = std::path::Path::new(p);
+        if pb.exists() {
+            continue;
+        }
+        if pb
+            .extension()
+            .map(|e| e.eq_ignore_ascii_case("md"))
+            .unwrap_or(false)
+        {
             // Vanished `.md`: purge its rows. Idempotent — Ok even if never indexed.
             if reindex_delete_note(&state, p).is_ok() {
                 done += 1;
             }
         } else {
             // Vanished non-`.md` path — possibly a removed directory (OLD side of a
-            // folder rename/move, or a folder delete). Prefix-purge its rows. A
-            // no-op if it was a plain non-`.md` file (nothing matches the prefix).
+            // folder rename/move, or a folder delete). Prefix-purge its rows (guarded
+            // + per-path re-stat). A no-op if it was a plain non-`.md` file.
             done += delete_rows_under_prefix(&state, p);
         }
     }
@@ -12475,12 +12514,74 @@ mod tests_watcher_freshness {
         assert_eq!(row("A_B"), 1);
         assert_eq!(row("AXB"), 1);
 
+        // Remove the folders so the per-path re-stat sees their notes as gone.
+        std::fs::remove_dir_all(root.path().join("Log")).unwrap();
         delete_rows_under_prefix(&state, &root.path().join("Log").to_string_lossy());
         assert_eq!(row("Log"), 0, "Log purged");
         assert_eq!(row("Logs"), 1, "Logs untouched — separator-bounded");
 
+        std::fs::remove_dir_all(root.path().join("A_B")).unwrap();
         delete_rows_under_prefix(&state, &root.path().join("A_B").to_string_lossy());
         assert_eq!(row("A_B"), 0, "A_B purged");
         assert_eq!(row("AXB"), 1, "AXB untouched — '_' literal, not a LIKE wildcard");
+    }
+
+    /// Offline-drive guard: a vanished folder whose rows are >50% of the whole
+    /// index is treated as a transient unmount and REFUSED — never a silent mass
+    /// index-wipe — even though the files genuinely re-stat as gone.
+    #[test]
+    fn delete_rows_under_prefix_refuses_mass_deletion() {
+        let (state, root) = state_with_schema();
+        let libs = libs_rooted(&root);
+        let big = root.path().join("Big");
+        let keep = root.path().join("Keep");
+        std::fs::create_dir_all(&big).unwrap();
+        std::fs::create_dir_all(&keep).unwrap();
+        for i in 0..3 {
+            std::fs::write(big.join(format!("n{i}.md")), "---\ntitle: n\n---\nx\n").unwrap();
+        }
+        std::fs::write(keep.join("k.md"), "---\ntitle: k\n---\nx\n").unwrap();
+        reindex_md_descendants(&state, &libs, &big.to_string_lossy());
+        reindex_md_descendants(&state, &libs, &keep.to_string_lossy());
+        assert_eq!(total_rows(&state), 4);
+
+        // Big's files ARE gone (a real vanish), but Big is 3/4 = 75% > 50%.
+        std::fs::remove_dir_all(&big).unwrap();
+        assert_eq!(
+            delete_rows_under_prefix(&state, &big.to_string_lossy()),
+            0,
+            "refused: >50% of the index would vanish (offline-drive guard)"
+        );
+        assert_eq!(total_rows(&state), 4, "all rows intact — no mass index-wipe");
+    }
+
+    /// Per-path re-stat: a spurious 'folder removed' event while the notes are
+    /// STILL on disk (a sync glitch) must NOT purge their rows.
+    #[test]
+    fn delete_rows_under_prefix_keeps_rows_whose_files_still_exist() {
+        let (state, root) = state_with_schema();
+        let libs = libs_rooted(&root);
+        // 1 note under Glitch, 3 elsewhere → Glitch is <50% so the fraction guard
+        // does NOT fire; the re-stat is the sole protector here.
+        let glitch = root.path().join("Glitch");
+        std::fs::create_dir_all(&glitch).unwrap();
+        std::fs::write(glitch.join("g.md"), "---\ntitle: g\n---\nx\n").unwrap();
+        for i in 0..3 {
+            let d = root.path().join(format!("Other{i}"));
+            std::fs::create_dir_all(&d).unwrap();
+            std::fs::write(d.join("o.md"), "---\ntitle: o\n---\nx\n").unwrap();
+            reindex_md_descendants(&state, &libs, &d.to_string_lossy());
+        }
+        reindex_md_descendants(&state, &libs, &glitch.to_string_lossy());
+        assert_eq!(total_rows(&state), 4);
+
+        // Glitch's file is STILL on disk → its row must survive the spurious event.
+        assert_eq!(
+            delete_rows_under_prefix(&state, &glitch.to_string_lossy()),
+            0,
+            "file still exists → row kept (spurious-event re-stat guard)"
+        );
+        let g = glitch.join("g.md").to_string_lossy().to_string();
+        assert_eq!(row_count(&state, &g), 1, "the still-present note keeps its row");
     }
 }

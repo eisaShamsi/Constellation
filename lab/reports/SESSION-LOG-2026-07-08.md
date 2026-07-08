@@ -80,3 +80,15 @@ Architect workflow `wf_9192113e-92f` (4 agents) COMPLETE → `docs/Watcher-Index
 - **Burst branch:** `reindexPaths.length ≤ 250` → **await** (note_meta readers see rows within ~1 s). `> 250` → **background** (`invoke(...).then(() => { loadAllStats(); refreshLibraryCaches(); })`) so the flush never stalls on minutes of indexing; the tree is already fresh and allNotes/counts refresh when the reindex settles. No chunking needed — `reindex_single_note` takes/releases the writer lock per note (WAL reads interleave), so there is no long lock hold.
 - No reconcile fallback (per-file scales and is non-blocking; avoids reconcile's "modified content not reindexed" caveat). **Deferred (honest):** a status-bar "indexing N external changes" progress indicator — files are visible/openable immediately and search catches up silently, so this is a nice-to-have, not shipped.
 - `npm run check` → **0 errors**.
+
+### Phase 5 gate — self-review hardening (before the safety-inspection landed) — GREEN
+
+Diff self-review found one latent app-killer + two robustness gaps in `delete_rows_under_prefix`; fixed proactively (WA#6):
+
+- **Offline-drive mass-deletion guard.** A watched folder (or library root) reported *vanished* during a **transient unmount** (network-drive blip, sync mid-move) would have silently purged every `note_meta` row under it — the "offline drive" mass-index-wipe `reconcile` explicitly caps against. Added: refuse if the prefix would purge **>50% of the whole index** (defer to boot reconcile).
+- **Per-path re-stat.** Only purge a row whose file is **actually gone** (a spurious "folder removed" while the notes are still on disk keeps its rows) — reconcile's re-stat-before-remove discipline.
+- **Add-before-delete ordering** in `reindex_changed_paths` (two passes): a folder rename's NEW rows are indexed before the OLD-side prefix-purge runs its >50% guard, so a legit rename reads as ≤50% and is never refused.
+- `watcher.rs` filter → **single `metadata()` stat** per path (was `!exists() || is_dir()` = two stats) — cheaper on the notify watch thread.
+- 2 new tests (`delete_rows_under_prefix_refuses_mass_deletion`, `..._keeps_rows_whose_files_still_exist`). Full suite: `cargo test --lib` = **1039 passed** (pre-hardening); watcher-freshness module now **10 passed; 0 failed**.
+
+Diff-scoped `safety-inspection` (workflow `wf_8a41970f-36d`) running over the 5 changed files — findings folded in before the binary/Boss test.
