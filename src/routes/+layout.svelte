@@ -2495,17 +2495,18 @@
 		// boot. Everything below is fire-and-forget — the UI never waits.
 		//
 		// Removed from the boot path in this rewrite:
-		//   - cache_reconcile() — full-filesystem mtime walk. Now only
-		//     triggered by the file watcher (per-file) or by the user
-		//     clicking Settings → Rebuild Index.
+		//   - cache_reconcile() — full-filesystem mtime walk. Runs on boot /
+		//     universe-switch / Settings → Rebuild Index only. (Per-file external
+		//     changes are indexed incrementally by reindex_changed_paths on the
+		//     watcher flush below — NOT by a reconcile walk. 2026-07-08.)
 		//   - enrichNodesBackground() — 4 per-library walks for strata /
 		//     maturity / origins / stages. Will be persisted into SQLite
 		//     at index time and read from cache in a future commit.
 		//
 		// loadAllStats remains because its Rust side is already cache-
-		// fast (metadata-only walk + per-library thread parallelism).
-		// It's fire-and-forget so the sidebar star counts populate
-		// without blocking anything.
+		// fast (reads the note_meta index — NOT a filesystem walk — with
+		// per-library thread parallelism). It's fire-and-forget so the
+		// sidebar star counts populate without blocking anything.
 		// ═══ BOOT ORDER: hydrate first, fan-out after ═══════════════════
 		// Critical finding (2026-04-16): all 34 boot IPCs (16 watchers +
 		// 16 appearances + stats + snapshot) were racing into Tauri's
@@ -3090,14 +3091,31 @@
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
 		let pendingTabReloads: Set<string> = new Set();
+		// Watcher index-freshness (2026-07-08) — external .md changes to reindex
+		// into note_meta so Quick Switcher / Search Hub / Index / backlinks / counts
+		// go current WITHOUT a reboot. The watcher was emit-only (Rule-8 gap); this
+		// set feeds the scoped reindex_changed_paths command on the flush below.
+		let pendingReindex: Set<string> = new Set();
 		// Batch rapid file changes (300ms window)
 		const scheduleWatcherFlush = () => {
 			clearTimeout(watcherDebounce);
 			watcherDebounce = setTimeout(async () => {
 				const libraryIds = [...pendingTreeRefresh];
 				const tabPaths = [...pendingTabReloads];
+				const reindexPaths = [...pendingReindex];
 				pendingTreeRefresh.clear();
 				pendingTabReloads.clear();
+				pendingReindex.clear();
+
+				// Reindex the externally-changed .md paths into note_meta FIRST, so
+				// every note_meta reader below (loadAllStats, and refreshLibraryCaches
+				// → allNotes/Quick Switcher/Search Hub) sees them. AWAITED: the
+				// (async) command's Promise resolves only once note_meta is committed.
+				// Scoped + off the UI thread; the app's own writes are already
+				// watcher-suppressed, so this fires only for genuine external changes.
+				if (reindexPaths.length) {
+					try { await invoke('reindex_changed_paths', { paths: reindexPaths }); } catch {}
+				}
 
 				// Refresh trees for changed libraries
 				for (const vid of libraryIds) {
@@ -3123,16 +3141,23 @@
 					}
 				}
 
-				// Debounced cache refresh for links, tags, index
+				// note_meta is now current for the external changes (awaited reindex
+				// above), so repopulate allNotes/tags/aliases PROMPTLY — the Quick
+				// Switcher refreshes within ~1s of the change, not 5s. The short
+				// debounce still coalesces a burst; refreshLibraryCaches self-guards
+				// re-entry (cacheRefreshing).
 				clearTimeout(cacheRefreshDebounce);
-				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 5000);
+				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 800);
 			}, 300);
 		};
 		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
 			const { libraryId, paths } = event.payload;
 			pendingTreeRefresh.add(libraryId);
 			for (const p of paths) {
-				if (!wasRecentlyWritten(p)) pendingTabReloads.add(p);
+				if (!wasRecentlyWritten(p)) {
+					pendingTabReloads.add(p);
+					pendingReindex.add(p); // external change → reindex into note_meta
+				}
 			}
 			scheduleWatcherFlush();
 		});

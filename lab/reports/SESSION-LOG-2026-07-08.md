@@ -56,3 +56,11 @@ Architect workflow `wf_9192113e-92f` (4 agents) COMPLETE → `docs/Watcher-Index
 - `libraries.rs::library_name_for_path(libs, path)` — shared longest-root-wins resolver (separator-bounded, case/backslash-insensitive), batch-friendly (`load_all_libraries` once per flush). Mirrors `reconcile::lib_for`; the single resolver the reindex path uses (Don't-Duplicate). `reconcile.rs` left untouched (risk containment — its `lib_for` is proven).
 - `search.rs::reindex_changed_paths(app, paths)` — `#[tauri::command(async)]`. Per path, decide by `exists()` at flush time: existing `.md` → `reindex_single_note` (G4 decoder, no JS re-derivation); vanished `.md` → `reindex_delete_note` (idempotent); non-`.md`/dirs skipped (Phase 3). Per-path errors swallowed (batch never aborts). Loop-free (reindex writes only SQLite, outside the watched root). Registered in `lib.rs` handler.
 - New test `library_name_for_path_picks_most_specific_root` (nested-wins, separator bound, Windows path). `cargo test --lib tests_watcher_freshness` → **5 passed; 0 failed**. Command not yet wired to the flush (Phase 2).
+
+### Phase 2 — wire the watcher flush (`+layout.svelte`) — type-clean
+
+- `pendingReindex: Set<string>` populated in the `library-changed` listener behind the same `wasRecentlyWritten` guard as `pendingTabReloads` (external changes only).
+- `scheduleWatcherFlush` now **awaits `reindex_changed_paths(reindexPaths)` FIRST**, before `refreshLibraryTree`/`loadAllStats`/`refreshLibraryCaches` — so every `note_meta` reader sees the committed rows. The `(async)` Promise resolves only on completion → ordering guaranteed.
+- `cacheRefreshDebounce` re-pointed 5000 ms → **800 ms**: `note_meta` is already current after the awaited reindex, so `allNotes`/tags/aliases (the Quick Switcher source) repopulate within ~1 s of the change instead of 5 s. Short debounce still coalesces a burst; `refreshLibraryCaches` self-guards re-entry.
+- Fixed two stale comments the census flagged (`cache_reconcile` "triggered by the file watcher per-file" → false; `loadAllStats` "metadata-only walk" → reads `note_meta`, not a walk).
+- `npm run check` → **0 errors** (317 pre-existing unused-CSS warnings). Boot/typing untouched (no hot-path change). Awaiting the Boss single-file-add test after the binary build (bundled with Phases 3–4).
