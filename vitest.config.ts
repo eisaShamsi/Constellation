@@ -66,6 +66,10 @@ export default defineConfig({
 			// backslash-doubling). RED against the hand-rolled parser; Phase 1
 			// turns them green against the yamlDoc module.
 			'tests/g4/frontmatterRoundtrip.test.ts',
+			// G4 Phase 1 (2026-07-08) — the yamlDoc round-trip authority proven
+			// GREEN in isolation (both recipes + byte-perfect untouched keys + H1
+			// malformed passthrough) before the live noteModel swap (Phase 2).
+			'tests/g4/yamlDoc.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

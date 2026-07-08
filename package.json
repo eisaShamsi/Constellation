@@ -49,7 +49,8 @@
 		"lucide": "^1.8.0",
 		"marked": "^17.0.4",
 		"mermaid": "^11.12.3",
-		"pixi.js": "^8.17.1"
+		"pixi.js": "^8.17.1",
+		"yaml": "^2.9.0"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.6",
