@@ -2106,8 +2106,12 @@ fn has_title(content: &str, target: &str) -> bool {
         let trimmed = line.trim();
         if trimmed.starts_with("title:") {
             let value = trimmed["title:".len()..].trim();
-            let value = value.trim_matches('"').trim_matches('\'').to_lowercase();
-            if value == target { return true; }
+            // G4 Phase 4 (C3) — decode via the shared scalar decoder and fold with the SAME
+            // key the index uses (fold_match_key, NFC+Unicode-lower — not ASCII to_lowercase),
+            // so the federated wikilink walk resolves a quoted/accented title identically to
+            // note_meta.name_lower. `target` is folded too so both sides use one key.
+            let decoded = crate::search::fold_match_key(&crate::search::decode_yaml_scalar(value));
+            if decoded == crate::search::fold_match_key(target) { return true; }
         }
     }
     false
@@ -2121,28 +2125,37 @@ fn has_alias(content: &str, target: &str) -> bool {
         None => return false,
     };
     let frontmatter = &content[3..end];
-    // Look for aliases: [...] or aliases:\n- ...
+    // G4 Phase 4 (C3) — decode + fold with normalize_alias_for_match (the SAME key
+    // note_aliases.alias_lower uses: fold_match_key + Arabic tashkeel/tatweel strip), so the
+    // federated alias walk matches the alias index. The list-item arm is now BLOCK-GUARDED to
+    // only match items UNDER an `aliases:` block (it previously over-matched ANY `- ` line —
+    // e.g. a tags list item — resolving federated links it shouldn't).
+    let want = crate::search::normalize_alias_for_match(target);
+    let matches = |raw: &str| crate::search::normalize_alias_for_match(&crate::search::decode_yaml_scalar(raw)) == want;
+    let mut in_aliases = false;
     for line in frontmatter.lines() {
         let trimmed = line.trim();
-        // Inline YAML array: aliases: [a, b, c]
+        // Inline YAML array: aliases: [a, b, c]  |  scalar: aliases: x
         if trimmed.starts_with("aliases:") {
             let value = trimmed["aliases:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
                 let inner = &value[1..value.len()-1];
-                for alias in inner.split(',') {
-                    let a = alias.trim().trim_matches('"').trim_matches('\'').to_lowercase();
-                    if a == target { return true; }
-                }
+                for alias in inner.split(',') { if matches(alias) { return true; } }
+                in_aliases = false;
             } else if !value.is_empty() {
-                // Single value: aliases: my alias
-                let a = value.trim_matches('"').trim_matches('\'').to_lowercase();
-                if a == target { return true; }
+                if matches(value) { return true; }
+                in_aliases = false;
+            } else {
+                in_aliases = true; // block form: `aliases:` then `- item` lines follow
             }
+            continue;
         }
-        // YAML list item: - alias
-        if trimmed.starts_with("- ") {
-            let a = trimmed[2..].trim().trim_matches('"').trim_matches('\'').to_lowercase();
-            if a == target { return true; }
+        if in_aliases {
+            if let Some(rest) = trimmed.strip_prefix("- ") {
+                if matches(rest) { return true; }
+            } else if !trimmed.is_empty() {
+                in_aliases = false; // a non-list-item line ends the aliases block
+            }
         }
     }
     false

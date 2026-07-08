@@ -2389,8 +2389,10 @@ pub(crate) fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
     for line in fm.lines() {
         let t = line.trim();
         if let Some(rest) = t.strip_prefix("cid_cn:") {
-            let val = rest.trim().trim_matches('"').trim_matches('\'');
-            if !val.is_empty() { return Some(val.to_string()); }
+            // G4 Phase 4 — decode via the SHARED scalar decoder so this second cid_cn reader
+            // can no longer disagree with parse_frontmatter's generic arm on a quoted cid.
+            let val = decode_yaml_scalar(rest);
+            if !val.is_empty() { return Some(val); }
         }
     }
     None
@@ -4406,6 +4408,127 @@ pub(crate) fn body_after_frontmatter(content: &str) -> &str {
 // the indexer writes into note_meta.tags_json, or the Dashboard chips (counted
 // from the index) and the click-through (scanned from disk) disagree — the
 // Boss-found "127 notes counted, 0 listed" defect.
+/// G4 Phase 4 — decode a single YAML scalar VALUE slice (the text after `key:`) to the
+/// string it represents, matching what the JS writer / a real YAML parser reads. Handles
+/// PLAIN (as-is), SINGLE-quoted (`''`→`'`), DOUBLE-quoted (full YAML-1.2 escape table),
+/// and empty/null. Block scalars (`|`/`>`) are handled by the caller's stateful consumer.
+///
+/// NEVER returns Result and NEVER panics — on anything it can't fully parse (e.g. an
+/// unterminated quote) it degrades to a best-effort trimmed literal (the current floor).
+/// This preserves the reader's non-negotiable invariant: a note is never dropped from the
+/// index; a bad value yields a wrong-but-present row, never a missing one.
+pub(crate) fn decode_yaml_scalar(raw: &str) -> String {
+    let s = raw.trim();
+    if s.is_empty() { return String::new(); }
+    match s.as_bytes()[0] {
+        b'\'' => decode_single_quoted(s),
+        b'"' => decode_double_quoted(s),
+        b'~' if s == "~" => String::new(),
+        _ => {
+            if s == "null" || s == "Null" || s == "NULL" { return String::new(); }
+            // Plain scalar (flow [..]/{..} are handled by the caller for list/map fields).
+            s.to_string()
+        }
+    }
+}
+
+fn decode_single_quoted(s: &str) -> String {
+    // s starts with '. YAML single-quoted: the ONLY escape is '' → '. No backslash escapes.
+    let inner = &s[1..];
+    let mut out = String::new();
+    let mut chars = inner.chars().peekable();
+    let mut closed = false;
+    while let Some(c) = chars.next() {
+        if c == '\'' {
+            if chars.peek() == Some(&'\'') { chars.next(); out.push('\''); } // escaped ''
+            else { closed = true; break; } // closing quote
+        } else {
+            out.push(c);
+        }
+    }
+    if closed { out } else { inner.trim_end_matches('\'').replace("''", "'") } // unterminated → best-effort
+}
+
+fn decode_double_quoted(s: &str) -> String {
+    // s starts with ". YAML double-quoted: C/JSON-style backslash escapes.
+    let inner = &s[1..];
+    let mut out = String::new();
+    let mut chars = inner.chars().peekable();
+    let mut closed = false;
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => { closed = true; break; }
+            '\\' => match chars.next() {
+                Some('n') => out.push('\n'),
+                Some('t') => out.push('\t'),
+                Some('r') => out.push('\r'),
+                Some('"') => out.push('"'),
+                Some('\\') => out.push('\\'),
+                Some('/') => out.push('/'),
+                Some('0') => out.push('\0'),
+                Some('a') => out.push('\u{07}'),
+                Some('b') => out.push('\u{08}'),
+                Some('f') => out.push('\u{0C}'),
+                Some('v') => out.push('\u{0B}'),
+                Some('e') => out.push('\u{1B}'),
+                Some(' ') => out.push(' '),
+                Some('N') => out.push('\u{85}'),
+                Some('_') => out.push('\u{A0}'),
+                Some('x') => push_hex_escape(&mut chars, &mut out, 2),
+                Some('u') => push_hex_escape(&mut chars, &mut out, 4),
+                Some('U') => push_hex_escape(&mut chars, &mut out, 8),
+                Some('\n') => {} // backslash-newline line-continuation: drop
+                Some(other) => { out.push('\\'); out.push(other); } // unknown → literal
+                None => out.push('\\'),
+            },
+            _ => out.push(c),
+        }
+    }
+    if closed { out } else { inner.trim_end_matches('"').to_string() } // unterminated → best-effort
+}
+
+fn push_hex_escape(chars: &mut std::iter::Peekable<std::str::Chars>, out: &mut String, n: usize) {
+    let mut hex = String::new();
+    for _ in 0..n { if let Some(c) = chars.next() { hex.push(c); } else { break; } }
+    match u32::from_str_radix(&hex, 16).ok().and_then(char::from_u32) {
+        Some(ch) => out.push(ch),
+        None => { out.push_str("\\"); out.push_str(&hex); } // best-effort literal (e.g. lone surrogate)
+    }
+}
+
+/// G4 Phase 4 (C2) — collect a block scalar (`|`/`>` + chomp) starting at `lines[start]`
+/// (whose value slice is the block header). Returns (decoded_value, lines_consumed incl. the
+/// header). The body is every following line MORE-indented than the header key; those lines
+/// are consumed so they are NEVER re-scanned as bogus property keys (the identity-corruption
+/// guard — a `cid_cn:` inside a block body must not overwrite the real cid).
+fn collect_block_scalar(lines: &[&str], start: usize, header_indent: usize) -> (String, usize) {
+    let header_val = lines[start].trim();
+    let folded = header_val.starts_with('>'); // '|' literal, '>' folded
+    // chomp indicator: '-' strip, '+' keep, else clip (we clip for index purposes)
+    let mut body: Vec<String> = Vec::new();
+    let mut i = start + 1;
+    let mut block_indent: Option<usize> = None;
+    while i < lines.len() {
+        let line = lines[i];
+        let indent = line.len() - line.trim_start().len();
+        if line.trim().is_empty() {
+            body.push(String::new());
+            i += 1;
+            continue;
+        }
+        if indent <= header_indent { break; } // dedent → block ends
+        let bi = *block_indent.get_or_insert(indent);
+        // strip the block's common indent (first body line sets it)
+        let stripped = if line.len() >= bi { &line[bi.min(indent)..] } else { line.trim_start() };
+        body.push(stripped.to_string());
+        i += 1;
+    }
+    // trim trailing empty lines (clip chomp, good enough for index values)
+    while body.last().map(|l| l.is_empty()).unwrap_or(false) { body.pop(); }
+    let joined = if folded { body.join(" ") } else { body.join("\n") };
+    (joined, i - start)
+}
+
 pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, String) {
     let mut properties = HashMap::new();
     let mut tags = Vec::new();
@@ -4415,9 +4538,16 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
         {
             body = body_slice.trim().to_string();
 
+            // G4 Phase 4 — indexed loop so a block scalar's indented body can be consumed
+            // (never re-scanned as a bogus key); values decoded via decode_yaml_scalar so
+            // single/double-quoted + escapes read like the JS writer / a real YAML parser.
+            let lines: Vec<&str> = fm.lines().collect();
             let mut in_tags = false;
-            for line in fm.lines() {
+            let mut i = 0usize;
+            while i < lines.len() {
+                let line = lines[i];
                 let trimmed = line.trim();
+                let indent = line.len() - line.trim_start().len();
                 if trimmed.starts_with("tags:") {
                     in_tags = true;
                     // Inline tags: tags: [a, b] or tags: a, b
@@ -4426,21 +4556,20 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
                         // Strip brackets for [a, b] format
                         let val = val.trim_start_matches('[').trim_end_matches(']');
                         for t in val.split(',') {
-                            let t = t.trim().trim_matches(|c| c == '"' || c == '\'');
+                            let t = decode_yaml_scalar(t);
                             if !t.is_empty() { tags.push(t.to_lowercase()); }
                         }
                     }
+                    i += 1;
                     continue;
                 }
                 if in_tags {
                     if trimmed.starts_with("- ") {
-                        // Strip quotes like the inline-array arm above does —
-                        // `- "wiki-tag"` must index as `wiki-tag`, not `"wiki-tag"`
-                        // (quoted tags split the population and render as #"…" chips).
-                        let tag = trimmed[2..].trim()
-                            .trim_matches(|c| c == '"' || c == '\'')
-                            .to_lowercase();
+                        // `- "wiki-tag"` must index as `wiki-tag`, not `"wiki-tag"`.
+                        let tag = decode_yaml_scalar(&trimmed[2..]).to_lowercase();
                         if !tag.is_empty() { tags.push(tag); }
+                        i += 1;
+                        continue;
                     } else if !trimmed.is_empty() && !trimmed.starts_with('#') {
                         in_tags = false;
                     }
@@ -4448,10 +4577,25 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
                 if !in_tags && trimmed.contains(':') && !trimmed.starts_with('#') {
                     if let Some(idx) = trimmed.find(':') {
                         let key = trimmed[..idx].trim().to_string();
-                        let val = trimmed[idx + 1..].trim().trim_matches('"').to_string();
+                        let raw_val = trimmed[idx + 1..].trim();
+                        // Block scalar header (`|`, `>`, `|-`, `>+`, `|2`, …)? Consume the
+                        // indented body so its lines are never mis-read as property keys
+                        // (a `cid_cn:` inside a block body must NOT overwrite the real cid).
+                        let is_block_header = (raw_val == "|" || raw_val == ">")
+                            || ((raw_val.starts_with('|') || raw_val.starts_with('>'))
+                                && raw_val.len() <= 3
+                                && raw_val[1..].chars().all(|c| c == '-' || c == '+' || c.is_ascii_digit()));
+                        if is_block_header {
+                            let (block_val, consumed) = collect_block_scalar(&lines, i, indent);
+                            if !key.is_empty() { properties.insert(key, block_val); }
+                            i += consumed;
+                            continue;
+                        }
+                        let val = decode_yaml_scalar(raw_val);
                         if !key.is_empty() { properties.insert(key, val); }
                     }
                 }
+                i += 1;
             }
         }
     }
@@ -4470,6 +4614,78 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
     }
 
     (properties, tags, body)
+}
+
+#[cfg(test)]
+mod tests_g4_reader {
+    //! G4 Phase 4 — the frontmatter index reader must decode a value to the SAME
+    //! string the JS writer wrote (and the same standard YAML forms Obsidian/hand
+    //! authoring produce): single/double-quoted with escapes, block scalars, flow.
+    //! The naive `trim_matches('"')` reader mis-decodes all of these — a block-scalar
+    //! `title: |` even indexes as name `"|"` (all such notes collide + become
+    //! unfindable). Fixtures are the real yaml@2.9.0 writer output + hand-authored
+    //! forms (src-tauri/tests/fixtures/g4_scalar_forms.json). Floor invariant: a
+    //! malformed note must STILL index (a wrong row, never a missing row).
+    use super::*;
+
+    const FIXTURES: &str = include_str!("../tests/fixtures/g4_scalar_forms.json");
+
+    fn blocks() -> Vec<serde_json::Value> {
+        let v: serde_json::Value = serde_json::from_str(FIXTURES).unwrap();
+        v["blocks"].as_array().unwrap().clone()
+    }
+
+    #[test]
+    fn reader_decodes_like_the_js_writer() {
+        for b in blocks() {
+            let yaml = b["yaml"].as_str().unwrap();
+            let content = format!("---\n{}---\nbody\n", yaml);
+            let (props, _tags, _body) = parse_frontmatter(&content);
+            if let Some(t) = b.get("expect_title").and_then(|x| x.as_str()) {
+                assert_eq!(props.get("title").map(|s| s.as_str()), Some(t),
+                    "title decode mismatch for:\n{}", yaml);
+            }
+            if let Some(c) = b.get("expect_cid").and_then(|x| x.as_str()) {
+                assert_eq!(props.get("cid_cn").map(|s| s.as_str()), Some(c),
+                    "cid_cn decode/identity mismatch for:\n{}", yaml);
+            }
+        }
+    }
+
+    #[test]
+    fn decode_yaml_scalar_is_total() {
+        // The decoder must NEVER panic — an un-parseable value degrades to best-effort, never
+        // an error/drop. Feed the adversarial edge inputs (unterminated quotes, truncated
+        // escapes, lone backslash/surrogate, mixed quotes, huge, unicode).
+        for raw in [
+            "", "   ", "'", "\"", "'''", "\"\\", "\"\\u", "\"\\uD800\"", "\"\\x\"", "\"\\U0001F600\"",
+            "'unterminated", "\"unterminated", "'a''b", "\"a\\\"b", "plain", "~", "null",
+            "'O''Brien'", "\"tab\\there\"", "[a, b", "{a: b", "| not a header inline",
+            "\"\\", "\\", "''''", "\"\\\\\"", "😀 emoji", "الحضارة", "a: b: c", "  spaced  ",
+        ] {
+            let out = decode_yaml_scalar(raw); // must not panic
+            let _ = out.len();
+        }
+        // a long pathological input
+        let big = format!("\"{}", "\\".repeat(10000));
+        let _ = decode_yaml_scalar(&big);
+    }
+
+    #[test]
+    fn malformed_frontmatter_still_indexes() {
+        // The floor invariant: a malformed frontmatter must NEVER drop the note —
+        // parse_frontmatter always returns a tuple (a wrong row, never a missing row).
+        for bad in [
+            "---\ntitle: unterminated \"quote\ncid_cn: NOTE_M1\n---\nbody\n",
+            "---\n\ttab: indented\ntitle: Ok\ncid_cn: NOTE_M2\n---\nbody\n",
+            "---\n&anchor stray\ntitle: Ok\n---\nbody\n",
+            "---\ntitle: A\ntitle: B\n---\nbody\n", // duplicate key
+        ] {
+            let (props, _t, _b) = parse_frontmatter(bad); // must not panic
+            // it still parsed SOMETHING (didn't drop everything)
+            let _ = props;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -4894,18 +5110,18 @@ fn push_alias(out: &mut Vec<String>, raw: &str) {
 /// produce the same byte representation when stamping a 'rename'
 /// alias row, without re-implementing the trim+normalize chain.
 pub(crate) fn normalize_alias_for_match(raw: &str) -> String {
-    let cleaned = raw
-        .trim()
-        .trim_matches('"')
-        .trim_matches('\'')
-        .trim();
+    // G4 Phase 4 — decode via the shared scalar decoder (unquote + unescape single/double)
+    // instead of a naive quote-trim, so an alias written with proper YAML quoting folds to
+    // the SAME key the federated has_alias walk uses (both call this) and matches the
+    // wikilink target. Empty/null decodes to "".
+    let cleaned = decode_yaml_scalar(raw);
     if cleaned.is_empty() {
         return String::new();
     }
     // MIG-085 §B.0 — NFC + full-Unicode lower (fold_match_key), then the existing
     // Arabic strip. Adds NFC for cross-platform consistency; keeps the prior alias
     // semantics (measured: zero change to existing alias_lower values).
-    normalize_arabic_for_search(&fold_match_key(cleaned))
+    normalize_arabic_for_search(&fold_match_key(&cleaned))
 }
 
 /// A typed link extracted from note content.
@@ -5465,6 +5681,13 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         .filter(|t| !t.is_empty())
         .cloned()
         .unwrap_or_else(|| file_stem.clone());
+    // G4 Phase 4 (Q1) — a multi-line (block-scalar) title collapses to a single line for the
+    // display name + name_lower, so a [[Title]] wikilink (whose target folds to a single line)
+    // resolves. Guarded on '\n' so ordinary single-line titles are byte-untouched. The verbatim
+    // multi-line value is still preserved in properties_json.
+    let name = if name.contains('\n') {
+        name.split_whitespace().collect::<Vec<_>>().join(" ")
+    } else { name };
 
     // MIG-003 Step 3: cid_cn from frontmatter — injected by
     // canonical::ensure_cid_cn at note creation. Falls back to '' for any

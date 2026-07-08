@@ -149,7 +149,10 @@ function serializeLine(key: string, prop: FrontmatterProperty): string {
 	else if (prop.type === 'checkbox') value = prop.value === 'true' || prop.value === 'yes';
 	else value = prop.value;
 	// yamlStringify of a single-key object yields `key: value\n` with correct quoting/escaping.
-	return yamlStringify({ [key]: value });
+	// lineWidth:0 disables line-FOLDING (G4 Phase 4 C1) so every emitted value stays on ONE
+	// line — the Rust index reader's tolerant line-scanner then decodes it without needing
+	// multi-line continuation reconstruction (folded quoted values would be mis-read).
+	return yamlStringify({ [key]: value }, { lineWidth: 0 });
 }
 
 /**

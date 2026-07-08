@@ -1,0 +1,126 @@
+{
+  "scalarForms": [
+    {
+      "input_value": "Plain Title",
+      "emitted": "k: Plain Title",
+      "value_slice": "Plain Title",
+      "decoded": "Plain Title"
+    },
+    {
+      "input_value": "O'Brien",
+      "emitted": "k: O'Brien",
+      "value_slice": "O'Brien",
+      "decoded": "O'Brien"
+    },
+    {
+      "input_value": "He said: \"go\"",
+      "emitted": "k: 'He said: \"go\"'",
+      "value_slice": "'He said: \"go\"'",
+      "decoded": "He said: \"go\""
+    },
+    {
+      "input_value": "it's a \"mixed\" one",
+      "emitted": "k: it's a \"mixed\" one",
+      "value_slice": "it's a \"mixed\" one",
+      "decoded": "it's a \"mixed\" one"
+    },
+    {
+      "input_value": "a: b colon value",
+      "emitted": "k: \"a: b colon value\"",
+      "value_slice": "\"a: b colon value\"",
+      "decoded": "a: b colon value"
+    },
+    {
+      "input_value": "#hash-lead",
+      "emitted": "k: \"#hash-lead\"",
+      "value_slice": "\"#hash-lead\"",
+      "decoded": "#hash-lead"
+    },
+    {
+      "input_value": "123",
+      "emitted": "k: \"123\"",
+      "value_slice": "\"123\"",
+      "decoded": "123"
+    },
+    {
+      "input_value": "true",
+      "emitted": "k: \"true\"",
+      "value_slice": "\"true\"",
+      "decoded": "true"
+    },
+    {
+      "input_value": "",
+      "emitted": "k: \"\"",
+      "value_slice": "\"\"",
+      "decoded": ""
+    },
+    {
+      "input_value": "   padded   ",
+      "emitted": "k: \"   padded   \"",
+      "value_slice": "\"   padded   \"",
+      "decoded": "   padded   "
+    },
+    {
+      "input_value": "الحضارة \"x\"",
+      "emitted": "k: الحضارة \"x\"",
+      "value_slice": "الحضارة \"x\"",
+      "decoded": "الحضارة \"x\""
+    },
+    {
+      "input_value": "tab\tinside",
+      "emitted": "k: tab\tinside",
+      "value_slice": "tab\tinside",
+      "decoded": "tab\tinside"
+    },
+    {
+      "input_value": "unicode é ✓",
+      "emitted": "k: unicode é ✓",
+      "value_slice": "unicode é ✓",
+      "decoded": "unicode é ✓"
+    },
+    {
+      "input_value": "line one\nline two",
+      "emitted": "k: |-\n  line one\n  line two",
+      "value_slice": "|-\n  line one\n  line two",
+      "decoded": "line one\nline two"
+    },
+    {
+      "input_value": "backslash",
+      "emitted": "k: backslash",
+      "value_slice": "backslash",
+      "decoded": "backslash"
+    }
+  ],
+  "blocks": [
+    {
+      "yaml": "title: My Title\ncid_cn: NOTE_1\n",
+      "expect_title": "My Title",
+      "expect_cid": "NOTE_1"
+    },
+    {
+      "yaml": "title: 'O''Brien'\ncid_cn: 'ABC123'\n",
+      "expect_title": "O'Brien",
+      "expect_cid": "ABC123"
+    },
+    {
+      "yaml": "title: \"He said: \\\"go\\\"\"\ncid_cn: NOTE_2\n",
+      "expect_title": "He said: \"go\"",
+      "expect_cid": "NOTE_2"
+    },
+    {
+      "yaml": "title: |\n  Multi\n  Line\ncid_cn: NOTE_3\n",
+      "expect_title": "Multi\nLine",
+      "expect_cid": "NOTE_3"
+    },
+    {
+      "yaml": "title: |\n  body has cid_cn: FAKE inside\ncid_cn: REAL_CID\n",
+      "expect_title": "body has cid_cn: FAKE inside",
+      "expect_cid": "REAL_CID"
+    },
+    {
+      "yaml": "authors: [Ada, Alan]\ncid_cn: NOTE_4\n",
+      "expect_cid": "NOTE_4",
+      "expect_authors_json": "[\"Ada\",\"Alan\"]"
+    }
+  ]
+}
