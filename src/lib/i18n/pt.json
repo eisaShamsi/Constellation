@@ -1,4 +1,8 @@
 {
+  "saveHealth": {
+    "couldNotSave": "Não foi possível salvar {note} — sua edição está segura e será repetida.",
+    "retry": "Tentar novamente"
+  },
   "collision": {
     "title": "Já existe uma nota chamada {name}",
     "desc": "Escolha como resolver o conflito de nome.",

@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -61,6 +61,7 @@
 	import DigestPane from '$lib/components/DigestPane.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
+	import SaveHealthBanner from '$lib/components/SaveHealthBanner.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import BaseTab from '$lib/lens/BaseTab.svelte';
 	import CascadeFreezeOverlay from '$lib/components/CascadeFreezeOverlay.svelte';
@@ -1483,6 +1484,17 @@
 	// focus-captured text findable/backlinked (W1-1); a failed write is SURFACED via the
 	// save-health banner (Save-Durability, 2026-07-08 — replaced the console-only log,
 	// which is invisible in a release build with devtools disabled).
+	// Save-Durability (2026-07-08) — auto-retry failed saves every ~10 s WHILE any
+	// remain (Boss-approved). A drive/sync that later frees up then persists the edit
+	// unattended, even if the user walked away. The timer exists only while there are
+	// failures (gated on the reactive size) and is cleared on teardown (Rule 4).
+	$effect(() => {
+		if ($saveHealth.size === 0) return;
+		const timer = setInterval(() => {
+			for (const path of get(saveHealth).keys()) void retrySaveFailure(path);
+		}, 10000);
+		return () => clearInterval(timer);
+	});
 	let focusSaveTimer: ReturnType<typeof setTimeout> | null = null;
 	function commitFocusSave() {
 		if (focusSaveTimer) { clearTimeout(focusSaveTimer); focusSaveTimer = null; }
@@ -6359,6 +6371,8 @@
 	</div>
 {:else}
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
+	<!-- Save-Durability — the save-failure surface (fixed top banner; auto-dismisses on success) -->
+	<SaveHealthBanner />
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock" data-style-target="cDock">
 		<div class="dock-top">

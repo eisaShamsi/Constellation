@@ -1,4 +1,8 @@
 {
+  "saveHealth": {
+    "couldNotSave": "{note} konnte nicht gespeichert werden — deine Änderung ist sicher und wird erneut versucht.",
+    "retry": "Erneut versuchen"
+  },
   "collision": {
     "title": "Eine Notiz namens {name} existiert bereits",
     "desc": "Wählen Sie, wie der Namenskonflikt gelöst werden soll.",

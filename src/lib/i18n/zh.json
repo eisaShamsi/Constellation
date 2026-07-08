@@ -1,4 +1,8 @@
 {
+  "saveHealth": {
+    "couldNotSave": "无法保存 {note} — 您的编辑已安全保留，将重试。",
+    "retry": "重试"
+  },
   "collision": {
     "title": "已存在名为 {name} 的笔记",
     "desc": "选择如何解决名称冲突。",

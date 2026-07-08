@@ -27,6 +27,7 @@
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
+	import SaveHealthBanner from '$lib/components/SaveHealthBanner.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
@@ -1020,6 +1021,8 @@
 </script>
 
 <div class="second-screen" dir={$dir}>
+	<!-- Save-Durability — the save-failure surface (second-screen JS context has its own saveHealth) -->
+	<SaveHealthBanner />
 	<!-- Top bar -->
 	<div class="screen-toolbar">
 		<div class="screen-title">

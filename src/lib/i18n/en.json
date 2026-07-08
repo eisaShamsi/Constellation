@@ -1,4 +1,8 @@
 {
+  "saveHealth": {
+    "couldNotSave": "Couldn’t save {note} — your edit is safe and will retry.",
+    "retry": "Retry now"
+  },
   "collision": {
     "title": "A note named {name} already exists",
     "desc": "Choose how to resolve the name conflict.",

@@ -327,6 +327,27 @@ export function standardSaveEnv(opts: {
 }
 
 /**
+ * Save-Durability — retry a previously-failed save. The save-health banner's "Retry"
+ * button and the ~10 s auto-retry timer both call this. If the note is still OPEN and
+ * dirty, re-run the durability gate (a durable write clears its save-health entry via
+ * `standardSaveEnv`'s onSuccess); if it is already clean, drop the stale entry. If the
+ * note is CLOSED, its edit is preserved in the write-ahead net (restored on reopen),
+ * so there is nothing to re-drive from here.
+ */
+export async function retrySaveFailure(path: string): Promise<void> {
+	const tab = get(openTabs).find((t) => t.path === path);
+	if (!tab) return; // closed — the write-ahead net holds it; restored on reopen
+	if (!isNoteDirty(tab.id)) { clearSaveFailure(path); return; } // already clean
+	await saveNoteSession(tab.id, path, standardSaveEnv({
+		origin: 'retry_save',
+		name: tab.name,
+		onSaved: (savedPath) => {
+			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+		},
+	}), 'retry_save');
+}
+
+/**
  * §140 — extract `cid_cn` from a note's frontmatter, or `null` if absent.
  * Used as a cheap "same logical note" signature for the openNoteTab
  * write-ahead-buffer freshness check (see `openNoteTab` for the why).

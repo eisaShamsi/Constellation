@@ -1,4 +1,8 @@
 {
+  "saveHealth": {
+    "couldNotSave": "{note} kaydedilemedi — düzenlemeniz güvende ve yeniden denenecek.",
+    "retry": "Yeniden dene"
+  },
   "collision": {
     "title": "{name} adlı bir not zaten var",
     "desc": "Ad çakışmasını nasıl çözeceğinizi seçin.",
