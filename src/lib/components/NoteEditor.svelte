@@ -11,7 +11,7 @@
 	import { dir } from '$lib/i18n';
 	import {
 		parseFrontmatter, buildFullContent,
-		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
+		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead, standardSaveEnv,
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
@@ -23,8 +23,8 @@
 	// MAINTAINS the model (ensure on tab change + live push per edit); the
 	// model is not yet READ for seed/save — that swap lands flag-gated next,
 	// so the app behaves identically to the §C-1 safe state right now.
-	import { ensure as ensureModel, editBody, editProps, seedBody } from '$lib/editor/noteSession';
-	import { compose, markSaved, getModel } from '$lib/editor/noteModel';
+	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession } from '$lib/editor/noteSession';
+	import { compose, getModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import type { Text } from '@codemirror/state';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
@@ -190,8 +190,7 @@
 			editProps(tab.id, newProps, tab.path);
 			const r = compose(tab.id, tab.path);
 			if (!r.ok) return; // identity refusal — never write a frankenstein
-			fc = r.content;
-			markSaved(tab.id, r.version);
+			fc = r.content; // for the in-store tab display update below (NOT marked saved here)
 		} else {
 			fc = buildFullContent(newProps, freshBody());
 		}
@@ -204,7 +203,21 @@
 		// Also update the local tab reference
 		tab.content = fc;
 		markRecentWrite(tab.path);
-		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
+		if (SINGLE_OWNERSHIP) {
+			// Save-Durability — route through the ONE gate: clean only on a durable
+			// write, net + surface on failure, and ADD the reindex the stage promote
+			// never had (INV-7 — a stage change now updates the search/derived index).
+			saveNoteSession(tab.id, tab.path, standardSaveEnv({
+				origin: 'stage_promote',
+				name: tab.name,
+				onSaved: (savedPath) => {
+					broadcastNoteSaved(savedPath);
+					invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+				},
+			}), 'stage_promote');
+		} else {
+			writeNote(tab.path, fc, 'stage_promote').catch(() => {});
+		}
 		onStageChanged?.(tab.path, nextStage);
 	}
 
@@ -221,64 +234,55 @@
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
 		saving = true;
-		// MIG-076 §C — push this view's body to the model, then compose the
-		// write from the model ALONE (props + body, one identity-checked
-		// snapshot). A path mismatch is REFUSED, never composed.
-		let content: string;
 		if (SINGLE_OWNERSHIP) {
+			// Save-Durability (2026-07-08) — push this view's body to the model, then
+			// go through the ONE durability gate (noteSession.save + standardSaveEnv):
+			// compose (identity-checked; a path mismatch is REFUSED) → net BEFORE the
+			// write → await → mark clean ONLY on a durable write + reindex/embed/
+			// broadcast/CECE. On failure the model stays DIRTY, the net is RETAINED,
+			// and the save-health banner surfaces it (no silent swallow, no false-clean
+			// — the app-killer this migration kills).
 			editBody(tab.id, text, filePath);
-			const r = compose(tab.id, filePath);
-			if (!r.ok) { saving = false; return; }
-			content = r.content;
-			markSaved(tab.id, r.version);
-		} else {
-			content = buildFullContent(freshProps(), text);
-		}
-		markRecentWrite(filePath);
-		writeNote(filePath, content, 'editor_save')
-			.then(() => {
-				broadcastNoteSaved(filePath);
-				// Reindex for search (non-blocking) — updates FTS5, tags, links,
-				// and (MIG-002) word_count / created_at / enrichment. Without this
-				// call, body edits never re-run index_note: the DB row stays at
-				// whatever shape was indexed on initial file creation.
-				invoke('constellation_search_reindex', {
-					notePath: filePath,
-					libraryName: tab.libraryName,
-				}).catch(() => {});
-				// MIG-071 audit HIGH (CFS) — re-embed for semantic search too (was reindex-only, so a
-				// note's vector went stale after every body edit). Mirrors store.ts saveTabContent.
-				if (get(appSettings).enabledFeatures?.semanticSearch) {
-					invoke('constellation_embed_notes', {
-						notes: [{ path: filePath, name: tab.name, content: text }],
-						force: true,
+			markRecentWrite(filePath);
+			saveNoteSession(tab.id, tab.path, standardSaveEnv({
+				origin: 'editor_save',
+				name: tab.name,
+				onSaved: (savedPath) => {
+					broadcastNoteSaved(savedPath);
+					// Reindex for search (non-blocking) — FTS5, tags, links, word_count.
+					invoke('constellation_search_reindex', {
+						notePath: savedPath,
+						libraryName: tab.libraryName,
 					}).catch(() => {});
-				}
-				// MIG-021v3 V3-§10.A.1 — CECE background scan on save.
-				// When enabled in Settings, dispatch the same window event
-				// the right-click "Suggest sources & content type" context
-				// menu uses. The Source Review panel's handleClassifyAndShow
-				// listener does the IPC + queue prepend + flash highlight
-				// in one path, so the on-save flow gets identical UX to
-				// the manual-classify flow.
-				//
-				// V3-§10.A originally called classifier_suggest_for_note
-				// directly here, which fired the IPC correctly but never
-				// notified the Source Review panel — the queue stayed
-				// stale. Caught in Gate 3 Stage 3 (Boss-test 2026-05-11).
-				//
-				// This dispatch rides the existing 1500ms-debounced save
-				// cycle (handleSave is NotePane's debouncedSaveTimer
-				// callback), so the "typing stays instant" guarantee is
-				// preserved — never fires per-keystroke.
-				if (get(appSettings).cece?.backgroundScan === 'on_save') {
-					window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
-						detail: { notePath: filePath },
-					}));
-				}
-			})
-			.catch(() => {})
-			.finally(() => { saving = false; });
+					// MIG-071 — re-embed for semantic search (vector went stale after edits).
+					if (get(appSettings).enabledFeatures?.semanticSearch) {
+						invoke('constellation_embed_notes', {
+							notes: [{ path: savedPath, name: tab.name, content: text }],
+							force: true,
+						}).catch(() => {});
+					}
+					// MIG-021v3 — CECE on-save background scan (rides the 1500ms debounce,
+					// never per-keystroke). Dispatches the same event the manual
+					// "Suggest sources & content type" menu uses (Source Review listener).
+					if (get(appSettings).cece?.backgroundScan === 'on_save') {
+						window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
+							detail: { notePath: savedPath },
+						}));
+					}
+				},
+			}), 'editor_save').finally(() => { saving = false; });
+		} else {
+			// Legacy (dead under SINGLE_OWNERSHIP=true) — kept for the flag-off path.
+			const content = buildFullContent(freshProps(), text);
+			markRecentWrite(filePath);
+			writeNote(filePath, content, 'editor_save')
+				.then(() => {
+					broadcastNoteSaved(filePath);
+					invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
+				})
+				.catch(() => {})
+				.finally(() => { saving = false; });
+		}
 	}
 
 	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
@@ -293,38 +297,54 @@
 			editBody(tab.id, text, filePath);
 			const r = compose(tab.id, filePath);
 			if (!r.ok) return; // identity refusal
-			content = r.content;
-			markSaved(tab.id, r.version);
+			content = r.content; // for the store-tab display update + no-write recovery net (NOT marked saved here)
 		} else {
 			content = buildFullContent(freshProps(), text);
 		}
-		// Update store tab if present
+		// Update store tab if present (display state)
 		const ct = get(openTabs).find(x => x.id === tab.id);
 		if (ct) {
 			ct.content = content;
 			ct.cursorPos = cursorPos;
 			ct.scrollTop = scrollTop;
 		}
-		setWriteAhead(filePath, content, cursorPos, scrollTop);
-		if (needsDiskSave) {
-			markRecentWrite(filePath);
+		if (!needsDiskSave) {
+			// No disk write (nothing changed since last save) — still stash the current
+			// buffer for crash recovery, then done.
+			setWriteAhead(filePath, content, cursorPos, scrollTop);
+			return;
+		}
+		markRecentWrite(filePath);
+		if (SINGLE_OWNERSHIP) {
+			// Save-Durability — the ONE gate: net-before-write → mark clean ONLY on a
+			// durable write → compare-and-clear the net → reindex/embed/broadcast. On
+			// failure the model stays dirty, the net is retained, save-health surfaces it.
+			saveNoteSession(tab.id, tab.path, standardSaveEnv({
+				origin: 'editor_flush',
+				name: tab.name,
+				cursorPos,
+				scrollTop,
+				onSaved: (savedPath) => {
+					broadcastNoteSaved(savedPath);
+					invoke('constellation_search_reindex', {
+						notePath: savedPath,
+						libraryName: tab.libraryName,
+					}).catch(() => {});
+					if (get(appSettings).enabledFeatures?.semanticSearch) {
+						invoke('constellation_embed_notes', {
+							notes: [{ path: savedPath, name: tab.name, content: text }],
+							force: true,
+						}).catch(() => {});
+					}
+				},
+			}), 'editor_flush');
+		} else {
+			setWriteAhead(filePath, content, cursorPos, scrollTop);
 			writeNote(filePath, content, 'editor_flush')
 				.then(() => {
 					clearWriteAhead(filePath);
 					broadcastNoteSaved(filePath);
-					// Same reindex call as handleSave — flush paths (tab close,
-					// window unload, visibility change) must also trigger reindex.
-					invoke('constellation_search_reindex', {
-						notePath: filePath,
-						libraryName: tab.libraryName,
-					}).catch(() => {});
-					// MIG-071 audit HIGH (CFS) — re-embed on flush too (tab close / unload), mirroring save.
-					if (get(appSettings).enabledFeatures?.semanticSearch) {
-						invoke('constellation_embed_notes', {
-							notes: [{ path: filePath, name: tab.name, content: text }],
-							force: true,
-						}).catch(() => {});
-					}
+					invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
 				})
 				.catch(() => {});
 		}

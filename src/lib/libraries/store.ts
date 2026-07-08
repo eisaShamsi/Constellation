@@ -13,7 +13,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
 import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, type SaveEnv } from '$lib/editor/noteSession';
-import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
+import { compose as composeNoteModel, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
@@ -822,53 +822,56 @@ export async function saveTabContent(
 		// disk write is composed from the model ALONE, so the body is the live
 		// one the editor pane maintains, NOT the (possibly stale) `body` param
 		// PropertyEditor passed. A path mismatch is REFUSED, never composed.
-		let newContent: string;
-		let embedBody = body;
-		if (SINGLE_OWNERSHIP) {
-			// expectPath guards the write: a stale PropertyEditor teardown for the
-			// PREVIOUS note (its filePath) is rejected once the tab's model has been
-			// repurposed to a new note — the new-note-while-open poison fix.
-			editNoteProps(tabId, updatedProps, filePath);
-			const r = composeNoteModel(tabId, filePath);
-			if (!r.ok) return; // identity refusal — finally{} still releases the lock
-			newContent = r.content;
-			markNoteSaved(tabId, r.version);
-			embedBody = getNoteModel(tabId)?.body.toString() ?? body;
-		} else {
-			newContent = buildFullContent(updatedProps, body);
-		}
-		// Do NOT update the store during autosave — it triggers full reactivity cascade.
-		// The editor owns the content. Store is synced on tab switch / note reload.
-		recentWrites.set(filePath, Date.now());
-		await writeNote(filePath, newContent, 'prop_save');
-		emit('screen:note-saved', { path: filePath }).catch(() => {});
-		// Reindex for search (non-blocking) — updates FTS5, tags, links
-		const tab = get(openTabs).find(t => t.path === filePath);
-		if (tab) {
-			invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
-		}
-		// Re-embed for semantic search via Rust ONNX (non-blocking)
-		if (get(appSettings).enabledFeatures?.semanticSearch) {
-			const tab = get(openTabs).find(t => t.path === filePath);
+		// Body for the embed comes from the live model (a prop-save doesn't touch it).
+		const embedBody = SINGLE_OWNERSHIP ? (getNoteModel(tabId)?.body.toString() ?? body) : body;
+		// The post-DURABLE-write side effects — screen sync, reindex, embed, recents.
+		// Run ONLY after the write lands (onSaved) — never on a failed write.
+		const runPostSave = (savedPath: string) => {
+			emit('screen:note-saved', { path: savedPath }).catch(() => {});
+			const tab = get(openTabs).find(t => t.path === savedPath);
 			if (tab) {
+				invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+			}
+			if (get(appSettings).enabledFeatures?.semanticSearch && tab) {
 				invoke('constellation_embed_notes', {
-					notes: [{ path: filePath, name: tab.name, content: embedBody }],
-					force: !bodyUnchanged
+					notes: [{ path: savedPath, name: tab.name, content: embedBody }],
+					force: !bodyUnchanged,
 				}).catch(() => {});
 			}
-		}
-		// Track as recently edited in localStorage for second screen dashboard
-		try {
-			const key = 'constellation-recent-edited';
-			const existing: { name: string; path: string; libraryName: string; editedAt: number }[] = JSON.parse(localStorage.getItem(key) || '[]');
+			// Track as recently edited for the second-screen dashboard.
+			try {
+				const key = 'constellation-recent-edited';
+				const existing: { name: string; path: string; libraryName: string; editedAt: number }[] = JSON.parse(localStorage.getItem(key) || '[]');
+				if (tab) {
+					const filtered = existing.filter(n => n.path !== savedPath);
+					filtered.unshift({ name: tab.name, path: savedPath, libraryName: tab.libraryName, editedAt: Date.now() });
+					localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+				}
+			} catch {}
+			setTimeout(() => recentWrites.delete(savedPath), 2000);
+		};
+		// Do NOT update the store during autosave — it triggers a full reactivity
+		// cascade. The editor owns the content; the store syncs on tab switch / reload.
+		recentWrites.set(filePath, Date.now());
+		if (SINGLE_OWNERSHIP) {
+			// props → model (auto-date applied); the write composes from the model
+			// ALONE (the live body, not the possibly-stale `body` param). expectPath
+			// guards a stale PropertyEditor teardown for a repurposed tab (the
+			// new-note-while-open poison fix). Save-Durability gate: mark clean ONLY on
+			// a durable write; on failure the model stays dirty, the net is retained,
+			// and the save-health banner surfaces it (no false-clean, no silent loss).
+			editNoteProps(tabId, updatedProps, filePath);
 			const tab = get(openTabs).find(t => t.path === filePath);
-			if (tab) {
-				const filtered = existing.filter(n => n.path !== filePath);
-				filtered.unshift({ name: tab.name, path: filePath, libraryName: tab.libraryName, editedAt: Date.now() });
-				localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
-			}
-		} catch {}
-		setTimeout(() => recentWrites.delete(filePath), 2000);
+			await saveNoteSession(tabId, filePath, standardSaveEnv({
+				origin: 'prop_save',
+				name: tab?.name ?? filePath,
+				onSaved: (savedPath) => runPostSave(savedPath),
+			}), 'prop_save');
+		} else {
+			const newContent = buildFullContent(updatedProps, body);
+			await writeNote(filePath, newContent, 'prop_save');
+			runPostSave(filePath);
+		}
 	} finally {
 		saveLocks.set(tabId, false);
 	}

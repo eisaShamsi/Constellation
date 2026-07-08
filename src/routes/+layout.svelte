@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -43,8 +43,8 @@
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
-	import { editBody as editNoteBody, seedBody, externalChange as externalChangeNoteModel } from '$lib/editor/noteSession';
-	import { compose as composeNoteModel, markSaved as markNoteSaved } from '$lib/editor/noteModel';
+	import { editBody as editNoteBody, seedBody, externalChange as externalChangeNoteModel, save as saveNoteSession } from '$lib/editor/noteSession';
+	import { compose as composeNoteModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
@@ -1479,28 +1479,32 @@
 	// the in-memory model instantly (editNoteBody); this commits it to disk on a
 	// 1500 ms pause OR on flush (exit/destroy), NEVER per keystroke (Rule 3 — the
 	// per-build inspection caught a per-keystroke write+reindex regression here).
-	// A write-ahead buffer makes a failed write recoverable (W1-2); the reindex
-	// keeps focus-captured text findable/backlinked (W1-1); the error is surfaced (W1-5).
+	// A write-ahead buffer makes a failed write recoverable (W1-2); the reindex keeps
+	// focus-captured text findable/backlinked (W1-1); a failed write is SURFACED via the
+	// save-health banner (Save-Durability, 2026-07-08 — replaced the console-only log,
+	// which is invisible in a release build with devtools disabled).
 	let focusSaveTimer: ReturnType<typeof setTimeout> | null = null;
 	function commitFocusSave() {
 		if (focusSaveTimer) { clearTimeout(focusSaveTimer); focusSaveTimer = null; }
 		if (!focusSessionId) return;
 		const r = composeNoteModel(focusSessionId, focusSessionPath);
 		if (!r.ok) return; // identity refusal — never write under another note's path
-		markNoteSaved(focusSessionId, r.version);
 		const ft = get(openTabs).find(x => x.id === focusSessionId);
-		if (ft) ft.content = r.content;
+		if (ft) ft.content = r.content; // display state (NOT marked saved here)
 		const path = focusSessionPath;
 		const libName = ft?.libraryName ?? '';
-		setWriteAhead(path, r.content, 0, 0);
 		markRecentWrite(path);
-		writeNote(path, r.content, 'focus_pane')
-			.then(() => {
-				clearWriteAhead(path);
-				if (secondScreenOpen) broadcastNoteSaved(path);
-				reindexNote(path, libName).catch(() => {});
-			})
-			.catch((e) => { console.error('[focus save] write failed (kept in write-ahead for recovery):', e); });
+		// Save-Durability gate: net-before-write → mark clean ONLY on a durable write
+		// → compare-and-clear the net → broadcast/reindex. On failure the model stays
+		// dirty, the net is retained, and the save-health banner surfaces it.
+		saveNoteSession(focusSessionId, path, standardSaveEnv({
+			origin: 'focus_pane',
+			name: ft?.name ?? path,
+			onSaved: (savedPath) => {
+				if (secondScreenOpen) broadcastNoteSaved(savedPath);
+				reindexNote(savedPath, libName).catch(() => {});
+			},
+		}), 'focus_pane');
 	}
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; linkTypes?: string[]; traversalCount?: number }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string; linkTypes?: string[] }[]>([]);
