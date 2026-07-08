@@ -34,9 +34,9 @@
 	let view: EditorView | null = null;
 	let lastInternalValue = value;
 	let wordCount = $state(0);
-	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
 	let lastFlushedText = value;
+	const IDLE_SAVE_INTERVAL = 30000; // 30 s crash-safety belt during gap-free typing (mirrors NotePane)
 	// APP-KILLER #2 (safety sweep, 2026-07-08) — durability on window/webview TEARDOWN.
 	// Svelte onDestroy does NOT run on a full window unload (only beforeunload / visibility-
 	// change fire), and Focus's only other persistence is a pause-only 1500 ms debounce in the
@@ -215,7 +215,7 @@
 		// Durability triggers that survive a window unload (see flushNow above).
 		window.addEventListener('beforeunload', flushNow);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
-		idleSaveTimer = setInterval(idleFlush, 30000);
+		idleSaveTimer = setInterval(idleFlush, IDLE_SAVE_INTERVAL);
 	});
 
 	// Script fonts — dispatch to bidiPlugin whenever appSettings changes (typewriter preset aware)
@@ -230,19 +230,15 @@
 	// Tab switches destroy/recreate FocusPane with new value prop.
 
 	onDestroy(() => {
-		if (saveTimer) clearTimeout(saveTimer);
 		if (pauseTimer) clearTimeout(pauseTimer);
 		if (idleSaveTimer) clearInterval(idleSaveTimer);
 		window.removeEventListener('beforeunload', flushNow);
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
-		if (view) {
-			const text = view.state.doc.toString();
-			// Safety Audit G1 — flush the final buffer IMMEDIATELY on teardown (tab/mode
-			// switch, close). onchange only debounces; onflush persists now so the last
-			// keystrokes before a fast exit are never lost.
-			onflush?.(text);
-			view.destroy();
-		}
+		// Safety Audit G1 — flush the final buffer IMMEDIATELY on teardown (tab/mode switch,
+		// close). onchange only debounces; flushNow reads the live doc + persists via onflush
+		// so the last keystrokes before a fast exit are never lost. (Single-sourced flush.)
+		flushNow();
+		if (view) view.destroy();
 	});
 </script>
 

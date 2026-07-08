@@ -12,7 +12,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, type SaveEnv } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -384,6 +384,21 @@ function navFlushEnv(tab: { id: string; name: string; libraryName: string }, ori
 			}
 		},
 	});
+}
+
+/**
+ * APP-KILLER #2 — the shared prelude for the THREE departure-flush sites (openNoteTab
+ * in-place reuse, loadTabHistoryEntry, closeTab): look the tab up, and if its model is
+ * dirty, flush it to disk through the durability gate before its id-slot is re-seeded /
+ * disposed. Returns {ok:true} when there is nothing to flush. The per-site supersede-token
+ * dance and the abort-vs-best-effort decision stay at each call site (they genuinely differ),
+ * so this factors only the identical find + dirty-gate + markRecentWrite + env assembly.
+ */
+function flushOutgoing(tabId: string, origin = 'nav_flush'): Promise<FlushResult> {
+	const tab = get(openTabs).find((t) => t.id === tabId);
+	if (!tab || !isNoteDirty(tabId)) return Promise.resolve({ ok: true });
+	markRecentWrite(tab.path);
+	return flushOutgoingModel(tabId, navFlushEnv(tab, origin));
 }
 
 /**
@@ -1018,13 +1033,9 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 		// path from the model. A failed flush ABORTS the nav (user stays on the note +
 		// save-health banner); a nav that superseded us during the flush also bails.
 		if (NAV_FLUSH_ENABLED) {
-			const outgoing = get(openTabs).find(t => t.id === tabId);
-			if (outgoing && isNoteDirty(tabId)) {
-				markRecentWrite(outgoing.path);
-				const f = await flushOutgoingModel(tabId, navFlushEnv(outgoing), 'nav_flush');
-				if (!f.ok) { _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
-				if (_navTokens.get(tabId) !== myToken) return;
-			}
+			const f = await flushOutgoing(tabId, 'nav_flush');
+			if (!f.ok) { _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
+			if (_navTokens.get(tabId) !== myToken) return; // superseded during the flush await
 		}
 		const content: string = await invoke('read_note', { filePath });
 		// If a later nav has superseded this one, don't stomp its result.
@@ -1834,8 +1845,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		if (NAV_FLUSH_ENABLED && isNoteDirty(currentTab.id)) {
 			const navToken = (_navTokens.get(currentTab.id) ?? 0) + 1;
 			_navTokens.set(currentTab.id, navToken);
-			markRecentWrite(currentTab.path);
-			const f = await flushOutgoingModel(currentTab.id, navFlushEnv(currentTab), 'nav_flush');
+			const f = await flushOutgoing(currentTab.id, 'nav_flush');
 			if (!f.ok) { _traceNav('openNoteTab:flushAbort', currentTab.id, filePath); return; }
 			if (_navTokens.get(currentTab.id) !== navToken) { _traceNav('openNoteTab:superseded', currentTab.id, filePath); return; }
 		}
@@ -1912,13 +1922,7 @@ export async function closeTab(tabId: string) {
 	// dismissed): the write-ahead net + save-health banner preserve a failed write and
 	// restore it on reopen. Re-read openTabs AFTER the await so a concurrent tab op is
 	// respected. (Gap in the APP-KILLER #2 nav-flush — closeTab is the third departure.)
-	if (NAV_FLUSH_ENABLED) {
-		const closing = get(openTabs).find(t => t.id === tabId);
-		if (closing && isNoteDirty(tabId)) {
-			markRecentWrite(closing.path);
-			await flushOutgoingModel(tabId, navFlushEnv(closing, 'close_flush'), 'close_flush');
-		}
-	}
+	if (NAV_FLUSH_ENABLED) await flushOutgoing(tabId, 'close_flush');
 
 	const tabs = get(openTabs);
 	const idx = tabs.findIndex(t => t.id === tabId);

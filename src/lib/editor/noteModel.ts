@@ -118,6 +118,20 @@ function composeModel(m: NoteModel): string {
 
 /** Open (create) the model for a note from its on-disk content. */
 export function openModel(id: string, path: string, content: string): NoteModel {
+	// APP-KILLER #2 (LL-023 tripwire, dev-only) — replacing a still-DIRTY model onto a
+	// DIFFERENT path silently discards the outgoing note's unsaved edits (the nav-loss class).
+	// Every departure site (openNoteTab reuse / loadTabHistoryEntry / closeTab / renameItem)
+	// flushes first via flushIfDirty; a same-path re-seed (reloadTabsFromDisk adopt) is fine.
+	// This catches a FUTURE unguarded replace site in dev before it reintroduces the loss.
+	if (import.meta.env.DEV) {
+		const prev = models.get(id);
+		if (prev && prev.path !== path && isDirty(id)) {
+			console.warn(
+				`[noteModel] openModel is replacing a DIRTY model onto a different path with no flush: ` +
+				`${prev.path} → ${path} (id ${id}). Flush the outgoing model first (flushIfDirty) — APP-KILLER #2.`,
+			);
+		}
+	}
 	const { properties, body } = parseFrontmatter(content);
 	const m: NoteModel = {
 		id,
