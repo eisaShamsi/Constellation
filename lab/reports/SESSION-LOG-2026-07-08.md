@@ -146,4 +146,16 @@ Adversarial Architect workflow `wf_16260085-719` (4 agents) COMPLETE → `docs/A
 - `noteSession.save()` rewritten into the durability contract: `compose → setNet(before write) → try await write → catch: onError + return {write_failed} (NO markSaved; net RETAINED) → markSaved → clearNetIf(compare-and-clear) → onSuccess`. **Backward-compatible** — the 3rd arg accepts `DiskWriter | SaveEnv`, so the existing harness + minimal callers are unchanged; production sites pass the full env. Never throws on a write failure (returns `write_failed`).
 - `store.ts`: `clearWriteAheadIf` (compare-and-clear, INV-3), `saveHealth` writable + `reportSaveFailure`/`clearSaveFailure` (path-keyed, coalesced), `standardSaveEnv({origin, name, onSaved})` factory (write + net + surface + optional on-durable-write hook).
 - Migrated the 5 already-correct flush sites (`store.ts` task_toggle/flush_all/rename/structural + `lens/store.ts` base_edit) onto `standardSaveEnv` — they gain the net + surface, keep the correct order.
-- Harness `tests/mig-076/runtimeHarness.test.ts` +5 cases: GREEN (failed write → dirty + net retained + surfaced once + nothing written), SUCCESS (clean + compare-and-clear with the written content), **RED baseline** (inlined markSaved-before-write → falsely-clean), type-during-await (newer edit stays dirty), compare-and-clear (newer net survives). **16/16 pass.** *(App behavior for the wrong component sites is unchanged yet — Phase 2 reroutes them.)*
+- Harness `tests/mig-076/runtimeHarness.test.ts` +5 cases: GREEN (failed write → dirty + net retained + surfaced once + nothing written), SUCCESS (clean + compare-and-clear with the written content), **RED baseline** (inlined markSaved-before-write → falsely-clean), type-during-await (newer edit stays dirty), compare-and-clear (newer net survives). **16/16 pass.** *(App behavior for the wrong component sites is unchanged yet — Phase 2 reroutes them.)* Commit `81d5873c`.
+
+### Phase 2 (Steps 2–6) — reroute all 5 wrong save sites — GREEN
+
+All five now go through `saveNoteSession` + `standardSaveEnv` (mark clean only on a durable write; net + surface; the inlined markSaved-before-write + swallowed `.catch(()=>{})` deleted at each): **handleSave** (the debounced APP-KILLER) · **handleFlush** (markSaved→success, net via the gate, no-write path stashes the net) · **handlePromote** (+ADDS the reindex it never had, INV-7) · **saveTabContent** (post-write side effects → `onSaved`, run only on durable write) · **commitFocusSave** (+fixed the false "error is surfaced" comment — now genuinely via save-health). Dropped now-unused markSaved imports. svelte-check 0 errors; harness 16/16. Commit `5519fa4a`.
+
+### Phase 3 Step 7 — save-health banner + Retry + ~10s auto-retry + i18n ×15 — GREEN
+
+`SaveHealthBanner.svelte` (non-blocking top banner, one row/failed note, auto-dismiss on success) mounted in main + SS `+layout`; `store.ts::retrySaveFailure(path)` (re-drives an open+dirty note); a ~10s auto-retry `$effect` in main `+layout` (runs only while failures remain, teardown-cleaned); `saveHealth.couldNotSave/{note}`+`retry` in all 15 locales (JSON-validated). svelte-check 0 errors; harness 16/16. Commit `ed4c9d4d`.
+
+### Step 8 — gate (in progress)
+
+Diff-scoped `safety-inspection` `wf_5f9b257d-a99` over the 7 changed save-path files + frontend build running. Then release binary → Boss **Editor-Surface Gate** test (the runtime proof — force a write failure, confirm no false-clean + the banner + recovery). `write_note` already atomic+fsync (verified).
