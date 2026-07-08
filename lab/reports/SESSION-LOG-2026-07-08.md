@@ -64,3 +64,12 @@ Architect workflow `wf_9192113e-92f` (4 agents) COMPLETE → `docs/Watcher-Index
 - `cacheRefreshDebounce` re-pointed 5000 ms → **800 ms**: `note_meta` is already current after the awaited reindex, so `allNotes`/tags/aliases (the Quick Switcher source) repopulate within ~1 s of the change instead of 5 s. Short debounce still coalesces a burst; `refreshLibraryCaches` self-guards re-entry.
 - Fixed two stale comments the census flagged (`cache_reconcile` "triggered by the file watcher per-file" → false; `loadAllStats` "metadata-only walk" → reads `note_meta`, not a walk).
 - `npm run check` → **0 errors** (317 pre-existing unused-CSS warnings). Boot/typing untouched (no hot-path change). Awaiting the Boss single-file-add test after the binary build (bundled with Phases 3–4).
+
+### Phase 3 — directory / folder-rename completeness — GREEN
+
+**Subtlety the Architect spec missed (found during build):** a renamed-away folder's OLD path is *filtered out* by the watcher (`is_dir()` false — it's gone — and not `.md`), so the old-side cleanup signal never reached the frontend. Two-part close:
+
+- `watcher.rs` — relaxed the path filter to `!p.exists() || p.is_dir() || is_md` (still **emit-only**; the reindex runs off-thread). Passes vanished files/dirs so the old-side signal arrives; existing non-`.md` files stay ignored.
+- `search.rs` — `reindex_changed_paths` now dispatches by kind: existing dir → `reindex_md_descendants` (NEW side: index not-yet-known `.md` under a renamed/moved/bulk-added folder; skips already-known → spurious dir-modify is cheap); vanished non-`.md` → `delete_rows_under_prefix` (OLD side: purge rows under the gone folder). Prefix match is a **Rust `starts_with`, NOT SQL `LIKE`** — Constellation paths contain `_` which `LIKE` treats as a wildcard (a `LIKE prefix||'%'` would over-match and delete unrelated notes = app-killer). Separator-bounded (`…/Old` ≠ `…/OldArchive`); each victim via `reindex_delete_note` (former-target counts/sky maintained).
+- **Known limitation (documented):** an external folder RENAME lands as delete-old + index-new (NOT a `cid_cn` relocate), so per-note aux (review schedule, own outgoing-link weights) resets. Incoming links survive (name-keyed). Acceptable for a rare external rename; boot reconcile relocate-by-cid is the gentler heal.
+- 3 new tests (folder rename new+old, spurious-event skip, separator+underscore guards). `cargo test --lib tests_watcher_freshness` → **8 passed; 0 failed**.

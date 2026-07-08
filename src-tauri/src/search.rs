@@ -9376,9 +9376,122 @@ pub fn reindex_single_note(
 /// reads the `.md` but writes only SQLite (in app-data, outside the watched root),
 /// so it emits no notify event. Returns the count actually reindexed/deleted.
 ///
-/// Phase 1 handles `.md` FILES only. Directories (Windows folder-rename, where
-/// `ReadDirectoryChangesW` emits one event for the folder, not per-child) are
-/// handled in Phase 3.
+/// Phase 3 — walk `.md` files under an EXISTING directory and reindex only those
+/// NOT already in `note_meta`: the NEW side of an external folder rename/move, or
+/// a bulk folder add. On Windows `ReadDirectoryChangesW` emits ONE event for the
+/// folder (not per child), so a renamed folder's children are only reachable via
+/// this walk. Already-indexed descendants are skipped, so a spurious
+/// directory-modify (a single file added to a large folder — the added file
+/// arrives via its own per-file event too) is cheap. Manual stack walk (unbounded
+/// depth); hidden dirs (`.trash`, `.constellation`) skipped. Returns count indexed.
+fn reindex_md_descendants(
+    state: &SearchState,
+    libs: &[crate::libraries::LibraryInfo],
+    dir_path: &str,
+) -> usize {
+    let mut count = 0usize;
+    let mut stack = vec![std::path::PathBuf::from(dir_path)];
+    while let Some(dir) = stack.pop() {
+        let rd = match std::fs::read_dir(&dir) {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        for entry in rd.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let hidden = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .map(|n| n.starts_with('.'))
+                    .unwrap_or(false);
+                if !hidden {
+                    stack.push(path);
+                }
+            } else if path
+                .extension()
+                .map(|e| e.eq_ignore_ascii_case("md"))
+                .unwrap_or(false)
+            {
+                let ps = path.to_string_lossy().to_string();
+                // Reindex only paths not already known (cheap for spurious events).
+                let known = match state.db.lock() {
+                    Ok(g) => g
+                        .as_ref()
+                        .map(|c| {
+                            c.query_row(
+                                "SELECT 1 FROM note_meta WHERE path = ?1",
+                                params![ps],
+                                |_| Ok(()),
+                            )
+                            .is_ok()
+                        })
+                        .unwrap_or(false),
+                    Err(_) => false,
+                };
+                if !known {
+                    if let Some(lib) = crate::libraries::library_name_for_path(libs, &ps) {
+                        if reindex_single_note(state, &ps, &lib).is_ok() {
+                            count += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Phase 3 — delete `note_meta` rows whose path is under a vanished directory:
+/// the OLD side of an external folder rename/move, or a folder delete. Uses a
+/// RUST-side prefix match, NOT SQL `LIKE`: Constellation paths routinely contain
+/// `_` (e.g. `…_LINK_0001.md`), which `LIKE` treats as a single-char WILDCARD —
+/// a `path LIKE prefix||'%'` would over-match and delete UNRELATED notes, an
+/// app-killer. Separator-bounded so `…/Old` never matches `…/OldArchive`. Each
+/// victim goes through `reindex_delete_note` so its former link targets' incoming
+/// counts / sky are maintained (a raw DELETE would leave those stale). Returns
+/// count deleted.
+///
+/// Note: an external folder RENAME lands here as delete-old + index-new (NOT a
+/// cid_cn relocate), so per-note aux (review schedule, own outgoing-link weights)
+/// resets — acceptable for a rare external rename; incoming links survive (they
+/// are name-keyed), and the boot reconcile relocate-by-cid is the gentler heal.
+fn delete_rows_under_prefix(state: &SearchState, dir_path: &str) -> usize {
+    let norm = |p: &str| p.replace('\\', "/").to_lowercase();
+    let prefix = format!("{}/", norm(dir_path).trim_end_matches('/'));
+    let victims: Vec<String> = {
+        let db = match state.db.lock() {
+            Ok(g) => g,
+            Err(_) => return 0,
+        };
+        let conn = match db.as_ref() {
+            Some(c) => c,
+            None => return 0,
+        };
+        let mut stmt = match conn.prepare("SELECT path FROM note_meta") {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
+        let it = match stmt.query_map([], |r| r.get::<_, String>(0)) {
+            Ok(i) => i,
+            Err(_) => return 0,
+        };
+        it.flatten()
+            .filter(|p| norm(p).starts_with(&prefix))
+            .collect()
+    };
+    let mut n = 0usize;
+    for p in &victims {
+        if reindex_delete_note(state, p).is_ok() {
+            n += 1;
+        }
+    }
+    n
+}
+
+/// Directories are handled too (Phase 3): an existing dir (folder rename NEW side
+/// / bulk add) → index new `.md` descendants; a vanished dir (folder rename OLD
+/// side / delete) → purge its rows. The vanished-dir signal relies on the watcher
+/// now passing non-existent paths (see `watcher.rs`).
 #[tauri::command(async)]
 pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
     let state = app.state::<SearchState>();
@@ -9392,25 +9505,31 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
             .extension()
             .map(|e| e.eq_ignore_ascii_case("md"))
             .unwrap_or(false);
-        if !is_md {
-            // Phase 1: `.md` files only. A directory path (folder rename) has no
-            // `.md` extension → skipped here; Phase 3 adds subtree/prefix handling.
-            continue;
-        }
-        if pb.exists() {
-            // Existing `.md`: (re)index it. If no registered library owns the path
-            // (a file outside every root — shouldn't happen for a watched path) it
-            // has no note_meta identity, so skip.
-            if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
-                if reindex_single_note(&state, p, &lib).is_ok() {
-                    done += 1;
+        if pb.is_dir() {
+            // Existing directory — NEW side of an external folder rename/move, or a
+            // bulk folder add. Index every not-yet-known `.md` descendant.
+            done += reindex_md_descendants(&state, &libs, p);
+        } else if pb.exists() {
+            if is_md {
+                // Existing `.md`: (re)index it. If no registered library owns the
+                // path it has no note_meta identity, so skip.
+                if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
+                    if reindex_single_note(&state, p, &lib).is_ok() {
+                        done += 1;
+                    }
                 }
             }
-        } else {
+            // Existing non-`.md` file → not part of the note index; skip.
+        } else if is_md {
             // Vanished `.md`: purge its rows. Idempotent — Ok even if never indexed.
             if reindex_delete_note(&state, p).is_ok() {
                 done += 1;
             }
+        } else {
+            // Vanished non-`.md` path — possibly a removed directory (OLD side of a
+            // folder rename/move, or a folder delete). Prefix-purge its rows. A
+            // no-op if it was a plain non-`.md` file (nothing matches the prefix).
+            done += delete_rows_under_prefix(&state, p);
         }
     }
     Ok(done)
@@ -12251,5 +12370,117 @@ mod tests_watcher_freshness {
         );
         // Outside every library → None (the command skips it).
         assert_eq!(library_name_for_path(&libs, "D:/Other/Note.md"), None);
+    }
+
+    // ── Phase 3 — directory (folder rename/move/delete) handling ──────────────
+
+    fn libs_rooted(dir: &TempDir) -> Vec<crate::libraries::LibraryInfo> {
+        vec![crate::libraries::LibraryInfo {
+            id: "test".into(),
+            name: "TestLib".into(),
+            path: dir.path().to_string_lossy().to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".into(),
+        }]
+    }
+
+    fn total_rows(state: &SearchState) -> i64 {
+        let db = state.db.lock().unwrap();
+        db.as_ref()
+            .unwrap()
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap()
+    }
+
+    /// The Windows folder-rename case: the OS emits one event for the folder, not
+    /// per child. NEW side (reindex_md_descendants) makes the new location
+    /// searchable; OLD side (delete_rows_under_prefix) purges the stale rows — so
+    /// no phantom entries linger and no duplicates appear.
+    #[test]
+    fn folder_rename_indexes_new_location_and_purges_old() {
+        let (state, root) = state_with_schema();
+        let libs = libs_rooted(&root);
+        let old_dir = root.path().join("OldDir");
+        std::fs::create_dir_all(&old_dir).unwrap();
+        std::fs::write(old_dir.join("A.md"), "---\ntitle: A\n---\nalpha\n").unwrap();
+        std::fs::write(old_dir.join("B.md"), "---\ntitle: B\n---\nbeta\n").unwrap();
+        let old_a = old_dir.join("A.md").to_string_lossy().to_string();
+
+        // Seed the index at the OLD location.
+        assert_eq!(
+            reindex_md_descendants(&state, &libs, &old_dir.to_string_lossy()),
+            2,
+            "two notes indexed at the old location"
+        );
+        assert_eq!(row_count(&state, &old_a), 1);
+
+        // Simulate the external rename: files now live under NewDir; OldDir gone.
+        let new_dir = root.path().join("NewDir");
+        std::fs::create_dir_all(&new_dir).unwrap();
+        std::fs::write(new_dir.join("A.md"), "---\ntitle: A\n---\nalpha\n").unwrap();
+        std::fs::write(new_dir.join("B.md"), "---\ntitle: B\n---\nbeta\n").unwrap();
+        std::fs::remove_dir_all(&old_dir).unwrap();
+        let new_a = new_dir.join("A.md").to_string_lossy().to_string();
+
+        // NEW side: index the new location. OLD side: purge the vanished folder.
+        assert_eq!(
+            reindex_md_descendants(&state, &libs, &new_dir.to_string_lossy()),
+            2,
+            "two notes indexed at the new location"
+        );
+        assert_eq!(
+            delete_rows_under_prefix(&state, &old_dir.to_string_lossy()),
+            2,
+            "two stale rows purged from the old location"
+        );
+
+        assert_eq!(row_count(&state, &new_a), 1, "new location searchable");
+        assert_eq!(row_count(&state, &old_a), 0, "old location gone — no phantom");
+        assert_eq!(total_rows(&state), 2, "no duplicate/phantom rows after rename");
+    }
+
+    /// A spurious directory-modify (a file added to a big folder fires a dir event
+    /// too) must be cheap: descendants already in note_meta are skipped.
+    #[test]
+    fn reindex_md_descendants_skips_already_known() {
+        let (state, root) = state_with_schema();
+        let libs = libs_rooted(&root);
+        let dir = root.path().join("Folder");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("N.md"), "---\ntitle: N\n---\nx\n").unwrap();
+        let ds = dir.to_string_lossy().to_string();
+        assert_eq!(reindex_md_descendants(&state, &libs, &ds), 1, "first pass indexes new file");
+        assert_eq!(reindex_md_descendants(&state, &libs, &ds), 0, "already-known descendants skipped");
+    }
+
+    /// The prefix purge is separator-bounded (`Log` ≠ `Logs`) AND treats `_`
+    /// literally (`A_B` ≠ `AXB`) — the reason it is a Rust `starts_with`, not a
+    /// SQL `LIKE prefix||'%'` (which would over-match `_` and delete `AXB` too).
+    #[test]
+    fn delete_rows_under_prefix_is_separator_bounded_and_underscore_literal() {
+        let (state, root) = state_with_schema();
+        let libs = libs_rooted(&root);
+        for folder in ["Log", "Logs", "A_B", "AXB"] {
+            let d = root.path().join(folder);
+            std::fs::create_dir_all(&d).unwrap();
+            std::fs::write(d.join("n.md"), "---\ntitle: n\n---\nx\n").unwrap();
+            reindex_md_descendants(&state, &libs, &d.to_string_lossy());
+        }
+        let row = |folder: &str| {
+            let p = root.path().join(folder).join("n.md").to_string_lossy().to_string();
+            row_count(&state, &p)
+        };
+        assert_eq!(row("Log"), 1);
+        assert_eq!(row("Logs"), 1);
+        assert_eq!(row("A_B"), 1);
+        assert_eq!(row("AXB"), 1);
+
+        delete_rows_under_prefix(&state, &root.path().join("Log").to_string_lossy());
+        assert_eq!(row("Log"), 0, "Log purged");
+        assert_eq!(row("Logs"), 1, "Logs untouched — separator-bounded");
+
+        delete_rows_under_prefix(&state, &root.path().join("A_B").to_string_lossy());
+        assert_eq!(row("A_B"), 0, "A_B purged");
+        assert_eq!(row("AXB"), 1, "AXB untouched — '_' literal, not a LIKE wildcard");
     }
 }

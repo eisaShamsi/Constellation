@@ -65,8 +65,16 @@ pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -
             let changed_paths: Vec<String> = event
                 .paths
                 .iter()
+                // Watcher index-freshness (2026-07-08): also pass paths that no
+                // longer exist (a removed / renamed-away file or DIRECTORY). A
+                // renamed-away folder's OLD path fails `is_dir()` (it's gone) and
+                // isn't `.md`, so without this the old-side signal is lost and the
+                // frontend reindex can't purge that folder's stale note_meta rows.
+                // Still emit-only — the reindex runs off-thread via the frontend's
+                // `reindex_changed_paths`; existing non-`.md` files stay ignored.
                 .filter(|p| {
-                    p.is_dir()
+                    !p.exists()
+                        || p.is_dir()
                         || p.extension()
                             .map(|e| e == "md")
                             .unwrap_or(false)
