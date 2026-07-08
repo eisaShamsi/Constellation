@@ -289,6 +289,18 @@ Tippen Sie `[[`, um die Notizvervollstaendigung zu oeffnen. Beginnen Sie mit der
 
 Sie koennen auch auf bestimmte Ueberschriften verlinken: `[[Notizname#Ueberschrift]]`.
 
+### Speichern und Wiederherstellung
+
+Constellation **speichert automatisch** waehrend der Eingabe — es gibt keine Speichern-Schaltflaeche. Ihre Aenderungen werden einen Moment nach dem Innehalten in die `.md`-Datei geschrieben (und immer dann, wenn Sie die Notiz wechseln oder einen Tab schliessen). Eine Notiz gilt erst dann als "gespeichert", wenn sie tatsaechlich auf die Festplatte geschrieben wurde.
+
+Sollte ein Speichern einmal **fehlschlagen** — zum Beispiel weil ein Synchronisierungsdienst (iCloud / OneDrive / Syncthing) oder ein Virenscanner die Datei kurz sperrt —, geht Ihre Arbeit **nicht** verloren:
+
+- Oben erscheint ein Banner: *"{note} konnte nicht gespeichert werden — deine Änderung ist sicher und wird erneut versucht."* Ihre Eingabe bleibt auf dem Bildschirm und wird sicher im Speicher gehalten (sowie in einem Wiederherstellungspuffer, der einen Neustart uebersteht).
+- Constellation **versucht es automatisch alle paar Sekunden erneut**, sodass Ihre Aenderung von selbst geschrieben wird, sobald die Datei wieder frei ist — selbst wenn Sie sich zwischenzeitlich entfernt haben.
+- Sie koennen auch auf **Erneut versuchen** im Banner klicken, um sofort zu speichern. Das Banner verschwindet, sobald die Notiz gespeichert ist.
+
+Sie muessen sich nie Sorgen machen, dass eine gesperrte oder kurzzeitig nicht verfuegbare Datei Sie eine Aenderung kostet.
+
 ---
 
 ## 4. Suche

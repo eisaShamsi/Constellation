@@ -256,6 +256,18 @@ Escribe `[[` para abrir el autocompletado de notas. Comienza a escribir el nombr
 
 Tambien puedes enlazar a encabezados especificos: `[[Nombre de la Nota#Encabezado]]`.
 
+### Guardado y Recuperación
+
+Constellation **guarda automáticamente** mientras escribes — no hay botón de Guardar. Tus ediciones se escriben en el archivo `.md` un instante después de que haces una pausa (y cada vez que cambias de nota o cierras una pestaña). Una nota se marca como «guardada» solo una vez que se ha escrito realmente en el disco.
+
+Si un guardado alguna vez **falla** — por ejemplo, cuando una herramienta de sincronización (iCloud / OneDrive / Syncthing) o un antivirus bloquea brevemente el archivo — Constellation **no** pierde tu trabajo:
+
+- Aparece un aviso en la parte superior: *«No se pudo guardar {note} — tu edición está a salvo y se reintentará.»* Lo que escribiste permanece en pantalla y se conserva de forma segura en memoria (y en un búfer de recuperación que sobrevive a un reinicio).
+- Constellation **reintenta automáticamente cada pocos segundos**, así que en cuanto el archivo se libera tu edición se escribe por sí sola — incluso si te has alejado.
+- También puedes hacer clic en **Reintentar ahora** en el aviso para guardar de inmediato. El aviso desaparece en cuanto la nota se guarda.
+
+Nunca tienes que preocuparte de que un archivo bloqueado o momentáneamente no disponible te cueste una edición.
+
 ---
 
 ## 4. Busqueda

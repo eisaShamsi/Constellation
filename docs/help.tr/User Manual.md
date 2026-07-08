@@ -256,6 +256,18 @@ Not otomatik tamamlamayı açmak için `[[` yazın. Bir not adı yazmaya başlay
 
 Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
+### Kaydetme ve Kurtarma
+
+Constellation, siz yazarken **otomatik olarak kaydeder** — bir Kaydet düğmesi yoktur. Düzenlemeleriniz, yazmayı bıraktıktan bir an sonra (ve bir nota geçtiğinizde ya da bir sekmeyi kapattığınızda) `.md` dosyasına yazılır. Bir not, ancak gerçekten diske yazıldığında "kaydedildi" olarak işaretlenir.
+
+Bir kaydetme işlemi bir şekilde **başarısız olursa** — örneğin bir senkronizasyon aracı (iCloud / OneDrive / Syncthing) ya da bir antivirüs dosyayı kısa süreliğine kilitlerse — Constellation çalışmanızı **kaybetmez**:
+
+- Üstte bir bildirim şeridi belirir: *"{note} kaydedilemedi — düzenlemeniz güvende ve yeniden denenecek."* Yazdıklarınız ekranda kalır ve bellekte (ve yeniden başlatmaya dayanan bir kurtarma tamponunda) güvenle tutulur.
+- Constellation **birkaç saniyede bir otomatik olarak yeniden dener**, böylece dosya serbest kaldığında düzenlemeniz — siz başından ayrılmış olsanız bile — kendiliğinden yazılır.
+- Ayrıca bildirim şeridindeki **Şimdi yeniden dene** düğmesine tıklayarak hemen kaydedebilirsiniz. Not kaydedildiğinde bildirim şeridi kaybolur.
+
+Kilitli veya kısa süreliğine erişilemeyen bir dosyanın size bir düzenleme kaybettirmesinden asla endişe etmenize gerek yoktur.
+
 ---
 
 ## 4. Arama

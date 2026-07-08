@@ -256,6 +256,18 @@ Tapez `[[` pour ouvrir l'autocompletion des notes. Commencez a saisir un nom de 
 
 Vous pouvez egalement lier vers des titres specifiques : `[[Nom de la note#Titre]]`.
 
+### Enregistrement et récupération
+
+Constellation **enregistre automatiquement** au fil de votre saisie — il n'y a pas de bouton d'enregistrement. Vos modifications sont écrites dans le fichier `.md` un instant après une pause (et chaque fois que vous changez de note ou fermez un onglet). Une note n'est marquée « enregistrée » qu'une fois qu'elle est réellement écrite sur le disque.
+
+Si un enregistrement **échoue** un jour — par exemple parce qu'un outil de synchronisation (iCloud / OneDrive / Syncthing) ou un antivirus verrouille brièvement le fichier — Constellation ne **perd pas** votre travail :
+
+- Une bannière apparaît en haut : *« Impossible d'enregistrer {note} — votre modification est en sécurité et sera réessayée. »* Votre saisie reste à l'écran et est conservée en toute sécurité en mémoire (et dans un tampon de récupération qui survit à un redémarrage).
+- Constellation **réessaie automatiquement toutes les quelques secondes** : dès que le fichier se libère, votre modification est écrite d'elle-même — même si vous vous êtes éloigné.
+- Vous pouvez aussi cliquer sur **Réessayer maintenant** dans la bannière pour enregistrer immédiatement. La bannière disparaît une fois la note enregistrée.
+
+Vous n'avez jamais à craindre qu'un fichier verrouillé ou momentanément indisponible vous coûte une modification.
+
 ---
 
 ## 4. Recherche

@@ -284,6 +284,18 @@ Digite `[[` para abrir o autocompletar de notas. Comece a digitar o nome de uma 
 
 Voce tambem pode vincular a titulos especificos: `[[Nome da Nota#Titulo]]`.
 
+### Salvamento e Recuperação
+
+O Constellation **salva automaticamente** enquanto você digita — não há botão Salvar. Suas edições são gravadas no arquivo `.md` um instante depois de você fazer uma pausa (e sempre que você troca de nota ou fecha uma aba). Uma nota só é marcada como "salva" depois de ser genuinamente gravada no disco.
+
+Se um salvamento **falhar** — por exemplo, uma ferramenta de sincronização (iCloud / OneDrive / Syncthing) ou um antivírus bloqueia o arquivo por um instante — o Constellation **não** perde o seu trabalho:
+
+- Uma faixa aparece no topo: *"Não foi possível salvar {note} — sua edição está segura e o salvamento será repetido."* O que você digitou permanece na tela e é mantido com segurança na memória (e em um buffer de recuperação que sobrevive a uma reinicialização).
+- O Constellation **repete a tentativa automaticamente a cada poucos segundos**, de modo que, assim que o arquivo é liberado, sua edição é gravada por conta própria — mesmo que você já tenha se afastado.
+- Você também pode clicar em **Tentar agora** na faixa para salvar imediatamente. A faixa desaparece assim que a nota é salva.
+
+Você nunca precisa se preocupar que um arquivo bloqueado ou brevemente indisponível lhe custe uma edição.
+
 ---
 
 ## 4. Pesquisa
