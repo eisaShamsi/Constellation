@@ -14,6 +14,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
 import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
+import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
 import { toggleTask } from '$lib/tasks/store'; // §A.3 — reconciled task toggle (tasks/store has no store dep → no cycle)
@@ -643,7 +644,10 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 		const updated = addTypedLinkToProps(properties, type, wikilink);
 		if (!updated) return; // already linked
 		markRecentWrite(sourcePath);
-		await writeNote(sourcePath, buildFullContent(updated, body), 'reviewer_connect');
+		// G4 Phase 3 — byte-perfect round-trip: preserve the closed note's rich
+		// frontmatter (nested maps / block scalars / quoted values) instead of
+		// rebuilding it lossily with buildFullContent.
+		await writeNote(sourcePath, composeUpdatedContent(content, updated, body), 'reviewer_connect');
 		// Fire-and-forget the reindex (exactly like saveTabContent does for every save): a
 		// link-dense source can be slow to reindex because index_note's per-edge sky triggers
 		// re-fire for ALL its edges (pre-existing cost — PJ-066), and the CONNECT must not
@@ -1302,6 +1306,26 @@ export function buildFullContent(properties: FrontmatterProperty[], body: string
 	const frontmatter = reconstructFrontmatter(properties);
 	if (!frontmatter) return body;
 	return frontmatter + '\n' + body;
+}
+
+/**
+ * G4 Phase 3 — the byte-perfect replacement for `buildFullContent` on a ROUND-TRIP
+ * write: a note READ from disk whose props are edited and written back (closed-note
+ * tag/link adds, etc.). `buildFullContent` rebuilds the frontmatter from the lossy
+ * projection and silently drops nested maps / block scalars / corrupts quoted values;
+ * this instead diffs `newProps` against the ORIGINAL content's projection and applies
+ * ONLY the changes to the real bytes via the yamlDoc CST, so unedited rich frontmatter
+ * is preserved verbatim (the SAME engine the open-editor save path uses). Consistency,
+ * not losslessness: both sides use this module's `parseFrontmatter` projection, so an
+ * unedited key produces no diff and is left byte-perfect.
+ *
+ * Use for any read→edit-props→write of an EXISTING note. Use `buildFullContent` only
+ * for a genuinely NEW note (no original bytes to preserve).
+ */
+export function composeUpdatedContent(originalContent: string, newProps: FrontmatterProperty[], newBody?: string): string {
+	const { yaml, hadFence } = splitFrontmatter(originalContent);
+	const parsed = parseFrontmatter(originalContent);
+	return composeFrontmatter(yaml, hadFence, parsed.properties, newProps, newBody ?? parsed.body);
 }
 
 export async function writeNote(filePath: string, content: string, origin?: string): Promise<void> {

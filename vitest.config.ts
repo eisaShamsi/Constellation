@@ -75,6 +75,10 @@ export default defineConfig({
 			// scalars / quoted values / lists in every OTHER key (same parseFrontmatter
 			// projection for base + current → no diff → byte-perfect).
 			'tests/g4/noteModelRoundtrip.test.ts',
+			// G4 Phase 3 (2026-07-08) — composeUpdatedContent (byte-perfect round-trip
+			// write for closed-note tag/link adds) preserves rich frontmatter the lossy
+			// buildFullContent destroys.
+			'tests/g4/composeUpdated.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

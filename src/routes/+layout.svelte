@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -5870,7 +5870,9 @@
 			} else {
 				const content = await readNote(path);
 				const { properties, body } = parseFrontmatter(content);
-				await writeNote(path, buildFullContent(addTagToProps(properties, t), body), 'add_tag');
+				// G4 Phase 3 — byte-perfect round-trip: adding a tag to a CLOSED note
+				// must not destroy its rich frontmatter (the buildFullContent hazard).
+				await writeNote(path, composeUpdatedContent(content, addTagToProps(properties, t), body), 'add_tag');
 				const lib = $libraryStats.find(l => path.startsWith(l.path));
 				if (lib) await reindexNote(path, lib.name);
 			}
