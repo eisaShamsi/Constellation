@@ -154,6 +154,31 @@ pub fn load_libraries_pub(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     load_all_libraries(app)
 }
 
+/// The most-specific (longest-root-wins) library NAME whose registered root
+/// contains `path`, or None. Longest wins so a note in a nested library is
+/// attributed to THAT library, not its parent (e.g. universe_notes at the
+/// Universe root vs a sub-folder library). Mirrors `reconcile::lib_for`; kept
+/// here as the single resolver the watcher-freshness reindex path uses so a
+/// changed path is attributed to the same library reconcile would pick
+/// (Don't-Duplicate). Batch callers (the watcher flush over a git-pull's worth
+/// of paths) pass a pre-loaded `libs` so `load_all_libraries` runs ONCE, not
+/// per path. Case-/separator-insensitive; the `under` bound is at a separator so
+/// `…/Research` never matches `…/Research Notes`.
+pub fn library_name_for_path(libs: &[LibraryInfo], path: &str) -> Option<String> {
+    let norm = |p: &str| p.replace('\\', "/").to_lowercase();
+    let np = norm(path);
+    libs.iter()
+        .filter(|l| {
+            let rn = norm(&l.path);
+            np == rn || np.starts_with(&format!("{}/", rn))
+        })
+        // Raw byte-length ordering is identical to normalized (norm only maps
+        // `\`→`/` and lowercases — both length-preserving), so the longest raw
+        // root path is the most-specific library.
+        .max_by_key(|l| l.path.len())
+        .map(|l| l.name.clone())
+}
+
 /// Save registered libraries to the active universe's config.
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;

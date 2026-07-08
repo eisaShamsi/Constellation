@@ -50,3 +50,9 @@ Architect workflow `wf_9192113e-92f` (4 agents) COMPLETE → `docs/Watcher-Index
 - `nonexistent_path_delete_is_a_clean_noop` — create-then-delete race / never-indexed path → clean `Ok`, no abort.
 
 `cargo test --lib tests_watcher_freshness` → **4 passed; 0 failed** (0.20s). Harness proven; safe to build the fix.
+
+### Phase 1 — Rust command, file-level — GREEN
+
+- `libraries.rs::library_name_for_path(libs, path)` — shared longest-root-wins resolver (separator-bounded, case/backslash-insensitive), batch-friendly (`load_all_libraries` once per flush). Mirrors `reconcile::lib_for`; the single resolver the reindex path uses (Don't-Duplicate). `reconcile.rs` left untouched (risk containment — its `lib_for` is proven).
+- `search.rs::reindex_changed_paths(app, paths)` — `#[tauri::command(async)]`. Per path, decide by `exists()` at flush time: existing `.md` → `reindex_single_note` (G4 decoder, no JS re-derivation); vanished `.md` → `reindex_delete_note` (idempotent); non-`.md`/dirs skipped (Phase 3). Per-path errors swallowed (batch never aborts). Loop-free (reindex writes only SQLite, outside the watched root). Registered in `lib.rs` handler.
+- New test `library_name_for_path_picks_most_specific_root` (nested-wins, separator bound, Windows path). `cargo test --lib tests_watcher_freshness` → **5 passed; 0 failed**. Command not yet wired to the flush (Phase 2).

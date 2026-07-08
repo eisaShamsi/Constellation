@@ -9355,6 +9355,67 @@ pub fn reindex_single_note(
     Ok(())
 }
 
+/// Watcher index-freshness (2026-07-08) — reindex a batch of EXTERNALLY-changed
+/// paths into `note_meta` so every derived surface (Quick Switcher, Search Hub
+/// full-text, Index, backlinks, counts, tags) becomes current WITHOUT a reboot.
+///
+/// Driven by the frontend watcher flush (`library-changed` → `scheduleWatcherFlush`),
+/// which already debounces 300 ms and drops the app's OWN writes (`watcher_suppress`
+/// / `wasRecentlyWritten`) — so this fires only for genuinely external changes.
+/// This is the Rule-8 (write-time-derivation) hook the watcher was missing: the
+/// watcher stays emit-only (taking the DB lock on notify's watch thread risks
+/// `ReadDirectoryChangesW` buffer overflow → dropped events), and the reindex runs
+/// here, off the UI thread (`(async)`, the PJ-066 idiom).
+///
+/// Decision is by `exists()` at flush time (last-writer-by-reality): an existing
+/// `.md` → `reindex_single_note` (the G4-hardened Rust decoder, NO JS
+/// re-derivation of name/aliases); a vanished `.md` → `reindex_delete_note`
+/// (idempotent — a no-op if never indexed). Per-path errors are SWALLOWED so one
+/// racing path (created-then-deleted inside the window; a TOCTOU delete between
+/// `exists()` and the disk read) never aborts the batch. Loop-free: the reindex
+/// reads the `.md` but writes only SQLite (in app-data, outside the watched root),
+/// so it emits no notify event. Returns the count actually reindexed/deleted.
+///
+/// Phase 1 handles `.md` FILES only. Directories (Windows folder-rename, where
+/// `ReadDirectoryChangesW` emits one event for the folder, not per-child) are
+/// handled in Phase 3.
+#[tauri::command(async)]
+pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
+    let state = app.state::<SearchState>();
+    // Load libraries ONCE for the whole batch (a git-pull can touch hundreds of
+    // paths; per-path load would re-walk the federation tree each time).
+    let libs = crate::libraries::load_all_libraries(&app);
+    let mut done = 0usize;
+    for p in &paths {
+        let pb = std::path::Path::new(p);
+        let is_md = pb
+            .extension()
+            .map(|e| e.eq_ignore_ascii_case("md"))
+            .unwrap_or(false);
+        if !is_md {
+            // Phase 1: `.md` files only. A directory path (folder rename) has no
+            // `.md` extension → skipped here; Phase 3 adds subtree/prefix handling.
+            continue;
+        }
+        if pb.exists() {
+            // Existing `.md`: (re)index it. If no registered library owns the path
+            // (a file outside every root — shouldn't happen for a watched path) it
+            // has no note_meta identity, so skip.
+            if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
+                if reindex_single_note(&state, p, &lib).is_ok() {
+                    done += 1;
+                }
+            }
+        } else {
+            // Vanished `.md`: purge its rows. Idempotent — Ok even if never indexed.
+            if reindex_delete_note(&state, p).is_ok() {
+                done += 1;
+            }
+        }
+    }
+    Ok(done)
+}
+
 /// Main search command — supports lexical, structured, and combined modes.
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
@@ -12146,5 +12207,49 @@ mod tests_watcher_freshness {
             "deleting a never-indexed path is a clean no-op"
         );
         assert_eq!(row_count(&state, ghost), 0);
+    }
+
+    /// Phase 1 — the shared resolver `reindex_changed_paths` uses to attribute a
+    /// changed path to a library. Picks the MOST-SPECIFIC (longest-root) library,
+    /// is separator-bounded (`/Research` never matches `/Research Notes`), and
+    /// case-/backslash-insensitive (Windows watcher paths). Pure logic — no app.
+    #[test]
+    fn library_name_for_path_picks_most_specific_root() {
+        use crate::libraries::{library_name_for_path, LibraryInfo};
+        let mk = |name: &str, path: &str| LibraryInfo {
+            id: name.to_string(),
+            name: name.to_string(),
+            path: path.to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".to_string(),
+        };
+        let libs = vec![
+            mk("Universe", "C:/U"),          // root (universe_notes-style)
+            mk("Research", "C:/U/Research"), // nested registered library
+        ];
+        // Nested library wins over its parent (longest-root).
+        assert_eq!(
+            library_name_for_path(&libs, "C:/U/Research/Sub/Note.md").as_deref(),
+            Some("Research"),
+            "longest-root-wins: nested library, not its parent"
+        );
+        // A note directly under the root → the root library.
+        assert_eq!(
+            library_name_for_path(&libs, "C:/U/Loose.md").as_deref(),
+            Some("Universe")
+        );
+        // Separator-bounded: a sibling that shares a name prefix is NOT matched.
+        assert_eq!(
+            library_name_for_path(&libs, "C:/U/Research Notes/X.md").as_deref(),
+            Some("Universe"),
+            "prefix bound at separator — 'Research Notes' is not under 'Research'"
+        );
+        // Backslash + case insensitive (a raw Windows watcher path).
+        assert_eq!(
+            library_name_for_path(&libs, r"c:\U\research\Deep.md").as_deref(),
+            Some("Research")
+        );
+        // Outside every library → None (the command skips it).
+        assert_eq!(library_name_for_path(&libs, "D:/Other/Note.md"), None);
     }
 }
