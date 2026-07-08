@@ -185,3 +185,26 @@ The `/migration` is complete and Boss-validated. Remediation #1 of the Safety Au
 ### SESSION CLOSE — full PCS + handover (Boss-requested)
 
 Complete PCS done: all commits pushed to `origin/main` (tree clean), session log (this file), Orientation **v3.33** (whole-session; v3.32 watcher-freshness + v3.33 save-durability), MoCh `docs/MoCh/MoCh-2026-07-08-1500.md`, help/manual notes ×15 (Syncing + Saving-and-Recovery), Charter register (both sweeps), memory updated. **Handover + ready-to-paste next-session prompt:** `docs/handover/Handover-2026-07-08-save-durability-close.md` — the fresh session starts APP-KILLER #2 (notemodel-ownership nav-loss) from there.
+
+---
+
+## APP-KILLER #2 — NoteModel-Ownership silent nav-loss (`/migration`, next session)
+
+**Concept (the horse):** a navigation is a *departure*, and a departure flushes — whatever you were typing reaches disk before the editor is handed to the next note. Class: notemodel-ownership / content-integrity (Solve-the-Class: single content ownership).
+
+**Phase 1 — Architect (adversarial workflow `wf_0862e784-829`, 8 agents).** Mapped all 5 `openNoteModel` replace sites + the teardown double-refusal + duplicate-model + cross-window. The refutation pass killed a naïve fix (would have re-broken wikilinks by folding flush into `reloadTabsFromDisk`; missed reindex/broadcast on `nav_flush`; sourced the old path from the tab not the model; missed the `markSaved` swap-poison; and surfaced a Focus-mode nav-loss app-killer). Doc: `docs/APP-KILLER-NoteModel-Ownership-Architect.md`.
+
+**Phase 2 — Plan + Boss ruling.** `docs/APP-KILLER-NoteModel-Ownership-Plan.md`. Boss ruled **A3 (full scope)** + **B1 (jump to existing tab, unconditional)**.
+
+**Phase 3 — Build (Reproduce-First, harness 22/22 GREEN throughout, svelte-check 0 errors):**
+- `c43923ce §1` — reproduction (RED): harness Recipes I/J/K capture nav-loss / abort / swap-poison before any fix.
+- `971923c2 §2` — `noteSession.flushIfDirty` choke point + `noteModel.markSaved(id,ver,expectPath?)` path-guard. RED→GREEN.
+- `ead8e9d1 §3` — flush-before-replace at `openNoteTab` reuse + `loadTabHistoryEntry` (`NAV_FLUSH_ENABLED`); `navFlushEnv` carries reindex+broadcast+embed `onSaved`; shared `_navTokens` supersede; failed flush ABORTS the nav.
+- `a1fedcf4 §4` — Focus auto-exit keys on `id|path` so an in-place nav exits Focus (was refusing/losing Focus keystrokes).
+- `d8cc1b03 §5-6` — rename-on-locked-file keeps the net + dirty model (no stale re-seed) + re-points save-health; `openNoteTab` dedups against ALL tabs (B1, `DEDUP_ALL_TABS_ENABLED`).
+- `edcf1772 §7a` — safety-sweep fixes: `closeTab` APP-KILLER + FocusPane window-close.
+- `4254115a §7b` — `/simplify`: `flushOutgoing` helper (collapses the 3 departure sites), dead `saveTimer` removed, `openModel` LL-023 dev tripwire.
+
+**Phase 4 — per-cycle whole-app safety sweep (`wf_415a7214-4ad`, 44 agents, 23 confirmed: 1 APP-KILLER · 3 HIGH · 13 MED · 6 LOW).** Migration diff CLEAN of new app-killers. **Fixed this build (WA#6, in-class gaps):** (1) **APP-KILLER** `closeTab` disposed the model before flushing → now `async` + `flushOutgoing` first (third departure; class complete). (2) **HIGH** FocusPane had no unload flush → now `beforeunload`+`visibilitychange`+30 s idle. Other 21 = standing G2–G8 backlog; the 2 remaining HIGH are both **G3 second-screen cross-window** (own migration). Register in `docs/Constellation-Safety-Audit-CHARTER.md`.
+
+**PENDING:** release-binary build + the 8-item **Editor-Surface Gate Boss test** (staged); then docs close-out (orientation v-bump, MoCh, help/manual) + PCS. Deferred-findings sequencing ruling surfaced to Eisa.
