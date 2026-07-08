@@ -44,6 +44,15 @@ describe('G4 Phase 3 — composeUpdatedContent preserves rich frontmatter on a c
 		expect(composeUpdatedContent(RICH, properties, body)).toBe(RICH);
 	});
 
+	it('adds the first property to an EMPTY-fence note (review Finding 1 — was a no-op)', () => {
+		const empty = '---\n---\nbody text\n';
+		const out = composeUpdatedContent(empty, [{ key: 'tags', value: 'a', type: 'list', listItems: ['a'] }], 'body text\n');
+		expect(out).toContain('tags:'); // the property landed
+		expect(out).toContain('a');
+		expect(out).toContain('body text');
+		expect(parseFrontmatter(out).properties.find((p) => p.key === 'tags')).toBeTruthy();
+	});
+
 	it('demonstrates the hazard it replaces: the old buildFullContent DESTROYS the same note', () => {
 		// This locks in WHY Phase 3 exists — the legacy path is lossy on this note.
 		const { properties, body } = parseFrontmatter(RICH);

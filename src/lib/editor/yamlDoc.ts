@@ -213,7 +213,15 @@ export function composeFrontmatter(
 	for (const tok of new Parser().parse(rawYaml)) {
 		if (tok.type === 'document') { cst = tok; break; }
 	}
-	if (!cst) return `---${eol}${rawYaml}---${eol}${body}`;
+	if (!cst) {
+		// No document token — the fence is EMPTY (`---\n---`) or whitespace-only. The
+		// YAML parsed WITHOUT errors (H1 above already caught malformed input), so it is
+		// safely editable: build a block from newProps (adds the first tag/property on an
+		// empty-fence note). G4 review Finding 1 — empty-fence tag-add was a no-op.
+		if (newProps.length === 0) return `---${eol}${rawYaml}---${eol}${body}`;
+		const yamlText = newProps.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol)).join('');
+		return `---${eol}${yamlText}---${eol}${body}`;
+	}
 
 	const oldByKey = new Map(oldProps.map((p) => [p.key, p]));
 	const newByKey = new Map(newProps.map((p) => [p.key, p]));
