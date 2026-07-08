@@ -158,4 +158,10 @@ All five now go through `saveNoteSession` + `standardSaveEnv` (mark clean only o
 
 ### Step 8 — gate (in progress)
 
-Diff-scoped `safety-inspection` `wf_5f9b257d-a99` over the 7 changed save-path files + frontend build running. Then release binary → Boss **Editor-Surface Gate** test (the runtime proof — force a write failure, confirm no false-clean + the banner + recovery). `write_note` already atomic+fsync (verified).
+`safety-inspection` `wf_5f9b257d-a99` (42 agents, ran whole-app again — the workflow's `args` arrive stringified, so it never enters diff-mode; still covers the diff files). **23 confirmed — the migration's own diff is CLEAN (zero NEW app-killers from the 5-site reroute).** Every finding cross-checked against the new code (primitive / reroutes / banner / compare-and-clear).
+
+**WA#6 fix folded in:** `store.ts:824` — `saveTabContent`'s single-flight `saveLocks` guard silently dropped a concurrent property edit (early-returned BEFORE `editNoteProps` reached the model). Same silent-loss class; fixed by moving `editNoteProps` (the model update) BEFORE the guard → a concurrent edit always lands in the model (dirty), persisted on the next save/flush; the guard now serializes only the WRITE. svelte-check 0 errors; harness 16/16.
+
+The other 22 are the standing G2–G8 backlog (appended to the Charter). **Highest-priority remaining = the 2nd APP-KILLER, still open:** `store.ts:1787` (`openNoteTab` in-place reuse discards the outgoing dirty model, no flush → ~30 s nav-loss) + `+layout.svelte:3320` (two-tab same-note clobber) → the **next migration** (notemodel-ownership: flush-before-replace). Surfaced to Eisa.
+
+**`write_note` verified already atomic + fsync-durable** (`write_gate::atomic_write`), and `replace_file` (Windows `ReplaceFileW`) fails on a read-only target → a Boss-reproducible way to force a save failure for the Editor-Surface Gate test. Rebuilding the binary with all fixes → Boss test.

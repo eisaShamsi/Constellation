@@ -821,23 +821,28 @@ export async function saveTabContent(
 	// embedded (and still embed it if it never was — safe). Body edits leave it false.
 	bodyUnchanged: boolean = false
 ): Promise<void> {
-	if (saveLocks.get(tabId)) return;
-	// PropertyEditor's frontmatter edits land here directly, so the same
-	// F2 post-cascade-stomp gate NoteEditor uses must apply here too. See
-	// `isCascading` for the full rationale.
+	// PropertyEditor's frontmatter edits land here directly, so the same F2
+	// post-cascade-stomp gate NoteEditor uses must apply here too (see `isCascading`).
 	if (isCascading(filePath)) return;
+	// Auto-update the "updated" / "حُدث" property if it exists.
+	const now = new Date();
+	const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+	const updatedProps = properties.map(p => {
+		const k = p.key.toLowerCase();
+		if ((k === 'updated' || k === 'modified' || k === 'حُدث' || k === 'تعديل') && p.type === 'date') {
+			return { ...p, value: dateStr };
+		}
+		return p;
+	});
+	// Save-Durability (2026-07-08) — push props to the MODEL (the source of truth)
+	// BEFORE the single-flight write guard, so a concurrent property edit arriving while
+	// a slow write is in flight is NEVER dropped: it lands in the model (dirty) and the
+	// next save/flush persists it. The guard serializes the WRITE, never the model update.
+	// (Fixes the saveLocks-drop silent-loss — same class as this migration; wf_5f9b257d.)
+	if (SINGLE_OWNERSHIP) editNoteProps(tabId, updatedProps, filePath);
+	if (saveLocks.get(tabId)) return; // a write is already in flight; the model has this edit
 	saveLocks.set(tabId, true);
 	try {
-		// Auto-update the "updated" / "حُدث" property if it exists
-		const now = new Date();
-		const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-		const updatedProps = properties.map(p => {
-			const k = p.key.toLowerCase();
-			if ((k === 'updated' || k === 'modified' || k === 'حُدث' || k === 'تعديل') && p.type === 'date') {
-				return { ...p, value: dateStr };
-			}
-			return p;
-		});
 
 		// MIG-076 §C — props go to the model (with the auto-date applied); the
 		// disk write is composed from the model ALONE, so the body is the live
@@ -875,13 +880,11 @@ export async function saveTabContent(
 		// cascade. The editor owns the content; the store syncs on tab switch / reload.
 		recentWrites.set(filePath, Date.now());
 		if (SINGLE_OWNERSHIP) {
-			// props → model (auto-date applied); the write composes from the model
-			// ALONE (the live body, not the possibly-stale `body` param). expectPath
-			// guards a stale PropertyEditor teardown for a repurposed tab (the
-			// new-note-while-open poison fix). Save-Durability gate: mark clean ONLY on
-			// a durable write; on failure the model stays dirty, the net is retained,
-			// and the save-health banner surfaces it (no false-clean, no silent loss).
-			editNoteProps(tabId, updatedProps, filePath);
+			// props already pushed to the model above (before the guard). The write
+			// composes from the model ALONE (the live body, not the possibly-stale
+			// `body` param). Save-Durability gate: mark clean ONLY on a durable write;
+			// on failure the model stays dirty, the net is retained, and the save-health
+			// banner surfaces it (no false-clean, no silent loss).
 			const tab = get(openTabs).find(t => t.path === filePath);
 			await saveNoteSession(tabId, filePath, standardSaveEnv({
 				origin: 'prop_save',
