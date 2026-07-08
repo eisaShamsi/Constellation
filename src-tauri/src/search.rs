@@ -9518,6 +9518,12 @@ fn delete_rows_under_prefix(state: &SearchState, dir_path: &str) -> usize {
 /// now passing non-existent paths (see `watcher.rs`).
 #[tauri::command(async)]
 pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
+    // Ensure the search DB is initialized FIRST — otherwise reindex_single_note
+    // silently no-ops when state.db is None (e.g. a watcher event arriving mid
+    // universe-switch), leaving the external change unindexed with no error. The
+    // ensure-first discipline the other search commands follow (safety-inspection
+    // wf_8a41970f-36d, search.rs:9285 finding).
+    ensure_search_db_ready(&app)?;
     let state = app.state::<SearchState>();
     // Load libraries ONCE for the whole batch (a git-pull can touch hundreds of
     // paths; per-path load would re-walk the federation tree each time).

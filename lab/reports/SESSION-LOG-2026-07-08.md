@@ -91,4 +91,12 @@ Diff self-review found one latent app-killer + two robustness gaps in `delete_ro
 - `watcher.rs` filter → **single `metadata()` stat** per path (was `!exists() || is_dir()` = two stats) — cheaper on the notify watch thread.
 - 2 new tests (`delete_rows_under_prefix_refuses_mass_deletion`, `..._keeps_rows_whose_files_still_exist`). Full suite: `cargo test --lib` = **1039 passed** (pre-hardening); watcher-freshness module now **10 passed; 0 failed**.
 
-Diff-scoped `safety-inspection` (workflow `wf_8a41970f-36d`) running over the 5 changed files — findings folded in before the binary/Boss test.
+### Phase 5 gate — safety-inspection (whole-app) — migration diff CLEAN
+
+`safety-inspection` `wf_8a41970f-36d` ran **whole-app** (the `args` reached the workflow JSON-stringified, so `args.files` was undefined → whole-app mode — which is the per-cycle sweep this migration's close triggers anyway). 43 agents, **22 confirmed** (2 APP-KILLER · 7 HIGH · 11 MED · 2 LOW).
+
+- **The migration diff is CLEAN — ZERO confirmed findings in the new code.** Verified by scanning every confirmed finding: none reference `reindex_changed_paths` / `reindex_md_descendants` / `delete_rows_under_prefix` / `library_name_for_path` / the watcher filter / the flush wiring.
+- **One finding touched the new command** (`search.rs:9285` — `reindex_single_note` returns `Ok` when `state.db` is None): a pre-existing behavior inherited by `reindex_changed_paths`. **Fixed this build** — added `ensure_search_db_ready(&app)?` at the top of the command (guards the mid-universe-switch edge). Tests unaffected (they call the helpers directly).
+- The other 21 are the **standing G2–G8 Safety-Audit backlog, mostly re-confirms of the 2026-07-07 register** (nothing between the sweeps touched those paths). 2 APP-KILLERs are pre-existing G2 content-loss (`NoteEditor.svelte:233` save-before-write; `store.ts:1693` same-tab-nav model clobber). NEW: `yamlDoc.ts:150/254` nested-object-list flatten (a G4 gap), `link_types.rs`/`universe.rs` non-atomic JSON (G6), `bulk_ops.rs:305` TOCTOU, `FocusPane` no-net. Full register appended to `docs/Constellation-Safety-Audit-CHARTER.md`. **Surfaced to Eisa for sequencing — NOT fixed in this build** (pre-existing; would muddle the clean watcher-freshness change; each needs its own Reproduce-First remediation).
+
+Full lib suite: **1039 passed** (pre-guard). Watcher-freshness module: **10 passed** (pre-guard); db-ready guard is a 1-line command-only addition (compiled; doesn't touch the helper tests).
