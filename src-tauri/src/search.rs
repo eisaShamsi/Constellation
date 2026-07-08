@@ -5112,8 +5112,10 @@ pub(crate) fn extract_aliases(content: &str) -> Vec<String> {
                 push_alias(&mut aliases, rest);
                 continue;
             }
-            // Any non-list-item line ends the block (next field, blank, etc.).
-            if !trimmed.is_empty() {
+            // Any non-list-item, non-comment line ends the block (next field, blank, etc.).
+            // G4 Phase 4 — a `#` comment inside the block must NOT end it (matches has_alias),
+            // else an alias authored after a comment is silently dropped from the index.
+            if !trimmed.is_empty() && !trimmed.starts_with('#') {
                 in_aliases_block = false;
             }
         }
