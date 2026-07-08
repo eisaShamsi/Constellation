@@ -214,6 +214,13 @@ export function toggleEditMode(tabId: string) {
 // (defective) behavior. Frontend-only; models are ephemeral, so toggling is safe.
 const NAV_FLUSH_ENABLED = true;
 
+// APP-KILLER #2 (B1, Boss-ruled 2026-07-08) — one path → one tab. When true, opening a
+// note already open in ANY tab (incl. a background tab, and regardless of Ctrl+click)
+// activates that tab instead of minting a SECOND tab + SECOND model for the same path
+// (two independent models for one path = a save from one clobbers the other's disk edits).
+// Trade-off: the same note can no longer be open in two panes at once. One-line revert.
+const DEDUP_ALL_TABS_ENABLED = true;
+
 // ─── Centralized save with lock ───
 const saveLocks = new Map<string, boolean>();
 const recentWrites = new Map<string, number>();
@@ -1705,6 +1712,22 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		return;
 	}
 
+	// APP-KILLER #2 (B1) — one path → one tab. If this note is already open in ANY OTHER tab
+	// (a background tab; the active-tab case is handled by the early-return above), activate
+	// that tab instead of minting a second tab + second model for the same path — regardless
+	// of newTab / Ctrl+click. Runs before the file read (no I/O needed to focus an open tab).
+	if (DEDUP_ALL_TABS_ENABLED) {
+		const existing = get(openTabs).find(t => t.path === filePath);
+		if (existing) {
+			if (get(splitActive)) focusedTabId.set(existing.id); else activeTabId.set(existing.id);
+			if (highlightTerm) openTabs.update(tabs => tabs.map(t => t.id === existing.id ? { ...t, highlightTerm } : t));
+			// The activated (previously background) tab mounts its editor → the one-shot jump fires on mount.
+			if (targetLine && targetLine > 0) setPendingLineJump(existing.id, targetLine);
+			_traceNav('openNoteTab:dedupExisting', existing.id, filePath);
+			return;
+		}
+	}
+
 	// Living Link System: record traversal when following a wikilink (fire-and-forget)
 	// Deferred until we have the note's display name (extracted from content below)
 	const _fromNotePath = fromNotePath;
@@ -2685,10 +2708,13 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	const renamedTab = get(openTabs).find((t) => t.path === oldPath);
 	if (renamedTab) markCascading(renamedTab.path);
 	let effectivePath: string;
+	// APP-KILLER #2 — track whether the pre-rename flush was DURABLE (see the guard below).
+	let renameFlushOk = true;
 	try {
 		if (renamedTab && isNoteDirty(renamedTab.id)) {
 			markRecentWrite(renamedTab.path);
-			await saveNoteSession(renamedTab.id, renamedTab.path, standardSaveEnv({ origin: 'rename_flush', name: renamedTab.name }), 'rename_flush');
+			const rf = await saveNoteSession(renamedTab.id, renamedTab.path, standardSaveEnv({ origin: 'rename_flush', name: renamedTab.name }), 'rename_flush');
+			renameFlushOk = rf.ok; // a FAILED write (locked .md) must NOT lose the dirty edit below
 		}
 		// Rust returns the EFFECTIVE path. For canonical notes, rename updates
 		// the frontmatter title in-place and the file stays at oldPath — so the
@@ -2720,12 +2746,20 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	// twice — path, then content — and the instantly-destroyed middle editor
 	// instance was a zombie that could flush an EMPTY initial doc over the
 	// renamed file: the 159 B body-less write at 22:20:08.)
-	clearWriteAhead(oldPath);
-	clearWriteAhead(effectivePath);
+	// APP-KILLER #2 — only wipe the recovery net + re-seed the model from disk when the
+	// pre-rename flush was DURABLE. If it FAILED (locked .md), the dirty model + its net
+	// (migrated to effectivePath above) are the ONLY copy of the user's unsaved edits: keep
+	// BOTH — no clearWriteAhead, and fresh stays null so the tab re-seed below repaths the
+	// model (identity follows the rename) WITHOUT openNoteModel replacing it from stale disk.
+	// The save-health auto-retry persists it once the lock clears.
 	let fresh: string | null = null;
-	try {
-		fresh = await readNote(effectivePath);
-	} catch { /* folder rename / unreadable target — path/name update only */ }
+	if (renameFlushOk) {
+		clearWriteAhead(oldPath);
+		clearWriteAhead(effectivePath);
+		try {
+			fresh = await readNote(effectivePath);
+		} catch { /* folder rename / unreadable target — path/name update only */ }
+	}
 
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === oldPath) {
@@ -2755,6 +2789,14 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		}
 		return t;
 	}));
+	// APP-KILLER #2 — on a FAILED pre-rename flush, re-point the save-health failure from the
+	// old path to the renamed path so the banner's Retry + the ~10 s auto-retry target the
+	// note's CURRENT (tab-owned) path (retrySaveFailure looks the tab up BY path). For a
+	// canonical rename (effectivePath === oldPath) this is a harmless no-op.
+	if (!renameFlushOk) {
+		const stale = get(saveHealth).get(oldPath);
+		if (stale) { clearSaveFailure(oldPath); reportSaveFailure(effectivePath, stale.name, stale.error); }
+	}
 	return effectivePath;
 }
 
