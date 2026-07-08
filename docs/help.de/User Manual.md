@@ -81,6 +81,17 @@ Eine **Bibliothek** ist ein Ordner auf Ihrem Computer, der Markdown-Dateien (`.m
 - **Bibliothek entfernen**: Einstellungen > Bibliotheken > klicken Sie auf die Entfernen-Schaltflaeche neben dem Bibliotheksnamen
 - **Bibliothekseinstellungen**: Jede Bibliothek kann eigene Darstellungseinstellungen haben (Schriftarten, Farben)
 
+### Synchronisierung und externe Änderungen
+
+Constellation folgt dem Prinzip **File Over App** — Ihre Notizen sind schlichte `.md`-Dateien auf der Festplatte, und die App überwacht sie auf Änderungen. Wenn eine Notiz von *außerhalb* von Constellation hinzukommt oder sich ändert, während die App geöffnet ist — eine Obsidian-Synchronisierung von einem anderen Gerät, ein `git pull`, ein Cloud-Synchronisierungsdienst (iCloud / Syncthing / OneDrive) oder eine Datei, die Sie in einen Bibliotheksordner ablegen —, erkennt Constellation dies **automatisch**, innerhalb von etwa einer Sekunde und **ohne Neustart**:
+
+- Die Notiz erscheint im **Dateibaum**.
+- Sie wird auffindbar über den **Sternensprung** (`Ctrl+O`), die **Suche**, den **Index**, **Rückverweise** und die **Notizanzahl** der Bibliothek — alles aktualisiert sich von selbst.
+- Wenn Sie einen Ordner außerhalb der App umbenennen, bleiben seine Notizen am neuen Ort auffindbar und die alten Einträge werden bereinigt.
+- Ein großer Schwung (ein `git pull` vieler Notizen oder eine erste Synchronisierung) wird im Hintergrund indiziert — das Tippen bleibt verzögerungsfrei, während die Suche nachzieht.
+
+Sie müssen nichts tun: Constellation hält seinen Suchindex im Gleichschritt mit Ihren Dateien, während sich diese auf der Festplatte ändern. *(Ein Detail: Das Umbenennen eines Ordners von **außerhalb** der App setzt den Wiedervorlage-Zeitplan und den Link-Gewichtungsverlauf dieser Notizen zurück — der Notiztext selbst bleibt unberührt. Das Umbenennen von Ordnern **innerhalb** von Constellation bewahrt hingegen alles.)*
+
 ### Kind-Universen
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.

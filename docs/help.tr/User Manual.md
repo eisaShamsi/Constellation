@@ -94,6 +94,17 @@ Dosya Gezgini, notlarınızın *yaşadığı* yerdir — kütüphanelerinizin ve
 - **Kütüphane kaldırma**: Ayarlar > Kütüphaneler > kütüphane adının yanındaki kaldır düğmesine tıklayın
 - **Kütüphane ayarları**: Her kütüphanenin kendi görünüm ayarları (yazı tipleri, renkler) olabilir
 
+### Senkronizasyon ve Dış Değişiklikler
+
+Constellation, **File Over App** ilkesini benimser — notlarınız diskte sade `.md` dosyalarıdır ve uygulama bunları değişikliklere karşı izler. Uygulama açıkken bir not Constellation'ın *dışından* gelir veya değişirse — başka bir cihazdan gelen bir Obsidian senkronizasyonu, bir `git pull`, bir bulut senkronizasyon aracı (iCloud / Syncthing / OneDrive) ya da bir kütüphane klasörüne bıraktığınız bir dosya — Constellation bunu yaklaşık bir saniye içinde, **yeniden başlatma gerekmeden**, **otomatik olarak** algılar:
+
+- Not, **dosya ağacında** görünür.
+- **Star Jump** (`Ctrl+O`), **Arama**, **Dizin**, **geri bağlantılar** ve kütüphanenin **not sayısı** üzerinden bulunabilir hâle gelir — hepsi kendiliğinden güncellenir.
+- Bir klasörü uygulamanın dışından yeniden adlandırırsanız, içindeki notlar yeni konumda bulunabilir kalır ve eski kayıtlar temizlenir.
+- Büyük bir toplu iş (çok sayıda notun bir `git pull` ile gelmesi ya da ilk senkronizasyon) arka planda dizinlenir — arama yetişirken yazmanız anlık kalır.
+
+Herhangi bir şey yapmanıza gerek yoktur: Constellation, dosyalarınız diskte değiştikçe arama dizinini onlarla eşzamanlı tutar. *(Küçük bir ayrıntı: bir klasörü uygulamanın **dışından** yeniden adlandırmak, o notların gözden geçirme zamanlamasını ve bağlantı ağırlığı geçmişini sıfırlar — notun metnine ise dokunulmaz. Klasörleri Constellation'ın **içinden** yeniden adlandırmak her şeyi korur.)*
+
 ### Alt Evrenler
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.

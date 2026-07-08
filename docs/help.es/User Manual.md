@@ -80,6 +80,17 @@ Una **Biblioteca** es una carpeta en tu computadora que contiene archivos Markdo
 - **Eliminar una biblioteca**: Configuracion > Bibliotecas > haz clic en el boton de eliminar junto al nombre de la biblioteca
 - **Configuracion de biblioteca**: Cada biblioteca puede tener su propia configuracion de apariencia (fuentes, colores)
 
+### Sincronización y Cambios Externos
+
+Constellation sigue el principio **File Over App**: tus notas son simples archivos `.md` en el disco, y la aplicación vigila sus cambios. Si una nota llega o cambia *desde fuera* de Constellation mientras la aplicación está abierta —una sincronización de Obsidian desde otro dispositivo, un `git pull`, una herramienta de sincronización en la nube (iCloud / Syncthing / OneDrive) o un archivo que sueltas en la carpeta de una biblioteca—, Constellation lo detecta **automáticamente**, en aproximadamente un segundo y **sin reiniciar**:
+
+- La nota aparece en el **árbol de archivos**.
+- Se vuelve localizable en el **Star Jump** (`Ctrl+O`), la **Búsqueda**, el **Índice**, los **retroenlaces** y el **recuento de notas** de la biblioteca — todo se actualiza por sí solo.
+- Si renombras una carpeta desde fuera de la aplicación, sus notas siguen siendo localizables en la nueva ubicación y las entradas antiguas se depuran.
+- Un lote grande (un `git pull` de muchas notas, o una primera sincronización) se indexa en segundo plano — la escritura permanece instantánea mientras la búsqueda se pone al día.
+
+No necesitas hacer nada: Constellation mantiene su índice de búsqueda al día con tus archivos a medida que cambian en el disco. *(Un detalle: renombrar una carpeta desde **fuera** de la aplicación reinicia el historial de programación de revisión y de peso de enlaces de esas notas — el texto de la nota en sí queda intacto. Renombrar carpetas **dentro** de Constellation lo conserva todo.)*
+
 ### Universos Secundarios
 
 Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.

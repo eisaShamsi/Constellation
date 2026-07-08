@@ -80,6 +80,17 @@ Uma **Biblioteca** e uma pasta no seu computador contendo arquivos Markdown (`.m
 - **Remover uma biblioteca**: Configuracoes > Bibliotecas > clique no botao de remover ao lado do nome da biblioteca
 - **Configuracoes da biblioteca**: Cada biblioteca pode ter suas proprias configuracoes de aparencia (fontes, cores)
 
+### Sincronização e Alterações Externas
+
+O Constellation segue o princípio **File Over App** — as suas notas são simples arquivos `.md` no disco, e o aplicativo monitora essas alterações. Se uma nota chegar ou for alterada a partir de *fora* do Constellation enquanto o aplicativo está aberto — uma sincronização do Obsidian a partir de outro dispositivo, um `git pull`, uma ferramenta de sincronização na nuvem (iCloud / Syncthing / OneDrive) ou um arquivo que você solta em uma pasta de biblioteca — o Constellation a detecta **automaticamente**, em cerca de um segundo, **sem reiniciar**:
+
+- A nota aparece na **árvore de arquivos**.
+- Ela se torna localizável no **Star Jump** (`Ctrl+O`), na **Busca**, no **Índice**, nos **retrolinks** e na **contagem de notas** da biblioteca — tudo se atualiza sozinho.
+- Se você renomear uma pasta de fora do aplicativo, as suas notas continuam localizáveis no novo local e as entradas antigas são removidas.
+- Um grande lote (um `git pull` de muitas notas ou uma primeira sincronização) é indexado em segundo plano — a digitação permanece instantânea enquanto a busca se atualiza.
+
+Você não precisa fazer nada: o Constellation mantém o seu índice de busca em sincronia com os seus arquivos à medida que eles mudam no disco. *(Um detalhe: renomear uma pasta de **fora** do aplicativo redefine o histórico de agendamento de revisão e de peso de link dessas notas — o texto da nota em si permanece intacto. Renomear pastas **dentro** do Constellation preserva tudo.)*
+
 ### Universos Secundarios
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.

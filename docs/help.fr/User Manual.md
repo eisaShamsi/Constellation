@@ -94,6 +94,17 @@ Une **Bibliotheque** est un dossier sur votre ordinateur contenant des fichiers 
 - **Supprimer une bibliotheque** : Parametres > Bibliotheques > cliquez sur le bouton de suppression a cote du nom de la bibliotheque
 - **Parametres de la bibliotheque** : Chaque bibliotheque peut avoir ses propres parametres d'apparence (polices, couleurs)
 
+### Synchronisation et modifications externes
+
+Constellation applique le principe **File Over App** — vos notes sont de simples fichiers `.md` sur le disque, et l'application surveille leurs modifications. Si une note arrive ou change *depuis l'extérieur* de Constellation pendant que l'application est ouverte — une synchronisation Obsidian depuis un autre appareil, un `git pull`, un outil de synchronisation cloud (iCloud / Syncthing / OneDrive), ou un fichier que vous déposez dans le dossier d'une bibliothèque — Constellation la prend en compte **automatiquement**, en une seconde environ, **sans redémarrage** :
+
+- La note apparaît dans l'**arborescence des fichiers**.
+- Elle devient repérable dans le **Saut stellaire** (`Ctrl+O`), la **Recherche**, l'**Index**, les **rétroliens** et le **nombre de notes** de la bibliothèque — tout se met à jour tout seul.
+- Si vous renommez un dossier depuis l'extérieur de l'application, ses notes restent repérables à leur nouvel emplacement et les anciennes entrées sont nettoyées.
+- Un lot volumineux (un `git pull` de nombreuses notes, ou une première synchronisation) est indexé en arrière-plan — la frappe reste instantanée pendant que la recherche se met à jour.
+
+Vous n'avez rien à faire : Constellation maintient son index de recherche synchronisé avec vos fichiers à mesure qu'ils changent sur le disque. *(Un détail : renommer un dossier depuis l'**extérieur** de l'application réinitialise l'historique du calendrier de révision et du poids des liens de ces notes — le texte de la note lui-même reste intact. Renommer des dossiers **à l'intérieur** de Constellation préserve tout.)*
+
 ### Univers enfants
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
