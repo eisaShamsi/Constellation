@@ -12008,3 +12008,143 @@ mod tests_pj065_index_emission {
         assert_eq!(rows[0].3, 1.0, "default unearned weight");
     }
 }
+
+#[cfg(test)]
+mod tests_watcher_freshness {
+    //! Watcher index-freshness (2026-07-08) — Reproduce-First harness for the
+    //! runtime reindex of EXTERNAL `.md` changes. The watcher is emit-only; the
+    //! fix reindexes changed paths into `note_meta` via `reindex_single_note` /
+    //! `reindex_delete_note` (the per-path primitives the new
+    //! `reindex_changed_paths` command drives). These pin the mechanism:
+    //!   - an external `.md` on disk, absent from the index (RED), becomes a
+    //!     correctly-decoded `note_meta` row after reindex (GREEN);
+    //!   - a block-scalar title decodes via the G4 reader (NOT the literal `|`,
+    //!     and NOT re-derived in JS — the whole point of the class fix);
+    //!   - a vanished `.md` is purged from `note_meta` AND `note_links`;
+    //!   - a never-indexed vanished path is a clean no-op (the
+    //!     create-then-delete-within-the-window / nonexistent-path race).
+    use super::*;
+    use tempfile::TempDir;
+
+    /// A `SearchState` over a real-schema temp-file `search.db`. `init_db` gives
+    /// the FULL note_meta/notes_fts/note_body/note_links/note_aliases schema +
+    /// triggers (a hand-rolled subset would make `index_note` error). The
+    /// returned `TempDir` is kept alive by the caller so the db file survives.
+    fn state_with_schema() -> (SearchState, TempDir) {
+        let dir = TempDir::new().unwrap();
+        let db_file = dir.path().join("search.db");
+        let conn = init_db(&db_file).expect("init_db builds the real schema");
+        let state = SearchState::new();
+        *state.db.lock().unwrap() = Some(conn);
+        (state, dir)
+    }
+
+    fn row_count(state: &SearchState, path: &str) -> i64 {
+        let db = state.db.lock().unwrap();
+        db.as_ref()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM note_meta WHERE path = ?1",
+                params![path],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    fn name_of(state: &SearchState, path: &str) -> Option<String> {
+        let db = state.db.lock().unwrap();
+        db.as_ref()
+            .unwrap()
+            .query_row(
+                "SELECT name FROM note_meta WHERE path = ?1",
+                params![path],
+                |r| r.get(0),
+            )
+            .ok()
+    }
+
+    /// RED→GREEN: the core reproduction. A `.md` written straight to disk (an
+    /// external add — Obsidian sync / git pull) is absent from `note_meta` until
+    /// the per-path reindex runs, then present with its title decoded as the name.
+    #[test]
+    fn external_add_absent_until_reindex_then_present() {
+        let (state, libdir) = state_with_schema();
+        let note = libdir.path().join("Zephyr.md");
+        std::fs::write(&note, "---\ntitle: Zephyr Note\n---\nbody about wind\n").unwrap();
+        let p = note.to_string_lossy().to_string();
+
+        // RED — written to disk, never indexed → invisible to every note_meta reader.
+        assert_eq!(row_count(&state, &p), 0, "precondition: external add not yet in note_meta");
+
+        // GREEN — the fix's per-path primitive makes note_meta current.
+        reindex_single_note(&state, &p, "TestLib").unwrap();
+        assert_eq!(row_count(&state, &p), 1, "after reindex the external note is in note_meta");
+        assert_eq!(
+            name_of(&state, &p).as_deref(),
+            Some("Zephyr Note"),
+            "frontmatter title decoded as the note name"
+        );
+    }
+
+    /// The catastrophic G4 case: a block-scalar title would index as the literal
+    /// `|` under the old naive reader. This proves the fix reuses the hardened
+    /// Rust decoder — so an Obsidian-imported multi-line title is correct, and no
+    /// JS re-derivation of the name is introduced.
+    #[test]
+    fn block_scalar_title_decodes_via_g4_reader() {
+        let (state, libdir) = state_with_schema();
+        let note = libdir.path().join("Block.md");
+        std::fs::write(&note, "---\ntitle: |\n  Multi Word Title\n---\nbody\n").unwrap();
+        let p = note.to_string_lossy().to_string();
+        reindex_single_note(&state, &p, "TestLib").unwrap();
+        let name = name_of(&state, &p).unwrap_or_default();
+        assert!(
+            name.contains("Multi Word Title"),
+            "block-scalar title decoded (got {:?}), not the literal '|'",
+            name
+        );
+        assert_ne!(name.trim(), "|", "must NOT index as the literal block-scalar indicator");
+    }
+
+    /// External delete: the file is removed on disk; feeding its path to the
+    /// delete primitive purges both the metadata row and its outgoing links.
+    #[test]
+    fn external_delete_purges_note_meta_and_links() {
+        let (state, libdir) = state_with_schema();
+        let note = libdir.path().join("Doomed.md");
+        std::fs::write(&note, "---\ntitle: Doomed\n---\nlinks to [[Other]]\n").unwrap();
+        let p = note.to_string_lossy().to_string();
+        reindex_single_note(&state, &p, "TestLib").unwrap();
+        assert_eq!(row_count(&state, &p), 1, "seeded");
+
+        std::fs::remove_file(&note).unwrap();
+        reindex_delete_note(&state, &p).unwrap();
+        assert_eq!(row_count(&state, &p), 0, "note_meta row purged on external delete");
+        let link_rows: i64 = {
+            let db = state.db.lock().unwrap();
+            db.as_ref()
+                .unwrap()
+                .query_row(
+                    "SELECT COUNT(*) FROM note_links WHERE source_path = ?1",
+                    params![p],
+                    |r| r.get(0),
+                )
+                .unwrap()
+        };
+        assert_eq!(link_rows, 0, "note_links rows purged on external delete");
+    }
+
+    /// The create-then-delete-within-the-window race: `exists()==false` at flush
+    /// for a path that was never indexed → the delete must be a clean no-op,
+    /// never an error or panic that would abort the whole batch.
+    #[test]
+    fn nonexistent_path_delete_is_a_clean_noop() {
+        let (state, _dir) = state_with_schema();
+        let ghost = "/no/such/Ghost.md";
+        assert!(
+            reindex_delete_note(&state, ghost).is_ok(),
+            "deleting a never-indexed path is a clean no-op"
+        );
+        assert_eq!(row_count(&state, ghost), 0);
+    }
+}

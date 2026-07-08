@@ -1,0 +1,52 @@
+# Session Log — 2026-07-08
+
+Continues from `SESSION-LOG-2026-07-07.md` (MIG-099 create-latency fix + G4 frontmatter round-trip Phases 0–4, all Boss-validated, pushed to `origin/main` @ `293e77ca`).
+
+---
+
+## Function in hand: Runtime index freshness on EXTERNAL file changes (the "Quick Switcher stale" report)
+
+**Boss report / task:** an `.md` note added on disk *externally* while the app runs (Obsidian sync, git pull, manual drop) is **not** Ctrl+O-jumpable until relaunch. Boss framed it as "the `allNotes` boot cache doesn't refresh," suggested fix = upsert into `allNotes` on the watcher event.
+
+### Reproduction / mechanism — CONFIRMED from code (Reproduce-First)
+
+The root cause is **deeper and broader** than the Quick Switcher. It is a single **Rule-8 (write-time-derivation) gap on the file-watcher hook**:
+
+- `src-tauri/src/watcher.rs` (the `notify` callback) — on an external `.md` change it **only** `emit`s `library-changed {libraryId, paths}`. It **never reindexes** the changed file into the derived index (`note_meta` / `note_links` / `notes_fts`). App-created writes are `watcher_suppress`-filtered, so `library-changed` fires *only* for genuinely external changes.
+- `src/routes/+layout.svelte` `scheduleWatcherFlush` (~L3094) — on `library-changed` it refreshes the **filesystem** tree (`read_library_tree` → fresh ✅), reloads open tabs, and 5 s later calls `refreshLibraryCaches()` which reads `cache_boot_snapshot_core` (= `note_meta`) into `allNotes`. But `note_meta` was never updated → the refresh reads a stale index.
+- The **only** runtime paths that reindex are the app's *own* writes (`create_note`, rename cascade, add-tag/add-link → `reindex_single_note`). External changes are picked up **only at boot** — `reconcile::run` orphan-walk (step 4) + re-adopt (step 9); `reconcile::maybe_schedule` runs **boot-only** (`search.rs:8806`).
+
+**Therefore every `note_meta`-derived surface is stale until reboot, not just Ctrl+O:**
+
+| Surface | Reads | External note (never runtime-reindexed) |
+|---|---|---|
+| File tree | filesystem (`read_library_tree`) | ✅ fresh |
+| Quick Switcher (Ctrl+O) | `allNotes` boot cache (`+layout.svelte:870`) | ❌ stale |
+| SearchHub wikilink autocomplete (`wikiAuto`) | `allNotes` boot cache | ❌ stale |
+| SearchHub full-text | `constellation_search` → live `note_meta`/FTS (`store.ts:1919`) | ❌ **also stale** |
+| Index panel / backlinks | `note_meta` / `note_links` | ❌ stale |
+
+### Instance vs class
+
+- **Instance fix (Boss's suggestion):** upsert `allNotes` in JS on the watcher event. Fixes Ctrl+O only; leaves SearchHub full-text / Index / backlinks stale. **Worse:** it forces the frontend to re-derive a note's name/aliases from raw frontmatter *in JS*, duplicating the Rust indexer just hardened in **G4 Phase 4** → guaranteed to drift (violates Don't-Duplicate + Solve-the-Class).
+- **Class fix (recommended):** on the watcher hook, **reindex the changed `.md` paths into `note_meta`** (scoped, per-path — `reindex_single_note` for create/modify, `reindex_delete_note` for delete). Then the *existing* frontend refresh makes `allNotes` **and** SearchHub full-text / Index / backlinks all current. This is Rule 8 placed exactly where CLAUDE.md says: "wire a trigger/hook on the source-of-truth write path." The watcher IS that hook for external changes.
+
+Architect workflow `wf_9192113e-92f` (4 agents) COMPLETE → `docs/Watcher-Index-Freshness-Architect.md`. Census expanded the stale-surface list (semantic, tags, aliases, counts, Sky/Map/Sight/Review/Bases). Adversarial pass caught the **Windows dir-rename gap** (`ReadDirectoryChangesW` emits ONE event for a renamed folder, not per-child — naïve per-file reindex would lose every note inside). WA#5: the fix shape (debounced per-path incremental reindex) is the Obsidian/VS Code/Logseq/FTS5 standard. WAL `open_reader` isolation verified — reindex writer never blocks/tears the snapshot read.
+
+### Plan APPROVED (Boss, 2026-07-08)
+
+- **Scope:** full class fix, all 6 phases (incl. Phase 3 Windows dir-rename hardening).
+- **Burst thresholds:** soft 500 (background + status bar), hard ~2000 (reconcile fallback) — defaults accepted.
+- **Open-note external MODIFY:** Boss chose **focus-reconcile (Obsidian-style)** over today's live-reload. → **SEPARATE follow-up** after the freshness fix (touches the open editor buffer = Editor-Surface Gate / BUG-015/023 territory; its own Reproduce-First harness + review). Queued, NOT bundled into this migration.
+
+**Migration-class** (Rust watcher/index ↔ Svelte cache ↔ derived-index write path). Plan-Approval = Build-Approval → cascading Phases 0→5, stopping at the Phase 2 + Phase 3 Boss tests.
+
+### Phase 0 — RED harness (Reproduce-First) — GREEN
+
+`search.rs::tests_watcher_freshness` (4 tests, `init_db` real-schema temp DB + `SearchState`, real `.md` files on disk):
+- `external_add_absent_until_reindex_then_present` — RED precondition (written to disk, absent from `note_meta`) → GREEN after `reindex_single_note` (present, title decoded as name). The core reproduction.
+- `block_scalar_title_decodes_via_g4_reader` — a `title: |` block scalar decodes to the words, NOT the literal `|` — proves the fix reuses the G4-hardened Rust decoder (no JS re-derivation).
+- `external_delete_purges_note_meta_and_links` — vanished `.md` → `reindex_delete_note` purges `note_meta` + `note_links`.
+- `nonexistent_path_delete_is_a_clean_noop` — create-then-delete race / never-indexed path → clean `Ok`, no abort.
+
+`cargo test --lib tests_watcher_freshness` → **4 passed; 0 failed** (0.20s). Harness proven; safe to build the fix.
