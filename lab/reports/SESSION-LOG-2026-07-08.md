@@ -180,4 +180,8 @@ The `/migration` is complete and Boss-validated. Remediation #1 of the Safety Au
 - **User Manual (SO #2):** "Saving and Recovery" note (the save-health banner + auto-retry) + 14-language propagation.
 - **Audit (migration Phase 4):** satisfied by the per-cycle whole-app sweep (diff CLEAN, `wf_5f9b257d-a99`) + the 7 invariants + 16 harness tests + the 2 Boss stages. No schema change / no backfill → trivial migration-path (rollback = revert commits; no persisted state).
 
-**NEXT (recommended, awaiting Boss go):** the **2nd APP-KILLER** — `store.ts:1787` `openNoteTab` in-place reuse discards the outgoing dirty model (~30 s nav-loss on a mid-typing wikilink/file-tree click) + `+layout.svelte:3320` two-tab same-note clobber. Its own `/migration` (notemodel-ownership: flush-before-replace + sibling reconcile), Reproduce-First.
+**NEXT (Boss-approved as its own migration):** the **2nd APP-KILLER** — `store.ts:1787` `openNoteTab` in-place reuse discards the outgoing dirty model (~30 s nav-loss on a mid-typing wikilink/file-tree click) + `+layout.svelte:3320` two-tab same-note clobber. Its own `/migration` (notemodel-ownership: flush-before-replace + sibling reconcile), Reproduce-First.
+
+### SESSION CLOSE — full PCS + handover (Boss-requested)
+
+Complete PCS done: all commits pushed to `origin/main` (tree clean), session log (this file), Orientation **v3.33** (whole-session; v3.32 watcher-freshness + v3.33 save-durability), MoCh `docs/MoCh/MoCh-2026-07-08-1500.md`, help/manual notes ×15 (Syncing + Saving-and-Recovery), Charter register (both sweeps), memory updated. **Handover + ready-to-paste next-session prompt:** `docs/handover/Handover-2026-07-08-save-durability-close.md` — the fresh session starts APP-KILLER #2 (notemodel-ownership nav-loss) from there.
