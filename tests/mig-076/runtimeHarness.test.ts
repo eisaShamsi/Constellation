@@ -425,3 +425,17 @@ describe('Recipe K — a late save cannot poison a swapped-in model (markSaved p
 		expect(M.isDirty('t')).toBe(true); // guarded: dirty (poison would make this false)
 	});
 });
+
+describe('Recipe M — close-tab-while-dirty flushes before the model is disposed', () => {
+	it('the closing tab flushes its edit to disk BEFORE close() deletes the model — nothing lost', async () => {
+		S.open('t', '/a.md', note('NA', 'A body'));
+		S.editBody('t', 'typed then closed'); // dirty, inside the debounce window
+		// closeTab is a DEPARTURE that disposes the model: flush first (best-effort, net-backed),
+		// THEN close. The teardown flush can't save it once the model is gone — so the store must.
+		const r = await S.flushIfDirty('t', write);
+		expect(r.ok).toBe(true);
+		expect(diskBody('/a.md')).toBe('typed then closed');
+		S.close('t'); // model disposed AFTER the durable flush
+		expect(diskBody('/a.md')).toBe('typed then closed'); // edit safe on disk, model gone
+	});
+});

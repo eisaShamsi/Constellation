@@ -368,9 +368,9 @@ export async function retrySaveFailure(path: string): Promise<void> {
  * (index↔disk divergence) and the second screen un-notified. This mirrors NoteEditor's
  * handleSave onSaved: broadcast (second-screen sync) + FTS5/note_meta reindex + re-embed.
  */
-function navFlushEnv(tab: { id: string; name: string; libraryName: string }): SaveEnv {
+function navFlushEnv(tab: { id: string; name: string; libraryName: string }, origin = 'nav_flush'): SaveEnv {
 	return standardSaveEnv({
-		origin: 'nav_flush',
+		origin,
 		name: tab.name,
 		onSaved: (savedPath) => {
 			emit('screen:note-saved', { path: savedPath }).catch(() => {});
@@ -1904,7 +1904,22 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	}
 }
 
-export function closeTab(tabId: string) {
+export async function closeTab(tabId: string) {
+	// APP-KILLER #2 — a tab CLOSE is a DEPARTURE that DISPOSES the model (closeNoteModel
+	// below). Flush its dirty edits to disk FIRST through the durability gate, or they
+	// vanish when the model is deleted (the teardown flush can't help — the model is
+	// already gone). Unlike a nav we do NOT abort on a failed flush (the tab is being
+	// dismissed): the write-ahead net + save-health banner preserve a failed write and
+	// restore it on reopen. Re-read openTabs AFTER the await so a concurrent tab op is
+	// respected. (Gap in the APP-KILLER #2 nav-flush — closeTab is the third departure.)
+	if (NAV_FLUSH_ENABLED) {
+		const closing = get(openTabs).find(t => t.id === tabId);
+		if (closing && isNoteDirty(tabId)) {
+			markRecentWrite(closing.path);
+			await flushOutgoingModel(tabId, navFlushEnv(closing, 'close_flush'), 'close_flush');
+		}
+	}
+
 	const tabs = get(openTabs);
 	const idx = tabs.findIndex(t => t.id === tabId);
 	if (idx === -1) return;

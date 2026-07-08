@@ -35,6 +35,24 @@
 	let lastInternalValue = value;
 	let wordCount = $state(0);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
+	let lastFlushedText = value;
+	// APP-KILLER #2 (safety sweep, 2026-07-08) — durability on window/webview TEARDOWN.
+	// Svelte onDestroy does NOT run on a full window unload (only beforeunload / visibility-
+	// change fire), and Focus's only other persistence is a pause-only 1500 ms debounce in the
+	// layout — so typing without a >1.5 s gap and then closing the window lost the whole run.
+	// Mirror NotePane: flush on beforeunload + tab-hide + a 30 s idle tick. flush → onflush →
+	// commitFocusSave sets the SYNCHRONOUS write-ahead net (recoverable on reopen even if the
+	// async disk write is cut off by the unload).
+	function flushNow() {
+		if (!view) return;
+		lastFlushedText = view.state.doc.toString();
+		onflush?.(lastFlushedText);
+	}
+	function idleFlush() {
+		if (view && view.state.doc.toString() !== lastFlushedText) flushNow();
+	}
+	function handleVisibilityChange() { if (document.hidden) flushNow(); }
 
 	// ─── Progressive disclosure state ───
 	let isTyping = $state(false);
@@ -193,6 +211,11 @@
 		}
 
 		view.focus();
+
+		// Durability triggers that survive a window unload (see flushNow above).
+		window.addEventListener('beforeunload', flushNow);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		idleSaveTimer = setInterval(idleFlush, 30000);
 	});
 
 	// Script fonts — dispatch to bidiPlugin whenever appSettings changes (typewriter preset aware)
@@ -209,6 +232,9 @@
 	onDestroy(() => {
 		if (saveTimer) clearTimeout(saveTimer);
 		if (pauseTimer) clearTimeout(pauseTimer);
+		if (idleSaveTimer) clearInterval(idleSaveTimer);
+		window.removeEventListener('beforeunload', flushNow);
+		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		if (view) {
 			const text = view.state.doc.toString();
 			// Safety Audit G1 — flush the final buffer IMMEDIATELY on teardown (tab/mode
