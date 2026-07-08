@@ -133,4 +133,17 @@ Boss go: "start with the first one." Function in hand: the NotePane **debounced-
 
 **Key lever (Solve-the-Class):** the CORRECT shared primitive already exists — `noteSession.ts:84 save()` does `compose → await write → markSaved` (clean only if the await didn't throw). The component sites BYPASS it with an inlined wrong order + no net. Fix direction: consolidate every save onto one correct primitive (net-before-write → await → mark-clean-only-on-success + clear-net; on failure keep dirty + retain net + SURFACE the error, never silent).
 
-Adversarial Architect workflow `wf_16260085-719` running (census · WA#5 · design/refute) — plan to Boss for approval before build (full `/migration`, feedback_bug023 — save/lifecycle/cross-window).
+Adversarial Architect workflow `wf_16260085-719` (4 agents) COMPLETE → `docs/APP-KILLER-Save-Durability-Architect.md`. Census confirmed 5 wrong sites (handleSave/handleFlush/handlePromote/saveTabContent/commitFocusSave) vs the CORRECT `noteSession.save()`; WA#5 = VS Code dirty-until-resolved + hot-exit journal is the universal rule. Verified myself (WA#1): `write_note` → `write_gate::atomic_write` is **already atomic + fsync-durable** (Architect decision #3 resolved).
+
+### Plan APPROVED (Boss, 2026-07-08) — full 8-step `/migration`
+
+- Scope: **all 8 steps** (class fix — durability everywhere + recovery net + visible notice).
+- Save-fail notice: **top banner + Retry** (Obsidian-style, path-coalesced, i18n ×15).
+- Auto-retry: **~10 s timer** while a save stays dirty.
+
+### Step 1 — the hardened primitive, proven headless — GREEN
+
+- `noteSession.save()` rewritten into the durability contract: `compose → setNet(before write) → try await write → catch: onError + return {write_failed} (NO markSaved; net RETAINED) → markSaved → clearNetIf(compare-and-clear) → onSuccess`. **Backward-compatible** — the 3rd arg accepts `DiskWriter | SaveEnv`, so the existing harness + minimal callers are unchanged; production sites pass the full env. Never throws on a write failure (returns `write_failed`).
+- `store.ts`: `clearWriteAheadIf` (compare-and-clear, INV-3), `saveHealth` writable + `reportSaveFailure`/`clearSaveFailure` (path-keyed, coalesced), `standardSaveEnv({origin, name, onSaved})` factory (write + net + surface + optional on-durable-write hook).
+- Migrated the 5 already-correct flush sites (`store.ts` task_toggle/flush_all/rename/structural + `lens/store.ts` base_edit) onto `standardSaveEnv` — they gain the net + surface, keep the correct order.
+- Harness `tests/mig-076/runtimeHarness.test.ts` +5 cases: GREEN (failed write → dirty + net retained + surfaced once + nothing written), SUCCESS (clean + compare-and-clear with the written content), **RED baseline** (inlined markSaved-before-write → falsely-clean), type-during-await (newer edit stays dirty), compare-and-clear (newer net survives). **16/16 pass.** *(App behavior for the wrong component sites is unchanged yet — Phase 2 reroutes them.)*

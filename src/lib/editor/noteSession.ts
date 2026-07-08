@@ -22,6 +22,33 @@ import type { FrontmatterProperty } from '$lib/libraries/store';
 export type DiskWriter = (path: string, content: string, origin: string) => void | Promise<void>;
 export type SaveResult = M.ComposeResult;
 
+/**
+ * The full durability contract for a save (Save-Durability migration, 2026-07-08).
+ * A save may only mark the model clean AFTER the disk write is proven durable, and
+ * a failed write must (a) NOT mark clean (model stays dirty → retried), (b) RETAIN
+ * a recovery net (never a silent loss), and (c) SURFACE the error (never swallowed).
+ * All side effects are injected so the headless harness drives the REAL path.
+ *   - `setNet`      — write-ahead buffer set BEFORE the write (retained on failure).
+ *   - `clearNetIf`  — compare-and-clear: only wipe the net if what we wrote is still
+ *                     the buffered content (a newer edit's net is never clobbered).
+ *   - `onSuccess`   — reindex / embed / broadcast — runs ONLY on a durable write.
+ *   - `onError`     — surface the failure (save-health banner) — never silent.
+ */
+export interface SaveEnv {
+	write: DiskWriter;
+	setNet?: (path: string, content: string, cursorPos: number, scrollTop: number) => void;
+	clearNetIf?: (path: string, content: string) => void;
+	onSuccess?: (info: { path: string; content: string; version: number }) => void;
+	onError?: (info: { path: string; content: string; version: number; error: unknown }) => void;
+	cursorPos?: number;
+	scrollTop?: number;
+}
+
+/** compose refusal | write failure | success. `ok:false` covers both non-durable outcomes. */
+export type SaveOutcome =
+	| M.ComposeResult
+	| { ok: false; reason: 'write_failed'; path: string; version: number; error: unknown };
+
 /** Open a note's session from its on-disk content (tab open / nav / reload). */
 export function open(id: string, path: string, diskContent: string): void {
 	M.openModel(id, path, diskContent);
@@ -77,20 +104,36 @@ export function seedBody(id: string, path: string, fallback: string): string {
 
 /**
  * Save: compose from THIS id for THIS path (REFUSES a mismatch — the identity
- * guard that kills the cross-note write), write through the injected writer,
- * record the saved version. Returns the compose result so the caller can
- * journal a refusal. The caller never assembles content itself.
+ * guard that kills the cross-note write), then run the durability contract:
+ * net-before-write → await write → ON SUCCESS mark clean + compare-and-clear net
+ * + onSuccess; ON FAILURE surface via onError, RETAIN the net, and leave the model
+ * DIRTY (never a false-clean; the next debounce/retry re-attempts). Never throws on
+ * a write failure — returns `{write_failed}` so callers proceed without an unhandled
+ * rejection (the failure is already netted + surfaced). The caller never assembles
+ * content itself. `env` may be a bare `DiskWriter` (back-compat: the headless harness
+ * and any minimal caller) or the full `SaveEnv` (production sites, with net + surface).
  */
 export async function save(
 	id: string,
 	expectPath: string,
-	write: DiskWriter,
+	env: DiskWriter | SaveEnv,
 	origin = 'editor_save',
-): Promise<SaveResult> {
+): Promise<SaveOutcome> {
+	const e: SaveEnv = typeof env === 'function' ? { write: env } : env;
 	const r = M.compose(id, expectPath);
-	if (!r.ok) return r;
-	await write(r.path, r.content, origin);
-	M.markSaved(id, r.version);
+	if (!r.ok) return r; // identity refusal (path_mismatch) — nothing composed, nothing written
+	// NET BEFORE THE WRITE — a failed/interrupted write is recoverable from the buffer.
+	e.setNet?.(r.path, r.content, e.cursorPos ?? 0, e.scrollTop ?? 0);
+	try {
+		await e.write(r.path, r.content, origin);
+	} catch (error) {
+		// SURFACE (never silent) + net RETAINED + model NOT marked clean (stays dirty → retried).
+		e.onError?.({ path: r.path, content: r.content, version: r.version, error });
+		return { ok: false, reason: 'write_failed', path: r.path, version: r.version, error };
+	}
+	M.markSaved(id, r.version); // clean trails durability — reached only if the write resolved
+	e.clearNetIf?.(r.path, r.content); // compare-and-clear: never wipe a newer edit's net
+	e.onSuccess?.({ path: r.path, content: r.content, version: r.version });
 	return r;
 }
 

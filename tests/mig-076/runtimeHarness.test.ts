@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as S from '$lib/editor/noteSession';
+import * as M from '$lib/editor/noteModel';
 import { parseFrontmatter, type FrontmatterProperty } from '$lib/libraries/store';
 
 const note = (cid: string, body: string, extra = '') =>
@@ -247,5 +248,98 @@ describe('Global invariant — disk never holds a foreign identity', () => {
 		expect(diskBody('/a.md')).toBe('alpha-2');
 		expect(diskBody('/b.md')).toBe('beta');
 		expect(diskBody('/c.md')).toBe('gamma-2');
+	});
+});
+
+/**
+ * Save-Durability (2026-07-08) — the reproduction harness for the "mark-clean-
+ * before-durable-write" app-killer. `noteSession.save()` may only mark the model
+ * clean AFTER a durable write; a failed write must keep it DIRTY, RETAIN the net,
+ * and SURFACE the error (never a silent loss). Drives the REAL save primitive with
+ * an injected failing/succeeding writer + spies.
+ */
+describe('Save-Durability — clean only trails a durable write', () => {
+	it('GREEN — a failed write keeps the model DIRTY, retains the net, surfaces once, writes nothing', async () => {
+		S.open('t', '/n.md', note('N', 'old body'));
+		S.editBody('t', 'freshly typed');
+		const calls = { net: [] as unknown[], clearIf: [] as unknown[], err: [] as unknown[], ok: [] as unknown[] };
+		const out = await S.save('t', '/n.md', {
+			write: () => { throw new Error('EBUSY: file locked'); },
+			setNet: (p, c) => calls.net.push([p, c]),
+			clearNetIf: (p, c) => calls.clearIf.push([p, c]),
+			onError: (i) => calls.err.push(i),
+			onSuccess: (i) => calls.ok.push(i),
+		});
+		expect(out.ok).toBe(false);
+		expect((out as { reason?: string }).reason).toBe('write_failed');
+		expect(S.isDirty('t')).toBe(true);       // NOT falsely clean — the whole fix
+		expect(calls.net.length).toBe(1);        // net set BEFORE the write
+		expect(calls.clearIf.length).toBe(0);    // net RETAINED on failure
+		expect(calls.err.length).toBe(1);        // surfaced exactly once
+		expect(calls.ok.length).toBe(0);
+		expect(disk.has('/n.md')).toBe(false);   // nothing reached disk
+	});
+
+	it('SUCCESS — a durable write marks clean, compare-and-clears the net with the written content', async () => {
+		S.open('t', '/n.md', note('N', 'old'));
+		S.editBody('t', 'new content');
+		const calls = { net: [] as unknown[], clearIf: [] as string[][], ok: [] as unknown[] };
+		const out = await S.save('t', '/n.md', {
+			write: (p, c) => { disk.set(p, c); },
+			setNet: (p, c) => calls.net.push([p, c]),
+			clearNetIf: (p, c) => calls.clearIf.push([p, c]),
+			onSuccess: (i) => calls.ok.push(i),
+		});
+		expect(out.ok).toBe(true);
+		expect(S.isDirty('t')).toBe(false);
+		expect(calls.net.length).toBe(1);
+		expect(calls.clearIf.length).toBe(1);                    // cleared on success
+		expect(calls.clearIf[0][1]).toBe(disk.get('/n.md'));     // with exactly what we wrote
+		expect(calls.ok.length).toBe(1);
+		expect(diskBody('/n.md')).toBe('new content');
+	});
+
+	it('RED baseline — the inlined order (markSaved BEFORE a failing write) yields a FALSELY-CLEAN model', () => {
+		// Replicates the shipping bug shape (NoteEditor.handleSave:233) to prove why the
+		// fix matters: mark clean, THEN write; a failed write leaves isDirty === false.
+		M.openModel('t', '/n.md', note('N', 'old'));
+		M.setBody('t', 'edited', '/n.md');
+		const r = M.compose('t', '/n.md');
+		expect(r.ok).toBe(true);
+		if (r.ok) M.markSaved('t', r.version);   // WRONG order: clean before durable
+		let threw = false;
+		try { throw new Error('EBUSY'); } catch { threw = true; } // the write "fails"
+		expect(threw).toBe(true);
+		expect(M.isDirty('t')).toBe(false);      // ← FALSELY CLEAN — the edit is now unrecoverable
+	});
+
+	it('type-during-await keeps the model dirty for the NEWER edit (version semantics)', async () => {
+		S.open('t', '/n.md', note('N', ''));
+		S.editBody('t', 'v1');
+		let release!: () => void;
+		const gate = new Promise<void>((res) => { release = res; });
+		const p = S.save('t', '/n.md', { write: async (path, c) => { await gate; disk.set(path, c); } });
+		S.editBody('t', 'v2');   // user types MORE during the in-flight write
+		release();
+		await p;
+		expect(diskBody('/n.md')).toBe('v1');    // the composed (v1) content persisted
+		expect(S.isDirty('t')).toBe(true);       // v2 is still unsaved → correctly dirty
+	});
+
+	it('compare-and-clear — a completed save does NOT wipe a NEWER net set during its write', async () => {
+		S.open('t', '/n.md', note('N', 'old'));
+		S.editBody('t', 'first');
+		const nets = new Map<string, string>();
+		let release!: () => void;
+		const gate = new Promise<void>((res) => { release = res; });
+		const out = S.save('t', '/n.md', {
+			write: async (path, c) => { await gate; disk.set(path, c); },
+			setNet: (path, c) => nets.set(path, c),
+			clearNetIf: (path, c) => { if (nets.get(path) === c) nets.delete(path); }, // real compare-and-clear
+		});
+		nets.set('/n.md', 'NEWER-NET');   // a newer edit replaces the net mid-write (handleFlush)
+		release();
+		await out;
+		expect(nets.get('/n.md')).toBe('NEWER-NET'); // the newer net survived the older write's clear
 	});
 });

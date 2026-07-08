@@ -12,7 +12,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, type SaveEnv } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -254,6 +254,76 @@ export function clearWriteAhead(filePath: string) {
 		delete all[filePath];
 		localStorage.setItem(WAB_LS_KEY, JSON.stringify(all));
 	} catch {}
+}
+
+/**
+ * Save-Durability (2026-07-08) — compare-and-clear the write-ahead net. A completed
+ * save clears the net ONLY when the buffered content still equals what it wrote; if
+ * a newer edit (concurrent typing, or a second window sharing the localStorage
+ * origin) has already replaced the buffer, that newer net is left intact. Prevents
+ * an older resolved write from wiping a newer in-flight write's recovery buffer (INV-3).
+ */
+export function clearWriteAheadIf(filePath: string, content: string) {
+	const cur = getWriteAhead(filePath);
+	if (cur && cur.content !== content) return; // a newer net exists — never clobber it
+	clearWriteAhead(filePath);
+}
+
+/**
+ * Save-Durability (2026-07-08) — the "save health" surface. A save write that fails
+ * (a `.md` momentarily locked by Syncthing/OneDrive/Defender, disk full, offline
+ * drive) records a persistent, path-KEYED entry here — coalesced by construction, so
+ * a failing drive at the 1.5 s debounce produces ONE entry per note, never a per-tick
+ * storm. The banner (main + second-screen `+layout`) renders one row per entry; a
+ * later successful save for that path auto-dismisses it. INV-5: no save failure is
+ * ever silently swallowed.
+ */
+export const saveHealth = writable<Map<string, { name: string; error: string; since: number }>>(new Map());
+
+export function reportSaveFailure(path: string, name: string, error: unknown) {
+	saveHealth.update((m) => {
+		const n = new Map(m);
+		n.set(path, { name, error: String((error as { message?: string })?.message ?? error), since: Date.now() });
+		return n;
+	});
+}
+
+export function clearSaveFailure(path: string) {
+	saveHealth.update((m) => {
+		if (!m.has(path)) return m;
+		const n = new Map(m);
+		n.delete(path);
+		return n;
+	});
+}
+
+/**
+ * Save-Durability (2026-07-08) — the one place a component/flush save site assembles
+ * its `SaveEnv`. Wires the write-ahead net (set-before-write + compare-and-clear), the
+ * save-health surface, and an optional `onSaved` hook for the component-owned
+ * on-DURABLE-write side effects (reindex / embed / broadcast / CECE). No site
+ * hand-rolls the mark-clean ordering again (INV-1) — they all go through
+ * `noteSession.save()` with this env.
+ */
+export function standardSaveEnv(opts: {
+	origin: string;
+	name?: string;
+	cursorPos?: number;
+	scrollTop?: number;
+	onSaved?: (path: string, content: string) => void;
+}): SaveEnv {
+	return {
+		write: (p, c) => writeNote(p, c, opts.origin),
+		setNet: setWriteAhead,
+		clearNetIf: clearWriteAheadIf,
+		cursorPos: opts.cursorPos,
+		scrollTop: opts.scrollTop,
+		onSuccess: ({ path, content }) => {
+			clearSaveFailure(path);
+			opts.onSaved?.(path, content);
+		},
+		onError: ({ path, error }) => reportSaveFailure(path, opts.name ?? path, error),
+	};
 }
 
 /**
@@ -546,7 +616,7 @@ export async function toggleTaskReconciled(filePath: string, lineNumber: number)
 	try {
 		if (openTab && isNoteDirty(openTab.id)) {
 			markRecentWrite(openTab.path);
-			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'task_toggle_flush'), 'task_toggle_flush');
+			await saveNoteSession(openTab.id, openTab.path, standardSaveEnv({ origin: 'task_toggle_flush', name: openTab.name }), 'task_toggle_flush');
 		}
 		await toggleTask(filePath, lineNumber);
 		await reloadTabsFromDisk([filePath]); // model ADOPTS the toggled disk + {#key} remount
@@ -695,7 +765,7 @@ export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> 
 			if (!isNoteDirty(tab.id)) continue; // clean — disk already current
 			markRecentWrite(tab.path);
 			writes.push(
-				saveNoteSession(tab.id, tab.path, (p, c) => writeNote(p, c, 'flush_all'), 'flush_all')
+				saveNoteSession(tab.id, tab.path, standardSaveEnv({ origin: 'flush_all', name: tab.name }), 'flush_all')
 					.then(() => {})
 					.catch((err) => {
 						console.error('[flushAllTabsInLibrary] model flush failed for', tab.path, err);
@@ -2532,7 +2602,7 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	try {
 		if (renamedTab && isNoteDirty(renamedTab.id)) {
 			markRecentWrite(renamedTab.path);
-			await saveNoteSession(renamedTab.id, renamedTab.path, (p, c) => writeNote(p, c, 'rename_flush'), 'rename_flush');
+			await saveNoteSession(renamedTab.id, renamedTab.path, standardSaveEnv({ origin: 'rename_flush', name: renamedTab.name }), 'rename_flush');
 		}
 		// Rust returns the EFFECTIVE path. For canonical notes, rename updates
 		// the frontmatter title in-place and the file stays at oldPath — so the
@@ -3495,7 +3565,7 @@ export async function resolveStructuralConflict(notePath: string, field: 'parent
 	try {
 		if (openTab && isNoteDirty(openTab.id)) {
 			markRecentWrite(openTab.path);
-			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'structural_resolve_flush'), 'structural_resolve_flush');
+			await saveNoteSession(openTab.id, openTab.path, standardSaveEnv({ origin: 'structural_resolve_flush', name: openTab.name }), 'structural_resolve_flush');
 		}
 		await invoke('resolve_structural_conflict', { notePath, field, targetName });
 		await reloadTabsFromDisk([notePath]); // model ADOPTS the resolved disk + {#key} remount

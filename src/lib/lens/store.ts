@@ -123,7 +123,7 @@ export async function updateBaseOrder(filePath: string, order: LensSort[]): Prom
  * property edit), then reload the model from disk.
  */
 export async function updateNoteProperty(filePath: string, key: string, value: string): Promise<void> {
-	const { openTabs, markCascading, clearCascading, markRecentWrite, writeNote, reloadTabsFromDisk } = await import('$lib/libraries/store');
+	const { openTabs, markCascading, clearCascading, markRecentWrite, writeNote, reloadTabsFromDisk, standardSaveEnv } = await import('$lib/libraries/store');
 	const { save: saveNoteSession, isDirty: isNoteDirty } = await import('$lib/editor/noteSession');
 	const { get } = await import('svelte/store');
 	const openTab = get(openTabs).find((t) => t.path === filePath);
@@ -131,7 +131,7 @@ export async function updateNoteProperty(filePath: string, key: string, value: s
 	try {
 		if (openTab && isNoteDirty(openTab.id)) {
 			markRecentWrite(openTab.path);
-			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'base_edit_flush'), 'base_edit_flush');
+			await saveNoteSession(openTab.id, openTab.path, standardSaveEnv({ origin: 'base_edit_flush', name: openTab.name }), 'base_edit_flush');
 		}
 		await invoke('update_note_property', { filePath, key, value });
 		if (openTab) await reloadTabsFromDisk([filePath]); // model ADOPTS the edited disk
