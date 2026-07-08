@@ -232,3 +232,13 @@ is safe too; Phase 4 — harden the Rust index reader (H2); Phase 5 — cycle cl
 ×15 + Orientation v-bump. Phase 2's own Editor-Surface Gate remainder (Focus round-trip,
 tab-switch-in-Focus, rename linked-probe) still to Boss-test, though the mig-076 model
 tests cover those lifecycle invariants (all green with yamlDoc).
+
+### G4 Phase 3 — closed-note writers made byte-perfect + the "property didn't persist" mystery SOLVED
+
+Boss ratified the full fix ("we are going to fix this, aren't we?" → yes, before any import-heavy release). The data-safety stakes: importing an Obsidian vault with rich frontmatter and then editing carried real silent-corruption risk — the exact threat to Constellation's File-Over-App promise. Phase 2 fixed the open-editor path; Phase 3 closes the rest.
+
+- **`composeUpdatedContent(originalContent, newProps, newBody?)`** (store.ts) — the byte-perfect replacement for `buildFullContent` on a read→edit-props→write of an EXISTING note. Same yamlDoc engine + same `parseFrontmatter` projection for base+new → an unedited key is byte-perfect. Rewired the 2 LIVE lossy sites: **addLinkToNote CLOSED** (`store.ts` reviewer_connect) + **addTagToNote CLOSED** (`+layout` add_tag). (store.ts:768/+layout:7740 are the DEAD `!SINGLE_OWNERSHIP` branches; SecondScreenPage has no live buildFullContent write.)
+- **Adversarial review (Phase 3): NO existing-content corruption/loss — byte-perfect guarantee holds.** Found 2 bounded items: (1) false-success — a tag/link add to a closed note with **malformed YAML** or an **empty fence** silently no-ops (no corruption; reindex re-reads disk so NO persistent index↔disk divergence). **Empty-fence FIXED** (`690b…` empty-fence commit — now builds the block from newProps); malformed-YAML stays safe-passthrough by design (a UI "invalid YAML" warning is a separate item for a Boss ruling). (2) cosmetic list-churn (edited list moves to block end + flow→block; bounded fixpoint, no loss — same as Phase 2).
+- **RECORD CORRECTION:** the earlier "title/quote property edit didn't persist" on the hand-made Boss test note was **NOT a cid/path identity quirk** (my Phase-2-validation hypothesis was wrong) — it was the **H1 malformed-YAML guard**: that note had `quote: He said: "hello"` (an invalid colon-space in a plain scalar). `composeFrontmatter` correctly preserved it verbatim and declined the edit. A normally-authored valid-YAML note edits + persists fine (Boss-confirmed on the app-created note). No bug.
+
+**State:** G4 Phases 0–3 done. 269→ green. NEXT (to fully close G4): Phase 4 (harden the Rust index reader, H2), Phase 5 (cycle close + docs ×15 + Orientation v-bump + whole-app sweep). Boss test for Phase 3: add a tag to a CLOSED rich note → frontmatter preserved.
