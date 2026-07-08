@@ -2153,8 +2153,8 @@ fn has_alias(content: &str, target: &str) -> bool {
         if in_aliases {
             if let Some(rest) = trimmed.strip_prefix("- ") {
                 if matches(rest) { return true; }
-            } else if !trimmed.is_empty() {
-                in_aliases = false; // a non-list-item line ends the aliases block
+            } else if !trimmed.is_empty() && !trimmed.starts_with('#') {
+                in_aliases = false; // a non-list-item, non-comment line ends the aliases block
             }
         }
     }

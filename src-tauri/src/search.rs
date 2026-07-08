@@ -4472,13 +4472,13 @@ fn decode_double_quoted(s: &str) -> String {
                 Some('v') => out.push('\u{0B}'),
                 Some('e') => out.push('\u{1B}'),
                 Some(' ') => out.push(' '),
-                Some('N') => out.push('\u{85}'),
-                Some('_') => out.push('\u{A0}'),
                 Some('x') => push_hex_escape(&mut chars, &mut out, 2),
                 Some('u') => push_hex_escape(&mut chars, &mut out, 4),
-                Some('U') => push_hex_escape(&mut chars, &mut out, 8),
                 Some('\n') => {} // backslash-newline line-continuation: drop
-                Some(other) => { out.push('\\'); out.push(other); } // unknown → literal
+                // yaml@2.9.0 (the JS side) does NOT decode \N \_ \U or any other letter as an
+                // escape — it drops the backslash and keeps the char. Match it for JS↔Rust
+                // consistency (the goal is decode == what the JS lib reads, over YAML-1.2 spec).
+                Some(other) => out.push(other),
                 None => out.push('\\'),
             },
             _ => out.push(c),
@@ -4518,8 +4518,18 @@ fn collect_block_scalar(lines: &[&str], start: usize, header_indent: usize) -> (
         }
         if indent <= header_indent { break; } // dedent → block ends
         let bi = *block_indent.get_or_insert(indent);
-        // strip the block's common indent (first body line sets it)
-        let stripped = if line.len() >= bi { &line[bi.min(indent)..] } else { line.trim_start() };
+        // Strip the block's common indent (bi bytes of the first body line's leading
+        // whitespace), CHAR-BOUNDARY-SAFE: consume leading WHITESPACE chars until bi bytes
+        // or the first non-whitespace char. A body line indented with a multibyte whitespace
+        // char (NBSP U+00A0, ideographic space U+3000 — first-class per Language-First) must
+        // NEVER be byte-sliced mid-char: `&line[bi..]` panics there and unwinds uncaught →
+        // drops the note AND every note after it (the cardinal never-drop violation).
+        let mut cut = 0usize;
+        for (idx, ch) in line.char_indices() {
+            if idx >= bi || !ch.is_whitespace() { break; }
+            cut = idx + ch.len_utf8();
+        }
+        let stripped = &line[cut..];
         body.push(stripped.to_string());
         i += 1;
     }
@@ -4649,6 +4659,23 @@ mod tests_g4_reader {
                 assert_eq!(props.get("cid_cn").map(|s| s.as_str()), Some(c),
                     "cid_cn decode/identity mismatch for:\n{}", yaml);
             }
+        }
+    }
+
+    #[test]
+    fn block_scalar_multibyte_indent_does_not_panic() {
+        // Review #1 (the cardinal never-drop): a block-body line indented with a MULTIBYTE
+        // whitespace char (NBSP U+00A0, ideographic space U+3000 — first-class per
+        // Language-First) must NOT be byte-sliced mid-char (that panics → drops the note AND
+        // every note after it). The real cid after the block must still be read.
+        for content in [
+            "---\nd: |\n    a\n   \u{00A0}b\ncid_cn: NOTE_X\n---\nbody\n",
+            "---\nd: |\n\u{3000}\u{3000}cjk body\ncid_cn: NOTE_Y\n---\nbody\n",
+            "---\ntitle: |\n  \u{00A0}\u{00A0}deep\ncid_cn: NOTE_Z\n---\nbody\n",
+        ] {
+            let (props, _t, _b) = parse_frontmatter(content); // must not panic
+            assert!(props.get("cid_cn").is_some(),
+                "cid_cn must survive a multibyte-indented block body for:\n{}", content);
         }
     }
 
