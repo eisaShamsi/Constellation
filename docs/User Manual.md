@@ -471,7 +471,9 @@ You can also link to specific headings: `[[Note Name#Heading]]`.
 
 ### Saving and Recovery
 
-Constellation **saves automatically** as you type — there is no Save button. Your edits are written to the `.md` file a moment after you pause (and whenever you switch notes or close a tab). A note is marked "saved" only once it is genuinely written to disk.
+Constellation **saves automatically** as you type — there is no Save button. Your edits are written to the `.md` file a moment after you pause, and **immediately whenever you leave the note** — switching notes, following a `[[wikilink]]`, pressing Back/Forward, or closing the tab — **even if you were still typing**. A note is marked "saved" only once it is genuinely written to disk, so moving away never costs you an edit. (If the file happens to be locked at that moment, Constellation keeps you on the note and shows the recovery banner below instead of moving on.)
+
+**One note, one tab.** Opening a note that is already open simply jumps to its existing tab — a note is never open in two tabs at once, so two copies can never overwrite each other.
 
 If a save ever **fails** — for example a sync tool (iCloud / OneDrive / Syncthing) or antivirus briefly locks the file — Constellation does **not** lose your work:
 
