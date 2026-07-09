@@ -13,12 +13,13 @@
 	 * the reindex settles).
 	 */
 	import { invoke } from '@tauri-apps/api/core';
-	import { getBacklinks, getOutgoingLinks, type NoteLink } from '$lib/libraries/store';
+	import { getBacklinks, getOutgoingLinks, appSettings, type NoteLink } from '$lib/libraries/store';
 	import { detectDir } from '$lib/utils';
 	import { t } from '$lib/i18n';
 	import { onDestroy } from 'svelte';
 	import type { DialMode } from '$lib/cockpitFlag';
 	import NoteRadialGraph from './NoteRadialGraph.svelte';
+	import NoteAsterGraph from './NoteAsterGraph.svelte';
 
 	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; }
 
@@ -109,6 +110,22 @@
 		{ id: 'live', label: $t('cockpit.dialLive') || 'Peek', icon: 'M8 3C4 3 1.5 8 1.5 8S4 13 8 13s6.5-5 6.5-5S12 3 8 3zm0 8a3 3 0 110-6 3 3 0 010 6z' },
 		{ id: 'locked', label: $t('cockpit.dialLocked') || 'Pin', icon: 'M4.5 7V5a3.5 3.5 0 117 0v2H12a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1h.5zm2 0h3V5a1.5 1.5 0 10-3 0v2z' },
 	]);
+
+	// The note's facets (the top tabs). The radial link-graph is the default 'Links' view;
+	// the rest are wired in the next increments (contextual — shown per the note's content).
+	let activeTab = $state('links');
+	const FACETS = [
+		{ id: 'links', label: 'Links' },
+		{ id: 'properties', label: 'Properties' },
+		{ id: 'structure', label: 'Structure' },
+		{ id: 'tags', label: 'Tags' },
+		{ id: 'skyview', label: 'Sky View' },
+		{ id: 'tasks', label: 'Tasks' },
+		{ id: 'health', label: 'Knowledge Health' },
+		{ id: 'provenance', label: 'Provenance' },
+		{ id: 'review', label: 'Review Pulse' },
+		{ id: 'sources', label: 'Source Review' },
+	];
 </script>
 
 <div class="ck">
@@ -135,8 +152,25 @@
 	</div>
 
 	{#if shown?.path}
-		<div class="ck-graph">
-			<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+		<div class="ck-tabs" role="tablist">
+			{#each FACETS as f}
+				<button class="ck-tab" class:on={activeTab === f.id} role="tab" aria-selected={activeTab === f.id}
+					onclick={() => activeTab = f.id}>{f.label}</button>
+			{/each}
+		</div>
+		<div class="ck-facet">
+			{#if activeTab === 'links'}
+				{#if $appSettings.noteGraphStyle === 'aster'}
+					<NoteAsterGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+				{:else}
+					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+				{/if}
+			{:else}
+				<div class="ck-facet-soon">
+					<span class="ck-facet-name">{FACETS.find((f) => f.id === activeTab)?.label}</span>
+					<span>this facet is wired in the next pass</span>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="ck-idle">
@@ -160,7 +194,13 @@
 	.ck-pinbadge { font-size: 11px; color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); border-radius: 5px; padding: 1px 6px; }
 	.ck-ro { font-size: 11px; color: var(--text-faint, #9ca3af); border: 1px solid var(--background-modifier-border, #d4d4d8); border-radius: 5px; padding: 2px 8px; }
 	.ck-dotlib { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
-	.ck-graph { flex: 1; min-height: 0; }
+	.ck-tabs { display: flex; gap: 2px; flex-wrap: wrap; border-bottom: 1px solid var(--background-modifier-border, #d4d4d8); padding-bottom: 6px; margin-bottom: 6px; }
+	.ck-tab { border: none; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 12.5px; color: var(--text-muted, #6b7280); cursor: pointer; }
+	.ck-tab:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.04)); }
+	.ck-tab.on { color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 12%, transparent); font-weight: 500; }
+	.ck-facet { flex: 1; min-height: 0; }
+	.ck-facet-soon { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-faint, #9ca3af); font-size: 13px; }
+	.ck-facet-name { font-size: 15px; font-weight: 500; color: var(--text-muted, #6b7280); }
 	.ck-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-faint, #9ca3af); }
 	.ck-idle p { font-size: 13px; }
 </style>

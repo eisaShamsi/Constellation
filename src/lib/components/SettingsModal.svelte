@@ -16,6 +16,7 @@
 	// reused by the Style Setter too. Replaces this file's old inline CURATED_FONTS + loadSystemFonts.
 	import { systemFonts, ensureSystemFonts } from '$lib/fonts';
 	import { notifySettingsChanged } from '$lib/secondScreen';
+	import { NOTE_GRAPH_STYLES } from '$lib/cockpitFlag';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -1022,6 +1023,19 @@
 								onchange={(e) => updateSettings({ noteTitleSummaryEnabled: (e.target as HTMLInputElement).checked })} />
 							<span class="toggle-slider"></span>
 						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.noteGraphStyle') || 'Second screen · note graph'}</div>
+							<div class="setting-desc">{$t('settings.editor.noteGraphStyleDesc') || 'The lens the second screen uses to draw the open note and its links. Colours and style are tunable in the Style Setter.'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.noteGraphStyle}
+							onchange={(e) => updateSettings({ noteGraphStyle: (e.target as HTMLSelectElement).value as any })}>
+							{#each NOTE_GRAPH_STYLES as s}
+								<option value={s.id}>{s.label}{s.built ? '' : ' — coming'}</option>
+							{/each}
+						</select>
 					</div>
 
 					<div class="setting-item">

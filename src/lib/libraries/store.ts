@@ -4166,6 +4166,11 @@ export interface AppSettings {
 	 * in Settings → Editor → Note title summary. */
 	noteTitleSummaryEnabled: boolean;
 
+	/** PJ-068 v2 — which note-graph "lens" the second screen renders for the open note:
+	 *  'aster' (relationship rose, default) · 'heartwood' (living tree) · 'orrery' (orbital sky).
+	 *  Chosen in Settings; coloured via the Style Setter (--rel-* vars). */
+	noteGraphStyle: 'aster' | 'heartwood' | 'orrery';
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -4494,6 +4499,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	perNoteLinkQueries: true,
 	noteSummariesEnabled: false,
 	noteTitleSummaryEnabled: false,
+	noteGraphStyle: 'aster',
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,

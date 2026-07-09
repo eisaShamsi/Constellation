@@ -2,13 +2,12 @@
 	/**
 	 * PJ-068 v2 (P2) — the Note Radial Graph.
 	 *
-	 * The open note at the centre; its BACKLINKS radiate LEFT and its OUTGOING links
-	 * radiate RIGHT — each node a linked note, coloured by its typed relationship
-	 * (supports / contradicts / causes / derives-from …), sized by the link's living
-	 * weight (via its lifecycle tier). Read-only: clicking a node asks the MAIN window
-	 * to open that note (onNavigate → sendNoteToMain). Pure presentational — the host
-	 * fetches the persisted note_links rows (get_backlink_rows / get_outgoing_rows) and
-	 * passes them in, so this never touches disk or the index.
+	 * The open note at the centre; ALL its BACKLINKS radiate LEFT and ALL its OUTGOING
+	 * links radiate RIGHT — every link shown (like Sky View), as a small node coloured by
+	 * its typed relationship (supports / contradicts / causes / derives-from …) and sized
+	 * by the link's living weight (lifecycle tier). Dense-but-clear: hover a node to reveal
+	 * its note + a spoke to the centre; click a node → the MAIN window opens it (read-only).
+	 * Pure presentational — the host passes the persisted note_links rows (no disk/index).
 	 */
 	import { detectDir } from '$lib/utils';
 
@@ -22,12 +21,10 @@
 		noteName?: string;
 		backlinks?: any[];
 		outgoing?: any[];
-		/** outgoing rows carry a target NAME, not a path — the host resolves it. */
 		resolveTarget?: (name: string) => { path: string; libraryName: string };
 		onNavigate?: (path: string, name: string, libraryName: string) => void;
 	} = $props();
 
-	// The 8 typed links + associative — Constellation's cognitive vocabulary.
 	const TYPE_COLOR: Record<string, string> = {
 		supports: '#16a34a', contradicts: '#dc2626', causes: '#ea580c',
 		exemplifies: '#0d9488', generalizes: '#2563eb', 'derives-from': '#7c3aed',
@@ -35,21 +32,18 @@
 	};
 	const typeColor = (t?: string) => TYPE_COLOR[(t || 'associative').toLowerCase()] || TYPE_COLOR.associative;
 	const clean = (n: string) => (n || '').replace(/\.md$/, '');
-	// Node radius encodes the living-link weight via its lifecycle tier (weight-derived).
-	const TIER_R: Record<string, number> = { emerging: 7, established: 10, 'load-bearing': 14, stale: 7 };
-	const nodeR = (tier?: string) => TIER_R[(tier || 'emerging').toLowerCase()] ?? 8;
+	// Small radius; encodes the living-link weight via its lifecycle tier (weight-derived).
+	const TIER_R: Record<string, number> = { emerging: 4, established: 5.5, 'load-bearing': 8, stale: 4 };
+	const nodeR = (tier?: string) => TIER_R[(tier || 'emerging').toLowerCase()] ?? 4.5;
 
-	const CX = 450, CY = 300, R = 205, MAXSIDE = 9;
+	const CX = 500, CY = 340, R = 268;
 
 	function layoutSide(items: any[], side: 'left' | 'right') {
-		// Heaviest (load-bearing) first so the strongest relationships take the prime slots.
-		const order = ['load-bearing', 'established', 'emerging', 'stale'];
-		const sorted = [...items].sort((a, b) => order.indexOf((a.tier || 'emerging')) - order.indexOf((b.tier || 'emerging')));
-		const shown = sorted.slice(0, MAXSIDE);
-		const n = shown.length;
-		const startDeg = side === 'left' ? 108 : -72;
-		const endDeg = side === 'left' ? 252 : 72;
-		return shown.map((it, i) => {
+		const n = items.length;
+		// left = backlinks on the left semicircle (95°→265°); right = outgoing (−85°→85°).
+		const startDeg = side === 'left' ? 95 : -85;
+		const endDeg = side === 'left' ? 265 : 85;
+		return items.map((it, i) => {
 			const tt = n <= 1 ? 0.5 : i / (n - 1);
 			const rad = ((startDeg + tt * (endDeg - startDeg)) * Math.PI) / 180;
 			const isOut = side === 'right';
@@ -61,16 +55,21 @@
 				x: CX + R * Math.cos(rad), y: CY + R * Math.sin(rad),
 				r: nodeR(it.tier), color: typeColor(it.linkType),
 				name: clean(rawName), path: resolved.path, lib: resolved.libraryName || it.libraryName,
-				type: it.linkType || 'associative', side, faded: (it.tier === 'stale'),
+				type: it.linkType || 'associative', side, faded: it.tier === 'stale',
 			};
 		});
 	}
 
-	let backNodes = $derived(layoutSide(backlinks, 'left'));
-	let outNodes = $derived(layoutSide(outgoing, 'right'));
-	let backMore = $derived(Math.max(0, backlinks.length - MAXSIDE));
-	let outMore = $derived(Math.max(0, outgoing.length - MAXSIDE));
+	let nodes = $derived([...layoutSide(backlinks, 'left'), ...layoutSide(outgoing, 'right')]);
 	let hasAny = $derived(backlinks.length > 0 || outgoing.length > 0);
+	let hovered = $state<number>(-1);
+
+	// The typed relationships actually present → a compact legend.
+	let legend = $derived.by(() => {
+		const seen = new Set<string>();
+		for (const n of nodes) seen.add(n.type.toLowerCase());
+		return [...seen].map((t) => ({ type: t, color: typeColor(t) }));
+	});
 
 	function go(node: { path: string; name: string; lib: string }) {
 		if (node.path) onNavigate?.(node.path, node.name, node.lib);
@@ -79,35 +78,49 @@
 
 <div class="rg">
 	{#if hasAny}
-		<svg viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Radial link graph of the open note">
-			<text class="rg-side" x="120" y="34">backlinks — what points here</text>
-			<text class="rg-side" x="780" y="34" text-anchor="end">outgoing — where it points</text>
+		<svg viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img"
+			aria-label="Radial link graph — {backlinks.length} backlinks, {outgoing.length} outgoing">
+			<text class="rg-side" x="150" y="30">{backlinks.length} backlinks — what points here</text>
+			<text class="rg-side" x="850" y="30" text-anchor="end">{outgoing.length} outgoing — where it points</text>
 
-			<g class="rg-spokes" fill="none">
-				{#each [...backNodes, ...outNodes] as nd}
-					<line x1={CX} y1={CY} x2={nd.x} y2={nd.y} stroke={nd.color} stroke-opacity={nd.faded ? 0.25 : 0.5} />
-				{/each}
-			</g>
+			{#if hovered >= 0 && nodes[hovered]}
+				{@const nd = nodes[hovered]}
+				<line x1={CX} y1={CY} x2={nd.x} y2={nd.y} stroke={nd.color} stroke-width="1.5" />
+			{/if}
 
-			{#each [...backNodes, ...outNodes] as nd}
-				<g class="rg-node" class:rg-disabled={!nd.path} opacity={nd.faded ? 0.55 : 1}
-					role="button" tabindex={nd.path ? 0 : -1} aria-label={nd.name}
+			{#each nodes as nd, i}
+				<circle class="rg-dot" class:rg-disabled={!nd.path} cx={nd.x} cy={nd.y}
+					r={i === hovered ? nd.r + 2.5 : nd.r} fill={nd.color} opacity={nd.faded ? 0.5 : 1}
+					role="button" tabindex={nd.path ? 0 : -1} aria-label="{nd.type}: {nd.name}"
+					onmouseenter={() => hovered = i} onmouseleave={() => { if (hovered === i) hovered = -1; }}
+					onfocus={() => hovered = i} onblur={() => { if (hovered === i) hovered = -1; }}
 					onclick={() => go(nd)} onkeydown={(e) => { if (e.key === 'Enter') go(nd); }}>
-					<circle cx={nd.x} cy={nd.y} r={nd.r} fill={nd.color} />
-					<text class="rg-tp" x={nd.side === 'left' ? nd.x - nd.r - 6 : nd.x + nd.r + 6} y={nd.y - 4}
-						text-anchor={nd.side === 'left' ? 'end' : 'start'} fill={nd.color}>{nd.type}</text>
-					<text class="rg-nm" x={nd.side === 'left' ? nd.x - nd.r - 6 : nd.x + nd.r + 6} y={nd.y + 9}
-						text-anchor={nd.side === 'left' ? 'end' : 'start'}>{nd.name}</text>
-				</g>
+					<title>{nd.type} · {nd.name}</title>
+				</circle>
 			{/each}
 
-			{#if backMore > 0}<text class="rg-more" x="120" y="566">+{backMore} more backlinks</text>{/if}
-			{#if outMore > 0}<text class="rg-more" x="780" y="566" text-anchor="end">+{outMore} more outgoing</text>{/if}
+			{#if hovered >= 0 && nodes[hovered]}
+				{@const nd = nodes[hovered]}
+				<g pointer-events="none">
+					<text class="rg-htype" x={nd.side === 'left' ? nd.x - nd.r - 8 : nd.x + nd.r + 8} y={nd.y - 4}
+						text-anchor={nd.side === 'left' ? 'end' : 'start'} fill={nd.color}>{nd.type}</text>
+					<text class="rg-hname" x={nd.side === 'left' ? nd.x - nd.r - 8 : nd.x + nd.r + 8} y={nd.y + 10}
+						text-anchor={nd.side === 'left' ? 'end' : 'start'}>{nd.name}</text>
+				</g>
+			{/if}
 
-			<rect x={CX - 66} y={CY - 30} width="132" height="60" rx="12" fill="var(--background-primary, #fff)" stroke="var(--background-modifier-border-focus, #b8b8c0)" stroke-width="1.5" />
+			<rect x={CX - 70} y={CY - 30} width="140" height="60" rx="12"
+				fill="var(--background-primary, #fff)" stroke="var(--background-modifier-border-focus, #b8b8c0)" stroke-width="1.5" />
 			<text class="rg-cn" x={CX} y={CY - 2} text-anchor="middle">{clean(noteName)}</text>
 			<text class="rg-cs" x={CX} y={CY + 16} text-anchor="middle">{outgoing.length} out · {backlinks.length} in</text>
 		</svg>
+
+		<div class="rg-legend">
+			{#each legend as l}
+				<span class="rg-lg"><span class="rg-lgd" style="background:{l.color}"></span>{l.type}</span>
+			{/each}
+			<span class="rg-lghint">hover a node to reveal · click to open</span>
+		</div>
 	{:else}
 		<div class="rg-empty">
 			<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.35" aria-hidden="true"><circle cx="12" cy="12" r="3" /><circle cx="4" cy="6" r="1.6" /><circle cx="20" cy="18" r="1.6" /></svg>
@@ -117,18 +130,20 @@
 </div>
 
 <style>
-	.rg { width: 100%; height: 100%; min-height: 0; display: flex; }
-	.rg svg { width: 100%; height: 100%; }
+	.rg { width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; }
+	.rg svg { width: 100%; flex: 1; min-height: 0; }
 	.rg-side { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.rg-more { font: 11px var(--font-sans); fill: var(--text-faint, #9ca3af); }
-	.rg-node { cursor: pointer; }
-	.rg-node:hover circle { stroke: var(--text-normal, #1a1a1a); stroke-width: 1.5; }
-	.rg-node.rg-disabled { cursor: default; }
-	.rg-node.rg-disabled:hover circle { stroke: none; }
-	.rg-tp { font: 9px var(--font-sans); }
-	.rg-nm { font: 12px var(--font-sans); fill: var(--text-normal, #1a1a1a); }
+	.rg-dot { cursor: pointer; transition: r 0.08s; }
+	.rg-dot:hover { stroke: var(--text-normal, #1a1a1a); stroke-width: 1.5; }
+	.rg-dot.rg-disabled { cursor: default; }
+	.rg-htype { font: 500 12px var(--font-sans); }
+	.rg-hname { font: 13px var(--font-sans); fill: var(--text-normal, #1a1a1a); }
 	.rg-cn { font: 500 14px var(--font-sans); fill: var(--text-normal, #1a1a1a); }
 	.rg-cs { font: 10px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	.rg-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: center; padding: 6px 0 2px; font-size: 11px; color: var(--text-secondary, #4b5563); }
+	.rg-lg { display: inline-flex; align-items: center; gap: 5px; text-transform: lowercase; }
+	.rg-lgd { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+	.rg-lghint { color: var(--text-faint, #9ca3af); }
 	.rg-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-faint, #9ca3af); }
 	.rg-empty p { font-size: 13px; }
 </style>
