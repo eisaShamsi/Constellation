@@ -207,4 +207,19 @@ Complete PCS done: all commits pushed to `origin/main` (tree clean), session log
 
 **Phase 4 — per-cycle whole-app safety sweep (`wf_415a7214-4ad`, 44 agents, 23 confirmed: 1 APP-KILLER · 3 HIGH · 13 MED · 6 LOW).** Migration diff CLEAN of new app-killers. **Fixed this build (WA#6, in-class gaps):** (1) **APP-KILLER** `closeTab` disposed the model before flushing → now `async` + `flushOutgoing` first (third departure; class complete). (2) **HIGH** FocusPane had no unload flush → now `beforeunload`+`visibilitychange`+30 s idle. Other 21 = standing G2–G8 backlog; the 2 remaining HIGH are both **G3 second-screen cross-window** (own migration). Register in `docs/Constellation-Safety-Audit-CHARTER.md`.
 
-**PENDING:** release-binary build + the 8-item **Editor-Surface Gate Boss test** (staged); then docs close-out (orientation v-bump, MoCh, help/manual) + PCS. Deferred-findings sequencing ruling surfaced to Eisa.
+**SHIPPED + Boss-validated 10/10 + CLOSED (2026-07-09).** Release binary built (frontend-first + cargo release); the full 8-item **Editor-Surface Gate** passed on the running app — Stage 1 (wikilink/file-click nav · Alt-←/→ · close-tab · Focus-mode nav · one-note-one-tab) + Stage 2 (rename-with-links probe pair · tab-switch normal+Focus · properties/stage · restart content-integrity · **locked-file → stayed on the note + save-health banner "Couldn't save C v2 — your edit is safe and will retry" + Retry**, done by locking `NewName/C v2.md` read-only on cue). Close-out: orientation **v3.34** (NEW file), MoCh `docs/MoCh/MoCh-2026-07-08-2245.md`, User Manual (Saving-and-Recovery made explicit + one-note-one-tab), Charter register, memory. Commits `c43923ce..d84b1fb4`, all on `origin/main`.
+
+**Boss finding during Test 9 (restart):** content integrity passed, but **auto-restore of open tabs on relaunch is NOT built** (only manual named workspaces exist). Boss wants it → queued as a feature: **a Settings toggle, default ON** ("Restore my tabs on startup").
+
+---
+
+## G3 — Second-Screen Cross-Window Sync (`/migration`) — Architect + Plan DONE + Boss-APPROVED; build next session
+
+The 2 remaining HIGH from the APP-KILLER #2 sweep (`wf_415a7214-4ad`): the second screen (a separate JS realm) is blind to a main-window rename cascade (`SecondScreenPage.svelte:1771` — no `cascade:rewrote` listener, no `isCascading` gate) and never adopts main→SS saves into its writable editor tabs (`:723`) → a stale SS edit stomps the rewrite / clobbers main's committed edits.
+
+- **Architect** (adversarial workflow `wf_a6e3b69b-da7` — 4 mappers verified; the schema-strict synthesis agent failed, so the synthesis was authored by hand from the mappers' findings). Root of both bugs: the SS mounts 7 editable `NoteEditor`s but has no inbound path pushing fresh disk content (save OR cascade) into those models. `docs/G3-SecondScreen-CrossWindow-Architect.md`.
+- **Boss ruling (2026-07-09):** **read-only by DEFAULT + a Settings toggle to make it editable** (a hybrid). Read-only default fixes both HIGH bugs by construction; editable mode is made safe too (WA#6).
+- **Plan (approved):** §1 read-only `NoteEditor` prop + Settings toggle (default off) · §2 SS adopts main→SS saves (freshness + conflict-safety) · §3 SS reacts to `cascade:rewrote` (freshness) · §4 editable-mode cross-window freeze (safety when toggle on) · §5 harness two-sessions-one-path recipe + `/simplify` + diff-scoped sweep + **Editor-Surface Gate item 7** two-window Boss test. `docs/G3-SecondScreen-CrossWindow-Plan.md`. Commit `202de9d2`.
+- **Boss decision:** build in a FRESH session (this session already shipped APP-KILLER #2 end-to-end). Session close after PCS + Orientation.
+
+**Queue after G3:** the auto-restore-tabs feature (Settings toggle, default on). Then the standing G2–G8 backlog (Charter).
