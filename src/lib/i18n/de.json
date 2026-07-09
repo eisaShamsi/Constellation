@@ -182,6 +182,8 @@
       "tabSizeDesc": "Anzahl der Leerzeichen, die ein Tabulator-Zeichen darstellt",
       "noteTitleSummary": "Notiztitel-Zusammenfassung",
       "noteTitleSummaryDesc": "Zeigt die einzeilige KI-Zusammenfassung der Notiz direkt unter ihrem Titel im Editor an. Standardmäßig deaktiviert für einen schlankeren Titelbereich.",
+      "noteGraphStyle": "Zweiter Bildschirm · Notizgraph",
+      "noteGraphStyleDesc": "Die Linse, mit der der zweite Bildschirm die offene Notiz und ihre Verknüpfungen zeichnet. Farben und Stil sind im Style Setter anpassbar.",
       "taskDates": "Aufgabentermine in natürlicher Sprache",
       "taskDatesDesc": "In einer Aufgabenzeile schlägt die Eingabe von @today / @tomorrow / @next week (oder dem bloßen Wort) ein 📅-Datum zum Anheften vor. Nimm den Vorschlag an, um es einzufügen."
     },

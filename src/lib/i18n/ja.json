@@ -182,6 +182,8 @@
       "tabSizeDesc": "タブ文字が表示されるスペース数",
       "noteTitleSummary": "ノートタイトルの要約",
       "noteTitleSummaryDesc": "エディターでノートの1行AI要約をタイトルの直下に表示します。タイトル領域をすっきりさせるため、既定ではオフです。",
+      "noteGraphStyle": "セカンドスクリーン · ノートグラフ",
+      "noteGraphStyleDesc": "セカンドスクリーンが開いているノートとそのリンクを描くレンズ。色とスタイルは Style Setter で調整できます。",
       "taskDates": "自然言語のタスク日付",
       "taskDatesDesc": "タスク行で @today / @tomorrow / @next week（または単語そのもの）を入力すると、固定する 📅 の日付が候補表示されます。候補を受け入れると挿入されます。"
     },

@@ -182,6 +182,8 @@
       "tabSizeDesc": "一个制表符字符显示的空格数",
       "noteTitleSummary": "笔记标题摘要",
       "noteTitleSummaryDesc": "在编辑器中，将笔记的一行 AI 摘要直接显示在其标题下方。为使标题区域更简洁，默认关闭。",
+      "noteGraphStyle": "第二屏幕 · 笔记图",
+      "noteGraphStyleDesc": "第二屏幕用来绘制打开的笔记及其链接的透镜。颜色和样式可在 Style Setter 中调整。",
       "taskDates": "自然语言任务日期",
       "taskDatesDesc": "在任务行中输入 @today / @tomorrow / @next week（或单独的词）会建议一个可固定的 📅 日期。接受建议即可插入。"
     },

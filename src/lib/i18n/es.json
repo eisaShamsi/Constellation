@@ -182,6 +182,8 @@
       "tabSizeDesc": "Número de espacios que representa un carácter de tabulación",
       "noteTitleSummary": "Resumen del título de la nota",
       "noteTitleSummaryDesc": "Muestra el resumen de una línea generado por IA de la nota directamente bajo su título en el editor. Desactivado por defecto para un área de título más ligera.",
+      "noteGraphStyle": "Segunda pantalla · gráfico de nota",
+      "noteGraphStyleDesc": "La lente con la que la segunda pantalla dibuja la nota abierta y sus enlaces. Los colores y el estilo se ajustan en el Style Setter.",
       "taskDates": "Fechas de tareas en lenguaje natural",
       "taskDatesDesc": "En una línea de tarea, al escribir @today / @tomorrow / @next week (o la palabra sola) se sugiere una fecha 📅 para fijar. Acepta la sugerencia para insertarla."
     },

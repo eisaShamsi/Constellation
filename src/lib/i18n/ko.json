@@ -182,6 +182,8 @@
       "tabSizeDesc": "탭 문자가 표시되는 공백 수",
       "noteTitleSummary": "노트 제목 요약",
       "noteTitleSummaryDesc": "편집기에서 노트의 한 줄 AI 요약을 제목 바로 아래에 표시합니다. 더 간결한 제목 영역을 위해 기본값은 끄기입니다.",
+      "noteGraphStyle": "보조 화면 · 노트 그래프",
+      "noteGraphStyleDesc": "보조 화면이 열린 노트와 그 링크를 그리는 렌즈입니다. 색상과 스타일은 Style Setter에서 조정할 수 있습니다.",
       "taskDates": "자연어 작업 날짜",
       "taskDatesDesc": "작업 줄에서 @today / @tomorrow / @next week(또는 단어 자체)를 입력하면 고정할 📅 날짜가 제안됩니다. 제안을 수락하면 삽입됩니다."
     },

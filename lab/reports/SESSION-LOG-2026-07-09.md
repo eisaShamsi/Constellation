@@ -140,6 +140,18 @@ Boss two-window test: Steps 1 (open SS), 4 (click-to-navigate), 5 (dial Follow/P
 
 **Next: P2 radial Boss test (on a fresh binary) → then the contextual facet tabs.**
 
+### P2 radial test → Boss redirect to a designed graph (two SME panels)
+- Boss: show ALL links (no cap) + the facet tabs were missing. Fixed the radial to show every node (small dots, hover-reveal, no "+N more") + added the facet tab bar (Links default; others "coming"). Commit `ddfe6d82`+.
+- Boss then wanted the note-graph made **beautiful**, with **options**, each **concept-led**, and steered: **the GRAPH is what matters** (not non-graph paradigms), delivered as **pictures**.
+- **Panel 1 — aesthetic review** (`wf_67919c1c-4c0`, 6 lenses + creative director): verdict on the plain build = "confetti dots"; direction = a **star-chart / personal orrery**, **Flexoki** dual-theme palette, glow-halos (not flat discs), home-star centre, sorted colour bands, contradicts=ember, one graceful morph, quiet chrome. Concept brief written: `docs/concept-papers/Note-Constellation-Radial-View-Concept.md`.
+- **Panel 2 — concept divergence** (`wf_a2af08f5-9a3`, 7 SMEs → 9 curated concepts): graph bets (Aster/Shamsa/Orrery/Deep-Field/Heartwood) + non-graph bets (Tide/Al-Isnad/Self-Writing/Vital-Signs). Shown to Boss as a **visual board** (per the graph steer, graph concepts only).
+- **Boss ruling (round 3):** build **THREE switchable lenses** — order **(1) Aster (2) Heartwood (3) Orrery** — toggled in Settings, coloured via the **Style Setter**. Thanked the panel.
+
+### P2 — "The Aster" lens (flagship #1) — built (commit `16b7233e`)
+- **`NoteAsterGraph.svelte`** — the relationship ROSE: one petal per typed relationship (split backlinks-left / outgoing-right), petal width ∝ count, filaments = the individual links (radial threads, heaviest longest, sorted to the spine), soft petal glow = the aggregate → density becomes texture at 3 or 200+ links. Hover a thread → name + spoke; click → main navigates. Home-star centre (no rectangle), ecliptic ring, deep-field vignette, contradicts = the ember. **Relationship colours = CSS vars `--rel-*`** (Style-Setter-ready), Flexoki defaults.
+- **Pluggable plumbing:** `cockpitFlag.NoteGraphStyle` + `NOTE_GRAPH_STYLES`; `appSettings.noteGraphStyle` (default `aster`); SettingsModal lens selector (Heartwood/Orrery "coming"); cockpit renders the active lens (Aster live; baseline radial for the others).
+- **Verify:** svelte-check 0 errors. **Next:** Aster Boss test → Heartwood → Orrery → the Style Setter `--rel-*` category.
+
 ---
 
 **SS concept sourced (from our docs):** the SS is *"an extension of the mind onto a second monitor — the context around the work in hand, never a second copy of it."* The **PJ-068 razor** (every SS surface must pass): **Contextual** (responds to what the MS is doing now) · **Complementary** (shows what the MS is NOT showing) · **Chosen** (appears only because the user opened the SS; never self-initiates). Display-Not-Domain is settled law. History: born 2026-03-13 as a mode-switcher → found its vocation 2026-03-19 as the Sky View contextual companion → 2026-04-05 the "clean writing space + panels migrate" redesign (7 principles) → double-init fixes. PJ-068's replication audit already grades each mode COMPLEMENTS vs REPLICATES.

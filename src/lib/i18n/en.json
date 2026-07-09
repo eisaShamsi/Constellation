@@ -147,7 +147,9 @@
       "indentWithTabs": "Indent with tabs",
       "indentWithTabsDesc": "Use tabs instead of spaces for indentation",
       "noteTitleSummary": "Note title summary",
-      "noteTitleSummaryDesc": "Show the note’s one-line AI summary directly under its title in the editor. Off by default for a leaner title area."
+      "noteTitleSummaryDesc": "Show the note’s one-line AI summary directly under its title in the editor. Off by default for a leaner title area.",
+      "noteGraphStyle": "Second screen · note graph",
+      "noteGraphStyleDesc": "The lens the second screen uses to draw the open note and its links. Colours and style are tunable in the Style Setter."
     },
     "language": {
       "title": "Language",
