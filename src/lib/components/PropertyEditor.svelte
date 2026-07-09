@@ -38,6 +38,11 @@
 		onstagechange,
 		onLiveProps,
 		onPropContextMenu,
+		/* G3 — read-only display mode (second screen's default). Gates the two
+		   disk-write sites (debouncedSave + onDestroy flush) so a "read-only" note
+		   view can never persist a property edit, and its model stays clean so the
+		   cross-window freshness sync (externalChange) always adopts. */
+		readOnly = false,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -56,6 +61,7 @@
 		onLiveProps?: (tabId: string, count: number) => void;
 		/** MIG-077 §F-Editor — right-click a property row; NotePane builds the menu. */
 		onPropContextMenu?: (prop: FrontmatterProperty, idx: number, x: number, y: number) => void;
+		readOnly?: boolean;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -463,10 +469,11 @@
 		document.removeEventListener('constellation:add-property', handleAddPropertyEvent);
 		document.removeEventListener('click', handleDocClick);
 		if (focusRaf !== null) cancelAnimationFrame(focusRaf);
-		// Flush any pending save before the component is destroyed
+		// Flush any pending save before the component is destroyed.
+		// G3 — a read-only view never writes (WA#6); still clear the timer to avoid a leak.
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
-			if (tabId && filePath) {
+			if (!readOnly && tabId && filePath) {
 				/* Direct mutation so onflush reads fresh properties */
 				const tab = get(openTabs).find(t => t.id === tabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
@@ -788,6 +795,9 @@
 	}
 
 	function debouncedSave() {
+		// G3 — a read-only view never persists a property edit (WA#6). Returning here
+		// keeps the note's model clean so the cross-window freshness sync always adopts.
+		if (readOnly) return;
 		// MIG-087 §E (item 2) — live props-count observer. Every real edit routes
 		// through here (the init-sync $effect does NOT), so this fires only on user
 		// edits — the exact analog of §C's onLiveStats(onDocChange). Report the
@@ -825,6 +835,11 @@
 	</div>
 
 	{#if !collapsed}
+	<!-- G3 — in read-only mode the whole property body is inert (non-interactive), so it
+	     matches the read-only body (CM6 editable:false) + title (readonly) at the SAME layer;
+	     the debouncedSave/onDestroy write-gate above is the safety belt. display:contents keeps
+	     the existing flex layout (the rows stay layout children of .property-editor). -->
+	<div style="display: contents" inert={readOnly || undefined}>
 	{#each editableProps as prop, idx}
 		{@const iconInfo = getIcon(prop)}
 		{@const isEmpty = !prop.value || (prop.type === 'list' && (!prop.listItems || prop.listItems.length === 0))}
@@ -1121,6 +1136,7 @@
 	<button class="pe-add" bind:this={addBtnRef} onclick={addProperty}>
 		+ {$t('propertyEditor.addProperty')}
 	</button>
+	</div>
 	{/if}
 </div>
 

@@ -106,6 +106,12 @@
 		canGoBack = false,
 		canGoForward = false,
 		saving = false,
+		/* G3 — read-only display surface (the second screen's default). When true the
+		   CM6 body is non-editable (EditorState.readOnly + EditorView.editable.of(false)),
+		   the title input is read-only, and PropertyEditor's disk writes are gated. The
+		   view still renders live (livePreview, links, decorations). Reconfigured live
+		   (compartment) so the Settings toggle takes effect without a remount. */
+		readOnly = false,
 		/* Phase 8: autocomplete data */
 		noteNames = [] as { name: string; path: string; libraryName?: string }[],
 		allTags = [] as string[],
@@ -146,6 +152,7 @@
 		canGoBack?: boolean;
 		canGoForward?: boolean;
 		saving?: boolean;
+		readOnly?: boolean;
 		noteNames?: { name: string; path: string; libraryName?: string }[];
 		allTags?: string[];
 		onchange?: (value: string) => void;
@@ -212,6 +219,9 @@
 	const dirCompartment = new Compartment();
 	const livePreviewCompartment = new Compartment();
 	const typedLinkModeCompartment = new Compartment();
+	// G3 — read-only compartment so the Settings toggle flips editability live
+	// (reconfigure, no remount → cursor/scroll preserved).
+	const readOnlyCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
 
 	/** §E.2 — the content-DOM classes that drive typed-link display in the editor:
@@ -436,6 +446,7 @@
 					indentWithTab,
 					...defaultKeymap, ...historyKeymap, ...($appSettings.autoPairBrackets ? closeBracketsKeymap : []), ...searchKeymap,
 				]),
+				readOnlyCompartment.of(readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
 				typedLinkModeCompartment.of(EditorView.contentAttributes.of({
@@ -870,6 +881,19 @@
 		// First run with nothing custom → the default render is already correct (no work).
 		if (first && isEmpty) return;
 		prewarmIcons().then(() => { try { v.dispatch({ effects: refreshCallouts.of(null) }); } catch { /* view torn down */ } });
+	});
+
+	/* ─── G3 read-only toggle — reconfigure editability live ─── */
+	// Guard on the boolean so the compartment only reconfigures when the Settings
+	// toggle flips (appSettings is a store — a bare $effect would fire on any change).
+	let _prevReadOnly = readOnly;
+	$effect(() => {
+		if (view && readOnly !== _prevReadOnly) {
+			_prevReadOnly = readOnly;
+			view.dispatch({ effects: readOnlyCompartment.reconfigure(
+				readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []
+			) });
+		}
 	});
 
 	/* ─── Typed-link display mode (§E.2: colour-by-type / label-above) ─── */
@@ -1343,6 +1367,7 @@
 			dir="auto"
 			placeholder={$t('notePane.titlePlaceholder')}
 			spellcheck="false"
+			readonly={readOnly}
 			onblur={handleTitleBlur}
 			onkeydown={handleTitleKeydown}
 		/>
@@ -1370,6 +1395,7 @@
 					{tabId}
 					{filePath}
 					{libraryName}
+					{readOnly}
 					noteDir={dir}
 					collapsed={propsCollapsed}
 					onToggle={() => propsCollapsed = !propsCollapsed}

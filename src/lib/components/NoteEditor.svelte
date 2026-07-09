@@ -75,6 +75,7 @@
 		onLiveStats,
 		onLiveProps,
 		linkTraversalMap,
+		readOnly = false,
 	}: {
 		tab: TabLike;
 		noteNames?: { name: string; path: string; libraryName?: string }[];
@@ -107,6 +108,11 @@
 		 *  non-empty-key count. Like onLiveStats it NEVER feeds back into content. */
 		onLiveProps?: (id: string, count: number) => void;
 		linkTraversalMap?: Map<string, number>;
+		/** G3 — mount this editor as a READ-ONLY display (the second screen's default).
+		 *  Every write callback below early-returns as a belt, and NotePane makes the
+		 *  CM6 body + title non-editable. Belt-and-suspenders with NotePane/PropertyEditor:
+		 *  even if a view somehow emits a save, the note is never written to disk. */
+		readOnly?: boolean;
 	} = $props();
 
 	// Internal derived state — recalculated when tab changes OR when the
@@ -167,6 +173,7 @@
 	}
 
 	function handlePromote(nextStage: string) {
+		if (readOnly) return; // G3 — read-only display never writes
 		// Stage promote/demote writes to disk via writeNote like saveTabContent
 		// does, so the same F2 post-cascade-stomp gate applies here too.
 		// See `isCascading` for the full rationale.
@@ -230,6 +237,7 @@
 	// wrong file on disk, or at minimum poison `setWriteAhead` for the new
 	// tab. Bail in that case.
 	function handleSave(text: string, filePath: string) {
+		if (readOnly) return; // G3 — read-only display never writes
 		if (saving) return;
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
@@ -286,6 +294,7 @@
 	}
 
 	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
+		if (readOnly) return; // G3 — read-only display never writes
 		if (!filePath || filePath !== tab.path) return;
 		// Flush fires on tab close, visibility change, and the {#key}-bump
 		// destroy itself — all paths must respect the cascade gate.
@@ -351,6 +360,7 @@
 	}
 
 	async function handleTitleChange(newTitle: string, filePath: string) {
+		if (readOnly) return; // G3 — read-only display never renames
 		if (!newTitle || !tab.path) return;
 		// Same staleness guard as handleSave/handleFlush. If the title-blur
 		// event arrives from a NotePane whose mounted file no longer matches
@@ -456,6 +466,7 @@
 	libraryPath={tab.libraryPath || ''}
 	{noteNames}
 	{allTags}
+	{readOnly}
 	properties={parsed.properties}
 	rawYaml={parsed.rawYaml ?? ''}
 	{stage}
@@ -468,7 +479,7 @@
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
 	{linkTraversalMap}
 	onchange={() => {}}
-	onDocChange={(doc: Text) => { editBody(tab.id, doc, tab.path); onLiveStats?.(tab.id, doc); }}
+	onDocChange={(doc: Text) => { if (!readOnly) editBody(tab.id, doc, tab.path); onLiveStats?.(tab.id, doc); }}
 	{onLiveProps}
 	onpromote={handlePromote}
 	onsave={handleSave}

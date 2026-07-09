@@ -21,6 +21,11 @@
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
 	import { detectDir, renderMarkdown } from '$lib/utils';
+	// G3 — the freshness-gated adopt primitive (adoptDisk): a clean model takes the
+	// fresh disk content, a dirty model is never clobbered. Same primitive the main
+	// window uses to adopt the SS's own writes (+layout.svelte:3329).
+	import { externalChange as externalChangeNoteModel } from '$lib/editor/noteSession';
+	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { scanNoteTasks } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
@@ -171,6 +176,10 @@
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let loading = $state(true);
+	// The second screen is a READ-ONLY display, always (Boss ruling 2026-07-09; PJ-068 v2).
+	// It is a contextual complement, never an editing domain — every NoteEditor mount below
+	// is read-only. Kept as a named constant so the 7 mounts read one source of truth.
+	const ssReadOnly = true;
 	let universeName = $state('');
 
 	// ─── Dashboard state ───
@@ -690,6 +699,63 @@
 	let unlisteners: (() => void)[] = [];
 	let libraryChangeTimer: ReturnType<typeof setTimeout> | null = null;
 
+	/**
+	 * G3 §2/§3 — adopt fresh disk content for `path` into EVERY second-screen note
+	 * view that shows it, freshness-gated. The SS holds up to 7 NoteEditor mounts: the
+	 * store `openTabs` (active editor + tab list) plus 5 companion `$state` tabs. For
+	 * each matching view, `externalChangeNoteModel` (noteModel.adoptDisk) adopts ONLY
+	 * when the model is clean AND the disk genuinely differs — a dirty editable-mode
+	 * edit is never clobbered, an echo of our own write is ignored. On a real adopt we
+	 * bump the tab's `reloadVersion` so NoteEditor's {#key} remounts NotePane and
+	 * re-seeds from the freshly-adopted model (the display shows the new truth).
+	 *
+	 * SS mirror of the main window's onNoteSaved adopt (+layout.svelte:3320) and its
+	 * cascade reload (+layout.svelte:3223) — but freshness-gated per the G3 Plan (NOT
+	 * reloadTabsFromDisk, which force-adopts and would clobber a dirty editable SS tab).
+	 */
+	async function adoptFreshDiskIntoSS(path: string): Promise<void> {
+		if (!SINGLE_OWNERSHIP || !path) return;
+		// Skip the disk read entirely when NO SS view shows this note. A rename cascade can
+		// rewrite dozens of backlinks (§3 loops over all of them), but the SS shows at most 7
+		// distinct notes — reading every rewritten path would be mostly wasted IPC (Rule 3).
+		const shownHere = get(openTabs).some((t) => t.path === path)
+			|| [dashboardNoteTab, dashboardSelectedNote, indexSelectedNote, mapCompanionNoteTab, peekTab].some((c) => c?.path === path);
+		if (!shownHere) return;
+		let content: string;
+		try {
+			content = await invoke<string>('read_note', { filePath: path });
+		} catch { return; }
+		// Store openTabs (active editor + tab list). Adopt per tab (freshness-gated),
+		// then bump reloadVersion ONLY on the tabs that actually adopted — so a mounted
+		// view remounts to show the new truth while a dirty editable-mode edit is never
+		// disrupted. (One-path-one-tab dedup means at most one match today.)
+		const adoptedIds = new Set<string>();
+		for (const t of get(openTabs)) {
+			if (t.path === path && externalChangeNoteModel(t.id, content)) adoptedIds.add(t.id);
+		}
+		if (adoptedIds.size > 0) {
+			openTabs.update((ts) => ts.map((t) =>
+				adoptedIds.has(t.id) ? { ...t, content, reloadVersion: (t.reloadVersion ?? 0) + 1 } : t
+			));
+		}
+		// Companion $state tabs — each adopts independently (freshness-gated).
+		dashboardNoteTab = adoptCompanionTab(dashboardNoteTab, path, content);
+		dashboardSelectedNote = adoptCompanionTab(dashboardSelectedNote, path, content);
+		indexSelectedNote = adoptCompanionTab(indexSelectedNote, path, content);
+		mapCompanionNoteTab = adoptCompanionTab(mapCompanionNoteTab, path, content);
+		peekTab = adoptCompanionTab(peekTab, path, content);
+	}
+
+	/** G3 — adopt fresh disk into one companion tab (freshness-gated). Returns the
+	 *  same object untouched when it doesn't match / the model is dirty / the payload is
+	 *  an echo; otherwise a NEW object with the fresh content + a bumped reloadVersion so
+	 *  Svelte re-renders and NoteEditor's {#key} remounts with the adopted model. */
+	function adoptCompanionTab(tab: any, path: string, content: string): any {
+		if (!tab || tab.path !== path) return tab;
+		if (!externalChangeNoteModel(tab.id, content)) return tab; // dirty edit or echo → leave it
+		return { ...tab, content, reloadVersion: (tab.reloadVersion ?? 0) + 1 };
+	}
+
 	onMount(async () => {
 		const win = getCurrentWindow();
 		try { await win.setTitle('Constellation'); } catch {}
@@ -744,8 +810,24 @@
 					await loadSplitCompanionPanelData(splitCompanionData);
 				} catch {}
 			}
+			// G3 §2 — adopt the main window's save into EVERY SS editor view of this
+			// note (active tab + companions), freshness-gated so an editable-mode edit
+			// on the SS is never clobbered. Fixes HIGH #2 (SS never adopted main→SS saves).
+			await adoptFreshDiskIntoSS(path);
 		});
 		unlisteners.push(u2);
+
+		// G3 §3 — react to a main-window rename cascade. `cascade:rewrote` is emitted
+		// app-wide from Rust (libraries.rs:1618/:5483) so it reaches this separate SS
+		// realm; the rewrite listener only lives in +layout (main window). For each
+		// rewritten path, adopt the canonical cascade result into every SS view of it
+		// (freshness-gated). Fixes HIGH #1 (SS blind to the cascade → stale [[wikilink]]).
+		const uCascade = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
+			for (const p of event.payload?.paths ?? []) {
+				await adoptFreshDiskIntoSS(p);
+			}
+		});
+		unlisteners.push(uCascade);
 
 		// Listen for universe switch
 		const u3 = await onUniverseSwitch(async () => {
@@ -1069,7 +1151,7 @@
 					</button>
 				</div>
 				<div class="dash-note-editor">
-					<NoteEditor tab={dashboardNoteTab} noteNames={allNotes} />
+					<NoteEditor tab={dashboardNoteTab} noteNames={allNotes} readOnly={ssReadOnly} />
 				</div>
 			</div>
 
@@ -1109,7 +1191,7 @@
 					</div>
 					<div class="dash-tag-editor">
 						{#if dashboardSelectedNote}
-							<NoteEditor tab={dashboardSelectedNote} noteNames={allNotes} />
+							<NoteEditor tab={dashboardSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
 						{:else}
 							<div class="dash-tag-empty">
 								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
@@ -1156,7 +1238,7 @@
 					</div>
 					<div class="dash-tag-editor">
 						{#if indexSelectedNote}
-							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} />
+							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
 						{:else}
 							<div class="dash-tag-empty">
 								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
@@ -1212,7 +1294,7 @@
 					</div>
 					<div class="index-compare-editor">
 						{#if indexSelectedNote}
-							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} />
+							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
 						{:else}
 							<div class="dash-tag-empty">
 								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
@@ -1229,7 +1311,7 @@
 					<!-- Note view: editor + context mini-map -->
 					<div class="map-companion-note">
 						<div class="map-companion-editor">
-							<NoteEditor tab={mapCompanionNoteTab} noteNames={allNotes} />
+							<NoteEditor tab={mapCompanionNoteTab} noteNames={allNotes} readOnly={ssReadOnly} />
 						</div>
 						{#if mapCompanionData.focusNode}
 							<div class="map-companion-context">
@@ -1585,7 +1667,7 @@
 									</div>
 									<div class="peek-editor">
 										{#if peekTab.path}
-											<NoteEditor tab={peekTab} noteNames={allNotes} />
+											<NoteEditor tab={peekTab} noteNames={allNotes} readOnly={ssReadOnly} />
 										{/if}
 									</div>
 								</div>
@@ -1768,7 +1850,7 @@
 				{/if}
 				<div class="note-area" style="--note-width:{noteWidth}%">
 					{#if $activeTab?.path}
-						<NoteEditor tab={$activeTab} noteNames={allNotes} />
+						<NoteEditor tab={$activeTab} noteNames={allNotes} readOnly={ssReadOnly} />
 					{/if}
 				</div>
 			</div>

@@ -439,3 +439,67 @@ describe('Recipe M — close-tab-while-dirty flushes before the model is dispose
 		expect(diskBody('/a.md')).toBe('typed then closed'); // edit safe on disk, model gone
 	});
 });
+
+/**
+ * G3 (2026-07-09) — SECOND-SCREEN CROSS-WINDOW SYNC. Two sessions on ONE path model
+ * the two real webview realms (id 'main' = the main window's model, id 'ss' = the
+ * second screen's model) sharing one disk. This proves the adopt handshake the SS runs
+ * in `adoptFreshDiskIntoSS` (§2 onNoteSaved / §3 cascade:rewrote): a CLEAN ss adopts a
+ * main-window save/cascade; a DIRTY ss REFUSES (its edit is never clobbered); an echo is
+ * ignored. The freshness gate (`externalChange` = adoptDisk) is the single arbiter.
+ *
+ * Scope honesty: this is the LOGIC of the handshake. The two-realm Tauri transport +
+ * CM6 reseed on reloadVersion is the residual the Boss two-window test closes (a single
+ * vitest realm can't mount two webviews) — Editor-Surface Gate item 7.
+ */
+describe('Recipe N — two windows, one note (G3 second-screen cross-window sync)', () => {
+	it('main saves → a CLEAN ss adopts the fresh disk (the §2 freshness sync)', async () => {
+		S.open('main', '/n.md', note('N', 'v1'));
+		S.open('ss', '/n.md', note('N', 'v1'));      // both windows show v1
+		S.editBody('main', 'v2 from main');
+		await S.save('main', '/n.md', write);        // main persists v2
+		expect(diskBody('/n.md')).toBe('v2 from main');
+		// the SS's onNoteSaved → adoptFreshDiskIntoSS → externalChange adopts it (clean model):
+		expect(S.externalChange('ss', disk.get('/n.md')!)).toBe(true);
+		expect(S.bodyForView('ss')).toBe('v2 from main'); // SS view === disk
+	});
+
+	it('main saves → a DIRTY ss REFUSES the adopt (the editable-mode SS edit is never clobbered)', async () => {
+		S.open('main', '/n.md', note('N', 'v1'));
+		S.open('ss', '/n.md', note('N', 'v1'));
+		S.editBody('ss', 'ss local edit');           // SS is mid-edit (editable mode) → dirty
+		S.editBody('main', 'v2 from main');
+		await S.save('main', '/n.md', write);
+		// the freshness gate REFUSES — the SS keeps its own unsaved edit (last-writer-wins residual):
+		expect(S.externalChange('ss', disk.get('/n.md')!)).toBe(false);
+		expect(S.bodyForView('ss')).toBe('ss local edit');
+	});
+
+	it('cascade-rewrite → a clean ss RELOADS the rewrite, never stomps it (the §3/§4 invariant)', async () => {
+		// A links B; both windows show A; B is renamed in main → the cascade rewrites A on disk.
+		S.open('main', '/a.md', note('NA', 'see [[B]]'));
+		S.open('ss', '/a.md', note('NA', 'see [[B]]')); // SS shows A (read-only view → clean model)
+		await S.save('main', '/a.md', write);
+
+		// updateLinksOnRename authors A's rewritten content on disk (the cascade result):
+		disk.set('/a.md', note('NA', 'see [[B-renamed]]'));
+
+		// the SS's cascade:rewrote handler adopts the canonical rewrite (clean → adopts):
+		expect(S.externalChange('ss', disk.get('/a.md')!)).toBe(true);
+		expect(S.bodyForView('ss')).toBe('see [[B-renamed]]'); // shows the rewrite, didn't revert it
+
+		// a subsequent SS save composes the ADOPTED content — never the pre-cascade [[B]] (no stomp):
+		const r = await S.save('ss', '/a.md', write);
+		expect(r.ok).toBe(true);
+		expect(diskBody('/a.md')).toBe('see [[B-renamed]]');
+		expect(disk.get('/a.md')).not.toContain('[[B]]'); // the pre-cascade link is gone from disk
+		expect(diskCid('/a.md')).toBe('NA');
+	});
+
+	it('echo guard — the ss ignores an adopt of content identical to its own model (no needless remount)', () => {
+		S.open('ss', '/n.md', note('N', 'v1'));
+		// main "saves" identical content (an echo of what the SS already holds) → not adopted:
+		expect(S.externalChange('ss', note('N', 'v1'))).toBe(false);
+		expect(S.bodyForView('ss')).toBe('v1');
+	});
+});
