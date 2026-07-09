@@ -22,6 +22,7 @@
 	} from '$lib/libraries/store';
 	import { detectDir } from '$lib/utils';
 	import { t } from '$lib/i18n';
+	import { onDestroy } from 'svelte';
 	import type { DialMode } from '$lib/cockpitFlag';
 
 	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; content?: string; }
@@ -71,15 +72,10 @@
 	let loading = $state(false);
 	let gen = 0;
 	let lastKey = '';
+	let lastPath = '';
+	let refetchTimer: ReturnType<typeof setTimeout> | undefined;
 
-	// Fetch the shown note's zones. Guarded on the note PATH so a parent re-render with a
-	// fresh focus object (same note) never refetches — zero IPC churn on the main window's edits.
-	$effect(() => {
-		const f = shown;
-		const key = (f?.path ?? '') + '#' + reloadNonce;
-		if (key === lastKey) return;
-		lastKey = key;
-		if (!f?.path) { backlinks = []; outgoing = []; unlinked = []; review = null; return; }
+	function fetchZones(f: Focus) {
 		const myGen = ++gen;
 		const name = f.name.replace(/\.md$/, '');
 		loading = true;
@@ -102,7 +98,25 @@
 				if (myGen === gen) loading = false;
 			}
 		})();
+	}
+
+	// Fetch the shown note's zones. Path-guarded so a parent re-render with a fresh focus
+	// object (same note) never refetches — zero IPC churn on the main window's keystrokes.
+	// On a NOTE change → fetch immediately (the data is already in note_links). On a same-note
+	// reloadNonce bump (a save/cascade) → wait ~450 ms so the async reindex lands before re-reading.
+	$effect(() => {
+		const f = shown;
+		const path = f?.path ?? '';
+		const key = path + '#' + reloadNonce;
+		if (key === lastKey) return;            // unchanged → leave any pending refetch alone
+		const pathChanged = path !== lastPath;
+		lastKey = key; lastPath = path;
+		clearTimeout(refetchTimer);             // supersede a pending refetch on a genuinely new key
+		if (!f?.path) { backlinks = []; outgoing = []; unlinked = []; review = null; return; }
+		if (pathChanged) fetchZones(f);
+		else refetchTimer = setTimeout(() => fetchZones(f), 450);
 	});
+	onDestroy(() => clearTimeout(refetchTimer));
 
 	// ── Control Dashboard aggregates ──
 	const CONF_ORDER = ['hypothesis', 'evidence', 'established', 'contested'];
@@ -131,11 +145,11 @@
 	const clean = (n: string) => (n || '').replace(/\.md$/, '');
 	const dot = (lib: string) => libraryColorMap[lib] || 'var(--interactive-accent, #7c3aed)';
 
-	const DIALS: { id: DialMode; label: string; icon: string }[] = [
+	let DIALS = $derived<{ id: DialMode; label: string; icon: string }[]>([
 		{ id: 'normal', label: $t('cockpit.dialNormal') || 'Follow', icon: 'M8 3a5 5 0 100 10A5 5 0 008 3zM8 5a3 3 0 110 6 3 3 0 010-6z' },
 		{ id: 'live', label: $t('cockpit.dialLive') || 'Peek', icon: 'M8 3C4 3 1.5 8 1.5 8S4 13 8 13s6.5-5 6.5-5S12 3 8 3zm0 8a3 3 0 110-6 3 3 0 010 6z' },
 		{ id: 'locked', label: $t('cockpit.dialLocked') || 'Pin', icon: 'M4.5 7V5a3.5 3.5 0 117 0v2H12a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1h.5zm2 0h3V5a1.5 1.5 0 10-3 0v2z' },
-	];
+	]);
 </script>
 
 <div class="ck">
@@ -180,7 +194,7 @@
 		<section class="ck-zone ck-control">
 			<div class="ck-zlabel">{$t('cockpit.controlDashboard') || 'Control dashboard'} <span class="ck-zhint">{$t('cockpit.controlHint') || 'health & what needs attention'}</span></div>
 			<div class="ck-rows">
-				<div class="ck-row"><span class="ck-dotc s-ok"></span><span class="ck-rk">{$t('cockpit.confidence') || 'confidence'}</span><span class="ck-rv ck-cap">{dominantConfidence === '—' ? '—' : ($t('confidence.' + dominantConfidence) || dominantConfidence)}</span></div>
+				<div class="ck-row"><span class="ck-dotc s-ok"></span><span class="ck-rk">{$t('cockpit.confidence') || 'confidence'}</span><span class="ck-rv ck-cap">{dominantConfidence}</span></div>
 				{#if contestedCount > 0}<div class="ck-row"><span class="ck-dotc s-bad"></span><span class="ck-rk">{$t('cockpit.contested') || 'contested links'}</span><span class="ck-rv s-badtext">{contestedCount}</span></div>{/if}
 				{#if staleCount > 0}<div class="ck-row"><span class="ck-dotc s-warn"></span><span class="ck-rk">{$t('cockpit.dormant') || 'dormant · decaying'}</span><span class="ck-rv s-warntext">{staleCount}</span></div>{/if}
 				{#if loadBearingCount > 0}<div class="ck-row"><span class="ck-dotc s-acc"></span><span class="ck-rk">{$t('cockpit.loadBearing') || 'load-bearing'}</span><span class="ck-rv">{loadBearingCount}</span></div>{/if}
