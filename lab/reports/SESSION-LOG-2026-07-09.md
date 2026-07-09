@@ -113,7 +113,16 @@ During Stage-1 two-window testing the Boss corrected the premise and re-scoped t
 - **The one residual the whole-app sweep flagged (SecondScreenPage:877, two-sided editable conflict) is ELIMINATED** — the editable write path no longer exists.
 - **Verify:** harness **26/26**; `svelte-check` **0 errors**; grep confirms zero dangling refs to any removed symbol. Pure removal → covered by the existing sweep (its one in-diff finding removed); no new app-killer surface.
 
-**Next: P1 — the focus channel + three-zone cockpit shell + the Normal/Live/Locked dial (the first new user-visible surface → the first two-window Boss test).**
+### P1 — Three-zone cockpit shell + Normal/Live/Locked dial (note focus, all zones wired) — built
+Boss steer: dial must *use* the space (Style-Setter rule); show ALL zones wired, not an empty skeleton.
+- **New `src/lib/cockpitFlag.ts`** (`COCKPIT_ENABLED = true` + `DialMode`) — one-line rollback; old tabbed panels kept behind `{:else}`.
+- **New `src/lib/components/SecondScreenCockpit.svelte`** — the read-only three-zone cockpit for a focused note: ① Estimation Map (universe scale + note position + maturity — first cut; holistic past/present/future = P4 dedicated pass) · ② Control Dashboard (link health: dominant confidence, contested/tension count, dormant/decaying, load-bearing, review status via `get_note_review_status`) · ③ Operation Map (outgoing typed links, backlinks, unlinked mentions — click-to-navigate). Plus the **Normal/Live/Locked dial** (full-width segmented, never squeezed). Data via the cheap per-note IPCs (`get_backlink_rows`/`get_outgoing_rows` — MIG-079 index seeks; `scan_unlinked_mentions`; `get_note_review_status`) — Rule-8 clean, gen-guarded, path+nonce-keyed (zero IPC churn on the main window's keystrokes).
+- **Wired into `SecondScreenPage`** — renders the cockpit for the note-focus branch (`editorPanelsActive`) behind `COCKPIT_ENABLED`; `cockpitNavigate` → `sendNoteToMain` (read-only nav); `cockpitReload` bumped on the shown note's save/cascade so the link zones re-read.
+- **Coupling:** Normal/Live follow the live focus; Locked captures the focus on entry + freezes it. (Live's hover source comes online at P3.)
+- **Verify:** `svelte-check` **0 errors**; harness **26/26** (unaffected). Read-only display, no write/index/lifecycle path → per-build write-path safety sweep exempt (verification = svelte-check + harness + gen-guard review). i18n: `$t('cockpit.*') || 'English'` fallbacks (×15 keys land in the P5 i18n close-out once labels stabilize).
+- **Next Boss test:** two-window — open a note in the main window (SS open) → the second screen shows the three-zone cockpit; click a backlink → the main window navigates.
+
+**Next: P1 two-window Boss test (on a fresh release binary) → then P2 (retire the fallback editor + deepen the note complement).**
 
 ---
 

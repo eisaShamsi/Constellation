@@ -32,6 +32,9 @@
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
+	// PJ-068 v2 — the read-only three-zone Knowledge Cockpit (the note-focus complement).
+	import SecondScreenCockpit from '$lib/components/SecondScreenCockpit.svelte';
+	import { COCKPIT_ENABLED, type DialMode } from '$lib/cockpitFlag';
 	import SaveHealthBanner from '$lib/components/SaveHealthBanner.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
@@ -176,6 +179,21 @@
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let loading = $state(true);
+	// PJ-068 v2 — the cockpit's coupling dial (Normal/Live/Locked); persists per session.
+	let cockpitDial = $state<DialMode>('normal');
+	// Bumped when the cockpit's shown note is saved/cascade-rewritten so it re-reads its
+	// link zones (the path is unchanged, so the cockpit's own path-guard won't refetch).
+	let cockpitReload = $state(0);
+	function cockpitNavigate(path: string, name: string, libraryName: string) {
+		if (!path) return;
+		sendNoteToMain({
+			path, name,
+			libraryName,
+			libraryPath: $libraries.find(l => l.name === libraryName)?.path ?? '',
+			libraryColor: libraryColorMap[libraryName] || '#7c3aed',
+		});
+	}
+
 	// The second screen is a READ-ONLY display, always (Boss ruling 2026-07-09; PJ-068 v2).
 	// It is a contextual complement, never an editing domain — every NoteEditor mount below
 	// is read-only. Kept as a named constant so the 7 mounts read one source of truth.
@@ -814,6 +832,8 @@
 			// note (active tab + companions), freshness-gated so an editable-mode edit
 			// on the SS is never clobbered. Fixes HIGH #2 (SS never adopted main→SS saves).
 			await adoptFreshDiskIntoSS(path);
+			// PJ-068 v2 — refresh the cockpit's link zones if it's showing this note.
+			if (editorPanelsData?.notePath === path) cockpitReload++;
 		});
 		unlisteners.push(u2);
 
@@ -825,6 +845,7 @@
 		const uCascade = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
 			for (const p of event.payload?.paths ?? []) {
 				await adoptFreshDiskIntoSS(p);
+				if (editorPanelsData?.notePath === p) cockpitReload++;
 			}
 		});
 		unlisteners.push(uCascade);
@@ -1520,6 +1541,18 @@
 			</div>
 
 		{:else if editorPanelsActive && editorPanelsData}
+			{#if COCKPIT_ENABLED}
+				<SecondScreenCockpit
+					focus={{ path: editorPanelsData.notePath ?? '', name: editorPanelsData.noteName ?? '', libraryName: editorPanelsData.libraryName ?? '', libraryPath: editorPanelsData.libraryPath ?? '' }}
+					dialMode={cockpitDial}
+					onDialChange={(m) => cockpitDial = m}
+					onNavigate={cockpitNavigate}
+					{libraryColorMap}
+					{allNotes}
+					universeNotes={totalNotes}
+					reloadNonce={cockpitReload}
+				/>
+			{:else}
 			<!-- Editor Panels Companion (migrated right sidebar) -->
 			<div class="split-companion" dir={detectDir(editorPanelsData.noteName || editorPanelsData.content || '')}>
 				<div class="split-companion-header">
@@ -1649,6 +1682,7 @@
 					{/if}
 				</div>
 			</div>
+			{/if}
 
 		{:else if contextMode === 'skyview'}
 			<!-- Sky View Companion — kept as-is -->
