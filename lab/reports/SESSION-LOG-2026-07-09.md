@@ -122,7 +122,23 @@ Boss steer: dial must *use* the space (Style-Setter rule); show ALL zones wired,
 - **Verify:** `svelte-check` **0 errors**; harness **26/26** (unaffected). Read-only display, no write/index/lifecycle path → per-build write-path safety sweep exempt (verification = svelte-check + harness + gen-guard review). i18n: `$t('cockpit.*') || 'English'` fallbacks (×15 keys land in the P5 i18n close-out once labels stabilize).
 - **Next Boss test:** two-window — open a note in the main window (SS open) → the second screen shows the three-zone cockpit; click a backlink → the main window navigates.
 
-**Next: P1 two-window Boss test (on a fresh release binary) → then P2 (retire the fallback editor + deepen the note complement).**
+### P1 Boss test (round 1) — cockpit WORKS; 2 fixes applied
+Boss two-window test: Steps 1 (open SS), 4 (click-to-navigate), 5 (dial Follow/Pin) **PASS**. Screenshot confirmed the three zones filling the space with real typed-link data (derives-from / supports / generalizes chips, backlinks + outgoing). Two issues → fixed (commit `b6419e5f`):
+1. **"UX naming issue"** — raw `cockpit.*` keys showed. Root cause: this i18n returns the KEY for a missing entry (truthy) → `$t(k) || 'fallback'` never fell back. Fix: added the real `cockpit.*` label block to `en.json`; confidence shows the value directly (capitalized) instead of an unresolved nested `confidence.*` path; dial labels made `$derived` (locale-reactive). **×14 locales pending Boss label sign-off** (naming was flagged — get wording approved before translating).
+2. **Step 6 freshness ("nothing happened")** — cockpit re-read link zones on the save broadcast, before the async reindex updated `note_links`. Fix: immediate fetch on note-open (path change); ~450 ms-delayed refetch on a same-note save/cascade (`reloadNonce` bump) so `note_links` has settled. Leak-safe timer (supersede + `onDestroy`).
+- Verify: `svelte-check` 0 errors; labels embedded in the release build. Re-test binary building.
+
+### P1 re-test (round 2) → Boss REDIRECTED the note view to a radial link-graph
+- **Naming: approved.** **Step 6 still off** (screenshot showed stale outgoing `a`/`c` vs the note's real links A/C v2/Bauhaus — the timed refetch didn't catch the reindex).
+- **Boss's 3rd image + ruling:** the note-focus view should be a **radial graph — the open note at CENTER, its backlinks/outgoing links as surrounding nodes** (with facet tabs). Initially I over-elaborated it as the four Cognitive-Engine questions (Development/Altitude/Origin/Connection) — grounded in `Cognitive-Engine-One-Picture` + `16-inspector360` (the radial IS the existing Inspector-360/360.3D concept) — but **Boss corrected: center = the note, surrounding nodes = backlinks/outgoing links** (simpler). Two mockups shown; corrected one confirmed.
+- **Boss design decisions (2026-07-09):** (1) node encoding = colour by typed relationship + size by link weight — **keep**; (2) **backlinks left · outgoing right**; (3) facet tabs = my call, **contextual**; (4) click a node → the **main window** opens that note (read-only nav).
+
+### P2 — the Note Radial Graph (the real note-focus view) — built
+- **New `src/lib/components/NoteRadialGraph.svelte`** — the open note centred; **backlinks radiate left, outgoing right**; each node coloured by its typed relationship (the 8 + associative — supports=green / contradicts=red / causes=orange / exemplifies=teal / generalizes=blue / derives-from=violet / part-of / supersedes), sized by lifecycle tier (weight-derived: load-bearing large → emerging small; stale faded); spokes coloured per relationship. Click a node → `onNavigate` → `sendNoteToMain` (read-only). Caps 9/side + "+N more". Pure presentational (host passes the persisted `note_links` rows).
+- **`SecondScreenCockpit` restructured** — the note-focus view is now the **dial (Follow/Peek/Pin) + the radial graph**, replacing the P1 list zones (Estimation Map + Control Dashboard + Operation Map). Data still via `get_backlink_rows`/`get_outgoing_rows` (Rule-8 clean); the ~450ms save-refresh timing carried over. The Estimation Map (holistic universe) moves to the separate universe-focus view (later).
+- **Verify:** `svelte-check` **0 errors** (fixed 2: SVG `<text>` has no `dir` attr; `prevDial` init). Contextual facet tabs (Boss's call) = the immediate next increment. i18n ×14 for cockpit + radial strings HELD until the note-view design (radial + tabs) stabilizes, then one complete pass (avoid re-translating a moving target).
+
+**Next: P2 radial Boss test (on a fresh binary) → then the contextual facet tabs.**
 
 ---
 

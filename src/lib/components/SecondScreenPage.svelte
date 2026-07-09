@@ -1549,7 +1549,6 @@
 					onNavigate={cockpitNavigate}
 					{libraryColorMap}
 					{allNotes}
-					universeNotes={totalNotes}
 					reloadNonce={cockpitReload}
 				/>
 			{:else}
