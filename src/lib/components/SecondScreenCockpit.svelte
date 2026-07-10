@@ -114,7 +114,6 @@
 
 	let DIALS = $derived<{ id: DialMode; label: string; icon: string }[]>([
 		{ id: 'normal', label: $t('cockpit.dialNormal') || 'Follow', icon: 'M8 3a5 5 0 100 10A5 5 0 008 3zM8 5a3 3 0 110 6 3 3 0 010-6z' },
-		{ id: 'live', label: $t('cockpit.dialLive') || 'Peek', icon: 'M8 3C4 3 1.5 8 1.5 8S4 13 8 13s6.5-5 6.5-5S12 3 8 3zm0 8a3 3 0 110-6 3 3 0 010 6z' },
 		{ id: 'locked', label: $t('cockpit.dialLocked') || 'Pin', icon: 'M4.5 7V5a3.5 3.5 0 117 0v2H12a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1h.5zm2 0h3V5a1.5 1.5 0 10-3 0v2z' },
 	]);
 

@@ -8,7 +8,11 @@
  */
 export const COCKPIT_ENABLED = true;
 
-export type DialMode = 'normal' | 'live' | 'locked';
+/** The cockpit's coupling dial. `normal` (Follow) tracks the note you're editing; `locked` (Pin)
+ *  holds the cockpit on one note while you move around the main window. A third `live` (Peek)
+ *  segment shipped dead — it resolved to the same note as Follow and was consumed nowhere — and
+ *  was removed 2026-07-10 per Boss ruling (a control with no concept doesn't ship). */
+export type DialMode = 'normal' | 'locked';
 
 /** The note-graph "lens" the second screen renders: switchable visual styles over the same
  *  live link data, chosen in Settings, coloured via the Style Setter. The Aster (relationship

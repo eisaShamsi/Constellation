@@ -2283,7 +2283,6 @@
   "cockpit": {
     "dial": "Coupling",
     "dialNormal": "Follow",
-    "dialLive": "Peek",
     "dialLocked": "Pin",
     "pinned": "pinned",
     "readOnly": "read-only",

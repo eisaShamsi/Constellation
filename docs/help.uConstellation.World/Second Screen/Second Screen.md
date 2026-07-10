@@ -6,7 +6,7 @@ aliases:
   - Multi-window
   - Companion window
   - Dashboard
-description: Use Constellation's Second Screen as a mode-based companion — showing a Universe Dashboard in File Explorer mode, Navigator, Sky View, or Sky View companion depending on the active sidebar. Requires two or more connected monitors.
+description: Use Constellation's Second Screen as a mode-based companion — a read-only Knowledge Cockpit while you edit (the note's links as The Butterfly or The Ledger, plus a deck of gauges), or a Universe Dashboard, Navigator, Sky View, or Map companion depending on the active sidebar. Requires two or more connected monitors.
 ---
 
 # Second Screen
@@ -249,3 +249,42 @@ Workspaces save and restore the second screen state, including whether it was op
 ## RTL Support
 
 The Second Screen fully supports right-to-left (RTL) languages including Arabic, Hebrew, Persian, and Urdu. The dashboard, tags, and all companion modes render correctly in RTL.
+
+---
+
+### Editor Mode — the Knowledge Cockpit
+
+When a note is open in the main window, the Second Screen becomes the **Knowledge Cockpit**: a read-only view of everything *around* that note. It never edits and never saves — it complements the note you are writing, it does not duplicate it. A **read-only** badge in the corner says so.
+
+**The coupling dial** (top-left) decides which note the cockpit is looking at:
+
+| Setting | What it does |
+|---|---|
+| **Follow** (default) | The cockpit always shows the note you are editing. Switch notes in the main window and the cockpit follows. |
+| **Pin** | The cockpit locks onto the note it is showing. Move around the main window freely — the cockpit stays put. A **pinned** badge appears. |
+
+**The facet tabs** below the dial choose what you want to know about the note. **Links** is the one that is live today; the rest are being wired in.
+
+#### The note graph — two lenses
+
+The **Links** facet draws the note's living links. Your note sits in the middle; everything that **points at it** is on the **left**, everything it **points to** is on the **right**. Every link is drawn — nothing is hidden or sampled. Colour tells you the *kind* of relationship (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of, supersedes).
+
+Pick the lens with the toggle at the right-hand end of the tab row. Your choice is remembered.
+
+- **The Butterfly** (default) — two facing wings. Each wedge is one kind of relationship; the biggest one points straight out along the wing, the smaller ones fan above and below it, so the wings sit level and mirror each other. Inside a wedge, **every individual link is its own stem** running out to the wedge's rim, ending in a small bead. A stronger, more-travelled link gets a **bigger bead** and a slightly darker stem. Each wedge names itself down the edge of the screen — `part-of · 394` — so nothing overlaps.
+- **The Ledger** — the same links as a balance sheet. A rail runs down the middle, one row per kind of relationship, identical on both sides. Backlink bars grow left, outgoing bars grow right, measured against a shared scale, so you can see at a glance whether a note is held up by what points at it or by what it points to. **Click any bar** to open the list of its individual links.
+
+In both lenses: **hover** a link to see its name, and **click** it to open that note **in the main window**. The cockpit itself never changes what you're editing.
+
+#### The gauge deck
+
+Along the bottom of both lenses runs a strip of gauges — the note's own statistics, grouped by the four questions the Cognitive Engine asks of any piece of knowledge:
+
+| Gauge | Shows |
+|---|---|
+| **Development** | Stage and maturity as filled dot-ladders, plus a coloured review pill (up to date · due · stale · never reviewed) |
+| **Content** | The word count, the note's stratum, and its tags |
+| **Origin** | Where the note came from — provenance, source, and the date it was created |
+| **Connection** | A relationship-mix bar, a supports-versus-contradicts balance meter, a confidence bar, and the count of load-bearing links |
+
+A gauge only appears if the note actually carries that information.
