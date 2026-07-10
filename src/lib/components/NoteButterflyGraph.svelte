@@ -58,10 +58,24 @@
 		return out;
 	}
 
+	/** Order a wing's petals CENTRE-OUT by size: the largest relationship points straight out
+	 *  along the wing's horizontal axis, the rest fan alternately above and below it. Laying them
+	 *  out sequentially from one edge instead (canonical order) drops the biggest petal into a
+	 *  corner, pushing all the mass into one quadrant — which reads as a tilted lens. */
+	function centreOut(types: string[], count: (t: string) => number, side: 'left' | 'right') {
+		const desc = types.slice().sort((a, b) => count(b) - count(a));
+		const above: string[] = [], below: string[] = [];
+		desc.forEach((tp, i) => { if (i > 0) (i % 2 === 1 ? above : below).push(tp); });
+		const topDown = [...above.reverse(), desc[0], ...below];
+		// the left fan's angles run bottom→top, so its sequence is reversed to mirror the right
+		return side === 'left' ? topDown.reverse() : topDown;
+	}
+
 	function buildFan(items: any[], side: 'left' | 'right', gmax: number, maxTrav: number, g: typeof geo) {
 		const groups = groupByType(items);
-		const types = REL_ORDER.filter((tp) => groups[tp]);
-		if (!types.length) return [];
+		const present = REL_ORDER.filter((tp) => groups[tp]);
+		if (!present.length) return [];
+		const types = centreOut(present as unknown as string[], (tp) => groups[tp].length, side);
 		const ox = side === 'left' ? g.cx - g.gut : g.cx + g.gut;
 		const a0 = side === 'left' ? 180 - A_HALF : -A_HALF;
 		const a1 = side === 'left' ? 180 + A_HALF : A_HALF;
