@@ -1543,7 +1543,7 @@
 		{:else if editorPanelsActive && editorPanelsData}
 			{#if COCKPIT_ENABLED}
 				<SecondScreenCockpit
-					focus={{ path: editorPanelsData.notePath ?? '', name: editorPanelsData.noteName ?? '', libraryName: editorPanelsData.libraryName ?? '', libraryPath: editorPanelsData.libraryPath ?? '' }}
+					focus={{ path: editorPanelsData.notePath ?? '', name: editorPanelsData.noteName ?? '', libraryName: editorPanelsData.libraryName ?? '', libraryPath: editorPanelsData.libraryPath ?? '', content: editorPanelsData.content }}
 					dialMode={cockpitDial}
 					onDialChange={(m) => cockpitDial = m}
 					onNavigate={cockpitNavigate}

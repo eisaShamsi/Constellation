@@ -21,7 +21,7 @@
 	import NoteRadialGraph from './NoteRadialGraph.svelte';
 	import NoteAsterGraph from './NoteAsterGraph.svelte';
 
-	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; }
+	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; content?: string; }
 
 	let {
 		focus = null,
@@ -60,6 +60,7 @@
 
 	let backlinks = $state<any[]>([]);
 	let outgoing = $state<any[]>([]);
+	let review = $state<any | null>(null);
 	let loading = $state(false);
 	let gen = 0;
 	let lastKey = '';
@@ -79,6 +80,10 @@
 				if (myGen !== gen) return;
 				backlinks = getBacklinks(blRows, name, undefined, []);
 				outgoing = getOutgoingLinks(ogRows, f.path, undefined);
+				// Per-note review/health stats (maturity, word count, review status) — cheap IPC.
+				invoke('get_note_review_status', { notePath: f.path, staleGraceDays: 1 })
+					.then((r) => { if (myGen === gen) review = r; })
+					.catch(() => { if (myGen === gen) review = null; });
 			} finally {
 				if (myGen === gen) loading = false;
 			}
@@ -161,7 +166,7 @@
 		<div class="ck-facet">
 			{#if activeTab === 'links'}
 				{#if $appSettings.noteGraphStyle === 'aster'}
-					<NoteAsterGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+					<NoteAsterGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{:else}
 					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{/if}
