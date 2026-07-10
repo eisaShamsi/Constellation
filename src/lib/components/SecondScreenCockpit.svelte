@@ -120,18 +120,22 @@
 	// The note's facets (the top tabs). The radial link-graph is the default 'Links' view;
 	// the rest are wired in the next increments (contextual — shown per the note's content).
 	let activeTab = $state('links');
+	// Each facet's label is pulled from the app's EXISTING translation for that panel (all 15
+	// languages already have these), so the tab bar localizes with zero new i18n keys and never
+	// disagrees with the panel it opens. `facetLabel` falls back to the English name on a miss.
 	const FACETS = [
-		{ id: 'links', label: 'Links' },
-		{ id: 'properties', label: 'Properties' },
-		{ id: 'structure', label: 'Structure' },
-		{ id: 'tags', label: 'Tags' },
-		{ id: 'skyview', label: 'Sky View' },
-		{ id: 'tasks', label: 'Tasks' },
-		{ id: 'health', label: 'Knowledge Health' },
-		{ id: 'provenance', label: 'Provenance' },
-		{ id: 'review', label: 'Review Pulse' },
-		{ id: 'sources', label: 'Source Review' },
+		{ id: 'links', label: 'Links', labelKey: 'settings.sections.links' },
+		{ id: 'properties', label: 'Properties', labelKey: 'settings.panels.panelProperties' },
+		{ id: 'structure', label: 'Structure', labelKey: 'panels.structure' },
+		{ id: 'tags', label: 'Tags', labelKey: 'settings.plugins.tags' },
+		{ id: 'skyview', label: 'Sky View', labelKey: 'settings.plugins.graphView' },
+		{ id: 'tasks', label: 'Tasks', labelKey: 'settings.panels.panelTasks' },
+		{ id: 'health', label: 'Knowledge Health', labelKey: 'ribbon.knowledgeHealth' },
+		{ id: 'provenance', label: 'Provenance', labelKey: 'settings.panels.panelProvenance' },
+		{ id: 'review', label: 'Review Pulse', labelKey: 'panels.review' },
+		{ id: 'sources', label: 'Source Review', labelKey: 'panels.sourceReview' },
 	];
+	const facetLabel = (f: { label: string; labelKey: string }) => { const v = $t(f.labelKey); return v === f.labelKey ? f.label : v; };
 
 	// The lens toggle lives on this page (Boss ruling 2026-07-10). The SS only *requests* the
 	// switch — main owns the settings write and broadcasts it back (Display-not-Domain).
@@ -169,7 +173,7 @@
 		<div class="ck-tabs" role="tablist">
 			{#each FACETS as f}
 				<button class="ck-tab" class:on={activeTab === f.id} role="tab" aria-selected={activeTab === f.id}
-					onclick={() => activeTab = f.id}>{f.label}</button>
+					onclick={() => activeTab = f.id}>{facetLabel(f)}</button>
 			{/each}
 			{#if activeTab === 'links'}
 				<div class="ck-lens" role="group" aria-label="note graph lens">
@@ -192,7 +196,7 @@
 				{/if}
 			{:else}
 				<div class="ck-facet-soon">
-					<span class="ck-facet-name">{FACETS.find((f) => f.id === activeTab)?.label}</span>
+					<span class="ck-facet-name">{(() => { const f = FACETS.find((x) => x.id === activeTab); return f ? facetLabel(f) : ''; })()}</span>
 					<span>this facet is wired in the next pass</span>
 				</div>
 			{/if}

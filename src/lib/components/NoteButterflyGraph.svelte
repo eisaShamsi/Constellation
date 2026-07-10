@@ -52,7 +52,7 @@
 	// dim the graph or light up the wrong node after navigation (runes-clean: no $effect reset).
 	type Sel = { pi: number; k: number; key: string };
 
-	const HEADER_BAND = 34, TIP_PAD_V = 14, FOOT_PAD = 16, EDGE_PAD = 48, BOXH = 52, GAP = 2, REACH_FLOOR = 0.34;
+	const HEADER_BAND = 34, TIP_PAD_V = 14, FOOT_PAD = 16, BOXH = 52, GAP = 2, REACH_FLOOR = 0.34;
 	const DEG = Math.PI / 180;
 	const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 	const r2 = (x: number) => Math.round(x * 100) / 100;
@@ -75,7 +75,6 @@
 		const title = raw.length > 32 ? (rtl ? '…' + raw.slice(raw.length - 32) : raw.slice(0, 32) + '…') : raw;
 		const boxW = clamp(title.length * 8.4 + 34, 140, 300);
 		const S = boxW / 2 + 18;
-		const horizReach = (cx - S) - EDGE_PAD;
 		const vertRoom = H / 2 - HEADER_BAND - TIP_PAD_V;
 		const geo = { cx, cy, boxW, S, title, rtl };
 
@@ -111,6 +110,21 @@
 		const all = [...aL, ...aR];
 
 		if (!all.length) return { geo, petals: [] as any[], largestPi: 0 };
+
+		// Reserve a label lane sized to the WIDEST rendered label, and pull the wings in by exactly
+		// that width (Boss: "move the fans toward the centre to give space"). Each label then lives
+		// wholly inside its lane — middle-anchored, so it never flips off the edge under RTL and never
+		// sits under a wedge. The width metric is script-aware (Arabic/Hebrew glyphs run wider at 12px).
+		const labelW = (str: string) => {
+			let w = 0;
+			for (const ch of str) { const c = ch.charCodeAt(0);
+				const wide = (c >= 0x0590 && c <= 0x08FF) || (c >= 0xFB1D && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF); // Hebrew + Arabic
+				w += wide ? 7.8 : (ch === ' ' || ch === '·' ? 4 : 6.7); }
+			return w;
+		};
+		for (const p of all) { p.label = relLabelIn($locale, p.type); p._lw = labelW(p.label + ' · ' + p.links.length) + 24; }
+		const LANE = clamp(Math.max(...all.map((p) => p._lw)), 96, Math.max(96, cx - S - 70));
+		const horizReach = (cx - S) - LANE;
 
 		// ADAPTIVE ENVELOPE → single isotropic R (never scale the shape to fill the stage).
 		let D = 0;
@@ -180,9 +194,9 @@
 
 				return {
 					type: pet.type, sign, ox, color: relColor(pet.type), ember: pet.type === 'contradicts',
-					count: n, wedge, fil, phiMid: pet.phi, rO, baseSW,
-					// label fields — seeded so model.petals stays typed; the ladder overwrites them below.
-					labelY: 0, estW: 0, rimX: 0, rimY: 0, anchor: 'start', labelX: 0, swatchX: 0, leaderX2: 0,
+					count: n, wedge, fil, phiMid: pet.phi, rO, baseSW, label: pet.label as string,
+					// label geometry — seeded so model.petals stays typed; the ladder overwrites them below.
+					labelY: 0, rimX: 0, rimY: 0, labelX: 0, swatchX: 0, leaderX2: 0,
 				};
 			});
 		}
@@ -212,11 +226,12 @@
 			for (const it of items) {
 				const p = it.p;
 				p.labelY = it.ly;
-				p.estW = (p.type.length + 3 + String(p.count).length) * 6.6;   // matches the file's char metric
 				p.rimX = p.ox + side * p.rO * Math.cos(p.phiMid * DEG);
 				p.rimY = cy - p.rO * Math.sin(p.phiMid * DEG);
-				if (side > 0) { p.anchor = 'end'; p.labelX = W - 12; p.swatchX = (W - 12) - p.estW - 13; p.leaderX2 = p.swatchX - 4; }   // RIGHT: swatch centre-facing
-				else { p.anchor = 'start'; p.labelX = 25; p.swatchX = 12; p.leaderX2 = 25 + p.estW + 4; }                                  // LEFT: swatch at edge, text starts x=25
+				// text MIDDLE-anchored inside the reserved lane (bidi-robust — no start/end flip under
+				// RTL); swatch at the outer edge; leader from the wedge rim to the lane's inner edge.
+				if (side > 0) { p.swatchX = W - 19; p.labelX = W - 11 - LANE / 2; p.leaderX2 = W - LANE; }   // RIGHT lane [W-LANE, W-10]
+				else { p.swatchX = 10; p.labelX = 11 + LANE / 2; p.leaderX2 = LANE; }                        // LEFT lane [10, LANE]
 			}
 		}
 		ladder(leftP, -1); ladder(rightP, 1);
@@ -341,7 +356,7 @@
 					<rect x={p.swatchX} y={p.labelY - 4.5} width="9" height="9" rx="2" fill={relColor(p.type)}/>
 				{/each}
 				{#each model.petals as p}
-					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor={p.anchor}><tspan font-weight="600" fill="var(--text-normal)">{relLabelIn($locale, p.type)}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
+					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor="middle"><tspan font-weight="600" fill="var(--text-normal)">{p.label}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
 				{/each}
 
 				<!-- the spine: a plain title box, no arc, no handbag (Boss #5) -->
