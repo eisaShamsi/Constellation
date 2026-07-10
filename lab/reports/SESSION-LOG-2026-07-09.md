@@ -152,6 +152,12 @@ Boss two-window test: Steps 1 (open SS), 4 (click-to-navigate), 5 (dial Follow/P
 - **Pluggable plumbing:** `cockpitFlag.NoteGraphStyle` + `NOTE_GRAPH_STYLES`; `appSettings.noteGraphStyle` (default `aster`); SettingsModal lens selector (Heartwood/Orrery "coming"); cockpit renders the active lens (Aster live; baseline radial for the others).
 - **Verify:** svelte-check 0 errors. **Next:** Aster Boss test → Heartwood → Orrery → the Style Setter `--rel-*` category.
 
+### Aster test → PASS + polish/stats + i18n fix (into 2026-07-10)
+- Boss: "Good starting point... all pass. But fix the settings localization." → the `settings.editor.noteGraphStyle`/`Desc` keys were missing (raw keys shown). Added ×15 locales ("Second screen · note graph"; "Style Setter" kept as brand). Commit `da909744`.
+- Boss: **"Polish the Aster, add the note statistics — every bit available."**
+- **Aster polish + stats HUD** (commit `27a32715`): a quiet cognitive HUD in the four corners around the rose, by the four Cognitive-Engine questions — **Development** (stage/maturity/review), **Content·Altitude** (word count/stratum/tags), **Origin** (provenance/source/created), **Connections** (links in/out/dominant confidence/tensions/load-bearing/dormant). Every row graceful (shown only when the datum exists). Data from frontmatter (`parseFrontmatter`) + `get_note_review_status` + the fetched link rows — Rule-8 clean; the graph fetch stays path-keyed (content changes never refetch links). Look: deeper vignette, contradicts ember, lone home-star at 0 links (SVG always renders). Colours stay `--*` CSS vars for the Style Setter.
+- **Verify:** svelte-check 0 errors. Binary building for the Boss test.
+
 ---
 
 **SS concept sourced (from our docs):** the SS is *"an extension of the mind onto a second monitor — the context around the work in hand, never a second copy of it."* The **PJ-068 razor** (every SS surface must pass): **Contextual** (responds to what the MS is doing now) · **Complementary** (shows what the MS is NOT showing) · **Chosen** (appears only because the user opened the SS; never self-initiates). Display-Not-Domain is settled law. History: born 2026-03-13 as a mode-switcher → found its vocation 2026-03-19 as the Sky View contextual companion → 2026-04-05 the "clean writing space + panels migrate" redesign (7 principles) → double-init fixes. PJ-068's replication audit already grades each mode COMPLEMENTS vs REPLICATES.
