@@ -17,6 +17,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
+	import { relColor } from '$lib/cockpitGraphData';
 	import { styleSetterOpen, closeStyleSetter, styleSetterInspectRequest, styleSetterCategoryRequest } from '$lib/stores/styleSetter';
 	// MIG-070 §C polish (Item A) — real font choices: the shared catalogue (curated floor + the user's
 	// installed fonts via queryLocalFonts), reused from Settings. Drives the font pickers + live preview.
@@ -451,6 +452,19 @@
 			{ label: 'Blind spots', type: 'color', var: '--i360-blind' },
 			{ label: 'Card border', type: 'color', var: '--i360-border' },
 			{ label: 'Card radius', type: 'range', var: '--i360-radius', min: 0, max: 24, step: 1, unit: 'px', def: 12 } ] },
+		// Boss ruling 2026-07-10 — the note-graph's relationship colours. The Link Types registry is
+		// the BASE (so a `supports` wedge matches a `supports` pill); these vars OVERRIDE the graph
+		// alone, on demand — the same pattern as the Cognitive colours above. Unset = registry colour.
+		relTypes: { name: 'Relationship colours', controls: [
+			{ label: 'Supports', type: 'color', var: '--rel-supports' },
+			{ label: 'Contradicts', type: 'color', var: '--rel-contradicts' },
+			{ label: 'Causes', type: 'color', var: '--rel-causes' },
+			{ label: 'Exemplifies', type: 'color', var: '--rel-exemplifies' },
+			{ label: 'Generalizes', type: 'color', var: '--rel-generalizes' },
+			{ label: 'Derives from', type: 'color', var: '--rel-derives-from' },
+			{ label: 'Part of', type: 'color', var: '--rel-part-of' },
+			{ label: 'Supersedes', type: 'color', var: '--rel-supersedes' },
+			{ label: 'Untyped', type: 'color', var: '--rel-associative' } ] },
 		pLinkTiers: { name: 'Traversal chips', controls: [
 			{ label: 'Accent', type: 'color', var: '--link-tier-accent' },
 			{ label: 'Emerging', type: 'color', var: '--link-tier-emerging' },
@@ -667,6 +681,7 @@
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage', 'cogMatch'] },
 		{ key: 'panels', name: 'Panels', surface: 'editor', elements: ['pKhCard', 'pProvTag', 'pTaskBadge', 'pReviewStale', 'pI360', 'pLinkTiers'] },
+		{ key: 'relgraph', name: 'Note graph', surface: 'relgraph', elements: ['relTypes'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
@@ -714,7 +729,43 @@
 	// MIG-088 Phase 1 — Properties (frontmatter) is THREE-zone: its dedicated centre preview shows the
 	// pill mimic. (Two-zone relies on the live app showing through behind the right-anchored panel — but
 	// the panel would occlude the right-sidebar Properties panel, so live-behind can't preview it.)
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'cognitive' && activeCategory !== 'panels' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'frontmatter' && activeCategory !== 'cognitive' && activeCategory !== 'panels' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar' && activeCategory !== 'relgraph');
+
+	// Boss ruling 2026-07-10 — the "Note graph" preview: a Butterfly mimic filling the WHOLE centre
+	// zone (Style Setter preview rule). Each wedge fills with relColor(id) — the SAME resolver the
+	// real lenses use, `var(--rel-id, <registry colour>)` — so it shows the registry palette by
+	// default and recolours live from the draft as you pick. True circular arcs, like the lens.
+	const REL_WINGS = [
+		{ sign: -1, items: [['part-of', 1.0], ['exemplifies', 0.64], ['derives-from', 0.46], ['causes', 0.36]] },
+		{ sign: 1, items: [['supports', 1.0], ['generalizes', 0.68], ['contradicts', 0.52], ['supersedes', 0.42], ['associative', 0.34]] },
+	] as { sign: number; items: [string, number][] }[];
+	const REL_LABELS: Record<string, string> = {
+		'part-of': 'Part of', exemplifies: 'Exemplifies', 'derives-from': 'Derives from', causes: 'Causes',
+		supports: 'Supports', generalizes: 'Generalizes', contradicts: 'Contradicts', supersedes: 'Supersedes',
+		associative: 'Untyped',
+	};
+	const relWedges = $derived.by(() => {
+		void $linkTypesStore;                     // re-resolve when the vocabulary is recoloured
+		const CX = 450, CY = 180, S = 70, RIN = 16, R = 148, W = 28, STEP = 32, D2R = Math.PI / 180;
+		const out: { id: string; label: string; color: string; d: string; lx: number; ly: number; sign: number }[] = [];
+		for (const wing of REL_WINGS) {
+			const ox = CX + wing.sign * S;
+			wing.items.forEach(([id, f], k) => {
+				const phi = k === 0 ? 0 : (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * STEP;
+				const a0 = phi - W / 2, a1 = phi + W / 2, rOut = RIN + (R - RIN) * f;
+				const P = (r: number, a: number): [number, number] =>
+					[ox + wing.sign * r * Math.cos(a * D2R), CY - r * Math.sin(a * D2R)];
+				const [ix0, iy0] = P(RIN, a0), [ix1, iy1] = P(RIN, a1);
+				const [ex1, ey1] = P(rOut, a1), [ex0, ey0] = P(rOut, a0);
+				const sIn = wing.sign > 0 ? 1 : 0, sOut = wing.sign > 0 ? 0 : 1;
+				const [lx, ly] = P(rOut + 12, phi);
+				out.push({ id, label: REL_LABELS[id] ?? id, color: relColor(id), sign: wing.sign, lx, ly,
+					d: `M${ix0} ${iy0} A${RIN} ${RIN} 0 0 ${sIn} ${ix1} ${iy1} L${ex1} ${ey1} A${rOut} ${rOut} 0 0 ${sOut} ${ex0} ${ey0} Z` });
+			});
+		}
+		return out;
+	});
+
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -1185,7 +1236,7 @@
 				<div class="ss-hint">{selected ? L('Previewing') + ': ' + (sel?.name ? L(sel.name) : '') : L('Select an element on the left to preview & style it')}</div>
 				<div class="ss-stage">
 					{#if activeSurface !== 'editor'}
-						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'} class:ss-prev-alt--cns={activeSurface === 'cns'} class:ss-prev-alt--calendar={activeSurface === 'calendar'}>
+						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'} class:ss-prev-alt--cns={activeSurface === 'cns'} class:ss-prev-alt--calendar={activeSurface === 'calendar'} class:ss-prev-alt--relgraph={activeSurface === 'relgraph'}>
 							<div class="ss-alt-title">{L(CATEGORIES.find((c) => c.surface === activeSurface)?.name)}</div>
 							{#if activeSurface === 'sky'}
 								<!-- MIG-072 §2 — live Sky View preview. Each bubble reads its --skyview-* var, so it
@@ -1310,6 +1361,25 @@
 									<span class="ss-cns-ring r3"></span>
 									<span class="ss-cns-label">{L('Apple (Fruit)')}</span>
 								</button>
+							{:else if activeSurface === 'relgraph'}
+								<!-- Boss ruling 2026-07-10 — the note-graph relationship palette. Full centre zone (never a
+								     squeezed thumbnail). Wedges resolve through relColor(), so an unset var shows the Link
+								     Types registry colour and a pick recolours them live. -->
+								<div class="ss-relprev ss-hot" class:ss-sel={selected === 'relTypes'}
+									role="button" tabindex="0" aria-label={L('Relationship colours')}
+									onclick={() => selectEl('relTypes')}
+									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('relTypes'); } }}>
+									<svg class="ss-relsvg" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+										<line class="ss-relseam" x1="450" y1="12" x2="450" y2="152"/>
+										<line class="ss-relseam" x1="450" y1="208" x2="450" y2="348"/>
+										{#each relWedges as w (w.id)}
+											<path d={w.d} fill={w.color} fill-opacity="0.85" stroke={w.color} stroke-opacity="0.55" stroke-width="1"/>
+											<text class="ss-rellabel" x={w.lx} y={w.ly} text-anchor={w.sign < 0 ? 'end' : 'start'}>{L(w.label)}</text>
+										{/each}
+										<rect class="ss-relbox" x="392" y="158" width="116" height="44" rx="10"/>
+										<text class="ss-reltitle" x="450" y="185" text-anchor="middle">{L('Note')}</text>
+									</svg>
+								</div>
 							{:else if activeSurface === 'calendar'}
 								<!-- §C.2d — the REAL CalendarPanel, filling the centre zone (full-center-zone rule).
 								     It inherits the draft --cal-* from .ss, so it recolours live as you pick. One
@@ -1821,6 +1891,13 @@
 	.ss-prev-alt--cns { width: 100%; height: 100%; max-width: 1100px; padding: 18px 22px; }
 	/* §C.2d — Calendar preview fills the whole centre zone (full-center-zone rule); the real
 	   CalendarPanel scales to it. The wrapper is the single click-target (selects calendar). */
+	.ss-prev-alt--relgraph { width: 100%; height: 100%; max-width: 1100px; padding: 18px 22px; }
+	.ss-relprev { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer; }
+	.ss-relsvg { width: 100%; height: 100%; display: block; }
+	.ss-relseam { stroke: var(--text-normal, #2e3338); stroke-opacity: 0.7; stroke-dasharray: 1 4; stroke-width: 1; }
+	.ss-rellabel { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280); dominant-baseline: middle; }
+	.ss-relbox { fill: var(--background-primary, #fff); stroke: var(--background-modifier-border, #d4d4d8); }
+	.ss-reltitle { font: 600 14px var(--font-sans); fill: var(--text-normal, #2e3338); }
 	.ss-prev-alt--calendar { width: 100%; height: 100%; max-width: 1100px; padding: 14px 18px; }
 	.ss-calprev { align-self: stretch; flex: 1; width: 100%; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
 	.ss-calprev.ss-sel { border-color: #b9acff; }
