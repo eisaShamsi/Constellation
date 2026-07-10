@@ -20,7 +20,8 @@
  * exclude that lane in Rust (PJ-065), keeping the graph a purely cognitive surface.
  */
 import { parseFrontmatter } from '$lib/libraries/store';
-import { linkTypeColor, linkTypeLabel, linkTypeRank, isNullLinkType } from '$lib/libraries/linkTypeRegistry';
+import { linkTypeColor, linkTypeRank, isNullLinkType, getLinkType } from '$lib/libraries/linkTypeRegistry';
+import { tIn } from '$lib/i18n';
 
 /** The null/default relationship — an untyped link. Not a registry type; always sorts last. */
 export const NULL_TYPE = 'associative';
@@ -30,8 +31,23 @@ const NULL_RANK = 1e6;
  *  value valid in an SVG `fill`/`stroke`, so no per-theme branching is needed. */
 export const relColor = (id: string) => `var(--rel-${id}, ${linkTypeColor(id)})`;
 
-/** The type's display name — a custom type shows its real label, never "associative". */
-export const relLabel = (id: string) => (id === NULL_TYPE ? NULL_TYPE : linkTypeLabel(id));
+/** The type's display name IN THE UI LANGUAGE. Same resolver as LinkTypePill so the wedge, the row
+ *  and the pill always read the same word: the `linkTypes.<id>` translation, else the registry's
+ *  user-given label (a custom type), else the raw id. Pass `$locale` from the component so the
+ *  label re-renders when the language changes. */
+export const relLabelIn = (loc: string, id: string) => {
+	const key = `linkTypes.${id.toLowerCase()}`;
+	const tr = tIn(loc, key);
+	return tr !== key ? tr : (getLinkType(id)?.label ?? id);
+};
+
+/** A localized value from a fixed vocabulary (stage / maturity), falling back to the raw value. */
+export const vocabIn = (loc: string, prefix: string, value: string) => {
+	if (!value) return '';
+	const key = `${prefix}.${value.toLowerCase()}`;
+	const tr = tIn(loc, key);
+	return tr !== key ? tr : value;
+};
 
 const TIERW: Record<string, number> = { 'load-bearing': 1, established: 0.7, emerging: 0.42, stale: 0.2 };
 export const tierW = (t?: string) => TIERW[(t || 'emerging').toLowerCase()] ?? 0.42;

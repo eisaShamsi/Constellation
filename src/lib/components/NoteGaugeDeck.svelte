@@ -7,8 +7,8 @@
 	 * (app CSS vars); link colours are --rel-*. Reused by the Butterfly and the Ledger so the
 	 * data reads identically whichever lens is chosen.
 	 */
-	import { t } from '$lib/i18n';
-	import { deriveStats, relColor, STAGES, MATS } from '$lib/cockpitGraphData';
+	import { t, locale } from '$lib/i18n';
+	import { deriveStats, relColor, vocabIn, STAGES, MATS } from '$lib/cockpitGraphData';
 	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 
 	let { content = '', review = null as any, backlinks = [] as any[], outgoing = [] as any[] }: {
@@ -37,12 +37,12 @@
 		{#if s.stageIdx >= 0}
 			<div class="g"><span class="gl">{L('cockpit.deck.stage', 'stage')}</span>
 				<span class="lad">{#each STAGES as _, i}<i class:on={i <= s.stageIdx} class:cur={i === s.stageIdx}></i>{/each}</span>
-				<span class="gv">{s.stage}</span></div>
+				<span class="gv">{vocabIn($locale, 'notePane.stage', s.stage)}</span></div>
 		{/if}
 		{#if s.matIdx >= 0}
 			<div class="g"><span class="gl">{L('cockpit.deck.maturity', 'maturity')}</span>
 				<span class="lad">{#each MATS as _, i}<i class:on={i <= s.matIdx} class:cur={i === s.matIdx}></i>{/each}</span>
-				<span class="gv">{s.maturity}</span></div>
+				<span class="gv">{vocabIn($locale, 'reviewer.maturity', s.maturity)}</span></div>
 		{/if}
 		{#if reviewLabel}
 			<div class="g"><span class="gl">{L('cockpit.deck.review', 'review')}</span>

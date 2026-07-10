@@ -32,8 +32,8 @@
 	 * travels there — nothing is edited or saved. Theme-aware via app CSS vars; relationship colour
 	 * only from relColor() (--rel-*, Style-Setter controlled), so it reads in light AND dark.
 	 */
-	import { t } from '$lib/i18n';
-	import { groupByType, relColor, relLabel, tierW, clean } from '$lib/cockpitGraphData';
+	import { t, tn, locale } from '$lib/i18n';
+	import { groupByType, relColor, relLabelIn, tierW, clean } from '$lib/cockpitGraphData';
 	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import { detectDir } from '$lib/utils';
 	import NoteGaugeDeck from './NoteGaugeDeck.svelte';
@@ -341,14 +341,14 @@
 					<rect x={p.swatchX} y={p.labelY - 4.5} width="9" height="9" rx="2" fill={relColor(p.type)}/>
 				{/each}
 				{#each model.petals as p}
-					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor={p.anchor}><tspan font-weight="600" fill="var(--text-normal)">{relLabel(p.type)}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
+					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor={p.anchor}><tspan font-weight="600" fill="var(--text-normal)">{relLabelIn($locale, p.type)}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
 				{/each}
 
 				<!-- the spine: a plain title box, no arc, no handbag (Boss #5) -->
 				<rect class="bf-box" x={model.geo.cx - model.geo.boxW / 2} y={model.geo.cy - BOXH / 2}
 					width={model.geo.boxW} height={BOXH} rx="12"/>
 				<text class="bf-title" x={model.geo.cx} y={model.geo.cy - 4} text-anchor="middle">{model.geo.title}</text>
-				<text class="bf-sub" x={model.geo.cx} y={model.geo.cy + 15} text-anchor="middle">{total} {L('cockpit.links', 'links')}</text>
+				<text class="bf-sub" x={model.geo.cx} y={model.geo.cy + 15} text-anchor="middle">{$tn('plurals.links', total)}</text>
 				{#if !hasAny}
 					<text class="bf-empty" x={model.geo.cx} y={model.geo.cy + BOXH / 2 + 22} text-anchor="middle">{L('cockpit.noLinks', 'no links yet')}</text>
 				{/if}
@@ -377,10 +377,15 @@
 <style>
 	.bf { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
 	.bf-stage { flex: 1; min-height: 0; width: 100%; background: var(--background-primary, #fff); }
-	.bf-svg { width: 100%; height: 100%; display: block; outline: none; }
+	/* The cockpit is wrapped in dir={$dir}. SVG text-anchor is resolved against the INLINE BASE
+	   DIRECTION, so under RTL "start" means the right edge — every label and header anchored to
+	   the wrong side and ran off-canvas. The graph's geometry is LTR by definition (backlinks
+	   left, outgoing right), so pin the SVG to ltr and let each text run shape itself via
+	   unicode-bidi: plaintext (Arabic still reads right-to-left inside its own box). */
+	.bf-svg { width: 100%; height: 100%; display: block; outline: none; direction: ltr; }
 	.bf-seam { stroke: var(--text-normal); stroke-opacity: 0.7; stroke-dasharray: 1 4; stroke-width: 1; }
-	.bf-flank { font: 12px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.bf-label { font: 12px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext; }
+	.bf-flank { font: 12px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.bf-label { font: 12px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext;  }
 	.bf-fil { cursor: pointer; }
 	.bf-marks.dimmed { opacity: 0.16; transition: opacity 0.12s; }
 	.bf-box { fill: var(--background-primary, #fff); stroke: var(--background-modifier-border, #d4d4d8); }

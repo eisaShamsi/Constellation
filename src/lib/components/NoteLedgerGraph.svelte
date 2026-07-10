@@ -10,8 +10,8 @@
 	 * disc. Click a bar to open its individual links; click one → the MAIN window navigates.
 	 * Theme-aware; --rel-* for the Style Setter.
 	 */
-	import { t } from '$lib/i18n';
-	import { groupByType, relColor, relLabel, orderTypes, tierW, clean, deriveStats } from '$lib/cockpitGraphData';
+	import { t, locale } from '$lib/i18n';
+	import { groupByType, relColor, relLabelIn, orderTypes, tierW, clean, deriveStats } from '$lib/cockpitGraphData';
 	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import NoteGaugeDeck from './NoteGaugeDeck.svelte';
 
@@ -79,7 +79,7 @@
 			<line x1={RAIL} y1={GTOP - 10} x2={RAIL} y2={model.railBot} stroke="var(--background-modifier-border, #b8b8b8)" stroke-width="1.4"/>
 
 			{#each model.rows as r}
-				<text class="lg-type" x={RAIL} y={r.cy - BARH / 2 - 6} text-anchor="middle" fill={r.color}>{relLabel(r.type)}</text>
+				<text class="lg-type" x={RAIL} y={r.cy - BARH / 2 - 6} text-anchor="middle" fill={r.color}>{relLabelIn($locale, r.type)}</text>
 				{#if r.back}
 					<g class="lg-bar" class:on={open?.type === r.type && open?.side === 'back'} role="button" tabindex="0"
 						aria-label="{r.type} · {r.back} backlinks" onclick={() => toggle(r.type, 'back', r.back)}
@@ -109,7 +109,7 @@
 			<div class="lg-drawer" dir="auto">
 				<div class="lg-dhead">
 					<span class="lg-ddot" style="background:{relColor(open.type)}"></span>
-					<span class="lg-dtitle">{relLabel(open.type)} · {open.side === 'back' ? L('cockpit.incoming', 'incoming') : L('cockpit.outgoing', 'outgoing')}</span>
+					<span class="lg-dtitle">{relLabelIn($locale, open.type)} · {open.side === 'back' ? L('cockpit.incoming', 'incoming') : L('cockpit.outgoing', 'outgoing')}</span>
 					<button class="lg-dclose" onclick={() => open = null} aria-label="close">✕</button>
 				</div>
 				<div class="lg-dlist">
@@ -129,13 +129,14 @@
 <style>
 	.lg { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
 	.lg-stage { flex: 1; min-height: 0; position: relative; }
-	.lg-svg { width: 100%; height: 100%; display: block; }
-	.lg-cn { font: 600 13px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a); }
-	.lg-side { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.lg-type { font: 500 12px var(--font-sans); text-transform: lowercase; letter-spacing: 0.02em; }
-	.lg-ct { font: 11px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.lg-tick { font: 10px var(--font-sans); fill: var(--text-faint, #9ca3af); }
-	.lg-empty { font: 14px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	/* see NoteButterflyGraph: SVG text-anchor flips under an inherited dir=rtl. */
+	.lg-svg { width: 100%; height: 100%; display: block; direction: ltr; }
+	.lg-cn { font: 600 13px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a);  unicode-bidi: plaintext; }
+	.lg-side { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.lg-type { font: 500 12px var(--font-sans); text-transform: lowercase; letter-spacing: 0.02em;  unicode-bidi: plaintext; }
+	.lg-ct { font: 11px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.lg-tick { font: 10px var(--font-sans); fill: var(--text-faint, #9ca3af);  unicode-bidi: plaintext; }
+	.lg-empty { font: 14px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
 	.lg-bar { cursor: pointer; }
 	.lg-bar rect { transition: opacity 0.12s; }
 	.lg-bar:hover rect { opacity: 0.82; }
