@@ -22,6 +22,7 @@
 	import {
 		cognitiveLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
+	import { notifyLinkTypesChanged } from '$lib/secondScreen';
 	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
 	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
 	import { appSettings, addStyleSwatch } from '$lib/libraries/store';
@@ -90,6 +91,9 @@
 		try {
 			await saveLinkTypes(toLinkTypeDeltas(types));
 			types = cognitiveLinkTypes().map((tp) => ({ ...tp })); // reflect the resolved order
+			// The registry is a PER-WINDOW cache. Tell the second screen to reload it, or its
+			// note-graph keeps the old colours / labels / order until that window is reopened.
+			notifyLinkTypesChanged().catch(() => {});
 		} catch (e) {
 			error = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
 		} finally {

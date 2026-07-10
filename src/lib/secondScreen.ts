@@ -137,6 +137,17 @@ export function onLensChangeRequest(callback: (id: string) => void): Promise<Unl
 	return listen<{ id: string }>('screen:set-lens', (event) => callback(event.payload.id));
 }
 
+/** The link-type vocabulary changed (a Link Types editor save, or a universe switch). The
+ *  registry is a PER-WINDOW in-memory cache seeded from the main window's boot bundle, so the
+ *  second screen must be told to reload it — otherwise its note-graph keeps the old colours,
+ *  labels and ordering, or (before its first load) renders every relationship neutral grey. */
+export async function notifyLinkTypesChanged(): Promise<void> {
+	await emit('link-types:changed');
+}
+export function onLinkTypesChanged(callback: () => void): Promise<UnlistenFn> {
+	return listen('link-types:changed', () => callback());
+}
+
 /* ------------------------------------------------------------------ */
 /*  Events: Bidirectional                                              */
 /* ------------------------------------------------------------------ */

@@ -8,7 +8,8 @@
 	 * data reads identically whichever lens is chosen.
 	 */
 	import { t } from '$lib/i18n';
-	import { deriveStats, STAGES, MATS, clean } from '$lib/cockpitGraphData';
+	import { deriveStats, relColor, STAGES, MATS } from '$lib/cockpitGraphData';
+	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 
 	let { content = '', review = null as any, backlinks = [] as any[], outgoing = [] as any[] }: {
 		content?: string; review?: any; backlinks?: any[]; outgoing?: any[];
@@ -18,7 +19,8 @@
 	// never falls back. `$t(k) === k ? fb : …` shows the English fallback instead of a raw key.
 	const L = (k: string, fb: string) => { const v = $t(k); return v === k ? fb : v; };
 
-	let s = $derived(deriveStats(content, review, backlinks, outgoing));
+	// `void $linkTypesStore` re-derives the mix bar's colours when the vocabulary is recoloured.
+	let s = $derived.by(() => { void $linkTypesStore; return deriveStats(content, review, backlinks, outgoing); });
 	let reviewLabel = $derived.by(() => {
 		const m: Record<string, string> = {
 			upToDate: L('cockpit.deck.upToDate', 'up to date'), due: L('cockpit.deck.due', 'due'),
@@ -73,7 +75,7 @@
 		{/if}
 		{#if s.supportsN || s.contradictsN}
 			<div class="g"><span class="gl">{L('cockpit.deck.balance', 'balance')}</span>
-				<span class="bal"><span class="bal-s" style="flex:{s.supportsN || 0.001}"></span><span class="bal-c" style="flex:{s.contradictsN || 0.001}"></span></span>
+				<span class="bal"><span style="flex:{s.supportsN || 0.001};background:{relColor('supports')}"></span><span style="flex:{s.contradictsN || 0.001};background:{relColor('contradicts')}"></span></span>
 				<span class="gv">{s.supportsN}↑ {s.contradictsN}↓</span></div>
 		{/if}
 		{#if s.totalLinks}
@@ -97,9 +99,10 @@
 	.lad i.on { background: var(--interactive-accent, #7c3aed); }
 	.lad i.cur { box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent, #7c3aed) 35%, transparent); }
 	.pill { font-size: 11px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
-	.sev-ok { color: var(--rel-supports, #16a34a); background: color-mix(in srgb, var(--rel-supports, #16a34a) 14%, transparent); }
-	.sev-warn { color: #b7791f; background: color-mix(in srgb, #d0a215 18%, transparent); }
-	.sev-bad { color: var(--rel-contradicts, #dc2626); background: color-mix(in srgb, var(--rel-contradicts, #dc2626) 14%, transparent); }
+	/* review status is a STATUS, not a relationship — use the shared status vars, not --rel-*. */
+	.sev-ok { color: var(--text-success, #16a34a); background: color-mix(in srgb, var(--text-success, #16a34a) 14%, transparent); }
+	.sev-warn { color: var(--text-warning, #b7791f); background: color-mix(in srgb, var(--text-warning, #d0a215) 18%, transparent); }
+	.sev-bad { color: var(--text-error, #dc2626); background: color-mix(in srgb, var(--text-error, #dc2626) 14%, transparent); }
 	.sev-mut { color: var(--text-muted, #6b7280); background: color-mix(in srgb, var(--text-muted, #6b7280) 12%, transparent); }
 	.num { font-size: 21px; font-weight: 600; line-height: 1; display: flex; align-items: baseline; gap: 6px; }
 	.numl { font-size: 11px; font-weight: 400; color: var(--text-muted, #6b7280); }
@@ -110,7 +113,5 @@
 	.mix.conf { height: 6px; max-width: 120px; }
 	.mix span { min-width: 2px; }
 	.bal { display: flex; width: 72px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--background-modifier-border, #ececec); flex-shrink: 0; }
-	.bal-s { background: var(--rel-supports, #879A39); }
-	.bal-c { background: var(--rel-contradicts, #D14D41); }
 	@media (max-width: 720px) { .deck { grid-template-columns: repeat(2, 1fr); } }
 </style>

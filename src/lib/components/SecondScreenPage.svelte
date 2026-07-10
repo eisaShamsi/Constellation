@@ -43,8 +43,9 @@
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import { buildContextMenu, type ContextTarget, type ContextActions } from '$lib/components/contextMenuBuilder';
 	import { onNoteMutation } from '$lib/noteMutations';
+	import { loadLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import {
-		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
+		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged, onLinkTypesChanged,
 		onStateRequest, onWorkspaceRestore,
 		onContextChanged, onSkyViewHover, onSkyViewClick,
 		onSidebarModeChanged, onSplitModeChanged,
@@ -778,6 +779,11 @@
 		const win = getCurrentWindow();
 		try { await win.setTitle('Constellation'); } catch {}
 
+		// The link-type registry is a PER-WINDOW in-memory cache, seeded from the boot bundle in
+		// the MAIN window only. Without this the cockpit's note-graph would render every
+		// relationship neutral grey and lose its labels/ordering.
+		loadLinkTypes().catch(() => {});
+
 		const unlistenHidden = await listen('screen-hidden', () => {
 			notifyScreenClosed();
 		});
@@ -860,10 +866,16 @@
 				}
 			} catch {}
 			allNotes = []; // Clear stale notes before rebuild
+			await loadLinkTypes().catch(() => {});   // the new Universe has its own link-type vocabulary
 			await loadAllData();
 			await loadDashboardData();
 		});
 		unlisteners.push(u3);
+
+		// The vocabulary changed in the main window (a Link Types editor save): re-pull the
+		// resolved registry so the note-graph recolours/re-labels live.
+		const uLT = await onLinkTypesChanged(() => { loadLinkTypes().catch(() => {}); });
+		unlisteners.push(uLT);
 
 		// Listen for settings changes
 		const u4 = await onSettingsChanged(async (settings) => {

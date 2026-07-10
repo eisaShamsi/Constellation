@@ -33,7 +33,8 @@
 	 * only from relColor() (--rel-*, Style-Setter controlled), so it reads in light AND dark.
 	 */
 	import { t } from '$lib/i18n';
-	import { groupByType, relColor, tierW, clean } from '$lib/cockpitGraphData';
+	import { groupByType, relColor, relLabel, tierW, clean } from '$lib/cockpitGraphData';
+	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import { detectDir } from '$lib/utils';
 	import NoteGaugeDeck from './NoteGaugeDeck.svelte';
 
@@ -67,6 +68,7 @@
 
 	// ── ALL geometry lives here — one derivation, no $effect, no per-frame work. ─────────────────
 	let model = $derived.by(() => {
+		void $linkTypesStore;   // recolour/re-order when the link-type vocabulary changes
 		const cx = W / 2, cy = H / 2;
 		const raw = clean(noteName);
 		const rtl = detectDir(raw || noteName) === 'rtl';
@@ -339,7 +341,7 @@
 					<rect x={p.swatchX} y={p.labelY - 4.5} width="9" height="9" rx="2" fill={relColor(p.type)}/>
 				{/each}
 				{#each model.petals as p}
-					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor={p.anchor}><tspan font-weight="600" fill="var(--text-normal)">{p.type}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
+					<text class="bf-label" x={p.labelX} y={p.labelY} text-anchor={p.anchor}><tspan font-weight="600" fill="var(--text-normal)">{relLabel(p.type)}</tspan><tspan font-weight="400" fill="var(--text-muted)"> · {p.count}</tspan></text>
 				{/each}
 
 				<!-- the spine: a plain title box, no arc, no handbag (Boss #5) -->

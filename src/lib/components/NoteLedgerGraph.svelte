@@ -11,7 +11,8 @@
 	 * Theme-aware; --rel-* for the Style Setter.
 	 */
 	import { t } from '$lib/i18n';
-	import { groupByType, relColor, tierW, clean, REL_ORDER, deriveStats } from '$lib/cockpitGraphData';
+	import { groupByType, relColor, relLabel, orderTypes, tierW, clean, deriveStats } from '$lib/cockpitGraphData';
+	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import NoteGaugeDeck from './NoteGaugeDeck.svelte';
 
 	let { noteName = '', content = '', review = null as any, backlinks = [] as any[], outgoing = [] as any[], resolveTarget, onNavigate }: {
@@ -25,8 +26,9 @@
 	const RAIL = 450, GTOP = 92, BARMAX = 322, BARH = 14, LAB = 26;
 
 	let model = $derived.by(() => {
+		void $linkTypesStore;   // recolour/re-order when the link-type vocabulary changes
 		const gl = groupByType(backlinks), gr = groupByType(outgoing);
-		const types = REL_ORDER.filter((tp) => gl[tp] || gr[tp]);
+		const types = orderTypes([...new Set([...Object.keys(gl), ...Object.keys(gr)])]);
 		const gmax = Math.max(1, ...types.map((tp) => Math.max(gl[tp]?.length || 0, gr[tp]?.length || 0)));
 		const rowH = Math.min(52, types.length ? 430 / types.length : 52);
 		const rows = types.map((tp, i) => ({
@@ -77,7 +79,7 @@
 			<line x1={RAIL} y1={GTOP - 10} x2={RAIL} y2={model.railBot} stroke="var(--background-modifier-border, #b8b8b8)" stroke-width="1.4"/>
 
 			{#each model.rows as r}
-				<text class="lg-type" x={RAIL} y={r.cy - BARH / 2 - 6} text-anchor="middle" fill={r.color}>{r.type}</text>
+				<text class="lg-type" x={RAIL} y={r.cy - BARH / 2 - 6} text-anchor="middle" fill={r.color}>{relLabel(r.type)}</text>
 				{#if r.back}
 					<g class="lg-bar" class:on={open?.type === r.type && open?.side === 'back'} role="button" tabindex="0"
 						aria-label="{r.type} · {r.back} backlinks" onclick={() => toggle(r.type, 'back', r.back)}
@@ -107,7 +109,7 @@
 			<div class="lg-drawer" dir="auto">
 				<div class="lg-dhead">
 					<span class="lg-ddot" style="background:{relColor(open.type)}"></span>
-					<span class="lg-dtitle">{open.type} · {open.side === 'back' ? L('cockpit.incoming', 'incoming') : L('cockpit.outgoing', 'outgoing')}</span>
+					<span class="lg-dtitle">{relLabel(open.type)} · {open.side === 'back' ? L('cockpit.incoming', 'incoming') : L('cockpit.outgoing', 'outgoing')}</span>
 					<button class="lg-dclose" onclick={() => open = null} aria-label="close">✕</button>
 				</div>
 				<div class="lg-dlist">
