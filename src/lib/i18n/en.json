@@ -2316,6 +2316,7 @@
     "candidate": "candidate",
     "noConnections": "no connections yet — this note stands alone",
     "incoming": "incoming",
+    "links": "links",
     "lens": {
       "butterfly": "The Butterfly (facing blooms)",
       "ledger": "The Ledger (balance sheet)",
