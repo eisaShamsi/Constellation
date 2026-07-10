@@ -126,6 +126,17 @@ export async function notifyScreenClosed(): Promise<void> {
 	await emit('screen:closed');
 }
 
+/** The second screen asks MAIN to switch the note-graph lens. Display-not-Domain: the SS never
+ *  writes settings itself (main owns the single settings write path, so a later main-window save
+ *  can't clobber a stale copy); it requests, main persists, and main's `screen:settings-changed`
+ *  broadcast re-renders the SS. */
+export async function requestLensChange(id: string): Promise<void> {
+	await emit('screen:set-lens', { id });
+}
+export function onLensChangeRequest(callback: (id: string) => void): Promise<UnlistenFn> {
+	return listen<{ id: string }>('screen:set-lens', (event) => callback(event.payload.id));
+}
+
 /* ------------------------------------------------------------------ */
 /*  Events: Bidirectional                                              */
 /* ------------------------------------------------------------------ */

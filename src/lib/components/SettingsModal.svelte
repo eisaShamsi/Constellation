@@ -16,7 +16,6 @@
 	// reused by the Style Setter too. Replaces this file's old inline CURATED_FONTS + loadSystemFonts.
 	import { systemFonts, ensureSystemFonts } from '$lib/fonts';
 	import { notifySettingsChanged } from '$lib/secondScreen';
-	import { NOTE_GRAPH_STYLES, normalizeGraphStyle } from '$lib/cockpitFlag';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -1025,18 +1024,8 @@
 						</label>
 					</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.noteGraphStyle') || 'Second screen · note graph'}</div>
-							<div class="setting-desc">{$t('settings.editor.noteGraphStyleDesc') || 'The lens the second screen uses to draw the open note and its links. Colours and style are tunable in the Style Setter.'}</div>
-						</div>
-						<select class="setting-control" value={normalizeGraphStyle($appSettings.noteGraphStyle)}
-							onchange={(e) => updateSettings({ noteGraphStyle: (e.target as HTMLSelectElement).value as any })}>
-							{#each NOTE_GRAPH_STYLES as s}
-								<option value={s.id}>{($t(s.labelKey) === s.labelKey ? s.label : $t(s.labelKey))}{s.built ? '' : ' — ' + ($t('cockpit.lens.coming') === 'cockpit.lens.coming' ? 'coming' : $t('cockpit.lens.coming'))}</option>
-							{/each}
-						</select>
-					</div>
+					<!-- The note-graph lens toggle lives ON the second-screen cockpit page itself
+					     (Boss ruling 2026-07-10) — the choice belongs next to what it changes. -->
 
 					<div class="setting-item">
 						<div class="setting-info">

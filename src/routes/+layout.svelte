@@ -144,7 +144,8 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, onLensChangeRequest, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { normalizeGraphStyle } from '$lib/cockpitFlag';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -3314,6 +3315,11 @@
 			if (rightSidebarBeforeSS) rightSidebarOpen = true;
 			emitEditorPanels({ active: false });
 		});
+		// The second screen's on-page lens toggle requests the switch; MAIN performs the
+		// settings write (single writer) and its broadcast re-renders the SS.
+		const unlistenLens = await onLensChangeRequest((id) => {
+			updateSettings({ noteGraphStyle: normalizeGraphStyle(id) });
+		});
 		// When the second screen saves a note, reload it in the main window if open
 		const unlistenNoteSaved = await onNoteSaved(async (path) => {
 			if (wasRecentlyWritten(path)) return; // we wrote it ourselves
@@ -3352,6 +3358,7 @@
 			unlistenScreenClosed,
 			unlistenNoteSaved,
 			unlistenScreenNoteAction,
+			unlistenLens,
 		);
 	});
 

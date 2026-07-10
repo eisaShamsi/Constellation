@@ -17,7 +17,8 @@
 	import { detectDir } from '$lib/utils';
 	import { t } from '$lib/i18n';
 	import { onDestroy } from 'svelte';
-	import { type DialMode, normalizeGraphStyle } from '$lib/cockpitFlag';
+	import { type DialMode, normalizeGraphStyle, NOTE_GRAPH_STYLES } from '$lib/cockpitFlag';
+	import { requestLensChange } from '$lib/secondScreen';
 	import NoteRadialGraph from './NoteRadialGraph.svelte';
 	import NoteButterflyGraph from './NoteButterflyGraph.svelte';
 	import NoteLedgerGraph from './NoteLedgerGraph.svelte';
@@ -132,6 +133,14 @@
 		{ id: 'review', label: 'Review Pulse' },
 		{ id: 'sources', label: 'Source Review' },
 	];
+
+	// The lens toggle lives on this page (Boss ruling 2026-07-10). The SS only *requests* the
+	// switch — main owns the settings write and broadcasts it back (Display-not-Domain).
+	let lens = $derived(normalizeGraphStyle($appSettings.noteGraphStyle));
+	const lensLabel = (s: { labelKey: string; label: string }) => {
+		const v = $t(s.labelKey);
+		return (v === s.labelKey ? s.label : v).replace(/\s*\(.*\)\s*$/, '');
+	};
 </script>
 
 <div class="ck">
@@ -163,12 +172,21 @@
 				<button class="ck-tab" class:on={activeTab === f.id} role="tab" aria-selected={activeTab === f.id}
 					onclick={() => activeTab = f.id}>{f.label}</button>
 			{/each}
+			{#if activeTab === 'links'}
+				<div class="ck-lens" role="group" aria-label="note graph lens">
+					{#each NOTE_GRAPH_STYLES.filter((s) => s.built) as s}
+						<button class="ck-lensbtn" class:on={lens === s.id}
+							onclick={() => requestLensChange(s.id)}
+							aria-pressed={lens === s.id}>{lensLabel(s)}</button>
+					{/each}
+				</div>
+			{/if}
 		</div>
 		<div class="ck-facet">
 			{#if activeTab === 'links'}
-				{#if normalizeGraphStyle($appSettings.noteGraphStyle) === 'butterfly'}
+				{#if lens === 'butterfly'}
 					<NoteButterflyGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
-				{:else if normalizeGraphStyle($appSettings.noteGraphStyle) === 'ledger'}
+				{:else if lens === 'ledger'}
 					<NoteLedgerGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{:else}
 					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
@@ -202,7 +220,14 @@
 	.ck-pinbadge { font-size: 11px; color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); border-radius: 5px; padding: 1px 6px; }
 	.ck-ro { font-size: 11px; color: var(--text-faint, #9ca3af); border: 1px solid var(--background-modifier-border, #d4d4d8); border-radius: 5px; padding: 2px 8px; }
 	.ck-dotlib { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
-	.ck-tabs { display: flex; gap: 2px; flex-wrap: wrap; border-bottom: 1px solid var(--background-modifier-border, #d4d4d8); padding-bottom: 6px; margin-bottom: 6px; }
+	.ck-tabs { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; border-bottom: 1px solid var(--background-modifier-border, #d4d4d8); padding-bottom: 6px; margin-bottom: 6px; }
+	.ck-lens { margin-inline-start: auto; display: flex; gap: 2px; padding: 2px; border-radius: 8px;
+		background: var(--background-secondary, #f4f4f5); border: 1px solid var(--background-modifier-border, #e2e2e2); }
+	.ck-lensbtn { border: none; background: transparent; padding: 4px 11px; border-radius: 6px; font-size: 12px;
+		color: var(--text-muted, #6b7280); cursor: pointer; white-space: nowrap; }
+	.ck-lensbtn:hover { color: var(--text-normal, #1a1a1a); }
+	.ck-lensbtn.on { background: var(--background-primary, #fff); color: var(--text-normal, #1a1a1a); font-weight: 600;
+		box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
 	.ck-tab { border: none; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 12.5px; color: var(--text-muted, #6b7280); cursor: pointer; }
 	.ck-tab:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.04)); }
 	.ck-tab.on { color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 12%, transparent); font-weight: 500; }
