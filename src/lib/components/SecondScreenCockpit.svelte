@@ -17,9 +17,10 @@
 	import { detectDir } from '$lib/utils';
 	import { t } from '$lib/i18n';
 	import { onDestroy } from 'svelte';
-	import type { DialMode } from '$lib/cockpitFlag';
+	import { type DialMode, normalizeGraphStyle } from '$lib/cockpitFlag';
 	import NoteRadialGraph from './NoteRadialGraph.svelte';
-	import NoteAsterGraph from './NoteAsterGraph.svelte';
+	import NoteButterflyGraph from './NoteButterflyGraph.svelte';
+	import NoteLedgerGraph from './NoteLedgerGraph.svelte';
 
 	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; content?: string; }
 
@@ -165,8 +166,10 @@
 		</div>
 		<div class="ck-facet">
 			{#if activeTab === 'links'}
-				{#if $appSettings.noteGraphStyle === 'aster'}
-					<NoteAsterGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+				{#if normalizeGraphStyle($appSettings.noteGraphStyle) === 'butterfly'}
+					<NoteButterflyGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+				{:else if normalizeGraphStyle($appSettings.noteGraphStyle) === 'ledger'}
+					<NoteLedgerGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{:else}
 					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{/if}

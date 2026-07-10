@@ -2314,7 +2314,37 @@
     "backlinks": "backlinks",
     "unlinkedMentions": "unlinked mentions",
     "candidate": "candidate",
-    "noConnections": "no connections yet — this note stands alone"
+    "noConnections": "no connections yet — this note stands alone",
+    "incoming": "incoming",
+    "lens": {
+      "butterfly": "The Butterfly (facing blooms)",
+      "ledger": "The Ledger (balance sheet)",
+      "heartwood": "Heartwood (living tree)",
+      "orrery": "The Orrery (orbital sky)",
+      "coming": "coming"
+    },
+    "deck": {
+      "development": "development",
+      "content": "content",
+      "origin": "origin",
+      "connection": "connection",
+      "stage": "stage",
+      "maturity": "maturity",
+      "review": "review",
+      "words": "words",
+      "stratum": "stratum",
+      "provenance": "provenance",
+      "source": "source",
+      "created": "created",
+      "balance": "balance",
+      "confidence": "confidence",
+      "loadBearing": "load-bearing",
+      "mix": "relationship mix",
+      "upToDate": "up to date",
+      "due": "due",
+      "stale": "stale",
+      "never": "never reviewed"
+    }
   },
   "secondScreen": {
     "title": "Second Screen",

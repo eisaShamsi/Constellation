@@ -4167,9 +4167,10 @@ export interface AppSettings {
 	noteTitleSummaryEnabled: boolean;
 
 	/** PJ-068 v2 — which note-graph "lens" the second screen renders for the open note:
-	 *  'aster' (relationship rose, default) · 'heartwood' (living tree) · 'orrery' (orbital sky).
+	 *  'butterfly' (facing blooms, default) · 'ledger' (balance sheet) · 'heartwood' · 'orrery'.
+	 *  The retired 'aster' normalizes to 'butterfly' on read (normalizeGraphStyle in cockpitFlag).
 	 *  Chosen in Settings; coloured via the Style Setter (--rel-* vars). */
-	noteGraphStyle: 'aster' | 'heartwood' | 'orrery';
+	noteGraphStyle: 'butterfly' | 'ledger' | 'heartwood' | 'orrery';
 
 	// Built-in features
 	enabledFeatures: {
@@ -4499,7 +4500,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	perNoteLinkQueries: true,
 	noteSummariesEnabled: false,
 	noteTitleSummaryEnabled: false,
-	noteGraphStyle: 'aster',
+	noteGraphStyle: 'butterfly',
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,
