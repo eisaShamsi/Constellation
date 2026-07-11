@@ -24,8 +24,8 @@ export type NoteGraphStyle = 'butterfly' | 'ledger' | 'heartwood' | 'orrery';
 export const NOTE_GRAPH_STYLES: { id: NoteGraphStyle; labelKey: string; label: string; built: boolean }[] = [
 	{ id: 'butterfly', labelKey: 'cockpit.lens.butterfly', label: 'The Butterfly (facing blooms)', built: true },
 	{ id: 'ledger', labelKey: 'cockpit.lens.ledger', label: 'The Ledger (balance sheet)', built: true },
+	{ id: 'orrery', labelKey: 'cockpit.lens.orrery', label: 'The Orrery (orbital sky)', built: true },
 	{ id: 'heartwood', labelKey: 'cockpit.lens.heartwood', label: 'Heartwood (living tree)', built: false },
-	{ id: 'orrery', labelKey: 'cockpit.lens.orrery', label: 'The Orrery (orbital sky)', built: false },
 ];
 
 /** Normalize a stored/loaded lens value: retired ('aster') or unknown values fall back to the

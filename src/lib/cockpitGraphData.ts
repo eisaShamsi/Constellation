@@ -68,7 +68,35 @@ export const CONF_COLOR: Record<string, string> = {
 
 export interface GLink {
 	name?: string; target?: string; path?: string; libraryName?: string;
-	linkType?: string; tier?: string; confidence?: string; annotation?: string; traversalCount?: number;
+	linkType?: string; tier?: string; confidence?: string; annotation?: string;
+	traversalCount?: number; lastTraversed?: string; weight?: number;
+}
+
+/** The Orrery's six recency orbits, inner (recent/warm) → outer (cold). A link with
+ *  traversalCount === 0 was NEVER actually walked (its lastTraversed is only its birth-seeded
+ *  timestamp), so it pins to the outermost NEVER shell regardless of age — the reliable
+ *  cold-by-definition sentinel. Otherwise the shell is the age of its last traversal. */
+export const RECENCY_SHELLS = [
+	{ key: 'today', maxDays: 1 }, { key: 'week', maxDays: 7 }, { key: 'month', maxDays: 30 },
+	{ key: 'quarter', maxDays: 90 }, { key: 'older', maxDays: Infinity }, { key: 'never', maxDays: -1 },
+] as const;
+export const NEVER_SHELL = 5;
+
+export function recencyShell(lk: GLink, nowMs: number): number {
+	if (!lk.traversalCount) return NEVER_SHELL;              // never actually walked → cold rim
+	const t = lk.lastTraversed ? Date.parse(lk.lastTraversed) : NaN;
+	if (!isFinite(t)) return NEVER_SHELL;
+	const days = (nowMs - t) / 86_400_000;
+	for (let i = 0; i < 5; i++) if (days <= RECENCY_SHELLS[i].maxDays) return i;
+	return 4;                                                // OLDER (>90d but genuinely walked)
+}
+
+/** Earned weight — logarithmic in traversals (the app's own growth curve). Falls back to the
+ *  lifecycle tier when a raw count is absent, so a load-bearing link always reads as heavy. */
+export function earnedWeight(lk: GLink): number {
+	if (typeof lk.weight === 'number' && lk.weight > 0) return lk.weight;
+	const c = lk.traversalCount ?? 0;
+	return c > 0 ? 1 + Math.log(1 + c) : 0.5 + tierW(lk.tier);
 }
 
 /** Keep a link's own type id — including a user's CUSTOM type, which used to collapse into

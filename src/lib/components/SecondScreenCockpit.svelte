@@ -22,6 +22,7 @@
 	import NoteRadialGraph from './NoteRadialGraph.svelte';
 	import NoteButterflyGraph from './NoteButterflyGraph.svelte';
 	import NoteLedgerGraph from './NoteLedgerGraph.svelte';
+	import NoteOrreryGraph from './NoteOrreryGraph.svelte';
 
 	interface Focus { path: string; name: string; libraryName: string; libraryPath: string; content?: string; }
 
@@ -191,6 +192,8 @@
 					<NoteButterflyGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{:else if lens === 'ledger'}
 					<NoteLedgerGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+				{:else if lens === 'orrery'}
+					<NoteOrreryGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{:else}
 					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 				{/if}

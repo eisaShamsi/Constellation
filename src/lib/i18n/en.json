@@ -2323,6 +2323,18 @@
       "orrery": "The Orrery (orbital sky)",
       "coming": "coming"
     },
+    "orrery": {
+      "clustered": "clustered links",
+      "weight": "weight",
+      "recency": {
+        "today": "walked today",
+        "week": "walked this week",
+        "month": "walked this month",
+        "quarter": "walked this quarter",
+        "older": "walked long ago",
+        "never": "never walked"
+      }
+    },
     "deck": {
       "development": "development",
       "content": "content",
