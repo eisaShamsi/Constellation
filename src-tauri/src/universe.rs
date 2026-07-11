@@ -118,7 +118,17 @@ pub(crate) fn atomic_write(path: &std::path::Path, contents: &[u8]) -> std::io::
         "{}.tmp",
         path.file_name().and_then(|n| n.to_str()).unwrap_or("state.json")
     ));
-    std::fs::write(&tmp, contents)?;
+    // MIG-100 / G6 hardening: fsync BEFORE the rename — otherwise power loss
+    // can land the rename while the data blocks are still unflushed, leaving
+    // a zero-length/garbage file under the FINAL name (the exact failure the
+    // temp+rename dance exists to prevent; write_gate.rs documents the same
+    // requirement for note writes).
+    {
+        use std::io::Write;
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(contents)?;
+        f.sync_all()?;
+    }
     match std::fs::rename(&tmp, path) {
         Ok(()) => Ok(()),
         Err(e) => {
@@ -1367,7 +1377,11 @@ pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value
 }
 
 /// Save settings.json to the active universe.
-#[tauri::command]
+// MIG-100 inspection fix (freeze class): (async) — these persisted-JSON saves
+// now fsync (hardened atomic_write); a sync command would park the WebView2
+// dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
+// disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+#[tauri::command(async)]
 pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
@@ -1407,12 +1421,100 @@ pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Val
 }
 
 /// Save workspaces.json to the active universe.
-#[tauri::command]
+// MIG-100 inspection fix (freeze class): (async) — these persisted-JSON saves
+// now fsync (hardened atomic_write); a sync command would park the WebView2
+// dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
+// disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+#[tauri::command(async)]
 pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&workspaces).map_err(|e| e.to_string())?;
     atomic_write(&dir.join("workspaces.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save workspaces: {}", e))
+}
+
+// ─── MIG-100 — Auto-session (session.json) ───
+//
+// The auto-restore-tabs snapshot. Deliberately a SEPARATE file from
+// workspaces.json: this one is machine-written every ~1s of tab churn and
+// disposable, while workspaces.json holds the user's named snapshots — a bug
+// in the high-frequency path must never be able to clobber the precious file.
+// Both commands take an EXPLICIT universe root instead of the ambient
+// active_constellation_dir: the active pointer flips BEFORE the frontend
+// switch handler runs (UniverseManager awaits set_active_universe first), so
+// an ambient-keyed save racing a universe switch would write universe A's
+// tabs into universe B's file.
+
+/// Track which universe roots have had their session rotated this process
+/// lifetime. `.prev` must be LAST LAUNCH's final state (the Firefox
+/// previous.jsonlz4 pattern) — rotating on every save would make it a ~1s
+/// stale sibling, propagating a bad snapshot into both generations within
+/// seconds. Keyed per root so a mid-session universe switch still rotates
+/// the other universe's file exactly once.
+fn session_rotate_once(dir: &Path) -> bool {
+    use std::collections::HashSet;
+    use std::sync::{Mutex, OnceLock};
+    static ROTATED: OnceLock<Mutex<HashSet<PathBuf>>> = OnceLock::new();
+    let set = ROTATED.get_or_init(|| Mutex::new(HashSet::new()));
+    let key = fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
+    let mut guard = set.lock().unwrap_or_else(|p| p.into_inner());
+    guard.insert(key)
+}
+
+/// Read the auto-session snapshot for an explicit universe root.
+/// Missing/corrupt current generation → try session.prev.json → null.
+/// Absence or corruption is NEVER an Err: a bad snapshot means "no session",
+/// not a boot failure. (A missing current with a live .prev is the
+/// crash-between-rotate-and-write window — .prev is the last good state.)
+// (async): file reads on a slow/remote disk must not park the WebView2
+// dispatch thread (same rationale as this file's other read commands).
+#[tauri::command(async)]
+pub fn read_universe_session(universe_root: String) -> Result<serde_json::Value, String> {
+    let dir = constellation_dir(Path::new(&universe_root));
+    for name in ["session.json", "session.prev.json"] {
+        if let Ok(data) = fs::read_to_string(dir.join(name)) {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
+                if !v.is_null() {
+                    return Ok(v);
+                }
+            }
+        }
+    }
+    Ok(serde_json::Value::Null)
+}
+
+/// Save (or delete) the auto-session snapshot for an explicit universe root.
+/// `session: null` deletes BOTH generations — the toggle-off "stop
+/// remembering" primitive. First save per launch rotates current → .prev.
+// MIG-100 inspection fix (freeze class): (async) — these persisted-JSON saves
+// now fsync (hardened atomic_write); a sync command would park the WebView2
+// dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
+// disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+#[tauri::command(async)]
+pub fn save_universe_session(universe_root: String, session: serde_json::Value) -> Result<(), String> {
+    let dir = constellation_dir(Path::new(&universe_root));
+    let current = dir.join("session.json");
+    if session.is_null() {
+        // Toggle-off "stop remembering": a deletion that FAILS must say so —
+        // returning Ok while the tab list survives on disk would be a false
+        // success (the frontend reverts the toggle on Err). Missing = fine.
+        for name in ["session.json", "session.prev.json"] {
+            match fs::remove_file(dir.join(name)) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => return Err(format!("Failed to delete {}: {}", name, e)),
+            }
+        }
+        return Ok(());
+    }
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create .constellation: {}", e))?;
+    if session_rotate_once(&dir) && current.exists() {
+        // Best-effort: a failed rotation must not block the save — atomic_write
+        // below still protects the current generation.
+        let _ = fs::rename(&current, dir.join("session.prev.json"));
+    }
+    let json = serde_json::to_string(&session).map_err(|e| e.to_string())?;
+    atomic_write(&current, json.as_bytes()).map_err(|e| format!("Failed to save session: {}", e))
 }
 
 /// MIG-092 §1 — read collections.json from the active universe (Collections'
@@ -1463,7 +1565,11 @@ pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Va
 }
 
 /// MIG-092 §1 — save collections.json to the active universe.
-#[tauri::command]
+// MIG-100 inspection fix (freeze class): (async) — these persisted-JSON saves
+// now fsync (hardened atomic_write); a sync command would park the WebView2
+// dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
+// disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+#[tauri::command(async)]
 pub fn save_universe_collections(app: tauri::AppHandle, collections: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&collections).map_err(|e| e.to_string())?;
@@ -1486,7 +1592,11 @@ pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json:
 }
 
 /// Save property-types.json to the active universe.
-#[tauri::command]
+// MIG-100 inspection fix (freeze class): (async) — these persisted-JSON saves
+// now fsync (hardened atomic_write); a sync command would park the WebView2
+// dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
+// disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+#[tauri::command(async)]
 pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Value) -> Result<(), String> {
     let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&types).map_err(|e| e.to_string())?;
@@ -1699,6 +1809,89 @@ mod tests {
             .iter()
             .map(|p| fs::canonicalize(p).unwrap_or_else(|_| p.clone()))
             .collect()
+    }
+
+    // ─── MIG-100 §1 — auto-session IPC pair ───
+
+    fn session_of(root: &Path) -> serde_json::Value {
+        read_universe_session(root.to_string_lossy().to_string()).unwrap()
+    }
+
+    fn save_session(root: &Path, v: serde_json::Value) {
+        save_universe_session(root.to_string_lossy().to_string(), v).unwrap();
+    }
+
+    #[test]
+    fn session_missing_file_is_null_never_err() {
+        let tmp = TempDir::new().unwrap();
+        assert!(session_of(tmp.path()).is_null());
+    }
+
+    #[test]
+    fn session_round_trip() {
+        let tmp = TempDir::new().unwrap();
+        let snap = serde_json::json!({"version": 1, "tabs": [{"path": "a.md"}]});
+        save_session(tmp.path(), snap.clone());
+        assert_eq!(session_of(tmp.path()), snap);
+    }
+
+    #[test]
+    fn session_corrupt_current_falls_back_to_prev() {
+        let tmp = TempDir::new().unwrap();
+        let cdir = constellation_dir(tmp.path());
+        fs::create_dir_all(&cdir).unwrap();
+        let prev = serde_json::json!({"version": 1, "tabs": [{"path": "prev.md"}]});
+        fs::write(cdir.join("session.prev.json"), serde_json::to_string(&prev).unwrap()).unwrap();
+        fs::write(cdir.join("session.json"), "{ not json").unwrap();
+        assert_eq!(session_of(tmp.path()), prev);
+        // Both generations corrupt → null, never an Err.
+        fs::write(cdir.join("session.prev.json"), "also { not json").unwrap();
+        assert!(session_of(tmp.path()).is_null());
+    }
+
+    #[test]
+    fn session_rotates_once_per_launch() {
+        let tmp = TempDir::new().unwrap();
+        let cdir = constellation_dir(tmp.path());
+        fs::create_dir_all(&cdir).unwrap();
+        // Simulate LAST launch's final state already on disk.
+        let last_launch = serde_json::json!({"version": 1, "tabs": [{"path": "last-launch.md"}]});
+        fs::write(cdir.join("session.json"), serde_json::to_string(&last_launch).unwrap()).unwrap();
+        // First save of THIS launch rotates it into .prev …
+        let v2 = serde_json::json!({"version": 1, "tabs": [{"path": "v2.md"}]});
+        save_session(tmp.path(), v2.clone());
+        // … later saves do NOT rotate again: .prev stays last-launch, not ~1s stale.
+        let v3 = serde_json::json!({"version": 1, "tabs": [{"path": "v3.md"}]});
+        save_session(tmp.path(), v3.clone());
+        assert_eq!(session_of(tmp.path()), v3);
+        let prev: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(cdir.join("session.prev.json")).unwrap()).unwrap();
+        assert_eq!(prev, last_launch);
+    }
+
+    #[test]
+    fn session_two_roots_stay_isolated() {
+        let tmp_a = TempDir::new().unwrap();
+        let tmp_b = TempDir::new().unwrap();
+        let a = serde_json::json!({"version": 1, "tabs": [{"path": "a.md"}]});
+        let b = serde_json::json!({"version": 1, "tabs": [{"path": "b.md"}]});
+        save_session(tmp_a.path(), a.clone());
+        save_session(tmp_b.path(), b.clone());
+        assert_eq!(session_of(tmp_a.path()), a);
+        assert_eq!(session_of(tmp_b.path()), b);
+    }
+
+    #[test]
+    fn session_null_deletes_both_generations() {
+        let tmp = TempDir::new().unwrap();
+        let cdir = constellation_dir(tmp.path());
+        fs::create_dir_all(&cdir).unwrap();
+        fs::write(cdir.join("session.json"), "{\"version\":1}").unwrap();
+        fs::write(cdir.join("session.prev.json"), "{\"version\":1}").unwrap();
+        save_session(tmp.path(), serde_json::Value::Null);
+        assert!(!cdir.join("session.json").exists());
+        assert!(!cdir.join("session.prev.json").exists());
+        assert!(session_of(tmp.path()).is_null());
     }
 
     // MIG-062 §B — recursive enumeration covers the whole federation tree.

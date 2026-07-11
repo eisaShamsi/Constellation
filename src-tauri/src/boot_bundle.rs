@@ -32,6 +32,10 @@ pub struct BootBundle {
     pub libraries: Vec<LibraryInfo>,
     pub settings: serde_json::Value,
     pub workspaces: serde_json::Value,
+    /// MIG-100 — the auto-session snapshot (`.constellation/session.json`),
+    /// or null when none exists. Delivered in the bundle so the boot-time
+    /// tab restore costs zero extra IPC round-trips.
+    pub session: serde_json::Value,
     pub property_types: serde_json::Value,
     /// MIG-067 §C — the resolved Link-Type Registry (8 seeds + custom, ordered +
     /// nested) so the frontend `linkTypeRegistry` seeds without a separate IPC.
@@ -94,6 +98,18 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         crate::universe::read_universe_workspaces(app.clone())
             .unwrap_or(serde_json::Value::Array(vec![]))
     );
+    // MIG-100 — the auto-session snapshot. The root is resolved HERE and
+    // passed explicitly (the session IPCs never key off the ambient active
+    // pointer — see universe.rs). No-active-universe or a bad file both
+    // degrade to null = "no session", never a bundle failure.
+    let session = time_step!(
+        "read_universe_session",
+        crate::universe::active_universe_dir(&app)
+            .and_then(|root| crate::universe::read_universe_session(
+                root.to_string_lossy().to_string()
+            ))
+            .unwrap_or(serde_json::Value::Null)
+    );
     let property_types = time_step!(
         "read_universe_property_types",
         crate::universe::read_universe_property_types(app.clone())
@@ -135,6 +151,7 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         libraries,
         settings,
         workspaces,
+        session,
         property_types,
         link_types,
         workspace_bases,
