@@ -18,24 +18,32 @@
 	 * rim-labelled). Within each (shell × type) CELL the bodies are placed by pure DETERMINISTIC EVEN
 	 * ANGULAR DIVISION (name-sorted, zero jitter) — position is a function of the data alone.
 	 *
-	 * REMARK 1 (Boss, zoom-out) — DISPLAY ALL NODES: the central sun and its inner dead-zone are
-	 * SMALL so the orbits get far more radial budget and 'today' sits close to the centre; the node
-	 * dots are sized from the tightest (shell × type) cell THAT CAN STILL FIT — its arc-length ÷ its
-	 * node count — with a couple-px floor, so the common case draws EVERY node at even spacing rather
-	 * than a '+N' cluster, and a single pathological over-dense cell no longer flattens the dots of
-	 * every sparse wing beside it (it clusters on its own). Clustering survives ONLY as a genuine last
-	 * resort for a cell that cannot fit all its nodes even at the minimum dot size; nothing is dropped.
+	 * REMARK 1 (Boss, "zoom out" = the HOVER effect, NOT the resting field): at REST the view stays
+	 * COMPACT and count-proportional — node dots are drawn at their NORMAL, readable size (a small sun
+	 * + small inner dead-zone give the orbits their radial budget) and an over-dense (shell × type)
+	 * cell may still tier its lightest excess into ONE counted '+N' cluster (nothing is ever dropped —
+	 * the cluster fans on hover/click). The compact base is intentional; "show every node" is the
+	 * HOVER-EXPAND effect below, not the resting field.
 	 *
 	 * REMARK 2 (Boss) — TOP LABEL DE-COLLISION: the six recency ring labels own the 12-o'clock spoke.
 	 * Any wing '+N' cluster count or rim type-label that would land on that spoke is pushed clear —
 	 * horizontally to the nearer side, and if a narrow pane would clamp it back onto the lane, radially
 	 * out of the lane's band — so every recency label and every count stays readable at any width.
 	 *
-	 * HOVER-EXPAND: hovering a crowded wing (its background OR any of its bodies/clusters) GROWS that
-	 * wing's angular width until its cells dissolve any '+N' cluster and every node is visible at
-	 * legible spacing, while the OTHER wings shrink to a floor. On mouse-leave it snaps back to the
-	 * count-proportional layout. Instant snap (no per-frame work): the layout recomputes only when the
-	 * hovered wing actually changes.
+	 * HOVER-EXPAND (Boss remarks — "take advantage of the available space" + "enlarge the nodes"):
+	 * hovering a wing (its background OR any of its bodies/clusters) turns it into a real zoom-in.
+	 * (a) Its node dots grow to an ENLARGED size, clearly bigger than the resting dots — sized in ONE
+	 *     uniform band across the whole wing so relative weight ORDER is preserved wing-wide (a heavy
+	 *     node is never smaller than a lighter one, even across cells).
+	 * (b) Its ANGULAR width grows AS FAR AS NEEDED — up to ~0.92·2π — so its fullest (shell × type)
+	 *     cell seats EVERY node at that enlarged size with even spacing and NO '+N' cluster, while the
+	 *     OTHER wings collapse to thin (still hittable) slivers floored > 0. If even at the 0.92 cap the
+	 *     fullest cell cannot seat the enlarged dot, the wing's uniform radius steps DOWN together until
+	 *     all nodes fit with no overlap — so "every node shown on hover" holds even for the worst case
+	 *     (~371 in one cell). A SINGLE-type note (T === 1) already fills the circle, so its width can't
+	 *     grow — but hovering it still enlarges its dots and dissolves its '+N' clusters.
+	 * On mouse-leave the layout snaps back to the compact resting state. The geometry recomputes only
+	 * when the hovered wing actually changes (no per-frame work).
 	 *
 	 * ENCODINGS (honesty ledger): direction = solid disc (outgoing) vs hollow ring (backlink);
 	 * size = earnedWeight; halo = confidence, drawn purely as ring STYLE (hypothesis dotted /
@@ -147,7 +155,6 @@
 		const cx = Math.round(W / 2), cy = Math.round(H / 2);
 		const now = Date.now();
 		const TAU = 2 * Math.PI;
-		const MIN_SLOT = 11;   // px of orbit arc the hover-expand aims to give each node (comfort target)
 		const nk = noteKey;
 		const hw = (hoverWing && hoverWing.key === nk) ? hoverWing.wing : null;
 
@@ -189,24 +196,36 @@
 			arr[r.shell]++;
 		}
 
-		// ── radial frame — Remark 1a: a SMALL sun with a small inner dead-zone so the orbits get far
-		//    more radial budget and 'today' sits close to the centre; Remark 1c: a modest outer margin
-		//    (rim reserve sized to the LONGEST localized label) so long locales never clip and the
-		//    rim/count labels have room. ────────────────────────────────────────────────────────────
+		// ── radial frame — a SMALL sun with a small inner dead-zone so the orbits get far more radial
+		//    budget and 'today' sits close to the centre; a modest outer margin (rim reserve sized to
+		//    the LONGEST localized label) so long locales never clip and the rim/count labels have room.
+		//    Router reserves the ENLARGED dot ceiling so an enlarged outer-shell dot never clips the rim.
 		const maxLabelPx = T ? Math.max(...present.map((tp) => estW(relLabelIn($locale, tp) + ' · ' + countByType[tp]))) : 0;
 		const rimReserve = clamp(26 + 0.7 * maxLabelPx, 48, Math.max(48, Math.min(cx, cy) * 0.5));
 		const Rmax = Math.max(40, Math.min(cx, cy) - rimReserve);
-		const Rsun = clamp(Math.min(W, H) * 0.035, 9, 18);             // Remark 1a: smaller central sun
-		const gap = clamp(Rsun * 0.5, 4, 10);                          // smaller inner dead-zone
+		const Rsun = clamp(Math.min(W, H) * 0.035, 9, 18);             // small central sun (kept)
+		const gap = clamp(Rsun * 0.5, 4, 10);                          // small inner dead-zone (kept)
 		const R0 = Math.min(Rsun + gap + 4, Rmax - 8);                 // innermost orbit (today) close to centre
-		const BODY_MAX = clamp(Rmax * 0.05, 4.5, 8);                   // absolute dot ceiling (trimmed — zoomed out)
-		const DOT_FLOOR = 2.25;                                        // Remark 1b: a couple-px radius floor, never 0
-		const Router = Math.max(R0 + 8, Rmax - (BODY_MAX + 3));        // inset so outer bodies clear the rim
+		const BODY_MAX = clamp(Rmax * 0.055, 5, 9);                    // RESTING dot ceiling — normal, readable (v2 sizing)
+		const ENL_MAX = clamp(Rmax * 0.11, 9, 16);                     // ENLARGED dot ceiling for the HOVERED wing (always > BODY_MAX)
+		const Router = Math.max(R0 + 8, Rmax - (ENL_MAX + 3));         // reserve so an enlarged outer dot clears the rim
 		const orbitR: number[] = [];
 		for (let s = 0; s < 6; s++) orbitR.push(R0 + (Router - R0) * (s / 5)); // equal radial budget per band, recent inside
 
 		const EMPTY = { cx, cy, Rsun, Rmax, orbitR, title, ringMode: 'none' as string, ringLabels: [] as any[], ringLegend: [] as any[], legendBox: null as any, sectors: [] as any[], cells: [] as any[], navTargets: [] as any[] };
 		if (!T) return EMPTY;
+
+		// ── dot sizing — RESTING wings use the NORMAL ceiling (over-dense cells cluster in PASS B); the
+		//    HOVERED wing uses ONE uniform ENLARGED radius across all its cells so weight ORDER is
+		//    preserved wing-wide (finding: cross-cell inversion). Both are bounded so nothing overlaps. ─
+		const gmaxW = Math.max(1, ...recs.map((r) => r.w));
+		const restMax = BODY_MAX;
+		const restMin = clamp(restMax * 0.5, 2, 3);                    // floor keeps the hollow-ring hole legible
+		const enlMax = ENL_MAX;
+		const enlMin = clamp(enlMax * 0.5, 3, 6);
+		const bandR = (w: number, mn: number, mx: number, maxW: number) =>
+			clamp(mn + (mx - mn) * Math.sqrt(w / Math.max(1e-6, maxW)), mn, mx);
+		const slotMin = 2 * restMax * 1.08;                           // arc a resting body needs → clustering budget
 
 		// ── Remark 2: the six recency time labels, tied to their ring lines. They ride the top label
 		//    spoke, DE-COLLIDED so they never pile into an illegible stack on a small pane; when the pane
@@ -286,26 +305,36 @@
 		const minFrac = Math.min(0.05, 0.72 / T);                      // floor per wing (≤ 0.72 total, so proportional pool > 0)
 		const propFrac = present.map((tp) => minFrac + (1 - T * minFrac) * (countByType[tp] / totalCount));
 
-		// ── hover-expand: a hovered CROWDED wing expands to show all its nodes; the others shrink. Give
-		//    it the span its fullest cell needs (n · MIN_SLOT of arc), then re-proportion the rest. ──
+		// ── HOVER-EXPAND (Boss remarks). The hovered wing ALWAYS becomes a zoom-in — its dots enlarge and
+		//    its cells never cluster (findings: every hovered wing must respond; T === 1 must still
+		//    enlarge/decluster). STEP B (T > 1 only): grow the wing's ANGULAR width so its fullest cell
+		//    seats every node at the enlarged dot with even spacing — per-node arc = enlMax/0.46 + gap
+		//    (matched to the arc-fit below) — clamped to [proportional, 0.92]; the OTHER wings share the
+		//    remaining angle, floored > 0. A single-type note already fills the circle, so its width
+		//    can't grow, but expandType is still set → its dots enlarge and its clusters dissolve. The
+		//    actual enlarged RADIUS is derived per-wing after the sectors are laid out (see wingCap). ────
+		const NODE_GAP = 2;                                            // px breathing room between two enlarged dots
+		const perNode = (dot: number) => dot / 0.46 + NODE_GAP;       // arc a radius-`dot` body needs (matches arc-fit)
 		let fracs = propFrac;
 		let expandType: string | null = null;
-		if (hw && present.includes(hw) && T > 1) {
+		if (hw && present.includes(hw)) {
 			const k = present.indexOf(hw);
-			const shells = countByTypeShell[hw] || [];
-			let needSpan = 0;
-			for (let s = 0; s < 6; s++) {
-				const n = shells[s] || 0;
-				if (n > 0) needSpan = Math.max(needSpan, (n * MIN_SLOT) / Math.max(1, orbitR[s]));
-			}
-			const needFrac = clamp((needSpan * 1.12 + 0.06) / TAU, propFrac[k], 0.78);
-			if (needFrac > propFrac[k] + 0.005) {
-				expandType = hw;
-				const rest = 1 - needFrac;
-				const otherCount = Math.max(1, totalCount - countByType[hw]);
-				const minO = Math.min(0.03, (rest * 0.6) / Math.max(1, T - 1));
-				fracs = present.map((tp, i) =>
-					i === k ? needFrac : minO + (rest - (T - 1) * minO) * (countByType[tp] / otherCount));
+			expandType = hw;                                          // hovered wing always zooms + declusters
+			if (T > 1) {
+				const shells = countByTypeShell[hw] || [];
+				let needFrac = propFrac[k];
+				for (let s = 0; s < 6; s++) {
+					const n = shells[s] || 0;
+					if (n > 0) needFrac = Math.max(needFrac, (n * perNode(enlMax)) / (Math.max(1, orbitR[s]) * TAU));
+				}
+				needFrac = clamp(needFrac * 1.14 + 0.03, propFrac[k], 0.92);   // + wedge pad / inter-sector gap headroom
+				if (needFrac > propFrac[k] + 0.004) {
+					const rest = 1 - needFrac;
+					const otherCount = Math.max(1, totalCount - countByType[hw]);
+					const minO = Math.min(0.03, (rest * 0.6) / Math.max(1, T - 1));
+					fracs = present.map((tp, i) =>
+						i === k ? needFrac : minO + (rest - (T - 1) * minO) * (countByType[tp] / otherCount));
+				}
 			}
 		}
 
@@ -362,12 +391,8 @@
 			};
 		});
 
-		// ── PASS A — Remark 1b: gather every (type × shell) cell's arc-length and node count, and derive
-		//    ONE global dot radius. It is the min over only the cells that CAN fit all their nodes at the
-		//    floor (0.46·arc/n ≥ DOT_FLOOR): a genuinely-overflowing cell no longer drags the global dot
-		//    size down, so sparse wings keep larger, weight-legible dots while that one cell clusters. ──
+		// ── PASS A — gather every (type × shell) cell's arc-length + node count for placement. ───────────
 		const cellSpecs: any[] = [];
-		let reqR = BODY_MAX;
 		for (const sec of sectors) {
 			for (let s = 0; s < 6; s++) {
 				const links = recs.filter((r) => r.type === sec.type && r.shell === s);
@@ -376,29 +401,37 @@
 				const pad = clamp(0.05 * (sec.hi - sec.lo), 0.01, 0.09);
 				const usable = Math.max(0.02, (sec.hi - sec.lo) - 2 * pad);
 				const arc = Math.max(1, r_s * usable);
-				const rFit = 0.46 * (arc / Math.max(1, links.length));   // radius each node can be to fit all n
-				if (rFit >= DOT_FLOOR && rFit < reqR) reqR = rFit;       // only fitting cells constrain the ceiling
 				cellSpecs.push({ sec, s, links, r_s, pad, usable, arc });
 			}
 		}
 
-		const gmaxW = Math.max(1, ...recs.map((r) => r.w));
-		const bodyMaxEff = clamp(reqR, DOT_FLOOR, BODY_MAX);           // global dot ceiling from the tightest FITTING cell
-		const bodyMinEff = Math.min(bodyMaxEff, clamp(bodyMaxEff * 0.5, 2, 3)); // floor 2 keeps the hollow-ring hole legible
-		const bodyR = (w: number) => clamp(bodyMinEff + (bodyMaxEff - bodyMinEff) * Math.sqrt(w / gmaxW), bodyMinEff, bodyMaxEff);
-		const slotMin = 2 * bodyMaxEff * 1.08;                        // arc a body needs; budget = arc / slotMin
+		// ── the ONE uniform enlarged radius for the hovered wing: the min per-cell arc-fit across all its
+		//    (non-empty) cells — every cell can seat its nodes at this radius with even spacing, and it
+		//    steps DOWN from enlMax only when the widest cell can't reach it even at the 0.92 width cap.
+		//    Applying it uniformly keeps a heavier node from ever rendering smaller than a lighter one
+		//    across cells (weight ORDER preserved wing-wide). ──────────────────────────────────────────
+		let wingCap = enlMax;
+		let wingMaxW = 1;
+		if (expandType) {
+			wingMaxW = Math.max(1, ...recs.filter((r) => r.type === expandType).map((r) => r.w));
+			for (const cs of cellSpecs) {
+				if (cs.sec.type !== expandType) continue;
+				wingCap = Math.min(wingCap, 0.46 * (cs.arc / Math.max(1, cs.links.length)));
+			}
+			wingCap = clamp(wingCap, 0.6, enlMax);
+		}
+		const wingMin = Math.min(wingCap, enlMin);
 
-		// crowded cells shrink their bodies (radius ≤ ~0.46× the slot arc) so they never overlap and stay
-		// individually hoverable — this also bounds the mustKeep-overflow case.
-		const mkBody = (r: any, x: number, y: number, s: number, capR: number) => ({
+		const mkBody = (r: any, x: number, y: number, s: number, radius: number) => ({
 			name: r.name, path: r.path, lib: r.lib, dir: r.dir, type: r.type, conf: r.conf,
 			tier: r.tier, w: r.w, shell: s, alarm: r.alarm, never: s === NEVER_SHELL,
-			x: r2(x), y: r2(y), rB: r2(Math.min(bodyR(r.w), capR)), halo: confHalo(r.conf),
+			x: r2(x), y: r2(y), rB: r2(radius), halo: confHalo(r.conf),
 		});
 
-		// ── PASS B — place bodies by even angular division. With the global dot size, when a cell fits at
-		//    the floor its budget ≥ its count → NO cluster (Remark 1: '+N' almost never appears). Only a
-		//    cell that cannot fit its nodes even at the floor overflows into ONE counted cluster. ─────────
+		// ── PASS B — place bodies by even angular division. RESTING wing: a cell over its slot budget
+		//    keeps a counted '+N' cluster (nothing dropped — fans on hover/click) and its dots are sized
+		//    per-cell up to restMax. HOVERED wing: budget = every node → NEVER clusters; all its dots
+		//    share the uniform enlarged radius band [wingMin, wingCap], which fits every cell. ───────────
 		const cells: any[] = [];
 		const navTargets: any[] = [];
 		const byName = (a: any, b: any) => a.name.localeCompare(b.name);
@@ -406,8 +439,10 @@
 		for (const cs of cellSpecs) {
 			const { sec, s, links, r_s, pad, usable, arc } = cs;
 			const lo = sec.lo, hi = sec.hi;
+			const expanded = sec.type === expandType;
 			const sorted = links.slice().sort(byName);
-			const budget = Math.max(1, Math.floor(arc / slotMin));
+			// the hovered wing shows EVERY node (no cluster); a resting wing clusters an over-dense cell.
+			const budget = expanded ? sorted.length : Math.max(1, Math.floor(arc / slotMin));
 
 			let individual: any[] = sorted, clustered: any[] = [];
 			if (sorted.length > budget) {
@@ -435,13 +470,18 @@
 			const hasCluster = clustered.length > 0;
 			const slots = individual.length + (hasCluster ? 1 : 0);
 			const slotArc = arc / Math.max(1, slots);
-			const cellCap = clamp(0.46 * slotArc, 1.4, bodyMaxEff);
+			// resting per-cell arc-fit — floor low enough to shrink to fit rather than overlap on a
+			// narrow pane (finding: hard 1.4 floor caused overlap); the hovered wing uses wingCap instead.
+			const restCap = Math.min(restMax, Math.max(0.6, 0.46 * slotArc));
 			const ci = cells.length;
 
 			const bodies = individual.map((r, k) => {
 				const th = lo + pad + ((k + 0.5) / slots) * usable;
 				const [x, y] = pt(r_s, th);
-				return mkBody(r, x, y, s, cellCap);
+				const radius = expanded
+					? bandR(r.w, wingMin, wingCap, wingMaxW)             // uniform enlarged band → weight order preserved
+					: Math.min(bandR(r.w, restMin, restMax, gmaxW), restCap);
+				return mkBody(r, x, y, s, radius);
 			});
 
 			let cluster: any = null;
@@ -459,12 +499,12 @@
 				let stepA = 14 / rFan;
 				if ((M - 1) * stepA > 1.7) stepA = 1.7 / Math.max(1, M - 1);
 				const startA = th - ((M - 1) * stepA) / 2;
-				const fanCap = clamp(0.46 * rFan * stepA, 1.4, bodyMaxEff);
+				const fanCap = Math.min(restMax, Math.max(0.6, 0.46 * rFan * stepA));
 				const members = clustered.slice().sort(byName).map((r, m) => {
 					const [mx, my] = pt(rFan, startA + m * stepA);
 					const cxp = clamp(mx + dx, 6, Math.max(6, W - 6));
 					const cyp = clamp(my + dy, 6, Math.max(6, H - 6));
-					return mkBody(r, cxp, cyp, s, fanCap);
+					return mkBody(r, cxp, cyp, s, Math.min(bandR(r.w, restMin, restMax, gmaxW), fanCap));
 				});
 				cluster = { n: M, gx: r2(gx), gy: r2(gy), r: r2(glyphR), members };
 			}
