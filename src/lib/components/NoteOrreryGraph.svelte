@@ -96,7 +96,7 @@
 	};
 	function shellLabel(s: number): string {
 		const key = RECENCY_SHELLS[s]?.key ?? 'older';
-		return L('cockpit.orrery.recency.' + key, SHELL_FB[key] ?? key);
+		return L('cockpit.orrery.recency.' + key + '.long', SHELL_FB[key] ?? key);
 	}
 	// Concise ring labels — the six time bands drawn ON the chart, tied to their rings.
 	const RING_FB: Record<string, string> = {

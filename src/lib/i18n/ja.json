@@ -3879,6 +3879,18 @@
       "orrery": "太陽系儀（周回する空）",
       "coming": "近日"
     },
+    "orrery": {
+      "clustered": "まとめられたリンク",
+      "weight": "重み",
+      "recency": {
+        "today": { "long": "今日辿った", "short": "今日" },
+        "week": { "long": "今週辿った", "short": "今週" },
+        "month": { "long": "今月辿った", "short": "今月" },
+        "quarter": { "long": "今四半期に辿った", "short": "今四半期" },
+        "older": { "long": "ずっと前に辿った", "short": "それ以前" },
+        "never": { "long": "一度も辿っていない", "short": "未通過" }
+      }
+    },
     "deck": {
       "development": "発達",
       "content": "内容",

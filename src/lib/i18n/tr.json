@@ -3906,6 +3906,18 @@
       "orrery": "Gezegen modeli (yörünge göğü)",
       "coming": "yakında"
     },
+    "orrery": {
+      "clustered": "kümelenmiş bağlantılar",
+      "weight": "Ağırlık",
+      "recency": {
+        "today": { "long": "bugün geçildi", "short": "Bugün" },
+        "week": { "long": "bu hafta geçildi", "short": "Bu hafta" },
+        "month": { "long": "bu ay geçildi", "short": "Bu ay" },
+        "quarter": { "long": "bu çeyrek geçildi", "short": "Bu çeyrek" },
+        "older": { "long": "uzun süre önce geçildi", "short": "Daha eski" },
+        "never": { "long": "hiç geçilmedi", "short": "Hiç geçilmedi" }
+      }
+    },
     "deck": {
       "development": "gelişim",
       "content": "içerik",

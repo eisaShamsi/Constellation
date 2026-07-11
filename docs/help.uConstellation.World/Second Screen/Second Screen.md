@@ -6,7 +6,7 @@ aliases:
   - Multi-window
   - Companion window
   - Dashboard
-description: Use Constellation's Second Screen as a mode-based companion — a read-only Knowledge Cockpit while you edit (the note's links as The Butterfly or The Ledger, plus a deck of gauges), or a Universe Dashboard, Navigator, Sky View, or Map companion depending on the active sidebar. Requires two or more connected monitors.
+description: Use Constellation's Second Screen as a mode-based companion — a read-only Knowledge Cockpit while you edit (the note's links as The Butterfly, The Ledger, or The Orrery, plus a deck of gauges), or a Universe Dashboard, Navigator, Sky View, or Map companion depending on the active sidebar. Requires two or more connected monitors.
 ---
 
 # Second Screen
@@ -273,6 +273,7 @@ Pick the lens with the toggle at the right-hand end of the tab row. Your choice 
 
 - **The Butterfly** (default) — two facing wings. Each wedge is one kind of relationship; the biggest one points straight out along the wing, the smaller ones fan above and below it, so the wings sit level and mirror each other. Inside a wedge, **every individual link is its own stem** running out to the wedge's rim, ending in a small bead. A stronger, more-travelled link gets a **bigger bead** and a slightly darker stem. Each wedge names itself down the edge of the screen — `part-of · 394` — so nothing overlaps.
 - **The Ledger** — the same links as a balance sheet. A rail runs down the middle, one row per kind of relationship, identical on both sides. Backlink bars grow left, outgoing bars grow right, measured against a shared scale, so you can see at a glance whether a note is held up by what points at it or by what it points to. **Click any bar** to open the list of its individual links.
+- **The Orrery** — the note as a solar system, showing TIME. Your note is the sun; its links orbit it on six rings from **today** (close, warm) out to **never walked** (the cold rim), so a link's distance shows how recently you last followed it. Which direction it sits shows its relationship type, and each wing's width shows how many links of that type there are. Solid dots point out, hollow rings point in; a bigger dot is a more load-bearing link. The one thing to watch for: a **big dot pulsing amber out on a cold ring** — a link your thinking rests on that you've stopped walking. **Hover a wing** and it zooms open to show every one of its links, larger; move away and it settles back.
 
 In both lenses: **hover** a link to see its name, and **click** it to open that note **in the main window**. The cockpit itself never changes what you're editing.
 

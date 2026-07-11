@@ -3906,6 +3906,18 @@
       "orrery": "Die Planetenmaschine (Planetenbahnen)",
       "coming": "bald"
     },
+    "orrery": {
+      "clustered": "Gebündelte Verknüpfungen",
+      "weight": "Gewicht",
+      "recency": {
+        "today": { "long": "Heute begangen", "short": "Heute" },
+        "week": { "long": "Diese Woche begangen", "short": "Diese Woche" },
+        "month": { "long": "Diesen Monat begangen", "short": "Dieser Monat" },
+        "quarter": { "long": "Dieses Quartal begangen", "short": "Dieses Quartal" },
+        "older": { "long": "Vor langer Zeit begangen", "short": "Älter" },
+        "never": { "long": "Nie begangen", "short": "Nie" }
+      }
+    },
     "deck": {
       "development": "Entwicklung",
       "content": "Inhalt",

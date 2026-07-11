@@ -3906,6 +3906,18 @@
       "orrery": "El Planetario (cielo orbital)",
       "coming": "próximamente"
     },
+    "orrery": {
+      "clustered": "Enlaces agrupados",
+      "weight": "Peso",
+      "recency": {
+        "today": { "long": "Transitado hoy", "short": "Hoy" },
+        "week": { "long": "Transitado esta semana", "short": "Esta semana" },
+        "month": { "long": "Transitado este mes", "short": "Este mes" },
+        "quarter": { "long": "Transitado este trimestre", "short": "Este trimestre" },
+        "older": { "long": "Transitado hace mucho", "short": "Más antiguo" },
+        "never": { "long": "Nunca transitado", "short": "Nunca" }
+      }
+    },
     "deck": {
       "development": "desarrollo",
       "content": "contenido",

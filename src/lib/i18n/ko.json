@@ -3879,6 +3879,18 @@
       "orrery": "태양계 모형 (궤도의 하늘)",
       "coming": "준비 중"
     },
+    "orrery": {
+      "clustered": "묶인 링크",
+      "weight": "가중치",
+      "recency": {
+        "today": { "long": "오늘 따라감", "short": "오늘" },
+        "week": { "long": "이번 주에 따라감", "short": "이번 주" },
+        "month": { "long": "이번 달에 따라감", "short": "이번 달" },
+        "quarter": { "long": "이번 분기에 따라감", "short": "이번 분기" },
+        "older": { "long": "오래전에 따라감", "short": "이전" },
+        "never": { "long": "따라간 적 없음", "short": "미방문" }
+      }
+    },
     "deck": {
       "development": "발전",
       "content": "내용",
