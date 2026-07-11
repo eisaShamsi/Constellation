@@ -4,7 +4,7 @@
 
 ---
 
-> Read `docs/Constellation Orientation & Onboarding v3.36.md` first (highest version — the cockpit three-lens set, the registry-base palette unification, and the RTL/Arabic-plural fixes are in its "What changed in v3.36" preamble). Then `git pull origin main` and skim `git log --oneline -8`.
+> Read `docs/Constellation Orientation & Onboarding v3.36.md` first (highest version — the cockpit three-lens set, the registry-base palette unification, and the RTL/Arabic-plural fixes are in its "What changed in v3.36" preamble), then the handover `lab/reports/HANDOVER-2026-07-11-cockpit-lenses-complete.md`. Then `git pull origin main` and skim `git log --oneline -8`.
 >
 > **State:** the second-screen **Knowledge Cockpit** is complete and Boss-validated — a read-only contextual view with **three note-graph lenses on one chassis**: **Butterfly** (composition — in/out + type mix), **Ledger** (magnitude — exact counts), **Orrery** (time — alive vs cold + the going-cold alarm). One palette shared with the whole app (Link Types registry base + a Style-Setter "Note graph → Relationship colours" override). Localized in all 15 languages including RTL. The Aster and Heartwood were cut. Latest binary rebuilt 2026-07-11.
 >
