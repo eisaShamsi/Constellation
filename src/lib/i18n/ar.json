@@ -3895,14 +3895,14 @@
       "one": "حرف واحد",
       "two": "حرفان",
       "few": "{count} أحرف",
-      "many": "{count} حرفًا",
+      "many": "{count} حرف",
       "other": "{count} حرف"
     },
     "links": {
       "one": "رابط واحد",
       "two": "رابطان",
       "few": "{count} روابط",
-      "many": "{count} رابطًا",
+      "many": "{count} رابط",
       "other": "{count} رابط"
     },
     "nodes": {
@@ -3930,35 +3930,35 @@
       "one": "مصطلح واحد",
       "two": "مصطلحان",
       "few": "{count} مصطلحات",
-      "many": "{count} مصطلحًا",
+      "many": "{count} مصطلح",
       "other": "{count} مصطلح"
     },
     "tabs": {
       "one": "تبويب واحد",
       "two": "تبويبان",
       "few": "{count} تبويبات",
-      "many": "{count} تبويبًا",
+      "many": "{count} تبويب",
       "other": "{count} تبويب"
     },
     "files": {
       "one": "ملف واحد",
       "two": "ملفان",
       "few": "{count} ملفات",
-      "many": "{count} ملفًا",
+      "many": "{count} ملف",
       "other": "{count} ملف"
     },
     "items": {
       "one": "عنصر واحد",
       "two": "عنصران",
       "few": "{count} عناصر",
-      "many": "{count} عنصرًا",
+      "many": "{count} عنصر",
       "other": "{count} عنصر"
     },
     "tags": {
       "one": "وسم واحد",
       "two": "وسمان",
       "few": "{count} وسوم",
-      "many": "{count} وسمًا",
+      "many": "{count} وسم",
       "other": "{count} وسم"
     },
     "tasksDue": {
@@ -3979,7 +3979,7 @@
       "one": "توتر واحد",
       "two": "توتران",
       "few": "{count} توترات",
-      "many": "{count} توترًا",
+      "many": "{count} توتر",
       "other": "{count} توتر"
     },
     "blindSpots": {
@@ -3993,28 +3993,28 @@
       "one": "صادر واحد",
       "two": "صادران",
       "few": "{count} صادرة",
-      "many": "{count} صادرًا",
+      "many": "{count} صادر",
       "other": "{count} صادر"
     },
     "inbound": {
       "one": "وارد واحد",
       "two": "واردان",
       "few": "{count} واردة",
-      "many": "{count} واردًا",
+      "many": "{count} وارد",
       "other": "{count} وارد"
     },
     "selected": {
       "one": "عنصر واحد محدد",
       "two": "محددان",
       "few": "{count} محددة",
-      "many": "{count} محددًا",
+      "many": "{count} محدد",
       "other": "{count} محدد"
     },
     "hidden": {
       "one": "عنصر واحد مخفي",
       "two": "مخفيان",
       "few": "{count} مخفية",
-      "many": "{count} مخفيًا",
+      "many": "{count} مخفي",
       "other": "{count} مخفي"
     },
     "more": {
@@ -4028,7 +4028,7 @@
       "one": "رابط وارد واحد",
       "two": "رابطان واردان",
       "few": "{count} روابط واردة",
-      "many": "{count} رابطًا واردًا",
+      "many": "{count} رابط وارد",
       "other": "{count} رابط وارد"
     },
     "walks": {
@@ -4042,7 +4042,7 @@
       "one": "يوم واحد",
       "two": "يومان",
       "few": "{count} أيام",
-      "many": "{count} يومًا",
+      "many": "{count} يوم",
       "other": "{count} يوم"
     },
     "mentions": {
