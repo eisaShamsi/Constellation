@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Enfocar siempre las nuevas pestañas",
       "alwaysFocusNewTabsDesc": "Al abrir un enlace en una nueva pestaña, cambiar a ella inmediatamente",
+      "restoreTabsOnRelaunch": "Restaurar pestañas al reiniciar",
+      "restoreTabsOnRelaunchDesc": "Reabre las pestañas de tu última sesión al iniciar la aplicación. Desactivarlo también elimina la sesión guardada",
       "display": "Pantalla",
       "readableLineLength": "Longitud de línea legible",
       "readableLineLengthDesc": "Limitar la longitud máxima de línea. Menos contenido cabe en pantalla, pero los bloques largos de texto son más legibles",

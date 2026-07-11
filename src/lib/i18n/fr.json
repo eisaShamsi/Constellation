@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Toujours basculer vers les nouveaux onglets",
       "alwaysFocusNewTabsDesc": "Lorsque vous ouvrez un lien dans un nouvel onglet, y basculer immédiatement",
+      "restoreTabsOnRelaunch": "Restaurer les onglets au redémarrage",
+      "restoreTabsOnRelaunchDesc": "Rouvre les onglets de votre dernière session au démarrage. La désactivation supprime aussi la session enregistrée",
       "display": "Affichage",
       "readableLineLength": "Longueur de ligne lisible",
       "readableLineLengthDesc": "Limiter la longueur maximale des lignes. Moins de contenu est visible à l'écran, mais les longs blocs de texte sont plus lisibles",

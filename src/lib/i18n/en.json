@@ -113,6 +113,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Always focus new tabs",
       "alwaysFocusNewTabsDesc": "When you open a link in a new tab, switch to it immediately",
+      "restoreTabsOnRelaunch": "Restore tabs on relaunch",
+      "restoreTabsOnRelaunchDesc": "Reopen the tabs from your last session when the app starts. Turning this off also deletes the remembered session.",
       "display": "Display",
       "readableLineLength": "Readable line length",
       "readableLineLengthDesc": "Limit maximum line length for better readability",

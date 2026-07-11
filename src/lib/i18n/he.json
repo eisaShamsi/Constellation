@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "תמיד התמקד בלשוניות חדשות",
       "alwaysFocusNewTabsDesc": "כאשר פותחים קישור בלשונית חדשה, עבור אליה מיד",
+      "restoreTabsOnRelaunch": "שחזור לשוניות בהפעלה מחדש",
+      "restoreTabsOnRelaunchDesc": "פותח מחדש את הלשוניות מהמושב האחרון עם הפעלת היישום. כיבוי האפשרות גם מוחק את המושב השמור",
       "display": "תצוגה",
       "readableLineLength": "אורך שורה קריא",
       "readableLineLengthDesc": "הגבל את אורך השורה המרבי. פחות תוכן נכנס במסך, אך בלוקי טקסט ארוכים קריאים יותר",

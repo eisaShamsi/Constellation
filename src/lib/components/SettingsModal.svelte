@@ -74,6 +74,24 @@
 	}
 	function clearAllCorrections() { updateSettings({ calendarCorrections: {} }); }
 
+	// MIG-100 §6 — the auto-session toggle. Lifecycle FIRST (session.ts owns
+	// the start/stop/delete policy), setting second: the toggle must never
+	// show a state the live system isn't actually in.
+	async function onRestoreTabsToggle(checked: boolean) {
+		try {
+			const { setSessionEnabled } = await import('$lib/libraries/session');
+			const { getActiveUniversePath } = await import('$lib/universe/store');
+			const root = await getActiveUniversePath();
+			if (!root) throw new Error('no active universe');
+			await setSessionEnabled(root, checked);
+			updateSettings({ restoreTabsOnRelaunch: checked });
+		} catch (e) {
+			console.warn('[session] toggle lifecycle failed — setting unchanged', e);
+			// Snap the checkbox back to the real (unchanged) state.
+			updateSettings({ restoreTabsOnRelaunch: !checked });
+		}
+	}
+
 	// MIG-012 §Build.8-fix — fully-localized confirm dialog state.
 	// Replaces browser-native confirm() which forces OS-locale OK/Cancel
 	// labels (always English on Windows-EN) and bypassed our $t chain.
@@ -959,6 +977,19 @@
 						<label class="toggle">
 							<input type="checkbox" checked={$appSettings.alwaysFocusNewTabs}
 								onchange={(e) => updateSettings({ alwaysFocusNewTabs: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<!-- MIG-100 — auto-restore tabs on relaunch -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.restoreTabsOnRelaunch')}</div>
+							<div class="setting-desc">{$t('settings.editor.restoreTabsOnRelaunchDesc')}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.restoreTabsOnRelaunch}
+								onchange={(e) => onRestoreTabsToggle((e.target as HTMLInputElement).checked)} />
 							<span class="toggle-slider"></span>
 						</label>
 					</div>

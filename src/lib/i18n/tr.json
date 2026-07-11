@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Yeni sekmelere her zaman odaklan",
       "alwaysFocusNewTabsDesc": "Bir bağlantıyı yeni sekmede açtığınızda hemen o sekmeye geç",
+      "restoreTabsOnRelaunch": "Yeniden başlatmada sekmeleri geri yükle",
+      "restoreTabsOnRelaunchDesc": "Uygulama açıldığında son oturumun sekmelerini yeniden açar. Kapatmak kayıtlı oturumu da siler",
       "display": "Görüntüleme",
       "readableLineLength": "Okunabilir satır uzunluğu",
       "readableLineLengthDesc": "Maksimum satır uzunluğunu sınırla. Ekranda daha az içerik görünür, ancak uzun metin blokları daha okunabilir olur",

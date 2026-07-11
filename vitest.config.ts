@@ -79,6 +79,13 @@ export default defineConfig({
 			// write for closed-note tag/link adds) preserves rich frontmatter the lossy
 			// buildFullContent destroys.
 			'tests/g4/composeUpdated.test.ts',
+			// MIG-100 §2 (2026-07-11) — the auto-session tracker (restore tabs on
+			// relaunch): signature guards, debounce, serialization, cancel-and-flush.
+			'tests/mig-100/session.test.ts',
+			// MIG-100 §7 (2026-07-11) — the boot-restore recipes R1–R7: Gate #8
+			// zero-write proof, 0-of-N deferred arm, switch-abort, focus safety,
+			// model-as-source, deferred cid drain, arm-in-finally + sentinel.
+			'tests/mig-100/restore.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

@@ -3,9 +3,10 @@
  */
 
 import { writable, derived, get } from 'svelte/store';
+import { tick } from 'svelte';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
-import { normalizePathKey } from '$lib/utils';
+import { normalizePathKey, subscribeSkipInitial } from '$lib/utils';
 import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
 import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reducers
 // MIG-076 §C — single content ownership. noteModel/noteSession use this
@@ -1041,28 +1042,15 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 		// If a later nav has superseded this one, don't stomp its result.
 		if (_navTokens.get(tabId) !== myToken) return;
 
-		// Name: mirror openNoteTab — prefer frontmatter `title:`, fall back to
-		// the filename stem. Without this parity the tab label flips between
-		// the two conventions as the user navigates forward (click) vs back
-		// (history), producing visible "title ≠ body" desync.
-		let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-		const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
-		if (fmTitleMatch?.[1]) name = fmTitleMatch[1].trim();
+		// Name: mirror openNoteTab (shared deriveTabName). Without this parity
+		// the tab label flips between conventions as the user navigates
+		// forward (click) vs back (history).
+		const name = deriveTabName(filePath, content);
 
 		// Resolve library for the new path so cross-library history entries
 		// (or any future cross-library nav) don't keep the old library's
 		// name/path on the tab.
-		const allLibs = get(libraries);
-		const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
-		const filePathNorm = normalize(filePath);
-		let resolvedLibrary: typeof allLibs[number] | undefined;
-		let bestLen = -1;
-		for (const v of allLibs) {
-			const libNorm = normalize(v.path);
-			if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
-				if (libNorm.length > bestLen) { bestLen = libNorm.length; resolvedLibrary = v; }
-			}
-		}
+		const { library: resolvedLibrary } = deriveLibraryForPath(filePath);
 
 		openTabs.update(tabs => tabs.map(t => {
 			if (t.id !== tabId) return t;
@@ -1663,7 +1651,7 @@ export function clearLinkTraversalBumps() {
  * completes, or after an app restart with a localStorage backup entry).
  * Negligible against the corruption it prevents.
  */
-async function resolveNoteContent(filePath: string): Promise<{ content: string; cursorPos: number; scrollTop: number } | null> {
+async function resolveNoteContent(filePath: string, preserveNet = false): Promise<{ content: string; cursorPos: number; scrollTop: number } | null> {
 	const wab = getWriteAhead(filePath);
 	if (!wab) {
 		try {
@@ -1700,8 +1688,51 @@ async function resolveNoteContent(filePath: string): Promise<{ content: string; 
 			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
 		}
 	}
-	clearWriteAhead(filePath);
+	// MIG-100 inspection fix (APP-KILLER): the RESTORE path must NOT consume
+	// the net. A restored tab's model is born CLEAN — nothing would ever write
+	// the recovered content to disk, and a background tab never mounts the
+	// editor whose teardown re-stashes the net. With preserveNet the recovery
+	// copy survives until a real durable save replaces it (the manual-open
+	// path keeps today's consume semantics — its mounted editor re-stashes).
+	if (!preserveNet) clearWriteAhead(filePath);
 	return { content: wab.content, cursorPos: wab.cursorPos, scrollTop: wab.scrollTop };
+}
+
+/**
+ * Derive a note's containing library from the registered libraries.
+ * Path-normalized, case-insensitive prefix match so Windows paths (\ vs /)
+ * and case differences don't silently lose the library anchor — which would
+ * break embed resolution for any note. Picks the LONGEST matching prefix so
+ * nested libraries (e.g. "Universe" and "Universe/Project" both registered)
+ * route each note to its immediate containing library.
+ * Shared by openNoteTab and the MIG-100 session restore.
+ */
+function deriveLibraryForPath(filePath: string): { library: LibraryInfo | undefined; libraryPath: string } {
+	const allLibraries = get(libraries);
+	const normalize = (p: string) => normalizePathKey(p).replace(/\/+$/, '');
+	const filePathNorm = normalize(filePath);
+	let library: LibraryInfo | undefined;
+	let bestLen = -1;
+	for (const v of allLibraries) {
+		const libNorm = normalize(v.path);
+		if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
+			if (libNorm.length > bestLen) { bestLen = libNorm.length; library = v; }
+		}
+	}
+	return { library, libraryPath: library?.path ?? '' };
+}
+
+/**
+ * Derive a tab's display name: prefer the frontmatter `title:`, fall back to
+ * the filename stem. One helper — the label convention must not drift between
+ * click-nav, history-nav, and session restore (a drift shows as the tab label
+ * flipping as the user navigates forward vs back).
+ */
+function deriveTabName(filePath: string, content: string): string {
+	let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+	if (fmTitleMatch?.[1]) name = fmTitleMatch[1].trim();
+	return name;
 }
 
 export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string, targetLine?: number) {
@@ -1767,11 +1798,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		} catch { /* non-fatal: CID stays absent, note still opens */ }
 	}
 	// For canonical files, extract title from frontmatter; fallback to filename stem
-	let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
-	if (fmTitleMatch?.[1]) {
-		name = fmTitleMatch[1].trim();
-	}
+	const name = deriveTabName(filePath, content);
 
 	// Living Link System: record traversal now that we have the display name
 	if (_fromNotePath) {
@@ -1802,25 +1829,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}
 	}
 
-	// Derive library path from registered libraries.
-	// Use a path-normalized, case-insensitive prefix match so Windows paths
-	// (\ vs / separators) and case differences don't silently lose the
-	// library anchor — which would break embed resolution for any note.
-	// Pick the LONGEST matching prefix so nested libraries
-	// (e.g. "Universe" and "Universe/Project" both registered) route each
-	// note to its immediate containing library.
-	const allLibraries = get(libraries);
-	const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
-	const filePathNorm = normalize(filePath);
-	let library: typeof allLibraries[number] | undefined;
-	let bestLen = -1;
-	for (const v of allLibraries) {
-		const libNorm = normalize(v.path);
-		if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
-			if (libNorm.length > bestLen) { bestLen = libNorm.length; library = v; }
-		}
-	}
-	const libraryPath = library?.path ?? '';
+	const { library, libraryPath } = deriveLibraryForPath(filePath);
 	// Derive libraryName locally from the same normalized match used for
 	// libraryPath. The caller's `libraryName` arg comes from
 	// `resolve_wikilink_cross_library` whose current-library branch uses
@@ -1912,6 +1921,196 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			activeTabId.set(id);
 		}
 	}
+}
+
+/**
+ * MIG-100 — the ONE departure primitive for "leave every open tab" moments
+ * (workspace restore, universe switch, universe create). Flush each dirty
+ * departing model through the durability gate (a failed flush proceeds — the
+ * write-ahead net + save-health banner hold the edit, closeTab's contract),
+ * clear the tab stores, wait a tick so the unmounting panes' own teardown
+ * flush has run, then dispose the models (a raw `openTabs.set([])` alone
+ * leaks every NoteModel for the process lifetime).
+ */
+export async function flushDisposeClearTabs(origin: string): Promise<void> {
+	const departing = get(openTabs);
+	for (const t of departing) {
+		if (NAV_FLUSH_ENABLED && isNoteDirty(t.id)) {
+			try { await flushOutgoing(t.id, origin); } catch { /* net + banner hold it */ }
+		}
+	}
+	openTabs.set([]);
+	activeTabId.set(null);
+	focusedTabId.set(null);
+	await tick();
+	for (const t of departing) closeNoteModel(t.id);
+}
+
+// ─── MIG-100 §3 — session restore: the batch-insert path ───
+
+export interface SessionRestoreInput {
+	tabs: { path: string; libraryName: string; libraryColor: string; pinned?: boolean }[];
+	activeTabPath: string | null;
+	splitActive: boolean;
+	splitDir: SplitDirection;
+}
+
+/** MIG-100 §3 — paths restored WITHOUT a cid_cn. Gate #8 forbids the boot
+ *  restore from writing user files, so the cid injection every manual open
+ *  performs is DEFERRED: drained on the first USER activation of that tab,
+ *  through the toggleTaskReconciled recipe (mark-cascading → flush-if-dirty →
+ *  disk ensure → model ADOPTS). A skipped drain stays pending; the manual
+ *  open path heals it eventually. */
+const pendingCidEnsure = new Set<string>();
+let cidEnsureUnsubs: Array<() => void> = [];
+
+function armDeferredCidEnsure(): void {
+	if (cidEnsureUnsubs.length > 0) return;
+	const onActivate = (tabId: string | null) => {
+		if (!tabId) return;
+		const tab = get(openTabs).find((t) => t.id === tabId);
+		if (!tab || !pendingCidEnsure.has(tab.path)) return;
+		pendingCidEnsure.delete(tab.path);
+		void drainCidEnsure(tab);
+		if (pendingCidEnsure.size === 0) {
+			for (const u of cidEnsureUnsubs) u();
+			cidEnsureUnsubs = [];
+		}
+	};
+	// Skip each subscription's synchronous first fire — that's the CURRENT
+	// activation (set by the restore itself), not a user action.
+	cidEnsureUnsubs = [
+		subscribeSkipInitial(activeTabId, onActivate),
+		subscribeSkipInitial(focusedTabId, onActivate),
+	];
+}
+
+async function drainCidEnsure(tab: OpenTab): Promise<void> {
+	// Same gate shape as toggleTaskReconciled: the disk op runs under the
+	// cascading mark so the open note's armed autosave can't interleave.
+	markCascading(tab.path);
+	try {
+		if (isNoteDirty(tab.id)) {
+			markRecentWrite(tab.path);
+			await saveNoteSession(tab.id, tab.path, standardSaveEnv({ origin: 'cid_ensure_flush', name: tab.name }), 'cid_ensure_flush');
+		}
+		await invoke('ensure_cid_cn_cmd', { filePath: tab.path });
+		// Guarded adopt — deliberately NOT reloadTabsFromDisk: its
+		// unconditional model re-seed would discard keystrokes typed during
+		// the awaits above (markCascading blocks saves, not typing). The model
+		// adopts the cid-bearing disk ONLY while it is still clean; if the
+		// user typed, their model wins and the path re-pends for a later
+		// clean activation.
+		const diskContent = await readNote(tab.path).catch(() => null);
+		if (diskContent === null) return;
+		let adopted = false;
+		openTabs.update((ts) =>
+			ts.map((t) => {
+				if (t.id !== tab.id || t.content === diskContent || isNoteDirty(t.id)) return t;
+				adopted = true;
+				openNoteModel(t.id, t.path, diskContent);
+				return { ...t, content: diskContent, reloadVersion: (t.reloadVersion ?? 0) + 1 };
+			})
+		);
+		if (adopted) {
+			clearWriteAhead(tab.path);
+		} else if (isNoteDirty(tab.id)) {
+			// cid landed on disk but the dirty model will overwrite it on its
+			// next save — re-pend so a later clean activation re-ensures.
+			pendingCidEnsure.add(tab.path);
+			armDeferredCidEnsure();
+		}
+	} catch { /* non-fatal: cid stays absent; the next manual open heals it */ }
+	finally {
+		clearCascading(tab.path);
+	}
+}
+
+/**
+ * MIG-100 §3 — restore a session snapshot's tabs in ONE batch.
+ *
+ * NOT a loop over openNoteTab: that would activate every tab in sequence
+ * (alwaysFocusNewTabs) — N CM6 mount/teardown cycles, wab pollution, focus
+ * churn — and would run ensure_cid_cn disk writes at boot (Gate #8). This
+ * path reads each note (write-ahead-buffer-aware via resolveNoteContent),
+ * builds all OpenTabs, commits them in ONE openTabs update (append — tabs
+ * the user already opened stay untouched, one-path-one-tab preserved), and
+ * activates at most ONE tab, only when the user hasn't navigated yet.
+ *
+ * `stillValid` is checked immediately before the commit — a universe switch
+ * mid-restore aborts with zero store mutations.
+ */
+export async function restoreSessionTabs(
+	snap: SessionRestoreInput,
+	stillValid?: () => boolean,
+): Promise<{ restored: number; requested: number; aborted?: boolean; activatedId?: string }> {
+	const requested = snap.tabs.length;
+	const built: OpenTab[] = [];
+	const seen = new Set<string>();
+	for (const saved of snap.tabs) {
+		if (!saved.path || seen.has(saved.path)) continue;
+		seen.add(saved.path);
+		// preserveNet: the restore may show write-ahead-recovered content but
+		// must never DESTROY the recovery copy (the model is born clean; only
+		// a real durable save may replace the net).
+		const resolved = await resolveNoteContent(saved.path, true);
+		if (resolved === null) continue; // missing/unreadable → skip, never abort the rest
+		const { content, cursorPos, scrollTop } = resolved;
+		if ((saved.path.endsWith('.md') || saved.path.endsWith('.markdown')) && !extractCidCn(content)) {
+			pendingCidEnsure.add(saved.path); // deferred — no boot-time write
+		}
+		let name = saved.path.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+		const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+		if (fmTitleMatch?.[1]) name = fmTitleMatch[1].trim();
+		const { library, libraryPath } = deriveLibraryForPath(saved.path);
+		built.push({
+			id: `tab_${++tabCounter}_${Date.now()}`,
+			path: saved.path,
+			content,
+			libraryName: library?.name ?? saved.libraryName,
+			libraryPath,
+			name,
+			libraryColor: saved.libraryColor,
+			history: [saved.path],
+			historyIndex: 0,
+			cursorPos,
+			scrollTop,
+			...(saved.pinned ? { pinned: true } : {}),
+		});
+	}
+	if (stillValid && !stillValid()) return { restored: 0, requested, aborted: true };
+	if (built.length === 0) return { restored: 0, requested };
+
+	// ONE commit. Dedup against tabs the user opened DURING the reads
+	// (one path → one tab, the B1 invariant), then models born with their
+	// tabs, synchronously — same discipline as openNoteTab.
+	let appended: OpenTab[] = [];
+	openTabs.update((ts) => {
+		const have = new Set(ts.map((t) => t.path));
+		appended = built.filter((b) => !have.has(b.path));
+		return appended.length ? [...ts, ...appended] : ts;
+	});
+	for (const t of appended) openNoteModel(t.id, t.path, t.content);
+	editingTabIds.update((set) => {
+		const next = new Set(set);
+		for (const t of appended) next.add(t.id);
+		return next;
+	});
+
+	// ONE activation — only when the user hasn't opened/focused anything yet
+	// (restore must never steal focus from a live user).
+	let activatedId: string | undefined;
+	if (appended.length > 0 && get(activeTabId) === null && get(focusedTabId) === null) {
+		const match =
+			(snap.activeTabPath && appended.find((t) => t.path === snap.activeTabPath)) || appended[0];
+		splitActive.set(snap.splitActive);
+		splitDirection.set(snap.splitDir);
+		activeTabId.set(match.id);
+		if (snap.splitActive) focusedTabId.set(match.id);
+		activatedId = match.id;
+	}
+	if (pendingCidEnsure.size > 0) armDeferredCidEnsure();
+	return { restored: appended.length, requested, activatedId };
 }
 
 export async function closeTab(tabId: string) {
@@ -3925,6 +4124,10 @@ export interface AppSettings {
 	foldIndent: boolean;
 	indentationGuides: boolean;
 	alwaysFocusNewTabs: boolean;
+	/** MIG-100 — reopen the last session's tabs at launch (the auto-session,
+	 *  `.constellation/session.json`). OFF also deletes the stored session —
+	 *  off means "stop remembering". */
+	restoreTabsOnRelaunch: boolean;
 	propertiesInDocument: 'visible' | 'hidden' | 'source';
 
 	// Files & Links
@@ -4406,6 +4609,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	foldIndent: true,
 	indentationGuides: false,
 	alwaysFocusNewTabs: true,
+	restoreTabsOnRelaunch: true,
 	propertiesInDocument: 'visible',
 	defaultNoteLocation: 'root',
 	defaultNoteFolder: '',
@@ -5069,31 +5273,31 @@ export function saveWorkspace(name: string, layout?: WorkspaceLayout, secondScre
 }
 
 export async function restoreWorkspace(ws: Workspace): Promise<{ layout?: WorkspaceLayout; secondScreen?: WorkspaceSecondScreen }> {
-	// Close all current tabs
-	openTabs.set([]);
-	activeTabId.set(null);
-	focusedTabId.set(null);
+	// MIG-100 §5 — the old shape here had two latent defects the Architect
+	// census documented: (1) `openTabs.set([])` discarded possibly-dirty
+	// models with NO flush (the nav-loss class v3.34 closed everywhere else);
+	// (2) the sequential openNoteTab loop with `newTab` undefined collapsed a
+	// multi-tab workspace through the in-place-replace branch. Now: the ONE
+	// departure primitive, then the shared batch-insert.
+	await flushDisposeClearTabs('workspace_restore_flush');
 
-	// Open saved tabs
-	for (const saved of ws.tabs) {
-		try {
-			await openNoteTab(saved.path, saved.libraryName, saved.libraryColor);
-		} catch { /* file may not exist anymore */ }
-	}
+	// Batch-insert (one store commit, one activation — restoreSessionTabs
+	// activates ws.activeTabPath or the first restored tab, and applies the
+	// split state from the snapshot).
+	const result = await restoreSessionTabs({
+		tabs: ws.tabs.map((t) => ({
+			path: t.path,
+			libraryName: t.libraryName,
+			libraryColor: t.libraryColor,
+		})),
+		activeTabPath: ws.activeTabPath,
+		splitActive: ws.splitActive,
+		splitDir: ws.splitDir,
+	});
 
-	// Restore active tab
-	if (ws.activeTabPath) {
-		const tabs = get(openTabs);
-		const match = tabs.find(t => t.path === ws.activeTabPath);
-		if (match) {
-			activeTabId.set(match.id);
-			focusedTabId.set(match.id);
-		}
-	}
-
-	// Restore split state
-	splitActive.set(ws.splitActive);
-	splitDirection.set(ws.splitDir);
+	// The old loop applied focusedTabId unconditionally; keep that behavior
+	// for manual restores (restoreSessionTabs sets it only in split mode).
+	if (result.activatedId) focusedTabId.set(result.activatedId);
 
 	// Return layout and second screen state for the caller to apply
 	return { layout: ws.layout, secondScreen: ws.secondScreen };

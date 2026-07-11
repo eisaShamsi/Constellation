@@ -529,6 +529,27 @@ export function normalizePathKey(p: string): string {
 }
 
 /**
+ * MIG-100 — subscribe to a Svelte store but IGNORE the synchronous first fire
+ * (which reports the CURRENT value at subscribe time, not a mutation). For
+ * watchers that must react only to a real change AFTER the subscription —
+ * e.g. "on the first user tab mutation" — the initial fire is a false
+ * positive. One helper so the subtle idiom can't drift across copies.
+ */
+export function subscribeSkipInitial<T>(
+	store: { subscribe: (fn: (v: T) => void) => () => void },
+	fn: (v: T) => void
+): () => void {
+	let initial = true;
+	return store.subscribe((v) => {
+		if (initial) {
+			initial = false;
+			return;
+		}
+		fn(v);
+	});
+}
+
+/**
  * §137 — migrate every entry in a path-keyed Map from `oldPath` to `newPath`.
  *
  * Rule 8 (Write-Time Derivation): when a path mutates — file rename, folder

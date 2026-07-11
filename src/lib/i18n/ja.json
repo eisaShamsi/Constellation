@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "新しいタブを常にフォーカス",
       "alwaysFocusNewTabsDesc": "リンクを新しいタブで開いた際、すぐにそのタブに切り替える",
+      "restoreTabsOnRelaunch": "再起動時にタブを復元",
+      "restoreTabsOnRelaunchDesc": "アプリ起動時に前回のセッションのタブを開き直します。オフにすると保存されたセッションも削除されます",
       "display": "表示",
       "readableLineLength": "読みやすい行幅",
       "readableLineLengthDesc": "最大行幅を制限します。表示されるコンテンツは減りますが、長いテキストブロックが読みやすくなります",

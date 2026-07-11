@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "始终聚焦新标签页",
       "alwaysFocusNewTabsDesc": "在新标签页中打开链接时，立即切换到该标签页",
+      "restoreTabsOnRelaunch": "重新启动时恢复标签页",
+      "restoreTabsOnRelaunchDesc": "应用启动时重新打开上次会话的标签页。关闭此选项也会删除已保存的会话",
       "display": "显示",
       "readableLineLength": "可读行宽",
       "readableLineLengthDesc": "限制最大行宽。屏幕上显示的内容较少，但长文本块更易阅读",

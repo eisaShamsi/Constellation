@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Sempre focar novas abas",
       "alwaysFocusNewTabsDesc": "Ao abrir um link em uma nova aba, alternar para ela imediatamente",
+      "restoreTabsOnRelaunch": "Restaurar abas ao reiniciar",
+      "restoreTabsOnRelaunchDesc": "Reabre as abas da sua última sessão ao iniciar o aplicativo. Desativar também exclui a sessão salva",
       "display": "Exibição",
       "readableLineLength": "Comprimento de linha legível",
       "readableLineLengthDesc": "Limitar o comprimento máximo da linha. Menos conteúdo cabe na tela, mas blocos longos de texto ficam mais legíveis",

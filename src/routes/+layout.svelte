@@ -13,7 +13,7 @@
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
-		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
+		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
@@ -140,9 +140,10 @@
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
-		getChildUniverses,
+		getChildUniverses, getActiveUniversePath,
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
+	import { restoreSessionThenTrack, stopSessionTracking, persistSessionNow } from '$lib/libraries/session';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
 	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, onLensChangeRequest, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { normalizeGraphStyle } from '$lib/cockpitFlag';
@@ -2330,6 +2331,11 @@
 		performance.mark('boot:paint');
 		appReady = true;
 
+		// MIG-100 §3 — the auto-session snapshot from the boot bundle; stays
+		// undefined on the fallback path (restoreSessionThenTrack then reads
+		// the file itself).
+		let bootSession: unknown = undefined;
+
 		// ── Round 5 follow-up diagnostic: JS-event-loop heartbeat ──
 		// Samples the event loop every 100 ms. If the JS thread is blocked
 		// during the core-snapshot queue window, `bootHeartbeatMaxGapMs`
@@ -2370,6 +2376,8 @@
 			libraries: any[];
 			settings: Record<string, unknown>;
 			workspaces: unknown[];
+			/** MIG-100 — the auto-session snapshot, or null when none exists. */
+			session?: unknown;
 			property_types: Record<string, unknown>;
 			link_types?: unknown[];
 			workspace_bases: any[];
@@ -2434,6 +2442,10 @@
 			if (Array.isArray(bundle.workspaces) && bundle.workspaces.length > 0) {
 				workspaces.set(bundle.workspaces as any);
 			}
+
+			// MIG-100 §3 — the auto-session snapshot rides the bundle; the
+			// restore itself fires after boot:hydrated (below).
+			bootSession = bundle.session;
 
 			// Property types — seed the registry cache (avoids a separate IPC).
 			try {
@@ -2549,6 +2561,24 @@
 		// See lab/boot-perf/boot-bundle-cold-start.md.
 		await refreshLibraryCaches().catch(() => {});
 
+		// MIG-100 §3 — auto-restore the last session's tabs. Fire-and-forget,
+		// strictly post-hydration: zero awaited work on the boot path, and the
+		// tracker arms inside the same call's finally — never while openTabs
+		// is still boot-empty (the empty-overwrite race is structural).
+		void (async () => {
+			try {
+				const root = await getActiveUniversePath();
+				if (!root) return;
+				const s = get(appSettings);
+				await restoreSessionThenTrack(bootSession, root, {
+					enabled: s?.restoreTabsOnRelaunch !== false,
+					safeBootMode: s?.safeBootMode === true,
+				});
+			} catch (e) {
+				console.warn('[session] restore failed', e);
+			}
+		})();
+
 		// Post-hydration fan-out — populate sidebar badges and enable
 		// the file watcher. Fire-and-forget; the UI is already live.
 		{
@@ -2612,6 +2642,13 @@
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
+		// MIG-100 §4a — leaving the current universe: stop-and-flush its session
+		// tracker (writes to the ARM-time root — safe on either side of the
+		// pointer flip), and clear the old universe's tabs so they can neither
+		// render inside the new universe nor be persisted into ITS session file
+		// by the re-armed tracker (the created-path contamination finding).
+		await stopSessionTracking();
+		await flushDisposeClearTabs('universe_created_flush');
 		await setActiveUniverse(entry.id);
 		activeUniverseName = entry.name;
 		showUniverseSetup = false;
@@ -2658,6 +2695,16 @@
 	}
 
 	async function handleUniverseSwitch() {
+		// MIG-100 §4a — step 0: stop-and-flush the OLD universe's session
+		// tracker BEFORE anything else. The ambient active-universe pointer has
+		// ALREADY flipped (UniverseManager awaits set_active_universe before
+		// onSwitch) — harmless, because the flush writes to the root captured
+		// at arm time, never the ambient pointer. This also cancels the pending
+		// debounce so the `$openTabs = []` below can never be persisted as an
+		// empty session, and bumps the generation token that aborts a restore
+		// still in flight from THIS universe's own boot.
+		await stopSessionTracking();
+
 		// Save current state, clear everything, re-init
 		appReady = false;
 		librariesLoaded = false;
@@ -2668,10 +2715,9 @@
 			try { await invoke('unwatch_library', { libraryId: lib.id }); } catch { /* ignore */ }
 		}
 
-		// Clear in-memory state
-		$openTabs = [];
-		$activeTabId = null;
-		$focusedTabId = null;
+		// Clear in-memory state (flush-first + model disposal — MIG-100
+		// inspection fix; the raw `$openTabs = []` leaked every model).
+		await flushDisposeClearTabs('universe_switch_flush');
 		workspaceBases = [];
 		// MIG-055 §F — clear Five Acts notes; reloaded by initApp() for the
 		// new universe (init_db on that universe re-creates the system note
@@ -3349,6 +3395,19 @@
 			handleOrgNodeMenuAction(action, { kind: 'note', path, name, isMarkdown: path.toLowerCase().endsWith('.md') });
 		});
 
+		// MIG-100 §4b — graceful-close handshake: Rust holds the CloseRequested,
+		// we persist the session (signature-guarded — instant when nothing
+		// changed), then ack so the close proceeds without waiting out the
+		// 700ms timeout. The ack fires even if the persist throws — the close
+		// must never hang on a failed write (the runtime debounce already
+		// bounded the loss).
+		const unlistenFinalFlush = await listen('session:final-flush', async () => {
+			try {
+				await persistSessionNow();
+			} catch { /* loss already bounded to ≤1s of arrangement */ }
+			invoke('session_flush_ack').catch(() => {});
+		});
+
 		// Cleanup on destroy
 		cleanupFns.push(
 			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
@@ -3359,6 +3418,7 @@
 			unlistenNoteSaved,
 			unlistenScreenNoteAction,
 			unlistenLens,
+			unlistenFinalFlush,
 		);
 	});
 

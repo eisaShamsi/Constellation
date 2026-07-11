@@ -149,6 +149,8 @@
     "editor": {
       "alwaysFocusNewTabs": "Neue Tabs immer fokussieren",
       "alwaysFocusNewTabsDesc": "Beim Öffnen eines Links in einem neuen Tab sofort dorthin wechseln",
+      "restoreTabsOnRelaunch": "Tabs beim Neustart wiederherstellen",
+      "restoreTabsOnRelaunchDesc": "Öffnet beim Start die Tabs der letzten Sitzung erneut. Beim Ausschalten wird die gespeicherte Sitzung auch gelöscht",
       "display": "Anzeige",
       "readableLineLength": "Lesbare Zeilenlänge",
       "readableLineLengthDesc": "Maximale Zeilenlänge begrenzen. Weniger Inhalt ist sichtbar, aber lange Textblöcke sind besser lesbar",
