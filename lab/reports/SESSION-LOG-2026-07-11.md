@@ -64,4 +64,4 @@ Applied: the departure primitive (drift between two hand-written copies eliminat
 - `9d2f419e` — MIG-100 §2–§7 (frontend: tracker, restore, wiring, restoreWorkspace repair, toggle + i18n ×15, 24 recipes, inspection fixes, simplify cleanups).
 - Docs close (this commit): orientation **v3.37**, User Manual + 14 translations, help topic, MoCh 15:30, this log.
 
-**NEXT:** Boss Stage 1 tutorial (binary ready) → Stage 2 → migration close (Charter append + tag + PCS).
+**Boss Stage 1: PASS** (2026-07-11 — all five checks incl. the type-then-immediately-close content-safety check). **NEXT:** Stage 2 (toggle lifecycle, missing file, universe switch) → migration close (Charter append + tag + PCS).
