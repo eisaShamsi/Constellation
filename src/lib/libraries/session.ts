@@ -32,7 +32,7 @@
  */
 import { get, type Unsubscriber } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
-import { subscribeSkipInitial } from '$lib/utils';
+import { subscribeSkipInitial, normalizePathKey } from '$lib/utils';
 import {
 	openTabs,
 	activeTabId,
@@ -46,6 +46,11 @@ export interface SessionTab {
 	libraryName: string;
 	libraryColor: string;
 	pinned?: boolean;
+	/** One-boot grace (hotfix-inspection LOW): set on a tab whose file was
+	 *  unreadable at restore — it stays in persisted snapshots this session
+	 *  so a TRANSIENT failure (AV lock, cloud placeholder, drive hiccup)
+	 *  isn't pruned; a carried tab that fails a SECOND boot is dropped. */
+	carried?: boolean;
 }
 
 /** The persisted shape (`.constellation/session.json`). Paths + arrangement
@@ -64,6 +69,9 @@ export const SESSION_DEBOUNCE_MS = 1000;
 
 let trackedRoot: string | null = null; // captured at arm time — never ambient
 let lastWrittenSig: string | null = null;
+/** Tabs unreadable at THIS boot's restore, carried into persisted snapshots
+ *  for one boot of grace (see SessionTab.carried). Reset per restore/stop. */
+let carriedTabs: SessionTab[] = [];
 let dirtyRetry = false; // a failed write → retry on the next mutation
 let timer: ReturnType<typeof setTimeout> | null = null;
 let unsubs: Unsubscriber[] = [];
@@ -87,17 +95,23 @@ export function captureSessionSnapshot(): SessionSnapshot {
 	const all = get(openTabs);
 	const activeId = get(activeTabId);
 	const active = all.find((t) => t.id === activeId);
+	const openPaths = new Set(all.map((t) => t.path));
 	return {
 		version: 1,
 		savedAt: Date.now(),
-		tabs: all
-			.filter((t) => t.path)
-			.map((t) => ({
-				path: t.path,
-				libraryName: t.libraryName,
-				libraryColor: t.libraryColor,
-				...(t.pinned ? { pinned: true as const } : {}),
-			})),
+		tabs: [
+			...all
+				.filter((t) => t.path)
+				.map((t) => ({
+					path: t.path,
+					libraryName: t.libraryName,
+					libraryColor: t.libraryColor,
+					...(t.pinned ? { pinned: true as const } : {}),
+				})),
+			// One-boot grace: transiently-unreadable tabs stay in the snapshot
+			// (a manual reopen supersedes the carried entry).
+			...carriedTabs.filter((c) => !openPaths.has(c.path)),
+		],
 		activeTabPath: active?.path ?? null,
 		splitActive: get(splitActive),
 		splitDir: get(splitDirection),
@@ -191,6 +205,7 @@ export function stopSessionTracking(): Promise<void> {
 	trackedRoot = null;
 	lastWrittenSig = null;
 	dirtyRetry = false;
+	carriedTabs = []; // grace entries belong to the universe being left
 	return flushed;
 }
 
@@ -260,6 +275,7 @@ function validateSnapshot(raw: unknown): SessionSnapshot | null {
 			libraryName: typeof tt.libraryName === 'string' ? tt.libraryName : '',
 			libraryColor: typeof tt.libraryColor === 'string' ? tt.libraryColor : '#7c3aed',
 			...(tt.pinned === true ? { pinned: true as const } : {}),
+			...(tt.carried === true ? { carried: true as const } : {}),
 		});
 	}
 	return {
@@ -278,6 +294,18 @@ export interface RestoreGates {
 	/** appSettings.safeBootMode — skip restore AND don't arm (arming over the
 	 *  empty boot state would overwrite the snapshot the user may want back). */
 	safeBootMode: boolean;
+	/** The universe root the bundle payload was READ FROM (bundle.session_root).
+	 *  The active universe can flip between the bundle read and this restore
+	 *  (the 2026-07-11 Scratch incident); a payload whose origin differs from
+	 *  `universeRoot` is DISCARDED and the correct root is re-read instead. */
+	bundleRoot?: string | null;
+}
+
+/** Same-universe comparison: separators, case, and trailing slashes vary
+ *  between the Rust-resolved root and getActiveUniversePath. */
+function sameRoot(a: string, b: string): boolean {
+	const n = (p: string) => normalizePathKey(p).replace(/\/+$/, '');
+	return n(a) === n(b);
 }
 
 /**
@@ -323,6 +351,13 @@ export async function restoreSessionThenTrack(
 		}
 
 		let raw = bundleSession;
+		// Origin check (Boss Stage-2 failure 4): a payload read from another
+		// universe must never restore here — discard it and fall through to
+		// the direct re-read of THIS root.
+		if (raw !== undefined && raw !== null && gates.bundleRoot && !sameRoot(gates.bundleRoot, universeRoot)) {
+			void journal('session_restore_payload_mismatch', `${gates.bundleRoot} ≠ ${universeRoot}`);
+			raw = null;
+		}
 		if (raw === undefined || raw === null) {
 			// Bundle-failure fallback: read directly. An Err degrades to null →
 			// no restore, but tracking still arms (deliberate: a transient read
@@ -353,6 +388,21 @@ export async function restoreSessionThenTrack(
 			void journal('session_restore_failed', `0/${result.requested} — arm deferred`);
 			deferArm = true;
 			return;
+		}
+		// Partial restore: carry each FIRST-strike unreadable tab into this
+		// session's snapshots (transient failures survive one boot); a tab
+		// already carried — a second strike — is dropped for good.
+		carriedTabs = result.skipped
+			.filter((t) => !t.carried)
+			.map((t) => ({
+				path: t.path,
+				libraryName: t.libraryName,
+				libraryColor: t.libraryColor,
+				...(t.pinned ? { pinned: true as const } : {}),
+				carried: true as const,
+			}));
+		if (carriedTabs.length > 0) {
+			void journal('session_restore_carried', `${carriedTabs.length} unreadable tab(s) on one-boot grace`);
 		}
 	} catch (e) {
 		try { localStorage.removeItem(RESTORE_SENTINEL_KEY); } catch { /* ignore */ }

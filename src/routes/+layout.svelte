@@ -2333,8 +2333,10 @@
 
 		// MIG-100 §3 — the auto-session snapshot from the boot bundle; stays
 		// undefined on the fallback path (restoreSessionThenTrack then reads
-		// the file itself).
+		// the file itself). bootSessionRoot = the payload's ORIGIN universe,
+		// verified against the arming root at restore time.
 		let bootSession: unknown = undefined;
+		let bootSessionRoot: string | null = null;
 
 		// ── Round 5 follow-up diagnostic: JS-event-loop heartbeat ──
 		// Samples the event loop every 100 ms. If the JS thread is blocked
@@ -2378,6 +2380,9 @@
 			workspaces: unknown[];
 			/** MIG-100 — the auto-session snapshot, or null when none exists. */
 			session?: unknown;
+			/** MIG-100 — the universe root the session payload was read from;
+			 *  the restore refuses a payload whose origin ≠ the arming root. */
+			session_root?: string | null;
 			property_types: Record<string, unknown>;
 			link_types?: unknown[];
 			workspace_bases: any[];
@@ -2446,6 +2451,7 @@
 			// MIG-100 §3 — the auto-session snapshot rides the bundle; the
 			// restore itself fires after boot:hydrated (below).
 			bootSession = bundle.session;
+			bootSessionRoot = bundle.session_root ?? null;
 
 			// Property types — seed the registry cache (avoids a separate IPC).
 			try {
@@ -2573,6 +2579,7 @@
 				await restoreSessionThenTrack(bootSession, root, {
 					enabled: s?.restoreTabsOnRelaunch !== false,
 					safeBootMode: s?.safeBootMode === true,
+					bundleRoot: bootSessionRoot,
 				});
 			} catch (e) {
 				console.warn('[session] restore failed', e);

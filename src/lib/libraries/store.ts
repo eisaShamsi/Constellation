@@ -1651,7 +1651,10 @@ export function clearLinkTraversalBumps() {
  * completes, or after an app restart with a localStorage backup entry).
  * Negligible against the corruption it prevents.
  */
-async function resolveNoteContent(filePath: string, preserveNet = false): Promise<{ content: string; cursorPos: number; scrollTop: number } | null> {
+async function resolveNoteContent(
+	filePath: string,
+	opts: { preserveNet?: boolean; requireDisk?: boolean } = {}
+): Promise<{ content: string; cursorPos: number; scrollTop: number } | null> {
 	const wab = getWriteAhead(filePath);
 	if (!wab) {
 		try {
@@ -1663,6 +1666,12 @@ async function resolveNoteContent(filePath: string, preserveNet = false): Promis
 	}
 	let diskContent: string | null = null;
 	try { diskContent = await invoke<string>('read_note', { filePath }); } catch { /* disk unreachable; trust wab */ }
+	// MIG-100 hotfix (Boss Stage-2 failure 3): the RESTORE path requires the
+	// FILE to exist — a wab entry alone must not resurrect a tab at a dead
+	// path (every viewed note leaves a teardown-re-stashed wab; a note moved
+	// while the app was closed came back as a ghost). The net is left intact:
+	// a manual open (no requireDisk) can still recover real unsaved content.
+	if (opts.requireDisk && diskContent === null) return null;
 	if (diskContent !== null) {
 		// MIG-076 §C-1 — FAIL-CLOSED restore. The old policy rejected the
 		// buffer only when BOTH identities were readable AND differed, so any
@@ -1684,7 +1693,12 @@ async function resolveNoteContent(filePath: string, preserveNet = false): Promis
 				identityProven ? '(empty-body resurrection)' : '(identity unproven)',
 				'— preferring disk',
 			);
-			clearWriteAhead(filePath);
+			// MIG-100 hotfix-inspection: the RESTORE path must not destroy the
+			// net even on rejection — a cid-less recovery copy (deferred-cid
+			// note whose save failed) is identity-unproven by construction,
+			// yet may be the ONLY copy of unsaved edits. Disk wins the view;
+			// the net stays for manual recovery.
+			if (!opts.preserveNet) clearWriteAhead(filePath);
 			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
 		}
 	}
@@ -1694,7 +1708,7 @@ async function resolveNoteContent(filePath: string, preserveNet = false): Promis
 	// editor whose teardown re-stashes the net. With preserveNet the recovery
 	// copy survives until a real durable save replaces it (the manual-open
 	// path keeps today's consume semantics — its mounted editor re-stashes).
-	if (!preserveNet) clearWriteAhead(filePath);
+	if (!opts.preserveNet) clearWriteAhead(filePath);
 	return { content: wab.content, cursorPos: wab.cursorPos, scrollTop: wab.scrollTop };
 }
 
@@ -1949,7 +1963,7 @@ export async function flushDisposeClearTabs(origin: string): Promise<void> {
 // ─── MIG-100 §3 — session restore: the batch-insert path ───
 
 export interface SessionRestoreInput {
-	tabs: { path: string; libraryName: string; libraryColor: string; pinned?: boolean }[];
+	tabs: { path: string; libraryName: string; libraryColor: string; pinned?: boolean; carried?: boolean }[];
 	activeTabPath: string | null;
 	splitActive: boolean;
 	splitDir: SplitDirection;
@@ -2043,18 +2057,32 @@ async function drainCidEnsure(tab: OpenTab): Promise<void> {
 export async function restoreSessionTabs(
 	snap: SessionRestoreInput,
 	stillValid?: () => boolean,
-): Promise<{ restored: number; requested: number; aborted?: boolean; activatedId?: string }> {
+): Promise<{
+	restored: number;
+	requested: number;
+	aborted?: boolean;
+	activatedId?: string;
+	/** Requested tabs whose file was unreadable — the caller decides whether
+	 *  to carry them forward one boot (transient failure) or drop them. */
+	skipped: SessionRestoreInput['tabs'];
+}> {
 	const requested = snap.tabs.length;
 	const built: OpenTab[] = [];
 	const seen = new Set<string>();
+	const skipped: SessionRestoreInput['tabs'] = [];
 	for (const saved of snap.tabs) {
 		if (!saved.path || seen.has(saved.path)) continue;
 		seen.add(saved.path);
 		// preserveNet: the restore may show write-ahead-recovered content but
 		// must never DESTROY the recovery copy (the model is born clean; only
-		// a real durable save may replace the net).
-		const resolved = await resolveNoteContent(saved.path, true);
-		if (resolved === null) continue; // missing/unreadable → skip, never abort the rest
+		// a real durable save may replace the net). requireDisk: a wab entry
+		// alone must not resurrect a tab whose file is gone (the ghost-tab
+		// failure) — restore restores FILES, the net stays for real recovery.
+		const resolved = await resolveNoteContent(saved.path, { preserveNet: true, requireDisk: true });
+		if (resolved === null) {
+			skipped.push(saved); // unreadable → skip, never abort the rest
+			continue;
+		}
 		const { content, cursorPos, scrollTop } = resolved;
 		if ((saved.path.endsWith('.md') || saved.path.endsWith('.markdown')) && !extractCidCn(content)) {
 			pendingCidEnsure.add(saved.path); // deferred — no boot-time write
@@ -2078,8 +2106,8 @@ export async function restoreSessionTabs(
 			...(saved.pinned ? { pinned: true } : {}),
 		});
 	}
-	if (stillValid && !stillValid()) return { restored: 0, requested, aborted: true };
-	if (built.length === 0) return { restored: 0, requested };
+	if (stillValid && !stillValid()) return { restored: 0, requested, aborted: true, skipped };
+	if (built.length === 0) return { restored: 0, requested, skipped };
 
 	// ONE commit. Dedup against tabs the user opened DURING the reads
 	// (one path → one tab, the B1 invariant), then models born with their
@@ -2110,7 +2138,7 @@ export async function restoreSessionTabs(
 		activatedId = match.id;
 	}
 	if (pendingCidEnsure.size > 0) armDeferredCidEnsure();
-	return { restored: appended.length, requested, activatedId };
+	return { restored: appended.length, requested, activatedId, skipped };
 }
 
 export async function closeTab(tabId: string) {

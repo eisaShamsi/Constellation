@@ -277,6 +277,148 @@ describe('R9 — cid drain never discards keystrokes typed during the drain', ()
 	});
 });
 
+describe('R10 — Boss Stage-2 failure 4: a payload from universe A must never restore under universe B', () => {
+	it('cross-root payload is discarded (re-read of the CORRECT root finds nothing)', async () => {
+		// The real incident (2026-07-11 19:05): the boot bundle's session was
+		// read while Eisa Cognitive Knowledge was active; the restore then
+		// applied it inside the freshly-activated Scratch and the tracker
+		// wrote the foreign tab into Scratch's session.json.
+		disk.set('/eck/note.md', note('E', 'ECK note'));
+		const eckPayload = {
+			version: 1, savedAt: 1,
+			tabs: [
+				{ path: '/eck/note.md', libraryName: 'ECK', libraryColor: '#1' },
+				{ path: '/eck/other.md', libraryName: 'ECK', libraryColor: '#1' },
+			],
+			activeTabPath: '/eck/note.md', splitActive: false, splitDir: 'vertical',
+		};
+		await restoreSessionThenTrack(eckPayload, 'E:/U/Scratch', {
+			enabled: true,
+			safeBootMode: false,
+			bundleRoot: 'E:/U/EisaCognitiveKnowledge', // payload origin ≠ arm root
+		});
+		let current: any[] = [];
+		openTabs.subscribe((v) => (current = v))();
+		expect(current).toHaveLength(0); // NOTHING from A restores under B
+		expect(journalMarks()).toContain('session_restore_payload_mismatch');
+		// The fallback re-read targeted the ARM root, not the payload's:
+		const reads = calls.filter((c) => c.cmd === 'read_universe_session');
+		expect(reads).toHaveLength(1);
+		expect(reads[0].args.universeRoot).toBe('E:/U/Scratch');
+		expect(isSessionTracking()).toBe(true); // still arms — for Scratch, clean
+	});
+
+	it('matching roots restore normally (normalized comparison — slashes/case)', async () => {
+		disk.set('/lib/a.md', note('A', 'body A'));
+		const payload = {
+			version: 1, savedAt: 1,
+			tabs: [{ path: '/lib/a.md', libraryName: 'L', libraryColor: '#1' }],
+			activeTabPath: '/lib/a.md', splitActive: false, splitDir: 'vertical',
+		};
+		await restoreSessionThenTrack(payload, 'E:\\U\\A', {
+			enabled: true,
+			safeBootMode: false,
+			bundleRoot: 'e:/u/a/', // same universe, different separators/case
+		});
+		let current: any[] = [];
+		openTabs.subscribe((v) => (current = v))();
+		expect(current.map((t) => t.path)).toEqual(['/lib/a.md']);
+	});
+});
+
+describe('R11 — Boss Stage-2 failure 3: a missing file must not resurrect from the crash net', () => {
+	it('wab exists but disk is gone → tab skipped, net preserved', async () => {
+		// The real incident: "Testing opened note.md" was moved away while the
+		// app was closed; its teardown-re-stashed write-ahead entry then
+		// resurrected a ghost tab at the dead path.
+		setWriteAhead('/lib/moved.md', note('M', 'ghost content'), 0, 0);
+		disk.set('/lib/a.md', note('A', 'body A'));
+		try {
+			const r = await restoreSessionTabs(snapOf(['/lib/moved.md', '/lib/a.md'], '/lib/a.md'));
+			expect(r).toMatchObject({ restored: 1, requested: 2 }); // ghost SKIPPED
+			let current: any[] = [];
+			openTabs.subscribe((v) => (current = v))();
+			expect(current.map((t) => t.path)).toEqual(['/lib/a.md']);
+			// The net is NOT consumed — real recovery stays possible later.
+			expect(getWriteAhead('/lib/moved.md')?.content).toContain('ghost content');
+		} finally {
+			clearWriteAhead('/lib/moved.md');
+		}
+	});
+});
+
+describe('R12 — the wab REJECT branch honors preserveNet (hotfix-inspection MED)', () => {
+	it('identity-unproven wab at restore: disk content used, net NOT destroyed', async () => {
+		// A cid-less recovery copy (deferred-cid note whose save failed) with a
+		// cid-bearing disk: identity unproven → the restore must fall back to
+		// disk WITHOUT destroying the possibly-only copy of unsaved edits.
+		disk.set('/lib/x.md', note('X', 'disk body'));
+		setWriteAhead('/lib/x.md', 'no frontmatter — cid-less unsaved edits', 0, 0);
+		try {
+			await restoreSessionTabs(snapOf(['/lib/x.md']));
+			let current: any[] = [];
+			openTabs.subscribe((v) => (current = v))();
+			expect(current[0].content).toContain('disk body'); // disk wins the VIEW
+			// …but the net survives for manual recovery:
+			expect(getWriteAhead('/lib/x.md')?.content).toContain('cid-less unsaved edits');
+		} finally {
+			clearWriteAhead('/lib/x.md');
+		}
+	});
+});
+
+describe('R13 — a transiently unreadable tab is carried forward, not silently pruned (hotfix-inspection LOW)', () => {
+	it('k-of-N restore: the skipped tab stays in the next persisted snapshot (one-boot grace)', async () => {
+		vi.useFakeTimers();
+		try {
+			disk.set('/lib/ok.md', note('K', 'ok'));
+			const payload = {
+				version: 1, savedAt: 1,
+				tabs: [
+					{ path: '/lib/ok.md', libraryName: 'L', libraryColor: '#1' },
+					{ path: '/lib/transient.md', libraryName: 'L', libraryColor: '#1' }, // read fails
+				],
+				activeTabPath: '/lib/ok.md', splitActive: false, splitDir: 'vertical',
+			};
+			await restoreSessionThenTrack(payload, 'E:/U/A', { enabled: true, safeBootMode: false });
+			// arrangement change → persist: the snapshot must still CONTAIN the
+			// transiently-missing tab (carried), not prune it.
+			openTabs.update((ts) => ts.map((t) => ({ ...t, pinned: true })));
+			await vi.advanceTimersByTimeAsync(SESSION_DEBOUNCE_MS + 10);
+			const s = calls.filter((c) => c.cmd === 'save_universe_session');
+			expect(s.length).toBeGreaterThan(0);
+			const savedTabs = s.at(-1)!.args.session.tabs;
+			expect(savedTabs.map((t: any) => t.path)).toContain('/lib/transient.md');
+			expect(savedTabs.find((t: any) => t.path === '/lib/transient.md')?.carried).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('a CARRIED tab that fails again is dropped (two strikes — no immortal ghosts)', async () => {
+		vi.useFakeTimers();
+		try {
+			disk.set('/lib/ok.md', note('K', 'ok'));
+			const payload = {
+				version: 1, savedAt: 1,
+				tabs: [
+					{ path: '/lib/ok.md', libraryName: 'L', libraryColor: '#1' },
+					{ path: '/lib/gone.md', libraryName: 'L', libraryColor: '#1', carried: true }, // 2nd strike
+				],
+				activeTabPath: '/lib/ok.md', splitActive: false, splitDir: 'vertical',
+			};
+			await restoreSessionThenTrack(payload, 'E:/U/A', { enabled: true, safeBootMode: false });
+			openTabs.update((ts) => ts.map((t) => ({ ...t, pinned: true })));
+			await vi.advanceTimersByTimeAsync(SESSION_DEBOUNCE_MS + 10);
+			const s = calls.filter((c) => c.cmd === 'save_universe_session');
+			const savedTabs = s.at(-1)!.args.session.tabs;
+			expect(savedTabs.map((t: any) => t.path)).not.toContain('/lib/gone.md');
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
 describe('R7 — a broken restore still arms tracking (never silently dead)', () => {
 	it('mid-restore throw → journal error marker + tracking armed', async () => {
 		// read_note resolves a NON-STRING → content.match throws inside the
