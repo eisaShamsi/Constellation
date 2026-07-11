@@ -32,7 +32,7 @@
 	 * travels there — nothing is edited or saved. Theme-aware via app CSS vars; relationship colour
 	 * only from relColor() (--rel-*, Style-Setter controlled), so it reads in light AND dark.
 	 */
-	import { t, tn, locale } from '$lib/i18n';
+	import { t, tn, locale, dir } from '$lib/i18n';
 	import { groupByType, relColor, relLabelIn, tierW, clean } from '$lib/cockpitGraphData';
 	import { linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import { detectDir } from '$lib/utils';
@@ -363,7 +363,10 @@
 				<rect class="bf-box" x={model.geo.cx - model.geo.boxW / 2} y={model.geo.cy - BOXH / 2}
 					width={model.geo.boxW} height={BOXH} rx="12"/>
 				<text class="bf-title" x={model.geo.cx} y={model.geo.cy - 4} text-anchor="middle">{model.geo.title}</text>
-				<text class="bf-sub" x={model.geo.cx} y={model.geo.cy + 15} text-anchor="middle">{$tn('plurals.links', total)}</text>
+				<!-- "{count} links" mixes a number with a UI-language word; the SVG is forced dir=ltr for
+				     anchor stability, so give the subtitle the UI language's OWN base direction — else
+				     Arabic reads the word before the count ("رابطًا 140" instead of "140 رابطًا"). -->
+				<text class="bf-sub" x={model.geo.cx} y={model.geo.cy + 15} text-anchor="middle" style:direction={$dir}>{$tn('plurals.links', total)}</text>
 				{#if !hasAny}
 					<text class="bf-empty" x={model.geo.cx} y={model.geo.cy + BOXH / 2 + 22} text-anchor="middle">{L('cockpit.noLinks', 'no links yet')}</text>
 				{/if}
