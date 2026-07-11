@@ -138,6 +138,16 @@ La structure du dossier univers suit le modele Obsidian : les notes vont directe
 | **Arborescence** | Clic droit sur un dossier > Nouvelle note |
 | **Mission Control** | `Ctrl+P` > "Nouvelle note" |
 
+### Vos onglets reviennent au redémarrage
+
+Jusqu'ici, fermer Constellation faisait oublier quelles notes étaient ouvertes — chaque lancement repartait d'une fenêtre vide. Désormais, l'application mémorise vos onglets ouverts, celui qui était actif et si la fenêtre était fractionnée, puis remet tout en place automatiquement au lancement suivant. Vous retrouvez votre bureau tel que vous l'aviez laissé.
+
+- La mémorisation est **par Univers** et se met à jour discrètement environ une seconde après chaque ouverture, fermeture ou réorganisation d'onglets. Un plantage ou un arrêt forcé ne fait perdre, au pire, que la dernière seconde de *disposition* — jamais le contenu des notes (la protection du contenu repose sur un mécanisme distinct, plus ancien).
+- Une note déplacée ou supprimée pendant que l'application était fermée est simplement ignorée ; le reste de vos onglets revient quand même.
+- Pour désactiver la fonction : **Paramètres > Éditeur > Restaurer les onglets au redémarrage**. La désactivation supprime aussi la session enregistrée — désactiver signifie *cesser de mémoriser*.
+- Les **Espaces de travail** nommés ne sont pas concernés : ils restent vos instantanés délibérés, enregistrés à la main. Cette fonction n'est que le « dernier état » mis à jour en continu.
+- Limite connue : avec une vue fractionnée, la fraction elle-même revient, mais la répartition des onglets entre les volets n'est pas encore mémorisée.
+
 ### Modes d'edition
 
 Constellation propose deux modes d'edition, selectionnables dans **Parametres > Editeur > Type d'editeur** :

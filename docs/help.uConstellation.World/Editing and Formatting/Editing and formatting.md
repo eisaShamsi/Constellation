@@ -326,8 +326,13 @@ You can customize the editor behavior in **Settings > Editor**. Settings are org
 | Setting | Description | Default |
 |---------|-------------|---------|
 | Always focus new tabs | When you open a link in a new tab, switch to it immediately | On |
+| Restore tabs on relaunch | Reopen the tabs from your last session when the app starts. Turning this off also deletes the remembered session | On |
 | Default view for new tabs | Reading or editing view when opening a new note | Reading view |
 | Default editing mode | Live Preview or Source mode when entering edit mode | Live Preview |
+
+#### Restore tabs on relaunch
+
+With this on (the default), closing and reopening Constellation puts your desk back the way you left it: the same tabs in the same order, the same active tab, and the split view if you had one. The memory is per-Universe and updates quietly about a second after you open, close, or rearrange tabs — a crash or force-kill loses at most the last second of arrangement, never note content. A note that was moved or deleted while the app was closed is simply skipped; the rest still return. Named Workspaces are unaffected — they stay your deliberate, hand-saved snapshots.
 
 ### Display
 

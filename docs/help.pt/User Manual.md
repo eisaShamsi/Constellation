@@ -166,6 +166,16 @@ Sua seleção e a posição de rolagem são preservadas ao alternar entre as aba
 | **Arvore de Arquivos** | Clique com botao direito em uma pasta > Nova Nota |
 | **Mission Control** | `Ctrl+P` > "Nova nota" |
 
+### Suas abas voltam ao reiniciar
+
+Até agora, fechar o Constellation fazia com que ele esquecesse quais notas estavam abertas — cada inicialização começava em branco. Agora o aplicativo lembra as abas abertas, qual delas estava ativa e se a janela estava dividida, e as recoloca automaticamente na próxima vez que você iniciar. Sua mesa de trabalho fica exatamente como você a deixou.
+
+- A memória é **por Universo** e se atualiza silenciosamente cerca de um segundo depois que você abre, fecha ou reorganiza abas. Uma falha ou encerramento forçado perde no máximo o último segundo de *arranjo* — nunca o conteúdo das notas (a segurança do conteúdo é um mecanismo separado e mais antigo).
+- Uma nota que foi movida ou excluída enquanto o aplicativo estava fechado é simplesmente ignorada; o restante das suas abas volta normalmente.
+- Para desativar: **Configurações → Editor → Restaurar abas ao reiniciar**. Desativar também exclui a sessão salva — desligado significa *parar de lembrar*.
+- Os **Espaços de trabalho** nomeados não são afetados: eles continuam sendo seus instantâneos deliberados, salvos manualmente. Este recurso é apenas o "último estado" contínuo.
+- Limite conhecido: com a Visualização Dividida, a divisão em si volta, mas ainda não é lembrado quais abas estavam em qual metade.
+
 ### Modos do Editor
 
 Constellation oferece dois modos de editor, selecionaveis em **Configuracoes > Editor > Tipo de editor**:

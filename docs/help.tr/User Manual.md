@@ -138,6 +138,16 @@ Evren klasör yapısı Obsidian modelini takip eder: notlar doğrudan kök klas�
 | **Dosya Ağacı** | Bir klasöre sağ tıklayın > Yeni Not |
 | **Mission Control** | `Ctrl+P` > "New note" |
 
+### Sekmeleriniz yeniden başlatmada geri gelir
+
+Şimdiye kadar Constellation'ı kapattığınızda hangi notların açık olduğu unutuluyordu — her açılış boş başlıyordu. Artık uygulama açık sekmelerinizi, hangisinin etkin olduğunu ve pencerenin bölünmüş olup olmadığını hatırlıyor ve bir sonraki açılışta hepsini otomatik olarak yerine koyuyor. Masanız, bıraktığınız gibi karşınıza gelir.
+
+- Bu hafıza **Evren başına** tutulur ve siz sekme açtıktan, kapattıktan veya yeniden düzenledikten yaklaşık bir saniye sonra sessizce güncellenir. Bir çökme veya zorla kapatma en fazla son bir saniyelik *yerleşimi* kaybettirir — not içeriğini asla (içerik güvenliği ayrı ve daha eski bir mekanizmadır).
+- Uygulama kapalıyken taşınan veya silinen bir not yalnızca atlanır; sekmelerinizin geri kalanı yine geri gelir.
+- Kapatmak için: **Ayarlar > Düzenleyici > Yeniden başlatmada sekmeleri geri yükle**. Kapatmak, hatırlanan oturumu da siler — kapalı, *hatırlamayı bırak* demektir.
+- Adlandırılmış **Çalışma Alanları** bundan etkilenmez: onlar sizin bilinçli olarak elle kaydettiğiniz anlık görüntüler olarak kalır. Bu özellik yalnızca sürekli güncellenen "son durum" kaydıdır.
+- Bilinen sınır: bölünmüş görünümde bölünmenin kendisi geri gelir, ancak hangi sekmenin hangi yarıda olduğu henüz hatırlanmaz.
+
 ### Düzenleyici Modları
 
 Constellation, **Ayarlar > Düzenleyici > Düzenleyici türü** bölümünden seçilebilen iki düzenleyici modu sunar:

@@ -171,6 +171,16 @@ Jede Stapelaktion läuft über genau dieselben sicheren, abgesicherten Abläufe,
 | **Dateibaum** | Rechtsklick auf einen Ordner > Neue Notiz |
 | **Mission Control** | `Ctrl+P` > "Neue Notiz" |
 
+### Ihre Tabs kehren beim Neustart zurück
+
+Bisher vergaß Constellation beim Schließen, welche Notizen geöffnet waren — jeder Start begann leer. Jetzt merkt sich die App Ihre offenen Tabs, welcher davon aktiv war und ob das Fenster geteilt war, und stellt all das beim nächsten Start automatisch wieder her. Ihr Schreibtisch sieht so aus, wie Sie ihn verlassen haben.
+
+- Die Erinnerung gilt **pro Universum** und aktualisiert sich unauffällig etwa eine Sekunde, nachdem Sie Tabs öffnen, schließen oder umordnen. Bei einem Absturz oder erzwungenen Beenden geht höchstens die letzte Sekunde der *Anordnung* verloren — niemals Notizinhalt (die Inhaltssicherung ist ein eigener, älterer Mechanismus).
+- Eine Notiz, die verschoben oder gelöscht wurde, während die App geschlossen war, wird einfach übersprungen; die übrigen Tabs kehren trotzdem zurück.
+- Zum Ausschalten: **Einstellungen → Editor → Tabs beim Neustart wiederherstellen**. Beim Ausschalten wird die gespeicherte Sitzung ebenfalls gelöscht — aus bedeutet *nicht mehr merken*.
+- Benannte **Arbeitsbereiche** bleiben unberührt: Sie sind weiterhin Ihre bewussten, von Hand gespeicherten Schnappschüsse. Diese Funktion ist lediglich der fortlaufende „letzte Stand".
+- Bekannte Einschränkung: Bei einer geteilten Ansicht kehrt die Teilung selbst zurück, aber welche Tabs in welcher Hälfte lagen, wird noch nicht gemerkt.
+
 ### Editor-Modi
 
 Constellation bietet zwei Editor-Modi, auswaehlbar unter **Einstellungen > Editor > Editortyp**:

@@ -138,6 +138,16 @@ El **Explorador de Archivos** (el árbol de archivos de la barra lateral) es la 
 | **Arbol de Archivos** | Clic derecho en una carpeta > Nueva Nota |
 | **Mission Control** | `Ctrl+P` > "Nueva nota" |
 
+### Tus pestañas vuelven al reiniciar
+
+Hasta ahora, al cerrar Constellation se olvidaba qué notas tenías abiertas — cada inicio comenzaba en blanco. Ahora la aplicación recuerda tus pestañas abiertas, cuál estaba activa y si la ventana estaba dividida, y las restaura automáticamente la próxima vez que la inicias. El escritorio queda tal como lo dejaste.
+
+- La memoria es **por Universo** y se actualiza silenciosamente alrededor de un segundo después de abrir, cerrar o reorganizar pestañas. Un fallo o un cierre forzado pierde como mucho el último segundo de *disposición* — nunca el contenido de las notas (la seguridad del contenido es un mecanismo aparte, más antiguo).
+- Una nota que fue movida o eliminada mientras la aplicación estaba cerrada simplemente se omite; el resto de tus pestañas vuelven igualmente.
+- Para desactivarlo: **Configuración → Editor → Restaurar pestañas al reiniciar**. Desactivarlo también elimina la sesión guardada — apagado significa *dejar de recordar*.
+- Los **Espacios de trabajo** con nombre no se ven afectados: siguen siendo tus instantáneas deliberadas, guardadas a mano. Esta función es solo el «último estado» continuo.
+- Límite conocido: con la Vista Dividida, la división en sí vuelve, pero aún no se recuerda qué pestañas estaban en cada mitad.
+
 ### Modos del Editor
 
 Constellation ofrece dos modos de editor, seleccionables en **Configuracion > Editor > Tipo de editor**:

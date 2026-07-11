@@ -331,6 +331,16 @@ If a folder template is configured for the parent folder, it is applied to the n
 
 The same dialog handles **New Folder**, **New Base**, and **New Library** — invoke them via the corresponding `+` toolbar buttons, the right-click menus, or Mission Control. New Library additionally shows a *Pick…* button so you can choose where the library folder lives on disk; New Base in workspace mode hides the location and shows a multi-select for which libraries the base will query.
 
+### Your tabs come back on relaunch
+
+Until now, closing Constellation forgot which notes you had open — every launch started blank. Now the app remembers your open tabs, which one was active, and whether the window was split, and puts them back automatically the next time you launch. The desk looks the way you left it.
+
+- The memory is **per-Universe** and updates quietly about a second after you open, close, or rearrange tabs. A crash or force-kill loses at most the last second of *arrangement* — never note content (content safety is a separate, older mechanism).
+- A note that was moved or deleted while the app was closed is simply skipped; the rest of your tabs still return.
+- To turn it off: **Settings → Editor → Restore tabs on relaunch**. Turning it off also deletes the remembered session — off means *stop remembering*.
+- Named **Workspaces** are unaffected: they stay your deliberate, hand-saved snapshots. This feature is just the rolling "last state".
+- Known limit: with a split view, the split itself returns but which tabs sat in which half is not remembered yet.
+
 ### Editor
 
 Constellation uses a high-performance CodeMirror 6 editor with two modes, switchable via the toggle in the breadcrumb bar:
