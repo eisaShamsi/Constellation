@@ -6,15 +6,25 @@
 
 <script lang="ts">
 	/**
-	 * PJ-068 — "The Orrery" note-graph lens (Art Director final build).
+	 * PJ-068 — "The Orrery" note-graph lens (Art Director final build + Boss's four refinements).
 	 *
 	 * THE HORSE: at a glance, how RECENTLY has each of this note's links actually been walked, and
 	 * which typed relationships are drifting cold? The note is a warm central SUN. Six concentric
-	 * recency ORBITS carry the radial axis — inner = today/warm, outer rim = never-walked/cold.
-	 * Angular TYPE SECTORS carry the categorical axis — canonical order (orderTypes), one constant
-	 * relColour per relationship. Within each (shell × type) CELL the bodies are placed by pure
-	 * DETERMINISTIC EVEN ANGULAR DIVISION (name-sorted, zero jitter) — position is a function of the
-	 * data alone, so a body never moves between renders (Form-Aligns-To-Purpose: no decorative DOF).
+	 * recency ORBITS carry the radial axis — inner = today/warm, outer rim = never-walked/cold — drawn
+	 * as CLEAR, thin, theme-aware ring lines (Remark 2), each wearing its own recency label so the
+	 * TIME structure is legible at a glance (Remark 1). Angular TYPE SECTORS carry the categorical
+	 * axis (canonical order, one constant relColour per relationship) and each wing's ANGULAR WIDTH now
+	 * encodes its link COUNT (Remark 3): a 398-link type gets a wide wing, a 1–2-link type a small
+	 * floored wing (still visible, hittable, rim-labelled). Within each (shell × type) CELL the bodies
+	 * are placed by pure DETERMINISTIC EVEN ANGULAR DIVISION (name-sorted, zero jitter) — position is a
+	 * function of the data alone (Form-Aligns-To-Purpose: no decorative DOF).
+	 *
+	 * HOVER-EXPAND (Remark 4): hovering a crowded wing (its background OR any of its bodies/clusters)
+	 * GROWS that wing's angular width until its cells dissolve their '+N' clusters and every node is
+	 * visible at legible spacing, while the OTHER wings shrink to a floor. On mouse-leave it snaps back
+	 * to the count-proportional layout. Wing bearing is therefore no longer constant across notes — an
+	 * accepted trade: width now HONESTLY encodes count (more data, not decoration). Instant snap (no
+	 * per-frame work): the layout recomputes only when the hovered wing actually changes.
 	 *
 	 * ENCODINGS (honesty ledger): direction = solid disc (outgoing) vs hollow ring (backlink);
 	 * size = earnedWeight; halo = confidence, drawn purely as ring STYLE (hypothesis dotted /
@@ -75,6 +85,15 @@
 		const key = RECENCY_SHELLS[s]?.key ?? 'older';
 		return L('cockpit.orrery.recency.' + key, SHELL_FB[key] ?? key);
 	}
+	// Concise ring labels (Remark 1) — the six time bands drawn ON the chart, tied to their rings.
+	const RING_FB: Record<string, string> = {
+		today: 'today', week: 'this week', month: 'this month',
+		quarter: 'this quarter', older: 'older', never: 'never walked',
+	};
+	function ringLabelShort(s: number): string {
+		const key = RECENCY_SHELLS[s]?.key ?? 'older';
+		return L('cockpit.orrery.recency.' + key + '.short', RING_FB[key] ?? key);
+	}
 
 	// confidence halo — encoded by RING STYLE only (hue stays the relation's own colour).
 	function confHalo(conf: string): { add: number; sw: number; dash: string }[] {
@@ -96,17 +115,36 @@
 	// members (they sit 8–16px outward with no data-k in between). Set on cluster/fan hover or a
 	// cluster click; cleared on svg pointerleave, on moving onto a normal body, or on keyboard nav.
 	let latch = $state(null as { p: number; key: string } | null);
+	// Remark 4 — the wing (link TYPE) the pointer is over, and the one to EXPAND. Carries a noteKey so
+	// a value left stale by a click-navigate (the note changed under a stationary pointer) can never
+	// pre-expand the wrong note's wing. The setter below only reassigns when the wing/key actually
+	// changes, so a pointermove that stays inside one wing does NOT invalidate the geometry — the
+	// derivation reads this $state but does zero per-frame work.
+	let hoverWing = $state(null as { wing: string; key: string } | null);
 
 	let total = $derived(backlinks.length + outgoing.length);
 	let hasAny = $derived(total > 0);
 	// identity token: any of these changing means a different note is on screen.
 	let noteKey = $derived(noteName + '|' + backlinks.length + '|' + outgoing.length);
 
-	// ── ALL geometry lives here — one derivation, no $effect, no per-frame work. ─────────────────
+	function setHoverWing(wing: string | null) {
+		const cur = hoverWing;
+		if (!wing) { if (cur) hoverWing = null; return; }
+		if (cur && cur.wing === wing && cur.key === noteKey) return;   // same wing, same note → no invalidation
+		hoverWing = { wing, key: noteKey };
+	}
+
+	// ── ALL geometry lives here — one derivation, no $effect, no per-frame work. It reads the hovered
+	//    wing (Remark 4): changing WHICH wing is hovered recomputes the layout (expand + re-proportion),
+	//    nothing else does. ────────────────────────────────────────────────────────────────────────
 	let model = $derived.by(() => {
 		void $linkTypesStore;   // recolour / re-order when the link-type vocabulary changes
 		const cx = Math.round(W / 2), cy = Math.round(H / 2);
 		const now = Date.now();
+		const TAU = 2 * Math.PI;
+		const MIN_SLOT = 11;   // px of orbit arc a body needs before its cell tiers into a cluster
+		const nk = noteKey;
+		const hw = (hoverWing && hoverWing.key === nk) ? hoverWing.wing : null;
 
 		const rtlTitle = detectDir(clean(noteName) || noteName) === 'rtl';
 		let title = clean(noteName);
@@ -139,7 +177,12 @@
 		const present = orderTypes([...new Set(recs.map((r) => r.type))]);
 		const T = present.length;
 		const countByType: Record<string, number> = {};
-		for (const r of recs) countByType[r.type] = (countByType[r.type] || 0) + 1;
+		const countByTypeShell: Record<string, number[]> = {};
+		for (const r of recs) {
+			countByType[r.type] = (countByType[r.type] || 0) + 1;
+			const arr = countByTypeShell[r.type] || (countByTypeShell[r.type] = [0, 0, 0, 0, 0, 0]);
+			arr[r.shell]++;
+		}
 
 		// ── radial frame — the rim reserve is sized to the LONGEST localized label so long locales
 		//    (German 'widerspricht', Arabic, CJK) never clip; the outermost orbit is inset by one body
@@ -156,22 +199,94 @@
 		const orbitR: number[] = [];
 		for (let s = 0; s < 6; s++) orbitR.push(R0 + (Router - R0) * (s / 5)); // equal radial budget per band, recent inside
 
-		if (!T) return { cx, cy, Rsun, Rmax, orbitR, title, sectors: [] as any[], cells: [] as any[], navTargets: [] as any[] };
+		const EMPTY = { cx, cy, Rsun, Rmax, orbitR, title, ringMode: 'none' as string, ringLabels: [] as any[], ringLegend: [] as any[], legendBox: null as any, sectors: [] as any[], cells: [] as any[], navTargets: [] as any[] };
+		if (!T) return EMPTY;
+
+		// ── Remark 1 + 2: the six recency time labels, tied to their ring lines. They ride the top
+		//    label spoke, DE-COLLIDED so they never pile into an illegible stack on a small pane; when
+		//    the pane is too short to letter six on the spoke, they fall back to a compact corner
+		//    legend so every band is still named. A displaced chip draws a hairline tick to its true
+		//    ring so the tie survives. ──────────────────────────────────────────────────────────────
+		const bandGap = (Router - R0) / 5;
+		const chipH = clamp(bandGap * 0.9, 10, 14);
+		const rFont = clamp(chipH * 0.66, 7.5, 9.5);
+		const minSep = chipH + 1.5;
+		const botLimit = cy - Rsun - 10;                               // keep the innermost label off the sun pill
+		const rawY = orbitR.map((r) => cy - r);                        // s=0 lowest (large y) … s=5 highest (small y)
+		const dispY: number[] = new Array(6);
+		let prevY = -Infinity;
+		for (let s = 5; s >= 0; s--) { const y = Math.max(rawY[s], prevY + minSep); dispY[s] = y; prevY = y; } // push down, keep order
+		const ringMode: string = dispY[0] <= botLimit ? 'spoke' : 'legend';
+		let ringLabels: any[] = [];
+		let ringLegend: any[] = [];
+		let legendBox: any = null;
+		if (ringMode === 'spoke') {
+			ringLabels = orbitR.map((r, s) => {
+				const text = ringLabelShort(s);
+				const w = estW(text) * 0.9 + 12;
+				return {
+					s, cold: s >= 4, text, font: r2(rFont), h: r2(chipH),
+					chipX: r2(cx - w / 2), chipY: r2(dispY[s] - chipH / 2), chipW: r2(w),
+					tx: cx, ty: r2(dispY[s]),
+					tick: Math.abs(dispY[s] - rawY[s]) > 1.5, tickY1: r2(dispY[s]), tickY2: r2(rawY[s]),
+				};
+			});
+		} else {
+			const lh = clamp(chipH, 10, 12);
+			const lfont = r2(clamp(lh * 0.72, 8, 9.5));
+			const lpad = 5;
+			ringLegend = orbitR.map((r, s) => ({ s, cold: s >= 4, text: ringLabelShort(s), font: lfont, tx: 11, ty: r2(3 + lpad + s * lh + lh / 2) }));
+			const lw = Math.max(46, ...ringLegend.map((e: any) => estW(e.text))) + 14;
+			legendBox = { x: 3, y: 3, w: r2(lw), h: r2(2 * lpad + 6 * lh) };
+		}
 
 		const gmaxW = Math.max(1, ...recs.map((r) => r.w));
 		const bodyR = (w: number) => clamp(BODY_MIN + (BODY_MAX - BODY_MIN) * Math.sqrt(w / gmaxW), BODY_MIN, BODY_MAX);
 
-		// ── angular sectors (categorical: one equal wedge per present type; reading direction flips order) ──
+		// ── angular sectors — Remark 3: each present type's wedge WIDTH ∝ its link count, with a
+		//    minimum floor so a 1–2 link type is still visible, hittable, and keeps its rim label. ──
 		const start = -Math.PI / 2;                                    // 12 o'clock
 		const sign = ($dir === 'rtl') ? -1 : 1;
-		const step = (2 * Math.PI) / T;
-		const gapRad = Math.min(0.06, step * 0.12);
-		const half = step / 2 - gapRad / 2;
+		const totalCount = Math.max(1, recs.length);
+		const minFrac = Math.min(0.05, 0.72 / T);                      // floor per wing (≤ 0.72 total, so proportional pool > 0)
+		const propFrac = present.map((tp) => minFrac + (1 - T * minFrac) * (countByType[tp] / totalCount));
+
+		// ── Remark 4: a hovered CROWDED wing expands to show all its nodes; the others shrink. Give
+		//    it the span its fullest cell needs (n · MIN_SLOT of arc), then re-proportion the rest. ──
+		let fracs = propFrac;
+		let expandType: string | null = null;
+		if (hw && present.includes(hw) && T > 1) {
+			const k = present.indexOf(hw);
+			const shells = countByTypeShell[hw] || [];
+			let needSpan = 0;
+			for (let s = 0; s < 6; s++) {
+				const n = shells[s] || 0;
+				if (n > 0) needSpan = Math.max(needSpan, (n * MIN_SLOT) / Math.max(1, orbitR[s]));
+			}
+			const needFrac = clamp((needSpan * 1.12 + 0.06) / TAU, propFrac[k], 0.78);
+			if (needFrac > propFrac[k] + 0.005) {
+				expandType = hw;
+				const rest = 1 - needFrac;
+				const otherCount = Math.max(1, totalCount - countByType[hw]);
+				const minO = Math.min(0.03, (rest * 0.6) / Math.max(1, T - 1));
+				fracs = present.map((tp, i) =>
+					i === k ? needFrac : minO + (rest - (T - 1) * minO) * (countByType[tp] / otherCount));
+			}
+		}
+
+		const gapRad = clamp(Math.min(...fracs) * TAU * 0.14, 0.008, 0.05);
 		const pt = (r: number, th: number): [number, number] => [cx + r * Math.cos(th), cy + r * Math.sin(th)];
 
+		let acc = 0;
 		const sectors = present.map((type: string, k: number) => {
-			const center = start + sign * (k + 0.5) * step;
-			const lo = center - half, hi = center + half;
+			const f = fracs[k];
+			const e0 = start + sign * acc * TAU;
+			const e1 = start + sign * (acc + f) * TAU;
+			acc += f;
+			let lo = Math.min(e0, e1) + gapRad / 2;
+			let hi = Math.max(e0, e1) - gapRad / 2;
+			if (hi <= lo) { const m0 = (Math.min(e0, e1) + Math.max(e0, e1)) / 2; lo = m0 - 0.004; hi = m0 + 0.004; }
+			const center = (lo + hi) / 2;
 			// faint wedge path (true annular sector, hairline) — spans the sun rim to the outer rim
 			const rIn = Rsun + 3, rOut = Rmax;
 			const [x0, y0] = pt(rIn, lo), [x1, y1] = pt(rIn, hi), [x2, y2] = pt(rOut, hi), [x3, y3] = pt(rOut, lo);
@@ -193,7 +308,7 @@
 			lx = clamp(lx, 6, W - 6);
 			ly = clamp(ly, 12, H - 8);
 			return {
-				type, color: relColor(type), label, count,
+				type, color: relColor(type), label, count, expanded: expandType === type,
 				lo, hi, mid: center, wedge,
 				bx1: r2(bx1), by1: r2(by1), bx2: r2(bx2), by2: r2(by2),
 				lx: r2(lx), ly: r2(ly + 3), anchor,
@@ -201,7 +316,6 @@
 		});
 
 		// ── cells: (type × shell). Even angular division + density-tiered clustering. ───────────
-		const MIN_SLOT = 11;   // px of orbit arc a body needs before its cell tiers into a cluster
 		const cells: any[] = [];
 		const navTargets: any[] = [];
 		const byName = (a: any, b: any) => a.name.localeCompare(b.name);
@@ -273,7 +387,7 @@
 			}
 		}
 
-		return { cx, cy, Rsun, Rmax, orbitR, title, sectors, cells, navTargets };
+		return { cx, cy, Rsun, Rmax, orbitR, title, ringMode, ringLabels, ringLegend, legendBox, sectors, cells, navTargets };
 	});
 
 	// centre pill (drawn atop the orbits so the note title stays legible over hairlines)
@@ -311,7 +425,7 @@
 		}
 		if (p < 0) return null;
 		const c = model.cells[p]; const cl = c?.cluster; if (!cl) return null;
-		return { members: cl.members as any[], color: c.color as string, p, gx: cl.gx as number, gy: cl.gy as number };
+		return { members: cl.members as any[], color: c.color as string, type: c.type as string, p, gx: cl.gx as number, gy: cl.gy as number };
 	});
 
 	let plate = $derived.by(() => {
@@ -350,20 +464,27 @@
 		if (m?.path) onNavigate?.(m.path, m.name, m.lib || '');
 	}
 	function onMove(e: PointerEvent) {
-		const el = (e.target as Element)?.closest?.('[data-k]') as any;
-		if (!el) { hover = null; return; }   // in the glyph→member gap: keep the latch, drop the hover
+		const tgt = e.target as Element;
+		// which wing is the pointer over (wedge background OR a mark's data-wing) → drives the expand.
+		// Decorative elements are pointer-transparent, so crossing a ring line / gap reads as "no
+		// wing" and collapses cleanly; the setter dedupes so staying inside a wing is a no-op.
+		const wingEl = tgt?.closest?.('[data-wing]') as any;
+		setHoverWing(wingEl ? ((wingEl.dataset.wing as string) || null) : null);
+		const el = tgt?.closest?.('[data-k]') as any;
+		if (!el) { hover = null; return; }   // wedge background / glyph→member gap: keep latch, drop hover
 		const kind = el.dataset.k as Hit['kind'];
 		const p = +el.dataset.p;
 		hover = { kind, p, i: +(el.dataset.i ?? '0'), key: noteKey };
 		if (kind === 'cluster' || kind === 'fan') latch = { p, key: noteKey };
 		else latch = null;                    // moved onto a normal body → close any latched fan
 	}
-	function onLeave() { hover = null; latch = null; }
+	function onLeave() { hover = null; latch = null; setHoverWing(null); }
 	function onClick(e: MouseEvent) {
 		const el = (e.target as Element)?.closest?.('[data-k]') as any;
 		if (!el) return;
 		const kind = el.dataset.k as Hit['kind'];
 		if (kind === 'cluster') { latch = { p: +el.dataset.p, key: noteKey }; return; }   // open the fan (also for touch)
+		setHoverWing(null);                   // navigating away → never carry the wing to the next note
 		navigateSel({ kind, p: +el.dataset.p, i: +(el.dataset.i ?? '0'), key: noteKey });
 	}
 	function onKey(e: KeyboardEvent) {
@@ -416,22 +537,25 @@
 					</radialGradient>
 				</defs>
 
-				<!-- warm→cold sky wash + the sun's glow, behind everything -->
-				<circle cx={model.cx} cy={model.cy} r={r2(model.Rmax)} fill="url(#warm-{uid})"/>
-				<circle cx={model.cx} cy={model.cy} r={r2(model.orbitR[2] ?? model.Rmax)} fill="url(#sun-{uid})"/>
+				<!-- warm→cold sky wash + the sun's glow, behind everything (decorative, no pointer target) -->
+				<circle cx={model.cx} cy={model.cy} r={r2(model.Rmax)} fill="url(#warm-{uid})" pointer-events="none"/>
+				<circle cx={model.cx} cy={model.cy} r={r2(model.orbitR[2] ?? model.Rmax)} fill="url(#sun-{uid})" pointer-events="none"/>
 
-				<!-- faint type wedges (low-alpha, hairline) -->
+				<!-- count-proportional type wedges (the ONLY pointer targets besides the marks); the
+				     hovered/expanded wing brightens (Remark 3 + 4) -->
 				{#each model.sectors as sec}
-					<path d={sec.wedge} fill={sec.color} fill-opacity="0.06"/>
+					<path class="orr-wedge" d={sec.wedge} data-wing={sec.type} fill={sec.color} style:fill-opacity={sec.expanded ? 0.14 : 0.06}/>
 				{/each}
 				<!-- sector boundary hairlines -->
 				{#each model.sectors as sec}
-					<line x1={sec.bx1} y1={sec.by1} x2={sec.bx2} y2={sec.by2} stroke="var(--background-modifier-border, #d4d4d8)" stroke-opacity="0.22" stroke-width="1"/>
+					<line x1={sec.bx1} y1={sec.by1} x2={sec.bx2} y2={sec.by2} stroke="var(--background-modifier-border, #d4d4d8)" stroke-opacity="0.22" stroke-width="1" pointer-events="none"/>
 				{/each}
-				<!-- six recency orbits (hairline, dashed; outer rings fade colder) -->
-				{#each model.orbitR as r, s}
-					<circle class="orr-orbit" class:cold={s >= 4} cx={model.cx} cy={model.cy} r={r2(r)} fill="none"/>
-				{/each}
+				{#if hasAny}
+					<!-- Remark 2: six recency orbits as CLEAR thin ring lines (outer rings fade colder) -->
+					{#each model.orbitR as r, s}
+						<circle class="orr-orbit" class:cold={s >= 4} cx={model.cx} cy={model.cy} r={r2(r)} fill="none"/>
+					{/each}
+				{/if}
 				<!-- rim labels: type · count -->
 				{#each model.sectors as sec}
 					<text class="orr-rim" x={sec.lx} y={sec.ly} text-anchor={sec.anchor}><tspan fill={sec.color} font-weight="600">{sec.label}</tspan><tspan fill="var(--text-muted)"> · {sec.count}</tspan></text>
@@ -441,7 +565,7 @@
 				<g class="orr-marks" class:dimmed={!!act}>
 					{#each model.cells as c, ci}
 						{#each c.bodies as b, bi}
-							<g class="orr-body" data-k="body" data-p={ci} data-i={bi}>
+							<g class="orr-body" data-k="body" data-p={ci} data-i={bi} data-wing={c.type}>
 								{#if b.alarm}
 									<circle class="orr-alarm" cx={b.x} cy={b.y} r={r2(b.rB + 3.4)} fill="none"/>
 								{/if}
@@ -458,7 +582,7 @@
 							</g>
 						{/each}
 						{#if c.cluster}
-							<g class="orr-cluster" data-k="cluster" data-p={ci}>
+							<g class="orr-cluster" data-k="cluster" data-p={ci} data-wing={c.type}>
 								<circle cx={c.cluster.gx} cy={c.cluster.gy} r={c.cluster.r} fill="var(--background-secondary, #f4f4f5)" stroke={c.color} stroke-width="1"/>
 								<text class="orr-cn" x={c.cluster.gx} y={r2(c.cluster.gy + 3)} text-anchor="middle">+{c.cluster.n}</text>
 							</g>
@@ -470,16 +594,38 @@
 				{#if fanView}
 					<g>
 						{#each fanView.members as m, mi}
-							<line x1={fanView.gx} y1={fanView.gy} x2={m.x} y2={m.y} stroke={fanView.color} stroke-opacity="0.3" stroke-width="0.7"/>
+							<line x1={fanView.gx} y1={fanView.gy} x2={m.x} y2={m.y} stroke={fanView.color} stroke-opacity="0.3" stroke-width="0.7" pointer-events="none"/>
 						{/each}
 						{#each fanView.members as m, mi}
-							<g class="orr-body" data-k="fan" data-p={fanView.p} data-i={mi}>
+							<g class="orr-body" data-k="fan" data-p={fanView.p} data-i={mi} data-wing={fanView.type}>
 								{#if m.dir === 'out'}
 									<circle cx={m.x} cy={m.y} r={m.rB} fill={fanView.color} stroke="var(--background-primary)" stroke-width="0.6"/>
 								{:else}
 									<circle cx={m.x} cy={m.y} r={m.rB} fill="var(--background-primary)" stroke={fanView.color} stroke-width={r2(clamp(m.rB * 0.34, 0.7, 2))}/>
 								{/if}
 							</g>
+						{/each}
+					</g>
+				{/if}
+
+				<!-- Remark 1: the recency time labels, tied to their rings (spoke ruler, de-collided; or a
+				     compact corner legend when the pane is too short). On top, pointer-transparent. -->
+				{#if hasAny && model.ringMode === 'spoke'}
+					<g class="orr-rings" pointer-events="none">
+						<line class="orr-spine" x1={model.cx} y1={r2(model.cy - model.orbitR[5])} x2={model.cx} y2={r2(model.cy - model.orbitR[0])}/>
+						{#each model.ringLabels as rl}
+							{#if rl.tick}
+								<line class="orr-tick" x1={model.cx} y1={rl.tickY1} x2={model.cx} y2={rl.tickY2}/>
+							{/if}
+							<rect class="orr-ring-chip" x={rl.chipX} y={rl.chipY} width={rl.chipW} height={rl.h} rx={r2(rl.h / 2)}/>
+							<text class="orr-ring-lbl" class:cold={rl.cold} x={rl.tx} y={rl.ty} text-anchor="middle" style:font-size={rl.font + 'px'}>{rl.text}</text>
+						{/each}
+					</g>
+				{:else if hasAny && model.ringMode === 'legend'}
+					<g class="orr-rings" pointer-events="none">
+						<rect class="orr-legend-box" x={model.legendBox.x} y={model.legendBox.y} width={model.legendBox.w} height={model.legendBox.h} rx="5"/>
+						{#each model.ringLegend as le}
+							<text class="orr-ring-lbl" class:cold={le.cold} x={le.tx} y={le.ty} text-anchor="start" style:font-size={le.font + 'px'}>{le.text}</text>
 						{/each}
 					</g>
 				{/if}
@@ -531,13 +677,22 @@
 	   so under RTL "start" flips to the right edge. The geometry is LTR by definition, so pin the SVG
 	   to ltr and let each label shape itself via unicode-bidi: plaintext. */
 	.orr-svg { width: 100%; height: 100%; display: block; outline: none; direction: ltr; }
-	.orr-orbit { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.55; stroke-width: 1; stroke-dasharray: 1 4; }
-	.orr-orbit.cold { stroke-opacity: 0.38; }
+	/* Remark 2: clear, thin, theme-aware ring lines (the old 1 4 dash read near-invisible). */
+	.orr-orbit { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; stroke-width: 1; pointer-events: none; }
+	.orr-orbit.cold { stroke-opacity: 0.4; }
+	.orr-wedge { transition: fill-opacity 0.15s ease; }
 	.orr-body { cursor: pointer; }
 	.orr-cluster { cursor: pointer; }
 	.orr-marks.dimmed { opacity: 0.2; transition: opacity 0.12s; }
 	.orr-cn { font: 600 9px var(--font-sans); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
-	.orr-rim { font: 11px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext; }
+	.orr-rim { font: 11px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext; pointer-events: none; }
+	/* Remark 1: the recency label spoke + its ring chips / corner legend. */
+	.orr-spine { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.35; stroke-width: 1; stroke-dasharray: 1 3; }
+	.orr-tick { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.5; stroke-width: 1; }
+	.orr-ring-chip { fill: var(--background-primary, #fff); fill-opacity: 0.72; stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; }
+	.orr-legend-box { fill: var(--background-primary, #fff); fill-opacity: 0.82; stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; }
+	.orr-ring-lbl { font-family: var(--font-sans); font-weight: 600; fill: var(--text-muted, #6b7280); dominant-baseline: middle; unicode-bidi: plaintext; }
+	.orr-ring-lbl.cold { fill: var(--text-faint, #9ca3af); }
 	.orr-pill { fill: var(--background-secondary, #f4f4f5); stroke: var(--background-modifier-border, #d4d4d8); }
 	.orr-title { font: 600 12px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
 	.orr-sub { font: 10px var(--font-sans); fill: var(--text-muted, #6b7280); }
