@@ -12,4 +12,17 @@
 - **Adversarial verdicts:** D1 REJECTED (failure ceiling = named workspaces wiped via the shared whole-array atomic write — 3 independent kill paths); D3 rejected as stated (its `setActiveUniverse` flush hook fires at 5 non-switch sites incl. boot → boot-breaking; accepted silent persist failure = forbidden class); D2 RECOMMENDED — every fatal finding absorbed by a cheap correction (explicit-root IPC signature, ~20-LOC crash-loop breaker).
 - **Critic's structural catch (gap all 3 designs shared):** the close path should use the EXISTING Rust `CloseRequested` handler (lib.rs:633-648) for a guaranteed final flush on graceful close — not a new DOM beforeunload; `beforeunload`+IPC survival in Tauri v2/WebView2 is UNKNOWN until tested.
 - **Deliverable:** `docs/MIG-100-Auto-Restore-Tabs-Architect.md` (options table, 11 mandatory corrections, invariants, rollback).
-- **Next:** Boss option pick → Phase 2 (Plan).
+- **Boss picked D2** (dedicated session file) — committed `9a6ab328`.
+
+## MIG-100 — Phase 2 (Plan) COMPLETE
+
+- **Plan workflow `wf_2cfdbdc3-6d6`** — planner + coverage checker + feasibility checker (3 agents, 0 errors). All checker findings folded into the final plan:
+  - **Feasibility ERROR #1:** the toggle gate in §3 would not compile before the setting exists → `AppSettings` field + `DEFAULT_SETTINGS` moved into §2.
+  - **Feasibility ERROR #2:** `vitest.config.ts` uses an explicit include whitelist (:24-90) → new `session.test.ts` must be added there or its tests silently never run.
+  - **Stale anchor:** `get_perf_trace_log` is invoked at +layout.svelte:3578 (registered lib.rs:618), not :3473.
+  - **Coverage WEAK ×3 closed:** safeBootMode-skip verification clause added (§3); deferred-cid-ensure drain test added (R6); mid-restore-throw arm-in-finally test added (R7).
+  - **Bundling split:** draft §4 split into §4a (frontend switch/create hooks) + §4b (Rust CloseRequested close path) — two subsystems, two commits.
+  - **Inspection-cadence GAP closed:** diff-scoped `safety-inspection` before EVERY code commit touching persisted-JSON/lifecycle (§1, §3, §4a, §4b, §5, §6); whole-app sweep at §8 (migration close = cycle boundary).
+  - Implementation notes: CloseRequested closure is sync → `prevent_close` + `async_runtime::spawn` + `window.destroy()` (destroy bypasses CloseRequested = re-entry guard); universe root sourced from `get_active_universe_path` (universe/store.ts:34-36), captured at arm time.
+- **Deliverable:** `docs/MIG-100-Auto-Restore-Tabs-Plan.md` — 9 commits (§1..§8 with §4a/§4b), traceability table (11 corrections + 7 invariants → steps), risk mitigations, rollback, staged Boss tests.
+- **Next:** Boss plan approval → Phase 3 (Build) cascades.
