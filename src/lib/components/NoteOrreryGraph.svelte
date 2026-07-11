@@ -6,42 +6,47 @@
 
 <script lang="ts">
 	/**
-	 * PJ-068 — "The Orrery" note-graph lens (Art Director final build + Boss's four refinements).
+	 * PJ-068 — "The Orrery" note-graph lens (Art Director final build + Boss's refinements).
 	 *
 	 * THE HORSE: at a glance, how RECENTLY has each of this note's links actually been walked, and
 	 * which typed relationships are drifting cold? The note is a warm central SUN. Six concentric
 	 * recency ORBITS carry the radial axis — inner = today/warm, outer rim = never-walked/cold — drawn
-	 * as CLEAR, thin, theme-aware ring lines (Remark 2), each wearing its own recency label so the
-	 * TIME structure is legible at a glance (Remark 1). Angular TYPE SECTORS carry the categorical
-	 * axis (canonical order, one constant relColour per relationship) and each wing's ANGULAR WIDTH now
-	 * encodes its link COUNT (Remark 3): a 398-link type gets a wide wing, a 1–2-link type a small
-	 * floored wing (still visible, hittable, rim-labelled). Within each (shell × type) CELL the bodies
-	 * are placed by pure DETERMINISTIC EVEN ANGULAR DIVISION (name-sorted, zero jitter) — position is a
-	 * function of the data alone (Form-Aligns-To-Purpose: no decorative DOF).
+	 * as CLEAR, thin, theme-aware ring lines, each wearing its own recency label so the TIME structure
+	 * is legible at a glance. Angular TYPE SECTORS carry the categorical axis (canonical order, one
+	 * constant relColour per relationship) and each wing's ANGULAR WIDTH encodes its link COUNT: a
+	 * 398-link type gets a wide wing, a 1–2-link type a small floored wing (still visible, hittable,
+	 * rim-labelled). Within each (shell × type) CELL the bodies are placed by pure DETERMINISTIC EVEN
+	 * ANGULAR DIVISION (name-sorted, zero jitter) — position is a function of the data alone.
 	 *
-	 * HOVER-EXPAND (Remark 4): hovering a crowded wing (its background OR any of its bodies/clusters)
-	 * GROWS that wing's angular width until its cells dissolve their '+N' clusters and every node is
-	 * visible at legible spacing, while the OTHER wings shrink to a floor. On mouse-leave it snaps back
-	 * to the count-proportional layout. Wing bearing is therefore no longer constant across notes — an
-	 * accepted trade: width now HONESTLY encodes count (more data, not decoration). Instant snap (no
-	 * per-frame work): the layout recomputes only when the hovered wing actually changes.
+	 * REMARK 1 (Boss, zoom-out) — DISPLAY ALL NODES: the central sun and its inner dead-zone are
+	 * SMALL so the orbits get far more radial budget and 'today' sits close to the centre; the node
+	 * dots are sized from the tightest (shell × type) cell THAT CAN STILL FIT — its arc-length ÷ its
+	 * node count — with a couple-px floor, so the common case draws EVERY node at even spacing rather
+	 * than a '+N' cluster, and a single pathological over-dense cell no longer flattens the dots of
+	 * every sparse wing beside it (it clusters on its own). Clustering survives ONLY as a genuine last
+	 * resort for a cell that cannot fit all its nodes even at the minimum dot size; nothing is dropped.
+	 *
+	 * REMARK 2 (Boss) — TOP LABEL DE-COLLISION: the six recency ring labels own the 12-o'clock spoke.
+	 * Any wing '+N' cluster count or rim type-label that would land on that spoke is pushed clear —
+	 * horizontally to the nearer side, and if a narrow pane would clamp it back onto the lane, radially
+	 * out of the lane's band — so every recency label and every count stays readable at any width.
+	 *
+	 * HOVER-EXPAND: hovering a crowded wing (its background OR any of its bodies/clusters) GROWS that
+	 * wing's angular width until its cells dissolve any '+N' cluster and every node is visible at
+	 * legible spacing, while the OTHER wings shrink to a floor. On mouse-leave it snaps back to the
+	 * count-proportional layout. Instant snap (no per-frame work): the layout recomputes only when the
+	 * hovered wing actually changes.
 	 *
 	 * ENCODINGS (honesty ledger): direction = solid disc (outgoing) vs hollow ring (backlink);
 	 * size = earnedWeight; halo = confidence, drawn purely as ring STYLE (hypothesis dotted /
 	 * evidence thin / established thick / contested dashed-double) in the relation's OWN hue so no
 	 * non-type colour enters; warmth (inner warm → outer cold) is a low-alpha radial-gradient annulus
-	 * DECLARED REDUNDANT with the radial orbit axis (reinforcement + explicit Boss ORRERY-FEEL
-	 * requirement, not a new channel). ALARM = load-bearing AND walked AND gone-cold → a STATUS
-	 * -coloured warning ring (distinct from every type hue) with a slow breathe-pulse on a heavy body
-	 * stranded on an outer cold orbit.
+	 * DECLARED REDUNDANT with the radial orbit axis. ALARM = load-bearing AND walked AND gone-cold → a
+	 * STATUS-coloured warning ring (distinct from every type hue) with a slow breathe-pulse on a heavy
+	 * body stranded on an outer cold orbit.
 	 *
-	 * ALL links are represented, density-TIERED never capped: a per-cell slot budget from the orbit
-	 * arc; when a cell overflows, only its smallest-weight optional bodies collapse into ONE counted
-	 * '+N' cluster (nothing dropped, and never a '+1'). Load-bearing / alive / alarm bodies never
-	 * cluster; crowded cells SHRINK their body radius instead of overlapping. Hovering / focusing a
-	 * cluster fans its members onto a temporary sub-arc that LATCHES open across the pointer gap, each
-	 * member individually named and click-navigable. Read-only (Display-not-Domain): hover names a
-	 * link, click travels the MAIN window. Theme-aware; relationship colour only from relColor().
+	 * ALL links are represented, read-only (Display-not-Domain): hover names a link, click travels the
+	 * MAIN window. Theme-aware; relationship colour only from relColor().
 	 */
 	import { t, tn, locale, dir } from '$lib/i18n';
 	import { relColor, relLabelIn, earnedWeight, recencyShell, normalizeType, orderTypes, clean, RECENCY_SHELLS, NEVER_SHELL } from '$lib/cockpitGraphData';
@@ -85,7 +90,7 @@
 		const key = RECENCY_SHELLS[s]?.key ?? 'older';
 		return L('cockpit.orrery.recency.' + key, SHELL_FB[key] ?? key);
 	}
-	// Concise ring labels (Remark 1) — the six time bands drawn ON the chart, tied to their rings.
+	// Concise ring labels — the six time bands drawn ON the chart, tied to their rings.
 	const RING_FB: Record<string, string> = {
 		today: 'today', week: 'this week', month: 'this month',
 		quarter: 'this quarter', older: 'older', never: 'never walked',
@@ -115,8 +120,8 @@
 	// members (they sit 8–16px outward with no data-k in between). Set on cluster/fan hover or a
 	// cluster click; cleared on svg pointerleave, on moving onto a normal body, or on keyboard nav.
 	let latch = $state(null as { p: number; key: string } | null);
-	// Remark 4 — the wing (link TYPE) the pointer is over, and the one to EXPAND. Carries a noteKey so
-	// a value left stale by a click-navigate (the note changed under a stationary pointer) can never
+	// Hover-expand — the wing (link TYPE) the pointer is over, and the one to EXPAND. Carries a noteKey
+	// so a value left stale by a click-navigate (the note changed under a stationary pointer) can never
 	// pre-expand the wrong note's wing. The setter below only reassigns when the wing/key actually
 	// changes, so a pointermove that stays inside one wing does NOT invalidate the geometry — the
 	// derivation reads this $state but does zero per-frame work.
@@ -135,14 +140,14 @@
 	}
 
 	// ── ALL geometry lives here — one derivation, no $effect, no per-frame work. It reads the hovered
-	//    wing (Remark 4): changing WHICH wing is hovered recomputes the layout (expand + re-proportion),
-	//    nothing else does. ────────────────────────────────────────────────────────────────────────
+	//    wing: changing WHICH wing is hovered recomputes the layout (expand + re-proportion), nothing
+	//    else does. ─────────────────────────────────────────────────────────────────────────────────
 	let model = $derived.by(() => {
 		void $linkTypesStore;   // recolour / re-order when the link-type vocabulary changes
 		const cx = Math.round(W / 2), cy = Math.round(H / 2);
 		const now = Date.now();
 		const TAU = 2 * Math.PI;
-		const MIN_SLOT = 11;   // px of orbit arc a body needs before its cell tiers into a cluster
+		const MIN_SLOT = 11;   // px of orbit arc the hover-expand aims to give each node (comfort target)
 		const nk = noteKey;
 		const hw = (hoverWing && hoverWing.key === nk) ? hoverWing.wing : null;
 
@@ -184,17 +189,18 @@
 			arr[r.shell]++;
 		}
 
-		// ── radial frame — the rim reserve is sized to the LONGEST localized label so long locales
-		//    (German 'widerspricht', Arabic, CJK) never clip; the outermost orbit is inset by one body
-		//    diameter so s=5 bodies never sit on the wedge rim. ────────────────────────────────────
+		// ── radial frame — Remark 1a: a SMALL sun with a small inner dead-zone so the orbits get far
+		//    more radial budget and 'today' sits close to the centre; Remark 1c: a modest outer margin
+		//    (rim reserve sized to the LONGEST localized label) so long locales never clip and the
+		//    rim/count labels have room. ────────────────────────────────────────────────────────────
 		const maxLabelPx = T ? Math.max(...present.map((tp) => estW(relLabelIn($locale, tp) + ' · ' + countByType[tp]))) : 0;
-		const rimReserve = clamp(24 + 0.7 * maxLabelPx, 44, Math.max(44, Math.min(cx, cy) * 0.5));
+		const rimReserve = clamp(26 + 0.7 * maxLabelPx, 48, Math.max(48, Math.min(cx, cy) * 0.5));
 		const Rmax = Math.max(40, Math.min(cx, cy) - rimReserve);
-		const Rsun = clamp(Math.min(W, H) * 0.045, 12, 26);
-		const gap = clamp(Rsun * 0.7, 10, 20);
-		const R0 = Math.min(Rsun + gap + 6, Rmax - 8);                 // innermost orbit (today), off the sun with a gap
-		const BODY_MAX = clamp(Rmax * 0.055, 5, 9);
-		const BODY_MIN = clamp(Rmax * 0.02, 2, 3.2);
+		const Rsun = clamp(Math.min(W, H) * 0.035, 9, 18);             // Remark 1a: smaller central sun
+		const gap = clamp(Rsun * 0.5, 4, 10);                          // smaller inner dead-zone
+		const R0 = Math.min(Rsun + gap + 4, Rmax - 8);                 // innermost orbit (today) close to centre
+		const BODY_MAX = clamp(Rmax * 0.05, 4.5, 8);                   // absolute dot ceiling (trimmed — zoomed out)
+		const DOT_FLOOR = 2.25;                                        // Remark 1b: a couple-px radius floor, never 0
 		const Router = Math.max(R0 + 8, Rmax - (BODY_MAX + 3));        // inset so outer bodies clear the rim
 		const orbitR: number[] = [];
 		for (let s = 0; s < 6; s++) orbitR.push(R0 + (Router - R0) * (s / 5)); // equal radial budget per band, recent inside
@@ -202,17 +208,16 @@
 		const EMPTY = { cx, cy, Rsun, Rmax, orbitR, title, ringMode: 'none' as string, ringLabels: [] as any[], ringLegend: [] as any[], legendBox: null as any, sectors: [] as any[], cells: [] as any[], navTargets: [] as any[] };
 		if (!T) return EMPTY;
 
-		// ── Remark 1 + 2: the six recency time labels, tied to their ring lines. They ride the top
-		//    label spoke, DE-COLLIDED so they never pile into an illegible stack on a small pane; when
-		//    the pane is too short to letter six on the spoke, they fall back to a compact corner
-		//    legend so every band is still named. A displaced chip draws a hairline tick to its true
-		//    ring so the tie survives. ──────────────────────────────────────────────────────────────
+		// ── Remark 2: the six recency time labels, tied to their ring lines. They ride the top label
+		//    spoke, DE-COLLIDED so they never pile into an illegible stack on a small pane; when the pane
+		//    is too short to letter six on the spoke, they fall back to a compact corner legend so every
+		//    band is still named. A displaced chip draws a hairline tick to its true ring. ──────────────
 		const bandGap = (Router - R0) / 5;
 		const chipH = clamp(bandGap * 0.9, 10, 14);
 		const rFont = clamp(chipH * 0.66, 7.5, 9.5);
 		const minSep = chipH + 1.5;
-		const botLimit = cy - Rsun - 10;                               // keep the innermost label off the sun pill
-		const rawY = orbitR.map((r) => cy - r);                        // s=0 lowest (large y) … s=5 highest (small y)
+		const botLimit = cy - Rsun - 10;                             // keep the innermost label off the sun pill
+		const rawY = orbitR.map((r) => cy - r);                      // s=0 lowest (large y) … s=5 highest (small y)
 		const dispY: number[] = new Array(6);
 		let prevY = -Infinity;
 		for (let s = 5; s >= 0; s--) { const y = Math.max(rawY[s], prevY + minSep); dispY[s] = y; prevY = y; } // push down, keep order
@@ -240,18 +245,48 @@
 			legendBox = { x: 3, y: 3, w: r2(lw), h: r2(2 * lpad + 6 * lh) };
 		}
 
-		const gmaxW = Math.max(1, ...recs.map((r) => r.w));
-		const bodyR = (w: number) => clamp(BODY_MIN + (BODY_MAX - BODY_MIN) * Math.sqrt(w / gmaxW), BODY_MIN, BODY_MAX);
+		// ── Remark 2: the top-spoke lane the recency chips own, + a helper that pushes any colliding
+		//    wing content (a '+N' cluster glyph, a rim label) clear of it. First it shoves horizontally
+		//    to the nearer side; if a narrow pane clamps that back onto the lane, it falls back to a
+		//    RADIAL offset (lifts the box above the lane's outer edge) so separation is guaranteed on
+		//    any width. In legend mode there is no spoke, so the lane is null and the helper is a no-op. ─
+		let topLane: { x0: number; x1: number; y0: number; y1: number } | null = null;
+		if (ringMode === 'spoke' && ringLabels.length) {
+			let lx0 = Infinity, lx1 = -Infinity, ly0 = Infinity, ly1 = -Infinity;
+			for (const rl of ringLabels) {
+				lx0 = Math.min(lx0, rl.chipX); lx1 = Math.max(lx1, rl.chipX + rl.chipW);
+				ly0 = Math.min(ly0, rl.chipY); ly1 = Math.max(ly1, rl.chipY + rl.h);
+			}
+			topLane = { x0: lx0 - 5, x1: lx1 + 5, y0: ly0, y1: ly1 };
+		}
+		const clearLane = (x: number, y: number, halfW: number, halfH: number): [number, number] => {
+			if (!topLane) return [x, y];
+			const vOver = !(y + halfH < topLane.y0 || y - halfH > topLane.y1);
+			const hOver = !(x + halfW < topLane.x0 || x - halfW > topLane.x1);
+			if (!vOver || !hOver) return [x, y];
+			const right = topLane.x1 + halfW + 2;
+			const left = topLane.x0 - halfW - 2;
+			let nx = (x >= cx) ? right : left;
+			nx = clamp(nx, 6 + halfW, Math.max(6 + halfW, W - 6 - halfW));
+			// did the clamp land it back on the lane? then lift it radially out of the lane's y-band.
+			const stillH = !(nx + halfW < topLane.x0 || nx - halfW > topLane.x1);
+			if (stillH) {
+				const up = topLane.y0 - halfH - 2;
+				const ny = clamp(up, 6 + halfH, Math.max(6 + halfH, H - 6 - halfH));
+				return [x, ny];
+			}
+			return [nx, y];
+		};
 
-		// ── angular sectors — Remark 3: each present type's wedge WIDTH ∝ its link count, with a
-		//    minimum floor so a 1–2 link type is still visible, hittable, and keeps its rim label. ──
+		// ── angular sectors — each present type's wedge WIDTH ∝ its link count, with a minimum floor so
+		//    a 1–2 link type is still visible, hittable, and keeps its rim label. ───────────────────────
 		const start = -Math.PI / 2;                                    // 12 o'clock
 		const sign = ($dir === 'rtl') ? -1 : 1;
 		const totalCount = Math.max(1, recs.length);
 		const minFrac = Math.min(0.05, 0.72 / T);                      // floor per wing (≤ 0.72 total, so proportional pool > 0)
 		const propFrac = present.map((tp) => minFrac + (1 - T * minFrac) * (countByType[tp] / totalCount));
 
-		// ── Remark 4: a hovered CROWDED wing expands to show all its nodes; the others shrink. Give
+		// ── hover-expand: a hovered CROWDED wing expands to show all its nodes; the others shrink. Give
 		//    it the span its fullest cell needs (n · MIN_SLOT of arc), then re-proportion the rest. ──
 		let fracs = propFrac;
 		let expandType: string | null = null;
@@ -307,6 +342,18 @@
 			else lx = clamp(lx, 6 + lw / 2, W - 6 - lw / 2);
 			lx = clamp(lx, 6, W - 6);
 			ly = clamp(ly, 12, H - 8);
+			// Remark 2: push a rim label off the top ring-label spoke, then RE-CLAMP to canvas (the
+			// nudge shifts an edge-anchored label's x, which could otherwise sit off the rim).
+			const lHalf = lw / 2;
+			const boxCx = anchor === 'start' ? lx + lHalf : anchor === 'end' ? lx - lHalf : lx;
+			const [clearedCx, clearedY] = clearLane(boxCx, ly, lHalf, 8);
+			lx = lx + (clearedCx - boxCx);
+			ly = clearedY;
+			if (anchor === 'start') lx = Math.min(lx, W - 6 - lw);
+			else if (anchor === 'end') lx = Math.max(lx, 6 + lw);
+			else lx = clamp(lx, 6 + lw / 2, W - 6 - lw / 2);
+			lx = clamp(lx, 6, W - 6);
+			ly = clamp(ly, 12, H - 8);
 			return {
 				type, color: relColor(type), label, count, expanded: expandType === type,
 				lo, hi, mid: center, wedge,
@@ -315,76 +362,116 @@
 			};
 		});
 
-		// ── cells: (type × shell). Even angular division + density-tiered clustering. ───────────
-		const cells: any[] = [];
-		const navTargets: any[] = [];
-		const byName = (a: any, b: any) => a.name.localeCompare(b.name);
+		// ── PASS A — Remark 1b: gather every (type × shell) cell's arc-length and node count, and derive
+		//    ONE global dot radius. It is the min over only the cells that CAN fit all their nodes at the
+		//    floor (0.46·arc/n ≥ DOT_FLOOR): a genuinely-overflowing cell no longer drags the global dot
+		//    size down, so sparse wings keep larger, weight-legible dots while that one cell clusters. ──
+		const cellSpecs: any[] = [];
+		let reqR = BODY_MAX;
+		for (const sec of sectors) {
+			for (let s = 0; s < 6; s++) {
+				const links = recs.filter((r) => r.type === sec.type && r.shell === s);
+				if (!links.length) continue;
+				const r_s = orbitR[s];
+				const pad = clamp(0.05 * (sec.hi - sec.lo), 0.01, 0.09);
+				const usable = Math.max(0.02, (sec.hi - sec.lo) - 2 * pad);
+				const arc = Math.max(1, r_s * usable);
+				const rFit = 0.46 * (arc / Math.max(1, links.length));   // radius each node can be to fit all n
+				if (rFit >= DOT_FLOOR && rFit < reqR) reqR = rFit;       // only fitting cells constrain the ceiling
+				cellSpecs.push({ sec, s, links, r_s, pad, usable, arc });
+			}
+		}
 
-		// crowded cells shrink their bodies (radius ≤ ~0.46× the slot arc) so they never overlap and
-		// stay individually hoverable — this also bounds the mustKeep-overflow case the spec exempts.
+		const gmaxW = Math.max(1, ...recs.map((r) => r.w));
+		const bodyMaxEff = clamp(reqR, DOT_FLOOR, BODY_MAX);           // global dot ceiling from the tightest FITTING cell
+		const bodyMinEff = Math.min(bodyMaxEff, clamp(bodyMaxEff * 0.5, 2, 3)); // floor 2 keeps the hollow-ring hole legible
+		const bodyR = (w: number) => clamp(bodyMinEff + (bodyMaxEff - bodyMinEff) * Math.sqrt(w / gmaxW), bodyMinEff, bodyMaxEff);
+		const slotMin = 2 * bodyMaxEff * 1.08;                        // arc a body needs; budget = arc / slotMin
+
+		// crowded cells shrink their bodies (radius ≤ ~0.46× the slot arc) so they never overlap and stay
+		// individually hoverable — this also bounds the mustKeep-overflow case.
 		const mkBody = (r: any, x: number, y: number, s: number, capR: number) => ({
 			name: r.name, path: r.path, lib: r.lib, dir: r.dir, type: r.type, conf: r.conf,
 			tier: r.tier, w: r.w, shell: s, alarm: r.alarm, never: s === NEVER_SHELL,
 			x: r2(x), y: r2(y), rB: r2(Math.min(bodyR(r.w), capR)), halo: confHalo(r.conf),
 		});
 
-		for (const sec of sectors) {
-			for (let s = 0; s < 6; s++) {
-				const links = recs.filter((r) => r.type === sec.type && r.shell === s);
-				if (!links.length) continue;
-				const r_s = orbitR[s];
-				const lo = sec.lo, hi = sec.hi;
-				const pad = clamp(0.05 * (hi - lo), 0.01, 0.09);
-				const usable = Math.max(0.02, (hi - lo) - 2 * pad);
-				const sorted = links.slice().sort(byName);
-				const budget = Math.max(1, Math.floor((r_s * usable) / MIN_SLOT));
+		// ── PASS B — place bodies by even angular division. With the global dot size, when a cell fits at
+		//    the floor its budget ≥ its count → NO cluster (Remark 1: '+N' almost never appears). Only a
+		//    cell that cannot fit its nodes even at the floor overflows into ONE counted cluster. ─────────
+		const cells: any[] = [];
+		const navTargets: any[] = [];
+		const byName = (a: any, b: any) => a.name.localeCompare(b.name);
 
-				let individual = sorted, clustered: any[] = [];
-				if (sorted.length > budget) {
-					const must = sorted.filter((r) => r.mustKeep);
-					const opt = sorted.filter((r) => !r.mustKeep).sort((a, b) => b.w - a.w); // collapse the LIGHTEST first
-					const keepOpt = Math.max(0, budget - must.length);
-					const toCluster = opt.slice(keepOpt);
-					if (toCluster.length >= 2) {                     // never a '+1' cluster — one leftover renders inline
-						clustered = toCluster;
-						individual = [...must, ...opt.slice(0, keepOpt)].sort(byName);
-					} else {
-						individual = sorted;
-					}
+		for (const cs of cellSpecs) {
+			const { sec, s, links, r_s, pad, usable, arc } = cs;
+			const lo = sec.lo, hi = sec.hi;
+			const sorted = links.slice().sort(byName);
+			const budget = Math.max(1, Math.floor(arc / slotMin));
+
+			let individual: any[] = sorted, clustered: any[] = [];
+			if (sorted.length > budget) {
+				const must = sorted.filter((r: any) => r.mustKeep);
+				const opt = sorted.filter((r: any) => !r.mustKeep).sort((a: any, b: any) => b.w - a.w); // collapse the LIGHTEST first
+				let keep: any[]; let drop: any[];
+				if (must.length <= budget) {
+					const keepOpt = budget - must.length;
+					keep = [...must, ...opt.slice(0, keepOpt)];
+					drop = opt.slice(keepOpt);
+				} else {
+					// LAST RESORT: even mustKeep alone cannot fit — cluster the lightest excess so nothing
+					// overlaps (the synthetic 900-in-one-cell case). Never reached by realistic data.
+					const m2 = must.slice().sort((a: any, b: any) => b.w - a.w);       // heaviest kept
+					keep = m2.slice(0, budget);
+					drop = [...opt, ...m2.slice(budget)];
 				}
-				const hasCluster = clustered.length > 0;
-				const slots = individual.length + (hasCluster ? 1 : 0);
-				const slotArc = (r_s * usable) / Math.max(1, slots);
-				const cellCap = clamp(0.46 * slotArc, 1.4, BODY_MAX);
-				const ci = cells.length;
-
-				const bodies = individual.map((r, k) => {
-					const th = lo + pad + ((k + 0.5) / slots) * usable;
-					const [x, y] = pt(r_s, th);
-					return mkBody(r, x, y, s, cellCap);
-				});
-
-				let cluster: any = null;
-				if (hasCluster) {
-					const th = lo + pad + ((slots - 0.5) / slots) * usable;
-					const [gx, gy] = pt(r_s, th);
-					const M = clustered.length;
-					const rFan = r_s + clamp(Rmax * 0.03, 8, 16);       // fan pops just outside the orbit
-					let stepA = 14 / rFan;
-					if ((M - 1) * stepA > 1.7) stepA = 1.7 / Math.max(1, M - 1);
-					const startA = th - ((M - 1) * stepA) / 2;
-					const fanCap = clamp(0.46 * rFan * stepA, 1.4, BODY_MAX);
-					const members = clustered.slice().sort(byName).map((r, m) => {
-						const [mx, my] = pt(rFan, startA + m * stepA);
-						return mkBody(r, mx, my, s, fanCap);
-					});
-					cluster = { n: M, gx: r2(gx), gy: r2(gy), r: r2(clamp(BODY_MAX * 0.9, 4, 8)), members };
+				if (drop.length >= 2) {                            // never a '+1' cluster — one leftover renders inline
+					clustered = drop;
+					individual = keep.slice().sort(byName);
+				} else {
+					individual = sorted;
 				}
-
-				cells.push({ p: ci, s, type: sec.type, color: sec.color, bodies, cluster });
-				bodies.forEach((_, bi) => navTargets.push({ kind: 'body', p: ci, i: bi }));
-				if (cluster) cluster.members.forEach((_: any, mi: number) => navTargets.push({ kind: 'fan', p: ci, i: mi }));
 			}
+			const hasCluster = clustered.length > 0;
+			const slots = individual.length + (hasCluster ? 1 : 0);
+			const slotArc = arc / Math.max(1, slots);
+			const cellCap = clamp(0.46 * slotArc, 1.4, bodyMaxEff);
+			const ci = cells.length;
+
+			const bodies = individual.map((r, k) => {
+				const th = lo + pad + ((k + 0.5) / slots) * usable;
+				const [x, y] = pt(r_s, th);
+				return mkBody(r, x, y, s, cellCap);
+			});
+
+			let cluster: any = null;
+			if (hasCluster) {
+				const th = lo + pad + ((slots - 0.5) / slots) * usable;
+				const [gx0, gy0] = pt(r_s, th);
+				const M = clustered.length;
+				const glyphR = clamp(BODY_MAX * 0.95, 6.5, 8);
+				const glyphHW = Math.max(glyphR, ('+' + M).length * 3.2);   // the '+N' text runs wider than the disc
+				// Remark 2: push the '+N' glyph off the top ring-label spoke; rigid-translate its fan by
+				// the same (dx, dy) so the connector lines and members stay consistent.
+				const [gx, gy] = clearLane(gx0, gy0, glyphHW, glyphR);
+				const dx = gx - gx0, dy = gy - gy0;
+				const rFan = r_s + clamp(Rmax * 0.03, 8, 16);       // fan pops just outside the orbit
+				let stepA = 14 / rFan;
+				if ((M - 1) * stepA > 1.7) stepA = 1.7 / Math.max(1, M - 1);
+				const startA = th - ((M - 1) * stepA) / 2;
+				const fanCap = clamp(0.46 * rFan * stepA, 1.4, bodyMaxEff);
+				const members = clustered.slice().sort(byName).map((r, m) => {
+					const [mx, my] = pt(rFan, startA + m * stepA);
+					const cxp = clamp(mx + dx, 6, Math.max(6, W - 6));
+					const cyp = clamp(my + dy, 6, Math.max(6, H - 6));
+					return mkBody(r, cxp, cyp, s, fanCap);
+				});
+				cluster = { n: M, gx: r2(gx), gy: r2(gy), r: r2(glyphR), members };
+			}
+
+			cells.push({ p: ci, s, type: sec.type, color: sec.color, bodies, cluster });
+			bodies.forEach((_, bi) => navTargets.push({ kind: 'body', p: ci, i: bi }));
+			if (cluster) cluster.members.forEach((_: any, mi: number) => navTargets.push({ kind: 'fan', p: ci, i: mi }));
 		}
 
 		return { cx, cy, Rsun, Rmax, orbitR, title, ringMode, ringLabels, ringLegend, legendBox, sectors, cells, navTargets };
@@ -542,7 +629,7 @@
 				<circle cx={model.cx} cy={model.cy} r={r2(model.orbitR[2] ?? model.Rmax)} fill="url(#sun-{uid})" pointer-events="none"/>
 
 				<!-- count-proportional type wedges (the ONLY pointer targets besides the marks); the
-				     hovered/expanded wing brightens (Remark 3 + 4) -->
+				     hovered/expanded wing brightens -->
 				{#each model.sectors as sec}
 					<path class="orr-wedge" d={sec.wedge} data-wing={sec.type} fill={sec.color} style:fill-opacity={sec.expanded ? 0.14 : 0.06}/>
 				{/each}
@@ -551,7 +638,7 @@
 					<line x1={sec.bx1} y1={sec.by1} x2={sec.bx2} y2={sec.by2} stroke="var(--background-modifier-border, #d4d4d8)" stroke-opacity="0.22" stroke-width="1" pointer-events="none"/>
 				{/each}
 				{#if hasAny}
-					<!-- Remark 2: six recency orbits as CLEAR thin ring lines (outer rings fade colder) -->
+					<!-- six recency orbits as CLEAR thin ring lines (outer rings fade colder) -->
 					{#each model.orbitR as r, s}
 						<circle class="orr-orbit" class:cold={s >= 4} cx={model.cx} cy={model.cy} r={r2(r)} fill="none"/>
 					{/each}
@@ -593,7 +680,7 @@
 				<!-- the active cluster's members, fanned onto a temporary sub-arc (latched; each navigable) -->
 				{#if fanView}
 					<g>
-						{#each fanView.members as m, mi}
+						{#each fanView.members as m}
 							<line x1={fanView.gx} y1={fanView.gy} x2={m.x} y2={m.y} stroke={fanView.color} stroke-opacity="0.3" stroke-width="0.7" pointer-events="none"/>
 						{/each}
 						{#each fanView.members as m, mi}
@@ -608,7 +695,7 @@
 					</g>
 				{/if}
 
-				<!-- Remark 1: the recency time labels, tied to their rings (spoke ruler, de-collided; or a
+				<!-- Remark 2: the recency time labels, tied to their rings (spoke ruler, de-collided; or a
 				     compact corner legend when the pane is too short). On top, pointer-transparent. -->
 				{#if hasAny && model.ringMode === 'spoke'}
 					<g class="orr-rings" pointer-events="none">
@@ -677,7 +764,7 @@
 	   so under RTL "start" flips to the right edge. The geometry is LTR by definition, so pin the SVG
 	   to ltr and let each label shape itself via unicode-bidi: plaintext. */
 	.orr-svg { width: 100%; height: 100%; display: block; outline: none; direction: ltr; }
-	/* Remark 2: clear, thin, theme-aware ring lines (the old 1 4 dash read near-invisible). */
+	/* Clear, thin, theme-aware ring lines (the old 1 4 dash read near-invisible). */
 	.orr-orbit { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; stroke-width: 1; pointer-events: none; }
 	.orr-orbit.cold { stroke-opacity: 0.4; }
 	.orr-wedge { transition: fill-opacity 0.15s ease; }
@@ -686,7 +773,7 @@
 	.orr-marks.dimmed { opacity: 0.2; transition: opacity 0.12s; }
 	.orr-cn { font: 600 9px var(--font-sans); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
 	.orr-rim { font: 11px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext; pointer-events: none; }
-	/* Remark 1: the recency label spoke + its ring chips / corner legend. */
+	/* Remark 2: the recency label spoke + its ring chips / corner legend. */
 	.orr-spine { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.35; stroke-width: 1; stroke-dasharray: 1 3; }
 	.orr-tick { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.5; stroke-width: 1; }
 	.orr-ring-chip { fill: var(--background-primary, #fff); fill-opacity: 0.72; stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; }
