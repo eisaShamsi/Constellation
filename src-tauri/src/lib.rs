@@ -111,8 +111,15 @@ fn open_second_screen(app: tauri::AppHandle) -> Result<(), String> {
 fn constellation_show_in_folder(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+        // explorer /select needs (a) a BACKSLASH path and (b) the /select flag OUTSIDE the quotes.
+        // The naive `.arg("/select,<path>")` auto-quotes the WHOLE token when the path has spaces
+        // (e.g. `E:\Cognitive Knowledge\Eisa Test\…`) → explorer can't parse the flag and silently
+        // opens Documents instead of highlighting the file (PJ-070 "Show copy" bug). `raw_arg`
+        // appends the command line verbatim so ONLY the path is quoted: `explorer /select,"<path>"`.
+        let win_path = path.replace('/', "\\");
         std::process::Command::new("explorer")
-            .arg(format!("/select,{}", path))
+            .raw_arg(format!("/select,\"{}\"", win_path))
             .spawn()
             .map_err(|e| e.to_string())?;
     }

@@ -45,6 +45,12 @@ The Boss's active "Eisa Cognitive Knowledge" universe resolves to on-disk root *
 
 Reconciled FIRST at close → `docs/Constellation Pending Jobs v1.19.md`: PJ-070 Done (evidence); PJ-083→087 filed; ► Next action → **PJ-071**.
 
+## Post-close follow-up — "Show copy" reveal-in-explorer fix (Boss-found, 2026-07-12)
+
+Boss test of the conflict banner's **Show copy** button: it opened "My Documents" instead of revealing the `.conflict` side-copy. Root cause: `constellation_show_in_folder` (lib.rs) built `explorer /select,<path>` via `.arg()`, which auto-quotes the WHOLE `/select,<path>` token when the path has spaces (`E:\Cognitive Knowledge\Eisa Test\…`) → explorer can't parse the `/select,` flag → falls back to Documents. **Fix:** `raw_arg(format!("/select,\"{}\"", win_path))` — quote ONLY the path + normalize `/`→`\`. Fixes the same latent bug in all 7 reveal callers (file-explorer right-click, NoteEditor, etc.). cargo check clean; release binary 2026-07-12 18:03. **Boss-validated: "Passed perfectly"** — Show copy now opens the folder with the file highlighted.
+
+**Boss follow-up request (deferred as a feature):** the option to MERGE the two copies (note version + `.conflict` side-copy) — the user's choice. This is the conflict-RESOLUTION layer the Architect explicitly deferred ("the full 3-way Adopt/Keep-mine/Show-diff dialog is a separate follow-up PJ"). Being scoped as a new PJ; PJ-070's zero-loss safety net stands complete + validated.
+
 ## Verification snapshot
 
 svelte-check **0 errors** · vitest **334 passed** (13 new) · cargo check **clean** · release binary **2026-07-12 14:34** (frontend rebuilt first, conflict strings confirmed embedded).
