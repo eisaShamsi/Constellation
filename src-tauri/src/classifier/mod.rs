@@ -27,6 +27,55 @@ use crate::sources::{write_suggestions, SuggestionRecord};
 use std::path::Path;
 use tauri::Manager;
 
+/// Flatten one synthesized axis (`AxisDecision`) into the flat `Suggestion`
+/// list the queue stores: the `primary`, then each `see_also` (with its vote
+/// weight), then — PJ-091 Part A — each `secondary` not already present.
+///
+/// `secondary` = the runners-up within 80% of the primary's weight ("close
+/// enough to also be true", LC SCM H 180). The old inline builder read only
+/// `primary` + `see_also`, so a genuine secondary beyond `see_also`'s top-3 was
+/// silently dropped from the suggestion. Precise per-candidate weights aren't
+/// carried past `see_also`'s top-3, so a secondary-only id gets the definitional
+/// floor confidence (0.8 × primary_weight — "secondary" means ≥80% of the
+/// primary's vote). Also DRYs the previously-duplicated horizontal/vertical loop.
+fn build_axis_suggestions(
+    axis: &crate::cece::synthesis::AxisDecision,
+    reasoning: &str,
+    axis_name: &str,
+) -> Vec<crate::sources::Suggestion> {
+    let mut out: Vec<crate::sources::Suggestion> = Vec::new();
+    let Some(prim) = &axis.primary else {
+        return out;
+    };
+    out.push(crate::sources::Suggestion {
+        source: prim.clone(),
+        confidence: axis.primary_weight,
+        evidence: reasoning.to_string(),
+        axis: axis_name.to_string(),
+    });
+    for (i, s) in axis.see_also.iter().enumerate() {
+        let w = axis.see_also_weights.get(i).copied().unwrap_or(0.0);
+        out.push(crate::sources::Suggestion {
+            source: s.clone(),
+            confidence: w,
+            evidence: "see also (competing cataloger vote)".to_string(),
+            axis: axis_name.to_string(),
+        });
+    }
+    for s in &axis.secondary {
+        if out.iter().any(|existing| existing.source == *s) {
+            continue;
+        }
+        out.push(crate::sources::Suggestion {
+            source: s.clone(),
+            confidence: axis.primary_weight * 0.8,
+            evidence: "secondary (within 80% of the primary's vote)".to_string(),
+            axis: axis_name.to_string(),
+        });
+    }
+    out
+}
+
 /// On-demand single-note classification.
 ///
 /// Reads the note from disk, runs the CECE 6-cataloger ensemble,
@@ -125,50 +174,16 @@ pub fn classifier_suggest_for_note(
     // primary_weight is normalized [0, 1] where 1.0 = winning weighted
     // vote; see_also_weights are normalized fractions of the primary.
     let mut suggestions: Vec<crate::sources::Suggestion> = Vec::new();
-    if let Some(prim) = &composite.horizontal.primary {
-        suggestions.push(crate::sources::Suggestion {
-            source: prim.clone(),
-            confidence: composite.horizontal.primary_weight,
-            evidence: composite.composite_reasoning.clone(),
-            axis: "horizontal".to_string(),
-        });
-        for (i, s) in composite.horizontal.see_also.iter().enumerate() {
-            let w = composite
-                .horizontal
-                .see_also_weights
-                .get(i)
-                .copied()
-                .unwrap_or(0.0);
-            suggestions.push(crate::sources::Suggestion {
-                source: s.clone(),
-                confidence: w,
-                evidence: "see also (competing cataloger vote)".to_string(),
-                axis: "horizontal".to_string(),
-            });
-        }
-    }
-    if let Some(prim) = &composite.vertical.primary {
-        suggestions.push(crate::sources::Suggestion {
-            source: prim.clone(),
-            confidence: composite.vertical.primary_weight,
-            evidence: composite.composite_reasoning.clone(),
-            axis: "vertical".to_string(),
-        });
-        for (i, s) in composite.vertical.see_also.iter().enumerate() {
-            let w = composite
-                .vertical
-                .see_also_weights
-                .get(i)
-                .copied()
-                .unwrap_or(0.0);
-            suggestions.push(crate::sources::Suggestion {
-                source: s.clone(),
-                confidence: w,
-                evidence: "see also (competing cataloger vote)".to_string(),
-                axis: "vertical".to_string(),
-            });
-        }
-    }
+    suggestions.extend(build_axis_suggestions(
+        &composite.horizontal,
+        &composite.composite_reasoning,
+        "horizontal",
+    ));
+    suggestions.extend(build_axis_suggestions(
+        &composite.vertical,
+        &composite.composite_reasoning,
+        "vertical",
+    ));
 
     // tier_used semantics carried over from v2 for backward compat:
     // 1 = only cheap catalogers contributed; 2 = expensive (Reasoning)
@@ -349,10 +364,12 @@ pub fn cece_resolve_disambiguation(
     let chosen_id_for_reliability = chosen_id.clone();
     match axis.as_str() {
         "horizontal" => {
-            crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()])?;
+            // PJ-091: adopting a disambiguated pick MERGES with the note's manual
+            // values (never subtract) — same rule as Accept.
+            crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()], Some(true))?;
         }
         "vertical" => {
-            crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()])?;
+            crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()], Some(true))?;
         }
         other => return Err(format!("Unknown axis: {}", other)),
     }
@@ -404,12 +421,12 @@ pub fn cece_resolve_disambiguation(
         // a failure loses no data — but it must not be silent.)
         match axis.as_str() {
             "horizontal" => {
-                if let Err(e) = crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![other_id]) {
+                if let Err(e) = crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![other_id], Some(true)) {
                     eprintln!("[cece] co-write content_type failed for {}: {}", note_path, e);
                 }
             }
             "vertical" => {
-                if let Err(e) = crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![other_id]) {
+                if let Err(e) = crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![other_id], Some(true)) {
                     eprintln!("[cece] co-write sources failed for {}: {}", note_path, e);
                 }
             }
@@ -690,6 +707,49 @@ fn extract_title_and_body(content: &str) -> (String, String) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pj091_build_axis_suggestions_carries_secondary() {
+        use crate::cece::synthesis::{AxisDecision, ConfidenceRegime};
+        // A secondary source NOT among see_also's top-3 — the old inline builder
+        // (primary + see_also only) silently dropped it from the suggestion.
+        let axis = AxisDecision {
+            primary: Some("testimony".to_string()),
+            secondary: vec!["revelation".to_string()],
+            regime: ConfidenceRegime::StrongMajority,
+            see_also: vec!["inference".to_string()],
+            needs_user_disambiguation_between: None,
+            dissenter: None,
+            primary_weight: 0.9,
+            see_also_weights: vec![0.5],
+        };
+        let sugg = build_axis_suggestions(&axis, "reason", "horizontal");
+        let ids: Vec<&str> = sugg.iter().map(|s| s.source.as_str()).collect();
+        assert!(ids.contains(&"testimony"), "primary present");
+        assert!(ids.contains(&"inference"), "see_also present");
+        assert!(
+            ids.contains(&"revelation"),
+            "PJ-091 Part A: the classifier's secondary must be carried, not dropped"
+        );
+
+        // A secondary that is ALSO in see_also must not be duplicated.
+        let axis2 = AxisDecision {
+            primary: Some("testimony".to_string()),
+            secondary: vec!["inference".to_string()],
+            regime: ConfidenceRegime::StrongMajority,
+            see_also: vec!["inference".to_string()],
+            needs_user_disambiguation_between: None,
+            dissenter: None,
+            primary_weight: 0.9,
+            see_also_weights: vec![0.5],
+        };
+        let sugg2 = build_axis_suggestions(&axis2, "reason", "horizontal");
+        assert_eq!(
+            sugg2.iter().filter(|s| s.source == "inference").count(),
+            1,
+            "a secondary already surfaced as see_also must not duplicate"
+        );
+    }
 
     #[test]
     fn extract_title_and_body_handles_no_frontmatter() {

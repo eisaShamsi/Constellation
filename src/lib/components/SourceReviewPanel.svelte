@@ -779,13 +779,19 @@
     // suggestion row, so a post-write read would return null.
     const compositeJsonForReliability = record.composite_json;
     try {
+      // PJ-091: Accept ADOPTS the suggestion into the note — merge with the
+      // note's current values so a value the user set by hand (and the edit UI,
+      // which seeds only from the suggestion, never showed them) is never
+      // silently dropped. Boss ruling 2026-07-12: never lose a manual value.
       await invoke('sources_set_manual', {
         notePath: record.note_path,
         sources: horizontalIds,
+        merge: true,
       });
       await invoke('content_type_set_manual', {
         notePath: record.note_path,
         contentType: verticalIds,
+        merge: true,
       });
       // V3-§9.C.2 — Now that both axes are written, update per-cataloger
       // reliability for BOTH axes from the snapshot. Without this call

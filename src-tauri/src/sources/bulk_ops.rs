@@ -26,9 +26,10 @@ use std::thread;
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::{
-    clear_suggestions, is_valid_content_type_id, is_valid_source_id, read_suggestions,
-    rewrite_frontmatter_content_type, rewrite_frontmatter_sources,
-    write_content_type_to_db, write_sources_to_db, Suggestion,
+    clear_suggestions, extract_content_type, extract_sources, is_valid_content_type_id,
+    is_valid_source_id, read_suggestions, rewrite_frontmatter_content_type,
+    rewrite_frontmatter_sources, union_preserve_order, write_content_type_to_db,
+    write_sources_to_db, Suggestion,
 };
 
 #[derive(Default)]
@@ -306,9 +307,18 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
+    // PJ-091: accept ENRICHES, it must not SUBTRACT. Union each axis's suggestion
+    // with the note's CURRENT on-disk values (read inside the gate — race-free),
+    // so Approve-All never drops a source/type the user set by hand after this
+    // suggestion was queued. `merged_*` are stashed for the step-4 DB mirror so
+    // note_meta reflects exactly what landed on disk.
+    let mut merged_h = Vec::new();
+    let mut merged_v = Vec::new();
     crate::write_gate::gate_rmw(path, "bulk_accept", |content| {
-        let after_h = rewrite_frontmatter_sources(content, &horizontal_ids);
-        let after_both = rewrite_frontmatter_content_type(&after_h, &vertical_ids);
+        merged_h = union_preserve_order(&extract_sources(content), &horizontal_ids);
+        merged_v = union_preserve_order(&extract_content_type(content), &vertical_ids);
+        let after_h = rewrite_frontmatter_sources(content, &merged_h);
+        let after_both = rewrite_frontmatter_content_type(&after_h, &merged_v);
         Ok(if after_both == content { None } else { Some(after_both) })
     })?;
 
@@ -318,8 +328,8 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     let conn = db_guard
         .as_ref()
         .ok_or("Search database not initialized")?;
-    write_sources_to_db(conn, note_path, &horizontal_ids)?;
-    write_content_type_to_db(conn, note_path, &vertical_ids)?;
+    write_sources_to_db(conn, note_path, &merged_h)?;
+    write_content_type_to_db(conn, note_path, &merged_v)?;
     clear_suggestions(conn, note_path)?;
 
     Ok(())

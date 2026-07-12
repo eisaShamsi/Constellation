@@ -531,15 +531,54 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
 /// cycle now runs inside `gate_rmw` (per-path lock held across it — MIG-076
 /// §A2 upgraded), so a debounced editor save can never land inside the rewrite
 /// window once the calling commands are `(async)`.
-fn rewrite_note_sources_on_disk(note_path: &str, sources: &[String]) -> Result<(), String> {
+/// PJ-091: union a classifier suggestion's ids with the note's CURRENT values,
+/// preserving order — the user's existing (often manual) values come first, in
+/// their order, and any suggested id not already present is appended. This is
+/// the "adopt a suggestion" semantic: accepting ENRICHES a note's classification;
+/// it must never SUBTRACT a value the human asserted (Boss ruling 2026-07-12,
+/// "never lose a manual value"). Both slices are already taxonomy-normalized
+/// (from `extract_sources`/`extract_content_type` and the validated suggestion),
+/// so a plain equality dedupe is correct.
+pub(crate) fn union_preserve_order(existing: &[String], additions: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = existing.to_vec();
+    for a in additions {
+        if !out.iter().any(|e| e == a) {
+            out.push(a.clone());
+        }
+    }
+    out
+}
+
+/// Writes the horizontal `sources:` frontmatter under the write lock and returns
+/// the EFFECTIVE set that landed on disk (so the caller mirrors THAT to the DB).
+///
+/// `merge = false` is the exact-set primitive — the note's sources become exactly
+/// `sources` (the user's manual authority: PropertyEditor / clear).
+/// `merge = true` is the accept-a-suggestion path — `sources` is UNIONED with the
+/// note's current on-disk values, read INSIDE the gate (race-free), so accepting a
+/// stale suggestion can never drop a value the user typed after it was queued
+/// (PJ-091). The union is computed under the same lock that serializes the write.
+fn rewrite_note_sources_on_disk(
+    note_path: &str,
+    sources: &[String],
+    merge: bool,
+) -> Result<Vec<String>, String> {
     let path = Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
+    let mut effective = Vec::new();
     crate::write_gate::gate_rmw(path, "sources_rewrite", |content| {
-        Ok(Some(rewrite_frontmatter_sources(content, sources)))
+        let ids = if merge {
+            union_preserve_order(&extract_sources(content), sources)
+        } else {
+            sources.to_vec()
+        };
+        let rewritten = rewrite_frontmatter_sources(content, &ids);
+        effective = ids;
+        Ok(Some(rewritten))
     })?;
-    Ok(())
+    Ok(effective)
 }
 
 // ─── Tauri commands ────────────────────────────────────────────────
@@ -584,6 +623,11 @@ pub fn sources_set_manual(
     app: tauri::AppHandle,
     note_path: String,
     sources: Vec<String>,
+    // PJ-091: absent/false = exact-set (the user's manual authority). true =
+    // accept-a-suggestion — union with the note's current on-disk values so a
+    // stale suggestion never drops a value the user typed. Only the accept seams
+    // (per-card Accept, disambiguation) pass true; direct-set callers omit it.
+    merge: Option<bool>,
 ) -> Result<(), String> {
     crate::search::ensure_search_db_ready(&app)?;
     // Validate all values are in the horizontal taxonomy up front;
@@ -617,17 +661,20 @@ pub fn sources_set_manual(
         }
     };
 
-    // 1. Write frontmatter to disk (canonical store).
-    rewrite_note_sources_on_disk(&note_path, &sources)?;
+    // 1. Write frontmatter to disk (canonical store). `effective` is what
+    //    actually landed — for merge accepts, the union of the pick with the
+    //    note's prior on-disk values; for exact-set, `sources` verbatim.
+    let effective = rewrite_note_sources_on_disk(&note_path, &sources, merge.unwrap_or(false))?;
 
-    // 2. Update note_meta.sources mirror + clear suggestion.
+    // 2. Update note_meta.sources mirror + clear suggestion. Mirror the
+    //    EFFECTIVE set so note_meta never diverges from disk (PJ-091).
     {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard
             .as_ref()
             .ok_or("Search database not initialized")?;
-        write_sources_to_db(conn, &note_path, &sources)?;
+        write_sources_to_db(conn, &note_path, &effective)?;
         clear_suggestions(conn, &note_path)?;
     }
 
@@ -804,7 +851,8 @@ pub fn sources_clear(
     crate::search::ensure_search_db_ready(&app)?;
     let empty: Vec<String> = Vec::new();
 
-    rewrite_note_sources_on_disk(&note_path, &empty)?;
+    // Clear = exact-set to empty (the user's authority), never merge.
+    rewrite_note_sources_on_disk(&note_path, &empty, false)?;
 
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
@@ -1047,18 +1095,30 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
 
 // Note-open-freeze Batch-2 §B2-3 (2026-07-03): read→rewrite→write as ONE gated
 // critical section (`gate_rmw`) — see rewrite_note_sources_on_disk.
+/// Vertical-axis counterpart to `rewrite_note_sources_on_disk` — same merge
+/// contract (PJ-091). `merge = true` unions with the note's current on-disk
+/// `content_type:` under the lock; returns the effective set for the DB mirror.
 fn rewrite_note_content_type_on_disk(
     note_path: &str,
     content_type: &[String],
-) -> Result<(), String> {
+    merge: bool,
+) -> Result<Vec<String>, String> {
     let path = Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
+    let mut effective = Vec::new();
     crate::write_gate::gate_rmw(path, "content_type_rewrite", |content| {
-        Ok(Some(rewrite_frontmatter_content_type(content, content_type)))
+        let ids = if merge {
+            union_preserve_order(&extract_content_type(content), content_type)
+        } else {
+            content_type.to_vec()
+        };
+        let rewritten = rewrite_frontmatter_content_type(content, &ids);
+        effective = ids;
+        Ok(Some(rewritten))
     })?;
-    Ok(())
+    Ok(effective)
 }
 
 // ─── Tauri commands (content_type) ──────────────────────────────────
@@ -1083,6 +1143,8 @@ pub fn content_type_set_manual(
     app: tauri::AppHandle,
     note_path: String,
     content_type: Vec<String>,
+    // PJ-091: see `sources_set_manual` — absent/false = exact-set, true = accept-merge.
+    merge: Option<bool>,
 ) -> Result<(), String> {
     crate::search::ensure_search_db_ready(&app)?;
     for s in &content_type {
@@ -1111,11 +1173,12 @@ pub fn content_type_set_manual(
         }
     };
 
-    rewrite_note_content_type_on_disk(&note_path, &content_type)?;
+    let effective =
+        rewrite_note_content_type_on_disk(&note_path, &content_type, merge.unwrap_or(false))?;
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-    write_content_type_to_db(conn, &note_path, &content_type)?;
+    write_content_type_to_db(conn, &note_path, &effective)?;
     drop(db_guard);
 
     // Log the correction (best-effort; non-blocking).
@@ -1148,7 +1211,8 @@ pub fn content_type_clear(
 ) -> Result<(), String> {
     crate::search::ensure_search_db_ready(&app)?;
     let empty: Vec<String> = Vec::new();
-    rewrite_note_content_type_on_disk(&note_path, &empty)?;
+    // Clear = exact-set to empty (the user's authority), never merge.
+    rewrite_note_content_type_on_disk(&note_path, &empty, false)?;
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
@@ -1300,6 +1364,72 @@ mod tests {
         assert!(!rewritten.contains("- inference"));
         assert!(rewritten.contains("title: Foo"));
         assert!(rewritten.contains("body"));
+    }
+
+    #[test]
+    fn pj091_repro_accept_replace_truncates_manual_multivalue() {
+        // PJ-091 REPRODUCTION (Reproduce-First). The bug: "accept a classifier
+        // suggestion" was implemented as a REPLACE (rewrite_frontmatter_sources
+        // with the suggestion ids). When a note carries MANUAL values the stale
+        // suggestion doesn't (the user typed `- perception` after the suggestion
+        // was queued), accepting silently DROPS the manual value. This test
+        // documents that the exact-set primitive truncates — the fix lives ABOVE
+        // it (union at the accept seam), the primitive itself stays exact-set.
+        let content = "---\ntitle: Foo\nsources:\n  - testimony\n  - perception\n---\n\nbody";
+        let replaced = rewrite_frontmatter_sources(content, &["testimony".to_string()]);
+        assert!(replaced.contains("- testimony"));
+        assert!(
+            !replaced.contains("- perception"),
+            "repro: a raw replace drops the user's manual `perception`"
+        );
+    }
+
+    #[test]
+    fn pj091_accept_merge_preserves_manual_multivalue() {
+        // The fix: an ACCEPT unions the suggestion with the note's current values.
+        let content = "---\ntitle: Foo\nsources:\n  - testimony\n  - perception\n---\n\nbody";
+
+        // Suggestion ⊆ existing → union adds nothing, keeps both + order.
+        let merged = union_preserve_order(&extract_sources(content), &["testimony".to_string()]);
+        assert_eq!(
+            merged,
+            vec!["testimony".to_string(), "perception".to_string()],
+            "the manual `perception` survives; user order preserved"
+        );
+        let written = rewrite_frontmatter_sources(content, &merged);
+        assert!(written.contains("- testimony"));
+        assert!(written.contains("- perception"));
+
+        // A genuinely new suggested id is appended AFTER the manual ones.
+        let with_new = union_preserve_order(&extract_sources(content), &["inference".to_string()]);
+        assert_eq!(
+            with_new,
+            vec![
+                "testimony".to_string(),
+                "perception".to_string(),
+                "inference".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn pj091_union_preserve_order_dedupes_and_appends() {
+        let existing = vec!["testimony".to_string(), "perception".to_string()];
+        // Overlap is deduped, new is appended, existing order is untouched.
+        let out = union_preserve_order(
+            &existing,
+            &["perception".to_string(), "revelation".to_string()],
+        );
+        assert_eq!(
+            out,
+            vec![
+                "testimony".to_string(),
+                "perception".to_string(),
+                "revelation".to_string()
+            ]
+        );
+        // Empty additions => unchanged (idempotent).
+        assert_eq!(union_preserve_order(&existing, &[]), existing);
     }
 
     #[test]
