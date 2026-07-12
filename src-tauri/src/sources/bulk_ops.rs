@@ -296,18 +296,21 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
         .map(|s| s.source.clone())
         .collect();
 
-    // 3. Read note content from disk, rewrite both axes' frontmatter
-    //    in a single read-modify-write so we don't open the file twice.
+    // 3. Rewrite BOTH axes' frontmatter as ONE locked read-modify-write (gate_rmw), so a concurrent
+    //    editor save can land before or after but NEVER inside the window. PJ-071: the bulk path was
+    //    the last source-accept still on the racy unlocked-read + gate_write — the per-card path
+    //    already moved to gate_rmw (sources/mod.rs::rewrite_note_sources_on_disk). The closure is
+    //    pure string work: NO gate_* and NO DB lock inside it (gate_rmw's two hard rules) — the
+    //    SQLite-mirror update is step 4, after this returns. Idempotent rewrite → Ok(None), no write.
     let path = std::path::Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
     }
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("read: {}", e))?;
-    let after_h = rewrite_frontmatter_sources(&content, &horizontal_ids);
-    let after_both = rewrite_frontmatter_content_type(&after_h, &vertical_ids);
-    // MIG-076 §A2 — gated (bulk programmatic frontmatter rewrite).
-    crate::write_gate::gate_write(path, &after_both, None, "bulk_accept")?;
+    crate::write_gate::gate_rmw(path, "bulk_accept", |content| {
+        let after_h = rewrite_frontmatter_sources(content, &horizontal_ids);
+        let after_both = rewrite_frontmatter_content_type(&after_h, &vertical_ids);
+        Ok(if after_both == content { None } else { Some(after_both) })
+    })?;
 
     // 4. Update the SQLite mirror + clear the suggestion row.
     let search_state = app.state::<crate::search::SearchState>();

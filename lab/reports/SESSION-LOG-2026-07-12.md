@@ -71,3 +71,16 @@ After PJ-070 closed, the Boss asked for the option to **merge** the two conflict
 ## PJ-072 note
 
 The whole session's Boss tests ran against the `E:\Cognitive Knowledge\` universe root — reconfirming the PJ-072 lead (the active "Eisa Cognitive Knowledge" universe lives there, not `E:\Constellation Universes\...`).
+
+---
+
+## PJ-071 — bulk Accept-All read-modify-write race (Group-1 continuation, Boss "Proceed")
+
+**Function in hand:** the CECE bulk "Approve All sources" path — `accept_one` (`sources/bulk_ops.rs:269`).
+
+- **SO#8 cross-check — PASS.** Both sites confirmed: `accept_one` reads unlocked (line 305) then `gate_write` (line 310); `gate_rmw` exists (write_gate.rs:627); the per-card path already uses it (`sources/mod.rs:539`).
+- **The bug.** The read→modify→write was not atomic — `gate_write` locks only the write, not the disk read at 305. A concurrent editor `write_note` (dispatch thread) landing between the unlocked read and the gated write is silently overwritten by the stale-based frontmatter rewrite; no error, no sidecar.
+- **The fix (proven-pattern migration, no `/migration` — single write-path fn).** Replaced the unlocked read + `gate_write` with one `gate_rmw(path, "bulk_accept", |content| { rewrite_frontmatter_sources → rewrite_frontmatter_content_type; Ok(None if unchanged else Some) })` — read+mutate+write under the per-path lock the editor also takes, so a save lands before or after but never inside. Runs on the existing `thread::spawn` worker (no dispatch freeze; gate_rmw's two rules honoured — pure closure, DB-mirror update after). Behaviour-preserving + idempotent-skip.
+- **Reproduce-First / verify.** The race window is visible in the old code; the fix inherits `gate_rmw`'s proof (`concurrent_writers_serialize_never_tear` + the gate_rmw unit tests, in the 22 write_gate tests that pass). cargo check clean; 31 sources tests + 22 write_gate tests pass. Backend-only, no user-visible change → no live Boss test needed.
+- **Per-build whole-app sweep (`wf_4dd12a39-694`, 46 agents, 24 confirmed):** the PJ-071 diff's OWN gate_rmw change = **ZERO findings**. ONE new HIGH in the same function (a DISTINCT bug — accept REPLACES a note's manual multi-value `sources:`/`content_type:` with the suggestion's ids because the suggestion builder `classifier/mod.rs:128-148` drops `.secondary`) → filed **PJ-091** (needs a classifier-synthesis look + a Boss ruling on accept semantics; NOT fixed inline — a separate concern from the race + a design decision). The other 22 are pre-existing backlog.
+- **Close (SO#9):** Pending Jobs **v1.21** (PJ-071 Done, PJ-091 filed, ► Next action → PJ-091); Orientation **v3.42**; Charter register appended.

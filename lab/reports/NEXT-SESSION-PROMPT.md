@@ -8,7 +8,9 @@ Read docs/Constellation Orientation & Onboarding v3.41.md first (highest version
 
 State: three deliverables closed this session — PJ-070 (watcher external-change adopt, /migration CLOSED + Boss-validated), the "Show copy" reveal fix, and PJ-088 (conflict-resolution side-by-side merge view, Boss-validated). The backlog is reconciled — docs/Constellation Pending Jobs v1.20.md — with a standing "► Next action" line; PJ-088 closed + PJ-089/PJ-090 (two HIGH silent-loss findings from the PJ-088 sweep) filed. SO#9 makes that ledger the living backlog, reconciled FIRST at every job-close (it pairs with SO#8's cross-check-before-tackling).
 
-Boss ruling holds: continue Group 1, top-down. Next item = PJ-071.
+UPDATE (PJ-071 shipped this session): PJ-071 (bulk Accept-All RMW race) is FIXED (gate_rmw migration, `sources/bulk_ops.rs`; backend-only, tests pass) — Pending Jobs v1.21, Orientation v3.42. Its per-build sweep surfaced a NEW HIGH → **PJ-091** (accepting a classifier suggestion silently TRUNCATES a note's manual multi-value `sources:`/`content_type:` frontmatter, because the suggestion builder `classifier/mod.rs:128-148` drops `.secondary`). PJ-091 needs a classifier-synthesis look + a Boss ruling on accept semantics (merge-vs-replace / preserve-manual) — it is the new ► Next action.
+
+Boss ruling holds: continue Group 1, top-down. Next item = **PJ-091** (then PJ-089 Index-preview clobber, PJ-090 SS Tasks-toggle, PJ-086 switchTab, …). Read the current backlog: docs/Constellation Pending Jobs v1.21.md.
 
 PJ-071 — the bulk Accept-All unlocked read-modify-write race: accept_one reads unlocked then gate_write (sources/bulk_ops.rs:305), the exact race the proven gate_rmw pattern prevents — per-card accept was migrated to it, bulk wasn't — so a concurrent editor save in the window is silently overwritten. It is a write-path change.
 
