@@ -13,8 +13,8 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
-import { compose as composeNoteModel, getModel as getNoteModel } from '$lib/editor/noteModel';
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
+import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
@@ -222,6 +222,15 @@ const NAV_FLUSH_ENABLED = true;
 // Trade-off: the same note can no longer be open in two panes at once. One-line revert.
 const DEDUP_ALL_TABS_ENABLED = true;
 
+// PJ-070 (2026-07-12) — the watcher external-change ADOPT valve. When true, an external .md
+// edit to an OPEN note (git-pull / Syncthing / Obsidian) is ADOPTED into the single-ownership
+// note model (freshness-gated: a clean model adopts + remounts; a dirty model keeps its unsaved
+// work and the incoming edit is preserved to a `.conflict` sidecar) instead of only updating
+// tab.content — so the next keystroke can never silently overwrite the external edit.
+// WARNING: false = today's content-only update = the KNOWN Recipe-O clobber (external edit lost
+// on the next keystroke). It is a one-line ROLLBACK lever, NOT a safe steady state.
+const WATCHER_ADOPT_ENABLED = true;
+
 // ─── Centralized save with lock ───
 const saveLocks = new Map<string, boolean>();
 const recentWrites = new Map<string, number>();
@@ -310,6 +319,48 @@ export function clearSaveFailure(path: string) {
 		n.delete(path);
 		return n;
 	});
+}
+
+/**
+ * PJ-070 — the "external conflict" surface. When a note's file is edited OUTSIDE Constellation
+ * while its open model has UNSAVED local edits, the local work is kept (never clobbered) and the
+ * incoming disk copy is preserved to a `.conflict` sidecar. Each conflict records one entry here,
+ * KEYED BY SIDECAR PATH (unique per conflict), rendered as a banner row with a "Show copy" action.
+ * Unlike saveHealth this is NOT a failure and does NOT auto-clear — a conflict is a decision the
+ * user makes, so the row persists until they dismiss it (or reveal + resolve the copy).
+ */
+export const saveConflicts = writable<Map<string, { noteName: string; notePath: string; since: number }>>(new Map());
+
+export function reportConflict(sidecarPath: string, noteName: string, notePath: string) {
+	saveConflicts.update((m) => {
+		const n = new Map(m);
+		n.set(sidecarPath, { noteName, notePath, since: Date.now() });
+		return n;
+	});
+}
+
+export function dismissConflict(sidecarPath: string) {
+	saveConflicts.update((m) => {
+		if (!m.has(sidecarPath)) return m;
+		const n = new Map(m);
+		n.delete(sidecarPath);
+		return n;
+	});
+}
+
+/**
+ * PJ-070 — the conflict hook `adoptExternalChangeIntoTabs` calls for a DIRTY tab whose file was
+ * genuinely changed externally: persist the incoming disk copy to a `.conflict` sidecar (never
+ * lost) and surface a banner row. Best-effort — a sidecar-write failure is logged, never thrown
+ * (the local unsaved work is already safe in the model; this only preserves the REMOTE copy).
+ */
+export async function reportExternalConflict(notePath: string, noteName: string, diskContent: string): Promise<void> {
+	try {
+		const sidecarPath = await invoke<string>('write_conflict_sidecar', { notePath, diskContent });
+		reportConflict(sidecarPath, noteName, notePath);
+	} catch (e) {
+		console.error('[PJ-070] failed to write conflict sidecar for', notePath, e);
+	}
 }
 
 /**
@@ -665,6 +716,133 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 	// The cascade just authored canonical disk content; any in-flight
 	// write-ahead buffer for these paths is now stale.
 	for (const fp of byPath.keys()) clearWriteAhead(fp);
+}
+
+/** PJ-070 — paths whose NotePane is mid-REMOUNT from a watcher/external adopt (a reloadVersion
+ *  bump). DEDICATED (not the shared cascade Map) so a concurrent rename cascade's clear — even
+ *  clearAllCascading — can never lift it. NoteEditor's teardown flush gates (handleFlush /
+ *  handleSave) bail while a path is reseeding: otherwise the OLD, stale-displaying editor's
+ *  {#key} teardown flush would push its pre-adopt body back into the freshly-adopted model —
+ *  the hazard-#6 re-stale (setBody has no staleness guard). O(1) empty-set early-exit keeps it
+ *  off the keystroke hot path. */
+const reseedingPaths = new Map<string, number>();
+export function isReseeding(path: string): boolean {
+	if (reseedingPaths.size === 0) return false;
+	return reseedingPaths.has(normPath(path));
+}
+// Refcounted (like cascadingPaths) so two overlapping adopts of the SAME path — e.g. the 300ms
+// watcher flush racing an onNoteSaved within one tick() bracket — don't pop each other's mark: the
+// first clear must not lift the gate while the second is still mid-teardown.
+function markReseeding(path: string) {
+	const key = normPath(path);
+	reseedingPaths.set(key, (reseedingPaths.get(key) ?? 0) + 1);
+}
+function clearReseeding(path: string) {
+	const key = normPath(path);
+	const n = reseedingPaths.get(key);
+	if (n === undefined) return;
+	if (n <= 1) reseedingPaths.delete(key);
+	else reseedingPaths.set(key, n - 1);
+}
+
+/**
+ * PJ-070 — adopt an EXTERNAL disk change (file watcher / second-screen save) into every open tab
+ * whose file changed, freshness-gated. The main-window twin of SecondScreenPage.adoptFreshDiskIntoSS,
+ * and the ONE home both main-window ingress paths call (the watcher flush + onNoteSaved). Per changed
+ * open tab:
+ *   - CLEAN model → adoptDisk: the model adopts the disk, and (unless it is the Focus note) the tab's
+ *     reloadVersion bumps so NoteEditor's {#key} remounts NotePane on the fresh model. The bump is
+ *     bracketed by a DEDICATED reseed mark spanning the async {#key} teardown (await tick), so the
+ *     outgoing editor's teardown flush can't re-stale the adopted model (hazard #6). When the note is
+ *     in FOCUS mode, hooks.focusReseed remounts FocusPane instead (hazard #7) — and if no focusReseed
+ *     is wired yet, the focus tab is LEFT UNTOUCHED (never adopt-without-reseed).
+ *   - DIRTY model + a GENUINE external change (disk !== the model's synced baseline) → hooks.conflict
+ *     (writes the `.conflict` sidecar + banner). Local unsaved work is NEVER clobbered (adoptDisk refuses
+ *     on dirty). An echo of our own write / a spurious touch (disk === baseline) is ignored.
+ * Never force-adopts (never openNoteModel / reloadTabsFromDisk here — that would discard local edits, the
+ * APP-KILLER #2 / LL-014 class). When WATCHER_ADOPT_ENABLED is off, degrades to the pre-PJ-070 content-only
+ * update (the Recipe-O clobber). `readDisk` is injectable so the harness drives the store boundary sans Tauri.
+ */
+export async function adoptExternalChangeIntoTabs(
+	paths: string[],
+	hooks?: {
+		conflict?: (notePath: string, noteName: string, diskContent: string) => void | Promise<void>;
+		focusReseed?: (path: string) => void;
+		focusPath?: string | null;
+	},
+	readDisk: (filePath: string) => Promise<string> = readNote,
+): Promise<void> {
+	if (paths.length === 0) return;
+	const tabs = get(openTabs);
+	const openPaths = new Set(tabs.map((t) => t.path));
+	const targets = paths.filter((fp) => openPaths.has(fp)); // invariant #9 — O(changed + open), not O(changed × open)
+	if (targets.length === 0) return;
+
+	// Read each changed open path once (reuse the 300ms-flush read; a deleted file's rejection is
+	// caught per-path so it can't sink the batch — invariant #8).
+	const reads = await Promise.all(
+		targets.map((fp) => readDisk(fp).then((content) => ({ fp, content }) as const).catch(() => null)),
+	);
+	const byPath = new Map<string, string>();
+	for (const r of reads) if (r) byPath.set(r.fp, r.content);
+	if (byPath.size === 0) return;
+
+	// ── ROLLBACK path (WATCHER_ADOPT_ENABLED off): today's content-only update, no adopt, no remount. ──
+	if (!WATCHER_ADOPT_ENABLED) {
+		openTabs.update((ts) => ts.map((t) => {
+			const c = byPath.get(t.path);
+			return c !== undefined ? { ...t, content: c } : t;
+		}));
+		return;
+	}
+
+	const focusPathNorm = hooks?.focusPath ? normPath(hooks.focusPath) : null;
+	const adopted = new Set<string>();          // paths whose CLEAN model adopted the disk (path↔id is 1:1 under DEDUP)
+	let focusReseedPath: string | null = null;  // the at-most-one focus note that also needs a FocusPane remount
+	const conflicts: Array<{ path: string; name: string; disk: string }> = [];
+
+	for (const t of tabs) {
+		const disk = byPath.get(t.path);
+		if (disk === undefined) continue;
+		if (isCascading(t.path)) continue; // invariant #3 — a rename cascade owns this path; its force-adopt runs there
+		const isFocusTab = focusPathNorm !== null && normPath(t.path) === focusPathNorm;
+		// Never adopt a Focus note without a way to reseed FocusPane (it ignores `value` after mount):
+		// a fresh model behind a stale Focus view would let Focus's teardown write stale. Leave as today.
+		if (isFocusTab && !hooks?.focusReseed) continue;
+		if (externalChangeNoteModel(t.id, disk)) {
+			// CLEAN model adopted the disk (invariant #2 — adoptDisk, never a force re-seed). Refresh the
+			// store tab (content + reloadVersion) uniformly; the FocusPane one ALSO gets focusReseed below.
+			adopted.add(t.path);
+			if (isFocusTab) focusReseedPath = t.path; // hazard #7 — remount FocusPane too (not under the reloadVersion {#key})
+		} else if (isNoteDirty(t.id) && diskDiffersFromBaseline(t.id, disk)) {
+			// DIRTY + a genuine external change → preserve the incoming edit; never clobber local work.
+			conflicts.push({ path: t.path, name: t.name, disk });
+		}
+		// else: our own write echoing back / a spurious touch (disk === baseline) → nothing to do (invariant #1).
+	}
+
+	// Batched remount for the clean adopters, bracketed by the dedicated reseed mark across the async
+	// {#key} teardown (hazard #6): mark BEFORE the store update, clear only AFTER tick() has flushed the
+	// remount + the outgoing editor's onDestroy teardown flush (which the mark makes a no-op). The reseed
+	// mark is inert for a Focus tab (NotePane isn't mounted); FocusPane's own teardown is gated by
+	// focusReseedSuppress inside focusReseed.
+	if (adopted.size > 0) {
+		for (const p of adopted) markReseeding(p);
+		openTabs.update((ts) => ts.map((t) =>
+			adopted.has(t.path)
+				? { ...t, content: byPath.get(t.path)!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
+				: t,
+		));
+		for (const p of adopted) clearWriteAhead(p); // invariant #10 — only adopters (a dirty refuser keeps its net)
+		if (focusReseedPath) hooks!.focusReseed!(focusReseedPath); // remount FocusPane on the freshly-adopted model
+		await tick();
+		for (const p of adopted) clearReseeding(p);
+	}
+
+	// Sidecar + banner for each genuine dirty conflict (async IPC — a stub no-ops if unwired).
+	for (const c of conflicts) {
+		await hooks?.conflict?.(c.path, c.name, c.disk);
+	}
 }
 
 /**

@@ -15,7 +15,7 @@
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
-		isCascading,
+		isCascading, isReseeding,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
@@ -240,7 +240,7 @@
 		if (readOnly) return; // G3 — read-only display never writes
 		if (saving) return;
 		if (!filePath || filePath !== tab.path) return;
-		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
+		if (isCascading(filePath) || isReseeding(filePath)) return; // F2 post-cascade-stomp gate + PJ-070 watcher-reseed teardown gate
 		saving = true;
 		if (SINGLE_OWNERSHIP) {
 			// Save-Durability (2026-07-08) — push this view's body to the model, then
@@ -298,11 +298,18 @@
 		if (!filePath || filePath !== tab.path) return;
 		// Flush fires on tab close, visibility change, and the {#key}-bump
 		// destroy itself — all paths must respect the cascade gate.
-		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
+		// PJ-070: also skip while this path is mid-reseed from a watcher/external adopt — the
+		// outgoing (stale) editor's {#key} teardown must not flush its pre-adopt body back into
+		// the freshly-adopted model (hazard #6 re-stale).
+		if (isCascading(filePath) || isReseeding(filePath)) return; // F2 post-cascade-stomp gate + PJ-070 watcher-reseed teardown gate
 		// MIG-076 §C — same single-source composition as handleSave; the buffer
 		// ops are inert Map writes, safe at this teardown moment (the §C-2 lesson).
 		let content: string;
 		if (SINGLE_OWNERSHIP) {
+			// PJ-070 — a merely-viewed note's teardown flush pushes its unchanged body here. That is now
+			// inert at the source: setBody's STRING path no-ops an identical-content push (noteModel.ts),
+			// so this can't spuriously dirty a clean model (which would defeat adoptDisk + raise phantom
+			// `.conflict` sidecars). Same guard protects FocusPane's onflush and flushAllDirtyTabs.
 			editBody(tab.id, text, filePath);
 			const r = compose(tab.id, filePath);
 			if (!r.ok) return; // identity refusal

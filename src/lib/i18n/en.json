@@ -3,6 +3,11 @@
     "couldNotSave": "Couldn’t save {note} — your edit is safe and will retry.",
     "retry": "Retry now"
   },
+  "conflict": {
+    "externalKept": "An external edit to {note} was kept as a separate copy — your version is unchanged.",
+    "showCopy": "Show copy",
+    "dismiss": "Dismiss"
+  },
   "collision": {
     "title": "A note named {name} already exists",
     "desc": "Choose how to resolve the name conflict.",

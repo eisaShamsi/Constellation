@@ -3,6 +3,11 @@
     "couldNotSave": "{note} kaydedilemedi — düzenlemeniz güvende ve yeniden denenecek.",
     "retry": "Yeniden dene"
   },
+  "conflict": {
+    "externalKept": "{note} notuna yapılan harici bir düzenleme ayrı bir kopya olarak saklandı — sizin sürümünüz değişmedi.",
+    "showCopy": "Kopyayı göster",
+    "dismiss": "Kapat"
+  },
   "collision": {
     "title": "{name} adlı bir not zaten var",
     "desc": "Ad çakışmasını nasıl çözeceğinizi seçin.",

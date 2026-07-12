@@ -79,6 +79,15 @@ export interface NoteModel {
 	 * Null on the legacy path (USE_YAML_DOC off).
 	 */
 	base: { rawYaml: string; hadFence: boolean; props: FrontmatterProperty[] } | null;
+	/**
+	 * PJ-070 — the exact bytes last SYNCED with disk (set at open, at adoptDisk, and on a
+	 * durable save). The watcher's dirty-conflict discriminator compares an incoming external
+	 * change against this: a DIRTY model + `disk !== diskBaseline` = a genuine external edit
+	 * (→ `.conflict` sidecar), while `disk === diskBaseline` is a spurious fs touch or our own
+	 * echo (→ no sidecar). Distinct from `base` (the frontmatter write-base) — this is the whole
+	 * file. Full-string compare, off the keystroke hot path (only the 300ms watcher flush).
+	 */
+	diskBaseline: string;
 }
 
 const models = new Map<string, NoteModel>();
@@ -142,6 +151,7 @@ export function openModel(id: string, path: string, content: string): NoteModel 
 		version: 0,
 		savedVersion: 0,
 		base: baseOf(content, properties),
+		diskBaseline: content, // PJ-070 — what's on disk at open
 	};
 	models.set(id, m);
 	return m;
@@ -180,7 +190,15 @@ export function setBody(id: string, body: string | Text, expectPath?: string): v
 	// identity leak the 2026-06-12 Boss test surfaced.
 	if (expectPath !== undefined && m.path !== expectPath) return;
 	const next = typeof body === 'string' ? toText(body) : body;
-	if (next === m.body) return;
+	if (next === m.body) return; // O(1) ref check — the per-keystroke Text path (onDocChange), Rule 1.
+	// PJ-070 — the STRING form of setBody is ONLY the cold flush/teardown pushes (handleFlush,
+	// FocusPane onflush, saveTabContent), never the per-keystroke Text path above. A no-op push there
+	// (identical content — e.g. a merely-VIEWED note's teardown flush re-pushing the unchanged body)
+	// must NOT bump version: a spuriously-dirty clean model makes adoptDisk refuse the next external
+	// edit (reintroducing the PJ-070 clobber on background/focus notes + raising phantom `.conflict`
+	// sidecars) and makes flushAllDirtyTabs re-write untouched notes on a universe switch. The content
+	// compare is O(N) but runs ONLY on these cold string paths, so the keystroke hot path stays O(1).
+	if (typeof body === 'string' && next.eq(m.body)) return;
 	m.body = next;
 	m.version++;
 }
@@ -272,7 +290,33 @@ export function adoptDisk(id: string, diskContent: string): boolean {
 	m.cid = cidOf(m.props);
 	m.body = toText(body);
 	m.base = baseOf(diskContent, properties);
+	m.diskBaseline = diskContent; // PJ-070 — disk is now the synced baseline
 	m.version++;
 	m.savedVersion = m.version; // disk IS the saved state
 	return true;
+}
+
+/**
+ * PJ-070 — re-baseline after a DURABLE save. Called by noteSession.save's success branch with
+ * the exact bytes just written (= what `read_note` will now return), so the model knows the
+ * current on-disk truth. Path-guarded exactly like markSaved (a save that resolves after an
+ * id-swap must not stamp its old content onto the new model's baseline).
+ */
+export function noteDiskSynced(id: string, content: string, expectPath?: string): void {
+	const m = models.get(id);
+	if (!m) return;
+	if (expectPath !== undefined && m.path !== expectPath) return;
+	m.diskBaseline = content;
+}
+
+/**
+ * PJ-070 — does an incoming external disk change GENUINELY differ from what this model last
+ * synced with disk? The watcher's dirty-conflict arbiter: only a true difference (not a spurious
+ * fs touch, not our own echo) on a DIRTY model warrants the `.conflict` sidecar. Returns false
+ * when no model exists (nothing to conflict with).
+ */
+export function diskDiffersFromBaseline(id: string, disk: string): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	return disk !== m.diskBaseline;
 }

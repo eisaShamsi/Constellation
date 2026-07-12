@@ -3,6 +3,11 @@
     "couldNotSave": "{note} konnte nicht gespeichert werden — deine Änderung ist sicher und wird erneut versucht.",
     "retry": "Erneut versuchen"
   },
+  "conflict": {
+    "externalKept": "Eine externe Änderung an {note} wurde als separate Kopie gespeichert — deine Version bleibt unverändert.",
+    "showCopy": "Kopie anzeigen",
+    "dismiss": "Verwerfen"
+  },
   "collision": {
     "title": "Eine Notiz namens {name} existiert bereits",
     "desc": "Wählen Sie, wie der Namenskonflikt gelöst werden soll.",

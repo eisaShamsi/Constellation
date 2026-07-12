@@ -479,6 +479,36 @@ pub fn write_note(
     crate::write_gate::gate_write(path, &content, expect.as_ref(), surface).map(|_| ())
 }
 
+/// PJ-070 — write the INCOMING external disk content to a `.conflict` sidecar next to a note whose
+/// open model was DIRTY when an external edit landed, so the user's unsaved work stays in the editor
+/// (never clobbered) AND the external edit is never lost. The sidecar's FINAL `.txt` extension makes
+/// it inert to every `.md`-gated surface (the file watcher, `index_note`, the tree walker), so it
+/// cannot re-fire the watcher, be indexed as a duplicate-`cid_cn` note, or appear in the sidebar —
+/// while the `.md` kept inside the stem tells the user (and their external editor) it is Markdown.
+/// Returns the sidecar path for the conflict banner's "Show copy" button. Written via
+/// `gate_create_exclusive` (atomic + fsync + journalled + refuse-if-exists); a same-second name
+/// collision retries with a `-N` suffix. NOT `write_note` (which rejects any non-`.md` path).
+#[tauri::command]
+pub fn write_conflict_sidecar(note_path: String, disk_content: String) -> Result<String, String> {
+    let note = Path::new(&note_path);
+    let parent = note.parent().ok_or("Note has no parent directory.")?;
+    let stem = note
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Note has no file name.")?;
+    let ts = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+    // Try `<stem>.conflict-<ts>.md.txt`, then `-2`, `-3`, … on a same-second collision.
+    for n in 1..=50u32 {
+        let suffix = if n == 1 { String::new() } else { format!("-{n}") };
+        let sidecar = parent.join(format!("{stem}.conflict-{ts}{suffix}.md.txt"));
+        match crate::write_gate::gate_create_exclusive(&sidecar, &disk_content, "conflict_sidecar")? {
+            crate::write_gate::WriteOutcome::RefusedExists => continue,
+            _ => return Ok(sidecar.to_string_lossy().to_string()),
+        }
+    }
+    Err("Could not create a conflict sidecar (too many collisions).".to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryStats {
     pub library_id: String,

@@ -3,6 +3,11 @@
     "couldNotSave": "无法保存 {note} — 您的编辑已安全保留，将重试。",
     "retry": "重试"
   },
+  "conflict": {
+    "externalKept": "对 {note} 的外部编辑已保留为单独的副本 — 您的版本保持不变。",
+    "showCopy": "显示副本",
+    "dismiss": "忽略"
+  },
   "collision": {
     "title": "已存在名为 {name} 的笔记",
     "desc": "选择如何解决名称冲突。",

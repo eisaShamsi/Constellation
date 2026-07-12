@@ -503,3 +503,118 @@ describe('Recipe N — two windows, one note (G3 second-screen cross-window sync
 		expect(S.bodyForView('ss')).toBe('v1');
 	});
 });
+
+/**
+ * Recipe O (PJ-070, 2026-07-12) — THE MAIN-WINDOW WATCHER EXTERNAL-CHANGE CLOBBER.
+ *
+ * The APP-KILLER mirror of Recipe N, but in the MAIN window. An external `.md` edit
+ * (git-pull / Syncthing / Obsidian) lands on an OPEN note. Today the watcher flush
+ * (+layout.svelte) updates only the store's `tab.content` — it NEVER adopts the fresh
+ * disk into the single-ownership note model and never bumps `reloadVersion`. So the
+ * mounted editor + its model keep the STALE body, and the user's next keystroke's
+ * debounced `editor_save` composes the stale model → it DURABLY OVERWRITES the external
+ * edit (then reindexes, so search agrees with the stomp).
+ *
+ * This recipe reproduces the MECHANISM on demand at the content-flow layer: the RED half
+ * shows that skipping the adopt loses the external edit; the GREEN half shows the same
+ * freshness gate Recipe N/E use (`externalChange` = adoptDisk) preserves it. The residual
+ * the running-app Boss test still closes is purely the wiring (does +layout actually call
+ * the adopt on the watcher path) — the exact "seed from tab.content, not bodyForView"
+ * integration residual this harness's own header calls out.
+ */
+describe('Recipe O — main-window watcher external-change adopt (PJ-070)', () => {
+	it('RED (today): watcher updates only tab.content, not the model → the next keystroke CLOBBERS the external edit', async () => {
+		// Note open in the main window; model + disk agree.
+		S.open('t', '/n.md', note('N', 'line one'));
+
+		// An external editor (git-pull / Syncthing / Obsidian) rewrites the file on disk.
+		disk.set('/n.md', note('N', 'line one\nADDED-BY-GIT-PULL'));
+
+		// BUG: the watcher flush updates tab.content but does NOT adopt into the model
+		// (it never calls externalChange/adoptDisk). The model is still stale:
+		expect(S.bodyForView('t')).toBe('line one'); // editor shows the pre-pull body
+
+		// The user types one character on the STALE view, then the debounce fires:
+		S.editBody('t', S.bodyForView('t') + 'x'); // "line onex"
+		await S.save('t', '/n.md', write);
+
+		// The external edit is GONE from disk — silently clobbered by the keystroke save:
+		expect(diskBody('/n.md')).toBe('line onex');
+		expect(disk.get('/n.md')).not.toContain('ADDED-BY-GIT-PULL'); // the wound
+	});
+
+	it('GREEN (fix): the watcher freshness-adopts into the model → the keystroke is added ON TOP, external edit preserved', async () => {
+		S.open('t', '/n.md', note('N', 'line one'));
+
+		// Same external edit lands on disk.
+		disk.set('/n.md', note('N', 'line one\nADDED-BY-GIT-PULL'));
+
+		// FIX: the watcher flush adopts the fresh disk into the model (clean model → adopts),
+		// exactly as adoptFreshDiskIntoSS does. reloadVersion would bump → {#key} remount.
+		expect(S.externalChange('t', disk.get('/n.md')!)).toBe(true);
+		expect(S.bodyForView('t')).toBe('line one\nADDED-BY-GIT-PULL'); // editor shows the pull
+
+		// The user now types on top of the FRESH content:
+		S.editBody('t', S.bodyForView('t') + '\nmine'); // append
+		const r = await S.save('t', '/n.md', write);
+		expect(r.ok).toBe(true);
+
+		// Both survive — the external edit AND the local keystroke:
+		expect(disk.get('/n.md')).toContain('ADDED-BY-GIT-PULL'); // preserved, not clobbered
+		expect(diskBody('/n.md')).toBe('line one\nADDED-BY-GIT-PULL\nmine');
+		expect(S.bodyForView('t')).toBe(diskBody('/n.md')); // screen === disk
+		expect(diskCid('/n.md')).toBe('N'); // identity intact
+	});
+
+	it('DIRTY conflict: a mid-edit model REFUSES the external adopt → the local unsaved edit is never clobbered (last-writer-wins)', async () => {
+		S.open('t', '/n.md', note('N', 'base'));
+		S.editBody('t', 'base\nmy unsaved local work'); // user is mid-edit → dirty
+
+		// An external edit lands WHILE the user has unsaved local work — a true conflict:
+		disk.set('/n.md', note('N', 'base\nexternal edit'));
+
+		// The freshness gate REFUSES (dirty model wins) — the local edit is protected:
+		expect(S.externalChange('t', disk.get('/n.md')!)).toBe(false);
+		expect(S.bodyForView('t')).toBe('base\nmy unsaved local work');
+
+		// The local save then persists the user's own work (the conflict resolves last-writer-wins,
+		// the same residual Recipe N documents — the fix protects local work, not the remote copy):
+		await S.save('t', '/n.md', write);
+		expect(diskBody('/n.md')).toBe('base\nmy unsaved local work');
+	});
+});
+
+/**
+ * Recipe O-baseline (PJ-070 §1) — the dirty-conflict DISCRIMINATOR. `diskBaseline` tracks the
+ * exact on-disk bytes across open → edit → save → adoptDisk, so the watcher can tell a GENUINE
+ * external edit (→ sidecar) from a spurious fs touch / our own echo (→ no sidecar). This is what
+ * arbitrates the DIRTY branch of adoptExternalChangeIntoTabs (§2).
+ */
+describe('Recipe O-baseline — diskBaseline dirty-conflict discriminator (PJ-070 §1)', () => {
+	it('baseline follows disk through open → edit → save → adopt; only a genuine change on a dirty model reads as a conflict', async () => {
+		S.open('t', '/n.md', note('N', 'v1'));
+		// At open, baseline === disk. Clean model: no conflict either way.
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v1'))).toBe(false); // identical → not a change
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v2 external'))).toBe(true); // genuinely different
+
+		// User types (dirty) but disk is untouched → a spurious touch delivering the SAME bytes is NOT a conflict:
+		S.editBody('t', 'v1\nlocal');
+		expect(M.isDirty('t')).toBe(true);
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v1'))).toBe(false); // baseline still the open bytes → no false sidecar
+		// A genuine external edit while dirty IS a conflict:
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v2 external'))).toBe(true);
+
+		// A durable save re-baselines to the written bytes → the just-saved content is no longer "a change":
+		await S.save('t', '/n.md', write);
+		expect(M.diskDiffersFromBaseline('t', disk.get('/n.md')!)).toBe(false);
+
+		// adoptDisk re-baselines to the adopted bytes:
+		expect(S.externalChange('t', note('N', 'v3 adopted'))).toBe(true);
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v3 adopted'))).toBe(false);
+		expect(M.diskDiffersFromBaseline('t', note('N', 'v4'))).toBe(true);
+	});
+
+	it('no model → diskDiffersFromBaseline is false (nothing to conflict with)', () => {
+		expect(M.diskDiffersFromBaseline('absent', note('N', 'anything'))).toBe(false);
+	});
+});

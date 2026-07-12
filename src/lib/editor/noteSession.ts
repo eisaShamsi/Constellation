@@ -132,6 +132,7 @@ export async function save(
 		return { ok: false, reason: 'write_failed', path: r.path, version: r.version, error };
 	}
 	M.markSaved(id, r.version, r.path); // clean trails durability — path-guarded so a save that resolves after an id-swap can't poison the new model (APP-KILLER #2)
+	M.noteDiskSynced(id, r.content, r.path); // PJ-070 — re-baseline: the model now knows the exact on-disk bytes (path-guarded, same reason as markSaved)
 	e.clearNetIf?.(r.path, r.content); // compare-and-clear: never wipe a newer edit's net
 	e.onSuccess?.({ path: r.path, content: r.content, version: r.version });
 	return r;

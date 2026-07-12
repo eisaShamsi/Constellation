@@ -25,6 +25,7 @@
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
+		adoptExternalChangeIntoTabs, reportExternalConflict,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		isInStarred, toggleStarred,
@@ -43,7 +44,7 @@
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
-	import { editBody as editNoteBody, seedBody, externalChange as externalChangeNoteModel, save as saveNoteSession } from '$lib/editor/noteSession';
+	import { editBody as editNoteBody, seedBody, save as saveNoteSession } from '$lib/editor/noteSession';
 	import { compose as composeNoteModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
@@ -1487,6 +1488,28 @@
 	// note focus was opened for, even as the active tab changes underneath.
 	let focusSessionId = $state('');
 	let focusSessionPath = $state('');
+	// PJ-070 (hazard #7) — FocusPane is NOT under the reloadVersion {#key} and ignores `value`
+	// after mount, so a watcher/external adopt can't refresh it by a store update alone. A bump
+	// of focusReloadVersion remounts FocusPane (it re-seeds from the freshly-adopted model via
+	// seedBody). focusReseedSuppress gates the outgoing FocusPane's teardown flush during that
+	// remount — every FocusPane write path (onchange live + onflush from beforeunload/visibility/
+	// idle/onDestroy) funnels through the two handlers below, so this one flag covers them all,
+	// preventing the old (stale-displaying) FocusPane from durably writing its pre-adopt body
+	// (the 2026-06-12 corruption class).
+	let focusReloadVersion = $state(0);
+	let focusReseedSuppress = false;
+	function focusReseed(_path: string) {
+		focusReseedSuppress = true;
+		focusReloadVersion++; // remount FocusPane → onMount re-seeds from the fresh model
+		// Clear AFTER the {#key} remount + the old FocusPane's onDestroy→flushNow→onflush have run
+		// (that teardown flush is a no-op while suppressed). One tick spans the remount microtask.
+		tick().then(() => { focusReseedSuppress = false; });
+	}
+	// PJ-070 — the ONE place the external-adopt hooks are wired, so the watcher flush and the
+	// second-screen onNoteSaved adopt can never drift (the exact sibling-gap this migration closed).
+	function adoptExternalHooks() {
+		return { conflict: reportExternalConflict, focusReseed, focusPath: focusMode ? focusSessionPath : null };
+	}
 	// Safety Audit G1 — the focus session's DEBOUNCED disk save. Keystrokes update
 	// the in-memory model instantly (editNoteBody); this commits it to disk on a
 	// 1500 ms pause OR on flush (exit/destroy), NEVER per keystroke (Rule 3 — the
@@ -3195,6 +3218,15 @@
 				}
 				markOrgChartDirty();
 
+				// PJ-070 — adopt external changes into OPEN tabs FIRST, before the reindex/stats
+				// awaits below, so the window in which a keystroke could land on a still-stale model
+				// is as small as possible (invariant #11). A CLEAN model adopts the disk + remounts
+				// NotePane/FocusPane on the fresh content; a DIRTY model keeps its unsaved work and the
+				// incoming external edit is preserved to a `.conflict` sidecar (never a silent clobber).
+				// Replaces the old bare tab.content update below that never adopted into the
+				// single-ownership model (the Recipe-O clobber).
+				await adoptExternalChangeIntoTabs(tabPaths, adoptExternalHooks());
+
 				// Reindex the externally-changed paths into note_meta so Quick
 				// Switcher / Search Hub / Index / backlinks / counts go current.
 				// A NORMAL change (a handful of files): AWAIT so the note_meta readers
@@ -3215,19 +3247,8 @@
 				}
 				await loadAllStats();
 
-				// Reload open tabs whose files changed
-				const tabs = get(openTabs);
-				for (const changedPath of tabPaths) {
-					const tab = tabs.find(t => t.path === changedPath);
-					if (tab) {
-						try {
-							const content: string = await invoke('read_note', { filePath: changedPath });
-							openTabs.update(ts => ts.map(t =>
-								t.path === changedPath ? { ...t, content } : t
-							));
-						} catch { /* file may have been deleted */ }
-					}
-				}
+				// (Open tabs whose files changed were already adopted into their models above,
+				// BEFORE the reindex — PJ-070. The old bare tab.content-only reload lived here.)
 
 				// note_meta is now current for the external changes (awaited reindex
 				// above), so repopulate allNotes/tags/aliases PROMPTLY — the Quick
@@ -3373,21 +3394,15 @@
 		const unlistenLens = await onLensChangeRequest((id) => {
 			updateSettings({ noteGraphStyle: normalizeGraphStyle(id) });
 		});
-		// When the second screen saves a note, reload it in the main window if open
+		// When the second screen saves a note, reload it in the main window if open.
+		// PJ-070 — route through the ONE shared adopt helper so the main window's model adopts the
+		// fresh disk AND its NotePane/FocusPane REMOUNTS on it. The old hand-rolled adopt here bumped
+		// the model but FORGOT the reloadVersion bump, so the mounted editor kept showing the pre-save
+		// body until some other remount (the WA#6 sibling gap this fold closes). A dirty local model
+		// is never clobbered (freshness-gated); a genuine conflict lands in a `.conflict` sidecar.
 		const unlistenNoteSaved = await onNoteSaved(async (path) => {
 			if (wasRecentlyWritten(path)) return; // we wrote it ourselves
-			const tab = get(openTabs).find(t => t.path === path);
-			if (tab) {
-				try {
-					const content = await invoke<string>('read_note', { filePath: path });
-					tab.content = content;
-					openTabs.update(tabs => tabs);
-					// MIG-076 §C — the second screen wrote this note; the main
-					// window's model adopts it (freshness-gated: a dirty local
-					// model is never clobbered).
-					if (SINGLE_OWNERSHIP) externalChangeNoteModel(tab.id, content);
-				} catch {}
-			}
+			await adoptExternalChangeIntoTabs([path], adoptExternalHooks());
 		});
 
 		// Global keyboard shortcuts — capture phase to beat browser defaults
@@ -7854,11 +7869,18 @@
 							<BaseTab path={$activeTab.path} content={$activeTab.content ?? ''} onRowContextMenu={handleBaseRowContextMenu} />
 						{:else if focusMode}
 							{@const _parsed = parseFrontmatter($activeTab.content || '')}
+							<!-- PJ-070 (hazard #7) — key FocusPane on focusReloadVersion so a watcher/external
+							     adopt remounts it (it ignores `value` after mount). id|path are inert within a
+							     session (focus exits on tab change) but keep the key robust. -->
+							{#key focusSessionId + '|' + focusSessionPath + '|' + focusReloadVersion}
 							<FocusPane
 								value={SINGLE_OWNERSHIP ? seedBody(focusSessionId, focusSessionPath, _parsed.body) : _parsed.body}
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								onchange={(text) => {
+									// PJ-070 — suppress the live push while remounting on an external adopt (the new
+									// FocusPane re-seeds from the fresh model; a stray onchange would re-dirty stale).
+									if (focusReseedSuppress) return;
 									// MIG-076 §C — push the body to the model for the note FOCUS WAS OPENED
 									// FOR (captured session id/path), never the live $activeTab (compose is
 									// path-refused). Safety Audit G1: the keystroke updates the in-memory model
@@ -7878,9 +7900,17 @@
 										writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 									}
 								}}
-								onflush={(text) => { if (SINGLE_OWNERSHIP && focusSessionId) editNoteBody(focusSessionId, text, focusSessionPath); commitFocusSave(); }}
+								onflush={(text) => {
+									// PJ-070 (hazard #7) — the outgoing FocusPane's teardown flush (onDestroy /
+									// beforeunload / visibilitychange / idle all funnel here) must NOT durably write
+									// its pre-adopt body while we remount on a fresh external edit.
+									if (focusReseedSuppress) return;
+									if (SINGLE_OWNERSHIP && focusSessionId) editNoteBody(focusSessionId, text, focusSessionPath);
+									commitFocusSave();
+								}}
 								onexit={() => { focusMode = false; }}
 							/>
+							{/key}
 						{:else}
 							<!--
 								"Note as organism" — Tier 1 flanking panels.

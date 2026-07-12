@@ -47,6 +47,10 @@ export default defineConfig({
 			'tests/mig-076/noteModel.test.ts',
 			'tests/mig-076/runtimeHarness.test.ts',
 			'tests/mig-076/currentBugRepro.test.ts',
+			// PJ-070 §2 (2026-07-12) — the store-boundary test for adoptExternalChangeIntoTabs:
+			// the watcher external-change adopt (clean adopt + reloadVersion bump / dirty-conflict
+			// hook / cascade + echo + deleted + Focus-handoff guards) driven end-to-end sans Tauri.
+			'tests/mig-076/watcherAdoptStore.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

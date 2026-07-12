@@ -3,6 +3,11 @@
     "couldNotSave": "Impossible d’enregistrer {note} — votre modification est en sécurité et sera réessayée.",
     "retry": "Réessayer"
   },
+  "conflict": {
+    "externalKept": "Une modification externe de {note} a été conservée dans une copie distincte — votre version reste inchangée.",
+    "showCopy": "Afficher la copie",
+    "dismiss": "Ignorer"
+  },
   "collision": {
     "title": "Une note nommée {name} existe déjà",
     "desc": "Choisissez comment résoudre le conflit de nom.",

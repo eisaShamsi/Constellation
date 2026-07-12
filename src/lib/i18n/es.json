@@ -3,6 +3,11 @@
     "couldNotSave": "No se pudo guardar {note}: tu edición está a salvo y se reintentará.",
     "retry": "Reintentar"
   },
+  "conflict": {
+    "externalKept": "Una edición externa de {note} se conservó como una copia aparte — tu versión no ha cambiado.",
+    "showCopy": "Mostrar copia",
+    "dismiss": "Descartar"
+  },
   "collision": {
     "title": "Ya existe una nota llamada {name}",
     "desc": "Elige cómo resolver el conflicto de nombre.",
