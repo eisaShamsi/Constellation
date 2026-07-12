@@ -12,10 +12,18 @@
 	let {
 		onClose,
 		onSwitch,
+		onBeforeSwitch,
 		onRemoveLast,
 	}: {
 		onClose: () => void;
 		onSwitch: () => void;
+		/** MIG-100 — runs BEFORE set_active_universe flips the Rust active
+		 *  universe: the departing universe's dirty tabs must flush while
+		 *  their paths still validate against the ACTIVE universe's
+		 *  libraries (write_note rejects foreign paths). Best-effort — a
+		 *  flush failure must never block the switch (the write-ahead net
+		 *  + save-health banner hold the edit). */
+		onBeforeSwitch?: () => Promise<void>;
 		onRemoveLast: () => void;
 	} = $props();
 
@@ -51,6 +59,12 @@
 		// switch — the switch handler is not the felt lag (that was the departing
 		// universe's still-warming background boot; its own reproduce-first pass).
 		try {
+			// MIG-100 — departure flush BEFORE the active-universe flip (see the
+			// onBeforeSwitch prop doc). Tabs are neither cleared nor disposed
+			// here — a failed switch leaves the user's desk untouched.
+			if (onBeforeSwitch) {
+				try { await onBeforeSwitch(); } catch { /* net + banner hold it */ }
+			}
 			await setActiveUniverse(id);
 			activeId = id;
 			onSwitch();

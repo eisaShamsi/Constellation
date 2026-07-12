@@ -13,7 +13,7 @@
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
-		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs,
+		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
@@ -8980,6 +8980,13 @@
 {#if showUniverseManager}
 	<UniverseManager
 		onClose={() => showUniverseManager = false}
+		onBeforeSwitch={async () => {
+			// MIG-100 — pre-flip departure: persist the session snapshot to the
+			// OLD root and flush every dirty model while write_note still
+			// validates against the departing universe's libraries.
+			await stopSessionTracking();
+			await flushAllDirtyTabs('universe_departure_flush');
+		}}
 		onSwitch={handleUniverseSwitch}
 		onRemoveLast={() => { showUniverseManager = false; appReady = false; showUniverseSetup = true; }}
 	/>

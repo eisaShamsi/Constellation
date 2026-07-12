@@ -22,6 +22,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 import { invoke } from '@tauri-apps/api/core';
 import {
 	restoreSessionTabs,
+	flushAllDirtyTabs,
 	openTabs,
 	activeTabId,
 	focusedTabId,
@@ -416,6 +417,26 @@ describe('R13 — a transiently unreadable tab is carried forward, not silently 
 		} finally {
 			vi.useRealTimers();
 		}
+	});
+});
+
+describe('R14 — the pre-flip departure flush writes dirty models, touches nothing else (switch-flush fix)', () => {
+	it('flushAllDirtyTabs writes the dirty model; tabs/stores/models stay intact', async () => {
+		disk.set('/lib/a.md', note('A', 'original'));
+		await restoreSessionTabs(snapOf(['/lib/a.md']));
+		let current: any[] = [];
+		openTabs.subscribe((v) => (current = v))();
+		const tab = current[0];
+		S.editBody(tab.id, 'edited before switch'); // dirty at departure
+		await flushAllDirtyTabs('universe_departure_flush');
+		const w = calls.filter((c) => c.cmd === 'write_note');
+		expect(w).toHaveLength(1);
+		expect(w[0].args.content).toContain('edited before switch');
+		// Nothing cleared, nothing disposed — a failed switch after this
+		// leaves the user's desk untouched.
+		openTabs.subscribe((v) => (current = v))();
+		expect(current).toHaveLength(1);
+		expect(S.bodyForView(tab.id)).toBe('edited before switch');
 	});
 });
 

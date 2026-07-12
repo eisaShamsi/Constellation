@@ -412,7 +412,17 @@ pub fn write_note(
     // coarse (five frontend writers shared one tag). Callers label themselves.
     origin: Option<String>,
 ) -> Result<(), String> {
-    validate_path_in_any_library(&app, &file_path)?;
+    // MIG-100 forensics fix: a validation rejection must leave a journal
+    // line — the switch-flush incident (a departing universe's flush
+    // rejected against the NEW universe's libraries) was invisible in the
+    // journal because these early Errs never reached gate_write.
+    if let Err(e) = validate_path_in_any_library(&app, &file_path) {
+        crate::write_gate::journal_frontend_marker(
+            "write_note_rejected".to_string(),
+            format!("{}: {}", file_path, e),
+        );
+        return Err(e);
+    }
     let path = Path::new(&file_path);
 
     // Safety: only allow writing .md files, reject ADS on Windows

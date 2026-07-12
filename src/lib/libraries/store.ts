@@ -1948,16 +1948,31 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
  */
 export async function flushDisposeClearTabs(origin: string): Promise<void> {
 	const departing = get(openTabs);
-	for (const t of departing) {
-		if (NAV_FLUSH_ENABLED && isNoteDirty(t.id)) {
-			try { await flushOutgoing(t.id, origin); } catch { /* net + banner hold it */ }
-		}
-	}
+	await flushAllDirtyTabs(origin);
 	openTabs.set([]);
 	activeTabId.set(null);
 	focusedTabId.set(null);
 	await tick();
 	for (const t of departing) closeNoteModel(t.id);
+}
+
+/**
+ * MIG-100 switch-flush fix (Boss re-test finding): flush every dirty open
+ * model to disk — WITHOUT clearing or disposing anything. This must run
+ * BEFORE `set_active_universe` flips the Rust active universe, because
+ * `write_note` validates paths against the ACTIVE universe's libraries — a
+ * departure flush that runs after the flip is rejected ("Couldn't save X"
+ * banners for every dirty departing tab; the write-ahead net held the
+ * content, but the write itself never landed). The Universe Manager calls
+ * this via its onBeforeSwitch hook; the post-flip teardown then finds every
+ * model clean and performs no writes at all.
+ */
+export async function flushAllDirtyTabs(origin: string): Promise<void> {
+	for (const t of get(openTabs)) {
+		if (NAV_FLUSH_ENABLED && isNoteDirty(t.id)) {
+			try { await flushOutgoing(t.id, origin); } catch { /* net + banner hold it */ }
+		}
+	}
 }
 
 // ─── MIG-100 §3 — session restore: the batch-insert path ───
