@@ -618,3 +618,30 @@ describe('Recipe O-baseline — diskBaseline dirty-conflict discriminator (PJ-07
 		expect(M.diskDiffersFromBaseline('absent', note('N', 'anything'))).toBe(false);
 	});
 });
+
+/**
+ * Recipe P (PJ-088) — replaceContent RE-BASES, so a conflict-merge that changes NON-PROJECTABLE
+ * frontmatter (a nested map / block scalar the lenient parser can't project) is written VERBATIM,
+ * not silently diffed against the stale open-time base. The safety-inspection finding [7] on the
+ * merge save path: setProps+setBody left `m.base` stale → compose dropped the merge's rich-frontmatter
+ * change. replaceContent re-bases to the merged source → compose emits it byte-consistently.
+ */
+describe('Recipe P — replaceContent re-bases the merge save (PJ-088 finding [7])', () => {
+	it('a merge that REMOVES a nested-map frontmatter key writes the merged text verbatim (the removal sticks)', async () => {
+		const original = '---\ntitle: T\ncid_cn: N\nmeta:\n  a: 1\n  b: 2\n---\nbody one';
+		S.open('t', '/n.md', original);
+		await S.save('t', '/n.md', write);
+		expect(disk.get('/n.md')).toContain('meta:'); // the nested map is on disk
+
+		// The user reconciled to a version WITHOUT the nested map (and a new body):
+		const merged = '---\ntitle: T\ncid_cn: N\nstage: seed\n---\nbody merged';
+		S.replaceContent('t', merged, '/n.md');
+		await S.save('t', '/n.md', write);
+
+		expect(diskBody('/n.md')).toBe('body merged');
+		expect(disk.get('/n.md')).not.toContain('meta:');   // the removed nested map is GONE (the fix; the bug left it)
+		expect(disk.get('/n.md')).toContain('stage: seed');  // the merge's added key is present
+		expect(diskCid('/n.md')).toBe('N');                  // identity intact
+		expect(M.isDirty('t')).toBe(false);                  // durably saved
+	});
+});

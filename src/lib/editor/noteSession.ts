@@ -80,6 +80,12 @@ export function editProps(id: string, props: FrontmatterProperty[], expectPath?:
 	M.setProps(id, props, expectPath);
 }
 
+/** PJ-088 — replace the model's whole content (frontmatter + body) from a merged source, re-basing
+ *  so compose emits it verbatim. `expectPath` identity-guards the write (see editBody). */
+export function replaceContent(id: string, content: string, expectPath?: string): void {
+	M.replaceContent(id, content, expectPath);
+}
+
 /**
  * The body a view must SEED from when it mounts — ALWAYS the model, never a
  * stale tab copy. This is the symptom-1 fix made explicit and testable: it

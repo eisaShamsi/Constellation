@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "Une modification externe de {note} a été conservée dans une copie distincte — votre version reste inchangée.",
     "showCopy": "Afficher la copie",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "merge": "Fusionner…",
+    "mergeTitle": "Résoudre le conflit",
+    "yourVersion": "Votre version",
+    "outsideCopy": "Copie externe",
+    "mergeHelp": "Copiez ce que vous voulez de la copie externe, ou modifiez librement, puis Enregistrer la fusion. Les deux versions restent en sécurité jusqu’à l’enregistrement.",
+    "mergeLoading": "Chargement…",
+    "mergeLoadError": "Impossible de charger les deux versions.",
+    "mergeReopen": "Ouvrez d’abord cette note, puis Fusionner.",
+    "mergeSaveError": "Impossible d’enregistrer la fusion — rien n’a été modifié ; votre version et la copie sont toutes deux en sécurité. Réessayez.",
+    "mergeCancel": "Annuler",
+    "mergeSave": "Enregistrer la fusion",
+    "mergeSaving": "Enregistrement…"
   },
   "collision": {
     "title": "Une note nommée {name} existe déjà",

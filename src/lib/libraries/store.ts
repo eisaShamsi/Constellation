@@ -13,7 +13,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -4177,6 +4177,72 @@ export async function resolveStructuralConflict(notePath: string, field: 'parent
 		await reloadTabsFromDisk([notePath]); // model ADOPTS the resolved disk + {#key} remount
 	} finally {
 		if (openTab) clearCascading(openTab.path);
+	}
+}
+
+/**
+ * PJ-088 — resolve a conflict by SAVING a user-reconciled MERGE safely. The note is OPEN under
+ * Single-Ownership, so the merged text is pushed INTO the one model (editProps+editBody) and saved
+ * through the durability gate — NEVER a raw write over the open note (a raw write would reintroduce
+ * the PJ-070 Recipe-O clobber: the still-dirty model's next autosave composes the stale body over
+ * the merge). The `.conflict` sidecar is moved to trash (reversible) + the banner dismissed ONLY
+ * after a proven durable save; on failure nothing irreversible runs (zero-loss, retryable). Returns
+ * {ok} so the caller closes the overlay + trashes only on success. Cancel never calls this — the
+ * merged text lives in the merge view and reaches the model only here, at Save.
+ */
+export async function resolveConflictMerge(
+	notePath: string,
+	sidecarPath: string,
+	mergedText: string,
+	hooks?: { focusReseed?: (path: string) => void },
+): Promise<{ ok: boolean; reason?: string }> {
+	const tab = get(openTabs).find((t) => t.path === notePath);
+	if (!tab) return { ok: false, reason: 'note_not_open' }; // the entry point opens the note first — a model must exist
+
+	markCascading(notePath); // gate the armed autosave + the outgoing {#key} teardown flush for the whole op
+	markReseeding(notePath); // hazard #6 — span the async remount so the outgoing (stale) editor can't re-stale the merge
+	try {
+		// Push the merged content INTO the one model, path-guarded + RE-BASED (replaceContent), so
+		// compose emits the merged frontmatter verbatim — not a G4 diff against the stale open-time base
+		// (which would silently drop non-projectable frontmatter, e.g. nested maps, the merge changed).
+		// The model IS now the merge — no stale second copy remains to overwrite it (the core defense).
+		replaceContentInModel(tab.id, mergedText, notePath);
+		markRecentWrite(notePath); // suppress the watcher echo of our own write (no phantom sidecar)
+		const outcome = await saveNoteSession(
+			tab.id,
+			notePath,
+			standardSaveEnv({
+				origin: 'merge_resolve',
+				name: tab.name,
+				onSaved: (savedPath) => {
+					emit('screen:note-saved', { path: savedPath }).catch(() => {}); // second screen refresh
+					reindexNote(savedPath, tab.libraryName).catch(() => {}); // search/backlinks reflect the merge
+				},
+			}),
+			'merge_resolve',
+		);
+		// Durability gate: on failure the model stays DIRTY, the net is RETAINED, the save-health banner
+		// surfaces it (onError). Nothing irreversible has run — the sidecar + conflict banner remain.
+		if (!outcome.ok) return { ok: false, reason: (outcome as { reason?: string }).reason ?? 'write_failed' };
+
+		// Durable success → remount the editor surfaces on the merged disk, then resolve the sidecar.
+		await reloadTabsFromDisk([notePath]); // NotePane: force-reseed clean model + reloadVersion {#key} remount
+		hooks?.focusReseed?.(notePath); // FocusPane is NOT under the {#key} — reseed it too (Editor-Surface Gate #2/#4)
+		await tick(); // let the remounts + the gated outgoing teardown flush settle before we release the gate
+
+		// Sidecar → trash (reversible, never hard-delete), banner row → dismiss. ONLY after durable success.
+		const libNorm = normPath(sidecarPath);
+		const lib = get(libraryStats)
+			.filter((l) => libNorm.startsWith(normPath(l.path)))
+			.sort((a, b) => normPath(b.path).length - normPath(a.path).length)[0]; // longest-prefix = most-specific (nested/federated)
+		if (lib) {
+			try { await moveToTrash(sidecarPath, lib.path); } catch (e) { console.error('[PJ-088] conflict sidecar trash failed', e); }
+		}
+		dismissConflict(sidecarPath);
+		return { ok: true };
+	} finally {
+		clearReseeding(notePath);
+		clearCascading(notePath);
 	}
 }
 

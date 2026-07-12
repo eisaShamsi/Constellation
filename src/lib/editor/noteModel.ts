@@ -216,6 +216,28 @@ export function setProps(id: string, props: FrontmatterProperty[], expectPath?: 
 	m.version++;
 }
 
+/**
+ * PJ-088 — replace the model's ENTIRE content (frontmatter + body) from an authored/merged source,
+ * RE-BASING so compose emits it byte-consistently. Distinct from setProps+setBody: those leave the
+ * G4 write-base (`m.base`) at its open-time bytes, so compose would diff the stale base against the
+ * merged props — a violation of the UNIFICATION invariant (old/new props must project the SAME
+ * source) that silently DROPS non-projectable frontmatter (nested maps / block scalars) the merge
+ * changed. Re-basing to the merged content means compose applies a zero diff and emits the merged
+ * frontmatter verbatim. Marks dirty (version++), path-guarded — flows through the durability gate
+ * and stays dirty-until-durable on a failed save.
+ */
+export function replaceContent(id: string, content: string, expectPath?: string): void {
+	const m = models.get(id);
+	if (!m) return;
+	if (expectPath !== undefined && m.path !== expectPath) return;
+	const { properties, body } = parseFrontmatter(content);
+	m.props = cloneProps(properties);
+	m.cid = cidOf(m.props);
+	m.body = toText(body);
+	m.base = baseOf(content, properties); // re-base to the merged source → compose emits it verbatim (no stale-base diff)
+	m.version++;
+}
+
 /** Identity update for rename/move — content untouched. */
 export function setPath(id: string, path: string): void {
 	const m = models.get(id);

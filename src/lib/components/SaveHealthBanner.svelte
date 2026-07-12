@@ -11,15 +11,19 @@
 	// and the incoming disk copy is preserved to a `.conflict` sidecar. Distinct from a
 	// failure: no auto-clear, no retry — "Show copy" reveals the sidecar, "×" dismisses.
 	import { saveHealth, retrySaveFailure, saveConflicts, dismissConflict } from '$lib/libraries/store';
+	import { openMergeView } from '$lib/stores/mergeView';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 
 	const rows = $derived([...$saveHealth.entries()].map(([path, info]) => ({ path, name: info.name })));
-	const conflicts = $derived([...$saveConflicts.entries()].map(([sidecarPath, info]) => ({ sidecarPath, name: info.noteName })));
+	const conflicts = $derived([...$saveConflicts.entries()].map(([sidecarPath, info]) => ({ sidecarPath, name: info.noteName, notePath: info.notePath })));
 
 	function showCopy(sidecarPath: string) {
 		invoke('constellation_show_in_folder', { path: sidecarPath }).catch(() => {});
+	}
+	function merge(c: { sidecarPath: string; name: string; notePath: string }) {
+		openMergeView({ notePath: c.notePath, sidecarPath: c.sidecarPath, noteName: c.name });
 	}
 </script>
 
@@ -38,6 +42,9 @@
 			<div class="shrow cfrow">
 				<span class="shicon" aria-hidden="true">⧉</span>
 				<span class="shmsg" dir={detectDir(c.name)}>{$t('conflict.externalKept', { note: c.name })}</span>
+				<button class="shbtn" type="button" onclick={() => merge(c)}>
+					{$t('conflict.merge')}
+				</button>
 				<button class="shbtn" type="button" onclick={() => showCopy(c.sidecarPath)}>
 					{$t('conflict.showCopy')}
 				</button>

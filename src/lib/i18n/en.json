@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "An external edit to {note} was kept as a separate copy — your version is unchanged.",
     "showCopy": "Show copy",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "merge": "Merge…",
+    "mergeTitle": "Resolve conflict",
+    "yourVersion": "Your version",
+    "outsideCopy": "Outside copy",
+    "mergeHelp": "Copy what you want from the outside copy, or edit freely, then Save merged. Both versions stay safe until you save.",
+    "mergeLoading": "Loading…",
+    "mergeLoadError": "Couldn’t load the two versions.",
+    "mergeReopen": "Open this note first, then Merge.",
+    "mergeSaveError": "Couldn’t save the merge — nothing was changed; your version and the copy are both safe. Try again.",
+    "mergeCancel": "Cancel",
+    "mergeSave": "Save merged",
+    "mergeSaving": "Saving…"
   },
   "collision": {
     "title": "A note named {name} already exists",

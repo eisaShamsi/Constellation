@@ -63,6 +63,7 @@
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import SaveHealthBanner from '$lib/components/SaveHealthBanner.svelte';
+	import ConflictMergeView from '$lib/components/ConflictMergeView.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import BaseTab from '$lib/lens/BaseTab.svelte';
 	import CascadeFreezeOverlay from '$lib/components/CascadeFreezeOverlay.svelte';
@@ -6471,6 +6472,8 @@
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
 	<!-- Save-Durability — the save-failure surface (fixed top banner; auto-dismisses on success) -->
 	<SaveHealthBanner />
+	<!-- PJ-088 — the conflict-resolution side-by-side MERGE overlay (mounts when a merge target is set) -->
+	<ConflictMergeView {focusReseed} />
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock" data-style-target="cDock">
 		<div class="dock-top">

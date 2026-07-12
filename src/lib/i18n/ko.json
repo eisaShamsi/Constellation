@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "{note}에 대한 외부 편집을 별도 복사본으로 보관했습니다 — 편집 중인 내용은 그대로 유지됩니다.",
     "showCopy": "복사본 보기",
-    "dismiss": "닫기"
+    "dismiss": "닫기",
+    "merge": "병합…",
+    "mergeTitle": "충돌 해결",
+    "yourVersion": "내 버전",
+    "outsideCopy": "외부 복사본",
+    "mergeHelp": "외부 복사본에서 원하는 내용을 가져오거나 자유롭게 편집한 뒤 병합본 저장을 누르세요. 저장하기 전까지 두 버전 모두 안전하게 보관됩니다.",
+    "mergeLoading": "불러오는 중…",
+    "mergeLoadError": "두 버전을 불러오지 못했습니다.",
+    "mergeReopen": "이 노트를 먼저 연 다음 병합하세요.",
+    "mergeSaveError": "병합을 저장하지 못했습니다 — 아무것도 변경되지 않았으며 내 버전과 복사본 모두 안전합니다. 다시 시도하세요.",
+    "mergeCancel": "취소",
+    "mergeSave": "병합본 저장",
+    "mergeSaving": "저장 중…"
   },
   "collision": {
     "title": "{name} 이름의 노트가 이미 있습니다",

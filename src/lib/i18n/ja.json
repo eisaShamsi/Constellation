@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "{note} への外部からの編集は別のコピーとして保持されました — お使いのバージョンは変更されていません。",
     "showCopy": "コピーを表示",
-    "dismiss": "閉じる"
+    "dismiss": "閉じる",
+    "merge": "マージ…",
+    "mergeTitle": "競合を解決",
+    "yourVersion": "お使いのバージョン",
+    "outsideCopy": "外部のコピー",
+    "mergeHelp": "外部のコピーから必要な部分をコピーするか、自由に編集してから「マージを保存」を押してください。保存するまで、両方のバージョンは安全に保持されます。",
+    "mergeLoading": "読み込み中…",
+    "mergeLoadError": "2つのバージョンを読み込めませんでした。",
+    "mergeReopen": "先にこのノートを開いてから、マージしてください。",
+    "mergeSaveError": "マージを保存できませんでした — 何も変更されていません。お使いのバージョンとコピーはどちらも安全です。もう一度お試しください。",
+    "mergeCancel": "キャンセル",
+    "mergeSave": "マージを保存",
+    "mergeSaving": "保存中…"
   },
   "collision": {
     "title": "{name} という名前のノートは既に存在します",

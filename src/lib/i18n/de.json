@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "Eine externe Änderung an {note} wurde als separate Kopie gespeichert — deine Version bleibt unverändert.",
     "showCopy": "Kopie anzeigen",
-    "dismiss": "Verwerfen"
+    "dismiss": "Verwerfen",
+    "merge": "Zusammenführen…",
+    "mergeTitle": "Konflikt lösen",
+    "yourVersion": "Deine Version",
+    "outsideCopy": "Externe Kopie",
+    "mergeHelp": "Übernimm aus der externen Kopie, was du brauchst, oder bearbeite frei, dann Zusammengeführt speichern. Beide Versionen bleiben sicher, bis du speicherst.",
+    "mergeLoading": "Wird geladen…",
+    "mergeLoadError": "Die beiden Versionen konnten nicht geladen werden.",
+    "mergeReopen": "Öffne zuerst diese Notiz, dann Zusammenführen.",
+    "mergeSaveError": "Die Zusammenführung konnte nicht gespeichert werden — nichts wurde geändert; deine Version und die Kopie sind beide sicher. Versuche es erneut.",
+    "mergeCancel": "Abbrechen",
+    "mergeSave": "Zusammengeführt speichern",
+    "mergeSaving": "Wird gespeichert…"
   },
   "collision": {
     "title": "Eine Notiz namens {name} existiert bereits",

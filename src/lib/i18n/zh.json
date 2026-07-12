@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "对 {note} 的外部编辑已保留为单独的副本 — 您的版本保持不变。",
     "showCopy": "显示副本",
-    "dismiss": "忽略"
+    "dismiss": "忽略",
+    "merge": "合并…",
+    "mergeTitle": "解决冲突",
+    "yourVersion": "您的版本",
+    "outsideCopy": "外部副本",
+    "mergeHelp": "从外部副本中复制您想要的内容，或自由编辑，然后保存合并结果。在您保存之前，两个版本都会保持安全。",
+    "mergeLoading": "加载中…",
+    "mergeLoadError": "无法加载这两个版本。",
+    "mergeReopen": "请先打开此笔记，然后再合并。",
+    "mergeSaveError": "无法保存合并结果 — 未做任何更改；您的版本和副本都安全无恙。请重试。",
+    "mergeCancel": "取消",
+    "mergeSave": "保存合并结果",
+    "mergeSaving": "保存中…"
   },
   "collision": {
     "title": "已存在名为 {name} 的笔记",

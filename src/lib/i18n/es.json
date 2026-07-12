@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "Una edición externa de {note} se conservó como una copia aparte — tu versión no ha cambiado.",
     "showCopy": "Mostrar copia",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "merge": "Combinar…",
+    "mergeTitle": "Resolver el conflicto",
+    "yourVersion": "Tu versión",
+    "outsideCopy": "Copia externa",
+    "mergeHelp": "Copia lo que quieras de la copia externa, o edita libremente, y luego pulsa Guardar combinado. Ambas versiones quedan a salvo hasta que guardes.",
+    "mergeLoading": "Cargando…",
+    "mergeLoadError": "No se pudieron cargar las dos versiones.",
+    "mergeReopen": "Abre esta nota primero y luego pulsa Combinar.",
+    "mergeSaveError": "No se pudo guardar la combinación — no se cambió nada; tu versión y la copia están a salvo. Inténtalo de nuevo.",
+    "mergeCancel": "Cancelar",
+    "mergeSave": "Guardar combinado",
+    "mergeSaving": "Guardando…"
   },
   "collision": {
     "title": "Ya existe una nota llamada {name}",

@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "{note} notuna yapılan harici bir düzenleme ayrı bir kopya olarak saklandı — sizin sürümünüz değişmedi.",
     "showCopy": "Kopyayı göster",
-    "dismiss": "Kapat"
+    "dismiss": "Kapat",
+    "merge": "Birleştir…",
+    "mergeTitle": "Çakışmayı çöz",
+    "yourVersion": "Sizin sürümünüz",
+    "outsideCopy": "Dış kopya",
+    "mergeHelp": "Dış kopyadan istediğinizi alın veya serbestçe düzenleyin, ardından Birleştirileni kaydedin. Siz kaydedene kadar her iki sürüm de güvende kalır.",
+    "mergeLoading": "Yükleniyor…",
+    "mergeLoadError": "İki sürüm yüklenemedi.",
+    "mergeReopen": "Önce bu notu açın, sonra Birleştirin.",
+    "mergeSaveError": "Birleştirme kaydedilemedi — hiçbir şey değişmedi; sürümünüz ve kopya güvende. Yeniden deneyin.",
+    "mergeCancel": "İptal",
+    "mergeSave": "Birleştirileni kaydet",
+    "mergeSaving": "Kaydediliyor…"
   },
   "collision": {
     "title": "{name} adlı bir not zaten var",

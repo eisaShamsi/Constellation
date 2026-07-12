@@ -6,7 +6,19 @@
   "conflict": {
     "externalKept": "Uma edição externa em {note} foi mantida como uma cópia separada — sua versão permanece inalterada.",
     "showCopy": "Mostrar cópia",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "merge": "Mesclar…",
+    "mergeTitle": "Resolver conflito",
+    "yourVersion": "Sua versão",
+    "outsideCopy": "Cópia externa",
+    "mergeHelp": "Copie o que quiser da cópia externa, ou edite livremente, e depois clique em Salvar mesclado. As duas versões ficam protegidas até você salvar.",
+    "mergeLoading": "Carregando…",
+    "mergeLoadError": "Não foi possível carregar as duas versões.",
+    "mergeReopen": "Abra esta nota primeiro e depois clique em Mesclar.",
+    "mergeSaveError": "Não foi possível salvar a mesclagem — nada foi alterado; sua versão e a cópia estão ambas protegidas. Tente novamente.",
+    "mergeCancel": "Cancelar",
+    "mergeSave": "Salvar mesclado",
+    "mergeSaving": "Salvando…"
   },
   "collision": {
     "title": "Já existe uma nota chamada {name}",
