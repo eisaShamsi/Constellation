@@ -54,3 +54,20 @@ Boss test of the conflict banner's **Show copy** button: it opened "My Documents
 ## Verification snapshot
 
 svelte-check **0 errors** · vitest **334 passed** (13 new) · cargo check **clean** · release binary **2026-07-12 14:34** (frontend rebuilt first, conflict strings confirmed embedded).
+
+---
+
+## PJ-088 — conflict-resolution side-by-side MERGE view (Boss-requested follow-up, same day)
+
+After PJ-070 closed, the Boss asked for the option to **merge** the two conflict versions ("the user's choice to decide") — the resolution layer the PJ-070 Architect had deferred. Boss chose: shape = **side-by-side**, **build now**, panes = **full live preview**.
+
+- **Design (Art Director team, per the standing ruling).** Workflow `wf_d7453254-50e` (11 agents: 3 census — incl. the safety-critical save-wire map — + WA#5 prior art + 3 competing designs + 3 adversarial judges + synthesis) → `docs/PJ-088-Conflict-Merge-Design.md`. Chosen: `@codemirror/merge` `MergeView` (2-way — no common ancestor stored; lazy-imported, 29KB chunk, Rule 6) in a full-center overlay; live-preview panes; per-chunk copy-across.
+- **Build (§1–§5).** `mergeView.ts` store; `ConflictMergeView.svelte` (the overlay); banner **Merge…** button (+ expose `notePath`); mount in `+layout` (with `focusReseed`); **the safety wire `resolveConflictMerge`** (store.ts) — writes the merge through the model + durability gate, never a raw write; sidecar→trash + dismiss only after durable success; Cancel = pure no-op. `conflict.*` (13 keys) ×15.
+- **The one in-diff safety-inspection finding, FIXED pre-commit.** The whole-app sweep (`wf_c0dac305-85e`, 40 agents, 19 confirmed) flagged: the merge save pushed props via `editNoteProps` but left `m.base` stale → compose diffed the merge against the open-time base → non-projectable frontmatter (nested maps/block scalars) the merge changed was silently dropped. Fixed at the model layer: new **`replaceContent`** re-bases to the merged source so compose emits it verbatim. Reproduce-First: runtimeHarness **Recipe P** (nested-map removal sticks). The other 18 findings are pre-existing (2 new HIGH filed: **PJ-089** Index-preview two-writable-model clobber, **PJ-090** SS Tasks-panel toggle no-broadcast).
+- **Boss UX feedback → refinement.** First merge test PASSED but the default `@codemirror/merge` gutter chevron "wasn't noticeable." Replaced via `renderRevertControl` with a prominent **◀ Copy to mine** accent button per chunk (the mockup's wording); `conflict.copyAcross` ×15.
+- **Boss-validated end-to-end.** The two-column view renders with live preview (the spike worked — clear highlighted diffs, unchanged lines folded); the **◀ Copy to mine** button pulls the outside chunk in; **Save merged** writes the reconciled note (disk-verified: all lines + `cid_cn` intact) and moves the side-copy to `.trash` (recoverable); the banner clears. Commits `bc6a1e43` (§1–§5) + `59295333` (button). svelte-check 0, vitest **335**, cargo clean.
+- **Show-copy note:** the PJ-070 "Show copy" reveal was also fixed this session (`621fffaf`, spaced-path explorer-select) — Boss-validated separately.
+
+## PJ-072 note
+
+The whole session's Boss tests ran against the `E:\Cognitive Knowledge\` universe root — reconfirming the PJ-072 lead (the active "Eisa Cognitive Knowledge" universe lives there, not `E:\Constellation Universes\...`).

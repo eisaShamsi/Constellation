@@ -1,12 +1,12 @@
 # Next-session kickoff prompt — paste this to resume
 
-> Ready-to-paste prompt for the session after PJ-070 (Watcher External-Change Adopt) closed and the backlog was reconciled to Pending Jobs v1.19. Copy everything in the box.
+> Ready-to-paste prompt for the session after PJ-070 closed, "Show copy" was fixed, and the PJ-088 merge view shipped (backlog reconciled to Pending Jobs v1.20). Copy everything in the box.
 
 ---
 
-Read docs/Constellation Orientation & Onboarding v3.40.md first (highest version — the PJ-070 close + the class fix + the PJ-072 lead are in its "What changed in v3.40" preamble). Then read the handover lab/reports/HANDOVER-2026-07-12-pj070-closed.md. Then git pull origin main and skim git log --oneline -10.
+Read docs/Constellation Orientation & Onboarding v3.41.md first (highest version — PJ-088 the merge view is in its "What changed in v3.41" preamble; PJ-070 + the class fix + the PJ-072 lead are in v3.40 below it). Then read the handover lab/reports/HANDOVER-2026-07-12-pj088-merge-closed.md. Then git pull origin main and skim git log --oneline -12.
 
-State: PJ-070 (Watcher External-Change Adopt) is CLOSED + Boss-validated (Stages 1+2). The backlog is reconciled — docs/Constellation Pending Jobs v1.19.md — with a standing "► Next action" line and 5 new PJs filed from the close (PJ-083..087). SO#9 makes that ledger the living backlog, reconciled FIRST at every job-close (it pairs with SO#8's cross-check-before-tackling).
+State: three deliverables closed this session — PJ-070 (watcher external-change adopt, /migration CLOSED + Boss-validated), the "Show copy" reveal fix, and PJ-088 (conflict-resolution side-by-side merge view, Boss-validated). The backlog is reconciled — docs/Constellation Pending Jobs v1.20.md — with a standing "► Next action" line; PJ-088 closed + PJ-089/PJ-090 (two HIGH silent-loss findings from the PJ-088 sweep) filed. SO#9 makes that ledger the living backlog, reconciled FIRST at every job-close (it pairs with SO#8's cross-check-before-tackling).
 
 Boss ruling holds: continue Group 1, top-down. Next item = PJ-071.
 
