@@ -245,6 +245,35 @@ pub fn validate_path_in_any_library(app: &tauri::AppHandle, file_path: &str) -> 
             }
         }
     }
+
+    // MIG-100 switch-flush fix — a note in a REGISTERED-but-not-active universe
+    // must still be writable to its OWN file. The active-universe check above
+    // is a NAVIGATION boundary, not a write-authorization one: a tab's
+    // deferred flush (NotePane teardown, a pending debounced save) can land
+    // AFTER a universe switch flipped the active pointer, and that write is
+    // legitimate — it goes to the departing universe's own file. Reached ONLY
+    // when the active checks miss (the rare departure race / a previously-
+    // erroring path), so the common save pays nothing. Still rejects a path
+    // outside EVERY registered/federated universe (the real security bound).
+    let file = Path::new(file_path);
+    if let Ok(file_canon) = fs::canonicalize(file) {
+        for root in crate::universe::registered_universe_roots(app) {
+            // Universe root itself (flat universes: the root IS the library).
+            if let Ok(root_canon) = fs::canonicalize(&root) {
+                if file_canon.starts_with(&root_canon) {
+                    return Ok(file_canon);
+                }
+            }
+            // Sub-libraries at external paths — the universe's OWN libraries
+            // only (never a federated cUniverse file, which is read-only from
+            // here and writable only through its own universe's identity).
+            for lib in crate::universe::own_libraries_for_root(&root) {
+                if let Ok(canon) = validate_path_in_library(file_path, &lib.path) {
+                    return Ok(canon);
+                }
+            }
+        }
+    }
     Err("Access denied: path is not within any registered library.".to_string())
 }
 

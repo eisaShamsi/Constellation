@@ -138,6 +138,21 @@ pub(crate) fn atomic_write(path: &std::path::Path, contents: &[u8]) -> std::io::
     }
 }
 
+/// MIG-100 safety-inspection fix — best-effort ATOMIC persist for the
+/// federation/migration heal sites that previously did `let _ = fs::write`
+/// (non-atomic AND error-swallowed). A plain `fs::write` truncates-then-writes,
+/// so a crash / power-loss / AV-lock mid-write leaves `universe.json` /
+/// `libraries.json` PARTIAL — and every loader here swallows the parse error
+/// and falls back to EMPTY, silently dropping the user's federation manifest
+/// or library registrations. `atomic_write` (temp + fsync + rename) makes that
+/// impossible. Best-effort by design (these heals are opportunistic), but a
+/// failure is now LOGGED, never silently discarded.
+fn persist_json_best_effort(path: &Path, json: &str) {
+    if let Err(e) = atomic_write(path, json.as_bytes()) {
+        eprintln!("[universe] Failed to persist {}: {}", path.display(), e);
+    }
+}
+
 fn save_registry(app: &tauri::AppHandle, registry: &UniverseRegistry) -> Result<(), String> {
     let path = registry_path(app)?;
     let data = serde_json::to_string_pretty(registry).map_err(|e| e.to_string())?;
@@ -307,7 +322,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
             // Update metadata to flat (notes_folder = None)
             meta.notes_folder = None;
             if let Ok(json) = serde_json::to_string_pretty(&meta) {
-                let _ = fs::write(&meta_path, json);
+                persist_json_best_effort(&meta_path, &json);
             }
 
             // Update libraries.json: point universe_notes library to root
@@ -320,7 +335,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
                         }
                     }
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_path, json);
+                        persist_json_best_effort(&libs_path, &json);
                     }
                 }
             }
@@ -349,7 +364,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
                             canonical_mode: "native".to_string(),
                         });
                         if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                            let _ = fs::write(&libs_path, json);
+                            persist_json_best_effort(&libs_path, &json);
                         }
                     }
                 }
@@ -380,7 +395,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
             canonical_mode: "native".to_string(),
         });
         if let Ok(json) = serde_json::to_string_pretty(&libs) {
-            let _ = fs::write(&libs_path, json);
+            persist_json_best_effort(&libs_path, &json);
         }
     }
 
@@ -764,7 +779,7 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
                         }
                     }
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_path, json);
+                        persist_json_best_effort(&libs_path, &json);
                     }
                 }
             }
@@ -802,7 +817,7 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
                 }
                 if changed {
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_fix_path, json);
+                        persist_json_best_effort(&libs_fix_path, &json);
                     }
                 }
             }
@@ -928,7 +943,7 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
                         }
                     }
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_path, json);
+                        persist_json_best_effort(&libs_path, &json);
                     }
                 }
             }
@@ -946,7 +961,7 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
                         }
                     }
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_path, json);
+                        persist_json_best_effort(&libs_path, &json);
                     }
                 }
             }
@@ -960,7 +975,7 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
         meta.notes_folder = Some(new_name.clone());
     }
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(&meta_path, &meta_json)
+    atomic_write(&meta_path, meta_json.as_bytes())
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
     // 4. Update global registry
@@ -1068,7 +1083,7 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
                 }
                 if changed {
                     if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        let _ = fs::write(&libs_path, json);
+                        persist_json_best_effort(&libs_path, &json);
                     }
                 }
             }
@@ -1217,7 +1232,7 @@ pub fn add_child_universe(app: tauri::AppHandle, child_path: String) -> Result<(
     }
 
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(&meta_path, json).map_err(|e| format!("Failed to save universe.json: {}", e))
+    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))
 }
 
 /// Remove a child universe path from the active universe's children array.
@@ -1233,7 +1248,7 @@ pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Resul
     meta.children.retain(|c| c != &child_path);
 
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(&meta_path, json).map_err(|e| format!("Failed to save universe.json: {}", e))
+    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))
 }
 
 /// Return the full merged library list for the active universe
@@ -1243,6 +1258,33 @@ pub fn resolve_universe_libraries(app: tauri::AppHandle) -> Result<Vec<crate::li
     let universe_dir = active_universe_dir(&app)?;
     let mut visited = Vec::new();
     Ok(resolve_libraries_recursive(&universe_dir, &mut visited))
+}
+
+/// MIG-100 — a SPECIFIC universe root's OWN libraries (its
+/// `.constellation/libraries.json`, NON-recursive — deliberately WITHOUT the
+/// federated cUniverse libraries, mirroring `load_libraries`' write-scope
+/// discipline: an edit must never land on a read-only cUniverse file). Used
+/// by write-path validation so a departing universe's note (a tab whose
+/// deferred flush lands after a universe switch flipped the active pointer)
+/// still validates against its OWN universe's libraries. Only reached on the
+/// rare active-miss.
+pub fn own_libraries_for_root(universe_root: &Path) -> Vec<crate::libraries::LibraryInfo> {
+    let libs_path = constellation_dir(universe_root).join("libraries.json");
+    match fs::read_to_string(&libs_path) {
+        Ok(data) => serde_json::from_str(&data).unwrap_or_default(),
+        Err(_) => vec![],
+    }
+}
+
+/// MIG-100 — the registered universe roots (registry entries only; the active
+/// universe first via list ordering is irrelevant here). Used by the write
+/// validator's cross-universe fallback.
+pub fn registered_universe_roots(app: &tauri::AppHandle) -> Vec<PathBuf> {
+    load_registry(app)
+        .entries
+        .into_iter()
+        .map(|e| PathBuf::from(e.path))
+        .collect()
 }
 
 /// Info about a child universe — name, path, and how many libraries it contributes.
@@ -1879,6 +1921,31 @@ mod tests {
         save_session(tmp_b.path(), b.clone());
         assert_eq!(session_of(tmp_a.path()), a);
         assert_eq!(session_of(tmp_b.path()), b);
+    }
+
+    #[test]
+    fn own_libraries_for_root_reads_non_recursive() {
+        // MIG-100 switch-flush fix: a departing universe's own libraries must
+        // resolve from its root regardless of which universe is active.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().join("UniverseA");
+        let cdir = constellation_dir(&root);
+        fs::create_dir_all(&cdir).unwrap();
+        let libs = serde_json::json!([
+            { "id": "lib1", "name": "A Notes", "path": root.to_string_lossy(),
+              "color": "#111", "is_universe_notes": true },
+            { "id": "lib2", "name": "Sub", "path": root.join("Sub").to_string_lossy(),
+              "color": "#222", "is_universe_notes": false },
+        ]);
+        fs::write(cdir.join("libraries.json"), serde_json::to_string(&libs).unwrap()).unwrap();
+
+        let resolved = own_libraries_for_root(&root);
+        assert_eq!(resolved.len(), 2, "both own libraries resolve");
+        assert!(resolved.iter().any(|l| l.name == "A Notes"));
+        assert!(resolved.iter().any(|l| l.name == "Sub"));
+
+        // A missing/blank universe root → empty, never a panic.
+        assert!(own_libraries_for_root(&tmp.path().join("Nope")).is_empty());
     }
 
     #[test]
