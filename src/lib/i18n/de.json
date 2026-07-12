@@ -18,7 +18,8 @@
     "mergeSaveError": "Die Zusammenführung konnte nicht gespeichert werden — nichts wurde geändert; deine Version und die Kopie sind beide sicher. Versuche es erneut.",
     "mergeCancel": "Abbrechen",
     "mergeSave": "Zusammengeführt speichern",
-    "mergeSaving": "Wird gespeichert…"
+    "mergeSaving": "Wird gespeichert…",
+    "copyAcross": "In deine übernehmen"
   },
   "collision": {
     "title": "Eine Notiz namens {name} existiert bereits",

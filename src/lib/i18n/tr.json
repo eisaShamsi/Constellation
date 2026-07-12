@@ -18,7 +18,8 @@
     "mergeSaveError": "Birleştirme kaydedilemedi — hiçbir şey değişmedi; sürümünüz ve kopya güvende. Yeniden deneyin.",
     "mergeCancel": "İptal",
     "mergeSave": "Birleştirileni kaydet",
-    "mergeSaving": "Kaydediliyor…"
+    "mergeSaving": "Kaydediliyor…",
+    "copyAcross": "Sürümüme kopyala"
   },
   "collision": {
     "title": "{name} adlı bir not zaten var",

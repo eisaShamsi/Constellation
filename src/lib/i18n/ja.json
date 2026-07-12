@@ -18,7 +18,8 @@
     "mergeSaveError": "マージを保存できませんでした — 何も変更されていません。お使いのバージョンとコピーはどちらも安全です。もう一度お試しください。",
     "mergeCancel": "キャンセル",
     "mergeSave": "マージを保存",
-    "mergeSaving": "保存中…"
+    "mergeSaving": "保存中…",
+    "copyAcross": "自分側にコピー"
   },
   "collision": {
     "title": "{name} という名前のノートは既に存在します",

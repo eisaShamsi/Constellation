@@ -18,7 +18,8 @@
     "mergeSaveError": "Couldn’t save the merge — nothing was changed; your version and the copy are both safe. Try again.",
     "mergeCancel": "Cancel",
     "mergeSave": "Save merged",
-    "mergeSaving": "Saving…"
+    "mergeSaving": "Saving…",
+    "copyAcross": "Copy to mine"
   },
   "collision": {
     "title": "A note named {name} already exists",

@@ -18,7 +18,8 @@
     "mergeSaveError": "No se pudo guardar la combinación — no se cambió nada; tu versión y la copia están a salvo. Inténtalo de nuevo.",
     "mergeCancel": "Cancelar",
     "mergeSave": "Guardar combinado",
-    "mergeSaving": "Guardando…"
+    "mergeSaving": "Guardando…",
+    "copyAcross": "Copiar a la tuya"
   },
   "collision": {
     "title": "Ya existe una nota llamada {name}",

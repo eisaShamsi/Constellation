@@ -87,11 +87,22 @@
 			const dirYours = detectDir(yourText) as 'ltr' | 'rtl';
 			const dirTheirs = detectDir(theirText) as 'ltr' | 'rtl';
 
+			const copyLabel = get(t)('conflict.copyAcross'); // captured for the custom control's label/tooltip
 			const { MergeView } = await import('@codemirror/merge'); // lazy — off the main bundle / hot path
 			mergeView = new MergeView({
 				parent: mountEl!,
 				orientation: 'a-b',            // a = left (yours), b = right (outside)
-				revertControls: 'b-to-a',      // the copy-across arrow: outside chunk → yours (a is editable)
+				revertControls: 'b-to-a',      // copy-across direction: an outside chunk → yours (a is editable)
+				// PJ-088 Boss feedback — the default gutter chevron was too subtle. Render a clear, LABELED
+				// button per changed chunk instead (the library delegates the click on the container).
+				renderRevertControl: () => {
+					const b = document.createElement('button');
+					b.className = 'cm-copy-across';
+					b.textContent = '◀ ' + copyLabel;
+					b.title = copyLabel;
+					b.setAttribute('aria-label', copyLabel);
+					return b;
+				},
 				highlightChanges: true,
 				gutter: true,
 				collapseUnchanged: { margin: 3, minSize: 4 },
@@ -181,6 +192,17 @@
 	.cm-merge { position: absolute; inset: 0; overflow: auto; }
 	.cm-merge :global(.cm-mergeView) { height: 100%; }
 	.cm-merge :global(.cm-editor) { height: 100%; }
+	/* PJ-088 — the copy-across control as a clear, labeled button (default chevron was too subtle). */
+	.cm-merge :global(.cm-merge-revert) { width: auto !important; min-width: 96px; }
+	.cm-merge :global(.cm-copy-across) {
+		display: inline-flex; align-items: center; gap: 4px;
+		background: var(--interactive-accent, #7c3aed); color: #fff;
+		border: none; border-radius: 6px; padding: 3px 9px;
+		font-size: 12px; font-weight: 600; line-height: 1.4; white-space: nowrap; cursor: pointer;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+	}
+	.cm-merge :global(.cm-copy-across:hover) { filter: brightness(1.12); }
+	.cm-merge :global(.cm-copy-across:active) { transform: translateY(1px); }
 	.cm-loading, .cm-error { position: absolute; inset-block-start: 8px; inset-inline: 8px; z-index: 2; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
 	.cm-loading { background: var(--background-secondary, #f4f4f6); color: var(--text-muted, #888); }
 	.cm-error { background: #8a5a00; color: #fff; }

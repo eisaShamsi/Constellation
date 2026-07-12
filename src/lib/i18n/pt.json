@@ -18,7 +18,8 @@
     "mergeSaveError": "Não foi possível salvar a mesclagem — nada foi alterado; sua versão e a cópia estão ambas protegidas. Tente novamente.",
     "mergeCancel": "Cancelar",
     "mergeSave": "Salvar mesclado",
-    "mergeSaving": "Salvando…"
+    "mergeSaving": "Salvando…",
+    "copyAcross": "Copiar para a minha"
   },
   "collision": {
     "title": "Já existe uma nota chamada {name}",

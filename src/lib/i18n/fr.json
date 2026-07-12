@@ -18,7 +18,8 @@
     "mergeSaveError": "Impossible d’enregistrer la fusion — rien n’a été modifié ; votre version et la copie sont toutes deux en sécurité. Réessayez.",
     "mergeCancel": "Annuler",
     "mergeSave": "Enregistrer la fusion",
-    "mergeSaving": "Enregistrement…"
+    "mergeSaving": "Enregistrement…",
+    "copyAcross": "Copier vers la vôtre"
   },
   "collision": {
     "title": "Une note nommée {name} existe déjà",

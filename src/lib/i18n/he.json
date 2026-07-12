@@ -18,7 +18,8 @@
     "mergeSaveError": "לא ניתן היה לשמור את המיזוג — דבר לא השתנה; הגרסה שלך והעותק בטוחים שניהם. נסה שוב.",
     "mergeCancel": "ביטול",
     "mergeSave": "שמור מזוג",
-    "mergeSaving": "שומר…"
+    "mergeSaving": "שומר…",
+    "copyAcross": "העתק לשלי"
   },
   "collision": {
     "title": "כבר קיימת פתקה בשם {name}",
