@@ -281,6 +281,11 @@ Constellation follows **File Over App** — your notes are plain `.md` files on 
 
 You don't need to do anything: Constellation keeps its search index in step with your files as they change on disk. *(One detail: renaming a folder from **outside** the app resets those notes' review-schedule and link-weight history — the note text itself is untouched. Renaming folders **inside** Constellation preserves everything.)*
 
+**If the changed note is currently OPEN in a tab**, Constellation brings it up to date safely — your work is never silently overwritten:
+
+- If you have **no unsaved changes** in that note, the open note quietly refreshes to show the outside edit, so your next keystroke builds on the new version. *(Previously, an open note kept showing the old text and your next keystroke could silently save over the outside edit — that can no longer happen.)*
+- If you **do have unsaved edits** in that note at the same moment an outside change arrives — a genuine conflict — Constellation never touches your unsaved work. It keeps **your** version in the editor, writes the incoming outside version to a **side-copy** next to the note (named `<note>.conflict-<timestamp>.md.txt`, so nothing is ever lost), and shows a banner: *"An external edit to {note} was kept as a separate copy — your version is unchanged."* Click **Show copy** to open the folder to that side-copy and merge by hand if you wish. The side-copy is an inert `.txt` file — it never appears in your sidebar or search and never triggers another sync.
+
 ### Universe Notes Folder
 
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.

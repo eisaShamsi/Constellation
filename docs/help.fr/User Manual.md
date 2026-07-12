@@ -105,6 +105,11 @@ Constellation applique le principe **File Over App** — vos notes sont de simpl
 
 Vous n'avez rien à faire : Constellation maintient son index de recherche synchronisé avec vos fichiers à mesure qu'ils changent sur le disque. *(Un détail : renommer un dossier depuis l'**extérieur** de l'application réinitialise l'historique du calendrier de révision et du poids des liens de ces notes — le texte de la note lui-même reste intact. Renommer des dossiers **à l'intérieur** de Constellation préserve tout.)*
 
+**Si la note modifiée est actuellement OUVERTE dans un onglet**, Constellation la met à jour en toute sécurité — votre travail n'est jamais écrasé en silence :
+
+- Si vous n'avez **aucune modification non enregistrée** dans cette note, la note ouverte se rafraîchit discrètement pour afficher la modification externe, de sorte que votre prochaine frappe s'appuie sur la nouvelle version. *(Auparavant, une note ouverte continuait d'afficher l'ancien texte et votre prochaine frappe pouvait enregistrer par-dessus la modification externe en silence — cela ne peut plus se produire.)*
+- Si vous **avez bien des modifications non enregistrées** dans cette note au moment précis où une modification externe arrive — un véritable conflit — Constellation ne touche jamais à votre travail non enregistré. Il conserve **votre** version dans l'éditeur, écrit la version externe entrante dans une **copie annexe** à côté de la note (nommée `<note>.conflict-<timestamp>.md.txt`, de sorte que rien n'est jamais perdu), et affiche une bannière : *« Une modification externe de {note} a été conservée comme copie séparée — votre version reste inchangée. »* Cliquez sur **Afficher la copie** pour ouvrir le dossier sur cette copie annexe et fusionner à la main si vous le souhaitez. La copie annexe est un fichier `.txt` inerte — elle n'apparaît jamais dans votre barre latérale ni dans la recherche, et ne déclenche jamais une nouvelle synchronisation.
+
 ### Univers enfants
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.

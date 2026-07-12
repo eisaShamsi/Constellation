@@ -92,6 +92,11 @@ Constellation folgt dem Prinzip **File Over App** — Ihre Notizen sind schlicht
 
 Sie müssen nichts tun: Constellation hält seinen Suchindex im Gleichschritt mit Ihren Dateien, während sich diese auf der Festplatte ändern. *(Ein Detail: Das Umbenennen eines Ordners von **außerhalb** der App setzt den Wiedervorlage-Zeitplan und den Link-Gewichtungsverlauf dieser Notizen zurück — der Notiztext selbst bleibt unberührt. Das Umbenennen von Ordnern **innerhalb** von Constellation bewahrt hingegen alles.)*
 
+**Ist die geänderte Notiz gerade in einem Tab GEÖFFNET**, bringt Constellation sie sicher auf den neuesten Stand — Ihre Arbeit wird niemals unbemerkt überschrieben:
+
+- Wenn Sie in dieser Notiz **keine ungespeicherten Änderungen** haben, aktualisiert sich die geöffnete Notiz unauffällig und zeigt die externe Bearbeitung, sodass Ihr nächster Tastenanschlag auf der neuen Version aufbaut. *(Zuvor zeigte eine geöffnete Notiz weiterhin den alten Text, und Ihr nächster Tastenanschlag konnte die externe Bearbeitung unbemerkt überschreiben — das kann nun nicht mehr geschehen.)*
+- Wenn Sie in dieser Notiz **doch ungespeicherte Änderungen** haben, während gleichzeitig eine externe Änderung eintrifft — ein echter Konflikt —, rührt Constellation Ihre ungespeicherte Arbeit niemals an. Es behält **Ihre** Version im Editor, schreibt die eingehende externe Version in eine **Nebenkopie** neben der Notiz (mit dem Namen `<note>.conflict-<timestamp>.md.txt`, sodass nie etwas verloren geht) und zeigt ein Banner: *"Eine externe Bearbeitung von {note} wurde als separate Kopie gesichert — deine Version ist unverändert."* Klicken Sie auf **Kopie anzeigen**, um den Ordner mit dieser Nebenkopie zu öffnen und sie bei Bedarf von Hand zusammenzuführen. Die Nebenkopie ist eine inaktive `.txt`-Datei — sie erscheint niemals in Ihrer Seitenleiste oder Suche und löst niemals eine weitere Synchronisierung aus.
+
 ### Kind-Universen
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.

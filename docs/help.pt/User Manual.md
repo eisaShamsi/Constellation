@@ -91,6 +91,11 @@ O Constellation segue o princípio **File Over App** — as suas notas são simp
 
 Você não precisa fazer nada: o Constellation mantém o seu índice de busca em sincronia com os seus arquivos à medida que eles mudam no disco. *(Um detalhe: renomear uma pasta de **fora** do aplicativo redefine o histórico de agendamento de revisão e de peso de link dessas notas — o texto da nota em si permanece intacto. Renomear pastas **dentro** do Constellation preserva tudo.)*
 
+**Se a nota alterada estiver aberta em uma aba no momento**, o Constellation a atualiza com segurança — o seu trabalho nunca é sobrescrito silenciosamente:
+
+- Se você **não tiver alterações não salvas** nessa nota, a nota aberta é atualizada discretamente para mostrar a edição externa, de modo que a sua próxima tecla digitada parte da nova versão. *(Antes, uma nota aberta continuava mostrando o texto antigo e a sua próxima tecla digitada podia salvar por cima da edição externa silenciosamente — isso não pode mais acontecer.)*
+- Se você **tiver edições não salvas** nessa nota no exato momento em que uma alteração externa chega — um conflito genuíno — o Constellation nunca toca no seu trabalho não salvo. Ele mantém a **sua** versão no editor, grava a versão externa recebida em uma **cópia paralela** ao lado da nota (nomeada `<note>.conflict-<timestamp>.md.txt`, para que nada seja jamais perdido) e exibe uma faixa: *"Uma edição externa em {note} foi mantida como uma cópia separada — a sua versão permanece inalterada."* Clique em **Mostrar cópia** para abrir a pasta nessa cópia paralela e mesclar manualmente, se quiser. A cópia paralela é um arquivo `.txt` inerte — ela nunca aparece na sua barra lateral nem na busca e nunca dispara outra sincronização.
+
 ### Universos Secundarios
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.

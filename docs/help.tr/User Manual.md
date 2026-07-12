@@ -105,6 +105,11 @@ Constellation, **File Over App** ilkesini benimser — notlarınız diskte sade 
 
 Herhangi bir şey yapmanıza gerek yoktur: Constellation, dosyalarınız diskte değiştikçe arama dizinini onlarla eşzamanlı tutar. *(Küçük bir ayrıntı: bir klasörü uygulamanın **dışından** yeniden adlandırmak, o notların gözden geçirme zamanlamasını ve bağlantı ağırlığı geçmişini sıfırlar — notun metnine ise dokunulmaz. Klasörleri Constellation'ın **içinden** yeniden adlandırmak her şeyi korur.)*
 
+**Değişen not o anda bir sekmede AÇIKSA**, Constellation onu güvenli bir şekilde günceller — çalışmanızın üzerine asla sessizce yazılmaz:
+
+- O notta **kaydedilmemiş değişikliğiniz yoksa**, açık not dıştan gelen düzenlemeyi göstermek için sessizce yenilenir, böylece bir sonraki tuş vuruşunuz yeni sürümün üzerine inşa edilir. *(Önceden, açık bir not eski metni göstermeye devam ederdi ve bir sonraki tuş vuruşunuz dıştan gelen düzenlemenin üzerine sessizce kaydedebilirdi — bu artık olamaz.)*
+- Dıştan bir değişikliğin geldiği anda o notta **kaydedilmemiş düzenlemeleriniz varsa** — gerçek bir çakışma — Constellation kaydedilmemiş çalışmanıza asla dokunmaz. **Sizin** sürümünüzü düzenleyicide tutar, dıştan gelen sürümü notun yanındaki bir **yan kopyaya** yazar (`<note>.conflict-<timestamp>.md.txt` olarak adlandırılır, böylece hiçbir şey asla kaybolmaz) ve bir bildirim şeridi gösterir: *"{note} notuna yapılan bir dış düzenleme ayrı bir kopya olarak saklandı — sizin sürümünüz değişmeden kaldı."* İsterseniz o yan kopyayı içeren klasörü açıp elle birleştirmek için **Kopyayı göster**'e tıklayın. Yan kopya, işlevsiz bir `.txt` dosyasıdır — kenar çubuğunuzda veya aramanızda asla görünmez ve başka bir senkronizasyonu asla tetiklemez.
+
 ### Alt Evrenler
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.

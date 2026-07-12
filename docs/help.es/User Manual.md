@@ -91,6 +91,11 @@ Constellation sigue el principio **File Over App**: tus notas son simples archiv
 
 No necesitas hacer nada: Constellation mantiene su índice de búsqueda al día con tus archivos a medida que cambian en el disco. *(Un detalle: renombrar una carpeta desde **fuera** de la aplicación reinicia el historial de programación de revisión y de peso de enlaces de esas notas — el texto de la nota en sí queda intacto. Renombrar carpetas **dentro** de Constellation lo conserva todo.)*
 
+**Si la nota modificada está abierta en una pestaña en ese momento**, Constellation la pone al día de forma segura — tu trabajo nunca se sobrescribe en silencio:
+
+- Si **no tienes cambios sin guardar** en esa nota, la nota abierta se actualiza discretamente para mostrar la edición externa, de modo que tu siguiente pulsación de tecla parte de la nueva versión. *(Antes, una nota abierta seguía mostrando el texto antiguo y tu siguiente pulsación podía guardar en silencio por encima de la edición externa — eso ya no puede ocurrir.)*
+- Si **sí tienes ediciones sin guardar** en esa nota en el mismo momento en que llega un cambio externo — un conflicto real — Constellation nunca toca tu trabajo sin guardar. Mantiene **tu** versión en el editor, escribe la versión externa entrante en una **copia aparte** junto a la nota (llamada `<note>.conflict-<timestamp>.md.txt`, de modo que nunca se pierde nada) y muestra un aviso: *«Una edición externa de {note} se conservó como una copia separada — tu versión queda intacta.»* Haz clic en **Mostrar copia** para abrir la carpeta en esa copia aparte y fusionarla a mano si lo deseas. La copia aparte es un archivo `.txt` inerte — nunca aparece en tu barra lateral ni en la búsqueda y nunca desencadena otra sincronización.
+
 ### Universos Secundarios
 
 Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.
