@@ -703,11 +703,27 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 	for (const r of reads) if (r) byPath.set(r.fp, r.content);
 	if (byPath.size === 0) return;
 
+	// PJ-092 (APP-KILLER) — a path whose model is still DIRTY here had its
+	// pre-reload flush FAIL (a locked .md — Syncthing/OneDrive/Defender) or was
+	// re-typed during the cascade. Every flush-then-reload caller flushes/saves
+	// BEFORE reloading, so dirty ⟺ that flush did not land. Force-reseeding from
+	// stale disk (openNoteModel) + wiping the net (clearWriteAhead) would silently,
+	// permanently lose the unsaved edits and self-heal the save-health banner to
+	// green. Skip both — the dirty model + its net stay the SOLE copy; the ~10 s
+	// save-health auto-retry persists it once the lock clears. Guarding the shared
+	// reload primitive (not each caller) covers EVERY flush-then-reload site at once
+	// — present and future — and also catches a re-type-during-cascade that a mere
+	// flush-outcome bool would miss. (resolveConflictMerge gates on outcome.ok
+	// before reaching here, so its model is already clean; mirrors renameItem's
+	// `renameFlushOk`, which stays separate — it doesn't call reloadTabsFromDisk.)
+	const dirtySkipped = new Set<string>();
 	openTabs.update((ts) => {
 		let mutated = false;
 		const next = ts.map((t) => {
 			const newContent = byPath.get(t.path);
-			if (newContent === undefined || newContent === t.content) return t;
+			if (newContent === undefined) return t;
+			if (isNoteDirty(t.id)) { dirtySkipped.add(t.path); return t; }
+			if (newContent === t.content) return t;
 			mutated = true;
 			// MIG-076 §C — the cascade authored canonical disk content; force the
 			// model to adopt it so the next save composes from the cascade result.
@@ -716,9 +732,19 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 		});
 		return mutated ? next : ts;
 	});
-	// The cascade just authored canonical disk content; any in-flight
-	// write-ahead buffer for these paths is now stale.
-	for (const fp of byPath.keys()) clearWriteAhead(fp);
+	// The cascade authored canonical disk content; a non-dirty path's in-flight
+	// write-ahead buffer is now stale. A dirty-skipped path's net is the SOLE copy
+	// of its unsaved edits (PJ-092) — keep it.
+	for (const fp of byPath.keys()) {
+		if (!dirtySkipped.has(fp)) clearWriteAhead(fp);
+	}
+	if (dirtySkipped.size > 0) {
+		console.warn(
+			'[reloadTabsFromDisk] PJ-092 — kept', dirtySkipped.size,
+			'dirty tab(s) whose pre-reload flush failed; edits preserved, not reseeded from stale disk:',
+			[...dirtySkipped]
+		);
+	}
 }
 
 /** PJ-070 — paths whose NotePane is mid-REMOUNT from a watcher/external adopt (a reloadVersion
