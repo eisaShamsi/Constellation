@@ -23,6 +23,9 @@ import { invoke } from '@tauri-apps/api/core';
 import {
 	restoreSessionTabs,
 	flushAllDirtyTabs,
+	flushDisposeClearTabs,
+	closeTab,
+	pendingCidEnsureCount,
 	openTabs,
 	activeTabId,
 	focusedTabId,
@@ -96,7 +99,10 @@ const snapOf = (paths: string[], active = paths[0] ?? null) => ({
 
 beforeEach(async () => {
 	await stopSessionTracking();
-	openTabs.set([]);
+	// Full departure reset — clears openTabs + disposes models + drains the
+	// module-global pendingCidEnsure set/watchers so tests don't leak state
+	// into each other (the production universe-departure path).
+	await flushDisposeClearTabs('test-reset');
 	activeTabId.set(null);
 	focusedTabId.set(null);
 	splitActive.set(false);
@@ -437,6 +443,33 @@ describe('R14 — the pre-flip departure flush writes dirty models, touches noth
 		openTabs.subscribe((v) => (current = v))();
 		expect(current).toHaveLength(1);
 		expect(S.bodyForView(tab.id)).toBe('edited before switch');
+	});
+});
+
+describe('R15 — deferred-cid watchers do not leak across a universe departure (close-audit drift)', () => {
+	it('a pending cid-less tab is cleared by flushDisposeClearTabs (no per-switch subscription leak)', async () => {
+		disk.set('/lib/nocid.md', '---\ntitle: N\n---\nbody'); // no cid_cn
+		disk.set('/lib/a.md', note('A', 'A'));
+		await restoreSessionTabs(snapOf(['/lib/a.md', '/lib/nocid.md'], '/lib/a.md'));
+		expect(pendingCidEnsureCount()).toBe(1); // nocid pending, watchers armed
+		await flushDisposeClearTabs('universe_switch_flush'); // depart the universe
+		expect(pendingCidEnsureCount()).toBe(0); // set cleared + watchers torn down
+	});
+});
+
+describe('R16 — closing a pending-cid tab drops it (no wedged auto-unsubscribe)', () => {
+	it('closeTab removes the closed tab’s pending path; set empties → watchers released', async () => {
+		disk.set('/lib/n1.md', '---\ntitle: N1\n---\nb1');
+		disk.set('/lib/n2.md', '---\ntitle: N2\n---\nb2');
+		await restoreSessionTabs(snapOf(['/lib/n1.md', '/lib/n2.md'], '/lib/n1.md'));
+		expect(pendingCidEnsureCount()).toBe(2);
+		let current: any[] = [];
+		openTabs.subscribe((v) => (current = v))();
+		await closeTab(current.find((t) => t.path === '/lib/n2.md')!.id);
+		expect(pendingCidEnsureCount()).toBe(1); // n2 dropped, n1 still pending
+		openTabs.subscribe((v) => (current = v))();
+		await closeTab(current.find((t) => t.path === '/lib/n1.md')!.id);
+		expect(pendingCidEnsureCount()).toBe(0); // empties → dispose
 	});
 });
 

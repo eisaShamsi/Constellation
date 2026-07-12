@@ -1952,6 +1952,10 @@ export async function flushDisposeClearTabs(origin: string): Promise<void> {
 	openTabs.set([]);
 	activeTabId.set(null);
 	focusedTabId.set(null);
+	// Close-audit fix: the departing universe's deferred-cid watchers +
+	// pending paths must not survive into the next universe (2 leaked store
+	// subscriptions per switch otherwise, firing on every later activation).
+	disposeDeferredCidEnsure();
 	await tick();
 	for (const t of departing) closeNoteModel(t.id);
 }
@@ -1993,6 +1997,32 @@ export interface SessionRestoreInput {
 const pendingCidEnsure = new Set<string>();
 let cidEnsureUnsubs: Array<() => void> = [];
 
+/** Test/diagnostic — count of tabs awaiting deferred cid-ensure. The
+ *  activation watchers are alive iff this is > 0 (the close-audit invariant:
+ *  the set empties → the watchers are torn down), so it's the observable for
+ *  the leak fixes. */
+export function pendingCidEnsureCount(): number {
+	return pendingCidEnsure.size;
+}
+
+/** MIG-100 close-audit fix (drift/leak class): tear down the deferred-cid
+ *  activation watchers + clear the pending set. Called when the set empties
+ *  (drain), when a pending tab is CLOSED (else its path wedges the set and
+ *  the watchers leak for the session), and on universe departure (the tabs
+ *  are gone — their pending paths belong to the universe being left). */
+function disposeDeferredCidEnsure(): void {
+	for (const u of cidEnsureUnsubs) u();
+	cidEnsureUnsubs = [];
+	pendingCidEnsure.clear();
+}
+
+/** Drop a single path from the pending set (a tab closed before its deferred
+ *  cid-ensure drained); tear the watchers down if that empties the set. */
+function dropPendingCidEnsure(path: string): void {
+	if (!pendingCidEnsure.delete(path)) return;
+	if (pendingCidEnsure.size === 0) disposeDeferredCidEnsure();
+}
+
 function armDeferredCidEnsure(): void {
 	if (cidEnsureUnsubs.length > 0) return;
 	const onActivate = (tabId: string | null) => {
@@ -2001,10 +2031,7 @@ function armDeferredCidEnsure(): void {
 		if (!tab || !pendingCidEnsure.has(tab.path)) return;
 		pendingCidEnsure.delete(tab.path);
 		void drainCidEnsure(tab);
-		if (pendingCidEnsure.size === 0) {
-			for (const u of cidEnsureUnsubs) u();
-			cidEnsureUnsubs = [];
-		}
+		if (pendingCidEnsure.size === 0) disposeDeferredCidEnsure();
 	};
 	// Skip each subscription's synchronous first fire — that's the CURRENT
 	// activation (set by the restore itself), not a user action.
@@ -2175,6 +2202,10 @@ export async function closeTab(tabId: string) {
 
 	// Clean up non-reactive state first (no cascade)
 	saveLocks.delete(tabId);
+	// Close-audit fix: a restored tab closed before its deferred cid-ensure
+	// drained would wedge `pendingCidEnsure` (never empties → the activation
+	// watchers leak for the session). Drop its path here.
+	if (idx >= 0) dropPendingCidEnsure(tabs[idx].path);
 	closeNoteModel(tabId); // MIG-076 §C — dispose this tab's content model
 	const editSet = get(editingTabIds);
 	if (editSet.has(tabId)) {

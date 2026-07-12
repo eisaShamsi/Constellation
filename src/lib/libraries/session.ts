@@ -169,6 +169,14 @@ export function persistSessionNow(): Promise<void> {
  *  rewriting an identical snapshot. */
 export function startSessionTracking(universeRoot: string, seedSignature?: string | null): void {
 	if (trackedRoot !== null) void stopSessionTracking();
+	// Close-audit fix: cancel any pending 0-of-N deferred-arm watcher — arming
+	// for real supersedes it. Otherwise (deferred arm still live + a live
+	// toggle-ON that arms directly) the stray watcher fires on the next tab
+	// mutation and spuriously re-enters startSessionTracking.
+	if (deferredArmUnsub) {
+		deferredArmUnsub();
+		deferredArmUnsub = null;
+	}
 	trackedRoot = universeRoot;
 	lastWrittenSig = seedSignature ?? null;
 	dirtyRetry = false;
