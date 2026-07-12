@@ -227,8 +227,11 @@ const DEDUP_ALL_TABS_ENABLED = true;
 // note model (freshness-gated: a clean model adopts + remounts; a dirty model keeps its unsaved
 // work and the incoming edit is preserved to a `.conflict` sidecar) instead of only updating
 // tab.content — so the next keystroke can never silently overwrite the external edit.
-// WARNING: false = today's content-only update = the KNOWN Recipe-O clobber (external edit lost
-// on the next keystroke). It is a one-line ROLLBACK lever, NOT a safe steady state.
+// WARNING: false = content-only update for BOTH ingress paths (the watcher flush AND the
+// second-screen onNoteSaved) = the KNOWN Recipe-O clobber (external edit lost on the next
+// keystroke). It is a one-line ROLLBACK lever, NOT a safe steady state — and note it is NOT
+// byte-identical to pre-PJ-070 (the old onNoteSaved adopted the model without a remount); for an
+// exact code-level rollback use `git revert` of the PJ-070 commit, not this flag.
 const WATCHER_ADOPT_ENABLED = true;
 
 // ─── Centralized save with lock ───
@@ -828,15 +831,20 @@ export async function adoptExternalChangeIntoTabs(
 	// focusReseedSuppress inside focusReseed.
 	if (adopted.size > 0) {
 		for (const p of adopted) markReseeding(p);
-		openTabs.update((ts) => ts.map((t) =>
-			adopted.has(t.path)
-				? { ...t, content: byPath.get(t.path)!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
-				: t,
-		));
-		for (const p of adopted) clearWriteAhead(p); // invariant #10 — only adopters (a dirty refuser keeps its net)
-		if (focusReseedPath) hooks!.focusReseed!(focusReseedPath); // remount FocusPane on the freshly-adopted model
-		await tick();
-		for (const p of adopted) clearReseeding(p);
+		try {
+			openTabs.update((ts) => ts.map((t) =>
+				adopted.has(t.path)
+					? { ...t, content: byPath.get(t.path)!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
+					: t,
+			));
+			for (const p of adopted) clearWriteAhead(p); // invariant #10 — only adopters (a dirty refuser keeps its net)
+			if (focusReseedPath) hooks!.focusReseed!(focusReseedPath); // remount FocusPane on the freshly-adopted model
+			await tick();
+		} finally {
+			// ALWAYS lift the gate — a throw in the flush/reseed above must never leave a path
+			// permanently reseeding, which would disable handleSave/handleFlush for it (a save-loss).
+			for (const p of adopted) clearReseeding(p);
+		}
 	}
 
 	// Sidecar + banner for each genuine dirty conflict (async IPC — a stub no-ops if unwired).
