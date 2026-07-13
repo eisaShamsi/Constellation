@@ -250,3 +250,13 @@ Switch the hierarchy source using the dropdown:
 | **Ctrl/⌘-click** | Add or remove a note or folder from the multi-selection (Tree mode) |
 | **Shift-click** | Select a range (Tree mode) |
 | **Escape** | Clear the multi-selection |
+
+## Your work is protected — saving, external edits, and renames
+
+Constellation is built so that **no ordinary action can silently lose the text you've typed.** Three things you may see, and what they mean:
+
+- **The save-health banner ("Couldn't save … — your edit is safe and will retry").** If a note's file can't be written for a moment — usually because a sync tool (Syncthing, OneDrive, iCloud) or antivirus is briefly holding it — Constellation keeps your edit in memory and in a crash-safe recovery net, shows this banner, and **keeps retrying automatically** until the file frees up. Your unsaved text is never lost; it is restored even if you restart the app. (You can also press **Retry now**.)
+
+- **Renaming a note updates its links safely.** When you rename a note, Constellation automatically rewrites every `[[wikilink]]` that points to it. If one of the notes being updated happens to be open with unsaved edits *and* its file is momentarily locked, Constellation **skips updating that one note this time** to protect your unsaved work — its link still resolves via the old name and catches up on the next save. Every other note updates normally, and the app never freezes.
+
+- **When a note is edited outside Constellation while it's open.** If the same note is changed by another program or a sync tool while you have it open, Constellation adopts the outside change if you have no unsaved edits; if you *do* have unsaved edits, it keeps **both** — your version stays on screen and the outside version is saved as a separate `.conflict` side-copy. A banner offers **Merge…** (a side-by-side view where you reconcile the two, with a "Copy to mine" button per difference) and **Show copy** (reveals the side-copy in your file explorer). Nothing is ever overwritten without your choice.
