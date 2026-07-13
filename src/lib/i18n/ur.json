@@ -1089,6 +1089,7 @@
     "sortCount": "تعداد کے لحاظ سے ترتیب"
   },
   "indexPanel": {
+    "openToEdit": "ترمیم کے لیے کھولیں",
     "hiddenTerms": "چھپے اصطلاحات: {count}",
     "hideTerm": "اصطلاح چھپائیں",
     "showTerm": "اصطلاح دکھائیں",

@@ -62,11 +62,16 @@ The first time you type any query in a fresh session, expect a 2–5 second wait
 
 Misses are normal. The M11 dictionary covers 20,000 common-vocabulary concepts. Specialized jargon, proper nouns, and rare regional variants will often miss `≈ similar` — they'll still appear if they match the literal substring (layer 1) or the bridge (layer 2). Misses are not bugs.
 
-## Editing from the Index
+## Previewing from the Index
 
-Click any note in a term's mentions to open it as a split preview pane alongside the Index. The preview is a full editor — you can edit, save, change properties, promote stages. The clicked term is highlighted in the note and scrolled to automatically.
+Click any note in a term's mentions to open it as a split **preview pane** alongside the Index. The clicked term is highlighted in the note and scrolled to automatically.
 
-`Ctrl+Click` (or `Cmd+Click`) opens the note as a regular tab instead. A **"Return to Index"** button appears in the tab bar — click it to jump back to exactly where you left off in the Index.
+The preview is a **read-only peek** — you can read the note (and follow its links, see below), but you can't type in it, change its properties, or rename it. This is deliberate: the preview is a quick look at where a term is used, *not* a second editing surface. Because it can never write, it can never overwrite the same note if you also have it open in a normal tab.
+
+**To edit the note you're peeking at**, click the **"Open to edit"** button at the top of the preview. It opens the note as a normal, editable tab (and if that note is already open, it simply jumps you to the existing tab — never a duplicate). A **"Return to Index"** button appears in the tab bar so you can hop back to exactly where you left off.
+
+- `Ctrl+Click` (or `Cmd+Click`) a note in the list opens it straight as a regular editable tab (same as "Open to edit"), leaving the Index with a "Return to Index" button.
+- **Following links inside the preview:** click a `[[wikilink]]` in the peek and the preview *follows* it — it navigates to the linked note and you stay in the Index, so you can trace connections without leaving. `Ctrl+Click` (or `Cmd+Click`) a link instead to open that note as a real editable tab. (A link to a note that doesn't exist yet does nothing — a peek never creates notes.)
 
 ## Second Screen
 

@@ -1688,6 +1688,7 @@
     "sortCount": "Sort by count"
   },
   "indexPanel": {
+    "openToEdit": "Open to edit",
     "hiddenTerms": "Hidden terms: {count}",
     "hideTerm": "Hide term",
     "showTerm": "Show term",

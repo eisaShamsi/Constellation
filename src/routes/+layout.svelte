@@ -44,7 +44,7 @@
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
-	import { editBody as editNoteBody, seedBody, save as saveNoteSession } from '$lib/editor/noteSession';
+	import { editBody as editNoteBody, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
 	import { compose as composeNoteModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
@@ -6458,9 +6458,7 @@
 	async function handleIndexNoteClick(filePath: string, noteName: string, highlightTerm?: string, e?: MouseEvent) {
 		// Ctrl+click or middle-click: open in a real tab, hide Index but keep state for return
 		if (e && (e.ctrlKey || e.metaKey || e.button === 1)) {
-			showIndex = false;
-			indexReturnPending = true; // show "Return to Index" button
-			return handleNoteClick(filePath, noteName, highlightTerm, e);
+			return leaveIndexForNote(filePath, noteName, highlightTerm, e);
 		}
 		// Bold the active link in the index
 		indexActiveNotePath = filePath;
@@ -6479,7 +6477,12 @@
 			});
 			return;
 		}
-		// Normal click: build a standalone tab for the index split pane (no store mutation)
+		// Normal click: build a standalone tab for the index split pane (no store mutation).
+		// PJ-089 — the preview is a READ-ONLY peek (mounted `readOnly` below), so it never
+		// writes and can never clobber the same note open in a real tab. It still owns a
+		// single-ownership NoteModel (keyed by this tab's unique id) purely for seeding; that
+		// model is freed by the lifecycle-owned disposal $effect below whenever this preview's
+		// id changes or clears, so browsing many terms never grows the model Map unbounded.
 		try {
 			const content: string = await invoke('read_note', { filePath });
 			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
@@ -6498,6 +6501,69 @@
 				historyIndex: 0,
 			};
 		} catch { /* ignore read errors */ }
+	}
+
+	// PJ-089 — lifecycle-owned disposal of the read-only Index preview's single-ownership model.
+	// Keyed to the preview tab's id: Svelte runs the returned cleanup for the PREVIOUS id whenever
+	// indexNoteTab changes (next term) or clears (dismiss) or the component unmounts — so ANY path
+	// that drops/swaps the preview frees its model automatically. This is the structural fix for
+	// the model-Map leak: disposal can never be forgotten by a clear-site (the fragility that let
+	// the original code leak). Safe: a read-only view has no teardown write to race the close.
+	$effect(() => {
+		const id = indexNoteTab?.id;
+		if (!id) return;
+		return () => closeNoteSession(id);
+	});
+
+	// PJ-089 — leave the Index for a note: open it in a real tab but keep the Return-to-Index
+	// affordance in the tab bar. The one home for the "showIndex=false + indexReturnPending"
+	// gesture shared by the Ctrl/middle-click branch and the "Open to edit" button (so the flags
+	// never drift out of lockstep — a recurring hazard in this file's many reset sites).
+	function leaveIndexForNote(path: string, name: string, term?: string, e?: MouseEvent) {
+		showIndex = false;
+		indexReturnPending = true; // show "Return to Index" button
+		return handleNoteClick(path, name, term, e);
+	}
+
+	// PJ-089 — dismiss the read-only Index preview: clear the split-pane state (the disposal
+	// $effect above frees the model when indexNoteTab clears).
+	function closeIndexPreview() {
+		indexNoteTab = null;
+		indexActiveNotePath = '';
+	}
+
+	// PJ-089 — "Open to edit": the preview is a peek, not a desk. To edit, promote it to a REAL,
+	// single-owner tab (openNoteTab dedups by path — it activates the existing tab if the note is
+	// already open, else opens a fresh one), mirroring the Ctrl/middle-click branch.
+	async function openIndexPreviewInTab() {
+		const t = indexNoteTab;
+		if (!t) return;
+		closeIndexPreview();
+		await leaveIndexForNote(t.path, t.name, t.highlightTerm);
+	}
+
+	// PJ-089 — wikilink click INSIDE the read-only preview. The default NoteEditor link handler
+	// opens a real tab in the background (hidden under the Index overlay) — the confusing "nothing
+	// happens in the preview, but a tab opened behind it" behavior. Instead, make links behave like
+	// the Index note-list itself: a plain click makes the PEEK follow the link (navigate the preview,
+	// stay in the Index); Ctrl/⌘/middle-click opens it as a real tab and leaves the Index. A peek
+	// never authors, so an unresolvable link (a note that doesn't exist yet) is inert here.
+	async function handleIndexPreviewLinkClick(link: string, newTab?: boolean) {
+		const t = indexNoteTab;
+		if (!t?.libraryPath) return;
+		let resolved: Awaited<ReturnType<typeof resolveWikilinkCrossLibrary>>;
+		try {
+			resolved = await resolveWikilinkCrossLibrary(t.libraryPath, link);
+		} catch {
+			return;
+		}
+		if (!resolved) return; // unresolvable in a peek → inert (never create a note from a peek)
+		const name = resolved.path.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+		if (newTab) {
+			await leaveIndexForNote(resolved.path, name); // Ctrl/middle-click → open for real, leave the Index
+		} else {
+			await handleIndexNoteClick(resolved.path, name); // plain click → the peek follows the link
+		}
 	}
 
 
@@ -7341,9 +7407,20 @@
 					<div class="index-note-pane">
 						<div class="index-note-header">
 							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
-							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
+							<div class="index-note-actions">
+								<button class="index-open-edit" onclick={openIndexPreviewInTab}>
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+									<span>{$t('indexPanel.openToEdit')}</span>
+								</button>
+								<button class="index-close" onclick={closeIndexPreview} title={$t('common.close')}>×</button>
+							</div>
 						</div>
-						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} onTitleRename={handleRenameComplete} />
+						<!-- PJ-089 — READ-ONLY peek. The preview shares one file with any real tab of the
+						     same note, but keys its model by this preview tab's unique id, so a writable
+						     mount would be a SECOND owner → last-writer-wins silent clobber. Mounting
+						     read-only (the proven Display-not-Domain primitive) makes it a look-only peek
+						     that can never write; "Open to edit" promotes it to a real single-owner tab. -->
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} readOnly={true} onLinkClick={handleIndexPreviewLinkClick} />
 						<CascadeFreezeOverlay path={indexNoteTab?.path} />
 					</div>
 					<div class="index-split-divider"></div>
@@ -7351,7 +7428,7 @@
 				<div class="index-panel-pane">
 					<div class="index-header">
 						<span class="index-title">{$t('ribbon.index')}</span>
-						<button class="index-close" onclick={() => { showIndex = false; indexNoteTab = null; indexActiveNotePath = ''; }}>×</button>
+						<button class="index-close" onclick={() => { showIndex = false; closeIndexPreview(); }}>×</button>
 					</div>
 					<div class="index-body">
 						<IndexPanel
@@ -10115,6 +10192,16 @@
 		font-size: 1.2rem;
 	}
 	.index-close:hover { background: var(--border); color: var(--text); }
+	/* PJ-089 — the read-only preview's action row: "Open to edit" (promote to a real tab) + close. */
+	.index-note-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+	.index-open-edit {
+		display: inline-flex; align-items: center; gap: 5px;
+		padding: 3px 9px; border: var(--border-width, 1px) solid var(--border);
+		background: var(--bg); border-radius: 4px; color: var(--text-muted);
+		font-size: 0.72rem; font-weight: 500; cursor: pointer; white-space: nowrap;
+	}
+	.index-open-edit:hover { background: var(--border); color: var(--text); }
+	.index-open-edit svg { flex-shrink: 0; }
 	.index-body {
 		flex: 1; overflow: auto;
 	}

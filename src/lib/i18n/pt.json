@@ -1529,6 +1529,7 @@
     "sortCount": "Ordenar por contagem"
   },
   "indexPanel": {
+    "openToEdit": "Abrir para editar",
     "hiddenTerms": "Termos ocultos: {count}",
     "hideTerm": "Ocultar termo",
     "showTerm": "Mostrar termo",

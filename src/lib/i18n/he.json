@@ -1089,6 +1089,7 @@
     "sortCount": "מיון לפי כמות"
   },
   "indexPanel": {
+    "openToEdit": "פתח לעריכה",
     "hiddenTerms": "מונחים מוסתרים: {count}",
     "hideTerm": "הסתר מונח",
     "showTerm": "הצג מונח",

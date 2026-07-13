@@ -1529,6 +1529,7 @@
     "sortCount": "गिनती के अनुसार क्रमबद्ध"
   },
   "indexPanel": {
+    "openToEdit": "संपादित करने के लिए खोलें",
     "hiddenTerms": "छिपे शब्द: {count}",
     "hideTerm": "शब्द छिपाएँ",
     "showTerm": "शब्द दिखाएँ",

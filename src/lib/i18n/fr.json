@@ -1089,6 +1089,7 @@
     "sortCount": "Trier par nombre"
   },
   "indexPanel": {
+    "openToEdit": "Ouvrir pour modifier",
     "hiddenTerms": "Termes masqués : {count}",
     "hideTerm": "Masquer le terme",
     "showTerm": "Afficher le terme",

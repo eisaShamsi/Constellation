@@ -1623,6 +1623,7 @@
     "sortCount": "ترتيب حسب العدد"
   },
   "indexPanel": {
+    "openToEdit": "افتح للتحرير",
     "hiddenTerms": "المصطلحات المخفية: {count}",
     "hideTerm": "إخفاء المصطلح",
     "showTerm": "إظهار المصطلح",

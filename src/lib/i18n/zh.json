@@ -1529,6 +1529,7 @@
     "sortCount": "按数量排序"
   },
   "indexPanel": {
+    "openToEdit": "打开以编辑",
     "hiddenTerms": "隐藏的词条：{count}",
     "hideTerm": "隐藏词条",
     "showTerm": "显示词条",

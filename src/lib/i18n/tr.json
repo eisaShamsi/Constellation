@@ -1529,6 +1529,7 @@
     "sortCount": "Sayıya göre sırala"
   },
   "indexPanel": {
+    "openToEdit": "Düzenlemek için aç",
     "hiddenTerms": "Gizli terimler: {count}",
     "hideTerm": "Terimi gizle",
     "showTerm": "Terimi göster",

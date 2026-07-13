@@ -76,6 +76,7 @@
 		onLiveProps,
 		linkTraversalMap,
 		readOnly = false,
+		onLinkClick,
 	}: {
 		tab: TabLike;
 		noteNames?: { name: string; path: string; libraryName?: string }[];
@@ -113,6 +114,12 @@
 		 *  CM6 body + title non-editable. Belt-and-suspenders with NotePane/PropertyEditor:
 		 *  even if a view somehow emits a save, the note is never written to disk. */
 		readOnly?: boolean;
+		/** PJ-089 — override the wikilink click. When provided, a link click in this view calls
+		 *  this instead of the default open-in-a-real-tab behavior. The Index read-only preview
+		 *  passes a handler that makes the PEEK follow the link (plain click) or open a real tab +
+		 *  leave the Index (Ctrl/middle-click) — so a link click never silently opens a hidden
+		 *  background tab under the Index overlay. `newTab` is true for Ctrl/⌘/middle-click. */
+		onLinkClick?: (link: string, newTab?: boolean) => void;
 	} = $props();
 
 	// Internal derived state — recalculated when tab changes OR when the
@@ -497,7 +504,7 @@
 	onnavigateforward={onnavigateforward}
 	onmoreaction={handleMoreAction}
 	highlightTerm={tab.highlightTerm ?? ''}
-	onlinkclick={handleLinkClick}
+	onlinkclick={onLinkClick ?? handleLinkClick}
 />
 </div>
 {/key}

@@ -1529,6 +1529,7 @@
     "sortCount": "개수순 정렬"
   },
   "indexPanel": {
+    "openToEdit": "편집하려면 열기",
     "hiddenTerms": "숨긴 용어: {count}",
     "hideTerm": "용어 숨기기",
     "showTerm": "용어 표시",

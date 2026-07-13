@@ -54,6 +54,9 @@ export default defineConfig({
 			// PJ-092 redo (2026-07-13) — the flush-gate-exclude contract: flushAllTabsInLibrary
 			// reports the not-durably-flushed paths → the rename cascade excludes them.
 			'tests/mig-076/renameCascadeExclude.test.ts',
+			// PJ-089 (2026-07-13) — Recipe Q: the Index-panel preview two-writable-model
+			// clobber reproduction (two ids on one path → last-writer-wins, no reconcile).
+			'tests/mig-076/indexPreviewClobber.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

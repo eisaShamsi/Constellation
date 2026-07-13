@@ -1089,6 +1089,7 @@
     "sortCount": "Nach Anzahl sortieren"
   },
   "indexPanel": {
+    "openToEdit": "Zum Bearbeiten öffnen",
     "hiddenTerms": "Ausgeblendete Begriffe: {count}",
     "hideTerm": "Begriff ausblenden",
     "showTerm": "Begriff einblenden",
