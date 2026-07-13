@@ -682,6 +682,15 @@ export function tabsInLibrary(libraryPath: string): OpenTab[] {
  *  single bad read does not block reloads for the rest. The recreate
  *  primitive loses CodeMirror undo history for the affected tabs; that
  *  trade is accepted by Concept Paper D6.
+ *
+ *  PJ-092 INVARIANT: this primitive FORCE-adopts disk over the model (openNoteModel,
+ *  no dirty-guard — by design). It must NEVER be handed a path whose open model is
+ *  DIRTY: force-reseeding a dirty model from divergent disk loses the edits (or hangs
+ *  the reactive layer). The guard lives UPSTREAM at every caller — the rename cascade
+ *  excludes not-durably-flushed notes (`flushAllTabsInLibrary`'s returned paths → the
+ *  walker never rewrites them → they're never in `result.rewritten`), and the single-
+ *  note callers abort on a non-durable flush. A future edit MUST NOT leak a dirty path
+ *  into this function.
  */
 export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 	if (filePaths.length === 0) return;
@@ -876,10 +885,8 @@ export async function toggleTaskReconciled(filePath: string, lineNumber: number)
 	// inside the cascading window — identical to how flushAllTabsInLibrary runs inside the rename cascade.
 	if (openTab) markCascading(openTab.path);
 	try {
-		if (openTab && isNoteDirty(openTab.id)) {
-			markRecentWrite(openTab.path);
-			await saveNoteSession(openTab.id, openTab.path, standardSaveEnv({ origin: 'task_toggle_flush', name: openTab.name }), 'task_toggle_flush');
-		}
+		// PJ-092 H4 — bounded flush; if not durable, DON'T toggle+reload (clobber/hang guard); save-health retries.
+		if (openTab && !(await flushOpenTabOrAbort(openTab, 'task_toggle_flush'))) return;
 		await toggleTask(filePath, lineNumber);
 		await reloadTabsFromDisk([filePath]); // model ADOPTS the toggled disk + {#key} remount
 	} finally {
@@ -960,6 +967,11 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 		// re-seeds + {#key}-remounts the tab from the just-written disk — cheap (one file read,
 		// no reindex), the proven pattern toggleTaskReconciled uses to refresh an open note
 		// after an external change.
+		// PJ-092 H4 — addLinkToNote is largely safe-by-construction (saveTabContent IS the write;
+		// no independent disk-rewriter, so a failed write leaves disk unchanged and this reload no-ops).
+		// Belt: if the model is still dirty (the write didn't land), skip the view-refresh — the new
+		// property already shows in the dirty model; save-health retries the write.
+		if (isNoteDirty(openTab.id)) return;
 		await reloadTabsFromDisk([sourcePath]);
 	} else {
 		// CLOSED: gated writeNote + reindex; index_note derives the note_links row (and
@@ -1010,43 +1022,73 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
  *  `markRecentWrite` is called for each path to suppress the file
  *  watcher's external-edit emit during the write.
  */
-export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
-	const writes: Promise<void>[] = [];
+export async function flushAllTabsInLibrary(libraryPath: string): Promise<string[]> {
+	// PJ-092 (redo, flush-gate-exclude) — RETURNS the paths whose flush was NOT
+	// durable. The rename cascade excludes these from the on-disk link rewrite so a
+	// note we couldn't flush is NEVER touched on disk → no model↔disk divergence →
+	// no silent data-loss, no reactive freeze. Mirrors renameItem's `renameFlushOk`
+	// gate, generalized to the whole-library cascade.
+	//
+	// H2 — each dirty tab is flushed through the BOUNDED re-flush loop
+	// (`flushOutgoingModel` = flushIfDirty, MAX=4): a keystroke that lands DURING the
+	// awaited write advances the model, so a single `save` would return ok:true with
+	// the model still dirty (the walker would then rewrite the note and the reload
+	// would clobber the during-write keystroke). The loop re-composes until clean or
+	// a genuine failure, closing that await-window race.
+	//
+	// Hardening — a flush that THROWS is recorded as failed (never propagated): a
+	// thrown `flushAllTabsInLibrary` would leave the caller's excluded set undefined
+	// and skip the whole cascade. Fail-safe = never rewrite a note we couldn't prove
+	// we flushed.
+	const failed: string[] = [];
+	const flushes: Promise<void>[] = [];
 	for (const tab of tabsInLibrary(libraryPath)) {
 		if (SINGLE_OWNERSHIP) {
-			// MIG-076 §D1 — under single ownership the MODEL is the keystroke
-			// authority; the write-ahead buffer is filled only on tab teardown
-			// (NoteEditor.handleFlush), NEVER per keystroke. Reading the WAB here
-			// would miss a tab being actively edited, so the cascade walker would
-			// rewrite that tab's STALE disk content and leave freshly-typed
-			// [[links]] to the renamed note broken (the sub-1.5s pre-autosave
-			// race the §D1 review surfaced). Compose the pre-cascade flush from
-			// the model instead: `saveNoteSession` composes + writes + marks
-			// saved, and REFUSES (skips) any tab whose model identity no longer
-			// matches its path — the same identity guard the rest of §C uses.
 			if (!isNoteDirty(tab.id)) continue; // clean — disk already current
 			markRecentWrite(tab.path);
-			writes.push(
-				saveNoteSession(tab.id, tab.path, standardSaveEnv({ origin: 'flush_all', name: tab.name }), 'flush_all')
-					.then(() => {})
+			const p = tab.path;
+			flushes.push(
+				flushOutgoingModel(tab.id, standardSaveEnv({ origin: 'flush_all', name: tab.name }), 'flush_all')
+					.then((r) => { if (!r.ok) failed.push(p); })
 					.catch((err) => {
-						console.error('[flushAllTabsInLibrary] model flush failed for', tab.path, err);
+						console.error('[flushAllTabsInLibrary] model flush threw for', p, err);
+						failed.push(p);
 					})
 			);
 		} else {
+			// Legacy (!SINGLE_OWNERSHIP) rollback path: the write-ahead-buffer write.
+			// Same fail-safe contract — a failed write records the path so the cascade excludes it.
 			const wab = getWriteAhead(tab.path);
 			if (!wab) continue; // not dirty — nothing to flush
 			markRecentWrite(tab.path);
-			writes.push(
+			const p = tab.path;
+			flushes.push(
 				writeNote(tab.path, wab.content, 'flush_all')
-					.then(() => clearWriteAhead(tab.path))
+					.then(() => clearWriteAhead(p))
 					.catch((err) => {
-						console.error('[flushAllTabsInLibrary] write failed for', tab.path, err);
+						console.error('[flushAllTabsInLibrary] write failed for', p, err);
+						failed.push(p);
 					})
 			);
 		}
 	}
-	await Promise.all(writes);
+	await Promise.all(flushes);
+	return failed;
+}
+
+/** PJ-092 — flush ONE open tab's dirty model to disk through the BOUNDED re-flush loop
+ *  before an operation rewrites its file + reloads it. Returns `true` when durable (or the
+ *  tab isn't dirty), `false` when the flush did NOT land. On `false` the caller MUST NOT
+ *  rewrite + reload the note — force-reseeding a still-dirty model is the loss/freeze class
+ *  this migration closes; the edit stays dirty + netted and the ~10 s save-health retry
+ *  persists it. The bounded loop (`flushOutgoingModel`) closes the H2 await-window race — a
+ *  single `save` would return ok:true with the model dirty again if a keystroke lands during
+ *  the write. One primitive so a future flush-then-reload caller can't forget the gate. */
+export async function flushOpenTabOrAbort(openTab: OpenTab, origin: string): Promise<boolean> {
+	if (!isNoteDirty(openTab.id)) return true;
+	markRecentWrite(openTab.path);
+	const r = await flushOutgoingModel(openTab.id, standardSaveEnv({ origin, name: openTab.name }), origin);
+	return r.ok;
 }
 
 export async function saveTabContent(
@@ -4152,8 +4194,12 @@ export interface CascadeResult {
 	failed_truncated: number;
 }
 
-export async function updateLinksOnRename(libraryPath: string, libraryName: string, oldName: string, newName: string): Promise<CascadeResult> {
-	return await invoke('update_links_on_rename', { libraryPath, libraryName, oldName, newName });
+export async function updateLinksOnRename(libraryPath: string, libraryName: string, oldName: string, newName: string, excludePaths: string[] = []): Promise<CascadeResult> {
+	// PJ-092 — `excludePaths` = open notes whose flush was NOT durable; the Rust walker
+	// must NEVER rewrite them (rewriting a note we couldn't flush diverges disk from the
+	// dirty model → data-loss / freeze). Pre-normalize to forward slashes as a belt; Rust
+	// re-keys by full FILE IDENTITY (canonicalize + NFC), the primary guard.
+	return await invoke('update_links_on_rename', { libraryPath, libraryName, oldName, newName, excludePaths: excludePaths.map(normPath) });
 }
 
 // PJ-065 §D9 — one-click resolution of a contested structural parent. Edits ONE frontmatter
@@ -4169,10 +4215,8 @@ export async function resolveStructuralConflict(notePath: string, field: 'parent
 	const openTab = get(openTabs).find((t) => t.path === notePath);
 	if (openTab) markCascading(openTab.path);
 	try {
-		if (openTab && isNoteDirty(openTab.id)) {
-			markRecentWrite(openTab.path);
-			await saveNoteSession(openTab.id, openTab.path, standardSaveEnv({ origin: 'structural_resolve_flush', name: openTab.name }), 'structural_resolve_flush');
-		}
+		// PJ-092 H4 — bounded flush; if not durable, DON'T rewrite+reload (clobber/hang guard); save-health retries.
+		if (openTab && !(await flushOpenTabOrAbort(openTab, 'structural_resolve_flush'))) return;
 		await invoke('resolve_structural_conflict', { notePath, field, targetName });
 		await reloadTabsFromDisk([notePath]); // model ADOPTS the resolved disk + {#key} remount
 	} finally {

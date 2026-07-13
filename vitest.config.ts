@@ -51,6 +51,9 @@ export default defineConfig({
 			// the watcher external-change adopt (clean adopt + reloadVersion bump / dirty-conflict
 			// hook / cascade + echo + deleted + Focus-handoff guards) driven end-to-end sans Tauri.
 			'tests/mig-076/watcherAdoptStore.test.ts',
+			// PJ-092 redo (2026-07-13) — the flush-gate-exclude contract: flushAllTabsInLibrary
+			// reports the not-durably-flushed paths → the rename cascade excludes them.
+			'tests/mig-076/renameCascadeExclude.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

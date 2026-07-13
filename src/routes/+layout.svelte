@@ -1473,6 +1473,10 @@
 	let sidebarHeadings = $state<HeadingItem[]>([]);
 	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
 	let focusMode = $state(false);
+	// PJ-092 — the current rename cascade's excluded (unflushable) note keys (normPathLC+NFC),
+	// shared with the cascade:rewrote listener so it applies the SAME fail-closed exclusion the
+	// handleRenameComplete belt does — else a leaked excluded path is force-reloaded twice (LL-023).
+	let renameCascadeExcludedKeys = new Set<string>();
 	let _focusModeTabId = '';
 	// APP-KILLER #2 — _focusModeTabId now holds "id|path": exit Focus when the active tab
 		// changes id (tab switch) OR path (in-place nav/reuse — wikilink / Quick Switcher /
@@ -3297,7 +3301,12 @@
 		// per Concept Paper D6, $effect on value/editBody is forbidden
 		// (BUG-015's class).
 		const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
-			await reloadTabsFromDisk(event.payload?.paths ?? []);
+			// PJ-092 (LL-023 drift fix) — apply the SAME fail-closed exclusion as handleRenameComplete's
+			// belt: an excluded (unflushable) note that LEAKED into the rewritten set must NOT be force-
+			// reloaded here either. This listener is defence-in-depth for the SAME cascade; without the
+			// filter it would re-do exactly the reload the belt skipped, clobbering the dirty model.
+			const paths = (event.payload?.paths ?? []).filter((p) => !renameCascadeExcludedKeys.has(normPathLC(p).normalize('NFC')));
+			await reloadTabsFromDisk(paths);
 		});
 		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
 
@@ -6298,11 +6307,44 @@
 					const tabs = tabsInLibrary(lib.path);
 					for (const t of tabs) markCascading(t.path);
 					try {
-						await flushAllTabsInLibrary(lib.path);
+						// PJ-092 — the open notes whose unsaved edits could NOT be flushed (a locked .md).
+						const excludedPaths = await flushAllTabsInLibrary(lib.path);
+						// Share the excluded set with the cascade:rewrote listener (defence-in-depth, :3300)
+						// so it applies the SAME fail-closed exclusion this belt does (LL-023 drift fix).
+						renameCascadeExcludedKeys = new Set(excludedPaths.map((pp) => normPathLC(pp).normalize('NFC')));
 						// §B2-4 forensics marker — about to DISPATCH the cascade IPC.
 						invoke('journal_frontend_marker', { surface: 'cascade_dispatch', detail: `${oldName} -> ${newName}` }).catch(() => {});
-						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName);
-						await reloadTabsFromDisk(result.rewritten);
+						// The walker NEVER rewrites an excluded note's disk (matched by file identity).
+						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName, excludedPaths);
+						// PJ-092 fail-CLOSED belt (①): a note we could not flush must never be in
+						// result.rewritten. If one leaks (a path-normalization contract breach), NEVER
+						// reload it — force-reseeding the dirty model IS the data-loss — drop it + surface it.
+						let reloadPaths = result.rewritten;
+						if (excludedPaths.length > 0 && result.rewritten.length > 0) {
+							// PJ-092 fail-CLOSED belt (①). NFC-normalize BOTH sides (①/H1 — a leak that reaches
+							// here differs by NFC/NFD, the exact Arabic-root form normPathLC alone can't fold, so
+							// without NFC the belt would MISS the headline hazard). One partition pass: kept =
+							// reloaded, leaked = a contract breach (the Rust identity-exclude should have skipped it).
+							const key = (fp: string) => normPathLC(fp).normalize('NFC');
+							const excl = new Set(excludedPaths.map(key));
+							const kept: string[] = [];
+							const leaked: string[] = [];
+							for (const fp of result.rewritten) (excl.has(key(fp)) ? leaked : kept).push(fp);
+							if (leaked.length > 0) {
+								console.error('[handleRenameComplete] PJ-092 CONTRACT BREACH — an unflushed note is in rewritten; NOT reloading:', leaked);
+								invoke('journal_frontend_marker', { surface: 'cascade_exclude_breach', detail: leaked.join('|') }).catch(() => {});
+								reloadPaths = kept;
+							}
+						}
+						await reloadTabsFromDisk(reloadPaths);
+						// PJ-092 H3 (③) — FocusPane is NOT under the reloadVersion {#key}; if the note open
+						// in Focus mode was rewritten, remount FocusPane on the freshly-reseeded model (mirror
+						// adoptExternalChangeIntoTabs), or the next Focus keystroke composes from stale text
+						// and silently reverts the rewrite on disk.
+						if (focusMode && focusSessionPath) {
+							const fp = normPathLC(focusSessionPath);
+							if (reloadPaths.some((p) => normPathLC(p) === fp)) focusReseed(focusSessionPath);
+						}
 						// §144 (supersedes §143's targeted update — the targeted
 						// approach only worked when the in-memory link's target
 						// matched the rename's oldName exactly. After several
@@ -6321,16 +6363,20 @@
 						// (since allLibraryLinks isn't refreshed between
 						// boots and renames before §144 left silent staleness
 						// behind every time).
-						if (result.rewritten.length > 0) {
+						// PJ-092 H5 (⑤) — a rename ALWAYS stamps an alias, so refresh the alias map whenever
+						// there were backlinks (rewritten OR excluded), not only when something rewrote —
+						// else an excluded backlink may not surface in the alias-aware Backlinks view.
+						if (result.rewritten.length > 0 || excludedPaths.length > 0) {
 							try {
 								const graph = await invoke<{
 									links: NoteLink[];
 									tags: Record<string, number>;
 									aliases: Array<{ note_path: string; alias: string }>;
 								}>('cache_boot_snapshot_graph');
-								// MIG-079 §C.2b — graph.links is empty now; force-re-fetch the
-								// deferred edge list so the post-cascade note_links state lands.
-								await ensureFullLinks(true);
+								if (result.rewritten.length > 0) {
+									// MIG-079 §C.2b — force-re-fetch the deferred edge list so the post-cascade note_links state lands.
+									await ensureFullLinks(true);
+								}
 								// Refresh the alias index too — renames stamp a
 								// new alias entry on the renamed file, which the
 								// alias-aware Backlinks reader needs to see.

@@ -5476,6 +5476,27 @@ const MAX_FAILED_REPORTED: usize = 100;
 // run off the IPC dispatch thread. Per-file RMW is gated (gate_rmw in
 // update_links_recursive); the caller (handleRenameComplete) awaits the whole
 // chain, so cascade ordering vs the tab reload is preserved by the awaits.
+/// PJ-092 — a canonical IDENTITY key for a path, so the rename cascade decides
+/// "is this the note the frontend could NOT flush?" by FILE IDENTITY, not a raw
+/// string compare across the JS↔Rust boundary. A defeated match = the reverted
+/// data-loss bug returns, so this is the load-bearing seam (the universe root can
+/// be an Arabic path — NFC vs NFD is a live surface here).
+///   1. `canonicalize` (when the file exists) collapses `\` vs `/`, case, 8.3
+///      short names, the `\\?\` long-path prefix, symlinks, `.`/`..`.
+///   2. Unicode **NFC** folds the Arabic NFC/NFD forms the two sides may carry.
+///   3. forward slashes + (Windows only) lowercase — a last-resort belt when the
+///      OS canonical form is unavailable; Windows lowercasing can only BROADEN a
+///      match on a case-insensitive FS (the fail-safe direction).
+fn path_identity_key(p: &Path) -> String {
+    use unicode_normalization::UnicodeNormalization;
+    let base = std::fs::canonicalize(p)
+        .map(|c| c.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| p.to_string_lossy().into_owned());
+    let nfc: String = base.nfc().collect();
+    let fwd = nfc.replace('\\', "/");
+    if cfg!(windows) { fwd.to_lowercase() } else { fwd }
+}
+
 #[tauri::command(async)]
 pub fn update_links_on_rename(
     app: tauri::AppHandle,
@@ -5483,6 +5504,11 @@ pub fn update_links_on_rename(
     library_name: String,
     old_name: String,
     new_name: String,
+    // PJ-092 — the open notes whose unsaved edits could NOT be flushed (a locked
+    // .md). Their disk is NEVER rewritten: rewriting would diverge disk from the
+    // still-dirty model and the reload would clobber the edits (data-loss) or hang
+    // the reactive layer (the reverted freeze). Matched by file identity, not string.
+    exclude_paths: Vec<String>,
 ) -> Result<CascadeResult, String> {
     use tauri::Emitter;
     validate_path_in_any_library(&app, &library_path)?;
@@ -5502,7 +5528,30 @@ pub fn update_links_on_rename(
         failed: Vec::new(),
         failed_truncated: 0,
     };
-    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
+    // PJ-092 — identity keys of the notes to EXCLUDE from the on-disk rewrite.
+    let exclude: std::collections::HashSet<String> = exclude_paths
+        .iter()
+        .map(|p| path_identity_key(Path::new(p)))
+        .collect();
+    let mut excluded_hit: std::collections::HashSet<String> = std::collections::HashSet::new();
+    update_links_recursive(
+        Path::new(&library_path),
+        &re,
+        &new_name,
+        &mut result,
+        &exclude,
+        &mut excluded_hit,
+    );
+    // Hardening — a normalization miss is otherwise invisible-until-loss: an exclude
+    // entry that matched NO walked file may be a defeated exclusion. Make it visible.
+    for key in &exclude {
+        if !excluded_hit.contains(key) {
+            eprintln!(
+                "[update_links_on_rename] PJ-092: exclude entry matched no walked file (possible path-normalization miss): {}",
+                key
+            );
+        }
+    }
 
     // §4 — reindex each rewritten source so `note_meta.outgoing_links_json`
     // and `note_links.target_name` reflect the new wikilink targets. Without
@@ -5558,7 +5607,14 @@ pub fn update_links_on_rename(
     Ok(result)
 }
 
-fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result: &mut CascadeResult) {
+fn update_links_recursive(
+    dir: &Path,
+    re: &regex::Regex,
+    new_name: &str,
+    result: &mut CascadeResult,
+    exclude: &std::collections::HashSet<String>,
+    excluded_hit: &mut std::collections::HashSet<String>,
+) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -5568,11 +5624,22 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result:
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            update_links_recursive(&path, re, new_name, result);
+            update_links_recursive(&path, re, new_name, result, exclude, excluded_hit);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // A file that vanished mid-walk (concurrent move/delete) is
             // silently skipped — same semantics as the old `if let Ok(read)`.
             if !path.exists() { continue; }
+            // PJ-092 — a note the frontend could NOT flush is EXCLUDED: never rewrite
+            // its disk (identity match, not a raw string compare — the Arabic-root
+            // NFC/8.3/\\?\ hazards). Only pays the per-file canonicalize when there IS
+            // an exclusion (rare — only when a flush failed); a clean rename skips it.
+            if !exclude.is_empty() {
+                let key = path_identity_key(&path);
+                if exclude.contains(&key) {
+                    excluded_hit.insert(key);
+                    continue;
+                }
+            }
             // Note-open-freeze Batch-2 §B2-4 (2026-07-03): the per-file
             // read→rewrite→write now runs as ONE gated critical section
             // (gate_rmw — the per-path lock held across the WHOLE cycle), so
@@ -5636,7 +5703,79 @@ fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
 
 #[cfg(test)]
 mod cascade_walker_tests {
-    use super::rewrite_for_test;
+    use super::{path_identity_key, rewrite_for_test, update_links_recursive, CascadeResult};
+    use std::collections::HashSet;
+    use std::path::Path;
+
+    // ── PJ-092 flush-gate-exclude: the identity-key contract + the walker exclude ──
+
+    #[test]
+    fn identity_key_folds_separators() {
+        // `\` and `/` forms of the same path key equal (canonicalize fails for a
+        // non-existent path, so the NFC+slash+case belt runs — the JS↔Rust seam).
+        assert_eq!(
+            path_identity_key(Path::new("C:/Lib/note.md")),
+            path_identity_key(Path::new("C:\\Lib\\note.md")),
+        );
+    }
+
+    #[test]
+    fn identity_key_folds_nfc_nfd() {
+        // The same name in NFC vs NFD must key equal — the Arabic universe-root hazard
+        // (H1): tab.path (JS) and to_string_lossy() (Rust) may carry different forms.
+        use unicode_normalization::UnicodeNormalization;
+        let nfc: String = "E:/كلاود/café.md".nfc().collect();
+        let nfd: String = "E:/كلاود/café.md".nfd().collect();
+        assert_ne!(nfc, nfd, "precondition: NFC and NFD byte-differ");
+        assert_eq!(
+            path_identity_key(Path::new(&nfc)),
+            path_identity_key(Path::new(&nfd)),
+            "NFC/NFD forms of the same path must produce the same identity key"
+        );
+    }
+
+    #[test]
+    fn walker_excludes_by_identity_and_rewrites_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        let excluded = dir.path().join("Excluded.md");
+        let rewritten = dir.path().join("Rewritten.md");
+        std::fs::write(&excluded, "links [[Old]] here").unwrap();
+        std::fs::write(&rewritten, "links [[Old]] here").unwrap();
+
+        let re = regex::Regex::new(&format!(r"\[\[({})(\]\]|\|)", regex::escape("Old"))).unwrap();
+        let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        // Exclude the note using a DELIBERATELY different separator form than the
+        // walker will produce — the identity key must still match (the sharp edge).
+        let excluded_alt_sep = excluded.to_string_lossy().replace('/', "\\");
+        let exclude: HashSet<String> =
+            [excluded_alt_sep].iter().map(|p| path_identity_key(Path::new(p))).collect();
+        let mut hit: HashSet<String> = HashSet::new();
+
+        update_links_recursive(dir.path(), &re, "New", &mut result, &exclude, &mut hit);
+
+        assert_eq!(result.rewritten.len(), 1, "exactly the non-excluded file is rewritten");
+        assert!(result.rewritten[0].contains("Rewritten"));
+        assert_eq!(
+            std::fs::read_to_string(&excluded).unwrap(),
+            "links [[Old]] here",
+            "the excluded note's bytes are UNTOUCHED (never rewritten)"
+        );
+        assert_eq!(std::fs::read_to_string(&rewritten).unwrap(), "links [[New]] here");
+        assert_eq!(hit.len(), 1, "the exclude entry matched a walked file");
+    }
+
+    #[test]
+    fn walker_empty_exclude_rewrites_all() {
+        // Empty exclude == today's behavior (the rollback proof).
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("A.md"), "[[Old]]").unwrap();
+        std::fs::write(dir.path().join("B.md"), "[[Old]]").unwrap();
+        let re = regex::Regex::new(&format!(r"\[\[({})(\]\]|\|)", regex::escape("Old"))).unwrap();
+        let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        let mut hit: HashSet<String> = HashSet::new();
+        update_links_recursive(dir.path(), &re, "New", &mut result, &HashSet::new(), &mut hit);
+        assert_eq!(result.rewritten.len(), 2, "empty exclude rewrites everything (rollback-equivalent)");
+    }
 
     #[test]
     fn bare_wikilink_rewrites() {
