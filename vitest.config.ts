@@ -51,9 +51,6 @@ export default defineConfig({
 			// the watcher external-change adopt (clean adopt + reloadVersion bump / dirty-conflict
 			// hook / cascade + echo + deleted + Focus-handoff guards) driven end-to-end sans Tauri.
 			'tests/mig-076/watcherAdoptStore.test.ts',
-			// PJ-092 (2026-07-12) — reloadTabsFromDisk dirty-guard (APP-KILLER): never
-			// force-adopt disk over a dirty model whose pre-cascade flush failed.
-			'tests/mig-076/reloadDirtyGuard.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection
