@@ -14,7 +14,6 @@
 		writeNote, markRecentWrite, wasRecentlyWritten, setWriteAhead, clearWriteAhead,
 		renameItem,
 		scanLibraryLinks, scanLibraryTags,
-		toggleTaskReconciled,
 		buildSkyData,
 		libraryStats, loadAllStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
@@ -1529,15 +1528,13 @@
 									</div>
 								{:else if splitCompanionTab === 'tasks'}
 									{#if panel.tasks.length > 0}
+										<!-- PJ-090 — READ-ONLY (Display-not-Domain). The SS never writes; ticking a task
+										     is the main window's Tasks plugin's job. A writable toggle here was the
+										     PJ-090 cross-window clobber (SS writes → watcher-suppressed → main reverts). -->
 										<TasksPanel
 											tasks={panel.tasks}
 											{libraryColorMap}
-											onToggle={async (filePath, lineNumber) => {
-												try {
-													await toggleTaskReconciled(filePath, lineNumber);
-													if (splitCompanionData) await loadSplitCompanionPanelData(splitCompanionData);
-												} catch {}
-											}}
+											readOnly={ssReadOnly}
 										/>
 									{:else}
 										<p class="sc-empty">{$t('panels.noTasks') || 'No tasks'}</p>
@@ -1673,15 +1670,12 @@
 						{:else if editorPanelsTab === 'tasks'}
 							<div class="sc-panel">
 								{#if epTasks.length > 0}
+									<!-- PJ-090 — READ-ONLY (Display-not-Domain); see the split-companion note above.
+									     (This editor-panels companion is itself legacy behind !COCKPIT_ENABLED.) -->
 									<TasksPanel
 										tasks={epTasks}
 										{libraryColorMap}
-										onToggle={async (filePath, lineNumber) => {
-											try {
-												await toggleTaskReconciled(filePath, lineNumber);
-												if (editorPanelsData) await loadEditorPanelsData(editorPanelsData);
-											} catch {}
-										}}
+										readOnly={ssReadOnly}
 									/>
 								{:else}
 									<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>

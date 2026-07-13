@@ -82,3 +82,28 @@ Harness reproduction of the two-writable-model clobber through the REAL `noteSes
 - **Link re-test** (plain-click follows in peek · Ctrl-click opens a real tab + leaves Index): **PASS.**
 - **Stage 2** (same note in a tab + preview → no silent overwrite; "Open to edit" no duplicate; the two close buttons): **PASS.**
 - **Committed after the pass** (the standing rule — commit is the LAST step, gated on the Boss). **Close (SO#9):** Pending Jobs **v1.26** (PJ-089 Done; PJ-098–101 filed from the per-cycle whole-app sweep `wf_ca0d3aa9-3d6`); Orientation **v3.47**; English Index help updated (read-only peek + Open-to-edit + link-follow — the 14 locale backfill is standing PJ-014 debt); Charter register appended; MoCh `MoCh-2026-07-13-1400.md`. ► Next action = **PJ-090** (SS Tasks-panel toggle no-broadcast clobber).
+
+---
+
+## PJ-090 — SS Tasks cross-window clobber — RESOLVED BY CUT (not fixed) + SS re-conception ruled
+
+**Function in hand:** the Second Screen's Tasks panel (task-checkbox toggle in the SS window).
+
+### The arc
+1. **Reproduce-First + fix (later reverted):** confirmed the mechanism — `toggle_task` → `gate_rmw` → `atomic_write` watcher-suppresses PROCESS-WIDE, and `toggleTaskReconciled` didn't `broadcastNoteSaved`, so an SS toggle never reached the main window → the main reverts it. Built a broadcast fix (add `broadcastNoteSaved` + `markRecentWrite` to the shared primitive), Recipe R reproduction, focused adversarial review SAFE ×7, svelte-check 0, vitest 344, binary built.
+2. **Stop-On-Correction (SO#8 miss):** the Boss's screenshot showed the current SS is the **read-only Knowledge Cockpit** — whose Tasks facet is a STUB. My SO#8 cross-check had verified the toggle *code* existed but not that it's *reachable in the running SS*. The default SS can't toggle tasks at all; only the split-view split-companion mode could. I stopped, re-oriented, and reported the corrected picture.
+3. **The Boss reframed it as a CONCEPT question** ("what should the SS provide beyond the right sidebar / main Tasks plugin — be honest?"). Per the Art-Director-owns-UI ruling, convened the team via workflow `wf_043756ee-352` (census → 3 Art-Director options → 3 adversarial honesty judges → synthesis). **Verdict: the SS is ~90% stubbed duplication of the right sidebar (same i18n keys); only the note-graph lenses + the Pin dial are genuine complements. The Tasks toggle is a Display-Not-Domain breach; the broadcast fix would "make an illegal write work."** Doc: `docs/concept-papers/PJ-068-v3-SS-Honest-Audit-2026-07-13.md`.
+4. **Boss rulings:** (a) **CUT the toggle, discard the broadcast fix** (PJ-090). (b) **Re-conceive the SS as the full three-zone Cockpit via `/migration`** (the next major work).
+
+### What shipped (PJ-090 resolution)
+- Reverted the broadcast fix (store.ts, vitest.config.ts) + removed Recipe R.
+- `TasksPanel` gained a `readOnly` prop (checkbox `disabled` + no-write); both SS mounts (split-companion + the dead editor-panels one) now `readOnly={ssReadOnly}`; the `toggleTaskReconciled` import + both onToggle write handlers removed. Main-window Tasks toggling untouched.
+- svelte-check 0, vitest 341 (Recipe R removed). **Boss live-test: main-window toggle works · SS checkboxes read-only — PASS.**
+- **Close (SO#9):** Pending Jobs **v1.27** (PJ-090 closed by cut; ► Next = the SS three-zone Cockpit `/migration`); Orientation **v3.48**; the honest-audit doc saved.
+
+### Two lessons
+1. **SO#8 must verify a PJ against the RUNNING structure, not just the code's presence.** The toggle code existed but was unreachable in the current Cockpit. Reading the orientation's Second-Screen § would have caught it before I built a fix for a near-dead path.
+2. **Concept-before-Function:** the honest answer to "fix the SS task toggle" was "CUT it — it violates the SS's read-only concept." The Art Director & Team (not solo iteration) produced that honest verdict.
+
+### Next
+The **Second-Screen three-zone Cockpit `/migration`** (Boss-directed) — Architect phase next: Move 1 (cut the stub-facet duplication + dead companions, keep lenses + Pin dial) → Move 2 (build WHERE / HEALTH / DECISION; the whole-corpus tension/health board first). Continues/closes PJ-068.

@@ -7,10 +7,17 @@
 		tasks = [] as TaskItem[],
 		onToggle,
 		libraryColorMap = {} as Record<string, string>,
+		readOnly = false,
 	}: {
 		tasks: TaskItem[];
-		onToggle: (filePath: string, lineNumber: number) => void;
+		/** Optional — omitted (or ignored under readOnly) makes the checkboxes display-only. */
+		onToggle?: (filePath: string, lineNumber: number) => void;
 		libraryColorMap?: Record<string, string>;
+		/** PJ-090 — the second screen mounts this READ-ONLY (Display-not-Domain): the checkbox
+		 *  shows completion state but cannot be toggled. Ticking a task is the main window's
+		 *  Tasks plugin's job; a display never writes to disk. Main-window mounts leave this
+		 *  false so their checkboxes stay interactive. */
+		readOnly?: boolean;
 	} = $props();
 
 	let filter = $state<'all' | 'incomplete' | 'completed'>('all');
@@ -130,7 +137,8 @@
 						<input
 							type="checkbox"
 							checked={task.completed}
-							onchange={() => onToggle(task.file_path, task.line_number)}
+							disabled={readOnly}
+							onchange={() => { if (!readOnly) onToggle?.(task.file_path, task.line_number); }}
 						/>
 					</label>
 					<div class="tp-content">
