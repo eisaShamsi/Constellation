@@ -68,3 +68,17 @@
 
 ### NEXT — PJ-106: the Arabic/RTL typing & navigation overhaul (Boss-directed)
 Boss (2026-07-14): Home/End misbehave; line/paragraph navigation and word/sentence/line/paragraph/page selection broken when typing Arabic; worse in bilingual notes. Editor-core (CM6 bidi) across NotePane+FocusPane → **/migration** with WA#5 prior-art research (CM6 bidi isolates, Obsidian/VS Code RTL). Starts next.
+
+---
+
+## PJ-106 — Arabic/RTL Typing & Navigation /migration — BUILD (Phases 1–2 closed 2026-07-14)
+
+**Function in hand:** the editor's caret/selection/direction engine for RTL + bilingual notes (NotePane + FocusPane + ConflictMergeView), shared from `$lib/editor/`.
+**Ruled:** Option B (full: direction + selection), A-first, LOGICAL (Word) arrows, per-paragraph Ctrl+Shift override stored as an invisible RLM/LRM mark. Plan `docs/PJ-106-RTL-Typing-PLAN.md` (approved as amended; 15 design-inspection hazards binding). Symptoms `lab/reports/PJ-106-RTL-Symptoms-BossReported.md` (Rounds 1–3).
+**Reproduce-First:** the Boss's detailed live symptom reports (Rounds 2–3) ARE the on-demand reproduction; the visual defects are not headless-testable (jsdom false-passes — no layout), so the fix is verified by the staged Boss live-tests; the offset-pure direction logic is locked in `tests/pj-106/rtlDirection.test.ts`.
+
+### Predecessor → Replacement (the direction heuristics re-pointed — all SAME PLACE, no relocation)
+- **H2** `dirCompartment` editorAttributes.dir (`NotePane.svelte:450`) — Replacement: extended to carry BOTH editor + content attrs at the RESOLVED base (`dir==='rtl'?'rtl':'ltr'`); same place. **H3** `contentAttributes.dir:'auto'` (`:451`, the viewport-flip competitor) — CUT; folded into H2 at the resolved base (SI2-1). **H4** `bidiPlugin.resolveEditorDir` (`bidiPlugin.ts:59`) — Replacement: reads the DOM `dir` (now deterministic), the 'auto' viewport-scan branch REMOVED (H9). Reconfigure site (`NotePane.svelte:815`) updated to keep both attrs in sync. FocusPane H2 (`:183`) → `detectDir(value)` base + content attr (SI2-2). ConflictMergeView panes (`:52`) → content dir = the pane's resolved base (SI4-01). **H1** `detectDir(body)→noteDir` (`+layout.svelte:1631`) kept (never returns 'auto' — verified). **H5** toolbar `RTL_DETECT` — untouched (INV-5).
+
+### §A1 — the headline direction fix (SHIPPED to test)
+`EditorView.perLineTextDirection.of(true)` enabled (rollback lever `src/lib/editor/rtlFlag.ts` `RTL_MOTION_ENABLED`, in a compartment for NotePane; flag-gated add for Focus/merge — SI4-03: motion only, bidiPlugin's static rendering untouched) across all THREE editable surfaces; deterministic base direction replaces `dir='auto'`. This connects the already-rendered per-line `dir` to the caret/selection MOTION engine — the root cause of symptoms ①②③. Gates: svelte-check 0, vitest 354 (+4 rtlDirection). **Awaiting Stage-1 Boss live-test.** (§A2 same-transaction, §A3 empty-line inheritance, §A4 isolate ranges, §A5 logical-arrow keymap, then Part B selection + the Ctrl+Shift override — after the Boss validates the core.)

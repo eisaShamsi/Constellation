@@ -5,6 +5,8 @@
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
+	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
+	import { detectDir } from '$lib/utils'; // PJ-106 §A1 — deterministic Focus base direction
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -180,10 +182,16 @@
 					...historyKeymap,
 					{ key: 'Escape', run: () => { onexit?.(); return true; } },
 				]),
-				EditorView.editorAttributes.of({ dir: 'auto' }),
+				/* PJ-106 §A1 (SI2-2 parity) — deterministic base from the note's content (not the
+				   viewport-first-strong 'auto'); both editor + content attrs so the base governs
+				   the empty-line caret side. FocusPane has no dir prop, so it derives its own. */
+				EditorView.editorAttributes.of({ dir: detectDir(value) }),
+				EditorView.contentAttributes.of({ dir: detectDir(value) }),
 				scriptFontsField,
 				bidiPlugin,
 				bidiTheme,
+				/* PJ-106 §A1 — connect per-line direction to the caret/selection MOTION engine. */
+				...(RTL_MOTION_ENABLED ? [EditorView.perLineTextDirection.of(true)] : []),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {

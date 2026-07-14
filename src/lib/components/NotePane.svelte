@@ -28,6 +28,7 @@
 	import { prewarmIcons } from '$lib/theme/iconOverrides';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
+	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -217,6 +218,7 @@
 	let chevronHandler: EventListener | null = null;
 	let linkClickHandler: EventListener | null = null;
 	const dirCompartment = new Compartment();
+	const rtlMotionCompartment = new Compartment(); // PJ-106 §A1 — perLineTextDirection rollback lever
 	const livePreviewCompartment = new Compartment();
 	const typedLinkModeCompartment = new Compartment();
 	// G3 — read-only compartment so the Settings toggle flips editability live
@@ -447,8 +449,16 @@
 					...defaultKeymap, ...historyKeymap, ...($appSettings.autoPairBrackets ? closeBracketsKeymap : []), ...searchKeymap,
 				]),
 				readOnlyCompartment.of(readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
-				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
-				EditorView.contentAttributes.of({ dir: 'auto' }),
+				/* PJ-106 §A1 (SI2-1) — ONE authority for the base direction: editor + content
+				   attributes both carry the note's RESOLVED base (detectDir → 'rtl'|'ltr', never
+				   the viewport-first-strong 'auto' that competed with the motion engine). */
+				dirCompartment.of([
+					EditorView.editorAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
+					EditorView.contentAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
+				]),
+				/* PJ-106 §A1 — tell the CARET/SELECTION engine to read per-line direction
+				   (the bidiPlugin already renders it). Flag-gated (SI4-03: motion only). */
+				rtlMotionCompartment.of(RTL_MOTION_ENABLED ? EditorView.perLineTextDirection.of(true) : []),
 				typedLinkModeCompartment.of(EditorView.contentAttributes.of({
 					class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),
 				})),
@@ -812,7 +822,10 @@
 	$effect(() => {
 		if (view && dir !== prevDir) {
 			prevDir = dir;
-			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+			view.dispatch({ effects: dirCompartment.reconfigure([
+				EditorView.editorAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
+				EditorView.contentAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
+			]) });
 		}
 	});
 

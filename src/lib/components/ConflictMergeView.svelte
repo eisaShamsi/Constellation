@@ -15,6 +15,7 @@
 	import { detectDir } from '$lib/utils';
 	import { EditorState, type Extension } from '@codemirror/state';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
+	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1 (SI4-01)
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -46,10 +47,13 @@
 			calloutCollapseField,
 			livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme, baseLensField,
 			scriptFontsField, bidiPlugin, bidiTheme,
+			/* PJ-106 §A1 (SI4-01) — the merge panes are editable bilingual surfaces too:
+			   connect per-line direction to the caret engine + a deterministic base (not 'auto'). */
+			...(RTL_MOTION_ENABLED ? [EditorView.perLineTextDirection.of(true)] : []),
 			libraryPathField, notePathField, attachmentFolderField, linkTraversalMapField,
 			EditorView.lineWrapping,
 			EditorView.editorAttributes.of({ dir }),
-			EditorView.contentAttributes.of({ dir: 'auto' }),
+			EditorView.contentAttributes.of({ dir }),
 		];
 		if (editable) {
 			base.push(history(), drawSelection(), keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]));

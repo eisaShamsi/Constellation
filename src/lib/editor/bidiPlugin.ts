@@ -56,18 +56,15 @@ function detectLineScript(text: string): string | null {
 	return null; // default font (Latin)
 }
 
-/** Resolve the editor's effective base direction, treating 'auto' as 'ltr' unless content says otherwise */
+/** Resolve the editor's base direction from the DOM `dir` attribute the host sets
+ *  (NotePane/FocusPane/merge panes now set a DETERMINISTIC 'rtl'|'ltr', never 'auto').
+ *  PJ-106 §A1 (H9): the buildBidiDecorations gate must use the SAME base the content
+ *  attribute uses, so a per-line decoration is added exactly when the line differs from
+ *  that base. The legacy 'auto' viewport-scan branch is removed — it could disagree with
+ *  the content attribute and desync motion from render; a lingering 'auto'/unset dir
+ *  falls back to 'ltr'. */
 function resolveEditorDir(view: EditorView): 'rtl' | 'ltr' {
-	const domDir = view.dom.getAttribute('dir') || 'ltr';
-	if (domDir === 'rtl') return 'rtl';
-	if (domDir === 'ltr') return 'ltr';
-	// 'auto' — scan first few lines to determine actual direction
-	const doc = view.state.doc;
-	for (let i = 1; i <= Math.min(doc.lines, 10); i++) {
-		const d = detectLineDir(doc.line(i).text);
-		if (d) return d;
-	}
-	return 'ltr'; // fallback: LTR
+	return view.dom.getAttribute('dir') === 'rtl' ? 'rtl' : 'ltr';
 }
 
 // ─── Script font configuration (passed from app settings) ───
