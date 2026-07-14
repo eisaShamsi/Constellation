@@ -93,3 +93,33 @@ modifier+click (Ctrl+click Windows / Cmd+click Mac).
   a keyboard command "select sentence at caret", both via Intl.Segmenter with Arabic
   terminators (؟ ۔ ! and NOT ؛ — a semicolon is intra-sentence, per the SI-inspection H4).
 - Boss may re-key the sentence gesture later; Ctrl+click is the default.
+
+**§B0 SHIPPED (2026-07-14, Boss-validated):** triple-click now selects the line's TEXT only
+(`[line.from, line.to]`), NOT the trailing newline. CM6's default included `line.to+1`, so
+`drawSelection` painted the selection across the empty remainder of the visual line — on an
+RTL line that empty run is to the LEFT of the right-aligned text (Boss remark). Fix =
+`tripleClickTextOnly` (`EditorView.mouseSelectionStyle`), shared across NotePane/FocusPane/
+merge panes (Editor Parity). Supports triple-click-drag + shift-extend + multi-select.
+
+## Round 5 — Enter-on-RTL regression (2026-07-14)
+
+**Symptom (Boss, with screenshot):** typing Arabic, pressing **Enter** on an RTL line drops
+the caret at the **LEFT** of the new empty line (should be the RIGHT — the RTL reading start).
+This is symptom ①'s empty-line case surfacing specifically when the **note's base is RTL**.
+
+**Mechanism (read off the code, not guessed):** `.cm-line { unicode-bidi: plaintext }` resolves
+an EMPTY line to LTR (no strong char → the Unicode P2/P3 default), ignoring the RTL base. The
+bidiPlugin was meant to override that with an explicit `dir="rtl"` stamp — but it only stamped a
+line when its direction **differed** from the editor base. In a fully-Arabic note the base IS
+already RTL, so the empty line "matched" and got **no** stamp → fell back to plaintext → caret
+left. (The earlier Stage-1 test passed because that note's base was still LTR, so the empty RTL
+line *differed* and got stamped.) The 300 ms debounce also delayed even a correct stamp.
+
+**Fix §A3 + §A2 (2026-07-14):**
+- §A3 — `bidiPlugin.buildBidiDecorations`: a NEUTRAL (empty/whitespace/syntax-only) line at RTL
+  now ALWAYS gets an explicit `dir="rtl"` (to defeat plaintext's LTR default), even when it
+  matches the base. Non-empty lines keep the differ-from-base optimization (their first-strong
+  char already renders correctly under plaintext).
+- §A2 — `bidiPlugin.update`: a STRUCTURAL change (line count changed, e.g. Enter) rebuilds
+  SYNCHRONOUSLY so the new empty line gets its `dir` in the same frame (no left→right flash).
+  Character typing keeps the 300 ms debounce (Rule 1).

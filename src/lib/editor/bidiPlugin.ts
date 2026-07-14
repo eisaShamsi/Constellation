@@ -105,36 +105,30 @@ function buildBidiDecorations(view: EditorView): DecorationSet {
 
 		for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
 			const line = doc.line(lineNum);
-			let lineDir = detectLineDir(line.text);
+			const detected = detectLineDir(line.text);
+			// A NEUTRAL line has no strong directional character (empty / whitespace / syntax /
+			// numbers only). Its effective direction is its own strong dir, else the nearest
+			// preceding non-empty line, else the editor's base.
+			const isNeutral = detected === null;
+			const lineDir: 'rtl' | 'ltr' = detected ?? prevDir ?? editorDir;
+			if (detected !== null) prevDir = detected;
 
-			// Empty line: inherit direction from nearest preceding non-empty line.
-			// Only inherit RTL — LTR is the default and needs no explicit decoration.
-			if (lineDir === null && prevDir === 'rtl') {
-				lineDir = 'rtl';
-			}
-
-			if (lineDir !== null) {
-				prevDir = lineDir;
-			}
-
-			// Only decorate when the line direction differs from the editor base direction.
-			// This prevents adding dir='ltr' to LTR lines in LTR documents (a no-op that
-			// caused DOM thrashing when editorDir was 'auto' and all lines got decorated).
-			if (lineDir !== null && lineDir !== editorDir) {
+			// PJ-106 §A3 — a NEUTRAL line at RTL needs an EXPLICIT dir attribute to override
+			// `.cm-line { unicode-bidi: plaintext }`, which otherwise resolves an empty line to
+			// LTR (no strong char → the Unicode default), dropping the caret on the LEFT even in
+			// an RTL note (the Boss's Enter-on-RTL bug). A NON-neutral line only needs a dir when
+			// it differs from the base — its own first-strong char already renders it correctly
+			// under plaintext, so stamping the base-matching majority avoids DOM thrash.
+			const needsDir = lineDir !== editorDir || (isNeutral && lineDir === 'rtl');
+			if (needsDir) {
 				const attrs: Record<string, string> = { dir: lineDir };
-				const style: string[] = [
-					`text-align: ${lineDir === 'rtl' ? 'right' : 'left'}`,
-				];
-
+				const style: string[] = [`text-align: ${lineDir === 'rtl' ? 'right' : 'left'}`];
 				const script = detectLineScript(line.text);
-				if (script && scriptFonts[script]) {
-					style.push(`font-family: ${scriptFonts[script]}`);
-				}
-
+				if (script && scriptFonts[script]) style.push(`font-family: ${scriptFonts[script]}`);
 				attrs.style = style.join('; ');
 				builder.add(line.from, line.from, Decoration.line({ attributes: attrs }));
-			} else if (lineDir !== null && lineDir === editorDir) {
-				// Same direction as editor base — only add if there's a font override
+			} else {
+				// Base-matching line — only a font override, if configured.
 				const script = detectLineScript(line.text);
 				if (script && scriptFonts[script]) {
 					builder.add(line.from, line.from, Decoration.line({
@@ -167,8 +161,19 @@ class BidiPluginClass {
 		}
 
 		if (update.docChanged) {
-			// map fast path, then debounced rebuild (no syntaxTree but still O(visible_lines))
+			// map fast path first (keeps existing dir decorations aligned to the new offsets)
 			this.decorations = this.decorations.map(update.changes);
+			// PJ-106 §A2 — a STRUCTURAL change (line inserted/removed, e.g. Enter) rebuilds
+			// SYNCHRONOUSLY, so a brand-new empty line gets its inherited dir='rtl' in the SAME
+			// frame. Otherwise the 300 ms debounce leaves the new line under unicode-bidi:plaintext
+			// (LTR default) and the caret flashes on the wrong side after every Enter. Pressing
+			// Enter is an occasional gesture, not a per-keystroke burst, so a sync O(visible_lines)
+			// rebuild here does not violate Rule 1 (character typing still takes the debounce below).
+			if (update.startState.doc.lines !== update.state.doc.lines) {
+				if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
+				this.decorations = buildBidiDecorations(update.view);
+				return;
+			}
 			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 			const view = update.view;
 			this.rebuildTimer = setTimeout(() => {
