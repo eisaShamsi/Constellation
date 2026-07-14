@@ -8005,8 +8005,12 @@ pub(crate) fn kh_cache_recompute_blocking(app: &tauri::AppHandle, only_if_empty:
         recompute_link_stats_cache(&conn)?;
         Ok(true)
     };
+    let started = std::time::Instant::now();
     match run() {
         Ok(true) => {
+            // SS-Cockpit §0 (A11) — the INV-7 measurement line: recompute duration on the
+            // real Universe, re-checked at §17 after the two new keys land.
+            eprintln!("[kh-cache] recompute completed in {} ms", started.elapsed().as_millis());
             use tauri::Emitter;
             let _ = app.emit("kh-snapshot-ready", serde_json::json!({}));
         }
