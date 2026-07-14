@@ -118,26 +118,6 @@
 		{ id: 'locked', label: $t('cockpit.dialLocked') || 'Pin', icon: 'M4.5 7V5a3.5 3.5 0 117 0v2H12a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1h.5zm2 0h3V5a1.5 1.5 0 10-3 0v2z' },
 	]);
 
-	// The note's facets (the top tabs). The radial link-graph is the default 'Links' view;
-	// the rest are wired in the next increments (contextual — shown per the note's content).
-	let activeTab = $state('links');
-	// Each facet's label is pulled from the app's EXISTING translation for that panel (all 15
-	// languages already have these), so the tab bar localizes with zero new i18n keys and never
-	// disagrees with the panel it opens. `facetLabel` falls back to the English name on a miss.
-	const FACETS = [
-		{ id: 'links', label: 'Links', labelKey: 'settings.sections.links' },
-		{ id: 'properties', label: 'Properties', labelKey: 'settings.panels.panelProperties' },
-		{ id: 'structure', label: 'Structure', labelKey: 'panels.structure' },
-		{ id: 'tags', label: 'Tags', labelKey: 'settings.plugins.tags' },
-		{ id: 'skyview', label: 'Sky View', labelKey: 'settings.plugins.graphView' },
-		{ id: 'tasks', label: 'Tasks', labelKey: 'settings.panels.panelTasks' },
-		{ id: 'health', label: 'Knowledge Health', labelKey: 'ribbon.knowledgeHealth' },
-		{ id: 'provenance', label: 'Provenance', labelKey: 'settings.panels.panelProvenance' },
-		{ id: 'review', label: 'Review Pulse', labelKey: 'panels.review' },
-		{ id: 'sources', label: 'Source Review', labelKey: 'panels.sourceReview' },
-	];
-	const facetLabel = (f: { label: string; labelKey: string }) => { const v = $t(f.labelKey); return v === f.labelKey ? f.label : v; };
-
 	// The lens toggle lives on this page (Boss ruling 2026-07-10). The SS only *requests* the
 	// switch — main owns the settings write and broadcasts it back (Display-not-Domain).
 	let lens = $derived(normalizeGraphStyle($appSettings.noteGraphStyle));
@@ -167,41 +147,31 @@
 				<span class="ck-anchor-idle">{$t('cockpit.idle') || 'open a note in the main window'}</span>
 			{/if}
 		</div>
+		<!-- SS-Cockpit §3 (INV-10) — the lens toggle re-homed to the header chrome:
+		     the facet tab bar it lived on is CUT (9 stub mirror facets, the honest-audit
+		     duplication verdict); the DECISION zone is the lens graph at full glass. -->
+		{#if shown?.path}
+			<div class="ck-lens" role="group" aria-label="note graph lens">
+				{#each NOTE_GRAPH_STYLES.filter((s) => s.built) as s}
+					<button class="ck-lensbtn" class:on={lens === s.id}
+						onclick={() => requestLensChange(s.id)}
+						aria-pressed={lens === s.id}>{lensLabel(s)}</button>
+				{/each}
+			</div>
+		{/if}
 		<span class="ck-ro">{$t('cockpit.readOnly') || 'read-only'}</span>
 	</div>
 
 	{#if shown?.path}
-		<div class="ck-tabs" role="tablist">
-			{#each FACETS as f}
-				<button class="ck-tab" class:on={activeTab === f.id} role="tab" aria-selected={activeTab === f.id}
-					onclick={() => activeTab = f.id}>{facetLabel(f)}</button>
-			{/each}
-			{#if activeTab === 'links'}
-				<div class="ck-lens" role="group" aria-label="note graph lens">
-					{#each NOTE_GRAPH_STYLES.filter((s) => s.built) as s}
-						<button class="ck-lensbtn" class:on={lens === s.id}
-							onclick={() => requestLensChange(s.id)}
-							aria-pressed={lens === s.id}>{lensLabel(s)}</button>
-					{/each}
-				</div>
-			{/if}
-		</div>
 		<div class="ck-facet">
-			{#if activeTab === 'links'}
-				{#if lens === 'butterfly'}
-					<NoteButterflyGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
-				{:else if lens === 'ledger'}
-					<NoteLedgerGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
-				{:else if lens === 'orrery'}
-					<NoteOrreryGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
-				{:else}
-					<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
-				{/if}
+			{#if lens === 'butterfly'}
+				<NoteButterflyGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+			{:else if lens === 'ledger'}
+				<NoteLedgerGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
+			{:else if lens === 'orrery'}
+				<NoteOrreryGraph noteName={shown.name} content={shown.content ?? ''} {review} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 			{:else}
-				<div class="ck-facet-soon">
-					<span class="ck-facet-name">{(() => { const f = FACETS.find((x) => x.id === activeTab); return f ? facetLabel(f) : ''; })()}</span>
-					<span>this facet is wired in the next pass</span>
-				</div>
+				<NoteRadialGraph noteName={shown.name} {backlinks} {outgoing} {resolveTarget} {onNavigate} />
 			{/if}
 		</div>
 	{:else}
@@ -226,20 +196,14 @@
 	.ck-pinbadge { font-size: 11px; color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); border-radius: 5px; padding: 1px 6px; }
 	.ck-ro { font-size: 11px; color: var(--text-faint, #9ca3af); border: 1px solid var(--background-modifier-border, #d4d4d8); border-radius: 5px; padding: 2px 8px; }
 	.ck-dotlib { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
-	.ck-tabs { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; border-bottom: 1px solid var(--background-modifier-border, #d4d4d8); padding-bottom: 6px; margin-bottom: 6px; }
-	.ck-lens { margin-inline-start: auto; display: flex; gap: 2px; padding: 2px; border-radius: 8px;
+	.ck-lens { display: flex; gap: 2px; padding: 2px; border-radius: 8px;
 		background: var(--background-secondary, #f4f4f5); border: 1px solid var(--background-modifier-border, #e2e2e2); }
 	.ck-lensbtn { border: none; background: transparent; padding: 4px 11px; border-radius: 6px; font-size: 12px;
 		color: var(--text-muted, #6b7280); cursor: pointer; white-space: nowrap; }
 	.ck-lensbtn:hover { color: var(--text-normal, #1a1a1a); }
 	.ck-lensbtn.on { background: var(--background-primary, #fff); color: var(--text-normal, #1a1a1a); font-weight: 600;
 		box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-	.ck-tab { border: none; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 12.5px; color: var(--text-muted, #6b7280); cursor: pointer; }
-	.ck-tab:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.04)); }
-	.ck-tab.on { color: var(--interactive-accent, #7c3aed); background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 12%, transparent); font-weight: 500; }
 	.ck-facet { flex: 1; min-height: 0; }
-	.ck-facet-soon { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-faint, #9ca3af); font-size: 13px; }
-	.ck-facet-name { font-size: 15px; font-weight: 500; color: var(--text-muted, #6b7280); }
 	.ck-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-faint, #9ca3af); }
 	.ck-idle p { font-size: 13px; }
 </style>
