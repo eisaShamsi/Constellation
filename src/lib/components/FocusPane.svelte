@@ -7,6 +7,7 @@
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
 	import { detectDir } from '$lib/utils'; // PJ-106 §A1 — deterministic Focus base direction
+	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -192,6 +193,7 @@
 				bidiTheme,
 				/* PJ-106 §A1 — connect per-line direction to the caret/selection MOTION engine. */
 				...(RTL_MOTION_ENABLED ? [EditorView.perLineTextDirection.of(true)] : []),
+				tripleClickTextOnly,
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {

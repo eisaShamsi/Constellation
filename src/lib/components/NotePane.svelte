@@ -29,6 +29,7 @@
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
+	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -459,6 +460,7 @@
 				/* PJ-106 §A1 — tell the CARET/SELECTION engine to read per-line direction
 				   (the bidiPlugin already renders it). Flag-gated (SI4-03: motion only). */
 				rtlMotionCompartment.of(RTL_MOTION_ENABLED ? EditorView.perLineTextDirection.of(true) : []),
+				tripleClickTextOnly, // PJ-106 §B0 — triple-click selects text, not the trailing newline
 				typedLinkModeCompartment.of(EditorView.contentAttributes.of({
 					class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),
 				})),

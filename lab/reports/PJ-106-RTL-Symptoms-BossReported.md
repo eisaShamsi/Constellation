@@ -75,3 +75,21 @@ Design points the Plan (Part B) MUST resolve — flag to the Boss if a decision 
    remain plain, per File-Over-App). Present the options to the Boss with the tradeoffs.
 3. Interaction with Part-A's automatic per-line direction: the hard override takes precedence;
    a paragraph with no override keeps first-strong auto behavior.
+
+## Round 4 — selection-gesture ruling (2026-07-14, sourced)
+
+Boss Stage-1 observation: triple-click selected "the whole line." **Verified (rangeForClick
+type 3, @codemirror/view): triple-click selects the whole DOCUMENT line = the markdown
+paragraph (soft-wrapped) — it only looked like a "line" because that paragraph fit one row.**
+WA#5 research (MacMost, Apple Pages support, Macworld): **triple-click = paragraph is the
+universal standard on BOTH Windows (Word) and macOS (TextEdit/Pages).** No plain-click
+sentence gesture exists on either OS; the ONLY standard sentence gesture is Word's
+modifier+click (Ctrl+click Windows / Cmd+click Mac).
+
+**Ruling for Part B — the selection gestures (no change to what already works):**
+- double-click → word (CM6 default, working)
+- triple-click → paragraph (CM6 default = the whole document line, working; NOT changed)
+- **Ctrl+click → sentence** (NEW — the Word convention; matches the Boss's Windows habit) +
+  a keyboard command "select sentence at caret", both via Intl.Segmenter with Arabic
+  terminators (؟ ۔ ! and NOT ؛ — a semicolon is intra-sentence, per the SI-inspection H4).
+- Boss may re-key the sentence gesture later; Ctrl+click is the default.
