@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "복구된 사본",
+    "saveCopy": "사본 저장",
+    "discard": "버리기…",
+    "confirmDiscard": "정말 버릴까요?",
     "couldNotSave": "{note}을(를) 저장하지 못했습니다 — 편집 내용은 안전하며 다시 시도합니다.",
     "retry": "다시 시도"
   },

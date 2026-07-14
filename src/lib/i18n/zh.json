@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "恢复副本",
+    "saveCopy": "保存副本",
+    "discard": "放弃…",
+    "confirmDiscard": "确定放弃？",
     "couldNotSave": "无法保存 {note} — 您的编辑已安全保留，将重试。",
     "retry": "重试"
   },

@@ -7,13 +7,14 @@ import { tick } from 'svelte';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { normalizePathKey, subscribeSkipInitial } from '$lib/utils';
+import { t } from '$lib/i18n'; // PJ-102c — the localized recovered-copy suffix (leaf module, no cycle)
 import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
 import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reducers
 // MIG-076 §C — single content ownership. noteModel/noteSession use this
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -414,6 +415,80 @@ export async function retrySaveFailure(path: string): Promise<void> {
 			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
 		},
 	}), 'retry_save');
+}
+
+/** PJ-102c — make a recovered copy's FRONTMATTER own its NEW identity (body untouched):
+ *  strip the cid_cn (a copy is a NEW note — the duplicate-cid_cn class; a fresh cid is
+ *  injected by ensure_cid_cn on first open) AND retitle `title:` with the copy suffix —
+ *  the tab label derives from the title, so an unretitled copy is indistinguishable
+ *  from the locked original on the tab bar (the Boss's 2026-07-14 live-test remark). */
+function rebrandCopyFrontmatter(content: string, copySuffix: string): string {
+	const m = content.match(/^(---\r?\n[\s\S]*?\r?\n---)/);
+	if (!m) return content;
+	let fm = m[1].replace(/^cid_cn:[^\n]*\r?\n/m, '');
+	fm = fm.replace(/^title:[ \t]*"?([^"\r\n]*?)"?[ \t]*$/m, (_, title: string) => `title: ${title} (${copySuffix})`);
+	return fm + content.slice(m[1].length);
+}
+
+/**
+ * PJ-102c — "Save a copy": the user's explicit exit when a note's own file stays
+ * unwritable (a persistent lock — sync tool / antivirus / another app). Takes the
+ * CURRENT unsaved content (the open model via the identity-guarded compose; the
+ * write-ahead net when the tab is closed) and writes it VERBATIM (minus the cid_cn —
+ * a copy is a new note) to a collision-safe sibling `<stem> (recovered copy).md`
+ * through the normal gated write, then opens it as a real tab. The locked original
+ * is never touched — its banner entry keeps retrying until the lock clears or the
+ * user discards. Returns the copy's path, or null when there was nothing to copy
+ * or every write attempt failed (the banner stays — never a silent swallow).
+ */
+export async function saveRecoveredCopy(path: string): Promise<string | null> {
+	const tab = get(openTabs).find((t) => t.path === path);
+	let content: string | null = null;
+	if (tab) {
+		const r = composeNoteModel(tab.id, path);
+		if (r.ok) content = r.content;
+	}
+	if (content === null) content = getWriteAhead(path)?.content ?? null;
+	if (content === null) return null;
+	// Localized suffix (the full-localization standing order): filename, title, and tab
+	// all carry the SAME suffix in the user's language.
+	let copySuffix = 'recovered copy';
+	try { const tr = get(t)('saveHealth.copySuffix'); if (tr && tr !== 'saveHealth.copySuffix') copySuffix = tr; } catch { /* fallback stays */ }
+	const copyContent = rebrandCopyFrontmatter(content, copySuffix);
+	const dirPath = path.replace(/[\\/][^\\/]+$/, '');
+	const stem = (path.split(/[\\/]/).pop() ?? 'note').replace(/\.(md|markdown)$/, '');
+	for (let i = 0; i < 20; i++) {
+		const candidate = `${dirPath}/${stem} (${copySuffix}${i === 0 ? '' : ' ' + (i + 1)}).md`;
+		const exists = await invoke<string>('read_note', { filePath: candidate }).then(() => true, () => false);
+		if (exists) continue;
+		try {
+			await writeNote(candidate, copyContent, 'recovered_copy');
+		} catch {
+			return null; // write to the sibling failed too (folder-wide problem) — banner stays, nothing lost
+		}
+		emit('note-created', { path: candidate }).catch(() => {}); // gated creates are watcher-suppressed — announce
+		const lib = get(libraries).find((v) => normPath(path).startsWith(normPath(v.path)));
+		// NEW tab deliberately: a same-slot reuse would flush the outgoing dirty (locked)
+		// original first — which fails and ABORTS the nav. A new tab opens the copy beside
+		// the original with no outgoing flush; the user sees both.
+		await openNoteTab(candidate, lib?.name ?? tab?.libraryName ?? '', tab?.libraryColor ?? '#7c3aed', undefined, true);
+		return candidate;
+	}
+	return null;
+}
+
+/**
+ * PJ-102c — "Discard my changes": the user's explicit decision to drop the unsaved
+ * work and keep what is on disk. The open tab force-reseeds from disk through the
+ * shared reload primitive (model re-seed + {#key} remount + net cleared); a closed
+ * note just drops its net. The saveHealth entry clears — this is the DELIBERATE
+ * counterpart of the silent discard the PJ-102 arc eliminated.
+ */
+export async function discardFailedSave(path: string): Promise<void> {
+	const tab = get(openTabs).find((t) => t.path === path);
+	if (tab) await reloadTabsFromDisk([path]);
+	clearWriteAhead(path); // belt — the reload clears it only on its success path
+	clearSaveFailure(path);
 }
 
 /**
@@ -1882,7 +1957,7 @@ export function clearLinkTraversalBumps() {
 async function resolveNoteContent(
 	filePath: string,
 	opts: { preserveNet?: boolean; requireDisk?: boolean } = {}
-): Promise<{ content: string; cursorPos: number; scrollTop: number } | null> {
+): Promise<{ content: string; cursorPos: number; scrollTop: number; recoveredFromNet?: boolean; diskContent?: string | null } | null> {
 	const wab = getWriteAhead(filePath);
 	if (!wab) {
 		try {
@@ -1937,7 +2012,10 @@ async function resolveNoteContent(
 	// copy survives until a real durable save replaces it (the manual-open
 	// path keeps today's consume semantics — its mounted editor re-stashes).
 	if (!opts.preserveNet) clearWriteAhead(filePath);
-	return { content: wab.content, cursorPos: wab.cursorPos, scrollTop: wab.scrollTop };
+	// PJ-102b — tell the caller this content came from the NET and what disk truly
+	// holds, so the model can be born DIRTY with the real baseline (never "clean" on
+	// content disk never had — the lie behind the recovery-then-clobber arc).
+	return { content: wab.content, cursorPos: wab.cursorPos, scrollTop: wab.scrollTop, recoveredFromNet: true, diskContent };
 }
 
 /**
@@ -2036,7 +2114,18 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
 		try {
 			const updated = await invoke<string>('ensure_cid_cn_cmd', { filePath });
-			if (updated && updated !== content) content = updated;
+			// PJ-102 (APP-KILLER) — adopt the cmd's result ONLY when the content we
+			// already hold LACKS a cid_cn. The cmd reads DISK and, when the cid already
+			// exists, returns the disk content verbatim (canonical.rs) — so an
+			// unconditional adopt silently swapped a net-RECOVERED content (which
+			// resolveNoteContent had already consumed the recovery buffer for) back to
+			// stale disk: the user's last unsaved edits vanished from screen, net, and
+			// disk on the app's own documented recovery route. An identity-proven
+			// recovery ALWAYS carries a cid_cn (that is what identity-proven means), so
+			// this predicate protects exactly the recovery case while leaving the cmd's
+			// two real jobs — inject a missing cid / migrate legacy `cid:` — untouched
+			// (both only ever apply to cid_cn-less content).
+			if (updated && updated !== content && !extractCidCn(content)) content = updated;
 		} catch { /* non-fatal: CID stays absent, note still opens */ }
 	}
 	// For canonical files, extract title from frontmatter; fallback to filename stem
@@ -2131,6 +2220,8 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		// relying on NoteEditor's async ensure $effect closes the window where a
 		// stale teardown save could land between reuse and ensure.
 		openNoteModel(currentTab.id, filePath, content);
+		// PJ-102b — net-recovered content is UNSAVED work: born dirty + true disk baseline.
+		if (resolved.recoveredFromNet) markModelRecoveredFromNet(currentTab.id, resolved.diskContent ?? null);
 		// §A.2 — the {#key} remount (path changed) re-runs NotePane's mount; arm the one-shot line jump.
 		if (targetLine && targetLine > 0) setPendingLineJump(currentTab.id, targetLine);
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
@@ -2149,6 +2240,8 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	};
 	openTabs.update(tabs => [...tabs, tab]);
 	openNoteModel(id, filePath, content); // MIG-076 §C — model born with the tab, synchronously
+	// PJ-102b — net-recovered content is UNSAVED work: born dirty + true disk baseline.
+	if (resolved.recoveredFromNet) markModelRecoveredFromNet(id, resolved.diskContent ?? null);
 	if (targetLine && targetLine > 0) setPendingLineJump(id, targetLine); // §A.2 — arm the one-shot jump for the new tab's mount
 
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
@@ -2338,6 +2431,7 @@ export async function restoreSessionTabs(
 }> {
 	const requested = snap.tabs.length;
 	const built: OpenTab[] = [];
+	const restoredTrueDisk = new Map<string, string>(); // PJ-102b — path → true disk bytes for wab-recovered tabs
 	const seen = new Set<string>();
 	const skipped: SessionRestoreInput['tabs'] = [];
 	for (const saved of snap.tabs) {
@@ -2354,6 +2448,11 @@ export async function restoreSessionTabs(
 			continue;
 		}
 		const { content, cursorPos, scrollTop } = resolved;
+		// PJ-102b (restore half) — remember the TRUE disk bytes for wab-recovered tabs;
+		// applied to the model after the one-commit seed below (clean + true baseline).
+		if (resolved.recoveredFromNet && resolved.diskContent != null) {
+			restoredTrueDisk.set(saved.path, resolved.diskContent);
+		}
 		if ((saved.path.endsWith('.md') || saved.path.endsWith('.markdown')) && !extractCidCn(content)) {
 			pendingCidEnsure.add(saved.path); // deferred — no boot-time write
 		}
@@ -2388,7 +2487,16 @@ export async function restoreSessionTabs(
 		appended = built.filter((b) => !have.has(b.path));
 		return appended.length ? [...ts, ...appended] : ts;
 	});
-	for (const t of appended) openNoteModel(t.id, t.path, t.content);
+	for (const t of appended) {
+		openNoteModel(t.id, t.path, t.content);
+		// PJ-102b (restore half) — a wab-recovered restore tab stays BORN-CLEAN (Gate #8:
+		// a restore performs zero write-class IPCs) but gets the TRUE disk baseline, so a
+		// phantom watcher event (disk === baseline) is REFUSED by adoptDisk instead of
+		// "adopting" stale disk and destroying the preserved net (the Q4 hole: store.ts
+		// clearWriteAhead-on-adopt). A genuinely-changed disk still adopts (clean model).
+		const trueDisk = restoredTrueDisk.get(t.path);
+		if (trueDisk !== undefined) setModelDiskBaseline(t.id, trueDisk);
+	}
 	editingTabIds.update((set) => {
 		const next = new Set(set);
 		for (const t of appended) next.add(t.id);

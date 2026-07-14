@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "wiederhergestellte Kopie",
+    "saveCopy": "Kopie speichern",
+    "discard": "Verwerfen…",
+    "confirmDiscard": "Wirklich verwerfen?",
     "couldNotSave": "{note} konnte nicht gespeichert werden — deine Änderung ist sicher und wird erneut versucht.",
     "retry": "Erneut versuchen"
   },

@@ -10,11 +10,12 @@
 	// outside Constellation while its open model had unsaved edits — the local work is kept
 	// and the incoming disk copy is preserved to a `.conflict` sidecar. Distinct from a
 	// failure: no auto-clear, no retry — "Show copy" reveals the sidecar, "×" dismisses.
-	import { saveHealth, retrySaveFailure, saveConflicts, dismissConflict } from '$lib/libraries/store';
+	import { saveHealth, retrySaveFailure, saveConflicts, dismissConflict, saveRecoveredCopy, discardFailedSave } from '$lib/libraries/store';
 	import { openMergeView } from '$lib/stores/mergeView';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
+	import { onDestroy } from 'svelte';
 
 	const rows = $derived([...$saveHealth.entries()].map(([path, info]) => ({ path, name: info.name })));
 	const conflicts = $derived([...$saveConflicts.entries()].map(([sidecarPath, info]) => ({ sidecarPath, name: info.noteName, notePath: info.notePath })));
@@ -25,6 +26,29 @@
 	function merge(c: { sidecarPath: string; name: string; notePath: string }) {
 		openMergeView({ notePath: c.notePath, sidecarPath: c.sidecarPath, noteName: c.name });
 	}
+
+	// PJ-102c — the locked-file exits. "Save a copy" writes the unsaved content to a
+	// sibling file and opens it (the original keeps retrying). "Discard" is a two-step
+	// inline confirm (click once → the button becomes "Really discard?" for 5 s) — an
+	// EXPLICIT drop of the unsaved work, the deliberate counterpart of the silent
+	// discard the PJ-102 arc eliminated. No native confirm dialogs (MIG-077 ruling).
+	let confirmDiscardPath = $state<string | null>(null);
+	let confirmTimer: ReturnType<typeof setTimeout> | null = null;
+	function askDiscard(path: string) {
+		if (confirmDiscardPath === path) {
+			if (confirmTimer) { clearTimeout(confirmTimer); confirmTimer = null; }
+			confirmDiscardPath = null;
+			void discardFailedSave(path);
+			return;
+		}
+		confirmDiscardPath = path;
+		if (confirmTimer) clearTimeout(confirmTimer);
+		confirmTimer = setTimeout(() => { confirmDiscardPath = null; confirmTimer = null; }, 5000);
+	}
+	function saveCopy(path: string) {
+		void saveRecoveredCopy(path);
+	}
+	onDestroy(() => { if (confirmTimer) clearTimeout(confirmTimer); });
 </script>
 
 {#if rows.length > 0 || conflicts.length > 0}
@@ -35,6 +59,12 @@
 				<span class="shmsg" dir={detectDir(row.name)}>{$t('saveHealth.couldNotSave', { note: row.name })}</span>
 				<button class="shbtn" type="button" onclick={() => retrySaveFailure(row.path)}>
 					{$t('saveHealth.retry')}
+				</button>
+				<button class="shbtn" type="button" onclick={() => saveCopy(row.path)}>
+					{$t('saveHealth.saveCopy')}
+				</button>
+				<button class="shbtn" class:sharm={confirmDiscardPath === row.path} type="button" onclick={() => askDiscard(row.path)}>
+					{confirmDiscardPath === row.path ? $t('saveHealth.confirmDiscard') : $t('saveHealth.discard')}
 				</button>
 			</div>
 		{/each}
@@ -100,6 +130,14 @@
 	.shbtn:hover {
 		background: rgba(255, 255, 255, 0.3);
 	}
+	/* PJ-102c — the armed discard confirm: unmistakably a destructive second step. */
+	.sharm {
+		background: #fff;
+		color: #b3261e;
+		font-weight: 600;
+		border-color: #fff;
+	}
+	.sharm:hover { background: #ffe4e1; }
 	.shdismiss {
 		flex: 0 0 auto;
 		background: transparent;

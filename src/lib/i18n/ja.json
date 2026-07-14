@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "復元コピー",
+    "saveCopy": "コピーを保存",
+    "discard": "破棄…",
+    "confirmDiscard": "本当に破棄しますか？",
     "couldNotSave": "{note} を保存できませんでした — 編集内容は安全に保持され、再試行されます。",
     "retry": "再試行"
   },

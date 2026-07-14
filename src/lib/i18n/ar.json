@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "نسخة مستعادة",
+    "saveCopy": "احفظ نسخة",
+    "discard": "تجاهل…",
+    "confirmDiscard": "تأكيد التجاهل؟",
     "couldNotSave": "تعذّر حفظ {note} — تعديلك محفوظ وستتم إعادة المحاولة.",
     "retry": "إعادة المحاولة"
   },

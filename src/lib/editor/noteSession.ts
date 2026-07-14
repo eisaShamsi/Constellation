@@ -183,6 +183,17 @@ export function repath(id: string, newPath: string): void {
 	M.setPath(id, newPath);
 }
 
+/** PJ-102b — a model seeded from the write-ahead NET is truthfully DIRTY with the
+ *  ACTUAL disk bytes as its baseline (see noteModel.markRecoveredFromNet). */
+export function recoveredFromNet(id: string, trueDiskContent: string | null): void {
+	M.markRecoveredFromNet(id, trueDiskContent);
+}
+
+/** PJ-102b (restore half) — truth-set a clean model's disk baseline (see noteModel). */
+export function setDiskBaseline(id: string, trueDiskContent: string): void {
+	M.setDiskBaseline(id, trueDiskContent);
+}
+
 /** External change (file watcher / second screen) — freshness-gated; returns whether adopted. */
 export function externalChange(id: string, diskContent: string): boolean {
 	return M.adoptDisk(id, diskContent);

@@ -49,3 +49,22 @@
 - **(c) Known-broken (the pivot's cause):** the sweep's 5 pre-existing APP-KILLERs (`lab/reports/SWEEP-REGISTER-2026-07-14-wf_8b0a5104.md`): the 2 NEW = ensure_cid_cn destroys write-ahead recovery on manual reopen (`store.ts:2039`) + dirty background models never flushed at app close (`+layout.svelte:3436`); plus save_pulse non-atomic (=PJ-075), open_existing_universe active_path flip (`universe.rs:1099`), template-insert raw write bypass (`+layout.svelte:4767`).
 - **(d) Pending not started:** Group-1 queue (PJ-098/093/086/099/085+073/074/083/087+075/076/077/094–097/100/101/072/002); the Cockpit Parts B–F; PJ-014 locale backfill; PJ-081 orientation-body refresh.
 - **(e) Doc drift:** SS help + User Manual still describe the pre-cut SS (§16 of the Plan owns the rewrite — deferred with the migration); the sweep register is NOT yet mapped item-by-item into the ledger (the 5 app-killers are; the ~50 others map at the next full reconciliation — noted in v1.28's preamble).
+
+---
+
+## PJ-102 — the manual-reopen recovery APP-KILLER — FIXED (three-part arc) + the banner exits
+
+**Function in hand:** the manual-reopen recovery path (`openNoteTab` × the write-ahead net × `ensure_cid_cn` × the freshness arbiter) + the save-health banner.
+
+### The arc (each part driven by the Boss's live findings on a REAL locked file)
+1. **PJ-102a** — Reproduce-First (Recipe S1 RED→GREEN): `ensure_cid_cn`'s disk-verbatim return no longer overwrites net-recovered content (adopt gated on `!extractCidCn(content)`). Adversarial review: SAFE 5/5.
+2. **Boss live-test round 1: PASS — with two new wounds** (the banner self-healed while the file stayed locked; switching away and back lost the recovered line). Diagnosed off the code + journal: the recovered model was **born clean on content disk never had**.
+3. **PJ-102b** — born-DIRTY + TRUE disk baseline (`markRecoveredFromNet`); `adoptDisk` phantom-event guard; the restore path gets the true baseline (the review's confirmed Q4 hole — a phantom event destroyed the PRESERVED net via clearWriteAhead-on-adopt); the `''`-sentinel Q5 corner fixed (baseline only from real disk bytes). Recipes S4/S5/S6/S7 RED→GREEN.
+4. **PJ-102c (Boss-directed mid-arc)** — the two locked-file EXITS on the banner: **Save a copy** (verbatim sibling; fresh identity — cid stripped + title suffixed after the Boss's twin-tab remark; localized suffix ×15; NEW tab to avoid the failed-outgoing-flush abort) + **Discard…** (two-step inline confirm). Recipes S8/S9.
+5. **Boss live-tests: ALL PASS** (reopen · switch-away/return · honest banner · Save-a-copy · Discard · the tab-label re-check).
+
+**Gates:** Recipe S ×9 · vitest 350 · svelte-check 0 · 2 adversarial reviews (findings fixed in-pass, WA#6). Test artifacts cleaned from `Eisa Test/`; the lock job released.
+**Close (SO#9):** Pending Jobs **v1.29** (PJ-102 done; **PJ-106 Arabic/RTL filed as the Boss-directed ► Next**); Orientation **v3.50**; help save-safety section updated (EN).
+
+### NEXT — PJ-106: the Arabic/RTL typing & navigation overhaul (Boss-directed)
+Boss (2026-07-14): Home/End misbehave; line/paragraph navigation and word/sentence/line/paragraph/page selection broken when typing Arabic; worse in bilingual notes. Editor-core (CM6 bidi) across NotePane+FocusPane → **/migration** with WA#5 prior-art research (CM6 bidi isolates, Obsidian/VS Code RTL). Starts next.

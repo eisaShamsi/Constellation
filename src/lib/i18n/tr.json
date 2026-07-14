@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "kurtarılan kopya",
+    "saveCopy": "Bir kopya kaydet",
+    "discard": "Vazgeç…",
+    "confirmDiscard": "Gerçekten vazgeçilsin mi?",
     "couldNotSave": "{note} kaydedilemedi — düzenlemeniz güvende ve yeniden denenecek.",
     "retry": "Yeniden dene"
   },

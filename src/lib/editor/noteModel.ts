@@ -244,6 +244,42 @@ export function setPath(id: string, path: string): void {
 	if (m) m.path = path;
 }
 
+/**
+ * PJ-102b — mark a model whose content was seeded from the write-ahead NET (a
+ * crash / failed-save recovery) as what it truthfully is: DIRTY (the recovered
+ * delta IS unsaved work — the autosave/retry must persist it, the save-health
+ * banner must stay red until a durable write, a departure must flush it) with
+ * `diskBaseline` set to the ACTUAL on-disk bytes (so the freshness arbiter
+ * sees a phantom event as a phantom and a genuine external edit as a genuine
+ * conflict). Without this the model was born "clean" on content disk never had
+ * — a lie every downstream arbiter then acted on (the Boss-hit clobber).
+ */
+export function markRecoveredFromNet(id: string, trueDiskContent: string | null): void {
+	const m = models.get(id);
+	if (!m) return;
+	// Only adopt a REAL baseline — never fabricate one (a '' sentinel would make the
+	// dirty-branch discriminator see EVERY real disk as a "genuine change" and raise a
+	// spurious .conflict sidecar on the first phantom event after a disk-unreachable
+	// open). With the baseline left at the recovered bytes, the dirty guard alone
+	// still prevents every clobber; a sidecar in that unverifiable corner is honest.
+	if (trueDiskContent !== null) m.diskBaseline = trueDiskContent;
+	m.version++; // dirty: version now exceeds savedVersion
+}
+
+/**
+ * PJ-102b (the restore half) — set the model's diskBaseline to the ACTUAL on-disk
+ * bytes WITHOUT dirtying it. The MIG-100 session restore seeds a wab-recovered tab
+ * born-clean by design (Gate #8: a restore performs zero write-class IPCs) — but
+ * seeding it with baseline = the recovered bytes was a lie the phantom-guard can't
+ * see through: a phantom watcher event then "adopted" stale disk and clearWriteAhead
+ * DESTROYED the preserved net. With the TRUE baseline, a phantom event (disk ===
+ * baseline) is refused and the net survives; only a genuinely-changed disk adopts.
+ */
+export function setDiskBaseline(id: string, trueDiskContent: string): void {
+	const m = models.get(id);
+	if (m) m.diskBaseline = trueDiskContent;
+}
+
 export type ComposeResult =
 	| { ok: true; content: string; path: string; cid: string | null; version: number }
 	| { ok: false; reason: 'no_model' | 'path_mismatch'; modelPath?: string };
@@ -307,6 +343,14 @@ export function adoptDisk(id: string, diskContent: string): boolean {
 	if (!m) return false;
 	if (isDirty(id)) return false;
 	if (composeModel(m) === diskContent) return false; // our own echo
+	// PJ-102b — the PHANTOM-EVENT guard: a clean model whose baseline already equals
+	// the incoming disk means NOTHING actually changed on disk — the watcher event is
+	// a phantom (AV/indexer touch, a suppressed-echo leak). Without this, a model
+	// seeded from RECOVERED content (net-restore: content ≠ disk by design, baseline
+	// = the true stale disk) would "adopt" that stale disk on the first phantom event
+	// — silently reverting the recovery. A genuine external edit still adopts (its
+	// disk differs from the baseline).
+	if (diskContent === m.diskBaseline) return false;
 	const { properties, body } = parseFrontmatter(diskContent);
 	m.props = cloneProps(properties);
 	m.cid = cidOf(m.props);

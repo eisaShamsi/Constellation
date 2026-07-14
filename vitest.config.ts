@@ -57,6 +57,9 @@ export default defineConfig({
 			// PJ-089 (2026-07-13) — Recipe Q: the Index-panel preview two-writable-model
 			// clobber reproduction (two ids on one path → last-writer-wins, no reconcile).
 			'tests/mig-076/indexPreviewClobber.test.ts',
+			// PJ-102 (2026-07-14) — Recipe S: the manual-reopen recovery clobber
+			// (ensure_cid_cn must never swap recovered content for stale disk).
+			'tests/mig-076/reopenRecoveryClobber.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

@@ -1,5 +1,9 @@
 {
   "saveHealth": {
+    "copySuffix": "recovered copy",
+    "saveCopy": "Save a copy",
+    "discard": "Discard…",
+    "confirmDiscard": "Really discard?",
     "couldNotSave": "Couldn’t save {note} — your edit is safe and will retry.",
     "retry": "Retry now"
   },
