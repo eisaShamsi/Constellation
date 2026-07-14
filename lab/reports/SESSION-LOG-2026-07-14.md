@@ -37,3 +37,15 @@
 - **Stage 1 (the clean cockpit / follow+Pin / no-lag / instant workspace save / dashboard-click-to-main): ALL PASS.**
 - **Boss remark:** closing ALL main-window tabs left the SS frozen on the last note. **Diagnosed off the code** (the focus-sender $effect at `+layout.svelte:562` only fired when a note was active — the SS was never told the desk emptied; pre-existing since the Cockpit shipped). **Fixed:** the effect now emits `editorPanels {active:false}` on a genuinely-empty tab set → the SS drops to its designed empty state. Boss re-check on the running binary (11:24): **PASS.** Commit `<this>`.
 - Stage-0 discipline note: the first fix build FAILED silently useful — `os error 5` (the running app locked the exe); the freshness check caught the stale 10:52 binary before any test instruction went out; rebuilt clean after the Boss closed the app.
+
+---
+
+## STATE-OF-STANDING (SO#5 — before the pivot to the APP-KILLERs)
+
+**Boss ruling:** fix the 2 new APP-KILLERs first; the SS-Cockpit migration PAUSES at the Part-A checkpoint.
+
+- **(a) Verified-shipped + protected:** SS-Cockpit §0–§3 + the empty-desk follow-up (`45d20b88`→`9535072f`), ALL Boss-validated on the running binary (Stage 1 + re-check). The SS is the clean read-only cockpit: lenses at full glass + Pin/Follow + header lens toggle + honest empty state; ~930 lines of duplication/dead code gone. Earlier this arc: PJ-089 (`2f43fc97`), PJ-090-by-cut (`4196a9d2`) — both Boss-validated.
+- **(b) In-flight / paused:** the SS-Cockpit migration — Parts B–F NOT started (next step would be the A2 pre-B hardening commit + the two cache keys). Plan + amendments in `docs/SS-Cockpit-Migration-PLAN.md` (approved as amended); resume point = §6 (pre-B hardening first). The repointed `COCKPIT_ENABLED` flag has zero consumers by design until §10. Working tree clean.
+- **(c) Known-broken (the pivot's cause):** the sweep's 5 pre-existing APP-KILLERs (`lab/reports/SWEEP-REGISTER-2026-07-14-wf_8b0a5104.md`): the 2 NEW = ensure_cid_cn destroys write-ahead recovery on manual reopen (`store.ts:2039`) + dirty background models never flushed at app close (`+layout.svelte:3436`); plus save_pulse non-atomic (=PJ-075), open_existing_universe active_path flip (`universe.rs:1099`), template-insert raw write bypass (`+layout.svelte:4767`).
+- **(d) Pending not started:** Group-1 queue (PJ-098/093/086/099/085+073/074/083/087+075/076/077/094–097/100/101/072/002); the Cockpit Parts B–F; PJ-014 locale backfill; PJ-081 orientation-body refresh.
+- **(e) Doc drift:** SS help + User Manual still describe the pre-cut SS (§16 of the Plan owns the rewrite — deferred with the migration); the sweep register is NOT yet mapped item-by-item into the ledger (the 5 app-killers are; the ~50 others map at the next full reconciliation — noted in v1.28's preamble).
