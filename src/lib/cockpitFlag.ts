@@ -1,10 +1,12 @@
 /**
- * PJ-068 v2 — Knowledge Cockpit rollout flag.
+ * SS-Cockpit migration §1 (2026-07-14) — REPOINTED: the three-zone rollback toggle.
  *
- * When true, the second screen renders the three-zone cockpit (Estimation Map /
- * Control Dashboard / Operation Map) for a focused note instead of the legacy
- * tabbed editor-panels companion. The old path stays in code behind `!COCKPIT_ENABLED`
- * for one-line rollback until the migration closes (P5). Frontend-only, no schema.
+ * The legacy `!COCKPIT_ENABLED` editor-panels companion was DELETED in §1 (the
+ * cockpit now mounts unconditionally for a focused note — amendment A1), so this
+ * flag gates ONLY the NEW zone mounts inside the cockpit (the HealthBoard §10 and
+ * WhereStrip §14). Flag off → the §3 lenses-only cockpit (the Boss-validated
+ * PART-A shape) — never a blank SS. Retired at §19 (migration close).
+ * Zero consumers between §1 and §10 by design. Frontend-only, no schema.
  */
 export const COCKPIT_ENABLED = true;
 

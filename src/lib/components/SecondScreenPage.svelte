@@ -10,12 +10,10 @@
 		loadLibraryAppearance,
 		openNoteTab, openTabs, activeTabId, activeTab,
 		switchTab, closeTab,
-		parseFrontmatter, buildFullContent,
-		writeNote, markRecentWrite, wasRecentlyWritten, setWriteAhead, clearWriteAhead,
-		renameItem,
-		scanLibraryLinks, scanLibraryTags,
+		parseFrontmatter, wasRecentlyWritten,
+		scanLibraryLinks,
 		buildSkyData,
-		libraryStats, loadAllStats,
+		libraryStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
@@ -33,11 +31,9 @@
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	// PJ-068 v2 — the read-only three-zone Knowledge Cockpit (the note-focus complement).
 	import SecondScreenCockpit from '$lib/components/SecondScreenCockpit.svelte';
-	import { COCKPIT_ENABLED, type DialMode } from '$lib/cockpitFlag';
+	import { type DialMode } from '$lib/cockpitFlag';
 	import SaveHealthBanner from '$lib/components/SaveHealthBanner.svelte';
-	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
-	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import { buildContextMenu, type ContextTarget, type ContextActions } from '$lib/components/contextMenuBuilder';
@@ -50,18 +46,15 @@
 		onSidebarModeChanged, onSplitModeChanged,
 		onDashboardOpenNote, onDashboardTagSelected,
 		onIndexTermSelected, onIndexCompare,
-		onMapCompanion, onEditorPanels,
+		onEditorPanels,
 		listMonitors,
 		sendNoteToMain, requestNoteActionOnMain, notifyScreenClosed, sendScreenState, emitScreenReady,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
 		type IndexTermData, type IndexCompareData,
-		type MapCompanionData, type EditorPanelsData, type MonitorInfo
+		type EditorPanelsData, type MonitorInfo
 	} from '$lib/secondScreen';
-	import {
-		listUniverses, getChildUniverses,
-		type ChildUniverseInfo
-	} from '$lib/universe/store';
+	import { listUniverses } from '$lib/universe/store';
 	function renderMarkdownPreview(raw: string): string {
 		// MIG-071 audit HIGH (XSS) — render through the DOMPurify-sanitized renderMarkdown. Was raw
 		// marked.parse(), which let a note body's <img onerror=…>/<script> execute on the 2nd screen.
@@ -96,23 +89,11 @@
 	let indexActiveCompareIdx = $state(0); // which term column is active in compare mode
 
 	// Map companion mode
-	let mapCompanionActive = $state(false);
-	let mapCompanionData = $state<MapCompanionData | null>(null);
-	let mapCompanionNoteTab = $state<any>(null); // for note click
-	let mapCompanionColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 
 
 	// Editor panels companion mode (migrated right sidebar)
 	let editorPanelsActive = $state(false);
 	let editorPanelsData = $state<EditorPanelsData | null>(null);
-	let editorPanelsTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks'>('properties');
-	let epBacklinks = $state<{ name: string; path: string; context: string; libraryName: string }[]>([]);
-	let epForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
-	let epTags = $state<string[]>([]);
-	let epProperties = $state<{ key: string; value: any }[]>([]);
-	let epLocalSkyNodes = $state<SkyNode[]>([]);
-	let epLocalSkyLinks = $state<SkyLink[]>([]);
-	let epTasks = $state<TaskItem[]>([]);
 
 	// ─── MIG-096 §2 — the second screen's note right-click menu ───
 	// Display-not-Domain: the menu is SHOWN here, but every mutating action is
@@ -152,7 +133,6 @@
 	onNoteMutation({
 		onAnyChange: () => {
 			if (splitCompanionData) loadSplitCompanionPanelData(splitCompanionData);
-			if (editorPanelsData) loadEditorPanelsData(editorPanelsData);
 		},
 	}).then(u => { if (ssMutationsDestroyed) u(); else unlistenSSMutations = u; }).catch(() => {});
 	onDestroy(() => { ssMutationsDestroyed = true; unlistenSSMutations?.(); });
@@ -199,98 +179,6 @@
 	// is read-only. Kept as a named constant so the 7 mounts read one source of truth.
 	const ssReadOnly = true;
 	let universeName = $state('');
-
-	// ─── Dashboard state ───
-	let childUniverses = $state<ChildUniverseInfo[]>([]);
-	let childUniverseLibs = $state<Record<string, { name: string; path: string }[]>>({});
-	let dashboardTags = $state<{ tag: string; count: number }[]>([]);
-	let selectedTag = $state<string | null>(null);
-	let selectedTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
-	let loadingTagNotes = $state(false);
-
-	// Batch-W — same stale-result shape as DashboardView.selectTag (notes_by_tag
-	// is `(async)`; success AND failure of a stale call must not write).
-	let tagLoadSeq = 0;
-
-	async function selectTag(tag: string) {
-		const seq = ++tagLoadSeq;
-		if (selectedTag === tag) {
-			selectedTag = null;
-			selectedTagNotes = [];
-			return;
-		}
-		selectedTag = tag;
-		loadingTagNotes = true;
-		const notes: { name: string; path: string; libraryName: string }[] = [];
-		try {
-			for (const lib of get(libraries)) {
-				const results = await invoke<any[]>('notes_by_tag', { libraryPath: lib.path, tag });
-				notes.push(...results.map((n: any) => ({ name: n.name, path: n.path, libraryName: n.library_name || lib.name })));
-			}
-			if (seq !== tagLoadSeq) return; // a newer selection owns the write
-			selectedTagNotes = notes.sort((a, b) => a.name.localeCompare(b.name));
-		} catch {
-			if (seq !== tagLoadSeq) return; // a newer selection owns the write
-			selectedTagNotes = [];
-		}
-		loadingTagNotes = false;
-	}
-
-	let totalNotes = $derived($libraryStats.reduce((sum: number, s: any) => sum + s.star_count, 0));
-	let totalFolders = $derived($libraryStats.reduce((sum: number, s: any) => sum + s.folder_count, 0));
-	let cuLibNames = $derived.by(() => {
-		const names = new Set<string>();
-		for (const libs of Object.values(childUniverseLibs)) {
-			for (const lib of libs) names.add(lib.name);
-		}
-		return names;
-	});
-	let topLevelStats = $derived($libraryStats.filter((s: any) => !cuLibNames.has(s.name) && !s.is_universe_notes));
-	let universeNotesStats = $derived($libraryStats.find((s: any) => s.is_universe_notes) ?? null);
-
-	// ─── Recently opened/edited (read from localStorage, shared with main window) ───
-	let recentOpenedRaw = $state<{ name: string; path: string; libraryName: string; openedAt: number }[]>([]);
-	let recentEditedRaw = $state<{ name: string; path: string; libraryName: string; editedAt: number }[]>([]);
-
-	function refreshRecentLists() {
-		try { recentOpenedRaw = JSON.parse(localStorage.getItem('constellation-recent-opened') || '[]'); } catch { recentOpenedRaw = []; }
-		try { recentEditedRaw = JSON.parse(localStorage.getItem('constellation-recent-edited') || '[]'); } catch { recentEditedRaw = []; }
-	}
-
-	// Opened = in opened list but NOT in edited list
-	let editedPathSet = $derived(new Set(recentEditedRaw.map(n => n.path)));
-	let recentlyOpened = $derived(recentOpenedRaw.filter(n => !editedPathSet.has(n.path)).slice(0, 10));
-	let recentlyEdited = $derived(recentEditedRaw.slice(0, 10));
-
-	async function loadDashboardData() {
-		try {
-			await loadAllStats();
-			try {
-				childUniverses = await getChildUniverses();
-				const libMap: Record<string, { name: string; path: string }[]> = {};
-				for (const cu of childUniverses) {
-					try {
-						const libs = await invoke<{ name: string; path: string }[]>('read_child_universe_libraries', { childPath: cu.path });
-						libMap[cu.path] = libs.map(l => ({ name: l.name, path: l.path }));
-					} catch { libMap[cu.path] = []; }
-				}
-				childUniverseLibs = libMap;
-			} catch { childUniverses = []; childUniverseLibs = {}; }
-			// Collect tags from all libraries
-			try {
-				const merged: Record<string, number> = {};
-				for (const lib of get(libraries)) {
-					const tags = await scanLibraryTags(lib.path);
-					for (const [tag, count] of Object.entries(tags)) {
-						merged[tag] = (merged[tag] || 0) + count;
-					}
-				}
-				dashboardTags = Object.entries(merged)
-					.map(([tag, count]) => ({ tag, count }))
-					.sort((a, b) => b.count - a.count);
-			} catch { dashboardTags = []; }
-		} catch {}
-	}
 
 	// ─── Sky View Companion state ───
 	let contextMode = $state<ContextMode>('editor');
@@ -464,83 +352,6 @@
 			document.body.classList.add(`theme-${resolved}`);
 		}
 	});
-
-	// ─── Load editor panels data for a note ───
-	// Batch-W — scan_library_links is `(async)`: rapid main-window tab
-	// switches can leave an older note's slow scan resolving after a newer
-	// note's fast one; only the newest load may write the panels.
-	let epGeneration = 0;
-	/** Check if any descendant of a node is in the search match set. */
-	async function loadEditorPanelsData(data: EditorPanelsData) {
-		const gen = ++epGeneration;
-		if (!data.notePath || !data.libraryPath) {
-			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
-			epLocalSkyNodes = []; epLocalSkyLinks = [];
-			return;
-		}
-		try {
-			// Parse frontmatter for properties and tags
-			const fm = parseFrontmatter(data.content || '');
-			epProperties = fm.properties;
-			const tagProp = fm.properties.find(p => p.key === 'tags');
-			epTags = Array.isArray(tagProp?.value) ? tagProp.value : [];
-
-			// Scan links
-			const links = await scanLibraryLinks(data.libraryPath, data.libraryName || '').catch(() => []);
-			if (gen !== epGeneration) return; // a newer note owns the panels
-			const noteName = data.noteName?.replace(/\.md$/, '').toLowerCase() || '';
-
-			// Backlinks
-			epBacklinks = links
-				.filter(l => l.target.toLowerCase() === noteName)
-				.map(l => {
-					const match = allNotes.find(n => n.path === l.source_path);
-					return {
-						name: match?.name || l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') || '',
-						path: l.source_path,
-						context: '',
-						libraryName: data.libraryName || '',
-					};
-				})
-				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
-
-			// Forward links
-			epForwardLinks = links
-				.filter(l => l.source_path === data.notePath)
-				.map(l => {
-					const match = allNotes.find(n => n.name.toLowerCase() === l.target.toLowerCase());
-					return match || { name: l.target, path: '', libraryName: data.libraryName || '' };
-				})
-				.filter(l => l.path)
-				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
-
-			// Local star
-			const { nodes, links: skyLinks } = buildSkyData(links, allNotes);
-			const connectedIds = new Set<string>([noteName]);
-			for (const link of skyLinks) {
-				if (link.source === noteName || link.target === noteName) {
-					connectedIds.add(link.source);
-					connectedIds.add(link.target);
-				}
-			}
-			epLocalSkyNodes = nodes.filter(n => connectedIds.has(n.id));
-			epLocalSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
-		// Tasks
-			if (data.notePath && data.libraryPath) {
-				const taskResult = await scanNoteTasks(data.notePath, data.libraryName || '', data.libraryPath).catch(() => null);
-				if (gen !== epGeneration) return; // a newer note owns the panels
-				epTasks = taskResult?.tasks ?? [];
-			} else {
-				epTasks = [];
-			}
-		} catch (e) {
-			if (gen !== epGeneration) return; // a stale failure must not blank a newer note's panels
-			console.error('[SS] loadEditorPanelsData failed:', e);
-			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
-			epLocalSkyNodes = []; epLocalSkyLinks = []; epTasks = [];
-		}
-	}
-
 	// Batch-W — same stale-result shape as epGeneration, for the split view.
 	let scGeneration = 0;
 	/** Load panel data for all split notes in parallel. */
@@ -737,7 +548,7 @@
 		// rewrite dozens of backlinks (§3 loops over all of them), but the SS shows at most 7
 		// distinct notes — reading every rewritten path would be mostly wasted IPC (Rule 3).
 		const shownHere = get(openTabs).some((t) => t.path === path)
-			|| [dashboardNoteTab, dashboardSelectedNote, indexSelectedNote, mapCompanionNoteTab, peekTab].some((c) => c?.path === path);
+			|| [dashboardNoteTab, dashboardSelectedNote, indexSelectedNote, peekTab].some((c) => c?.path === path);
 		if (!shownHere) return;
 		let content: string;
 		try {
@@ -760,7 +571,6 @@
 		dashboardNoteTab = adoptCompanionTab(dashboardNoteTab, path, content);
 		dashboardSelectedNote = adoptCompanionTab(dashboardSelectedNote, path, content);
 		indexSelectedNote = adoptCompanionTab(indexSelectedNote, path, content);
-		mapCompanionNoteTab = adoptCompanionTab(mapCompanionNoteTab, path, content);
 		peekTab = adoptCompanionTab(peekTab, path, content);
 	}
 
@@ -788,20 +598,6 @@
 		});
 		unlisteners.push(unlistenHidden);
 
-		// Load recent lists from localStorage and listen for changes
-		refreshRecentLists();
-		const handleStorage = (e: StorageEvent) => {
-			if (e.key === 'constellation-recent-opened' || e.key === 'constellation-recent-edited') {
-				refreshRecentLists();
-			}
-		};
-		window.addEventListener('storage', handleStorage);
-		unlisteners.push(() => window.removeEventListener('storage', handleStorage));
-
-		// Also poll periodically since storage events don't fire for same-origin same-window writes
-		const recentPollTimer = setInterval(refreshRecentLists, 2000);
-		unlisteners.push(() => clearInterval(recentPollTimer));
-
 		// Listen for notes sent from main window
 		const u1 = await onNoteToScreen(async (note) => {
 			// No-op for tracking (localStorage handles it), but keep listener for other modes
@@ -810,16 +606,12 @@
 
 		// Listen for note saves
 		const u2 = await onNoteSaved(async (path) => {
-			refreshRecentLists();
 			if (wasRecentlyWritten(path)) return; // we saved it ourselves — skip reload
-			// Reload editor panels if the saved note is the one we're displaying
+			// Re-read the focused note's content so the cockpit's lenses stay current (INV-2/INV-6)
 			if (editorPanelsActive && editorPanelsData?.notePath === path) {
-				// Re-read content and reload panels
 				try {
 					const content = await invoke<string>('read_note', { filePath: path });
-					const updated = { ...editorPanelsData, content };
-					editorPanelsData = updated;
-					await loadEditorPanelsData(updated);
+					editorPanelsData = { ...editorPanelsData, content };
 				} catch {}
 			}
 			if (splitCompanionActive && splitCompanionData?.notes?.some(n => n.notePath === path)) {
@@ -867,7 +659,6 @@
 			allNotes = []; // Clear stale notes before rebuild
 			await loadLinkTypes().catch(() => {});   // the new Universe has its own link-type vocabulary
 			await loadAllData();
-			await loadDashboardData();
 		});
 		unlisteners.push(u3);
 
@@ -892,7 +683,7 @@
 		// Listen for library file changes
 		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async () => {
 			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
-			libraryChangeTimer = setTimeout(async () => { await loadAllData(); await loadDashboardData(); }, 3000);
+			libraryChangeTimer = setTimeout(async () => { await loadAllData(); }, 3000);
 		});
 		unlisteners.push(u5);
 
@@ -902,7 +693,7 @@
 		// and dashboard in step. Same debounced reload as u5.
 		const u5b = await listen<{ path: string }>('note-created', async () => {
 			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
-			libraryChangeTimer = setTimeout(async () => { await loadAllData(); await loadDashboardData(); }, 3000);
+			libraryChangeTimer = setTimeout(async () => { await loadAllData(); }, 3000);
 		});
 		unlisteners.push(u5b);
 
@@ -979,7 +770,6 @@
 		// Listen for sidebar mode changes from main window
 		const u11 = await onSidebarModeChanged((mode) => {
 			mainSidebarMode = mode;
-			if (mode === 'tree') loadDashboardData();
 		});
 		unlisteners.push(u11);
 
@@ -1033,39 +823,6 @@
 		});
 		unlisteners.push(u16);
 
-		const u17 = await onMapCompanion(async (data) => {
-			if (!data.active) {
-				mapCompanionActive = false;
-				mapCompanionData = null;
-				mapCompanionNoteTab = null;
-				return;
-			}
-			mapCompanionActive = true;
-			mapCompanionData = data;
-			if (data.colorMode) mapCompanionColorMode = data.colorMode as any;
-			// Reset other modes
-			dashboardMode = 'none';
-			indexMode = 'none';
-
-			// If a note was clicked, load it for editing
-			if (data.clickedNote) {
-				try {
-					const content = await invoke<string>('read_note', { filePath: data.clickedNote.path });
-					mapCompanionNoteTab = {
-						id: `map-note-${Date.now()}`,
-						path: data.clickedNote.path,
-						content,
-						name: data.clickedNote.name.endsWith('.md') ? data.clickedNote.name : data.clickedNote.name + '.md',
-						libraryName: data.clickedNote.libraryName,
-						libraryPath: data.clickedNote.libraryPath,
-					};
-				} catch { mapCompanionNoteTab = null; }
-			} else {
-				mapCompanionNoteTab = null;
-			}
-		});
-		unlisteners.push(u17);
-
 		const u12 = await onSplitModeChanged(async (data) => {
 			if (data.active) {
 				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
@@ -1092,11 +849,6 @@
 			// Reset other companion modes
 			dashboardMode = 'none';
 			indexMode = 'none';
-			mapCompanionActive = false;
-			mapCompanionData = null;
-			mapCompanionNoteTab = null;
-			// Load panel data
-			await loadEditorPanelsData(data);
 		});
 		unlisteners.push(u18);
 
@@ -1120,7 +872,6 @@
 		} catch {}
 
 		await loadAllData();
-		await loadDashboardData();
 	});
 
 	onDestroy(() => {
@@ -1336,94 +1087,6 @@
 				</div>
 			</div>
 
-		{:else if mapCompanionActive && mapCompanionData}
-			<!-- Constellation Map companion -->
-			<div class="map-companion" dir={detectDir(mapCompanionData?.focusNode?.name || '')}>
-				{#if mapCompanionData.clickedNote && mapCompanionNoteTab}
-					<!-- Note view: editor + context mini-map -->
-					<div class="map-companion-note">
-						<div class="map-companion-editor">
-							<NoteEditor tab={mapCompanionNoteTab} noteNames={allNotes} readOnly={ssReadOnly} />
-						</div>
-						{#if mapCompanionData.focusNode}
-							<div class="map-companion-context">
-								<ConstellationMap
-									initialData={mapCompanionData.focusNode}
-									{libraryColorMap}
-									compact={true}
-									initialColorMode={mapCompanionColorMode}
-									onNoteClick={(path, name) => {
-										const n = allNotes.find(x => x.path === path);
-										const lb = n ? $libraries.find(l => l.name === n.libraryName) : null;
-										sendNoteToMain({ path, name, libraryName: n?.libraryName ?? '', libraryPath: lb?.path ?? '', libraryColor: libraryColorMap[n?.libraryName ?? ''] || '#7c3aed' });
-									}}
-								/>
-							</div>
-						{/if}
-					</div>
-				{:else if mapCompanionData.focusNode?.children}
-					<!-- Drill-down view: grid of child mini-maps -->
-					{@const focusNode = mapCompanionData.focusNode}
-					{@const children = focusNode.children || []}
-					{@const dirChildren = children.filter((c: any) => c.is_dir)}
-					<div class="map-companion-grid-header">
-						<span class="map-companion-title" dir="auto">{focusNode.name}</span>
-						<span class="map-companion-stats">{focusNode.note_count} notes · {focusNode.word_count?.toLocaleString()} words</span>
-						<select class="map-companion-color-select" bind:value={mapCompanionColorMode}>
-							<option value="maturity">{$t('constellationMap.colorByMaturity') || 'Color by Maturity'}</option>
-							<option value="stratum">{$t('constellationMap.colorByStratum') || 'Color by Stratum'}</option>
-							<option value="library">{$t('constellationMap.colorByLibrary') || 'Color by Library'}</option>
-						</select>
-					</div>
-					<div class="map-companion-legend">
-						{#if mapCompanionColorMode === 'maturity'}
-							{#each [['seed','#d1d5db'],['sapling','#86efac'],['evergreen','#16a34a'],['canonical','#f59e0b'],['wilting','#a3e635']] as [label, color]}
-								<span class="map-legend-item"><span class="map-legend-dot" style="background:{color}"></span>{label}</span>
-							{/each}
-						{:else if mapCompanionColorMode === 'stratum'}
-							{#each ['#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e','#ef4444'] as color, i}
-								<span class="map-legend-item"><span class="map-legend-dot" style="background:{color}"></span>L{i + 1}</span>
-							{/each}
-						{:else if mapCompanionColorMode === 'library'}
-							{#each Object.entries(libraryColorMap) as [name, color]}
-								<span class="map-legend-item"><span class="map-legend-dot" style="background:{color}"></span>{name}</span>
-							{/each}
-						{/if}
-					</div>
-					{#if dirChildren.length > 0}
-						<div class="map-companion-grid">
-							{#each dirChildren as child (child.path || child.name)}
-								<div class="map-companion-card">
-									<div class="map-companion-card-label" dir="auto">{child.name}</div>
-									<div class="map-companion-card-chart">
-										<ConstellationMap
-											initialData={child}
-											{libraryColorMap}
-											compact={true}
-											initialColorMode={mapCompanionColorMode}
-										/>
-									</div>
-									<div class="map-companion-card-stats">{child.note_count} notes</div>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<div class="map-companion-full">
-							<ConstellationMap
-								initialData={focusNode}
-								{libraryColorMap}
-								compact={true}
-								initialColorMode={mapCompanionColorMode}
-							/>
-						</div>
-					{/if}
-				{:else}
-					<div class="dash-tag-empty">
-						<p>Map companion</p>
-					</div>
-				{/if}
-			</div>
-
 		{:else if splitCompanionActive && splitCompanionData}
 			<!-- Split View — Comparison Panels (all notes side by side) -->
 			<div class="split-companion">
@@ -1550,144 +1213,15 @@
 			</div>
 
 		{:else if editorPanelsActive && editorPanelsData}
-			{#if COCKPIT_ENABLED}
-				<SecondScreenCockpit
-					focus={{ path: editorPanelsData.notePath ?? '', name: editorPanelsData.noteName ?? '', libraryName: editorPanelsData.libraryName ?? '', libraryPath: editorPanelsData.libraryPath ?? '', content: editorPanelsData.content }}
-					dialMode={cockpitDial}
-					onDialChange={(m) => cockpitDial = m}
-					onNavigate={cockpitNavigate}
-					{libraryColorMap}
-					{allNotes}
-					reloadNonce={cockpitReload}
-				/>
-			{:else}
-			<!-- Editor Panels Companion (migrated right sidebar) -->
-			<div class="split-companion" dir={detectDir(editorPanelsData.noteName || editorPanelsData.content || '')}>
-				<div class="split-companion-header">
-					<span class="split-companion-label">{$t('secondScreen.editorPanels') || 'Panels'}</span>
-					{#if editorPanelsData.noteName}
-						<span class="split-companion-note">{editorPanelsData.noteName.replace(/\.md$/, '')}</span>
-					{/if}
-					{#if monitorCount > 1}
-						<span class="monitor-badge">2nd Display</span>
-					{/if}
-				</div>
-				<div class="split-companion-tabs">
-					{#each [
-						{ id: 'properties', icon: '⚙', label: $t('panels.properties') || 'Properties' },
-						{ id: 'backlinks', icon: '🔗', label: $t('panels.backlinks') || 'Backlinks' },
-						{ id: 'tags', icon: '🏷', label: $t('panels.tags') || 'Tags' },
-						{ id: 'star', icon: '', label: $t('panels.skyView') || 'Sky View' },
-						{ id: 'tasks', icon: '☑', label: $t('panels.tasks') || 'Tasks' },
-					] as tab}
-						<button class="sc-tab" class:active={editorPanelsTab === tab.id}
-							onclick={() => editorPanelsTab = tab.id as any}>
-							{#if tab.id === 'star'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>{:else}{tab.icon}{/if} {tab.label}
-						</button>
-					{/each}
-				</div>
-				<div class="split-companion-body">
-					{#if editorPanelsData.notePath}
-						{#if editorPanelsTab === 'properties'}
-							<div class="sc-panel">
-								<div class="sc-props-list">
-									{#each epProperties as prop}
-										<div class="sc-prop">
-											<span class="sc-prop-key">{prop.key}</span>
-											<span class="sc-prop-val">
-												{#if Array.isArray(prop.value)}
-													{prop.value.join(', ')}
-												{:else}
-													{prop.value}
-												{/if}
-											</span>
-										</div>
-									{/each}
-									{#if epProperties.length === 0}
-										<p class="sc-empty">{$t('secondScreen.noProperties') || 'No properties'}</p>
-									{/if}
-								</div>
-							</div>
-						{:else if editorPanelsTab === 'backlinks'}
-							<div class="sc-panel">
-								{#if epBacklinks.length > 0}
-									<ul class="sc-link-list">
-										{#each epBacklinks as bl}
-											<li>
-												<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(bl.path, bl.name, e)} onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
-													<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
-													{bl.name}
-												</button>
-											</li>
-										{/each}
-									</ul>
-								{:else}
-									<p class="sc-empty">{$t('backlinksPanel.noBacklinks') || 'No backlinks'}</p>
-								{/if}
-								{#if epForwardLinks.length > 0}
-									<h4 class="sc-section-title">{$t('secondScreen.forwardLinks') || 'Forward Links'} <span class="sc-count">{epForwardLinks.length}</span></h4>
-									<ul class="sc-link-list">
-										{#each epForwardLinks as fl}
-											<li>
-												<button class="sc-link-item" oncontextmenu={(e) => showSSNoteMenu(fl.path, fl.name, e)} onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
-													<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
-													{fl.name}
-												</button>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{:else if editorPanelsTab === 'tags'}
-							<div class="sc-panel">
-								{#if epTags.length > 0}
-									<div class="sc-tags">
-										{#each epTags as tag}
-											<span class="sc-tag">#{tag}</span>
-										{/each}
-									</div>
-								{:else}
-									<p class="sc-empty">{$t('panels.noTags') || 'No tags'}</p>
-								{/if}
-							</div>
-						{:else if editorPanelsTab === 'star'}
-							<div class="sc-panel sc-star-panel">
-								{#if epLocalSkyNodes.length > 0}
-									<LocalSkyView
-										nodes={epLocalSkyNodes}
-										links={epLocalSkyLinks}
-										libraryColorMap={libraryColorMap}
-										activeNodeId={editorPanelsData.noteName?.replace(/\.md$/, '').toLowerCase() || ''}
-										onNodeClick={(id) => {
-											const note = allNotes.find(n => n.name.toLowerCase() === id);
-											if (note) sendNoteToMain({ path: note.path, name: note.name, libraryName: note.libraryName, libraryPath: '', libraryColor: libraryColorMap[note.libraryName] || '#7c3aed' });
-										}}
-									/>
-								{:else}
-									<p class="sc-empty">{$t('panels.noConnections') || 'No connections'}</p>
-								{/if}
-							</div>
-						{:else if editorPanelsTab === 'tasks'}
-							<div class="sc-panel">
-								{#if epTasks.length > 0}
-									<!-- PJ-090 — READ-ONLY (Display-not-Domain); see the split-companion note above.
-									     (This editor-panels companion is itself legacy behind !COCKPIT_ENABLED.) -->
-									<TasksPanel
-										tasks={epTasks}
-										{libraryColorMap}
-										readOnly={ssReadOnly}
-									/>
-								{:else}
-									<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
-								{/if}
-							</div>
-						{/if}
-					{:else}
-						<p class="sc-empty">{$t('panels.noNoteSelected') || 'No note selected'}</p>
-					{/if}
-				</div>
-			</div>
-			{/if}
+			<SecondScreenCockpit
+				focus={{ path: editorPanelsData.notePath ?? '', name: editorPanelsData.noteName ?? '', libraryName: editorPanelsData.libraryName ?? '', libraryPath: editorPanelsData.libraryPath ?? '', content: editorPanelsData.content }}
+				dialMode={cockpitDial}
+				onDialChange={(m) => cockpitDial = m}
+				onNavigate={cockpitNavigate}
+				{libraryColorMap}
+				{allNotes}
+				reloadNonce={cockpitReload}
+			/>
 
 		{:else if contextMode === 'skyview'}
 			<!-- Sky View Companion — kept as-is -->
@@ -1837,23 +1371,6 @@
 				{/if}
 			</div>
 
-		{:else if mainSidebarMode === 'skyview'}
-			<!-- OrgChart companion -->
-			<div class="navigator-fullscreen">
-				<OrgChart
-					{libraryColorMap}
-					universeName={universeName}
-					embedded={true}
-					onNoteClick={(path, name) => {
-						const note = allNotes.find(n => n.path === path);
-						const lib = note ? $libraries.find(v => v.name === note.libraryName) : null;
-						const color = note ? libraryColorMap[note.libraryName] || '#7c3aed' : '#7c3aed';
-						openNoteTab(path, note?.libraryName ?? '', color);
-					}}
-					onNoteContext={(path, name, e) => showSSNoteMenu(path, name, e)}
-				/>
-			</div>
-
 		{:else if mainSidebarMode === 'tree' && $activeTab}
 			<!-- File Explorer companion — Universe Dashboard (only when main window has a note open) -->
 			<DashboardView
@@ -1920,141 +1437,7 @@
 <style>
 	/* ─── Dashboard ─── */
 	.dashboard-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-	.dashboard-scroll { flex: 1; overflow-y: auto; padding: 24px 28px; }
-
-	.dashboard-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-	.dashboard-header h2 { font-size: 20px; font-weight: 700; color: var(--text-normal); margin: 0; }
-
-	.dashboard-stats {
-		display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-		gap: 12px; margin-bottom: 28px;
-	}
-	.stat-card {
-		display: flex; flex-direction: column; align-items: center; gap: 4px;
-		padding: 16px 12px; border-radius: 10px;
-		background: var(--background-secondary);
-		border: 1px solid var(--background-modifier-border);
-	}
-	.stat-value { font-size: 28px; font-weight: 700; color: var(--interactive-accent); line-height: 1; }
-	.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
-
-	.dashboard-section { margin-bottom: 24px; }
-	.dashboard-section-title {
-		font-size: 12px; font-weight: 600; color: var(--text-muted);
-		text-transform: uppercase; letter-spacing: 0.5px;
-		margin: 0 0 12px 0; padding-bottom: 8px;
-		border-bottom: 1px solid var(--background-modifier-border);
-	}
-
-	.library-list { display: flex; flex-direction: column; gap: 10px; }
-	.library-card {
-		background: var(--background-secondary);
-		border-radius: 10px; padding: 10px 14px;
-		border: 1px solid var(--background-modifier-border);
-	}
-	.library-card-header {
-		display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-	}
 	.lib-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-	.lib-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.library-card-stats { display: flex; gap: 8px; }
-	.lib-stat-box {
-		flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-		padding: 8px 6px; border-radius: 8px;
-		background: color-mix(in srgb, var(--lib-color) 8%, var(--background-primary));
-		border: 1px solid color-mix(in srgb, var(--lib-color) 18%, transparent);
-	}
-	.lib-stat-value { font-size: 18px; font-weight: 700; color: var(--lib-color); line-height: 1; }
-	.lib-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-
-	.recent-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-	.recent-column { min-width: 0; }
-	.recent-empty { color: var(--text-faint); font-size: 13px; padding: 8px 12px; margin: 0; }
-	.recent-list { display: flex; flex-direction: column; gap: 2px; }
-	.recent-note {
-		display: flex; align-items: center; gap: 10px;
-		padding: 8px 12px; border-radius: 8px; border: none; width: 100%;
-		background: transparent; color: var(--text-normal); cursor: pointer;
-		text-align: start; font-family: inherit; transition: background 0.15s;
-	}
-	.recent-note:hover { background: var(--background-modifier-hover); }
-	.recent-name { flex: 1; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-	.recent-time { font-size: 11px; color: var(--text-faint); white-space: nowrap; margin-inline-start: auto; }
-
-	.cu-list { display: flex; flex-direction: column; gap: 8px; }
-	.cu-group {
-		background: var(--background-secondary);
-		border-radius: 10px; overflow: hidden;
-		border: 1px solid var(--background-modifier-border);
-	}
-	.cu-header {
-		display: flex; align-items: center; gap: 10px;
-		padding: 10px 14px 0;
-	}
-	.cu-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.cu-stat-boxes { display: flex; gap: 8px; padding: 10px 14px; }
-	.cu-stat-box {
-		flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-		padding: 8px 6px; border-radius: 8px;
-		background: color-mix(in srgb, #6366f1 8%, var(--background-primary));
-		border: 1px solid color-mix(in srgb, #6366f1 18%, transparent);
-	}
-	.cu-stat-value { font-size: 18px; font-weight: 700; color: #6366f1; line-height: 1; }
-	.cu-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-	.cu-libs {
-		padding: 0 14px 10px; margin-top: 0;
-		display: flex; flex-direction: column; gap: 8px;
-	}
-
-	.tags-layout { display: block; }
-	.tags-layout.tags-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-	.tags-list-col { min-width: 0; }
-	.tags-notes-col {
-		min-width: 0; border-inline-start: 1px solid var(--background-modifier-border);
-		padding-inline-start: 20px; font-family: var(--font-interface-theme);
-	}
-	.tags-notes-title {
-		display: flex; align-items: center; gap: 8px;
-		margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: var(--text-normal);
-	}
-	.tags-notes-close {
-		margin-inline-start: auto; background: none; border: none; cursor: pointer;
-		color: var(--text-muted); padding: 2px; border-radius: 4px;
-		display: flex; align-items: center;
-	}
-	.tags-notes-close:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-	.tag-badge {
-		padding: 2px 10px; border-radius: 12px;
-		background: var(--interactive-accent); color: white; font-size: 12px;
-	}
-	.tags-notes-count {
-		font-size: 11px; color: var(--text-faint);
-		background: var(--background-modifier-border);
-		padding: 1px 6px; border-radius: 8px;
-	}
-
-	.dashboard-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-	.dashboard-tag {
-		display: inline-flex; align-items: center; gap: 4px;
-		padding: 4px 10px; border-radius: 12px;
-		background: var(--background-secondary);
-		border: 1px solid var(--background-modifier-border);
-		font-family: var(--font-interface-theme);
-		font-size: 12px; color: var(--text-muted);
-		cursor: pointer; transition: all 0.15s;
-	}
-	.dashboard-tag:hover { border-color: var(--interactive-accent); }
-	.dashboard-tag.tag-selected {
-		background: var(--interactive-accent); border-color: var(--interactive-accent);
-	}
-	.dashboard-tag.tag-selected .tag-name { color: white; }
-	.dashboard-tag.tag-selected .tag-count { background: rgba(255,255,255,0.25); color: white; }
-	.tag-name { color: var(--text-normal); }
-	.tag-count {
-		font-size: 10px; color: var(--text-faint);
-		background: var(--background-modifier-border);
-		padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
-	}
 
 	.second-screen {
 		display: flex;
@@ -2105,10 +1488,6 @@
 
 	/* ─── Content ─── */
 	.screen-content { flex: 1; overflow: hidden; position: relative; }
-
-	.navigator-fullscreen {
-		position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;
-	}
 
 	.screen-loading {
 		display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2282,10 +1661,6 @@
 		cursor: pointer; display: flex; align-items: center; justify-content: center;
 	}
 	.dash-back-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-	.dash-note-name {
-		font-size: 15px; font-weight: 600; color: var(--text-normal);
-		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-	}
 	.dash-note-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
 	/* Dashboard Companion — tag split view */
@@ -2326,55 +1701,6 @@
 
 	/* Map Companion */
 	.map-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-	.map-companion-note { display: flex; flex: 1; overflow: hidden; }
-	.map-companion-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-	.map-companion-context { width: 300px; min-width: 250px; border-left: 1px solid var(--background-modifier-border); overflow: hidden; }
-	.map-companion-grid-header {
-		padding: 12px 16px; flex-shrink: 0;
-		border-bottom: 1px solid var(--background-modifier-border);
-		display: flex; align-items: center; gap: 10px;
-	}
-	.map-companion-title { font-size: 16px; font-weight: 700; color: var(--text-normal); }
-	.map-companion-stats { font-size: 12px; color: var(--text-muted); flex: 1; }
-	.map-companion-color-select {
-		font-size: 12px; padding: 3px 8px; border-radius: 6px;
-		border: 1px solid var(--background-modifier-border);
-		background: var(--background-primary); color: var(--text-normal);
-		cursor: pointer;
-	}
-	.map-companion-legend {
-		display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px;
-		border-bottom: 1px solid var(--background-modifier-border);
-	}
-	.map-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
-	.map-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-	.map-companion-grid {
-		flex: 1; overflow-y: auto; padding: 12px;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-		grid-auto-rows: 1fr;
-		gap: 12px; align-content: stretch;
-	}
-	.map-companion-card {
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 10px; overflow: hidden;
-		background: var(--background-secondary);
-		display: flex; flex-direction: column;
-		min-height: 300px;
-	}
-	.map-companion-card-label {
-		padding: 8px 14px; font-size: 14px; font-weight: 700;
-		color: var(--text-normal);
-		border-bottom: 1px solid var(--background-modifier-border);
-		flex-shrink: 0;
-	}
-	.map-companion-card-chart { flex: 1; min-height: 0; }
-	.map-companion-card-stats {
-		padding: 6px 14px; font-size: 12px; color: var(--text-muted);
-		border-top: 1px solid var(--background-modifier-border);
-		flex-shrink: 0;
-	}
-	.map-companion-full { flex: 1; overflow: hidden; }
 
 	/* Index Compare */
 	.index-compare { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
@@ -2407,10 +1733,6 @@
 		font-size: 11px; font-weight: 700; color: var(--interactive-accent);
 		text-transform: uppercase; letter-spacing: 1px;
 	}
-	.split-companion-note {
-		font-size: 14px; font-weight: 600; color: var(--text-normal);
-		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-	}
 	.split-companion-tabs {
 		display: flex; gap: 2px; padding: 6px 12px;
 		border-bottom: 1px solid var(--background-modifier-border);
@@ -2423,7 +1745,6 @@
 	}
 	.sc-tab:hover { background: var(--background-modifier-hover); }
 	.sc-tab.active { background: var(--interactive-accent); color: white; }
-	.split-companion-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
 	.split-companion-count { font-size: 12px; color: var(--text-muted); margin-inline-start: auto; }
 	.split-compare-columns {
 		display: flex; flex: 1; overflow-x: auto; overflow-y: hidden;
@@ -2443,14 +1764,12 @@
 	}
 	.split-compare-col-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.split-compare-col-body { flex: 1; overflow-y: auto; padding: 10px 12px; }
-	.sc-panel { min-height: 100px; }
 	/* MIG-072 §5 — the 2nd-screen Sky View companion fills the whole panel body (was a fixed
 	   300px cap that left most of the centre zone empty). Parents are definite-height flex items
 	   (.split-compare-col-body / .split-companion-body), so height:100% resolves; the min-height
 	   floor keeps the graph usable if the window is very short. */
 	.sc-star-panel { height: 100%; min-height: 240px; }
 	.sc-empty { color: var(--text-faint); font-size: 13px; padding: 16px 0; text-align: center; }
-	.sc-info { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
 	.sc-props-list { display: flex; flex-direction: column; gap: 6px; }
 	.sc-prop {
 		display: flex; gap: 10px; padding: 6px 10px; border-radius: 6px;
@@ -2480,10 +1799,4 @@
 		display: flex; align-items: center; gap: 4px;
 	}
 	.sc-count { font-weight: 400; opacity: 0.6; font-size: 10px; }
-
-	.monitor-badge {
-		font-size: 12px; color: var(--text-muted); margin-inline-start: auto;
-		background: var(--background-modifier-border); border-radius: 10px; padding: 3px 10px;
-		font-weight: 500;
-	}
 </style>
