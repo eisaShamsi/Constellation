@@ -577,6 +577,14 @@
 				libraryPath: $activeTab.libraryPath ?? '',
 				content: $activeTab.content,
 			});
+		} else if (secondScreenOpen && !showSkyView && !$activeTab?.path) {
+			// SS-Cockpit §3 follow-up (Boss Stage-1 remark) — closing the LAST tab left the
+			// cockpit frozen on the last note: this effect only ever fired when a note was
+			// active, so the SS was never told the desk emptied. Contextual law: no focus in
+			// the main window → the SS drops to its empty state. ($activeTab is derived
+			// atomically from activeTabId + openTabs, so a mid-switch null transient can't
+			// fire this — only a genuinely empty tab set does.)
+			emitEditorPanels({ active: false });
 		}
 	});
 	// Track recently opened notes in localStorage (shared utility)
