@@ -147,7 +147,7 @@
 	} from '$lib/universe/store';
 	import { restoreSessionThenTrack, stopSessionTracking, persistSessionNow } from '$lib/libraries/session';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitEditorPanels, onLensChangeRequest, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitEditorPanels, onLensChangeRequest, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { normalizeGraphStyle } from '$lib/cockpitFlag';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
@@ -8295,11 +8295,9 @@
 									{libraryColorMap}
 									onNoteClick={(path, name, libraryName) => openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed')}
 									onNoteToScreen={(note) => {
-										if (secondScreenOpen) {
-											emitDashboardOpenNote(note);
-										} else {
-											openNoteTab(note.path, note.libraryName, note.libraryColor);
-										}
+										// SS-Cockpit §2 — the SS dashboard-note RO copy is cut: a home-dashboard
+										// note click always opens in MAIN (the single-owner path).
+										openNoteTab(note.path, note.libraryName, note.libraryColor);
 									}}
 									onTagSelect={secondScreenOpen ? (tag, notes) => {
 										emitDashboardTagSelected({ tag, notes });

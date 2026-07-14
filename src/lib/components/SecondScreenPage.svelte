@@ -44,7 +44,7 @@
 		onStateRequest, onWorkspaceRestore,
 		onContextChanged, onSkyViewHover, onSkyViewClick,
 		onSidebarModeChanged, onSplitModeChanged,
-		onDashboardOpenNote, onDashboardTagSelected,
+		onDashboardTagSelected,
 		onIndexTermSelected, onIndexCompare,
 		onEditorPanels,
 		listMonitors,
@@ -75,17 +75,14 @@
 	let preSplitSidebarMode = $state<SidebarMode>('tree');
 
 	// Dashboard companion mode
-	let dashboardMode = $state<'none' | 'note' | 'tag'>('none');
-	let dashboardNoteTab = $state<any>(null); // OpenTab-like object for note editor
+	let dashboardMode = $state<'none' | 'tag'>('none');
 	let dashboardTagName = $state('');
 	let dashboardTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
-	let dashboardSelectedNote = $state<any>(null); // OpenTab-like for selected tag note
 
 	// Index companion mode
 	let indexMode = $state<'none' | 'term' | 'compare'>('none');
 	let indexTermData = $state<IndexTermData | null>(null);
 	let indexCompareData = $state<IndexCompareData | null>(null);
-	let indexSelectedNote = $state<any>(null); // OpenTab-like for selected note
 	let indexActiveCompareIdx = $state(0); // which term column is active in compare mode
 
 	// Map companion mode
@@ -548,7 +545,7 @@
 		// rewrite dozens of backlinks (§3 loops over all of them), but the SS shows at most 7
 		// distinct notes — reading every rewritten path would be mostly wasted IPC (Rule 3).
 		const shownHere = get(openTabs).some((t) => t.path === path)
-			|| [dashboardNoteTab, dashboardSelectedNote, indexSelectedNote, peekTab].some((c) => c?.path === path);
+			|| [peekTab].some((c) => c?.path === path);
 		if (!shownHere) return;
 		let content: string;
 		try {
@@ -568,9 +565,6 @@
 			));
 		}
 		// Companion $state tabs — each adopts independently (freshness-gated).
-		dashboardNoteTab = adoptCompanionTab(dashboardNoteTab, path, content);
-		dashboardSelectedNote = adoptCompanionTab(dashboardSelectedNote, path, content);
-		indexSelectedNote = adoptCompanionTab(indexSelectedNote, path, content);
 		peekTab = adoptCompanionTab(peekTab, path, content);
 	}
 
@@ -773,32 +767,8 @@
 		});
 		unlisteners.push(u11);
 
-		const u13 = await onDashboardOpenNote(async (note) => {
-			dashboardMode = 'note';
-			dashboardTagName = '';
-			dashboardTagNotes = [];
-			dashboardSelectedNote = null;
-			try {
-				const content = await invoke<string>('read_note', { filePath: note.path });
-				dashboardNoteTab = {
-					id: `dash-note-${Date.now()}`,
-					path: note.path,
-					content,
-					name: note.name.endsWith('.md') ? note.name : note.name + '.md',
-					libraryName: note.libraryName,
-					libraryPath: note.libraryPath,
-					libraryColor: note.libraryColor,
-					history: [note.path],
-					historyIndex: 0,
-				};
-			} catch { dashboardNoteTab = null; }
-		});
-		unlisteners.push(u13);
-
 		const u14 = await onDashboardTagSelected(async (data) => {
 			dashboardMode = 'tag';
-			dashboardNoteTab = null;
-			dashboardSelectedNote = null;
 			dashboardTagName = data.tag;
 			dashboardTagNotes = data.notes;
 		});
@@ -808,7 +778,6 @@
 			indexMode = 'term';
 			indexTermData = data;
 			indexCompareData = null;
-			indexSelectedNote = null;
 			dashboardMode = 'none';
 		});
 		unlisteners.push(u15);
@@ -817,7 +786,6 @@
 			indexMode = 'compare';
 			indexCompareData = data;
 			indexTermData = null;
-			indexSelectedNote = null;
 			indexActiveCompareIdx = 0;
 			dashboardMode = 'none';
 		});
@@ -925,62 +893,25 @@
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
 			</div>
-		{:else if dashboardMode === 'note' && dashboardNoteTab}
-			<!-- Dashboard: single note editor -->
-			<div class="dash-note-companion" dir={detectDir(dashboardNoteTab?.name || '')}>
-				<div class="dash-note-header">
-					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }} title={$t('notePane.back') || 'Back to Dashboard'}>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-					</button>
-				</div>
-				<div class="dash-note-editor">
-					<NoteEditor tab={dashboardNoteTab} noteNames={allNotes} readOnly={ssReadOnly} />
-				</div>
-			</div>
-
 		{:else if dashboardMode === 'tag' && dashboardTagNotes.length > 0}
 			<!-- Dashboard: tag notes split view -->
 			<div class="dash-tag-companion" dir={detectDir(dashboardTagName)}>
 				<div class="dash-tag-header">
-					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardTagName = ''; dashboardTagNotes = []; dashboardSelectedNote = null; }}>
+					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardTagName = ''; dashboardTagNotes = []; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
 					<span class="dash-tag-badge">#{dashboardTagName}</span>
 					<span class="dash-tag-count">{$tn('plurals.notes', dashboardTagNotes.length)}</span>
 				</div>
-				<div class="dash-tag-split">
-					<div class="dash-tag-list">
-						{#each dashboardTagNotes as note}
-							<button class="dash-tag-note" class:active={dashboardSelectedNote?.path === note.path}
-								onclick={async () => {
-									try {
-										const content = await invoke('read_note', { filePath: note.path });
-										const lib = $libraries.find(l => l.name === note.libraryName);
-										dashboardSelectedNote = {
-											id: `dash-tag-${Date.now()}`,
-											path: note.path,
-											content,
-											name: note.name.endsWith('.md') ? note.name : note.name + '.md',
-											libraryName: note.libraryName,
-											libraryPath: lib?.path ?? '',
-											libraryColor: libraryColorMap[note.libraryName] || '#7c3aed',
-										};
-									} catch { dashboardSelectedNote = null; }
-								}}>
-								<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
-								<span class="dash-tag-note-name" dir="auto">{note.name.replace(/\.md$/, '')}</span>
-							</button>
-						{/each}
-					</div>
-					<div class="dash-tag-editor">
-						{#if dashboardSelectedNote}
-							<NoteEditor tab={dashboardSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
-						{:else}
-							<div class="dash-tag-empty">
-								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
-							</div>
-						{/if}
-					</div>
+				<!-- SS-Cockpit §2 (A9 keep-lists-browsable) — a display list, not a second desk:
+				     the RO editor half is cut; open a note from the MAIN window as usual. -->
+				<div class="dash-tag-list dash-tag-list-full">
+					{#each dashboardTagNotes as note}
+						<div class="dash-tag-note">
+							<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
+							<span class="dash-tag-note-name" dir="auto">{note.name.replace(/\.md$/, '')}</span>
+						</div>
+					{/each}
 				</div>
 			</div>
 
@@ -988,46 +919,21 @@
 			<!-- Index: single term → note list + editor -->
 			<div class="dash-tag-companion" dir={detectDir(indexTermData.term)}>
 				<div class="dash-tag-header">
-					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexTermData = null; indexSelectedNote = null; }}>
+					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexTermData = null; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
 					<span class="dash-tag-badge">{indexTermData.term}</span>
 					<span class="dash-tag-count">{$tn('plurals.notes', indexTermData.notes.length)}</span>
 				</div>
-				<div class="dash-tag-split">
-					<div class="dash-tag-list">
-						{#each indexTermData.notes as note}
-							{@const matched = allNotes.find(n => n.path === note.note_path)}
-							{@const lib = matched ? $libraries.find(l => l.name === matched.libraryName) : null}
-							<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
-								onclick={async () => {
-									try {
-										const content = await invoke('read_note', { filePath: note.note_path });
-										indexSelectedNote = {
-											id: `idx-term-${Date.now()}`,
-											path: note.note_path,
-											content,
-											name: note.note_name.endsWith('.md') ? note.note_name : note.note_name + '.md',
-											libraryName: lib?.name ?? '',
-											libraryPath: lib?.path ?? '',
-											highlightTerm: indexTermData?.term ?? '',
-										};
-									} catch { indexSelectedNote = null; }
-								}}>
-								<span class="lib-dot" style="background:{libraryColorMap[matched?.libraryName ?? ''] || '#7c3aed'}"></span>
-								<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
-							</button>
-						{/each}
-					</div>
-					<div class="dash-tag-editor">
-						{#if indexSelectedNote}
-							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
-						{:else}
-							<div class="dash-tag-empty">
-								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
-							</div>
-						{/if}
-					</div>
+				<!-- SS-Cockpit §2 (A9) — display list; the RO editor half is cut. -->
+				<div class="dash-tag-list dash-tag-list-full">
+					{#each indexTermData.notes as note}
+						{@const matched = allNotes.find(n => n.path === note.note_path)}
+						<div class="dash-tag-note">
+							<span class="lib-dot" style="background:{libraryColorMap[matched?.libraryName ?? ''] || '#7c3aed'}"></span>
+							<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
+						</div>
+					{/each}
 				</div>
 			</div>
 
@@ -1035,7 +941,7 @@
 			<!-- Index: multi-term compare -->
 			<div class="index-compare">
 				<div class="dash-tag-header">
-					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexCompareData = null; indexSelectedNote = null; }}>
+					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexCompareData = null; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
 					<span class="index-compare-label">{$t('secondScreen.comparingTerms') || 'Comparing'} {$tn('plurals.terms', indexCompareData.terms.length)}</span>
@@ -1050,39 +956,14 @@
 								</div>
 								<div class="index-compare-col-list">
 									{#each termData.notes as note}
-										{@const matched = allNotes.find(n => n.path === note.note_path)}
-										{@const lib = matched ? $libraries.find(l => l.name === matched.libraryName) : null}
-										<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
-											onclick={async () => {
-												indexActiveCompareIdx = idx;
-												try {
-													const content = await invoke('read_note', { filePath: note.note_path });
-													indexSelectedNote = {
-														id: `idx-cmp-${Date.now()}`,
-														path: note.note_path,
-														content,
-														name: note.note_name.endsWith('.md') ? note.note_name : note.note_name + '.md',
-														libraryName: lib?.name ?? '',
-														libraryPath: lib?.path ?? '',
-														highlightTerm: termData.term,
-													};
-												} catch { indexSelectedNote = null; }
-											}}>
+										<!-- SS-Cockpit §2 (A9) — display row; the RO editor half is cut. -->
+										<div class="dash-tag-note">
 											<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
-										</button>
+										</div>
 									{/each}
 								</div>
 							</div>
 						{/each}
-					</div>
-					<div class="index-compare-editor">
-						{#if indexSelectedNote}
-							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} readOnly={ssReadOnly} />
-						{:else}
-							<div class="dash-tag-empty">
-								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
-							</div>
-						{/if}
 					</div>
 				</div>
 			</div>
@@ -1436,7 +1317,6 @@
 
 <style>
 	/* ─── Dashboard ─── */
-	.dashboard-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 	.lib-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
 	.second-screen {
@@ -1645,11 +1525,11 @@
 		content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 	}
 
-	/* Dashboard Companion — note editor mode */
-	.dash-note-companion, .dash-tag-companion {
+	/* Dashboard/Index list companions (§2 — display lists) */
+	.dash-tag-companion {
 		display: flex; flex-direction: column; height: 100%; overflow: hidden;
 	}
-	.dash-note-header, .dash-tag-header {
+	.dash-tag-header {
 		display: flex; align-items: center; gap: 10px;
 		padding: 6px 16px; flex-shrink: 0;
 		background: #e8e8ec;
@@ -1661,7 +1541,6 @@
 		cursor: pointer; display: flex; align-items: center; justify-content: center;
 	}
 	.dash-back-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-	.dash-note-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
 	/* Dashboard Companion — tag split view */
 	.dash-tag-badge {
@@ -1669,9 +1548,6 @@
 		background: var(--interactive-accent); color: white; font-size: 13px; font-weight: 600;
 	}
 	.dash-tag-count { font-size: 12px; color: var(--text-faint); }
-	.dash-tag-split {
-		flex: 1; display: flex; overflow: hidden;
-	}
 	.dash-tag-list {
 		width: 280px; min-width: 220px; max-width: 360px;
 		border-right: 1px solid var(--background-modifier-border);
@@ -1685,22 +1561,12 @@
 		transition: background 0.12s;
 	}
 	.dash-tag-note:hover { background: var(--background-modifier-hover); }
-	.dash-tag-note.active { background: var(--interactive-accent); color: white; }
-	.dash-tag-note.active .lib-dot { box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
 	.dash-tag-note-name {
 		flex: 1; font-size: 13px; overflow: hidden;
 		text-overflow: ellipsis; white-space: nowrap;
 	}
-	.dash-tag-editor {
-		flex: 1; overflow: hidden; display: flex; flex-direction: column;
-	}
-	.dash-tag-empty {
-		flex: 1; display: flex; align-items: center; justify-content: center;
-		color: var(--text-faint); font-size: 14px;
-	}
 
 	/* Map Companion */
-	.map-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
 	/* Index Compare */
 	.index-compare { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
@@ -1720,7 +1586,6 @@
 	}
 	.index-compare-col-header:hover { background: var(--background-modifier-hover); }
 	.index-compare-col-list { max-height: 200px; overflow-y: auto; }
-	.index-compare-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
 	/* Split Companion */
 	.split-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
@@ -1799,4 +1664,7 @@
 		display: flex; align-items: center; gap: 4px;
 	}
 	.sc-count { font-weight: 400; opacity: 0.6; font-size: 10px; }
+
+	/* SS-Cockpit §2 — the A9 display list fills the pane (no editor half). */
+	.dash-tag-list-full { flex: 1; width: 100%; overflow-y: auto; }
 </style>

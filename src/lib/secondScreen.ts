@@ -305,18 +305,9 @@ export interface DashboardTagData {
 	notes: { name: string; path: string; libraryName: string }[];
 }
 
-/** Main → Second Screen: open a note from dashboard (recently edited/opened) */
-export async function emitDashboardOpenNote(note: ScreenNote): Promise<void> {
-	await emit('screen:dashboard-open-note', note);
-}
-
 /** Main → Second Screen: tag clicked on dashboard — show tag notes list */
 export async function emitDashboardTagSelected(data: DashboardTagData): Promise<void> {
 	await emit('screen:dashboard-tag-selected', data);
-}
-
-export function onDashboardOpenNote(callback: (note: ScreenNote) => void): Promise<UnlistenFn> {
-	return listen<ScreenNote>('screen:dashboard-open-note', (event) => callback(event.payload));
 }
 
 export function onDashboardTagSelected(callback: (data: DashboardTagData) => void): Promise<UnlistenFn> {
