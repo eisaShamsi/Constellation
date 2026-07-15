@@ -64,6 +64,9 @@ export default defineConfig({
 			// (deterministic base; the visual defects are the Boss's live staged tests).
 			'tests/pj-106/rtlDirection.test.ts',
 			'tests/pj-106/rtlMotion.test.ts',
+			// PJ-106 §B1 (2026-07-15) — paragraph navigation (Ctrl+↑/↓), offset-pure
+			// and direction-blind: Arabic/bilingual assert the SAME offsets as Latin.
+			'tests/pj-106/paragraphNav.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

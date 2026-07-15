@@ -31,6 +31,7 @@
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
+	import { paragraphNavKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -471,6 +472,7 @@
 						? [
 								EditorView.perLineTextDirection.of(true),
 								logicalArrowKeymap((s) => s.field(baseLensField, false) ?? null),
+								paragraphNavKeymap(), // PJ-106 §B1 — Ctrl+↑/↓ paragraph navigation
 							]
 						: [],
 				),

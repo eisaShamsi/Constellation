@@ -9,6 +9,7 @@
 	import { detectDir } from '$lib/utils'; // PJ-106 §A1 — deterministic Focus base direction
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
+	import { paragraphNavKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -198,6 +199,8 @@
 				/* PJ-106 §A5 — Word-style LOGICAL arrows. No skip source: Focus is parser-free and
 				   has no collapsed widgets (Rule 6 — this must not pull livePreview into Focus). */
 				...(RTL_MOTION_ENABLED ? [logicalArrowKeymap()] : []),
+				/* PJ-106 §B1 — Ctrl+↑/↓ paragraph navigation (direction-blind, parser-free). */
+				...(RTL_MOTION_ENABLED ? [paragraphNavKeymap()] : []),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
