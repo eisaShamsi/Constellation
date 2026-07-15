@@ -9,7 +9,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import { EditorState } from '@codemirror/state';
-import { paragraphForwardPos, paragraphBackwardPos } from '$lib/editor/paragraphNav';
+import {
+	paragraphForwardPos,
+	paragraphBackwardPos,
+	lineTextRange,
+	paragraphBlockRange,
+} from '$lib/editor/paragraphNav';
 
 const st = (doc: string) => EditorState.create({ doc });
 
@@ -95,5 +100,57 @@ describe('PJ-106 §B1 — paragraphBackwardPos (Ctrl+↑ → current, else previ
 		const p2start = s.doc.line(4).from;
 		expect(paragraphBackwardPos(s, p2start + 4)).toBe(p2start); // current
 		expect(paragraphBackwardPos(s, p2start)).toBe(p1start); // already-at-start → previous
+	});
+});
+
+describe('PJ-106 §B2 — lineTextRange (Ctrl+L → current line, text only)', () => {
+	it('selects the line text WITHOUT the trailing newline (the §B0 rule)', () => {
+		const s = st('first line\nsecond line');
+		const l1 = s.doc.line(1);
+		const r = lineTextRange(s, 3, 3); // caret inside line 1
+		expect(r).toEqual({ from: l1.from, to: l1.to });
+		expect(r.to).toBe(l1.to); // NOT l1.to + 1 (CM6's default would include the newline)
+	});
+
+	it('spans every line a multi-line selection touches, text only', () => {
+		const s = st('l1\nl2\nl3\nl4');
+		const r = lineTextRange(s, s.doc.line(2).from + 1, s.doc.line(3).from + 1);
+		expect(r).toEqual({ from: s.doc.line(2).from, to: s.doc.line(3).to });
+	});
+
+	it('is direction-blind: an Arabic line gives the same text range as a Latin one', () => {
+		const s = st('مرحبا بالعالم\nسطر ثانٍ');
+		const l1 = s.doc.line(1);
+		expect(lineTextRange(s, 5, 5)).toEqual({ from: l1.from, to: l1.to });
+	});
+});
+
+describe('PJ-106 §B2 — paragraphBlockRange (Ctrl+Shift+L → whole blank-delimited block)', () => {
+	it('selects a multi-line paragraph block from its first to last non-blank line', () => {
+		//     l1   l2   l3    l4(blank) l5
+		const s = st('a\nb\nc\n\nnext');
+		const r = paragraphBlockRange(s, s.doc.line(2).from, s.doc.line(2).from); // caret on line 2 (mid-block)
+		expect(r).toEqual({ from: s.doc.line(1).from, to: s.doc.line(3).to });
+	});
+
+	it('a single-line paragraph selects just that line (text only)', () => {
+		const s = st('para1\n\npara2\n\npara3');
+		const l3 = s.doc.line(3);
+		expect(paragraphBlockRange(s, l3.from + 1, l3.from + 1)).toEqual({ from: l3.from, to: l3.to });
+	});
+
+	it('does not cross the blank-line boundary into neighbouring paragraphs', () => {
+		const s = st('one\ntwo\n\nTHREE\nFOUR\n\nfive');
+		// caret in the middle block (THREE/FOUR, lines 4-5)
+		const r = paragraphBlockRange(s, s.doc.line(4).from + 1, s.doc.line(4).from + 1);
+		expect(r).toEqual({ from: s.doc.line(4).from, to: s.doc.line(5).to });
+	});
+
+	it('is direction-blind: an Arabic block gives the same range as a Latin one', () => {
+		const s = st('فقرة سطر أول\nفقرة سطر ثانٍ\n\nفقرة أخرى');
+		expect(paragraphBlockRange(s, s.doc.line(1).from + 2, s.doc.line(1).from + 2)).toEqual({
+			from: s.doc.line(1).from,
+			to: s.doc.line(2).to,
+		});
 	});
 });

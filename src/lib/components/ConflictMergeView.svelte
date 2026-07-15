@@ -18,7 +18,7 @@
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1 (SI4-01)
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
-	import { paragraphNavKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1
+	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -58,6 +58,8 @@
 			...(RTL_MOTION_ENABLED ? [logicalArrowKeymap((s) => s.field(baseLensField, false) ?? null)] : []),
 			/* PJ-106 §B1 — Ctrl+↑/↓ paragraph navigation (Editor Parity). */
 			...(RTL_MOTION_ENABLED ? [paragraphNavKeymap()] : []),
+			/* PJ-106 §B2 — Ctrl+L select line / Ctrl+Shift+L select paragraph block (Editor Parity). */
+			...(RTL_MOTION_ENABLED ? [selectUnitKeymap()] : []),
 			libraryPathField, notePathField, attachmentFolderField, linkTraversalMapField,
 			EditorView.lineWrapping,
 			EditorView.editorAttributes.of({ dir }),

@@ -1,5 +1,6 @@
 /**
- * PJ-106 §B1 — paragraph navigation (Word/Windows Ctrl+↑ / Ctrl+↓).
+ * PJ-106 §B1 — paragraph navigation (Word/Windows Ctrl+↑ / Ctrl+↓)
+ * PJ-106 §B2 — select by unit: line (Ctrl+L) and paragraph block (Ctrl+Shift+L).
  *
  * THE CONCEPT (the horse): jump the caret between PARAGRAPHS, the way Ctrl+↑/↓ does in
  * Microsoft Word — the Boss's daily muscle memory, and his Round-1 symptom ("cannot navigate
@@ -97,6 +98,71 @@ export function paragraphNavKeymap(): Extension {
 		keymap.of([
 			{ key: 'Mod-ArrowUp', run: up, shift: selectUp, preventDefault: true },
 			{ key: 'Mod-ArrowDown', run: down, shift: selectDown, preventDefault: true },
+		]),
+	);
+}
+
+// ── PJ-106 §B2 — select by unit (line / paragraph block) ──────────────────────
+//
+// THE CONCEPT (the horse): the Boss's Round-1 list — "cannot select a word, a sentence, a
+// line, a whole paragraph, or a whole page." Word (double-click), page (Shift+PageUp/Down) and
+// all (Ctrl+A) are already covered by CM6; sentence is §B3. This adds the two genuine gaps:
+//   • LINE  (Ctrl+L)       — the current document line's TEXT.
+//   • PARAGRAPH (Ctrl+Shift+L) — the whole blank-line-delimited block (may span several lines).
+// Both select the TEXT only, never the trailing newline — §B0's rule: on an RTL line the
+// newline's empty run sits to the LEFT of the right-aligned words, so including it paints the
+// highlight past the text. (CM6's own Alt-l `selectLine` includes `to+1`; we override it here
+// so Alt-l and Ctrl+L behave identically and correctly on RTL.) Direction-blind, offset-pure,
+// parser-free — the range math is exported for headless tests.
+
+/** The current document line(s)'s TEXT range for a selection span: [firstLine.from, lastLine.to]
+ *  — never the trailing newline (§B0). */
+export function lineTextRange(state: EditorState, from: number, to: number): { from: number; to: number } {
+	const doc = state.doc;
+	return { from: doc.lineAt(from).from, to: doc.lineAt(to).to };
+}
+
+/** The blank-line-delimited paragraph BLOCK spanning [from,to], text-only. A block is the run of
+ *  consecutive non-blank lines around the span; a caret on a blank line selects just that line. */
+export function paragraphBlockRange(state: EditorState, from: number, to: number): { from: number; to: number } {
+	const doc = state.doc;
+	let s = doc.lineAt(from).number;
+	if (!isBlankLine(state, s)) while (s > 1 && !isBlankLine(state, s - 1)) s--;
+	let e = doc.lineAt(to).number;
+	if (!isBlankLine(state, e)) while (e < doc.lines && !isBlankLine(state, e + 1)) e++;
+	return { from: doc.line(s).from, to: doc.line(e).to };
+}
+
+/** Apply a per-range text-range computer to every cursor and select the results. */
+function selectByUnit(
+	view: EditorView,
+	unit: (state: EditorState, from: number, to: number) => { from: number; to: number },
+): boolean {
+	const state = view.state;
+	const ranges = state.selection.ranges.map((range) => {
+		const r = unit(state, range.from, range.to);
+		return EditorSelection.range(r.from, r.to);
+	});
+	view.dispatch(
+		state.update({
+			selection: EditorSelection.create(ranges, state.selection.mainIndex),
+			userEvent: 'select',
+		}),
+	);
+	return true;
+}
+
+/** Ctrl+L → select the current line's text; Ctrl+Shift+L → select the whole paragraph block.
+ *  Alt+L is overridden to the same text-only line select, fixing CM6's newline-including default
+ *  on RTL lines (§B0). */
+export function selectUnitKeymap(): Extension {
+	const line: Command = (v) => selectByUnit(v, lineTextRange);
+	const para: Command = (v) => selectByUnit(v, paragraphBlockRange);
+	return Prec.high(
+		keymap.of([
+			{ key: 'Mod-l', run: line, preventDefault: true },
+			{ key: 'Alt-l', run: line, preventDefault: true }, // override CM6 selectLine's trailing newline
+			{ key: 'Shift-Mod-l', run: para, preventDefault: true },
 		]),
 	);
 }
