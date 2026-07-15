@@ -17,6 +17,7 @@
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1 (SI4-01)
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
+	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -52,6 +53,8 @@
 			   connect per-line direction to the caret engine + a deterministic base (not 'auto'). */
 			...(RTL_MOTION_ENABLED ? [EditorView.perLineTextDirection.of(true)] : []),
 			tripleClickTextOnly,
+			/* PJ-106 §A5 — the merge panes are bilingual editing surfaces too (Editor Parity). */
+			...(RTL_MOTION_ENABLED ? [logicalArrowKeymap((s) => s.field(baseLensField, false) ?? null)] : []),
 			libraryPathField, notePathField, attachmentFolderField, linkTraversalMapField,
 			EditorView.lineWrapping,
 			EditorView.editorAttributes.of({ dir }),

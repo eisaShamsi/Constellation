@@ -63,6 +63,7 @@ export default defineConfig({
 			// PJ-106 §A0/§A1 (2026-07-14) — the offset-pure RTL direction-resolution recipes
 			// (deterministic base; the visual defects are the Boss's live staged tests).
 			'tests/pj-106/rtlDirection.test.ts',
+			'tests/pj-106/rtlMotion.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

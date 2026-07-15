@@ -30,6 +30,7 @@
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
+	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -457,9 +458,22 @@
 					EditorView.editorAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
 					EditorView.contentAttributes.of({ dir: dir === 'rtl' ? 'rtl' : 'ltr' }),
 				]),
-				/* PJ-106 §A1 — tell the CARET/SELECTION engine to read per-line direction
-				   (the bidiPlugin already renders it). Flag-gated (SI4-03: motion only). */
-				rtlMotionCompartment.of(RTL_MOTION_ENABLED ? EditorView.perLineTextDirection.of(true) : []),
+				/* PJ-106 — the RTL MOTION bundle, in ONE compartment (a Compartment may appear
+				   only once in a configuration) so RTL_MOTION_ENABLED=false strips the whole
+				   feature and restores the pre-PJ-106 motion byte-for-byte:
+				     §A1 — tell the CARET/SELECTION engine to read per-line direction (the
+				           bidiPlugin already RENDERS it; this connects it to MOTION).
+				     §A5 — Word-style LOGICAL arrows. The skip source keeps the caret OUT of a
+				           collapsed lens block's hidden source (design-inspection H3) WITHOUT
+				           touching the global atomicRanges facet, which also feeds Backspace. */
+				rtlMotionCompartment.of(
+					RTL_MOTION_ENABLED
+						? [
+								EditorView.perLineTextDirection.of(true),
+								logicalArrowKeymap((s) => s.field(baseLensField, false) ?? null),
+							]
+						: [],
+				),
 				tripleClickTextOnly, // PJ-106 §B0 — triple-click selects text, not the trailing newline
 				typedLinkModeCompartment.of(EditorView.contentAttributes.of({
 					class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),

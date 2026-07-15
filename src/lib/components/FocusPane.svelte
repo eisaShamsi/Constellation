@@ -8,6 +8,7 @@
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
 	import { detectDir } from '$lib/utils'; // PJ-106 §A1 — deterministic Focus base direction
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
+	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -194,6 +195,9 @@
 				/* PJ-106 §A1 — connect per-line direction to the caret/selection MOTION engine. */
 				...(RTL_MOTION_ENABLED ? [EditorView.perLineTextDirection.of(true)] : []),
 				tripleClickTextOnly,
+				/* PJ-106 §A5 — Word-style LOGICAL arrows. No skip source: Focus is parser-free and
+				   has no collapsed widgets (Rule 6 — this must not pull livePreview into Focus). */
+				...(RTL_MOTION_ENABLED ? [logicalArrowKeymap()] : []),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
