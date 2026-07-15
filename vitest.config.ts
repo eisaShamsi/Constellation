@@ -64,9 +64,12 @@ export default defineConfig({
 			// (deterministic base; the visual defects are the Boss's live staged tests).
 			'tests/pj-106/rtlDirection.test.ts',
 			'tests/pj-106/rtlMotion.test.ts',
-			// PJ-106 §B1 (2026-07-15) — paragraph navigation (Ctrl+↑/↓), offset-pure
-			// and direction-blind: Arabic/bilingual assert the SAME offsets as Latin.
+			// PJ-106 §B1/§B2 (2026-07-15) — paragraph navigation (Ctrl+↑/↓) + select
+			// line/paragraph, offset-pure and direction-blind (Arabic == Latin offsets).
 			'tests/pj-106/paragraphNav.test.ts',
+			// PJ-106 §B3 (2026-07-15) — select-sentence via Intl.Segmenter (UAX #29):
+			// breaks on ؟ ! ۔ . but NOT ؛; no decimal false-break (design-inspection H4).
+			'tests/pj-106/sentenceSelect.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

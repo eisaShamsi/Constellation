@@ -32,6 +32,7 @@
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
+	import { ctrlClickSentence, sentenceSelectKeymap } from '$lib/editor/sentenceSelect'; // PJ-106 §B3
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -474,6 +475,8 @@
 								logicalArrowKeymap((s) => s.field(baseLensField, false) ?? null),
 								paragraphNavKeymap(), // PJ-106 §B1 — Ctrl+↑/↓ paragraph navigation
 								selectUnitKeymap(), // PJ-106 §B2 — Ctrl+L line / Ctrl+Shift+L paragraph
+								ctrlClickSentence, // PJ-106 §B3 — Ctrl+click selects the sentence
+								sentenceSelectKeymap(), // PJ-106 §B3 — Ctrl+Shift+S select sentence at caret
 							]
 						: [],
 				),

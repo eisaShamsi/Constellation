@@ -10,6 +10,7 @@
 	import { tripleClickTextOnly } from '$lib/editor/tripleClickLine'; // PJ-106 §B0
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
+	import { ctrlClickSentence, sentenceSelectKeymap } from '$lib/editor/sentenceSelect'; // PJ-106 §B3
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -203,6 +204,8 @@
 				...(RTL_MOTION_ENABLED ? [paragraphNavKeymap()] : []),
 				/* PJ-106 §B2 — Ctrl+L select line / Ctrl+Shift+L select paragraph block. */
 				...(RTL_MOTION_ENABLED ? [selectUnitKeymap()] : []),
+				/* PJ-106 §B3 — Ctrl+click / Ctrl+Shift+S select the sentence (Intl.Segmenter). */
+				...(RTL_MOTION_ENABLED ? [ctrlClickSentence, sentenceSelectKeymap()] : []),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
