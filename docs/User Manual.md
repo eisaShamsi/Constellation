@@ -1759,7 +1759,16 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 - **Auto-detection**: Note direction is detected automatically from content
 - **Interface**: Full RTL interface when Arabic/Hebrew language is selected
-- **Editor**: RTL text editing with correct cursor movement and selection
+- **Editor**: RTL text editing with **Word-style caret behavior** (see below)
+
+### How the caret and arrows behave in Arabic and bilingual text
+
+Constellation's editor follows the same logic Microsoft Word uses on Windows, so your muscle memory carries over:
+
+- **Arrow keys move by one character of the *text*, in reading order** — not by one position on the screen. In pure Arabic or pure English this looks exactly like the arrow you pressed. At a seam between Arabic and English (e.g. an Arabic sentence containing an English word), the caret steps cleanly through each character in writing order and "hops" across the seam — that hop is correct, and it's what stops the caret from feeling stuck at the boundary.
+- **Home** goes to the reading *start* of the line — the **right** edge on an Arabic line; **End** goes to the reading *end* — the **left** edge. Pressing **Enter** on an Arabic line places the new-line caret on the **right**.
+- **Triple-click** selects the paragraph's **text** (not the empty space to the side of it). **Double-click** selects a word.
+- A **Latin word at the end of an Arabic line** keeps a clear, stable caret position instead of losing its direction.
 - **Sky View**: Arabic labels render right-to-left with proper font fallback
 - **Legend**: Items flip dot/text order based on content language
 - **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings > Language
