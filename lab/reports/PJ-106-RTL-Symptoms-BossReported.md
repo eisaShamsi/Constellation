@@ -123,3 +123,34 @@ line *differed* and got stamped.) The 300 ms debounce also delayed even a correc
 - §A2 — `bidiPlugin.update`: a STRUCTURAL change (line count changed, e.g. Enter) rebuilds
   SYNCHRONOUSLY so the new empty line gets its `dir` in the same frame (no left→right flash).
   Character typing keeps the 300 ms debounce (Rule 1).
+
+## Round 6 — invisible Home caret on IMPORTED Arabic notes (2026-07-15) — PARKED by Boss
+
+**Symptom (Boss):** on an *imported* Arabic note, pressing **Home** leaves the blinking caret
+BAR unpainted (the caret is functionally there — Home works, you can type/navigate) — only the
+visual bar is missing. On a note *created* in-app it's fine. End works everywhere. Latin notes
+never affected. Repro file: `العالم العربي/.../أدب وتراث/التراث والثقافة/العمارة الإسلامية.md`
+(imported); control: `Eisa Test/المعزة.md` (created).
+
+**Diagnosis done (drove the running release app via computer-use + filesystem diff):**
+- The TRIGGER is the imported note's rich **16-field Obsidian frontmatter** (aliases, tags,
+  maturity, stage, library, cUniverse, folder, source, source_url, license, attribution,
+  created, cid_cn, sources, content_type) — NOT the body. Proven two ways: (a) Boss pasted the
+  identical body into a new note (4-field app frontmatter) → Home works; (b) the CM6 editor doc
+  is `body` only (frontmatter stripped, NoteEditor.svelte:471) so both notes feed the caret code
+  BYTE-IDENTICAL input. The rich **Properties panel** above the editor is what disturbs the
+  right-edge (Home) caret; End (left edge) is unaffected.
+- RULED OUT with dedicated Boss-passed test notes: body text, a heading first line, long
+  wrapping paragraphs, a callout box, a 141-char unbreakable `source_url`. None alone reproduces.
+- Persisted with properties collapsed AND expanded (observed, though caret capture unreliable).
+
+**Honest limitation:** the caret is a 1.5px blinking bar; the computer-use screenshot pipeline
+downsamples and cannot resolve it even at 250% app-zoom, and the RELEASE binary has devtools
+disabled — so the exact pixel mechanism (is `coordsAtPos` returning null? clipped by
+`overflow-x:hidden`? positioned off-screen?) was NOT nailed. Naming it needs an instrumented/dev
+build that reads the live caret rect at the Home position (Reproduce-First; no guessing).
+
+**Status: PARKED (Boss ruled "closed" 2026-07-15).** Polish-class (Home is functional; only the
+visual bar is missing) vs the solid core PJ-106 motion. Filed as a PJ ledger entry for later.
+Test notes used for the hunt were moved to scratchpad (`pj106-caret-testnotes/`), Boss's own
+notes untouched.
