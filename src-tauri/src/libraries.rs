@@ -422,7 +422,9 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
     let re = HEADING_RE.get_or_init(|| regex::Regex::new(r"(?m)^#{1,6}\s+(.+)$").unwrap());
     for cap in re.captures_iter(&content) {
         if let Some(m) = cap.get(1) {
-            headings.push(m.as_str().trim().to_string());
+            // PJ-106 §B4 — strip invisible direction marks (RLM/LRM): a heading forced RTL
+            // keeps its identity for [[note#heading]] pickers and fragment resolution.
+            headings.push(m.as_str().replace(['\u{200E}', '\u{200F}'], "").trim().to_string());
         }
     }
     Ok(headings)

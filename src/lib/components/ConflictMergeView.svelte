@@ -20,6 +20,7 @@
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
 	import { ctrlClickSentence, sentenceSelectKeymap } from '$lib/editor/sentenceSelect'; // PJ-106 §B3
+	import { paragraphDirKeys } from '$lib/editor/paragraphDir'; // PJ-106 §B4
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -63,6 +64,9 @@
 			...(RTL_MOTION_ENABLED ? [selectUnitKeymap()] : []),
 			/* PJ-106 §B3 — Ctrl+click / Ctrl+Shift+S select the sentence (Editor Parity). */
 			...(RTL_MOTION_ENABLED ? [ctrlClickSentence, sentenceSelectKeymap()] : []),
+			/* PJ-106 §B4 — Right/Left-Ctrl+Shift paragraph direction (the right pane's
+			   EditorState.readOnly is belted inside setParagraphDirection). */
+			...(RTL_MOTION_ENABLED ? [paragraphDirKeys()] : []),
 			libraryPathField, notePathField, attachmentFolderField, linkTraversalMapField,
 			EditorView.lineWrapping,
 			EditorView.editorAttributes.of({ dir }),

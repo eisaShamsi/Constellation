@@ -59,6 +59,49 @@ The fix held through the exact app-killer scenario. PJ-108 CLOSED.**
 - **Docs in-commit (SO#6/SO#9):** Pending Jobs **v1.31** (PJ-108 closed; PJ-106 Part-B selection
   half recorded; ► Next re-pointed), Orientation **v3.52**, MoCh ×2, this log.
 
+## PJ-106 §B4 — the paragraph direction switch (Boss directed: proceed ahead of Jul 18)
+
+**Working on:** Right-Ctrl+Shift → caret's paragraph 100% RTL, Left-Ctrl+Shift → 100% LTR,
+persisted as an invisible RLM/LRM at each content line's content-start (the Boss-approved
+Round-3 design). New `src/lib/editor/paragraphDir.ts` (pure change-computer + arm/disarm/fire
+gesture); `bidiPlugin.ts` mark-precedence + shared `BLOCK_PREFIX_RE` + content-based same-frame
+rebuild; wired into NotePane/FocusPane/ConflictMergeView behind `RTL_MOTION_ENABLED`.
+
+**The adversarial review (`wf_34d75a00`, 24 agents, 4 refute-first lenses + per-finding
+skeptics — standing in for the rate-limited automated inspection): 16 confirmed findings.**
+Headline: **[APP-KILLER]** `domEventHandlers` never sees keymap-consumed chords, so releasing
+Ctrl+Shift+S (§B3!) would have force-flipped the paragraph → the gesture now uses
+`domEventObservers` (always run). **[HIGH]** the merge view edits the FULL file → YAML keys
+would get marked (`‏title:` ≠ `title:`, silent metadata/typed-link loss) → frontmatter-aware
+skip + caret-in-frontmatter no-ops entirely; **[HIGH]** a mark before a line-leading `#tag`
+kills the tag in index/tasks/Obsidian → tag-leading lines skipped. Plus: CommonMark-aware
+fence parity (opener char+length matched; quoted/listed fences; indented-code lines never
+marked); `![[note#heading]]` fragment identity normalized against marks (livePreview.ts +
+store.ts extractHeadings + libraries.rs get_note_headings); checked-task lines (`- [x]`) read
+past the `x` in detectLineDir (structured prefix strip); undo/redo/paste/adopt get the
+same-frame rebuild via content-based mark detection (replaces the effect-only trigger);
+caret maps AFTER the inserted mark (assoc 1); `isolateHistory` keeps the flip one undo step;
+AltGr chords belted; digit-only lines are content (no half-flipped blocks); link-ref/footnote
+definition lines skipped. **15 of 16 fixed in code**; the 16th — the Windows Ctrl+Shift
+layout-hotkey collision — is Word's own shipped convention and is a Boss live observation +
+ruling (folded into the staged test). Documented limitation (LOW, accepted): a line starting
+with `_emphasis_` renders literal underscores in some EXTERNAL renderers when marked.
+
+Gates: 30/30 §B4 recipes (incl. one contract catch — caret on a YAML line now targets
+nothing), vitest 425, svelte-check 0, fresh release binary 14:49.
+
+**Boss live-test — PASS (all stages).** Steps 1–5: English→RTL flip, LTR return + one-press
+undo, the two-line Arabic paragraph forced LTR and back, Ctrl+Shift+S/L still select without
+flipping (the app-killer check), persistence across note-switch AND full app restart. Step 6
+(the OS-collision ruling): the Boss switches language with **Win+Space** — the gesture doesn't
+switch his language, and the 30-second disambiguation confirmed an already-written Arabic
+paragraph **stays put** on a language switch (the earlier observation was Part-A's correct
+auto-direction on newly-typed text, not a mark write). **Ruling: no collision → §B4 ships
+as-is.** Committed `<this>`. **PJ-106 Part B is COMPLETE** (§B1/§B2/§B3/§B4 all Boss-validated).
+Remaining in PJ-106: §A4 (Reproduce-First-gated on the callout repro), C1 (CM6 bump, optional),
+C2 (docs/help/User Manual ×15), C3 (Phase-4 audit + the per-cycle sweep — the automated
+inspection resets Jul 18 and doubles as the §B4 post-gate confirmation).
+
 ## Housekeeping
 
 - Test notes `PJ108 Target.md` / `PJ108 Linker.md` remain in `Eisa Test` pending tab-close →

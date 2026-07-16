@@ -596,13 +596,17 @@ class UniversalEmbedWidget extends WidgetType {
 	}
 }
 
+/** PJ-106 §B4 — invisible direction marks (RLM/LRM) never participate in heading identity:
+ *  a heading forced RTL is still the same `#heading` target for [[note#h]] / ![[note#h]]. */
+const DIR_MARKS_RE = /[‎‏]/g;
+
 function extractHeading(md: string, heading: string): string {
-	const target = heading.trim().toLowerCase();
+	const target = heading.replace(DIR_MARKS_RE, '').trim().toLowerCase();
 	const lines = md.split('\n');
 	let start = -1, endLevel = 7;
 	for (let i = 0; i < lines.length; i++) {
 		const m = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
-		if (m && m[2].trim().toLowerCase() === target) { start = i; endLevel = m[1].length; break; }
+		if (m && m[2].replace(DIR_MARKS_RE, '').trim().toLowerCase() === target) { start = i; endLevel = m[1].length; break; }
 	}
 	if (start < 0) return md;
 	let end = lines.length;

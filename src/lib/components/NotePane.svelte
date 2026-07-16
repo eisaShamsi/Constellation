@@ -33,6 +33,7 @@
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
 	import { ctrlClickSentence, sentenceSelectKeymap } from '$lib/editor/sentenceSelect'; // PJ-106 §B3
+	import { paragraphDirKeys } from '$lib/editor/paragraphDir'; // PJ-106 §B4
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
@@ -477,6 +478,7 @@
 								selectUnitKeymap(), // PJ-106 §B2 — Ctrl+L line / Ctrl+Shift+L paragraph
 								ctrlClickSentence, // PJ-106 §B3 — Ctrl+click selects the sentence
 								sentenceSelectKeymap(), // PJ-106 §B3 — Ctrl+Shift+S select sentence at caret
+								paragraphDirKeys(), // PJ-106 §B4 — Right/Left-Ctrl+Shift paragraph direction
 							]
 						: [],
 				),

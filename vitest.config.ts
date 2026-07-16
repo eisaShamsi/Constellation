@@ -73,6 +73,9 @@ export default defineConfig({
 			// PJ-106 §B3 (2026-07-15) — select-sentence via Intl.Segmenter (UAX #29):
 			// breaks on ؟ ! ۔ . but NOT ؛; no decimal false-break (design-inspection H4).
 			'tests/pj-106/sentenceSelect.test.ts',
+			// PJ-106 §B4 (2026-07-16) — per-paragraph direction override: RLM/LRM at
+			// content start, markdown-safe placement, fence/table skips, idempotence.
+			'tests/pj-106/paragraphDir.test.ts',
 			// MIG-084 §F.2 (2026-06-23) — the Reviewer computed-priority engine.
 			'tests/mig-084/priorities.test.ts',
 			// MIG-090 §7 (2026-07-05) — the Workbench chips: pure intersection

@@ -1858,7 +1858,9 @@ export function extractHeadings(markdown: string): HeadingItem[] {
 		const match = line.match(/^(#{1,6})\s+(.+)/);
 		if (match) {
 			const level = match[1].length;
-			const text = match[2].replace(/[#*`\[\]]/g, '').trim();
+			// PJ-106 §B4 — direction marks (RLM/LRM) are stripped: a heading forced RTL keeps
+			// its identity in the outline, anchors, and [[note#heading]] targets.
+			const text = match[2].replace(/[#*`\[\]‎‏]/g, '').trim();
 			const id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 			headings.push({ level, text, id });
 		}

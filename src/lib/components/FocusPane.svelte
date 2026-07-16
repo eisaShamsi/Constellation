@@ -11,6 +11,7 @@
 	import { logicalArrowKeymap } from '$lib/editor/rtlMotion'; // PJ-106 §A5
 	import { paragraphNavKeymap, selectUnitKeymap } from '$lib/editor/paragraphNav'; // PJ-106 §B1/§B2
 	import { ctrlClickSentence, sentenceSelectKeymap } from '$lib/editor/sentenceSelect'; // PJ-106 §B3
+	import { paragraphDirKeys } from '$lib/editor/paragraphDir'; // PJ-106 §B4
 	import { t, tn } from '$lib/i18n';
 
 	let {
@@ -206,6 +207,8 @@
 				...(RTL_MOTION_ENABLED ? [selectUnitKeymap()] : []),
 				/* PJ-106 §B3 — Ctrl+click / Ctrl+Shift+S select the sentence (Intl.Segmenter). */
 				...(RTL_MOTION_ENABLED ? [ctrlClickSentence, sentenceSelectKeymap()] : []),
+				/* PJ-106 §B4 — Right/Left-Ctrl+Shift paragraph direction (parser-free). */
+				...(RTL_MOTION_ENABLED ? [paragraphDirKeys()] : []),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
