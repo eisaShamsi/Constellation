@@ -140,6 +140,15 @@ accent bar consistent). No performance complaint raised across the whole arc's l
 the INV-1 ruling stands as recorded: live validation at every increment sufficed. PJ-106's
 close verification is complete; the migration is DONE pending the Jul-18 sweep ritual.
 
+## Session close (PCS)
+
+Full PCS completed 2026-07-16: all commits pushed (`c0d668fc`…`c6a8e2a8` + this close commit);
+help/User Manual ×15 shipped in C2; orientation bumps rode their feature commits (v3.52/v3.53/
+v3.54); MoCh ×3 for the day's blocks (12:15 / 13:45 / 15:30); handover
+`HANDOVER-2026-07-16-pj106-close.md`; next-session prompt `NEXT-PROMPT-2026-07-18.md` (carries
+the Jul-18 sweep reminder). **PJ ledger reviewed at close — no change beyond v1.33** (the pass
+record touched no backlog item; ► Next stands: the Jul-18 sweep, then PJ-103).
+
 ## Housekeeping
 
 - Test notes `PJ108 Target.md` / `PJ108 Linker.md` remain in `Eisa Test` pending tab-close →
