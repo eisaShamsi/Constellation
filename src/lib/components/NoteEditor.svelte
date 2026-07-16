@@ -451,9 +451,14 @@
 			const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, link);
 			if (resolved) {
 				const libColors = buildLibraryColorMap(get(libraries));
-				await openNoteTab(resolved.path, resolved.library_name, libColors[resolved.library_name] || '#7c3aed', undefined, newTab, tab.path);
-			} else {
-				// Note doesn't exist — create it in the same folder with default frontmatter
+				// PJ-108 — a read-only host (second screen) passes preserveNet so following a
+				// wikilink never consumes the shared crash-recovery net (it has no writable
+				// editor to re-stash it). Writable hosts keep the consume-and-re-stash default.
+				await openNoteTab(resolved.path, resolved.library_name, libColors[resolved.library_name] || '#7c3aed', undefined, newTab, tab.path, undefined, readOnly);
+			} else if (!readOnly) {
+				// Note doesn't exist — create it in the same folder with default frontmatter.
+				// NEVER from a read-only display (Display-not-Domain — a read-only surface must
+				// not write a new file to disk); an unresolved link there is simply inert.
 				const folder = tab.path.replace(/[/\\][^/\\]+$/, '');
 				const frontmatter = buildDefaultFrontmatter(get(appSettings));
 				const newPath = await createNote(folder, link + '.md', frontmatter);

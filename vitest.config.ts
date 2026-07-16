@@ -60,6 +60,9 @@ export default defineConfig({
 			// PJ-102 (2026-07-14) — Recipe S: the manual-reopen recovery clobber
 			// (ensure_cid_cn must never swap recovered content for stale disk).
 			'tests/mig-076/reopenRecoveryClobber.test.ts',
+			// PJ-108 (2026-07-15) — Recipe RO: a read-only host following a wikilink
+			// must not consume the shared recovery net (openNoteTab preserveNet).
+			'tests/mig-076/readonlyLinkPreservesNet.test.ts',
 			// PJ-106 §A0/§A1 (2026-07-14) — the offset-pure RTL direction-resolution recipes
 			// (deterministic base; the visual defects are the Boss's live staged tests).
 			'tests/pj-106/rtlDirection.test.ts',

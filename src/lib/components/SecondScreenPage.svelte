@@ -9,7 +9,7 @@
 		libraries, loadLibraries, appSettings, loadSettings,
 		loadLibraryAppearance,
 		openNoteTab, openTabs, activeTabId, activeTab,
-		switchTab, closeTab,
+		switchTab, closeTab, setDisplayOnlyWindow,
 		parseFrontmatter, wasRecentlyWritten,
 		scanLibraryLinks,
 		buildSkyData,
@@ -175,6 +175,11 @@
 	// It is a contextual complement, never an editing domain — every NoteEditor mount below
 	// is read-only. Kept as a named constant so the 7 mounts read one source of truth.
 	const ssReadOnly = true;
+	// PJ-108 (APP-KILLER) — mark this whole window display-only in the store, so EVERY note-open
+	// here (session restore, note-list click, wikilink) preserves the shared crash-recovery net
+	// rather than consuming it (a read-only window has no writable editor to re-stash it). Set at
+	// script-init, before onMount's restore listener can fire an openNoteTab.
+	setDisplayOnlyWindow();
 	let universeName = $state('');
 
 	// ─── Sky View Companion state ───

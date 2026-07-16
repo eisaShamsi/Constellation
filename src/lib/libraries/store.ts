@@ -298,6 +298,23 @@ export function clearWriteAheadIf(filePath: string, content: string) {
 }
 
 /**
+ * PJ-108 (APP-KILLER) — this store instance runs in a DISPLAY-ONLY window (the second screen).
+ * Such a window never mounts a writable editor, so it must NEVER consume the shared crash-recovery
+ * net when it opens a note: without a writable editor to re-stash it, consuming the net silently
+ * destroys the ONLY copy of a main-window note's unsaved, save-failed edits (localStorage is shared
+ * across same-origin windows). When set, EVERY openNoteTab in this window defaults to preserveNet —
+ * the Solve-the-Class fix, so no individual SS call site (restore, list-click, wikilink) can leak.
+ * Separate JS context per window → the main window's flag stays false. (`on` param lets tests reset.)
+ */
+let displayOnlyWindow = false;
+export function setDisplayOnlyWindow(on: boolean = true) {
+	displayOnlyWindow = on;
+}
+export function isDisplayOnlyWindow(): boolean {
+	return displayOnlyWindow;
+}
+
+/**
  * Save-Durability (2026-07-08) — the "save health" surface. A save write that fails
  * (a `.md` momentarily locked by Syncthing/OneDrive/Defender, disk full, offline
  * drive) records a persistent, path-KEYED entry here — coalesced by construction, so
@@ -2055,7 +2072,7 @@ function deriveTabName(filePath: string, content: string): string {
 	return name;
 }
 
-export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string, targetLine?: number) {
+export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string, targetLine?: number, preserveNet?: boolean) {
 	const tabs = get(openTabs);
 
 	// If the same file is already the active tab, just update highlight
@@ -2094,7 +2111,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// Deferred until we have the note's display name (extracted from content below)
 	const _fromNotePath = fromNotePath;
 
-	const resolved = await resolveNoteContent(filePath);
+	// PJ-108 (APP-KILLER) — the second screen is a DISPLAY-ONLY window: it never mounts a writable
+	// editor to re-stash the net, so consuming the shared crash-recovery net here would silently
+	// destroy a main-window note's only unsaved-save-failed copy. Every openNoteTab in such a
+	// window preserves the net (restore, list-click, wikilink alike — Solve-the-Class); an explicit
+	// preserveNet arg still wins. Writable hosts keep the manual-open consume-and-re-stash default.
+	const resolved = await resolveNoteContent(filePath, { preserveNet: preserveNet ?? displayOnlyWindow });
 	if (resolved === null) {
 		// §B2-4 forensics: this silent return is what "I click the note and
 		// nothing happens" looks like when a stale tree row points at a dead
