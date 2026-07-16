@@ -1160,10 +1160,37 @@ Constellation oferece suporte de primeira classe para arabe, hebraico, persa, ur
 
 - **Deteccao automatica**: A direcao da nota e detectada automaticamente a partir do conteudo
 - **Interface**: Interface RTL completa quando o idioma arabe/hebraico e selecionado
-- **Editor**: Edicao de texto RTL com movimento de cursor e selecao corretos
+- **Editor**: edição de texto RTL com movimento de cursor e seleção corretos — os detalhes estão nas três seções a seguir
 - **Vista Estelar**: Rotulos em arabe sao renderizados da direita para a esquerda com fallback de fonte adequado
 - **Legenda**: Os itens invertem a ordem ponto/texto com base no idioma do conteudo
 - **Fontes de escrita**: Configure fontes para arabe, hebraico e CJK independentemente nas Configuracoes
+
+### Como o cursor e as setas se comportam em texto árabe e bilíngue
+
+O editor do Constellation segue a mesma lógica que o Microsoft Word usa no Windows, então a sua memória muscular funciona desde o primeiro momento:
+
+- **As setas movem o cursor um caractere do *texto* de cada vez, na ordem de leitura** — não uma posição na tela. Em árabe puro ou inglês puro, isso se parece exatamente com a seta que você pressionou. Numa costura entre árabe e inglês (p. ex. uma frase em árabe contendo uma palavra em inglês), o cursor percorre cada caractere na ordem de escrita e "salta" através da costura — esse salto é correto, e é ele que impede o cursor de parecer preso na fronteira.
+- **Home** vai para o *início* de leitura da linha — a borda **direita** numa linha em árabe; **End** vai para o *fim* de leitura — a borda **esquerda**. Pressionar **Enter** numa linha em árabe coloca o cursor da nova linha à **direita**.
+- **Clique triplo** seleciona o **texto** do parágrafo (não o espaço vazio ao lado dele). **Clique duplo** seleciona uma palavra.
+- Uma **palavra em alfabeto latino no fim de uma linha em árabe** mantém uma posição de cursor nítida e estável, em vez de perder a direção.
+
+### Selecionar e navegar por unidade
+
+Cada unidade de texto tem um seletor rápido, idêntico em notas em árabe, em inglês e mistas:
+
+- **Palavra** — clique duplo. **Frase** — **Ctrl+clique** em qualquer ponto dela, ou **Ctrl+Shift+S** na posição do cursor. A detecção de frases entende a pontuação árabe: **؟ ۔ !** e o ponto final encerram uma frase, enquanto o ponto e vírgula árabe **؛** é uma pausa *dentro* de uma — e decimais como 3.14 nunca dividem uma frase. (O Ctrl+clique substitui o antigo gesto de adicionar outro cursor.)
+- **Linha** — **Ctrl+L**. **Parágrafo** (o bloco entre linhas vazias) — **Ctrl+Shift+L**, ou clique triplo. Os destaques abraçam o texto — numa linha em árabe, a seleção para nas palavras em vez de se estender pelo lado esquerdo vazio.
+- **Uma tela inteira** — **Shift+Page Down/Up**. **Tudo** — **Ctrl+A**.
+- **Mover por parágrafo** — **Ctrl+↓** salta para o início do próximo parágrafo, **Ctrl+↑** para o início do atual (pressione de novo para ir ao anterior). Adicione **Shift** para selecionar parágrafo por parágrafo.
+
+### Forçar a direção de um parágrafo
+
+Às vezes a detecção automática não é o que você quer — um parágrafo em árabe que começa com um nome de marca em inglês, ou um parágrafo em inglês que você quer ler da direita para a esquerda:
+
+- **Pressione e solte Ctrl+Shift do lado direito** → o parágrafo em que o cursor está se torna **100% da direita para a esquerda**. **Ctrl+Shift do lado esquerdo** → **100% da esquerda para a direita**. (A convenção do Microsoft Word.)
+- O comando dispara **ao soltar as teclas**, sem nenhuma outra tecla no meio — então Ctrl+Shift+S e os demais atalhos continuam funcionando intactos.
+- A imposição é **rígida** (vence a detecção automática), aplica-se ao parágrafo inteiro ou a todos os parágrafos que uma seleção abranger, e fica guardada **dentro do texto** como um caractere de direção invisível — sobrevive a reinicializações e à sincronização, e viaja com o texto para o Word ou o Obsidian.
+- Um único **Ctrl+Z** desfaz. O Markdown permanece seguro: listas, títulos e citações mantêm os seus marcadores; blocos de código, tabelas e linhas que *começam* com uma #tag são deliberadamente deixados intactos.
 
 ### Configuracao para Arabe
 

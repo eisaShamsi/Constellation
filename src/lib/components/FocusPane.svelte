@@ -189,7 +189,8 @@
 				]),
 				/* PJ-106 §A1 (SI2-2 parity) — deterministic base from the note's content (not the
 				   viewport-first-strong 'auto'); both editor + content attrs so the base governs
-				   the empty-line caret side. FocusPane has no dir prop, so it derives its own. */
+				   the empty-line caret side. (The `dir` prop drives the pane CHROME; the editor
+				   base deliberately derives from content — audit-corrected comment.) */
 				EditorView.editorAttributes.of({ dir: detectDir(value) }),
 				EditorView.contentAttributes.of({ dir: detectDir(value) }),
 				scriptFontsField,

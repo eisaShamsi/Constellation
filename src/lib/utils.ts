@@ -303,7 +303,10 @@ marked.use({
 });
 marked.setOptions({ breaks: true, gfm: true });
 
-/** Detect if text is predominantly RTL (Arabic, Hebrew, etc.) */
+/** Detect if text is predominantly RTL (Arabic, Hebrew, etc.)
+ *  DELIBERATELY blind to the §B4 RLM/LRM direction marks (U+200E/U+200F are in no counted
+ *  range): the marks are PER-LINE overrides — they must never shift the NOTE-level base this
+ *  function feeds (H1→H2/H3). Per-line rendering honors them via bidiPlugin.detectLineDir. */
 export function detectDir(text: string): 'rtl' | 'ltr' {
 	const clean = text.replace(/^---[\s\S]*?---\n?/, '')
 		.replace(/[#*_`\[\]()!>|~\-=+\d\s\\\/:.;,?!@$%^&{}"'<>]/g, '');

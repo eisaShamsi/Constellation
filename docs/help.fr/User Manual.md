@@ -1130,10 +1130,37 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 - **Detection automatique** : La direction de la note est detectee automatiquement a partir du contenu
 - **Interface** : Interface RTL complete lorsque la langue arabe/hebraique est selectionnee
-- **Editeur** : Edition de texte RTL avec mouvement de curseur et selection corrects
+- **Editeur** : Edition de texte RTL avec **comportement du curseur à la Word** (voir ci-dessous)
 - **Vue Etoiles** : Les etiquettes arabes s'affichent de droite a gauche avec un repli de police adequat
 - **Legende** : Les elements inversent l'ordre point/texte selon la langue du contenu
 - **Polices de script** : Configurez les polices arabes, hebraiques et CJK independamment dans les Parametres
+
+### Comportement du curseur et des flèches en texte arabe et bilingue
+
+L'éditeur de Constellation suit la même logique que Microsoft Word sous Windows, si bien que vos automatismes restent valables :
+
+- **Les flèches déplacent le curseur d'un caractère du *texte*, dans l'ordre de lecture** — pas d'une position à l'écran. En arabe pur ou en anglais pur, le résultat correspond exactement à la flèche pressée. À une couture entre l'arabe et l'anglais (par ex. une phrase arabe contenant un mot anglais), le curseur parcourt proprement chaque caractère dans l'ordre d'écriture et « saute » la couture — ce saut est correct, et c'est lui qui empêche le curseur de sembler coincé à la frontière.
+- **Home** va au *début* de lecture de la ligne — le bord **droit** sur une ligne arabe ; **End** va à la *fin* de lecture — le bord **gauche**. Appuyer sur **Enter** sur une ligne arabe place le curseur de la nouvelle ligne à **droite**.
+- **Le triple-clic** sélectionne le **texte** du paragraphe (pas le vide à côté). **Le double-clic** sélectionne un mot.
+- Un **mot latin en fin de ligne arabe** conserve une position de curseur nette et stable au lieu de perdre sa direction.
+
+### Sélectionner et naviguer par unité
+
+Chaque unité de texte a son sélecteur rapide, identique dans les notes en arabe, en anglais ou mixtes :
+
+- **Mot** — double-clic. **Phrase** — **Ctrl+clic** n'importe où dedans, ou **Ctrl+Shift+S** avec le curseur à l'intérieur. La détection de phrase comprend la ponctuation arabe : **؟ ۔ !** et le point terminent une phrase, tandis que le point-virgule arabe **؛** est une pause *à l'intérieur* d'une phrase — et les décimaux comme 3.14 ne coupent jamais. (Ctrl+clic remplace l'ancien geste d'ajout de curseur.)
+- **Ligne** — **Ctrl+L**. **Paragraphe** (le bloc entre lignes vides) — **Ctrl+Shift+L**, ou triple-clic. Le surlignage épouse le texte — sur une ligne arabe, la sélection s'arrête aux mots au lieu de s'étirer sur le vide à gauche.
+- **Écran entier** — **Shift+Page Down/Up**. **Tout** — **Ctrl+A**.
+- **Se déplacer par paragraphe** — **Ctrl+↓** saute au début du paragraphe suivant, **Ctrl+↑** au début du paragraphe courant (de nouveau pour le précédent). Ajoutez **Shift** pour sélectionner paragraphe par paragraphe.
+
+### Forcer la direction d'un paragraphe
+
+Parfois la détection automatique n'est pas ce que vous voulez — un paragraphe arabe qui s'ouvre sur un nom de marque anglais, ou un paragraphe anglais que vous voulez lire de droite à gauche :
+
+- **Appuyez puis relâchez Ctrl+Shift du côté droit du clavier** → le paragraphe où se trouve le curseur devient **100 % droite-à-gauche**. **Ctrl+Shift du côté gauche** → **100 % gauche-à-droite**. (La convention de Microsoft Word.)
+- Le basculement se déclenche **au relâchement**, sans autre touche entre-temps — Ctrl+Shift+S et les autres raccourcis continuent donc de fonctionner sans changement.
+- Le forçage est **absolu** (il l'emporte sur la détection automatique), s'applique au paragraphe entier ou à chaque paragraphe couvert par une sélection, et est enregistré **dans le texte lui-même** sous forme de caractère de direction invisible — il survit aux redémarrages et à la synchronisation, et voyage avec le texte dans Word ou Obsidian.
+- Un seul **Ctrl+Z** l'annule. Le Markdown reste intact : les listes, titres et citations gardent leurs marqueurs ; les blocs de code, les tableaux et les lignes qui *commencent* par un #tag sont volontairement laissés tels quels.
 
 ### Configuration pour l'arabe
 

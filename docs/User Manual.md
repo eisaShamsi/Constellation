@@ -1769,6 +1769,25 @@ Constellation's editor follows the same logic Microsoft Word uses on Windows, so
 - **Home** goes to the reading *start* of the line — the **right** edge on an Arabic line; **End** goes to the reading *end* — the **left** edge. Pressing **Enter** on an Arabic line places the new-line caret on the **right**.
 - **Triple-click** selects the paragraph's **text** (not the empty space to the side of it). **Double-click** selects a word.
 - A **Latin word at the end of an Arabic line** keeps a clear, stable caret position instead of losing its direction.
+
+### Selecting and navigating by unit
+
+Every unit of text has a fast selector, identical in Arabic, English, and mixed notes:
+
+- **Word** — double-click. **Sentence** — **Ctrl+click** anywhere in it, or **Ctrl+Shift+S** at the caret. Sentence detection understands Arabic punctuation: **؟ ۔ !** and the full stop end a sentence, while the Arabic semicolon **؛** is a pause *inside* one — and decimals like 3.14 never split. (Ctrl+click replaces the old add-a-cursor gesture.)
+- **Line** — **Ctrl+L**. **Paragraph** (the block between empty lines) — **Ctrl+Shift+L**, or triple-click. Highlights hug the text — on an Arabic line the selection stops at the words instead of stretching across the empty left side.
+- **Screenful** — **Shift+Page Down/Up**. **Everything** — **Ctrl+A**.
+- **Move by paragraph** — **Ctrl+↓** jumps to the next paragraph's start, **Ctrl+↑** to the current one's (again for the previous). Add **Shift** to select paragraph-by-paragraph.
+
+### Forcing a paragraph's direction
+
+Sometimes the automatic detection isn't what you want — an Arabic paragraph opening with an English brand name, or an English paragraph you want read right-to-left:
+
+- **Press and release Right Ctrl+Shift** → the paragraph the cursor is in becomes **100% right-to-left**. **Left Ctrl+Shift** → **100% left-to-right**. (The Microsoft Word convention.)
+- It fires **on release**, with no other key in between — so Ctrl+Shift+S and friends keep working untouched.
+- The override is a **hard** one (it beats auto-detection), applies to the whole paragraph or every paragraph a selection spans, and is stored **inside the text** as an invisible direction character — it survives restarts and sync, and travels with the text into Word or Obsidian.
+- One **Ctrl+Z** undoes it. Markdown stays safe: lists, headings, and quotes keep their markers; code blocks, tables, and lines that *begin* with a #tag are deliberately left untouched.
+
 - **Sky View**: Arabic labels render right-to-left with proper font fallback
 - **Legend**: Items flip dot/text order based on content language
 - **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings > Language

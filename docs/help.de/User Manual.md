@@ -1164,10 +1164,37 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 - **Automatische Erkennung**: Die Notizrichtung wird automatisch anhand des Inhalts erkannt
 - **Oberflaeche**: Vollstaendige RTL-Oberflaeche bei Auswahl von Arabisch/Hebraeisch
-- **Editor**: RTL-Textbearbeitung mit korrekter Cursorbewegung und Auswahl
+- **Editor**: RTL-Textbearbeitung mit **Word-artigem Verhalten der Einfügemarke** (siehe unten)
 - **Sternenansicht**: Arabische Beschriftungen werden von rechts nach links mit korrektem Schrift-Fallback gerendert
 - **Legende**: Elemente wechseln Punkt-/Textreihenfolge basierend auf der Inhaltssprache
 - **Schrift-Skripte**: Arabische, hebraeische und CJK-Schriftarten unabhaengig in den Einstellungen konfigurierbar
+
+### Wie sich Einfügemarke und Pfeiltasten in arabischem und zweisprachigem Text verhalten
+
+Constellations Editor folgt derselben Logik wie Microsoft Word unter Windows, sodass Ihr Muskelgedächtnis direkt übertragbar ist:
+
+- **Die Pfeiltasten bewegen die Einfügemarke um jeweils ein Zeichen des *Textes*, in Lesereihenfolge** — nicht um eine Position auf dem Bildschirm. In rein arabischem oder rein englischem Text sieht das genauso aus wie der gedrückte Pfeil. An einer Nahtstelle zwischen Arabisch und Englisch (z. B. einem arabischen Satz mit einem englischen Wort darin) schreitet die Einfügemarke sauber Zeichen für Zeichen in Schreibreihenfolge voran und „springt" über die Nahtstelle — dieser Sprung ist korrekt und verhindert, dass sich die Einfügemarke an der Grenze wie festgefahren anfühlt.
+- **Home** springt an den *Leseanfang* der Zeile — bei einer arabischen Zeile den **rechten** Rand; **End** springt an das *Leseende* — den **linken** Rand. **Enter** in einer arabischen Zeile setzt die Einfügemarke der neuen Zeile nach **rechts**.
+- **Dreifachklick** wählt den **Text** des Absatzes aus (nicht den leeren Raum daneben). **Doppelklick** wählt ein Wort aus.
+- Ein **lateinisches Wort am Ende einer arabischen Zeile** behält eine klare, stabile Position der Einfügemarke, statt seine Richtung zu verlieren.
+
+### Auswählen und Navigieren nach Einheit
+
+Jede Texteinheit hat ihren schnellen Auswahlweg — identisch in arabischen, englischen und gemischten Notizen:
+
+- **Wort** — Doppelklick. **Satz** — **Ctrl+Klick** an beliebiger Stelle darin oder **Ctrl+Shift+S** an der Einfügemarke. Die Satzerkennung versteht arabische Interpunktion: **؟ ۔ !** und der Punkt beenden einen Satz, das arabische Semikolon **؛** ist dagegen eine Pause *innerhalb* eines Satzes — und Dezimalzahlen wie 3.14 zerteilen nie einen Satz. (Ctrl+Klick ersetzt die frühere Geste „weiteren Cursor hinzufügen".)
+- **Zeile** — **Ctrl+L**. **Absatz** (der Block zwischen Leerzeilen) — **Ctrl+Shift+L** oder Dreifachklick. Markierungen schmiegen sich an den Text — in einer arabischen Zeile endet die Auswahl bei den Wörtern, statt sich über die leere linke Seite zu erstrecken.
+- **Bildschirmseite** — **Shift+Page Down/Up**. **Alles** — **Ctrl+A**.
+- **Absatzweise bewegen** — **Ctrl+↓** springt an den Anfang des nächsten Absatzes, **Ctrl+↑** an den des aktuellen (erneut drücken für den vorherigen). Mit zusätzlichem **Shift** wählen Sie Absatz für Absatz aus.
+
+### Die Richtung eines Absatzes erzwingen
+
+Manchmal ist die automatische Erkennung nicht das, was Sie wollen — ein arabischer Absatz, der mit einem englischen Markennamen beginnt, oder ein englischer Absatz, der von rechts nach links gelesen werden soll:
+
+- **Ctrl+Shift auf der RECHTEN Tastaturseite drücken und loslassen** → der Absatz, in dem der Cursor steht, wird zu **100 % rechts-nach-links**. **Ctrl+Shift auf der LINKEN Seite** → **100 % links-nach-rechts**. (Die Microsoft-Word-Konvention.)
+- Der Wechsel greift **beim Loslassen**, ohne dass dazwischen eine andere Taste gedrückt wird — Ctrl+Shift+S und alle anderen Kürzel funktionieren also unverändert weiter.
+- Die Überschreibung ist eine **harte** (sie schlägt die automatische Erkennung), gilt für den ganzen Absatz oder jeden Absatz, den eine Auswahl umfasst, und wird als unsichtbares Richtungszeichen **im Text selbst** gespeichert — sie übersteht Neustarts und Synchronisierung und wandert mit dem Text nach Word oder Obsidian.
+- Ein einziges **Ctrl+Z** macht sie rückgängig. Markdown bleibt unversehrt: Listen, Überschriften und Zitate behalten ihre Markierungszeichen; Codeblöcke, Tabellen und Zeilen, die mit einem #Tag *beginnen*, werden bewusst nicht angetastet.
 
 ### Einrichtung fuer Arabisch
 

@@ -175,6 +175,13 @@ describe('PJ-106 §B4 — the review-earned guards (adversarial findings, all fi
 		const doc = '123 456\nعربي';
 		expect(apply(doc, 1, 'rtl')).toBe(`${RLM}123 456\n${RLM}عربي`);
 	});
+
+	it('[AUDIT-FAIL] a callout HEADER is never marked (a mark before [! severs the callout)', () => {
+		const doc = '> [!note] ملاحظة\n> نص داخل الصندوق';
+		const out = apply(doc, 3, 'rtl');
+		// The header keeps its bytes; the CONTENT line still gets its mark after `> `.
+		expect(out).toBe(`> [!note] ملاحظة\n> ${RLM}نص داخل الصندوق`);
+	});
 });
 
 describe('PJ-106 §B4 — bidiPlugin detectLineDir honors the marks (no fighting)', () => {
@@ -200,5 +207,12 @@ describe('PJ-106 §B4 — bidiPlugin detectLineDir honors the marks (no fighting
 		expect(detectLineDir('hello')).toBe('ltr');
 		expect(detectLineDir('مرحبا')).toBe('rtl');
 		expect(detectLineDir('')).toBeNull();
+	});
+
+	it('a callout HEADER takes its direction from the TITLE, not the hidden [!type] keyword', () => {
+		expect(detectLineDir('> [!note] ملاحظة')).toBe('rtl'); // the Boss-reported split box
+		expect(detectLineDir('> [!note] English title')).toBe('ltr');
+		expect(detectLineDir('> [!فكرة] عنوان عربي')).toBe('rtl'); // custom Arabic trigger
+		expect(detectLineDir('> [!note]')).toBeNull(); // no title → neutral, inherits
 	});
 });

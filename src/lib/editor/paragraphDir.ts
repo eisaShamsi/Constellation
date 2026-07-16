@@ -62,6 +62,11 @@ function lineEligible(text: string): boolean {
 	if (/^\s{0,3}(?:[-*_]\s*){3,}\s*$/.test(text)) return false; // horizontal rule
 	if (/^\s{0,3}(?:=+|-+)\s*$/.test(text)) return false; // setext underline
 	if (/^\s{0,3}\[[^\]]+\]:\s/.test(text)) return false; // link-ref / footnote definition
+	// Callout HEADER (`> [!note] …`): a mark before `[!` severs the callout — every callout
+	// parser expects only whitespace between `>` and `[!` (the Phase-4 drift audit's FAIL).
+	// The header keeps automatic direction (from its title, via detectLineDir); the rest of
+	// the callout's lines still flip. Same precedent as the #tag skip.
+	if (/^(?:\s*>\s*)+\[!/.test(text)) return false;
 	// Syntax-only (pure markers, no letters and no digits — digit-only lines like `123 456`
 	// ARE content and stay eligible so a forced block never renders half-flipped).
 	if (/^[#*>\-\s`\[\]()!|~=+.‎‏]*$/.test(text)) return false;

@@ -1136,6 +1136,33 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 - **Açıklama**: Öğeler, içerik diline göre nokta/metin sırasını çevirir
 - **Yazı tipi betikleri**: Ayarlar'da Arapça, İbranice ve CJK yazı tiplerini bağımsız olarak yapılandırın
 
+### Arapça ve iki dilli metinde imleç ve ok tuşları nasıl davranır
+
+Constellation'ın düzenleyicisi, Microsoft Word'ün Windows'ta kullandığı mantığın aynısını izler; böylece kas hafızanız olduğu gibi taşınır:
+
+- **Ok tuşları, ekrandaki konuma göre değil, *metnin* okunuş sırasına göre birer karakter ilerler.** Salt Arapça veya salt İngilizce metinde bu, tam olarak bastığınız ok gibi görünür. Arapça ile İngilizcenin buluştuğu bir ek yerinde (örn. içinde İngilizce bir sözcük geçen Arapça bir cümlede) imleç, karakterleri yazılış sırasıyla temiz biçimde tek tek adımlar ve ek yerinin üzerinden "atlar" — bu atlama doğrudur; imlecin sınırda takılıp kalmış gibi hissetmesini önleyen şey de budur.
+- **Home**, satırın okuma açısından *başına* gider — Arapça bir satırda **sağ** kenara; **End** ise okuma açısından *sonuna* — **sol** kenara. Arapça bir satırda **Enter**, yeni satırın imlecini **sağa** yerleştirir.
+- **Üçlü tıklama** paragrafın **metnini** seçer (yanındaki boş alanı değil). **Çift tıklama** bir sözcüğü seçer.
+- **Arapça bir satırın sonundaki Latin harfli bir sözcük**, yönünü kaybetmek yerine net ve kararlı bir imleç konumu korur.
+
+### Birim bazında seçim ve gezinme
+
+Her metin biriminin Arapça, İngilizce ve karma notlarda birebir aynı çalışan hızlı bir seçicisi vardır:
+
+- **Sözcük** — çift tıklama. **Cümle** — herhangi bir yerine **Ctrl+tıklama** veya imleç içindeyken **Ctrl+Shift+S**. Cümle algılama Arapça noktalamayı anlar: **؟ ۔ !** ve nokta cümleyi bitirir; Arapça noktalı virgül **؛** ise cümlenin *içindeki* bir duraklamadır — 3.14 gibi ondalık sayılar da asla cümleyi bölmez. (Ctrl+tıklama, eski "imleç ekle" hareketinin yerini alır.)
+- **Satır** — **Ctrl+L**. **Paragraf** (boş satırlar arasındaki blok) — **Ctrl+Shift+L** veya üçlü tıklama. Vurgular metne yapışır — Arapça bir satırda seçim, boş sol tarafa uzanmak yerine sözcüklerde durur.
+- **Bir ekran dolusu** — **Shift+Page Down/Up**. **Tümü** — **Ctrl+A**.
+- **Paragraf bazında hareket** — **Ctrl+↓** sonraki paragrafın başına atlar, **Ctrl+↑** geçerli paragrafınkine (bir öncekine gitmek için yeniden basın). Atlarken paragraf paragraf seçmek için **Shift** ekleyin.
+
+### Paragraf yönünü zorlama
+
+Bazen otomatik algılama istediğiniz gibi olmaz — İngilizce bir marka adıyla açılan Arapça bir paragraf ya da sağdan sola okunmasını istediğiniz İngilizce bir paragraf:
+
+- **Sağ Ctrl+Shift tuşlarına basıp bırakın** → imlecin bulunduğu paragraf **%100 sağdan sola** olur. **Sol Ctrl+Shift** → **%100 soldan sağa**. (Microsoft Word'ün alışılmış davranışı.)
+- **Tuşları bıraktığınız anda** devreye girer, arada başka hiçbir tuş olmadan — bu yüzden Ctrl+Shift+S ve benzeri kısayollar aynen çalışmaya devam eder.
+- Geçersiz kılma **kesindir** (otomatik algılamayı yener), paragrafın tamamına veya bir seçimin kapsadığı her paragrafa uygulanır ve **metnin kendi içinde** görünmez bir yön karakteri olarak saklanır — yeniden başlatmalara ve eşitlemeye dayanır, metinle birlikte Word'e veya Obsidian'a taşınır.
+- Tek bir **Ctrl+Z** geri alır. Markdown güvende kalır: listeler, başlıklar ve alıntılar imlerini korur; kod bloklarına, tablolara ve #etiketle *başlayan* satırlara bilerek dokunulmaz.
+
 ### Arapça İçin Kurulum
 
 1. **Ayarlar > Genel > Dil** bölümüne gidin ve Arapça'yı seçin

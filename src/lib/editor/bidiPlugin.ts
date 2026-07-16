@@ -44,9 +44,14 @@ const CJK_RE       = /[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\u30A0-\u30FF\u304
 export function detectLineDir(text: string): 'rtl' | 'ltr' | null {
 	// Structured strip FIRST (quotes/bullets/ordered/task markers — `- [x] ` would otherwise
 	// leave its `x` as the first strong char and misread a checked Arabic task as LTR), then
-	// the legacy flat strip for the leftovers. The §B4 marks are in neither class — a leading
-	// mark survives into `clean` and wins the first-strong scan below.
-	const clean = text.replace(BLOCK_PREFIX_RE, '').replace(/^[#*>\-\s`\[\]()!|~=+\d.]+/, '');
+	// the callout type token (`[!note]` is hidden syntax — an Arabic callout's HEADER must
+	// take its direction from the visible TITLE, not from the English keyword; the Boss's
+	// 2026-07-16 split-box report), then the legacy flat strip for the leftovers. The §B4
+	// marks are in none of these — a leading mark survives and wins the first-strong scan.
+	const clean = text
+		.replace(BLOCK_PREFIX_RE, '')
+		.replace(/^\[![^\]]*\][+-]?\s*/, '')
+		.replace(/^[#*>\-\s`\[\]()!|~=+\d.]+/, '');
 	if (!clean) return null; // empty or syntax-only line
 
 	for (const ch of clean) {

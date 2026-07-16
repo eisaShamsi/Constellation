@@ -102,6 +102,36 @@ Remaining in PJ-106: §A4 (Reproduce-First-gated on the callout repro), C1 (CM6 
 C2 (docs/help/User Manual ×15), C3 (Phase-4 audit + the per-cycle sweep — the automated
 inspection resets Jul 18 and doubles as the §B4 post-gate confirmation).
 
+## PJ-106 CLOSE — C2 + C3(audit) + §A4 gate + the callout fixes
+
+**C2 (docs ×15) — DONE.** NEW help topic "Writing in Arabic and Mixed Scripts" in all 15 locales
+(English master hand-written; 14 native translations via `wf_e588176b`, every agent found its
+manual's RTL section at its own drifted number — §19/§20 — and extended it in place; folder/file
+names stay English per repo convention). English User Manual §18 extended (select-by-unit +
+forcing direction). `LESSONS-LEARNED.md` gained **LL-034** (bidi has TWO engines — render fixes
+without the motion facet ship half the recipe; sweep plain-text marks against every text parser).
+
+**C3 (Phase-4 audit, `wf_97aab837`, 3 lenses) — verdicts:** invariants **PASS-WITH-NOTES** (all
+6 INVs HOLD); migration-path **PASS-WITH-NOTES** (all 5 items PASS; flag-off contract now
+pinned in rtlFlag.ts + the plan CLOSE NOTES); drift **FAIL → FIXED same-pass** (WA#6): a §B4
+mark before `[!` would sever a callout (all 7 callout parsers mark-blind) → callout HEADERS are
+now in §B4's skip list; and — converging with the Boss's independent split-box report — a
+callout header now takes its DIRECTION from its visible TITLE, not the hidden `[!note]` keyword
+(`detectLineDir` strips the type token; an Arabic-titled callout renders as one coherent RTL
+box). Audit paper-trail also fixed: FocusPane:192 stale comment, detectDir mark-blind-by-design
+comment, rtlFlag.ts exact-scope comment, plan CLOSE NOTES §1–6. The remaining audit notes fold
+into the **Jul-18 sweep** (window-level mousedown disarm edge for a toolbar Ctrl+Shift+click)
+and the ledger (**PJ-109** — A5's optional Mod-Arrow Windows word-hop, never landed; polish).
+
+**§A4 — CLOSED, SUBSUMED BY PART A.** The Reproduce-First gate ran on the Boss's live app:
+End/Home + arrows inside an Arabic callout (pure + bilingual lines) — **"callout caret pass."**
+No repro fired → per the standing rule, §A4 is not built.
+
+**Gates at close:** vitest **427** (33 files; +2 callout recipes), svelte-check **0**, fresh
+release binary. **PJ-106 is CLOSED** pending only the Jul-18 per-cycle sweep (which doubles as
+the §B4 post-gate). INV-1 note: the Boss's live typing validation at every increment stands in
+for the two recorded burst numbers (flagged to the Boss at close for the explicit ruling).
+
 ## Housekeeping
 
 - Test notes `PJ108 Target.md` / `PJ108 Linker.md` remain in `Eisa Test` pending tab-close →

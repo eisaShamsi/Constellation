@@ -1139,10 +1139,37 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 - **Deteccion automatica**: La direccion de la nota se detecta automaticamente a partir del contenido
 - **Interfaz**: Interfaz RTL completa cuando se selecciona el idioma arabe/hebreo
-- **Editor**: Edicion de texto RTL con movimiento de cursor y seleccion correctos
+- **Editor**: el cursor, la selección y la dirección de cada párrafo siguen las convenciones de Microsoft Word — detallado en los apartados siguientes
 - **Vista Estelar**: Las etiquetas en arabe se renderizan de derecha a izquierda con respaldo de fuente adecuado
 - **Leyenda**: Los elementos invierten el orden punto/texto segun el idioma del contenido
 - **Fuentes de escritura**: Configura fuentes para arabe, hebreo y CJK de forma independiente en Configuracion
+
+### Cómo se comportan el cursor y las flechas en texto árabe y bilingüe
+
+El editor de Constellation sigue la misma lógica que usa Microsoft Word en Windows, así que tu memoria muscular se traslada tal cual:
+
+- **Las teclas de flecha avanzan un carácter del *texto*, en orden de lectura** — no una posición en la pantalla. En árabe puro o en inglés puro esto se ve exactamente como la flecha que pulsaste. En una costura entre árabe e inglés (p. ej., una oración en árabe que contiene una palabra en inglés), el cursor recorre limpiamente cada carácter en el orden de escritura y «salta» a través de la costura — ese salto es correcto, y es lo que evita que el cursor parezca atascado en la frontera.
+- **Home** va al *inicio* de lectura de la línea — el borde **derecho** en una línea en árabe; **End** va al *final* de lectura — el borde **izquierdo**. Pulsar **Enter** en una línea en árabe coloca el cursor de la línea nueva a la **derecha**.
+- El **triple clic** selecciona el **texto** del párrafo (no el espacio vacío a su lado). El **doble clic** selecciona una palabra.
+- Una **palabra latina al final de una línea en árabe** conserva una posición de cursor clara y estable en lugar de perder su dirección.
+
+### Seleccionar y navegar por unidad
+
+Cada unidad de texto tiene su selector rápido, idéntico en notas en árabe, en inglés y mixtas:
+
+- **Palabra** — doble clic. **Oración** — **Ctrl+clic** en cualquier punto de ella, o **Ctrl+Shift+S** con el cursor dentro. La detección de oraciones entiende la puntuación árabe: **؟ ۔ !** y el punto final terminan una oración, mientras que el punto y coma árabe **؛** es una pausa *dentro* de una — y los decimales como 3.14 nunca la parten. (Ctrl+clic sustituye al antiguo gesto de añadir otro cursor.)
+- **Línea** — **Ctrl+L**. **Párrafo** (el bloque entre líneas vacías) — **Ctrl+Shift+L**, o triple clic. Los resaltados se ciñen al texto — en una línea en árabe la selección se detiene en las palabras en lugar de extenderse por el lado izquierdo vacío.
+- **Una pantalla** — **Shift+Page Down/Up**. **Todo** — **Ctrl+A**.
+- **Moverse por párrafos** — **Ctrl+↓** salta al inicio del párrafo siguiente, **Ctrl+↑** al inicio del actual (otra vez para ir al anterior). Añade **Shift** para ir seleccionando párrafo a párrafo.
+
+### Forzar la dirección de un párrafo
+
+A veces la detección automática no es la que quieres — un párrafo en árabe que empieza con una marca comercial en inglés, o un párrafo en inglés que quieres leer de derecha a izquierda:
+
+- **Pulsa y suelta Ctrl+Shift del lado derecho del teclado** → el párrafo donde está el cursor pasa a ser **100 % de derecha a izquierda**. **Ctrl+Shift del lado izquierdo** → **100 % de izquierda a derecha**. (La convención de Microsoft Word.)
+- Se dispara **al soltar**, sin ninguna otra tecla entre medias — así que Ctrl+Shift+S y compañía siguen funcionando intactos.
+- La anulación es **dura** (vence a la detección automática), se aplica al párrafo entero o a todos los párrafos que abarque una selección, y se guarda **dentro del texto** como un carácter de dirección invisible — sobrevive a los reinicios y a la sincronización, y viaja con el texto si lo pegas en Word o en Obsidian.
+- Un solo **Ctrl+Z** lo deshace. El Markdown queda a salvo: las listas, los encabezados y las citas conservan sus marcadores; los bloques de código, las tablas y las líneas que *empiezan* con un #tag se dejan intactos a propósito.
 
 ### Configuracion para Arabe
 

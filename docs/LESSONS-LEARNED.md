@@ -668,7 +668,21 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-07-07 (LL-033 added — MIG-098: the rename→index update was a detached
+## LL-034: Bidi Text Has TWO Engines — Fixing the RENDER Is Only Half the Recipe; the MOTION Engine Must Be Told Too
+
+**Symptom (PJ-106, 2026-07-14/15 — the Boss's daily Arabic writing):** lines *looked* right (Arabic rendered right-to-left, correct alignment) while the *caret misbehaved* on the very same lines — Home/End jumped to the wrong edge, the empty-line caret sat left after Enter, arrows lost their way at Arabic↔Latin seams. Four separate direction heuristics were all stamping the DOM correctly, yet every motion command still consulted a different, stale answer.
+
+**Root cause:** a CodeMirror editor resolves direction TWICE, independently: (1) the **render** path — CSS (`unicode-bidi: plaintext`), `dir` attributes, line decorations — decides what you *see*; (2) the **motion** path — `textDirectionAt`, the bidi spans behind Home/End/arrows/selection — decides how the caret *moves*, and it reads **computed style + its own facets** (`perLineTextDirection`), NOT whatever the render happened to do. Stamping `dir` on a line fixes the picture; unless the motion facet is enabled and consults the SAME base, the caret keeps navigating the old geometry. Every "fix" that touched only the render shipped half the recipe — and the desync classes kept coming back (§A2's typing-flip lag, SI2-3's stale frame, §B4's 300 ms mark-insert window — all the same shape: render updated, motion not yet).
+
+**Rule:** any change to text direction must name BOTH halves in its design: *what does the user see* (render) AND *what does `textDirectionAt` return at that instant* (motion) — and the verification must assert they agree **in the same frame** (type/flip → immediately press End → the caret lands on the flipped side, zero intermediate frames). Corollary: jsdom/vitest can only test the offset-pure half — motion agreement needs the running app (Reproduce-First applies). Second corollary: when persisting direction in plain text (RLM/LRM marks), every consumer that parses that text (heading anchors, tags, wikilink targets, sentence segmentation) must be swept for mark-blindness — an invisible char is invisible to the USER, never to a regex.
+
+---
+
+*Last updated: 2026-07-16 (LL-034 added — PJ-106: bidi text has two engines; render fixes without
+the motion facet ship half the recipe, and every desync class (§A2/SI2-3/§B4) was this same shape.
+Assert render↔motion same-frame agreement, live; sweep plain-text direction marks against every
+text-parsing consumer).*
+*Earlier: 2026-07-07 (LL-033 added — MIG-098: the rename→index update was a detached
 fire-and-forget task with no durability/retry that silently no-op'd on conn-`None`/contention/
 app-close, drifting notes out of the index invisibly for ~9 days; `reindex_single_note` returned
 `Ok(())` on a `None` conn — a false-success. A fire-and-forget task is never a durability mechanism
