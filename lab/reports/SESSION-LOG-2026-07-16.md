@@ -132,6 +132,14 @@ release binary. **PJ-106 is CLOSED** pending only the Jul-18 per-cycle sweep (wh
 the §B4 post-gate). INV-1 note: the Boss's live typing validation at every increment stands in
 for the two recorded burst numbers (flagged to the Boss at close for the explicit ruling).
 
+## The close verification — Boss PASS (2026-07-16, post-722f3f97 binary)
+
+The Boss relaunched and verified the callout coherence fix on his own split-box test case:
+**"Pass"** — the Arabic-titled callout renders as one coherent RTL box (title + icon right,
+accent bar consistent). No performance complaint raised across the whole arc's live typing →
+the INV-1 ruling stands as recorded: live validation at every increment sufficed. PJ-106's
+close verification is complete; the migration is DONE pending the Jul-18 sweep ritual.
+
 ## Housekeeping
 
 - Test notes `PJ108 Target.md` / `PJ108 Linker.md` remain in `Eisa Test` pending tab-close →
