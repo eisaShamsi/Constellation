@@ -181,6 +181,12 @@ Canonical violation: 2026-06-11 — the first CNS preview shipped as a fixed 180
 - Every editor view — NotePane, FocusPane, and any future view — must support multilingual, mixed-script content natively.
 - Never build a single-language assumption into layout, fonts, cursor behavior, or input handling.
 
+### Cross-Platform by Design *(standing rule — Boss-mandated 2026-07-17)*
+- Constellation will ship on **both Windows and macOS**. We build on Windows today; the macOS side hasn't started. **Consider macOS in every coding and build decision** so that, at the right time, the macOS build takes *little effort* — never a rewrite.
+- Tauri is already cross-platform; keep app code platform-neutral and **flag macOS implications as they arise — never defer a platform assumption silently.**
+- Watch the Windows-only assumptions: **keyboard conventions** (Ctrl vs ⌘Cmd — the PJ-106 / §B4 RTL gestures use explicit `Ctrl` and will need a macOS keymap pass; CM6 `Mod-` maps Cmd-on-mac / Ctrl-on-Win, but explicit-`Ctrl` paths won't), **paths** (`\` vs `/`, case-sensitivity, NFC/NFD — the rename cascade already handles NFC; keep it), **file-locking / process quirks** (Windows-only *tooling*, not app code), and **packaging** (`.exe`/NSIS vs `.app`/`.dmg`/notarization; gate platform code behind `#[cfg(...)]`).
+- This sits alongside **Language-First by Design**: both are foundational "works everywhere, by design" constraints, not later add-ons.
+
 ### Constellation Knowledge Hierarchy
 Constellation organizes knowledge in a four-level structural hierarchy with an **optional federation layer** at the top — no other PKM system has this depth:
 
