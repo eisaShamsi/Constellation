@@ -22,6 +22,7 @@
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createTagCompletion, createSlashCompletion } from '$lib/editor/completions';
+	import { findWikilinkAtLineOffset } from '$lib/editor/linkAtPos'; // PJ-114 §0.2 — shared parser-free wikilink finder
 	import TableGridPicker from './TableGridPicker.svelte';
 	import EditorContextMenu from './EditorContextMenu.svelte';
 	import { syntaxTree } from '@codemirror/language';
@@ -273,19 +274,18 @@
 				if (pos === null) return false;
 				const line = editorView.state.doc.lineAt(pos);
 				const offset = pos - line.from;
-				// Check for wikilink at click position
-				const wikiRe = /\[\[([^\]]+)\]\]/g;
-				let match;
-				while ((match = wikiRe.exec(line.text)) !== null) {
-					if (offset >= match.index && offset <= match.index + match[0].length) {
-						event.preventDefault();
-						const link = match[1].split('|')[0].split('#')[0];
-						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link } }));
-						return true;
-					}
+				// PJ-114 §0.2 — wikilink under the click, via the shared parser-free finder
+				// (was an inline regex here; now one source of truth in linkAtPos.ts, reused by
+				// FocusPane's FM+ affordances). Behavior identical: same regex, same hit predicate.
+				const wikiHit = findWikilinkAtLineOffset(line.text, offset);
+				if (wikiHit) {
+					event.preventDefault();
+					document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link: wikiHit.target } }));
+					return true;
 				}
 				// Check for markdown link at click position
 				const mdRe = /\[([^\]]+)\]\(([^)]+)\)/g;
+				let match;
 				while ((match = mdRe.exec(line.text)) !== null) {
 					if (offset >= match.index && offset <= match.index + match[0].length) {
 						event.preventDefault();

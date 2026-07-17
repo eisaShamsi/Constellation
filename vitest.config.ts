@@ -118,6 +118,10 @@ export default defineConfig({
 			// zero-write proof, 0-of-N deferred arm, switch-abort, focus safety,
 			// model-as-source, deferred cid drain, arm-in-finally + sentinel.
 			'tests/mig-100/restore.test.ts',
+			// PJ-114 §0.2 (2026-07-17) — the shared parser-free wikilink finder
+			// (findWikilinkAtLineOffset), extracted from CodeMirrorEditor's Ctrl-click
+			// so FocusPane's FM+ affordances reuse one copy: hit predicate + alias/#heading strip.
+			'tests/pj-114/linkAtPos.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
