@@ -64,6 +64,16 @@
 		readOnly?: boolean;
 	} = $props();
 
+	// Sweep-2026-07-18 #1 (APP-KILLER) — snapshot the note identity at mount. The `tabId`/
+	// `filePath` props update reactively when the parent swaps notes (in-place wikilink nav / tab
+	// switch); during the NoteEditor {#key} teardown they already point at the INCOMING note while
+	// this instance's `editableProps` still hold the OUTGOING note's frontmatter. The onDestroy
+	// flush guards on these snapshots so it can never splice the outgoing props onto the incoming
+	// note (the BUG-023 content-integrity class via the props channel). Mirrors NotePane's
+	// `mountedFilePath` body-save guard (NotePane.svelte:297).
+	const mountedTabId = tabId;
+	const mountedFilePath = filePath;
+
 	const TYPE_ICONS: Record<PropertyType, string> = {
 		text: '\u2261',
 		number: '#',
@@ -473,11 +483,18 @@
 		// G3 — a read-only view never writes (WA#6); still clear the timer to avoid a leak.
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
-			if (!readOnly && tabId && filePath) {
+			// Sweep-2026-07-18 #1 (APP-KILLER) — flush ONLY when this instance still owns the note
+			// it mounted for. On a note swap the live tabId/filePath already point at the INCOMING
+			// note (B) while editableProps still hold the OUTGOING note's (A) frontmatter; using the
+			// live identity here spliced A's props onto B's model+disk AND stomped B's tab.content
+			// (both writes below). The identity gate makes this a clean skip on swap — no corruption
+			// — while a genuine close/switch of the mounted note still persists its pending edit. The
+			// snapshot targets defend a second time via editNoteProps' own expectPath guard.
+			if (!readOnly && mountedTabId && mountedFilePath && tabId === mountedTabId && filePath === mountedFilePath) {
 				/* Direct mutation so onflush reads fresh properties */
-				const tab = get(openTabs).find(t => t.id === tabId);
+				const tab = get(openTabs).find(t => t.id === mountedTabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
-				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
+				saveTabContent(mountedTabId, mountedFilePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
 	});
