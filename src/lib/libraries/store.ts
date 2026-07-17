@@ -1349,18 +1349,41 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 	const myToken = (_navTokens.get(tabId) ?? 0) + 1;
 	_navTokens.set(tabId, myToken);
 	try {
-		// APP-KILLER #2 — Alt+←/→ is a DEPARTURE: flush the OUTGOING dirty model to disk
-		// before this tab's id-slot is re-seeded below (openNoteModel). Sources the old
-		// path from the model. A failed flush ABORTS the nav (user stays on the note +
-		// save-health banner); a nav that superseded us during the flush also bails.
+		// Sweep-2026-07-18 #2 (B1) — one path → one tab, ALSO on Alt+←/→. If the target is
+		// ALREADY open in ANOTHER tab, activate that tab instead of re-seeding THIS tab onto
+		// the same path — which would mint a SECOND independent NoteModel for one file (models
+		// are keyed by tab id), the exact two-writers-last-wins clobber B1 kills for openNoteTab.
+		// Runs BEFORE the flush: on a dedup this tab keeps its own note (it doesn't depart), so
+		// there is nothing to flush. Mirrors openNoteTab's dedup (store.ts:2100).
+		// (Residual, shared with openNoteTab: this check is a single synchronous snapshot; a
+		// concurrent open of the SAME path during the awaited flush/resolve below could still
+		// mint a second model — an extremely narrow disk-latency TOCTOU, not introduced here.)
+		if (DEDUP_ALL_TABS_ENABLED) {
+			const existing = get(openTabs).find(t => t.path === filePath && t.id !== tabId);
+			if (existing) {
+				if (get(splitActive)) focusedTabId.set(existing.id); else activeTabId.set(existing.id);
+				_traceNav('loadTabHistoryEntry:dedupExisting', existing.id, filePath);
+				return;
+			}
+		}
+		// Alt+←/→ is a DEPARTURE: flush the OUTGOING dirty model to disk before this tab's
+		// id-slot is re-seeded below (openNoteModel). Sources the old path from the model. A
+		// failed flush ABORTS the nav (user stays on the note + save-health banner); a nav that
+		// superseded us during the flush also bails.
 		if (NAV_FLUSH_ENABLED) {
 			const f = await flushOutgoing(tabId, 'nav_flush');
 			if (!f.ok) { _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
 			if (_navTokens.get(tabId) !== myToken) return; // superseded during the flush await
 		}
-		const content: string = await invoke('read_note', { filePath });
+		// Sweep-2026-07-18 #10 — resolveNoteContent (NOT a raw read) so a note whose ONLY copy
+		// of unsaved edits lives in the write-ahead net (a failed save whose tab was closed) is
+		// recovered on Alt-nav — the documented reopen-restore route, previously bypassed here.
+		// Mirrors openNoteTab (store.ts:2121); displayOnlyWindow preserves the shared net (PJ-108).
+		const resolved = await resolveNoteContent(filePath, { preserveNet: displayOnlyWindow });
+		if (resolved === null) { _traceNav('loadTabHistoryEntry:unreadable', tabId, filePath); return; }
 		// If a later nav has superseded this one, don't stomp its result.
 		if (_navTokens.get(tabId) !== myToken) return;
+		const content = resolved.content;
 
 		// Name: mirror openNoteTab (shared deriveTabName). Without this parity
 		// the tab label flips between conventions as the user navigates
@@ -1380,11 +1403,16 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 				content,
 				name,
 				historyIndex: newHistoryIndex,
+				cursorPos: resolved.cursorPos,
+				scrollTop: resolved.scrollTop,
 				highlightTerm: undefined,
 				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
 			};
 		}));
 		openNoteModel(tabId, filePath, content); // MIG-076 §C — Alt-nav reuse drives the model synchronously
+		// #10 — net-recovered content is UNSAVED work: born DIRTY with the true disk baseline, so
+		// the autosave/retry persists it and switching away can't silently lose it (mirrors openNoteTab).
+		if (resolved.recoveredFromNet) markModelRecoveredFromNet(tabId, resolved.diskContent ?? null);
 		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }

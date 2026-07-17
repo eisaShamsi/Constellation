@@ -63,6 +63,9 @@ export default defineConfig({
 			// PJ-108 (2026-07-15) — Recipe RO: a read-only host following a wikilink
 			// must not consume the shared recovery net (openNoteTab preserveNet).
 			'tests/mig-076/readonlyLinkPreservesNet.test.ts',
+			// Sweep-2026-07-18 #2/#10 — Recipe HN: Alt+←/→ history nav must honor the
+			// B1 one-path-one-tab dedup + resolveNoteContent recovery (loadTabHistoryEntry).
+			'tests/mig-076/historyNavDedup.test.ts',
 			// PJ-106 §A0/§A1 (2026-07-14) — the offset-pure RTL direction-resolution recipes
 			// (deterministic base; the visual defects are the Boss's live staged tests).
 			'tests/pj-106/rtlDirection.test.ts',
