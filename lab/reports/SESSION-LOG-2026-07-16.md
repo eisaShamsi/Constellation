@@ -158,3 +158,145 @@ record touched no backlog item; ► Next stands: the Jul-18 sweep, then PJ-103).
 - Pending for the session-close PCS: User Manual + help topic (×15 locales) for the new selection
   commands (B1/B2/B3) — the PJ-106 C2 step, landing with the migration close or the PCS, whichever
   comes first.
+
+---
+
+# Session 2 (evening) — PJ-103 opened (the app-close flush APP-KILLER)
+
+**Function in hand:** PJ-103 — app close never flushes dirty note models; the `session:final-flush`
+listener (`+layout.svelte:3444`) persists only session.json before acking Rust's 700 ms close hold.
+
+## Session start
+- `git pull` clean — `HEAD == origin/main` at `53e39675`. Orientation v3.54 + handover read.
+- **Boss rulings ×3** (AskUserQuestion): (1) start PJ-103 NOW (§B4 precedent — stand-in adversarial
+  review; the Jul-18 whole-app sweep re-covers the diff); (2) schedule the Jul-18 sweep;
+  (3) PJ-108 fixture tabs are closed — move the files.
+
+## Housekeeping (done)
+- `PJ108 Target.md` + `PJ108 Linker.md` moved from `E:\Cognitive Knowledge\Eisa Test\` to the
+  session scratchpad (`pj108-fixtures\`, 200+165 bytes intact — moved, never deleted).
+- **Scheduled task `pj106-cycle-close-sweep-jul18`** created: fires ONCE at 2026-07-18T04:00+04:00,
+  runs `Workflow({name:'safety-inspection'})` whole-app, writes the register to `lab/reports/`,
+  commits/fixes NOTHING (Boss-test rule — fixes belong to the live session). Caveat: runs only
+  while the Claude desktop app is open; else fires on next launch.
+
+## PJ-103 — SO#8 cross-check + Understand phase (workflow `wf_ef19a089-dc0`, 6 readers, all facts cited to current code)
+- **Confirmed live, not stale.** The listener at `+layout.svelte:3444` calls only `persistSessionNow()`
+  (arrangement-only session.json, signature-guarded) then `session_flush_ack`. No note-model flush
+  exists anywhere on the close path.
+- **The Rust guillotine:** `lib.rs:661-692` — prevent_close → emit → `tokio::time::timeout(700ms, notified())`
+  with the Result DISCARDED (ack and timeout indistinguishable) → destroy both windows. No RunEvent
+  hook, no IPC drain; in-flight `write_note` is protected only by atomic_write's fsync+ReplaceFileW
+  (old-or-new, never torn — but a cut-off save is silently lost).
+- **The net does NOT cover the canonical scenario:** the write-ahead net (localStorage `constellation-wab`)
+  is written inside the save gate (`noteSession.ts:132`) — per keystroke it is NOT touched
+  (`NotePane.svelte:495-504`). A background-dirty model that never reached a save attempt has NO net
+  entry → nothing to recover at next boot.
+- **The mechanism (sweep register verbatim, re-verified):** type in A → switch to B inside the 1.5 s
+  debounce → outgoing pane's teardown flush dropped by the staleness guard (`NoteEditor.svelte:305`,
+  tab prop already points at B during the `{#key}` teardown) → model A dirty in RAM, no disk write,
+  no net, no timer (all died with the pane) → quit loses everything since A's last durable save
+  (the "~30 s" = NotePane's 30 s idle belt, inference — never derived in any doc).
+- **The active tab is exposed too:** sub-1.5 s keystrokes rely on DOM `beforeunload` firing under
+  `win.destroy()` — the codebase's own comment (`lib.rs:669-671`) says that is "NOT proven to survive
+  webview teardown". Load-bearing unknown → part of the live reproduction.
+- **The fix-shape tension nobody analyzed:** `flushAllDirtyTabs` (`store.ts:2319`) = sequential awaited
+  durable writes (fsync + up to 5 lock retries each) vs the 700 ms window. A synchronous net-stash of
+  every dirty model (compose + localStorage, zero awaits) is the only guaranteed-complete step.
+- **Paper-trail drift found:** the 2026-07-14 sweep register was NEVER appended to the Charter although
+  PJ-102–105 are marked "Open · Charter" in the ledger (fix at the ledger reconcile). The register file's
+  own scenario lines are truncated mid-sentence. PJ-086 (switch-time flush) = the same class's other
+  half; a close-time sweep covers its graceful-quit exposure.
+
+## Reproduce-First — in progress
+- Release binary verified current (built 16/07 17:36, post-PJ-106-close). App launched, PID 46652,
+  path-verified `target\release\constellation.exe`.
+- Victim/target notes created: `Eisa Test\PJ103 A.md` (106 bytes baseline, mtime 18:17:27, no marker)
+  + `PJ103 B.md`.
+- Computer-use request DENIED by Boss → reproduction handed to the Boss as a staged tutorial
+  (WA#1's own carve-out: the running GUI is the Boss's domain). **Stage 1 delivered:** type
+  `MARKER-ONE` in A → switch to B inside ~1 s → hands-off 15 s → I disk-check → Boss closes via X →
+  disk-check + reopen-recovery check. Awaiting the Boss's "done waiting".
+
+## PJ-103 Reproduce-First — COMPLETE (the loss fired live; root cause deeper than filed)
+
+**The named recipe (fires on demand):** hover the mouse over the window ✕ → type into the active
+note → click ✕ within the 1.5 s debounce → the typed tail NEVER reaches the .md file.
+Boss-executed 2026-07-16 ~19:13: `MARKER-THREE` typed, app closed, disk verified marker-less
+(`PJ103 A.md` last write 19:13:04 = the pre-typing Enter debounce; 172 bytes, no marker).
+
+**Mechanism, proven step by step on the release binary:**
+1. **Attempts 1+2 REFUTED the filed scenario** — a plain tab switch (paste+instant click; then
+   type+pre-aimed instant click) PERSISTED the outgoing note both times (`MARKER-ONE`/`-TWO` on
+   disk). The sweep register's "staleness guard drops the switch-away teardown flush" claim does
+   not fire on the live app. (PJ-086 as filed inherits this doubt — flagged for re-examination.)
+2. **The close cut-off CONFIRMED** — beforeunload DID fire under `win.destroy()` (settling the
+   codebase's own "unproven" comment, lib.rs:669): its synchronous compose+setWriteAhead stashed
+   the full marker content into localStorage at 19:13:46 (bytes recovered forensically from the
+   WebView2 leveldb log — evidence preserved at scratchpad `pj103-leveldb-evidence\`). The ASYNC
+   disk write it launched was cut off by process exit. Disk stale, net current.
+3. **The recovery net FAILED cross-session — TOTAL SILENT LOSS.** On reopen, leveldb's own LOG:
+   `Reusing MANIFEST-000001 / Recovering log #873 / Delete type=0 #3` — the manifest never
+   registered the test session's log (its 18:56 open logged "Creating DB since it was missing"),
+   so recovery replayed a STALE log and DELETED `000003.log` — the file holding the stash —
+   as an orphan. `getWriteAhead` then found nothing; the MIG-100 restore (journal:
+   `session_restore_begin 2 tabs → 2/2 restored` at 19:18:29) honestly served stale disk.
+   Boss confirmed: the note ends at MARKER-TWO. **localStorage is NOT a durable medium** —
+   its survival depends on Chromium leveldb internals (async browser-process commits,
+   orphan-log deletion). For the LAST copy of user knowledge that is a File-Over-App violation.
+4. Also observed live: the app relaunched into the WRONG universe (كون عيسى instead of Eisa
+   Cognitive Knowledge) — PJ-104 territory, timestamped evidence ~19:16.
+
+**The fix (Boss ruling: "up to 5 s, instant when clean"):**
+- `+layout.svelte` final-flush listener: `await flushAllDirtyTabs('final_flush')` BEFORE
+  `persistSessionNow()` before the ack — dirty models reach the .md files through the proven
+  bounded durability gate. Fail-open per step (close never hangs on a failed write).
+- `lib.rs` close arm: ack cap 700 ms → **5000 ms**; timeout expiry now writes a
+  `final_flush_timeout_5s` journal marker (no silent guillotine — Charter class-1).
+- Instant-when-clean: zero dirty models ⇒ the flush is a sync no-op scan ⇒ close unchanged.
+- Keystrokes live in the model from the first character (per-keystroke editBody), so the
+  sub-debounce tail is exactly what the close-flush persists.
+
+**Gates:** svelte-check 0 errors · cargo check clean · vitest 427/427.
+**In flight:** stand-in adversarial review (`wf_5bb5c713-220`, 4 refute lenses + verdict — the
+§B4 precedent, safety-inspection rate-limited until Jul 18) · npm run build → then
+cargo build --release (needs the running app closed — binary file lock) → Boss test (MARKER-FOUR
+recipe) → commit gated on the Boss PASS.
+**To file at the ledger reconcile:** the localStorage-net durability PJ (move the net's persistent
+layer to a Rust-side atomic_write file — needs its own migration); PJ-104 evidence; PJ-086
+re-examination; the 2026-07-14 register→Charter append drift; sweep-register mechanism correction
+for PJ-103.
+
+## PJ-103 — review-gated build + Boss PASS + CLOSE (rolls into 2026-07-17, ~05:11)
+
+**The stand-in adversarial review** (`wf_5bb5c713`, 4 refute-first lenses, 770k tokens): 12 findings.
+Every one fixed pre-commit or filed (WA#6):
+- FIXED: the post-flush typing window (bounded RE-PASS in the new `flushAllForAppClose`) · unserialized
+  same-id saves (per-id chain in `noteSession.save`; APP-KILLER-PLAUSIBLE closed unconditionally) ·
+  journal-invisible flush failure (`final_flush_residual_dirty` marker, awaited) · the false timeout
+  marker (renamed `final_flush_no_ack_5s` with honest semantics) · the boot-window 5s stall (listener
+  registered at the TOP of onMount — instant no-op ack during boot) · index↔disk divergence at close
+  (AWAITED FTS reindex of flushed notes; embeds stay async → PJ-113) · arrangement starvation
+  (persist-FIRST ordering) · the stale `session_flush_notify` contract doc · the updater `relaunch()`
+  bypass (SettingsModal flushes+persists before restart).
+- FILED: PJ-110 / PJ-111 / PJ-112 / PJ-113 (ledger v1.34).
+- **The recipes earned their keep:** my first serialization draft broke save()'s synchronous
+  compose+setNet prefix (the beforeunload-stash contract) — caught by 2 MIG-076 recipes
+  (type-during-await, compare-and-clear), fixed with the unchained fast path + an eager chained stash.
+- Workflow-authoring lesson: the review's verdict-synthesis prompt had an UNINTERPOLATED template
+  (my escaped `$`); the synthesizer agent correctly REFUSED to fabricate a verdict (Don't-Make-
+  Things-Up honored under delegation) — I synthesized from the four raw registers myself.
+
+**Gates:** svelte-check 0 · vitest 427/427 (after the fast-path fix) · cargo check clean ·
+`final_flush_repass` literal verified in `build/` · release binary rebuilt 20:25:36 (npm build first).
+
+**Boss test (staged, on the fresh binary):** Stage 1 — the MARKER-FOUR gesture (type + instant ✕,
+the exact recipe that killed MARKER-THREE): marker ON DISK at the close instant (05:11:22 Jul-17),
+no net involvement, no reopen needed. Stage 2 — typing burst clean · tab round-trip clean · clean
+close instant. **PASS — commit gated on this.**
+
+**Close paperwork:** ledger v1.34 (PJ-103 closed · PJ-110/111/112/113 filed · PJ-086 re-examine
+flag · register-correction note) · orientation v3.55 · Charter: PJ-103 close-cycle register +
+the 2026-07-14 drift fixed · User Manual close-flush paragraph EN + ×14 locales + the
+Notes-Management help topic (`wf_c422cf79`) · evidence `lab/reports/pj103-evidence-000003.log` ·
+MoCh-2026-07-16-1810.

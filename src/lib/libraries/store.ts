@@ -2324,6 +2324,48 @@ export async function flushAllDirtyTabs(origin: string): Promise<void> {
 	}
 }
 
+/**
+ * PJ-103 — the app-close flush: the body of the 'session:final-flush'
+ * graceful-close handshake. flushAllDirtyTabs plus the adversarial-review
+ * hardening (2026-07-16, wf_5bb5c713):
+ *  - BOUNDED RE-PASS: the window stays interactive during Rust's ≤5s close
+ *    hold, so keystrokes can land in a tab AFTER its flush pass — one re-scan
+ *    catches them before the ack.
+ *  - RESIDUAL JOURNAL MARKER: a write that fails fast (locked .md) leaves the
+ *    model dirty with only the save-health banner — which dies with the
+ *    window milliseconds later. The marker makes a dirty-at-ack close
+ *    journal-decidable (Charter class-1: never a silent loss).
+ *  - AWAITED FTS REINDEX for the flushed notes: navFlushEnv's fire-and-forget
+ *    reindex is killed by the destroy, leaving disk NEWER than the index
+ *    across the boot (the app's own write is watcher-suppressed, so no later
+ *    event heals it). Embeddings stay fire-and-forget — bounded staleness,
+ *    healed at the note's next save.
+ * Instant when clean: zero dirty models → returns after one synchronous scan.
+ */
+export async function flushAllForAppClose(): Promise<void> {
+	const dirty = get(openTabs).filter((t) => NAV_FLUSH_ENABLED && isNoteDirty(t.id));
+	if (dirty.length === 0) return;
+	await flushAllDirtyTabs('final_flush');
+	if (get(openTabs).some((t) => isNoteDirty(t.id))) {
+		await flushAllDirtyTabs('final_flush_repass');
+	}
+	const residual = get(openTabs).filter((t) => isNoteDirty(t.id)).length;
+	if (residual > 0) {
+		// Awaited — a fire-and-forget marker could be cut by the destroy,
+		// which would defeat its whole purpose (journal-decidability).
+		await invoke('journal_frontend_marker', {
+			surface: 'final_flush_residual_dirty',
+			detail: `${residual} note(s) still dirty at close ack`,
+		}).catch(() => {});
+	}
+	await Promise.all(
+		dirty.map((t) =>
+			invoke('constellation_search_reindex', { notePath: t.path, libraryName: t.libraryName })
+				.catch(() => {})
+		)
+	);
+}
+
 // ─── MIG-100 §3 — session restore: the batch-insert path ───
 
 export interface SessionRestoreInput {

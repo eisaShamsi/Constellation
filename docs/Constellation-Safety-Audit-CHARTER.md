@@ -331,3 +331,46 @@ PJ-092 (reverted 2026-07-13 as a frozen band-aid) was redone via the full `/migr
 ## PJ-090 — RESOLVED BY CUT (2026-07-13)
 
 The SS Tasks-panel cross-window clobber was **not fixed — the toggle was CUT** (Display-not-Domain). SO#8 revealed the ledger's premise rested on stale code: the current read-only Knowledge Cockpit's Tasks facet is a STUB, so the default SS cannot toggle tasks; only the split-view split-companion mode could. The Art-Director-&-Team honest audit (`wf_043756ee-352`) ruled the SS Tasks toggle a Display-Not-Domain duplication; the earlier cross-window-broadcast fix (adversarially SAFE ×7 but conceptually wrong — it "makes an illegal write work") was **reverted**. Fix: `TasksPanel.readOnly` prop; both SS mounts read-only; the write handlers + `toggleTaskReconciled` import removed. Main-window toggling untouched. svelte-check 0, vitest 341, Boss-tested PASS. **Standing lesson: SO#8 must verify a PJ against the RUNNING SS structure (the orientation Second-Screen §), not just the presence of the code.** The SS is being re-conceived as the three-zone Cockpit (`/migration`), which will delete the Tasks facet + the stub-facet duplication entirely.
+
+## The 2026-07-14 whole-app sweep — register pointer (drift fix, appended 2026-07-17)
+
+The SS-Cockpit §1-boundary whole-app sweep (`wf_8b0a5104-6e8`, 83 agents, **55 confirmed**; the
+Part-A diff itself: ZERO) was filed to the ledger (v1.28: PJ-102/103/104/105 + save_pulse=PJ-075)
+but its register was never appended here — the ledger's "Open · Charter" marks pointed at nothing.
+Full register: `lab/reports/SWEEP-REGISTER-2026-07-14-wf_8b0a5104.md`. NOTE: that register's PJ-103
+mechanism claim ("the staleness guard drops the switch-away teardown flush") was REFUTED by the
+2026-07-16 live reproduction — see the PJ-103 close entry below; the register stands as the
+historical record, the close entry is the correction.
+
+## PJ-103 close-cycle register (2026-07-16/17)
+
+**PJ-103 — app close never flushed dirty note models — FIXED (APP-KILLER, Boss-validated live).**
+The Reproduce-First arc on the release binary: (1) REFUTED the filed switch-drop mechanism (2/2
+fast switches persisted the outgoing note — PJ-086 flagged re-examine-first); (2) CONFIRMED the
+real loss at the close instant (type + ✕ inside the 1.5 s debounce → the Boss's MARKER-THREE never
+reached disk; beforeunload's sync net-stash landed but its async disk write was cut by
+`win.destroy()`); (3) exposed the localStorage net as NON-DURABLE — a Chromium leveldb
+MANIFEST/log-orphan inconsistency deleted the whole session's net on reopen (`Delete type=0 #3`,
+leveldb LOG; evidence `lab/reports/pj103-evidence-000003.log`) → TOTAL silent loss → **PJ-110**.
+**Fix:** the `session:final-flush` handshake now runs persist → `flushAllForAppClose` (durable
+per-model flush + re-pass + `final_flush_residual_dirty` journal marker + awaited FTS reindex) →
+ack; Rust cap 700 ms → 5000 ms + `final_flush_no_ack_5s` marker; listener registered at the top of
+onMount; per-id save serialization at the gate (sync-prefix preserved); updater `relaunch()`
+flushes first.
+
+**Stand-in adversarial review** (`wf_5bb5c713`, 4 refute-first lenses — the automated
+`safety-inspection` is rate-limited until Jul 18; its whole-app sweep is scheduled for Jul 18 4am):
+**12 findings — every one fixed pre-commit or filed:**
+- FIXED: post-flush typing window (re-pass before ack) · unserialized same-id saves
+  (APP-KILLER-PLAUSIBLE; per-id chain) · journal-invisible flush failure (`final_flush_residual_dirty`)
+  · false timeout marker (renamed `final_flush_no_ack_5s`, honest semantics) · boot-window 5 s
+  stall (listener first) · index↔disk divergence at close (awaited FTS reindex) · arrangement
+  starvation (persist-first) · stale `session_flush_notify` contract doc · updater relaunch bypass.
+- FILED: PJ-110 (net durability) · PJ-111 (flushOutgoing cascade-gate, design-needed) ·
+  PJ-112 (OS-shutdown bypass — tao routes no WM_ENDSESSION) · PJ-113 (close-time embed staleness).
+- Review-of-the-review lesson: 2 vitest recipes (Recipe: type-during-await, compare-and-clear)
+  caught my first serialization draft breaking save()'s synchronous compose+setNet prefix — the
+  contract the beforeunload stash depends on. The recipes are load-bearing; the fast-path preserved it.
+
+**Gates at close:** vitest 427 · svelte-check 0 · cargo clean · Boss test PASS (MARKER-FOUR on disk
+at the close instant · clean close instant · typing burst clean).

@@ -5,7 +5,8 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, tn, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, type WriteJournalStats } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, flushAllForAppClose, type WriteJournalStats } from '$lib/libraries/store';
+	import { persistSessionNow } from '$lib/libraries/session';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
@@ -460,6 +461,13 @@
 					updateProgress = 100;
 				}
 			}, { headers: getUpdateHeaders() });
+			// PJ-103 — relaunch() restarts the process WITHOUT CloseRequested,
+			// so the graceful-close flush handshake never runs on this path.
+			// Flush dirty note models to disk + persist the session arrangement
+			// here, fail-open (an update restart must never hang on a locked
+			// file — the net + banner + journal hold a failed write).
+			try { await flushAllForAppClose(); } catch { /* fail-open */ }
+			try { await persistSessionNow(); } catch { /* fail-open */ }
 			await relaunch();
 		} catch (e) {
 			updateStatus = $t('settings.general.updateError');

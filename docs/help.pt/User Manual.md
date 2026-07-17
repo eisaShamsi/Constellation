@@ -305,6 +305,8 @@ Voce tambem pode vincular a titulos especificos: `[[Nome da Nota#Titulo]]`.
 
 O Constellation **salva automaticamente** enquanto você digita — não há botão Salvar. Suas edições são gravadas no arquivo `.md` um instante depois de você fazer uma pausa (e sempre que você troca de nota ou fecha uma aba). Uma nota só é marcada como "salva" depois de ser genuinamente gravada no disco.
 
+**Fechar o aplicativo também é um ponto de salvamento.** Quando você fecha o Constellation, toda nota com digitação não salva é gravada em seu arquivo **antes** de a janela se fechar — incluindo as palavras digitadas no último segundo antes de você clicar em ✕. Um fechamento normal (nada por salvar) é instantâneo, exatamente como antes; quando há algo a gravar, a janela pode permanecer aberta por um breve momento (no máximo cinco segundos) enquanto suas notas pousam em segurança no disco.
+
 Se um salvamento **falhar** — por exemplo, uma ferramenta de sincronização (iCloud / OneDrive / Syncthing) ou um antivírus bloqueia o arquivo por um instante — o Constellation **não** perde o seu trabalho:
 
 - Uma faixa aparece no topo: *"Não foi possível salvar {note} — sua edição está segura e o salvamento será repetido."* O que você digitou permanece na tela e é mantido com segurança na memória (e em um buffer de recuperação que sobrevive a uma reinicialização).

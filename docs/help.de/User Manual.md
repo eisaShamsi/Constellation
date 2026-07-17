@@ -310,6 +310,8 @@ Sie koennen auch auf bestimmte Ueberschriften verlinken: `[[Notizname#Ueberschri
 
 Constellation **speichert automatisch** waehrend der Eingabe — es gibt keine Speichern-Schaltflaeche. Ihre Aenderungen werden einen Moment nach dem Innehalten in die `.md`-Datei geschrieben (und immer dann, wenn Sie die Notiz wechseln oder einen Tab schliessen). Eine Notiz gilt erst dann als "gespeichert", wenn sie tatsaechlich auf die Festplatte geschrieben wurde.
 
+**Auch das Schliessen der App ist ein Speicherpunkt.** Wenn Sie Constellation schliessen, wird jede Notiz mit ungespeicherten Eingaben in ihre Datei geschrieben, **bevor** sich das Fenster schliesst — einschliesslich der Woerter, die Sie in der allerletzten Sekunde vor dem Klick auf ✕ getippt haben. Ein normales Schliessen (nichts Ungespeichertes) erfolgt sofort, genau wie bisher; gibt es etwas zu schreiben, bleibt das Fenster unter Umstaenden einen kurzen Moment laenger offen (hoechstens fuenf Sekunden), waehrend Ihre Notizen sicher auf der Festplatte landen.
+
 Sollte ein Speichern einmal **fehlschlagen** — zum Beispiel weil ein Synchronisierungsdienst (iCloud / OneDrive / Syncthing) oder ein Virenscanner die Datei kurz sperrt —, geht Ihre Arbeit **nicht** verloren:
 
 - Oben erscheint ein Banner: *"{note} konnte nicht gespeichert werden — deine Änderung ist sicher und wird erneut versucht."* Ihre Eingabe bleibt auf dem Bildschirm und wird sicher im Speicher gehalten (sowie in einem Wiederherstellungspuffer, der einen Neustart uebersteht).

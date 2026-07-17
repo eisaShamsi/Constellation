@@ -277,6 +277,8 @@ Tambien puedes enlazar a encabezados especificos: `[[Nombre de la Nota#Encabezad
 
 Constellation **guarda automáticamente** mientras escribes — no hay botón de Guardar. Tus ediciones se escriben en el archivo `.md` un instante después de que haces una pausa (y cada vez que cambias de nota o cierras una pestaña). Una nota se marca como «guardada» solo una vez que se ha escrito realmente en el disco.
 
+**Cerrar la aplicación también es un punto de guardado.** Cuando cierras Constellation, cada nota con texto sin guardar se escribe en su archivo **antes** de que la ventana se cierre — incluidas las palabras que escribiste en el último segundo antes de hacer clic en ✕. Un cierre normal (sin nada pendiente) es instantáneo, exactamente como antes; cuando hay algo que escribir, la ventana puede permanecer abierta un breve instante (cinco segundos como máximo) mientras tus notas quedan a salvo en el disco.
+
 Si un guardado alguna vez **falla** — por ejemplo, cuando una herramienta de sincronización (iCloud / OneDrive / Syncthing) o un antivirus bloquea brevemente el archivo — Constellation **no** pierde tu trabajo:
 
 - Aparece un aviso en la parte superior: *«No se pudo guardar {note} — tu edición está a salvo y se reintentará.»* Lo que escribiste permanece en pantalla y se conserva de forma segura en memoria (y en un búfer de recuperación que sobrevive a un reinicio).

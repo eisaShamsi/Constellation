@@ -277,10 +277,12 @@ fn is_second_screen_open(app: tauri::AppHandle) -> bool {
     }
 }
 
-/// MIG-100 §4b — the graceful-close session-flush handshake. CloseRequested
+/// MIG-100 §4b + PJ-103 — the graceful-close flush handshake. CloseRequested
 /// on the main window emits `session:final-flush` and awaits this notify (or
-/// a 700ms timeout); the frontend acks via `session_flush_ack` once
-/// persistSessionNow() resolves. `notify_one` stores a permit, so an ack that
+/// a 5s cap — Boss ruling 2026-07-16: up to 5s, instant when clean); the
+/// frontend acks via `session_flush_ack` once persistSessionNow() AND
+/// flushAllForAppClose() (every dirty note model durably to disk + awaited
+/// FTS reindex) have resolved. `notify_one` stores a permit, so an ack that
 /// lands before the close task starts waiting is not lost.
 fn session_flush_notify() -> &'static tokio::sync::Notify {
     static NOTIFY: std::sync::OnceLock<tokio::sync::Notify> = std::sync::OnceLock::new();
@@ -666,23 +668,41 @@ pub fn run() {
                     // Notify frontend that screen was closed
                     let _ = window.emit("screen-hidden", ());
                 } else if window.label() == "main" {
-                    // MIG-100 §4b — graceful-close final session flush. A DOM
+                    // MIG-100 §4b + PJ-103 — graceful-close final flush. A DOM
                     // beforeunload + fire-and-forget invoke is NOT proven to
-                    // survive webview teardown; this Rust-side handshake is:
-                    // hold the close, let the frontend persist the session
-                    // (persistSessionNow — signature-guarded, instant when
-                    // nothing changed), proceed on ack or a 700ms timeout so
-                    // the close can never hang. destroy() bypasses
-                    // CloseRequested, so this arm cannot re-enter itself.
+                    // survive webview teardown (PJ-103 proved it live: the
+                    // beforeunload disk write was cut off mid-flight, and the
+                    // localStorage net that caught it was later wiped by a
+                    // leveldb log-orphan on reopen); this Rust-side handshake
+                    // is: hold the close, let the frontend flush every DIRTY
+                    // note model durably to disk (flushAllDirtyTabs) and then
+                    // persist the session (both instant when nothing is dirty/
+                    // changed), proceed on ack or a 5s cap so the close can
+                    // never hang (Boss ruling 2026-07-16: up to 5s, instant
+                    // when clean). destroy() bypasses CloseRequested, so this
+                    // arm cannot re-enter itself.
                     api.prevent_close();
                     let _ = window.emit("session:final-flush", ());
                     let win = window.clone();
                     tauri::async_runtime::spawn(async move {
-                        let _ = tokio::time::timeout(
-                            std::time::Duration::from_millis(700),
+                        let timed_out = tokio::time::timeout(
+                            std::time::Duration::from_millis(5000),
                             session_flush_notify().notified(),
                         )
-                        .await;
+                        .await
+                        .is_err();
+                        if timed_out {
+                            // Never a silent guillotine: a no-ack close is
+                            // journal-decidable (the Safety-Charter class-1 rule).
+                            // NOTE the honest semantics: "no ack within 5s" means
+                            // EITHER a cut-off flush OR no listener was registered
+                            // yet (a close during early boot / a wedged webview) —
+                            // the journal cannot distinguish the two from here.
+                            crate::write_gate::journal_marker(
+                                std::path::Path::new("close_handshake"),
+                                "final_flush_no_ack_5s",
+                            );
+                        }
                         // Main window closing: also close the second screen
                         if let Some(second) =
                             win.app_handle().get_webview_window("second-screen")

@@ -277,6 +277,8 @@ Vous pouvez egalement lier vers des titres specifiques : `[[Nom de la note#Titre
 
 Constellation **enregistre automatiquement** au fil de votre saisie — il n'y a pas de bouton d'enregistrement. Vos modifications sont écrites dans le fichier `.md` un instant après une pause (et chaque fois que vous changez de note ou fermez un onglet). Une note n'est marquée « enregistrée » qu'une fois qu'elle est réellement écrite sur le disque.
 
+**Fermer l'application est aussi un point d'enregistrement.** Quand vous fermez Constellation, chaque note contenant une saisie non enregistrée est écrite dans son fichier **avant** que la fenêtre ne se ferme — y compris les mots tapés à la toute dernière seconde avant votre clic sur ✕. Une fermeture normale (rien à enregistrer) est instantanée, exactement comme avant ; s'il y a quelque chose à écrire, la fenêtre peut rester ouverte un bref instant (cinq secondes au maximum) le temps que vos notes soient mises en sécurité sur le disque.
+
 Si un enregistrement **échoue** un jour — par exemple parce qu'un outil de synchronisation (iCloud / OneDrive / Syncthing) ou un antivirus verrouille brièvement le fichier — Constellation ne **perd pas** votre travail :
 
 - Une bannière apparaît en haut : *« Impossible d'enregistrer {note} — votre modification est en sécurité et sera réessayée. »* Votre saisie reste à l'écran et est conservée en toute sécurité en mémoire (et dans un tampon de récupération qui survit à un redémarrage).

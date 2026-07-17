@@ -119,13 +119,67 @@ export function seedBody(id: string, path: string, fallback: string): string {
  * content itself. `env` may be a bare `DiskWriter` (back-compat: the headless harness
  * and any minimal caller) or the full `SaveEnv` (production sites, with net + surface).
  */
-export async function save(
+/**
+ * PJ-103 adversarial-review fix (2026-07-16) — per-id in-flight serialization.
+ * Two concurrent save() calls for the SAME model (the app-close flush racing
+ * the 1500ms debounced editor_save; a double-X close re-pass) must never have
+ * two writes of DIFFERENT versions in flight at once: IPC arrival order is not
+ * contractually FIFO, so an older body could land on disk LAST while
+ * markSaved(newer) reports clean and the net compare-and-clears — the newest
+ * keystrokes would then exist nowhere. Chaining makes each save COMPOSE only
+ * after the prior write settles, so the newest content always writes last.
+ * The chain entry is deleted when its tail settles (no unbounded growth); the
+ * chained runner never rejects for write failures (save returns {ok:false}),
+ * and both settle-branches proceed so a rejected predecessor can't wedge the
+ * chain.
+ */
+const saveChains = new Map<string, Promise<unknown>>();
+
+export function save(
 	id: string,
 	expectPath: string,
 	env: DiskWriter | SaveEnv,
 	origin = 'editor_save',
 ): Promise<SaveOutcome> {
 	const e: SaveEnv = typeof env === 'function' ? { write: env } : env;
+	const prev = saveChains.get(id);
+	let run: Promise<SaveOutcome>;
+	if (prev) {
+		// CHAINED: compose only after the predecessor settles (newest-last).
+		// But the crash-net stash must NOT wait — a beforeunload flush issued
+		// while a debounced save is in flight would otherwise never stash if
+		// the webview dies before the predecessor settles. Stash the CURRENT
+		// composition eagerly; the chained write's own setNet (same-or-newer
+		// content) overwrites it, and the predecessor's compare-and-clear
+		// can only remove it when the contents are identical (nothing lost).
+		const eager = M.compose(id, expectPath);
+		if (eager.ok) e.setNet?.(eager.path, eager.content, e.cursorPos ?? 0, e.scrollTop ?? 0);
+		run = prev.then(
+			() => saveUnchained(id, expectPath, e, origin),
+			() => saveUnchained(id, expectPath, e, origin),
+		);
+	} else {
+		// FAST PATH (no in-flight save for this id): run directly — an async
+		// fn executes synchronously to its first await, preserving the
+		// original contract that compose + setNet complete BEFORE the first
+		// await (the beforeunload sync-stash guarantee, and the recipes'
+		// type-during-await version semantics).
+		run = saveUnchained(id, expectPath, e, origin);
+	}
+	const tail = run.then(() => undefined, () => undefined);
+	saveChains.set(id, tail);
+	void tail.then(() => {
+		if (saveChains.get(id) === tail) saveChains.delete(id);
+	});
+	return run;
+}
+
+async function saveUnchained(
+	id: string,
+	expectPath: string,
+	e: SaveEnv,
+	origin: string,
+): Promise<SaveOutcome> {
 	const r = M.compose(id, expectPath);
 	if (!r.ok) return r; // identity refusal (path_mismatch) — nothing composed, nothing written
 	// NET BEFORE THE WRITE — a failed/interrupted write is recoverable from the buffer.

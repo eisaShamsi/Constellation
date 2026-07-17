@@ -490,6 +490,8 @@ You can also link to specific headings: `[[Note Name#Heading]]`.
 
 Constellation **saves automatically** as you type — there is no Save button. Your edits are written to the `.md` file a moment after you pause, and **immediately whenever you leave the note** — switching notes, following a `[[wikilink]]`, pressing Back/Forward, or closing the tab — **even if you were still typing**. A note is marked "saved" only once it is genuinely written to disk, so moving away never costs you an edit. (If the file happens to be locked at that moment, Constellation keeps you on the note and shows the recovery banner below instead of moving on.)
 
+**Closing the app is a save point too.** When you close Constellation, every note with unsaved typing is written to its file **before** the window closes — including words typed in the very last second before you clicked ✕. A normal close (nothing unsaved) is instant, exactly as before; when there is something to write, the window may stay open for a brief moment (capped at five seconds) while your notes land safely on disk.
+
 **One note, one tab.** Opening a note that is already open simply jumps to its existing tab — a note is never open in two tabs at once, so two copies can never overwrite each other.
 
 If a save ever **fails** — for example a sync tool (iCloud / OneDrive / Syncthing) or antivirus briefly locks the file — Constellation does **not** lose your work:

@@ -13,7 +13,7 @@
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
-		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs,
+		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
@@ -2863,6 +2863,36 @@
 		window.addEventListener('unhandledrejection', handleUnhandledRejection);
 		window.addEventListener('error', handleUncaughtError);
 
+		// MIG-100 §4b + PJ-103 — graceful-close handshake, registered FIRST
+		// (before the awaited initializeApp): a close during boot must find
+		// this listener, or the Rust arm waits out its full 5s cap and writes
+		// a no-ack marker for a flush that never ran (adversarial-review
+		// finding, wf_5bb5c713). Rust holds the CloseRequested; we persist the
+		// session arrangement FIRST (small, signature-guarded — never starved
+		// by a slow flush), then flush every DIRTY note model durably to DISK
+		// (the whole point of a graceful close: the sub-debounce tail of
+		// typing must reach the .md file, File-Over-App — PJ-103 proved live
+		// that the beforeunload disk write gets cut off and the localStorage
+		// net is NOT a durable medium: a leveldb log-orphan wiped it wholesale
+		// on reopen), then ack. All steps are instant when nothing is
+		// dirty/changed — the common close feels unchanged; Rust caps the hold
+		// at 5s (Boss ruling 2026-07-16). Every step is fail-open: the ack
+		// fires even if a flush or the persist throws — the close must never
+		// hang on a failed write (per-note failures keep their model dirty +
+		// net + a journal marker; flushAllForAppClose also re-passes for
+		// keystrokes typed during the hold and awaits the FTS reindex of the
+		// flushed notes so the index never diverges from disk across the boot).
+		const unlistenFinalFlush = await listen('session:final-flush', async () => {
+			try {
+				await persistSessionNow();
+			} catch { /* loss already bounded to ≤1s of arrangement */ }
+			try {
+				await flushAllForAppClose();
+			} catch { /* per-note: net + banner + journal hold it; the close proceeds */ }
+			invoke('session_flush_ack').catch(() => {});
+		});
+		cleanupFns.push(unlistenFinalFlush);
+
 		// MIG-021v3 V3-§10.A — CECE background scan on app start.
 		// When enabled in Settings, fire classifier_scan_start once
 		// per app boot. Best-effort + non-blocking; the scan runs on
@@ -3435,18 +3465,10 @@
 			handleOrgNodeMenuAction(action, { kind: 'note', path, name, isMarkdown: path.toLowerCase().endsWith('.md') });
 		});
 
-		// MIG-100 §4b — graceful-close handshake: Rust holds the CloseRequested,
-		// we persist the session (signature-guarded — instant when nothing
-		// changed), then ack so the close proceeds without waiting out the
-		// 700ms timeout. The ack fires even if the persist throws — the close
-		// must never hang on a failed write (the runtime debounce already
-		// bounded the loss).
-		const unlistenFinalFlush = await listen('session:final-flush', async () => {
-			try {
-				await persistSessionNow();
-			} catch { /* loss already bounded to ≤1s of arrangement */ }
-			invoke('session_flush_ack').catch(() => {});
-		});
+		// MIG-100 §4b + PJ-103 — the graceful-close final-flush listener is
+		// registered at the TOP of onMount (before initializeApp), not here:
+		// a close during boot must find a listener or the Rust arm burns its
+		// full 5s cap for nothing (adversarial-review finding, wf_5bb5c713).
 
 		// Cleanup on destroy
 		cleanupFns.push(
@@ -3458,7 +3480,6 @@
 			unlistenNoteSaved,
 			unlistenScreenNoteAction,
 			unlistenLens,
-			unlistenFinalFlush,
 		);
 	});
 

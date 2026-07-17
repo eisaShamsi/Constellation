@@ -277,6 +277,8 @@ Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
 Constellation, siz yazarken **otomatik olarak kaydeder** — bir Kaydet düğmesi yoktur. Düzenlemeleriniz, yazmayı bıraktıktan bir an sonra (ve bir nota geçtiğinizde ya da bir sekmeyi kapattığınızda) `.md` dosyasına yazılır. Bir not, ancak gerçekten diske yazıldığında "kaydedildi" olarak işaretlenir.
 
+**Uygulamayı kapatmak da bir kayıt noktasıdır.** Constellation'ı kapattığınızda, kaydedilmemiş yazı içeren her not, pencere kapanmadan **önce** dosyasına yazılır — ✕ düğmesine tıklamadan hemen önceki son saniyede yazdığınız sözcükler de dahil. Normal bir kapatma (kaydedilmemiş bir şey yoksa) eskisi gibi anında gerçekleşir; yazılacak bir şey olduğunda ise notlarınız güvenle diske yazılırken pencere kısa bir süre (en fazla beş saniye) açık kalabilir.
+
 Bir kaydetme işlemi bir şekilde **başarısız olursa** — örneğin bir senkronizasyon aracı (iCloud / OneDrive / Syncthing) ya da bir antivirüs dosyayı kısa süreliğine kilitlerse — Constellation çalışmanızı **kaybetmez**:
 
 - Üstte bir bildirim şeridi belirir: *"{note} kaydedilemedi — düzenlemeniz güvende ve yeniden denenecek."* Yazdıklarınız ekranda kalır ve bellekte (ve yeniden başlatmaya dayanan bir kurtarma tamponunda) güvenle tutulur.
