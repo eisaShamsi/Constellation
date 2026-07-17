@@ -374,3 +374,30 @@ flushes first.
 
 **Gates at close:** vitest 427 · svelte-check 0 · cargo clean · Boss test PASS (MARKER-FOUR on disk
 at the close instant · clean close instant · typing burst clean).
+
+---
+
+## PJ-106 cycle-close whole-app sweep register (2026-07-17, ran a day early)
+
+The per-cycle whole-app `safety-inspection` (`wf_776dbce6-a50`, 82 agents) — the PJ-106 migration's
+C3 cycle boundary — ran 2026-07-17 at Boss direction (ahead of the scheduled Jul-18 4am task, which
+was disabled as superseded). **62 confirmed: 3 APP-KILLER · 11 HIGH · 38 MED · 10 LOW.** Full
+per-finding register: `lab/reports/SWEEP-REGISTER-2026-07-18-wf_776dbce6-a50.md`.
+
+**The 3 APP-KILLERs — remediated (WA#6):**
+- **PropertyEditor onDestroy cross-note frontmatter bleed** (`PropertyEditor.svelte:480`) — FIXED,
+  Boss-validated, commit `baae4533` (mount-time identity snapshot, mirrors NotePane `mountedFilePath`).
+- **`loadTabHistoryEntry` two-models-one-path clobber + net bypass** (`store.ts:1348/1361`) — FIXED,
+  Boss-validated, commit `317b2512` (B1 dedup + resolveNoteContent parity with openNoteTab).
+- **FocusPane outside the rename-cascade freeze** (`+layout.svelte:8019`) — **found NOT user-reachable**
+  (Focus mode hides the tree/tabs + auto-exits on nav; no rename can fire while in Focus). Reframed
+  into PJ-114 (Focus-mode right-click menu); the readOnly-during-cascade code is parked uncommitted
+  to ship WITH that feature (Reproduce-First: don't ship an untestable fix for a wrong-premise finding).
+
+**§B4 post-gate:** the toolbar-Ctrl+Shift-click disarm edge (the audit's one open edge) was CONFIRMED
+REACHABLE and FIXED — commit `b6310479` (window-level disarm belt + ignore OS key auto-repeat).
+
+**The 11 HIGH + 48 MED/LOW:** filed to Pending Jobs v1.35 (new: PJ-115/117/118/119/120; folds:
+PJ-116→114, PJ-120→072) or re-confirm existing backlog (PJ-073/074/075/085/087/099/100/101…). The
+per-build diff safety-inspection on the fix commits (`wf_8a0c0e99-ab1`) returned **zero findings in
+the edited functions** — all 12 it surfaced are pre-existing.
