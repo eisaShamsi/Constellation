@@ -4693,6 +4693,10 @@ export interface AppSettings {
 	spellcheck: boolean;
 	showFloatingToolbar: boolean;
 	foldHeading: boolean;
+	/** PJ-114 — FM+ (Focus Mode Plus): opt-in Focus right-click menu + in-Focus link
+	 *  navigation. Additionally gated by the FM_PLUS_ENABLED build flag. Default off;
+	 *  Focus stays byte-for-byte itself when off. */
+	focusModePlus: boolean;
 	foldIndent: boolean;
 	indentationGuides: boolean;
 	alwaysFocusNewTabs: boolean;
@@ -5178,6 +5182,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	spellcheck: false,
 	showFloatingToolbar: true,
 	foldHeading: true,
+	focusModePlus: false, // PJ-114 — FM+ opt-in, default off
 	foldIndent: true,
 	indentationGuides: false,
 	alwaysFocusNewTabs: true,
