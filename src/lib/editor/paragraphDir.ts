@@ -42,7 +42,7 @@
  * assoc 1 so the caret lands AFTER the inserted mark — typing immediately continues INSIDE
  * the override instead of in front of it. Read-only surfaces are belted out.
  */
-import { EditorView } from '@codemirror/view';
+import { EditorView, ViewPlugin } from '@codemirror/view';
 import { EditorSelection, type ChangeSpec, type EditorState, type Extension } from '@codemirror/state';
 import { isolateHistory } from '@codemirror/commands';
 import { paragraphBlockRange } from './paragraphNav';
@@ -186,8 +186,17 @@ export function setParagraphDirection(view: EditorView, dir: 'rtl' | 'ltr'): boo
 export function paragraphDirKeys(): Extension {
 	let ctrlSide: 'left' | 'right' = 'left';
 	let armed: 'left' | 'right' | null = null;
-	return EditorView.domEventObservers({
+	const disarm = () => { armed = null; };
+	const observers = EditorView.domEventObservers({
 		keydown(e, view) {
+			// Sweep-2026-07-18 #4 (root cause) — IGNORE OS key auto-repeat. Windows fires repeated
+			// keydown events for a HELD modifier (Ctrl/Shift, e.repeat===true). Without this, a
+			// mousedown/blur disarm (below + the window belt) is instantly UNDONE by the next
+			// auto-repeat re-running the arm branch ('Shift' while ctrlKey → armed) — so a
+			// Ctrl+Shift+toolbar-click still flipped on release (the Boss's live repro). Arming and
+			// disarming must key off REAL key transitions only; a fresh re-press (repeat===false)
+			// still arms normally, so the gesture itself is unaffected.
+			if (e.repeat) return;
 			if (e.getModifierState?.('AltGraph')) { armed = null; return; } // AltGr chord ≠ gesture
 			if (e.key === 'Control') {
 				ctrlSide = e.code === 'ControlRight' ? 'right' : 'left';
@@ -207,11 +216,28 @@ export function paragraphDirKeys(): Extension {
 				}
 			}
 		},
-		mousedown() {
-			armed = null; // a click moves the caret — firing after it would hit the WRONG paragraph
-		},
-		blur() {
-			armed = null; // focus left mid-gesture — never fire on a stale arm
-		},
+		mousedown: disarm, // a click moves the caret — firing after it would hit the WRONG paragraph
+		blur: disarm,      // focus left mid-gesture — never fire on a stale arm
 	});
+	// Sweep-2026-07-18 #4 — the WINDOW-level disarm belt. domEventObservers bind to contentDOM,
+	// so the mousedown observer above only sees clicks INSIDE the editor. Constellation's chrome
+	// (the note toolbar `onmousedown={e => e.preventDefault()}`, breadcrumb buttons, every layout
+	// resize divider) preserves editor focus on click — so a Ctrl+Shift+click there NEVER reaches
+	// contentDOM's mousedown, the arm survives, and the Ctrl+Shift release silently flips the
+	// caret paragraph (dirtying the note with invisible RLM/LRM marks). A capture-phase window
+	// listener catches every pointer press/wheel anywhere and disarms first. Registered via a
+	// ViewPlugin so it is torn down with the editor (Rule 4 — no leak). `wheel` is folded in: a
+	// Ctrl+Shift+scroll-then-release is likewise not an intended direction flip.
+	const windowBelt = ViewPlugin.define(() => {
+		if (typeof window === 'undefined') return {};
+		window.addEventListener('mousedown', disarm, true);
+		window.addEventListener('wheel', disarm, true);
+		return {
+			destroy() {
+				window.removeEventListener('mousedown', disarm, true);
+				window.removeEventListener('wheel', disarm, true);
+			},
+		};
+	});
+	return [observers, windowBelt];
 }
