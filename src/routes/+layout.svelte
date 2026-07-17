@@ -26,7 +26,7 @@
 		readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
 		adoptExternalChangeIntoTabs, reportExternalConflict,
-		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
+		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, isCascading, isReseeding,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
@@ -1501,6 +1501,12 @@
 	// note focus was opened for, even as the active tab changes underneath.
 	let focusSessionId = $state('');
 	let focusSessionPath = $state('');
+	// Sweep-2026-07-18 #3 (APP-KILLER) — TRUE while the note open in Focus is inside a rename
+	// cascade (its path is in the reactive cascadeFreeze set). Drives FocusPane hard read-only +
+	// the "Updating…" overlay — the parity NotePane already has (its panes render
+	// CascadeFreezeOverlay + NoteEditor's isCascading save-gate). Without it FocusPane was the one
+	// editable surface outside the freeze → typed-during-cascade keystrokes were silently discarded.
+	let focusFrozen = $derived(!!focusSessionPath && $cascadeFreeze.has(focusSessionPath));
 	// PJ-070 (hazard #7) — FocusPane is NOT under the reloadVersion {#key} and ignores `value`
 	// after mount, so a watcher/external adopt can't refresh it by a store update alone. A bump
 	// of focusReloadVersion remounts FocusPane (it re-seeds from the freshly-adopted model via
@@ -1546,6 +1552,14 @@
 	function commitFocusSave() {
 		if (focusSaveTimer) { clearTimeout(focusSaveTimer); focusSaveTimer = null; }
 		if (!focusSessionId) return;
+		// Sweep-2026-07-18 #14 (APP-KILLER belt) — the F2 post-cascade-stomp gate, for FocusPane.
+		// saveNoteSession is a DIRECT write NOT gated by isCascading, unlike NoteEditor's
+		// handleSave/handleFlush (NoteEditor.svelte:250/:311). An armed 1500ms timer — or an
+		// onflush/idle/beforeunload flush — firing DURING the rename cascade would compose the
+		// model's pre-cascade body and durably write it OVER the walker's [[A]]→[[A2]] rewrite,
+		// silently reverting the cascade with no surface. Skip while cascading; isReseeding too, so
+		// the outgoing body isn't flushed into a fresh watcher/adopt reseed (mirrors handleFlush).
+		if (isCascading(focusSessionPath) || isReseeding(focusSessionPath)) return;
 		const r = composeNoteModel(focusSessionId, focusSessionPath);
 		if (!r.ok) return; // identity refusal — never write under another note's path
 		const ft = get(openTabs).find(x => x.id === focusSessionId);
@@ -8020,6 +8034,18 @@
 								value={SINGLE_OWNERSHIP ? seedBody(focusSessionId, focusSessionPath, _parsed.body) : _parsed.body}
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
+								frozen={focusFrozen}
+								ontitlechange={(newTitle) => {
+									// §0.1 (PJ-116) — a title typed in Focus was silently discarded: FocusPane
+									// fires ontitlechange on blur (only when the title actually changed) but the
+									// host never wired the prop. Route it through the SAME rename+cascade engine
+									// NotePane's title-bar uses (onTitleRename={handleRenameComplete}), keyed on the
+									// CAPTURED focusSessionPath (identity-bound per MIG-076 §C — never the live
+									// $activeTab). handleRenameComplete guards empty/equal names; the non-empty
+									// belt here mirrors NoteEditor's delegation. Under rollback (SINGLE_OWNERSHIP
+									// off) the signal stays inert, matching NoteEditor's fallback gate.
+									if (SINGLE_OWNERSHIP && focusSessionPath && newTitle) handleRenameComplete(focusSessionPath, newTitle);
+								}}
 								onchange={(text) => {
 									// PJ-070 — suppress the live push while remounting on an external adopt (the new
 									// FocusPane re-seeds from the fresh model; a stray onchange would re-dirty stale).

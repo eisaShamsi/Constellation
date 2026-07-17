@@ -17,8 +17,12 @@
 	import { cascadeFreeze } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 
-	let { path }: { path?: string | null } = $props();
-	let frozen = $derived(!!path && $cascadeFreeze.has(path));
+	// Two modes: pass `path` and the overlay self-derives from the cascadeFreeze store
+	// (NotePane/split/index panes, keyed by tab.path); OR pass a controlled `frozen`
+	// boolean (FocusPane, which is a fixed-position self-contained surface and already
+	// computes its freeze state). `frozen` wins when provided.
+	let { path, frozen: frozenProp }: { path?: string | null; frozen?: boolean } = $props();
+	let frozen = $derived(frozenProp ?? (!!path && $cascadeFreeze.has(path)));
 </script>
 
 {#if frozen}

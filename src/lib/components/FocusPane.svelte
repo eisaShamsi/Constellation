@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
-	import { EditorState } from '@codemirror/state';
+	import { EditorState, Compartment } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+	import CascadeFreezeOverlay from '$lib/components/CascadeFreezeOverlay.svelte'; // sweep #3 — rename-cascade freeze
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { RTL_MOTION_ENABLED } from '$lib/editor/rtlFlag'; // PJ-106 §A1
@@ -19,6 +20,7 @@
 		title = '',
 		mode = 'blank-page' as 'blank-page' | 'typewriter' | 'manuscript' | 'flow',
 		dir = 'ltr' as 'ltr' | 'rtl',
+		frozen = false,
 		onchange,
 		ontitlechange,
 		onexit,
@@ -28,6 +30,15 @@
 		title?: string;
 		mode?: 'blank-page' | 'typewriter' | 'manuscript' | 'flow';
 		dir?: 'ltr' | 'rtl';
+		// Sweep-2026-07-18 #3 (APP-KILLER) — TRUE while the note open in Focus is inside a
+		// rename+wikilink cascade. FocusPane was the one editable surface OUTSIDE the cascade
+		// freeze: the user could keep typing during the ~7s walk with no signal, and the post-
+		// cascade reloadTabsFromDisk force-adopt then silently discarded those keystrokes (and an
+		// armed commitFocusSave could revert the walker's rewrite). While frozen the editor goes
+		// HARD read-only (keystrokes can't dirty the model → the force-adopt is always safe) and
+		// shows the same "Updating…" overlay NotePane gets. Belt: commitFocusSave is isCascading-
+		// gated in +layout. Mirrors NotePane's handleSave/handleFlush cascade gate + overlay.
+		frozen?: boolean;
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
 		onexit?: () => void;
@@ -40,6 +51,11 @@
 	let editorEl: HTMLDivElement;
 	let view: EditorView | null = null;
 	let lastInternalValue = value;
+	// Sweep-2026-07-18 #3 — the hard read-only gate driven by `frozen` (rename-cascade freeze).
+	// readOnly blocks edit transactions; editable:false also drops contentEditable so a focused
+	// editor takes no keystrokes at all during the cascade window.
+	const editGate = new Compartment();
+	const frozenExt = (f: boolean) => (f ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []);
 	let wordCount = $state(0);
 	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
 	let lastFlushedText = value;
@@ -179,6 +195,7 @@
 		const state = EditorState.create({
 			doc: value,
 			extensions: [
+				editGate.of(frozenExt(frozen)), // sweep #3 — hard read-only while the cascade freeze is up
 				getTheme(mode),
 				history(),
 				drawSelection(),
@@ -252,6 +269,13 @@
 		}
 	});
 
+	// Sweep-2026-07-18 #3 — reconfigure the hard read-only gate whenever the cascade freeze
+	// toggles, so the editor stops taking keystrokes the instant the rename cascade raises the
+	// freeze and becomes editable again the instant it lifts (or on the focusReseed remount).
+	$effect(() => {
+		if (view) view.dispatch({ effects: editGate.reconfigure(frozenExt(frozen)) });
+	});
+
 	// No $effect for value→editor sync. Editor owns its content after mount.
 	// Tab switches destroy/recreate FocusPane with new value prop.
 
@@ -300,6 +324,10 @@
 			<span>{$tn('plurals.words', wordCount)}</span>
 		{/if}
 	</div>
+
+	<!-- Sweep-2026-07-18 #3 — the rename-cascade "Updating…" freeze, reusing the shared overlay
+	     (controlled `frozen` mode). .focus-pane is position:fixed, so the absolute overlay fills it. -->
+	<CascadeFreezeOverlay {frozen} />
 </div>
 
 <style>
