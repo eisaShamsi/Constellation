@@ -4,7 +4,8 @@
 file, then `git pull origin main` + `git log --oneline -12`.
 
 ## HEAD
-`main` — the PJ-103 close commit (see git log; committed after the Boss live PASS at ~05:11 Jul-17).
+`main` — working tree clean, `HEAD == origin/main` at `4b3f217c` (the PJ-103 close, committed
+after the Boss live PASS at ~05:11 Jul-17, followed by the session-close PCS commit).
 
 ## What shipped (Boss-validated live)
 **PJ-103 — the app-close data-loss APP-KILLER — CLOSED.** The graceful close now writes every dirty
