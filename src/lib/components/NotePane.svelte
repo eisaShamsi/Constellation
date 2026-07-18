@@ -5,8 +5,8 @@
 	 * Live preview decorations via shared livePreview plugin. Typing must be instant.
 	 * Originally developed as eNotePane (experimental), promoted to production 2026-03-29.
 	 */
-	import { onMount, onDestroy } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { onMount, onDestroy, tick } from 'svelte';
+	import { t, dir as uiDir } from '$lib/i18n'; // uiDir: UI-language direction for the menu's TEXT (NotePane already has a note `dir` prop)
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { lookupStageEmoji, stageLabel, nextStage, prevStage } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
@@ -251,13 +251,40 @@
 	let propsCollapsed = $state(true);
 	let showMoreMenu = $state(false);
 	let moreMenuEl: HTMLDivElement | undefined;
+	// RTL truncation fix (2026-07-18) — the ⋯ dropdown is FIXED-positioned (coords below) so it
+	// escapes .e-desk's overflow-x:hidden clip that truncated its items in RTL. Mirrors the shared
+	// ContextMenu's fixed + measure-then-clamp approach.
+	let bcMenuEl = $state<HTMLDivElement | undefined>();
+	let bcMenuTop = $state(0);
+	let bcMenuLeft = $state(0);
 	const hasHistory = $derived(canGoBack || canGoForward);
 	const propsMode = $derived($appSettings.propertiesInDocument ?? 'visible');
 
 	/* ─── More menu ─── */
-	function toggleMoreMenu() {
+	function toggleMoreMenu(e: MouseEvent) {
 		showMoreMenu = !showMoreMenu;
 		if (showMoreMenu) {
+			// Anchor the fixed dropdown under the ⋯ button, then measure + clamp to the viewport so
+			// it never overflows a screen edge or gets clipped by an ancestor's overflow (the RTL bug).
+			const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+			bcMenuTop = rect.bottom + 4;
+			bcMenuLeft = Math.max(8, rect.right - 220); // provisional (right-align) until measured
+			tick().then(() => {
+				if (!bcMenuEl) return;
+				const w = bcMenuEl.offsetWidth;
+				const h = bcMenuEl.offsetHeight;
+				// Anchor to the ⋯ BUTTON, not the UI language: right-align (menu's right edge = the
+				// button's right edge = the note's right edge) by default; if that would overflow the
+				// LEFT screen edge (the button sits on the left, e.g. an RTL note), left-align instead.
+				// This keeps an Arabic UI over a Latin note correctly right-aligned (the reported bug).
+				let left = rect.right - w;
+				if (left < 8) left = rect.left;
+				left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+				let top = rect.bottom + 4;
+				if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 4);
+				bcMenuLeft = left;
+				bcMenuTop = top;
+			});
 			setTimeout(() => window.addEventListener('click', closeMoreMenu, { once: true }), 0);
 		}
 	}
@@ -1342,7 +1369,7 @@
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
 				</button>
 				{#if showMoreMenu}
-					<div class="e-bc-menu">
+					<div class="e-bc-menu" bind:this={bcMenuEl} dir={$uiDir} style="top: {bcMenuTop}px; left: {bcMenuLeft}px;">
 						<button class="e-bc-menu-item" onclick={() => { livePreviewEnabled = !livePreviewEnabled; showMoreMenu = false; }}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{#if livePreviewEnabled}<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>{:else}<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>{/if}</svg>
 							{livePreviewEnabled ? ($t('notePane.sourceMode') || 'Source mode') : ($t('notePane.livePreview') || 'Live preview')}
@@ -1609,12 +1636,14 @@
 	.e-bc-dots:hover { background: var(--background-modifier-border); color: var(--text-normal); }
 	.e-bc-more-wrap { position: relative; }
 	.e-bc-menu {
-		position: absolute; top: 100%; right: 0; z-index: 100;
+		/* RTL truncation fix (2026-07-18) — FIXED (not absolute) so the dropdown escapes
+		   .e-desk's overflow-x:hidden clip; top/left set inline by toggleMoreMenu (measured +
+		   viewport-clamped, LTR + RTL). Direction follows the UI via the dir attribute. */
+		position: fixed; z-index: 300;
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; padding: 4px 0; min-width: 220px; max-height: 80vh; overflow-y: auto;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.15); direction: ltr;
+		border-radius: 8px; padding: 4px 0; min-width: 220px; max-width: min(360px, calc(100vw - 16px));
+		max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 	}
-	:global([dir="rtl"]) .e-bc-menu { right: auto; left: 0; direction: rtl; }
 	.e-bc-menu-item {
 		display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 14px;
 		border: none; background: none; cursor: pointer; font-size: 13px;
