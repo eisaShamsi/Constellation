@@ -47,6 +47,7 @@
 	import { editBody as editNoteBody, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
 	import { compose as composeNoteModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+	import { FM_PLUS_ENABLED } from '$lib/editor/fmPlusFlag'; // PJ-114 — FM+ build kill-switch
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -8035,6 +8036,9 @@
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								frozen={focusFrozen}
+								fmPlusEnabled={FM_PLUS_ENABLED}
+								fmPlusActive={$appSettings.focusModePlus}
+								onToggleFmPlus={() => updateSettings({ focusModePlus: !$appSettings.focusModePlus })}
 								ontitlechange={(newTitle) => {
 									// §0.1 (PJ-116) — a title typed in Focus was silently discarded: FocusPane
 									// fires ontitlechange on blur (only when the title actually changed) but the

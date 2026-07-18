@@ -2397,6 +2397,8 @@
     "quranSymbols": "古兰经符号"
   },
   "focus": {
+    "fmPlusMark": "专注模式+",
+    "fmPlusTooltip": "专注模式 Plus — 无需离开专注即可跟随链接并重命名",
     "title": "专注",
     "description": "选择你的写作专注模式",
     "none": "标准",

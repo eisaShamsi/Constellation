@@ -1957,6 +1957,8 @@
     "quranSymbols": "Símbolos coránicos"
   },
   "focus": {
+    "fmPlusMark": "Modo Enfoque+",
+    "fmPlusTooltip": "Modo Enfoque Plus — sigue enlaces y renómbralos sin salir del Enfoque",
     "title": "Enfoque",
     "description": "Elige tu enfoque de escritura",
     "none": "Estándar",

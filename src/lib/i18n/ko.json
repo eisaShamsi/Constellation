@@ -2397,6 +2397,8 @@
     "quranSymbols": "쿠란 기호"
   },
   "focus": {
+    "fmPlusMark": "포커스 모드+",
+    "fmPlusTooltip": "포커스 모드 플러스 — 포커스를 벗어나지 않고 링크를 따라가고 이름 변경",
     "title": "집중",
     "description": "글쓰기 집중 모드를 선택하세요",
     "none": "표준",

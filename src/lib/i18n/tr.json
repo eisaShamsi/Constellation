@@ -2397,6 +2397,8 @@
     "quranSymbols": "Kur'an sembolleri"
   },
   "focus": {
+    "fmPlusMark": "Odak Modu+",
+    "fmPlusTooltip": "Odak Modu Plus — Odaktan çıkmadan bağlantıları izleyin ve yeniden adlandırın",
     "title": "Odak",
     "description": "Yazma odağınızı seçin",
     "none": "Standart",

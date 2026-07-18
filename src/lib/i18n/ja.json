@@ -2397,6 +2397,8 @@
     "quranSymbols": "コーラン記号"
   },
   "focus": {
+    "fmPlusMark": "フォーカスモード+",
+    "fmPlusTooltip": "フォーカスモードプラス — フォーカスを離れずにリンクをたどって名前を変更",
     "title": "フォーカス",
     "description": "執筆のフォーカスを選択",
     "none": "標準",

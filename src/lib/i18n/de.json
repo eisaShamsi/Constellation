@@ -1957,6 +1957,8 @@
     "quranSymbols": "Koransymbole"
   },
   "focus": {
+    "fmPlusMark": "Fokusmodus+",
+    "fmPlusTooltip": "Fokusmodus Plus — Links folgen und umbenennen, ohne den Fokus zu verlassen",
     "title": "Fokus",
     "description": "Wählen Sie Ihren Schreibfokus",
     "none": "Standard",

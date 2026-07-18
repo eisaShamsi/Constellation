@@ -2620,6 +2620,8 @@
     "quranSymbols": "Quran Symbols"
   },
   "focus": {
+    "fmPlusMark": "FM+",
+    "fmPlusTooltip": "Focus Mode Plus — follow links and rename them without leaving Focus",
     "title": "Focus",
     "description": "Choose your writing focus",
     "none": "Standard",

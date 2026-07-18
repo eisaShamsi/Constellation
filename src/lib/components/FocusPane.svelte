@@ -21,10 +21,13 @@
 		mode = 'blank-page' as 'blank-page' | 'typewriter' | 'manuscript' | 'flow',
 		dir = 'ltr' as 'ltr' | 'rtl',
 		frozen = false,
+		fmPlusEnabled = false,
+		fmPlusActive = false,
 		onchange,
 		ontitlechange,
 		onexit,
 		onflush,
+		onToggleFmPlus,
 	}: {
 		value: string;
 		title?: string;
@@ -39,6 +42,12 @@
 		// shows the same "Updating…" overlay NotePane gets. Belt: commitFocusSave is isCascading-
 		// gated in +layout. Mirrors NotePane's handleSave/handleFlush cascade gate + overlay.
 		frozen?: boolean;
+		// PJ-114 §1.2 — FM+ footer toggle. `fmPlusEnabled` = the build flag (render the token at
+		// all); `fmPlusActive` = the persisted user opt-in (lit vs. dim); `onToggleFmPlus` flips
+		// the setting. Focus stays a pure display — the parent (+layout) owns the setting.
+		fmPlusEnabled?: boolean;
+		fmPlusActive?: boolean;
+		onToggleFmPlus?: () => void;
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
 		onexit?: () => void;
@@ -318,10 +327,34 @@
 		<div class="focus-editor" bind:this={editorEl}></div>
 	</div>
 
-	<!-- Word count -->
+	<!-- Footer: word count + the FM+ opt-in token (PJ-114 §1.2) -->
 	<div class="focus-footer">
 		{#if wordCount > 0}
 			<span>{$tn('plurals.words', wordCount)}</span>
+		{/if}
+		{#if fmPlusEnabled}
+			<!-- PJ-114 §1.2 — the quiet FM+ opt-in token. Dim when off, lit + dotted when on;
+			     fades while actively typing (reuses isTyping), returns on pause. dir="ltr" locks
+			     the mark's internal layout so "FM+" and its "+" never reorder in an RTL library. -->
+			<button
+				type="button"
+				class="fm-plus-toggle"
+				class:active={fmPlusActive}
+				class:faded={isTyping}
+				aria-label={$t('focus.fmPlusTooltip')}
+				aria-pressed={fmPlusActive}
+				onclick={() => onToggleFmPlus?.()}
+			>
+				<span class="fm-plus-dot" aria-hidden="true"></span>
+				<!-- The mark is LOCALIZED (Boss 2026-07-17: Arabic shows the "وضع التركيز+" form —
+				     full-localization overrides "keep the brand English"). dir="auto" keeps "FM+" LTR
+				     while the Arabic/Hebrew mark runs RTL, independent of the note's own direction. -->
+				<span class="fm-plus-label" dir="auto">{$t('focus.fmPlusMark')}</span>
+				<!-- Custom tooltip ABOVE the mark (native `title` rendered downward into the taskbar
+				     since the footer is pinned to the bottom edge). dir="auto" so the localized text
+				     runs RTL in Arabic/Hebrew while the FM+ mark itself stays LTR. -->
+				<span class="fm-plus-tip" dir="auto">{$t('focus.fmPlusTooltip')}</span>
+			</button>
 		{/if}
 	</div>
 
@@ -451,11 +484,78 @@
 		padding: 8px;
 		pointer-events: none;
 	}
-	.focus-footer span {
+	.focus-footer > span {
 		font-size: 12px;
 		color: var(--text-muted, #888);
 		opacity: 0.6;
 		font-family: var(--font-interface-theme, sans-serif);
 	}
 	.focus-footer { pointer-events: auto; display: flex; justify-content: center; gap: 16px; align-items: center; }
+
+	/* PJ-114 §1.2 — the FM+ opt-in token. Quiet by default; the mark itself stays LTR (dir="ltr"
+	   on the button) so "FM+"/"+" never reorder in an RTL library. */
+	.fm-plus-toggle {
+		position: relative;         /* anchor for the tooltip above */
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		background: none;
+		border: none;
+		padding: 2px 4px;
+		cursor: pointer;
+		font-family: var(--font-interface-theme, sans-serif);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: var(--text-muted, #888);
+		opacity: 0.3;              /* off: faint & recessive, legible only on a deliberate look */
+		transition: opacity 0.6s ease, color 0.3s ease;
+	}
+	.fm-plus-toggle:hover { opacity: 0.6; }
+	.fm-plus-toggle.active {
+		opacity: 0.85;             /* on: lit */
+		color: var(--interactive-accent, #7c3aed);
+	}
+	.fm-plus-toggle.active:hover { opacity: 1; }
+	/* fade away while actively typing; returns on a pause (reuses the title's progressive-disclosure feel) */
+	.fm-plus-toggle.faded,
+	.fm-plus-toggle.active.faded { opacity: 0; }
+	.fm-plus-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		opacity: 0;                /* only shows when FM+ is active */
+		transition: opacity 0.3s ease;
+	}
+	.fm-plus-toggle.active .fm-plus-dot { opacity: 1; }
+	.fm-plus-label { line-height: 1; }
+	/* PJ-114 §1.2 — the FM+ tooltip, ABOVE the mark (Boss 2026-07-17: the native title rendered
+	   downward into the taskbar since the footer is pinned to the bottom edge). Fixed dark chip so
+	   it reads in both light and dark themes; dir="auto" so it runs RTL in Arabic/Hebrew. */
+	.fm-plus-tip {
+		position: absolute;
+		bottom: calc(100% + 8px);
+		left: 50%;
+		transform: translateX(-50%);
+		width: max-content;
+		max-width: 280px;
+		white-space: normal;
+		text-align: center;
+		padding: 6px 10px;
+		border-radius: 6px;
+		background: rgba(32, 33, 38, 0.97);
+		color: #f2f2f4;
+		font-size: 12px;
+		font-weight: 400;
+		line-height: 1.4;
+		letter-spacing: normal;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s ease;
+		z-index: 20;
+	}
+	.fm-plus-toggle:hover .fm-plus-tip,
+	.fm-plus-toggle:focus-visible .fm-plus-tip { opacity: 1; }
 </style>

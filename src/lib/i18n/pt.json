@@ -2397,6 +2397,8 @@
     "quranSymbols": "Símbolos corânicos"
   },
   "focus": {
+    "fmPlusMark": "Modo Foco+",
+    "fmPlusTooltip": "Modo Foco Plus — siga e renomeie links sem sair do Foco",
     "title": "Foco",
     "description": "Escolha seu foco de escrita",
     "none": "Padrão",
