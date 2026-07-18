@@ -28,6 +28,8 @@
 		onexit,
 		onflush,
 		onToggleFmPlus,
+		initialCaret = null,
+		oncaret,
 	}: {
 		value: string;
 		title?: string;
@@ -48,6 +50,12 @@
 		fmPlusEnabled?: boolean;
 		fmPlusActive?: boolean;
 		onToggleFmPlus?: () => void;
+		// Caret continuity (Boss-reported 2026-07-18) — `initialCaret` is where the writer's cursor
+		// was in NotePane, so Focus opens THERE instead of jumping to the top; `oncaret` hands our
+		// cursor back on teardown so NotePane resumes where Focus left off. Same body coordinates on
+		// both surfaces (both mount `seedBody(...)`), so the offset needs no translation.
+		initialCaret?: number | null;
+		oncaret?: (offset: number) => void;
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
 		onexit?: () => void;
@@ -85,6 +93,16 @@
 		if (view && view.state.doc.toString() !== lastFlushedText) flushNow();
 	}
 	function handleVisibilityChange() { if (document.hidden) flushNow(); }
+
+	// Caret continuity — hand our cursor back to NotePane at the moment of EXIT, i.e. BEFORE the
+	// mode flips and NotePane mounts. Doing this in onDestroy raced the remount: Svelte gives no
+	// ordering guarantee between the outgoing component's teardown and the incoming one's mount,
+	// so NotePane read an empty slot — the Boss-reported "works one way only". Reporting only on a
+	// deliberate exit (not on arbitrary teardown, e.g. a tab switch) also means a stale hand-off can
+	// never linger to yank the cursor on an ordinary note open.
+	function reportCaret() {
+		if (view) oncaret?.(view.state.selection.main.head);
+	}
 
 	// ─── Progressive disclosure state ───
 	let isTyping = $state(false);
@@ -135,6 +153,7 @@
 			view?.focus();
 		}
 		if (e.key === 'Escape') {
+			reportCaret();
 			onexit?.();
 		}
 	}
@@ -211,7 +230,7 @@
 				keymap.of([
 					...defaultKeymap,
 					...historyKeymap,
-					{ key: 'Escape', run: () => { onexit?.(); return true; } },
+					{ key: 'Escape', run: () => { reportCaret(); onexit?.(); return true; } },
 				]),
 				/* PJ-106 §A1 (SI2-2 parity) — deterministic base from the note's content (not the
 				   viewport-first-strong 'auto'); both editor + content attrs so the base governs
@@ -262,6 +281,12 @@
 			showTitle = true;
 		}
 
+		// Caret continuity — open where the writer actually was in NotePane, not at position 0.
+		// Clamped: the body may differ from what NotePane held (e.g. an external adopt reseed).
+		if (initialCaret !== null && initialCaret !== undefined) {
+			const pos = Math.min(Math.max(0, initialCaret), view.state.doc.length);
+			view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+		}
 		view.focus();
 
 		// Durability triggers that survive a window unload (see flushNow above).

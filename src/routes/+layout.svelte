@@ -1502,6 +1502,10 @@
 	// note focus was opened for, even as the active tab changes underneath.
 	let focusSessionId = $state('');
 	let focusSessionPath = $state('');
+	// Caret continuity (Boss-reported 2026-07-18) — the cursor offset handed over from NotePane when
+	// entering Focus, so Focus opens where the writer was instead of at the top. Consumed once per
+	// switch; null on any other entry path (nothing else changes).
+	let focusInitialCaret = $state<number | null>(null);
 	// Sweep-2026-07-18 #3 (APP-KILLER) — TRUE while the note open in Focus is inside a rename
 	// cascade (its path is in the reactive cascadeFreeze set). Drives FocusPane hard read-only +
 	// the "Updating…" overlay — the parity NotePane already has (its panes render
@@ -8040,6 +8044,14 @@
 								fmPlusEnabled={FM_PLUS_ENABLED}
 								fmPlusActive={$appSettings.focusModePlus}
 								onToggleFmPlus={() => updateSettings({ focusModePlus: !$appSettings.focusModePlus })}
+								initialCaret={focusInitialCaret}
+								oncaret={(offset) => {
+									// Caret continuity — write Focus's cursor into the tab's EXISTING cursor memory,
+									// so NotePane's own initialCursorPos restore (NotePane.svelte:848-851) puts the
+									// caret there on remount. Reuses the one mechanism instead of competing with it.
+									const ct = get(openTabs).find(x => x.id === focusSessionId);
+									if (ct) ct.cursorPos = offset;
+								}}
 								ontitlechange={(newTitle) => {
 									// §0.1 (PJ-116) — a title typed in Focus was silently discarded: FocusPane
 									// fires ontitlechange on blur (only when the title actually changed) but the
@@ -8225,6 +8237,10 @@
 											// (the in-focus-switch cross-note write).
 											focusSessionId = $activeTab?.id ?? '';
 											focusSessionPath = $activeTab?.path ?? '';
+											// Caret continuity — NotePane flushed just before emitting this action, so the
+											// tab's OWN cursor memory (tab.cursorPos) is already fresh; Focus opens where
+											// the writer actually was. One mechanism, no competing slot.
+											focusInitialCaret = $activeTab?.cursorPos ?? null;
 											focusMode = true;
 											break;
 									}

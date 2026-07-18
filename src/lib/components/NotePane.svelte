@@ -291,6 +291,16 @@
 	function closeMoreMenu() { showMoreMenu = false; }
 	function handleMoreAction(action: string) {
 		showMoreMenu = false;
+		// Caret hand-off — hand our cursor to Focus so it opens where the writer actually is,
+		// instead of jumping to the top (Smooth Transitions). Set BEFORE emitting, so the layout's
+		// switchToFocus handler can consume it. Same body coordinates on both surfaces.
+		if (action === 'switchToFocus') {
+			// Caret continuity — flush NOW so our cursor lands in `tab.cursorPos` (the app's EXISTING
+			// per-tab cursor memory: doFlush → onflush → NoteEditor writes ct.cursorPos) BEFORE Focus
+			// mounts and reads it. Synchronous, so it never races teardown. Same path teardown uses —
+			// not a new mechanism.
+			doFlush();
+		}
 		onmoreaction?.(action);
 	}
 
@@ -625,6 +635,14 @@
 			});
 			view = new EditorView({ state: fallbackState, parent: editorEl! });
 		}
+
+		/* Caret hand-off — if we're coming BACK from Focus mode on this same note, restore the
+		   cursor where Focus left it, so the round-trip is seamless. Single-use: on an ordinary
+		   note open the slot is empty and this is a no-op. Clamped, since the body may have grown
+		   or shrunk while in Focus. */
+		// Caret continuity — deliberately NO cursor restore here. The app's own per-tab cursor memory
+		// (`initialCursorPos`, applied further below in the saved-cursor branch) is the SINGLE
+		// mechanism. A second restore here was tried and it FOUGHT the real one and lost.
 
 		/* Highlight term(s) — supports multi-term comma-separated (,،、) */
 		if (highlightTerm && view) {
