@@ -273,12 +273,14 @@
 				if (!bcMenuEl) return;
 				const w = bcMenuEl.offsetWidth;
 				const h = bcMenuEl.offsetHeight;
-				// Anchor to the ⋯ BUTTON, not the UI language: right-align (menu's right edge = the
-				// button's right edge = the note's right edge) by default; if that would overflow the
-				// LEFT screen edge (the button sits on the left, e.g. an RTL note), left-align instead.
-				// This keeps an Arabic UI over a Latin note correctly right-aligned (the reported bug).
-				let left = rect.right - w;
-				if (left < 8) left = rect.left;
+				// Anchor by the NOTE's direction — that is what decides which side the ⋯ button sits
+				// on (an RTL note mirrors the breadcrumb, putting ⋯ on the left). Always open INTO the
+				// note: left-align when the button is at the note's left edge, right-align when it's at
+				// the right edge. Viewport-overflow anchoring was WRONG — with the sidebar open the
+				// button is far from the screen edge, so "right-align" stopped flipping and the menu
+				// spilled over the file tree (Boss-reported: Latin UI + Arabic note). The clamp stays
+				// as a pure safety net for extreme window sizes.
+				let left = dir === 'rtl' ? rect.left : rect.right - w;
 				left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
 				let top = rect.bottom + 4;
 				if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 4);
