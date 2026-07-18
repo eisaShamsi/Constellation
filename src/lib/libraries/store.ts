@@ -3710,6 +3710,11 @@ export interface NoteLink {
 	 *  user-promoted tier. The UI derives a richer lifecycle state from
 	 *  (traversal_count + last_traversed + confidence) via `linkLifecycle()`. */
 	confidence?: string;
+	/** PJ-114 §3 — ISO-8601 timestamp the link row was created, or '' for legacy
+	 *  rows written before the column was populated. Surfaced by the per-link
+	 *  inspector (§6), which renders an honest "unknown" rather than a guessed
+	 *  date. Empty for entries not sourced from `note_links`. */
+	created?: string;
 	/** Archival status: 'active' (default) or 'archived'. Archived links
 	 *  are hidden from backlinks/outgoing panels but preserved on disk. */
 	status?: 'active' | 'archived';
@@ -3982,6 +3987,10 @@ export function getBacklinks(
 			// need to import / re-derive on every row render.
 			tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 			confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+			/** PJ-114 §3 — ISO-8601 creation stamp ('' on legacy rows). Carried through for
+			 *  the per-link inspector (§6); this map REBUILDS rows, so an unmapped field is
+			 *  silently dropped. */
+			created: l.created ?? '',
 			annotation: displayAnnotation(l, dt),
 		};
 	});
@@ -4012,6 +4021,10 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 			lastTraversed: l.last_traversed ?? '',
 			tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 			confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+			/** PJ-114 §3 — ISO-8601 creation stamp ('' on legacy rows). Carried through for
+			 *  the per-link inspector (§6); this map REBUILDS rows, so an unmapped field is
+			 *  silently dropped. */
+			created: l.created ?? '',
 			annotation: displayAnnotation(l, dt),
 		};
 	});

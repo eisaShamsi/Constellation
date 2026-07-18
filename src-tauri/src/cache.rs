@@ -516,7 +516,8 @@ fn backlink_rows_in_schema(
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
-                weight, traversal_count, annotation, last_traversed, confidence \
+                weight, traversal_count, annotation, last_traversed, confidence, \
+                created, status \
          FROM {}.note_links \
          WHERE status != 'archived'{} AND target_name_lower IN ({})",
         schema, sx, placeholders
@@ -547,7 +548,8 @@ fn outgoing_rows_in_schema(
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
-                weight, traversal_count, annotation, last_traversed, confidence \
+                weight, traversal_count, annotation, last_traversed, confidence, \
+                created, status \
          FROM {}.note_links \
          WHERE source_path = ? AND status != 'archived'{}",
         schema, sx
@@ -582,6 +584,8 @@ fn map_note_link_row(row: &rusqlite::Row) -> rusqlite::Result<NoteLink> {
         traversal_count: row.get(6)?,
         last_traversed: row.get(8)?,
         confidence: row.get(9)?,
+        created: row.get(10)?,
+        status: row.get(11)?,
     })
 }
 
@@ -1284,7 +1288,8 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
-                weight, traversal_count, annotation, last_traversed, confidence \
+                weight, traversal_count, annotation, last_traversed, confidence, \
+                created, status \
          FROM {}.note_links WHERE status = 'active'{}",
         schema, sx
     );
@@ -1301,6 +1306,8 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
             let annotation: String = row.get(7)?;
             let last_traversed: String = row.get(8)?;
             let confidence: String = row.get(9)?;
+            let created: String = row.get(10)?;
+            let status: String = row.get(11)?;
             Ok(NoteLink {
                 source_path,
                 source_name,
@@ -1313,6 +1320,8 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
                 traversal_count,
                 last_traversed,
                 confidence,
+                created,
+                status,
             })
         })
         .map_err(|e| format!("query links ({}): {}", schema, e))?;
@@ -1364,6 +1373,8 @@ fn read_untyped_links_fallback_in_schema(conn: &Connection, schema: &str) -> Res
                 traversal_count: 0,
                 last_traversed: String::new(),
                 confidence: String::new(),
+                created: String::new(), // boot-graph fallback — not a note_links row
+                status: String::new(),
             });
         }
     }

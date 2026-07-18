@@ -2740,6 +2740,18 @@ pub struct NoteLink {
     /// so the UI can surface the raw tier without an extra query.
     #[serde(default)]
     pub confidence: String,
+    /// PJ-114 §3 — ISO-8601 timestamp the link row was created, or "" for legacy
+    /// rows written before the column was populated. Surfaced by the per-link
+    /// inspector (§6), which renders an honest "unknown" when empty — never a
+    /// fabricated date. Empty for entries not sourced from `note_links`.
+    #[serde(default)]
+    pub created: String,
+    /// PJ-114 §3 — lifecycle status: "active" or "archived". The per-note queries
+    /// filter archived rows out, so this reads 'active' for them today; it becomes
+    /// load-bearing when the supersedes/archive gesture lands (§10). Empty for
+    /// entries not sourced from `note_links`.
+    #[serde(default)]
+    pub status: String,
 }
 
 fn default_weight() -> f64 { 1.0 }
@@ -2865,6 +2877,8 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                         traversal_count: 0,
                         last_traversed: String::new(),
                         confidence: String::new(),
+                        created: String::new(), // file-scan result — not a note_links row
+                        status: String::new(),
                     });
                 }
             }
@@ -3029,6 +3043,8 @@ pub fn scan_unlinked_mentions(
                 traversal_count: 0,
                 last_traversed: String::new(),
                 confidence: String::new(),
+                created: String::new(), // file-scan result — not a note_links row
+                status: String::new(),
             });
         }
     }
