@@ -1212,7 +1212,7 @@
 		return items;
 	}
 
-	// Map the shared EditorContextMenu callbacks onto NotePane's own commands (reuse, no reinvention).
+	// Map the editor context-menu actions onto NotePane's own commands (reuse, no reinvention).
 	function ecmFormat(type: string) {
 		switch (type) {
 			case 'bold': wrapSelection('**', '**'); break;

@@ -2931,7 +2931,8 @@
 		// user presses "Build all summaries" in the Cataloger. Summaries still
 		// fill lazily on-demand as cards scroll into view (no boot cost).
 
-		// Listen for template picker requests from CodeMirrorEditor /template slash command
+		// Listen for template picker requests fired by the shared /template slash command
+		// (completions.ts, used by NotePane's editor).
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
 		// MIG-007 hub, re-pointed by MIG-074 §D (Architect ruling 7): the Settings →

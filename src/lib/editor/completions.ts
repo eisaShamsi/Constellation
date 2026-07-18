@@ -1,5 +1,5 @@
 /**
- * Shared autocompletion functions for NotePane and CodeMirrorEditor.
+ * Shared autocompletion functions for NotePane's editor (and any future note surface).
  * Factory pattern: each function takes data as params, returns a CompletionSource.
  */
 import { type CompletionContext, type Completion, startCompletion } from '@codemirror/autocomplete';

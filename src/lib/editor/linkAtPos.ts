@@ -1,12 +1,14 @@
-// PJ-114 §0.2 — the ONE parser-free wikilink line-scan, shared by the main editor
-// (CodeMirrorEditor Ctrl/⌘-click) and FocusPane's FM+ affordances (right-click menu,
-// Mod-click/Mod-Enter follow). A pure regex over a SINGLE line's text — NEVER the CM6
-// markdown parser. This is what lets FocusPane detect a [[link]] under the cursor while
-// staying strictly plain-text/parser-free (Rule 6 + the Editor-Parity Focus exception).
+// PJ-114 — the ONE parser-free wikilink line-scan. A pure regex over a SINGLE line's text —
+// NEVER the CM6 markdown parser. This is what lets a plain-text surface detect a [[link]]
+// under the cursor while staying parser-free (Rule 6 + the Editor-Parity Focus exception).
 //
-// Extracted verbatim (same regex, same hit predicate, same alias/#heading stripping) from
-// CodeMirrorEditor.svelte's Ctrl-click handler so both surfaces share one copy rather than
-// duplicating the scan (the "no copy-paste-and-adapt — one source of truth" rule).
+// Consumers: FocusPane today; NotePane's editor menu joins in Phase-1 §7, replacing its own
+// first-match-on-the-line regexes (which today target the WRONG link when a line has several).
+//
+// History: §0.2 extracted this from CodeMirrorEditor.svelte — a component that turned out to be
+// unmounted dead code and was deleted in Phase-1 §1. The helper itself is sound (11 unit tests,
+// tests/pj-114/linkAtPos.test.ts) and is genuinely used by FocusPane; only the "proven against
+// the main editor" claim in §0.2 was wrong — NotePane builds its own editor and its own menu.
 
 export interface WikilinkHit {
 	/** The full inner text between `[[` `]]`, e.g. `"Note|alias"` or `"Note#heading"`. */

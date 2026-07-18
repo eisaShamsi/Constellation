@@ -48,7 +48,7 @@
 
 	// Adjust position so the menu doesn't overflow the viewport. MIG-077 RTL: in an
 	// RTL UI the menu opens toward the start side (right edge anchored at the
-	// cursor), mirroring GraphMind / EditorContextMenu; LTR is unchanged.
+	// cursor), mirroring GraphMind; LTR is unchanged.
 	const MENU_W = 180;
 	const adjustedX = $derived(Math.min(x, window.innerWidth - MENU_W));
 	const rtlRight = $derived(Math.min(window.innerWidth - x, window.innerWidth - MENU_W));
