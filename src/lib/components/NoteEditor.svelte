@@ -424,25 +424,32 @@
 	}
 
 	function handleMoreAction(action: string) {
-		if (onmoreaction) {
-			onmoreaction(action);
-		} else {
-			// Default handler for common actions
-			switch (action) {
-				case 'showInExplorer':
-					invoke('constellation_show_in_folder', { path: tab.path }).catch(() => {});
-					break;
-				case 'openDefaultApp':
-					invoke('open_path', { path: tab.path }).catch(() => {});
-					break;
-				case 'copyPath':
-					navigator.clipboard.writeText(tab.path).catch(() => {});
-					break;
-				case 'copyName':
-					navigator.clipboard.writeText(tab.name).catch(() => {});
-					break;
-			}
+		// The four pure FILE ops are handled here, ALWAYS — they depend only on the tab and
+		// must behave identically in every host, including hosts that pass no handler at all
+		// (the second screen). They used to live behind `if (onmoreaction) … else`, which made
+		// the host's mere EXISTENCE shadow them: the main window's handler knew only its own
+		// five actions, so Copy path / Copy name / Show in explorer / Open in default app fell
+		// into its switch, matched nothing, and silently died (Boss-reported 2026-07-18).
+		// Host-owned actions (rename, delete, focus…) still delegate below.
+		switch (action) {
+			case 'showInExplorer':
+				invoke('constellation_show_in_folder', { path: tab.path })
+					.catch((e) => console.error('[NoteEditor] showInExplorer failed:', e));
+				return;
+			case 'openDefaultApp':
+				invoke('open_path', { path: tab.path })
+					.catch((e) => console.error('[NoteEditor] openDefaultApp failed:', e));
+				return;
+			case 'copyPath':
+				navigator.clipboard.writeText(tab.path)
+					.catch((e) => console.error('[NoteEditor] copyPath failed:', e));
+				return;
+			case 'copyName':
+				navigator.clipboard.writeText(tab.name)
+					.catch((e) => console.error('[NoteEditor] copyName failed:', e));
+				return;
 		}
+		onmoreaction?.(action);
 	}
 
 	async function handleLinkClick(link: string, newTab?: boolean) {

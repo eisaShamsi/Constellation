@@ -3533,11 +3533,26 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 			repathNoteModel(t.id, newPath); // MIG-076 §C — model identity follows the move
 			return { ...t, path: newPath, name: newName };
 		}
-		// If a folder was moved, update paths under it
+		// If a folder was moved, update paths under it.
+		//
+		// APP-KILLER FIX (2026-07-18): this derives from `newPath` — the destination Rust
+		// actually created — NOT from `targetFolder`. `relative` is sliced at
+		// `sourcePath.length`, i.e. AFTER the moved folder's own name, so pairing it with the
+		// parent directory dropped that name from every descendant: moving `A/Sub` into `B`
+		// repointed an open `A/Sub/Ideas.md` at `B/Ideas.md`. Both the tab and the model were
+		// set to the same wrong string, so `compose`'s path-identity guard could not fire, and
+		// every later save created a phantom note beside the real one — or overwrote an
+		// unrelated note of the same name, since WRITE_GATE_ENFORCE is false.
+		//
+		// `newPath` is also the only correct source when Rust CHOSE a different final name than
+		// requested (a collision suffix): `targetFolder` cannot know about that, the returned
+		// path can. This now matches `renameItem`'s equivalent branch above, which has always
+		// used the returned path (`effectivePath + relative`) — that asymmetry was the bug.
 		if (t.path.startsWith(sourcePath + '/') || t.path.startsWith(sourcePath + '\\')) {
 			const relative = t.path.substring(sourcePath.length);
-			repathNoteModel(t.id, targetFolder + relative); // MIG-076 §C
-			return { ...t, path: targetFolder + relative };
+			const movedPath = newPath + relative;
+			repathNoteModel(t.id, movedPath); // MIG-076 §C
+			return { ...t, path: movedPath };
 		}
 		return t;
 	}));

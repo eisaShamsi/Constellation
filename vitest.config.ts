@@ -132,6 +132,11 @@ export default defineConfig({
 			// box lost ALL styling and stopped working, and neither svelte-check nor a bundle
 			// grep caught it (the text was still in the output, just no longer a rule).
 			'tests/pj-114/linkTipCss.test.ts',
+			// APP-KILLER (2026-07-18) — moveItem repathed a moved folder's open descendants one
+			// directory too high (targetFolder + relative instead of the Rust-returned newPath),
+			// so every later save landed in a phantom file beside the real note. Pins the repath
+			// contract; the on-disk proof is the Boss's live recipe.
+			'tests/pj-127/moveItemRepath.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

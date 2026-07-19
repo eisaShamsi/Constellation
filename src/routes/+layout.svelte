@@ -8223,10 +8223,21 @@
 											window.dispatchEvent(new CustomEvent('constellation:reveal-in-tree', { detail: { path: $activeTab!.path } }));
 											break;
 										case 'delete':
-											window.dispatchEvent(new CustomEvent('constellation:delete-note', { detail: { path: $activeTab!.path, name: $activeTab!.name } }));
+											// Joins the tree's EXACT delete flow (confirm dialog → gated
+											// deleteWithSetting → tab close). The old line dispatched
+											// 'constellation:delete-note' — an event NOTHING listens to,
+											// so the menu item silently did nothing (Boss-reported
+											// 2026-07-18; the same phantom-event class the comment at
+											// the reveal-in-tree listener records being fixed before).
+											confirmDelete = { path: $activeTab!.path, name: $activeTab!.name };
 											break;
 										case 'addProperty':
-											window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: $activeTab!.path } }));
+											// On `document`, where PropertyEditor's listener actually is.
+											// Dispatching AT window never reaches document listeners
+											// (propagation runs document → window, not back down), so
+											// this menu item was dead too — found while fixing 'delete',
+											// same phantom-event class.
+											document.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: $activeTab!.path } }));
 											break;
 										case 'switchToFocus':
 											// MIG-076 §C — capture the focus note's identity for the

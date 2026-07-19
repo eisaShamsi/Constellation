@@ -490,3 +490,94 @@ list goes to the Boss with a recommendation to convert the *content-bearing* sub
 `RelatedCandidates` wiring confirmed in the bundle · binary **11:42**.
 
 **Not committed — awaiting the Boss test.**
+
+---
+
+# APP-KILLER remediation — Boss ruling: "Fix the app-killers first, then the PJ-126"
+
+*Function in hand: the five confirmed silent content-loss defects from the whole-app sweeps.*
+
+## Phase-1 Architect (`wf_2f120304-01e`): 5 re-verified at HEAD, adversarially refuted
+
+**Verdicts:** moveItem repath **CONFIRMED** (worse than filed) · cascade window **CONFIRMED**
+(refuter attacked on 5 vectors; all held) · second-screen dirty-birth **CONFIRMED** (5 vectors
+held; the net is mirrored through localStorage, which is how the SS sees the main window's
+snapshot) · template-insert stale write **CONFIRMED** · gate_rename clobber **DOWNGRADED** —
+the code fact is true (no dest-exists check in the locked region) but the consequence is refuted:
+`move_item` checks `dest.exists()` at `libraries.rs:1713` BEFORE calling gate_rename, and the
+rename path's collision handling sits upstream too. Real hole (a race between check and rename,
+and any future caller), not an app-killer. Re-file at lower severity.
+
+**Workflow caveat, recorded honestly:** the sequencing agent received only the first 2 of 5
+analyses — my script sliced its input at a character budget. Its "2 confirmed" framing is an
+artefact of MY truncation, not a finding. The per-bug verdicts above are each from a dedicated
+agent with full context and are what I acted on.
+
+**moveItem got WORSE under scrutiny:** the slice starts after the moved folder's own name, so the
+segment is dropped for DIRECT children too — wrong 100% of the time, not just for deep nesting.
+And when the target folder already holds a note with the same basename, the phantom write lands ON
+that unrelated note (gate verdict `WouldRefuseIdentity`, but `WRITE_GATE_ENFORCE = false` means
+journal-and-proceed) — destroying a second note, not just forking the first. A second symptom
+surfaced: clicking the real note in the tree after the move opens a SECOND tab on the same file
+(the wrong-path tab can't match), two tabs with divergent models.
+
+## FIX #1 SHIPPED (build 12:42) — moveItem derives from the Rust-returned path
+
+**Reproduce-First compliance:** this one is deterministic (no timing window), so the red test IS
+the reproduction of the repath contract, and the Boss's live recipe proves the on-disk half.
+**Red first:** `tests/pj-127/moveItemRepath.test.ts` written BEFORE the fix — **5 of 7 failed**
+against the bug (direct child, deep descendant, Windows separators, Rust-chosen collision name,
+same-prefix sibling). Notably the "tab and model never disagree" case PASSES with the bug present
+— both get the same wrong value; that agreement is exactly what defeats `compose`'s identity
+guard, and the test file says so.
+
+**The fix** (store.ts:3552-3555): `newPath + relative` instead of `targetFolder + relative` —
+matching `renameItem`'s always-correct sibling branch (`effectivePath + relative`). Also the only
+correct source when Rust chooses a collision-suffixed final name, which `targetFolder` cannot know.
+
+**Blast radius mapped (WA#4):** both UI callers (single `+layout.svelte:6027`, batch `:6017`)
+route through `moveItem` — one fix covers both. Repo-wide grep: no other `+ relative` path
+derivation exists. **PJ-098 verified STILL LIVE and adjacent:** `OrgChart.svelte:254` calls raw
+`invoke('move_item')`, bypassing the wrapper — an OrgChart drag-move repaths NOTHING (a different,
+already-filed defect). Boss test must use the file tree's Move, not the OrgChart, or it will look
+like the fix failed.
+
+**Verification:** red→green 7/7 · full suite **511 / 38 green** · svelte-check 0 errors ·
+binary **12:42**. **Not committed — awaiting the Boss test.**
+
+**Queue after this:** #2 template-insert (deterministic, dead selector — design question: what
+SHOULD "insert template" do, given the reachable branch never worked as designed?) · #3 cascade
+window + #4 second-screen (both need the on-screen instrumentation strip + the artificial cascade
+delay before any fix, per Reproduce-First — they are races) · gate_rename re-filed at lower
+severity · PJ-126 after.
+
+## ⋯-menu dead commands — Boss-reported, THREE distinct mechanisms, all fixed (build 13:32)
+
+Boss passed the moveItem fix, then reported five ⋯-menu commands dead: Copy path, Copy name,
+Show in system explorer, Open in default app, Delete. Investigation found the five split across
+THREE failure mechanisms, plus a sixth dead item the Boss had not hit yet:
+
+1. **The four file-ops — shadowed by the host's existence.** `NoteEditor.handleMoreAction` was
+   `if (onmoreaction) { delegate } else { built-in }`. The main window's handler knows only its
+   own five actions (rename/revealInTree/delete/addProperty/switchToFocus), so the four file-ops
+   fell into its switch, matched nothing, and died silently. **Fix (structural):** the four pure
+   file-ops are handled in NoteEditor UNCONDITIONALLY — they depend only on the tab and must be
+   identical in every host (the second screen passes no handler at all and always relied on the
+   built-ins) — and only host-owned actions delegate. The `.catch(() => {})` swallows became
+   `console.error`s while in there.
+2. **Delete — a phantom event.** The host dispatched `constellation:delete-note`; grep proves NO
+   listener has ever existed. **Fix:** the menu joins the tree's EXACT delete flow —
+   `confirmDelete = {path, name}` → the same confirm dialog → gated `deleteWithSetting`, which
+   itself closes the open tab (verified at store.ts:3598-3603). No new delete path invented.
+3. **addProperty — dispatched at `window`, listener on `document`** (PropertyEditor.svelte:474).
+   Events dispatched AT window never reach document listeners (propagation runs document→window,
+   not back down). Dead since wiring; unreported — found while fixing #2, fixed in-pass (WA#6).
+   **Fix:** dispatch on `document`.
+
+The phantom-event class has PRECEDENT the codebase itself records: the comment at
++layout.svelte:5891 documents `reveal-in-tree` being "dispatched but nothing listened" and fixed.
+Third instance of the class (delete, addProperty, reveal-in-tree). Worth a lint/test someday:
+every `CustomEvent('constellation:*')` dispatch should have a greppable listener.
+
+Verification: svelte-check 0 errors / 264 baseline · 511 tests green · binary **13:32**.
+**Not committed — awaiting Boss test (bundled with the moveItem fix test already passed).**
