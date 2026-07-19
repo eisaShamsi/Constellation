@@ -1520,7 +1520,8 @@
     "linkedMentions": "Связанные упоминания",
     "noBacklinks": "Нет обратных ссылок",
     "filter": "Фильтр...",
-    "unlinkedMentions": "Несвязанные упоминания"
+    "unlinkedMentions": "Несвязанные упоминания",
+    "linkIt": "Связать"
   },
   "outgoingLinksPanel": {
     "header": "Исходящие ссылки",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "Подсказка ссылки",
+      "max_width": "Максимальная ширина",
+      "room_for_marks_above_the_line": "Место для надстрочных знаков",
       "contradicts": "противоречит",
       "causes": "вызывает",
       "exemplifies": "иллюстрирует",

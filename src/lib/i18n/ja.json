@@ -1520,7 +1520,8 @@
     "linkedMentions": "リンクされた言及",
     "noBacklinks": "バックリンクなし",
     "filter": "絞り込み...",
-    "unlinkedMentions": "リンクされていない言及"
+    "unlinkedMentions": "リンクされていない言及",
+    "linkIt": "リンク化"
   },
   "outgoingLinksPanel": {
     "header": "アウトゴーイングリンク",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "リンクのツールチップ",
+      "max_width": "最大幅",
+      "room_for_marks_above_the_line": "文字の上に付く記号のためのゆとり",
       "contradicts": "矛盾",
       "causes": "原因",
       "exemplifies": "例示",

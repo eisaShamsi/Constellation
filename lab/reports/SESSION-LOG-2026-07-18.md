@@ -247,3 +247,246 @@ The two sweeps did surface pre-existing app-killers, including one the first swe
 (CLAUDE.md itself records the class as `.pane`), so the "fallback" branch is the ONLY reachable
 one, and it writes the stale store copy `tab.content` over disk. Awaiting the Boss's sequencing
 ruling along with the rest.
+
+---
+
+# §3b-SS — the link tooltip becomes a Style-Setter element (AWAITING BOSS TEST)
+
+Boss passed the §3b tooltip test, then: *"Add it to the Style Setter."* §3b committed first
+(`5b618bf4`, pushed) so the validated work was secured before new work began.
+
+**Placement:** a new `pLinkTip` element in the **Panels** category, sitting directly beside
+`pLinkTiers`. That pairing is the point — `pLinkTiers` styles the chip, `pLinkTip` styles the
+chip's explanation. (My stored recipe warned that `panels` is a two-zone category whose centre
+preview would be dead; **that note was stale** — `panels`, `cognitive` and `relgraph` have since
+been added to the two-zone exception list at `StyleSetter.svelte:732`, so the centre preview is live.)
+
+**Eight controls:** Background · Text · Border · Radius · **Line height** · Max width ·
+Padding (vertical) · Padding (horizontal). Line height is the one that matters — it is the dial
+for the exact complaint that produced this box.
+
+**No shadow control — deliberately.** `theme.css` wires `box-shadow: var(--tooltip-shadow,
+var(--shadow-l))`, reusing the **existing** shared "Tooltip shadow" token (Global → Shadows)
+rather than minting `--link-tip-shadow`. One dial should move every tooltip's elevation
+together; that is the app's own unify-on-demand pattern.
+
+**Byte-identical until edited.** Every value is `var(--link-tip-*, <today's value>)`, so nothing
+changes appearance until a control is actually moved.
+
+**The preview composes its samples with the REAL `traversalTooltip`**, in the interface language
+— so what the Boss styles cannot drift from what the app draws. The second sample row is fixed
+to **Arabic regardless of interface language**: the Line-height control exists *for* scripts with
+above-base marks, and the tanwin over يومًا is the mark that met the frame in the OS-drawn
+tooltip this box replaced. Styling that blind would be styling the wrong thing. The preview CSS
+mirrors `.link-tip` property-for-property with the same vars and fallbacks, with a comment on
+both sides to keep them in step.
+
+### i18n — 3 new labels, not 8
+`ssSlug` reuse meant only **`link_tooltip`, `max_width`, `room_for_marks_above_the_line`** were
+genuinely new; Background/Text/Border/Radius/**Line height**/Padding (vertical)/(horizontal) all
+already existed. Translated ×14 by one native-grammar agent per locale (`wf_91d1d543-b9d`).
+
+Every agent independently found and reused **this app's own existing word for "tooltip"** from
+`styleSetter.labels.tooltip_shadow` — تلميح · راهنما · הסבר כלי · ipucu · подсказка · 提示框 ·
+ツールチップ · Infobulle · Dica — rather than introducing a synonym. Several explicitly rejected the
+Microsoft-style calque in their language. Arabic reached further and used **التشكيل**, the app's
+own word from `scriptToolbar.tashkeel`, alongside the generic "العلامات" so the hint still covers
+nikkud and Persian/Urdu marks.
+
+### A real bug caught by verifying rather than trusting the diff
+The first insertion pass anchored on `raw.index('"styleSetter"')` — but `"styleSetter"` also
+appears **as a value** (`"styleSetter": "منسق المظهر"`) ~3,250 lines earlier, so the search landed
+on an unrelated `"labels"` block and wrote all three keys into the wrong namespace in **all 14
+files**. `git diff --numstat` showed a clean `3 0` per file and looked perfectly healthy. Only
+reading the keys back through `d['styleSetter']['labels']` exposed it. Reverted, re-anchored on
+`"styleSetter"\s*:\s*\{` (the object, not the string), and added a **post-write assertion** that
+reads each key back from the parsed object before the file is kept.
+
+### Verification
+`svelte-check` **0 errors** · **495 tests / 36 files green** · all 15 locales confirmed to carry
+the 3 keys **in `styleSetter.labels`** · diffs are exactly 3 added lines per locale · new CSS var
+and new label grep-confirmed in both bundles · binary rebuilt **09:40**.
+
+**Not committed — awaiting the Boss test.**
+
+## §3b-SS — regression found by the Boss, fixed: the tooltip stopped working entirely
+
+Boss: *"The Style Setter is fine, but the ×N badge no longer has any effect."* His screenshot
+showed the row's **native** "Right-click to set confidence" box where ours should have been.
+
+**Cause — mine, and entirely self-inflicted.** Parameterizing `.link-tip` for the Style Setter,
+I extended the comment above it and left a stray `*/` mid-block: the original comment closed at
+its old line, then seven lines of prose sat **outside any comment**, ending in a second `*/`.
+
+**Why that is worse than a syntax error:** CSS does not fail on it. The stray text is absorbed
+**into the next selector**, so the rule silently became `stray text… */ .link-tip` — a selector
+that matches nothing. The element was still created, still had its text, and carried **zero
+styling**: no `position: fixed` (so the JS-set left/top did nothing), no background, no
+`visibility` control. Proven, not assumed — parsing the exact broken text with postcss returns
+the selector `"stray text…*/\n.link-tip"`, versus `".link-tip"` when fixed.
+
+**Why nothing caught it — the part worth remembering.** `svelte-check` does not read `.css`
+files. Vitest had no CSS assertion. And **my bundle grep passed**: I searched the built output
+for `link-tip-line-height` and found it, because the text was still in the file even though it
+no longer parsed as a rule. *Presence in the bundle is not proof that the CSS parses.* That
+grep gave me false confidence and I shipped on it.
+
+**Fixed + guarded.** One comment block. New `tests/pj-114/linkTipCss.test.ts` parses `theme.css`
+with postcss and asserts: `.link-tip` exists as an exact selector · **no selector anywhere in the
+file has swallowed a comment delimiter** (guards the whole file, not just this rule) · the three
+declarations the box needs to be visible at all (`position: fixed`, `visibility: hidden`,
+`pointer-events: none`) · all eight Style-Setter vars are wired **with fallbacks** · the shadow
+still reuses the shared `--tooltip-shadow`. **Verified red→green**: re-introduced the exact break
+and all 5 assertions failed; restored and all 5 pass.
+
+**Build verification upgraded.** The bundle check no longer greps for text — it parses every
+built `.css` with postcss and asserts `.link-tip` resolves as a rule with `position` present.
+Both stylesheets (main + second screen) pass with 21 declarations each.
+
+`svelte-check` 0 errors (one caught in my own new test — a concise arrow returning a Map where
+postcss's walker wants `void | false`) · **500 tests / 37 files green** · binary **10:46**.
+
+**Not committed — awaiting the Boss re-test.**
+
+## §3b-SS2 — the link panels stop using OS tooltips entirely (AWAITING BOSS TEST)
+
+Boss passed the regression fix, then: *"Fix the badge tooltip style, as you did for the xN chip,
+and include it in the Style Setter."* Binary **11:07**.
+
+**The row hint is now app-drawn.** `linkConfidence.rightClickHint` on both row buttons moves from
+`title` to `data-linktip`. **No second Style-Setter element was added** — the row hint renders in
+the *same* `.link-tip` box, so the existing "Link tooltip" controls already govern it. The preview
+now shows a third sample row carrying the hint, so the element does not under-report its reach.
+(`Backlinks` was already a label slug — zero new i18n for that.)
+
+**`title=""` relocated to the row button**, the outermost element of the row: `title` resolves by
+walking to the nearest ancestor that has one, so ONE empty title there terminates the native walk
+for everything inside, including the chip. The chips' own `title=""` was then redundant and removed.
+
+### The change surfaced a defect it would itself have caused (WA#6)
+Putting `data-linktip` on the ROW meant every child that still carried a native `title` would draw
+**two boxes at once** — ours (resolved from the row via `closest()`) plus the OS one. Four such
+children existed: the annotation and NSC-headline spans in both panels. All converted to
+`data-linktip`. Nearest-ancestor-or-self resolution means hovering the annotation shows the
+annotation and hovering elsewhere on the row shows the hint, with no ambiguity.
+
+**A pre-existing localization bug found in passing:** the unlinked-mention "Link it" button carried
+a **hardcoded English `title="Link it"`** — never localized, in violation of the standing order.
+New key `backlinksPanel.linkIt` ×15 (`wf_b32b9254-7d2`, one native agent per locale). Every agent
+grounded the verb in the app's own existing root for "link" and most matched
+`reviewer.suggestLinkBtn` verbatim; several explicitly rejected the bare noun because a noun on an
+icon button reads as "a link" rather than "link it". Chinese and Hebrew independently chose the
+*convert-into-a-link* form (转换为链接 / המר לקישור) as truer to what the button does.
+
+### An accessibility regression I introduced, caught by svelte-check
+Removing `title` from the **icon-only** "Link it" button silently removed its **accessible name** —
+`title` had been doing double duty as tooltip *and* label, so a screen reader would have announced
+an unlabelled button. `aria-label` added, commented as required-not-optional for any icon-only
+control converted to the app-drawn tooltip. The warning count is back to its 264/38 baseline; a
+count that rises by one is a real signal, not noise.
+
+### Verification
+`svelte-check` **0 errors, 264 warnings (baseline)** · **500 tests / 37 files green** · `.link-tip`
+**parses as a rule** in both built stylesheets (not merely present as text — the lesson from the
+previous round) · localized `linkIt` confirmed in both bundles · all 15 locales verified to carry
+`backlinksPanel.linkIt` **in the right block**, diffs a clean 5 lines each · binary **11:07** newer
+than every touched source.
+
+*Two Sight-v6 perf budgets failed on one full-suite run and passed in isolation — they are
+wall-clock budgets and were starved by the parallel translation workflows, not regressed.
+Re-verified green on a quiet run rather than assumed.*
+
+**Not committed — awaiting the Boss test.**
+
+## §3b-SS3 — summaries are language-aware, by DOMINANCE (AWAITING BOSS TEST)
+
+Boss: *"Make sure that the summary are language aware. In this case (the image), it should be
+RTL."* His screenshot showed an Arabic NSC summary in the app-drawn tooltip laid out **LTR** —
+the short final line hugging the left edge, the sentence period on the wrong side. Binary **11:24**.
+
+**Cause — my own design decision.** `linkTip.ts` set the box's direction from
+`document.documentElement.dir`, i.e. the INTERFACE language. That is correct for what the box
+originally carried (the ×N diagnostic, composed in the UI language) but wrong now that the same
+box also carries **note content**: a link's annotation and an NSC summary headline, which are in
+the *note's* language. An English interface therefore forced an Arabic summary to lay out LTR.
+
+**The fix is `detectDir(text)`, NOT `dir="auto"` — and that distinction is the point.**
+My first instinct was `dir="auto"`. The repo has already litigated and REJECTED that:
+`tests/pj-106/rtlDirection.test.ts` documents §A1 replacing `dir="auto"` with `detectDir`
+because auto resolves from the **first strong character**, and *"first-char heuristics get
+bilingual content wrong."* That is not hypothetical here — **the very screenshot reporting this
+bug contains the failing shape**: a row titled "Arabic music" (Latin-first) whose summary is
+Arabic (Arabic-dominant). `auto` lays that out LTR; dominance gets it right. Checking the repo's
+own prior ruling turned a plausible fix into a correct one.
+
+**Extended to the inline rows too.** The Boss's instruction was general ("the summaries"), and the
+same summary renders both in the tooltip and inline in the row — with the identical weakness. The
+seven content-bearing spans in both panels (summary headline ×3, annotation ×2, context excerpt
+×2) move from `dir="auto"` to `dir={detectDir(…)}`. Deliberately NOT changed: the row *buttons*
+(their `dir` governs row layout and the tooltip's opening side, a different question) and the
+filter *input* (a UI control, where auto on typed text is correct).
+
+**Alignment pinned.** `text-align` is an inherited property, so a resolved-RTL box could still sit
+flush left if any ancestor set `text-align: left`. `.link-tip` now pins `text-align: start`, which
+follows whatever direction was resolved. Verified as `start` in **both** built stylesheets.
+
+**Two direction signals remain deliberately separate** and the comment now says why: TEXT
+direction from the content's own dominance; PLACEMENT side from the ANCHOR's resolved direction
+("which way does this surface open?"). They disagree in a real case — an Arabic UI with an English
+note — where the words must follow their script but the box must still open into the note.
+
+### Verification
+`svelte-check` **0 errors, 264 warnings (baseline)** · **504 tests / 37 files green** (4 new,
+locking the exact screenshot shape: Arabic summary → RTL; **Latin-first Arabic-dominant → RTL,
+which `dir="auto"` would fail**; Arabic-first English-dominant → LTR; and each composed chip
+tooltip resolving to its own interface language) · `text-align: start` confirmed in both built
+stylesheets · binary **11:24**.
+
+*The two Sight-v6 wall-clock perf budgets failed again on a loaded full-suite run and passed on a
+quiet one — same transient as before, re-verified rather than assumed.*
+
+**Not committed — awaiting the Boss test.**
+
+## §3b-SS4 — Suggested Connections joins the app-drawn tooltip (AWAITING BOSS TEST)
+
+Boss reported the Suggested Connections panel: the summary tooltip "not working", the Link button
+still showing a Windows box — while Outgoing Links "working perfectly". Binary **11:42**.
+
+**Honest classification: NOT a regression I introduced.** `RelatedCandidates.svelte` is untouched
+by this session — no working-tree change, last commit `19448e1c` (MIG-086). It never had
+`data-linktip`; it still used native `title`. What changed is the *contrast*: now that the two link
+panels draw their own tooltips, the un-converted surface beside them reads as broken. The
+user-visible complaint is entirely valid; the cause is coverage, not breakage.
+
+**What was actually there, read off the CSS rather than assumed:**
+- `.rc-name` — `overflow:hidden; text-overflow:ellipsis; white-space:nowrap` → genuinely truncates,
+  so its tooltip earns its place. Converted to `data-linktip`.
+- `.rc-snippet` — `max-height: 2.7em; overflow: hidden` → clipped to ~2 lines, and carried **no
+  tooltip at all**. That is precisely the "summary tooltip not working": there was never one to
+  work. Added.
+- `.rc-link` — `white-space:nowrap; flex-shrink:0` → never truncates, and its visible label already
+  reads "🔗 Link". Its `title` only ever repeated the text on the button. **Removed rather than
+  converted** — a tooltip that restates a visible label is noise (Constraint as Design). The button
+  keeps its accessible name from its own visible text, so no `aria-label` is needed here (contrast
+  the icon-only "Link it" button, which did need one).
+
+Both content lines also move `dir="auto"` → `dir={detectDir(…)}`, carrying forward the Boss's
+language-awareness ruling to this surface.
+
+**svelte-check earned its keep again:** my added `import { detectDir }` was a DUPLICATE — the file
+already imported it three lines below. Three errors, caught before the build.
+
+### Coverage — surfaced rather than left for the Boss to find
+This is the second surface the Boss has had to report. A survey found **295 native `title=` sites
+across the app** (`+layout.svelte` 64, `NotePane` 22, `SourceReviewPanel` 17, `TableToolbar` 16,
+`GraphMindView` 10 …). Most are legitimately chrome (toolbar buttons, icon controls) where a native
+tooltip is fine. The ones that matter are those showing **note content** — names, snippets,
+summaries, annotations — because those are the ones that truncate, and that need language-aware
+direction. Rather than converting 295 sites unilaterally or waiting to be told one at a time, the
+list goes to the Boss with a recommendation to convert the *content-bearing* subset only.
+
+### Verification
+`svelte-check` **0 errors, 264 warnings (baseline 264/38)** · **504 tests / 37 files green** ·
+`RelatedCandidates` wiring confirmed in the bundle · binary **11:42**.
+
+**Not committed — awaiting the Boss test.**

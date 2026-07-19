@@ -1080,7 +1080,8 @@
     "linkedMentions": "Menciones enlazadas",
     "noBacklinks": "Sin backlinks",
     "filter": "Filtrar...",
-    "unlinkedMentions": "Menciones no enlazadas"
+    "unlinkedMentions": "Menciones no enlazadas",
+    "linkIt": "Enlazar"
   },
   "outgoingLinksPanel": {
     "header": "Enlaces salientes",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "Tooltip de enlace",
+      "max_width": "Ancho máximo",
+      "room_for_marks_above_the_line": "Espacio para los signos que van encima de la línea",
       "contradicts": "contradice",
       "causes": "causa",
       "exemplifies": "ejemplifica",

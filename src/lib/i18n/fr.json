@@ -1080,7 +1080,8 @@
     "linkedMentions": "Mentions liées",
     "noBacklinks": "Aucun rétrolien",
     "filter": "Filtrer...",
-    "unlinkedMentions": "Mentions non liées"
+    "unlinkedMentions": "Mentions non liées",
+    "linkIt": "Relier"
   },
   "outgoingLinksPanel": {
     "header": "Liens sortants",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "Infobulle de lien",
+      "max_width": "Largeur maximale",
+      "room_for_marks_above_the_line": "De l'espace pour les signes au-dessus de la ligne",
       "contradicts": "contredit",
       "causes": "cause",
       "exemplifies": "illustre",

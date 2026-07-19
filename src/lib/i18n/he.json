@@ -1080,7 +1080,8 @@
     "linkedMentions": "אזכורים מקושרים",
     "noBacklinks": "אין קישורים נכנסים",
     "filter": "סנן...",
-    "unlinkedMentions": "אזכורים לא מקושרים"
+    "unlinkedMentions": "אזכורים לא מקושרים",
+    "linkIt": "המר לקישור"
   },
   "outgoingLinksPanel": {
     "header": "קישורים יוצאים",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "הסבר כלי לקישור",
+      "max_width": "רוחב מרבי",
+      "room_for_marks_above_the_line": "מקום לסימנים שמעל השורה",
       "contradicts": "סותר",
       "causes": "גורם",
       "exemplifies": "מדגים",

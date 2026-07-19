@@ -1679,7 +1679,8 @@
     "linkedMentions": "Linked mentions",
     "noBacklinks": "No backlinks",
     "filter": "Filter...",
-    "unlinkedMentions": "Unlinked mentions"
+    "unlinkedMentions": "Unlinked mentions",
+    "linkIt": "Link it"
   },
   "outgoingLinksPanel": {
     "header": "Outgoing links",
@@ -3882,7 +3883,10 @@
       "360_markers": "360 markers",
       "traversal_chips": "Traversal chips",
       "card_border": "Card border",
-      "card_radius": "Card radius"
+      "card_radius": "Card radius",
+      "link_tooltip": "Link tooltip",
+      "max_width": "Max width",
+      "room_for_marks_above_the_line": "Room for marks above the line"
     }
   },
   "reviewer": {

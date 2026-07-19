@@ -1080,7 +1080,8 @@
     "linkedMentions": "اشاره‌های لینک‌شده",
     "noBacklinks": "لینک برگشتی‌ای نیست",
     "filter": "فیلتر...",
-    "unlinkedMentions": "اشاره‌های بدون لینک"
+    "unlinkedMentions": "اشاره‌های بدون لینک",
+    "linkIt": "پیوندش بده"
   },
   "outgoingLinksPanel": {
     "header": "لینک‌های خروجی",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "راهنمای پیوند",
+      "max_width": "حداکثر عرض",
+      "room_for_marks_above_the_line": "جا برای نشانه‌های بالای خط",
       "contradicts": "نقض",
       "causes": "سبب",
       "exemplifies": "مثال",

@@ -1080,7 +1080,8 @@
     "linkedMentions": "Verknüpfte Erwähnungen",
     "noBacklinks": "Keine Rückverweise",
     "filter": "Filtern...",
-    "unlinkedMentions": "Nicht verknüpfte Erwähnungen"
+    "unlinkedMentions": "Nicht verknüpfte Erwähnungen",
+    "linkIt": "Verknüpfen"
   },
   "outgoingLinksPanel": {
     "header": "Ausgehende Links",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "Link-Tooltip",
+      "max_width": "Max. Breite",
+      "room_for_marks_above_the_line": "Platz für Zeichen über der Zeile",
       "contradicts": "widerspricht",
       "causes": "verursacht",
       "exemplifies": "veranschaulicht",

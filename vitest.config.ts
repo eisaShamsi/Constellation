@@ -127,6 +127,11 @@ export default defineConfig({
 			// clamp, the unknown-tier key-path guard, and i18n parity across all 15
 			// locales for the two vocabularies the chip tooltip reuses.
 			'tests/pj-114/linkDisplay.test.ts',
+			// PJ-114 §3b (2026-07-18) — theme.css integrity for the app-drawn tooltip. A stray
+			// comment close silently folded the `.link-tip` rule into an unmatched selector; the
+			// box lost ALL styling and stopped working, and neither svelte-check nor a bundle
+			// grep caught it (the text was still in the output, just no longer a rule).
+			'tests/pj-114/linkTipCss.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

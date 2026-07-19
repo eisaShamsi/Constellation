@@ -39,7 +39,11 @@
 	// cards is the documented main-thread FREEZE shape that the clean-slate Setter exists to avoid
 	// (orientation v2.49; LL-014). The Setter lists only the user's SAVED styles, as lightweight rows.
 	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, exportPreset, importPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
-	import { t } from '$lib/i18n';
+	import { t, locale } from '$lib/i18n';
+	// PJ-114 §3b — the preview composes its sample with the REAL helper, so what the Boss styles
+	// is literally what the app will draw, in the interface language, rather than a mock-up that
+	// can drift from it.
+	import { traversalTooltip } from '$lib/links/linkDisplay';
 
 	// MIG-072 follow-up — Style Setter i18n. Every control label / group + category name / chrome
 	// string renders through L(en): it looks up `styleSetter.labels.<slug>` and FALLS BACK to the
@@ -116,6 +120,11 @@
 	// MIG-088 §4b — elevation presets for the consolidated shadow tokens (modal/popover/dropdown/tooltip).
 	// Unify-on-demand: each surface wires var(--<token>, <its own current shadow>) so it's byte-identical
 	// until the user picks a preset here, which then applies to every surface of that class.
+	/** A fixed "17 days ago" for the Link-tooltip preview — far enough back to exercise the
+	 *  day bucket (the one that renders a number rather than "today"/"yesterday"), so the box
+	 *  is sized against realistic content rather than a two-word string. */
+	const twoWeeksAgoIso = new Date(Date.now() - 17 * 86_400_000).toISOString();
+
 	const SHADOW_ELEV_OPTS: [string, string][] = [
 		['None', 'none'], ['Soft', '0 2px 8px rgba(0,0,0,0.12)'], ['Medium', '0 6px 20px rgba(0,0,0,0.18)'],
 		['Strong', '0 12px 36px rgba(0,0,0,0.26)'], ['Dramatic', '0 20px 60px rgba(0,0,0,0.4)'],
@@ -465,6 +474,21 @@
 			{ label: 'Part of', type: 'color', var: '--rel-part-of' },
 			{ label: 'Supersedes', type: 'color', var: '--rel-supersedes' },
 			{ label: 'Untyped', type: 'color', var: '--rel-associative' } ] },
+		// PJ-114 §3b — the box Constellation draws when you rest on a traversal chip. It sits
+		// beside pLinkTiers on purpose: that element styles the chip, this one styles the chip's
+		// explanation. NO shadow control here — the shared "Tooltip shadow" (Global → Shadows)
+		// already reaches it, and one dial should move every tooltip's elevation together.
+		// "Line height" is the control that matters: it is the dial for the complaint that
+		// produced this box — Arabic marks meeting the frame in the OS-drawn tooltip.
+		pLinkTip: { name: 'Link tooltip', controls: [
+			{ label: 'Background', type: 'color', var: '--link-tip-bg' },
+			{ label: 'Text', type: 'color', var: '--link-tip-text' },
+			{ label: 'Border', type: 'color', var: '--link-tip-border' },
+			{ label: 'Radius', type: 'range', var: '--link-tip-radius', min: 0, max: 20, step: 1, unit: 'px', def: 8 },
+			{ label: 'Line height', type: 'range', var: '--link-tip-line-height', min: 1.2, max: 2.4, step: 0.05, unit: '', def: 1.75 },
+			{ label: 'Max width', type: 'range', var: '--link-tip-max-width', min: 200, max: 560, step: 10, unit: 'px', def: 320 },
+			{ label: 'Padding (vertical)', type: 'range', var: '--link-tip-pad-y', min: 2, max: 20, step: 1, unit: 'px', def: 9 },
+			{ label: 'Padding (horizontal)', type: 'range', var: '--link-tip-pad-x', min: 4, max: 28, step: 1, unit: 'px', def: 13 } ] },
 		pLinkTiers: { name: 'Traversal chips', controls: [
 			{ label: 'Accent', type: 'color', var: '--link-tier-accent' },
 			{ label: 'Emerging', type: 'color', var: '--link-tier-emerging' },
@@ -680,7 +704,7 @@
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'gShadows', 'gScrim', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'cognitive', name: 'Cognitive colours', surface: 'editor', elements: ['cogMaturity', 'cogConfidence', 'cogOrigin', 'cogStage', 'cogMatch'] },
-		{ key: 'panels', name: 'Panels', surface: 'editor', elements: ['pKhCard', 'pProvTag', 'pTaskBadge', 'pReviewStale', 'pI360', 'pLinkTiers'] },
+		{ key: 'panels', name: 'Panels', surface: 'editor', elements: ['pKhCard', 'pProvTag', 'pTaskBadge', 'pReviewStale', 'pI360', 'pLinkTiers', 'pLinkTip'] },
 		{ key: 'relgraph', name: 'Note graph', surface: 'relgraph', elements: ['relTypes'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
@@ -1519,6 +1543,31 @@
 									<div class="ss-i360col ss-i360-blind"><span class="ss-i360warn ss-iw-blind">0</span><span class="ss-i360name">{L('Blind spots')}</span></div>
 								</div>
 							</div>
+						{:else if pk === 'pLinkTip'}
+							<!-- The samples are composed by the REAL `traversalTooltip`, in the interface
+							     language, so the preview cannot drift from what the app draws. The second
+							     row is deliberately fixed to Arabic whatever the interface language: the
+							     Line-height control exists FOR scripts with above-base marks, and the
+							     tanwin over يومًا is the mark that met the frame in the OS-drawn tooltip
+							     this box replaced. Styling it blind would be styling the wrong thing. -->
+							<div class="ss-focus ss-fcard ss-fpanel">
+								<div class="ss-fep-title">{L('Link tooltip')}</div>
+								<div class="ss-tiprow">
+									<span class="ss-tierchip">×2</span>
+									<span class="ss-tipbox" dir="auto">{traversalTooltip(2, 'emerging', twoWeeksAgoIso, $locale)}</span>
+								</div>
+								<div class="ss-tiprow">
+									<span class="ss-tierchip ss-tier-load">×19</span>
+									<span class="ss-tipbox" dir="rtl">{traversalTooltip(19, 'load-bearing', twoWeeksAgoIso, 'ar')}</span>
+								</div>
+								<!-- The link ROW's own hint shares this same box, so these controls govern
+								     both. Shown here so the element does not under-report its reach. -->
+								<div class="ss-tiprow">
+									<span class="ss-tiprowlbl">{L('Backlinks')}</span>
+									<span class="ss-tipbox" dir="auto">{$t('linkConfidence.rightClickHint')}</span>
+								</div>
+								<div class="ss-tiphint">{L('Room for marks above the line')}</div>
+							</div>
 						{:else if pk === 'pLinkTiers'}
 							<div class="ss-focus ss-fcard ss-fpanel">
 								<div class="ss-fep-title">{L('Traversal chips')}</div>
@@ -2102,6 +2151,28 @@
 	.ss-tier-load { background: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); border-color: var(--link-tier-loadbearing, var(--link-tier-accent, var(--interactive-accent, #7c3aed))); color: #fff; }
 	.ss-tier-stale { background: color-mix(in srgb, var(--link-tier-stale, #d97706) 14%, transparent); border-color: color-mix(in srgb, var(--link-tier-stale, #d97706) 30%, transparent); color: var(--link-tier-stale, #d97706); }
 	.ss-tierlbl { font-size: 13px; font-weight: 600; color: var(--text-normal, #2e3338); }
+	/* PJ-114 §3b — Link tooltip preview. Mirrors `.link-tip` in theme.css property-for-property,
+	   reading the SAME draft vars with the SAME fallbacks, so what the Boss sees here is what the
+	   app draws. Only the positioning differs: the real box is `position: fixed` and hidden until
+	   placed, which cannot be shown inline. Keep these two rule sets in step — if a control is
+	   added to `pLinkTip`, it belongs in both. */
+	.ss-tiprow { display: flex; align-items: center; gap: 12px; min-height: 30px; }
+	.ss-tipbox {
+		box-sizing: border-box;
+		max-width: var(--link-tip-max-width, 320px);
+		padding: var(--link-tip-pad-y, 9px) var(--link-tip-pad-x, 13px);
+		background: var(--link-tip-bg, var(--background-secondary, #f2f3f5));
+		color: var(--link-tip-text, var(--text-normal, #2e3338));
+		border: 1px solid var(--link-tip-border, var(--background-modifier-border-focus, var(--border, rgba(0,0,0,.18))));
+		border-radius: var(--link-tip-radius, 8px);
+		box-shadow: var(--tooltip-shadow, var(--shadow-l, 0 8px 24px rgba(0,0,0,.18)));
+		font-size: calc(var(--link-tip-font-size, 0.8rem) * var(--rs-scale, 1));
+		line-height: var(--link-tip-line-height, 1.75);
+		white-space: normal; overflow-wrap: anywhere;
+		text-transform: none; letter-spacing: normal; font-weight: 400;
+	}
+	.ss-tiphint { font-size: 12px; color: var(--text-muted, #6b7280); margin-top: 4px; }
+	.ss-tiprowlbl { font-size: 12px; font-weight: 600; color: var(--text-muted, #6b7280); min-width: 66px; }
 	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
 	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
 	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }

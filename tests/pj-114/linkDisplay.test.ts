@@ -31,6 +31,7 @@ import {
 	walkCountLabel,
 } from '$lib/links/linkDisplay';
 import { LINK_STALE_DAYS } from '$lib/libraries/store';
+import { detectDir } from '$lib/utils';
 
 import ar from '$lib/i18n/ar.json';
 import de from '$lib/i18n/de.json';
@@ -242,6 +243,38 @@ describe('walkCountLabel — the editor chip says less, in the same words', () =
 
 	it('normalises an undefined count', () => {
 		expect(walkCountLabel(undefined, 'en')).toBe('0 walks');
+	});
+});
+
+describe('link tooltip text direction — resolved by dominance, not first character', () => {
+	// Boss test 2026-07-18: an Arabic NSC summary rendered LTR inside the app-drawn tooltip
+	// under an English interface — short final line flush left, sentence period on the wrong
+	// side. `linkTip.ts` sets the box's `dir` from the CONTENT via `detectDir`.
+	//
+	// Why `detectDir` and not `dir="auto"`: PJ-106 §A1 already replaced auto for this exact
+	// reason — auto resolves from the first STRONG CHARACTER, so a Latin-first/Arabic-dominant
+	// string comes out LTR. The screenshot that reported the bug contained precisely that shape
+	// (a row titled "Arabic music" with an Arabic summary). These cases lock the distinction.
+	const ARABIC_SUMMARY =
+		'محمد عبد الوهاب هو مغني وملحن وممثل مصري، يعدّ أحد أعلام الموسيقى العربية، لقّب بموسيقار الأجيال';
+
+	it('an Arabic summary resolves RTL', () => {
+		expect(detectDir(ARABIC_SUMMARY)).toBe('rtl');
+	});
+
+	it('a Latin-first but Arabic-dominant summary still resolves RTL (dir="auto" would not)', () => {
+		expect(detectDir(`Arabic music — ${ARABIC_SUMMARY}`)).toBe('rtl');
+	});
+
+	it('an English summary resolves LTR even when it opens with an Arabic word', () => {
+		expect(detectDir('الموسيقى: a long English summary sentence about this note and its sources'))
+			.toBe('ltr');
+	});
+
+	it('the app-composed chip tooltip resolves to its own interface language', () => {
+		expect(detectDir(traversalTooltip(3, 'established', daysAgo(2), 'en'))).toBe('ltr');
+		expect(detectDir(traversalTooltip(3, 'established', daysAgo(2), 'ar'))).toBe('rtl');
+		expect(detectDir(traversalTooltip(3, 'established', daysAgo(2), 'he'))).toBe('rtl');
 	});
 });
 

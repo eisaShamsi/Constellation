@@ -1520,7 +1520,8 @@
     "linkedMentions": "已链接的提及",
     "noBacklinks": "无反向链接",
     "filter": "筛选...",
-    "unlinkedMentions": "未链接的提及"
+    "unlinkedMentions": "未链接的提及",
+    "linkIt": "转换为链接"
   },
   "outgoingLinksPanel": {
     "header": "出链",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "链接提示框",
+      "max_width": "最大宽度",
+      "room_for_marks_above_the_line": "为字母上方的符号留出空间",
       "contradicts": "反驳",
       "causes": "导致",
       "exemplifies": "举例",

@@ -1520,7 +1520,8 @@
     "linkedMentions": "लिंक किए गए उल्लेख",
     "noBacklinks": "कोई बैकलिंक्स नहीं",
     "filter": "फ़िल्टर करें...",
-    "unlinkedMentions": "लिंक न किए गए उल्लेख"
+    "unlinkedMentions": "लिंक न किए गए उल्लेख",
+    "linkIt": "लिंक करें"
   },
   "outgoingLinksPanel": {
     "header": "आउटगोइंग लिंक्स",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "लिंक टूलटिप",
+      "max_width": "अधिकतम चौड़ाई",
+      "room_for_marks_above_the_line": "पंक्ति के ऊपर लगने वाले चिह्नों के लिए जगह",
       "contradicts": "विरोधाभास",
       "causes": "कारण",
       "exemplifies": "उदाहरण",

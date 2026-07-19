@@ -10,6 +10,10 @@
 	// the shared-term *why* is mandatory; invitational, not assertive; only UNCONNECTED
 	// relatives; an honest empty state (never a fabricated match).
 	import { t, dir as uiDir } from '$lib/i18n';
+	// PJ-114 §3b — Suggested Connections joins the app-drawn tooltip. The name and snippet use
+	// the `detectDir` already imported below (script DOMINANCE, not dir="auto"'s first strong
+	// character — PJ-106 §A1): a candidate titled in Latin but written in Arabic still lays out RTL.
+	import '$lib/links/linkTip';
 	import { suggestRelatedNotes, addLinkToNote, type RelatedCandidate } from '$lib/libraries/store';
 	import { detectDir } from '$lib/utils';
 	import LinkTypePicker from './LinkTypePicker.svelte';
@@ -169,12 +173,11 @@
 			{#each candidates as c (c.note_path)}
 				<li class="rc-item">
 					<div class="rc-row">
-						<span class="rc-name" dir="auto" title={c.note_name}>{c.note_name}</span>
+						<span class="rc-name" dir={detectDir(c.note_name)} data-linktip={c.note_name}>{c.note_name}</span>
 						<button
 							class="rc-link"
 							onclick={(e) => openPicker(e, c)}
 							disabled={connecting === c.note_path}
-							title={$t('reviewer.suggestLinkBtn') || 'Link'}
 						>
 							{connecting === c.note_path ? '⏳' : '🔗'} {$t('reviewer.suggestLinkBtn') || 'Link'}
 						</button>
@@ -186,7 +189,7 @@
 						</div>
 					{/if}
 					{#if c.snippet}
-						<div class="rc-snippet" dir="auto">{c.snippet}</div>
+						<div class="rc-snippet" dir={detectDir(c.snippet)} data-linktip={c.snippet}>{c.snippet}</div>
 					{/if}
 				</li>
 			{/each}

@@ -1520,7 +1520,8 @@
     "linkedMentions": "Bağlantılı bahsetmeler",
     "noBacklinks": "Geri bağlantı yok",
     "filter": "Filtrele...",
-    "unlinkedMentions": "Bağlantısız bahsetmeler"
+    "unlinkedMentions": "Bağlantısız bahsetmeler",
+    "linkIt": "Bağla"
   },
   "outgoingLinksPanel": {
     "header": "Giden bağlantılar",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "Bağlantı ipucu",
+      "max_width": "Maks. genişlik",
+      "room_for_marks_above_the_line": "Satırın üstündeki işaretlere yer açar",
       "contradicts": "çelişir",
       "causes": "neden-olur",
       "exemplifies": "örnekler",

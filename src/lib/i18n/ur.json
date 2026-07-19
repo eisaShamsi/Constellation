@@ -1080,7 +1080,8 @@
     "linkedMentions": "لنک شدہ حوالے",
     "noBacklinks": "کوئی بیک لنکس نہیں",
     "filter": "فلٹر کریں...",
-    "unlinkedMentions": "غیر لنک شدہ حوالے"
+    "unlinkedMentions": "غیر لنک شدہ حوالے",
+    "linkIt": "اسے جوڑیں"
   },
   "outgoingLinksPanel": {
     "header": "باہر جانے والے لنکس",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "لنک ٹول ٹپ",
+      "max_width": "زیادہ سے زیادہ چوڑائی",
+      "room_for_marks_above_the_line": "لائن کے اوپر آنے والے نشانات کے لیے گنجائش",
       "contradicts": "تضاد",
       "causes": "سبب",
       "exemplifies": "مثال",

@@ -24,6 +24,8 @@
  * widget that is created and discarded on every decoration rebuild.
  */
 
+import { detectDir } from '$lib/utils';
+
 /** The attribute a chip sets to declare its tooltip. Resolved with `closest()`, so it may sit
  *  on the chip or an ancestor — but keep it on the chip itself, since the box anchors to the
  *  element that carries it. */
@@ -81,12 +83,30 @@ function show(anchorEl: HTMLElement, text: string): void {
 	anchor = anchorEl;
 	el.textContent = text;
 
-	// TWO DIRECTION SIGNALS, DELIBERATELY SEPARATE — they disagree in exactly one real case:
-	// an Arabic interface with an English note open. The tooltip's WORDS follow the interface
-	// (Boss ruling, `livePreview.ts`), so the text must lay out RTL; but the chip sits inside
-	// an LTR note, so the box must still open leftward into that note rather than outward over
-	// the sidebar. Reading one signal for both would break one of the two.
-	el.dir = document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr';
+	// TWO DIRECTION SIGNALS, DELIBERATELY SEPARATE.
+	//
+	// TEXT direction comes from the TEXT ITSELF, by script DOMINANCE.
+	//
+	// This box carries two very different kinds of content: app-authored diagnostics in the
+	// INTERFACE language (the ×N chip, the row's confidence hint) and NOTE CONTENT in the note's
+	// own language (a link's annotation, an NSC summary headline). An earlier cut read
+	// `document.documentElement.dir`, which is right only for the first kind — Boss test
+	// 2026-07-18 showed an Arabic summary laid out LTR under an English interface, its short
+	// final line hugging the left edge and the sentence period on the wrong side.
+	//
+	// `detectDir`, not `dir="auto"`: this repo has already litigated that choice. PJ-106 §A1
+	// REPLACED `dir="auto"` with `detectDir` precisely because auto resolves from the first
+	// strong character, which "gets bilingual content wrong" (`tests/pj-106/rtlDirection.test.ts`).
+	// That is not hypothetical here — the very screenshot that reported this bug shows a row
+	// titled "Arabic music" whose summary is Arabic: Latin-first, Arabic-dominant. `auto` would
+	// lay it out LTR; dominance gets it right.
+	el.dir = detectDir(text);
+	//
+	// PLACEMENT side is read from the ANCHOR's resolved direction — a genuinely different
+	// question ("which way does this surface open?") that must not be answered by the content.
+	// They disagree in a real case: an Arabic UI with an English note, where the words lay out
+	// per their own script but the box must still open into the note rather than out over the
+	// sidebar.
 	const rtlAnchor = getComputedStyle(anchorEl).direction === 'rtl';
 
 	// MEASURE, THEN PLACE, THEN REVEAL. The rendered width swings widely across 15 locales, so

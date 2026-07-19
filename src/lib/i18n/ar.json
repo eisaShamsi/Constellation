@@ -1614,7 +1614,8 @@
     "linkedMentions": "الروابط الواردة",
     "noBacklinks": "لا توجد روابط واردة",
     "filter": "تصفية...",
-    "unlinkedMentions": "إشارات غير مرتبطة"
+    "unlinkedMentions": "إشارات غير مرتبطة",
+    "linkIt": "اربطها"
   },
   "outgoingLinksPanel": {
     "header": "الروابط الصادرة",
@@ -3359,6 +3360,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "تلميح الرابط",
+      "max_width": "أقصى عرض",
+      "room_for_marks_above_the_line": "مساحة للتشكيل والعلامات فوق السطر",
       "contradicts": "يناقض",
       "causes": "يسبب",
       "exemplifies": "يمثّل",

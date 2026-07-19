@@ -204,22 +204,36 @@ textarea {
        min-width: 240px is pointedly not copied: a min-width is what leaves a short English
        string sitting in a box wider than its own text — the other half of the Boss's report.
    Colour, border, shadow and scale all come from tokens already defined above; no new custom
-   property is introduced. Appending to <body> inherits the interface font, so none is set. */
+   property is introduced. Appending to <body> inherits the interface font, so none is set.
+
+   STYLE SETTER (Panels → "Link tooltip"): every value below is `var(--link-tip-*, <today's
+   value>)`, so the rendering is byte-identical until the user actually moves a control — the
+   "unify on demand" pattern this app uses everywhere. The SHADOW deliberately reuses the
+   EXISTING shared `--tooltip-shadow` token (Global → Shadows → "Tooltip shadow") rather than
+   minting a `--link-tip-shadow`: one dial should move every tooltip's elevation together.
+   `--link-tip-line-height` is the control that matters most — it is the dial for the very
+   complaint that produced this box (Arabic marks meeting the frame). */
 .link-tip {
   position: fixed; left: 0; top: 0; z-index: 9999;
   visibility: hidden;          /* placed while hidden, then revealed — no flash at 0,0 */
   pointer-events: none;        /* can never eat the hover it depends on */
   box-sizing: border-box;
-  max-width: 320px;
-  padding: 9px 13px;
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border-focus, var(--border));
-  border-radius: 8px;
-  box-shadow: var(--shadow-l);
-  font-size: calc(0.8rem * var(--rs-scale, 1));
-  line-height: 1.75;
+  max-width: var(--link-tip-max-width, 320px);
+  padding: var(--link-tip-pad-y, 9px) var(--link-tip-pad-x, 13px);
+  background: var(--link-tip-bg, var(--background-secondary));
+  color: var(--link-tip-text, var(--text-normal));
+  border: 1px solid var(--link-tip-border, var(--background-modifier-border-focus, var(--border)));
+  border-radius: var(--link-tip-radius, 8px);
+  box-shadow: var(--tooltip-shadow, var(--shadow-l));
+  font-size: calc(var(--link-tip-font-size, 0.8rem) * var(--rs-scale, 1));
+  line-height: var(--link-tip-line-height, 1.75);
   white-space: normal;
   overflow-wrap: anywhere;
+  /* The box carries note content as well as UI text, so its element `dir` is set to `auto` in
+     linkTip.ts and the browser resolves direction from the content itself. `text-align` is an
+     INHERITED property, so without pinning it to `start` an ancestor's `text-align: left` would
+     defeat that — an Arabic summary would resolve RTL yet still sit flush left. `start` follows
+     whatever direction `auto` resolved to. */
+  text-align: start;
   text-transform: none; letter-spacing: normal; font-weight: 400;
 }

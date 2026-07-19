@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { openNoteTab, libraries, readNote, appSettings, type LinkConfidence } from '$lib/libraries/store';
 	import { t, dir as uiDir, locale } from '$lib/i18n';
-	import { dominantLocale } from '$lib/utils';
+	// PJ-114 §3b — `detectDir` (script DOMINANCE), not dir="auto" (first strong character):
+	// PJ-106 §A1 replaced auto for exactly this reason. A summary titled in Latin but written
+	// in Arabic must still lay out RTL.
+	import { dominantLocale, detectDir } from '$lib/utils';
 	// PJ-114 §3b — link-state wording lives in ONE place now (see the module header).
 	import { displayAnnotationIn, traversalTooltip } from '$lib/links/linkDisplay';
 	// Side-effect import: installs the app-drawn tooltip for `data-linktip` elements.
@@ -184,9 +187,14 @@
 <!-- MIG-079 §C.2c-3 — ONE source of truth for each row, rendered by both the
      plain {#each} (small notes) and the VirtualList (hub notes). -->
 {#snippet backlinkRow(bl: BacklinkRow)}
+	<!-- The row's own hint is app-drawn too (PJ-114 §3b). `title=""` sits HERE, on the outermost
+	     element of the row, because `title` resolves by walking to the nearest ancestor that has
+	     one — so a single empty title on the row terminates that walk for everything inside it,
+	     including the ×N chip. That is why the chip below needs no `title` of its own. -->
 	<button class="bl-item" dir="auto" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
 		oncontextmenu={(e) => openConfMenu(e, bl.path, activeNoteName, bl.confidence ?? 'hypothesis')}
-		title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
+		title=""
+		data-linktip={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 		<span class="bl-name-row">
 			{#if bl.libraryName}
 				<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
@@ -196,24 +204,26 @@
 				<LinkTypePill id={lt} loc={noteLoc()} />
 			{/each}
 			{#if (bl.traversalCount ?? 0) > 0}
-				<!-- The empty `title` is load-bearing, not leftover: the ROW button carries its own
-				     native tooltip (the right-click hint above), and `title` resolves by walking up
-				     to the nearest ancestor that has one — so without this, the row's Windows-drawn
-				     box would appear underneath ours. An empty title terminates that walk. -->
+				<!-- `closest()` resolves the tooltip from the nearest ancestor-or-self carrying
+				     `data-linktip`, so the chip's own text wins here and the row's hint wins
+				     everywhere else on the row. No `title` needed — the row's empty one already
+				     terminates the native walk for this subtree. -->
 				<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"
-					title=""
 					data-linktip={traversalTooltip(bl.traversalCount, bl.tier, bl.lastTraversed, $locale)}>×{bl.traversalCount}</span>
 			{/if}
 			{#if bl.libraryName}
 				<span class="bl-library-label">{bl.libraryName}</span>
 			{/if}
 		</span>
-		<span class="bl-context" dir="auto">{bl.context}</span>
+		<span class="bl-context" dir={detectDir(bl.context)}>{bl.context}</span>
 		{#if bl.annotation}
-			<span class="bl-annotation" dir="auto" title={bl.annotation}>“{displayAnnotationIn(bl.annotation, noteLoc())}”</span>
+			<!-- `data-linktip`, not `title`: this sits INSIDE the row, which now declares its own
+			     tip, so a native title here would draw a second box on top of ours. Nearest
+			     ancestor-or-self wins, so hovering the annotation shows the annotation. -->
+			<span class="bl-annotation" dir={detectDir(bl.annotation ?? '')} data-linktip={bl.annotation}>“{displayAnnotationIn(bl.annotation, noteLoc())}”</span>
 		{/if}
 		{#if summaryHeadlines.get(bl.path)}
-			<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>
+			<span class="bl-headline" dir={detectDir(summaryHeadlines.get(bl.path) ?? '')} data-linktip={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>
 		{/if}
 	</button>
 {/snippet}
@@ -232,10 +242,15 @@
 			</span>
 			<span class="bl-context">{ul.context}</span>
 			{#if summaryHeadlines.get(ul.path)}
-				<span class="bl-headline" dir="auto" title={summaryHeadlines.get(ul.path)}>{summaryHeadlines.get(ul.path)}</span>
+				<span class="bl-headline" dir={detectDir(summaryHeadlines.get(ul.path) ?? '')} data-linktip={summaryHeadlines.get(ul.path)}>{summaryHeadlines.get(ul.path)}</span>
 			{/if}
 		</button>
-		<button class="bl-link-btn" title="Link it" onclick={(e) => linkMention(ul.path, e)}>
+		<!-- `aria-label` is REQUIRED here, not optional politeness: this button is icon-only, and
+		     the `title` it used to carry was doubling as its accessible name. Moving the tooltip to
+		     `data-linktip` silently removed that name — screen readers would have announced an
+		     unlabelled button. Any icon-only control converted to the app-drawn tooltip needs this. -->
+		<button class="bl-link-btn" aria-label={$t('backlinksPanel.linkIt')}
+			data-linktip={$t('backlinksPanel.linkIt')} onclick={(e) => linkMention(ul.path, e)}>
 			<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
 				<path d="M6.5 10.5L9.5 7.5M5 8.5L3.5 10a2.12 2.12 0 003 3L8 11.5M8 7.5l1.5-1.5a2.12 2.12 0 013 3L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 			</svg>

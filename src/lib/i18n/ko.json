@@ -1520,7 +1520,8 @@
     "linkedMentions": "링크된 언급",
     "noBacklinks": "백링크 없음",
     "filter": "필터...",
-    "unlinkedMentions": "링크되지 않은 언급"
+    "unlinkedMentions": "링크되지 않은 언급",
+    "linkIt": "링크로 만들기"
   },
   "outgoingLinksPanel": {
     "header": "나가는 링크",
@@ -3227,6 +3228,9 @@
   },
   "styleSetter": {
     "labels": {
+      "link_tooltip": "링크 툴팁",
+      "max_width": "최대 너비",
+      "room_for_marks_above_the_line": "글자 위 기호가 들어갈 공간",
       "contradicts": "모순",
       "causes": "유발",
       "exemplifies": "예시",

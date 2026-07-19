@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, type LinkConfidence } from '$lib/libraries/store';
 	import { t, dir as uiDir, locale } from '$lib/i18n';
-	import { dominantLocale } from '$lib/utils';
+	// PJ-114 §3b — `detectDir` (script DOMINANCE), not dir="auto" (first strong character):
+	// PJ-106 §A1 replaced auto for exactly this reason. A summary titled in Latin but written
+	// in Arabic must still lay out RTL.
+	import { dominantLocale, detectDir } from '$lib/utils';
 	// PJ-114 §3b — link-state wording lives in ONE place now (see the module header).
 	import { displayAnnotationIn, traversalTooltip } from '$lib/links/linkDisplay';
 	// Side-effect import: installs the app-drawn tooltip for `data-linktip` elements.
@@ -158,28 +161,29 @@
 <!-- MIG-079 §C.2c-3 — ONE source of truth for the row (plain {#each} for small
      notes, VirtualList for large). -->
 {#snippet outgoingRow(link: OutgoingRow)}
+	<!-- App-drawn row hint; the single `title=""` here terminates the native title walk for the
+	     whole row, including the ×N chip. Twin of BacklinksPanel — see the comment there. -->
 	<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto"
 		oncontextmenu={(e) => openConfMenu(e, activeNotePath, link.target, link.confidence ?? 'hypothesis')}
-		title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
+		title=""
+		data-linktip={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 		<span class="ol-target-row">
 			<span class="ol-target">{link.target}</span>
 			{#each rowLinkTypes(link) as lt (lt)}
 				<LinkTypePill id={lt} loc={noteLoc()} />
 			{/each}
 			{#if (link.traversalCount ?? 0) > 0}
-				<!-- Empty `title` is load-bearing — see the twin comment in BacklinksPanel: it stops
-				     the row's own native tooltip resolving underneath our drawn box. -->
+				<!-- Nearest-ancestor-or-self wins, so the chip's own text beats the row's hint. -->
 				<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"
-					title=""
 					data-linktip={traversalTooltip(link.traversalCount, link.tier, link.lastTraversed, $locale)}>×{link.traversalCount}</span>
 			{/if}
 		</span>
-		<span class="ol-context" dir="auto">{link.context}</span>
+		<span class="ol-context" dir={detectDir(link.context)}>{link.context}</span>
 		{#if link.annotation}
-			<span class="ol-annotation" dir="auto" title={link.annotation}>“{displayAnnotationIn(link.annotation, noteLoc())}”</span>
+			<span class="ol-annotation" dir={detectDir(link.annotation ?? '')} data-linktip={link.annotation}>“{displayAnnotationIn(link.annotation, noteLoc())}”</span>
 		{/if}
 		{#if summaryHeadlines.get(link.target)}
-			<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>
+			<span class="ol-headline" dir={detectDir(summaryHeadlines.get(link.target) ?? '')} data-linktip={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>
 		{/if}
 	</button>
 {/snippet}
