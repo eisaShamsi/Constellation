@@ -186,3 +186,40 @@ textarea {
   unicode-bidi: plaintext;
   text-align: start;
 }
+
+/* ── PJ-114 §3b — the living-link chip's tooltip (`src/lib/links/linkTip.ts`) ──────────────
+   Global, not a component's scoped <style>: the element is appended to <body> by a plain
+   module so that the CodeMirror chip widget — which is raw DOM, not a Svelte component —
+   reaches the same box as the two link panels. Styling it inline from JS would instead put
+   it out of the Style Setter's future reach.
+
+   THE ARABIC FIX IS HERE, and it is four properties answering four distinct failures:
+     line-height 1.75 + 9px vertical padding — the actual answer to the Boss's "enlarge the
+       box": a native tooltip draws in an OS line box sized for Latin ascenders, so the mark
+       above the final letter of "يومًا" collided with the frame. This is the load-bearing number.
+     white-space: normal — the text WRAPS and the box grows TALLER. Deliberately NOT the
+       nowrap+ellipsis of `Inspector360`'s dot tooltip, which would truncate the very string
+       being complained about.
+     max-width with NO width, height, or min-width — content-sized on both axes. `HelpTip`'s
+       min-width: 240px is pointedly not copied: a min-width is what leaves a short English
+       string sitting in a box wider than its own text — the other half of the Boss's report.
+   Colour, border, shadow and scale all come from tokens already defined above; no new custom
+   property is introduced. Appending to <body> inherits the interface font, so none is set. */
+.link-tip {
+  position: fixed; left: 0; top: 0; z-index: 9999;
+  visibility: hidden;          /* placed while hidden, then revealed — no flash at 0,0 */
+  pointer-events: none;        /* can never eat the hover it depends on */
+  box-sizing: border-box;
+  max-width: 320px;
+  padding: 9px 13px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border-focus, var(--border));
+  border-radius: 8px;
+  box-shadow: var(--shadow-l);
+  font-size: calc(0.8rem * var(--rs-scale, 1));
+  line-height: 1.75;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-transform: none; letter-spacing: normal; font-weight: 400;
+}

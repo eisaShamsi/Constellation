@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, type LinkConfidence } from '$lib/libraries/store';
-	import { t, tIn, dir as uiDir } from '$lib/i18n';
+	import { t, dir as uiDir, locale } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
+	// PJ-114 §3b — link-state wording lives in ONE place now (see the module header).
+	import { displayAnnotationIn, traversalTooltip } from '$lib/links/linkDisplay';
+	// Side-effect import: installs the app-drawn tooltip for `data-linktip` elements.
+	import '$lib/links/linkTip';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import VirtualList from './VirtualList.svelte';
 	import ConfidencePicker from './ConfidencePicker.svelte';
@@ -13,20 +17,6 @@
 	// single source of truth, so a recolour reflects here LIVE; text is auto-contrasted
 	// from the fill. Shape stays in appSettings (a UI pref). Matches BacklinksPanel.
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
-
-	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
-	function fmtTraversed(iso: string): string {
-		if (!iso) return '';
-		const d = new Date(iso);
-		if (isNaN(d.getTime())) return '';
-		const days = Math.floor((Date.now() - d.getTime()) / 86400000);
-		if (days === 0) return 'today';
-		if (days === 1) return 'yesterday';
-		if (days < 7) return `${days}d ago`;
-		if (days < 30) return `${Math.floor(days / 7)}w ago`;
-		if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-		return `${Math.floor(days / 365)}y ago`;
-	}
 
 	// `linkTypes` is the post-dedupe array of distinct typed-link badges
 	// for the same target. `linkType` kept as a back-compat optional —
@@ -84,20 +74,6 @@
 	/** The active NOTE's language (from its title) — so the type pills + annotations read in
 	 *  the NOTE's language (§H note-language principle), not the UI's. Matches BacklinksPanel. */
 	function noteLoc(): string { return dominantLocale(activeNoteName); }
-	/** A link type's name in the note's language (linkTypes.<id>); raw fallback otherwise. */
-	function typeName(id: string): string {
-		const k = `linkTypes.${id.toLowerCase()}`;
-		const tr = tIn(noteLoc(), k);
-		return tr !== k ? tr : id;
-	}
-	/** MIG-022 §A.4.d (Boss-Test Gate 3 Stage 4.1 catch, 2026-05-12): the annotation slot in
-	 *  this panel sometimes carries a known link-type name (e.g. "supersedes") rather than a
-	 *  user-written annotation — legacy index data + the search.rs::parse_typed_links path
-	 *  that treats pipe-aliases as annotation. Localize it in the note's language when it
-	 *  matches a known type; otherwise pass through verbatim. */
-	function displayAnnotation(annotation: string): string {
-		return annotation ? typeName(annotation) : annotation;
-	}
 
 	let showOutgoing = $state(true);
 
@@ -191,14 +167,16 @@
 				<LinkTypePill id={lt} loc={noteLoc()} />
 			{/each}
 			{#if (link.traversalCount ?? 0) > 0}
-				{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
+				<!-- Empty `title` is load-bearing — see the twin comment in BacklinksPanel: it stops
+				     the row's own native tooltip resolving underneath our drawn box. -->
 				<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"
-					title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{link.traversalCount}</span>
+					title=""
+					data-linktip={traversalTooltip(link.traversalCount, link.tier, link.lastTraversed, $locale)}>×{link.traversalCount}</span>
 			{/if}
 		</span>
 		<span class="ol-context" dir="auto">{link.context}</span>
 		{#if link.annotation}
-			<span class="ol-annotation" dir="auto" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
+			<span class="ol-annotation" dir="auto" title={link.annotation}>“{displayAnnotationIn(link.annotation, noteLoc())}”</span>
 		{/if}
 		{#if summaryHeadlines.get(link.target)}
 			<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>

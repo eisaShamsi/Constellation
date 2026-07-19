@@ -83,3 +83,167 @@ Also logged: **§0.2's "proven against the main editor" claim was false** — it
 - **Working tree:** clean apart from the runtime `.claude/scheduled_tasks.lock` deletion (leave it).
 - **Next:** Phase-1 **§3b** — extract the shared *localized* traversal helper (`fmtTraversed` is byte-identical in both panels **and** hardcoded English; the chip tooltip is a hardcoded English template). ~8 keys ×15 locales. Then §4 (confidence badge + density setting, folding in the `LinkStateChips` extraction), §5 (the blocking indexer fix), §6–§10.
 - **Help/manual:** deliberately NOT updated this session — the only new user-facing surface (the FM+ toggle) is default-off and its feature set is paused pending the cross-check. Documenting it now would document something incomplete. **Due when FM+ resumes.**
+
+---
+
+# §3b — the living-link state chip speaks the user's language (AWAITING BOSS TEST)
+
+*Function in hand: the `×N` traversal chip beside the type pills on Backlinks / Outgoing Links rows — and, as it turned out, inside NotePane itself.*
+
+**Concept (the horse):** a link's accumulated traversal is evidence of how much a connection has actually carried thought. The chip is where the user reads that evidence — so it must speak the user's language, from one place, and never leak an internal token.
+
+## What changed
+
+New `src/lib/links/linkDisplay.ts` — one source of truth for how a living link's *state* is put into words. Both link panels and the editor's inline chip now read from it. Net **-35 lines** in the two panels while *adding* localization.
+
+## The design deviation worth recording: ZERO new i18n keys
+
+The plan estimated "~8 keys ×15 locales." The verification pass found the vocabulary **already existed, fully translated in all 15 locales, and already on screen**:
+
+- `plurals.walks` — the CLDR plural-aware traversal count. "Walk" is already this app's user-facing word for a traversal (`CCSView.svelte:268/281` builds a tooltip of this exact shape).
+- `ccs.tier.*` — fresh / emerging / established / loadBearing / stale.
+
+Minting `linkState.tier.*` + `plurals.traversedTimes` would have created a **second translation of the same two concepts across 15 files** — guaranteed drift, with the CCS panel calling a traversal "عبور" while the chip called it something else for the identical event. Verified programmatically that both namespaces are complete in all 15 locales before relying on them.
+
+Relative time uses `Intl.RelativeTimeFormat` rather than hand-written strings — the same house precedent as `Intl.PluralRules` in the i18n core (WA#5).
+
+## Measured, not guessed
+
+Ran the full 15-locale × bucket matrix in node before choosing:
+
+- **`numberingSystem` must go in the locale TAG (`-u-nu-latn`), not the options bag** — the options form is a **TS2353 error** under this repo's `strict` (verified against the repo's own tsc) even though it works at runtime. It matters because **`fa` defaults to `arabext`** (۳ روز پیش) while the app interpolates counts with plain `String(count)` — one tooltip would have mixed ۳ and 3.
+- **`numeric:'auto'` is right for days, wrong for months/years.** At magnitude 1 it switches from elapsed duration to a *calendar claim*: "last month" for 44 elapsed days is a different and false statement, and ru/ja emit a prepositional phrase ("в прошлом месяце") rather than a label.
+- **Bucket boundary = `LINK_STALE_DAYS` (90), not 30.** Days up to the stale threshold, then months, then years. The boundary carries meaning (inside the living window → day resolution) **and** steps over the only remaining CLDR artifact in the whole matrix: Hebrew months 1–2 render as "לפני חודש (1)". At months 3+ every locale is clean.
+
+## Three pre-existing defects fixed in-pass (WA#6)
+
+1. **A third copy, inside NotePane itself.** Caught by grepping the *built bundle* for the old English string after the panels were clean — `livePreview.ts`'s `WikilinkTraversalChipWidget` carried the same hardcoded `'Traversed N times'`. The source grep had missed it (the literal is assembled by concatenation). Now shares `walkCountLabel`. It knows only the count (`linkTraversalMapField` is `Map<string, number>`), so it says *less* — it must never default a tier it was not told. `loc` added to `eq()` so a stale-language chip cannot survive a document language change.
+2. **Custom link types rendered their raw slug in the annotation** while the pill on the *same row* rendered the user's label — the panels' private `typeName` was a two-branch resolver where `relLabelIn` (already shared by the three cockpit lenses and `LinkTypePill`) is three-branch. Now uses the existing shared resolver; no fourth copy minted.
+3. **Future timestamps rendered "-1d ago."** `Math.floor` of a negative fraction rounds toward −∞. Reachable via clock skew across synced devices and hand-edited files. Clamped to "today" — without the clamp the *localized* form would have upgraded visible garbage into the confident falsehood **"tomorrow."**
+
+**One review finding rejected on evidence:** a reviewer called for `.bl-tier-fresh` / `.ol-tier-fresh` CSS. Traced it out — the chip renders only when `count > 0`, `linkLifecycle` returns `fresh` only at `count === 0`, and the dedupe ranks `fresh` below `emerging`, so the state is unreachable; the base `.bl-traversal-chip` rule already styles it regardless. Adding a rule for an unreachable state is the filler Form-Aligns-To-Purpose forbids.
+
+## Verification
+
+`svelte-check` **0 errors** · full suite **495 tests / 36 files green** (55 new, first-run pass — every predicted localized string matched: ar `اليوم`, he `אתמול`, ja `14 日前`, ru `1 год назад`, ar `عبوران`/`ركيزة`) · frontend + release binary rebuilt (17:47) · **the old English template grep-verified GONE from the built bundle** — the check that found the third copy.
+
+New tests lock: bucket boundaries, the future clamp, the unknown-tier key-path guard, Latin digits in every locale, the Hebrew-artifact-free assertion at every bucket, and **i18n parity across all 15 locales** — nothing in this repo enforces locale parity (no CI check, no lint rule, TS structural check deliberately disabled).
+
+## Status
+
+**Built, not committed — awaiting the Boss test** (standing order: Boss tests every build before commit).
+
+## Separate matter needing a ruling
+
+The per-build inspection ran **whole-app** rather than diff-scoped (the skill takes its `files` arg in a different form than passed). **No finding is in this diff.** It returned a full per-cycle sweep: **61 confirmed — 3 APP-KILLER, 17 HIGH, 5 LOW, 36 MED**, all pre-existing:
+
+- `store.ts:3539` — `moveItem`'s folder-move tab repath drops the moved folder's own name, repointing open tabs one directory too high; later saves create a phantom note that absorbs every edit.
+- `+layout.svelte:6356` — every cascade guard is built from a pre-walk snapshot while `reloadTabsFromDisk` force-adopts against live `openTabs`; a tab opened during the cascade window is outside all four guards but inside the force-adopt.
+- `store.ts:2277` — the display-only second screen is born dirty from the shared write-ahead net and durably writes that stale snapshot on its next navigation.
+
+Not folded into §3b. Needs a sequencing ruling — they are Group-1-class and PJ-114 Phase 1 has §5–§10 still ahead.
+
+## §3b — correction round 1 (Boss test findings)
+
+Boss tested the 17:47 binary and returned three findings. Binary rebuilt **18:40**.
+
+**Finding 3 — editor chip stayed English under an Arabic UI. RULING, applied.**
+I had shipped the editor's `×N` chip tooltip in the NOTE's language, reasoning from the §E.2 note-language principle that governs the typed-link *labels* it sits beside. The test note is titled "Collision Test", so `dominantLocale` resolved to English and the tooltip stayed English under an Arabic interface. Boss ruled it follows the **interface** — consistent with the standing order *"when the user switches language, EVERYTHING adapts."*
+
+The distinction that survives: the typed-link **label** is authored vocabulary and keeps the note's language; the chip tooltip is a **diagnostic about** the link and follows the UI. Implemented via `get(locale)` in `buildDecorations` plus a `locale.subscribe` in `LivePreviewPlugin`'s constructor that dispatches the existing `linkVocabChanged` effect — mirroring the `subscribeLinkTypes` pattern already there, with the first (synchronous, mid-construction) store emission skipped to avoid a re-entrant dispatch, and `unsubLocale()` added to `destroy()`. Without that subscription a CM6 widget cannot observe the language store at all and the chip would hold its build-time language until the note was reopened.
+
+**Findings 1 + 2 — one cause, and it was mine: the bidi isolates.**
+Reported as "the tooltip should be right-aligned in the English UI" and "the tooltip is truncated within the box" (Arabic). Read together: in English the box was measured **wider than the text it painted**; in Arabic the RTL text ran past a box measured as if LTR. Single mechanism — I had wrapped the tooltip in FSI…PDI (U+2068/U+2069), so the box width was computed for a string containing two characters the paint pass does not draw.
+
+Removed. They were never justified: the reviewers who proposed them stated they could not verify them in WebView2/WKWebView, and the module's own comment already established the hazard is **absent here** — `traversalTooltip` composes all three segments in ONE locale, so the string is directionally homogeneous with no internal reordering to isolate. A test now asserts the tooltip carries **no invisible bidi control characters** in en/ar/he/ja, so a well-meaning re-add fails CI rather than the Boss test.
+
+**Reproduce-First — attempted, blocked, and NOT papered over.**
+I did not want to fix 1+2 on reasoning alone, so I launched the 17:47 build against the Boss's *Eisa Cognitive Knowledge* universe under computer-control to hover the real chip in the real WebView2. The machine locked before I reached the note, and a lock screen is not something to work around. So the isolate removal ships as a **well-motivated hypothesis, not an observation** — stated as such to the Boss rather than claimed as verified. If the symptoms survive, the honest conclusion is that a native `title` gives no control over box width, alignment, or direction, and the fix is a custom tooltip element — a design decision for the Art Director, not an improvisation.
+
+Also corrected: the Chrome-extension route for observing this was unavailable, and the first app launch (via `nohup` from Git Bash) did not survive the shell exiting — relaunched detached via `Start-Process`. The instance was stopped before the rebuild; nothing was edited in it.
+
+**Verification after the correction:** `svelte-check` 0 errors · 495 tests / 36 files green · isolates grep-confirmed absent from the built bundle · frontend + release binary rebuilt (18:40). Still **not committed** — awaiting the re-test.
+
+## §3b — correction round 2: Constellation now draws the chip's tooltip
+
+Boss re-tested the 18:40 binary. Localization **passed** (image 3 showed `عبوران`). The two
+remaining asks resolved the open question decisively:
+
+> "I want the tooltip to shift left relative to the hand" · "enlarge the tooltip box to accommodate the text"
+
+**Neither is reachable through a native `title`** — the browser owns its placement and no CSS
+reaches its box. So the diagnosis from the previous round was right about the direction but
+incomplete about the remedy: removing the bidi isolates was necessary (the box was measured
+with two characters it never painted) but not sufficient. The tooltip had to become ours.
+
+**This is the SECOND time this exact native-tooltip failure has been reported in this app.**
+`StructuralOutlinePanel.svelte:125` carries a comment dated 2026-06-28: *"Bleeding-tip fix
+(Boss): replace the native `title` (WebView2 renders it as a wide box that bleeds off the panel
+edge) with a position:fixed tooltip whose x is clamped to the viewport."* Same cause, same
+answer, one panel over. Worth recording so the third report doesn't start from scratch.
+
+**Boss rulings this round:** fold the tooltip into §3b (one commit, one test) · scope it to the
+**living-link chip only**, not an app-wide sweep.
+
+### Design — Art Director & Team (`wf_8b148465-32b`), 3 proposals + judge
+
+Winner 47/50: a **window-singleton tooltip driven by a `data-linktip` attribute contract**
+(`src/lib/links/linkTip.ts`). Two delegated `mouseover`/`mouseout` listeners per window; one
+reused `<div>`; chips declare text via an attribute and own nothing else.
+
+**Why not a Svelte component** — the deciding constraint: one of the three chips is a raw-DOM
+CodeMirror `WidgetType`. A component would serve the two panels and fail the editor, forcing a
+third implementation — the same triplication `linkDisplay.ts` was created to end, one layer up.
+
+**Why not per-row handlers** (the `.toc-tip` precedent's shape): `VirtualList` keys its
+each-block by SLOT index, so every visible row's snippet re-runs on every scroll tick (~45–55
+rows). Delegation adds **zero** per-row work — the panels already computed this string for
+`title`; it now goes to a differently-named attribute.
+
+**Placement.** Anchored to the chip element, its trailing edge pinned to the chip's trailing
+edge — so in LTR the box lies to the LEFT of the pointer (the ask), and in RTL it mirrors
+rather than sitting over the file tree. Vertically above, since the chip is on a row's first
+line with context/annotation/headline stacked beneath. Side comes from **direction, never
+viewport proximity** — proximity was tried, Boss-reported and reverted at `cc35524d`.
+
+**Two direction signals, deliberately separate.** Placement reads the *anchor's* computed
+direction; text direction reads `document.documentElement.dir` (the interface). They disagree
+in exactly one real case — an Arabic UI with an English note — where the words must lay out RTL
+while the box must still open into the LTR note. Collapsing them breaks one or the other.
+
+**The Arabic fix is four properties**, each answering a distinct failure: `line-height: 1.75`
++ 9px padding (the actual answer — an OS line box is sized for Latin ascenders, so the tanwin in
+*يومًا* met the frame); `white-space: normal` so the text wraps and the box grows taller rather
+than truncating; `max-width` with **no min-width** (a min-width is what leaves a short English
+string in a box wider than its text — the other half of the report); and **measure-then-place**,
+so nothing assumes a width. That last point improves on both existing tooltips, which guess
+(`HelpTip` halfWidth=200, `.toc-tip` halfW=150).
+
+**`title=""` on the chip is load-bearing, not residue.** The row button carries its own native
+tooltip; `title` resolves by walking to the nearest ancestor that has one, so without the empty
+string the Windows-drawn box would appear *underneath* ours. Commented at both call sites.
+
+**Listener exception, named.** The two delegated listeners are installed once per window for the
+window's lifetime — a deliberate, documented exception to "remove every listener on destroy",
+because install/uninstall per panel mount would have the editor and both panels racing to own a
+shared resource, and the first unmount would silently kill the tooltip for the other two.
+
+### Verification
+`svelte-check` **0 errors** · **495 tests / 36 files green** · `link-tip` CSS **and**
+`data-linktip` grep-confirmed in BOTH bundles (main + second screen) · binary rebuilt **19:44**,
+verified newer than every touched source.
+
+**Static checks are NOT runtime verification for hover/placement** — that is the Boss test.
+
+### Inspection
+Ran three times; the saved workflow ignored `args` in every form tried (object, string,
+`mode`/`scope` keys) and swept **whole-app** each time. Stopped trying to scope it — worth a
+separate fix to the workflow's arg handling. **Zero findings in the §3b changes.** The only hits
+in a touched file are two at `BacklinksPanel.svelte:178` (`linkMention`) — both are **PJ-123**,
+already filed and explicitly out of PJ-114's scope.
+
+The two sweeps did surface pre-existing app-killers, including one the first sweep missed:
+`+layout.svelte:4816` — template-insert's `.note-pane` selector matches nothing in `src/`
+(CLAUDE.md itself records the class as `.pane`), so the "fallback" branch is the ONLY reachable
+one, and it writes the stale store copy `tab.content` over disk. Awaiting the Boss's sequencing
+ruling along with the rest.

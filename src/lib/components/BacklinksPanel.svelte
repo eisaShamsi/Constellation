@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { openNoteTab, libraries, readNote, appSettings, type LinkConfidence } from '$lib/libraries/store';
-	import { t, tIn, dir as uiDir } from '$lib/i18n';
+	import { t, dir as uiDir, locale } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
+	// PJ-114 §3b — link-state wording lives in ONE place now (see the module header).
+	import { displayAnnotationIn, traversalTooltip } from '$lib/links/linkDisplay';
+	// Side-effect import: installs the app-drawn tooltip for `data-linktip` elements.
+	import '$lib/links/linkTip';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import VirtualList from './VirtualList.svelte';
 	import ConfidencePicker from './ConfidencePicker.svelte';
@@ -20,29 +24,6 @@
 	 *  the NOTE's language, matching the editor labels (§H note-language principle), not the
 	 *  UI's (Boss: the pills should follow the note language, like the editor). */
 	function noteLoc(): string { return dominantLocale(activeNoteName); }
-	/** A link type's name in the note's language (linkTypes.<id>); raw fallback otherwise. */
-	function typeName(id: string): string {
-		const k = `linkTypes.${id.toLowerCase()}`;
-		const tr = tIn(noteLoc(), k);
-		return tr !== k ? tr : id;
-	}
-	function displayAnnotation(annotation: string): string {
-		return annotation ? typeName(annotation) : annotation;
-	}
-
-	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
-	function fmtTraversed(iso: string): string {
-		if (!iso) return '';
-		const d = new Date(iso);
-		if (isNaN(d.getTime())) return '';
-		const days = Math.floor((Date.now() - d.getTime()) / 86400000);
-		if (days === 0) return 'today';
-		if (days === 1) return 'yesterday';
-		if (days < 7) return `${days}d ago`;
-		if (days < 30) return `${Math.floor(days / 7)}w ago`;
-		if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-		return `${Math.floor(days / 365)}y ago`;
-	}
 
 	// `linkTypes` is the post-dedupe array of distinct typed-link badges
 	// for a single source note. `linkType` is kept as a back-compat
@@ -215,9 +196,13 @@
 				<LinkTypePill id={lt} loc={noteLoc()} />
 			{/each}
 			{#if (bl.traversalCount ?? 0) > 0}
-				{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
+				<!-- The empty `title` is load-bearing, not leftover: the ROW button carries its own
+				     native tooltip (the right-click hint above), and `title` resolves by walking up
+				     to the nearest ancestor that has one — so without this, the row's Windows-drawn
+				     box would appear underneath ours. An empty title terminates that walk. -->
 				<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"
-					title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{bl.traversalCount}</span>
+					title=""
+					data-linktip={traversalTooltip(bl.traversalCount, bl.tier, bl.lastTraversed, $locale)}>×{bl.traversalCount}</span>
 			{/if}
 			{#if bl.libraryName}
 				<span class="bl-library-label">{bl.libraryName}</span>
@@ -225,7 +210,7 @@
 		</span>
 		<span class="bl-context" dir="auto">{bl.context}</span>
 		{#if bl.annotation}
-			<span class="bl-annotation" dir="auto" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
+			<span class="bl-annotation" dir="auto" title={bl.annotation}>“{displayAnnotationIn(bl.annotation, noteLoc())}”</span>
 		{/if}
 		{#if summaryHeadlines.get(bl.path)}
 			<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>

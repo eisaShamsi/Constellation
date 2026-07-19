@@ -122,6 +122,11 @@ export default defineConfig({
 			// (findWikilinkAtLineOffset), extracted from CodeMirrorEditor's Ctrl-click
 			// so FocusPane's FM+ affordances reuse one copy: hit predicate + alias/#heading strip.
 			'tests/pj-114/linkAtPos.test.ts',
+			// PJ-114 §3b (2026-07-18) — the shared living-link display helpers
+			// (linkDisplay.ts): relative-time buckets + boundaries, the future-timestamp
+			// clamp, the unknown-tier key-path guard, and i18n parity across all 15
+			// locales for the two vocabularies the chip tooltip reuses.
+			'tests/pj-114/linkDisplay.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

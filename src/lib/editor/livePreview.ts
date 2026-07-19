@@ -15,8 +15,14 @@ import { syntaxTree } from '@codemirror/language';
 import { EditorState, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { t, tIn } from '$lib/i18n';
+import { t, tIn, locale } from '$lib/i18n';
 import { detectDir, dominantLocale } from '$lib/utils';
+// PJ-114 §3b — one vocabulary for a link's traversal count, shared with both link panels.
+import { walkCountLabel } from '$lib/links/linkDisplay';
+// PJ-114 §3b — the app-drawn tooltip. This is the call site that rules out a Svelte
+// component: the chip below is a raw-DOM CM6 widget, and the `data-linktip` attribute is
+// the one contract both it and the two Svelte panels can share.
+import { LINK_TIP_ATTR } from '$lib/links/linkTip';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
 import { isLinkTypeValue, getLinkType, linkTypeLabel, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
@@ -81,12 +87,27 @@ export const linkTraversalMapField = StateField.define<Map<string, number>>({
 const WIKILINK_CHIP_ACCENT = 'var(--interactive-accent, #7c3aed)';
 
 class WikilinkTraversalChipWidget extends WidgetType {
-	constructor(public count: number) { super(); }
+	/** `loc` is the UI language (Boss ruling, 2026-07-18 §3b test): "when the user
+	 *  switches language, EVERYTHING adapts." This chip's tooltip is a diagnostic
+	 *  ABOUT the link, not authored note content — so unlike the typed-link LABEL it
+	 *  sits beside (which follows the §E.2 note-language principle), it follows the
+	 *  interface. Shipped first as note-language and corrected on the Boss test: a note
+	 *  titled in English kept an English tooltip under an Arabic UI.
+	 *
+	 *  PJ-114 §3b: the tooltip was a hardcoded English template ('Traversed 3 times') —
+	 *  the third copy of the same words, alongside one in each link panel. All three now
+	 *  read the shared `plurals.walks` vocabulary, so a traversal is called the same
+	 *  thing everywhere. */
+	constructor(public count: number, public loc: string) { super(); }
 	toDOM() {
 		const el = document.createElement('span');
 		el.className = 'cm-living-link-chip';
 		el.textContent = '×' + this.count;
-		el.title = 'Traversed ' + this.count + (this.count === 1 ? ' time' : ' times');
+		// Declared as an attribute, not attached as a listener: this widget is created and
+		// discarded on every decoration rebuild, so anything per-widget would be churn to
+		// register and tear down. The delegated listener in linkTip.ts sees it for free.
+		el.setAttribute(LINK_TIP_ATTR, walkCountLabel(this.count, this.loc));
+		el.title = '';
 		// Inline styles keep the chip themable without needing a theme rule.
 		el.setAttribute('style',
 			'display:inline-flex;align-items:center;margin:0 3px;padding:0 6px;' +
@@ -102,7 +123,10 @@ class WikilinkTraversalChipWidget extends WidgetType {
 		);
 		return el;
 	}
-	eq(other: WikilinkTraversalChipWidget) { return this.count === other.count; }
+	/** `loc` participates in equality: without it a chip built for one note language
+	 *  would be reused verbatim after the document's language changed, leaving a
+	 *  stale-language tooltip behind. */
+	eq(other: WikilinkTraversalChipWidget) { return this.count === other.count && this.loc === other.loc; }
 	ignoreEvent() { return true; }
 }
 
@@ -1215,6 +1239,10 @@ function buildDecorations(view: EditorView): DecorationSet {
 	// §E.2 — labels above typed links read in the NOTE's own language (detected from
 	// its content), independent of the UI language. Sampled once per rebuild (cheap).
 	const noteLoc = dominantLocale(doc.sliceString(0, Math.min(doc.length, 2000)));
+	// The INTERFACE language, for chrome that describes a link rather than reading as
+	// part of the note (the `×N` chip's tooltip). Non-reactive by itself — the plugin
+	// subscribes to `locale` and forces a rebuild on change (see the constructor).
+	const uiLoc = get(locale);
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 	const libPath  = view.state.field(libraryPathField, false) || '';
 	const notePath = view.state.field(notePathField,    false) || '';
@@ -1495,7 +1523,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 								ranges.push({
 									from: absTo, to: absTo,
 									deco: Decoration.widget({
-										widget: new WikilinkTraversalChipWidget(count),
+										// UI locale, not `noteLoc` — see the widget's doc comment.
+										widget: new WikilinkTraversalChipWidget(count, uiLoc),
 										side: 1,
 									}),
 								});
@@ -1560,6 +1589,7 @@ class LivePreviewPlugin {
 	private lastCursorLine = -1;
 	private view: EditorView;
 	private unsubVocab: () => void;
+	private unsubLocale: () => void;
 
 	constructor(view: EditorView) {
 		this.view = view;
@@ -1572,6 +1602,18 @@ class LivePreviewPlugin {
 			// (re-entrancy) — e.g. when applying a Style changes appSettings + the registry
 			// together; a synchronous dispatch there would be swallowed and the colours
 			// wouldn't refresh until reopen.
+			queueMicrotask(() => { try { this.view.dispatch({ effects: linkVocabChanged.of(null) }); } catch { /* view gone */ } });
+		});
+		// PJ-114 §3b — the `×N` chip's tooltip reads in the INTERFACE language, which a
+		// CM6 widget cannot observe on its own. Rebuild on a language switch so the
+		// tooltip changes live, exactly as the vocabulary subscription above does for
+		// typed-link colours. Without this the chip would keep the language it was built
+		// in until the note was reopened.
+		let firstLocale = true;
+		this.unsubLocale = locale.subscribe(() => {
+			// A svelte store fires synchronously on subscribe; that first call happens
+			// mid-construction, where a dispatch would be re-entrant.
+			if (firstLocale) { firstLocale = false; return; }
 			queueMicrotask(() => { try { this.view.dispatch({ effects: linkVocabChanged.of(null) }); } catch { /* view gone */ } });
 		});
 	}
@@ -1633,6 +1675,7 @@ class LivePreviewPlugin {
 	destroy() {
 		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 		this.unsubVocab();
+		this.unsubLocale();
 	}
 }
 
