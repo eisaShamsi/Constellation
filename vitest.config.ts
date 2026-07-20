@@ -22,6 +22,14 @@ export default defineConfig({
 	},
 	test: {
 		include: [
+			// MIG-101 §A-fix (2026-07-20) — shape must survive the model's save path.
+			// The regression test for the Boss-reported silent shape loss.
+			// G4 — nested-object-list serializer (safety-inspection APP-KILLER):
+			// editing one ikhtilaf row flattened the whole block to a scalar.
+			'tests/g4/nestedObjectListRoundtrip.test.ts',
+			'tests/mig-101/shapeThroughModel.test.ts',
+			// MIG-101 §A — the read-only write guard (safety-inspection APP-KILLER).
+			'tests/mig-101/readOnlyWriteGuard.test.ts',
 			// MIG-080 §C.2 (2026-06-21) — natural-language task due-date resolution.
 			'tests/mig-080/taskDates.test.ts',
 			'tests/sight-v6/perf.test.ts',

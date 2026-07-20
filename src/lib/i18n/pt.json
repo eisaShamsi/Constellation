@@ -3945,12 +3945,30 @@
       "clustered": "Ligações agrupadas",
       "weight": "Peso",
       "recency": {
-        "today": { "long": "Percorrida hoje", "short": "Hoje" },
-        "week": { "long": "Percorrida esta semana", "short": "Esta semana" },
-        "month": { "long": "Percorrida este mês", "short": "Este mês" },
-        "quarter": { "long": "Percorrida neste trimestre", "short": "Este trimestre" },
-        "older": { "long": "Percorrida há muito tempo", "short": "Mais antiga" },
-        "never": { "long": "Nunca percorrida", "short": "Nunca" }
+        "today": {
+          "long": "Percorrida hoje",
+          "short": "Hoje"
+        },
+        "week": {
+          "long": "Percorrida esta semana",
+          "short": "Esta semana"
+        },
+        "month": {
+          "long": "Percorrida este mês",
+          "short": "Este mês"
+        },
+        "quarter": {
+          "long": "Percorrida neste trimestre",
+          "short": "Este trimestre"
+        },
+        "older": {
+          "long": "Percorrida há muito tempo",
+          "short": "Mais antiga"
+        },
+        "never": {
+          "long": "Nunca percorrida",
+          "short": "Nunca"
+        }
       }
     },
     "deck": {
@@ -3975,5 +3993,11 @@
       "never": "nunca revisada",
       "stale": "desatualizada"
     }
+  },
+  "shape": {
+    "setScrap": "Forma: Papelinho",
+    "setPage": "Forma: Página",
+    "clear": "Remover forma",
+    "revert": "Desfazer a última alteração de forma"
   }
 }

@@ -3945,12 +3945,30 @@
       "clustered": "Gebündelte Verknüpfungen",
       "weight": "Gewicht",
       "recency": {
-        "today": { "long": "Heute begangen", "short": "Heute" },
-        "week": { "long": "Diese Woche begangen", "short": "Diese Woche" },
-        "month": { "long": "Diesen Monat begangen", "short": "Dieser Monat" },
-        "quarter": { "long": "Dieses Quartal begangen", "short": "Dieses Quartal" },
-        "older": { "long": "Vor langer Zeit begangen", "short": "Älter" },
-        "never": { "long": "Nie begangen", "short": "Nie" }
+        "today": {
+          "long": "Heute begangen",
+          "short": "Heute"
+        },
+        "week": {
+          "long": "Diese Woche begangen",
+          "short": "Diese Woche"
+        },
+        "month": {
+          "long": "Diesen Monat begangen",
+          "short": "Dieser Monat"
+        },
+        "quarter": {
+          "long": "Dieses Quartal begangen",
+          "short": "Dieses Quartal"
+        },
+        "older": {
+          "long": "Vor langer Zeit begangen",
+          "short": "Älter"
+        },
+        "never": {
+          "long": "Nie begangen",
+          "short": "Nie"
+        }
       }
     },
     "deck": {
@@ -3975,5 +3993,11 @@
       "never": "nie überprüft",
       "stale": "veraltet"
     }
+  },
+  "shape": {
+    "setScrap": "Form: Zettel",
+    "setPage": "Form: Seite",
+    "clear": "Form entfernen",
+    "revert": "Letzte Formänderung rückgängig machen"
   }
 }

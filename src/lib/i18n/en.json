@@ -2357,12 +2357,30 @@
       "clustered": "clustered links",
       "weight": "weight",
       "recency": {
-        "today": { "long": "walked today", "short": "today" },
-        "week": { "long": "walked this week", "short": "this week" },
-        "month": { "long": "walked this month", "short": "this month" },
-        "quarter": { "long": "walked this quarter", "short": "this quarter" },
-        "older": { "long": "walked long ago", "short": "older" },
-        "never": { "long": "never walked", "short": "never walked" }
+        "today": {
+          "long": "walked today",
+          "short": "today"
+        },
+        "week": {
+          "long": "walked this week",
+          "short": "this week"
+        },
+        "month": {
+          "long": "walked this month",
+          "short": "this month"
+        },
+        "quarter": {
+          "long": "walked this quarter",
+          "short": "this quarter"
+        },
+        "older": {
+          "long": "walked long ago",
+          "short": "older"
+        },
+        "never": {
+          "long": "never walked",
+          "short": "never walked"
+        }
       }
     },
     "deck": {
@@ -4096,5 +4114,11 @@
     "chipUnlinked": "Unlinked",
     "chipContested": "Contested",
     "chipForming": "Forming"
+  },
+  "shape": {
+    "setScrap": "Shape: Scrap",
+    "setPage": "Shape: Page",
+    "clear": "Clear shape",
+    "revert": "Undo last shape change"
   }
 }

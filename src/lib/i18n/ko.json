@@ -3918,12 +3918,30 @@
       "clustered": "묶인 링크",
       "weight": "가중치",
       "recency": {
-        "today": { "long": "오늘 따라감", "short": "오늘" },
-        "week": { "long": "이번 주에 따라감", "short": "이번 주" },
-        "month": { "long": "이번 달에 따라감", "short": "이번 달" },
-        "quarter": { "long": "이번 분기에 따라감", "short": "이번 분기" },
-        "older": { "long": "오래전에 따라감", "short": "이전" },
-        "never": { "long": "따라간 적 없음", "short": "미방문" }
+        "today": {
+          "long": "오늘 따라감",
+          "short": "오늘"
+        },
+        "week": {
+          "long": "이번 주에 따라감",
+          "short": "이번 주"
+        },
+        "month": {
+          "long": "이번 달에 따라감",
+          "short": "이번 달"
+        },
+        "quarter": {
+          "long": "이번 분기에 따라감",
+          "short": "이번 분기"
+        },
+        "older": {
+          "long": "오래전에 따라감",
+          "short": "이전"
+        },
+        "never": {
+          "long": "따라간 적 없음",
+          "short": "미방문"
+        }
       }
     },
     "deck": {
@@ -3948,5 +3966,11 @@
       "never": "검토한 적 없음",
       "stale": "뒤처짐"
     }
+  },
+  "shape": {
+    "setScrap": "형태: 쪽지",
+    "setPage": "형태: 페이지",
+    "clear": "형태 지우기",
+    "revert": "마지막 형태 변경 실행 취소"
   }
 }

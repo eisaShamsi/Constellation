@@ -3918,12 +3918,30 @@
       "clustered": "まとめられたリンク",
       "weight": "重み",
       "recency": {
-        "today": { "long": "今日辿った", "short": "今日" },
-        "week": { "long": "今週辿った", "short": "今週" },
-        "month": { "long": "今月辿った", "short": "今月" },
-        "quarter": { "long": "今四半期に辿った", "short": "今四半期" },
-        "older": { "long": "ずっと前に辿った", "short": "それ以前" },
-        "never": { "long": "一度も辿っていない", "short": "未通過" }
+        "today": {
+          "long": "今日辿った",
+          "short": "今日"
+        },
+        "week": {
+          "long": "今週辿った",
+          "short": "今週"
+        },
+        "month": {
+          "long": "今月辿った",
+          "short": "今月"
+        },
+        "quarter": {
+          "long": "今四半期に辿った",
+          "short": "今四半期"
+        },
+        "older": {
+          "long": "ずっと前に辿った",
+          "short": "それ以前"
+        },
+        "never": {
+          "long": "一度も辿っていない",
+          "short": "未通過"
+        }
       }
     },
     "deck": {
@@ -3948,5 +3966,11 @@
       "never": "未見直し",
       "stale": "古い"
     }
+  },
+  "shape": {
+    "setScrap": "かたち: 紙片",
+    "setPage": "かたち: ページ",
+    "clear": "かたちを解除",
+    "revert": "直前のかたちの変更を元に戻す"
   }
 }

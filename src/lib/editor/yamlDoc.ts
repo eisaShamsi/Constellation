@@ -144,7 +144,22 @@ function findItem(cst: CST.Document, key: string): CST.CollectionItem | undefine
 /** Serialize a single `key: value` pair to a YAML line via the library (correct quoting). */
 function serializeLine(key: string, prop: FrontmatterProperty): string {
 	let value: unknown;
-	if (prop.type === 'list') value = prop.listItems ?? (prop.value ? prop.value.split(',').map((s) => s.trim()) : []);
+	// MIG-101 safety-inspection fix (2026-07-20) — APP-KILLER. This branch was
+	// MISSING, so a `nested-object-list` fell through to `value = prop.value`,
+	// the flat ` | `-joined SUMMARY string. Editing one row of a structured
+	// ikhtilāf block spliced the whole block-seq out of the CST and wrote a
+	// single scalar over it; on reopen the parser's nested branch requires an
+	// EMPTY value, so it never fired and every row was gone from the .md with no
+	// error. The legacy `reconstructFrontmatter` serialized this correctly — the
+	// G4 swap dropped it. Emitting the rows lets the library produce the same
+	// block form the parser expects:
+	//   ikhtilāf:
+	//     - school: Hanafī
+	//       position: permissible
+	// Empty row-sets deliberately fall through to the scalar path, matching the
+	// legacy `&& prop.nestedObjects.length > 0` guard.
+	if (prop.type === 'nested-object-list' && prop.nestedObjects?.length) value = prop.nestedObjects;
+	else if (prop.type === 'list') value = prop.listItems ?? (prop.value ? prop.value.split(',').map((s) => s.trim()) : []);
 	else if (prop.type === 'number' && prop.value.trim() !== '' && !Number.isNaN(Number(prop.value))) value = Number(prop.value);
 	else if (prop.type === 'checkbox') value = prop.value === 'true' || prop.value === 'yes';
 	else value = prop.value;

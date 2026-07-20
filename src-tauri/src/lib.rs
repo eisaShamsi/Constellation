@@ -64,6 +64,8 @@ pub mod sight_v7;
 // Verified by `git diff src-tauri/src/lexicon/` returning empty.
 pub mod lexicon;
 mod search;
+/// MIG-101 Phase A — note shape + its reversibility (see docs/MIG-101-*-Plan.md).
+mod shape;
 mod sky_backfill;
 mod links_backfill;
 mod note_body_backfill;
@@ -545,6 +547,16 @@ pub fn run() {
             watcher::watch_library,
             watcher::unwatch_library,
             bases::update_note_property,
+            // MIG-101 Phase A — shape is a frontmatter field that governs how a
+            // note is presented, never what it contains; every change is
+            // recorded and revertible.
+            shape::set_note_shape,
+            shape::clear_note_shape,
+            shape::revert_note_shape,
+            shape::get_note_shape,
+            shape::get_shape_history,
+            shape::record_shape_change,
+            shape::undo_shape,
             bases::create_base,
             // MIG-065 — convert an old MVP `.base` (BaseDefinition JSON) to the
             // new LensDefinition YAML (in place, on the user's explicit choice).

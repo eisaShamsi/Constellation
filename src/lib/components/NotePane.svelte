@@ -1404,6 +1404,33 @@
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
 							{$t('contextMenu.addProperty')}
 						</button>
+						<!-- MIG-101 Phase A — SHAPE. A note's shape governs how it is presented,
+						     never what it contains, so every one of these is reversible and none
+						     of them touches the body. `revertShape` undoes the last shape change
+						     exactly, including back to unshaped.
+					     Hidden when read-only: a display (second screen, Index preview) must
+					     never be OFFERED a write it cannot legitimately perform. NoteEditor's
+					     applyShape refuses independently — this is the second layer, so the
+					     UI never shows a dead action. -->
+					{#if !readOnly}
+						<div class="e-bc-menu-sep"></div>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('shapeScrap')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10l6-6V5a2 2 0 0 0-2-2z"/><path d="M15 21v-6h6"/></svg>
+							{$t('shape.setScrap')}
+						</button>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('shapePage')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+							{$t('shape.setPage')}
+						</button>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('shapeClear')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+							{$t('shape.clear')}
+						</button>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('shapeRevert')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-6.4L3 9"/></svg>
+							{$t('shape.revert')}
+						</button>
+					{/if}
 						<div class="e-bc-menu-sep"></div>
 						<button class="e-bc-menu-item" onclick={() => handleMoreAction('rename')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>

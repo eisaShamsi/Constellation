@@ -406,72 +406,167 @@ pub fn update_note_property(
     Ok(())
 }
 
-/// Update or insert a single property in a note's YAML frontmatter.
-fn update_frontmatter_property(content: &str, key: &str, value: &str) -> String {
-    let lines: Vec<&str> = content.lines().collect();
-
-    if !content.starts_with("---") {
-        // No frontmatter — create one
-        let mut result = format!("---\n{}: {}\n---\n", key, format_yaml_value(value));
-        result.push_str(content);
-        return result;
+/// Byte index just past the end of the line beginning at `start`, terminator
+/// INCLUDED. `None` once `start` is at/after the end of the string.
+fn line_end_inclusive(s: &str, start: usize) -> Option<usize> {
+    if start >= s.len() {
+        return None;
     }
+    Some(match s[start..].find('\n') {
+        Some(i) => start + i + 1,
+        None => s.len(),
+    })
+}
 
-    let end_idx = lines.iter().skip(1).position(|l| l.trim() == "---");
-    let end_idx = match end_idx {
-        Some(i) => i + 1,
-        None => {
-            // Malformed frontmatter — prepend new one
-            let mut result = format!("---\n{}: {}\n---\n", key, format_yaml_value(value));
-            result.push_str(content);
-            return result;
+/// Locate the YAML frontmatter block as BYTE OFFSETS, so the caller can splice
+/// it without ever re-serialising the rest of the file. Returns
+/// `(open_end, close_start, body_start)` where:
+/// - `content[..open_end]`             = opening `---` line, its terminator included
+/// - `content[open_end..close_start]`  = the frontmatter body lines
+/// - `content[close_start..body_start]`= closing `---` line, its terminator included
+/// - `content[body_start..]`           = the note body — **preserved byte-for-byte**
+///
+/// `None` when there is no well-formed frontmatter block.
+fn frontmatter_span(content: &str) -> Option<(usize, usize, usize)> {
+    let first_end = line_end_inclusive(content, 0)?;
+    if content[..first_end].trim_end() != "---" {
+        return None;
+    }
+    let mut pos = first_end;
+    while let Some(end) = line_end_inclusive(content, pos) {
+        if content[pos..end].trim_end() == "---" {
+            return Some((first_end, pos, end));
         }
+        pos = end;
+    }
+    None
+}
+
+/// Remove a single property from a note's YAML frontmatter, under the same
+/// byte-integrity contract as [`update_frontmatter_property`]: only the removed
+/// key's line (and the continuation lines of a list value) disappears —
+/// everything else survives byte-for-byte.
+///
+/// **MIG-101 §A3.** If removing the key empties the frontmatter block entirely,
+/// the whole block goes too. That is what makes revert-to-unshaped a TRUE
+/// inverse: a note that had no frontmatter, given a shape and then reverted,
+/// returns to its original bytes rather than keeping an empty `---\n---\n` husk.
+/// A block that was already empty is left alone (nothing was removed from it).
+pub(crate) fn remove_frontmatter_property(content: &str, key: &str) -> String {
+    let Some((open_end, close_start, _)) = frontmatter_span(content) else {
+        return content.to_string();
     };
 
-    // Check if property already exists
-    let mut found = false;
-    let mut new_lines: Vec<String> = Vec::new();
-    new_lines.push("---".to_string());
+    let inner = &content[open_end..close_start];
+    let mut rebuilt = String::with_capacity(inner.len());
+    let mut removed = false;
+    let mut skipping_list_items = false;
 
-    let mut i = 1;
-    while i < end_idx {
-        let line = lines[i];
-        if let Some(colon) = line.find(':') {
-            let k = line[..colon].trim();
-            if !k.is_empty() && !line.starts_with(' ') && !line.starts_with('\t') {
-                if k == key {
-                    // Replace existing value
-                    new_lines.push(format!("{}: {}", key, format_yaml_value(value)));
-                    found = true;
-                    // Skip any continuation lines (multi-line list)
-                    i += 1;
-                    while i < end_idx && (lines[i].starts_with("  - ") || lines[i].starts_with("  ")) {
-                        if lines[i].trim().starts_with("- ") {
-                            i += 1;
-                        } else {
-                            break;
-                        }
-                    }
+    for line in inner.split_inclusive('\n') {
+        let text = line.trim_end_matches(['\r', '\n']);
+        let is_top_level = !text.starts_with(' ') && !text.starts_with('\t');
+
+        if skipping_list_items {
+            if !is_top_level && text.trim_start().starts_with("- ") {
+                continue;
+            }
+            skipping_list_items = false;
+        }
+
+        if !removed && is_top_level {
+            if let Some(colon) = text.find(':') {
+                if text[..colon].trim() == key {
+                    removed = true;
+                    skipping_list_items = true;
                     continue;
                 }
             }
         }
-        new_lines.push(line.to_string());
-        i += 1;
+        rebuilt.push_str(line);
+    }
+
+    if !removed {
+        return content.to_string();
+    }
+    if rebuilt.trim().is_empty() {
+        // The block existed only to hold this key — drop it whole.
+        return content[close_start..]
+            .split_inclusive('\n')
+            .skip(1)
+            .collect::<String>();
+    }
+    format!("{}{}{}", &content[..open_end], rebuilt, &content[close_start..])
+}
+
+/// Update or insert a single property in a note's YAML frontmatter.
+///
+/// **MIG-101 §A0 — byte-integrity contract.** Editing one key rewrites ONLY that
+/// key's line. Everything else in the file — the body, the other frontmatter
+/// lines, each line's own terminator, and the presence/absence of a trailing
+/// newline — survives byte-for-byte, because the body is never split and
+/// rejoined; it is spliced back verbatim by byte offset.
+///
+/// The previous implementation did `content.lines()` … `join("\n")`, which
+/// silently (a) converted a CRLF file to LF **throughout, body included** and
+/// (b) stripped the file's trailing newline, on EVERY property edit. On Windows
+/// — our primary platform — any note touched by an external editor carries CRLF,
+/// so a single Bases cell edit rewrote every line of the file and produced a
+/// whole-file diff under Git/Syncthing. Silent content mutation beyond what the
+/// user asked for. Proven RED→GREEN by `shape_writepath_tests`.
+pub(crate) fn update_frontmatter_property(content: &str, key: &str, value: &str) -> String {
+    let formatted = format_yaml_value(value);
+
+    let Some((open_end, close_start, _body_start)) = frontmatter_span(content) else {
+        // No / malformed frontmatter — prepend a fresh block and keep the
+        // original content verbatim after it.
+        let eol = if content.contains("\r\n") { "\r\n" } else { "\n" };
+        return format!("---{eol}{key}: {formatted}{eol}---{eol}{content}");
+    };
+
+    // Match the block's OWN line ending, not the document's dominant one.
+    let eol = if content[..open_end].ends_with("\r\n") { "\r\n" } else { "\n" };
+
+    let inner = &content[open_end..close_start];
+    let mut rebuilt = String::with_capacity(inner.len() + key.len() + formatted.len() + 4);
+    let mut found = false;
+    let mut skipping_list_items = false;
+
+    for line in inner.split_inclusive('\n') {
+        let text = line.trim_end_matches(['\r', '\n']);
+        let is_top_level = !text.starts_with(' ') && !text.starts_with('\t');
+
+        // Drop the continuation lines of a replaced multi-line list value.
+        if skipping_list_items {
+            if !is_top_level && text.trim_start().starts_with("- ") {
+                continue;
+            }
+            skipping_list_items = false;
+        }
+
+        if !found && is_top_level {
+            if let Some(colon) = text.find(':') {
+                let k = text[..colon].trim();
+                if !k.is_empty() && k == key {
+                    // Reuse THIS line's own terminator so a lone CRLF/LF line
+                    // inside an otherwise-uniform block stays as it was.
+                    let terminator = &line[text.len()..];
+                    rebuilt.push_str(&format!("{key}: {formatted}{terminator}"));
+                    found = true;
+                    skipping_list_items = true;
+                    continue;
+                }
+            }
+        }
+        rebuilt.push_str(line);
     }
 
     if !found {
-        new_lines.push(format!("{}: {}", key, format_yaml_value(value)));
+        rebuilt.push_str(&format!("{key}: {formatted}{eol}"));
     }
 
-    new_lines.push("---".to_string());
-
-    // Append body (everything after frontmatter)
-    for line in &lines[end_idx + 1..] {
-        new_lines.push(line.to_string());
-    }
-
-    new_lines.join("\n")
+    // Opening line + rebuilt inner + closing line and everything after it,
+    // both spliced back verbatim.
+    format!("{}{}{}", &content[..open_end], rebuilt, &content[close_start..])
 }
 
 // ─── Workspace-level Base Storage ───
@@ -667,5 +762,115 @@ fn format_yaml_value(value: &str) -> String {
         format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         value.to_string()
+    }
+}
+
+#[cfg(test)]
+mod shape_writepath_tests {
+    use super::update_frontmatter_property;
+
+    // MIG-101 §A0 — PROVING TESTS. These are written RED first: they assert the
+    // byte-integrity contract Phase A depends on ("changing one frontmatter key
+    // changes only that key's line"). If they fail, the shape write path cannot
+    // claim a byte-exact revert.
+
+    #[test]
+    fn crlf_file_keeps_crlf_endings() {
+        let src = "---\r\ntitle: A\r\n---\r\nBody line one\r\nBody line two\r\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        assert!(out.contains("shape: scrap"), "property must be written");
+        assert!(
+            !out.contains("Body line one\nBody line two"),
+            "CRLF body was silently converted to LF -- the whole file was rewritten"
+        );
+    }
+
+    #[test]
+    fn trailing_newline_is_preserved() {
+        let src = "---\ntitle: A\n---\nBody\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        assert!(out.ends_with('\n'), "trailing newline was stripped");
+    }
+
+    #[test]
+    fn body_bytes_are_untouched_lf() {
+        let src = "---\ntitle: A\n---\nPara one\n\nPara two\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        let body = out.split("---").nth(2).unwrap_or("");
+        assert_eq!(body, "\nPara one\n\nPara two\n", "body bytes changed");
+    }
+
+    // ── The Phase A3 contract: set → change → revert is BYTE-EXACT ──
+
+    /// The core promise of MIG-101 Phase A. Reversibility is what makes
+    /// automatic container graduation permissible at all, so it is proven here
+    /// rather than asserted in a design document.
+    #[test]
+    fn shape_round_trip_is_byte_exact() {
+        for src in [
+            "---\ntitle: A\n---\nBody\n",
+            "---\r\ntitle: A\r\n---\r\nBody\r\n",
+            "---\ntitle: A\nshape: scrap\n---\nBody with no trailing newline",
+            "---\ntags:\n  - one\n  - two\ntitle: A\n---\n\nBody\n\n\n",
+        ] {
+            let with_shape = update_frontmatter_property(src, "shape", "page");
+            let reverted = update_frontmatter_property(&with_shape, "shape", "scrap");
+            let round_trip = update_frontmatter_property(&reverted, "shape", "page");
+            assert_eq!(
+                with_shape, round_trip,
+                "shape round-trip was not byte-exact for input {src:?}"
+            );
+        }
+    }
+
+    /// Everything OUTSIDE the edited key's own line must be identical — this is
+    /// stronger than "the body survives", because it also protects sibling
+    /// frontmatter keys, blank lines and indentation.
+    #[test]
+    fn only_the_edited_key_line_changes() {
+        let src = "---\ntitle: A\nshape: scrap\ncreated: 2026-01-01\n---\nBody\n";
+        let out = update_frontmatter_property(src, "shape", "page");
+        let before: Vec<&str> = src.lines().filter(|l| !l.starts_with("shape:")).collect();
+        let after: Vec<&str> = out.lines().filter(|l| !l.starts_with("shape:")).collect();
+        assert_eq!(before, after, "a line other than `shape:` was rewritten");
+        assert!(out.contains("shape: page"));
+        assert!(!out.contains("shape: scrap"));
+    }
+
+    #[test]
+    fn inserting_into_existing_frontmatter_keeps_siblings_and_body() {
+        let src = "---\ntitle: A\ncreated: 2026-01-01\n---\nBody\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        assert!(out.contains("title: A"));
+        assert!(out.contains("created: 2026-01-01"));
+        assert!(out.contains("shape: scrap"));
+        assert!(out.ends_with("---\nBody\n"), "body/closing fence disturbed: {out:?}");
+    }
+
+    #[test]
+    fn replacing_a_list_value_drops_only_its_continuation_lines() {
+        let src = "---\ntags:\n  - one\n  - two\ntitle: A\n---\nBody\n";
+        let out = update_frontmatter_property(src, "tags", "single");
+        assert!(out.contains("tags: single"));
+        assert!(!out.contains("- one"), "stale list item survived");
+        assert!(!out.contains("- two"), "stale list item survived");
+        assert!(out.contains("title: A"), "sibling key was eaten");
+        assert!(out.ends_with("---\nBody\n"));
+    }
+
+    #[test]
+    fn no_frontmatter_prepends_and_keeps_content_verbatim() {
+        let src = "Just a body\nwith two lines\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        assert!(out.starts_with("---\nshape: scrap\n---\n"));
+        assert!(out.ends_with(src), "original content was altered");
+    }
+
+    #[test]
+    fn malformed_frontmatter_is_not_treated_as_a_block() {
+        // Opening fence with no closing fence — must not eat the document.
+        let src = "---\ntitle: A\nstill frontmatter?\n";
+        let out = update_frontmatter_property(src, "shape", "scrap");
+        assert!(out.ends_with(src), "content lost on malformed frontmatter");
     }
 }

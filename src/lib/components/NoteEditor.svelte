@@ -423,6 +423,100 @@
 		openTabs.update(tabs => tabs);
 	}
 
+	/**
+	 * MIG-101 §A — set (or clear, with `null`) the note's SHAPE.
+	 *
+	 * **Shape goes through the MODEL, never to disk directly.** An open note's
+	 * in-memory model owns its content (MIG-076 single content ownership) and
+	 * composes frontmatter from the byte-base captured when the note was OPENED.
+	 * A Rust command writing `shape:` straight to disk therefore left the model
+	 * unaware: the next debounced save re-composed from the stale base and
+	 * SILENTLY DROPPED the key (Boss-reported 2026-07-20 as "nothing changed" —
+	 * the write had in fact succeeded on disk while the panel, and the model,
+	 * knew nothing about it). Routing through the model fixes both halves at
+	 * once: the value survives the next save, and the Properties panel updates
+	 * immediately because it renders the thing that changed.
+	 *
+	 * This mirrors the `stage` promote path above step for step — same
+	 * model→compose→durable-save shape, same identity refusal, same reindex.
+	 * If a third single-key frontmatter mutator appears, extract the three of
+	 * them rather than copying this a third time.
+	 *
+	 * Shape never touches the body, so a revert is byte-exact by construction.
+	 */
+	function applyShape(next: string | null, recordHistory = true) {
+		// G3 — read-only display never writes. Missing this guard made applyShape
+		// the ONLY write path in this component without it (handlePromote:183,
+		// handleSave, handleFlush and handleTitleChange all carry it), which handed
+		// every read-only host a durable disk write: the Index preview mounts a
+		// SECOND model for a path that may already be open in a real tab, so a
+		// shape click there would compose that preview's stale body over the live
+		// note — and because the real tab's model is clean, the watcher would ADOPT
+		// the reverted content rather than raise a conflict. Silent revert, on
+		// screen and on disk. Caught by the safety inspection, 2026-07-20.
+		if (readOnly) return; // G3 — read-only display never writes
+		if (isCascading(tab.path)) return;
+		const model = getModel(tab.id);
+		const prev =
+			(model?.props ?? []).find((p) => p.key.toLowerCase() === 'shape')?.value ?? null;
+		if ((prev ?? null) === next) return; // no-op: identical shape
+
+		if (SINGLE_OWNERSHIP && model) {
+			const props = model.props;
+			let newProps: FrontmatterProperty[];
+			if (!next) {
+				newProps = props.filter((p) => p.key.toLowerCase() !== 'shape');
+			} else {
+				let updated = false;
+				newProps = props.map((p) => {
+					if (p.key.toLowerCase() === 'shape') { updated = true; return { ...p, value: next }; }
+					return p;
+				});
+				if (!updated) newProps.push({ key: 'shape', value: next, type: 'text' as any });
+			}
+			editProps(tab.id, newProps, tab.path);
+			const r = compose(tab.id, tab.path);
+			if (!r.ok) return; // identity refusal — never write a frankenstein
+			const fc = r.content;
+			const ct = get(openTabs).find((x) => x.id === tab.id);
+			if (ct) {
+				ct.content = fc;
+				openTabs.update((tabs) => tabs);
+			}
+			tab.content = fc;
+			markRecentWrite(tab.path);
+			saveNoteSession(tab.id, tab.path, standardSaveEnv({
+				origin: 'shape_set',
+				name: tab.name,
+				onSaved: (savedPath) => {
+					broadcastNoteSaved(savedPath);
+					invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+				},
+			}), 'shape_set');
+		} else {
+			// No model for this note (not open through the editor) — Rust owns the
+			// write AND records its own history row.
+			invoke(next ? 'set_note_shape' : 'clear_note_shape', { filePath: tab.path, shape: next })
+				.catch((e) => console.error('[NoteEditor] shape write failed:', e));
+			return;
+		}
+
+		// History is recorded separately here because the DISK write above was the
+		// model's, not Rust's. Best-effort: losing a history row must not fail the
+		// edit, and the value on disk is the source of truth either way.
+		//
+		// §A3-fix — an UNDO must not record. `undo_shape` already consumed the step
+		// it handed back; appending the inverse as a new change is precisely what
+		// made repeated undo oscillate page→scrap→page instead of walking back to
+		// unshaped.
+		if (!recordHistory) return;
+		invoke('record_shape_change', {
+			filePath: tab.path,
+			fromShape: prev,
+			toShape: next,
+		}).catch((e) => console.error('[NoteEditor] record_shape_change failed:', e));
+	}
+
 	function handleMoreAction(action: string) {
 		// The four pure FILE ops are handled here, ALWAYS — they depend only on the tab and
 		// must behave identically in every host, including hosts that pass no handler at all
@@ -447,6 +541,39 @@
 			case 'copyName':
 				navigator.clipboard.writeText(tab.name)
 					.catch((e) => console.error('[NoteEditor] copyName failed:', e));
+				return;
+			// MIG-101 Phase A — shape ops depend only on the tab, so they belong in
+			// this always-handled block alongside the file ops. They go THROUGH THE
+			// MODEL, never to disk directly — see applyShape.
+			case 'shapeScrap':
+				applyShape('scrap');
+				return;
+			case 'shapePage':
+				applyShape('page');
+				return;
+			case 'shapeClear':
+				applyShape(null);
+				return;
+			case 'shapeRevert':
+				// `undo_shape` consumes one step and returns the shape to restore
+				// (null = back to unshaped). Applied WITHOUT recording, so the next
+				// undo takes the step before it rather than undoing this undo.
+				// A rejection means there is nothing left to undo — a normal end
+				// state, not a fault.
+				invoke<string | null>('undo_shape', { filePath: tab.path })
+					.then((target) => applyShape(target ?? null, false))
+					// Never swallow this. A bare `.catch(() => {})` here is what turned
+					// a schema-upgrade bug into an INVISIBLE one: every `undo_shape`
+					// call was failing with "no such column: undone" and the UI simply
+					// did nothing, with no trace anywhere (Boss-reported 2026-07-20 as
+					// "no effect at all"). "Nothing to undo" is the one expected
+					// rejection; anything else is a fault and must say so.
+					.catch((e) => {
+						const msg = String(e);
+						if (!msg.includes('Nothing to undo')) {
+							console.error('[NoteEditor] undo_shape failed:', e);
+						}
+					});
 				return;
 		}
 		onmoreaction?.(action);

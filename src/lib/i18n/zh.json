@@ -3918,12 +3918,30 @@
       "clustered": "聚合链接",
       "weight": "权重",
       "recency": {
-        "today": { "long": "今天访问过", "short": "今天" },
-        "week": { "long": "本周访问过", "short": "本周" },
-        "month": { "long": "本月访问过", "short": "本月" },
-        "quarter": { "long": "本季访问过", "short": "本季" },
-        "older": { "long": "很久以前访问过", "short": "更早" },
-        "never": { "long": "从未访问", "short": "从未" }
+        "today": {
+          "long": "今天访问过",
+          "short": "今天"
+        },
+        "week": {
+          "long": "本周访问过",
+          "short": "本周"
+        },
+        "month": {
+          "long": "本月访问过",
+          "short": "本月"
+        },
+        "quarter": {
+          "long": "本季访问过",
+          "short": "本季"
+        },
+        "older": {
+          "long": "很久以前访问过",
+          "short": "更早"
+        },
+        "never": {
+          "long": "从未访问",
+          "short": "从未"
+        }
       }
     },
     "deck": {
@@ -3948,5 +3966,11 @@
       "never": "从未回顾",
       "stale": "过时"
     }
+  },
+  "shape": {
+    "setScrap": "形态：纸片",
+    "setPage": "形态：页面",
+    "clear": "清除形态",
+    "revert": "撤销上次形态更改"
   }
 }

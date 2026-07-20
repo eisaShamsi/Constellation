@@ -3945,12 +3945,30 @@
       "clustered": "Liens regroupés",
       "weight": "poids",
       "recency": {
-        "today": { "long": "Emprunté aujourd'hui", "short": "Aujourd'hui" },
-        "week": { "long": "Emprunté cette semaine", "short": "Cette semaine" },
-        "month": { "long": "Emprunté ce mois-ci", "short": "Ce mois-ci" },
-        "quarter": { "long": "Emprunté ce trimestre", "short": "Ce trimestre" },
-        "older": { "long": "Emprunté il y a longtemps", "short": "Plus ancien" },
-        "never": { "long": "Jamais emprunté", "short": "Jamais" }
+        "today": {
+          "long": "Emprunté aujourd'hui",
+          "short": "Aujourd'hui"
+        },
+        "week": {
+          "long": "Emprunté cette semaine",
+          "short": "Cette semaine"
+        },
+        "month": {
+          "long": "Emprunté ce mois-ci",
+          "short": "Ce mois-ci"
+        },
+        "quarter": {
+          "long": "Emprunté ce trimestre",
+          "short": "Ce trimestre"
+        },
+        "older": {
+          "long": "Emprunté il y a longtemps",
+          "short": "Plus ancien"
+        },
+        "never": {
+          "long": "Jamais emprunté",
+          "short": "Jamais"
+        }
       }
     },
     "deck": {
@@ -3975,5 +3993,11 @@
       "never": "jamais revue",
       "stale": "périmée"
     }
+  },
+  "shape": {
+    "setScrap": "Forme : Bristol",
+    "setPage": "Forme : Page",
+    "clear": "Retirer la forme",
+    "revert": "Annuler le dernier changement de forme"
   }
 }

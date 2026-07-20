@@ -2022,6 +2022,7 @@ mod tests {
                 annotation TEXT NOT NULL DEFAULT '',
                 last_traversed TEXT NOT NULL DEFAULT '',
                 confidence TEXT NOT NULL DEFAULT '',
+                created TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'active'
             );
             INSERT INTO note_links (source_path, source_name, target_name, link_type, library_name)
@@ -2042,6 +2043,7 @@ mod tests {
                 annotation TEXT NOT NULL DEFAULT '',
                 last_traversed TEXT NOT NULL DEFAULT '',
                 confidence TEXT NOT NULL DEFAULT '',
+                created TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'active'
             );
             INSERT INTO note_links (source_path, source_name, target_name, link_type, library_name)
@@ -2165,7 +2167,8 @@ mod tests_c2c_per_note_rows {
                 source_path TEXT, source_name TEXT, target_name TEXT, link_type TEXT,
                 library_name TEXT DEFAULT '', annotation TEXT DEFAULT '', weight REAL DEFAULT 1.0,
                 traversal_count INTEGER DEFAULT 0, last_traversed TEXT DEFAULT '',
-                confidence TEXT DEFAULT 'hypothesis', status TEXT DEFAULT 'active',
+                confidence TEXT DEFAULT 'hypothesis', created TEXT DEFAULT '',
+                status TEXT DEFAULT 'active',
                 target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
              CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);
              CREATE INDEX idx_link_source ON note_links(source_path);

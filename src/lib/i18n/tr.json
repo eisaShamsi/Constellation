@@ -3945,12 +3945,30 @@
       "clustered": "kümelenmiş bağlantılar",
       "weight": "Ağırlık",
       "recency": {
-        "today": { "long": "bugün geçildi", "short": "Bugün" },
-        "week": { "long": "bu hafta geçildi", "short": "Bu hafta" },
-        "month": { "long": "bu ay geçildi", "short": "Bu ay" },
-        "quarter": { "long": "bu çeyrek geçildi", "short": "Bu çeyrek" },
-        "older": { "long": "uzun süre önce geçildi", "short": "Daha eski" },
-        "never": { "long": "hiç geçilmedi", "short": "Hiç geçilmedi" }
+        "today": {
+          "long": "bugün geçildi",
+          "short": "Bugün"
+        },
+        "week": {
+          "long": "bu hafta geçildi",
+          "short": "Bu hafta"
+        },
+        "month": {
+          "long": "bu ay geçildi",
+          "short": "Bu ay"
+        },
+        "quarter": {
+          "long": "bu çeyrek geçildi",
+          "short": "Bu çeyrek"
+        },
+        "older": {
+          "long": "uzun süre önce geçildi",
+          "short": "Daha eski"
+        },
+        "never": {
+          "long": "hiç geçilmedi",
+          "short": "Hiç geçilmedi"
+        }
       }
     },
     "deck": {
@@ -3975,5 +3993,11 @@
       "never": "hiç gözden geçirilmedi",
       "stale": "bayat"
     }
+  },
+  "shape": {
+    "setScrap": "Biçim: Pusula",
+    "setPage": "Biçim: Sayfa",
+    "clear": "Biçimi kaldır",
+    "revert": "Son biçim değişikliğini geri al"
   }
 }

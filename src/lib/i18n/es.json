@@ -3945,12 +3945,30 @@
       "clustered": "Enlaces agrupados",
       "weight": "Peso",
       "recency": {
-        "today": { "long": "Transitado hoy", "short": "Hoy" },
-        "week": { "long": "Transitado esta semana", "short": "Esta semana" },
-        "month": { "long": "Transitado este mes", "short": "Este mes" },
-        "quarter": { "long": "Transitado este trimestre", "short": "Este trimestre" },
-        "older": { "long": "Transitado hace mucho", "short": "Más antiguo" },
-        "never": { "long": "Nunca transitado", "short": "Nunca" }
+        "today": {
+          "long": "Transitado hoy",
+          "short": "Hoy"
+        },
+        "week": {
+          "long": "Transitado esta semana",
+          "short": "Esta semana"
+        },
+        "month": {
+          "long": "Transitado este mes",
+          "short": "Este mes"
+        },
+        "quarter": {
+          "long": "Transitado este trimestre",
+          "short": "Este trimestre"
+        },
+        "older": {
+          "long": "Transitado hace mucho",
+          "short": "Más antiguo"
+        },
+        "never": {
+          "long": "Nunca transitado",
+          "short": "Nunca"
+        }
       }
     },
     "deck": {
@@ -3975,5 +3993,11 @@
       "never": "nunca revisada",
       "stale": "obsoleta"
     }
+  },
+  "shape": {
+    "setScrap": "Forma: Recorte",
+    "setPage": "Forma: Página",
+    "clear": "Quitar forma",
+    "revert": "Deshacer el último cambio de forma"
   }
 }
