@@ -798,6 +798,42 @@ East Asian, European, South Asian & Hebrew) + synthesis. Claims below are GRADED
 "attested" = in classical sources or the codicological handbooks; "lexical only" = a real word, not
 verified as a technical term; "UNKNOWN" where unconfirmed.*
 
+## ⛔ SCOPE RULING — religious books are EXCLUDED (Boss, 2026-07-19)
+
+> **"Exclude all religious books."**
+
+Sacred, scriptural and liturgical texts are **out of scope as design evidence**: the Qur'an /
+مُصحَف, the Torah scroll, the Talmud page, the glossed Bible (*glossa ordinaria*), masorah,
+Buddhist sutra rolls, prayer and devotional books. **Two independent reasons, and both are good:**
+
+1. **They are the wrong model.** A sacred text's layout is optimised for recitation, veneration,
+   ritual use and transmission-fidelity. It answers questions Constellation never asks. Constellation
+   is a tool for a person working out their *own* thinking — a purpose no canonical text shares.
+2. **They had already produced one factual error** (the paragraph claim, below). Excluding the class
+   removes the failure mode structurally instead of patching each instance. *That is the same move as
+   Solve-the-Class-Not-the-Instance, applied to research rather than to code.*
+
+**What this removes, named honestly** — so a future reader knows the survey is *deliberately*
+secular, not accidentally thin:
+- The **Talmud page** and the **biblical *glossa ordinaria***, which were the two exemplars of the
+  **fixed-frame** layered page. The v2 synthesis was mid-run when the ruling landed and has been
+  redirected to secular fixed-frame evidence instead — chiefly **Accursius's *Glossa Ordinaria* on
+  the Corpus Juris Civilis** (the *legal* glossa: same designed geometry, no scripture), plus
+  humanist commentary editions, variorum editions, and the modern apparatus criticus.
+- The Qur'anic mise-en-page markers that caused the paragraph error.
+
+**What this does NOT remove** — most of the layered-page evidence was never religious. The Arabic
+scholarly apparatus (حاشية · تعليقة · لَحَق · عَطْفة · ضَرْب · بلغ) is attested overwhelmingly on
+**grammar, logic, medicine, astronomy, mathematics, lexicography, adab and poetry** — Ibn Sīnā's
+قانون carries glosses exactly the way a canonical text does. Same for East Asian 頭注 / 訓点 /
+振り仮名 on secular classics, European scholia on classical authors, and commonplace-book marginalia.
+**The tradition of the layered page is a scholarly tradition first; the scriptural instances are a
+subset, not the source.**
+
+**Standing rule where evidence is thin:** if a tradition's layered-page practice is attested *only*
+on sacred texts, the finding is **"unknown for secular texts in this tradition"** — a stated gap.
+Never substitute a religious example under a secular label.
+
 ## ★ THE HEADLINE — this justifies the whole shape concept
 
 > **Every historical container got its shape from physics FOR FREE. Digital affords nothing and
@@ -805,15 +841,20 @@ verified as a technical term; "UNKNOWN" where unconfirmed.*
 > used to impose. That is not a metaphor for templates; it is the literal justification for them.**
 
 A لِخاف (thin white stone) denies extent and grants permanence because of what it *is*. A washed
-لَوح denies persistence because it wipes. A مُصحَف demands ceremony because binding is irreversible
-and expensive. A bamboo 簡 rations extent to one column. **None of these had to be designed.**
+لَوح denies persistence because it wipes. A bound مُجَلَّد demands ceremony because binding is
+irreversible and expensive. A bamboo 簡 rations extent to one column. **None of these had to be
+designed.**
 
 In Constellation a file is a file. Therefore **a note shape is a SYNTHETIC CONTAINER** — a
 deliberate re-imposition of affordances the substrate no longer supplies.
 
-**And the proof that shape is first-class rather than cosmetic is the مُصحَف / قرآن pair:** the same
-content in a different container gets a different name and a different relationship — one is
-recited, the other is handled, endowed, inherited. **Shape changes what the thing IS.**
+**And the proof that shape is first-class rather than cosmetic is that languages give the container
+its own name, distinct from the work it holds.** A *symphony* is the work; a *score* is the object —
+you perform the first and shelve, annotate, inherit and fingerprint the second. Latin split the same
+pair as *liber* (the work) and *volumen* (the physical roll). **Shape changes what the thing IS**,
+and the vocabulary proves people always knew it. *(This point originally rested on the مُصحَف/قرآن
+pair; replaced with secular equivalents under the exclusion ruling above — the argument is unchanged
+because it was never a religious observation, only a naming one.)*
 
 ## The five-dimension hypothesis: HOLDS, but incomplete — and one is MIS-TYPED
 
@@ -835,10 +876,12 @@ recited, the other is handled, endowed, inherited. **Shape changes what the thin
   **In both, the KIND is read before a single word is.**
 
 **MIS-TYPED — CEREMONY is not a container affordance.** It is a proxy for **irreversibility and
-cost**. A مُصحَف demands a formal opening, formal hand, colophon and completeness not because
-binding *affords* ceremony but because binding is expensive and irrevocable — the ceremony is the
-psychological tariff on a commitment you cannot undo. A لَوح demands nothing because wiping costs
-nothing. **In digital, cost and irreversibility are both ~zero, so ceremony has NO physical source.
+cost**. A commissioned bound volume demands a formal opening, a formal hand, a colophon and
+completeness not because binding *affords* ceremony but because binding is expensive and irrevocable
+— the ceremony is the psychological tariff on a commitment you cannot undo. *The tariff scales with
+the bill, not with the subject matter: a bound medical or legal codex carries the same formality as
+any other, which is precisely why the exclusion ruling costs this argument nothing.* A لَوح demands
+nothing because wiping costs nothing. **In digital, cost and irreversibility are both ~zero, so ceremony has NO physical source.
 If Constellation imposes ceremony without a real downstream commitment behind it, it is
 manufacturing friction and calling it design.** Ceremony must be *earned* by the shape promising
 something irreversible or expensive — or dropped.
@@ -846,10 +889,24 @@ something irreversible or expensive — or dropped.
 **MISSING 6th — ADDRESSABILITY (the strongest finding).** The East Asian 巻 / 冊 split: 巻 divides
 the *work*, 冊 divides the *object*, and they float free — the Yongle Encyclopedia is **22,937 巻
 bound as 11,095 冊**. The logical address survived a total change of container (roll → stitched
-book). Arabic has the same layer: آية numbering, folio recto/verso, and the **عَطْفة** reference
+book). Arabic has the same layer: folio recto/verso, **lemma-citation** (a شرح addresses its base
+text by quoting its opening words after قوله — an address that survives *any* recopying because it
+is made of the text itself, not of a position), and the **عَطْفة** reference
 mark tying a marginal لَحَق to its exact gap in the line. *A container's fitness is partly: "can a
 stranger point at a piece of this, later, and still hit it after the object is reorganised?"* A
-scroll denies addressability; a codex grants it. **A قصاصة is impossible without it.** Not covered
+scroll denies addressability; a codex grants it. **A قصاصة is impossible without it.**
+
+> **★ A convergence worth pausing on, surfaced by the secular re-framing.** Lemma-citation anchors a
+> gloss by *quoting the words it is about*. That is, exactly, the W3C Web Annotation Model's
+> **TextQuoteSelector** — and the reason Hypothes.is anchors on quoted text with fuzzy matching
+> rather than on character offsets is the same reason a شرح did: **a position-based address dies the
+> moment the container re-flows, and a quote-based one does not.** Twelfth-century commentators and
+> the 2017 W3C spec solved the same problem the same way, eight centuries apart, because it is the
+> *only* shape of address that survives re-layout. → This is strong independent confirmation for the
+> anchoring design already sketched at §"Anchor granularity": **store the quote, not the offset**;
+> keep offsets only as a fast hint to be re-validated, never as the identity.
+
+Not covered
 by any of the five.
 
 **MISSING 7th — PROVENANCE-CARRYING.**
@@ -906,10 +963,14 @@ by any of the five.
   texture carries nothing and costs contrast across 15 languages.
 - **Refuse ceremony with nothing behind it.** If a shape demands ceremony, name the irreversible
   thing it commits to; if you cannot name it, cut the ceremony.
-- **Refuse the literal Talmud-page / 注疏 layout as UI.** That fixed geometric frame was a *print*
-  solution for four fixed, canonical, known-in-advance layers on a fixed sheet. قصاصات are unbounded
-  in number, arbitrary in length, unknown at layout time. **Take the ARCHITECTURE (zones own layers,
-  base untouched, size ranks the layer); refuse the PICTURE.**
+- **Refuse the literal fixed-frame glossed page as UI** — the Accursian legal folio, the 注疏 block,
+  any designed geometry of nested zones. That frame was a *print* solution for a **small, fixed,
+  canonical set of layers known before the page was laid out**. قصاصات are unbounded in number,
+  arbitrary in length, and unknown at layout time — the precondition the frame depends on is exactly
+  the one we cannot supply. **Take the ARCHITECTURE (zones own layers, base untouched, size ranks
+  the layer); refuse the PICTURE.** *(Originally written against the Talmud page; re-grounded on the
+  secular legal glossa under the exclusion ruling. The caution is unchanged — which is itself
+  evidence the point was structural, not scriptural.)*
 - **★ Refuse claiming قصاصة as a heritage term.** It is genuine Arabic ("a cut-off scrap", from قصّ)
   but **NOT attested as a technical term of classical codicology** — the attested terms are
   **تعليقة · حاشية · لَحَق · رُقْعَة**. Ship it as a deliberate, well-motivated coinage in the
@@ -925,11 +986,22 @@ by any of the five.
 
 ## Open questions the research could NOT close
 
-- **Two studies were truncated before reaching the synthesizer** (Talmud page, Latin *glossa
-  ordinaria*) — MY error again: the character slice in the workflow script. Their full results ARE
-  in the journal. The Talmud page is a **fixed-frame** solution where Arabic and East Asian are
-  **flowing-margin** solutions — *a genuine third model that went unanalysed.* **Re-run the
-  synthesis with both in hand before the قصاصة design is frozen.**
+- ~~**Two studies were truncated before reaching the synthesizer**~~ **→ SUPERSEDED TWICE.** The
+  truncation was mine (a character slice in the workflow script) and cost the synthesis its two
+  **fixed-frame** exemplars — the model that Arabic and East Asian **flowing-margin** practice does
+  not cover. The v2 re-run was launched to recover them; **the exclusion ruling then removed both,
+  because both were religious books.** The open question therefore survives its original evidence:
+
+  > **Fixed-frame vs flowing-margin remains genuinely unanalysed, and it is the one architectural
+  > question the قصاصة design cannot be frozen without.** v2 is answering it from **secular**
+  > fixed-frame evidence — chiefly Accursius's *Glossa Ordinaria* on the Corpus Juris Civilis, plus
+  > variorum editions and the apparatus criticus.
+
+  The question to answer, stated precisely: *what does a fixed frame SOLVE that a flowing margin
+  does not, and vice versa — and what did each tradition do when annotation **OVERFLOWED** its
+  allotted zone?* That last clause matters most: a physical page was **forced** to answer it, and a
+  digital one usually dodges it. Our قصاصات are unbounded, so overflow is not an edge case for us —
+  it is the normal condition.
 - **طُرَّة** — flagged unverified; real word, attested in West African ʿajamī scholarship, technical
   scope in the Eastern tradition UNKNOWN. Needs Gacek's *Glossary of Technical Terms*, not a search.
 - **Does قصاصة have any technical usage a native codicologist would recognise?** None found, but
@@ -950,9 +1022,13 @@ by any of the five.
 
   **The lesson, which generalises:** a web-search agent reading about a tradition will over-weight
   its most-documented *sacred* text and mistake that text's conventions for the culture's. The study
-  had itself graded this claim "needs a codicologist" — and the Boss is one. **Watch for the identical
-  trap in the Hebrew material** (Torah scroll / masorah conventions generalised to Hebrew writing at
-  large); the v2 synthesis has been instructed to flag it.
+  had itself graded this claim "needs a codicologist" — and the Boss is one.
+
+  **→ This is what the exclusion ruling above actually fixes.** My first response was to warn the v2
+  agent to watch for the same trap in the Hebrew material — i.e. to patch the instance. The Boss's
+  ruling removes the whole class instead: with sacred texts out of scope, *no* tradition can be
+  characterised from its most-venerated book. **The stronger fix was the categorical one, and it was
+  his, not mine** — a research-side instance of Solve-the-Class-Not-the-Instance.
 - **Whether users sustain graded annotation KINDS** or collapse them to one. History is unambiguous
   the kinds were distinct and useful — but they were maintained by a professional scholarly culture
   with institutional incentives.
