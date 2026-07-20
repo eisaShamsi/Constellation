@@ -670,3 +670,277 @@ cannot do.
 - **Does tending ever act alone**, or always propose and wait? (Leaning: always wait — but graduation
   ruled the other way, so it deserves a deliberate answer.)
 - **Is a mold allowed to be wrong** — if a named shape goes unused for a year, does the Studio say so?
+
+---
+
+# COMPOSITIONAL FORMS — "if a book, a journal and a note are types of something, what?"
+
+*Boss question, 2026-07-19. Recorded at his instruction.*
+
+## The answer
+
+**Not medium** — a book can be papyrus, paper or a file. **Not physical container** either (in the
+Boss's sense): a book can live in a scroll, a codex or a database; a journal can be a bound notebook
+or a folder of files. Both survive being moved between vessels. **Not function** — a book may be
+scholarly, literary, religious or technical.
+
+What distinguishes them is **how units of writing are combined into a whole**:
+
+> **Book, journal and note are COMPOSITIONAL FORMS. The axis is MODE OF COMPOSITION.**
+
+In the Boss's own vocabulary they are **أوعية نصية / textual containers** — but *abstract* ones,
+independent of both the medium and the physical vessel.
+
+## The four modes, and the list
+
+| Mode | Definition | Members |
+|---|---|---|
+| **Atomic** | one unit, whole in itself | note · **قصاصة** · card · fragment · entry · memo · reminder · definition · quote · observation · question · aphorism · **حاشية** (gloss) |
+| **Serial** | accretive, time-ordered, open-ended, never "finished" | journal · diary · log · daybook · **دفتر** · ledger · chronicle · **تاريخ** · annals · minutes · notebook · waste book |
+| **Structured** | designed architecture, closed, carries an arc | book · **كتاب** · treatise · **رسالة** · essay · **مقالة** · article · thesis · monograph · manual · textbook · commentary · **شرح** · report · study |
+| **Collected** | gathered rather than composed; the arrangement IS the work | anthology · commonplace book · dossier · **ملف** · archive · **أرشيف** · encyclopedia · **موسوعة** · dictionary · **معجم** · **ديوان** · catalogue · bibliography |
+
+**Unresolved:** the **letter** — atomic in extent but defined by having a RECIPIENT. That suggests
+**audience is a separate dimension crossing all four modes**, not a fifth mode. The Boss's genres
+table already treats correspondence as its own family, so he may have resolved this already.
+
+## Two clarifications this produces
+
+**1. The Boss's size scale conflates PARTS and WHOLES.** *sign → word → phrase → note → paragraph →
+letter → document → book → archive.* But a paragraph is a **part** — nobody makes a paragraph as a
+thing. A note is a **whole** — small, but complete. Sign/word/phrase/paragraph are units of
+LANGUAGE; note/letter/book/archive are compositional FORMS. Two different scales laid end to end.
+It matters because Constellation's atom is a *whole*, not a part.
+
+**2. Composition is independent of medium and container** — the third axis the taxonomy message was
+arguing for. What a thing is MADE of · what VESSEL holds it · how its units are COMBINED.
+
+## All four modes already exist in Constellation — unnamed, and unrelated to each other
+
+| Mode | Where it already lives |
+|---|---|
+| Atomic | the **note** — the app's declared atom |
+| Serial | **daily notes**, implemented as its own feature |
+| Structured | the **PJ-065 structural / parent–TOC link lane** |
+| Collected | **Collections** (MIG-092) |
+
+Four features, built at different times for different reasons, which turn out to be the four ways
+writing has always been composed. **Same shape as the Studio insight: the thing was already there,
+unnamed.**
+
+---
+
+# ★ THE FOUNDATIONS QUESTION — "Why are we stuck with the 'Note' as the gate to knowledge?"
+
+> Boss, 2026-07-19: *"But you discover one important thing: The app's foundations. Constellation
+> calls everything a 'note'! Why are we stuck with the 'Note' as the gate to knowledge? It is not
+> complying with the Constellation Way. Isn't it?"*
+
+**Partly yes — and the precision matters, because it decides whether this is a rewrite or a
+vocabulary fix.**
+
+### Where the violation is NOT
+
+**The `.md` file is a NEUTRAL vessel.** It can hold a two-word scrap or an entire book; nothing in
+the architecture constrains extent, structure or purpose. File-Over-App gives us a vessel with no
+opinion. The atom is not the problem.
+
+### Where the violation IS
+
+**"Note" is a non-neutral NAME on a neutral vessel.** The word pre-decides what the user is making,
+before the app has met them — which is precisely the one-way move the Constellation Way rejects.
+And the exact fault is a conflation: **one word doing two jobs — the name of the ATOM and the name
+of the WHOLE CATEGORY.** That is the same conflation the Boss's taxonomy message warned against,
+sitting in the app's most basic vocabulary.
+
+**What it actually forecloses:** Constellation can already HOLD all four compositional forms; it can
+only NAME one. Serial exists as a mechanism (daily notes) but there is no *journal* the user can
+point at and say "this is my 2026 journal" and have the app understand. The series is implicit; the
+structure is implicit; only the atom is named. **In a knowledge system naming is not cosmetic — it
+is how the user understands what they have.**
+
+**Is it a Constellation Way violation?** It is an *inherited* one — a decision made before the app
+met any user, and taken from the field (Obsidian: notes; Roam: blocks; Notion: pages) rather than
+chosen. An inherited assumption is still an assumption.
+
+### The proportionate response — NOT a rename
+
+**Renaming the atom is the wrong fix** and would be enormous churn (every table, command, i18n key,
+doc, and every user's mental model) to correct a naming fault the shape work already addresses.
+
+The right move is narrower: **stop letting "note" be the name of everything.** Keep it as the atom's
+name; let the compositional forms become first-class beside it, so the app can name what the user is
+actually making.
+
+**The Boss already began this himself.** *Qusasah* is the first thing in Constellation that is
+deliberately NOT a note — he named it instinctively rather than calling it "an annotation note."
+That is the precedent, and he set it.
+
+**Caution (Constraint as Design):** this must not become "forty note types." Four principled
+compositional modes, each earning its place — not a proliferation.
+
+### What the Template Studio must therefore know
+
+- A template declares its cast's **compositional mode**, not merely its content shape. "Daily note"
+  is *serial*; "book note" is *atomic*; "book" is *structured*; "reading list" is *collected*.
+- The Studio's offered types should be **organised by mode**, because mode is what determines how
+  the thing behaves over time — whether it accretes, closes, or gathers.
+- Mode interacts with **graduation**: outgrowing a shape may mean changing *extent* (scrap → page),
+  but it may also mean changing *mode* (a note that keeps accreting dated entries has become a
+  journal). Those are different transitions and should not be conflated.
+
+---
+
+# MEDIA & CONTAINERS ACROSS TRADITIONS — research findings (`wf_c054b0e2-6cf`)
+
+*Boss-directed 2026-07-19, Arabic first. Four tradition studies (Arabic/Islamic at high effort,
+East Asian, European, South Asian & Hebrew) + synthesis. Claims below are GRADED by the researchers:
+"attested" = in classical sources or the codicological handbooks; "lexical only" = a real word, not
+verified as a technical term; "UNKNOWN" where unconfirmed.*
+
+## ★ THE HEADLINE — this justifies the whole shape concept
+
+> **Every historical container got its shape from physics FOR FREE. Digital affords nothing and
+> denies nothing — so Constellation must AUTHOR the constraints that stone, wax, papyrus and paper
+> used to impose. That is not a metaphor for templates; it is the literal justification for them.**
+
+A لِخاف (thin white stone) denies extent and grants permanence because of what it *is*. A washed
+لَوح denies persistence because it wipes. A مُصحَف demands ceremony because binding is irreversible
+and expensive. A bamboo 簡 rations extent to one column. **None of these had to be designed.**
+
+In Constellation a file is a file. Therefore **a note shape is a SYNTHETIC CONTAINER** — a
+deliberate re-imposition of affordances the substrate no longer supplies.
+
+**And the proof that shape is first-class rather than cosmetic is the مُصحَف / قرآن pair:** the same
+content in a different container gets a different name and a different relationship — one is
+recited, the other is handled, endowed, inherited. **Shape changes what the thing IS.**
+
+## The five-dimension hypothesis: HOLDS, but incomplete — and one is MIS-TYPED
+
+**Holds cleanly** (falls out of physics without being forced):
+- **Extent** ← the unit of surface. عَسِيب/لِخاف hold one short passage because that is all they are.
+  A bamboo 簡 holds exactly one vertical column — *which is why the column became the citation unit
+  of Chinese texts and outlived bamboo by two millennia.* صَحيفة = one sitting · جُزء = one session ·
+  مُجَلَّد = a life's work.
+- **Persistence** ← erasability, the cleanest mapping of all. The school لَوح is *expiring by
+  construction*. The مُسوَّدة ("blackened" draft) is *meant-to-be-processed* — it exists to be
+  superseded by the مُبيَّضة ("whitened" fair copy). Inscription and cast bronze are permanent
+  because the medium refuses revision. **Every tradition that possessed an erasable surface used it
+  for drafting, without exception.**
+- **Attachment** ← whether the thing has its own text block. مَتْن stands alone; حاشية / تعليقة /
+  لَحَق are meaningless without a host. Likewise 頭注, 訓点.
+- **Signal** ← rubrication, script size, column doubling, framing. East Asian is the extreme:
+  half-size double columns 雙行小字 mean "gloss", full size means "text", above the frame line means
+  "head-note". Arabic: red vs black, overlined lemma, قوله / أقول as speaker markers in red.
+  **In both, the KIND is read before a single word is.**
+
+**MIS-TYPED — CEREMONY is not a container affordance.** It is a proxy for **irreversibility and
+cost**. A مُصحَف demands a formal opening, formal hand, colophon and completeness not because
+binding *affords* ceremony but because binding is expensive and irrevocable — the ceremony is the
+psychological tariff on a commitment you cannot undo. A لَوح demands nothing because wiping costs
+nothing. **In digital, cost and irreversibility are both ~zero, so ceremony has NO physical source.
+If Constellation imposes ceremony without a real downstream commitment behind it, it is
+manufacturing friction and calling it design.** Ceremony must be *earned* by the shape promising
+something irreversible or expensive — or dropped.
+
+**MISSING 6th — ADDRESSABILITY (the strongest finding).** The East Asian 巻 / 冊 split: 巻 divides
+the *work*, 冊 divides the *object*, and they float free — the Yongle Encyclopedia is **22,937 巻
+bound as 11,095 冊**. The logical address survived a total change of container (roll → stitched
+book). Arabic has the same layer: آية numbering, folio recto/verso, and the **عَطْفة** reference
+mark tying a marginal لَحَق to its exact gap in the line. *A container's fitness is partly: "can a
+stranger point at a piece of this, later, and still hit it after the object is reorganised?"* A
+scroll denies addressability; a codex grants it. **A قصاصة is impossible without it.** Not covered
+by any of the five.
+
+**MISSING 7th — PROVENANCE-CARRYING.**
+
+## ★ QUSASAH — what the layered page teaches
+
+1. **The governing law: annotations go OUTSIDE the text block, never inside it.** The مَتْن (lit.
+   "the firm ground, the back") is inviolable; everything a later reader says goes around it. **This
+   was not politeness — it is the mechanism by which the WORK stayed stable while the COPY
+   accumulated history.** A reader five centuries later tells base from gloss *at a glance*, because
+   the difference is spatial and absolute. → *A قصاصة never enters the host's body, under any
+   circumstance, including "just this once for convenience."*
+
+2. **The base stays authoritative through FIVE structural mechanisms — not through locking.** Nobody
+   forbade writing in the matn; the architecture made it obviously wrong. (a) **Spatial
+   segregation** — outside the ruled block, boundary often drawn literally in gold (جدول).
+   (b) **Graphic subordination** — glosses smaller, faster, less formal; the eye ranks them before
+   the mind reads them. (c) **Explicit voice marking** — قوله ("his statement:") / أقول ("I say:")
+   in RED at every switch of speaker. (d) **Self-attribution** — a gloss signs itself, terminating
+   in صح ("verified") or the glossator's mark. (e) **Additive-only editing** — errors struck by
+   ضَرْب and **remain legible**; omissions appended as a لَحَق, never interpolated; disagreement
+   written alongside, never substituted.
+   → **Don't make the host read-only; make the قصاصة obviously not the host.**
+
+3. **Anchor with an explicit mark; RENDER with spatial adjacency.** Arabic solved anchoring with the
+   **عَطْفة** — a curved stroke at the gap AND at the head of the marginal supplement: explicit,
+   portable, durable. East Asian used **no anchor syntax at all** — a 頭注 is bound to its column by
+   pure vertical alignment; *position is the link*. Digital reflow kills the second. **So: store the
+   Arabic way (a durable anchor surviving re-layout), present the East Asian way (the remark appears
+   beside its passage — no footnote number, no superscript, no marker cluttering the host).** The
+   user should never see the plumbing.
+
+4. **Attachment scope is THREE-way, not binary** — both traditions independently distinguish:
+   **interlinear** (one word — a synonym, a vowelling, an ʿajamī translation word; 振り仮名 furigana)
+   · **marginal** (a passage — outer/lower margin in Arabic, upper band in East Asian) ·
+   **title-page/flyleaf** (the whole object — ownership تملّك, endowment وقف, prices).
+   *Interlinear = "this word means that word." Marginal = "about this passage." Title-page = "about
+   this thing as an object."* → ship word-scope, passage-scope and note-scope as visually distinct
+   classes. **A single flat "comment" would be a regression against 12th-century practice.**
+
+5. **A remark's KIND matters and the kinds are not interchangeable** — gloss · objection · variant
+   reading · correction · **collation mark (بلغ — "the comparison reached this point", a progress
+   marker addressed to a future self)** · **audition record (سماع)** · ownership · endowment.
+
+## Cautions — what to REFUSE (cargo-cult failure modes, named)
+
+- **Refuse the scroll.** Its defining affordance is a DENIAL: no random access, no two-place
+  reading, no margin, no stable page address. It survives digitally only as the accidental default
+  of a scrolling viewport — *which is why we mistake it for neutral.* Importing "scroll mode" as a
+  deliberate shape imports a defect and calls it heritage.
+- **Refuse aged-paper texture, parchment backgrounds, torn-edge قصاصة graphics, faux-stitched
+  袋綴じ borders, rotated "pinned" sticky notes.** They signal *oldness*, not *kind*. Colour, weight,
+  size and zone carry the distinction (that is what rubrication and 雙行小字 actually did); a paper
+  texture carries nothing and costs contrast across 15 languages.
+- **Refuse ceremony with nothing behind it.** If a shape demands ceremony, name the irreversible
+  thing it commits to; if you cannot name it, cut the ceremony.
+- **Refuse the literal Talmud-page / 注疏 layout as UI.** That fixed geometric frame was a *print*
+  solution for four fixed, canonical, known-in-advance layers on a fixed sheet. قصاصات are unbounded
+  in number, arbitrary in length, unknown at layout time. **Take the ARCHITECTURE (zones own layers,
+  base untouched, size ranks the layer); refuse the PICTURE.**
+- **★ Refuse claiming قصاصة as a heritage term.** It is genuine Arabic ("a cut-off scrap", from قصّ)
+  but **NOT attested as a technical term of classical codicology** — the attested terms are
+  **تعليقة · حاشية · لَحَق · رُقْعَة**. Ship it as a deliberate, well-motivated coinage in the
+  spirit of the tradition. *Presenting it in 15 languages as "the historical Islamic term for
+  marginalia" would be exactly the fabrication class the BASIC RULE forbids.*
+- **Refuse importing dead containers because their names are beautiful** (دِيوان، سِجِلّ، بَياض،
+  龍鱗裝 — the last not even reliably reconstructed). A container earns a slot only if its profile
+  differs from every shape already shipped. **Naming is the last step, not the motivation.**
+- **Refuse a narrow decorative margin.** The margin worked because it was GENEROUS. A 40px gutter
+  with 8pt text is a margin in name only — قصاصات become unwritable and users will put remarks in
+  the host body instead, *defeating the entire feature*. If the viewport cannot afford real margin,
+  use a different primitive (overlay, facing pane, reveal) — not a token strip.
+
+## Open questions the research could NOT close
+
+- **Two studies were truncated before reaching the synthesizer** (Talmud page, Latin *glossa
+  ordinaria*) — MY error again: the character slice in the workflow script. Their full results ARE
+  in the journal. The Talmud page is a **fixed-frame** solution where Arabic and East Asian are
+  **flowing-margin** solutions — *a genuine third model that went unanalysed.* **Re-run the
+  synthesis with both in hand before the قصاصة design is frozen.**
+- **طُرَّة** — flagged unverified; real word, attested in West African ʿajamī scholarship, technical
+  scope in the Eastern tradition UNKNOWN. Needs Gacek's *Glossary of Technical Terms*, not a search.
+- **Does قصاصة have any technical usage a native codicologist would recognise?** None found, but
+  "I searched and found nothing" is weaker than a specialist's confirmation — and this word may ship
+  in 15 locales. Alternative with better lineage if ever needed: **تعليقة** ("a thing hung/attached"
+  — *the etymology is the design spec*). قصاصة has better transparency; تعليقة better pedigree.
+- **Did the classical Arabic page have a PARAGRAPH unit at all?** فِقْرة grades as modern; the
+  mise-en-page evidence suggests separation by rubricated heading, overlining and coloured circle
+  rather than indentation. **If true, the paragraph — which Constellation's editor treats as a
+  primitive — is a print invention in this tradition**, with real consequences for what a قصاصة can
+  anchor to. Needs a codicologist.
+- **Whether users sustain graded annotation KINDS** or collapse them to one. History is unambiguous
+  the kinds were distinct and useful — but they were maintained by a professional scholarly culture
+  with institutional incentives.
