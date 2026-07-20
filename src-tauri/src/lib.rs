@@ -619,6 +619,7 @@ pub fn run() {
             universe::scaffold_starter_library,
             universe::get_templates_dir,
             universe::list_templates,
+            universe::migrate_legacy_templates,
             universe::rename_universe,
             arabic::overrides::read_arabic_overrides,
             arabic::overrides::add_arabic_override,

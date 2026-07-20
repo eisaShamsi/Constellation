@@ -2163,7 +2163,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// timestamp derived from the file's creation time. Migrates any legacy
 	// `cid:` to `cid_cn:` on the same pass. Only markdown files get this; the
 	// vault's original filenames are never touched.
-	if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+	// MIG-TPL §1 — templates are EXEMPT: a mold must never be stamped with an identity (see
+	// `isTemplatePath`). Opening one to edit it would otherwise inject `cid_cn:` into the file.
+	if ((filePath.endsWith('.md') || filePath.endsWith('.markdown')) && !isTemplatePath(filePath)) {
 		try {
 			const updated = await invoke<string>('ensure_cid_cn_cmd', { filePath });
 			// PJ-102 (APP-KILLER) — adopt the cmd's result ONLY when the content we
@@ -2465,7 +2467,8 @@ async function drainCidEnsure(tab: OpenTab): Promise<void> {
 			markRecentWrite(tab.path);
 			await saveNoteSession(tab.id, tab.path, standardSaveEnv({ origin: 'cid_ensure_flush', name: tab.name }), 'cid_ensure_flush');
 		}
-		await invoke('ensure_cid_cn_cmd', { filePath: tab.path });
+		// MIG-TPL §1 — never stamp a template (identity belongs to the cast, not the mold).
+		if (!isTemplatePath(tab.path)) await invoke('ensure_cid_cn_cmd', { filePath: tab.path });
 		// Guarded adopt — deliberately NOT reloadTabsFromDisk: its
 		// unconditional model re-seed would discard keystrokes typed during
 		// the awaits above (markCascading blocks saves, not typing). The model
@@ -3390,6 +3393,33 @@ export async function createNote(folderPath: string, fileName: string, initialFr
 // sole caller). Property search lives in Search Hub's `properties` category.
 
 /** Build default frontmatter YAML for new notes (auto-dates + user-defined defaults) */
+/**
+ * MIG-TPL §1 — is this path inside the user's templates folder?
+ *
+ * Boss ruling 2026-07-19: **a template never carries `cid_cn` or a creation date.** A template is
+ * a MOLD; identity and birth belong to the CAST. Without this guard the rule would be broken by
+ * the app itself: simply OPENING a template to edit it runs `ensure_cid_cn_cmd`, which injects a
+ * `cid_cn:` into the file — so every mold would acquire an identity on first edit, and every note
+ * cast from it would inherit the mold's identity line.
+ *
+ * Compared case-insensitively on normalized separators, since the setting may be relative
+ * ("Templates") or an absolute path from the folder picker.
+ */
+export function isTemplatePath(filePath: string): boolean {
+	// TRIM FIRST, then fall back — mirroring `resolve_templates_dir` (universe.rs) exactly. It
+	// trims and treats the result as empty, so a whitespace-only setting resolves to "Templates"
+	// there. Falling back differently here would make the app list a folder whose files it then
+	// stamps with an identity. (Caught by tests/mig-tpl/isTemplatePath.test.ts.)
+	const folder = ((get(appSettings)?.templateFolder ?? '').trim()) || 'Templates';
+	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+	const f = norm(filePath);
+	const needle = norm(folder).replace(/\/+$/, '');
+	// Absolute setting: a straight prefix test. Relative: match the folder as a PATH SEGMENT so
+	// "Templates" does not also match "MyTemplatesArchive".
+	if (/^([a-z]:)?\//.test(needle)) return f.startsWith(needle + '/');
+	return f.includes('/' + needle + '/');
+}
+
 export function buildDefaultFrontmatter(settings: AppSettings): string {
 	const lines: string[] = [];
 	const now = new Date();

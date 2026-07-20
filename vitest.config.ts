@@ -137,6 +137,18 @@ export default defineConfig({
 			// so every later save landed in a phantom file beside the real note. Pins the repath
 			// contract; the on-disk proof is the Boss's live recipe.
 			'tests/pj-127/moveItemRepath.test.ts',
+			// APP-KILLER PJ-125/PJ-105 (2026-07-18) — template insert now dispatches into the
+			// path-guarded active editor (never the old raw write of stale tab.content). Pins
+			// the registry's wrong-note guard, incl. the pathless-registration aliasing case.
+			'tests/pj-127/templateInsertGuard.test.ts',
+			// MIG-TPL §1 (2026-07-19) — the template engine's four de-fusings: repeated-token
+			// corruption in formatDate, the $-substitution hazard on user text, prompt/suggester
+			// answers being re-scanned as template syntax, and the non-line-anchored frontmatter
+			// close. Surgical bug fixes ahead of the Option-B tokenizer.
+			'tests/mig-tpl/templateEngine.test.ts',
+			// MIG-TPL §1 — the identity-clean guard: templates are exempt from cid_cn injection.
+			// The false-positive cases matter most (over-matching would stop stamping REAL notes).
+			'tests/mig-tpl/isTemplatePath.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

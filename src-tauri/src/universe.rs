@@ -1774,21 +1774,61 @@ pub struct TemplateEntry {
     pub path: String,
 }
 
-/// Get the path to the universe-level templates directory.
+/// Resolve the templates folder the user actually chose.
+///
+/// MIG-TPL §1 (2026-07-19) — THE DISCONNECTION FIX. Settings has always shown a "Template folder"
+/// field (`appSettings.templateFolder`, default `"Templates"`), and NOTHING read it: both commands
+/// below resolved `<universe>/.constellation/templates` unconditionally — a hidden directory the
+/// UI never reveals and never creates. A Universe without that directory therefore had an
+/// empty picker forever, with an empty-state message pointing at the placebo setting.
+///
+/// Now the frontend passes its setting and it is honoured. File-Over-App: a template is an ordinary
+/// note the user owns, so it lives in a VISIBLE folder, not inside the app's private directory.
+///
+/// `folder` is interpreted as relative to the universe root (the common case, e.g. `"Templates"`),
+/// or used as-is when absolute (the Settings folder-picker yields an absolute path). Empty falls
+/// back to `"Templates"`. Traversal is refused: a relative folder may not escape the universe root.
+fn resolve_templates_dir(app: &tauri::AppHandle, folder: Option<String>) -> Result<PathBuf, String> {
+    let root = active_universe_dir(app)?;
+    let raw = folder.unwrap_or_default();
+    let raw = raw.trim();
+    let candidate = if raw.is_empty() {
+        root.join("Templates")
+    } else {
+        let p = Path::new(raw);
+        if p.is_absolute() { p.to_path_buf() } else { root.join(p) }
+    };
+
+    // Refuse `../` escapes for RELATIVE settings. An absolute path is the user's explicit choice
+    // (they picked it in the folder browser) and is left alone.
+    if !Path::new(raw).is_absolute() {
+        let normalized = candidate
+            .components()
+            .filter(|c| !matches!(c, std::path::Component::CurDir))
+            .collect::<PathBuf>();
+        if normalized.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+            return Err("Template folder must not contain '..'".to_string());
+        }
+    }
+    Ok(candidate)
+}
+
+/// Get the path to the templates directory, creating it on first use.
 #[tauri::command]
-pub fn get_templates_dir(app: tauri::AppHandle) -> Result<String, String> {
-    let cdir = active_constellation_dir(&app)?;
-    let templates_dir = cdir.join("templates");
+pub fn get_templates_dir(app: tauri::AppHandle, folder: Option<String>) -> Result<String, String> {
+    let templates_dir = resolve_templates_dir(&app, folder)?;
     fs::create_dir_all(&templates_dir)
         .map_err(|e| format!("Failed to create templates directory: {}", e))?;
     Ok(templates_dir.to_string_lossy().to_string())
 }
 
-/// List all .md template files in the universe templates directory.
+/// List all .md template files in the user's templates directory.
+///
+/// Returns an empty list (not an error) when the folder does not exist yet — the picker turns that
+/// into an actionable empty state naming the REAL folder and offering to create a template.
 #[tauri::command]
-pub fn list_templates(app: tauri::AppHandle) -> Result<Vec<TemplateEntry>, String> {
-    let cdir = active_constellation_dir(&app)?;
-    let templates_dir = cdir.join("templates");
+pub fn list_templates(app: tauri::AppHandle, folder: Option<String>) -> Result<Vec<TemplateEntry>, String> {
+    let templates_dir = resolve_templates_dir(&app, folder)?;
     if !templates_dir.exists() {
         return Ok(vec![]);
     }
@@ -1796,6 +1836,44 @@ pub fn list_templates(app: tauri::AppHandle) -> Result<Vec<TemplateEntry>, Strin
     collect_templates_recursive(&templates_dir, &mut templates);
     templates.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(templates)
+}
+
+/// One-time, VISIBLE, LOSSLESS migration of any templates left in the old hidden directory.
+///
+/// COPY, never move-and-delete: if anything goes wrong the originals are still there. Existing
+/// files at the destination are never overwritten. Returns the number of files copied so the
+/// frontend can tell the user what happened rather than moving their notes silently.
+#[tauri::command]
+pub fn migrate_legacy_templates(app: tauri::AppHandle, folder: Option<String>) -> Result<usize, String> {
+    let legacy = active_constellation_dir(&app)?.join("templates");
+    if !legacy.exists() {
+        return Ok(0);
+    }
+    let dest = resolve_templates_dir(&app, folder)?;
+    if legacy == dest {
+        return Ok(0);
+    }
+    fs::create_dir_all(&dest)
+        .map_err(|e| format!("Failed to create templates directory: {}", e))?;
+
+    let mut copied = 0usize;
+    let mut found = Vec::new();
+    collect_templates_recursive(&legacy, &mut found);
+    for entry in found {
+        let src = Path::new(&entry.path);
+        let file_name = match src.file_name() {
+            Some(n) => n,
+            None => continue,
+        };
+        let target = dest.join(file_name);
+        if target.exists() {
+            continue; // never clobber a template the user already has
+        }
+        if fs::copy(src, &target).is_ok() {
+            copied += 1;
+        }
+    }
+    Ok(copied)
 }
 
 fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {

@@ -55,74 +55,50 @@ function formatDate(d: Date, fmt: string): string {
 	const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-	return fmt
-		.replace('YYYY', String(year))
-		.replace('YY', String(year).slice(-2))
-		.replace('MMMM', monthNames[month])
-		.replace('MMM', monthNamesShort[month])
-		.replace('MM', String(month + 1).padStart(2, '0'))
-		.replace('DD', String(day).padStart(2, '0'))
-		.replace('dddd', dayNames[dow])
-		.replace('ddd', dayNamesShort[dow])
-		.replace('HH', String(hours).padStart(2, '0'))
-		.replace('mm', String(mins).padStart(2, '0'))
-		.replace('ss', String(secs).padStart(2, '0'));
+	// ONE PASS over the format string, longest tokens first.
+	//
+	// This was a chain of `.replace('YYYY', …).replace('YY', …)…` — two defects at once. Each
+	// `.replace` with a STRING pattern replaces only the FIRST occurrence, so a format repeating a
+	// token ("YYYY … YYYY", a header + footer date) left the second one unexpanded; and that
+	// leftover `YYYY` was then eaten by the NEXT rule's `YY`, producing "26YY". Serial passes also
+	// mean an earlier substitution's OUTPUT is re-scanned by later rules.
+	//
+	// A single alternation, ordered longest-first, expands each token exactly once from the
+	// original string and can never re-read its own output.
+	const map: Record<string, string> = {
+		YYYY: String(year),
+		YY: String(year).slice(-2),
+		MMMM: monthNames[month],
+		MMM: monthNamesShort[month],
+		MM: String(month + 1).padStart(2, '0'),
+		DD: String(day).padStart(2, '0'),
+		dddd: dayNames[dow],
+		ddd: dayNamesShort[dow],
+		HH: String(hours).padStart(2, '0'),
+		mm: String(mins).padStart(2, '0'),
+		ss: String(secs).padStart(2, '0'),
+	};
+	// Longest-first so YYYY wins over YY, MMMM over MMM over MM, dddd over ddd.
+	return fmt.replace(/YYYY|MMMM|dddd|MMM|ddd|YY|MM|DD|HH|mm|ss/g, (tok) => map[tok] ?? tok);
 }
-
-// ─── Sync Engine (backward compat) ───
 
 /**
- * Process template variables synchronously (basic variables only).
- * Use processTemplateAsync for full feature set.
+ * A replacer that yields `s` VERBATIM.
+ *
+ * `String.replace(pattern, replacementString)` treats `$&`, `$'`, "$`" and `$1` as special —
+ * so passing user text (a note title, clipboard contents, a prompt answer) as the replacement
+ * string lets those sequences inject the matched text instead of themselves. A note titled
+ * "Cost $& benefit" expanded to garbage. A FUNCTION replacer is never interpreted, so every
+ * user-supplied value below goes through this.
  */
-export function processTemplate(raw: string, ctx: TemplateContext): TemplateResult {
-	const now = new Date();
-	let content = raw;
+const verbatim = (s: string) => () => s;
 
-	// {{yesterday:FORMAT}} / {{yesterday}}
-	content = content.replace(/\{\{yesterday(?::([^}]+))?\}\}/gi, (_m, fmt?: string) =>
-		formatDate(addDays(now, -1), fmt || 'YYYY-MM-DD'));
-
-	// {{tomorrow:FORMAT}} / {{tomorrow}}
-	content = content.replace(/\{\{tomorrow(?::([^}]+))?\}\}/gi, (_m, fmt?: string) =>
-		formatDate(addDays(now, 1), fmt || 'YYYY-MM-DD'));
-
-	// {{date+N:FORMAT}} / {{date-N:FORMAT}} / {{date+N}} / {{date-N}}
-	content = content.replace(/\{\{date([+-]\d+)(?::([^}]+))?\}\}/g, (_m, offset: string, fmt?: string) =>
-		formatDate(addDays(now, parseInt(offset, 10)), fmt || 'YYYY-MM-DD'));
-
-	// {{date:FORMAT}}
-	content = content.replace(/\{\{date:([^}]+)\}\}/g, (_m, fmt: string) => formatDate(now, fmt));
-
-	// {{date}}
-	content = content.replace(/\{\{date\}\}/gi, formatDate(now, 'YYYY-MM-DD'));
-
-	// {{time}}
-	content = content.replace(/\{\{time\}\}/gi,
-		`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
-
-	// {{title}}
-	content = content.replace(/\{\{title\}\}/gi, ctx.title);
-
-	// {{folder}}
-	content = content.replace(/\{\{folder\}\}/gi, ctx.folder);
-
-	// {{library}}
-	content = content.replace(/\{\{(?:vault|library)\}\}/gi, ctx.library);
-
-	// {{frontmatter.KEY}} — sync access from context
-	if (ctx.frontmatter) {
-		content = content.replace(/\{\{frontmatter\.([^}]+)\}\}/g, (_m, key: string) =>
-			ctx.frontmatter?.[key.trim()] ?? '');
-	}
-
-	// {{cursor}}
-	const cursorIdx = content.indexOf(CURSOR_MARKER);
-	const cursorOffset = cursorIdx >= 0 ? cursorIdx : null;
-	content = content.replace(/\{\{cursor\}\}/gi, '');
-
-	return { content, cursorOffset };
-}
+// ─── Sync engine REMOVED (MIG-TPL §1, 2026-07-19) ───
+//
+// `processTemplate` had ZERO callers (verified repo-wide) while still being exported and
+// imported — and it silently lacked clipboard / file.* / prompt / suggester, leaving those
+// tokens verbatim in the output. A second engine that quietly does less than the real one is
+// a trap for the next caller, not backward compatibility. `processTemplateAsync` is the engine.
 
 // ─── Async Engine (full feature set) ───
 
@@ -162,19 +138,19 @@ export async function processTemplateAsync(
 		`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
 
 	// 7. {{title}}
-	content = content.replace(/\{\{title\}\}/gi, ctx.title);
+	content = content.replace(/\{\{title\}\}/gi, verbatim(ctx.title));
 
 	// 8. {{folder}}
-	content = content.replace(/\{\{folder\}\}/gi, ctx.folder);
+	content = content.replace(/\{\{folder\}\}/gi, verbatim(ctx.folder));
 
 	// 9. {{library}}
-	content = content.replace(/\{\{(?:vault|library)\}\}/gi, ctx.library);
+	content = content.replace(/\{\{(?:vault|library)\}\}/gi, verbatim(ctx.library));
 
 	// 10. {{clipboard}} — async
 	if (/\{\{clipboard\}\}/i.test(content) && callbacks.getClipboard) {
 		try {
 			const clip = await callbacks.getClipboard();
-			content = content.replace(/\{\{clipboard\}\}/gi, clip);
+			content = content.replace(/\{\{clipboard\}\}/gi, verbatim(clip));
 		} catch {
 			content = content.replace(/\{\{clipboard\}\}/gi, '');
 		}
@@ -203,29 +179,43 @@ export async function processTemplateAsync(
 		}
 	}
 
-	// 13. {{prompt:Question}} / {{prompt:Question|default}} — sequential
+	// 13. {{prompt:Question}} / {{prompt:Question|default}} — sequential.
+	//
+	// THE ANSWER IS DATA, NEVER SYNTAX. The scan resumes AFTER the inserted answer (`searchFrom`)
+	// instead of restarting at 0, so a reply containing `{{prompt:…}}` is left verbatim rather
+	// than re-prompted. The old loop re-`exec`ed the whole string including what it had just
+	// inserted — a second unexpected dialog at best, unbounded in the pathological case.
 	if (callbacks.promptUser) {
 		const promptRegex = /\{\{prompt:([^}]+)\}\}/i;
-		let match = promptRegex.exec(content);
+		let searchFrom = 0;
+		let match = promptRegex.exec(content.slice(searchFrom));
 		while (match) {
+			const at = searchFrom + match.index;
 			const parts = match[1].split('|');
 			const question = parts[0].trim();
 			const defaultVal = parts[1]?.trim();
 			const answer = await callbacks.promptUser(question, defaultVal);
-			content = content.slice(0, match.index) + (answer ?? '') + content.slice(match.index + match[0].length);
-			match = promptRegex.exec(content);
+			const text = answer ?? '';
+			content = content.slice(0, at) + text + content.slice(at + match[0].length);
+			searchFrom = at + text.length;                       // resume PAST the answer
+			match = promptRegex.exec(content.slice(searchFrom));
 		}
 	}
 
-	// 14. {{suggester:opt1,opt2,...}} — sequential
+	// 14. {{suggester:opt1,opt2,...}} — sequential. Same inertness rule as prompts: the chosen
+	// option is data, so the scan resumes past it rather than re-reading it as syntax.
 	if (callbacks.suggestOptions) {
 		const suggestRegex = /\{\{suggester:([^}]+)\}\}/i;
-		let match = suggestRegex.exec(content);
+		let searchFrom = 0;
+		let match = suggestRegex.exec(content.slice(searchFrom));
 		while (match) {
+			const at = searchFrom + match.index;
 			const options = match[1].split(',').map(s => s.trim()).filter(Boolean);
 			const chosen = await callbacks.suggestOptions(options);
-			content = content.slice(0, match.index) + (chosen ?? '') + content.slice(match.index + match[0].length);
-			match = suggestRegex.exec(content);
+			const text = chosen ?? '';
+			content = content.slice(0, at) + text + content.slice(at + match[0].length);
+			searchFrom = at + text.length;
+			match = suggestRegex.exec(content.slice(searchFrom));
 		}
 	}
 
@@ -241,10 +231,16 @@ export async function processTemplateAsync(
 
 /**
  * Extract only the body from a template file (strip frontmatter).
+ *
+ * The closing fence must be a `---` ON ITS OWN LINE. This used `indexOf('---', 3)`, which matched
+ * a `---` ANYWHERE — including inside a frontmatter VALUE (an em-dash-heavy title, a URL like
+ * `https://x/a---b`). The block was then cut early and its remainder leaked into the inserted body.
+ *
+ * Requires an opening fence on its own first line too, so a body that merely starts with a
+ * horizontal rule is not mistaken for frontmatter. CRLF tolerated.
  */
 export function extractTemplateBody(content: string): string {
-	if (!content.startsWith('---')) return content;
-	const endIdx = content.indexOf('---', 3);
-	if (endIdx < 0) return content;
-	return content.slice(endIdx + 3).trimStart();
+	const m = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(content);
+	if (!m) return content;
+	return content.slice(m[0].length).trimStart();
 }

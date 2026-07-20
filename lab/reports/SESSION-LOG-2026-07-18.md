@@ -581,3 +581,195 @@ every `CustomEvent('constellation:*')` dispatch should have a greppable listener
 
 Verification: svelte-check 0 errors / 264 baseline · 511 tests green · binary **13:32**.
 **Not committed — awaiting Boss test (bundled with the moveItem fix test already passed).**
+
+## APP-KILLER #2 — template-insert (PJ-125 + PJ-105) FIXED (build 15:56, AWAITING BOSS TEST)
+
+The "needs a design ruling" flag resolved itself on reading the code: the design intent is
+UNAMBIGUOUS in the dead branch — insert at the cursor, else append. What was broken was the
+mechanism, not the design, so per Plan-Approval-Equals-Build-Approval the cascade continued.
+
+**What was wrong (CONFIRMED at HEAD by the Phase-1 architect + refuter):** the cursor-insert
+branch selected `.note-pane.active .cm-editor` — no element in `src/` carries `note-pane` — so it
+had NEVER run. The only reachable path was the "fallback": a raw `write_note` of
+`tab.content + template`, where `tab.content` is the stale store copy the autosave deliberately
+never updates. Every keystroke since the last flush was discarded on disk; the write was
+watcher-suppressed so no adopt healed it; the still-dirty model then overwrote the inserted
+template on its next save. Silent loss in both directions. (Even had the selector matched, the
+`(pane as any)?.cmView?.view` extraction is not a CM6 API.)
+
+**The fix:** insert at the cursor through the **active-editor registry** — the emoji picker's
+proven mechanism (`+layout.svelte:8959`) — dispatched into the view so it flows through the ONE
+write path (updateListener → editBody → model → debounced save), exactly as if typed. The raw
+`write_note` fallback is DELETED, not repaired: any fallback that writes without the view is a
+wrong-content write by construction.
+
+**Path-guarded, and the guard is not optional:** `processTemplateAsync` can hold a `{{prompt:…}}`
+dialog open while the user switches tabs; an unguarded dispatch would land the template in the
+WRONG note (the §C cross-note class). New `getActiveEditorForPath(path)` mirrors
+`goToLineIfActive`'s guard; the insert additionally re-checks `focusedTab` after the await. If
+the target is no longer the focused editor: refuse, write NOTHING (nothing is lost — the refusal
+leaves every note exactly as it was). No toast exists in the app; a console refusal is
+proportionate for this rare edge and noted as such.
+
+**Latent hazard found by the test and fixed by construction (WA#6):** `registerActiveEditor(view)`
+with NO path used to keep the previous note's `lastPath` — a DIFFERENT view registering pathless
+would alias the old note, and the guarded getter would hand it out for a note it doesn't belong
+to. No caller registers pathless today (NotePane always passes filePath); the registry now clears
+the path on a different-view pathless registration, and the same-view focusin re-register keeps
+its known path (test-locked both ways).
+
+**Closes PJ-125 AND PJ-105** (the same site — the Charter's "template-insert raw-write bypass").
+
+Verification: 6 new guard tests · full suite **517 / 39 green** · svelte-check 0 errors ·
+binary **15:56**. Reproduce-First note: the defect's reachability is a static fact (selector
+match count = 0 — grep-provable), so the live half of the proof is the Boss recipe below, which
+asserts the class directly: unsaved typing + insert → BOTH survive to disk.
+
+---
+
+# Templates v2 — Boss pivot: "My Templates engine is not working… create a state-of-the-art template engine"
+
+*(Session continues past midnight — entries below occur 2026-07-19.)*
+
+The Boss's report arrived after the PJ-125 fix shipped insert-at-cursor correctly — because the
+fix exposed the layer above it: **the picker had nothing to insert.** Diagnosis, verified in the
+main session before any workflow ran:
+
+- **`templateFolder` is a placebo** — defined, defaulted `'Templates'`, rendered in Settings, and
+  read by NO other line in either language (grep conclusive). Rust reads the hidden
+  `<universe>/.constellation/templates/` unconditionally.
+- The Boss's universe has no such hidden dir → **empty picker, always**.
+- **No create-template flow exists anywhere.** My own PJ-125 test tutorial pointed him at the
+  placebo setting — recorded as my error: I did not verify the wiring end-to-end before writing
+  the tutorial.
+
+**Phase-1 Architect ran as one workflow (`wf_b414642f-909`):** a 16-surface audit (further finds:
+dead sync engine twin · non-line-anchored FM extraction · substring folder matching ('Work'
+matches 'Homework') · template-FM discarded while the help docs promise a merge · the <50-char
+daily-note heuristic · prompt-answer re-scan loop · `templateHotkeys` with no UI · inconsistent
+feature-toggle gating) + 4 research tracks (Obsidian core, Templater, Logseq/Notion, engine
+architectures/VS Code snippets) + a synthesis.
+
+**Architect doc written:** `docs/concept-papers/MIG-TPL-Templates-v2-Architect.md` — concept
+("a template is a pre-formed cognitive move"), the gap table, three options with Option B
+(Declarative Template System v2) recommended and Option C (scripting) rejected on the federation
+line, 12 invariants, the "Templates You Can See" quick-unblock as migration §1, and the 7 Boss
+decisions. **Awaiting Boss approval — Phase 2 (Plan) does not start until he rules.**
+
+App-killer queue state: #1 moveItem SHIPPED+validated (`1953a450`) · #2 template-insert FIXED,
+Boss-validated implicitly by the pivot test (insert now dispatches; the picker emptiness is the
+NEW work) — formally still uncommitted pending this direction · #3/#4 (cascade window,
+second-screen) queued behind the instrumentation build · PJ-126 queued after per the standing
+ruling. The Templates rebuild slots naturally after #2's commit since it owns the same surfaces.
+
+---
+
+# MIG-TPL §1 — "Templates You Can See" (build 19:58, AWAITING BOSS TEST)
+
+*Boss: "Go." — after approving the six rulings (Option B with A as phase 1).*
+
+## The disconnection, fixed
+
+`resolve_templates_dir` (universe.rs) now honours `appSettings.templateFolder`, defaulting to a
+**VISIBLE `Templates/` at the universe root** (created on first use) instead of the hidden
+`.constellation/templates` nothing ever revealed. Both commands take the setting; `../` escapes are
+refused for relative settings; an absolute path from the folder picker is used as-is.
+`migrate_legacy_templates` **COPIES** anything stranded in the old hidden dir — never moves, never
+overwrites — and reports the count.
+
+## Creation, which never existed
+
+`createNewTemplate` scaffolds a starter template and opens it as an ordinary note;
+`openTemplatesFolder` reveals the folder in Explorer. Both are command-palette entries
+(**no keyboard chords** — `getResolvedShortcut` returns empty for unknown ids, deliberate under
+Cross-Platform by Design). The picker's empty state now **names the real folder** and offers both
+actions inline; its wording drops the old instruction ("Create .md files in your template folder"
+— which named no folder) for a calm "No templates yet." because the buttons carry the action.
+
+## Identity-clean (Boss ruling R7)
+
+New `isTemplatePath()` gates **both** `ensure_cid_cn_cmd` call sites. Without it the app broke the
+rule itself: opening a template to edit it injects a `cid_cn:`, so every mold would acquire an
+identity on first edit and every cast would inherit it. The scaffolder likewise writes explicit
+frontmatter WITHOUT `created:` rather than `buildDefaultFrontmatter()`.
+
+**A test caught a real divergence here:** Rust trims *then* falls back to `Templates`; my TS treated
+a whitespace-only setting as set, so the two sides would have disagreed and templates in the
+fallback folder would have been stamped. Code fixed to mirror Rust exactly.
+
+## §1 engine de-fusing — RED FIRST, 9 red → 20 green
+
+Written against the shipped engine before any fix (`tests/mig-tpl/templateEngine.test.ts`):
+
+1. **`formatDate` repeated-token corruption.** A chain of `.replace('YYYY',…).replace('YY',…)` with
+   STRING patterns replaces only the FIRST occurrence — so `"YYYY … YYYY"` left the second
+   unexpanded, and the next rule's `YY` then ate it, yielding `26YY`. Replaced by ONE
+   longest-first alternation that cannot re-read its own output.
+2. **The `$`-substitution hazard.** User text passed as a `String.replace` REPLACEMENT makes `$&`,
+   `$'`, `` $` `` and `$1` special — a note titled "Cost $& benefit" expanded to garbage. All
+   user-supplied values (title/folder/library/clipboard/prompt/suggester/frontmatter) now go
+   through a `verbatim()` function replacer, which is never interpreted.
+3. **Prompt/suggester answers were re-scanned as syntax.** The loop re-`exec`ed the whole string
+   including what it had just inserted, so an answer containing `{{prompt:…}}` was re-prompted.
+   The scan now resumes PAST the inserted answer: **the answer is data, never syntax.**
+4. **`extractTemplateBody` was not line-anchored.** `indexOf('---', 3)` matched a `---` anywhere,
+   including inside a frontmatter VALUE (an em-dash title, a URL) — cutting the block early and
+   leaking its remainder into the body. Now a proper fence regex, CRLF-tolerant.
+
+**Also deleted: the dead sync engine.** `processTemplate` had zero callers while still exported and
+imported, and silently lacked clipboard/file/prompt/suggester. A second engine that quietly does
+less than the real one is a trap, not backward compatibility.
+
+## i18n ×15
+
+3 new strings (`commands.newTemplate`, `commands.openTemplatesFolder`, `templates.newTemplate` /
+`openFolder`) + the reworded empty state, translated by one native-grammar agent per locale
+(`wf_3233faec-8bf`). Every agent grounded its choice in the file's OWN vocabulary and reported the
+keys it took each term from — Arabic reused «مجلد القوالب» verbatim from the Settings label so the
+palette entry and the setting read identically; Turkish cloned `journal.openFolder`'s
+possessive-accusative shape; several matched their file's empty-state idiom for "yet" (Noch keine /
+Aún no / Henüz / 暂无 / ابھی کوئی). Diffs uniform: **5 added, 1 replaced** per locale.
+
+## Verification
+`svelte-check` **0 errors, 264-warning baseline** · **551 tests / 41 files green** · `cargo check`
+clean · all 15 locales verified programmatically · binary **19:58**.
+
+**Not committed — awaiting the Boss test.**
+
+## MIG-TPL §1 — scaffold dropped, plumbing kept (Boss: "Keep the plumbing and engine fixes, drop the scaffold, commit that.")
+
+**Boss verdict on the scaffold:** *"You are missing the general idea. What you've done is creating an
+analog way to do it. It is somehow old fashion, and difficult. Follow the Constellation way."*
+
+He was right, and the miss was mine: I inherited the Obsidian pattern from the research — hand the
+user a text file and a syntax card — without asking whether it was Constellation's pattern. It
+isn't, and four working counter-examples were in the repo the whole time (Style Setter, Link Type
+Registry, Callouts manager, PropertyEditor): **this app hands you a surface, not syntax.**
+
+**Dropped:** `createNewTemplate` (the comment-stuffed starter `.md`), its palette command, and the
+picker's create button. A commented syntax card is the analog path; shipping it now would only be
+torn out when the Studio lands. The removal carries a comment at the site pointing at the concept
+paper so it is not re-added.
+
+**Fixed in the same pass (Boss test 1):** "Open templates folder" used
+`constellation_show_in_folder` (`explorer /select,…`), which REVEALS a path inside its parent —
+right for a file, wrong for a folder. Now `open_path`, which opens the target directly on all three
+platforms.
+
+**Kept — and this is what the commit delivers:** the `templateFolder` setting is finally honoured
+(it was read by nothing); templates live in a VISIBLE folder at the universe root; the legacy hidden
+`.constellation/templates` is copied out of, losslessly; the picker's empty state names the real
+folder; the four engine de-fusings with their red-first tests; `isTemplatePath` + the identity-clean
+exemption; i18n ×15.
+
+**Deliberately retained though now unreferenced:** `commands.newTemplate` / `templates.newTemplate`
+in all 15 locales. The Studio will need them and re-running fourteen native-grammar agents would be
+waste. Recorded so a future orphan-key sweep does not delete them.
+
+**Known and NOT fixed here (belongs to the Studio):** `create_note` (`libraries.rs:757`) stamps
+`title` / `cid_cn` / `kind: note` / `created` in Rust unconditionally and strips those keys from any
+frontmatter passed in — so the identity-clean ruling cannot be honoured through that command. The
+Studio needs its own `create_template` write path rather than widening a core note-creation path for
+a special case.
+
+Verification: `svelte-check` 0 errors / 264 baseline · **551 tests / 41 files green** · binary 11:10.

@@ -6,10 +6,16 @@
 		templates = [] as { name: string; path: string; libraryName: string }[],
 		onSelect,
 		onClose,
+		// MIG-TPL §1 — the empty state names the REAL folder and offers a way out of it.
+		// All three are optional so existing mount sites keep working unchanged.
+		folderPath = '',
+		onOpenFolder = undefined,
 	}: {
 		templates: { name: string; path: string; libraryName: string }[];
 		onSelect: (path: string, libraryName: string) => void;
 		onClose: () => void;
+		folderPath?: string;
+		onOpenFolder?: () => void;
 	} = $props();
 
 	let query = $state('');
@@ -83,7 +89,23 @@
 			{#if filtered.length === 0 && query}
 				<div class="tp-empty">{$t('templates.noTemplates')}</div>
 			{:else if templates.length === 0}
-				<div class="tp-empty">{$t('templates.noTemplatesConfigured')}</div>
+				<!-- MIG-TPL §1 — an ACTIONABLE empty state. It used to say "create .md files in your
+				     template folder" without naming one, while the folder it actually read was hidden
+				     inside .constellation and never shown. Now it names the REAL folder and offers the
+				     two things a user with no templates needs. -->
+				<div class="tp-empty">
+					<div>{$t('templates.noTemplatesConfigured')}</div>
+					{#if folderPath}
+						<div class="tp-empty-path" dir="auto" title={folderPath}>{folderPath}</div>
+					{/if}
+					<div class="tp-empty-actions">
+						{#if onOpenFolder}
+							<button class="tp-empty-btn" onclick={() => { onOpenFolder?.(); onClose(); }}>
+								{$t('templates.openFolder')}
+							</button>
+						{/if}
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>
@@ -132,4 +154,16 @@
 	.tp-lib-name { font-size: 0.7rem; color: var(--text-faint); }
 	.tp-item.selected .tp-lib-name { color: rgba(255,255,255,0.7); }
 	.tp-empty { padding: 20px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+	.tp-empty-path {
+		margin-top: 6px; font-size: 0.78rem; color: var(--text-muted, #888);
+		word-break: break-all; font-family: var(--font-monospace-theme, monospace);
+	}
+	.tp-empty-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+	.tp-empty-btn {
+		padding: 5px 12px; border-radius: 6px; cursor: pointer;
+		border: 1px solid var(--background-modifier-border, #ccc);
+		background: var(--background-primary, #fff); color: var(--text-normal);
+		font-size: 0.8rem; font-family: inherit;
+	}
+	.tp-empty-btn:hover { border-color: var(--interactive-accent); color: var(--interactive-accent); }
 </style>

@@ -77,7 +77,7 @@
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import TemplatePrompt from '$lib/components/TemplatePrompt.svelte';
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
-	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
+	import { processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
 	import SightV3 from '$lib/sight/v3/SightV3.svelte';
@@ -2292,6 +2292,7 @@
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
 			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'open-templates-folder', name: $t('commands.openTemplatesFolder'), shortcut: sc('open-templates-folder'), icon: '📂', action: openTemplatesFolder, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
@@ -4273,7 +4274,7 @@
 		let templateBody = '';
 		if ($appSettings.enabledFeatures?.templates) {
 			try {
-				const tplDir: string = await invoke('get_templates_dir');
+				const tplDir: string = await invoke('get_templates_dir', { folder: $appSettings.templateFolder });
 				const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
 				const folderTpls = $appSettings.folderTemplates || {};
 				let matchedTpl = '';
@@ -4720,7 +4721,7 @@
 				try {
 					const noteContent: string = await invoke('read_note', { filePath: path });
 					if (noteContent.length < 50) {
-						const tplDir: string = await invoke('get_templates_dir');
+						const tplDir: string = await invoke('get_templates_dir', { folder: $appSettings.templateFolder });
 						const tplName = dailyTpl.endsWith('.md') ? dailyTpl : dailyTpl + '.md';
 						const tplRaw: string = await invoke('read_note', { filePath: `${tplDir}/${tplName}` });
 						const tplBody = extractTemplateBody(tplRaw);
@@ -4757,9 +4758,50 @@
 	let cachedTemplates = $state<{ name: string; path: string; libraryName: string }[]>([]);
 
 	/** Refresh templates from universe .constellation/templates/ directory */
+	/** MIG-TPL §1 — the templates folder the user actually chose, resolved by Rust (creating it on
+	 *  first use). Kept so the picker's empty state can NAME it instead of gesturing at "your
+	 *  template folder". */
+	let templatesFolderPath = $state('');
+
+	/** Open the templates folder in the OS file manager. One of the two affordances that made the
+	 *  folder reachable at all — before this there was no route to it from inside the app. */
+	async function openTemplatesFolder() {
+		try {
+			const dir: string = await invoke('get_templates_dir', { folder: $appSettings.templateFolder });
+			templatesFolderPath = dir;
+			// `open_path` OPENS the directory; `constellation_show_in_folder` would reveal it
+			// INSIDE its parent (explorer /select), which is right for a file and wrong for a
+			// folder — Boss test 2026-07-19, test 1.
+			await invoke('open_path', { path: dir });
+		} catch (e) {
+			console.error('[templates] could not open the templates folder:', e);
+		}
+	}
+
+	// The 'New template' SCAFFOLD was removed here (Boss ruling 2026-07-19). It wrote a starter
+	// .md stuffed with commented syntax examples — the Obsidian pattern: hand the user a text file
+	// and a syntax card. The Boss's verdict: "an analog way to do it… old fashion, and difficult."
+	// Creating a template is the SMART TEMPLATE STUDIO's job (see
+	// docs/concept-papers/Note-Shape-and-Template-Studio-Brainstorm.md): the Studio recognises the
+	// shapes you already write in, and offers a cross-cultural catalogue of structures — never a
+	// blank file plus a list of tokens to memorise. Shipping a half-analog creation path now would
+	// only have to be torn out again.
+	//
+	// The PLUMBING it sat on is kept and is what this commit delivers: the templateFolder setting
+	// is finally honoured, the folder is visible and reachable, and the legacy hidden folder is
+	// copied out of.
+
 	async function refreshTemplates() {
 		try {
-			const entries: { name: string; path: string }[] = await invoke('list_templates');
+			// MIG-TPL §1 — resolve (and create) the real folder first, so the picker's empty state
+			// can name it, then copy anything stranded in the old hidden dir. The copy is lossless
+			// and never overwrites, so running it on every refresh is safe and self-healing.
+			try {
+				templatesFolderPath = await invoke('get_templates_dir', { folder: $appSettings.templateFolder });
+				const moved: number = await invoke('migrate_legacy_templates', { folder: $appSettings.templateFolder });
+				if (moved > 0) console.info(`[templates] copied ${moved} template(s) out of the old hidden folder`);
+			} catch { /* non-fatal: listing still works if the folder already exists */ }
+			const entries: { name: string; path: string }[] = await invoke('list_templates', { folder: $appSettings.templateFolder });
 			cachedTemplates = entries.map(e => ({ name: e.name, path: e.path, libraryName: '' }));
 		} catch {
 			cachedTemplates = [];
@@ -4794,27 +4836,42 @@
 			const result = await processTemplateAsync(body, ctx, buildTemplateCallbacks());
 
 			if (templatePickerMode === 'insert') {
-				// Insert at cursor in editor
-				const pane = document.querySelector('.note-pane.active .cm-editor') as HTMLElement | null;
-				if (pane) {
-					// Dispatch to CodeMirror
-					const cmView = (pane as any)?.cmView?.view;
-					if (cmView) {
-						const pos = cmView.state.selection.main.head;
-						cmView.dispatch({
-							changes: { from: pos, insert: result.content },
-							selection: result.cursorOffset != null
-								? { anchor: pos + result.cursorOffset }
-								: { anchor: pos + result.content.length }
-						});
-						return;
-					}
+				// APP-KILLER FIX (PJ-125/PJ-105, 2026-07-18). The old branch selected
+				// `.note-pane.active .cm-editor` — a class NO element in src/ carries (the pane
+				// class is `.pane`; NotePane's root is `.e-desk`) — so the cursor-insert path had
+				// NEVER run, and the only reachable code was the "fallback": a raw `write_note` of
+				// `tab.content + template`. `tab.content` is the STALE store copy (the autosave
+				// deliberately never updates it — store.ts: "Do NOT update the store during
+				// autosave"), so the write discarded every keystroke since the last flush; it was
+				// watcher-suppressed, so no external-change adopt could heal it; and the
+				// still-dirty model then overwrote the inserted template on its next save. Silent
+				// loss in both directions.
+				//
+				// Now: insert AT THE CURSOR through the active-editor registry — the emoji
+				// picker's proven mechanism — dispatched into the view, so it flows through the
+				// ONE write path (updateListener → editBody → model → debounced save), exactly as
+				// if typed. Never a raw disk write. Path-guarded because `processTemplateAsync`
+				// above can hold a `{{prompt:…}}` dialog open while the user switches tabs — an
+				// unguarded dispatch would land the template in the WRONG note (the §C class).
+				const { getActiveEditorForPath } = await import('$lib/editor/activeEditor');
+				const still = get(focusedTab);
+				const view = still && still.id === tab.id ? getActiveEditorForPath(tab.path) : null;
+				if (view) {
+					const sel = view.state.selection.main;
+					view.dispatch({
+						changes: { from: sel.from, to: sel.to, insert: result.content },
+						selection: {
+							anchor: sel.from + (result.cursorOffset != null ? result.cursorOffset : result.content.length),
+						},
+					});
+					// Defer focus so Svelte finishes unmounting the picker first (emoji-picker idiom).
+					setTimeout(() => view.focus(), 0);
+				} else {
+					// The target note is no longer the focused editor (tab switched during a
+					// template prompt). Writing ANYWHERE now would be a wrong-note write, so
+					// refuse — nothing is modified, nothing is lost.
+					console.error('[template insert] refused: the target note is no longer the focused editor; no write performed');
 				}
-				// Fallback: append to note content
-				const currentContent = tab.content || '';
-				const newContent = currentContent + '\n' + result.content;
-				await invoke('write_note', { filePath: tab.path, content: newContent, origin: 'template_insert' });
-				openTabs.update(tabs => tabs.map(t => t.id === tab.id ? { ...t, content: newContent } : t));
 			}
 		} catch (e) {
 			console.error('Failed to insert template:', e);
@@ -8753,6 +8810,8 @@
 	{#if showTemplatePicker}
 		<TemplatePicker
 			templates={getTemplateFiles()}
+			folderPath={templatesFolderPath}
+			onOpenFolder={openTemplatesFolder}
 			onSelect={handleTemplateSelect}
 			onClose={() => showTemplatePicker = false}
 		/>

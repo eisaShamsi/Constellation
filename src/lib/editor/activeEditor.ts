@@ -12,6 +12,14 @@ let lastView: EditorView | null = null;
 let lastPath: string | null = null; // §A.2 — the note path the registered view belongs to
 
 export function registerActiveEditor(view: EditorView, path?: string) {
+	if (path === undefined && view !== lastView) {
+		// A DIFFERENT view registering with an unknown path must not inherit the previous
+		// note's path — the path-guarded getter would then hand this view out for a note it
+		// does not belong to (latent aliasing; no caller does this today, but the guard must
+		// hold by construction). A same-view re-register without a path (focusin after mount)
+		// keeps its known path, as before.
+		lastPath = null;
+	}
 	lastView = view;
 	if (path !== undefined) lastPath = path;
 }
@@ -22,6 +30,20 @@ export function unregisterActiveEditor(view: EditorView) {
 
 export function getActiveEditor(): EditorView | null {
 	return lastView;
+}
+
+/**
+ * The registered view ONLY if it belongs to `path` — the same guard `goToLineIfActive`
+ * uses, exposed for callers that need the view itself (template insert-at-cursor).
+ *
+ * The guard is not optional for any caller with an `await` between choosing the target
+ * note and dispatching into it: template processing can open a `{{prompt:…}}` dialog,
+ * and if the user switches tabs while it is up, an unguarded dispatch lands the insert
+ * in the WRONG note — the cross-note content class (BUG-023/§C) this registry's
+ * path-awareness exists to prevent.
+ */
+export function getActiveEditorForPath(path: string): EditorView | null {
+	return lastView && lastPath === path ? lastView : null;
 }
 
 /**

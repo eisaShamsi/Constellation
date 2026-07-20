@@ -1,0 +1,672 @@
+# Note Shape · The Post-it · Template Studio — brainstorm record
+
+*2026-07-19 · Boss ↔ Claude brainstorm, captured mid-flight at the Boss's pace ("Don't rush
+things out, we are still brainstorm the idea, the concept"). This is a RECORD of a live concept
+conversation, not an approved design. Nothing here is scheduled or approved. Its companion is
+`MIG-TPL-Templates-v2-Architect.md`, which covers the templates ENGINE and is awaiting the Boss's
+ruling on options A/B/C.*
+
+---
+
+## How this started
+
+The Boss reported "My Templates engine is not working." The audit found the engine largely intact
+but the plumbing severed (the visible `templateFolder` setting is read by nothing; the real lookup
+targets a hidden `.constellation/templates/` the app never reveals; no create-template flow exists
+anywhere). That is documented in the Architect doc.
+
+The Boss then rejected the framing of my response twice — correctly:
+
+1. **"You started with Option B. Where are the other options?"** — I led with a recommendation
+   instead of presenting the option space.
+2. **"You forgot to develop the Concept, first."** — Concept-Before-Function is temporally first;
+   I had written a concept paragraph but had not *developed* it before proposing mechanism.
+
+Then he opened the real subject: **a template is also the SHAPE of a note.** *"Like, 3M Post-it,
+can we consider it a note? If yes, what shape will it take?"* And: *"the note in Constellation is
+the gate to one's knowledge, any note, shape, or type, even a tissue, or a scribe on a hand palm."*
+
+---
+
+## The concept as developed so far
+
+**A template is the captured shape of a recurring cognitive move.** The question it answers:
+*"What shape does this kind of thinking take?"* — asked once, answered permanently.
+
+**The load-bearing distinction: a template is a MOLD; a note is a CAST.**
+
+### What "shape" decomposes into
+
+Chasing "what shape is a Post-it?" showed the yellow square is the least of it. Its cognition
+lives in constraints:
+
+| Dimension | What it carries |
+|---|---|
+| **Extent** | How much room the thought gets. A Post-it's size is a promise about scope. |
+| **Ceremony** | How much structure must be filled before it's valid. A Post-it has none. |
+| **Persistence** | Permanent vs expiring vs meant-to-be-processed. Post-its fall off *on purpose*. |
+| **Attachment** | Standalone vs stuck to a host. Often forgotten; it is the Post-it's defining trait. |
+| **Visual signal** | How the kind reads at a glance. *(Initially the weakest — see Template Studio.)* |
+
+**A tissue** — worthless medium, disproportionate idea: *a knowledge system must never judge a
+thought by the dignity of its container.* **A palm scribble** — nearest surface, urgent, will be
+washed off: near-zero capture friction, near-zero persistence.
+
+### The synthesis with the Boss's taxonomy message
+
+The Boss separately laid out a five-dimension note taxonomy (function in the knowledge cycle ·
+content kind · provenance · actionability · maturity), warning that most systems conflate them.
+Reading dimension 1 through the Post-it: **function-role and shape are the same thing seen from
+two sides.** A *fleeting* note IS a Post-it (small, ceremony-free, processed away). A *permanent*
+note IS a codex page. A *MOC* IS a map. And **maturity is shape changing over time** — seed →
+sapling → evergreen → canonical.
+
+### What already exists in the app (verified, not assumed)
+
+- `MATS = seed · sapling · evergreen · canonical` — the maturity dimension, **already shipped**.
+- `CONF = hypothesis · evidence · established · contested` — an epistemic dimension the Boss's
+  taxonomy doesn't name.
+- `file_kinds.rs` — a **container taxonomy** already first-class: NOTE · BASE · TMPL · LINK ·
+  MARK · CLIP + media. **MARK** = bookmark (url field + short body); **CLIP** = clipping
+  (source field + blockquotes). These are *shape signatures detected from content*.
+- **NotePane vs FocusPane** — the app already has two note FORMS, and FocusPane's charter (no
+  parser, no highlighting, "capture ideas fast") is a Post-it sitting next to a codex page.
+- `content_kind` / `function_role` / `actionability` — **do not exist**; genuinely new.
+- Search is **SQLite FTS5**, not Tantivy — but `docs/IPC-CONTRACT.md` records a planned
+  `full_text_search` "tantivy-backed FTS", so a facet design would not be stranded by that swap.
+
+**The gap: Constellation already INFERS shape but never lets you DECLARE one.** A template is
+precisely the act of declaring one.
+
+---
+
+## Boss rulings from this brainstorm
+
+**R1 — Graduation ("Constellation should be Smart").** *"I could start with Post-It, form and
+shape, but if I pass its constructed limitation, it should transfer itself to the next kind,
+automatically."* Shape constraints are **thresholds, not walls** — this dissolves the
+bind-vs-decorate dichotomy. Notes outgrow their shape and metamorphose.
+
+Consequences identified:
+- Each shape's limit should be **native to its nature**, not a universal word count: a Post-it
+  overflows by *extent*; a bookmark when your commentary exceeds the link; a clipping when your
+  words outnumber the quoted ones.
+- **The classifier exists; the trigger does not.** `classify_file` knows the signatures but runs
+  at canonicalization/import — never on content change. *(Correction of my own earlier claim that
+  the machinery "half-exists" — the smaller half exists.)*
+- **Must never be silent** (an app changing a note's identity invisibly is the scariest possible
+  behaviour) and **must never touch the keystroke path** (Rule 1) — evaluate at the debounced
+  save boundary.
+- **Do not conflate with maturity.** Graduation is about *extent*; maturity is about *epistemic
+  development*. A 2,000-word note can still be a seed. Fusing them loses "long but unripe."
+
+**R2 — The Post-it is NOT a link; it is a second surface.** *"I wrote a note a long time ago, and
+I have revisited it, but I don't want to edit it. I can use Post-It on top of the note, with my
+remarks, to remind myself that I need to do something about it."*
+- It is **marginalia**. The value is that the original stays untouched — the record isn't quietly
+  revised by hindsight.
+- Needs its own lane: visible on the note, **absent from backlinks, Sky, and every cognitive link
+  surface** (precedent: PJ-065 structural links sit outside the cognitive vocabulary).
+- **Unlocks annotating a note you cannot edit** — read-only notes, and notes in someone else's
+  federated cUniverse. Today there is no way to have a thought *about* such a note without
+  altering it or manufacturing a link.
+- File-Over-App: its own `.md`, host named in frontmatter, so it survives outside Constellation.
+
+**R3 — Anchor granularity.** *"Post-It should address whether the whole note, a paragraph,
+sentence, context, idea, or a term, within a note."* Reduces to **one mechanism**: whole-note is
+"no anchor"; paragraph/sentence/context/idea/term are all ranges of different size. Several
+selection conveniences, one data model.
+
+**R4 — Shape belongs to BOTH the note and the template.** Template seeds the initial shape; the
+note carries the live one. Graduation rewrites the note's, never the template's — the same
+relationship `created:` already has.
+
+**R5 — Reference UX.** Microsoft Word anchored comments on an **Arabic (RTL)** document: anchor
+highlight, marker icon, margin card with author + text + timestamp + reply box, card in the
+**LEFT** margin (mirrored from English Word).
+
+**R6 — Template Studio + a plain path.** *"I want to create a 'Template Studio' where users can
+independently manage and control template styles… different styles in the same universe. Unique
+style, fonts, size, page colors, etc. On the other hand, we can provide the users a simple plain
+way to use a templates."*
+
+**R7 — THE NAME: قصاصة (quṣāṣah)** — *"a clip, snip, or scrap."* Boss ruling 2026-07-19, taken
+after the team review proposed *marginalia / الحاشية*. Plural **قصاصات**.
+
+Why it beats both candidates: it is not a trademark (unlike *Post-it*), and unlike *ḥāshiya* — which
+is bound to the **margin of a manuscript** — it names **the scrap itself**, which sits far closer to
+the Boss's own founding image (*"even a tissue, or a scribe on a hand palm"*). A قصاصة is precisely
+a tissue-tier medium: humble, cut off, provisional.
+
+**Verified, no user-facing collision:** the file kinds (`NOTE`/`BASE`/`TMPL`/`LINK`/`MARK`/`CLIP`)
+are **internal Rust classification codes with no i18n entries** — checked across `en.json`/`ar.json`
+and the frontend; `CLIP` appears nowhere user-visible. So the name is free.
+
+**But there is a CONCEPTUAL overlap to write down**, because `CLIP` already means "clipping" and
+قصاصة *is* a clipping. The distinction is clean and opposite in direction:
+- **CLIP** — something clipped **from** the world **into** your universe (external source; the
+  existing heuristic is `source:` field + blockquotes).
+- **قصاصة** — something **you wrote**, stuck **onto** a note (the source is you).
+
+Consequences: the new kind needs its **own internal code, NOT `CLIP`**, and that contrast belongs in
+a comment at `file_kinds.rs` where the next reader will look. Plural handling goes through the CLDR
+`plurals.*` namespace (Arabic has five forms) — see the `plurals.walks` precedent.
+
+**R7b — NAMING POLICY (Boss, 2026-07-19):** *"It will be Qusasah in the other languages, and in
+Arabic قصاصة."*
+
+So: **Arabic → قصاصة · all other locales → "Qusasah"** (transliterated). This is consistent with the
+app's existing practice — verified: `app.name` is **"Constellation" in Latin script in all 15
+locales**, Arabic/Japanese/Hebrew/Chinese included — but it is *sharper* than that precedent.
+"Constellation" is a coined brand; **قصاصة is a real Arabic word being loaned out.** Hence Arabic
+gets the genuine word and every other language gets the loanword. Linguistically correct, not merely
+consistent.
+
+**IT IS A NAME, NOT A TRANSLATION — Boss correction, same session.** *"No. The others gets to use
+'Qusasah'. Not a translation."*
+
+**Exactly two strings exist, total:** `قصاصة` for `ar`, and `Qusasah` for **all fourteen other
+locales**. It is NOT re-transliterated per language (no クサーサ, no Кусаса, no קוסאסה) and NOT
+translated. Persian, Urdu and Hebrew use `Qusasah` like everyone else.
+
+*My error, recorded so it is not repeated:* I raised the Arabic-script question for fa/ur and an
+LTR-island concern for the RTL locales, and proposed routing it to per-locale translator agents.
+That was over-thinking a decision the Boss had already made completely — a NAME does not get a
+localization pass. There is no per-language rendering to resolve, so there is no question to ask.
+The i18n work here is two entries, not fifteen.
+
+**Plural:** follows the name, not a per-language grammar — no `plurals.*` category map is needed
+for it (contrast `plurals.walks`, which IS a counted common noun).
+
+**Open — inherited from the guardian's objection:** is قصاصة the name of the **SHAPE** (the smallest,
+ceremony-free cast, with the *concept* still needing a name such as التعليق) or of the **WHOLE
+FEATURE**? Both readings are defensible. If the whole feature: the name "expiring" on graduation is
+not a bug but an accurate description — the scrap genuinely *became a page*, and its life as a
+قصاصة ended, which is exactly what the team's graduation ruling already models (live anchor freezes
+to provenance + a `derives-from` link is minted).
+
+---
+
+## THE HARD PROBLEM (open, under team review)
+
+**Anchors must survive editing of the host, while the host is NEVER modified.** That rules out
+both common answers — Obsidian `^block-ids` and CriticMarkup **write markers into the annotated
+file**. Anchoring must live entirely outside the `.md` and still re-find its span after the text
+moves, is reworded, or is deleted. This is a studied problem (W3C Web Annotation Data Model,
+Hypothes.is) — WA#5 says take the field's answer rather than invent one. Team review in flight
+(`wf_635b637f-ca9`): four research tracks + engineer, auditor, Art Director, concept guardian.
+
+---
+
+## Template Studio — what it settles, and its discipline
+
+**It legitimises the visual-signal dimension.** Alone, "the Post-it is yellow" is decoration and
+fails Form-Aligns-To-Purpose. As a *kind* signal it is an instrument: the look tells you what kind
+of thinking is inside before you read a word — the reason a Post-it, a legal pad and a leather
+journal don't look alike on a real desk.
+
+**It makes graduation self-announcing.** R1 required graduation to be visible but not intrusive.
+With per-template style, no notification is needed: the yellow scrap *becomes* a page under your
+hands. The promotion is **perceived rather than announced** — better than a toast.
+
+**The discipline that prevents a scrapbook:** *style belongs to the mold, and every cast inherits
+it.* All Post-its look alike — that is what makes them recognisable as Post-its. The moment an
+individual note can be styled arbitrarily, the look stops meaning anything. Style is a property
+of the **kind**, not the instance.
+
+**It lands in an existing cascade.** Constellation already styles at three scopes: app-global
+Styles → per-Universe `styleOverride` → per-Library appearances. Template Studio is a **fourth**.
+Precedence must be deliberate — initial instinct: templates win for the note's *surface* (most
+specific), chrome stays with the Universe.
+
+**Open: where does a template's style live?** In the template's own frontmatter, the mold is
+self-describing and portable — share the template and its look travels, File-Over-App all the way
+down. In settings, it is centralised but the template alone is incomplete. Leaning strongly to
+frontmatter.
+
+**Reuse, don't rebuild.** The Style Setter engine is mature (categories, elements, live preview,
+CSS-variable application). Template Studio should be a new **scope** within it, not a parallel
+styling system ("secure the winning — one source of truth").
+
+**The plain path is guarded hardest.** Writing a `.md` with `{{date}}` and using it must remain a
+complete, respectable way to use templates — **never opening the Studio**. Styling is an upgrade,
+not a gate; otherwise ceremony becomes compulsory, contradicting the tissue and the palm.
+
+---
+
+## Open questions (not for me to decide)
+
+1. **What is the ladder?** Graduation implies an order. Post-it → ? → Note. Is there a rung
+   between? Do MARK and CLIP sit *on* that ladder, or are they parallel shapes with their own
+   paths that all terminate in a full Note? — decides whether shape is one progression or a family.
+2. **Does an anchored Post-it graduate?** If it grows into a full Note, does it keep its anchor
+   and host? Is an "anchored Note" still marginalia — or has it become something that should be a
+   link after all? *(Flagged to the concept guardian as the concept's weakest seam.)*
+3. **Is a Post-it findable?** It is not a link and is excluded from cognitive surfaces — but
+   "find all notes I flagged for review" is a real need. Outside the graph, inside search?
+4. **Anchor to a place or the whole note** — R3 says both; the mechanism must serve the range case
+   without ceremony for the whole-note case.
+5. **The Reviewer boundary.** Reviewer = system-initiated resurfacing; Post-it = user-authored
+   marginalia. Where exactly is the hand-off? (Boss ruling: complement, zero duplication.)
+6. **Which taxonomy dimensions become real**, and in what order? (`content_kind` first is my
+   instinct — the one users mean by "type", the one templates most naturally carry.)
+
+---
+
+## Process notes for whoever picks this up
+
+- The Boss is **brainstorming**; do not convert this into a plan or code until he says so.
+- Two framing corrections already earned: **present the option space, don't lead with a
+  recommendation**; and **develop the concept before proposing mechanism**.
+- The identity-clean ruling from the templates thread applies here too: **a template never
+  contains `cid_cn` or creation date/time** — and note that opening any `.md` currently *injects*
+  `cid_cn` (`canonical.rs:1224` via `store.ts:2168/2468`), so the templates folder needs an
+  exemption or editing a mold would stamp it.
+
+---
+
+# TEAM REVIEW — engineer · auditor · Art Director · concept guardian (`wf_635b637f-ca9`)
+
+*Boss-requested 2026-07-19. Four research tracks (W3C/Hypothes.is anchoring · editor-native
+position maintenance · sidecar storage · anchored-comment UX), four role reviews, one synthesis.*
+
+**Verdict: SOUND WITH CHANGES — unanimous.** No reviewer said "sound"; none said "needs-rethink";
+they converged on the same reasons independently, which the synthesizer called the strongest signal
+in the packet. *Process note: my script truncated the synthesizer's input, so it received 3 of 4
+reviews; the concept guardian's was recovered from the journal afterwards — it had reached the same
+headline conclusion independently.*
+
+## 1. BLOCKER — this is three concepts under one name
+
+Guardian and synthesizer reached this separately:
+
+- **(A) Marginalia** — a remark anchored over a note the user will not edit.
+- **(B) Mold/Cast + graduation** — a general law over ALL notes, not a Post-it feature. A daily log
+  that outgrows its form should graduate too. Building it "inside Post-it" puts a universal law
+  inside one feature.
+- **(C) Template Studio** — per-template visual style; a fourth style scope.
+
+As briefed they are welded: **anchored marginalia cannot ship until Template Studio is designed.**
+Recommendation: three migrations, (A) first, consuming only a minimal template hook. (A) is complete
+without the other two.
+
+## 2. The name — "Post-it" names the shape, not the concept
+
+Lesser objection: **a 3M trademark** — a real distribution consideration. Larger objection: it names
+*a yellow square of paper*, an instance of a SHAPE, and says nothing about the cognitive act. And
+because shape graduates, **the feature routinely stops being a Post-it while remaining the same
+thing** — a name that expires at first use.
+
+The act is ancient and already named in the Boss's own tradition: **الحاشية (hashiya) / التعليق
+(taliq)** — scholarly commentary anchored to a passage. Recommendation: name the CONCEPT
+*marginalia / al-hashiya*; keep **"Post-it" as the name of its default SHAPE**. Then "my Post-it
+graduated into a page" stays true instead of self-contradictory, and the x15 i18n pass has a real
+word to translate rather than a brand to transliterate.
+
+## 3. BLOCKER — the graduation seam breaks, in a specific place
+
+If a graduated Post-it keeps a **live anchor**, we have invented an *"anchored Note"*: a graph node
+with a coordinate, which no other node has — and it quietly becomes the link the Boss ruled it must
+not be. Marginalia is *defined by subordination*; a Note is the opposite.
+
+**Resolution:** *only a Post-it may hold a live anchor.* At graduation the anchor **freezes into
+provenance** (source id + the quote as it stood + timestamp — W3C's `State`/`cached` idea, whose
+omission the research identifies as the root cause of unrecoverable orphans) and a typed link is
+minted, defaulting to `derives-from`. Reversible by archive.
+
+Further: **SHAPE graduates automatically and visibly** (the Boss's self-announcing insight holds);
+**KIND is a one-click, undoable proposal.** "Constellation is still smart; it just does not rename
+your file while you type."
+
+## 4. The granularity ruling and orphaning are the SAME mechanism
+
+The most elegant finding. The six granularities are not a picker — they are a **ladder of decreasing
+precision**: term → sentence → paragraph → whole note. Orphaning is what happens when precision is
+lost. An anchor that can no longer find its sentence **has not failed — it has fallen one rung**, to
+its paragraph, then to the note. The bottom rung ("a remark about this note") is a perfectly good
+Post-it.
+
+Research backing: **~22% of Hypothes.is annotations orphan; 88% of those are unrecoverable**
+(arXiv:1512.06195). Degradation converts the field's ugliest failure into graceful decay.
+
+Requirement: the resolution outcome must be a **total, asserted function** over
+{exact, degraded-to-N, host-lost} — **never inferred** from the absence of a highlight, which is the
+shape of Hypothes.is's "limbo" bug (product-backlog#954) and of the app-killer class the Safety
+Charter exists to prevent.
+
+## 5. Anchoring — we are better positioned than the prior art
+
+- **We own CodeMirror 6.** Within a live session anchors map **exactly** through every edit
+  (`tr.changes.mapPos`, already used in `calloutPlugin.ts` / `paragraphDir.ts`). Hypothes.is
+  fuzzy-matches *because it cannot observe the document.* The hard part is only the **COLD seam** —
+  note reopened, external edit, sync, merge.
+- **The quote is a CHECKSUM, not a fallback.** A cheap selector (stored offset) is accepted only if
+  the text there still equals the stored quote — making "silently drifted onto neighbouring text"
+  impossible on the fast path.
+- **Do NOT copy Hypothes.is's tuning.** Verified from source: `maxErrors = quote.length / 2` (50%
+  edit distance), a minimum-score threshold the docstring claims but the code does not implement,
+  and an unconditional top-candidate return — deliberate recall-over-precision for the public web.
+  **"An orphan is honest; a mis-anchor lies."**
+- **Arabic**: `offset_unit` and `norm_form` are **schema, not convention** — mixing Rust bytes /
+  Rust chars / JS UTF-16 across the boundary is a silent corruption source in exactly this corpus.
+
+## 6. Not a link is not the same as not in the system — PJ-065 settles it
+
+The Boss's ruling holds (weight/confidence/traversal are meaningless on a remark; forcing it in
+would debase the vocabulary). But the repo already contains the pattern for *"a lane outside the
+cognitive vocabulary that is still fully real"*: the structural lane is excluded from cognitive
+surfaces **by explicit predicate**, not by omission. Adopt that shape — own file kind, **body
+indexed in FTS5 and fully findable**, anchor never indexed, excluded from Sky edges / link weight /
+traversal / cognitive backlinks by a written not-in clause.
+
+## 7. Word's card is a COLLABORATION UI; Constellation is a SOLITUDE UI
+
+The RTL *layout* is right and worth copying (`linkTip.ts` already provides the mirroring +
+measure-then-place machinery — a reuse, not a build). The *contents* are not: the **author avatar**
+answers "who said this?", a question with one possible answer in a single-user PKM; the **name**
+likewise; the **reply thread** answers "how do we converge?", which a solitary reader does not need.
+Specify **six elements** — highlighted span · marker · RTL-correct margin card · the remark ·
+created-time · one action — **and forbid the rest by name**, so "just add replies" must argue
+against a written ruling.
+
+## 8. Template Studio — sound, but decouple, and style cannot be raw CSS
+
+Style-as-signal is judged well-reasoned, and *"style belongs to the mold, every cast inherits it"* is
+endorsed as exactly right. Two cautions: **coupling makes a small shippable concept hostage to a
+large unresolved one** — ship the Post-it's default look as a built-in shape, let the Studio adopt it
+later; and in a **federated** Universe a template arrives from someone else, so arbitrary CSS
+travelling with it can phone home via `url()`, overlay app chrome, or render text at zero contrast.
+**A template's style must be a declarative TOKEN SET** from the existing registry, validated for
+contrast and clamped at apply time, identically for local and foreign templates: *"it can style the
+PAPER; it can never style the DESK or the INSTRUMENTS."* Frontmatter over settings. The plain path
+stays an invariant.
+
+## 9. The fourth thing hiding in the Boss's own sentence
+
+*"…to remind myself that I need to do something about it"* is an **OBLIGATION**, and obligations
+already have two owners (Tasks, Review Pulse). **Reviewer is DERIVED and system-initiated; Post-it
+is ASSERTED and user-authored** — opposite in origin. The hand-off is one-directional and narrow:
+**Post-it owns the remark and its location; the Reviewer owns all scheduling, ranking and
+resurfacing**, reading *one bit* — open vs resolved. **One attention inbox, and it belongs to the
+Reviewer.** "Show me everything I flagged" is a Reviewer lens fed by the Post-it signal, not a
+Post-it panel. If a remark also carries an obligation, the user writes a task line and the existing
+Tasks surface picks it up unchanged.
+
+## 10. Remaining blockers before design proceeds
+
+Split into three migrations · rule the graduation seam as a **schema fact** · close the pre-existing
+**silent-reclassification path** (`file_kinds.rs` infers kind from content TODAY — Post-it
+frontmatter must carry an explicit `kind:` honoured at priority 1; worth fixing even if Post-it is
+never built) · decide **host identity = `cid_cn`** (strong rec) vs name · **one host-content
+accessor, no fallback** (model if open, else disk — never both; never re-anchor a DIRTY host) · rule
+**federation scope for v1** (if in, the Rust parse-hardening lands in the SAME migration) · draw the
+**Reviewer boundary** · a **performance acceptance gate** measured on the 7,600-note Universe with a
+synthetic 5,000-Post-it load *before* commit.
+
+---
+
+# RULINGS — Boss: "You should know me by now. Choose what will work with Constellation philosophy."
+
+*2026-07-19. The Boss delegated the remaining open questions. Decided by me against the app's stated
+principles, each with its grounding named so a future session can re-open it on the merits.*
+
+**D1 — Qusasah is ONE name, for the whole feature.** The guardian's "the name expires on graduation"
+objection is REJECTED: Constellation already names stages meant to be outgrown (`seed → sapling →
+evergreen`). A seed that grows is no longer a seed — that is the point, not a defect. A Qusasah that
+graduates genuinely stops being one; the name retiring IS the transformation. A second abstract name
+for "the act" would be the unnecessary abstraction the Don't-list forbids. *(Grounding: Constraint as
+Design; no unnecessary abstractions.)*
+
+**D2 — There is NO ladder; there are ON-RAMPS.** No intermediate rung between Qusasah and NOTE (a
+scrap too long to be a scrap is just a short note — inventing a rung fills a degree of freedom the
+geometry affords but the cognition does not require). MARK and CLIP are NOT rungs but PARALLEL molds,
+each with its own native overflow — Qusasah by *extent*, MARK when commentary outgrows the link, CLIP
+when your words outnumber the quoted ones — **all terminating in NOTE**, the gate to knowledge.
+Graduation is convergent, not a chain. *(Grounding: Form-Aligns-To-Purpose.)*
+
+**D3 — SPLIT INTO THREE; Qusasah ships FIRST.** Qusasah · the mold/cast graduation law · Template
+Studio. The decisive reason is not scheduling: **the graduation law governs every note, so it cannot
+live inside one feature** — that is a universal law smuggled into a carriage. Qusasah is complete on
+its own and needs only a minimal template hook. *(Grounding: Concept-Before-Function; the Migration
+Rule.)*
+
+**D4 — Templates engine: OPTION B, with A as its first phase.** A alone leaves the mold English-only
+in a 15-language app — a standing Language-First violation, not a rough edge. C fails the CONCEPT
+before the security review: a mold that executes code is no longer inert shape, and under federation
+it is someone else's code in your Universe. *(Grounding: Language-First; Constraint as Design;
+federation safety.)*
+
+**D5 — The held-open rulings.**
+- **Host identity = `cid_cn`**, never path. The app already has an identity field; a name would
+  re-derive it worse.
+- **Graduation: SHAPE changes automatically and visibly; KIND is a one-click undoable proposal.**
+  Smart, but it does not rename your file while you type.
+- **The card is SIX elements** — highlighted span · marker · RTL-correct margin card · the remark ·
+  created-time · one action. No avatar, no author name, no replies: they answer questions a solitary
+  reader does not have. Forbid the rest by name.
+- **Template style is a declarative TOKEN SET, never raw CSS.** It styles the paper, never the desk.
+- **Reviewer owns ALL scheduling; Qusasah owns the remark and its location**, exposing exactly one
+  bit (open | resolved). One attention inbox, and it is the Reviewer's.
+- **Federation is IN v1**, with its Rust parse-hardening in the SAME migration. It is the distinctive
+  value, and Templater's history proves a trust boundary cannot be bolted on afterwards.
+
+**D6 — ORDER OF WORK.** The app-killers-first ruling predates the Boss reporting the templates
+breakage. Weighed honestly: the two remaining app-killers are RACES — real, but rare and requiring an
+instrumentation build first; the templates breakage is CERTAIN AND CONSTANT (the picker is empty
+every time). Therefore:
+
+1. **"Templates You Can See"** (migration §1 — days)
+2. **The two app-killer races** — instrumentation BEFORE fixes, per Reproduce-First
+3. **Qusasah**
+4. **Mold/cast law + Template Studio**
+5. **PJ-126** (the content-bearing tooltip sweep)
+
+*Any of these is reversible on the Boss's word; they are recorded as decisions, not as facts.*
+
+---
+
+# ★ THE CONSTELLATION WAY — Boss-dictated 2026-07-19, confirmed verbatim
+
+> *"Old-fashioned apps are one way to interact with users. The users don't have a choice but to
+> follow what the app wants them to do. So, if the app is STUPID, then imagine the outcomes.
+> The Constellation way, on the other hand, is a two-way interaction between the user and the app.
+> It shouldn't assume that it understands the user's needs and push them toward an undesired
+> outcome. Instead, it should start the 'Smart' interaction from step 0 and walk them through
+> (interact) to meet their needs. All that means that the Template Engine (Studio) has to be
+> smart."* — Eisa
+>
+> Boss confirmation of the formulation below: **"Exactly, well said. This is the Constellation way."**
+
+**THE LAW:** *The app observes, proposes, and adapts. The user decides. It never assumes, and never
+railroads. **Visible reasoning is what keeps "smart" from becoming "presumptuous."***
+
+## Why it matters
+
+A one-way app traps the user inside whatever the app assumed. If the assumption is wrong — or the
+app is stupid — there is no exit. Two-way means the app begins at **step 0**, before it knows
+anything, and learns the user's actual need through interaction rather than declaring it.
+
+## What it invalidates (recorded so it is not re-proposed)
+
+**A wizard is NOT automatically the Constellation way.** A wizard is a RAIL: the app decided the
+steps, their order, and what matters, before meeting the user. Prettier than a text file; the same
+one-way street. *(Canonical violation, same session: after the Boss rejected the comment-stuffed
+`.md` scaffold as "old fashion," I proposed a "Template Wizard" — and he corrected that it was
+still one-way. Two mechanism-proposals in a row, each smuggling an assumption.)*
+
+## Smart ≠ guessing
+
+| Presumptuous | Smart |
+|---|---|
+| "Here's a Book Note template" — from a generic list of what apps think people write | "43 of your notes open with a Source, a Claim and a Verdict. Shall I make that a shape?" |
+| The app decides what you need | The app proposes from **evidence in your own Universe**, and **shows the evidence** |
+| Refusing costs effort | Trivially refusable — a proposal you cannot easily reject is a rail |
+
+**The qualifier is the Boss's own:** *"It shouldn't assume that it understands the user's needs."*
+So "smart" cannot mean the app deciding confidently on the user's behalf — that is merely a stupid
+app with better manners.
+
+## "From step 0" — what it rules out
+
+Step 0 is before the app knows anything about what the user wants. **A form cannot be step 0,
+because a form IS the app's assumption rendered as UI.** The opening move must cost the user
+nothing and teach the app something — e.g. *"more like this"* pointed at a note the user already
+wrote, with the app showing what it thinks the shape is (what it kept, what it stripped as
+note-specific, what it noticed is always filled in) and the user correcting it. **The mold derived
+from casts the user already made** — the opposite of a blank form plus a syntax card.
+
+It does not stop at creation: if the user keeps adding a field the template lacks, the app should
+notice and offer it. **The mold keeps learning from the casts** — the same observe→propose→decide
+loop, running for the life of the template.
+
+## The app ALREADY holds the evidence (verified, not assumed)
+
+`note_meta` (`search.rs:2949`) carries, for **every note in the Universe**: `properties_json`,
+`tags_json`, `headings_json`, `outgoing_links_json`, `word_count`, `body_text`, folder, and dates.
+**Constellation already knows the shape of everything the user has ever written** — it has simply
+never used that to help them build a mold. Smart here requires no guessing and no AI: it requires
+reading what is already indexed.
+
+## Scope — this is a GENERAL law, not a templates rule
+
+It governs **graduation** (notice a note outgrowing its shape → propose visibly, never force),
+**Qusasah** (the Reviewer surfaces unresolved remarks; it never nags), and every future "smart"
+surface. It pairs with **Concept-Before-Function** (state the horse first) and with MIG-084's
+self-explanatory law (*"just by looking, the user UNDERSTANDS"*) — visible reasoning is the same
+demand applied to the app's own proposals.
+
+**Likely belongs in `CLAUDE.md` as a standing top-principal** alongside Concept-Before-Function and
+Form-Aligns-To-Purpose — flagged for the Boss's ruling rather than added unilaterally.
+
+---
+
+# THE SMART TEMPLATE STUDIO — concept (2026-07-19, Boss-directed "Start with the concept")
+
+*Developed under [[THE CONSTELLATION WAY]] above. Concept only — no mechanism, no UI. Nothing here
+is approved or scheduled.*
+
+## The concept
+
+**The Template Studio exists to recognise the shapes you are already writing in, and let you name
+them.**
+
+## The inversion
+
+Every template system researched assumes: *you know what template you want and lack a place to
+write it* — so it gives you a file and a syntax card (Obsidian, Templater). **The assumption is
+wrong**, and the user's own Universe disproves it: he has been writing in shapes for years. Notes
+about sources look alike; daily reviews look alike. Those ARE templates — unnamed, undeclared,
+rebuilt by hand every time. The mold was never missing; it was never *carved*.
+
+So the Studio's work is not invention. It is **taking an impression from the casts already made.**
+This is also why it can be smart WITHOUT guessing: it does not predict what the user might want, it
+reports what he demonstrably already does — from `note_meta`, which already holds properties, tags,
+headings, links and length for every note (`search.rs:2949`).
+
+## Two movements
+
+**Recognition** — surfacing the shapes latent in the practice, with evidence attached.
+**Tending** — a mold is not finished when named. If the user keeps adding a field the mold lacks,
+the app notices and offers it. The mold stays true to how he *actually* writes, not to how he wrote
+the day he named it. Most systems have only creation; tending is what makes a mold a relationship
+rather than a snapshot.
+
+## ★ BOSS RULING — a stated need is not an invitation to interrogate
+
+> *"If I ask for a book template, then Constellation should provide one, not something else. On the
+> other hand, the 'smart' templates library should contain what the universe has."*
+
+My proposed design had the request path routing THROUGH recognition ("your 12 book notes split into
+two shapes — which did you mean?"). **Rejected, and rightly**: that is the app being clever instead
+of useful — presumption wearing a helpful face, making the user do work he did not ask for in answer
+to a question he already answered.
+
+**The refinement to the law: TWO-WAY DOES NOT MEAN INTERROGATIVE.** Observing and proposing belongs
+where the user has NOT stated a need. The moment he states one, meeting it plainly IS the respectful
+move.
+
+### Two surfaces, two jobs
+
+| | Job | Behaviour |
+|---|---|---|
+| **The request path** | You name a type → you receive that type | Curated defaults. No questions, no cleverness. |
+| **The smart library** | What your Universe actually has | Recognition lives here — shapes you already write in, with evidence. Nobody asked it a question, so it is free to observe and offer. |
+
+Natural consequence: asking for *Book* when you already have your own Book mold gives you **yours**.
+Your practice outranks the default.
+
+## ★ BOSS RULING — cultural contrast is STRUCTURAL, not verbal
+
+> *"Since Constellation is a multinational app, it should consider the cultural contrast. For
+> example, the structure of an Arabic book differs from that of Japanese books."*
+
+I had been treating localization as *wording*. The Boss's point is that the **structure** differs:
+
+- An **Arabic** book carries a substantial **مقدمة** doing methodological work a Western preface does
+  not, moves through **أبواب** and **فصول**, closes with a **خاتمة** — and in the scholarly tradition
+  may carry **إسناد** / **تخريج** apparatus with no Western counterpart at all.
+- **Japanese** composition has **起承転結**, whose **転** is a *turn* rather than a conflict resolved —
+  structurally not the thesis→argument→conclusion spine.
+- A note *about* a book inherits this, because what is worth recording depends on how the thing is
+  built and what its tradition treats as significant.
+
+**Therefore: a translated English book template is the wrong template in the right language.** The
+default templates are **per-language artifacts, authored natively — NOT translated.** This is a
+deeper localization than Constellation has attempted: today it localizes strings; this localizes
+*shape*.
+
+**Two constraints on doing it:**
+1. **Do not author these from general knowledge.** Sketching Arabic or Japanese book structure from
+   a general impression is exactly the confident filler the BASIC RULE forbids. Arabic can start
+   from the Boss's own genres/containers taxonomy (his 2026-07-19 message: الأجناس الكتابية / الأوعية
+   النصية); every other tradition needs native authorship + real research — the i18n-agent method,
+   but for STRUCTURE rather than wording.
+2. **Culture ≠ locale.** A Japanese speaker writing Western-academic papers should get the Western
+   structure. The culturally-native default is a DEFAULT, never a constraint; the offered list stays
+   open and cross-tradition picking must be trivial.
+
+**Staging, honestly:** Arabic first (it is the Boss's Universe and his taxonomy already maps the
+territory); other languages get natively authored defaults as they are written — rather than
+shipping fifteen translations of an English shape and calling it multinational.
+
+## Step 0 — three bands, in descending authority
+
+**Your molds** (already named) → **Shapes noticed** (unnamed, with evidence — where the smart lives)
+→ **Types on offer** (the vocabulary, for when neither has what you want).
+
+The order matters: the user's own practice outranks anything the app suggests.
+
+**The offered list must be OPEN** — the Boss's examples (daily, summary, extraction, project, book,
+essay) are a starting vocabulary, not an enum. Typing your own type (*شرح*, *fatwa*, *maqāmah*) is
+first-class and queries the Universe identically.
+
+**The offered types are HUMAN HANDLES.** The Boss's six deliberately span different taxonomy
+dimensions — *daily* is an activity, *extraction* a function, *project* actionability, *book*
+provenance, *essay* a genre. That is correct: nobody thinks *"a literature-note with project
+actionability"*; they think *"a book note."* Each handle quietly sets several dimensions underneath;
+the structured taxonomy stays internal, visible on request, never a form to fill.
+
+## What the concept refuses
+
+**Many weak proposals** — 47 patterns listed is noise wearing the costume of intelligence. Few,
+strong, well-evidenced; and *"I haven't seen a strong recurring shape yet"* is an honest, valuable
+answer. Silence beats a list of guesses.
+**Mystery** — every proposal carries reachable evidence. Proposing without showing why is assuming.
+**Capture** — the `.md` stays the artifact; the Studio is a lens onto files the user owns. Hand-
+editing becomes the escape hatch, not the entrance.
+**Cost** — pattern-finding never runs at boot, never touches typing (Rule 8; derived at write time
+or on demand in Rust).
+
+## One emergent consequence
+
+If shapes are *recognised from the corpus*, **the taxonomy emerges from practice instead of being
+imposed.** `content_kind` stops being an enum someone else chose and becomes a description of what
+this user actually does — which is precisely what the Boss's taxonomy message warned flat enums
+cannot do.
+
+## Still open
+
+- **How assertive is recognition** — does the library open with what it found, or wait to be asked?
+- **Does tending ever act alone**, or always propose and wait? (Leaning: always wait — but graduation
+  ruled the other way, so it deserves a deliberate answer.)
+- **Is a mold allowed to be wrong** — if a named shape goes unused for a year, does the Studio say so?
