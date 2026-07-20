@@ -936,11 +936,23 @@ by any of the five.
   "I searched and found nothing" is weaker than a specialist's confirmation — and this word may ship
   in 15 locales. Alternative with better lineage if ever needed: **تعليقة** ("a thing hung/attached"
   — *the etymology is the design spec*). قصاصة has better transparency; تعليقة better pedigree.
-- **Did the classical Arabic page have a PARAGRAPH unit at all?** فِقْرة grades as modern; the
-  mise-en-page evidence suggests separation by rubricated heading, overlining and coloured circle
-  rather than indentation. **If true, the paragraph — which Constellation's editor treats as a
-  primitive — is a print invention in this tradition**, with real consequences for what a قصاصة can
-  anchor to. Needs a codicologist.
+- ~~**Did the classical Arabic page have a PARAGRAPH unit at all?**~~ **✗ CLOSED — the research was
+  WRONG, corrected by the Boss (2026-07-19): "No. It does have a paragraph. What you are referring
+  to is the Quran's structure."**
+
+  The study reported separation by rubricated heading, overlining and coloured circle rather than
+  indentation, and graded فِقْرة as modern usage. Every marker it cited is **Qur'anic** mise-en-page
+  — āya separators (rosettes/coloured circles), sūra headings, overlining — i.e. the layout of a
+  specific **recitational/liturgical** text, wrongly generalised to all Arabic prose. **Ordinary
+  Arabic prose manuscripts (scholarly, literary, administrative) paragraph normally.**
+
+  The paragraph therefore stands as an anchor unit for قصاصة; nothing downstream needs rethinking.
+
+  **The lesson, which generalises:** a web-search agent reading about a tradition will over-weight
+  its most-documented *sacred* text and mistake that text's conventions for the culture's. The study
+  had itself graded this claim "needs a codicologist" — and the Boss is one. **Watch for the identical
+  trap in the Hebrew material** (Torah scroll / masorah conventions generalised to Hebrew writing at
+  large); the v2 synthesis has been instructed to flag it.
 - **Whether users sustain graded annotation KINDS** or collapse them to one. History is unambiguous
   the kinds were distinct and useful — but they were maintained by a professional scholarly culture
   with institutional incentives.
