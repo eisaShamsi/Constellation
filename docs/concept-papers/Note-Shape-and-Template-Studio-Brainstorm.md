@@ -441,6 +441,9 @@ federation safety.)*
   re-derive it worse.
 - **Graduation: SHAPE changes automatically and visibly; KIND is a one-click undoable proposal.**
   Smart, but it does not rename your file while you type.
+  → **AMENDED by the Uninterrupted Stream ruling below (2026-07-19): the proposal must never be
+  *delivered* mid-flow.** "One-click undoable" describes the *cost* of the proposal; it says nothing
+  about its *timing*, and timing is now the governing constraint.
 - **The card is SIX elements** — highlighted span · marker · RTL-correct margin card · the remark ·
   created-time · one action. No avatar, no author name, no replies: they answer questions a solitary
   reader does not have. Forbid the rest by name.
@@ -486,11 +489,70 @@ A one-way app traps the user inside whatever the app assumed. If the assumption 
 app is stupid — there is no exit. Two-way means the app begins at **step 0**, before it knows
 anything, and learns the user's actual need through interaction rather than declaring it.
 
+## ★ THE UNINTERRUPTED STREAM — Boss ruling, 2026-07-19
+
+> **"The flow of ideas/knowledge shouldn't be interrupted to ask the writer whether they want to
+> change their medium from Qusasah to a journal, for example. Interruption is a creativity killer.
+> Instead, the user shouldn't be interrupted; the app should provide an uninterrupted stream for
+> their creativity."**
+
+**This resolves the graduation question by rejecting the axis it was posed on.** I had framed the
+choice as **automatic vs. deliberate** — act for the user, or make the user act. The Boss's answer is
+that *both* are wrong when they land mid-flow, because **the real variable is WHEN, not WHETHER**.
+
+- **Automatic-and-silent** is presumptuous — the app decided.
+- **Asking mid-stream** is *also* one-way: an interruption is the app seizing the user's attention at
+  a moment it chose. A modal that says "this looks like a journal — convert?" is a wizard compressed
+  into one question. **Consent obtained by interruption is not two-way interaction; it is a toll.**
+- **The third thing:** the app **notices silently, holds the observation, and surfaces it at a moment
+  the user entered deliberately.** Observation is free. The proposal waits.
+
+**The distinction that makes this safe: silent ACTION is dangerous; silent OBSERVATION is not.**
+Noticing costs the user nothing and can be discarded. Acting on the notice without being asked is the
+presumption. So the app may watch continuously and must intervene never.
+
+### ⚠ This corrects a mis-framing I put to the Boss
+
+I reported a tension between his "transfer itself automatically" requirement and the contemporary
+evidence, on the grounds that the closest living analogue (Bullet Journal migration) makes the move
+deliberately manual. **The tension was an artefact of my framing.** BuJo migration is manual *and*
+non-interrupting: it happens at a review moment the writer chose to enter, never while they are
+writing. The friction its practitioners defend is **deliberation at a boundary**, not friction during
+composition. **The Boss's ruling and that evidence agree.** What conflicts with both is the thing
+neither of us proposed — a prompt during writing.
+
+### The open risk this creates, which must not be waved away
+
+**A design that never interrupts can simply never be noticed.** That is the documented weakness of
+calm/ambient design, and it is now our exposure: an observation held quietly forever is a feature
+that shipped and did nothing. The honest tradeoff — interruption cost against discoverability — is
+under research, along with what makes a quiet marker eventually get crossed. **Recording this as a
+known risk, not a solved problem.** The ruling is right about interruption; it does not by itself
+answer discoverability.
+
+### What this constrains, concretely
+
+- **Nothing may block, modal, toast, or steal focus during composition.** Not for graduation, not for
+  shape, not for template selection, not for a Qusasah anchor going uncertain.
+- **The observation is durable and passive** — it survives until the user comes to it, and it costs
+  nothing to ignore indefinitely.
+- **It surfaces at a boundary the user chose**: opening the note later, a Reviewer pass, a quiet
+  gutter/margin marker they may walk past a hundred times.
+- **Reversible on arrival.** Whatever the user finds waiting must be undoable in one move.
+- **Pairs with "do not gate capture on a head"** (the verified finding from the book-history pass —
+  the one recommendation from that research that survived). Same law at the two ends of the stream:
+  **do not gate the beginning, do not interrupt the middle.**
+
+---
+
 ## What it invalidates (recorded so it is not re-proposed)
 
 **A wizard is NOT automatically the Constellation way.** A wizard is a RAIL: the app decided the
 steps, their order, and what matters, before meeting the user. Prettier than a text file; the same
-one-way street. *(Canonical violation, same session: after the Boss rejected the comment-stuffed
+one-way street.
+
+**And a mid-flow prompt is a wizard with one step.** It has the same defect in miniature — the app
+choosing the moment, the question, and the framing, while the user is mid-thought. *(Canonical violation, same session: after the Boss rejected the comment-stuffed
 `.md` scaffold as "old fashion," I proposed a "Template Wizard" — and he corrected that it was
 still one-way. Two mechanism-proposals in a row, each smuggling an assumption.)*
 
