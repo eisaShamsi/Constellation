@@ -415,6 +415,211 @@ Silent observation is safe primarily because it satisfies (1) trivially. **Hones
 
 ---
 
+---
+
+# ADDENDUM — accessibility, vocabulary limits, culture, RTL (thread 3)
+
+*The depth pass §10 flagged as outstanding. It closes three of the gaps and **corrects one
+recommendation above.***
+
+## ★ A1. The accessibility escape hatch — and it is a SUFFICIENT TECHNIQUE, not a workaround
+
+Both WCAG criteria fork on the **same** question, and the answer frees the design:
+
+| Is the signal the **only** carrier of the meaning? | SC 1.4.1 (A) | SC 1.4.11 (AA) | Consequence |
+|---|---|---|---|
+| **Yes** | Needs a non-colour cue **or** ≥3:1 lightness difference | "required to understand the content" → **3:1 floor applies** | **A genuinely subtle tint is non-compliant at Level A** |
+| **No** — the state is also stated in text somewhere reachable | Satisfied via **G14** | Exempt — "information is available in another form" | **No contrast floor at all. The tint may be arbitrarily faint.** |
+
+**G14** = *"Ensuring that information conveyed by color differences is also available in text."* A W3C
+**sufficient technique**. **[sourced]**
+
+> **★ THE CONVERGENCE: routing the observation into the Reviewer is what makes the subtle tint LEGAL.**
+> §8 already routed it there for *discoverability* (Ovsiankina: users return to surfaces they own).
+> It turns out the same decision satisfies **accessibility** — the Reviewer entry *is* the G14 text
+> equivalent, which demotes the on-page tint to a **redundant enhancement** exempt from the 3:1 floor.
+> **One architectural decision, two independent constraints. That is the strongest signal we have
+> that the architecture is right.**
+
+GOV.UK states the principle plainly: colour is *"an enhancement for people who can interpret it, but
+it's not necessary in order to understand it."* **[sourced-2°]**
+
+**Verbatim from Understanding SC 1.4.1, the sentence that caps the vocabulary:** *"if content relies
+on the user's ability to accurately perceive or differentiate a particular color an additional visual
+indicator will be required **regardless of the contrast ratio**."* **[sourced]** → At **N=1**
+(present/absent) lightness alone can carry it. At **N≥2** every state owes a non-colour
+differentiator, and each costs salience — the exact thing we are conserving.
+
+## ⚠ A2. CORRECTION to §8.3 — "blue–yellow axis, never red–green" was partly wrong
+
+**The hue-axis framing is not the robust rule.** Counter-evidence:
+- **Apple HIG, verbatim:** colour-blind users find it hard to distinguish red from green *"or **blue
+  from orange**."* **[sourced]**
+- **Okabe & Ito** independently list **"blue and violet"** as confusable — and state that
+  **low-saturation colours are "especially hard to distinguish."** *Our signal is low-saturation by
+  design.* **[sourced]**
+- Blue–yellow is **precisely the axis tritan deficiency loses.**
+
+> **Corrected rule: do not pick a hue axis — carry a LIGHTNESS difference as well as a hue
+> difference.** That is also exactly what SC 1.4.1's own note rewards. The blue-leaning advice
+> survives only as a weak preference (the S-cone axis is intact in protan/deutan, which is why
+> Okabe–Ito anchor on blue #0072B2 and orange #E69F00) — **not as the load-bearing constraint.**
+> **"Never red" stands** — red is the reserved alarm register (§B below).
+
+**Epidemiology, current best evidence** — Jeong YD et al., *Ophthalmology* 2025;132(12):1431–1444
+(56 studies, 21 countries, **1,703,619 participants**): global pooled **2.59%**; **males 4.38%**,
+females 0.64%; deutan is the commonest. Birch (*JOSA A* 2012) gives the classic **~8% of European
+males**; red–green is **~95% of all congenital cases**. **[sourced]**
+**⚠ Unresolved conflict:** tritan prevalence differs ~70× between these sources (<0.01% vs 0.67%).
+**Do not quote a single tritan number as settled. [unknown]**
+
+## ★ A3. Redundancy that costs ZERO salience
+
+**Apple's pattern is the most transferable thing in the brief:** *"instead of using red and green
+circles… use a red square and a green circle."* **It changes the shape of a mark that was already
+present — adding no new ink and no salience.** **[sourced]**
+
+Empirical warrant for colour+shape: Nothelfer, Gleicher & Franconeri, *JEP:HPP* 2017 — redundant
+colour+shape gave a **large** benefit for rapid segmentation and grouping, **88% mean accuracy**
+across three experiments vs markedly lower for either feature alone. **[sourced]**
+
+**Five redundancy channels that cost little or nothing:** ① shape of an already-present mark (free) ·
+② lightness alongside hue (*a **dim** tint and a **low-contrast** tint are different things — only the
+second is the accessibility problem*) · ③ position · ④ **outline vs fill** — IBM Carbon explicitly
+recommends outline icons for minimal-attention cases, *"more delicate and not as readily scannable"*
+· ⑤ **text elsewhere, not on the mark** (G14). **[sourced]**
+
+*Note Carbon's opposite-direction answer to the same tension: it requires ≥3 of {colour, shape,
+symbol, text} and instead **reduces the weight of each channel** rather than dropping channels.*
+
+## ★ B. THREE is the convergent number — and colour is a BUDGET
+
+**Two regulators, two industries, two separate decades, same answer:**
+- **IEC 60601-1-8** (medical alarms): **three** priorities. High = red, flashing 1.4–2.8 Hz · Medium =
+  yellow, 0.4–0.8 Hz · **Low = cyan or yellow, CONSTANT ON — not flashing.**
+  **[sourced-2° — paywalled standard; vendor documentation, consistent across sources, NOT verified
+  against IEC text]**
+  > **A steady tint is, in this vocabulary, the standardised form of "lowest priority."** Motion is
+  > reserved entirely for the two higher tiers. Direct precedent for what we are building.
+- **FAA AC 25.1322-1** (flight-deck alerting): **three** levels — Warning / Caution / Advisory.
+  **[sourced-2° — faa.gov returned 403; from the AC and its Federal Register rulemaking]**
+
+**★ And aviation's doctrine, which lands directly on Constellation:** *"The use of the colors red,
+amber, and yellow on the flight deck for functions **other than** flightcrew alerting must be limited
+and must not adversely affect flightcrew alerting."* Rationale: inconsistent use *"could increase
+processing time, add to workload, and increase potential for flightcrew confusion or errors."*
+
+> **Colour meaning is a BUDGET, and every non-alerting use of a colour depletes it.** Constellation
+> has already spent heavily: six link-stage colours, library identity, stratum, link types, syntax
+> highlighting, selection, search matches, diff. **The budget is drawn down before the status channel
+> gets anything — which is a second, independent argument for the reserved silent gutter.**
+
+**Alarm fatigue — the failure mode of proliferation is LEARNED DISMISSAL, not confusion.** Cvach,
+*BI&T* 2012: **80–99% of monitor alarms are false or clinically insignificant** *(the oft-repeated
+"99.4%" endpoint recurs with no traceable primary — use the band)*; "alarm hazards" was ECRI's **#1**
+health-technology hazard for 2012; the documented behaviour is the **"cry wolf" effect** — silencing,
+deferring, disabling. **[sourced-2°]**
+
+> **⚠ Aimed at us:** *a signal designed to "survive being ignored indefinitely" is walking toward this
+> hazard.* The mitigation in every one of these fields is identical: **few signals, each rare, each
+> meaning exactly one thing, each reliably true.** A signal that fires often and is ignored teaches
+> the user the channel is noise — **and that lesson generalises to every future signal on it.**
+
+## B5. Miller's 7±2 is the WRONG citation — and Miller said so himself
+
+*"the span of absolute judgment and the span of immediate memory are quite different kinds of
+limitations"* · *"I suspect that it is only a pernicious, Pythagorean coincidence."* **[sourced]**
+
+**The correct number for colour**, from Miller's own text reporting Eriksen: **3.1 bits for hue ≈
+8–9 identifiable hues; 2.3 bits for brightness ≈ 5 levels.** **[sourced]** — but that is for
+**optimal, high-saturation, foveated, actively-judged** stimuli. Ours is **low-saturation** and
+**peripheral**. Both push the effective limit well below.
+*(Cowan 2001's "4±1" revision applies to working memory, not to this. **[sourced-2°, not opened]**)*
+
+> **Verdict: 3 states + "no signal" is the defensible maximum; absolute ceiling 5. We are at N=1,
+> which is the strongest possible position — the only case where lightness alone can satisfy 1.4.1,
+> and the only case where the user has nothing to LEARN, just something to NOTICE. Hold it.** If a
+> second state is genuinely needed, spend it on a **different channel** (position, outline-vs-fill),
+> never a second hue.
+
+## ★ C. The transition sets the salience — not the steady state
+
+**Matthews, Dey, Mankoff, Carter & Rattenbury, UIST 2004 — five ordered notification levels:**
+
+| Level | Attention | Transition mechanism |
+|---|---|---|
+| **Ignore** | none | no change |
+| **★ Change blind** | inattention | **fading, slow motion, tiny updates** |
+| **Make aware** | divided | **discrete, abrupt updates** |
+| **Interrupt** | focused | flashing, beeping, vibration |
+| **Demand action** | focused + interaction | interrupts until acted on |
+
+**[sourced-2° — PDFs unparseable; taxonomy consistently reported, primary not read]**
+
+> **Our brief specifies exactly "Change blind," and the taxonomy names the mechanism: fading.** A tint
+> that fades in over ~1 s is change-blind **by construction**; **the same tint applied instantaneously
+> is one level louder.** **The salience of a persistent signal is set primarily by its TRANSITION, not
+> its steady-state appearance** — a free lever that costs no contrast.
+
+**⚠ Note the tension with §2, and hold both.** Vision science has **no gradual-onset capture data**
+(the 2025 review) — hence §2's "avoid the transient by *timing*." The peripheral-display *design*
+literature treats **fading as the established change-blind transition**. These agree in direction but
+differ in warrant: **timing is the evidence-backed lever; fading is the design-practice lever. Use
+both; rely on timing.**
+
+**And it supplies the upgrade path we needed:** the same signal may be authored **change-blind during
+writing** and re-presented **make-aware at a boundary** (on save, on close, on opening the notes
+list) — periphery → centre exactly as Weiser & Brown describe, **without ever interrupting.**
+
+*Weiser & Brown, "The Coming Age of Calm Technology" (Xerox PARC, 1996), verbatim:* *"A calm
+technology will move easily from the periphery of our attention, to the center, and back."* ·
+*"We use 'periphery' to name what we are attuned to without attending to explicitly."* · *"the
+periphery is informing without overburdening."* **[sourced]** — **The Boss's ruling is a near-verbatim
+restatement of this. Cite it as the concept, not as a technique.**
+
+## D. Culture — the folk wisdom is folk wisdom
+
+Jonauskaite et al., *Psychological Science* 2020;31(10):1245–1260 — **4,598 participants, 30 nations,
+22 native languages**, 20 emotions × 12 colour terms: **universal colour–emotion associations with
+average pattern similarity r = .88**; nation still predicted associations beyond the universal
+pattern; similarity was greater for linguistically/geographically close nations. **[sourced]**
+
+> **"Strongly universal, measurably modulated"** — *not* "colour meaning is culturally arbitrary"
+> (the design-blog claim, which carries no primary research), and *not* fully universal either.
+> **For a 15-language app: stable enough to build on, not stable enough to be the sole carrier —
+> which is the same conclusion accessibility forced for entirely different reasons. The two
+> constraints agree.**
+
+## E. RTL — the glyph does not mirror, its position must
+
+- **The mark itself must NOT mirror.** A circle, bar or tint has no reading-order semantics; every
+  source puts it in the "lacks clear directionality" bucket (Wikimedia Codex; PatternFly quoting
+  Material). *(If a chevron or arrow is ever added, **that** mirrors — our existing rule covers it.)*
+- **Its position MUST mirror** — via **logical properties** (`inset-inline-start`,
+  `margin-inline-end`), never physical `left`/`right`. A signal at the line's *start* edge stays at
+  the start edge: screen-left in English, screen-right in Arabic/Hebrew/Farsi/Urdu, automatically.
+- **★ The tooltip is the most likely RTL bug in the whole feature.** PatternFly explicitly flags
+  popper-positioned overlays as **not automatically RTL-correct** — *"the popper position and
+  placement will need to be managed manually."* And per A1 the tooltip may well BE the G14 text
+  equivalent, i.e. the compliance-critical part. **[sourced]**
+
+## F. What thread 3 could not verify
+
+IEC 60601-1-8 normative text (paywalled — colours/rates/duty cycles from vendor docs) · FAA AC
+25.1322-1 PDF (HTTP 403) · Cowan 2001 · Chapanis & Overbey and Halsey & Chapanis (paywalled; the
+"nameable colours reach ~5.07 bits / ~33 colours" upward qualifier is **unverified** — but the
+direction matters: **learned, nameable, well-separated colours vastly outperform arbitrary hue
+continua**) · Ware's 5–10 hue recommendation (book not opened) · Matthews et al. primary ·
+Pousman & Stasko contents · Material 3 bidirectionality page (JS-rendered; a claimed Hebrew exception
+for timelines is **unverified — do not act on it**) · Carbon/Apple current pages (mirrors + summaries)
+· tritan prevalence (~70× conflict, unresolved) · the "99.4%" alarm endpoint · **and: no published
+design rationale exists for the VS Code unsaved-dot / macOS close-button dot / sync dots — searched
+and not found.** *(VS Code's structure is nonetheless instructive: a low-salience dot in the tab plus
+a countable badge in the Explorer — the G14 pattern implemented as a product decision, though never
+stated as such.)*
+
+---
+
 *Research v1, 2026-07-19. Serves the Uninterrupted Stream ruling and the colour-signal
 specification. Companion to `Note-Shape-Concept-Research-v1.md` (six-track concept research) and
 `Note-Shape-and-Template-Studio-Brainstorm.md` (the durable concept record).*
