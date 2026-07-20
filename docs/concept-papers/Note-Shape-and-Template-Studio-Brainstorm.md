@@ -896,15 +896,50 @@ mark tying a marginal لَحَق to its exact gap in the line. *A container's fi
 stranger point at a piece of this, later, and still hit it after the object is reorganised?"* A
 scroll denies addressability; a codex grants it. **A قصاصة is impossible without it.**
 
-> **★ A convergence worth pausing on, surfaced by the secular re-framing.** Lemma-citation anchors a
-> gloss by *quoting the words it is about*. That is, exactly, the W3C Web Annotation Model's
-> **TextQuoteSelector** — and the reason Hypothes.is anchors on quoted text with fuzzy matching
-> rather than on character offsets is the same reason a شرح did: **a position-based address dies the
-> moment the container re-flows, and a quote-based one does not.** Twelfth-century commentators and
-> the 2017 W3C spec solved the same problem the same way, eight centuries apart, because it is the
-> *only* shape of address that survives re-layout. → This is strong independent confirmation for the
-> anchoring design already sketched at §"Anchor granularity": **store the quote, not the offset**;
-> keep offsets only as a fast hint to be re-validated, never as the identity.
+> **⚠ RETRACTED — I wrote a convergence here and adversarial verification inverted it (2026-07-19).**
+>
+> **What I claimed:** lemma-citation = the W3C **TextQuoteSelector**; Hypothes.is anchors on quoted
+> text *rather than* offsets because a position dies on re-flow and a quotation does not; therefore
+> **"store the quote, not the offset."** I presented this as independent confirmation of the anchoring
+> design, and it was doubly attractive because the v2 research agent reached the same conclusion
+> separately — *two derivations agreeing on a wrong answer, which is exactly how a plausible story
+> hardens into a fact.*
+>
+> **What is actually true:**
+> - **The W3C spec ranks nothing.** It does say TextPositionSelector is "very brittle with regards to
+>   changes to the resource… unlike the Text Quote Selector" — a statement about one axis, not a
+>   designation of a durable primitive.
+> - **Hypothes.is tries quote *last*, not first.** The client's real order is **Range → Position →
+>   Quote → MediaTime**, advancing only on failure. The quote is the **validator**
+>   (`maybeAssertQuote`) and the **recovery path** — not the address. The 32-character prefix/suffix
+>   window is a Hypothes.is house constant, not spec.
+> - **Every historical success of lemma anchoring happened over a text that was not permitted to
+>   change.** Scholia, catenae, the apparatus criticus, matn-wa-sharḥ — all anchor into a frozen
+>   canonical host. **Constellation's host is mutable, and the annotated passage is the single span
+>   most likely to be edited next.** The precedent is drawn from the opposite regime to ours.
+> - **Decisive for us:** quote anchoring *cannot* survive an edit to the quoted text itself. Position
+>   mapping through the transaction stream **can** — and that is `ChangeSet.mapPos`, which
+>   Constellation already runs in `calloutPlugin.ts` / `paragraphDir.ts`. **We already own the edit
+>   stream; Hypothes.is does not.** That is our structural advantage and the retracted claim would
+>   have thrown it away.
+>
+> **The corrected design, and it is the pairing the traditions actually used** — a positional address
+> *alongside* a stored quoted copy, never one instead of the other: critical-sign + lemma in the
+> two-roll Alexandrian system; line number + lemma in the apparatus criticus; Range+Position+Quote in
+> Hypothes.is. **Keep the pairing argument; drop the supremacy argument.**
+>
+> → **Map positions through the transaction stream as the primary address** (it survives edits, which
+> is our actual failure mode); **store the quote as a verifier** re-asserted on adopt/reload; **make
+> orphaning a visible first-class state** rather than a silent mis-anchor. Honest prior from
+> Hypothes.is's measured behaviour on read-only hosts: **~27% orphaned, ~61% at risk.** We should beat
+> that because we watch the edits — but the orphan state must exist and be shown.
+>
+> *One artefact from this that transfers immediately:* the `maybeAssertQuote` validator pattern maps
+> onto the **PJ-070 watcher-adopt** path — the case where a file changed underneath us and we must
+> decide whether our anchors still mean what they meant.
+>
+> *(W3C's normative rules on Unicode code points vs grapheme clusters in TextQuoteSelector ARE
+> load-bearing for us — Arabic combining marks and CJK. That part survived verification.)*
 
 Not covered
 by any of the five.

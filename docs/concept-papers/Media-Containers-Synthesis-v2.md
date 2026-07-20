@@ -5,6 +5,66 @@ Feeds: **Note Shape** (template-as-mould) and **Qusasah / قصاصة** (marginal
 
 ---
 
+## ⛔ READ FIRST — post-verification status (2026-07-19)
+
+**This document's four load-bearing claims were adversarially verified after it was written. One was
+REFUTED outright; three were partly confirmed but had their design recommendations removed,
+qualified, or INVERTED.** Sections 4, 6.1, 6.6 and 7.6 must be read against the corrections below.
+
+| Claim | Verdict | May it drive design? |
+|---|---|---|
+| **C1** — the Accursian legal page as a *secular* fixed frame (§4.0) | PARTLY CONFIRMED | **Yes, re-described.** The frame is real and has a name (*textus inclusus*). But the base text is **two dense columns, not one centred column**, and the **interlinear zone is the glossed Bible's hallmark, not the law book's** — imported from the excluded exemplar. Geometry was **not fixed**. Independence from the glossed Bible is **unestablished**. |
+| **C2** — the lemma/quotation beats positional anchoring (§6.1, §10.4) | PARTLY CONFIRMED | **NO as written.** Hypothes.is tries quote **last**, not first (Range→Position→Quote); quote is the **validator and recovery path**. Every historical success of lemma anchoring occurred over a **frozen** host — the opposite of our regime. *The layered pairing it actually supports: yes.* |
+| **C3** — heading-at-capture is what turns a jotting-heap into a work (§7.6) | PARTLY CONFIRMED | **NO for the causal claim.** No historian argues it, and the headline example (Lichtenberg's unheaded *Sudelbücher*) refutes it. Retrievability: yes. |
+| **C4** — annotation block measured first, base text fitted around it (§4.5 #4, §6.6) | **REFUTED** | **No.** No source attests the ordering. The one secular manuscript with decisive internal evidence shows the **host complete and the annotation abandoned** — host first. |
+
+### ⚠ The systemic finding — a scope-ruling violation, not four accuracy quibbles
+
+> **Scope note.** The manuscript-glossing evidence assembled here is **religious-corpus-dominant**.
+> Where a secular check was possible it either **weakened or reversed** the conclusion. No design
+> recommendation in this document should be read as carrying secular-tradition warrant.
+
+All four claims leaned on a religious evidence base while being presented as secular:
+*textus inclusus* is defined genre-neutrally and its standard exposition illustrates it with a
+**biblical commentary**; C2's comparative base is Iliad commentaries plus the **Qumran pesharim**;
+C3's flagship *Loci communes* is **Melanchthon's Lutheran dogmatics** and the manual tradition is
+Jesuit; C4's entire mature-glossed-codex base is the **Glossa ordinaria** — the Bible.
+**The exclusion did not merely trim the corpus; it revealed that the layered-page evidence base was
+religious all along, and that the secular substitutes were partly the excluded thing relabelled.**
+
+### What survived and is genuinely solid
+
+- **Hypothes.is's real architecture** — position/structure first as the fast path, quote as validator
+  (`maybeAssertQuote`) and recovery, **orphans as a visible first-class state**. Maps directly onto
+  the **PJ-070 watcher-adopt** path. *Most transferable artefact in the whole research.*
+- **Measured orphan profile** on read-only hosts: **~27% orphaned, ~61% at risk**. The honest prior.
+- **Quote anchoring cannot survive an edit to the quoted text; position mapping through the
+  transaction stream can.** Decisive for an editable host — and `ChangeSet.mapPos` is already ours.
+- **W3C's normative Unicode code-point / grapheme-cluster rules** — load-bearing for Arabic combining
+  marks and CJK. *Language-First by Design.*
+- ***Textus inclusus*** as a real named pre-installed enclosing frame, and a **single shared ruling
+  grid** for host and annotation *(medium confidence — single-source)*.
+- **"Do not gate capture on a head."** The manuals prescribed heading-at-capture; the surviving
+  manuscripts show nearly everyone abandoning it — *including Locke and including the manual authors*
+  — "sooner or later he gave up, leaving many if not most pages almost or indeed entirely empty."
+  **A mandatory write-time classification UI reproduces a documented historical failure.** Cheap
+  capture + strong automatic retrieval is what the evidence supports — already Constellation's
+  FTS5-trigger shape (Rule 8). **★ This bears directly on the Template Studio.**
+
+### The pattern worth remembering
+
+All four failures have the same shape: **a plausible architecture recalled from general knowledge,
+with the specifics back-filled confidently and wrongly.** That is the BASIC RULE's failure mode
+exactly — and it survived a research pass, a synthesis, and my own review before adversarial
+verification caught it. Qusasah's design should now stand on **its own engineering and UX merits**;
+the manuscript history supplies vocabulary and *one* genuinely useful pattern — a positional address
+paired with a stored quoted verifier, orphaning visibly on mismatch — and nothing more.
+
+*Full verification record: workflow `wf_b304b51b-5df`. Detailed per-claim corrections are folded into
+§4, §6.1, §6.6 and §7.6 below; §11 records what needs a specialist we do not have.*
+
+---
+
 ## Why this document exists
 
 The first synthesis was produced from **two of the four** tradition studies. The **European** and **South Asian + Hebrew** studies were truncated before delivery. The first pass said so honestly and flagged the gap as its top open question — but every conclusion it drew about page architecture came from two **flowing-margin** traditions only, and it therefore never saw the **fixed-frame** model that the two missing studies exist to describe.
@@ -154,6 +214,23 @@ The **glossed scholastic codex**, mature c. 1150–1250. The European study desc
 > ⚠ **Evidence flag.** The study's canonical exemplar for this description was an excluded text. What survives is its explicit statement that the *same architecture* serves the legal and Aristotelian glossed books — plus the study's own admission that it described the architecture "from **secondary descriptions**, not from measured codicological studies of named shelfmarks." So: **the secular fixed frame is attested but not measured in this research.** Every downstream claim carries that discount.
 >
 > The coordinator's brief names **Accursius's *Glossa Ordinaria* on the *Corpus Juris Civilis*** as the primary secular exemplar. **That attribution is not in any study in this research pass**; I know it only from general knowledge (Accursius, Bologna, c. 1230s, whose apparatus superseded the earlier glossators' and was the standard gloss in printed Roman-law folios). **Treat as unverified here** and see §11.
+
+> ### ⛔ C1 CORRECTION — verified 2026-07-19; the architecture is real, three of its four specifics are wrong
+>
+> **The attribution is real.** Accursius of Bologna (c. 1181/85–1259/63) compiled a *Glossa ordinaria* on the *Corpus iuris civilis* — c. 96,940 glosses; ~1,200 surviving manuscripts; printed from Mainz 1476 and in the Venice folios of Baptista de Tortis (*Digestum vetus*, 31 Oct 1494); authoritative into the 17th c. **Dating "c. 1230s" is loose** — begun probably in the 1220s, revised through the 1230s–40s, completion **contested** (1228 to c. 1258), with no modern critical edition to settle it. *(Beware citation chains through Britannica, which names the compiler "Franciscus Accursius" — that is his son.)*
+>
+> **The architecture is real and has a name: *textus inclusus*.** Kwakkel (*Glossator* 12, 2022, citing Drossbach 2020): the main text in **two central columns** in large script, commentary around it in smaller script "in the shape of two 'square brackets'… because it fully enclosed the main text." The apparatus was **pre-installed by the scribe** and the codex "was purchased like this." Measured exemplars exist — Bodleian A 1.11 Art. Seld.: *"2 columns of text (35 lines) and 2 columns of gloss (76 lines)"*, written area 162×96 mm, incl. gloss 265×166 mm; Bodmer Cod. 100 (*Digestum vetus*, 425×265 mm); a Toulouse *Institutiones* c. 1290–1300 with text justification 232×130 mm inside gloss justification 320×230 mm.
+>
+> **Three specifics in the brief were WRONG, and one of them re-imported the excluded thing:**
+> 1. **NOT a centred base text — two dense central columns.** Every measured description says so.
+> 2. **The interlinear-gloss-between-widely-spaced-lines zone is the glossed BIBLE's hallmark, not the law book's.** The glossed Bible opens its base text out so gloss can sit between the lines; **the legal page does the opposite** — it packs the base text dense and runs the gloss at roughly **double the line density** in the surrounding frame (35 vs 76 lines is the proof). Interlinear glossing occurs in law books as a reader-added layer; it is **not a designed structural zone**. *Asserting it was an import from the excluded exemplar — my brief did the exact thing I told the agent not to do.*
+> 3. **The geometry was NOT fixed.** Text-block length is described as irregular, and the recognised achievement of de Tortis was *solving the problem of making a page's text and its gloss end together* — **a problem that exists only because both masses reflow.**
+>
+> **And the "secular invention" framing collapses.** *Textus inclusus* is defined **genre-neutrally**, and its standard public exposition illustrates it with **Peter Lombard's *Glossa in epistolas Pauli*** — a biblical commentary — where the base text *is* a single centred column. **Whether the legal frame page developed independently of the glossed Bible is unresolved**; no named scholar asserts either direction, and what surfaced instead were two automated search summaries confidently asserting **opposite** directions with no traceable authority. *Treat that as a red flag, not a neutral null.*
+>
+> **What may still drive design:** *"an authored apparatus surrounds an untouchable core, separated by whitespace gutters, at ~2:1 annotation-to-text line density"* — **supported**. *"Give the annotation a stable geometric frame"* — **no historical warrant.**
+>
+> **The better-sourced contrast to carry forward is not secular-vs-religious but PRE-INSTALLED vs PREPARED-BLANK:** law books shipped **with** the gloss already written; glossed-Aristotle books shipped with **empty ruled annotation columns** the student filled (Kwakkel codes the layouts UTU / GTGG / GGTGGG — one text column flanked by up to five glossing columns). *Single-scholar sourcing, uncorroborated.* **For Qusasah this is the live question: does a note ship with lanes already drawn, or with lanes drawn only when a remark arrives?**
 
 **Two further secular fixed-frame specimens, both fully in scope:**
 
@@ -315,6 +392,20 @@ The European study names the primitive outright:
 
 **Build the *apparatus criticus* pairing:** store the **lemma** (quoted span) **and** a positional address; **when they disagree, the lemma adjudicates and the position is repaired.** The printed apparatus does exactly this — bold lemma + line number, where the number is the brittle half and the quotation is the durable half.
 
+> ### ⛔ C2 CORRECTION — verified 2026-07-19; the supremacy argument above is WRONG
+>
+> **The pairing recommendation survives. The ranking inside it does not, and the design consequence inverts.**
+>
+> - **The W3C spec ranks nothing.** It *does* say TextPositionSelector is "very brittle with regards to changes to the resource… unlike the Text Quote Selector" — one axis, not a designation of a durable primitive. State it that precisely.
+> - **Hypothes.is tries quote LAST.** Real order: **Range → Position → Quote → MediaTime**, advancing only on failure. Quote is the **validator** (`maybeAssertQuote`) and the **recovery path** — not the address. The 32-char prefix/suffix window is a Hypothes.is house constant, **not spec**.
+> - **The historical chain ran over FROZEN hosts.** Alexandrian scholia, catenae, the apparatus criticus, *matn-wa-sharḥ* — every one anchors into a text not permitted to change. **Constellation's host is mutable and the annotated span is the one most likely to be edited next.** The precedent comes from the opposite regime to ours.
+> - **Decisive:** a quote **cannot** survive an edit to the quoted text itself. **Position mapping through the transaction stream can** — `ChangeSet.mapPos`, already running in `calloutPlugin.ts` / `paragraphDir.ts`. **We own the edit stream; Hypothes.is does not.** That is our structural advantage, and "store the quote, not the offset" would have discarded it.
+> - Also struck: *"in the absence of line or paragraph numeration, as was the case in antiquity."* **Antiquity had stichometry** — Homeric papyri, the Bankes Homer among them, are numbered by hundreds in the margin. What was missing was a *standardised citation system*, not positional marking.
+>
+> **Corrected build:** **map positions through the transaction stream as the primary address**; **store the quote as a verifier** re-asserted on adopt/reload; **make orphaning a visible first-class state**, never a silent mis-anchor. Honest prior from measured Hypothes.is behaviour on read-only hosts: **~27% orphaned, ~61% at risk, ~3.5% archive-recoverable.** We should beat it because we watch the edits — but the orphan state must exist and be shown.
+>
+> **Keep the pairing argument; drop the supremacy argument.** Every durable tradition ran a positional address *alongside* a quoted copy — critical sign + lemma; line number + lemma; Range+Position+Quote. The pairing was always the point.
+
 **Render** with East Asian immediacy: the remark appears beside its passage with **no visible footnote number, no superscript, no marker cluttering the host**. Store explicitly; display spatially. The user never sees the plumbing.
 
 ### 6.2 Page architecture
@@ -358,10 +449,23 @@ A remark's kind matters and the kinds are not interchangeable. The secular appar
 ### 6.6 Overflow — the build order
 
 1. **Grow the lane** (default).
-2. **Shrink the host's display, not the annotation.**
+2. ~~**Shrink the host's display, not the annotation.**~~ → **REFUTED as history; see below.**
 3. **Secede** — the qusasah becomes a note, linked to the host.
 
 **Do not pre-allocate fixed space per lane.** That is the commonplace book's documented failure.
+
+> ### ⛔ C4 REFUTED — verified 2026-07-19
+>
+> The ordering claim ("zones planned first, base text written LAST or fitted to an already-measured commentary block") and the "base text as a small fraction of the written area" figure are **struck entirely**. No source attests the ordering in either direction, and **the one secular manuscript with decisive internal evidence runs the other way** — a Justinian *Institutiones* with a **complete text** and a gloss that **stops abruptly at f. 14**. Host first, annotation abandoned.
+>
+> **What is actually supported:** base text and gloss were copied together in one planned operation from a combined exemplar, on a **single shared ruling grid** laid down before writing. Base text occupied roughly **30–40%** of the written area in measured examples, varying page to page and sometimes inverting.
+>
+> **"Shrink the host, never the annotation" therefore loses its precedent and must stand on UX merit alone — and two things argue against it:**
+>
+> 1. **Parchment was zero-sum; a scrolling viewport is not.** Giving the gloss area necessarily took it from the text *because the page had a fixed total area*. The medieval remedy for an overgrown gloss was to **enlarge the surface** — the move the page could not make and **we can**. Defaulting to "shrink the host" imports a constraint we do not have. *(I had flagged the sibling of this trap myself under "Refuse the scroll" — the scrolling viewport looking neutral because it is the accidental default. Here it cuts the other way and is an actual affordance.)*
+> 2. **The historically accurate elastic rule is REFLOW, not SUPPRESS.** The host's column width narrowed under annotation pressure — but **no host content was ever truncated, collapsed, or scrolled out of reach.** That distinction is the whole of it: narrow the host, never hide it.
+>
+> **Corrected build order:** grow the lane → **enlarge the surface** (the move parchment could not make) → **reflow the host narrower, never suppress it** → secede into a linked note.
 
 ---
 
@@ -386,9 +490,23 @@ None is universal; the fourth candidate (epistemic distance) came from an exclud
 
 **The European material resolves it.** Europe holds *both* positions at once, and states the discriminator: the **commonplace book** is a legitimate lifelong instrument, while the **waste book** is "by definition not the record of record." The difference between them is **one thing — whether entries are filed under a heading at the moment of capture.**
 
-> **Structure applied at write time is what converts a jotting-heap into a work.** Not volume, not polish, not later synthesis.
+> ~~**Structure applied at write time is what converts a jotting-heap into a work.**~~ → **RETRACTED, see below.**
 
-Directly actionable, and it maps onto machinery Constellation has (a *locus communis* is a tag/MOC/heading applied at capture). It also aligns with **Rule 8, Write-Time Derivation** — the principle the codebase already applies to indexes turns out to be the historical answer for note collections too.
+> ### ⛔ C3 CORRECTION — verified 2026-07-19; the causal claim is retracted
+>
+> **Delete the generalisation.** No historian argues that heading-at-capture makes a collection a work, and **the claim's own headline example refutes it**: Lichtenberg's *Sudelbücher* are unheaded, never transferred, and canonical. His leading editor (Joost) holds that the *Sudelbücher* **became** his ledger and that the waste-book vocabulary was **ironic understatement**. Also cut *"waste book = not the record of record"* — archival sources call the waste book the **book of original entry**, interchangeable with daybook and journal; the "discarded, hence the name" etymology traces only to Wikipedia and content-marketing blogs.
+>
+> **What is actually supported:** attaching a head or keyword makes a heap **retrievable** — nothing more. **Locke's genuine innovation was the INDEX, a retrieval device — not the filing scheme**; his heads were *emergent*, chosen during note-taking. Second-order commonplacing (capture loose, apply heads at transfer) was a real and widely used option.
+>
+> **And the prescription-vs-practice finding is the one that matters:** the manuals prescribed heading-at-capture; the surviving manuscripts show the discipline **abandoned by most compilers, including Locke and including the manual authors** — *"sooner or later he gave up, leaving many if not most pages almost or indeed entirely empty."*
+>
+> ### ★ Design consequence — **do not gate capture on a head**
+>
+> **A mandatory write-time classification UI reproduces a documented historical failure mode: enthusiastic start, mostly empty book.** Cheap capture plus strong automatic retrieval is the pattern the evidence supports — and it is **already Constellation's shape** (FTS5 triggers, Rule 8: the derived view is maintained on write *by the system*, not by the user filling in a form).
+>
+> **This lands squarely on the Template Studio.** "Ask the user what kind of note they want *before* they can write" is exactly the gate the manuals prescribed and history abandoned. The Constellation Way already says a wizard is still a rail; the book historians say the rail gets abandoned by the very people who designed it. **Two independent arguments, same verdict: let capture be free and let the shape be proposed, adopted, or changed afterwards — never required first.**
+>
+> *(Rule 8 still applies here — but note it now cuts the OTHER way from how this section originally read. Write-Time Derivation is a promise the SYSTEM makes to the user, not a tax the system levies on them.)*
 
 **7.7 Repair granularity.** Islamic codices commonly quinions (5 bifolia); the Latin West quaternions; 袋綴じ is stab-sewn single leaves, repairable one leaf at a time. **[contested]** — the standard generalisation, varies by region and period; not a universal rule.
 
