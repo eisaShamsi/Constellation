@@ -124,17 +124,40 @@ proven in the Boss's Universe.**
 
 ---
 
-## R — Boss rulings needed before the affected step (not before §1a/§1b)
+## R — Boss rulings (updated 2026-07-21 — R2/R3/R4/R5 RULED; R1 in cross-check)
 
-- **R1 (before §1 ships):** "Save as template" keeps what? **Recommendation: keep property KEYS but
-  blank their values, keep headings, drop body prose** — the mold is the structure, the cast is the
-  content. Alternative: keep everything except identity (a true copy). Could also offer both as two
-  menu items if neither feels right alone.
-- **R2 (before §3):** where does the Studio live? **Recommendation: a full-page surface like the
-  Style Setter** (it is a workshop, not a sidebar glance), reachable from the sidebar toolbar and
-  the template picker's "manage" link.
-- **R3 (during §2b):** the Arabic default set — I draft from your taxonomy; you validate before it
-  ships.
+- **R1 — OPEN, Boss-directed cross-check in progress.** Boss: *"What are the standards? Is there a
+  case study we can follow?"* — a WA#5 check against proven methods before locking the keep-vs-strip
+  semantics. Research running (`wf_e5aee265-899`): template file-format standards (.dotx/.ott —
+  what they keep, how identity restamps at new-from-template), shipped save-as-template flows
+  (Evernote/Notion/Word/Canva/Figma…), and whether any product does structure-only. §1's default
+  waits on this answer.
+- **R2 — RULED: "Template Studio shall be treated as a core plugin. It will be like an app within
+  the app."** The Studio is a self-contained surface: its own toggle, its own settings, its own
+  views — shipped in-box but modular, on the Obsidian core-plugin model the app already parallels.
+  §3 is re-scoped accordingly; the research includes a repo-grounded track on how Style Setter and
+  the Wings flags mount today, so the Studio reuses those patterns rather than inventing a shell.
+- **R3 — RULED: "The Arabic should be built based on the old and new manuscript."** The Arabic
+  defaults derive from ATTESTED structures — the classical scholarly monograph (old) and modern
+  Arabic academic/trade conventions (new) — never from general impressions. The standing exclusion
+  of religious books as design evidence applies; the classical evidence base is the secular
+  scholarly tradition (grammar, medicine, history, adab, philosophy). The Boss's own 2026-07-19
+  taxonomy remains a named source. Draft skeletons come back **with per-element evidence grades**
+  for his validation — he is the validator of record.
+- **R4 — RULED: "The studio will have its own independent style setter."** This REVERSES the plan's
+  earlier "styling is out of scope": template visual styling comes INTO this migration as a
+  Studio-scoped style setter — its own instance, inside the Studio, not a category bolted onto the
+  main Style Setter. Lands as **§6** after §3 exists to host it. The earlier concept rulings still
+  govern its content: a declarative token set, never raw CSS; it styles the paper, never the desk.
+- **R5 — RULED: "The studio will store its templates in a visual library."** The Studio's template
+  list is a VISUAL gallery, not a filename list — §3 is re-scoped from "browse" to a card gallery
+  with previews. The research decides the preview mechanism (stored thumbnail vs live render vs
+  structure-skeleton preview); the concept leans structure-skeleton — showing the MOLD, not a cast.
+
+### Phase list as amended by R2/R4/R5
+§1 Save-as-Template (+ the frontmatter-trim defect fix) → §2 request path + Arabic/English defaults
+→ **§3 the Studio as a core-plugin app-within-app, with the visual template gallery** → §4
+recognition → §5 tending → **§6 the Studio's own style setter**.
 
 ## Discipline
 
