@@ -1726,7 +1726,8 @@
     "snippetSource": "ٹکڑے کا ماخذ",
     "snippetSelection": "میرا انتخاب",
     "snippetWholeNote": "مکمل نوٹ",
-    "startFromTemplate": "سانچے سے شروع کریں…"
+    "startFromTemplate": "سانچے سے شروع کریں…",
+    "setFolderTemplate": "طے شدہ سانچہ مقرر کریں…"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",

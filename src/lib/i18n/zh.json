@@ -2166,7 +2166,8 @@
     "snippetSource": "片段来源",
     "snippetSelection": "我的选区",
     "snippetWholeNote": "整篇笔记",
-    "startFromTemplate": "从模板开始…"
+    "startFromTemplate": "从模板开始…",
+    "setFolderTemplate": "设置默认模板…"
   },
   "secondScreen": {
     "title": "第二屏幕",

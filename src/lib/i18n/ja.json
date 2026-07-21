@@ -2166,7 +2166,8 @@
     "snippetSource": "スニペットの範囲",
     "snippetSelection": "選択範囲",
     "snippetWholeNote": "ノート全体",
-    "startFromTemplate": "テンプレートから始める…"
+    "startFromTemplate": "テンプレートから始める…",
+    "setFolderTemplate": "既定のテンプレートを設定…"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",

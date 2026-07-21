@@ -78,6 +78,7 @@
 	import TemplatePrompt from '$lib/components/TemplatePrompt.svelte';
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
+	import { resolveFolderTemplate, templateFileName } from '$lib/templates/folderTemplates';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
 	import SightV3 from '$lib/sight/v3/SightV3.svelte';
@@ -498,7 +499,7 @@
 	let showCommandPalette = $state(false);
 	let showQuickSwitcher = $state(false);
 	let showTemplatePicker = $state(false);
-	let templatePickerMode = $state<'insert' | 'newNote' | 'applyHere'>('insert');
+	let templatePickerMode = $state<'insert' | 'newNote' | 'applyHere' | 'bindFolder'>('insert');
 	// MIG-103 §1 — the title-confirm prompt for "Save as template" (Boss request):
 	// the user accepts the note's name or types a different one before the template
 	// is written.
@@ -508,6 +509,8 @@
 	// MIG-103 D2 — the note the template door belongs to. Carried explicitly so an
 	// apply can never land on merely-the-focused note (the split-view app-killer).
 	let applyTemplateTargetPath = $state('');
+	// MIG-103 D3 — the folder whose default template is being set.
+	let bindFolderTargetPath = $state('');
 
 	// Template prompt/suggester state for async template processing
 	let activePrompt = $state<{ question: string; defaultValue?: string; resolve: (v: string | null) => void } | null>(null);
@@ -4290,18 +4293,23 @@
 			try {
 				const tplDir: string = await invoke('get_templates_dir', { folder: $appSettings.templateFolder });
 				const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
-				const folderTpls = $appSettings.folderTemplates || {};
-				let matchedTpl = '';
-				let matchDepth = -1;
-				for (const [folder, tplName] of Object.entries(folderTpls)) {
-					const normFolder = folder.replace(/\\/g, '/');
-					if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
-						const depth = normFolder.split('/').length;
-						if (depth > matchDepth) { matchDepth = depth; matchedTpl = tplName; }
-					}
-				}
+				// MIG-103 D3 — deepest-wins over a true PATH-PREFIX match, with the
+				// templates directory carved out. The previous inline matcher used
+				// `noteFolder.includes(configuredFolder)` — a SUBSTRING test — so a
+				// folder configured as `Books` silently templated notes in
+				// `Cookbooks/`, `MyBooks/` and `Notebooks/`. Extracted to
+				// `$lib/templates/folderTemplates` so the rule is unit-tested rather
+				// than buried in a component.
+				const matchedTpl = resolveFolderTemplate(
+					noteFolder,
+					$appSettings.folderTemplates,
+					[tplDir], // creating a note inside Templates/ must not fire a template
+				);
+				// `default` remains the global fallback: it applies only if the user
+				// has actually created `default.md`, so it is still opt-in — a
+				// separate, also-attested pattern from the per-folder binding above.
 				const tplFile = matchedTpl || 'default';
-				const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
+				const tplPath = `${tplDir}/${templateFileName(tplFile)}`;
 				const tpl: string = await invoke('read_note', { filePath: tplPath });
 				if (tpl) templateBody = parseFrontmatter(tpl).body;
 			} catch { /* no template — OK */ }
@@ -5015,6 +5023,38 @@
 		}
 	}
 
+	/**
+	 * MIG-103 D3 — bind a default template to a folder.
+	 *
+	 * Notes created in this folder (or any folder beneath it, unless a deeper one
+	 * is bound) are born from that template — silently, at creation, so there is
+	 * never a dialog and never a note with content to overwrite. Off until set;
+	 * picking the same template again clears it, which is the only way to undo a
+	 * binding without a second surface.
+	 */
+	function openFolderTemplatePicker(folderPath: string) {
+		bindFolderTargetPath = folderPath;
+		templatePickerMode = 'bindFolder';
+		refreshTemplates();
+		showTemplatePicker = true;
+	}
+
+	function bindFolderTemplate(templatePath: string) {
+		const folder = bindFolderTargetPath;
+		bindFolderTargetPath = '';
+		if (!folder) return;
+		const name = templatePath.split(/[/\\]/).slice(-1)[0].replace(/\.md$/, '');
+		appSettings.update((s) => {
+			const map = { ...(s.folderTemplates ?? {}) };
+			// Same template again = clear the binding (a toggle, so the only gesture
+			// that sets one can also unset it).
+			if (map[folder] === name) delete map[folder];
+			else map[folder] = name;
+			return { ...s, folderTemplates: map };
+		});
+		notifySettingsChanged();
+	}
+
 	async function handleTemplateSelect(templatePath: string, _libraryName: string) {
 		// MIG-103 §1 — the picker serves two directions. newNote = instantiate a
 		// fresh note from the template (title-confirmed); insert = drop the
@@ -5022,6 +5062,10 @@
 		if (templatePickerMode === 'newNote') {
 			const defaultTitle = templatePath.split(/[/\\]/).slice(-1)[0].replace(/\.md$/, '');
 			newNoteTemplatePrompt = { templatePath, defaultTitle };
+			return;
+		}
+		if (templatePickerMode === 'bindFolder') {
+			bindFolderTemplate(templatePath);
 			return;
 		}
 		if (templatePickerMode === 'applyHere') {
@@ -5929,6 +5973,7 @@
 			actions.newBase = () => handleCreateBase(entry.path, libraryId);
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, entry.name);
+			actions.setFolderTemplate = () => openFolderTemplatePicker(entry.path);
 			actions.bookmark = () => toggleBookmarkPath('folder', entry.path, entry.name);
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
 			actions.copyPathRelative = () => copyRelativePath(entry.path);

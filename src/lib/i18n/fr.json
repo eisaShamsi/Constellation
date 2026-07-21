@@ -1737,7 +1737,8 @@
     "snippetSource": "Source du fragment",
     "snippetSelection": "Ma sélection",
     "snippetWholeNote": "Note entière",
-    "startFromTemplate": "Partir d’un modèle…"
+    "startFromTemplate": "Partir d’un modèle…",
+    "setFolderTemplate": "Définir le modèle par défaut…"
   },
   "secondScreen": {
     "title": "Deuxième écran",

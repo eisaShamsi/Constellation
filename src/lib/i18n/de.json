@@ -1737,7 +1737,8 @@
     "snippetSource": "Quelle des Textbausteins",
     "snippetSelection": "Meine Auswahl",
     "snippetWholeNote": "Ganze Notiz",
-    "startFromTemplate": "Mit einer Vorlage beginnen…"
+    "startFromTemplate": "Mit einer Vorlage beginnen…",
+    "setFolderTemplate": "Standardvorlage festlegen…"
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",

@@ -66,6 +66,10 @@ export interface ContextActions {
 	newNote?: (target: ContextTarget) => void;
 	newFolder?: (target: ContextTarget) => void;
 	newBase?: (target: ContextTarget) => void;
+	/** MIG-103 D3 — bind a default template to this folder (deepest-wins, silent
+	 *  at creation, off until set). The missing half: `folderTemplates` was read
+	 *  by note creation but nothing could ever write it. */
+	setFolderTemplate?: (target: ContextTarget) => void;
 	toggleExpand?: (target: ContextTarget) => void;
 	// MIG-077 §F — richer items (all reuse existing ops):
 	bookmark?: (target: ContextTarget) => void;
@@ -188,6 +192,7 @@ export function buildContextMenu(target: ContextTarget, a: ContextActions): Menu
 	// matching the existing isLibraryRoot behaviour — library management lives in
 	// the Library Manager).
 	const orgGroup: MenuItem[] = [];
+	if (a.setFolderTemplate) orgGroup.push({ label: $t('templates.setFolderTemplate'), icon: '🗂️', action: () => a.setFolderTemplate!(target) });
 	if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });
 	const bmf = bookmarkItem($t, target, a);
 	if (bmf) orgGroup.push(bmf);

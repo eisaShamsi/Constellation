@@ -1737,7 +1737,8 @@
     "snippetSource": "منبع قطعه",
     "snippetSelection": "انتخاب من",
     "snippetWholeNote": "کل یادداشت",
-    "startFromTemplate": "شروع از یک الگو…"
+    "startFromTemplate": "شروع از یک الگو…",
+    "setFolderTemplate": "تعیین الگوی پیش‌فرض…"
   },
   "secondScreen": {
     "title": "صفحه دوم",

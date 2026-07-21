@@ -2272,7 +2272,8 @@
     "snippetSource": "مصدر المقتطف",
     "snippetSelection": "ما حدّدته",
     "snippetWholeNote": "الملاحظة كاملة",
-    "startFromTemplate": "ابدأ من قالب…"
+    "startFromTemplate": "ابدأ من قالب…",
+    "setFolderTemplate": "تعيين القالب الافتراضي…"
   },
   "secondScreen": {
     "title": "الشاشة الثانية",

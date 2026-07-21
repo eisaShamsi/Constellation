@@ -2318,7 +2318,8 @@
     "snippetSource": "Snippet source",
     "snippetSelection": "My selection",
     "snippetWholeNote": "Whole note",
-    "startFromTemplate": "Start from a template…"
+    "startFromTemplate": "Start from a template…",
+    "setFolderTemplate": "Set default template…"
   },
   "cockpit": {
     "dial": "Coupling",

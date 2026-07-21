@@ -2166,7 +2166,8 @@
     "snippetSource": "Источник фрагмента",
     "snippetSelection": "Моё выделение",
     "snippetWholeNote": "Вся заметка",
-    "startFromTemplate": "Начать с шаблона…"
+    "startFromTemplate": "Начать с шаблона…",
+    "setFolderTemplate": "Задать шаблон по умолчанию…"
   },
   "secondScreen": {
     "title": "Второй экран",

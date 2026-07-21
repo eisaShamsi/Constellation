@@ -1726,7 +1726,8 @@
     "snippetSource": "מקור המקטע",
     "snippetSelection": "הבחירה שלי",
     "snippetWholeNote": "הפתק כולו",
-    "startFromTemplate": "להתחיל מתבנית…"
+    "startFromTemplate": "להתחיל מתבנית…",
+    "setFolderTemplate": "הגדרת תבנית ברירת מחדל…"
   },
   "secondScreen": {
     "title": "מסך שני",

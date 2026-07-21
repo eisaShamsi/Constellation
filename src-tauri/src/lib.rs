@@ -66,6 +66,8 @@ pub mod lexicon;
 mod search;
 /// MIG-101 Phase A — note shape + its reversibility (see docs/MIG-101-*-Plan.md).
 mod shape;
+/// MIG-103 §4 — RECOGNITION: discover the note shapes a Universe already contains.
+mod template_discovery;
 mod sky_backfill;
 mod links_backfill;
 mod note_body_backfill;

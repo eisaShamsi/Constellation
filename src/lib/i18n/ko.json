@@ -2166,7 +2166,8 @@
     "snippetSource": "스니펫 원본",
     "snippetSelection": "선택 영역",
     "snippetWholeNote": "전체 노트",
-    "startFromTemplate": "템플릿으로 시작…"
+    "startFromTemplate": "템플릿으로 시작…",
+    "setFolderTemplate": "기본 템플릿 설정…"
   },
   "secondScreen": {
     "title": "보조 화면",

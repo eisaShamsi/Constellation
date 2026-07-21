@@ -2166,7 +2166,8 @@
     "snippetSource": "Origem do trecho",
     "snippetSelection": "Minha seleção",
     "snippetWholeNote": "Nota inteira",
-    "startFromTemplate": "Começar a partir de um modelo…"
+    "startFromTemplate": "Começar a partir de um modelo…",
+    "setFolderTemplate": "Definir modelo padrão…"
   },
   "secondScreen": {
     "title": "Segunda tela",

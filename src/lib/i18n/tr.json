@@ -2166,7 +2166,8 @@
     "snippetSource": "Parçacık kaynağı",
     "snippetSelection": "Seçimim",
     "snippetWholeNote": "Tüm not",
-    "startFromTemplate": "Bir şablonla başla…"
+    "startFromTemplate": "Bir şablonla başla…",
+    "setFolderTemplate": "Varsayılan şablonu ayarla…"
   },
   "secondScreen": {
     "title": "İkinci Ekran",
