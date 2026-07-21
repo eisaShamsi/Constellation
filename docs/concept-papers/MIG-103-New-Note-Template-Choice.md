@@ -62,7 +62,63 @@ I flag this honestly: it is the most intuitive explanation of the observed behav
 
 ## 2. Where a personal-knowledge app belongs
 
-**Constellation is in the note camp, and the evidence for that is not mixed — it is 15–0.**
+> ## ⛔ BOSS CORRECTION (2026-07-21) — the "camp" framing is REJECTED
+>
+> **What I wrote:** *"A document is deliberate, infrequent, long-lived… a note is fast and frequent…
+> Constellation belongs in the note camp."*
+>
+> **Boss:** *"Wrong assumption! Constellation is a PKM/PKF system. It is based on the Cognitive
+> Knowledge making/formulation, and it could use long documents or short notes, to formulate one's
+> knowledge."*
+>
+> **He is right, and the error is categorical, not cosmetic.** I imported an outside taxonomy
+> (note-app vs document-app) and then reasoned from that camp's habits, instead of reading
+> Constellation's own concept. Constellation is not a note app that happens to hold long things:
+> **its declared purpose is Knowledge Formulation, and formulation spans the whole range.** The
+> evidence was in front of me — the four compositional forms (atomic · serial · structured ·
+> collected), note **shape** (scrap → page), and the **manuscript builder** we are building as the
+> fourth kind, which is long-document territory by definition.
+>
+> ### What survives, and what does not
+>
+> - **The product counts survive.** 15 of 15 note apps do not gate; 5 of 8 document apps are
+>   blank-first on the fast path. That is observed behaviour and is unaffected.
+> - **The INFERENCE does not survive.** "Constellation is in the note camp, 15–0" is withdrawn.
+>   Constellation is in **both** — or rather, the camp question is the wrong question for this app.
+>
+> ### The corrected frame: design PER COGNITIVE ACT, not per app
+>
+> The app contains **both kinds of act**, so the default belongs to the *gesture*, not to the product:
+>
+> | The act | What it needs | Constellation's surface |
+> |---|---|---|
+> | **Capture** — get it down before it evaporates | blank, instant, never gated | **New Note** |
+> | **Compose** — deliberately build something structured | structure offered up front | **New from template · the manuscript builder** |
+> | **Formulate** — a scrap turns out to be something bigger | move between the two, late | **apply-a-template-later · shape graduation** |
+>
+> **So "New Note stays blank" is still right — but the reason changes**, and the new reason is
+> stronger. Not *"because we are a note app"* (an imported claim, now false), but *"because that
+> particular gesture IS the capture gesture."* A different gesture may legitimately front structure —
+> which is exactly what the manuscript builder does, and why it is not a contradiction.
+>
+> ### The deeper consequence — this is why gating is wrong HERE
+>
+> The strongest argument against a chooser at creation is no longer borrowed from note apps. It comes
+> from Constellation's own concept: **in knowledge formulation you frequently do not yet know what the
+> thing is.** A scrap becomes a chapter; a daily entry becomes an essay. Forcing *"is this a quick note
+> or a book?"* at the instant of capture demands a decision the user has not made yet — and the process
+> of finding out **is the work**. That is the same insight as MIG-101's **graduation** (a note outgrows
+> its shape) and as Shipman & Marshall's incremental formalization, arrived at from our own doctrine
+> rather than from someone else's product habits.
+>
+> **It also elevates one recommendation:** *apply a template to a note you already started* (§4.3-C,
+> Decision 4) is no longer a nice-to-have third item. In a formulation system it is **the bridge
+> between the two acts** — the mechanism by which a captured scrap becomes a composed thing. It should
+> be weighted accordingly.
+
+**~~Constellation is in the note camp, and the evidence for that is not mixed — it is 15–0.~~**
+*(Withdrawn — see the correction above. The 15–0 count stands as an observation about note apps; the
+claim that it settles Constellation's identity does not.)*
 
 ### Reconciling with the project's own verified finding
 
