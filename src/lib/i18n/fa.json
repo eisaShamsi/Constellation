@@ -777,7 +777,8 @@
     "inspector360": "بازرس کروی",
     "constellationMap": "نقشه دانش",
     "newLibrary": "کتابخانه جدید",
-    "cataloger": "دسته‌بند"
+    "cataloger": "دسته‌بند",
+    "newNoteFromTemplate": "یادداشت جدید از الگو"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -1727,7 +1728,16 @@
     "promptCancel": "لغو",
     "suggesterTitle": "یک گزینه انتخاب کنید",
     "suggesterSearch": "فیلتر گزینه‌ها...",
-    "noOptions": "گزینه مطابقی یافت نشد"
+    "noOptions": "گزینه مطابقی یافت نشد",
+    "confirmTemplateName": "نام الگو",
+    "newNoteTitle": "عنوان یادداشت جدید",
+    "saveAsWhole": "ذخیره به‌عنوان الگو (یادداشت کامل)",
+    "saveAsFrontmatter": "ذخیره به‌عنوان الگو (فقط ویژگی‌ها)",
+    "saveAsSnippet": "ذخیره به‌عنوان الگو (قطعه)",
+    "snippetSource": "منبع قطعه",
+    "snippetSelection": "انتخاب من",
+    "snippetWholeNote": "کل یادداشت",
+    "startFromTemplate": "شروع از یک الگو…"
   },
   "secondScreen": {
     "title": "صفحه دوم",

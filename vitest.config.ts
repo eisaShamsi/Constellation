@@ -27,9 +27,17 @@ export default defineConfig({
 			// G4 — nested-object-list serializer (safety-inspection APP-KILLER):
 			// editing one ikhtilaf row flattened the whole block to a scalar.
 			'tests/g4/nestedObjectListRoundtrip.test.ts',
+			// MIG-103 D2 — the blank-body predicate behind the template door.
+			'tests/mig-103/blankBody.test.ts',
+			// MIG-103 D2 — the door must apply to ITS note, and only when blank
+			// (safety-inspection APP-KILLER: split-view wrong-note wipe).
+			'tests/mig-103/applyTemplateTarget.test.ts',
 			'tests/mig-101/shapeThroughModel.test.ts',
 			// MIG-101 §A — the read-only write guard (safety-inspection APP-KILLER).
 			'tests/mig-101/readOnlyWriteGuard.test.ts',
+			// PJ-130 Batch 1 (APP-KILLER) — display-only windows never write.
+			'tests/pj-130/displayOnlyNeverWrites.test.ts',
+
 			// MIG-080 §C.2 (2026-06-21) — natural-language task due-date resolution.
 			'tests/mig-080/taskDates.test.ts',
 			'tests/sight-v6/perf.test.ts',

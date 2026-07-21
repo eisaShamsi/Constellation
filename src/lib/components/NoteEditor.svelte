@@ -25,6 +25,7 @@
 	// so the app behaves identically to the §C-1 safe state right now.
 	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession } from '$lib/editor/noteSession';
 	import { compose, getModel } from '$lib/editor/noteModel';
+	import { getActiveEditorForPath } from '$lib/editor/activeEditor';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import type { Text } from '@codemirror/state';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
@@ -554,6 +555,51 @@
 			case 'shapeClear':
 				applyShape(null);
 				return;
+			// MIG-103 §1 — Save as Template. Reads the LIVE model when the note is
+			// open (the model is the authority — MIG-076; disk may be a stale cast),
+			// falls back to tab.content otherwise. Creates a NEW file in the
+			// universe's Templates folder, so it is a write and read-only hosts
+			// refuse (Display-not-Domain).
+			case 'saveTplWhole':
+			case 'saveTplFrontmatter':
+			case 'saveTplSnippet': {
+				if (readOnly) return; // G3 — read-only display never writes
+				const model = getModel(tab.id);
+				let liveContent: string | undefined;
+				if (SINGLE_OWNERSHIP && model) {
+					const r = compose(tab.id, tab.path);
+					if (r.ok) liveContent = r.content;
+				}
+				// The title-confirm prompt lives in the layout (where the modals are),
+				// so the actual create_template call happens there after the user
+				// accepts or edits the template name (Boss request, 2026-07-21). We
+				// capture the LIVE content here — the model is the authority on an
+				// open note (MIG-076) — and hand it off with the note's name and the
+				// chosen KIND (whole | frontmatter | snippet).
+				const kind = action === 'saveTplFrontmatter' ? 'frontmatter'
+					: action === 'saveTplSnippet' ? 'snippet' : 'whole';
+				// A snippet is a FRAGMENT, so its extent is the user's choice (Boss,
+				// 2026-07-21). Read whatever is selected in the live editor; the
+				// layout offers "Selection vs Whole note" only when there IS one —
+				// no selection means there is nothing to choose between, so it does
+				// not ask (a stated need is not an invitation to interrogate).
+				let selection = '';
+				if (kind === 'snippet') {
+					const view = getActiveEditorForPath(tab.path);
+					const sel = view?.state.selection.main;
+					if (view && sel && !sel.empty) selection = view.state.sliceDoc(sel.from, sel.to);
+				}
+				document.dispatchEvent(new CustomEvent('constellation:save-as-template', {
+					detail: {
+						path: tab.path,
+						defaultName: tab.name.replace(/\.md$/, ''),
+						content: liveContent ?? tab.content ?? '',
+						kind,
+						selection,
+					},
+				}));
+				return;
+			}
 			case 'shapeRevert':
 				// `undo_shape` consumes one step and returns the shape to restore
 				// (null = back to unshaped). Applied WITHOUT recording, so the next

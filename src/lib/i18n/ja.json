@@ -777,7 +777,8 @@
     "inspector360": "360.3Dインスペクター",
     "constellationMap": "ナレッジマップ",
     "newLibrary": "新しいライブラリ",
-    "cataloger": "分類器"
+    "cataloger": "分類器",
+    "newNoteFromTemplate": "テンプレートから新規ノート"
   },
   "actions": {
     "untitled": "無題",
@@ -2156,7 +2157,16 @@
     "promptCancel": "キャンセル",
     "suggesterTitle": "オプションを選択",
     "suggesterSearch": "オプションを絞り込み...",
-    "noOptions": "一致するオプションがありません"
+    "noOptions": "一致するオプションがありません",
+    "confirmTemplateName": "テンプレート名",
+    "newNoteTitle": "新しいノートのタイトル",
+    "saveAsWhole": "テンプレートとして保存（ノート全体）",
+    "saveAsFrontmatter": "テンプレートとして保存（プロパティのみ）",
+    "saveAsSnippet": "テンプレートとして保存（スニペット）",
+    "snippetSource": "スニペットの範囲",
+    "snippetSelection": "選択範囲",
+    "snippetWholeNote": "ノート全体",
+    "startFromTemplate": "テンプレートから始める…"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",

@@ -777,7 +777,8 @@
     "inspector360": "360.3D Denetçi",
     "constellationMap": "Bilgi Haritası",
     "newLibrary": "Yeni kütüphane",
-    "cataloger": "Sınıflandırıcı"
+    "cataloger": "Sınıflandırıcı",
+    "newNoteFromTemplate": "Şablondan yeni not"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -2156,7 +2157,16 @@
     "promptCancel": "İptal",
     "suggesterTitle": "Bir seçenek belirleyin",
     "suggesterSearch": "Seçenekleri filtrele...",
-    "noOptions": "Eşleşen seçenek yok"
+    "noOptions": "Eşleşen seçenek yok",
+    "confirmTemplateName": "Şablon adı",
+    "newNoteTitle": "Yeni not başlığı",
+    "saveAsWhole": "Şablon olarak kaydet (tüm not)",
+    "saveAsFrontmatter": "Şablon olarak kaydet (yalnızca özellikler)",
+    "saveAsSnippet": "Şablon olarak kaydet (parçacık)",
+    "snippetSource": "Parçacık kaynağı",
+    "snippetSelection": "Seçimim",
+    "snippetWholeNote": "Tüm not",
+    "startFromTemplate": "Bir şablonla başla…"
   },
   "secondScreen": {
     "title": "İkinci Ekran",

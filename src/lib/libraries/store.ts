@@ -542,6 +542,20 @@ function navFlushEnv(tab: { id: string; name: string; libraryName: string }, ori
  * so this factors only the identical find + dirty-gate + markRecentWrite + env assembly.
  */
 function flushOutgoing(tabId: string, origin = 'nav_flush'): Promise<FlushResult> {
+	// PJ-130 Batch 1 (APP-KILLER) — a display-only window NEVER writes to disk.
+	// "Additional screens are displays, not domains": the second screen mounts
+	// core components to show them, it does not own save/load. But PJ-108 makes
+	// every second-screen note-open PRESERVE the shared crash-recovery net, and
+	// resolveNoteContent still returns `recoveredFromNet: true` on that path, so
+	// openNoteTab calls markModelRecoveredFromNet → `m.version++` and the model is
+	// born DIRTY. A departure from the second screen (closeTab, tab switch,
+	// history nav) would then flushOutgoing that stale snapshot durably over the
+	// note — and because the MAIN window's model for the same note is clean, the
+	// watcher ADOPTS the revert instead of raising a conflict. Silent loss of the
+	// main window's newer content, on screen and on disk. This is the single
+	// choke point every departure-flush routes through, so one guard here closes
+	// the class. The net stays preserved for the main window either way.
+	if (displayOnlyWindow) return Promise.resolve({ ok: true });
 	const tab = get(openTabs).find((t) => t.id === tabId);
 	if (!tab || !isNoteDirty(tabId)) return Promise.resolve({ ok: true });
 	markRecentWrite(tab.path);
@@ -1412,7 +1426,7 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 		openNoteModel(tabId, filePath, content); // MIG-076 §C — Alt-nav reuse drives the model synchronously
 		// #10 — net-recovered content is UNSAVED work: born DIRTY with the true disk baseline, so
 		// the autosave/retry persists it and switching away can't silently lose it (mirrors openNoteTab).
-		if (resolved.recoveredFromNet) markModelRecoveredFromNet(tabId, resolved.diskContent ?? null);
+		if (resolved.recoveredFromNet && !displayOnlyWindow) markModelRecoveredFromNet(tabId, resolved.diskContent ?? null);
 		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }
@@ -2275,7 +2289,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		// stale teardown save could land between reuse and ensure.
 		openNoteModel(currentTab.id, filePath, content);
 		// PJ-102b — net-recovered content is UNSAVED work: born dirty + true disk baseline.
-		if (resolved.recoveredFromNet) markModelRecoveredFromNet(currentTab.id, resolved.diskContent ?? null);
+		// PJ-130 Batch 1 — but NOT in a display-only window. The net is shared crash-
+		// recovery state OWNED by the main window that created it; a display exists to
+		// SHOW disk content, so it opens clean and never claims the unsaved work as its
+		// own. This keeps the second-screen model from being born dirty at all — the
+		// belt to flushOutgoing's braces. Per-window flag: the main window is unaffected.
+		if (resolved.recoveredFromNet && !displayOnlyWindow) markModelRecoveredFromNet(currentTab.id, resolved.diskContent ?? null);
 		// §A.2 — the {#key} remount (path changed) re-runs NotePane's mount; arm the one-shot line jump.
 		if (targetLine && targetLine > 0) setPendingLineJump(currentTab.id, targetLine);
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
@@ -2295,7 +2314,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	openTabs.update(tabs => [...tabs, tab]);
 	openNoteModel(id, filePath, content); // MIG-076 §C — model born with the tab, synchronously
 	// PJ-102b — net-recovered content is UNSAVED work: born dirty + true disk baseline.
-	if (resolved.recoveredFromNet) markModelRecoveredFromNet(id, resolved.diskContent ?? null);
+	if (resolved.recoveredFromNet && !displayOnlyWindow) markModelRecoveredFromNet(id, resolved.diskContent ?? null);
 	if (targetLine && targetLine > 0) setPendingLineJump(id, targetLine); // §A.2 — arm the one-shot jump for the new tab's mount
 
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
@@ -3380,8 +3399,8 @@ export function closeNote() {
 }
 
 // ─── File operations ───
-export async function createNote(folderPath: string, fileName: string, initialFrontmatter?: string): Promise<string> {
-	const newPath: string = await invoke('create_note', { folderPath, fileName, initialFrontmatter: initialFrontmatter ?? null });
+export async function createNote(folderPath: string, fileName: string, initialFrontmatter?: string, initialBody?: string): Promise<string> {
+	const newPath: string = await invoke('create_note', { folderPath, fileName, initialFrontmatter: initialFrontmatter ?? null, initialBody: initialBody ?? null });
 	// F2′ — gated creates are watcher-suppressed (write_gate marks the path),
 	// so the file tree never hears about them; announce the birth explicitly.
 	// A Tauri emit reaches the main window from any window's JS context.

@@ -753,8 +753,43 @@ fn _collect_notes_recursive_unused(_dir: &Path, _library_id: &str, _library_name
 // keeps create responsive if a background reindex briefly holds the lock (the
 // note-open-freeze pattern). Body has no `.await`; the JS invoke contract and
 // `await createNote(...)` ordering are unchanged.
+/// MIG-103 §1b — merge caller-supplied frontmatter into a new note's block,
+/// filtering out the identity keys `create_note` stamps itself.
+///
+/// Two defects the old inline loop had, both found writing the MIG-103 plan:
+/// 1. It pushed each line **`trim()`ed**, destroying the indentation of nested
+///    YAML — a template carrying `source:\n  author: X` arrived with `author:`
+///    at column 0, silently corrupting the structure on EVERY instantiation.
+/// 2. Its key filter ran on the trimmed line, so a NESTED `title:` (e.g. inside
+///    a `source:` map) was falsely dropped along with the top-level one.
+/// Identity keys are only ever top-level scalars, so the filter now applies
+/// only to unindented lines, and every kept line keeps its own indentation.
+fn merge_initial_frontmatter(extra: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in extra.lines() {
+        let line = line.trim_end_matches('\r');
+        if line.trim().is_empty() {
+            continue;
+        }
+        let is_top_level = !line.starts_with(' ') && !line.starts_with('\t');
+        if is_top_level {
+            let t = line.trim_start();
+            if t.starts_with("title:")
+                || t.starts_with("cid_cn:")
+                || t.starts_with("cid:")
+                || t.starts_with("kind:")
+                || t.starts_with("created:")
+            {
+                continue;
+            }
+        }
+        out.push(line.to_string());
+    }
+    out
+}
+
 #[tauri::command(async)]
-pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>) -> Result<String, String> {
+pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>, initial_body: Option<String>) -> Result<String, String> {
     validate_path_in_any_library(&app, &folder_path)?;
     let folder = Path::new(&folder_path);
     if !folder.exists() || !folder.is_dir() {
@@ -787,21 +822,16 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
     fm_lines.push(format!("created: {}", dt.to_rfc3339()));
 
     if let Some(ref extra) = initial_frontmatter {
-        for line in extra.lines() {
-            let trimmed = line.trim();
-            if !trimmed.starts_with("title:")
-                && !trimmed.starts_with("cid_cn:")
-                && !trimmed.starts_with("cid:")
-                && !trimmed.starts_with("kind:")
-                && !trimmed.starts_with("created:")
-                && !trimmed.is_empty()
-            {
-                fm_lines.push(trimmed.to_string());
-            }
-        }
+        fm_lines.extend(merge_initial_frontmatter(extra));
     }
 
-    let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+    // MIG-103 §1 — `initial_body` carries a template's processed body when a note
+    // is instantiated FROM a template (new-from-template). Absent for a plain new
+    // note, which stays an empty body. The fresh cid_cn/created/title stamped
+    // above are exactly the identity a template must NOT carry (the anti-Evernote
+    // rule): instantiation mints identity, the template never supplies it.
+    let body = initial_body.unwrap_or_default();
+    let content = format!("---\n{}\n---\n\n{}", fm_lines.join("\n"), body);
     // MIG-076 §A2 — create-exclusive: if a race created this path between the
     // collision resolver above and now, REFUSE instead of silently overwriting
     // another note (previously fs::write would have clobbered it).
@@ -6289,6 +6319,45 @@ pub fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_mig103_frontmatter_merge {
+    use super::merge_initial_frontmatter;
+
+    /// THE DEFECT (found writing the MIG-103 plan): the old loop pushed every
+    /// line trim()ed, so nested YAML lost its indentation. This asserts the
+    /// indentation survives — it FAILS against the old implementation.
+    #[test]
+    fn nested_yaml_keeps_its_indentation() {
+        let extra = "tags:\n  - fiqh\nsource:\n  author: Ibn Khaldun\n  year: 1377";
+        let merged = merge_initial_frontmatter(extra);
+        assert!(merged.contains(&"  - fiqh".to_string()), "list item lost indentation: {merged:?}");
+        assert!(merged.contains(&"  author: Ibn Khaldun".to_string()), "nested key lost indentation: {merged:?}");
+        assert!(merged.contains(&"  year: 1377".to_string()));
+    }
+
+    /// Defect #2: the old filter matched trimmed lines, so a NESTED title:
+    /// (inside a map) was dropped along with the top-level one. Identity keys
+    /// are only ever top-level; nested keys must pass through untouched.
+    #[test]
+    fn nested_identity_lookalikes_survive_while_top_level_are_filtered() {
+        let extra = "title: Source Title\ncid_cn: 20260101T000000Z_NOTE_AAAA\nkind: note\ncreated: 2026-01-01\nsource:\n  title: The Muqaddima\n  created: 1377\nstage: seed";
+        let merged = merge_initial_frontmatter(extra);
+        assert!(!merged.iter().any(|l| l.starts_with("title:")), "top-level title must be filtered");
+        assert!(!merged.iter().any(|l| l.starts_with("cid_cn:")));
+        assert!(!merged.iter().any(|l| l.starts_with("kind:")));
+        assert!(!merged.iter().any(|l| l.starts_with("created:")));
+        assert!(merged.contains(&"  title: The Muqaddima".to_string()), "NESTED title was falsely dropped: {merged:?}");
+        assert!(merged.contains(&"  created: 1377".to_string()), "NESTED created was falsely dropped");
+        assert!(merged.contains(&"stage: seed".to_string()));
+    }
+
+    #[test]
+    fn crlf_input_is_normalized_without_content_loss() {
+        let merged = merge_initial_frontmatter("tags:\r\n  - one\r\nstage: seed\r\n");
+        assert_eq!(merged, vec!["tags:", "  - one", "stage: seed"]);
+    }
+}
 
 #[cfg(test)]
 mod tests_pj065_resolve {

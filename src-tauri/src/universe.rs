@@ -1876,6 +1876,194 @@ pub fn migrate_legacy_templates(app: tauri::AppHandle, folder: Option<String>) -
     Ok(copied)
 }
 
+// ─── MIG-103 §1 — "Save as Template": the impression-taking gesture ───
+
+/// The THREE kinds of template a note can be saved as (Boss taxonomy, 2026-07-21).
+/// Declared on the template file as `template_kind:` so the "use" side knows which
+/// action to take (create / apply / insert).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TemplateKind {
+    /// Frontmatter + body → creating a note from it makes a whole note.
+    Whole,
+    /// Properties only, no body → applied to merge properties into the current note.
+    Frontmatter,
+    /// A body fragment, no properties → inserted at the cursor.
+    Snippet,
+}
+
+impl TemplateKind {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_lowercase().as_str() {
+            "whole" | "note" => Some(Self::Whole),
+            "frontmatter" | "properties" => Some(Self::Frontmatter),
+            "snippet" => Some(Self::Snippet),
+            _ => None,
+        }
+    }
+    #[allow(dead_code)] // used by the §1 use-side (next increment) to read template_kind
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Whole => "whole",
+            Self::Frontmatter => "frontmatter",
+            Self::Snippet => "snippet",
+        }
+    }
+}
+
+/// The pure transform: note content → template content, for one of the three kinds.
+///
+/// **The R1 ruling (Boss-approved 2026-07-21), grounded in the standards research
+/// (`docs/concept-papers/MIG-103-R1-Standards-and-Case-Studies.md`):** a template
+/// is a FULL document whose type marker changes — the `.dotx`/`.ott` model. In
+/// every kind, identity is stripped (the Boss caveat, and the anti-Evernote rule):
+///
+/// - **`cid_cn`/`created` removed**, **`title` = the template's name**, **`kind:
+///   template`** — the type flip `file_kinds.rs` maps to `TMPL`.
+/// - **`template_kind:`** declares which of the three this is, so "use" knows the
+///   action without re-inferring it from shape.
+///
+/// The kinds differ in what they carry:
+/// - **Whole** — properties (minus identity) + body, verbatim. Body bytes pass
+///   through unchanged (the MIG-101 §A0 byte-splice discipline; CRLF preserved).
+/// - **Frontmatter** — properties (minus identity), **body dropped**. The mold's
+///   property skeleton, to be *applied* onto a note.
+/// - **Snippet** — **body only**, no source properties. A reusable body fragment;
+///   it still carries the minimal `kind: template` / `template_kind: snippet` /
+///   `title` block so the file is identifiable as a template, but nothing of the
+///   source note's own frontmatter.
+pub(crate) fn template_content_from_note(
+    content: &str,
+    template_name: &str,
+    kind: TemplateKind,
+) -> String {
+    let body = crate::bases::parse_frontmatter(content)
+        .map(|_| {
+            // Body = everything after the frontmatter block, byte-exact.
+            crate::bases::frontmatter_span(content)
+                .map(|(_, _, body_start)| content[body_start..].to_string())
+                .unwrap_or_else(|| content.to_string())
+        })
+        .unwrap_or_else(|| content.to_string());
+
+    match kind {
+        TemplateKind::Whole => {
+            let mut out = crate::bases::remove_frontmatter_property(content, "cid_cn");
+            out = crate::bases::remove_frontmatter_property(&out, "cid");
+            out = crate::bases::remove_frontmatter_property(&out, "created");
+            out = crate::bases::update_frontmatter_property(&out, "kind", "template");
+            out = crate::bases::update_frontmatter_property(&out, "template_kind", "whole");
+            crate::bases::update_frontmatter_property(&out, "title", template_name)
+        }
+        TemplateKind::Frontmatter => {
+            // Properties minus identity, and NO body.
+            let Some((open_end, close_start, _)) = crate::bases::frontmatter_span(content) else {
+                // No frontmatter to template — produce a bare properties template.
+                return format!(
+                    "---\nkind: template\ntemplate_kind: frontmatter\ntitle: {}\n---\n",
+                    template_name
+                );
+            };
+            let mut fm_only = content[..close_start].to_string();
+            // The closing fence + a single trailing newline; drop the body entirely.
+            let eol = if content[..open_end].ends_with("\r\n") { "\r\n" } else { "\n" };
+            fm_only.push_str(&format!("---{eol}"));
+            let mut out = crate::bases::remove_frontmatter_property(&fm_only, "cid_cn");
+            out = crate::bases::remove_frontmatter_property(&out, "cid");
+            out = crate::bases::remove_frontmatter_property(&out, "created");
+            out = crate::bases::update_frontmatter_property(&out, "kind", "template");
+            out = crate::bases::update_frontmatter_property(&out, "template_kind", "frontmatter");
+            crate::bases::update_frontmatter_property(&out, "title", template_name)
+        }
+        TemplateKind::Snippet => snippet_template(template_name, &body),
+    }
+}
+
+/// Build a snippet template from an arbitrary body fragment.
+///
+/// MIG-103 §1 (Boss request 2026-07-21): a snippet may be the note's WHOLE body
+/// or just a **selected** word / sentence / paragraph — a snippet is a fragment,
+/// so the user chooses its extent. Both paths land here so the produced file is
+/// identical in shape either way: a minimal identifying block (no properties from
+/// the source note — that is what makes it a snippet rather than a whole note),
+/// then the fragment verbatim.
+pub(crate) fn snippet_template(template_name: &str, body: &str) -> String {
+    let eol = if body.contains("\r\n") { "\r\n" } else { "\n" };
+    let header = format!(
+        "---{eol}kind: template{eol}template_kind: snippet{eol}title: {}{eol}---{eol}",
+        template_name
+    );
+    format!("{header}{}", body.trim_start_matches(['\r', '\n']))
+}
+
+/// Windows-safe file stem for a template name (mirrors create_note's discipline).
+fn sanitize_template_stem(name: &str) -> String {
+    let cleaned: String = name
+        .chars()
+        .map(|c| if matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') { ' ' } else { c })
+        .collect();
+    let cleaned = cleaned.trim().trim_end_matches('.').to_string();
+    if cleaned.is_empty() { "Template".to_string() } else { cleaned }
+}
+
+/// MIG-103 §1a — save an existing note as a template.
+///
+/// `content` carries the LIVE editor text when the note is open (the model is the
+/// authority on an open note — MIG-076; reading disk here would snapshot a stale
+/// cast). When absent, disk is read. The source must live inside the active
+/// universe or a registered library; the destination is the visible templates
+/// folder; collisions auto-suffix (`Name 1`, `Name 2`) exactly like create_note;
+/// the write is create-exclusive so a race cannot clobber an existing template.
+#[tauri::command(async)]
+pub fn create_template(
+    app: tauri::AppHandle,
+    file_path: String,
+    content: Option<String>,
+    template_name: String,
+    kind: String,
+    // `snippet_text` (MIG-103 §1): when saving a SNIPPET the user may choose a
+    // selected fragment instead of the whole body. Present = use this text
+    // verbatim as the snippet; absent = fall back to the note's whole body.
+    // Ignored for the other two kinds, whose extent is not a choice.
+    snippet_text: Option<String>,
+    folder: Option<String>,
+) -> Result<String, String> {
+    crate::bases::validate_base_path(&app, &file_path)?;
+    let template_kind = TemplateKind::parse(&kind)
+        .ok_or_else(|| format!("Unknown template kind '{}'.", kind))?;
+    let source = match content {
+        Some(c) => c,
+        None => fs::read_to_string(&file_path).map_err(|e| format!("Failed to read note: {}", e))?,
+    };
+
+    let stem = sanitize_template_stem(&template_name);
+    let templated = match (template_kind, snippet_text.as_deref()) {
+        (TemplateKind::Snippet, Some(sel)) if !sel.trim().is_empty() => snippet_template(&stem, sel),
+        _ => template_content_from_note(&source, &stem, template_kind),
+    };
+
+    let dir = resolve_templates_dir(&app, folder)?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create templates directory: {}", e))?;
+
+    // Collision-resolve, then write create-exclusive: the exists() probe is a
+    // convenience; the gate is the guarantee (a concurrent create REFUSES, and
+    // we advance to the next suffix rather than clobbering).
+    for attempt in 0..100u32 {
+        let candidate = if attempt == 0 {
+            dir.join(format!("{stem}.md"))
+        } else {
+            dir.join(format!("{stem} {attempt}.md"))
+        };
+        if candidate.exists() {
+            continue;
+        }
+        match crate::write_gate::gate_create_exclusive(&candidate, &templated, "create_template")? {
+            crate::write_gate::WriteOutcome::RefusedExists => continue,
+            _ => return Ok(candidate.to_string_lossy().to_string()),
+        }
+    }
+    Err("Could not find a free template name after 100 attempts.".to_string())
+}
+
 fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
     let entries = match fs::read_dir(dir) {
         Ok(e) => e,
@@ -2084,3 +2272,150 @@ mod tests {
         assert!(!set.contains(&fs::canonicalize(&a).unwrap()));
     }
 }
+
+#[cfg(test)]
+mod tests_mig103_template {
+    use super::{sanitize_template_stem, template_content_from_note, TemplateKind};
+
+    const NOTE: &str = "---\ntitle: \"Zakat rulings\"\ncid_cn: 20260707T190416Z_NOTE_943A\nkind: note\ncreated: 2026-07-07T19:04:16+00:00\ntags:\n  - fiqh\nstage: seed\n---\n# Overview\nProse paragraph one.\n\n## Details\nMore prose here.\n";
+
+    // ── Kind 1: WHOLE — properties (minus identity) + body verbatim ──
+    #[test]
+    fn whole_keeps_body_and_properties_strips_identity() {
+        let t = template_content_from_note(NOTE, "Zakat Template", TemplateKind::Whole);
+        assert!(!t.contains("cid_cn:"), "cid_cn must not survive into a template");
+        assert!(!t.contains("created:"), "created must not survive into a template");
+        assert!(t.contains("kind: template"), "the type flip IS templateness");
+        assert!(t.contains("template_kind: whole"), "the kind is declared on the file");
+        assert!(t.contains("title: Zakat Template"));
+        assert!(t.contains("Prose paragraph one."));
+        assert!(t.contains("More prose here."));
+        assert!(t.contains("  - fiqh"), "nested frontmatter preserved");
+        assert!(t.contains("stage: seed"));
+    }
+
+    /// The whole-note template must classify as TMPL through the EXISTING kind
+    /// system. Written to a real temp file because classification is path-based.
+    #[test]
+    fn produced_template_classifies_as_tmpl() {
+        let t = template_content_from_note(NOTE, "T", TemplateKind::Whole);
+        let dir = std::env::temp_dir().join(format!("cnstl_mig103_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("probe.md");
+        std::fs::write(&f, &t).unwrap();
+        let mut registry = crate::file_kinds::KindRegistry::new(None);
+        let kind = crate::file_kinds::classify_file(&f, &mut registry);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(kind, "TMPL", "kind: template must classify as TMPL");
+    }
+
+    // ── Kind 2: FRONTMATTER — properties (minus identity), NO body ──
+    #[test]
+    fn frontmatter_keeps_properties_drops_body() {
+        let t = template_content_from_note(NOTE, "Book Props", TemplateKind::Frontmatter);
+        assert!(t.contains("kind: template"));
+        assert!(t.contains("template_kind: frontmatter"));
+        assert!(t.contains("title: Book Props"));
+        assert!(t.contains("stage: seed"), "the properties' VALUES are kept (it's a property mold)");
+        assert!(t.contains("  - fiqh"));
+        assert!(!t.contains("cid_cn:"));
+        assert!(!t.contains("created:"));
+        assert!(!t.contains("Prose paragraph one."), "a frontmatter template carries NO body");
+        assert!(!t.contains("# Overview"), "not even headings");
+    }
+
+    #[test]
+    fn frontmatter_from_bare_note_is_a_minimal_props_block() {
+        let t = template_content_from_note("Just a body\n", "Empty Props", TemplateKind::Frontmatter);
+        assert!(t.contains("template_kind: frontmatter"));
+        assert!(t.contains("title: Empty Props"));
+        assert!(!t.contains("Just a body"), "no body in a frontmatter template");
+    }
+
+    // ── Kind 3: SNIPPET — body only, none of the source's properties ──
+    #[test]
+    fn snippet_keeps_body_drops_source_properties() {
+        let t = template_content_from_note(NOTE, "My Snippet", TemplateKind::Snippet);
+        assert!(t.contains("kind: template"));
+        assert!(t.contains("template_kind: snippet"));
+        assert!(t.contains("title: My Snippet"));
+        assert!(t.contains("# Overview"), "the body is the snippet");
+        assert!(t.contains("Prose paragraph one."));
+        assert!(!t.contains("stage: seed"), "the source's own properties are NOT in a snippet");
+        assert!(!t.contains("  - fiqh"));
+        assert!(!t.contains("cid_cn:"));
+    }
+
+    #[test]
+    fn snippet_from_bare_note_wraps_the_body() {
+        let t = template_content_from_note("Reusable text.\n", "Frag", TemplateKind::Snippet);
+        assert!(t.contains("template_kind: snippet"));
+        assert!(t.contains("Reusable text."));
+    }
+
+    /// Boss request 2026-07-21 — a snippet may be a SELECTED fragment (a word, a
+    /// sentence, a paragraph) rather than the whole body. Both paths must produce
+    /// an identically-shaped template file.
+    #[test]
+    fn snippet_from_a_selection_carries_only_the_fragment() {
+        let t = super::snippet_template("Frag", "just this sentence.");
+        assert!(t.contains("kind: template"));
+        assert!(t.contains("template_kind: snippet"));
+        assert!(t.contains("title: Frag"));
+        assert!(t.contains("just this sentence."));
+        assert!(!t.contains("# Overview"), "nothing but the fragment");
+    }
+
+    /// A selection snippet and a whole-body snippet must be the SAME SHAPE — the
+    /// header is identical; only the fragment differs.
+    #[test]
+    fn selection_and_whole_body_snippets_share_one_shape() {
+        let from_sel = super::snippet_template("X", "fragment text");
+        let from_body = template_content_from_note("---\nstage: seed\n---\nfragment text\n", "X", TemplateKind::Snippet);
+        let head = |s: &str| s.split("---").take(2).collect::<Vec<_>>().join("---");
+        assert_eq!(head(&from_sel), head(&from_body), "snippet header must not depend on the source path");
+        assert!(!from_body.contains("stage: seed"), "source properties never enter a snippet");
+    }
+
+    #[test]
+    fn snippet_preserves_a_crlf_fragment() {
+        let t = super::snippet_template("X", "line one\r\nline two");
+        assert!(t.contains("line one\r\nline two"), "fragment bytes preserved");
+    }
+
+    /// MIG-101 §A0 discipline: a CRLF note yields a CRLF whole-note template with
+    /// the body byte-identical.
+    #[test]
+    fn crlf_note_round_trips_in_whole_mode() {
+        let crlf = NOTE.replace('\n', "\r\n");
+        let t = template_content_from_note(&crlf, "T", TemplateKind::Whole);
+        assert!(t.contains("# Overview\r\nProse paragraph one.\r\n"), "CRLF body was rewritten");
+    }
+
+    /// A note with no frontmatter still becomes a valid whole-note template.
+    #[test]
+    fn bare_note_gains_a_frontmatter_block() {
+        let t = template_content_from_note("Just a body\n", "Bare", TemplateKind::Whole);
+        assert!(t.contains("kind: template"));
+        assert!(t.contains("template_kind: whole"));
+        assert!(t.contains("title: Bare"));
+        assert!(t.ends_with("Just a body\n"), "body must be preserved verbatim");
+    }
+
+    #[test]
+    fn kind_parse_is_forgiving_and_closed() {
+        assert_eq!(TemplateKind::parse("whole"), Some(TemplateKind::Whole));
+        assert_eq!(TemplateKind::parse("Note"), Some(TemplateKind::Whole));
+        assert_eq!(TemplateKind::parse("frontmatter"), Some(TemplateKind::Frontmatter));
+        assert_eq!(TemplateKind::parse("snippet"), Some(TemplateKind::Snippet));
+        assert_eq!(TemplateKind::parse("book"), None);
+    }
+
+    #[test]
+    fn stem_sanitizes_windows_reserved_chars() {
+        assert_eq!(sanitize_template_stem("A/B:C?"), "A B C");
+        assert_eq!(sanitize_template_stem("  "), "Template");
+        assert_eq!(sanitize_template_stem("Name."), "Name");
+    }
+}
+

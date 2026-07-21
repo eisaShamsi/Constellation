@@ -6,6 +6,7 @@
 	 * Originally developed as eNotePane (experimental), promoted to production 2026-03-29.
 	 */
 	import { onMount, onDestroy, tick } from 'svelte';
+	import { get } from 'svelte/store';
 	import { t, dir as uiDir } from '$lib/i18n'; // uiDir: UI-language direction for the menu's TEXT (NotePane already has a note `dir` prop)
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { lookupStageEmoji, stageLabel, nextStage, prevStage } from '$lib/libraries/store';
@@ -15,7 +16,7 @@
 	import ContextMenu from './ContextMenu.svelte'; // MIG-077 §F-Editor — note RC uses the SHARED menu (consistent with the file tree)
 	import type { MenuItem } from './contextMenuBuilder';
 	import { openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-077 §F — RC "Style…"
-	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
+	import { EditorView, keymap, drawSelection, ViewPlugin, WidgetType, Decoration, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder, Text } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
@@ -452,6 +453,97 @@
 	// MIG-080 §C.2 — natural-language task due-date autosuggest (@today / bare keyword → 📅 date).
 	const taskDateCompletion = createTaskDateCompletion(() => $appSettings.naturalLanguageTaskDates ?? true);
 
+	/**
+	 * MIG-103 D2 — the "Start from a template…" door shown inside an empty note.
+	 *
+	 * Built as a DOM element (not a Svelte component) because CM6's `placeholder`
+	 * owns its lifecycle: it mounts this while the doc is empty and discards it on
+	 * the first character. The container ignores pointer events so clicking the
+	 * blank area still just places the cursor; only the button is clickable.
+	 * Read-only hosts get nothing — a display never starts a note.
+	 */
+	function templateDoorElement(): HTMLElement {
+		const wrap = document.createElement('span');
+		wrap.className = 'e-tpl-door';
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'e-tpl-door-btn';
+		btn.textContent = get(t)('templates.startFromTemplate');
+		btn.addEventListener('mousedown', (ev) => {
+			// mousedown, not click: CM6 would otherwise take focus and place the
+			// cursor first, dismissing the door before the click lands.
+			ev.preventDefault();
+			ev.stopPropagation();
+			document.dispatchEvent(new CustomEvent('constellation:apply-template-here', {
+				detail: { path: filePath },
+			}));
+		});
+		wrap.appendChild(btn);
+		return wrap;
+	}
+
+	/**
+	 * Is the body BLANK — empty, or nothing but whitespace?
+	 *
+	 * CM6's own `placeholder` extension was the first attempt and it never fired:
+	 * its condition is literally `doc.length ? none : placeholder`, and a freshly
+	 * created note's body is `"\n"` — the blank line after the closing `---` — so
+	 * length is 1 and the placeholder is never shown (Boss-reported 2026-07-21;
+	 * diagnosed by reading the note's bytes and the library's source, not guessed).
+	 *
+	 * Deliberately NOT fixed by trimming what `create_note` writes: content
+	 * handling stays byte-exact (MIG-101 §A0) and a UI affordance is never a reason
+	 * to change what lands on disk.
+	 *
+	 * O(1) on any real note: the string is only materialised when the document is
+	 * already tiny, so this never costs anything on the keystroke path (Rule 1).
+	 */
+	function isBlankBody(state: EditorState): boolean {
+		const len = state.doc.length;
+		if (len === 0) return true;
+		if (len > 8) return false; // a blank body is a handful of whitespace chars at most
+		return state.doc.toString().trim() === '';
+	}
+
+	/** The door, as a CM6 widget. One instance per editor; `toDOM` builds fresh. */
+	class TemplateDoorWidget extends WidgetType {
+		toDOM(): HTMLElement { return templateDoorElement(); }
+		// Let the button's own listener handle clicks; the editor stays out of it.
+		ignoreEvent(): boolean { return true; }
+	}
+
+	/**
+	 * Shows the template door while the body is blank, and removes it the moment
+	 * anything is typed. Rebuilds ONLY when blankness actually flips — not on every
+	 * keystroke — so a burst of typing costs one comparison per change and nothing
+	 * else. Read-only hosts never get the door: a display never starts a note.
+	 */
+	function templateDoorExtension() {
+		const doorDeco = Decoration.set([
+			Decoration.widget({ widget: new TemplateDoorWidget(), side: 1 }).range(0),
+		]);
+		const visible = (state: EditorState) => !readOnly && isBlankBody(state);
+		return ViewPlugin.fromClass(
+			class {
+				decorations: DecorationSet;
+				private wasVisible: boolean;
+				constructor(view: EditorView) {
+					this.wasVisible = visible(view.state);
+					this.decorations = this.wasVisible ? doorDeco : Decoration.none;
+				}
+				update(u: ViewUpdate) {
+					if (!u.docChanged) return;
+					const now = visible(u.state);
+					if (now !== this.wasVisible) {
+						this.wasVisible = now;
+						this.decorations = now ? doorDeco : Decoration.none;
+					}
+				}
+			},
+			{ decorations: (v) => v.decorations },
+		);
+	}
+
 	/* ─── Mount ─── */
 	onMount(() => {
 		const state = EditorState.create({
@@ -459,6 +551,18 @@
 			extensions: [
 				history(),
 				drawSelection(),
+				// MIG-103 D2 (Boss-ruled 2026-07-21) — the template door, INSIDE the note.
+				// New Note stays blank and instant (D1: that gesture is the CAPTURE
+				// gesture), but a bare empty surface with no pathway is itself a
+				// defect — so an empty body offers a quiet, ignorable way in.
+				// CM6's own `placeholder` is exactly right: it renders only while the
+				// document is empty and removes itself the instant a character is
+				// typed, natively — no reactivity of ours on the keystroke path
+				// (Rule 1). Only the button takes pointer events, so clicking
+				// anywhere else in the empty note still just places the cursor.
+				// NotePane only, deliberately: FocusPane is capture at its purest and
+				// its blankness is the design (Editor Parity Rule exception).
+				templateDoorExtension(),
 				markdown({ base: markdownLanguage, extensions: [HighlightExt] }),
 				syntaxHighlighting(markdownHighlightStyle),
 				calloutCollapseField,
@@ -1431,6 +1535,25 @@
 							{$t('shape.revert')}
 						</button>
 					{/if}
+					<!-- MIG-103 §1 — Save as Template: the THREE kinds (Boss taxonomy, 2026-07-21).
+					     Whole note (properties + body) · Frontmatter (properties only) · Snippet
+					     (a body fragment). Each stamps template_kind so the "use" side knows the
+					     action. Hidden when read-only: a display never creates universe files. -->
+					{#if !readOnly}
+						<div class="e-bc-menu-sep"></div>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('saveTplWhole')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+							{$t('templates.saveAsWhole')}
+						</button>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('saveTplFrontmatter')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 10h8M8 13h6"/><path d="M4 15.5h16"/></svg>
+							{$t('templates.saveAsFrontmatter')}
+						</button>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('saveTplSnippet')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-4 6 4 6M16 6l4 6-4 6"/></svg>
+							{$t('templates.saveAsSnippet')}
+						</button>
+					{/if}
 						<div class="e-bc-menu-sep"></div>
 						<button class="e-bc-menu-item" onclick={() => handleMoreAction('rename')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
@@ -1604,6 +1727,26 @@
 </div>
 
 <style>
+	/* MIG-103 D2 — the "Start from a template…" door inside an empty note.
+	   The wrapper takes NO pointer events so clicking the blank body still just
+	   places the cursor; only the button is clickable. :global() because CM6
+	   owns this DOM (it lives inside .cm-placeholder), so Svelte scoping would
+	   never reach it. Quiet by construction — it must read as an offer, not a
+	   prompt, and it disappears on the first keystroke. */
+	:global(.cm-placeholder) { pointer-events: none; }
+	:global(.e-tpl-door) { pointer-events: none; }
+	:global(.e-tpl-door-btn) {
+		pointer-events: auto;
+		font-family: inherit; font-size: 0.85em;
+		color: var(--text-faint); background: none;
+		border: 1px dashed var(--background-modifier-border, #ccc);
+		border-radius: 6px; padding: 2px 10px; cursor: pointer;
+		opacity: 0.75; transition: opacity 120ms ease, color 120ms ease;
+	}
+	:global(.e-tpl-door-btn:hover) {
+		opacity: 1; color: var(--text-normal);
+		border-color: var(--interactive-accent);
+	}
 	/* ─── The Desk (spec 3.1) ─── */
 	.e-desk {
 		flex: 1; display: flex; flex-direction: column; align-items: center;

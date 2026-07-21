@@ -777,7 +777,8 @@
     "inspector360": "Инспектор 360.3D",
     "constellationMap": "Карта знаний",
     "newLibrary": "Новая библиотека",
-    "cataloger": "Классификатор"
+    "cataloger": "Классификатор",
+    "newNoteFromTemplate": "Новая заметка из шаблона"
   },
   "actions": {
     "untitled": "Без названия",
@@ -2156,7 +2157,16 @@
     "promptCancel": "Отмена",
     "suggesterTitle": "Выберите вариант",
     "suggesterSearch": "Фильтр вариантов...",
-    "noOptions": "Подходящих вариантов нет"
+    "noOptions": "Подходящих вариантов нет",
+    "confirmTemplateName": "Имя шаблона",
+    "newNoteTitle": "Заголовок новой заметки",
+    "saveAsWhole": "Сохранить как шаблон (вся заметка)",
+    "saveAsFrontmatter": "Сохранить как шаблон (только свойства)",
+    "saveAsSnippet": "Сохранить как шаблон (фрагмент)",
+    "snippetSource": "Источник фрагмента",
+    "snippetSelection": "Моё выделение",
+    "snippetWholeNote": "Вся заметка",
+    "startFromTemplate": "Начать с шаблона…"
   },
   "secondScreen": {
     "title": "Второй экран",

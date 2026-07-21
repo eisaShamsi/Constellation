@@ -746,7 +746,8 @@
     "senseMakingCanvas": "Sense-Making Canvas",
     "inspector360": "360.3D Inspector",
     "constellationMap": "Constellation Map",
-    "cataloger": "The Cataloger"
+    "cataloger": "The Cataloger",
+    "newNoteFromTemplate": "New note from template"
   },
   "actions": {
     "untitled": "Untitled",
@@ -2308,7 +2309,16 @@
     "promptCancel": "Cancel",
     "suggesterTitle": "Choose an option",
     "suggesterSearch": "Filter options...",
-    "noOptions": "No matching options"
+    "noOptions": "No matching options",
+    "confirmTemplateName": "Template name",
+    "newNoteTitle": "New note title",
+    "saveAsWhole": "Save as template (whole note)",
+    "saveAsFrontmatter": "Save as template (properties only)",
+    "saveAsSnippet": "Save as template (snippet)",
+    "snippetSource": "Snippet source",
+    "snippetSelection": "My selection",
+    "snippetWholeNote": "Whole note",
+    "startFromTemplate": "Start from a template…"
   },
   "cockpit": {
     "dial": "Coupling",

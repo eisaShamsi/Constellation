@@ -44,8 +44,8 @@
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
-	import { editBody as editNoteBody, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
-	import { compose as composeNoteModel } from '$lib/editor/noteModel';
+	import { editBody as editNoteBody, editProps as editNoteProps, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
+	import { compose as composeNoteModel, getModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { FM_PLUS_ENABLED } from '$lib/editor/fmPlusFlag'; // PJ-114 — FM+ build kill-switch
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
@@ -498,7 +498,16 @@
 	let showCommandPalette = $state(false);
 	let showQuickSwitcher = $state(false);
 	let showTemplatePicker = $state(false);
-	let templatePickerMode = $state<'insert' | 'newNote'>('insert');
+	let templatePickerMode = $state<'insert' | 'newNote' | 'applyHere'>('insert');
+	// MIG-103 §1 — the title-confirm prompt for "Save as template" (Boss request):
+	// the user accepts the note's name or types a different one before the template
+	// is written.
+	let saveTemplatePrompt = $state<{ path: string; defaultName: string; content: string; kind: string; selection: string } | null>(null);
+	// MIG-103 §1 — the title-confirm prompt for "New note from template".
+	let newNoteTemplatePrompt = $state<{ templatePath: string; defaultTitle: string } | null>(null);
+	// MIG-103 D2 — the note the template door belongs to. Carried explicitly so an
+	// apply can never land on merely-the-focused note (the split-view app-killer).
+	let applyTemplateTargetPath = $state('');
 
 	// Template prompt/suggester state for async template processing
 	let activePrompt = $state<{ question: string; defaultValue?: string; resolve: (v: string | null) => void } | null>(null);
@@ -2292,6 +2301,7 @@
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
 			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'new-note-from-template', name: $t('commands.newNoteFromTemplate'), icon: '🗂️', action: () => { templatePickerMode = 'newNote'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'open-templates-folder', name: $t('commands.openTemplatesFolder'), shortcut: sc('open-templates-folder'), icon: '📂', action: openTemplatesFolder, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
@@ -2939,6 +2949,8 @@
 		// Listen for template picker requests fired by the shared /template slash command
 		// (completions.ts, used by NotePane's editor).
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
+		document.addEventListener('constellation:save-as-template', handleSaveAsTemplateEvent);
+		document.addEventListener('constellation:apply-template-here', handleApplyTemplateHere);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
 		// MIG-007 hub, re-pointed by MIG-074 §D (Architect ruling 7): the Settings →
 		// Links button now opens CCS — the Link Dashboard tab is retired into it.
@@ -3522,6 +3534,8 @@
 		window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 		window.removeEventListener('error', handleUncaughtError);
 		window.removeEventListener('constellation:open-template-picker', handleTemplatePicker);
+		document.removeEventListener('constellation:save-as-template', handleSaveAsTemplateEvent);
+		document.removeEventListener('constellation:apply-template-here', handleApplyTemplateHere);
 		for (const fn of cleanupFns) fn();
 	});
 
@@ -4814,7 +4828,206 @@
 	}
 
 	/** Handle template selection — insert content into active note */
+	// MIG-103 §1 — Save as template: the layout owns the title-confirm modal.
+	function handleSaveAsTemplateEvent(e: Event) {
+		const d = (e as CustomEvent).detail as { path: string; defaultName: string; content: string; kind: string; selection?: string };
+		if (!d) return;
+		saveTemplatePrompt = { ...d, selection: d.selection ?? '' };
+	}
+
+	async function confirmSaveTemplate(title: string, source?: string) {
+		const p = saveTemplatePrompt;
+		saveTemplatePrompt = null;
+		if (!p) return;
+		const name = title.trim() || p.defaultName;
+		// MIG-103 §1 — a snippet's extent is the user's choice: their selection, or
+		// the whole note. Only sent for snippets, and only when a selection exists.
+		const snippetText = p.kind === 'snippet' && source === 'selection' && p.selection
+			? p.selection
+			: null;
+		try {
+			await invoke<string>('create_template', {
+				filePath: p.path,
+				content: p.content || null,
+				templateName: name,
+				kind: p.kind,
+				snippetText,
+				folder: get(appSettings)?.templateFolder ?? null,
+			});
+			await refreshTemplates();
+		} catch (err) {
+			console.error('[save as template] failed:', err);
+		}
+	}
+
+	// MIG-103 §1 — New note FROM a template. This is the "use" half of the
+	// template round-trip that §1's verification promised; its absence is why the
+	// first Boss test's "create a new note from it" step did nothing (the picker
+	// only ever INSERTED into the focused note). Fresh identity is stamped by
+	// create_note — the anti-Evernote rule — and a `born_from` key records the mold.
+	async function newNoteFromTemplate(templatePath: string, title: string) {
+		try {
+			const raw: string = await invoke('read_note', { filePath: templatePath });
+			const body = extractTemplateBody(raw);
+
+			// Target folder: the focused note's folder, else the first library root.
+			const tab = get(focusedTab);
+			let folder = '';
+			let libraryName = '';
+			if (tab) {
+				folder = tab.path.replace(/[/\\][^/\\]*$/, '');
+				libraryName = tab.libraryName;
+			} else {
+				const stats = get(libraryStats);
+				if (stats.length) { folder = stats[0].path; libraryName = stats[0].name; }
+			}
+			if (!folder) { console.error('[new from template] no target folder'); return; }
+
+			const noteTitle = title.trim() || 'Untitled';
+			const ctx = {
+				title: noteTitle,
+				folder: folder.split(/[/\\]/).slice(-1)[0] || '',
+				library: libraryName,
+				filePath: '',
+				frontmatter: {} as Record<string, string>,
+			};
+			const result = await processTemplateAsync(body, ctx, buildTemplateCallbacks());
+
+			// The template's own frontmatter, minus the template's identity (kind:
+			// template / title), passed through create_note — which filters the
+			// identity keys and stamps fresh ones — plus a born_from provenance key.
+			const tplName = templatePath.split(/[/\\]/).slice(-1)[0].replace(/\.md$/, '');
+			const fmMatch = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(raw);
+			const tplFm = fmMatch ? fmMatch[1] : '';
+			const initialFm = `${tplFm}\nborn_from: "${tplName.replace(/"/g, '\\"')}"`;
+
+			const newPath = await createNote(folder, noteTitle, initialFm, result.content);
+			await openNoteTab(newPath, libraryName, buildLibraryColorMap(get(libraries))[libraryName] || '#7c3aed');
+		} catch (err) {
+			console.error('[new from template] failed:', err);
+		}
+	}
+
+	// MIG-103 D2 — the empty-note template door. Opens the picker in a mode that
+	// applies the chosen template to THIS note. The note is empty when the door is
+	// visible (CM6 only renders the placeholder on an empty doc), so there is
+	// nothing to merge and nothing to lose. D4 extends this same path to notes that
+	// already have content, where the merge becomes an explicit decision.
+	function handleApplyTemplateHere(e: Event) {
+		// APP-KILLER FIX (safety inspection, 2026-07-21). This handler used to take
+		// no argument and discard `detail.path`, and the apply then targeted
+		// `focusedTab` — so in SPLIT VIEW the door of a blank pane wiped the OTHER,
+		// focused note's whole body. The mechanism is nasty: the door fires on
+		// MOUSEDOWN and the picker mounts as a full-screen overlay before mouseup,
+		// so the pane's click-to-focus never runs and focus stays on the other pane.
+		// The door knows which note it belongs to — carry that path through and
+		// target it explicitly.
+		const d = (e as CustomEvent).detail as { path?: string } | undefined;
+		const target = d?.path || get(focusedTab)?.path || '';
+		if (!target) return;
+		applyTemplateTargetPath = target;
+		templatePickerMode = 'applyHere';
+		refreshTemplates();
+		showTemplatePicker = true;
+	}
+
+	/**
+	 * Apply a template to the note the DOOR BELONGS TO — never merely "the focused
+	 * note" (that was the split-view app-killer; see `handleApplyTemplateHere`).
+	 *
+	 * Everything goes THROUGH THE MODEL — `editProps` for the frontmatter merge and
+	 * a CM6 dispatch for the body — never a raw disk write. That is the MIG-076
+	 * single-content-ownership rule, and it is also what makes the whole thing ONE
+	 * undoable action: Ctrl+Z takes it back.
+	 *
+	 * The frontmatter merge is ADDITIVE and never clobbers: the template's keys are
+	 * added where the note lacks them, the note's own values always win, and the
+	 * template's own identity keys are dropped. This is the #1 hazard from the
+	 * interaction-model research — a raw YAML dump produces two `title:` keys, the
+	 * unsolved corruption in the leading tool — and it cannot happen here because
+	 * frontmatter and body are two separate merge targets.
+	 *
+	 * **Two layers guard the body replacement**, because this call REPLACES the
+	 * whole document: (1) the target is the door's own path, resolved explicitly;
+	 * (2) the target must still be BLANK. The door only ever appears on a blank
+	 * note, so a non-blank target means something moved underneath us — refuse
+	 * rather than overwrite. (Applying over real content is D4's job, and it gets
+	 * an explicit merge step.)
+	 */
+	async function applyTemplateToCurrentNote(templatePath: string) {
+		const targetPath = applyTemplateTargetPath;
+		applyTemplateTargetPath = '';
+		if (!targetPath) return;
+		const tab = get(openTabs).find((t) => t.path === targetPath);
+		if (!tab) return;
+		try {
+			const raw: string = await invoke('read_note', { filePath: templatePath });
+			const body = extractTemplateBody(raw);
+
+			const fm = tab.content ? parseFrontmatter(tab.content) : null;
+			const fmRecord: Record<string, string> = {};
+			if (fm?.properties) for (const p of fm.properties) fmRecord[p.key] = p.value;
+			const ctx = {
+				title: tab.name.replace(/\.md$/, ''),
+				folder: tab.path.split(/[/\\]/).slice(-2, -1)[0] || '',
+				library: tab.libraryName,
+				filePath: tab.path,
+				frontmatter: fmRecord,
+			};
+			const result = await processTemplateAsync(body, ctx, buildTemplateCallbacks());
+
+			// Identity is the NOTE's, never the template's — the anti-Evernote rule.
+			const IDENTITY = new Set(['title', 'cid_cn', 'cid', 'kind', 'created', 'template_kind']);
+			const tplProps = parseFrontmatter(raw)?.properties ?? [];
+			const existing = getModel(tab.id)?.props ?? [];
+			const have = new Set(existing.map((p) => p.key.toLowerCase()));
+			const added = tplProps.filter(
+				(p) => !IDENTITY.has(p.key.toLowerCase()) && !have.has(p.key.toLowerCase()),
+			);
+			if (added.length) editNoteProps(tab.id, [...existing, ...added], tab.path);
+
+			// Body: dispatch into the live editor so it flows through the ONE write
+			// path (updateListener → model → debounced save), exactly as if typed.
+			// Resolved by the DOOR'S OWN PATH — never by whatever happens to be
+			// focused, which is what made this wipe the wrong note in split view.
+			const { getActiveEditorForPath } = await import('$lib/editor/activeEditor');
+			const view = getActiveEditorForPath(targetPath);
+			if (!view) {
+				console.error('[apply template] refused: no live editor for the target note; nothing written');
+				return;
+			}
+			// Layer 2 — this REPLACES the whole document, so it may only ever run on
+			// a blank one. The door cannot appear otherwise; a non-blank target means
+			// the note changed underneath us, and overwriting would be silent loss.
+			const doc = view.state.doc;
+			const stillBlank = doc.length === 0 || (doc.length <= 8 && doc.toString().trim() === '');
+			if (!stillBlank) {
+				console.error('[apply template] refused: the target note is no longer empty; nothing written');
+				return;
+			}
+			view.dispatch({
+				changes: { from: 0, to: view.state.doc.length, insert: result.content },
+				selection: { anchor: Math.min(result.cursorOffset ?? result.content.length, result.content.length) },
+			});
+			setTimeout(() => view.focus(), 0);
+		} catch (err) {
+			console.error('[apply template] failed:', err);
+		}
+	}
+
 	async function handleTemplateSelect(templatePath: string, _libraryName: string) {
+		// MIG-103 §1 — the picker serves two directions. newNote = instantiate a
+		// fresh note from the template (title-confirmed); insert = drop the
+		// template body at the cursor of the focused note (the pre-existing path).
+		if (templatePickerMode === 'newNote') {
+			const defaultTitle = templatePath.split(/[/\\]/).slice(-1)[0].replace(/\.md$/, '');
+			newNoteTemplatePrompt = { templatePath, defaultTitle };
+			return;
+		}
+		if (templatePickerMode === 'applyHere') {
+			await applyTemplateToCurrentNote(templatePath);
+			return;
+		}
 		try {
 			const raw: string = await invoke('read_note', { filePath: templatePath });
 			const body = extractTemplateBody(raw);
@@ -8823,6 +9036,31 @@
 			defaultValue={activePrompt.defaultValue}
 			onSubmit={(val) => { activePrompt?.resolve(val); activePrompt = null; }}
 			onCancel={() => { activePrompt?.resolve(null); activePrompt = null; }}
+		/>
+	{/if}
+
+	<!-- MIG-103 §1 — Save as template: confirm or edit the template's title. -->
+	{#if saveTemplatePrompt}
+		<TemplatePrompt
+			question={$t('templates.confirmTemplateName')}
+			defaultValue={saveTemplatePrompt.defaultName}
+			choiceLabel={saveTemplatePrompt.kind === 'snippet' && saveTemplatePrompt.selection ? $t('templates.snippetSource') : ''}
+			choices={saveTemplatePrompt.kind === 'snippet' && saveTemplatePrompt.selection
+				? [{ value: 'selection', label: $t('templates.snippetSelection') }, { value: 'whole', label: $t('templates.snippetWholeNote') }]
+				: []}
+			choiceDefault="selection"
+			onSubmit={(val, choice) => confirmSaveTemplate(val, choice)}
+			onCancel={() => { saveTemplatePrompt = null; }}
+		/>
+	{/if}
+
+	<!-- MIG-103 §1 — New note from template: confirm or edit the new note's title. -->
+	{#if newNoteTemplatePrompt}
+		<TemplatePrompt
+			question={$t('templates.newNoteTitle')}
+			defaultValue={newNoteTemplatePrompt.defaultTitle}
+			onSubmit={(val) => { const p = newNoteTemplatePrompt; newNoteTemplatePrompt = null; if (p) newNoteFromTemplate(p.templatePath, val); }}
+			onCancel={() => { newNoteTemplatePrompt = null; }}
 		/>
 	{/if}
 

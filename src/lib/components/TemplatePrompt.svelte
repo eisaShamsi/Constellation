@@ -7,14 +7,26 @@
 		defaultValue = '',
 		onSubmit,
 		onCancel,
+		// MIG-103 §1 — an OPTIONAL second decision rendered above the input, used by
+		// "Save as template (snippet)" to let the user pick the snippet's extent:
+		// their selection, or the whole note. Purely additive — every existing
+		// mount site omits it and is unchanged, and `onSubmit`'s second argument is
+		// simply ignored by callers that don't ask a choice.
+		choiceLabel = '',
+		choices = [] as { value: string; label: string }[],
+		choiceDefault = '',
 	}: {
 		question: string;
 		defaultValue?: string;
-		onSubmit: (value: string) => void;
+		onSubmit: (value: string, choice?: string) => void;
 		onCancel: () => void;
+		choiceLabel?: string;
+		choices?: { value: string; label: string }[];
+		choiceDefault?: string;
 	} = $props();
 
 	let value = $state(defaultValue || '');
+	let choice = $state(choiceDefault || choices[0]?.value || '');
 	let inputEl: HTMLInputElement;
 
 	onMount(() => {
@@ -27,7 +39,7 @@
 			onCancel();
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			onSubmit(value);
+			onSubmit(value, choice || undefined);
 		}
 	}
 </script>
@@ -39,6 +51,17 @@
 	<div class="tpl-prompt-panel" onclick={(e) => e.stopPropagation()}>
 		<div class="tpl-prompt-header">{$t('templates.promptTitle')}</div>
 		<div class="tpl-prompt-question">{question}</div>
+		{#if choices.length > 1}
+			<div class="tpl-prompt-choice">
+				{#if choiceLabel}<div class="tpl-prompt-choice-label">{choiceLabel}</div>{/if}
+				<div class="tpl-prompt-choice-row">
+					{#each choices as c (c.value)}
+						<button type="button" class="tpl-prompt-choice-btn" class:selected={choice === c.value}
+							onclick={() => choice = c.value}>{c.label}</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 		<input
 			bind:this={inputEl}
 			type="text"
@@ -52,7 +75,7 @@
 			<button class="tpl-prompt-btn tpl-prompt-cancel" onclick={onCancel}>
 				{$t('templates.promptCancel')}
 			</button>
-			<button class="tpl-prompt-btn tpl-prompt-submit" onclick={() => onSubmit(value)}>
+			<button class="tpl-prompt-btn tpl-prompt-submit" onclick={() => onSubmit(value, choice || undefined)}>
 				{$t('templates.promptSubmit')}
 			</button>
 		</div>
@@ -89,6 +112,19 @@
 		outline: none; width: 100%; box-sizing: border-box;
 	}
 	.tpl-prompt-input:focus { border-color: var(--interactive-accent); }
+	.tpl-prompt-choice { padding: 0 16px 4px; }
+	.tpl-prompt-choice-label { font-size: 0.72rem; color: var(--text-faint); margin-bottom: 4px; }
+	.tpl-prompt-choice-row { display: flex; gap: 6px; flex-wrap: wrap; }
+	.tpl-prompt-choice-btn {
+		padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem;
+		font-family: inherit; text-align: start;
+		border: 1px solid var(--background-modifier-border, #ccc);
+		background: var(--background-primary, #fff); color: var(--text-normal);
+	}
+	.tpl-prompt-choice-btn.selected {
+		background: var(--interactive-accent); color: var(--text-on-accent);
+		border-color: var(--interactive-accent);
+	}
 	.tpl-prompt-actions {
 		display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
 	}

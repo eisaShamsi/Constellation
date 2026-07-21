@@ -777,7 +777,8 @@
     "inspector360": "Inspetor 360.3D",
     "constellationMap": "Mapa do conhecimento",
     "newLibrary": "Nova biblioteca",
-    "cataloger": "Classificador"
+    "cataloger": "Classificador",
+    "newNoteFromTemplate": "Nova nota a partir de modelo"
   },
   "actions": {
     "untitled": "Sem título",
@@ -2156,7 +2157,16 @@
     "promptCancel": "Cancelar",
     "suggesterTitle": "Escolha uma opção",
     "suggesterSearch": "Filtrar opções...",
-    "noOptions": "Nenhuma opção correspondente"
+    "noOptions": "Nenhuma opção correspondente",
+    "confirmTemplateName": "Nome do modelo",
+    "newNoteTitle": "Título da nova nota",
+    "saveAsWhole": "Salvar como modelo (nota inteira)",
+    "saveAsFrontmatter": "Salvar como modelo (apenas propriedades)",
+    "saveAsSnippet": "Salvar como modelo (trecho)",
+    "snippetSource": "Origem do trecho",
+    "snippetSelection": "Minha seleção",
+    "snippetWholeNote": "Nota inteira",
+    "startFromTemplate": "Começar a partir de um modelo…"
   },
   "secondScreen": {
     "title": "Segunda tela",

@@ -777,7 +777,8 @@
     "inspector360": "מפקח 360.3D",
     "constellationMap": "מפת ידע",
     "newLibrary": "ספרייה חדשה",
-    "cataloger": "המסווג"
+    "cataloger": "המסווג",
+    "newNoteFromTemplate": "פתק חדש מתבנית"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -1716,7 +1717,16 @@
     "promptCancel": "ביטול",
     "suggesterTitle": "בחר אפשרות",
     "suggesterSearch": "סנן אפשרויות...",
-    "noOptions": "אין אפשרויות תואמות"
+    "noOptions": "אין אפשרויות תואמות",
+    "confirmTemplateName": "שם התבנית",
+    "newNoteTitle": "כותרת הפתק החדש",
+    "saveAsWhole": "שמירה כתבנית (פתק שלם)",
+    "saveAsFrontmatter": "שמירה כתבנית (מאפיינים בלבד)",
+    "saveAsSnippet": "שמירה כתבנית (מקטע)",
+    "snippetSource": "מקור המקטע",
+    "snippetSelection": "הבחירה שלי",
+    "snippetWholeNote": "הפתק כולו",
+    "startFromTemplate": "להתחיל מתבנית…"
   },
   "secondScreen": {
     "title": "מסך שני",

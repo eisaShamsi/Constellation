@@ -631,6 +631,8 @@ pub fn run() {
             universe::scaffold_starter_library,
             universe::get_templates_dir,
             universe::list_templates,
+            // MIG-103 §1 — Save as Template (full snapshot / structure only).
+            universe::create_template,
             universe::migrate_legacy_templates,
             universe::rename_universe,
             arabic::overrides::read_arabic_overrides,

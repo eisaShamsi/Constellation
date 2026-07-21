@@ -427,7 +427,7 @@ fn line_end_inclusive(s: &str, start: usize) -> Option<usize> {
 /// - `content[body_start..]`           = the note body — **preserved byte-for-byte**
 ///
 /// `None` when there is no well-formed frontmatter block.
-fn frontmatter_span(content: &str) -> Option<(usize, usize, usize)> {
+pub(crate) fn frontmatter_span(content: &str) -> Option<(usize, usize, usize)> {
     let first_end = line_end_inclusive(content, 0)?;
     if content[..first_end].trim_end() != "---" {
         return None;

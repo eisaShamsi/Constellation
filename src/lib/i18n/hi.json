@@ -777,7 +777,8 @@
     "inspector360": "360.3D इंस्पेक्टर",
     "constellationMap": "ज्ञान मानचित्र",
     "newLibrary": "नई लाइब्रेरी",
-    "cataloger": "वर्गीकारक"
+    "cataloger": "वर्गीकारक",
+    "newNoteFromTemplate": "टेम्पलेट से नया नोट"
   },
   "actions": {
     "untitled": "बिना शीर्षक",
@@ -2156,7 +2157,16 @@
     "promptCancel": "रद्द करें",
     "suggesterTitle": "एक विकल्प चुनें",
     "suggesterSearch": "विकल्प फ़िल्टर करें...",
-    "noOptions": "कोई मिलान विकल्प नहीं"
+    "noOptions": "कोई मिलान विकल्प नहीं",
+    "confirmTemplateName": "टेम्पलेट नाम",
+    "newNoteTitle": "नए नोट का शीर्षक",
+    "saveAsWhole": "टेम्पलेट के रूप में सहेजें (पूरा नोट)",
+    "saveAsFrontmatter": "टेम्पलेट के रूप में सहेजें (केवल गुण)",
+    "saveAsSnippet": "टेम्पलेट के रूप में सहेजें (स्निपेट)",
+    "snippetSource": "स्निपेट स्रोत",
+    "snippetSelection": "मेरा चयन",
+    "snippetWholeNote": "पूरा नोट",
+    "startFromTemplate": "टेम्पलेट से शुरू करें…"
   },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",

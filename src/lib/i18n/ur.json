@@ -777,7 +777,8 @@
     "inspector360": "360.3D معائنہ کار",
     "constellationMap": "علم کا نقشہ",
     "newLibrary": "نئی لائبریری",
-    "cataloger": "درجہ بند"
+    "cataloger": "درجہ بند",
+    "newNoteFromTemplate": "سانچے سے نیا نوٹ"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -1716,7 +1717,16 @@
     "promptCancel": "منسوخ",
     "suggesterTitle": "ایک آپشن منتخب کریں",
     "suggesterSearch": "آپشنز فلٹر کریں...",
-    "noOptions": "کوئی مماثل آپشن نہیں"
+    "noOptions": "کوئی مماثل آپشن نہیں",
+    "confirmTemplateName": "سانچے کا نام",
+    "newNoteTitle": "نئے نوٹ کا عنوان",
+    "saveAsWhole": "بطور سانچہ محفوظ کریں (مکمل نوٹ)",
+    "saveAsFrontmatter": "بطور سانچہ محفوظ کریں (صرف خواص)",
+    "saveAsSnippet": "بطور سانچہ محفوظ کریں (ٹکڑا)",
+    "snippetSource": "ٹکڑے کا ماخذ",
+    "snippetSelection": "میرا انتخاب",
+    "snippetWholeNote": "مکمل نوٹ",
+    "startFromTemplate": "سانچے سے شروع کریں…"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",

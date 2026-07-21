@@ -777,7 +777,8 @@
     "inspector360": "360.3D检查器",
     "constellationMap": "知识地图",
     "newLibrary": "新建库",
-    "cataloger": "分类器"
+    "cataloger": "分类器",
+    "newNoteFromTemplate": "从模板新建笔记"
   },
   "actions": {
     "untitled": "未命名",
@@ -2156,7 +2157,16 @@
     "promptCancel": "取消",
     "suggesterTitle": "选择一个选项",
     "suggesterSearch": "筛选选项...",
-    "noOptions": "没有匹配的选项"
+    "noOptions": "没有匹配的选项",
+    "confirmTemplateName": "模板名称",
+    "newNoteTitle": "新笔记标题",
+    "saveAsWhole": "另存为模板（整篇笔记）",
+    "saveAsFrontmatter": "另存为模板（仅属性）",
+    "saveAsSnippet": "另存为模板（片段）",
+    "snippetSource": "片段来源",
+    "snippetSelection": "我的选区",
+    "snippetWholeNote": "整篇笔记",
+    "startFromTemplate": "从模板开始…"
   },
   "secondScreen": {
     "title": "第二屏幕",

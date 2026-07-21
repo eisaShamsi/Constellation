@@ -777,7 +777,8 @@
     "senseMakingCanvas": "لوحة الإدراك",
     "inspector360": "المنظار الكروي",
     "constellationMap": "خريطة المعرفة",
-    "cataloger": "المُصنِّف"
+    "cataloger": "المُصنِّف",
+    "newNoteFromTemplate": "ملاحظة جديدة من قالب"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -2262,7 +2263,16 @@
     "promptCancel": "إلغاء",
     "suggesterTitle": "اختر خياراً",
     "suggesterSearch": "تصفية الخيارات...",
-    "noOptions": "لا توجد خيارات مطابقة"
+    "noOptions": "لا توجد خيارات مطابقة",
+    "confirmTemplateName": "اسم القالب",
+    "newNoteTitle": "عنوان الملاحظة الجديدة",
+    "saveAsWhole": "حفظ كقالب (ملاحظة كاملة)",
+    "saveAsFrontmatter": "حفظ كقالب (الخصائص فقط)",
+    "saveAsSnippet": "حفظ كقالب (مقتطف)",
+    "snippetSource": "مصدر المقتطف",
+    "snippetSelection": "ما حدّدته",
+    "snippetWholeNote": "الملاحظة كاملة",
+    "startFromTemplate": "ابدأ من قالب…"
   },
   "secondScreen": {
     "title": "الشاشة الثانية",

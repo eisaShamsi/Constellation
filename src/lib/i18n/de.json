@@ -777,7 +777,8 @@
     "inspector360": "360.3D-Inspektor",
     "constellationMap": "Wissenskarte",
     "newLibrary": "Neue Bibliothek",
-    "cataloger": "Klassifikator"
+    "cataloger": "Klassifikator",
+    "newNoteFromTemplate": "Neue Notiz aus Vorlage"
   },
   "actions": {
     "untitled": "Unbenannt",
@@ -1727,7 +1728,16 @@
     "promptCancel": "Abbrechen",
     "suggesterTitle": "Option auswählen",
     "suggesterSearch": "Optionen filtern...",
-    "noOptions": "Keine passenden Optionen"
+    "noOptions": "Keine passenden Optionen",
+    "confirmTemplateName": "Vorlagenname",
+    "newNoteTitle": "Titel der neuen Notiz",
+    "saveAsWhole": "Als Vorlage speichern (ganze Notiz)",
+    "saveAsFrontmatter": "Als Vorlage speichern (nur Eigenschaften)",
+    "saveAsSnippet": "Als Vorlage speichern (Textbaustein)",
+    "snippetSource": "Quelle des Textbausteins",
+    "snippetSelection": "Meine Auswahl",
+    "snippetWholeNote": "Ganze Notiz",
+    "startFromTemplate": "Mit einer Vorlage beginnen…"
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",
