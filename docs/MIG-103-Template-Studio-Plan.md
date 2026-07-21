@@ -1,6 +1,90 @@
 # MIG-103 — The Template Studio
 ## `/migration` Phase 2 — the Plan
 
+---
+
+## ★★ LOCKED DESIGN (2026-07-21) — all Boss rulings consolidated ★★
+
+*This block supersedes the scattered R-notes below. Every decision here is Boss-confirmed via the
+research→decide loop. Three research passes fed it, all committed:
+`MIG-103-R1-Standards-and-Case-Studies.md`, `MIG-103-Template-Use-Interaction-Model.md`,
+`MIG-103-Manuscript-Builder-Wizard-Research.md`.*
+
+### The FOUR kinds of template (Boss taxonomy, 2026-07-21)
+
+A Constellation note is **frontmatter + body**, so a template can carry either part, both, or a
+*structure*. The four kinds each pair with one action:
+
+| # | Kind | Payload | Action |
+|---|---|---|---|
+| 1 | **Whole note** | frontmatter + body | **create** a new note (or fill an empty one) |
+| 2 | **Frontmatter only** | properties, no body | **apply** — merge properties into the note you're in |
+| 3 | **Snippet** | a body fragment | **insert** at the cursor |
+| 4 | **Manuscript / project** | a *structure* | **build** many linked notes + a derived TOC |
+
+Kind 2's "apply" action is the one my earlier snippet/scaffold binary missed — the Boss's separation
+of frontmatter as its own kind unlocked it.
+
+### The interaction model (all Boss-confirmed)
+
+- **Save side** — "Save as template" lets you choose which of kinds 1–3 you're making (replaces the
+  earlier full / structure-only split, which was a hybrid).
+- **Use, no note open (empty state)** → **offer to create a new note** (route to kind 1). No more silent no-op.
+- **Use, open note WITH content** → **insert body at cursor** (kind 3), and **show a heads-up before
+  mixing** *(Boss chose the heads-up — more cautious than any product; his call).*
+- **Use, new note — destination** → **propose the active-context library/folder and SHOW it, one click
+  to change.** Never the silent "first library" guess (no product precedent; non-deterministic).
+- **Use, new note, nothing open** → **show a library picker** *(Boss chose the picker over a named home).*
+- **Frontmatter merge (kind 2 & the FM carried by kind 1)** → **never dump YAML as body text**; merge
+  keys, never duplicate `title:`, never clobber identity keys; one undoable transaction. *(The #1
+  hazard — the unsolved bug in Templater #1387; our Insert already strips template FM, so we're safe
+  on that path today.)*
+
+### The fourth kind — the manuscript builder (Boss-confirmed, 2026-07-21)
+
+**NOT a wizard. A proposer + editable canvas.** *(8 of 8 leading manuscript tools use this; zero use a
+step-by-step wizard. NN/g: wizards are the wrong pattern for expert-creative work.)*
+
+- **Model** → **propose a complete editable draft structure** (from the chosen type + your own notes),
+  show it whole, edit it directly. One guided moment (pick the type) that expands into everything;
+  after that, pure direct manipulation.
+- **Smart slotting** ("these notes fit Chapter 3") → **manual drag/link first as the floor; the
+  evidence-driven proposal layered on top**, with visible reasoning and one-click reject. Never the
+  only path. *(This proposal is genuine novelty — no manuscript/PKM tool does it; it IS the
+  Constellation Way's differentiator.)*
+- **Named mode** → **"structured composition" is a first-class named thing** the builder surfaces.
+  `shape:` cannot carry it (closed to scrap/page) — this is the one new concept-layer piece.
+- **TOC** → a **persisted, write-time-derived `.md` note**, re-derived from structural links on every
+  structure edit (Waypoint-style + Rule 8 + File-Over-App).
+- **Size: MEDIUM, not huge.** The PJ-065 structural lane (`structural.rs`; `contains:`/`parent:` →
+  ordered edges, proven by test at `search.rs:12203`), the Structure panel, `create_note` with
+  `initial_body`/`initial_frontmatter` (`libraries.rs:792`), and the "book = structured composition"
+  concept all EXIST. New: a batch-scaffold wrapper, an enroll-existing-note-into-TOC command, the
+  named mode surfaced in UI, and validated per-tradition skeleton files.
+- **The 9-item rail-vs-proposal checklist** (research §2) governs the build — satisfy all 9 or it has
+  regressed to the rejected rail.
+
+### Re-scoped phase sequence
+
+- **§1 — the three note-kinds round-trip** *(save + use)*: save-as (kinds 1–3), and use (create /
+  apply / insert) with the confirmed interaction model — empty-state offer, destination propose+show,
+  no-open picker, mixing heads-up, FM-merge safety. *(Save-as-full/structure + new-from-template are
+  BUILT but need re-shaping to the three kinds + the interaction rulings before they're final.)*
+- **§2 — the request path** (type a type → get it; your molds outrank curated defaults; Arabic
+  defaults from R3, Boss-validated).
+- **§3 — the Studio surface as a core-plugin app-within-app, with the visual template gallery** (R2/R5).
+- **§4 — recognition** (the smart library).
+- **§5 — the manuscript builder** (the fourth kind — proposer + editable canvas; manual floor first).
+- **§6 — the Studio's own style setter** (R4).
+- **§7 — tending.**
+
+**Honest limit recorded:** the "not-a-linear-wizard" verdict is strongly sourced (8/8 + NN/g); the
+finer "propose-full-draft-then-prune beats chapter-by-chapter" is strongly-*implied*, not proven — no
+controlled study exists. We build on the strong finding; the finer one is a reasonable bet, revisited
+if a Boss test says otherwise.
+
+---
+
 **Boss ruling 2026-07-21: "Let's focus on the Template Studio/engine. For me, it is priority one now."**
 
 **Concept (the horse):** *The Template Studio exists to recognise the shapes you are already writing
