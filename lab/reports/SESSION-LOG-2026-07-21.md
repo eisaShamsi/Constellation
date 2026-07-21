@@ -190,3 +190,50 @@ HEAD before its batches are worked.
 Orientation → **v3.62**. PJ ledger → **v1.41** (PJ-132/133/134 filed).
 **Boss-validated:** §1 save-side (three kinds, title prompt, snippet extent) and D2 (Steps 1–6).
 **NOT Boss-tested:** the split-view fix above (found after his pass), and Batch 1 from PJ-130.
+
+---
+
+## §4 — Shape discovery hardened against prior art (Boss-directed audit) — `18f41bea`
+
+Boss: *"I need you to conduct a thorough audit of other systems, such as Obsidian,
+to design a robust algorithm."* Five research tracks, load-bearing claims
+adversarially verified. Full audit: `docs/concept-papers/MIG-103-Shape-Discovery-Algorithm-Audit.md`.
+
+**The concept is unclaimed; the algorithm is not.** 11 of 11 type mechanisms
+audited across Obsidian (Dataview/Bases/Templater/Metadata Menu), Notion, Tana and
+Logseq require the user to DECLARE a type — none proposes one from the corpus. But
+JSON/NoSQL schema inference and Wikipedia infoboxes both solved the algorithm at
+scale, and they agree on the same answer.
+
+**ADOPTED — fill rates, not rigid sets.** Our exact-signature grouping is Baazizi's
+*label equivalence*; the fragmentation is the documented cost of the
+maximum-precision end of a known spectrum, and no threshold tuning fixes it. The
+universal treatment is ONE kind carrying a superset of keys with a fill rate
+against each (`Infobox person`: 142 parameters, ZERO required, `name` at 91%;
+Compass renders "present in 87%"; quicktype merges and marks optional). A kind is
+now `{core keys}` + `{key → count, fill}`. Real Universe: **106 rigid signatures →
+21 coherent kinds**; the philosopher went from 32 fragments to one 161-note kind
+with an honest tail (born 90% · died 84% · main_interests 83% · school 73%).
+
+**Four designs discarded with evidence, three of them mine:** closed frequent
+itemsets (surfaced bare fields as types) · maximal itemsets (91 patterns, largest
+covers 18, every core deleted) · Jaccard clustering (mean 1.94 keys/note = its
+documented failure condition) · signature-only cores (a unit test exposed that a
+family's core need not exist as a signature; our corpus hid it by happening to
+contain 146 plain notes).
+
+**One filter the audit did not name but the data demanded:** intersections traded
+one over-generation for another — `{born,institutions}`, `{alma_mater,born}`,
+`{born,field}`, `{awards,born}` are one family sliced four ways, and minimality
+cannot see it because none contains another. Comparing MEMBERSHIP instead of keys
+collapses 30 → 21, while `{born,institutions}` survives on merit (an academic is
+not just a person).
+
+**VERIFIED, NOT ADOPTED** — the audit's two "mechanical fixes" do not apply here.
+`tags` lives in a SEPARATE column (97.6% non-empty) this algorithm never reads — as
+a frontmatter key it is on ZERO notes; `kind` sits in properties on 185 of 7,802
+notes, 176 of them `'note'`. Checked against the live DB, not implemented on faith.
+
+**12 `template_discovery` tests · Rust suite 1105/0.** Backend only — no user
+surface yet, so nothing for the Boss to click. **The surface is the next build and
+IS Boss-gated before commit.**
