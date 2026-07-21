@@ -237,3 +237,60 @@ notes, 176 of them `'note'`. Checked against the live DB, not implemented on fai
 **12 `template_discovery` tests · Rust suite 1105/0.** Backend only — no user
 surface yet, so nothing for the Boss to click. **The surface is the next build and
 IS Boss-gated before commit.**
+
+---
+
+## §4B — a kind's name, read off its own members — `35263d3d`
+
+Boss ruling: *"Propose a name from the members, let me edit it."*
+
+**Concept:** the name of a kind is already written in the user's own notes — naming
+is reading, not inventing. `TemplatePrompt` already prefills-and-selects, so the
+proposal arrives as accept-or-overtype with no new UI paradigm.
+
+**Measured before researched.** Probing the real Universe killed the §4 audit's guess
+that the modal tag/folder names a kind: plain frequency proposes `source=Wikipedia`
+(100% of EVERY kind) and `the` (44% of film titles); the film kind's top folder is
+**History** at 79%/16x, so container-nearest naming (quicktype's rule) would answer
+"History" with confidence. Differential scoring fixes the first completely, with no
+stopword list — the only approach that survives fifteen languages. It does NOT fix
+the second: lift over-rewards rarity and the top-lift token is the imported slug
+`template-film-date-with-1-release-date` (69x). No scalar statistic separates it from
+`film`, because the same importer emitted both it and the frontmatter keys the kind
+was discovered from. Only CORROBORATION does — and the slug is then *mined*, donating
+`film` to the tag family.
+
+**Independence had to be engineered:** `folder:` is also a property and the library is
+also a path segment; naive splitting double-counts one fact as two and inflated 8
+honest results into 18 mostly-wrong container names (ARTS, HUMANITIES, SCIENCE).
+
+**55-agent prior-art round**, every load-bearing claim adversarially refuted; almost
+all died. Six survivors changed the code — Wilson lower bound *on the gates* replacing
+my ad-hoc `n/(n+5)` (Monroe/Colaresi/Quinn §3.2.6: a count floor "simply removes the
+most problematic features without resolving the issue"), word floor 3→2 chars (a
+3-char rule silently drops 映画 from `カサブランカ (映画)`), `is_value_noise` so
+`kind: film` can name a kind, ranked alternates + collision resolution by the user's
+own rarest core key (`person · institutions`, never `Person 2`), and raw COUNTS in the
+evidence because we have no ground truth for a confidence figure.
+
+**Derived, not tuned:** a 3-note kind can never be named (max attainable bound 0.438 <
+0.50); a 9-note kind needs 8/9; a 679-note kind needs 53%.
+
+**Two avenues tested and rejected rather than assumed:** retuning z (at 1.645 not one
+lost name returns — corroboration binds, not confidence) and outgoing links as a
+seventh family (only JSTOR/ISSN identifiers clear both gates).
+
+**Real Universe: 3 of 21 named** (`film`, `cathedral`, `import`); 18 say so. Abstention
+is a real answer — `born · died` is the largest kind of all (679) and has no name
+anywhere in the corpus, sitting 20% Philosophy / 15% Film / 13% Literature.
+
+**23 tests + an `--ignored` real-Universe harness** (four designs passed their unit
+tests and were still wrong, so the real-data check is now a test, not a script).
+**Rust 1116/0 · svelte-check 0 errors.**
+
+**FOUND, NOT INTRODUCED → PJ-135.** Validating across the Boss's other Universes
+exposed that `is_noise` is an English-only list: `أنشئ · حُدث` ("created · modified")
+is the #1 shape in Eisa Universe (241 notes) and #3 in Constellation Test (538). Real
+shapes, no meaning, outranking every genuine kind. Needs a Boss ruling — see the PJ.
+
+**PJ ledger → v1.42.** Per-build safety inspection launched diff-scoped.
