@@ -3,6 +3,61 @@
 
 ---
 
+## ★★ THE CONCEPT (the horse) — articulated from the origin, Boss-approved 2026-07-22 ★★
+
+*Written after the Boss asked: "Go back to the origin of the Templates Studio to understand the
+reason we created it in the first place. And, out of it, articulate the concept." The origin is the
+2026-07-19 directive ("My Templates engine is not working… create a state-of-the-art template
+engine"), the two framing corrections that followed, and the question that actually created the
+Studio — "Like, 3M Post-it, can we consider it a note? If yes, what shape will it take?"*
+
+> **A template is the captured shape of a recurring cognitive move** — the question *"what shape
+> does this kind of thinking take?"*, asked once and answered permanently. **A template is a MOLD;
+> a note is a CAST.**
+>
+> **The Template Studio is the workshop where molds are made, seen, chosen and tended.**
+>
+> **A mold reaches the workshop by one of TWO ROADS, and neither is secondary.**
+>
+> **ROAD ONE — you already made the shape.** You wrote the note, or twenty of them, and the form is
+> sitting there in your own material. The Studio takes the impression: from one note you point at,
+> or from a pattern it finds across many and hands back for you to name. Nothing is invented; the
+> cast came first.
+>
+> **ROAD TWO — you know the shape you need.** No note exists yet; the form is in your head. You say
+> what it is, plainly — these fields, these sections, this look — and the mold exists. **This road
+> must be the simple one:** a handful of ordinary choices, no ceremony, no wizard, and no
+> requirement to have written anything first.
+>
+> Both roads end in the same object: an ordinary `.md` you own, that shapes every note cast from
+> it, and whose look belongs to the KIND rather than the instance.
+
+**Why both roads, and not one.** Formulation runs in both directions. Sometimes you *discover* the
+shape by writing — you do not know it is a "contradiction workup" until you have made four. Sometimes
+you *decide* the shape and then write into it. A workshop that only took impressions would force the
+user to write badly-shaped notes just to earn a good shape; a workshop that only took declarations
+would make them specify everything up front, which is the rail the Boss has ruled against twice.
+
+**The load-bearing inheritance from the origin** (do not drop these again):
+- **The look is not decoration.** *"The look tells you what kind of thinking is inside before you
+  read a word — the reason a Post-it, a legal pad and a leather journal don't look alike on a real
+  desk."* This is why it is a *studio*, and why R4 (its own style setter) and R5 (a visual library)
+  exist at all.
+- **Style belongs to the mold; every cast inherits it.** The moment one note can be styled freely,
+  the look stops meaning anything. Style is a property of the KIND, not the instance.
+- **The plain path is guarded hardest.** Writing a `.md` containing `{{date}}` and using it must
+  remain a complete, respectable way to work — **never opening the Studio**. Styling is an upgrade,
+  not a gate.
+- **The mold has no identity and is inert.** No `cid_cn`, no `created`, no scripts, no side effects.
+
+**Recorded failure this concept prevents (2026-07-22):** I briefed the Art Director to design the
+Studio's dock icon from a concept I invented for one panel ("recognition of recurrence"), instead of
+from the Studio's own concept. The brief therefore contained no trace of the visual-signal dimension
+— the very reason the Studio exists. **Any new requirement starts with the concept (the horse);
+a component never gets a concept of its own invented for it.** — Boss, 2026-07-22.
+
+---
+
 ## ★★ LOCKED DESIGN (2026-07-21) — all Boss rulings consolidated ★★
 
 *This block supersedes the scattered R-notes below. Every decision here is Boss-confirmed via the
@@ -70,8 +125,14 @@ step-by-step wizard. NN/g: wizards are the wrong pattern for expert-creative wor
   apply / insert) with the confirmed interaction model — empty-state offer, destination propose+show,
   no-open picker, mixing heads-up, FM-merge safety. *(Save-as-full/structure + new-from-template are
   BUILT but need re-shaping to the three kinds + the interaction rulings before they're final.)*
+- **§1B — ROAD TWO: make a mold from nothing** *(added 2026-07-22 on the Boss's ruling — "the other
+  side should cover creating a template from scratch, to meet one's need, the simple way")*. The
+  concept's second road had no phase; it was a throwaway clause in a sentence. It is a FOUNDING
+  phase, not an add-on: §1 and §1B together are the two ways a mold comes into being. Simplicity is
+  the requirement, not a nicety — a few plain choices, no ceremony, no wizard, nothing written first.
 - **§2 — the request path** (type a type → get it; your molds outrank curated defaults; Arabic
-  defaults from R3, Boss-validated).
+  defaults from R3, Boss-validated). **Note the distinction from §1B:** §2 is *receiving someone
+  else's mold* (a curated or Arabic default); §1B is *making your own*. They are not the same act.
 - **§3 — the Studio surface as a core-plugin app-within-app, with the visual template gallery** (R2/R5).
 - **§4 — recognition** (the smart library).
 - **§5 — the manuscript builder** (the fourth kind — proposer + editable canvas; manual floor first).
@@ -151,6 +212,33 @@ The Studio's concept says molds are taken from casts. So the first mechanism is:
 > **Boss test:** take a real note with properties + headings → Save as template → open the template
 > file: no `cid_cn`, no `created`; structure intact including nested properties. Create a new note
 > from it: filled correctly, identity freshly stamped.
+
+### §1B — ROAD TWO: make a mold from nothing *(the concept's second founding act)*
+
+*Added 2026-07-22. Boss: "the other side should cover creating a template from scratch, to meet
+one's need, the simple way."*
+
+§1 takes an impression from a cast that already exists. §1B is the other road: **the user knows the
+shape they need and no note has been written yet.** Both are founding; the plan previously had only
+one of them, which quietly made the Studio backward-looking.
+
+**The governing requirement is SIMPLICITY**, stated by the Boss and inherited from the origin's
+"tissue, or a scribe on a hand palm". Concretely that means:
+- A handful of ordinary choices — name it, pick which of the four kinds it is, list the fields, list
+  the sections. Nothing else is required to reach a usable mold.
+- **No wizard and no rail** (standing ruling): the whole form is present and editable at once, not
+  a sequence of gated steps.
+- **Nothing must be written first.** An empty Universe can produce a mold on day one.
+- It writes the same ordinary `.md` §1 writes — one object, two roads, no second format.
+
+**Open for a Boss ruling before build:** where §1B lives (inside the Studio surface §3, or reachable
+without opening the Studio at all — the "plain path is guarded hardest" principle argues for the
+latter), and whether the field list offers the user's existing property vocabulary as suggestions
+(their own words, per the Constellation Way) or starts blank.
+
+> **Boss test:** from a Universe with nothing written, make a template called *Meeting* with two
+> fields and two sections, in one screen, without being walked through steps. Then create a note
+> from it and confirm the note is born with those fields and sections and a fresh identity.
 
 ### §2 — The request path — "I ask for a book, I get a book"
 
