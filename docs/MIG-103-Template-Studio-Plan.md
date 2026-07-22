@@ -240,10 +240,34 @@ opening the Studio** — it does not require the from-scratch BUILDER to live ou
 path stays complete and unguarded; §1B is the assisted road for users who want one, inside the
 workshop where the other molds already are.
 
-**Still open for a Boss ruling before build:** whether §1B's field list offers the user's existing
-property vocabulary as suggestions (their own words, per the Constellation Way — and the recognition
-engine already knows every key in the Universe with its real spelling and how often it is used) or
-starts blank.
+**BOSS RULING 2026-07-22 — §1B OFFERS THE USER'S OWN VOCABULARY AS SUGGESTIONS.** When naming the
+fields of a new mold, the Studio proposes the property names the user already writes.
+
+This is the Constellation Way applied to Road Two: **propose from the user's own evidence, and SHOW
+the evidence.** A suggestion is therefore never a bare word — it carries its count, exactly as §4B's
+name proposals carry theirs:
+
+    born ......... used in 679 of your notes
+    Country ...... used in 84
+    published .... used in 61
+
+Three things this ruling settles, all of them consequences of the concept rather than preferences:
+
+1. **It reuses work already done, not a new engine.** §4's discovery pass already reads every
+   property key in the Universe, and §4's `display` amendment already resolves each key to the
+   spelling the notes actually use. So the Studio suggests `Country` — the user's own casing — not a
+   lowercased identity. A mold cut with the wrong spelling spawns a duplicate property in every cast,
+   which is the defect that amendment was made to prevent.
+2. **Suggestions must never CONSTRAIN.** Road Two exists precisely for shapes that do not exist yet;
+   a field list that only accepted known keys would make the new shape unreachable and turn the
+   simple road into a rail. The user types anything; the vocabulary only saves typing and prevents
+   accidental near-duplicates (`author` vs `Author` vs `writer`).
+3. **Nothing is auto-inserted.** The Studio offers; the user picks. Adoption defaults to off here for
+   the same reason it does in §4 — the path of least resistance must be *nothing chosen*, never
+   *something chosen for you*.
+
+**§1B is now fully ruled** — inside the Studio, simple, no wizard, nothing written first, suggesting
+the user's own vocabulary with its evidence. Ready to build when it reaches the front of the queue.
 
 > **Boss test:** from a Universe with nothing written, make a template called *Meeting* with two
 > fields and two sections, in one screen, without being walked through steps. Then create a note
