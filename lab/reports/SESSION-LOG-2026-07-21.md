@@ -469,3 +469,90 @@ Re-reading the registry settled it in one command: the entry was gone; the manag
 worked. **Check the state before narrating a diagnosis from a screenshot.**
 
 **PJ ledger → v1.45** (both app-killers closed; PJ-139 filed).
+
+---
+
+# STATE OF STANDING — the Template Studio (MIG-103) — 2026-07-22
+
+*Written per SO#5 in answer to the Boss's "Where are we standing in the Template
+Studio?" — before any further work.*
+
+**Concept (the horse):** the Studio exists to **recognise the shapes you are already
+writing in, and let you name them** — taking an impression from casts already made, not
+inventing forms. **Function in hand:** the Template Studio — where templates are created,
+tended and chosen — and the engine that fills them in.
+
+## (a) Verified-shipped and PROTECTED (Boss-validated)
+
+- **§1 save-side** — the Boss's THREE kinds (whole note · frontmatter only · snippet),
+  each stamping `template_kind:`; title-confirm prompt on save; snippet extent is the
+  user's choice (*My selection* vs *Whole note*, offered only when a selection exists).
+  13 Rust tests. `dbeed12f`.
+- **D2 — the template door** — a quiet "Start from a template…" inside an empty note,
+  gone on the first keystroke, applying through the MODEL as one undoable action,
+  frontmatter merged additively. Boss-validated Steps 1–6. `dbeed12f`.
+- **D1** — settled by ruling, no code: New Note stays blank and instant. That gesture IS
+  the capture gesture.
+- **Protected by tests, not just by having worked once:** blankBody, applyTemplateTarget
+  (the split-view wrong-note wipe), templateEngine, isTemplatePath, templateInsertGuard.
+
+## (b) Built but AT RISK — in the tree, not proven by the Boss
+
+Worktree is **clean**; everything is committed and pushed to `origin/main`.
+
+- **D3 — folder default templates.** Wired live (`resolveFolderTemplate` at
+  `+layout.svelte:4303`, `bindFolderTemplate` at :5042) with 11 unit tests including the
+  substring-matching regression (`Books` once matched `Cookbooks`). **NEVER BOSS-TESTED.**
+  The session log records a Boss test for §1 save-side and D2 only. This shipped against
+  the standing order that the Boss tests every build before commit — recorded here rather
+  than left implicit.
+- **§4 — the recognition engine + naming.** Complete, prior-art-hardened, 23 Rust tests
+  plus an `--ignored` real-Universe harness. **It reaches no user**: `discover_shapes` is
+  not exposed as a Tauri command and no surface renders the 21 discovered kinds. Unusable
+  and untestable by the Boss in its current state.
+
+## (c) Known-broken / open defects that touch the Studio
+
+- **PJ-135** — the shape engine's noise list is English-only, so `أنشئ · حُدث`
+  ("created · modified") is the **#1 discovered kind** in Eisa Universe (241 notes) and
+  #3 in Constellation Test (538). This directly degrades §4's output. **Awaiting a Boss
+  ruling.**
+- **PJ-137** — the two-parser split (`store.parseFrontmatter` line scanner vs `yamlDoc`
+  CST). **Two of today's five app-killers originated here.** The permanent cure behind
+  PJ-136's read-only containment.
+- **PJ-136's read-only nested row is CONTAINMENT, not a decision** (Boss's own framing).
+- PJ-138 (translated help is a subset of EN) · PJ-139 (library removal UX).
+
+## (d) Pending, NOT started
+
+- **§1 use-side remainder** — the confirmed interaction model: destination propose+show,
+  library picker when nothing is open, mixing heads-up.
+- **D4 — apply a template to a note that ALREADY has content**, with explicit merge.
+  Today `applyTemplateToCurrentNote` refuses unless the note is still blank, so only D2's
+  door path works. The Boss's PKM/PKF correction promoted this to **the bridge between
+  capture and composition** — a scrap becomes a chapter, and finding out is the work.
+- **§2** request path (+ the Arabic skeletons from R3 — 10 items awaiting Boss validation).
+- **§3** the Studio as a core-plugin app-within-app + the visual gallery (R2/R5).
+- **§5** the manuscript builder — a proposer, NOT a wizard.
+- **§6** the Studio's own style setter (R4).
+- **§7** tending.
+
+## (e) DOCUMENTATION DRIFT found while writing this
+
+1. **The plan's phase ORDER no longer matches what we built.** `docs/MIG-103-Template-
+   Studio-Plan.md` schedules §4 "deliberately after §1–§3"; on the Boss's ruling we built
+   §4 immediately after §1. The plan doc still reads as though §2/§3 come first and does
+   not record the re-ordering or why.
+2. **The ledger silently dropped D3/D4.** v1.42's "► Next action" named **D3 then D4**;
+   v1.43 onward moved the next action to §4's surface without ever recording what
+   happened to D3 (built, untested) or D4 (not started). SO#9 requires closing what
+   shipped and re-ranking — the re-rank happened, the accounting did not.
+
+Both are corrected in the next ledger/plan touch; neither is a code defect.
+
+## The honest one-line answer
+
+**The Studio can take an impression and open a door; it cannot yet show you the library.**
+Saving templates works and is proven. Starting a blank note from one works and is proven.
+The engine that reads 21 note-kinds out of the Boss's own Universe and names them is
+finished and unreachable. Everything else is design-locked and unbuilt.
