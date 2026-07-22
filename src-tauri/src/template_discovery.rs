@@ -88,11 +88,40 @@ fn is_noise(key: &str) -> bool {
 /// One property of a discovered shape, with how often it actually appears.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShapeField {
+    /// Lowercased — the IDENTITY, used for every comparison and lookup.
     pub key: String,
+    /// The spelling MOST of the members actually use (`Country`, not `country`).
+    ///
+    /// Identity is lowercased so `Country` and `country` are one field; but a template
+    /// written from the lowercased identity would not match its own casts, and a
+    /// case-mismatched frontmatter key spawns a DUPLICATE property in every note made
+    /// from that template. So the mold is cut with the spelling the user actually
+    /// writes. Rendering and the written file use this; nothing else does.
+    pub display: String,
     /// Notes in this shape carrying the key.
     pub count: usize,
     /// `count / support` — 1.0 for a core field, lower for an optional one.
     pub fill: f64,
+}
+
+/// A recurring section heading, with the spelling the members actually use.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ShapeHeading {
+    /// Lowercased identity.
+    pub text: String,
+    /// Modal original spelling — `Cast`, not `cast`. See `ShapeField::display`.
+    pub display: String,
+}
+
+/// One example note. The PATH is the identity; the TITLE is what a human recognises.
+///
+/// Constellation's filenames are canonical (`YYYYMMDDTHHMMSSZ_NOTE_XXXX.md`), so a
+/// basename tells the user nothing. For the kinds with no proposed name — 18 of 21 on
+/// the real Universe — these titles are the densest recognition signal the surface has.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ShapeExample {
+    pub path: String,
+    pub title: String,
 }
 
 /// One recurring shape: a CORE every member carries, plus the optional tail, each
@@ -116,11 +145,11 @@ pub struct DiscoveredShape {
     /// Every key seen across the shape's notes, core first, then by fill rate.
     pub fields: Vec<ShapeField>,
     /// Headings appearing in at least `HEADING_QUORUM` of the matching notes.
-    pub headings: Vec<String>,
+    pub headings: Vec<ShapeHeading>,
     /// How many notes carry the whole core.
     pub support: usize,
     /// A few example notes — the evidence, so a proposal is always checkable.
-    pub examples: Vec<String>,
+    pub examples: Vec<ShapeExample>,
     /// A name read off the members (§4B), or `None` when the corpus does not
     /// contain one. `None` is a real answer, not a failure: on the real Universe the
     /// largest kind of all (679 notes sharing `born · died`) has no name anywhere in
@@ -282,6 +311,17 @@ fn is_value_noise(key: &str) -> bool {
     )
 }
 
+/// The spelling most members actually wrote, or the lowercase identity if unknown.
+/// Ties break toward the alphabetically-first spelling so the result is deterministic.
+fn modal_spelling(seen: Option<&HashMap<String, usize>>, fallback: &str) -> String {
+    seen.and_then(|m| {
+        m.iter()
+            .max_by(|a, b| a.1.cmp(b.1).then(b.0.cmp(a.0)))
+            .map(|(spelling, _)| spelling.clone())
+    })
+    .unwrap_or_else(|| fallback.to_string())
+}
+
 /// Discover the recurring shapes in a set of notes.
 ///
 /// `max_shapes` caps the result so the caller never has to render a wall of weak
@@ -406,24 +446,42 @@ pub fn discover_shapes(notes: &[NoteFacts], max_shapes: usize) -> Vec<Discovered
 
             let mut field_counts: HashMap<String, usize> = HashMap::new();
             let mut heading_counts: HashMap<String, usize> = HashMap::new();
+            // lowercase identity -> {original spelling -> times seen}, so the mold can
+            // be cut with the spelling the members actually use.
+            let mut field_spellings: HashMap<String, HashMap<String, usize>> = HashMap::new();
+            let mut heading_spellings: HashMap<String, HashMap<String, usize>> = HashMap::new();
             for &i in &members {
-                for k in notes[i].property_keys.iter().map(|k| k.to_lowercase()).filter(|k| !is_noise(k)) {
-                    *field_counts.entry(k).or_insert(0) += 1;
+                for raw in notes[i].property_keys.iter() {
+                    let k = raw.to_lowercase();
+                    if is_noise(&k) {
+                        continue;
+                    }
+                    *field_counts.entry(k.clone()).or_insert(0) += 1;
+                    *field_spellings.entry(k).or_default().entry(raw.clone()).or_insert(0) += 1;
                 }
-                let seen: HashSet<String> = notes[i]
-                    .headings
-                    .iter()
-                    .map(|h| h.trim().to_lowercase())
-                    .filter(|h| !h.is_empty())
-                    .collect();
-                for h in seen {
-                    *heading_counts.entry(h).or_insert(0) += 1;
+                let mut seen: HashSet<String> = HashSet::new();
+                for raw in notes[i].headings.iter() {
+                    let h = raw.trim().to_lowercase();
+                    if h.is_empty() || !seen.insert(h.clone()) {
+                        continue; // once per note, however often it repeats inside it
+                    }
+                    *heading_counts.entry(h.clone()).or_insert(0) += 1;
+                    *heading_spellings
+                        .entry(h)
+                        .or_default()
+                        .entry(raw.trim().to_string())
+                        .or_insert(0) += 1;
                 }
             }
 
             let mut fields: Vec<ShapeField> = field_counts
                 .into_iter()
-                .map(|(key, count)| ShapeField { key, count, fill: count as f64 / support as f64 })
+                .map(|(key, count)| ShapeField {
+                    display: modal_spelling(field_spellings.get(&key), &key),
+                    key,
+                    count,
+                    fill: count as f64 / support as f64,
+                })
                 .collect();
             // Core fields first (fill 1.0 by construction), then the tail by how
             // often it actually appears — the honest ordering.
@@ -443,9 +501,23 @@ pub fn discover_shapes(notes: &[NoteFacts], max_shapes: usize) -> Vec<Discovered
             Some(DiscoveredShape {
                 core: core.iter().cloned().collect(),
                 fields,
-                headings: headings.into_iter().map(|(h, _)| h).take(12).collect(),
+                headings: headings
+                    .into_iter()
+                    .take(12)
+                    .map(|(h, _)| ShapeHeading {
+                        display: modal_spelling(heading_spellings.get(&h), &h),
+                        text: h,
+                    })
+                    .collect(),
                 support,
-                examples: members.iter().take(5).map(|&i| notes[i].path.clone()).collect(),
+                examples: members
+                    .iter()
+                    .take(5)
+                    .map(|&i| ShapeExample {
+                        path: notes[i].path.clone(),
+                        title: notes[i].title.clone(),
+                    })
+                    .collect(),
                 proposed_name: None, // set by resolve_name_collisions, below
                 name_candidates: rank_names(&name_corpus, &members),
             })
@@ -826,6 +898,11 @@ fn parse_headings(json: &str) -> Vec<String> {
 mod tests {
     use super::*;
 
+    /// Does this shape carry the given heading (by lowercase identity)?
+    fn has_heading(s: &DiscoveredShape, text: &str) -> bool {
+        s.headings.iter().any(|h| h.text == text)
+    }
+
     fn note(path: &str, props: &[&str], heads: &[&str]) -> NoteFacts {
         NoteFacts {
             path: path.to_string(),
@@ -887,7 +964,7 @@ mod tests {
         assert_eq!(shapes[0].core, vec!["born", "died"]);
         assert_eq!(shapes[0].support, 6);
         assert_eq!(fill_of(&shapes[0], "born"), 1.0, "a core field is always present");
-        assert!(shapes[0].headings.contains(&"life".to_string()));
+        assert!(has_heading(&shapes[0], "life"));
         assert!(!shapes[0].examples.is_empty(), "a proposal must carry checkable evidence");
     }
 
@@ -976,8 +1053,8 @@ mod tests {
         for i in 0..10 { notes.push(note(&format!("/n{i}.md"), &["country", "region"], &["History"])); }
         notes.push(note("/odd.md", &["country", "region"], &["Weather"]));
         let s = &discover_shapes(&notes, 10)[0];
-        assert!(s.headings.contains(&"history".to_string()));
-        assert!(!s.headings.contains(&"weather".to_string()), "a one-off heading is not the shape");
+        assert!(has_heading(s, "history"));
+        assert!(!has_heading(s, "weather"), "a one-off heading is not the shape");
     }
 
     /// The redundancy filter, which minimality cannot do. Two cores that share no
@@ -1350,6 +1427,9 @@ mod tests {
         let mut n_named = 0;
         for s in &shapes {
             let core = s.core.join(" · ");
+            let spellings: Vec<&str> = s.fields.iter().take(4).map(|f| f.display.as_str()).collect();
+            let heads: Vec<&str> = s.headings.iter().take(4).map(|h| h.display.as_str()).collect();
+            let ex: Vec<&str> = s.examples.iter().take(2).map(|e| e.title.as_str()).collect();
             match &s.proposed_name {
                 Some(p) => {
                     n_named += 1;
@@ -1366,6 +1446,9 @@ mod tests {
                     println!("{:5}  {:44} → {:16} [{}]", s.support, core, p.name, ev.join(", "));
                 }
                 None => println!("{:5}  {:44} → (ask the user)", s.support, core),
+            }
+            if !spellings.is_empty() {
+                println!("          fields: {:?}  headings: {:?}  eg: {:?}", spellings, heads, ex);
             }
         }
         println!("\nnamed {n_named}/{}", shapes.len());
