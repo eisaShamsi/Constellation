@@ -231,10 +231,19 @@ one of them, which quietly made the Studio backward-looking.
 - **Nothing must be written first.** An empty Universe can produce a mold on day one.
 - It writes the same ordinary `.md` §1 writes — one object, two roads, no second format.
 
-**Open for a Boss ruling before build:** where §1B lives (inside the Studio surface §3, or reachable
-without opening the Studio at all — the "plain path is guarded hardest" principle argues for the
-latter), and whether the field list offers the user's existing property vocabulary as suggestions
-(their own words, per the Constellation Way) or starts blank.
+**BOSS RULING 2026-07-22 — §1B LIVES INSIDE THE STUDIO.** Making a mold from nothing is a
+workshop act, and it belongs in the workshop.
+
+*Reconciled with "the plain path is guarded hardest":* no conflict. That principle says a user must
+be able to write a `.md` containing `{{date}}` by hand and use it as a template **without ever
+opening the Studio** — it does not require the from-scratch BUILDER to live outside. The hand-written
+path stays complete and unguarded; §1B is the assisted road for users who want one, inside the
+workshop where the other molds already are.
+
+**Still open for a Boss ruling before build:** whether §1B's field list offers the user's existing
+property vocabulary as suggestions (their own words, per the Constellation Way — and the recognition
+engine already knows every key in the Universe with its real spelling and how often it is used) or
+starts blank.
 
 > **Boss test:** from a Universe with nothing written, make a template called *Meeting* with two
 > fields and two sections, in one screen, without being walked through steps. Then create a note
