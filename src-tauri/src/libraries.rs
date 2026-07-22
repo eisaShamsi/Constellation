@@ -1476,16 +1476,38 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
 
     for line in fm.lines() {
         let t = line.trim();
+        // INDENTATION IS THE ONLY THING that distinguishes a nested YAML key from a
+        // root key, so it cannot be trimmed away before matching. `source:\n  title:
+        // Muqaddimah` carries a `title:` that is NOT the note's title, and a block
+        // scalar's body may contain any text at all. Matching the trimmed line
+        // replaced both with a root-level `title:` at column 0 — destroying the user's
+        // value, orphaning its siblings, and emitting YAML that no longer parses.
+        // (2026-07-21 inspection, APP-KILLER; same class as the
+        // `merge_initial_frontmatter` line-trimming bug fixed the same day.)
+        let indented = line.starts_with(' ') || line.starts_with('\t');
+        let is_list_item = indented && t.starts_with("- ");
 
-        // Replace title field
-        if t.starts_with("title:") {
+        // Any line that is not an indented list item ENDS the alias list. This has to
+        // happen before the key branches below: with `aliases:` written above
+        // `title:`, the old code fell through the title branch with the list still
+        // open and appended the alias AFTER the title line — a stray `- "A"` under a
+        // root key, which is invalid YAML.
+        if in_alias_list && !is_list_item {
+            in_alias_list = false;
+            if !old_title_in_aliases {
+                new_lines.push(format!("  - \"{}\"", esc_old));
+            }
+        }
+
+        // Replace title field — only at the root.
+        if !indented && t.starts_with("title:") {
             found_title = true;
             new_lines.push(format!("title: \"{}\"", esc_new));
             continue;
         }
 
-        // Handle aliases field
-        if t.starts_with("aliases:") {
+        // Handle aliases field — only at the root.
+        if !indented && t.starts_with("aliases:") {
             found_aliases = true;
             let value = t["aliases:".len()..].trim();
 
@@ -1515,22 +1537,14 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
             continue;
         }
 
-        // Collect alias list items
-        if in_alias_list && t.starts_with("- ") {
+        // Collect alias list items (the list is closed above, not here).
+        if in_alias_list && is_list_item {
             let alias_val = t[2..].trim().trim_matches('"').trim_matches('\'');
             if alias_val == old_title {
                 old_title_in_aliases = true;
             }
             new_lines.push(line.to_string());
             continue;
-        }
-
-        // End of alias list — append old title if missing
-        if in_alias_list {
-            in_alias_list = false;
-            if !old_title_in_aliases {
-                new_lines.push(format!("  - \"{}\"", esc_old));
-            }
         }
 
         new_lines.push(line.to_string());
@@ -6435,6 +6449,88 @@ mod tests {
     use super::*;
 
     // ─── MIG-056 §F — build_aggregate_counts_sql shape tests ───
+
+    // ── Rename × frontmatter integrity (2026-07-21 inspection, APP-KILLER) ──────
+    //
+    // `update_frontmatter_title` matched `title:` on the TRIMMED line, so the ONLY
+    // thing distinguishing a nested YAML key from a root key — its indentation — was
+    // discarded. Renaming a note destroyed a nested `source.title` and left YAML that
+    // no longer parsed, after which `composeFrontmatter`'s invalid-YAML branch passes
+    // the frontmatter through verbatim, so EVERY later property edit on that note was
+    // silently dropped too.
+    //
+    // This is the same defect class as the `merge_initial_frontmatter` line-trimming
+    // bug fixed earlier the same day. Third strike on trim-the-line parsing (LL-014):
+    // both sites now key off column 0.
+
+    #[test]
+    fn rename_does_not_touch_a_title_nested_under_another_key() {
+        let before = "---\ntitle: My Note\nsource:\n  title: Muqaddimah\n  author: Ibn Khaldun\n---\nbody";
+        let after = update_frontmatter_title(before, "My Note v2", "My Note");
+
+        assert!(after.contains("  title: Muqaddimah"), "the nested value must survive:\n{after}");
+        assert!(after.contains("  author: Ibn Khaldun"), "its sibling must stay indented:\n{after}");
+        assert_eq!(
+            after.matches("\ntitle:").count(),
+            1,
+            "exactly one ROOT title key:\n{after}"
+        );
+        assert!(after.contains("title: \"My Note v2\""));
+        assert!(after.contains("- \"My Note\""), "the old title becomes an alias");
+    }
+
+    #[test]
+    fn rename_does_not_rewrite_a_line_inside_a_block_scalar() {
+        let before = "---\ntitle: A\ndesc: |\n  title: inside the block\n  more prose\n---\nbody";
+        let after = update_frontmatter_title(before, "B", "A");
+
+        assert!(
+            after.contains("  title: inside the block"),
+            "block-scalar content is prose, not a key:\n{after}"
+        );
+        assert!(after.contains("title: \"B\""));
+    }
+
+    #[test]
+    fn rename_closes_the_alias_list_before_a_later_root_key() {
+        // aliases BEFORE title: the old code appended the alias after the title line,
+        // producing `title: "B"` followed by a stray `- "A"` — invalid YAML.
+        let before = "---\naliases:\n  - other\ntitle: A\nstage: seed\n---\nbody";
+        let after = update_frontmatter_title(before, "B", "A");
+
+        let fm = after.split("---").nth(1).unwrap();
+        let lines: Vec<&str> = fm.lines().filter(|l| !l.trim().is_empty()).collect();
+        let title_at = lines.iter().position(|l| l.starts_with("title:")).unwrap();
+        for (i, l) in lines.iter().enumerate() {
+            if i > title_at {
+                assert!(
+                    !l.trim().starts_with("- "),
+                    "no orphan list item after a root key:\n{after}"
+                );
+            }
+        }
+        assert!(after.contains("- \"A\""), "the old title still becomes an alias:\n{after}");
+        assert!(after.contains("stage: seed"), "other keys survive:\n{after}");
+    }
+
+    #[test]
+    fn rename_still_handles_the_ordinary_shapes() {
+        // The plain case, unchanged.
+        let a = update_frontmatter_title("---\ntitle: A\n---\nbody", "B", "A");
+        assert!(a.contains("title: \"B\"") && a.contains("- \"A\""));
+
+        // Inline alias array is normalised to a list and keeps its members.
+        let b = update_frontmatter_title("---\ntitle: A\naliases: [x, y]\n---\nbody", "B", "A");
+        assert!(b.contains("- \"x\"") && b.contains("- \"y\"") && b.contains("- \"A\""));
+
+        // An existing alias equal to the old title is not duplicated.
+        let c = update_frontmatter_title("---\ntitle: A\naliases:\n  - A\n---\nbody", "B", "A");
+        assert_eq!(c.matches("- ").count(), 1, "no duplicate alias:\n{c}");
+
+        // No frontmatter at all — one is created.
+        let d = update_frontmatter_title("just body", "B", "A");
+        assert!(d.starts_with("---\ntitle: \"B\"") && d.contains("just body"));
+    }
 
     #[test]
     fn build_aggregate_counts_sql_empty_federation_is_single_schema() {
