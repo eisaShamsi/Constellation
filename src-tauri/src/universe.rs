@@ -377,11 +377,25 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
     // Just ensure it's registered as a library
     let libs_path = cdir.join("libraries.json");
     let root_path_str = universe_root.to_string_lossy().to_string();
+    // A read or parse FAILURE must never be read as "there are no libraries".
+    //
+    // This block exists to auto-register the Universe root as its own library, and it
+    // decides whether to write by asking whether the registry already contains such an
+    // entry. Collapsing an I/O error into an empty Vec (`.ok()...unwrap_or_default()`)
+    // answered "no entry" for a file we simply could not read — and then atomically
+    // REPLACED the registry with a single entry, deleting every library the user had
+    // registered, with no error and no backup. One transient lock (a sync client, an
+    // AV scanner, a network drive) on any boot was enough, and this runs on EVERY
+    // universe activation. (2026-07-21 inspection, APP-KILLER.)
+    //
+    // Absent is a fact; unreadable is an unknown. Only the fact may proceed.
     let mut libs: Vec<crate::libraries::LibraryInfo> = if libs_path.exists() {
-        fs::read_to_string(&libs_path)
-            .ok()
-            .and_then(|d| serde_json::from_str(&d).ok())
-            .unwrap_or_default()
+        let data = fs::read_to_string(&libs_path).map_err(|e| {
+            format!("Could not read {}: {e}. Refusing to touch it.", libs_path.display())
+        })?;
+        serde_json::from_str(&data).map_err(|e| {
+            format!("Could not parse {}: {e}. Refusing to overwrite it.", libs_path.display())
+        })?
     } else {
         vec![]
     };

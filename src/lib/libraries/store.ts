@@ -919,7 +919,14 @@ export async function adoptExternalChangeIntoTabs(
 	let focusReseedPath: string | null = null;  // the at-most-one focus note that also needs a FocusPane remount
 	const conflicts: Array<{ path: string; name: string; disk: string }> = [];
 
-	for (const t of tabs) {
+	// Re-read the tab list AFTER the awaited disk reads. The snapshot taken before them
+	// (line ~894) can be stale by the time they resolve: an in-place navigation landing
+	// in the read window rebinds a tab's path→id, and adopting on the old pairing writes
+	// one note's disk content into another note's model. Iterating a snapshot taken
+	// immediately before this synchronous loop means every (path, id) pair is current at
+	// the moment it is used. (2026-07-21 inspection, APP-KILLER; `adoptDisk`'s new
+	// expectPath guard is the second line of defence, not the first.)
+	for (const t of get(openTabs)) {
 		const disk = byPath.get(t.path);
 		if (disk === undefined) continue;
 		if (isCascading(t.path)) continue; // invariant #3 — a rename cascade owns this path; its force-adopt runs there
@@ -927,7 +934,7 @@ export async function adoptExternalChangeIntoTabs(
 		// Never adopt a Focus note without a way to reseed FocusPane (it ignores `value` after mount):
 		// a fresh model behind a stale Focus view would let Focus's teardown write stale. Leave as today.
 		if (isFocusTab && !hooks?.focusReseed) continue;
-		if (externalChangeNoteModel(t.id, disk)) {
+		if (externalChangeNoteModel(t.id, disk, t.path)) {
 			// CLEAN model adopted the disk (invariant #2 — adoptDisk, never a force re-seed). Refresh the
 			// store tab (content + reloadVersion) uniformly; the FocusPane one ALSO gets focusReseed below.
 			adopted.add(t.path);

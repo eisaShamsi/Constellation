@@ -338,9 +338,16 @@ export function isDirty(id: string): boolean {
  * clean model already equals the last disk write; this is what structurally
  * removes symptom 2 rather than guarding against it.
  */
-export function adoptDisk(id: string, diskContent: string): boolean {
+export function adoptDisk(id: string, diskContent: string, expectPath?: string): boolean {
 	const m = models.get(id);
 	if (!m) return false;
+	// PJ-070 / 2026-07-21 inspection — the IDENTITY guard, matching `markSaved`.
+	// adoptDisk was the only model mutator without one, so a caller holding a stale
+	// (path, id) pairing — one captured before an await, with an in-place navigation
+	// landing in the gap — would write one note's disk content into another note's
+	// model. Every other write path already proves identity before mutating; this one
+	// now does too, so the protection does not depend on each caller being careful.
+	if (expectPath !== undefined && m.path !== expectPath) return false;
 	if (isDirty(id)) return false;
 	if (composeModel(m) === diskContent) return false; // our own echo
 	// PJ-102b — the PHANTOM-EVENT guard: a clean model whose baseline already equals

@@ -249,8 +249,8 @@ export function setDiskBaseline(id: string, trueDiskContent: string): void {
 }
 
 /** External change (file watcher / second screen) — freshness-gated; returns whether adopted. */
-export function externalChange(id: string, diskContent: string): boolean {
-	return M.adoptDisk(id, diskContent);
+export function externalChange(id: string, diskContent: string, expectPath?: string): boolean {
+	return M.adoptDisk(id, diskContent, expectPath);
 }
 
 /** Unsaved edits beyond the last persisted version. */
