@@ -1279,6 +1279,13 @@ Each field renders with the type-appropriate editor:
 - Text fields → text input
 - `domain` → tag list (Enter to add, × to remove)
 - `updated_at` → date picker
+- **A property holding a block of its own fields** (for example `source:` with `title`,
+  `author` and `year` underneath) → **read-only summary**: the row lists the field names
+  as chips followed by a faint *read-only* label. The whole row is inert — the value, the
+  field name, and the remove button — because a block Constellation cannot fully edit is
+  a block it will not damage. Everything else on the note edits normally and leaves it
+  untouched. Editing nested fields in the panel is planned; until then, edit them in any
+  text editor and Constellation will preserve your changes exactly.
 - **`ikhtilāf` → custom widget** with two side-by-side inputs per row (school + position) plus a remove button per row, and an "Add school" button at the bottom. The widget reads from + writes to the structured YAML, so round-trips preserve every field.
 
 ### What about `supersedes`?

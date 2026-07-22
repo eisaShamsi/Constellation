@@ -1165,7 +1165,11 @@
     "ikhtilafSchoolPlaceholder": "مذهب",
     "ikhtilafPositionLabel": "موضع",
     "ikhtilafPositionPlaceholder": "موضع",
-    "stagePlaceholder": "یک مرحله را تایپ یا انتخاب کنید…"
+    "stagePlaceholder": "یک مرحله را تایپ یا انتخاب کنید…",
+    "nestedMapReadOnly": "فقط‌خواندنی",
+    "nestedMapHint": "فیلدهای تودرتو دقیقاً همان‌گونه که در پرونده هستند نگه داشته می‌شوند و اینجا قابل ویرایش نیستند.",
+    "nestedMapEmpty": "بدون فیلد",
+    "typeNestedMap": "فیلدهای تودرتو"
   },
   "editor": {
     "undo": "واگرد",

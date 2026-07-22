@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "学派",
     "ikhtilafPositionLabel": "立场",
     "ikhtilafPositionPlaceholder": "立场",
-    "stagePlaceholder": "输入或选择一个阶段…"
+    "stagePlaceholder": "输入或选择一个阶段…",
+    "nestedMapReadOnly": "只读",
+    "nestedMapHint": "嵌套字段将完全按文件中的原样保留，无法在此编辑。",
+    "nestedMapEmpty": "无字段",
+    "typeNestedMap": "嵌套字段"
   },
   "editor": {
     "undo": "撤销",

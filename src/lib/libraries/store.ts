@@ -87,13 +87,18 @@ export interface OpenTab {
 	reloadVersion?: number;
 }
 
-export type PropertyType = 'text' | 'number' | 'date' | 'datetime' | 'list' | 'link' | 'checkbox' | 'nested-object-list';
+export type PropertyType = 'text' | 'number' | 'date' | 'datetime' | 'list' | 'link' | 'checkbox' | 'nested-object-list' | 'nested-map';
 
 export interface FrontmatterProperty {
 	key: string;
 	value: string;
 	type: PropertyType;
 	listItems?: string[];
+	/** PJ-136 — for the `nested-map` type, the child keys in document order
+	 *  (`['title', 'author', 'year']`). The panel renders them as the row's
+	 *  read-only summary; the authoritative bytes remain in the CST, which
+	 *  `composeFrontmatter` never rewrites for this type. */
+	nestedKeys?: string[];
 	/** MIG-022 §A.1 (PJ-041 cluster, 2026-05-11) — for the
 	 *  `nested-object-list` type, holds the structured row data.
 	 *  Each row is a `{ field: value }` map. Used today by the
@@ -1691,6 +1696,53 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 						type: 'nested-object-list',
 						nestedObjects,
 					});
+				}
+				continue;
+			}
+
+			// PJ-136 — NESTED MAP: `key:` followed by indented `child: value` lines
+			// (indented, but NOT `- ` items — that is the list branch below).
+			//
+			//   source:
+			//     title: Muqaddimah
+			//     author: Ibn Khaldun
+			//
+			// Before this branch, such a key fell through to the scalar path and was
+			// projected as `{ key, value: '' }` — a row the property panel drew as
+			// "Empty" for a property that is not empty. That label was not merely
+			// wrong, it was an INVITATION: typing into it composed `source: <typed>`
+			// over the whole block and the children were gone, with no error.
+			// (`yamlDoc.projectProps` had always skipped nested maps by design —
+			// "preserved in the CST, not editable here"; this parser, which feeds the
+			// note MODEL and therefore the visible panel, did not. Two parsers, one
+			// rule, applied in only one of them.)
+			//
+			// Boss ruling 2026-07-22: render it READ-ONLY WITH A SUMMARY of its
+			// children — visible and honest, rather than hidden or editable. The
+			// summary lives in `value` for legacy display + search; the authoritative
+			// bytes stay in the CST, and `composeFrontmatter` now refuses to write or
+			// remove this type at all, so the data cannot be lost however the UI behaves.
+			if (!value && i + 1 < yamlLines.length && /^\s/.test(yamlLines[i + 1]) && !/^\s+-\s/.test(yamlLines[i + 1])) {
+				const children: string[] = [];
+				i++;
+				while (i < yamlLines.length && /^\s/.test(yamlLines[i]) && !/^\s*$/.test(yamlLines[i])) {
+					const cur = yamlLines[i];
+					const cIdx = cur.indexOf(':');
+					if (cIdx > 0) {
+						const ck = cur.substring(0, cIdx).trim();
+						if (ck) children.push(ck);
+					}
+					i++;
+				}
+				if (key) {
+					// `value` stays EXACTLY as it was before this branch existed — empty.
+					// The summary rides in `nestedKeys` instead, so the legacy
+					// `reconstructFrontmatter` (still live behind `buildFullContent`, which
+					// caches `tab.content`) serializes this key byte-identically to today
+					// and this fix changes no existing write behaviour anywhere. The only
+					// thing that changes is that the type is now KNOWN — which is what lets
+					// the panel render it and `composeFrontmatter` refuse to touch it.
+					properties.push({ key, value: '', type: 'nested-map', nestedKeys: children });
 				}
 				continue;
 			}

@@ -1165,7 +1165,11 @@
     "ikhtilafSchoolPlaceholder": "مذہب",
     "ikhtilafPositionLabel": "موقف",
     "ikhtilafPositionPlaceholder": "موقف",
-    "stagePlaceholder": "مرحلہ لکھیں یا منتخب کریں…"
+    "stagePlaceholder": "مرحلہ لکھیں یا منتخب کریں…",
+    "nestedMapReadOnly": "صرف پڑھنے کے لیے",
+    "nestedMapHint": "نیسٹڈ فیلڈز فائل میں جیسے ہیں ویسے ہی محفوظ رہتے ہیں اور یہاں تدوین نہیں ہو سکتی۔",
+    "nestedMapEmpty": "کوئی فیلڈ نہیں",
+    "typeNestedMap": "نیسٹڈ فیلڈز"
   },
   "editor": {
     "undo": "واپس کریں",

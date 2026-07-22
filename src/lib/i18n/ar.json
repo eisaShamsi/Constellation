@@ -1699,7 +1699,11 @@
     "ikhtilafSchoolLabel": "المذهب",
     "ikhtilafSchoolPlaceholder": "المذهب",
     "ikhtilafPositionLabel": "الموقف",
-    "ikhtilafPositionPlaceholder": "الموقف"
+    "ikhtilafPositionPlaceholder": "الموقف",
+    "nestedMapReadOnly": "للقراءة فقط",
+    "nestedMapHint": "تُحفظ الحقول المتداخلة كما هي في الملف تمامًا ولا يمكن تحريرها هنا.",
+    "nestedMapEmpty": "لا حقول",
+    "typeNestedMap": "حقول متداخلة"
   },
   "editor": {
     "undo": "تراجع",

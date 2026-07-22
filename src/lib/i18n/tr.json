@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "Mezhep",
     "ikhtilafPositionLabel": "Pozisyon",
     "ikhtilafPositionPlaceholder": "Pozisyon",
-    "stagePlaceholder": "Bir aşama yazın veya seçin…"
+    "stagePlaceholder": "Bir aşama yazın veya seçin…",
+    "nestedMapReadOnly": "salt okunur",
+    "nestedMapHint": "İç içe alanlar dosyadaki hâliyle korunur ve burada düzenlenemez.",
+    "nestedMapEmpty": "alan yok",
+    "typeNestedMap": "İç içe alanlar"
   },
   "editor": {
     "undo": "Geri al",

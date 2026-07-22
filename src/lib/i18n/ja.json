@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "学派",
     "ikhtilafPositionLabel": "立場",
     "ikhtilafPositionPlaceholder": "立場",
-    "stagePlaceholder": "ステージを入力または選択…"
+    "stagePlaceholder": "ステージを入力または選択…",
+    "nestedMapReadOnly": "読み取り専用",
+    "nestedMapHint": "入れ子のフィールドはファイル内のまま保持され、ここでは編集できません。",
+    "nestedMapEmpty": "フィールドなし",
+    "typeNestedMap": "入れ子フィールド"
   },
   "editor": {
     "undo": "元に戻す",

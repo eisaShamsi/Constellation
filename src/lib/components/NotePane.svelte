@@ -1233,9 +1233,19 @@
 	// above" → property actions + the editor menu + Style. NotePane owns the menu (it
 	// has the editor commands + view); PropertyEditor emits the row + exposes add/remove.
 	let propEditorRef = $state<any>(null);
-	let fmCtxMenu = $state<{ x: number; y: number; idx: number; key: string; value: string } | null>(null);
+	let fmCtxMenu = $state<{ x: number; y: number; idx: number; key: string; value: string; readOnly?: boolean } | null>(null);
 	function handlePropContextMenu(prop: FrontmatterProperty, idx: number, x: number, y: number) {
-		fmCtxMenu = { x, y, idx, key: prop.key ?? '', value: String(prop.value ?? '') };
+		// PJ-136 — a nested-map row has no scalar value (its content lives in the CST),
+		// so copy what the row actually SHOWS: its child field names. `readOnly` drops
+		// the Remove item below, because the write path refuses to splice this block and
+		// an action that cannot happen must not be offered.
+		const isNestedMap = prop.type === 'nested-map';
+		fmCtxMenu = {
+			x, y, idx,
+			key: prop.key ?? '',
+			value: isNestedMap ? (prop.nestedKeys ?? []).join(', ') : String(prop.value ?? ''),
+			readOnly: isNestedMap,
+		};
 	}
 	function getFrontmatterMenuItems(): MenuItem[] {
 		const fm = fmCtxMenu;
@@ -1244,7 +1254,11 @@
 			items.push(
 				{ label: $t('contextMenu.copyValue'), icon: '📋', action: () => navigator.clipboard.writeText(fm.value).catch(() => {}) },
 				{ label: $t('contextMenu.copyName'), icon: '🏷', action: () => navigator.clipboard.writeText(fm.key).catch(() => {}) },
-				{ label: $t('contextMenu.removeProperty'), icon: '🗑️', danger: true, action: () => propEditorRef?.removeProperty?.(fm.idx) },
+			);
+			if (!fm.readOnly) {
+				items.push({ label: $t('contextMenu.removeProperty'), icon: '🗑️', danger: true, action: () => propEditorRef?.removeProperty?.(fm.idx) });
+			}
+			items.push(
 				{ label: $t('contextMenu.addProperty'), icon: '➕', action: () => propEditorRef?.addProperty?.() },
 				{ separator: true },
 			);

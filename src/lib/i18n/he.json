@@ -1165,7 +1165,11 @@
     "ikhtilafSchoolPlaceholder": "בית מדרש",
     "ikhtilafPositionLabel": "עמדה",
     "ikhtilafPositionPlaceholder": "עמדה",
-    "stagePlaceholder": "הקלד או בחר שלב…"
+    "stagePlaceholder": "הקלד או בחר שלב…",
+    "nestedMapReadOnly": "לקריאה בלבד",
+    "nestedMapHint": "שדות מקוננים נשמרים בדיוק כפי שהם בקובץ ולא ניתן לערוך אותם כאן.",
+    "nestedMapEmpty": "אין שדות",
+    "typeNestedMap": "שדות מקוננים"
   },
   "editor": {
     "undo": "ביטול",

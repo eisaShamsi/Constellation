@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "학파",
     "ikhtilafPositionLabel": "입장",
     "ikhtilafPositionPlaceholder": "입장",
-    "stagePlaceholder": "단계를 입력하거나 선택하세요…"
+    "stagePlaceholder": "단계를 입력하거나 선택하세요…",
+    "nestedMapReadOnly": "읽기 전용",
+    "nestedMapHint": "중첩된 필드는 파일에 있는 그대로 유지되며 여기서는 편집할 수 없습니다.",
+    "nestedMapEmpty": "필드 없음",
+    "typeNestedMap": "중첩 필드"
   },
   "editor": {
     "undo": "실행 취소",

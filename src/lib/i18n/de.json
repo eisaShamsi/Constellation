@@ -1165,7 +1165,11 @@
     "ikhtilafSchoolPlaceholder": "Schule",
     "ikhtilafPositionLabel": "Position",
     "ikhtilafPositionPlaceholder": "Position",
-    "stagePlaceholder": "Phase eingeben oder auswählen …"
+    "stagePlaceholder": "Phase eingeben oder auswählen …",
+    "nestedMapReadOnly": "schreibgeschützt",
+    "nestedMapHint": "Verschachtelte Felder bleiben exakt wie in der Datei und sind hier nicht bearbeitbar.",
+    "nestedMapEmpty": "keine Felder",
+    "typeNestedMap": "Verschachtelte Felder"
   },
   "editor": {
     "undo": "Rückgängig",

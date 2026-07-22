@@ -86,6 +86,10 @@
 		// glyph until the \u00A7A.3 ikhtil\u0101f widget renders the structured
 		// rows directly. Tablet-with-rows icon (U+2630).
 		'nested-object-list': '\u2630',
+		// PJ-136 \u2014 a nested MAP (`source:` with `title`/`author`/`year` under it).
+		// Rendered read-only until PJ-137 unifies the two property parsers and makes
+		// nested structure editable for real. Branch/tree glyph (U+2387).
+		'nested-map': '\u2387',
 	};
 
 	const TYPE_ORDER: PropertyType[] = ['text', 'number', 'date', 'datetime', 'list', 'link', 'checkbox', 'nested-object-list'];
@@ -102,6 +106,8 @@
 		// type label. The \u00A7A.4 i18n cascade adds this key to en + ar +
 		// 13-locale backfill alongside the other propertyEditor.* labels.
 		'nested-object-list': 'propertyEditor.typeNestedObjectList',
+		// PJ-136 — see TYPE_ICONS above.
+		'nested-map': 'propertyEditor.typeNestedMap',
 	};
 
 	// Special well-known property keys with distinct icons (English + Arabic)
@@ -898,7 +904,13 @@
 			</div>
 
 			<!-- Key input with suggestions -->
-			{#if iconInfo.isSpecial}
+			<!-- PJ-136 — a nested-map row is read-only as a WHOLE, key included. Leaving
+			     the key editable made the label a smaller lie: renaming `source` looked
+			     like it worked, and then did nothing at all, because the write path
+			     refuses this type outright. A control that silently no-ops is the same
+			     silent-failure class we are trying to remove. Reuses the existing
+			     special-key span — same markup, same CSS, nothing duplicated. -->
+			{#if iconInfo.isSpecial || prop.type === 'nested-map'}
 				<span class="pe-key pe-key-special">{prop.key}</span>
 			{:else}
 				<div class="pe-key-wrap">
@@ -1082,6 +1094,37 @@
 						<span class="pe-link-bracket">]]</span>
 					{/if}
 				</div>
+			{:else if prop.type === 'nested-map'}
+				<!-- ⚠ TEMPORARY — CONTAINMENT, NOT A DECISION. Boss, 2026-07-22:
+				     "showing it read-only is a temporary procedure, until you research
+				     for a solution and fix it for good." The end state is that nested
+				     fields are EDITABLE like any other property; `source: {title,
+				     author, year}` is knowledge, and locking it is a stopgap. The cure
+				     is PJ-137 — retire the hand-rolled `store.parseFrontmatter` so the
+				     panel and the write path share ONE YAML-document model, after which
+				     editing is safe by construction instead of by refusal. Do not treat
+				     this branch as settled design.
+
+				     PJ-136 (Boss ruling 2026-07-22) — a property holding a nested block
+				     (`source:` with `title` / `author` / `year` under it) SHOWS what it
+				     holds, read-only. It previously fell through to the text input and
+				     drew as "Empty" — a label that was both false and an invitation:
+				     typing into it replaced the whole block, silently.
+
+				     Read-only here is the visible half; `composeFrontmatter` refusing to
+				     write or splice this type is the half that actually protects the data,
+				     because a widget only protects it while every caller keeps it inert. -->
+				<div class="pe-nested-map" dir="auto">
+					{#if prop.nestedKeys && prop.nestedKeys.length > 0}
+						{#each prop.nestedKeys as childKey}
+							<span class="pe-nested-chip">{childKey}</span>
+						{/each}
+					{:else}
+						<span class="pe-nested-note">{$t('propertyEditor.nestedMapEmpty')}</span>
+					{/if}
+					<span class="pe-nested-note" title={$t('propertyEditor.nestedMapHint')}
+						>{$t('propertyEditor.nestedMapReadOnly')}</span>
+				</div>
 			{:else if prop.type === 'nested-object-list'}
 				<!-- MIG-022 \u00A7A.3 (D-A4.\u03B1, 2026-05-11) \u2014 ikhtil\u0101f widget.
 				     Renders the structured rows from prop.nestedObjects
@@ -1137,9 +1180,15 @@
 					{/if}
 				{/each}
 			{/if}
-			<button class="pe-del" onclick={() => removeProperty(idx)} title={$t('propertyEditor.delete')}>
-				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-			</button>
+			<!-- PJ-136 — no delete on a nested-map row either. `composeFrontmatter`
+			     refuses to splice the block, so the button would remove the row from the
+			     panel, change nothing on disk, and let the row return on reload. Offering
+			     an action that cannot happen is worse than not offering it. -->
+			{#if prop.type !== 'nested-map'}
+				<button class="pe-del" onclick={() => removeProperty(idx)} title={$t('propertyEditor.delete')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+				</button>
+			{/if}
 		</div>
 	{/each}
 
@@ -1519,6 +1568,27 @@
 	}
 	.pe-taxo-empty {
 		color: var(--text-faint); font-style: italic; font-size: calc(0.78rem * var(--rs-scale, 1));
+	}
+	/* PJ-136 — the read-only nested-map summary. Deliberately NOT input-shaped: no
+	   border, no field background, no caret. The row must not look typeable, because
+	   looking typeable is what caused the data loss. */
+	.pe-nested-map {
+		display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+		min-height: var(--pill-height, 20px);
+		user-select: none;
+	}
+	.pe-nested-chip {
+		display: inline-flex; align-items: center;
+		height: var(--pill-height, 20px);
+		padding: 0 6px;
+		border-radius: 3px;
+		background: var(--background-modifier-border);
+		color: var(--text-muted);
+		font-size: calc(0.78rem * var(--rs-scale, 1));
+	}
+	.pe-nested-note {
+		color: var(--text-faint); font-style: italic;
+		font-size: calc(0.72rem * var(--rs-scale, 1));
 	}
 	.pe-taxo-pill {
 		display: inline-flex; align-items: center; gap: 4px;

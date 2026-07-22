@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "Школа",
     "ikhtilafPositionLabel": "Позиция",
     "ikhtilafPositionPlaceholder": "Позиция",
-    "stagePlaceholder": "Введите или выберите стадию…"
+    "stagePlaceholder": "Введите или выберите стадию…",
+    "nestedMapReadOnly": "только чтение",
+    "nestedMapHint": "Вложенные поля сохраняются точно так, как в файле, и здесь не редактируются.",
+    "nestedMapEmpty": "нет полей",
+    "typeNestedMap": "Вложенные поля"
   },
   "editor": {
     "undo": "Отменить",

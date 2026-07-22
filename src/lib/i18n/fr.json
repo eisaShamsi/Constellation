@@ -1165,7 +1165,11 @@
     "ikhtilafSchoolPlaceholder": "École",
     "ikhtilafPositionLabel": "Position",
     "ikhtilafPositionPlaceholder": "Position",
-    "stagePlaceholder": "Saisissez ou choisissez une étape…"
+    "stagePlaceholder": "Saisissez ou choisissez une étape…",
+    "nestedMapReadOnly": "lecture seule",
+    "nestedMapHint": "Les champs imbriqués sont conservés tels quels dans le fichier et ne sont pas modifiables ici.",
+    "nestedMapEmpty": "aucun champ",
+    "typeNestedMap": "Champs imbriqués"
   },
   "editor": {
     "undo": "Annuler",

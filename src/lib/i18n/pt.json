@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "Escola",
     "ikhtilafPositionLabel": "Posição",
     "ikhtilafPositionPlaceholder": "Posição",
-    "stagePlaceholder": "Escreva ou escolha uma fase…"
+    "stagePlaceholder": "Escreva ou escolha uma fase…",
+    "nestedMapReadOnly": "somente leitura",
+    "nestedMapHint": "Os campos aninhados são mantidos exatamente como no arquivo e não podem ser editados aqui.",
+    "nestedMapEmpty": "sem campos",
+    "typeNestedMap": "Campos aninhados"
   },
   "editor": {
     "undo": "Desfazer",

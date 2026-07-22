@@ -18,7 +18,7 @@ You can view and edit properties in the **Properties** tab of the right sidebar,
 
 ## Supported property types
 
-Constellation supports seven property types, each with a dedicated editor:
+Constellation supports eight property types, each with a dedicated editor:
 
 | Type | Icon | Editor |
 |------|------|--------|
@@ -29,6 +29,7 @@ Constellation supports seven property types, each with a dedicated editor:
 | List | List | Tag-style chips with inline add/remove |
 | Link | Chain | Wikilink input, clickable to navigate |
 | Checkbox | Check | Toggle switch |
+| Nested fields | Branch | Read-only summary of the fields it contains (see below) |
 
 ---
 
@@ -101,6 +102,44 @@ When a property value is blank, a muted italic placeholder is shown:
 - **Text / Link / Number**: "Empty" (or "فارغ" in Arabic)
 - **Date**: "dd/mm/yyyy"
 - **List**: "Empty" (or "فارغ" in Arabic)
+
+### Properties that contain other fields
+
+Most properties hold a single value — `stage: growth-seed`. A few hold a **block of
+their own fields**:
+
+```yaml
+source:
+  title: Muqaddimah
+  author: Ibn Khaldun
+  year: 1377
+```
+
+Here `source` doesn't have a value of its own; it has three fields underneath it. The
+inner `title` belongs to the *source*, not to the note.
+
+**How it appears.** The row shows the names of the fields it contains as small chips —
+*title*, *author*, *year* — followed by a faint **read-only** label. Hovering that label
+explains why: nested fields are kept exactly as written in the file and cannot be edited
+in this panel.
+
+**What you can and cannot do.** The whole row is read-only: you can't type into it, the
+field name itself isn't editable, and there's no remove button. Right-clicking offers
+**Copy value** (which copies the field names) and **Copy name**, but not *Remove
+property*. Everything else on the note — adding tags, changing the stage, renaming the
+note — works normally and leaves the block untouched.
+
+**Why it's locked, for now.** Constellation guarantees that a block it can't fully edit
+is a block it won't damage. Editing the row would mean replacing the whole block with a
+single value, so instead the panel shows you what's there and stays out of the way. Your
+file keeps the nested fields exactly as you wrote them.
+
+> [!note] This is temporary
+> Being able to edit nested fields directly in the panel is planned. Until then the rule
+> is simple and safe: Constellation shows you the block, and never rewrites it.
+
+**To edit them today**, open the `.md` file in any text editor — the fields are ordinary
+YAML and nothing in Constellation will overwrite your changes.
 
 ### Adding a new property
 

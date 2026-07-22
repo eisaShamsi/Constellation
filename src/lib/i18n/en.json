@@ -1764,7 +1764,11 @@
     "ikhtilafSchoolLabel": "School",
     "ikhtilafSchoolPlaceholder": "School",
     "ikhtilafPositionLabel": "Position",
-    "ikhtilafPositionPlaceholder": "Position"
+    "ikhtilafPositionPlaceholder": "Position",
+    "nestedMapReadOnly": "read-only",
+    "nestedMapHint": "Nested fields are kept exactly as written in the file and cannot be edited here.",
+    "nestedMapEmpty": "no fields",
+    "typeNestedMap": "Nested fields"
   },
   "editor": {
     "undo": "Undo",

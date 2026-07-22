@@ -1605,7 +1605,11 @@
     "ikhtilafSchoolPlaceholder": "विद्यालय",
     "ikhtilafPositionLabel": "स्थिति",
     "ikhtilafPositionPlaceholder": "स्थिति",
-    "stagePlaceholder": "कोई चरण टाइप करें या चुनें…"
+    "stagePlaceholder": "कोई चरण टाइप करें या चुनें…",
+    "nestedMapReadOnly": "केवल पढ़ने के लिए",
+    "nestedMapHint": "नेस्टेड फ़ील्ड फ़ाइल में जैसे हैं वैसे ही रखे जाते हैं और यहाँ संपादित नहीं किए जा सकते।",
+    "nestedMapEmpty": "कोई फ़ील्ड नहीं",
+    "typeNestedMap": "नेस्टेड फ़ील्ड"
   },
   "editor": {
     "undo": "पूर्ववत करें",

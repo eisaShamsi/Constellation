@@ -362,3 +362,56 @@ the bug and MUST go red when fixed.
   engine has no UI yet. PJ-136's fix WILL be user-facing and takes its help/manual pass
   in the same commit.
 - **Rust 1120/0 · svelte-check 0 errors · vitest 602/602.**
+
+---
+
+## PJ-136 — the "Empty" row, closed — Boss-validated in two rounds
+
+**Boss ruling:** *"Show it read-only with a summary."* Then, crucially: *"showing it
+read-only is a temporary procedure, until you research for a solution and fix it for
+good. Isn't it?"* — Yes. It is containment, not a decision, and the code and ledger now
+say so in his words.
+
+**What shipped.** A nested map (`source:` with `title`/`author`/`year` under it) is now a
+first-class property type. The row shows its child field names as chips plus a faint
+*read-only* label with a tooltip explaining why.
+
+**The protection is in the WRITE PATH, not the widget.** `composeFrontmatter` refuses to
+write or splice a `nested-map`, so the block survives however the panel behaves — the
+same reasoning that gave `adoptDisk` an identity guard instead of trusting its callers. A
+read-only widget protects data only while every caller keeps it read-only.
+
+**Design detail that kept the blast radius at zero:** `value` stays EMPTY, exactly as
+before; the summary rides in a new `nestedKeys` field. The legacy `reconstructFrontmatter`
+(still live behind `buildFullContent`, which caches `tab.content`) therefore serializes
+this key byte-identically to before. Nothing about existing write behaviour moved.
+
+**Boss round-1 catch — the label was still lying, smaller.** *"The chips are read-only,
+while the source is writable."* The key NAME was an editable input with autocomplete, and
+renaming it would have looked like it worked then done nothing, because the write path
+refuses the whole row. **A control that silently no-ops is the same silent-failure class
+this whole day was spent removing.** Closed at the row level: the key renders as plain
+text (reusing the existing `tags`/`aliases` span, no new UI), the × delete is gone, and
+right-click drops *Remove property* while *Copy value* copies the field names shown.
+
+**MY ERROR, logged.** The round-1 tutorial told the Boss to set `stage` to `sapling`. No
+such stage exists — the vocabulary is Spark/Birth/Growth/Maturity/Dormancy/Archival ×
+Seed. I had seen `maturity: sapling` as a property VALUE in his imported Wikipedia notes
+and carried it across to a different field without checking. That is a BASIC-RULE
+violation (invented factual detail in a tutorial). Grep before asserting a vocabulary.
+
+**Verification.** 7 tests, incl. *a write against the nested map is refused, not applied*
+and *dropping the row from the props does not splice the block*, plus guards that a real
+list is still a list and an ordinary property still deletes. i18n ×15 (4 keys).
+**Rust 1120/0 · svelte-check 0 errors · vitest 606/606.** Boss re-test 1–5 PASS. Disk
+confirmed: `Muqaddimah` / `Ibn Khaldun` / `1377` byte-identical with indentation intact,
+while `stage` moved to `spark-seed` beside them.
+
+**SO#2 help/manual — DONE, and it surfaced a gap.** EN help topic *Properties* gained a
+"Properties that contain other fields" section (incl. an explicit "this is temporary"
+note and how to edit them in a text editor meanwhile); the User Manual §10 type list
+gained the same entry. **The translated help sets have no Properties topic at all** — EN
+carries 42 topics, ar/de/zh carry 19–21 — so this could only be documented in English.
+Filed as **PJ-138**; not invented as 14 new half-topics.
+
+**PJ ledger → v1.44** (PJ-136 closed; PJ-137 + PJ-138 filed).

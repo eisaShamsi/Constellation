@@ -222,7 +222,12 @@ export function composeFrontmatter(
 		// No frontmatter fence. If properties were added (PropertyEditor on a plain
 		// .md), CREATE a fenced block from them (legacy buildFullContent parity).
 		if (newProps.length === 0) return body;
-		const yamlText = newProps.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol)).join('');
+		// PJ-136 — a nested map cannot reach here (there is no source YAML to have
+		// parsed one from), but never let its display SUMMARY be serialized as a scalar.
+		const yamlText = newProps
+			.filter((p) => p.type !== 'nested-map')
+			.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol))
+			.join('');
 		return `---${eol}${yamlText}---${eol}${body}`;
 	}
 	if (parseDocument(rawYaml).errors.length) return `---${eol}${rawYaml}---${eol}${body}`; // H1
@@ -237,18 +242,40 @@ export function composeFrontmatter(
 		// safely editable: build a block from newProps (adds the first tag/property on an
 		// empty-fence note). G4 review Finding 1 — empty-fence tag-add was a no-op.
 		if (newProps.length === 0) return `---${eol}${rawYaml}---${eol}${body}`;
-		const yamlText = newProps.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol)).join('');
+		// PJ-136 — a nested map cannot reach here (there is no source YAML to have
+		// parsed one from), but never let its display SUMMARY be serialized as a scalar.
+		const yamlText = newProps
+			.filter((p) => p.type !== 'nested-map')
+			.map((p) => serializeLine(p.key, p).replace(/\r?\n/g, eol))
+			.join('');
 		return `---${eol}${yamlText}---${eol}${body}`;
 	}
 
-	const oldByKey = new Map(oldProps.map((p) => [p.key, p]));
-	const newByKey = new Map(newProps.map((p) => [p.key, p]));
+	// PJ-136 — a `nested-map` property is IMMUTABLE here. Its `value` is a summary of
+	// its child keys for display, not its content, so writing it would replace the
+	// whole block with that summary; and its row must never be spliceable, or a UI
+	// that merely stops listing it would delete it.
+	//
+	// This is enforced in the WRITE PATH rather than in the widget on purpose. A
+	// read-only widget protects the data only as long as every caller keeps it
+	// read-only; refusing here means the block survives however the panel behaves —
+	// the same reason `adoptDisk` grew an identity guard instead of trusting callers.
+	// The authoritative bytes stay untouched in the CST and are emitted verbatim.
+	const oldByKey = new Map(
+		oldProps.filter((p) => p.type !== 'nested-map').map((p) => [p.key, p]),
+	);
+	const newByKey = new Map(
+		newProps.filter((p) => p.type !== 'nested-map').map((p) => [p.key, p]),
+	);
+	const immutableKeys = new Set(
+		[...oldProps, ...newProps].filter((p) => p.type === 'nested-map').map((p) => p.key),
+	);
 
 	// REMOVE — keys present before, gone now: splice their CST map item.
 	const coll = cst.value as CST.BlockMap | undefined;
 	if (coll && 'items' in coll) {
 		for (const key of oldByKey.keys()) {
-			if (!newByKey.has(key)) {
+			if (!newByKey.has(key) && !immutableKeys.has(key)) {
 				const idx = findItemIndex(cst, key);
 				if (idx !== -1) coll.items.splice(idx, 1);
 			}
