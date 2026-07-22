@@ -415,3 +415,57 @@ carries 42 topics, ar/de/zh carry 19–21 — so this could only be documented i
 Filed as **PJ-138**; not invented as 14 new half-topics.
 
 **PJ ledger → v1.44** (PJ-136 closed; PJ-137 + PJ-138 filed).
+
+---
+
+## The regression I shipped — caught by the per-build inspection, fixed, Boss-validated
+
+`98b71440` (PJ-136) introduced an APP-KILLER. The per-build inspection run immediately
+after it — 108 agents — found it before any user did.
+
+**Mechanism.** The nested-map guard was consulted in `composeFrontmatter`'s REMOVE loop
+but **not in SET/ADD**, and the immutable set came from the **props array** rather than
+the file. Safe only while the props report the type honestly — and the app manufactures
+a dishonest array by itself: PropertyEditor caches `tab.content` via `buildFullContent`,
+`reconstructFrontmatter` dropped the block's children from that cache, and re-parsing it
+re-typed the key as ordinary empty text. The next edit of ANY property then reached
+compose with the key absent from the old side and present on the new → the CST block-map
+item was spliced and `source: ""` appended. Durable, silent, unrecoverable.
+
+**Fixed twice over, either alone sufficient:** `nestedMapKeys(rawYaml)` reads the
+immutable set from the FILE (and now guards SET/ADD too), and `nestedRaw` carries the
+block's lines verbatim so the cache is lossless and the dishonest state never arises.
+
+**Recorded reasoning error.** The commit message claimed *"zero blast radius by design."*
+I verified that keeping `value` empty made `reconstructFrontmatter` byte-identical and
+stopped there — I never traced the re-parse of the lossy cache. **I checked the step I
+thought of and called it proof.** The deeper mistake: I made the file's own structure
+something the CALLER DECLARES rather than something the FILE STATES. A props array can
+lie; the file cannot. That is the generalizable lesson, not "add another guard".
+
+## The same class, still live in the shared library loader
+
+`load_libraries` collapses any failure into `vec![]`; `add_library` pushes its one new
+entry onto that empty Vec and atomically renames a ONE-ENTRY `libraries.json` over a
+registry holding 19. **This is the anti-pattern I fixed the same morning at
+`universe.rs:380` — at the one call site instead of the shared loader, so the class
+survived.** Solve the class, not the instance. `try_load_libraries` refuses on an
+unreadable/unparsable registry, backs up before refusing; reads still degrade.
+
+**Boss test 1–5 PASS** on the release binary, including the deliberate
+edit → switch-away → edit sequence. Disk verified byte-identical afterwards.
+**Rust 1123/0 · svelte-check 0 errors · vitest 609/609.**
+
+## PJ-139 — and a misread I should record
+
+Boss found that a deleted library folder leaves its registration behind and the sidebar
+shows it as completely normal, and that **the right-click menu offers no way to remove a
+library** (only *Manage libraries*, at the sidebar footer, does).
+
+**My error in handling it:** I read his message as "it can't be removed anywhere", saw
+RegressionCheck absent from his Manage-libraries screenshot, and told him the manager
+could not see it — a wrong conclusion from a screenshot taken AFTER he had removed it.
+Re-reading the registry settled it in one command: the entry was gone; the manager had
+worked. **Check the state before narrating a diagnosis from a screenshot.**
+
+**PJ ledger → v1.45** (both app-killers closed; PJ-139 filed).
