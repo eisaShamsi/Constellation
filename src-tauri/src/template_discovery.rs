@@ -733,6 +733,95 @@ fn resolve_name_collisions(shapes: &mut [DiscoveredShape], key_df: &HashMap<Stri
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// §4 SURFACE — the IPC boundary
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Everything the recognition panel needs, in one read.
+///
+/// Read-only and on demand — never at boot. Rule 8 (Write-Time Derivation) forbids
+/// re-walking the Universe to build a derived view, and this does not: `note_meta` is
+/// already maintained on the write path, so this is one indexed pass over data that is
+/// always current, not a rebuild. If the panel ever becomes something the user leaves
+/// open, the counters here merge associatively and can be maintained incrementally.
+#[tauri::command]
+pub fn discover_template_shapes(
+    state: tauri::State<crate::search::SearchState>,
+    max_shapes: Option<usize>,
+) -> Result<Vec<DiscoveredShape>, String> {
+    // PJ-066 §C3 — the READ-ONLY reader connection, so a multi-second scan can never
+    // wait on (or hold) the writer's lock and freeze the app.
+    let notes = crate::search::with_read_conn(state.inner(), |conn| {
+        let mut stmt = conn
+            .prepare(
+                "SELECT path, name, library_name, properties_json, tags_json, headings_json \
+                 FROM note_meta",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, Option<String>>(1)?.unwrap_or_default(),
+                    r.get::<_, Option<String>>(2)?.unwrap_or_default(),
+                    r.get::<_, Option<String>>(3)?.unwrap_or_default(),
+                    r.get::<_, Option<String>>(4)?.unwrap_or_default(),
+                    r.get::<_, Option<String>>(5)?.unwrap_or_default(),
+                ))
+            })
+            .map_err(|e| e.to_string())?;
+
+        let mut out: Vec<NoteFacts> = Vec::new();
+        for row in rows {
+            let (path, title, library, props, tags, heads) = row.map_err(|e| e.to_string())?;
+            let property_values = parse_property_values(&props);
+            out.push(NoteFacts {
+                property_keys: property_values.iter().map(|(k, _)| k.clone()).collect(),
+                headings: parse_headings(&heads),
+                tags: serde_json::from_str::<Vec<String>>(&tags).unwrap_or_default(),
+                property_values,
+                path,
+                title,
+                library,
+            });
+        }
+        Ok(out)
+    })?;
+
+    Ok(discover_shapes(&notes, max_shapes.unwrap_or(40)))
+}
+
+/// `properties_json` → `(key, value)` pairs. A non-string value keeps its key (the key
+/// is what SHAPES a note) but contributes no naming token, which is correct: a list or a
+/// map is not a label.
+fn parse_property_values(json: &str) -> Vec<(String, String)> {
+    serde_json::from_str::<serde_json::Value>(json)
+        .ok()
+        .and_then(|v| v.as_object().cloned())
+        .map(|o| {
+            o.into_iter()
+                .map(|(k, v)| (k, v.as_str().map(String::from).unwrap_or_default()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// `headings_json` → heading texts. Tolerates both the object form (`{"text": …}`) and a
+/// bare string array, because both shapes exist in the wild index.
+fn parse_headings(json: &str) -> Vec<String> {
+    serde_json::from_str::<Vec<serde_json::Value>>(json)
+        .unwrap_or_default()
+        .iter()
+        .map(|h| {
+            h.get("text")
+                .and_then(|t| t.as_str())
+                .map(String::from)
+                .unwrap_or_else(|| h.as_str().unwrap_or("").to_string())
+        })
+        .filter(|h| !h.trim().is_empty())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1201,6 +1290,7 @@ mod tests {
         )
         .expect("open the Universe read-only");
 
+        let t_read = std::time::Instant::now();
         let mut stmt = conn
             .prepare(
                 "SELECT path, name, library_name, properties_json, tags_json, headings_json \
@@ -1247,8 +1337,16 @@ mod tests {
             .filter_map(Result::ok)
             .collect();
 
+        let t0 = std::time::Instant::now();
+        println!("[read+parse] {:?} for {} notes", t_read.elapsed(), notes.len());
         let shapes = discover_shapes(&notes, 40);
-        println!("\n{} notes → {} kinds\n", notes.len(), shapes.len());
+        let elapsed = t0.elapsed();
+        println!(
+            "\n{} notes → {} kinds  [discovery {:?}]\n",
+            notes.len(),
+            shapes.len(),
+            elapsed
+        );
         let mut n_named = 0;
         for s in &shapes {
             let core = s.core.join(" · ");

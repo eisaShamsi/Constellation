@@ -559,6 +559,10 @@ pub fn run() {
             shape::get_shape_history,
             shape::record_shape_change,
             shape::undo_shape,
+            // MIG-103 §4 — read the note-kinds this Universe already contains, each
+            // with a name proposed from the user's own vocabulary. On demand, never
+            // at boot; read-only through the reader connection.
+            template_discovery::discover_template_shapes,
             bases::create_base,
             // MIG-065 — convert an old MVP `.base` (BaseDefinition JSON) to the
             // new LensDefinition YAML (in place, on the user's explicit choice).
