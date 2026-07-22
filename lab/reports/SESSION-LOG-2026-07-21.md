@@ -294,3 +294,71 @@ is the #1 shape in Eisa Universe (241 notes) and #3 in Constellation Test (538).
 shapes, no meaning, outranking every genuine kind. Needs a Boss ruling — see the PJ.
 
 **PJ ledger → v1.42.** Per-build safety inspection launched diff-scoped.
+
+---
+
+## The standing inspection — three APP-KILLERs, all fixed and Boss-validated
+
+Per-build inspection launched diff-scoped over `template_discovery.rs`; it **ignored
+`args.files` and swept the whole app** (PJ-124, confirmed a 5th time). 90 agents,
+57 confirmed: **3 APP-KILLER · 9 HIGH · 34 MED · 11 LOW** — and **zero findings in the
+new §4/§4B code**.
+
+### 1. Rename destroyed a nested frontmatter value — `6cb55169`
+`update_frontmatter_title` matched `title:` on the TRIMMED line, discarding the only
+thing that distinguishes a nested YAML key from a root key. A note carrying
+`source:` → `title: Muqaddimah` lost that value PERMANENTLY on rename; `source:` was
+left empty and `author:` orphaned under a scalar. **The second-order effect was worse:**
+the result is invalid YAML, and `composeFrontmatter`'s invalid-YAML branch passes
+frontmatter through verbatim by design — so from that rename onward every property,
+tag and typed-link edit on the note was silently discarded. The note quietly stopped
+accepting changes while looking completely normal.
+
+**THIRD STRIKE on trim-the-line parsing (LL-014)** — the same class was fixed hours
+earlier in `merge_initial_frontmatter`. Both sites now key off column 0. *Indentation
+is data, not whitespace.* A **second, independent bug** in the same function surfaced
+while fixing the first: with `aliases:` above `title:`, the title branch `continue`d
+with the list still open and appended the alias AFTER the title line — a stray `- "A"`
+under a root key. Reproduce-first: 4 tests, 3 red against the old code.
+
+### 2. A locked `libraries.json` could delete every library — `5144c610`
+`ensure_universe_notes_folder` runs on EVERY universe activation and read the registry
+with `.ok()…unwrap_or_default()`, which answers "there are no libraries" for a file it
+merely failed to read — then atomically replaced it with a single entry. No error, no
+backup (this site bypasses `load_libraries`' quarantine). One transient lock was enough.
+**Absent is a fact; unreadable is an unknown.**
+
+### 3. An external file change could land in the wrong note — `5144c610`
+`adoptExternalChangeIntoTabs` iterated a tab snapshot captured BEFORE its awaited disk
+reads. Fixed at source, **and structurally**: `adoptDisk` was the only model mutator
+without an identity guard and now takes the same `expectPath` every other write path
+proves. Solve-the-class — protection no longer depends on each caller being careful.
+
+**Boss test:** Stage 1 (rename × nested property) PASS — disk confirmed Muqaddimah,
+Ibn Khaldun and 1377 intact through rename + a tag edit, exactly one root `title:`.
+Stage 2A (libraries intact across restart + two universe switches) PASS. Stage 2B
+(Notepad edit to an open note arrives, right note, nothing disturbed) PASS.
+
+## PJ-136 — the "Empty" row the Boss spotted — `8de291a2`
+His Step-1 screenshot showed `source` rendering as **Empty**. Ran it down: two parsers,
+one rule. `yamlDoc.projectProps` skips nested maps by design ("preserved in the CST,
+not editable here — Boss decision"); `store.parseFrontmatter`, the hand-rolled line
+parser feeding the note MODEL and therefore the visible panel, has no such rule.
+
+Untouched, the data is safe — proven on disk. **Typing into the row composes
+`source: <typed>` over the whole block**, proven by test: Muqaddimah, Ibn Khaldun, 1377
+gone, no error. A field that reads Empty is an invitation to fill it in, so the wrong
+label IS the defect. Three characterization tests pinned; the destructive one asserts
+the bug and MUST go red when fixed.
+
+**BOSS RULED: render it read-only with a summary of its children.** Next build.
+
+## SO checklist
+- **SO#1** session log — this file. **SO#6** orientation → **v3.63**. **SO#7** MoCh →
+  `docs/MoCh/MoCh-2026-07-21-1400.md`. **SO#9** PJ ledger → **v1.43** (PJ-136 filed +
+  Boss-ruled; PJ-134 closed — it was app-killer #2).
+- **SO#2 help files / User Manual — reviewed, no change required.** All three fixes are
+  behaviour corrections with no new or altered user-facing surface, and the recognition
+  engine has no UI yet. PJ-136's fix WILL be user-facing and takes its help/manual pass
+  in the same commit.
+- **Rust 1120/0 · svelte-check 0 errors · vitest 602/602.**
