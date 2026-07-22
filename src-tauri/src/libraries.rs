@@ -54,6 +54,57 @@ fn libraries_config_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 /// MIG-065 §J: WRITE-path validation must scope to the active universe's own
 /// libraries so an edit never lands on a read-only cUniverse file (the
 /// federated-write blocker). Reads still use the recursive set.
+/// The registry, or an ERROR — for callers that are about to WRITE it back.
+///
+/// 2026-07-22 inspection, APP-KILLER. `load_libraries` collapses every failure into
+/// `vec![]`, which is fine for a read (an empty sidebar) and catastrophic for a write:
+/// `add_library` pushed its one new entry onto that empty Vec and atomically renamed a
+/// ONE-ENTRY libraries.json over a registry holding 19. Every library deregistered, no
+/// error surfaced, and on the read-failure branch not even a backup taken. One transient
+/// lock — a sync client, an AV scanner, a network drive — coinciding with one click of
+/// New Library was enough.
+///
+/// This is the SAME anti-pattern fixed the same day at `universe.rs:380` ("absent is a
+/// fact; unreadable is an unknown"). That fix was applied at the one call site instead of
+/// at the shared loader, so the class survived in here — solve the class, not the
+/// instance. Read paths keep degrading gracefully; write paths must not.
+pub(crate) fn try_load_libraries(app: &tauri::AppHandle) -> Result<Vec<LibraryInfo>, String> {
+    let path = libraries_config_path(app)
+        .map_err(|e| format!("Could not locate the libraries registry: {e}"))?;
+    try_load_libraries_at(&path)
+}
+
+/// The decision itself, free of `AppHandle` so it can be tested directly.
+pub(crate) fn try_load_libraries_at(path: &std::path::Path) -> Result<Vec<LibraryInfo>, String> {
+    if !path.exists() {
+        return Ok(vec![]); // genuinely absent — a fact, and a new registry is correct
+    }
+    let data = fs::read_to_string(path)
+        .map_err(|e| format!("Could not read {}: {e}. Refusing to overwrite it.", path.display()))?;
+    serde_json::from_str(&data).map_err(|e| {
+        back_up_corrupt_config(path);
+        format!("Could not parse {}: {e}. Refusing to overwrite it.", path.display())
+    })
+}
+
+/// Preserve a timestamped copy of a corrupt config before anything else touches it.
+fn back_up_corrupt_config(path: &std::path::Path) {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let backup = path.with_file_name(format!(
+        "{}.corrupt-{}",
+        path.file_name().and_then(|n| n.to_str()).unwrap_or("libraries.json"),
+        secs
+    ));
+    if let Err(be) = fs::copy(path, &backup) {
+        eprintln!("[libraries] Failed to back up corrupt config to {}: {}", backup.display(), be);
+    } else {
+        eprintln!("[libraries] Backed up corrupt config to {}", backup.display());
+    }
+}
+
 pub(crate) fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     let path = match libraries_config_path(app) {
         Ok(p) => p,
@@ -306,7 +357,7 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
 
     // Any directory is accepted as a library — no .obsidian or .md requirement
 
-    let mut libraries = load_libraries(&app);
+    let mut libraries = try_load_libraries(&app)?; // never write on an unreadable registry
 
     // Check for duplicates
     if libraries.iter().any(|v| v.path == path) {
@@ -340,7 +391,7 @@ pub fn set_library_canonical_mode(app: tauri::AppHandle, library_id: String, mod
     if !["native", "canonical", "compatible"].contains(&mode.as_str()) {
         return Err(format!("Invalid canonical mode: {}", mode));
     }
-    let mut libraries = load_libraries(&app);
+    let mut libraries = try_load_libraries(&app)?; // never write on an unreadable registry
     if let Some(lib) = libraries.iter_mut().find(|l| l.id == library_id) {
         lib.canonical_mode = mode;
         save_libraries(&app, &libraries)?;
@@ -362,7 +413,7 @@ pub fn get_library_mode(app: &tauri::AppHandle, folder_path: &str) -> String {
 /// Remove a library by ID (does NOT delete any files).
 #[tauri::command]
 pub fn remove_library(app: tauri::AppHandle, library_id: String) -> Result<(), String> {
-    let mut libraries = load_libraries(&app);
+    let mut libraries = try_load_libraries(&app)?; // never write on an unreadable registry
     let before = libraries.len();
     libraries.retain(|v| v.id != library_id);
 
@@ -6462,6 +6513,59 @@ mod tests {
     // This is the same defect class as the `merge_initial_frontmatter` line-trimming
     // bug fixed earlier the same day. Third strike on trim-the-line parsing (LL-014):
     // both sites now key off column 0.
+
+    // ── The write-safe registry loader (2026-07-22 inspection, APP-KILLER) ──────
+    //
+    // `load_libraries` collapses every failure into an empty Vec. Harmless for a
+    // read; catastrophic for `add_library`, which pushed one entry onto that empty
+    // Vec and atomically renamed a one-entry file over a 19-library registry.
+
+    #[test]
+    fn an_absent_registry_is_an_empty_one() {
+        let dir = std::env::temp_dir().join(format!("cns-libs-absent-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let p = dir.join("libraries.json");
+        let _ = std::fs::remove_file(&p);
+        assert_eq!(try_load_libraries_at(&p).unwrap().len(), 0, "absent is a FACT — proceed");
+    }
+
+    #[test]
+    fn a_corrupt_registry_refuses_and_keeps_a_backup() {
+        let dir = std::env::temp_dir().join(format!("cns-libs-corrupt-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let p = dir.join("libraries.json");
+        std::fs::write(&p, b"[{\"id\": \"a\", trunca").unwrap();
+
+        let err = try_load_libraries_at(&p).unwrap_err();
+        assert!(err.contains("Refusing to overwrite"), "must refuse, not return empty: {err}");
+
+        // The original is untouched and a timestamped copy exists beside it.
+        assert!(p.exists());
+        let backed_up = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(Result::ok)
+            .any(|e| e.file_name().to_string_lossy().contains(".corrupt-"));
+        assert!(backed_up, "a corrupt registry must leave a recoverable copy");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_readable_registry_round_trips() {
+        let dir = std::env::temp_dir().join(format!("cns-libs-ok-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let p = dir.join("libraries.json");
+        std::fs::write(
+            &p,
+            br#"[{"id":"a","name":"Philosophy","path":"E:/L/Philosophy","is_universe_notes":false,"canonical_mode":"native"}]"#,
+        )
+        .unwrap();
+
+        let libs = try_load_libraries_at(&p).unwrap();
+        assert_eq!(libs.len(), 1);
+        assert_eq!(libs[0].name, "Philosophy");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
 
     #[test]
     fn rename_does_not_touch_a_title_nested_under_another_key() {

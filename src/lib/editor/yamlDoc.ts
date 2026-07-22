@@ -124,6 +124,26 @@ export function parseFrontmatterDoc(content: string): FmDoc {
 	return { body, rawYaml: yaml, props: hasErrors ? [] : projectProps(yaml), hasErrors, hadFence: true };
 }
 
+/**
+ * Top-level keys whose value is a nested MAP, read from the YAML itself.
+ *
+ * PJ-136 — the authority for "this key holds a block" is the file, not the props
+ * array handed to `composeFrontmatter`. Those props can be derived from
+ * PropertyEditor's `tab.content` cache, which `reconstructFrontmatter` writes
+ * WITHOUT a nested block's children, so the key comes back typed as ordinary text.
+ * Keying the refusal off the file makes it independent of every upstream projection.
+ */
+function nestedMapKeys(yaml: string): Set<string> {
+	const out = new Set<string>();
+	const doc = parseDocument(yaml);
+	if (doc.errors.length || !isMap(doc.contents)) return out;
+	for (const pair of doc.contents.items) {
+		const k = pair.key;
+		if (isScalar(k) && k.value != null && isMap(pair.value)) out.add(String(k.value));
+	}
+	return out;
+}
+
 /** Index of the top-level map-item whose key scalar === `key`, or -1. */
 function findItemIndex(cst: CST.Document, key: string): number {
 	const coll = cst.value as CST.BlockMap | undefined;
@@ -261,14 +281,18 @@ export function composeFrontmatter(
 	// read-only; refusing here means the block survives however the panel behaves —
 	// the same reason `adoptDisk` grew an identity guard instead of trusting callers.
 	// The authoritative bytes stay untouched in the CST and are emitted verbatim.
+	// The set is read from the FILE, never from the props arrays. That distinction is
+	// the whole fix: a props array can arrive claiming `source` is ordinary text —
+	// `reconstructFrontmatter` drops a nested block's children when PropertyEditor
+	// caches `tab.content`, and re-parsing that cache re-projects the key as `text`.
+	// Trusting the props array there let the SET/ADD branch splice the block out and
+	// append `source: ""`. The file always knows; ask it.
+	const immutableKeys = nestedMapKeys(rawYaml);
 	const oldByKey = new Map(
-		oldProps.filter((p) => p.type !== 'nested-map').map((p) => [p.key, p]),
+		oldProps.filter((p) => !immutableKeys.has(p.key)).map((p) => [p.key, p]),
 	);
 	const newByKey = new Map(
-		newProps.filter((p) => p.type !== 'nested-map').map((p) => [p.key, p]),
-	);
-	const immutableKeys = new Set(
-		[...oldProps, ...newProps].filter((p) => p.type === 'nested-map').map((p) => p.key),
+		newProps.filter((p) => !immutableKeys.has(p.key)).map((p) => [p.key, p]),
 	);
 
 	// REMOVE — keys present before, gone now: splice their CST map item.

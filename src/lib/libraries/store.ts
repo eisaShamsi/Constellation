@@ -94,6 +94,11 @@ export interface FrontmatterProperty {
 	value: string;
 	type: PropertyType;
 	listItems?: string[];
+	/** PJ-136 — for the `nested-map` type, the child lines VERBATIM. The legacy
+	 *  `reconstructFrontmatter` re-emits them unchanged so `buildFullContent`'s
+	 *  `tab.content` cache stays lossless; a cache that dropped them re-parsed the key
+	 *  as ordinary text, and that lie is what let `composeFrontmatter` delete the block. */
+	nestedRaw?: string[];
 	/** PJ-136 — for the `nested-map` type, the child keys in document order
 	 *  (`['title', 'author', 'year']`). The panel renders them as the row's
 	 *  read-only summary; the authoritative bytes remain in the CST, which
@@ -1724,9 +1729,11 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 			// remove this type at all, so the data cannot be lost however the UI behaves.
 			if (!value && i + 1 < yamlLines.length && /^\s/.test(yamlLines[i + 1]) && !/^\s+-\s/.test(yamlLines[i + 1])) {
 				const children: string[] = [];
+				const rawLines: string[] = [];
 				i++;
 				while (i < yamlLines.length && /^\s/.test(yamlLines[i]) && !/^\s*$/.test(yamlLines[i])) {
 					const cur = yamlLines[i];
+					rawLines.push(cur); // verbatim — see nestedRaw
 					const cIdx = cur.indexOf(':');
 					if (cIdx > 0) {
 						const ck = cur.substring(0, cIdx).trim();
@@ -1742,7 +1749,7 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 					// and this fix changes no existing write behaviour anywhere. The only
 					// thing that changes is that the type is now KNOWN — which is what lets
 					// the panel render it and `composeFrontmatter` refuse to touch it.
-					properties.push({ key, value: '', type: 'nested-map', nestedKeys: children });
+					properties.push({ key, value: '', type: 'nested-map', nestedKeys: children, nestedRaw: rawLines });
 				}
 				continue;
 			}
@@ -1849,6 +1856,12 @@ export function reconstructFrontmatter(properties: FrontmatterProperty[]): strin
 				// byte-stable. This also fixes pre-existing special-char list items (`#`, `:`).
 				lines.push(`  - ${quoteIfNeeded(item)}`);
 			}
+		} else if (prop.type === 'nested-map') {
+			// PJ-136 — re-emit the block EXACTLY as it was read. Serializing this prop
+			// from `value` would write a bare `key:` and drop every child, which is what
+			// made the cached `tab.content` lossy in the first place.
+			lines.push(`${prop.key}:`);
+			for (const raw of prop.nestedRaw ?? []) lines.push(raw);
 		} else if (prop.type === 'checkbox') {
 			// Write bare YAML boolean (unquoted true/false)
 			lines.push(`${prop.key}: ${prop.value === 'true' ? 'true' : 'false'}`);
