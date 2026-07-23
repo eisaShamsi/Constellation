@@ -4014,5 +4014,34 @@
     "setPage": "Forma: Página",
     "clear": "Quitar forma",
     "revert": "Deshacer el último cambio de forma"
+  },
+  "templateStudio": {
+    "title": "Tipos de nota que escribes una y otra vez",
+    "subtitle": "Se encontraron {count} tipos recurrentes en el patrón de tus notas. Esta agrupación no cambia el contenido de tus notas.",
+    "loading": "Revisando tus notas…",
+    "emptyState": "Todavía no hay ningún tipo de nota que se repita lo suficiente. Sigue escribiendo: esto se llena a medida que surgen patrones.",
+    "notesLikeThis": "Notas como esta",
+    "whatDoYouCallThese": "¿Cómo llamas a estas?",
+    "theseNotesCarry": "Cada una de estas notas contiene: {fields}",
+    "whereItComesFrom": "De dónde viene la palabra «{token}» — de tus propias notas:",
+    "otherWords": "Otras palabras que usan tus notas:",
+    "collisionNote": "Otro tipo ya usa «{token}» por sí solo, así que Constellation puso a su lado el campo más raro que comparten estas notas. Cámbialo por lo que quieras.",
+    "noNameFound": "Constellation revisó las bibliotecas, carpetas, etiquetas, títulos, valores de propiedades y títulos de sección de estas {count} notas. Ninguna palabra se repitió en suficientes de ellas y en más de un lugar. Estas las nombras tú.",
+    "fieldsHeading": "Lo que contienen estas notas",
+    "coreGroup": "Las {count} tienen estos",
+    "tailGroup": "Algunas también tienen",
+    "headingsGroup": "Secciones que tiene la mayoría",
+    "allOf": "las {count}",
+    "someOf": "{n} de {total}",
+    "kept": "Guardado",
+    "evidence": {
+      "library": "{n} de estas {total} notas están en tu biblioteca «{token}» — en todo tu Universo, {corpusWith} de {corpusTotal}.",
+      "folder": "{n} de estas {total} notas están en una carpeta llamada «{token}» — en todo tu Universo, {corpusWith} de {corpusTotal}.",
+      "tag": "{n} de estas {total} notas tienen la etiqueta «{token}» — en todo tu Universo, {corpusWith} de {corpusTotal}.",
+      "title": "{n} de estas {total} notas llevan «{token}» en el título — en todo tu Universo, {corpusWith} de {corpusTotal}.",
+      "value": "{n} de estas {total} notas tienen «{token}» como valor de propiedad — en todo tu Universo, {corpusWith} de {corpusTotal}.",
+      "heading": "{n} de estas {total} notas tienen una sección llamada «{token}» — en todo tu Universo, {corpusWith} de {corpusTotal}."
+    },
+    "studioName": "Estudio de plantillas"
   }
 }

@@ -3987,5 +3987,34 @@
     "setPage": "形态：页面",
     "clear": "清除形态",
     "revert": "撤销上次形态更改"
+  },
+  "templateStudio": {
+    "title": "你反复书写的笔记种类",
+    "subtitle": "在你的笔记规律中发现了 {count} 种反复出现的类型。此归类不会改变笔记的内容。",
+    "loading": "正在查看你的笔记…",
+    "emptyState": "还没有哪种笔记重复得足够多。继续书写——当规律形成时，这里就会填满。",
+    "notesLikeThis": "像这样的笔记",
+    "whatDoYouCallThese": "你把这些叫作什么？",
+    "theseNotesCarry": "这些笔记每一篇都带有：{fields}",
+    "whereItComesFrom": "“{token}”这个词从何而来——来自你自己的笔记：",
+    "otherWords": "你的笔记使用的其他词：",
+    "collisionNote": "另一个种类已经单独使用“{token}”，因此 Constellation 在旁边加上了这些笔记共有的最罕见字段。你可以随意更改。",
+    "noNameFound": "Constellation 查看了这 {count} 篇笔记的库、文件夹、标签、标题、属性值和小节标题。没有一个词在足够多的笔记中、并且在不止一个地方重复出现。这些由你来命名。",
+    "fieldsHeading": "这些笔记带有什么",
+    "coreGroup": "全部 {count} 篇都有",
+    "tailGroup": "其中一些还有",
+    "headingsGroup": "大多数都有的小节",
+    "allOf": "全部 {count}",
+    "someOf": "{total} 篇中的 {n} 篇",
+    "kept": "已保存",
+    "evidence": {
+      "library": "这 {total} 篇笔记中有 {n} 篇位于你的库“{token}”——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
+      "folder": "这 {total} 篇笔记中有 {n} 篇位于名为“{token}”的文件夹——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
+      "tag": "这 {total} 篇笔记中有 {n} 篇带有标签“{token}”——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
+      "title": "这 {total} 篇笔记中有 {n} 篇标题含“{token}”——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
+      "value": "这 {total} 篇笔记中有 {n} 篇以“{token}”作为属性值——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
+      "heading": "这 {total} 篇笔记中有 {n} 篇含名为“{token}”的小节——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。"
+    },
+    "studioName": "模板工作室"
   }
 }

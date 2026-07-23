@@ -4014,5 +4014,34 @@
     "setPage": "Biçim: Sayfa",
     "clear": "Biçimi kaldır",
     "revert": "Son biçim değişikliğini geri al"
+  },
+  "templateStudio": {
+    "title": "Sürekli yazdığın not türleri",
+    "subtitle": "Notlarının deseninde yinelenen {count} tür bulundu. Bu gruplama notlarının içeriğini değiştirmez.",
+    "loading": "Notlarına göz atılıyor…",
+    "emptyState": "Henüz yeterince yinelenen bir not türü yok. Yazmayı sürdür — desenler oluştukça burası dolar.",
+    "notesLikeThis": "Bunun gibi notlar",
+    "whatDoYouCallThese": "Bunlara ne ad veriyorsun?",
+    "theseNotesCarry": "Bu notların her biri şunları taşıyor: {fields}",
+    "whereItComesFrom": "“{token}” sözcüğü nereden geliyor — kendi notlarından:",
+    "otherWords": "Notlarının kullandığı başka sözcükler:",
+    "collisionNote": "Başka bir tür “{token}” sözcüğünü tek başına kullanıyor, bu yüzden Constellation bu notların paylaştığı en seyrek alanı yanına koydu. Dilediğin gibi değiştir.",
+    "noNameFound": "Constellation bu {count} notun kitaplıklarına, klasörlerine, etiketlerine, başlıklarına, özellik değerlerine ve bölüm başlıklarına baktı. Hiçbir sözcük yeterli sayıda notta ve birden fazla yerde yinelenmedi. Bunları adlandırmak sana kalmış.",
+    "fieldsHeading": "Bu notlar ne taşıyor",
+    "coreGroup": "{count} notun hepsinde bunlar var",
+    "tailGroup": "Bazılarında ayrıca",
+    "headingsGroup": "Çoğunda bulunan bölümler",
+    "allOf": "tümü {count}",
+    "someOf": "{total} içinde {n}",
+    "kept": "Saklandı",
+    "evidence": {
+      "library": "Bu {total} nottan {n} tanesi “{token}” kitaplığında — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
+      "folder": "Bu {total} nottan {n} tanesi “{token}” adlı klasörde — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
+      "tag": "Bu {total} nottan {n} tanesi “{token}” etiketli — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
+      "title": "Bu {total} nottan {n} tanesinin başlığında “{token}” var — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
+      "value": "Bu {total} nottan {n} tanesinde “{token}” bir özellik değeri — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
+      "heading": "Bu {total} nottan {n} tanesinde “{token}” adlı bir bölüm var — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi."
+    },
+    "studioName": "Şablon Stüdyosu"
   }
 }

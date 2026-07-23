@@ -4014,5 +4014,34 @@
     "setPage": "Forma: Página",
     "clear": "Remover forma",
     "revert": "Desfazer a última alteração de forma"
+  },
+  "templateStudio": {
+    "title": "Tipos de nota que você escreve sempre",
+    "subtitle": "Foram encontrados {count} tipos recorrentes no padrão das suas notas. Este agrupamento não altera o conteúdo das suas notas.",
+    "loading": "Percorrendo suas notas…",
+    "emptyState": "Ainda não há tipo de nota que se repita o suficiente. Continue escrevendo — isto se preenche à medida que padrões surgem.",
+    "notesLikeThis": "Notas como esta",
+    "whatDoYouCallThese": "Como você chama estas?",
+    "theseNotesCarry": "Cada uma destas notas traz: {fields}",
+    "whereItComesFrom": "De onde vem a palavra “{token}” — das suas próprias notas:",
+    "otherWords": "Outras palavras que suas notas usam:",
+    "collisionNote": "Outro tipo já usa “{token}” sozinho, então o Constellation colocou ao lado o campo mais raro que estas notas compartilham. Mude para o que quiser.",
+    "noNameFound": "O Constellation examinou as bibliotecas, pastas, etiquetas, títulos, valores de propriedades e títulos de seção destas {count} notas. Nenhuma palavra se repetiu em notas suficientes e em mais de um lugar. Estas são suas para nomear.",
+    "fieldsHeading": "O que estas notas trazem",
+    "coreGroup": "Todas as {count} têm estes",
+    "tailGroup": "Algumas também têm",
+    "headingsGroup": "Seções que a maioria tem",
+    "allOf": "todas as {count}",
+    "someOf": "{n} de {total}",
+    "kept": "Guardado",
+    "evidence": {
+      "library": "{n} destas {total} notas estão na sua biblioteca “{token}” — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
+      "folder": "{n} destas {total} notas estão numa pasta chamada “{token}” — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
+      "tag": "{n} destas {total} notas têm a etiqueta “{token}” — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
+      "title": "{n} destas {total} notas têm “{token}” no título — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
+      "value": "{n} destas {total} notas têm “{token}” como valor de propriedade — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
+      "heading": "{n} destas {total} notas têm uma seção chamada “{token}” — em todo o seu Universo, {corpusWith} de {corpusTotal}."
+    },
+    "studioName": "Estúdio de modelos"
   }
 }

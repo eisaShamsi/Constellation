@@ -3987,5 +3987,34 @@
     "setPage": "형태: 페이지",
     "clear": "형태 지우기",
     "revert": "마지막 형태 변경 실행 취소"
+  },
+  "templateStudio": {
+    "title": "당신이 계속 쓰는 노트 종류",
+    "subtitle": "노트의 패턴에서 반복되는 {count}가지 종류가 발견되었습니다. 이 분류는 노트의 내용을 바꾸지 않습니다.",
+    "loading": "노트를 살펴보는 중…",
+    "emptyState": "아직 충분히 반복되는 종류가 없습니다. 계속 쓰다 보면 패턴이 생기며 채워집니다.",
+    "notesLikeThis": "이런 노트들",
+    "whatDoYouCallThese": "이것들을 뭐라고 부르시겠어요?",
+    "theseNotesCarry": "이 노트들은 모두 다음을 지니고 있습니다: {fields}",
+    "whereItComesFrom": "“{token}”이라는 낱말의 출처 — 당신의 노트에서:",
+    "otherWords": "당신의 노트가 쓰는 다른 낱말:",
+    "collisionNote": "다른 종류가 이미 “{token}”을 단독으로 쓰고 있어, Constellation이 이 노트들이 공유하는 가장 드문 항목을 옆에 붙였습니다. 원하는 대로 바꾸세요.",
+    "noNameFound": "Constellation은 이 {count}개 노트의 라이브러리, 폴더, 태그, 제목, 속성 값, 구역 제목을 살펴봤습니다. 충분한 수의 노트에서, 그리고 두 곳 이상에서 반복된 낱말은 없었습니다. 이름은 당신이 붙이세요.",
+    "fieldsHeading": "이 노트들이 지닌 것",
+    "coreGroup": "{count}개 모두가 지닌 것",
+    "tailGroup": "일부는 이것도 지님",
+    "headingsGroup": "대부분이 가진 구역",
+    "allOf": "전체 {count}",
+    "someOf": "{total} 중 {n}",
+    "kept": "보관됨",
+    "evidence": {
+      "library": "이 {total}개 노트 중 {n}개가 라이브러리 “{token}”에 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
+      "folder": "이 {total}개 노트 중 {n}개가 “{token}” 폴더에 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
+      "tag": "이 {total}개 노트 중 {n}개에 “{token}” 태그가 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
+      "title": "이 {total}개 노트 중 {n}개의 제목에 “{token}”이 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
+      "value": "이 {total}개 노트 중 {n}개가 “{token}”을 속성 값으로 가집니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
+      "heading": "이 {total}개 노트 중 {n}개에 “{token}” 구역이 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다."
+    },
+    "studioName": "템플릿 스튜디오"
   }
 }

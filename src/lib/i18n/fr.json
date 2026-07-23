@@ -4014,5 +4014,34 @@
     "setPage": "Forme : Page",
     "clear": "Retirer la forme",
     "revert": "Annuler le dernier changement de forme"
+  },
+  "templateStudio": {
+    "title": "Les genres de notes que tu écris sans cesse",
+    "subtitle": "{count} genres récurrents ont été trouvés dans la trame de vos notes. Ce regroupement ne modifie pas le contenu de vos notes.",
+    "loading": "Lecture de tes notes…",
+    "emptyState": "Aucun genre de note ne revient encore assez souvent. Continue d’écrire — cela se remplit à mesure que des motifs apparaissent.",
+    "notesLikeThis": "Des notes comme celle-ci",
+    "whatDoYouCallThese": "Comment appelles-tu celles-ci ?",
+    "theseNotesCarry": "Chacune de ces notes contient : {fields}",
+    "whereItComesFrom": "D’où vient le mot « {token} » — de tes propres notes :",
+    "otherWords": "D’autres mots que tes notes emploient :",
+    "collisionNote": "Un autre genre utilise déjà « {token} » seul, alors Constellation a placé à côté le champ le plus rare que ces notes partagent. Change-le comme tu veux.",
+    "noNameFound": "Constellation a examiné les bibliothèques, dossiers, étiquettes, titres, valeurs de propriétés et titres de sections de ces {count} notes. Aucun mot n’est revenu dans assez d’entre elles, à plus d’un endroit. Celles-ci, c’est à toi de les nommer.",
+    "fieldsHeading": "Ce que contiennent ces notes",
+    "coreGroup": "Les {count} ont ceci",
+    "tailGroup": "Certaines ont aussi",
+    "headingsGroup": "Sections que la plupart possèdent",
+    "allOf": "les {count}",
+    "someOf": "{n} sur {total}",
+    "kept": "Conservé",
+    "evidence": {
+      "library": "{n} de ces {total} notes se trouvent dans ta bibliothèque « {token} » — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
+      "folder": "{n} de ces {total} notes sont dans un dossier nommé « {token} » — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
+      "tag": "{n} de ces {total} notes portent l’étiquette « {token} » — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
+      "title": "{n} de ces {total} notes ont « {token} » dans leur titre — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
+      "value": "{n} de ces {total} notes ont « {token} » comme valeur de propriété — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
+      "heading": "{n} de ces {total} notes ont une section nommée « {token} » — dans tout ton Univers, {corpusWith} sur {corpusTotal}."
+    },
+    "studioName": "Studio des modèles"
   }
 }

@@ -4135,5 +4135,34 @@
     "setPage": "Shape: Page",
     "clear": "Clear shape",
     "revert": "Undo last shape change"
+  },
+  "templateStudio": {
+    "title": "Kinds of note you keep writing",
+    "subtitle": "{count} recurring kinds were found in the pattern of your notes. This grouping does not change the content of your notes.",
+    "loading": "Looking through your notes…",
+    "emptyState": "No kind of note repeats often enough yet. Keep writing — this fills in as patterns form.",
+    "notesLikeThis": "Notes like this",
+    "whatDoYouCallThese": "What do you call these?",
+    "theseNotesCarry": "Every one of these notes carries: {fields}",
+    "whereItComesFrom": "Where the word “{token}” comes from — your own notes:",
+    "otherWords": "Other words your notes use:",
+    "collisionNote": "Another kind is already using “{token}” on its own, so Constellation put the rarest field these notes share beside it. Change it to anything you like.",
+    "noNameFound": "Constellation looked at the libraries, folders, tags, titles, property values and section headings of these {count} notes. No word recurred in enough of them, in more than one place. These are yours to name.",
+    "fieldsHeading": "What these notes carry",
+    "coreGroup": "Every one of the {count} has these",
+    "tailGroup": "Some of them also have",
+    "headingsGroup": "Sections most of them have",
+    "allOf": "all {count}",
+    "someOf": "{n} of {total}",
+    "kept": "Kept",
+    "evidence": {
+      "library": "{n} of these {total} notes sit in your library “{token}” — across your whole Universe, {corpusWith} of {corpusTotal} do.",
+      "folder": "{n} of these {total} notes are in a folder called “{token}” — across your whole Universe, {corpusWith} of {corpusTotal} are.",
+      "tag": "{n} of these {total} notes are tagged “{token}” — across your whole Universe, {corpusWith} of {corpusTotal} are.",
+      "title": "{n} of these {total} notes have “{token}” in their title — across your whole Universe, {corpusWith} of {corpusTotal} do.",
+      "value": "{n} of these {total} notes have “{token}” as a property value — across your whole Universe, {corpusWith} of {corpusTotal} do.",
+      "heading": "{n} of these {total} notes have a section called “{token}” — across your whole Universe, {corpusWith} of {corpusTotal} do."
+    },
+    "studioName": "Template Studio"
   }
 }

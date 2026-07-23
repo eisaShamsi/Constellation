@@ -133,6 +133,8 @@
 	import NscBackfillProgressStrip from '$lib/components/NscBackfillProgressStrip.svelte';
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
+	// MIG-103 §4 — the Kind Studio: the note-kinds this Universe already contains.
+	import TemplateStudio from '$lib/components/TemplateStudio.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
 	import RelatedCandidates from '$lib/components/RelatedCandidates.svelte'; // MIG-086 §D — suggest+one-click typed link
@@ -643,6 +645,7 @@
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
 	let showReviewer = $state(false); // MIG-080 §F — left-dock universe Review reviewer
+	let showTemplateStudio = $state(false); // MIG-103 §4 — left-dock Kind Studio (read-only in Slice 1)
 	let cameFromReviewer = $state(false); // MIG-084 §F.2 — show a "← Reviewer" return chip
 	let reviewerReturnPath = $state<string | null>(null); // the note opened FROM the reviewer (restore on return)
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
@@ -1367,7 +1370,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
+	const fullPageActive = $derived(showTemplateStudio || showSkyView || showGlobalTasks || showIndex || showReviewer || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
 	// MIG-080 §A.2 — the Calendar page is a full-page overlay; if another full-page
 	// overlay opens while it's up, close the Calendar (the dock buttons close it the
 	// other direction). Settles: once false, the guard is inert (no loop).
@@ -1381,6 +1384,10 @@
 	// showReviewer), close the reviewer. Settles in one tick; no loop (once false,
 	// inert). NOT gated on isDashboardVisible — the reviewer overlays the home dashboard.
 	$effect(() => {
+		// MIG-103 §4 — the Kind Studio is a full page; any other full page closes it.
+		if (showTemplateStudio && (showSkyView || showGlobalTasks || showIndex || showReviewer || showConstellationMap || showSearchHub || showInspector360 || showCalendarPage || showCataloger || showOrgChart || showKnowledgeHealth || showExpressionForge || showSenseMakingCanvas)) {
+			showTemplateStudio = false;
+		}
 		if (showReviewer && (showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || showCalendarPage)) {
 			showReviewer = false;
 		}
@@ -2326,6 +2333,8 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
+			// MIG-103 §4 — open the Kind Studio.
+			{ id: 'template-studio', name: $t('templateStudio.studioName'), icon: '\u25C7', action: () => { showCommandPalette = false; showTemplateStudio = true; showReviewer = false; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -7038,6 +7047,21 @@
 			{/if}
 			<!-- MIG-080 §F — Review reviewer (left-dock core surface; Boss ruling). Opening it
 			     clears the main full-page peers; the reviewer guard closes it if another opens. -->
+			<!-- MIG-103 — the Template Studio. RULED STATIONERY: a page and its ruling.
+			     Boss-chosen 2026-07-22 from a survey of how templates are actually
+			     depicted across eleven contexts; this is the reMarkable convention —
+			     "a page-background preview: lined, grid, checklist" — where the page's
+			     RULING is the template. It is also, independently, what the Arabic
+			     manuscript tradition used: the مسطرة, a thread-strung board that
+			     embosses guide lines into a blank sheet without ink. The mold shapes
+			     the writing and never appears in it.
+
+			     Rules run edge to edge, as on real stationery — that is what separates
+			     it from a document with text in it. Mirror-symmetric, so the Arabic and
+			     Hebrew builds get the identical glyph. -->
+			<button class="dock-btn" class:active={showTemplateStudio} onclick={() => { showTemplateStudio = !showTemplateStudio; if (showTemplateStudio) { showReviewer = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; } }} title={$t('templateStudio.studioName')}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16"/></svg>
+			</button>
 			<button class="dock-btn" class:active={showReviewer} onclick={() => { showReviewer = !showReviewer; if (showReviewer) { cameFromReviewer = false; reviewerReturnPath = null;showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; indexReturnPending = false; } }} title={$t('reviewer.title') || 'Reviewer'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 			</button>
@@ -7833,6 +7857,22 @@
 		<!-- MIG-080 §F — the universe Review reviewer: a LEFT-DOCK full-page surface
 		     (Boss ruling 2026-06-22). Conditionally mounted so it loads fresh on open
 		     (the now-cheap get_due_notes). The per-note status lives in the right rail. -->
+		<!-- MIG-103 §4 — the Kind Studio. Slice 1 is READ-ONLY: it calls one command and
+		     writes nothing. Clicking an example opens that note and closes the Studio,
+		     matching how the Reviewer hands off. -->
+		{#if showTemplateStudio}
+			<div class="reviewer-overlay reviewer-visible">
+				<TemplateStudio
+					onClose={() => (showTemplateStudio = false)}
+					onOpenExample={(path) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showTemplateStudio = false;
+					}}
+				/>
+			</div>
+		{/if}
+
 		{#if showReviewer}
 			<div class="reviewer-overlay reviewer-visible">
 				<ReviewerView
@@ -8088,7 +8128,13 @@
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showReviewer || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360 || showCalendarPage} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<!-- This list is THE mechanism by which a full-page overlay takes the centre:
+		     the overlays are SIBLINGS of `.content-area`, and both are `flex: 1`, so an
+		     overlay that is not named here does not replace the editor — it splits the
+		     height with it. Any new full-page surface must be added here, or it renders
+		     in the top half with the editor below. (MIG-103 §4 — the Kind Studio was
+		     missing from it.) -->
+		<div class="content-area" class:content-hidden={showTemplateStudio || showIndex || showReviewer || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360 || showCalendarPage} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">

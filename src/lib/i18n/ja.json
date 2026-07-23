@@ -3987,5 +3987,34 @@
     "setPage": "かたち: ページ",
     "clear": "かたちを解除",
     "revert": "直前のかたちの変更を元に戻す"
+  },
+  "templateStudio": {
+    "title": "あなたが繰り返し書いているノートの種類",
+    "subtitle": "ノートのパターンから、繰り返し現れる {count} 種類が見つかりました。この分類がノートの内容を変えることはありません。",
+    "loading": "ノートを見ています…",
+    "emptyState": "まだ十分に繰り返される種類はありません。書き続けてください — パターンができるとここに現れます。",
+    "notesLikeThis": "こういうノート",
+    "whatDoYouCallThese": "これらを何と呼びますか？",
+    "theseNotesCarry": "これらのノートはすべて次を持っています: {fields}",
+    "whereItComesFrom": "「{token}」という語の出どころ — あなた自身のノートから:",
+    "otherWords": "あなたのノートが使う他の語:",
+    "collisionNote": "別の種類がすでに「{token}」単独で使っているため、Constellation はこれらのノートが共有する最も稀な項目を横に添えました。自由に変更できます。",
+    "noNameFound": "Constellation はこれら {count} 件のノートのライブラリ、フォルダ、タグ、タイトル、プロパティ値、見出しを調べました。十分な数のノートで、かつ複数の場所に繰り返される語はありませんでした。名前はあなたが付けてください。",
+    "fieldsHeading": "これらのノートが持つもの",
+    "coreGroup": "{count} 件すべてが持つ",
+    "tailGroup": "一部が持つ",
+    "headingsGroup": "ほとんどにある見出し",
+    "allOf": "全 {count} 件",
+    "someOf": "{total} 件中 {n} 件",
+    "kept": "保存済み",
+    "evidence": {
+      "library": "これら {total} 件のうち {n} 件はライブラリ「{token}」にあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
+      "folder": "これら {total} 件のうち {n} 件は「{token}」というフォルダにあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
+      "tag": "これら {total} 件のうち {n} 件に「{token}」タグが付いています — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
+      "title": "これら {total} 件のうち {n} 件はタイトルに「{token}」を含みます — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
+      "value": "これら {total} 件のうち {n} 件は「{token}」をプロパティ値に持ちます — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
+      "heading": "これら {total} 件のうち {n} 件に「{token}」という見出しがあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。"
+    },
+    "studioName": "テンプレート・スタジオ"
   }
 }
