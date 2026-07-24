@@ -2277,7 +2277,9 @@
     "snippetSelection": "ما حدّدته",
     "snippetWholeNote": "الملاحظة كاملة",
     "startFromTemplate": "ابدأ من قالب…",
-    "setFolderTemplate": "تعيين القالب الافتراضي…"
+    "setFolderTemplate": "تعيين القالب الافتراضي…",
+    "errNoFolder": "لا يوجد مجلد مكتبة لإنشاء الملاحظة فيه.",
+    "errNewNote": "تعذّر إنشاء الملاحظة من القالب: {error}"
   },
   "secondScreen": {
     "title": "الشاشة الثانية",
@@ -4246,7 +4248,7 @@
     "headingsGroup": "أقسام يحملها معظمها",
     "allOf": "كلها {count}",
     "someOf": "{n} من {total}",
-    "kept": "محفوظ",
+    "kept": "تم الاحتفاظ",
     "evidence": {
       "library": "{n} من هذه الملاحظات البالغة {total} تقع في مكتبتك «{token}» — وفي كونك كله {corpusWith} من {corpusTotal}.",
       "folder": "{n} من هذه الملاحظات البالغة {total} في مجلد اسمه «{token}» — وفي كونك كله {corpusWith} من {corpusTotal}.",
@@ -4255,6 +4257,16 @@
       "value": "{n} من هذه الملاحظات البالغة {total} تحمل «{token}» كقيمة خاصية — وفي كونك كله {corpusWith} من {corpusTotal}.",
       "heading": "{n} من هذه الملاحظات البالغة {total} تحوي قسمًا اسمه «{token}» — وفي كونك كله {corpusWith} من {corpusTotal}."
     },
-    "studioName": "استوديو القوالب"
+    "studioName": "استوديو القوالب",
+    "keep": "احتفظ",
+    "willWrite": "سيُنشئ {file} — يحتوي {fields}",
+    "willWriteSections": "…وأقسام: {sections}",
+    "needsName": "اكتب اسمًا للاحتفاظ بهذا النوع.",
+    "undo": "تراجع",
+    "clashTitle": "«{name}» موجود بالفعل.",
+    "clashRename": "غيّر الاسم",
+    "clashMerge": "أضف هذه الحقول إليه",
+    "merged": "أُضيف: {fields}",
+    "undoRefused": "جرى تعديل هذا القالب بعد إنشائه — تُرك كما هو."
   }
 }

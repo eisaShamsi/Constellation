@@ -1731,7 +1731,9 @@
     "snippetSelection": "میرا انتخاب",
     "snippetWholeNote": "مکمل نوٹ",
     "startFromTemplate": "سانچے سے شروع کریں…",
-    "setFolderTemplate": "طے شدہ سانچہ مقرر کریں…"
+    "setFolderTemplate": "طے شدہ سانچہ مقرر کریں…",
+    "errNoFolder": "نوٹ بنانے کے لیے کوئی لائبریری فولڈر نہیں۔",
+    "errNewNote": "ٹیمپلیٹ سے نوٹ نہیں بن سکا: {error}"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",
@@ -4033,7 +4035,7 @@
     "headingsGroup": "وہ حصے جو اکثر میں ہیں",
     "allOf": "تمام {count}",
     "someOf": "{total} میں سے {n}",
-    "kept": "محفوظ",
+    "kept": "محفوظ ہو گیا",
     "evidence": {
       "library": "اِن {total} نوٹوں میں سے {n} آپ کی لائبریری «{token}» میں ہیں — پوری کائنات میں {corpusTotal} میں سے {corpusWith}۔",
       "folder": "اِن {total} نوٹوں میں سے {n} «{token}» نامی فولڈر میں ہیں — پوری کائنات میں {corpusTotal} میں سے {corpusWith}۔",
@@ -4042,6 +4044,16 @@
       "value": "اِن {total} نوٹوں میں سے {n} میں «{token}» ایک خصوصیت کی قدر ہے — پوری کائنات میں {corpusTotal} میں سے {corpusWith}۔",
       "heading": "اِن {total} نوٹوں میں سے {n} میں «{token}» نامی حصہ ہے — پوری کائنات میں {corpusTotal} میں سے {corpusWith}۔"
     },
-    "studioName": "ٹیمپلیٹ اسٹوڈیو"
+    "studioName": "ٹیمپلیٹ اسٹوڈیو",
+    "keep": "محفوظ کریں",
+    "willWrite": "{file} بنائے گا — {fields} کے ساتھ",
+    "willWriteSections": "…اور حصے: {sections}",
+    "needsName": "اس قسم کو محفوظ کرنے کے لیے نام لکھیں۔",
+    "undo": "واپس کریں",
+    "clashTitle": "«{name}» پہلے سے موجود ہے۔",
+    "clashRename": "نام بدلیں",
+    "clashMerge": "یہ فیلڈز اس میں شامل کریں",
+    "merged": "شامل ہوا: {fields}",
+    "undoRefused": "اس ٹیمپلیٹ میں بعد میں ترمیم ہوئی — اسے ویسا ہی چھوڑ دیا گیا۔"
   }
 }

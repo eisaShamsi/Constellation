@@ -1742,7 +1742,9 @@
     "snippetSelection": "Meine Auswahl",
     "snippetWholeNote": "Ganze Notiz",
     "startFromTemplate": "Mit einer Vorlage beginnen…",
-    "setFolderTemplate": "Standardvorlage festlegen…"
+    "setFolderTemplate": "Standardvorlage festlegen…",
+    "errNoFolder": "Kein Bibliotheksordner zum Anlegen der Notiz.",
+    "errNewNote": "Notiz konnte nicht aus der Vorlage erstellt werden: {error}"
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",
@@ -4042,6 +4044,16 @@
       "value": "{n} dieser {total} Notizen haben „{token}“ als Eigenschaftswert — im gesamten Universum {corpusWith} von {corpusTotal}.",
       "heading": "{n} dieser {total} Notizen haben einen Abschnitt „{token}“ — im gesamten Universum {corpusWith} von {corpusTotal}."
     },
-    "studioName": "Vorlagen-Studio"
+    "studioName": "Vorlagen-Studio",
+    "keep": "Behalten",
+    "willWrite": "Schreibt {file} — mit {fields}",
+    "willWriteSections": "…und Abschnitte: {sections}",
+    "needsName": "Gib einen Namen ein, um diese Art zu behalten.",
+    "undo": "Rückgängig",
+    "clashTitle": "„{name}“ existiert bereits.",
+    "clashRename": "Umbenennen",
+    "clashMerge": "Diese Felder hinzufügen",
+    "merged": "Hinzugefügt: {fields}",
+    "undoRefused": "Diese Vorlage wurde seither bearbeitet — sie bleibt unangetastet."
   }
 }

@@ -14,20 +14,27 @@
 	 * `round(fill × support)` — a derived integer can be off by one, and a wrong count
 	 * is fabrication.
 	 */
-	import VirtualList from '$lib/components/VirtualList.svelte';
 	import { formatNumerals, detectDir } from '$lib/utils';
 	import { appSettings } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
-	import { coreFields, tailFields, kindSignature, type DiscoveredShape, type ShapeField } from '$lib/templates/discoveredKinds';
+	import { coreFields, tailFields, kindSignature, type DiscoveredShape } from '$lib/templates/discoveredKinds';
 
-	let { kind }: { kind: DiscoveredShape } = $props();
+	let {
+		kind,
+		picked,
+		onToggle,
+	}: {
+		kind: DiscoveredShape;
+		/** Optional field keys the user ticked. Owned by the PARENT, so a row that
+		 *  scrolls out of a virtualized list cannot lose its tick. */
+		picked?: ReadonlySet<string>;
+		onToggle?: (key: string) => void;
+	} = $props();
 
 	let core = $derived(coreFields(kind));
 	let tail = $derived(tailFields(kind));
 	let numerals = $derived($appSettings.numeralStyle ?? 'arabic');
 
-	/** Rule 7 — virtualize any list that can exceed 50 rows. */
-	const VIRTUAL_AT = 50;
 	function n(v: number) { return formatNumerals(v, numerals); }
 </script>
 
@@ -46,27 +53,32 @@
 
 	{#if tail.length > 0}
 		<p class="kf-group">{$t('templateStudio.tailGroup')}</p>
-		{#if tail.length >= VIRTUAL_AT}
-			<div class="kf-virtual">
-				<VirtualList items={tail} getItemHeight={() => 30} scrollResetKey={kindSignature(kind)}>
-					{#snippet row(f: ShapeField)}
-						<div class="kf-row">
-							<span class="kf-key" dir={detectDir(f.display)}>{f.display}</span>
-							<span class="kf-count">{$t('templateStudio.someOf', { n: n(f.count), total: n(kind.support) })}</span>
-						</div>
-					{/snippet}
-				</VirtualList>
-			</div>
-		{:else}
-			<ul class="kf-list">
-				{#each tail as f (f.key)}
-					<li class="kf-row">
-						<span class="kf-key" dir={detectDir(f.display)}>{f.display}</span>
-						<span class="kf-count">{$t('templateStudio.someOf', { n: n(f.count), total: n(kind.support) })}</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+		<!-- Boss 2026-07-23: chips, not a checkbox column. A vertical list of 21 optional
+		     fields was taller than the screen and pushed everything below it out of view;
+		     chips wrap, so the whole tail is visible at once and its shape is readable at a
+		     glance. Each chip still carries its count — the evidence never leaves.
+
+		     No virtualization here: chips wrap rather than stack, so even 60 fields is a
+		     few rows, not 60. Rule 7's threshold exists for LISTS that grow without bound
+		     in one direction; this no longer is one. -->
+		<div class="kf-chips">
+			{#each tail as f (f.key)}
+				{@const on = picked?.has(f.key) ?? false}
+				{#if onToggle}
+					<button type="button" class="kf-chip" class:kf-chip-on={on}
+						aria-pressed={on} dir={detectDir(f.display)}
+						onclick={() => onToggle?.(f.key)}>
+						<span class="kf-chip-key">{f.display}</span>
+						<span class="kf-chip-n">{n(f.count)}</span>
+					</button>
+				{:else}
+					<span class="kf-chip" dir={detectDir(f.display)}>
+						<span class="kf-chip-key">{f.display}</span>
+						<span class="kf-chip-n">{n(f.count)}</span>
+					</span>
+				{/if}
+			{/each}
+		</div>
 	{/if}
 
 	{#if kind.headings.length > 0}
@@ -111,4 +123,25 @@
 		font-size: calc(0.76rem * var(--rs-scale, 1));
 	}
 	.kf-heads .kf-key { color: var(--text-muted); }
+	.kf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-block-start: 2px; }
+	.kf-chip {
+		display: inline-flex; align-items: baseline; gap: 6px;
+		padding: 3px 9px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 999px;
+		background: var(--background-primary);
+		color: var(--text-muted);
+		font-size: calc(0.8rem * var(--rs-scale, 1));
+		cursor: pointer;
+		unicode-bidi: isolate;
+	}
+	.kf-chip:hover { background: var(--background-modifier-hover); }
+	/* Chosen chips read as SELECTED, not merely hovered — the accent border is the
+	   signal, so it survives a colour-blind reading and a dark theme alike. */
+	.kf-chip-on {
+		border-color: var(--interactive-accent);
+		color: var(--text-normal);
+		font-weight: 500;
+	}
+	.kf-chip-n { font-variant-numeric: tabular-nums; color: var(--text-faint); font-size: calc(0.72rem * var(--rs-scale, 1)); }
 </style>

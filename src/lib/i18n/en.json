@@ -2323,7 +2323,9 @@
     "snippetSelection": "My selection",
     "snippetWholeNote": "Whole note",
     "startFromTemplate": "Start from a template…",
-    "setFolderTemplate": "Set default template…"
+    "setFolderTemplate": "Set default template…",
+    "errNoFolder": "No library folder to create the note in.",
+    "errNewNote": "Could not create the note from the template: {error}"
   },
   "cockpit": {
     "dial": "Coupling",
@@ -4163,6 +4165,16 @@
       "value": "{n} of these {total} notes have “{token}” as a property value — across your whole Universe, {corpusWith} of {corpusTotal} do.",
       "heading": "{n} of these {total} notes have a section called “{token}” — across your whole Universe, {corpusWith} of {corpusTotal} do."
     },
-    "studioName": "Template Studio"
+    "studioName": "Template Studio",
+    "keep": "Keep",
+    "willWrite": "Writes {file} — with {fields}",
+    "willWriteSections": "...and sections: {sections}",
+    "needsName": "Type a name to keep this kind.",
+    "undo": "Undo",
+    "clashTitle": "“{name}” already exists.",
+    "clashRename": "Rename it",
+    "clashMerge": "Add these fields to it",
+    "merged": "Added: {fields}",
+    "undoRefused": "That template has been edited since — leaving it alone."
   }
 }

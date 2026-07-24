@@ -507,7 +507,12 @@
 	// is written.
 	let saveTemplatePrompt = $state<{ path: string; defaultName: string; content: string; kind: string; selection: string } | null>(null);
 	// MIG-103 §1 — the title-confirm prompt for "New note from template".
-	let newNoteTemplatePrompt = $state<{ templatePath: string; defaultTitle: string } | null>(null);
+	let newNoteTemplatePrompt = $state<{ templatePath: string; defaultTitle: string } | null>(null);
+	// Every template ACTION failure was `console.error` only — invisible in a release
+	// build (devtools is dev-only), so "nothing happened" was the entire user-facing
+	// report. A silent failure is the class this project exists to remove; the error
+	// now surfaces where the user is looking.
+	let templateActionError = $state('');
 	// MIG-103 D2 — the note the template door belongs to. Carried explicitly so an
 	// apply can never land on merely-the-focused note (the split-view app-killer).
 	let applyTemplateTargetPath = $state('');
@@ -4898,7 +4903,10 @@
 				const stats = get(libraryStats);
 				if (stats.length) { folder = stats[0].path; libraryName = stats[0].name; }
 			}
-			if (!folder) { console.error('[new from template] no target folder'); return; }
+			if (!folder) {
+				templateActionError = $t('templates.errNoFolder');
+				return;
+			}
 
 			const noteTitle = title.trim() || 'Untitled';
 			const ctx = {
@@ -4921,6 +4929,9 @@
 			const newPath = await createNote(folder, noteTitle, initialFm, result.content);
 			await openNoteTab(newPath, libraryName, buildLibraryColorMap(get(libraries))[libraryName] || '#7c3aed');
 		} catch (err) {
+			// Show the REAL message, not a generic one: it is the only diagnostic the
+			// user (or I) will get from a release build.
+			templateActionError = $t('templates.errNewNote', { error: String(err) });
 			console.error('[new from template] failed:', err);
 		}
 	}
@@ -6957,6 +6968,12 @@
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
 	<!-- Save-Durability — the save-failure surface (fixed top banner; auto-dismisses on success) -->
 	<SaveHealthBanner />
+	{#if templateActionError}
+		<div class="tpl-err" role="alert" dir="auto">
+			<span>{templateActionError}</span>
+			<button class="tpl-err-x" onclick={() => (templateActionError = '')} aria-label={$t('common.close')}>✕</button>
+		</div>
+	{/if}
 	<!-- PJ-088 — the conflict-resolution side-by-side MERGE overlay (mounts when a merge target is set) -->
 	<ConflictMergeView {focusReseed} />
 	<!-- ═══ DOCK ═══ -->
@@ -10312,6 +10329,16 @@
 	}
 
 	/* Content */
+	.tpl-err {
+		display: flex; align-items: center; gap: 10px;
+		padding: 8px 16px;
+		background: var(--background-modifier-error, #fdecea);
+		color: var(--text-error, #a12b1e);
+		font-size: 0.85rem;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.tpl-err span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+	.tpl-err-x { border: none; background: none; color: inherit; cursor: pointer; font-size: 0.9rem; }
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--center-zone-bg, #e8e8ec); }
 	.content-area.content-hidden { display: none; }
 

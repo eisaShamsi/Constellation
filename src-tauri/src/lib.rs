@@ -71,6 +71,8 @@ mod template_discovery;
 mod sky_backfill;
 mod links_backfill;
 mod note_body_backfill;
+/// One-off: clear phantom properties the old list-item parser stored (2026-07-23).
+mod props_reparse_backfill;
 mod tag_counts;
 mod incoming_links_backfill;
 mod name_fold_backfill;
@@ -563,6 +565,11 @@ pub fn run() {
             // with a name proposed from the user's own vocabulary. On demand, never
             // at boot; read-only through the reader connection.
             template_discovery::discover_template_shapes,
+            // MIG-103 §4 Slice 2 — KEEP: the only path from a discovered kind to disk.
+            universe::adopt_discovered_kind,
+            universe::list_kept_kinds,
+            universe::merge_fields_into_template,
+            universe::undo_adopt_kind,
             bases::create_base,
             // MIG-065 — convert an old MVP `.base` (BaseDefinition JSON) to the
             // new LensDefinition YAML (in place, on the user's explicit choice).

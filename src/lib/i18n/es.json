@@ -1742,7 +1742,9 @@
     "snippetSelection": "Mi selección",
     "snippetWholeNote": "Nota completa",
     "startFromTemplate": "Empezar desde una plantilla…",
-    "setFolderTemplate": "Definir plantilla predeterminada…"
+    "setFolderTemplate": "Definir plantilla predeterminada…",
+    "errNoFolder": "No hay carpeta de biblioteca donde crear la nota.",
+    "errNewNote": "No se pudo crear la nota desde la plantilla: {error}"
   },
   "secondScreen": {
     "title": "Segunda pantalla",
@@ -4042,6 +4044,16 @@
       "value": "{n} de estas {total} notas tienen «{token}» como valor de propiedad — en todo tu Universo, {corpusWith} de {corpusTotal}.",
       "heading": "{n} de estas {total} notas tienen una sección llamada «{token}» — en todo tu Universo, {corpusWith} de {corpusTotal}."
     },
-    "studioName": "Estudio de plantillas"
+    "studioName": "Estudio de plantillas",
+    "keep": "Guardar",
+    "willWrite": "Escribe {file} — con {fields}",
+    "willWriteSections": "…y secciones: {sections}",
+    "needsName": "Escribe un nombre para guardar este tipo.",
+    "undo": "Deshacer",
+    "clashTitle": "«{name}» ya existe.",
+    "clashRename": "Cambiar el nombre",
+    "clashMerge": "Añadir estos campos",
+    "merged": "Añadido: {fields}",
+    "undoRefused": "Esa plantilla se editó después — se deja intacta."
   }
 }

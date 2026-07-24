@@ -2171,7 +2171,9 @@
     "snippetSelection": "선택 영역",
     "snippetWholeNote": "전체 노트",
     "startFromTemplate": "템플릿으로 시작…",
-    "setFolderTemplate": "기본 템플릿 설정…"
+    "setFolderTemplate": "기본 템플릿 설정…",
+    "errNoFolder": "노트를 만들 라이브러리 폴더가 없습니다.",
+    "errNewNote": "템플릿에서 노트를 만들지 못했습니다: {error}"
   },
   "secondScreen": {
     "title": "보조 화면",
@@ -4015,6 +4017,16 @@
       "value": "이 {total}개 노트 중 {n}개가 “{token}”을 속성 값으로 가집니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다.",
       "heading": "이 {total}개 노트 중 {n}개에 “{token}” 구역이 있습니다 — 유니버스 전체로는 {corpusTotal} 중 {corpusWith}입니다."
     },
-    "studioName": "템플릿 스튜디오"
+    "studioName": "템플릿 스튜디오",
+    "keep": "보관",
+    "willWrite": "{file} 을(를) 만듭니다 — {fields} 포함",
+    "willWriteSections": "…구역: {sections}",
+    "needsName": "이 종류를 보관하려면 이름을 입력하세요.",
+    "undo": "실행 취소",
+    "clashTitle": "“{name}” 은(는) 이미 있습니다.",
+    "clashRename": "이름 바꾸기",
+    "clashMerge": "이 필드를 추가하기",
+    "merged": "추가됨: {fields}",
+    "undoRefused": "그 템플릿은 그 뒤로 편집되었습니다 — 그대로 둡니다."
   }
 }

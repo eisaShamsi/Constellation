@@ -1731,7 +1731,9 @@
     "snippetSelection": "הבחירה שלי",
     "snippetWholeNote": "הפתק כולו",
     "startFromTemplate": "להתחיל מתבנית…",
-    "setFolderTemplate": "הגדרת תבנית ברירת מחדל…"
+    "setFolderTemplate": "הגדרת תבנית ברירת מחדל…",
+    "errNoFolder": "אין תיקיית ספרייה ליצירת הפתק.",
+    "errNewNote": "לא ניתן ליצור פתק מהתבנית: {error}"
   },
   "secondScreen": {
     "title": "מסך שני",
@@ -4069,6 +4071,16 @@
       "value": "{n} מתוך {total} הפתקים האלה נושאים „{token}” כערך מאפיין — בכל היקום שלך, {corpusWith} מתוך {corpusTotal}.",
       "heading": "{n} מתוך {total} הפתקים האלה כוללים פרק בשם „{token}” — בכל היקום שלך, {corpusWith} מתוך {corpusTotal}."
     },
-    "studioName": "סטודיו התבניות"
+    "studioName": "סטודיו התבניות",
+    "keep": "שמור",
+    "willWrite": "יכתוב {file} — עם {fields}",
+    "willWriteSections": "…ופרקים: {sections}",
+    "needsName": "הקלד שם כדי לשמור את הסוג הזה.",
+    "undo": "בטל",
+    "clashTitle": "„{name}” כבר קיים.",
+    "clashRename": "שנה שם",
+    "clashMerge": "הוסף לו את השדות האלה",
+    "merged": "נוסף: {fields}",
+    "undoRefused": "התבנית נערכה מאז — נשארת כפי שהיא."
   }
 }

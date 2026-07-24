@@ -2171,7 +2171,9 @@
     "snippetSelection": "Моё выделение",
     "snippetWholeNote": "Вся заметка",
     "startFromTemplate": "Начать с шаблона…",
-    "setFolderTemplate": "Задать шаблон по умолчанию…"
+    "setFolderTemplate": "Задать шаблон по умолчанию…",
+    "errNoFolder": "Нет папки библиотеки для создания заметки.",
+    "errNewNote": "Не удалось создать заметку из шаблона: {error}"
   },
   "secondScreen": {
     "title": "Второй экран",
@@ -4069,6 +4071,16 @@
       "value": "{n} из этих {total} заметок имеют «{token}» как значение свойства — во всей вашей Вселенной {corpusWith} из {corpusTotal}.",
       "heading": "{n} из этих {total} заметок имеют раздел «{token}» — во всей вашей Вселенной {corpusWith} из {corpusTotal}."
     },
-    "studioName": "Студия шаблонов"
+    "studioName": "Студия шаблонов",
+    "keep": "Сохранить",
+    "willWrite": "Создаст {file} — с {fields}",
+    "willWriteSections": "…и разделы: {sections}",
+    "needsName": "Введите имя, чтобы сохранить этот вид.",
+    "undo": "Отменить",
+    "clashTitle": "«{name}» уже существует.",
+    "clashRename": "Переименовать",
+    "clashMerge": "Добавить эти поля",
+    "merged": "Добавлено: {fields}",
+    "undoRefused": "Этот шаблон с тех пор изменён — оставляем как есть."
   }
 }

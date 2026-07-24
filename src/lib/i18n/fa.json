@@ -1742,7 +1742,9 @@
     "snippetSelection": "انتخاب من",
     "snippetWholeNote": "کل یادداشت",
     "startFromTemplate": "شروع از یک الگو…",
-    "setFolderTemplate": "تعیین الگوی پیش‌فرض…"
+    "setFolderTemplate": "تعیین الگوی پیش‌فرض…",
+    "errNoFolder": "پوشهٔ کتابخانه‌ای برای ساخت یادداشت نیست.",
+    "errNewNote": "ساخت یادداشت از قالب ممکن نشد: {error}"
   },
   "secondScreen": {
     "title": "صفحه دوم",
@@ -4033,7 +4035,7 @@
     "headingsGroup": "بخش‌هایی که بیشترشان دارند",
     "allOf": "همهٔ {count}",
     "someOf": "{n} از {total}",
-    "kept": "نگه‌داشته",
+    "kept": "نگه داشته شد",
     "evidence": {
       "library": "{n} از این {total} یادداشت در کتابخانهٔ «{token}» توست — در کل کیهانت {corpusWith} از {corpusTotal}.",
       "folder": "{n} از این {total} یادداشت در پوشه‌ای به نام «{token}» است — در کل کیهانت {corpusWith} از {corpusTotal}.",
@@ -4042,6 +4044,16 @@
       "value": "{n} از این {total} یادداشت «{token}» را به‌عنوان مقدار ویژگی دارد — در کل کیهانت {corpusWith} از {corpusTotal}.",
       "heading": "{n} از این {total} یادداشت بخشی به نام «{token}» دارد — در کل کیهانت {corpusWith} از {corpusTotal}."
     },
-    "studioName": "استودیوی قالب‌ها"
+    "studioName": "استودیوی قالب‌ها",
+    "keep": "نگه‌دار",
+    "willWrite": "{file} را می‌نویسد — با {fields}",
+    "willWriteSections": "…و بخش‌ها: {sections}",
+    "needsName": "برای نگه‌داشتن این گونه نامی بنویس.",
+    "undo": "بازگردانی",
+    "clashTitle": "«{name}» از پیش وجود دارد.",
+    "clashRename": "تغییر نام",
+    "clashMerge": "این میدان‌ها را به آن بیفزا",
+    "merged": "افزوده شد: {fields}",
+    "undoRefused": "این قالب پس از آن ویرایش شده — دست‌نخورده ماند."
   }
 }

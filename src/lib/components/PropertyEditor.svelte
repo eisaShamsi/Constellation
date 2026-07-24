@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
-	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
+	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs, isReseeding, isCascading } from '$lib/libraries/store';
 	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
@@ -159,7 +159,7 @@
 		STRUCTURAL_LIST_LINK_KEYS.has(key) ? 'list' : null;
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
-	let saveTimeout: ReturnType<typeof setTimeout>;
+	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 	let mounted = true; // §C — guards the async Hijri converter from writing after teardown
 	let focusRaf: number | null = null;
 	let saving = $state(false);
@@ -496,6 +496,15 @@
 			// (both writes below). The identity gate makes this a clean skip on swap — no corruption
 			// — while a genuine close/switch of the mounted note still persists its pending edit. The
 			// snapshot targets defend a second time via editNoteProps' own expectPath guard.
+			// 2026-07-22 inspection (APP-KILLER) — the PROPS-channel twin of hazard #6.
+			// NoteEditor's body flush is gated on isReseeding/isCascading; this one was
+			// not. On a watcher adopt the model is re-based from disk and the {#key}
+			// block is torn down — and this teardown then wrote THIS instance's
+			// pre-adopt props back over the freshly-adopted ones, durably reverting an
+			// external frontmatter edit with no error, no conflict and no banner. The
+			// identity gate below cannot catch it: tabId and filePath are unchanged, only
+			// reloadVersion moved.
+			if (isReseeding(filePath) || isCascading(filePath)) return;
 			if (!readOnly && mountedTabId && mountedFilePath && tabId === mountedTabId && filePath === mountedFilePath) {
 				/* Direct mutation so onflush reads fresh properties */
 				const tab = get(openTabs).find(t => t.id === mountedTabId);
@@ -830,6 +839,10 @@
 		onLiveProps?.(tabId, editableProps.filter(p => p.key.trim().length > 0).length);
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
+			// Clear the handle as the timer FIRES. It was only ever assigned, never
+			// reset, so `if (saveTimeout)` in onDestroy stayed truthy forever after the
+			// first property edit — arming the teardown flush on every later unmount.
+			saveTimeout = undefined;
 			saving = true;
 			try {
 				/* Update tab content in store via direct mutation (no store.update = no cascade).

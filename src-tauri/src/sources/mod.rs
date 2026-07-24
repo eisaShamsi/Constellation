@@ -558,6 +558,27 @@ pub(crate) fn union_preserve_order(existing: &[String], additions: &[String]) ->
 /// note's current on-disk values, read INSIDE the gate (race-free), so accepting a
 /// stale suggestion can never drop a value the user typed after it was queued
 /// (PJ-091). The union is computed under the same lock that serializes the write.
+/// Announce a Rust-side frontmatter write so an OPEN note re-bases from disk.
+///
+/// 2026-07-22 inspection (APP-KILLER). These writes go through the gate, which marks
+/// the path watcher-SUPPRESSED — correct, since we must not treat our own write as an
+/// external edit and reload the world. But suppression also meant the frontend never
+/// heard about it at all, so an open note's model kept its OPEN-TIME frontmatter base
+/// and the next debounced save composed from it — silently erasing the `sources:` /
+/// `content_type:` block the user had just accepted.
+///
+/// Emitting the watcher's own event re-uses the existing, well-tested adopt path
+/// (`adoptExternalChangeIntoTabs`): a CLEAN model adopts the new bytes, a DIRTY one
+/// keeps its unsaved work and preserves the incoming change to a `.conflict` sidecar.
+/// One source of truth for "the file changed underneath you" — not a second channel.
+fn announce_frontmatter_write(app: &tauri::AppHandle, note_path: &str) {
+    use tauri::Emitter;
+    let _ = app.emit(
+        "library-changed",
+        serde_json::json!({ "libraryId": "", "paths": [note_path] }),
+    );
+}
+
 fn rewrite_note_sources_on_disk(
     note_path: &str,
     sources: &[String],
@@ -665,6 +686,7 @@ pub fn sources_set_manual(
     //    actually landed — for merge accepts, the union of the pick with the
     //    note's prior on-disk values; for exact-set, `sources` verbatim.
     let effective = rewrite_note_sources_on_disk(&note_path, &sources, merge.unwrap_or(false))?;
+    announce_frontmatter_write(&app, &note_path);
 
     // 2. Update note_meta.sources mirror + clear suggestion. Mirror the
     //    EFFECTIVE set so note_meta never diverges from disk (PJ-091).
@@ -853,6 +875,7 @@ pub fn sources_clear(
 
     // Clear = exact-set to empty (the user's authority), never merge.
     rewrite_note_sources_on_disk(&note_path, &empty, false)?;
+    announce_frontmatter_write(&app, &note_path);
 
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
@@ -1175,6 +1198,7 @@ pub fn content_type_set_manual(
 
     let effective =
         rewrite_note_content_type_on_disk(&note_path, &content_type, merge.unwrap_or(false))?;
+        announce_frontmatter_write(&app, &note_path);
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
@@ -1213,6 +1237,7 @@ pub fn content_type_clear(
     let empty: Vec<String> = Vec::new();
     // Clear = exact-set to empty (the user's authority), never merge.
     rewrite_note_content_type_on_disk(&note_path, &empty, false)?;
+    announce_frontmatter_write(&app, &note_path);
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;

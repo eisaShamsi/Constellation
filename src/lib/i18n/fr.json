@@ -1742,7 +1742,9 @@
     "snippetSelection": "Ma sélection",
     "snippetWholeNote": "Note entière",
     "startFromTemplate": "Partir d’un modèle…",
-    "setFolderTemplate": "Définir le modèle par défaut…"
+    "setFolderTemplate": "Définir le modèle par défaut…",
+    "errNoFolder": "Aucun dossier de bibliothèque où créer la note.",
+    "errNewNote": "Impossible de créer la note à partir du modèle : {error}"
   },
   "secondScreen": {
     "title": "Deuxième écran",
@@ -4042,6 +4044,16 @@
       "value": "{n} de ces {total} notes ont « {token} » comme valeur de propriété — dans tout ton Univers, {corpusWith} sur {corpusTotal}.",
       "heading": "{n} de ces {total} notes ont une section nommée « {token} » — dans tout ton Univers, {corpusWith} sur {corpusTotal}."
     },
-    "studioName": "Studio des modèles"
+    "studioName": "Studio des modèles",
+    "keep": "Conserver",
+    "willWrite": "Écrit {file} — avec {fields}",
+    "willWriteSections": "…et sections : {sections}",
+    "needsName": "Saisissez un nom pour conserver ce genre.",
+    "undo": "Annuler",
+    "clashTitle": "« {name} » existe déjà.",
+    "clashRename": "Renommer",
+    "clashMerge": "Ajouter ces champs",
+    "merged": "Ajouté : {fields}",
+    "undoRefused": "Ce modèle a été modifié depuis — il reste intact."
   }
 }

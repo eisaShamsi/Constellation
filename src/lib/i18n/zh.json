@@ -2171,7 +2171,9 @@
     "snippetSelection": "我的选区",
     "snippetWholeNote": "整篇笔记",
     "startFromTemplate": "从模板开始…",
-    "setFolderTemplate": "设置默认模板…"
+    "setFolderTemplate": "设置默认模板…",
+    "errNoFolder": "没有可创建笔记的库文件夹。",
+    "errNewNote": "无法从模板创建笔记：{error}"
   },
   "secondScreen": {
     "title": "第二屏幕",
@@ -4015,6 +4017,16 @@
       "value": "这 {total} 篇笔记中有 {n} 篇以“{token}”作为属性值——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。",
       "heading": "这 {total} 篇笔记中有 {n} 篇含名为“{token}”的小节——在整个宇宙中为 {corpusTotal} 篇中的 {corpusWith} 篇。"
     },
-    "studioName": "模板工作室"
+    "studioName": "模板工作室",
+    "keep": "保存",
+    "willWrite": "将写入 {file} —— 含 {fields}",
+    "willWriteSections": "……以及小节：{sections}",
+    "needsName": "输入名称以保存此类型。",
+    "undo": "撤销",
+    "clashTitle": "“{name}”已存在。",
+    "clashRename": "改个名称",
+    "clashMerge": "把这些字段加进去",
+    "merged": "已添加：{fields}",
+    "undoRefused": "该模板此后已被修改 —— 保持原样。"
   }
 }

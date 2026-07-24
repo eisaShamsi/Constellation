@@ -2171,7 +2171,9 @@
     "snippetSelection": "Minha seleção",
     "snippetWholeNote": "Nota inteira",
     "startFromTemplate": "Começar a partir de um modelo…",
-    "setFolderTemplate": "Definir modelo padrão…"
+    "setFolderTemplate": "Definir modelo padrão…",
+    "errNoFolder": "Não há pasta de biblioteca para criar a nota.",
+    "errNewNote": "Não foi possível criar a nota a partir do modelo: {error}"
   },
   "secondScreen": {
     "title": "Segunda tela",
@@ -4042,6 +4044,16 @@
       "value": "{n} destas {total} notas têm “{token}” como valor de propriedade — em todo o seu Universo, {corpusWith} de {corpusTotal}.",
       "heading": "{n} destas {total} notas têm uma seção chamada “{token}” — em todo o seu Universo, {corpusWith} de {corpusTotal}."
     },
-    "studioName": "Estúdio de modelos"
+    "studioName": "Estúdio de modelos",
+    "keep": "Guardar",
+    "willWrite": "Escreve {file} — com {fields}",
+    "willWriteSections": "…e secções: {sections}",
+    "needsName": "Escreva um nome para guardar este tipo.",
+    "undo": "Desfazer",
+    "clashTitle": "“{name}” já existe.",
+    "clashRename": "Mudar o nome",
+    "clashMerge": "Adicionar estes campos",
+    "merged": "Adicionado: {fields}",
+    "undoRefused": "Esse modelo foi editado desde então — fica intacto."
   }
 }

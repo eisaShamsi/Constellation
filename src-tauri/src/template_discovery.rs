@@ -816,7 +816,16 @@ fn resolve_name_collisions(shapes: &mut [DiscoveredShape], key_df: &HashMap<Stri
 /// already maintained on the write path, so this is one indexed pass over data that is
 /// always current, not a rebuild. If the panel ever becomes something the user leaves
 /// open, the counters here merge associatively and can be maintained incrementally.
-#[tauri::command]
+// PJ-066 §C5 — `(async)` so this runs on a Tokio worker, NOT the WebView2 IPC
+// thread. A plain `#[tauri::command]` is SYNCHRONOUS on the IPC thread, so this
+// scan blocked every repaint for its whole duration. Warm that is 0.33 s and
+// invisible; COLD it is ~12 s on a 2 GB index — measured, and then dismissed by me
+// as "the panel needs a loading state". It cannot show one: a blocked IPC thread
+// cannot paint. The app looks hung, and the user kills it.
+//
+// This is the same lesson as `scan_unlinked_mentions` above (a 47 s freeze from the
+// identical mistake). Any multi-second command must be `(async)`.
+#[tauri::command(async)]
 pub fn discover_template_shapes(
     state: tauri::State<crate::search::SearchState>,
     max_shapes: Option<usize>,
@@ -847,6 +856,17 @@ pub fn discover_template_shapes(
         for row in rows {
             let (path, title, library, props, tags, heads) = row.map_err(|e| e.to_string())?;
             let property_values = parse_property_values(&props);
+            // A MOLD IS NOT KNOWLEDGE. Templates live in the indexed corpus (they are
+            // ordinary `.md` files the user can edit), but they must never appear among
+            // the KINDS — a template is the instrument that gives notes their shape, not
+            // a note whose shape recurs. Left in, they inflated every count they matched
+            // and surfaced `template_kind` as a "field these notes carry".
+            if property_values.iter().any(|(k, v)| {
+                let k = k.to_lowercase();
+                (k == "kind" && v.eq_ignore_ascii_case("template")) || k == "template_kind"
+            }) {
+                continue;
+            }
             out.push(NoteFacts {
                 property_keys: property_values.iter().map(|(k, _)| k.clone()).collect(),
                 headings: parse_headings(&heads),

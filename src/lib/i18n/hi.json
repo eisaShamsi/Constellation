@@ -2171,7 +2171,9 @@
     "snippetSelection": "मेरा चयन",
     "snippetWholeNote": "पूरा नोट",
     "startFromTemplate": "टेम्पलेट से शुरू करें…",
-    "setFolderTemplate": "डिफ़ॉल्ट टेम्पलेट सेट करें…"
+    "setFolderTemplate": "डिफ़ॉल्ट टेम्पलेट सेट करें…",
+    "errNoFolder": "नोट बनाने के लिए कोई लाइब्रेरी फ़ोल्डर नहीं।",
+    "errNewNote": "टेम्पलेट से नोट नहीं बन सका: {error}"
   },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",
@@ -4042,6 +4044,16 @@
       "value": "इन {total} नोट्स में से {n} में “{token}” प्रॉपर्टी मान है — आपके पूरे ब्रह्मांड में {corpusTotal} में से {corpusWith}।",
       "heading": "इन {total} नोट्स में से {n} में “{token}” नाम का सेक्शन है — आपके पूरे ब्रह्मांड में {corpusTotal} में से {corpusWith}।"
     },
-    "studioName": "टेम्पलेट स्टूडियो"
+    "studioName": "टेम्पलेट स्टूडियो",
+    "keep": "रखें",
+    "willWrite": "{file} लिखेगा — {fields} के साथ",
+    "willWriteSections": "…और सेक्शन: {sections}",
+    "needsName": "इस प्रकार को रखने के लिए नाम लिखें।",
+    "undo": "पूर्ववत करें",
+    "clashTitle": "“{name}” पहले से मौजूद है।",
+    "clashRename": "नाम बदलें",
+    "clashMerge": "ये फ़ील्ड उसमें जोड़ें",
+    "merged": "जोड़ा गया: {fields}",
+    "undoRefused": "वह टेम्पलेट तब से संपादित हुआ है — उसे वैसे ही छोड़ा गया।"
   }
 }

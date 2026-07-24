@@ -405,6 +405,55 @@ mod tests_mig085b_surfaces_agree {
 }
 
 #[cfg(test)]
+mod tests_frontmatter_list_items {
+    //! 2026-07-23 — a YAML LIST ITEM is never a property key, even when its text
+    //! contains a colon. The indexer's key branch tested `trimmed.contains(':')`, so
+    //!
+    //!     notable_works:
+    //!       - "Mimesis: The Representation of Reality in Western Literature"
+    //!
+    //! indexed a phantom property named `- "Mimesis`. Every book title with a subtitle
+    //! did it — 12 notes in the Boss's Universe, found when the Template Studio listed
+    //! those phantoms as recurring fields. The .md files were always correct; only the
+    //! index lied, which is why nothing surfaced until a reader displayed the keys.
+    use super::parse_frontmatter;
+
+    #[test]
+    fn list_items_containing_a_colon_are_not_indexed_as_properties() {
+        let note = "---
+title: Erich Auerbach
+notable_works:
+  - \"Mimesis: The Representation of Reality\"
+  - \"Dante: Poet of the Secular World\"
+born: 9 November 1892
+---
+body";
+        let (props, _tags, _body) = parse_frontmatter(note);
+
+        assert!(props.contains_key("notable_works"), "the real key survives");
+        assert!(props.contains_key("born"), "keys AFTER the list still parse");
+        assert_eq!(props.get("title").map(String::as_str), Some("Erich Auerbach"));
+        for k in props.keys() {
+            assert!(!k.starts_with("- "), "phantom property from a list item: {k:?}");
+        }
+    }
+
+    #[test]
+    fn tag_lists_still_parse_after_the_list_item_skip() {
+        let note = "---
+tags:
+  - \"1892-births\"
+  - jewish-philosophers
+stage: growth
+---
+body";
+        let (props, tags, _body) = parse_frontmatter(note);
+        assert_eq!(tags, vec!["1892-births", "jewish-philosophers"]);
+        assert_eq!(props.get("stage").map(String::as_str), Some("growth"));
+    }
+}
+
+#[cfg(test)]
 mod tests_pj065_structural_exclusion {
     //! PJ-065 §5 — with the structural lane registered, a structural inbound edge
     //! ('parent'/'contains') must NOT count toward incoming_count nor appear in the
@@ -4583,6 +4632,24 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
                     } else if !trimmed.is_empty() && !trimmed.starts_with('#') {
                         in_tags = false;
                     }
+                }
+                // A line beginning `- ` is a LIST ITEM, never a key — in YAML a key cannot
+                // start with a sequence dash. Without this, any list item whose text
+                // contains a colon became a phantom property: a note carrying
+                //
+                //     notable_works:
+                //       - "Mimesis: The Representation of Reality in Western Literature"
+                //
+                // indexed a key `- "Mimesis` with the subtitle as its value. Every book
+                // title with a subtitle did it — 12 notes in the Boss's Universe, surfaced
+                // when the Template Studio listed them as recurring fields. The .md files
+                // were always correct; only the index lied. (2026-07-23)
+                //
+                // The tags branch above already consumes ITS list items; this covers every
+                // other list — notable_works, doctoral_advisor, aliases, influenced_by…
+                if trimmed.starts_with("- ") {
+                    i += 1; // MUST advance — this is a `while i < …` loop, not a for-loop.
+                    continue;
                 }
                 if !in_tags && trimmed.contains(':') && !trimmed.starts_with('#') {
                     if let Some(idx) = trimmed.find(':') {
@@ -8772,6 +8839,7 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // note_body on a background thread. No-op once stamped. Resumable; the body
     // is copied inside SQLite (the 123 MB outlier never crosses into Rust).
     crate::note_body_backfill::maybe_schedule(app.clone());
+    crate::props_reparse_backfill::maybe_schedule(app.clone());
 
     // MIG-079 §C.1: schedule the one-shot tag_counts backfill on a background
     // thread. No-op once stamped. Builds the whole summary from note_meta in one

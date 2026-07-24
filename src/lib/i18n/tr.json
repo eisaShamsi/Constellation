@@ -2171,7 +2171,9 @@
     "snippetSelection": "Seçimim",
     "snippetWholeNote": "Tüm not",
     "startFromTemplate": "Bir şablonla başla…",
-    "setFolderTemplate": "Varsayılan şablonu ayarla…"
+    "setFolderTemplate": "Varsayılan şablonu ayarla…",
+    "errNoFolder": "Notu oluşturacak kitaplık klasörü yok.",
+    "errNewNote": "Şablondan not oluşturulamadı: {error}"
   },
   "secondScreen": {
     "title": "İkinci Ekran",
@@ -4042,6 +4044,16 @@
       "value": "Bu {total} nottan {n} tanesinde “{token}” bir özellik değeri — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi.",
       "heading": "Bu {total} nottan {n} tanesinde “{token}” adlı bir bölüm var — tüm Evreninde {corpusTotal} nottan {corpusWith} tanesi."
     },
-    "studioName": "Şablon Stüdyosu"
+    "studioName": "Şablon Stüdyosu",
+    "keep": "Sakla",
+    "willWrite": "{file} yazar — {fields} ile",
+    "willWriteSections": "…ve bölümler: {sections}",
+    "needsName": "Bu türü saklamak için bir ad yaz.",
+    "undo": "Geri al",
+    "clashTitle": "“{name}” zaten var.",
+    "clashRename": "Adını değiştir",
+    "clashMerge": "Bu alanları ona ekle",
+    "merged": "Eklendi: {fields}",
+    "undoRefused": "O şablon o zamandan beri düzenlendi — dokunulmuyor."
   }
 }

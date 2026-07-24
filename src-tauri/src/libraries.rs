@@ -825,10 +825,15 @@ fn merge_initial_frontmatter(extra: &str) -> Vec<String> {
         let is_top_level = !line.starts_with(' ') && !line.starts_with('\t');
         if is_top_level {
             let t = line.trim_start();
+            // Identity belongs to the CAST, minted fresh — never inherited from the
+            // mold. `template_kind:` joins the list (2026-07-23): it marks a file AS a
+            // template, so a note born from one was itself being marked a template.
+            // The mold's marker must not be stamped onto its casts.
             if t.starts_with("title:")
                 || t.starts_with("cid_cn:")
                 || t.starts_with("cid:")
                 || t.starts_with("kind:")
+                || t.starts_with("template_kind:")
                 || t.starts_with("created:")
             {
                 continue;
@@ -1638,9 +1643,33 @@ fn set_frontmatter_parent(content: &str, new_parent: &str) -> String {
     let body = &after_first[end + 4..];
     let mut new_lines: Vec<String> = Vec::new();
     let mut found = false;
+    // 2026-07-22 inspection (APP-KILLER). Two defects, one class:
+    //
+    // 1. `trim_start()` matched an INDENTED `parent:` — a nested key belonging to
+    //    another property, not the note's parent. Same indentation defect fixed in
+    //    `update_frontmatter_title` the day before; indentation is data.
+    // 2. Constellation's OWN PropertyEditor writes `parent` as a block LIST
+    //    (`parent:` then `  - "[[Foo]]"`), and replacing only the header line left
+    //    those items orphaned under a scalar — YAML that no longer parses. After
+    //    that, composeFrontmatter's invalid-YAML branch passes frontmatter through
+    //    verbatim, so EVERY later property edit on the note is silently discarded.
+    //
+    // So: match at column 0 only, and when the old value was a block list, consume
+    // its items too.
+    let mut in_old_list = false;
     for line in fm.lines() {
-        if line.trim_start().starts_with("parent:") {
+        let indented = line.starts_with(' ') || line.starts_with('\t');
+        if in_old_list {
+            // Still inside the replaced list? Drop the item. Anything else ends it.
+            if indented && line.trim_start().starts_with("- ") {
+                continue;
+            }
+            in_old_list = false;
+        }
+        if !indented && line.starts_with("parent:") {
             found = true;
+            // An empty value means the real value is on the following lines.
+            in_old_list = line["parent:".len()..].trim().is_empty();
             new_lines.push(format!("parent: \"[[{}]]\"", esc));
             continue;
         }
@@ -6566,6 +6595,102 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+
+    /// A note born from a mold must not itself be marked a mold. `template_kind:` is
+    /// the marker that makes a file a template, so inheriting it made every cast a
+    /// template — found while tracing the Boss's "it doesn't create the note" report.
+    #[test]
+    fn a_note_born_from_a_template_does_not_inherit_the_template_marker() {
+        let tpl_fm = "kind: template
+template_kind: whole
+title: Film, Movie
+country:
+language:
+genre:";
+        let merged = merge_initial_frontmatter(tpl_fm);
+        let joined = merged.join("
+");
+
+        assert!(!joined.contains("template_kind"), "the cast must not carry the mold's marker:
+{joined}");
+        assert!(!joined.contains("kind: template"), "{joined}");
+        assert!(!joined.contains("title:"), "identity is minted fresh:
+{joined}");
+        // ...while the SHAPE the mold carries survives, empty values and all.
+        assert!(joined.contains("country:"), "{joined}");
+        assert!(joined.contains("language:"), "{joined}");
+        assert!(joined.contains("genre:"), "{joined}");
+    }
+
+    // ── PJ-065 set_frontmatter_parent (2026-07-22 inspection, APP-KILLER) ──────
+    //
+    // Constellation's OWN PropertyEditor writes `parent` as a block LIST, and this
+    // function replaced the header line with a scalar — orphaning the `- ` items
+    // under it and producing YAML that no longer parses. After that,
+    // composeFrontmatter's invalid-YAML branch passes frontmatter through verbatim,
+    // so every later property edit on that note is silently discarded.
+    //
+    // It also matched an INDENTED `parent:` — the identical indentation defect fixed
+    // in `update_frontmatter_title` the day before. Fourth strike on this class.
+
+    #[test]
+    fn setting_parent_replaces_a_block_list_without_orphaning_its_items() {
+        let before = "---
+title: X
+parent:
+  - \"[[Foo]]\"
+  - \"[[Bar]]\"
+stage: seed
+---
+body";
+        let after = set_frontmatter_parent(before, "New");
+
+        assert!(after.contains("parent: \"[[New]]\""), "{after}");
+        assert!(!after.contains("[[Foo]]"), "the old list is replaced, not left dangling:
+{after}");
+        assert!(!after.contains("[[Bar]]"), "{after}");
+        assert!(after.contains("stage: seed"), "later keys survive:
+{after}");
+        // No orphan list item anywhere — that is what made the file unparseable.
+        for line in after.split("---").nth(1).unwrap().lines() {
+            assert!(!line.trim_start().starts_with("- "), "orphaned item:
+{after}");
+        }
+    }
+
+    #[test]
+    fn setting_parent_does_not_touch_a_nested_parent_key() {
+        let before = "---
+title: X
+source:
+  parent: Muqaddimah
+---
+body";
+        let after = set_frontmatter_parent(before, "New");
+
+        assert!(after.contains("  parent: Muqaddimah"), "nested key is not the note's parent:
+{after}");
+        assert_eq!(after.matches("
+parent:").count(), 1, "exactly one ROOT parent:
+{after}");
+    }
+
+    #[test]
+    fn setting_parent_still_handles_the_ordinary_shapes() {
+        let a = set_frontmatter_parent("---
+title: X
+parent: \"[[Old]]\"
+---
+body", "New");
+        assert!(a.contains("parent: \"[[New]]\"") && !a.contains("[[Old]]"));
+
+        let b = set_frontmatter_parent("---
+title: X
+---
+body", "New");
+        assert!(b.contains("parent: \"[[New]]\""), "added when absent:
+{b}");
+    }
 
     #[test]
     fn rename_does_not_touch_a_title_nested_under_another_key() {

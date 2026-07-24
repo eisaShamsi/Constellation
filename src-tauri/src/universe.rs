@@ -2072,10 +2072,270 @@ pub fn create_template(
         }
         match crate::write_gate::gate_create_exclusive(&candidate, &templated, "create_template")? {
             crate::write_gate::WriteOutcome::RefusedExists => continue,
-            _ => return Ok(candidate.to_string_lossy().to_string()),
+            _ => {
+                let p = candidate.to_string_lossy().to_string();
+                reindex_written_template(&app, &p, "create_template");
+                return Ok(p);
+            }
         }
     }
     Err("Could not find a free template name after 100 attempts.".to_string())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MIG-103 §4 Slice 2 — KEEP: turn a discovered kind into a real mold.
+//
+// The Studio proposes; the user decides; only then is anything written. So this
+// is the ONLY place a discovered kind touches disk, and it does so under three
+// Boss rulings (2026-07-22):
+//   1. NEVER overwrite an existing template. On a name clash the user chooses —
+//      rename, merge into the existing one, or cancel — so this returns a TYPED
+//      error rather than silently suffixing the name. (`create_template` DOES
+//      auto-suffix, and that is right for its gesture: saving a note as a
+//      template is not naming a kind. Different act, different rule.)
+//   2. Optional fields are opt-in. The caller sends exactly what the user ticked;
+//      no threshold is applied here, because any threshold is a judgement the
+//      data does not contain.
+//   3. Undo is real. `undo_adopt_kind` trashes the file, but ONLY while it is
+//      byte-identical to what was written — once the user has edited the mold it
+//      is their work, not our transaction.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Index a template we just wrote, mirroring `create_note`.
+///
+/// 2026-07-22 inspection. Template writes go through the gate, which SUPPRESSES the
+/// watcher event, and none of them reindexed — so a freshly written template had no
+/// `note_meta` row until the next boot's reconcile. That is not "templates are
+/// excluded from search" (the frontend's `isTemplatePath` does that deliberately);
+/// it is invisible-now-visible-after-restart, which is worse than either choice,
+/// and it made a `[[Template Name]]` reference fail to resolve and offer to create
+/// a NEW note — a silent duplicate.
+///
+/// The file is the source of truth and was written successfully, so an index failure
+/// is SURFACED but never fails the write.
+fn reindex_written_template(app: &tauri::AppHandle, path: &str, surface: &str) {
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    match crate::libraries::load_all_libraries(app).iter().find(|l| path.starts_with(&l.path)) {
+        Some(lib) => {
+            if let Err(e) = crate::search::reindex_single_note(&search_state, path, &lib.name) {
+                if let Ok(p) = crate::search::db_path(app) {
+                    crate::search::diag_log(&p, &format!("[{surface}] reindex FAILED for {path}: {e}"));
+                }
+            }
+        }
+        None => {
+            // A templates folder outside every library is a valid choice; nothing to index.
+            if let Ok(p) = crate::search::db_path(app) {
+                crate::search::diag_log(&p, &format!("[{surface}] NO LIBRARY matched {path} — reindex SKIPPED"));
+            }
+        }
+    }
+}
+
+/// Returned when the chosen name is taken. The frontend matches on this exact
+/// prefix to raise the three-way choice; a plain string error would be
+/// indistinguishable from an I/O failure and would surface as a scary message.
+pub const TEMPLATE_EXISTS: &str = "TEMPLATE_EXISTS:";
+
+/// Build a mold from a discovered kind: properties with empty values, then a
+/// section per recurring heading.
+///
+/// Values are deliberately EMPTY. A discovered kind is a shape, not content — the
+/// fields say *what a note of this kind answers*, and every answer belongs to the
+/// cast. Spellings arrive as the members actually write them (`Country`, not
+/// `country`), which is why §4's `display` amendment exists: a mold cut with the
+/// wrong casing spawns a duplicate property in every note made from it.
+pub(crate) fn template_content_from_kind(
+    name: &str,
+    fields: &[String],
+    headings: &[String],
+    core: &[String],
+) -> String {
+    let mut out = String::from("---\n");
+    out.push_str("kind: template\n");
+    out.push_str("template_kind: whole\n");
+    out.push_str(&format!("title: {name}\n"));
+    // The kind this mold was cut from, so the Studio can recognise it again.
+    //
+    // Boss, 2026-07-23: "If I kept a kind… why is it there, as it hasn't been dealt
+    // with?" — because the tick lived in memory and died with the session. The record
+    // belongs in the FILE, not in app state: there it survives a restart, a sync, and
+    // moving the Universe to another machine. File-Over-App applies to the mold exactly
+    // as it does to the cast.
+    if !core.is_empty() {
+        let mut sorted: Vec<String> = core.iter().map(|k| k.to_lowercase()).collect();
+        sorted.sort();
+        out.push_str(&format!("from_kind: {}\n", sorted.join(" ")));
+    }
+    for f in fields {
+        let key = f.trim();
+        if key.is_empty() || key.contains(':') {
+            continue; // a key carrying a colon would break the block
+        }
+        out.push_str(&format!("{key}:\n"));
+    }
+    out.push_str("---\n\n");
+    for h in headings {
+        let t = h.trim();
+        if !t.is_empty() {
+            out.push_str(&format!("## {t}\n\n"));
+        }
+    }
+    out
+}
+
+/// KEEP — write the mold. Create-exclusive; never overwrites.
+// PJ-066 §C5 — `(async)`: this reindexes, which takes the writer `db` lock, and a
+// SYNC command holding it blocks the IPC thread and freezes the UI.
+#[tauri::command(async)]
+pub fn adopt_discovered_kind(
+    app: tauri::AppHandle,
+    name: String,
+    fields: Vec<String>,
+    headings: Vec<String>,
+    // The kind's core keys — stamped into the mold so the Studio recognises it later.
+    core: Vec<String>,
+    folder: Option<String>,
+) -> Result<String, String> {
+    let stem = sanitize_template_stem(&name);
+    let content = template_content_from_kind(&stem, &fields, &headings, &core);
+
+    let dir = resolve_templates_dir(&app, folder)?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create templates directory: {}", e))?;
+    let target = dir.join(format!("{stem}.md"));
+
+    // The gate is the guarantee — a concurrent create refuses rather than clobbers.
+    // The exists() probe only lets us report the clash before attempting the write.
+    if target.exists() {
+        return Err(format!("{TEMPLATE_EXISTS}{}", target.to_string_lossy()));
+    }
+    match crate::write_gate::gate_create_exclusive(&target, &content, "adopt_discovered_kind")? {
+        crate::write_gate::WriteOutcome::RefusedExists => {
+            Err(format!("{TEMPLATE_EXISTS}{}", target.to_string_lossy()))
+        }
+        _ => {
+            let p = target.to_string_lossy().to_string();
+            reindex_written_template(&app, &p, "adopt_discovered_kind");
+            Ok(p)
+        }
+    }
+}
+
+/// Which discovered kinds already have a mold, read from the templates themselves.
+///
+/// The Studio calls this on open so a kept kind shows the name the user gave it rather
+/// than pretending it was never dealt with. The source of truth is the `from_kind:` line
+/// in each template — no app state, nothing to go stale, and it survives a restart.
+#[derive(serde::Serialize)]
+pub struct KeptKind {
+    /// The kind's core keys, lowercased and space-joined — its signature.
+    pub signature: String,
+    pub name: String,
+    pub path: String,
+}
+
+#[tauri::command(async)]
+pub fn list_kept_kinds(
+    app: tauri::AppHandle,
+    folder: Option<String>,
+) -> Result<Vec<KeptKind>, String> {
+    let dir = resolve_templates_dir(&app, folder)?;
+    let mut out = Vec::new();
+    let Ok(entries) = fs::read_dir(&dir) else {
+        return Ok(out); // no templates folder yet is not an error
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().map_or(true, |e| e != "md") {
+            continue;
+        }
+        let Ok(content) = fs::read_to_string(&path) else { continue };
+        let Some(props) = crate::bases::parse_frontmatter(&content) else { continue };
+        let Some(sig) = props.get("from_kind") else { continue };
+        let sig = sig.trim().to_lowercase();
+        if sig.is_empty() {
+            continue;
+        }
+        out.push(KeptKind {
+            signature: sig,
+            name: props.get("title").cloned().unwrap_or_else(|| {
+                path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()
+            }),
+            path: path.to_string_lossy().to_string(),
+        });
+    }
+    Ok(out)
+}
+
+/// MERGE — add missing properties to an existing mold, changing nothing else.
+///
+/// Additive by construction: a key already present keeps its value (which may be a
+/// default the user typed), the body is untouched, and no key is ever removed. The
+/// user chose "add these fields to it", not "replace it".
+// PJ-066 §C5 — `(async)`: this reindexes, which takes the writer `db` lock, and a
+// SYNC command holding it blocks the IPC thread and freezes the UI.
+#[tauri::command(async)]
+pub fn merge_fields_into_template(
+    app: tauri::AppHandle,
+    template_path: String,
+    fields: Vec<String>,
+) -> Result<Vec<String>, String> {
+    crate::bases::validate_base_path(&app, &template_path)?;
+    let original = fs::read_to_string(&template_path)
+        .map_err(|e| format!("Failed to read template: {}", e))?;
+
+    let existing: std::collections::HashSet<String> = crate::bases::parse_frontmatter(&original)
+        .map(|m| m.keys().map(|k| k.to_lowercase()).collect())
+        .unwrap_or_default();
+
+    let mut out = original.clone();
+    let mut added: Vec<String> = Vec::new();
+    for f in &fields {
+        let key = f.trim();
+        if key.is_empty() || key.contains(':') || existing.contains(&key.to_lowercase()) {
+            continue;
+        }
+        out = crate::bases::update_frontmatter_property(&out, key, "");
+        added.push(key.to_string());
+    }
+    if added.is_empty() {
+        return Ok(added); // nothing to do — do not touch the file at all
+    }
+    crate::write_gate::gate_write(Path::new(&template_path), &out, None, "merge_fields_into_template")?;
+    reindex_written_template(&app, &template_path, "merge_fields_into_template");
+    Ok(added)
+}
+
+/// UNDO — trash a mold that was just kept, ONLY if it is untouched since.
+///
+/// The guard is byte-equality with what we wrote. Once the user has edited the
+/// mold it is their work and undo declines; an undo that silently discarded an
+/// edit would be exactly the silent data loss this project hunts.
+// PJ-066 §C5 — `(async)`: this reindexes, which takes the writer `db` lock, and a
+// SYNC command holding it blocks the IPC thread and freezes the UI.
+#[tauri::command(async)]
+pub fn undo_adopt_kind(
+    app: tauri::AppHandle,
+    template_path: String,
+    expected_content: String,
+) -> Result<bool, String> {
+    crate::bases::validate_base_path(&app, &template_path)?;
+    let current = match fs::read_to_string(&template_path) {
+        Ok(c) => c,
+        Err(_) => return Ok(false), // already gone — nothing to undo, and not an error
+    };
+    if current != expected_content {
+        return Ok(false); // edited since; leave it alone
+    }
+    // Trash, never delete. `move_to_trash` validates membership of a registered
+    // library, and the universe root IS one (`universe_notes`), so the default
+    // `<universe>/Templates` resolves. A templates folder pointed OUTSIDE the
+    // universe returns an error here rather than being hard-deleted — the right
+    // failure: refusing to undo is recoverable, an unrecoverable delete is not.
+    let root = active_universe_dir(&app)?.to_string_lossy().to_string();
+    crate::libraries::move_to_trash(app, template_path, root)?;
+    Ok(true)
 }
 
 fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
@@ -2104,6 +2364,70 @@ fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
 mod tests {
     use super::*;
     use tempfile::TempDir;
+
+    // ── MIG-103 §4 Slice 2 — the mold a kept kind produces ──────────────────
+
+    #[test]
+    fn a_kept_kind_becomes_a_mold_with_empty_fields_and_its_sections() {
+        let out = template_content_from_kind("film", &["country".into(), "language".into()], &["Cast".into(), "Plot".into()], &["country".into(), "language".into()]);
+
+        assert!(out.starts_with("---
+"));
+        assert!(out.contains("kind: template
+"));
+        assert!(out.contains("template_kind: whole
+"));
+        assert!(out.contains("title: film
+"));
+        // EMPTY values: a kind is a shape, not content — every answer belongs to the cast.
+        assert!(out.contains("country:
+"), "{out}");
+        assert!(out.contains("language:
+"), "{out}");
+        assert!(out.contains("## Cast
+"));
+        assert!(out.contains("## Plot
+"));
+        // No identity: a mold that carried one would stamp its birthday on every cast.
+        assert!(!out.contains("cid_cn"));
+        assert!(!out.contains("created:"));
+    }
+
+    /// The mold is cut with the spelling the member notes actually use. A
+    /// case-mismatched key spawns a DUPLICATE property in every note made from it.
+    #[test]
+    fn the_mold_keeps_the_spelling_it_was_given() {
+        let out = template_content_from_kind("Film", &["Country".into()], &["Production".into()], &["Country".into()]);
+        assert!(out.contains("Country:
+"), "{out}");
+        assert!(!out.contains("country:
+"), "must not lowercase the user's own key");
+        assert!(out.contains("## Production
+"));
+    }
+
+    #[test]
+    fn a_kind_with_no_sections_still_makes_a_valid_mold() {
+        let out = template_content_from_kind("person", &["born".into(), "died".into()], &[], &["born".into(), "died".into()]);
+        assert_eq!(out.matches("---").count(), 2, "exactly one frontmatter block:
+{out}");
+        assert!(out.trim_end().ends_with("---"), "no stray sections:
+{out}");
+    }
+
+    /// A key containing a colon would break the YAML block. Skipped, not escaped —
+    /// a property name with a colon in it is not a property name.
+    #[test]
+    fn a_field_that_would_break_the_block_is_skipped() {
+        let out = template_content_from_kind("x", &["good".into(), "bad: key".into(), "  ".into()], &[], &[]);
+        assert!(out.contains("good:
+"));
+        assert!(!out.contains("bad"));
+        let fm = out.split("---").nth(1).unwrap();
+        for line in fm.lines().filter(|l| !l.trim().is_empty()) {
+            assert_eq!(line.matches(':').count(), 1, "one colon per line: {line:?}");
+        }
+    }
 
     /// Write a `{root}/universe.json` (the fallback location read by
     /// `resolve_child_universe_roots`) with the given children.

@@ -2171,7 +2171,9 @@
     "snippetSelection": "選択範囲",
     "snippetWholeNote": "ノート全体",
     "startFromTemplate": "テンプレートから始める…",
-    "setFolderTemplate": "既定のテンプレートを設定…"
+    "setFolderTemplate": "既定のテンプレートを設定…",
+    "errNoFolder": "ノートを作成するライブラリフォルダがありません。",
+    "errNewNote": "テンプレートからノートを作成できませんでした: {error}"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",
@@ -4006,7 +4008,7 @@
     "headingsGroup": "ほとんどにある見出し",
     "allOf": "全 {count} 件",
     "someOf": "{total} 件中 {n} 件",
-    "kept": "保存済み",
+    "kept": "保存しました",
     "evidence": {
       "library": "これら {total} 件のうち {n} 件はライブラリ「{token}」にあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
       "folder": "これら {total} 件のうち {n} 件は「{token}」というフォルダにあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
@@ -4015,6 +4017,16 @@
       "value": "これら {total} 件のうち {n} 件は「{token}」をプロパティ値に持ちます — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。",
       "heading": "これら {total} 件のうち {n} 件に「{token}」という見出しがあります — ユニバース全体では {corpusTotal} 件中 {corpusWith} 件です。"
     },
-    "studioName": "テンプレート・スタジオ"
+    "studioName": "テンプレート・スタジオ",
+    "keep": "保存",
+    "willWrite": "{file} を作成します — {fields} を含む",
+    "willWriteSections": "…セクション: {sections}",
+    "needsName": "この種類を保存するには名前を入力してください。",
+    "undo": "取り消す",
+    "clashTitle": "「{name}」はすでに存在します。",
+    "clashRename": "名前を変える",
+    "clashMerge": "このフィールドを追加する",
+    "merged": "追加: {fields}",
+    "undoRefused": "そのテンプレートはその後編集されています — そのままにします。"
   }
 }
