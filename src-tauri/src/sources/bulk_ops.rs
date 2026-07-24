@@ -217,8 +217,17 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     }
 
     let mut completed: usize = 0;
+    // 2026-07-24 inspection (APP-KILLER). Every note whose frontmatter this batch
+    // actually rewrote must be ANNOUNCED: the write goes through the gate, which
+    // marks the path watcher-suppressed, so without this an OPEN note keeps its
+    // open-time frontmatter base and its next debounced save silently erases the
+    // accepted `sources:` / `content_type:` blocks from disk. Accumulated and
+    // flushed in chunks (never one event per note — Performance Rule 3), on the
+    // SAME boundary as the progress event, and drained on every exit path.
+    let mut announce_pending = AnnounceBuffer::default();
     for note_path in pending_paths {
         if state.cancel.load(Ordering::Relaxed) {
+            flush_announce(&app, &mut announce_pending);
             let _ = app.emit(
                 "sources:bulk_accept",
                 BulkAcceptEvent {
@@ -231,10 +240,13 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
             return Ok(());
         }
 
-        if let Err(e) = accept_one(&app, &note_path) {
-            // Record but don't abort.
-            if let Ok(mut g) = state.last_error.lock() {
-                *g = Some(format!("{}: {}", note_path, e));
+        match accept_one(&app, &note_path) {
+            Ok(wrote) => announce_pending.record(&note_path, wrote),
+            Err(e) => {
+                // Record but don't abort.
+                if let Ok(mut g) = state.last_error.lock() {
+                    *g = Some(format!("{}: {}", note_path, e));
+                }
             }
         }
 
@@ -243,6 +255,7 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
 
         // Throttle event emission per Performance Rule 3.
         if completed % 5 == 0 || completed == total {
+            flush_announce(&app, &mut announce_pending);
             let _ = app.emit(
                 "sources:bulk_accept",
                 BulkAcceptEvent {
@@ -254,6 +267,10 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
             );
         }
     }
+
+    // Belt-and-braces: the loop flushes on its own boundary, but an early `break`
+    // or a total that never hits the modulus must never strand an un-announced write.
+    flush_announce(&app, &mut announce_pending);
 
     let _ = app.emit(
         "sources:bulk_accept",
@@ -267,7 +284,56 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     Ok(())
 }
 
-fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
+/// Bookkeeping for the batched announce, kept PURE (no Tauri) so the property that
+/// actually matters is unit-testable: **every note whose frontmatter was rewritten is
+/// announced exactly once, on whichever exit path the run takes** — the modulus
+/// boundary, cancellation, or normal completion. The emit itself is a one-liner
+/// re-using the event shape already proven at the four per-card seams; the drain
+/// schedule is the part that can silently strand a path, and a stranded path is the
+/// app-killer coming straight back.
+#[derive(Default)]
+struct AnnounceBuffer {
+    pending: Vec<String>,
+}
+
+impl AnnounceBuffer {
+    /// A no-op accept (`wrote == false`) changed no bytes, so there is nothing for an
+    /// open note to re-base from — recording it would emit a pointless reload.
+    fn record(&mut self, note_path: &str, wrote: bool) {
+        if wrote {
+            self.pending.push(note_path.to_string());
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.pending.is_empty()
+    }
+
+    /// Hand back everything buffered and reset. Draining rather than peeking is what
+    /// makes double-announcing impossible.
+    fn drain(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.pending)
+    }
+}
+
+/// Announce the accumulated frontmatter writes as ONE `library-changed` event and
+/// clear the buffer. Re-uses the existing adopt path (`adoptExternalChangeIntoTabs`):
+/// a CLEAN open model adopts the new bytes, a DIRTY one keeps its unsaved work and
+/// preserves the incoming change to a `.conflict` sidecar.
+fn flush_announce(app: &AppHandle, buffer: &mut AnnounceBuffer) {
+    let batch = buffer.drain();
+    if batch.is_empty() {
+        return;
+    }
+    let refs: Vec<&str> = batch.iter().map(|s| s.as_str()).collect();
+    super::announce_frontmatter_writes(app, &refs);
+}
+
+/// Returns `true` when the note's frontmatter actually changed on disk — the
+/// caller batches an announce for those paths so an OPEN note re-bases instead of
+/// silently overwriting the accepted blocks on its next save (2026-07-24
+/// inspection, APP-KILLER).
+fn accept_one(app: &AppHandle, note_path: &str) -> Result<bool, String> {
     // 1. Read the suggestion record from the queue.
     let record_opt = {
         let search_state = app.state::<crate::search::SearchState>();
@@ -279,7 +345,7 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     };
     let record = match record_opt {
         Some(r) => r,
-        None => return Ok(()), // already cleared by another path; nothing to do
+        None => return Ok(false), // already cleared by another path; nothing to do
     };
 
     // 2. Split by axis + validate (defense-in-depth: strip any IDs the
@@ -314,13 +380,17 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     // note_meta reflects exactly what landed on disk.
     let mut merged_h = Vec::new();
     let mut merged_v = Vec::new();
-    crate::write_gate::gate_rmw(path, "bulk_accept", |content| {
+    let outcome = crate::write_gate::gate_rmw(path, "bulk_accept", |content| {
         merged_h = union_preserve_order(&extract_sources(content), &horizontal_ids);
         merged_v = union_preserve_order(&extract_content_type(content), &vertical_ids);
         let after_h = rewrite_frontmatter_sources(content, &merged_h);
         let after_both = rewrite_frontmatter_content_type(&after_h, &merged_v);
         Ok(if after_both == content { None } else { Some(after_both) })
     })?;
+    // Did the bytes on disk actually change? `gate_rmw` returns OkUnchecked for an
+    // idempotent no-op (nothing written) and Ok when it wrote. Only a real write
+    // needs announcing — see the caller, which batches the announce.
+    let wrote = matches!(outcome, crate::write_gate::WriteOutcome::Ok);
 
     // 4. Update the SQLite mirror + clear the suggestion row.
     let search_state = app.state::<crate::search::SearchState>();
@@ -332,7 +402,7 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     write_content_type_to_db(conn, note_path, &merged_v)?;
     clear_suggestions(conn, note_path)?;
 
-    Ok(())
+    Ok(wrote)
 }
 
 /// V3-§8.r5.5: Check if a composite_json blob reports a Split regime
@@ -377,4 +447,132 @@ pub fn sources_reject_all_pending(app: AppHandle) -> Result<usize, String> {
         .execute("DELETE FROM sources_suggestions", [])
         .map_err(|e| format!("delete: {}", e))?;
     Ok(n)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AnnounceBuffer;
+
+    /// Replays `run_bulk_accept`'s announce schedule against a scripted run, returning
+    /// the batches that would have been emitted. Mirrors the loop exactly: flush on
+    /// `completed % 5 == 0 || completed == total`, flush on cancel, flush after the loop.
+    ///
+    /// `outcomes` is one entry per queued note: `Some(true)` wrote, `Some(false)` was a
+    /// no-op, `None` errored. `cancel_before` cancels the run before that index.
+    fn replay(outcomes: &[Option<bool>], cancel_before: Option<usize>) -> Vec<Vec<String>> {
+        let total = outcomes.len();
+        let mut buf = AnnounceBuffer::default();
+        let mut batches: Vec<Vec<String>> = Vec::new();
+        let mut completed = 0usize;
+
+        for (i, outcome) in outcomes.iter().enumerate() {
+            if cancel_before == Some(i) {
+                let b = buf.drain();
+                if !b.is_empty() {
+                    batches.push(b);
+                }
+                return batches; // the cancel path returns immediately
+            }
+            let path = format!("note{}.md", i);
+            match outcome {
+                Some(wrote) => buf.record(&path, *wrote),
+                None => {} // an error records nothing, exactly like the real loop
+            }
+            completed += 1;
+            if completed % 5 == 0 || completed == total {
+                let b = buf.drain();
+                if !b.is_empty() {
+                    batches.push(b);
+                }
+            }
+        }
+        let b = buf.drain();
+        if !b.is_empty() {
+            batches.push(b);
+        }
+        batches
+    }
+
+    fn announced(batches: &[Vec<String>]) -> Vec<String> {
+        batches.iter().flatten().cloned().collect()
+    }
+
+    #[test]
+    fn only_actual_writes_are_announced() {
+        let mut buf = AnnounceBuffer::default();
+        buf.record("a.md", true);
+        buf.record("b.md", false); // idempotent no-op — nothing changed on disk
+        buf.record("c.md", true);
+        assert_eq!(buf.drain(), vec!["a.md".to_string(), "c.md".to_string()]);
+    }
+
+    #[test]
+    fn draining_twice_cannot_double_announce() {
+        let mut buf = AnnounceBuffer::default();
+        buf.record("a.md", true);
+        assert_eq!(buf.drain().len(), 1);
+        assert!(buf.is_empty());
+        assert!(buf.drain().is_empty());
+    }
+
+    /// THE PROPERTY. Whatever the queue length, every written path is announced
+    /// exactly once — including the tail that never reaches the `% 5` boundary,
+    /// which is the shape that would silently strand a write.
+    #[test]
+    fn every_write_is_announced_exactly_once_for_any_queue_length() {
+        for total in 0..40usize {
+            let outcomes: Vec<Option<bool>> = (0..total)
+                .map(|i| match i % 4 {
+                    0 => Some(false), // no-op
+                    1 => None,        // error
+                    _ => Some(true),  // wrote
+                })
+                .collect();
+            let expected: Vec<String> = outcomes
+                .iter()
+                .enumerate()
+                .filter(|(_, o)| **o == Some(true))
+                .map(|(i, _)| format!("note{}.md", i))
+                .collect();
+
+            let batches = replay(&outcomes, None);
+            let got = announced(&batches);
+            assert_eq!(got, expected, "queue length {}", total);
+
+            let mut sorted = got.clone();
+            sorted.sort();
+            sorted.dedup();
+            assert_eq!(sorted.len(), got.len(), "duplicate announce at length {}", total);
+        }
+    }
+
+    /// Cancelling must not strand the writes already made — they are on disk, so an
+    /// open note still has to re-base or it will overwrite them on the next keystroke.
+    #[test]
+    fn cancelling_still_announces_what_was_already_written() {
+        // 12 notes, all written, cancelled just before index 7: 0..=6 are on disk.
+        let outcomes: Vec<Option<bool>> = (0..12).map(|_| Some(true)).collect();
+        let batches = replay(&outcomes, Some(7));
+        let got = announced(&batches);
+        let expected: Vec<String> = (0..7).map(|i| format!("note{}.md", i)).collect();
+        assert_eq!(got, expected);
+    }
+
+    /// A cancel landing between the modulus boundary and the next flush is the
+    /// tightest window — notes 5 and 6 were written after the flush at 5.
+    #[test]
+    fn cancel_inside_the_unflushed_window_strands_nothing() {
+        let outcomes: Vec<Option<bool>> = (0..10).map(|_| Some(true)).collect();
+        let batches = replay(&outcomes, Some(7));
+        let got = announced(&batches);
+        assert!(got.contains(&"note5.md".to_string()));
+        assert!(got.contains(&"note6.md".to_string()));
+        assert_eq!(got.len(), 7);
+    }
+
+    #[test]
+    fn an_all_noop_run_emits_nothing() {
+        let outcomes: Vec<Option<bool>> = (0..9).map(|_| Some(false)).collect();
+        assert!(replay(&outcomes, None).is_empty());
+    }
 }

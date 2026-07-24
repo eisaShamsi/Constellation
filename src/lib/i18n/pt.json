@@ -2173,7 +2173,11 @@
     "startFromTemplate": "Começar a partir de um modelo…",
     "setFolderTemplate": "Definir modelo padrão…",
     "errNoFolder": "Não há pasta de biblioteca para criar a nota.",
-    "errNewNote": "Não foi possível criar a nota a partir do modelo: {error}"
+    "errNewNote": "Não foi possível criar a nota a partir do modelo: {error}",
+    "newNoteDestination": "Será criada em:",
+    "newNoteDestinationChange": "Alterar…",
+    "newNoteDestinationPick": "Escolha um local para",
+    "newNoteDestinationConfirm": "Escolher"
   },
   "secondScreen": {
     "title": "Segunda tela",

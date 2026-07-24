@@ -1744,7 +1744,11 @@
     "startFromTemplate": "Mit einer Vorlage beginnen…",
     "setFolderTemplate": "Standardvorlage festlegen…",
     "errNoFolder": "Kein Bibliotheksordner zum Anlegen der Notiz.",
-    "errNewNote": "Notiz konnte nicht aus der Vorlage erstellt werden: {error}"
+    "errNewNote": "Notiz konnte nicht aus der Vorlage erstellt werden: {error}",
+    "newNoteDestination": "Wird erstellt in:",
+    "newNoteDestinationChange": "Ändern…",
+    "newNoteDestinationPick": "Speicherort wählen für",
+    "newNoteDestinationConfirm": "Auswählen"
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",

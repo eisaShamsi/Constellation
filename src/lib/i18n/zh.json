@@ -2173,7 +2173,11 @@
     "startFromTemplate": "从模板开始…",
     "setFolderTemplate": "设置默认模板…",
     "errNoFolder": "没有可创建笔记的库文件夹。",
-    "errNewNote": "无法从模板创建笔记：{error}"
+    "errNewNote": "无法从模板创建笔记：{error}",
+    "newNoteDestination": "将创建于：",
+    "newNoteDestinationChange": "更改…",
+    "newNoteDestinationPick": "选择位置：",
+    "newNoteDestinationConfirm": "选择"
   },
   "secondScreen": {
     "title": "第二屏幕",

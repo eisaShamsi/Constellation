@@ -2173,7 +2173,11 @@
     "startFromTemplate": "Начать с шаблона…",
     "setFolderTemplate": "Задать шаблон по умолчанию…",
     "errNoFolder": "Нет папки библиотеки для создания заметки.",
-    "errNewNote": "Не удалось создать заметку из шаблона: {error}"
+    "errNewNote": "Не удалось создать заметку из шаблона: {error}",
+    "newNoteDestination": "Будет создана в:",
+    "newNoteDestinationChange": "Изменить…",
+    "newNoteDestinationPick": "Выберите расположение для",
+    "newNoteDestinationConfirm": "Выбрать"
   },
   "secondScreen": {
     "title": "Второй экран",

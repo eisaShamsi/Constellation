@@ -1362,6 +1362,15 @@ Create reusable note templates:
 2. Set the template folder path in **Settings > Templates**
 3. When creating a new note, choose a template from the template picker
 
+### New note from template
+
+Run **New note from template** from Mission Control, pick a template, and
+confirm the new note's title. The title dialog **shows where the note will be created** — the folder
+of the note you're working in is proposed, and **Change…** opens a searchable
+folder tree of the whole Universe if you want it elsewhere. When no note is
+open, the folder tree opens first: pick the destination, then confirm the
+title. The note is never placed somewhere you didn't see.
+
 Templates support variables:
 
 | Variable | Replaced with |

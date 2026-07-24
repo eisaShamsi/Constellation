@@ -915,9 +915,17 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
         let ps = file_path.to_string_lossy().to_string();
-        match load_all_libraries(&app).iter().find(|l| ps.starts_with(&l.path)) {
-            Some(lib) => {
-                if let Err(e) = crate::search::reindex_single_note(&search_state, &ps, &lib.name) {
+        // 2026-07-24 inspection: was a first-match `find(|l| ps.starts_with(&l.path))`.
+        // `ensure_universe_notes_folder` puts universe_notes (path == the Universe ROOT)
+        // at index 0 of libraries.json, so first-match ALWAYS returned the root for any
+        // note inside the Universe — every note created in a nested sub-library was
+        // indexed under the WRONG library_name, silently and durably (the gated create
+        // suppresses the watcher, and boot reconcile is mtime-gated). `library_name_for_path`
+        // is the canonical longest-root-wins resolver, and its `under` bound sits at a
+        // separator so `…/Research` never steals `…/Research Notes`.
+        match library_name_for_path(&load_all_libraries(&app), &ps) {
+            Some(lib_name) => {
+                if let Err(e) = crate::search::reindex_single_note(&search_state, &ps, &lib_name) {
                     if let Ok(p) = crate::search::db_path(&app) {
                         crate::search::diag_log(&p, &format!("[create_note] reindex FAILED for {}: {}", ps, e));
                     }
@@ -1200,9 +1208,10 @@ fn rename_item_db_tail(
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
         let libs = load_all_libraries(app);
-        if let Some(lib) = libs.iter().find(|l| new_path.starts_with(&l.path)) {
-            match crate::search::reindex_single_note(&search_state, new_path, &lib.name) {
-                Ok(_) => log(&format!("[rename-tail] reindex OK for {} (lib {})", new_path, lib.name)),
+        // Canonical longest-root-wins resolver — see the note at create_note's reindex.
+        if let Some(lib_name) = library_name_for_path(&libs, new_path) {
+            match crate::search::reindex_single_note(&search_state, new_path, &lib_name) {
+                Ok(_) => log(&format!("[rename-tail] reindex OK for {} (lib {})", new_path, lib_name)),
                 Err(e) => log(&format!("[rename-tail] reindex ERROR: {}", e)),
             }
         } else {
@@ -1804,8 +1813,11 @@ pub fn resolve_structural_conflict(
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
         let libs = load_all_libraries(&app);
-        if let Some(lib) = libs.iter().find(|l| note_path.starts_with(&l.path)) {
-            let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib.name);
+        // Canonical longest-root-wins resolver — see the note at create_note's reindex.
+        // This is the rename wikilink-cascade tail: first-match stamped the universe-root
+        // library onto EVERY cascade-rewritten referrer living in a nested sub-library.
+        if let Some(lib_name) = library_name_for_path(&libs, &note_path) {
+            let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib_name);
         }
     }
     {

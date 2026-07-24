@@ -506,8 +506,16 @@
 	// the user accepts the note's name or types a different one before the template
 	// is written.
 	let saveTemplatePrompt = $state<{ path: string; defaultName: string; content: string; kind: string; selection: string } | null>(null);
-	// MIG-103 §1 — the title-confirm prompt for "New note from template".
-	let newNoteTemplatePrompt = $state<{ templatePath: string; defaultTitle: string } | null>(null);
+	// MIG-103 §1 — the title-confirm prompt for "New note from template". The
+	// destination is PROPOSED AND SHOWN, never chosen silently (Boss ruling
+	// 2026-07-24: the old path dropped the note in the focused note's folder —
+	// or the FIRST library, the universe root — without asking).
+	let newNoteTemplatePrompt = $state<{ templatePath: string; defaultTitle: string; destFolder: string; destLibrary: string; destLabel: string } | null>(null);
+	// MIG-103 — the destination picker for "New note from template": the reused
+	// MoveDialog folder tree. Opens FIRST when nothing is focused (no folder to
+	// propose), or from the title prompt's Change… button; `returnTo` restores
+	// the prompt when a Change…-opened picker is cancelled.
+	let newNoteDestPicker = $state<{ templatePath: string; pendingTitle: string; returnTo: { destFolder: string; destLibrary: string; destLabel: string } | null; loading: boolean; folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] } | null>(null);
 	// Every template ACTION failure was `console.error` only — invisible in a release
 	// build (devtools is dev-only), so "nothing happened" was the entire user-facing
 	// report. A silent failure is the class this project exists to remove; the error
@@ -4887,22 +4895,14 @@
 	// first Boss test's "create a new note from it" step did nothing (the picker
 	// only ever INSERTED into the focused note). Fresh identity is stamped by
 	// create_note — the anti-Evernote rule — and a `born_from` key records the mold.
-	async function newNoteFromTemplate(templatePath: string, title: string) {
+	async function newNoteFromTemplate(templatePath: string, title: string, folder: string, libraryName: string) {
 		try {
 			const raw: string = await invoke('read_note', { filePath: templatePath });
 			const body = extractTemplateBody(raw);
 
-			// Target folder: the focused note's folder, else the first library root.
-			const tab = get(focusedTab);
-			let folder = '';
-			let libraryName = '';
-			if (tab) {
-				folder = tab.path.replace(/[/\\][^/\\]*$/, '');
-				libraryName = tab.libraryName;
-			} else {
-				const stats = get(libraryStats);
-				if (stats.length) { folder = stats[0].path; libraryName = stats[0].name; }
-			}
+			// The destination arrives from the title prompt — proposed from the
+			// focused note's folder and SHOWN there, or picked in the folder tree.
+			// Never chosen silently (Boss ruling 2026-07-24).
 			if (!folder) {
 				templateActionError = $t('templates.errNoFolder');
 				return;
@@ -4934,6 +4934,32 @@
 			templateActionError = $t('templates.errNewNote', { error: String(err) });
 			console.error('[new from template] failed:', err);
 		}
+	}
+
+	// MIG-103 — "propose + show": name a destination folder the way the user sees
+	// it in the sidebar — "Library / sub / folder", or just the library name when
+	// the folder IS a library root.
+	function describeDestination(folderPath: string): { library: string; label: string } {
+		const lib = libraryForPath(folderPath);
+		if (!lib) return { library: '', label: folderPath.split(/[/\\]/).slice(-1)[0] || folderPath };
+		const rel = folderPath.replace(/\\/g, '/').slice(lib.path.replace(/\\/g, '/').length).replace(/^\/+/, '');
+		return { library: lib.name, label: rel ? `${lib.name} / ${rel.split('/').join(' / ')}` : lib.name };
+	}
+
+	// MIG-103 — open the destination picker for "New note from template" (the
+	// reused MoveDialog tree). Fires FIRST when nothing is open (there is no
+	// folder to propose), and from the title prompt's Change… button.
+	async function openNewNoteDestPicker(templatePath: string, pendingTitle: string, returnTo: { destFolder: string; destLibrary: string; destLabel: string } | null) {
+		newNoteTemplatePrompt = null;
+		newNoteDestPicker = { templatePath, pendingTitle, returnTo, loading: true, folders: [] };
+		const entries = await buildUniverseFolderEntries();
+		if (!newNoteDestPicker) return; // cancelled while loading
+		if (!entries) {
+			newNoteDestPicker = null;
+			templateActionError = $t('templates.errNoFolder');
+			return;
+		}
+		newNoteDestPicker = { ...newNoteDestPicker, loading: false, folders: entries };
 	}
 
 	// MIG-103 D2 — the empty-note template door. Opens the picker in a mode that
@@ -5081,7 +5107,18 @@
 		// template body at the cursor of the focused note (the pre-existing path).
 		if (templatePickerMode === 'newNote') {
 			const defaultTitle = templatePath.split(/[/\\]/).slice(-1)[0].replace(/\.md$/, '');
-			newNoteTemplatePrompt = { templatePath, defaultTitle };
+			// The ruled interaction model (Boss, 2026-07-24): the destination is
+			// never silent. Propose the focused note's folder and SHOW it in the
+			// title prompt; with nothing open there is nothing to propose, so the
+			// user picks the destination first.
+			const tab = get(focusedTab);
+			if (tab) {
+				const folder = tab.path.replace(/[/\\][^/\\]*$/, '');
+				const d = describeDestination(folder);
+				newNoteTemplatePrompt = { templatePath, defaultTitle, destFolder: folder, destLibrary: d.library || tab.libraryName, destLabel: d.label };
+			} else {
+				openNewNoteDestPicker(templatePath, defaultTitle, null);
+			}
 			return;
 		}
 		if (templatePickerMode === 'bindFolder') {
@@ -6231,15 +6268,7 @@
 		if (!path) return;
 		if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); }
 		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
-		const np = norm(path);
-		// longest-prefix library match (correct with nested libraries)
-		let lib: LibraryStats | null = null;
-		for (const l of $libraryStats) {
-			const lp = norm(l.path);
-			if (np === lp || np.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
-				if (!lib || l.path.length > lib.path.length) lib = l;
-			}
-		}
+		const lib = libraryForPath(path);
 		if (!lib) return;
 		// expand the child universe first if the library lives inside one
 		if (isChildUniverseLib(lib.path)) {
@@ -6279,33 +6308,36 @@
 		setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
 	}
 
-	// MIG-077 A3-R3 — open the Move picker. Lists folders across the WHOLE universe
-	// (all libraries + federated child universes), grouped under each library root,
-	// excluding the source itself + its descendants + its current parent (a no-op).
-	// Folder enumeration is a lightweight Rust walk (list_universe_folders) so the
-	// frontend never reads thousands of note rows just to build the picker.
-	async function openMoveDialog(sourcePath: string, sourceName: string) {
+	// Longest-prefix library match — correct with nested libraries (universe_notes'
+	// own path IS the universe root, so every nested library also matches it).
+	// Shared by revealInTree, the Move picker, and the new-note destination label.
+	function libraryForPath(path: string): LibraryStats | null {
 		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
-		const np = norm(sourcePath);
-		let srcLib: LibraryStats | null = null;
+		const np = norm(path);
+		let lib: LibraryStats | null = null;
 		for (const l of $libraryStats) {
 			const lp = norm(l.path);
 			if (np === lp || np.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
-				if (!srcLib || l.path.length > srcLib.path.length) srcLib = l;
+				if (!lib || l.path.length > lib.path.length) lib = l;
 			}
 		}
-		moveDialog = { path: sourcePath, name: sourceName, libraryId: srcLib?.library_id ?? '', loading: true, folders: [] };
+		return lib;
+	}
+
+	// The whole-universe folder list (all libraries + federated child universes),
+	// grouped under each library root — shared by the Move picker and the
+	// new-note-from-template destination picker. Folder enumeration is a
+	// lightweight Rust walk (list_universe_folders) so the frontend never reads
+	// thousands of note rows just to build a picker. Returns null when the walk
+	// fails (callers surface their own error state).
+	async function buildUniverseFolderEntries(): Promise<{ path: string; name: string; depth: number; isLibraryRoot?: boolean }[] | null> {
 		let all: { library_id: string; library_name: string; path: string; name: string; depth: number }[];
 		try {
 			all = await invoke('list_universe_folders');
 		} catch {
-			moveDialog = null;
-			return;
+			return null;
 		}
-		if (!moveDialog) return; // cancelled while loading
-		const sourceIsDir = !/\.(md|base)$/i.test(sourcePath);
-		const lastSep = Math.max(sourcePath.lastIndexOf('\\'), sourcePath.lastIndexOf('/'));
-		const sourceParent = norm(lastSep >= 0 ? sourcePath.substring(0, lastSep) : '');
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
 		const byLib = new Map<string, typeof all>();
 		for (const f of all) {
 			if (!byLib.has(f.library_id)) byLib.set(f.library_id, []);
@@ -6331,6 +6363,22 @@
 				entries.push({ path: f.path, name: f.name, depth: f.depth });
 			}
 		}
+		return entries;
+	}
+
+	// MIG-077 A3-R3 — open the Move picker. Lists folders across the WHOLE universe,
+	// excluding the source itself + its descendants + its current parent (a no-op).
+	async function openMoveDialog(sourcePath: string, sourceName: string) {
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+		const np = norm(sourcePath);
+		const srcLib = libraryForPath(sourcePath);
+		moveDialog = { path: sourcePath, name: sourceName, libraryId: srcLib?.library_id ?? '', loading: true, folders: [] };
+		const entries = await buildUniverseFolderEntries();
+		if (!moveDialog) return; // cancelled while loading
+		if (!entries) { moveDialog = null; return; }
+		const sourceIsDir = !/\.(md|base)$/i.test(sourcePath);
+		const lastSep = Math.max(sourcePath.lastIndexOf('\\'), sourcePath.lastIndexOf('/'));
+		const sourceParent = norm(lastSep >= 0 ? sourcePath.substring(0, lastSep) : '');
 		const filtered = entries.filter((e) => {
 			const ne = norm(e.path);
 			if (sourceIsDir && (ne === np || ne.startsWith(np + '/'))) return false; // self / descendant
@@ -6656,7 +6704,14 @@
 			// follow in-app renames/moves (cid-keyed note items self-heal via
 			// hydration; this covers notes that have no cid yet + folder members).
 			migrateCollectionPath(oldPath, effectivePath);
-			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			// 2026-07-24 inspection: was a raw first-match `startsWith` — no separator
+			// bound and no longest-prefix — so a rename inside "Research Notes" resolved
+			// to a sibling library "Research". `tabsInLibrary` DOES bound correctly, so
+			// no tab of the note's own library got flushed or frozen, and the cascade
+			// walked the wrong library: every [[OldTitle]] elsewhere stayed un-rewritten
+			// while the success path fired normally. `libraryForPath` is the shared
+			// boundary-checked longest-prefix resolver.
+			const lib = libraryForPath(oldPath);
 			if (lib) {
 				const willCascade = $appSettings.autoUpdateLinks && !isDir;
 				// MIG-076 §D1 (instant-freeze v2, 2026-06-13): raise the read-only
@@ -9162,12 +9217,19 @@
 		/>
 	{/if}
 
-	<!-- MIG-103 §1 — New note from template: confirm or edit the new note's title. -->
+	<!-- MIG-103 §1 — New note from template: confirm or edit the new note's title.
+	     The destination is shown (propose + show) with a Change… door to the
+	     folder tree; it is never chosen silently. -->
 	{#if newNoteTemplatePrompt}
 		<TemplatePrompt
 			question={$t('templates.newNoteTitle')}
 			defaultValue={newNoteTemplatePrompt.defaultTitle}
-			onSubmit={(val) => { const p = newNoteTemplatePrompt; newNoteTemplatePrompt = null; if (p) newNoteFromTemplate(p.templatePath, val); }}
+			destinationLabel={newNoteTemplatePrompt.destLabel}
+			onChangeDestination={(currentTitle) => {
+				const p = newNoteTemplatePrompt;
+				if (p) openNewNoteDestPicker(p.templatePath, currentTitle.trim() || p.defaultTitle, { destFolder: p.destFolder, destLibrary: p.destLibrary, destLabel: p.destLabel });
+			}}
+			onSubmit={(val) => { const p = newNoteTemplatePrompt; newNoteTemplatePrompt = null; if (p) newNoteFromTemplate(p.templatePath, val, p.destFolder, p.destLibrary); }}
 			onCancel={() => { newNoteTemplatePrompt = null; }}
 		/>
 	{/if}
@@ -9439,6 +9501,32 @@
 			loading={moveDialog.loading}
 			onConfirm={handleMoveConfirm}
 			onCancel={() => moveDialog = null}
+		/>
+	{/if}
+
+	<!-- MIG-103 — destination picker for "New note from template": the same
+	     folder tree as Move, opened when nothing is focused (no proposal
+	     possible) or from the title prompt's Change… button. Confirm returns
+	     to the title prompt with the chosen destination shown. -->
+	{#if newNoteDestPicker}
+		<MoveDialog
+			title={$t('templates.newNoteDestinationPick')}
+			confirmLabel={$t('templates.newNoteDestinationConfirm')}
+			sourceName={newNoteDestPicker.pendingTitle}
+			folders={newNoteDestPicker.folders}
+			loading={newNoteDestPicker.loading}
+			onConfirm={(target) => {
+				const p = newNoteDestPicker;
+				newNoteDestPicker = null;
+				if (!p) return;
+				const d = describeDestination(target);
+				newNoteTemplatePrompt = { templatePath: p.templatePath, defaultTitle: p.pendingTitle, destFolder: target, destLibrary: d.library, destLabel: d.label };
+			}}
+			onCancel={() => {
+				const p = newNoteDestPicker;
+				newNoteDestPicker = null;
+				if (p?.returnTo) newNoteTemplatePrompt = { templatePath: p.templatePath, defaultTitle: p.pendingTitle, ...p.returnTo };
+			}}
 		/>
 	{/if}
 

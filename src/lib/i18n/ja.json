@@ -2173,7 +2173,11 @@
     "startFromTemplate": "テンプレートから始める…",
     "setFolderTemplate": "既定のテンプレートを設定…",
     "errNoFolder": "ノートを作成するライブラリフォルダがありません。",
-    "errNewNote": "テンプレートからノートを作成できませんでした: {error}"
+    "errNewNote": "テンプレートからノートを作成できませんでした: {error}",
+    "newNoteDestination": "作成先:",
+    "newNoteDestinationChange": "変更…",
+    "newNoteDestinationPick": "作成場所を選択:",
+    "newNoteDestinationConfirm": "選択"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",

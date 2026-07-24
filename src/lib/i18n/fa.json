@@ -1744,7 +1744,11 @@
     "startFromTemplate": "شروع از یک الگو…",
     "setFolderTemplate": "تعیین الگوی پیش‌فرض…",
     "errNoFolder": "پوشهٔ کتابخانه‌ای برای ساخت یادداشت نیست.",
-    "errNewNote": "ساخت یادداشت از قالب ممکن نشد: {error}"
+    "errNewNote": "ساخت یادداشت از قالب ممکن نشد: {error}",
+    "newNoteDestination": "ایجاد می‌شود در:",
+    "newNoteDestinationChange": "تغییر…",
+    "newNoteDestinationPick": "انتخاب مکان برای",
+    "newNoteDestinationConfirm": "انتخاب"
   },
   "secondScreen": {
     "title": "صفحه دوم",

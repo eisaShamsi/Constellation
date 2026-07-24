@@ -2279,7 +2279,11 @@
     "startFromTemplate": "ابدأ من قالب…",
     "setFolderTemplate": "تعيين القالب الافتراضي…",
     "errNoFolder": "لا يوجد مجلد مكتبة لإنشاء الملاحظة فيه.",
-    "errNewNote": "تعذّر إنشاء الملاحظة من القالب: {error}"
+    "errNewNote": "تعذّر إنشاء الملاحظة من القالب: {error}",
+    "newNoteDestination": "سيتم إنشاؤها في:",
+    "newNoteDestinationChange": "تغيير…",
+    "newNoteDestinationPick": "اختر موقعًا لـ",
+    "newNoteDestinationConfirm": "اختيار"
   },
   "secondScreen": {
     "title": "الشاشة الثانية",

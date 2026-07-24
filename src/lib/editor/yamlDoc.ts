@@ -26,6 +26,24 @@
 import { Parser, CST, parseDocument, stringify as yamlStringify, isSeq, isMap, isScalar } from 'yaml';
 import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 
+/**
+ * Keys whose seq-of-maps value the system round-trips LOSSLESSLY as a structured,
+ * editable list — MIG-022 §A.1 `ikhtilāf` (structured scholarly disagreement: each
+ * row a `school` + `position`).
+ *
+ * This module owns the set because it owns the serializer that makes the claim true
+ * (`serializeLine`'s `nested-object-list` branch). `store.parseFrontmatter` imports it
+ * to route the same keys to the structured parser — one source of truth, and the
+ * import direction (store → yamlDoc) is the one that already exists, so no cycle.
+ *
+ * Adding a key here is a PROMISE that both the parser and the serializer handle its
+ * shape without dropping bytes. Every OTHER seq-of-maps is treated as an immutable
+ * block (see `immutableBlockKeys`) precisely because that promise does not hold.
+ */
+export const STRUCTURED_LIST_KEYS: ReadonlySet<string> = new Set([
+	'ikhtilāf', 'ikhtilaf', 'الاختلاف',
+]);
+
 export interface FmDoc {
 	/** Everything after the closing `---` fence (the note body), verbatim. */
 	body: string;
@@ -125,21 +143,50 @@ export function parseFrontmatterDoc(content: string): FmDoc {
 }
 
 /**
- * Top-level keys whose value is a nested MAP, read from the YAML itself.
+ * Top-level keys whose value is a BLOCK this compose must never rewrite — a nested
+ * MAP, or a SEQUENCE any of whose items is itself a map/seq, read from the YAML itself.
  *
  * PJ-136 — the authority for "this key holds a block" is the file, not the props
  * array handed to `composeFrontmatter`. Those props can be derived from
  * PropertyEditor's `tab.content` cache, which `reconstructFrontmatter` writes
  * WITHOUT a nested block's children, so the key comes back typed as ordinary text.
  * Keying the refusal off the file makes it independent of every upstream projection.
+ *
+ * 2026-07-24 inspection (APP-KILLER). The refusal used to check `isMap` ONLY, so a
+ * seq-of-maps —
+ *   authors:
+ *     - name: X
+ *       role: Y
+ * — was not immutable. `projectProps` here has always skipped that shape, but the
+ * OTHER parser (store.ts `parseFrontmatter`, which feeds the note model and hence the
+ * visible panel) projected it as a TRUNCATED flat list: `- name: X` became a chip and
+ * the continuation line `role: Y` was dropped from the projection entirely. Editing
+ * that chip splices the whole block-seq out of the CST below and rewrites it from the
+ * truncated projection — `role: Y` gone from the .md, no error, and the rewritten YAML
+ * re-parses cleanly so nothing ever notices. Same class as the MIG-101 nested-object-list
+ * and PJ-136 nested-map cases; this was the third, still-unguarded shape. Guarding the
+ * SEQ here means the bytes survive however any upstream projection behaves.
  */
-function nestedMapKeys(yaml: string): Set<string> {
+function immutableBlockKeys(yaml: string): Set<string> {
 	const out = new Set<string>();
 	const doc = parseDocument(yaml);
 	if (doc.errors.length || !isMap(doc.contents)) return out;
 	for (const pair of doc.contents.items) {
 		const k = pair.key;
-		if (isScalar(k) && k.value != null && isMap(pair.value)) out.add(String(k.value));
+		if (!isScalar(k) || k.value == null) continue;
+		const key = String(k.value);
+		// MIG-101: `ikhtilāf` is a seq-of-maps the system DOES round-trip losslessly —
+		// `serializeLine` has a real `nested-object-list` branch and the panel edits it
+		// through a structured widget. Exempting it by KEY keeps PJ-136's principle
+		// intact: the decision still comes from the file plus a static set, never from
+		// a props array that a lossy cache could have misreported.
+		if (STRUCTURED_LIST_KEYS.has(key) || STRUCTURED_LIST_KEYS.has(key.toLowerCase())) continue;
+		const v = pair.value;
+		// A seq of pure scalars stays editable (the ordinary tags/aliases list); a seq
+		// holding ANY non-scalar item is a block whose bytes the flat projection cannot
+		// round-trip.
+		const isBlock = isMap(v) || (isSeq(v) && !v.items.every((it) => isScalar(it)));
+		if (isBlock) out.add(key);
 	}
 	return out;
 }
@@ -287,7 +334,7 @@ export function composeFrontmatter(
 	// caches `tab.content`, and re-parsing that cache re-projects the key as `text`.
 	// Trusting the props array there let the SET/ADD branch splice the block out and
 	// append `source: ""`. The file always knows; ask it.
-	const immutableKeys = nestedMapKeys(rawYaml);
+	const immutableKeys = immutableBlockKeys(rawYaml);
 	const oldByKey = new Map(
 		oldProps.filter((p) => !immutableKeys.has(p.key)).map((p) => [p.key, p]),
 	);

@@ -572,10 +572,26 @@ pub(crate) fn union_preserve_order(existing: &[String], additions: &[String]) ->
 /// keeps its unsaved work and preserves the incoming change to a `.conflict` sidecar.
 /// One source of truth for "the file changed underneath you" — not a second channel.
 fn announce_frontmatter_write(app: &tauri::AppHandle, note_path: &str) {
+    announce_frontmatter_writes(app, std::slice::from_ref(&note_path));
+}
+
+/// The batched form, for the bulk path. Approve-All rewrites hundreds of notes;
+/// one event per note would violate the batch-index-events rule, so the caller
+/// accumulates the paths it actually wrote and announces them in chunks.
+///
+/// 2026-07-24 inspection (APP-KILLER). `bulk_ops::accept_one` was the missed
+/// sibling of the four per-card seams below: it rewrites frontmatter through the
+/// same watcher-SUPPRESSED gate but never announced, so an open note kept its
+/// OPEN-TIME base and the next keystroke's save silently erased the whole batch's
+/// accepted `sources:` / `content_type:` blocks from disk.
+pub(super) fn announce_frontmatter_writes(app: &tauri::AppHandle, note_paths: &[&str]) {
+    if note_paths.is_empty() {
+        return;
+    }
     use tauri::Emitter;
     let _ = app.emit(
         "library-changed",
-        serde_json::json!({ "libraryId": "", "paths": [note_path] }),
+        serde_json::json!({ "libraryId": "", "paths": note_paths }),
     );
 }
 

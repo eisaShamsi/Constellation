@@ -2173,7 +2173,11 @@
     "startFromTemplate": "템플릿으로 시작…",
     "setFolderTemplate": "기본 템플릿 설정…",
     "errNoFolder": "노트를 만들 라이브러리 폴더가 없습니다.",
-    "errNewNote": "템플릿에서 노트를 만들지 못했습니다: {error}"
+    "errNewNote": "템플릿에서 노트를 만들지 못했습니다: {error}",
+    "newNoteDestination": "생성 위치:",
+    "newNoteDestinationChange": "변경…",
+    "newNoteDestinationPick": "생성 위치 선택:",
+    "newNoteDestinationConfirm": "선택"
   },
   "secondScreen": {
     "title": "보조 화면",

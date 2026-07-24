@@ -1733,7 +1733,11 @@
     "startFromTemplate": "سانچے سے شروع کریں…",
     "setFolderTemplate": "طے شدہ سانچہ مقرر کریں…",
     "errNoFolder": "نوٹ بنانے کے لیے کوئی لائبریری فولڈر نہیں۔",
-    "errNewNote": "ٹیمپلیٹ سے نوٹ نہیں بن سکا: {error}"
+    "errNewNote": "ٹیمپلیٹ سے نوٹ نہیں بن سکا: {error}",
+    "newNoteDestination": "یہاں بنایا جائے گا:",
+    "newNoteDestinationChange": "تبدیل کریں…",
+    "newNoteDestinationPick": "مقام منتخب کریں:",
+    "newNoteDestinationConfirm": "منتخب کریں"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",

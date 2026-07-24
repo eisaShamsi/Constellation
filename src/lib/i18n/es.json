@@ -1744,7 +1744,11 @@
     "startFromTemplate": "Empezar desde una plantilla…",
     "setFolderTemplate": "Definir plantilla predeterminada…",
     "errNoFolder": "No hay carpeta de biblioteca donde crear la nota.",
-    "errNewNote": "No se pudo crear la nota desde la plantilla: {error}"
+    "errNewNote": "No se pudo crear la nota desde la plantilla: {error}",
+    "newNoteDestination": "Se creará en:",
+    "newNoteDestinationChange": "Cambiar…",
+    "newNoteDestinationPick": "Elige una ubicación para",
+    "newNoteDestinationConfirm": "Elegir"
   },
   "secondScreen": {
     "title": "Segunda pantalla",

@@ -16,12 +16,19 @@
 		loading = false,
 		onConfirm,
 		onCancel,
+		// MIG-103 — the same folder tree serves as the new-note-from-template
+		// destination picker; only the header and the confirm verb differ. Empty =
+		// the original Move labels, so every existing mount site is unchanged.
+		title = '',
+		confirmLabel = '',
 	}: {
 		sourceName: string;
 		folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[];
 		loading?: boolean;
 		onConfirm: (targetFolder: string) => Promise<void> | void;
 		onCancel: () => void;
+		title?: string;
+		confirmLabel?: string;
 	} = $props();
 
 	let filter = $state('');
@@ -60,7 +67,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="dialog-overlay" onclick={onCancel} onkeydown={handleKeydown}>
 	<div class="dialog" onclick={(e) => e.stopPropagation()}>
-		<p class="dialog-title">{$t('contextMenu.move')}<span class="dialog-source" dir={detectDir(sourceName)}>{sourceName}</span></p>
+		<p class="dialog-title">{title || $t('contextMenu.move')}<span class="dialog-source" dir={detectDir(sourceName)}>{sourceName}</span></p>
 		<input
 			bind:this={filterEl}
 			bind:value={filter}
@@ -96,7 +103,7 @@
 		{#if error}<p class="dialog-error">{error}</p>{/if}
 		<div class="dialog-actions">
 			<button class="dialog-btn cancel" onclick={onCancel}>{$t('dialogs.cancel')}</button>
-			<button class="dialog-btn" onclick={submit} disabled={!selected || submitting}>{$t('contextMenu.move')}</button>
+			<button class="dialog-btn" onclick={submit} disabled={!selected || submitting}>{confirmLabel || $t('contextMenu.move')}</button>
 		</div>
 	</div>
 </div>

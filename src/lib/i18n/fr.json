@@ -1744,7 +1744,11 @@
     "startFromTemplate": "Partir d’un modèle…",
     "setFolderTemplate": "Définir le modèle par défaut…",
     "errNoFolder": "Aucun dossier de bibliothèque où créer la note.",
-    "errNewNote": "Impossible de créer la note à partir du modèle : {error}"
+    "errNewNote": "Impossible de créer la note à partir du modèle : {error}",
+    "newNoteDestination": "Sera créée dans :",
+    "newNoteDestinationChange": "Modifier…",
+    "newNoteDestinationPick": "Choisir un emplacement pour",
+    "newNoteDestinationConfirm": "Choisir"
   },
   "secondScreen": {
     "title": "Deuxième écran",

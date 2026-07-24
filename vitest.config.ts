@@ -36,6 +36,7 @@ export default defineConfig({
 			'tests/mig-103/folderTemplates.test.ts',
 			'tests/mig-103/nestedMapProperty.test.ts',
 			'tests/mig-103/nestedMapCacheRoundtrip.test.ts',
+			'tests/mig-103/seqOfMapsRoundtrip.test.ts',
 			'tests/mig-101/shapeThroughModel.test.ts',
 			// MIG-101 §A — the read-only write guard (safety-inspection APP-KILLER).
 			'tests/mig-101/readOnlyWriteGuard.test.ts',

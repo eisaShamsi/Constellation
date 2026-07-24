@@ -2173,7 +2173,11 @@
     "startFromTemplate": "टेम्पलेट से शुरू करें…",
     "setFolderTemplate": "डिफ़ॉल्ट टेम्पलेट सेट करें…",
     "errNoFolder": "नोट बनाने के लिए कोई लाइब्रेरी फ़ोल्डर नहीं।",
-    "errNewNote": "टेम्पलेट से नोट नहीं बन सका: {error}"
+    "errNewNote": "टेम्पलेट से नोट नहीं बन सका: {error}",
+    "newNoteDestination": "यहाँ बनाया जाएगा:",
+    "newNoteDestinationChange": "बदलें…",
+    "newNoteDestinationPick": "स्थान चुनें:",
+    "newNoteDestinationConfirm": "चुनें"
   },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",

@@ -1733,7 +1733,11 @@
     "startFromTemplate": "להתחיל מתבנית…",
     "setFolderTemplate": "הגדרת תבנית ברירת מחדל…",
     "errNoFolder": "אין תיקיית ספרייה ליצירת הפתק.",
-    "errNewNote": "לא ניתן ליצור פתק מהתבנית: {error}"
+    "errNewNote": "לא ניתן ליצור פתק מהתבנית: {error}",
+    "newNoteDestination": "תיווצר ב:",
+    "newNoteDestinationChange": "שינוי…",
+    "newNoteDestinationPick": "בחרו מיקום עבור",
+    "newNoteDestinationConfirm": "בחירה"
   },
   "secondScreen": {
     "title": "מסך שני",

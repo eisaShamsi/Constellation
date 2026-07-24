@@ -208,6 +208,16 @@
 			</nav>
 			<div class="ks-detail">
 				{#if selected}
+					<!-- Keyed on the selected kind (2026-07-24 inspection): the detail column
+					     holds local state about THIS kind — `shownCandidate`, the alternate
+					     name the user clicked. Rendered unkeyed, that state survived a `kind`
+					     prop change, so selecting a different kind left the previous kind's
+					     token heading the evidence block: the wrong kind's naming reasoning
+					     attached to the kind on screen. A different kind is a different
+					     subject; remount it, so this and any future local state reset with it.
+					     (The visible-reasoning surface is exactly what The Constellation Way
+					     relies on to keep "smart" from becoming presumptuous.) -->
+					{#key kindSignature(selected)}
 					<TemplateStudioDetail kind={selected} draftName={draftFor(selected)} {onOpenExample}
 						picked={picksFor(kindSignature(selected))}
 						status={statuses.get(kindSignature(selected)) ?? null}
@@ -221,6 +231,7 @@
 						onKeep={() => keep(selected)}
 						onUndo={() => undo(selected)}
 						onResolve={(c) => resolve(selected, c)} />
+					{/key}
 				{/if}
 			</div>
 		</div>

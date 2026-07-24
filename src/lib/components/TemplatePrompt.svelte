@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { detectDir } from '$lib/utils';
 
 	let {
 		question = '',
@@ -15,6 +16,13 @@
 		choiceLabel = '',
 		choices = [] as { value: string; label: string }[],
 		choiceDefault = '',
+		// MIG-103 — the destination row for "New note from template": the proposed
+		// folder is SHOWN (never chosen silently) with a Change… door to the folder
+		// tree. onChangeDestination receives the current input value so an edited
+		// title survives the round-trip through the picker. Optional — every other
+		// mount site omits both and is unchanged.
+		destinationLabel = '',
+		onChangeDestination = undefined,
 	}: {
 		question: string;
 		defaultValue?: string;
@@ -23,6 +31,8 @@
 		choiceLabel?: string;
 		choices?: { value: string; label: string }[];
 		choiceDefault?: string;
+		destinationLabel?: string;
+		onChangeDestination?: (currentValue: string) => void;
 	} = $props();
 
 	let value = $state(defaultValue || '');
@@ -71,6 +81,16 @@
 			onkeydown={handleKeydown}
 			placeholder={defaultValue || ''}
 		/>
+		{#if destinationLabel}
+			<div class="tpl-prompt-dest">
+				<svg class="tpl-prompt-dest-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+				<span class="tpl-prompt-dest-where">{$t('templates.newNoteDestination')}</span>
+				<span class="tpl-prompt-dest-label" dir={detectDir(destinationLabel)}>{destinationLabel}</span>
+				{#if onChangeDestination}
+					<button type="button" class="tpl-prompt-dest-change" onclick={() => onChangeDestination?.(value)}>{$t('templates.newNoteDestinationChange')}</button>
+				{/if}
+			</div>
+		{/if}
 		<div class="tpl-prompt-actions">
 			<button class="tpl-prompt-btn tpl-prompt-cancel" onclick={onCancel}>
 				{$t('templates.promptCancel')}
@@ -125,6 +145,23 @@
 		background: var(--interactive-accent); color: var(--text-on-accent);
 		border-color: var(--interactive-accent);
 	}
+	.tpl-prompt-dest {
+		display: flex; align-items: center; gap: 6px; min-width: 0;
+		margin-top: 10px; font-size: 0.78rem; color: var(--text-muted);
+	}
+	.tpl-prompt-dest-ic { flex-shrink: 0; opacity: 0.7; }
+	.tpl-prompt-dest-where { flex-shrink: 0; }
+	.tpl-prompt-dest-label {
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+		color: var(--text-normal);
+	}
+	.tpl-prompt-dest-change {
+		flex-shrink: 0; margin-inline-start: auto;
+		border: none; background: none; cursor: pointer;
+		color: var(--interactive-accent); font-size: 0.78rem; font-family: inherit;
+		padding: 2px 4px; border-radius: 4px;
+	}
+	.tpl-prompt-dest-change:hover { background: var(--background-modifier-hover); }
 	.tpl-prompt-actions {
 		display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
 	}

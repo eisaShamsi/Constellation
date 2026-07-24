@@ -2173,7 +2173,11 @@
     "startFromTemplate": "Bir şablonla başla…",
     "setFolderTemplate": "Varsayılan şablonu ayarla…",
     "errNoFolder": "Notu oluşturacak kitaplık klasörü yok.",
-    "errNewNote": "Şablondan not oluşturulamadı: {error}"
+    "errNewNote": "Şablondan not oluşturulamadı: {error}",
+    "newNoteDestination": "Şurada oluşturulacak:",
+    "newNoteDestinationChange": "Değiştir…",
+    "newNoteDestinationPick": "Konum seçin:",
+    "newNoteDestinationConfirm": "Seç"
   },
   "secondScreen": {
     "title": "İkinci Ekran",

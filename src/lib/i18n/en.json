@@ -2325,7 +2325,11 @@
     "startFromTemplate": "Start from a template…",
     "setFolderTemplate": "Set default template…",
     "errNoFolder": "No library folder to create the note in.",
-    "errNewNote": "Could not create the note from the template: {error}"
+    "errNewNote": "Could not create the note from the template: {error}",
+    "newNoteDestination": "Will be created in:",
+    "newNoteDestinationChange": "Change…",
+    "newNoteDestinationPick": "Choose a location for",
+    "newNoteDestinationConfirm": "Choose"
   },
   "cockpit": {
     "dial": "Coupling",

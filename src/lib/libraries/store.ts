@@ -16,7 +16,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
 import { editProps as editNoteProps, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
-import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
+import { splitFrontmatter, composeFrontmatter, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
 import { toggleTask } from '$lib/tasks/store'; // §A.3 — reconciled task toggle (tasks/store has no store dep → no cycle)
@@ -151,9 +151,10 @@ const DATE_KEYS = new Set([
 // indented `- field: value` line. The §A.3 Properties panel renders
 // these via the custom ikhtilāf widget per D-A4.α; raw consumers can
 // read `nestedObjects` directly.
-const IKHTILAF_KEYS = new Set([
-	'ikhtilāf', 'ikhtilaf', 'الاختلاف',
-]);
+// The set lives in yamlDoc, next to the serializer that makes "losslessly editable"
+// true for these keys — see STRUCTURED_LIST_KEYS there. Aliased so the many call
+// sites below read unchanged.
+const IKHTILAF_KEYS = STRUCTURED_LIST_KEYS;
 
 /** Normalize DD/MM/YYYY → YYYY-MM-DD for storage */
 export function normalizeDateValue(value: string): string {
@@ -1755,19 +1756,65 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 			}
 
 			// Multi-line list: key:\n  - item1\n  - item2
-			const listItems: string[] = [];
 			if (!value && i + 1 < yamlLines.length && /^\s+-\s/.test(yamlLines[i + 1])) {
-				i++;
-				while (i < yamlLines.length && /^\s+-\s/.test(yamlLines[i])) {
-					let item = yamlLines[i].replace(/^\s+-\s*/, '').trim();
-					if ((item.startsWith('"') && item.endsWith('"')) || (item.startsWith("'") && item.endsWith("'"))) {
-						item = item.slice(1, -1);
-					}
-					listItems.push(item);
-					i++;
+				// 2026-07-24 inspection (APP-KILLER). Take the block's FULL extent first,
+				// then decide what it is — the old code consumed only consecutive `- item`
+				// lines, which projected two very common shapes TRUNCATED:
+				//   authors:            (seq-of-maps: `role:` is not a `- ` item, so the
+				//     - name: X          scan stopped and the outer `!startsWith(' ')`
+				//       role: Y          guard then skipped that line entirely)
+				//   tags:               (a block list with a blank line between items:
+				//     - a                everything after the blank was dropped)
+				//
+				//     - b
+				// A truncated projection of an EDITABLE type is a data-destroying
+				// invitation: editing one chip makes `composeFrontmatter` splice the whole
+				// block and rewrite it from what we captured, so the uncaptured lines are
+				// gone from the .md — no error, and the result re-parses cleanly. Both
+				// shapes are valid YAML that Constellation reads in place from Obsidian
+				// vaults. The rule is the one PJ-136 settled for nested maps and the Boss
+				// ruled on 2026-07-22: when we cannot round-trip the bytes, render it
+				// READ-ONLY WITH A SUMMARY — visible and honest, never editable.
+				const blockStart = i + 1;
+				let end = blockStart;
+				let lastContent = blockStart; // last indented, non-blank line
+				while (end < yamlLines.length) {
+					const l = yamlLines[end];
+					if (/^\s*$/.test(l)) { end++; continue; } // blank: may be interior
+					if (!/^\s/.test(l)) break; // back to a top-level key — block over
+					lastContent = end;
+					end++;
 				}
-				if (key) {
+				end = lastContent + 1; // drop trailing blank lines
+				const blockLines = yamlLines.slice(blockStart, end);
+				i = end;
+
+				// A plain flat list is every non-blank line being a `- item` whose text is
+				// not itself a `key: value` map entry. `- https://x` and `- "a: b"` are
+				// scalars, not maps — the test requires a colon followed by space/EOL on
+				// an unquoted item, which is YAML's own rule.
+				const contentLines = blockLines.filter((l) => !/^\s*$/.test(l));
+				const isFlatList =
+					contentLines.every((l) => /^\s+-\s/.test(l)) &&
+					!contentLines.some((l) => /^\s+-\s*[^"'\s][^:]*:(\s|$)/.test(l));
+
+				if (key && isFlatList) {
+					const listItems = contentLines.map((l) => {
+						let item = l.replace(/^\s+-\s*/, '').trim();
+						if ((item.startsWith('"') && item.endsWith('"')) || (item.startsWith("'") && item.endsWith("'"))) {
+							item = item.slice(1, -1);
+						}
+						return item;
+					});
 					properties.push({ key, value: listItems.join(', '), type: 'list', listItems });
+				} else if (key) {
+					const children = blockLines
+						.map((l) => {
+							const m = /^\s*(?:-\s*)?([^:]+):(?:\s|$)/.exec(l);
+							return m ? m[1].trim() : '';
+						})
+						.filter(Boolean);
+					properties.push({ key, value: '', type: 'nested-map', nestedKeys: children, nestedRaw: blockLines });
 				}
 				continue;
 			}

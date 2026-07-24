@@ -2116,9 +2116,12 @@ pub fn create_template(
 fn reindex_written_template(app: &tauri::AppHandle, path: &str, surface: &str) {
     use tauri::Manager;
     let search_state = app.state::<crate::search::SearchState>();
-    match crate::libraries::load_all_libraries(app).iter().find(|l| path.starts_with(&l.path)) {
-        Some(lib) => {
-            if let Err(e) = crate::search::reindex_single_note(&search_state, path, &lib.name) {
+    // Canonical longest-root-wins resolver (2026-07-24 inspection) — a first-match
+    // `starts_with` always returned the universe_notes root, filing every template
+    // written into a nested sub-library under the wrong library_name.
+    match crate::libraries::library_name_for_path(&crate::libraries::load_all_libraries(app), path) {
+        Some(lib_name) => {
+            if let Err(e) = crate::search::reindex_single_note(&search_state, path, &lib_name) {
                 if let Ok(p) = crate::search::db_path(app) {
                     crate::search::diag_log(&p, &format!("[{surface}] reindex FAILED for {path}: {e}"));
                 }
@@ -2282,29 +2285,63 @@ pub fn merge_fields_into_template(
     fields: Vec<String>,
 ) -> Result<Vec<String>, String> {
     crate::bases::validate_base_path(&app, &template_path)?;
-    let original = fs::read_to_string(&template_path)
-        .map_err(|e| format!("Failed to read template: {}", e))?;
 
-    let existing: std::collections::HashSet<String> = crate::bases::parse_frontmatter(&original)
-        .map(|m| m.keys().map(|k| k.to_lowercase()).collect())
-        .unwrap_or_default();
-
-    let mut out = original.clone();
+    // 2026-07-24 inspection. This was an UNGUARDED read-modify-write: read the file,
+    // append fields, then `gate_write(..., expect = None)`. Studio-cut templates
+    // deliberately carry no `cid_cn`, so the gate's self-attestation degraded to an
+    // unconditional overwrite — an editor save landing between the read and the write
+    // was silently discarded. `gate_rmw` makes read+write ONE critical section, so a
+    // concurrent save can land before or after but never inside the window. (The
+    // closure is pure string work: no `gate_*`, no DB lock inside — gate_rmw's two
+    // hard rules.)
     let mut added: Vec<String> = Vec::new();
-    for f in &fields {
-        let key = f.trim();
-        if key.is_empty() || key.contains(':') || existing.contains(&key.to_lowercase()) {
-            continue;
-        }
-        out = crate::bases::update_frontmatter_property(&out, key, "");
-        added.push(key.to_string());
+    let outcome = crate::write_gate::gate_rmw(
+        Path::new(&template_path),
+        "merge_fields_into_template",
+        |original| {
+            added.clear();
+            let existing: std::collections::HashSet<String> =
+                crate::bases::parse_frontmatter(original)
+                    .map(|m| m.keys().map(|k| k.to_lowercase()).collect())
+                    .unwrap_or_default();
+            let mut out = original.to_string();
+            for f in &fields {
+                let key = f.trim();
+                if key.is_empty() || key.contains(':') || existing.contains(&key.to_lowercase()) {
+                    continue;
+                }
+                out = crate::bases::update_frontmatter_property(&out, key, "");
+                added.push(key.to_string());
+            }
+            // Nothing to add — do not touch the file at all.
+            Ok(if added.is_empty() { None } else { Some(out) })
+        },
+    )?;
+
+    if added.is_empty() || outcome == crate::write_gate::WriteOutcome::OkUnchecked {
+        return Ok(added);
     }
-    if added.is_empty() {
-        return Ok(added); // nothing to do — do not touch the file at all
-    }
-    crate::write_gate::gate_write(Path::new(&template_path), &out, None, "merge_fields_into_template")?;
     reindex_written_template(&app, &template_path, "merge_fields_into_template");
+    // The gate marks the path watcher-SUPPRESSED, so without this an OPEN template tab
+    // keeps its pre-merge content and the next keystroke's save silently overwrites the
+    // merged fields while the Studio's "merged: added X" message stands. Re-uses the
+    // watcher's own event → the existing adopt path (clean model adopts, dirty model
+    // keeps its work and sidecars the change).
+    announce_disk_write(&app, &template_path);
     Ok(added)
+}
+
+/// Announce a Rust-side write so an OPEN note re-bases from disk instead of
+/// overwriting it. Gated writes are watcher-suppressed by design (we must not treat
+/// our own write as an external edit); this re-emits the watcher's own event so the
+/// well-tested `adoptExternalChangeIntoTabs` path runs. Twin of
+/// `sources::announce_frontmatter_write`.
+fn announce_disk_write(app: &tauri::AppHandle, path: &str) {
+    use tauri::Emitter;
+    let _ = app.emit(
+        "library-changed",
+        serde_json::json!({ "libraryId": "", "paths": [path] }),
+    );
 }
 
 /// UNDO — trash a mold that was just kept, ONLY if it is untouched since.

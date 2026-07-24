@@ -150,9 +150,38 @@ fn process_batch(
     Ok((scanned, fixed, last))
 }
 
+/// Verify no row still carries the defect's signature, THEN stamp.
+///
+/// 2026-07-24 inspection. The cursor lives in memory while the connection under it
+/// can be swapped: a universe switch mid-run (`invalidate_search_state` NULLs the
+/// conn, `ensure_search_db_ready` installs the new one — easily inside the 50 ms
+/// inter-batch sleep) leaves Universe A's cursor driving a scan of Universe B. B's
+/// rows below that cursor are never examined, the drained scan then stamps B's
+/// `schema_versions`, and because the stamp makes `is_needed` false B never gets its
+/// own pass — its phantom properties stay wrong forever.
+///
+/// The mature sibling `note_body_backfill::finalize` guards exactly this with a
+/// completeness check before stamping; the same shape applies here and is exact,
+/// because the defect has a cheap SQL signature. If anything is still unconverted we
+/// simply DON'T stamp — the next boot re-runs, and the pass is idempotent.
 fn stamp(db: &Mutex<Option<Connection>>) -> Result<(), String> {
     let guard = db.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("DB not initialized")?;
+
+    let remaining: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM note_meta WHERE properties_json LIKE '%\"- %'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(-1);
+    if remaining != 0 {
+        return Err(format!(
+            "completeness check failed: {} row(s) still carry the phantom signature — not stamping, the next boot re-runs",
+            remaining
+        ));
+    }
+
     conn.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) \
          VALUES ('props_reparse', ?1, strftime('%s','now'))",
