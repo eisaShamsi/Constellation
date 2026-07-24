@@ -2414,3 +2414,20 @@ Constellation gives you a context menu in three places, each offering only the a
 - **Right-click a search result** — a **safe** subset: Open, Open in new tab, Reveal in tree, Copy link, Copy path, Bookmark, Show in explorer, Open in default app, and **Style…** (the **Cognitive colours** category). By design there is **no Rename, Move, or Delete** here — the search panel does not keep an up-to-the-second copy of the file tree, so destructive actions stay in the file tree where the view is always current.
 
 Each **Style…** entry lands on the category for the thing you right-clicked, so you never have to hunt for the right controls. Every menu item, category name, and state label appears in your chosen interface language and mirrors for right-to-left layouts.
+
+
+## Template Studio — recognising the kinds of note you keep writing
+
+Open the ruled-page icon in the left dock. Constellation shows the kinds of note
+already recurring in your Universe — each with a count, the fields those notes
+share, and five real examples. Where your own material contains a name for a
+kind (a library, a tag, words in titles), it is proposed with its evidence shown
+as plain counts; otherwise the name box is empty and the naming is yours.
+
+Press **Keep** to turn a kind into a template. The exact file, fields and
+sections are stated before anything is written; optional fields are chips you
+tick in. Keep never overwrites an existing template — you choose *Rename it* or
+*Add these fields to it* — and **Undo** moves the new file to the trash (it
+refuses if you have edited the template since). Kept kinds stay marked with the
+name you gave them across restarts: the record is a `from_kind:` line in the
+template file itself, so it travels with your files.
