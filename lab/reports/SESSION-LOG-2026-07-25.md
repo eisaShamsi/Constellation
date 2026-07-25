@@ -3,8 +3,9 @@
 Continuation of the MIG-103 / safety-hardening arc. Two commits landed earlier in
 the day (`a740a20f` destination propose+show; `bc8091e3` search.db un-deletable +
 archive-reversal + scan de-freeze + sidebar dedup — logged in `SESSION-LOG-2026-07-24-B.md`).
-This log covers the **third** commit: the **PJ-140 Rust remediation + the Whole-Ecosystem
-file-tree fix + the library-icon system**, plus two new top-principal laws.
+This log covers the **third** commit (**`332f566d`**, pushed to `origin/main`): the
+**PJ-140 Rust remediation + the Whole-Ecosystem file-tree fix + the library-icon system**,
+plus two new top-principal laws.
 
 **Verification (all green, run at close):** Rust **1161 passed / 0 failed** (10 ignored;
 +9 new tests) · svelte-check **0 errors** (268 pre-existing unused-CSS warnings) ·
