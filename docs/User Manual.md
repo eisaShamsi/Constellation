@@ -269,6 +269,7 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 - **Link an existing library**: open the Library Manager and choose *Link existing library*, or use Mission Control (`Ctrl+P`) → *Add library*. A folder picker opens; pick a folder that's already on disk (e.g. an Obsidian vault) and Constellation registers it without copying or moving any files.
 - **Remove a library**: open the Library Manager and click the trash icon next to the library. Your files are not deleted — Constellation only forgets about the library.
 - **Library settings**: Each library can have its own appearance settings (fonts, colors).
+- **How a library is marked**: A Library is more than a folder, so it carries its own **library-building mark** (a pediment over columns), tinted in the library's colour — shown next to the library in the sidebar, on the Dashboard, and (as a bold, colour-tinted row) in the **Move** dialog's destination list, where it lets you tell a whole library apart from an ordinary folder. A linked child Universe (cUniverse) is marked with a **planet-and-orbit** glyph instead, because it is a whole other Universe rather than a library inside this one. You can resize the library mark in **Style Setter → Library → Icon size** (it affects the library glyph only; toolbar and folder icons have their own size controls).
 
 ### Syncing and External Changes
 

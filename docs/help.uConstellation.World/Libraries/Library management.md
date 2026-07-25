@@ -47,6 +47,20 @@ When you choose *Link existing library*, an OS folder picker opens directly. Nav
 
 ---
 
+## How a library looks
+
+A Library is a first-class citizen in Constellation — more than a folder — so it carries its own **mark**. Everywhere a library appears, it shows as a small **library building** (a pediment over columns), tinted in the library's own colour:
+
+- **In the sidebar file tree** — next to each library's name.
+- **In the Move dialog** — the destination list shows each library as a bold, colour-tinted building row, so you can tell a whole library apart from an ordinary folder (folders keep the plain folder icon).
+- **On the Dashboard** — each library card carries the same mark.
+
+A **linked Universe** (a federated child Universe) is marked differently — a small **planet-and-orbit** glyph — because it is a whole other Universe, not a library inside this one.
+
+You can resize the library mark: **Style Setter → Library → Icon size**. This affects the library building glyph only; the toolbar icons and folder icons have their own size controls.
+
+---
+
 ## Library dropdown
 
 The library dropdown is a quick-access popup that appears above the sidebar footer.

@@ -579,6 +579,22 @@ pub fn gate_rename(old: &Path, new: &Path, surface: &str) -> Result<WriteOutcome
         Err(p) => p.into_inner(),
     });
 
+    // 2026-07-25 PJ-140 #18: dest-exists guard UNDER the lock. Every caller's collision
+    // check is an OUTSIDE-the-lock exists() pre-check (move_item, trash de-collide,
+    // rename_folder), so a concurrent create at `new` between that check and here would
+    // be silently REPLACED: fs::rename replaces an existing dest on both Windows and —
+    // the mandated macOS port — POSIX rename(2). Return Err (NOT Ok(RefusedExists)):
+    // every caller already treats a collision as Err — `?` callers propagate the clean
+    // "already exists" error and never run their post-rename DB migrate against a path
+    // holding someone else's file, and delete_trash's `.is_err()` fallback then
+    // completes the move via copy+remove. An Ok outcome here would instead read as a
+    // successful rename that never happened (false success). Skip when old==new
+    // (case/separator variant).
+    if ka != kb && new.exists() {
+        journal(new, surface, WriteOutcome::RefusedExists, 0, fnv1a(old.to_string_lossy().as_bytes()));
+        return Err("An item with this name already exists at the destination.".to_string());
+    }
+
     crate::watcher_suppress::mark(old);
     crate::watcher_suppress::mark(new);
 

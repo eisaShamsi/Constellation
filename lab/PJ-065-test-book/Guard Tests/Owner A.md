@@ -3,6 +3,10 @@ title: "Owner A"
 cid_cn: 20260627T120300Z_NOTE_A00C
 kind: note
 created: 2026-06-27T12:03:00Z
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Owner A

@@ -131,6 +131,7 @@ Every setting lives under one of the five blocks above. Highlights:
 - **Status bar** — height, font size, background, text color
 - **Right sidebar (inspector)** — background, tab row height, tab icon size, tab icon colors
 - **File explorer (left sidebar)** — Universe notes row, child universe (cUniverse) rows, library names, folders, notes — each with independent size, weight, and color; plus vertical row spacing
+- **Library icon** — the small **library-building mark** that stands for each Library in the sidebar, the Move dialog, and the Dashboard has its own **Icon size** control (Style Setter → Library → *Icon size*). It sizes the library glyph only; a linked Universe (cUniverse) keeps its planet-and-orbit mark, and the toolbar/folder icons have their own size controls.
 
 ### Editor
 

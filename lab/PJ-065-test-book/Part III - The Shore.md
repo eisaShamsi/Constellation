@@ -3,6 +3,10 @@ title: "Part III - The Shore"
 cid_cn: 20260627T120030Z_NOTE_A004
 kind: note
 created: 2026-06-27T12:00:30Z
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Part III — The Shore

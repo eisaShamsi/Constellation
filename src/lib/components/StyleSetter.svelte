@@ -30,6 +30,7 @@
 	// hang off the standard "Reset this element" button (the editor's own link was removed).
 	import { linkTypesStore, seedColorsDiffer, resetSeedColors } from '$lib/libraries/linkTypeRegistry';
 	import CalloutTypesEditor from './CalloutTypesEditor.svelte';
+	import LibraryIcon from './LibraryIcon.svelte';
 	// MIG-081 §C.2d — the real CalendarPanel as the Calendar category's centre preview. It reads
 	// the draft --cal-* (set on the .ss root) → recolours live; engine loads lazily on open.
 	import CalendarPanel from './CalendarPanel.svelte';
@@ -171,6 +172,7 @@
 			{ label: 'Text colour', type: 'color', var: '--ft-library-color' },
 			{ label: 'Font', type: 'select', var: '--ft-library-font-family', options: FONTS },
 			{ label: 'Font size', type: 'range', var: '--ft-library-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
+			{ label: 'Icon size', type: 'range', var: '--ft-library-icon-size', min: 10, max: 24, step: 1, unit: 'px', def: 13 },
 			{ label: 'Font weight', type: 'range', var: '--ft-library-weight', min: 300, max: 900, step: 100, unit: '', def: 600 } ] },
 		folder: { name: 'Folder', controls: [
 			{ label: 'Text colour', type: 'color', var: '--ft-folder-color' },
@@ -1471,11 +1473,11 @@
 						</div>
 					{:else if pk === 'tree'}
 						<div class="ss-focus ss-fcard ss-ftree">
-							<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library' || selected === 'interface'} onclick={() => selectEl('library')}>📚 {L('My Library')}</span>
+							<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library' || selected === 'interface'} onclick={() => selectEl('library')}><LibraryIcon kind="library" size={15} color="currentColor" /> {L('My Library')}</span>
 							<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={() => selectEl('folder')}>📁 {L('Ideas')}</span>
 							<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>{L('Apple (Fruit)')}</span>
 							<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>{L('Banana')}</span>
-							<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={() => selectEl('cuniverse')}>✦ {L('Linked Universe')}</span>
+							<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={() => selectEl('cuniverse')}><LibraryIcon kind="cuniverse" size={15} color="currentColor" /> {L('Linked Universe')}</span>
 						</div>
 					{:else if pk === 'universe'}
 						<div class="ss-focus ss-fcard"><span class="ss-univ" style="margin-top:0">◇ {L('Universe')}</span></div>

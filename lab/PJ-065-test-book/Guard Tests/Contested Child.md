@@ -4,6 +4,10 @@ cid_cn: 20260627T120320Z_NOTE_A00E
 kind: note
 created: 2026-06-27T12:03:20Z
 parent: "[[Owner A]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Contested Child

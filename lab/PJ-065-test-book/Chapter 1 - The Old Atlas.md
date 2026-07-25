@@ -5,6 +5,10 @@ kind: note
 created: 2026-06-27T12:00:40Z
 contains:
   - "[[Scene 1 - Dust and Ink]]"
+sources:
+  - mass-transmission/meaning
+content_type:
+  - higher-order-constructs/law/logical/identity
 ---
 
 # Chapter 1 — The Old Atlas

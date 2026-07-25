@@ -4,6 +4,10 @@ cid_cn: 20260627T120120Z_NOTE_A009
 kind: note
 created: 2026-06-27T12:01:20Z
 parent: "[[Chapter 1 - The Old Atlas]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Scene 1 — Dust and Ink

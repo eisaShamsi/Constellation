@@ -762,43 +762,62 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
         if parent_name.as_deref() == Some(&this_name) && parent.join(".constellation").exists() == false {
             // Parent has same name and no .constellation of its own → consolidate
             eprintln!("[universe] Consolidating nested universe: {} → {}", universe_path.display(), parent.display());
-            // Move .constellation/ and all contents up to parent
+            // Move .constellation/ and all contents up to parent.
+            // 2026-07-25 PJ-140 #33: log a failed move instead of swallowing it — the
+            // critical entry is .constellation/ (universe.json, libraries.json,
+            // settings.json, search.db). If IT fails to move, repointing the registry
+            // at the parent would leave the universe pointing at a directory WITHOUT
+            // its config (silent breakage). So the repoint below is gated on the move
+            // actually landing.
             if let Ok(entries) = fs::read_dir(&universe_path) {
                 for entry in entries.flatten() {
                     let src = entry.path();
                     let dest = parent.join(entry.file_name());
                     if !dest.exists() {
-                        let _ = fs::rename(&src, &dest);
-                    }
-                }
-            }
-            // Remove the now-empty nested directory
-            let _ = fs::remove_dir(&universe_path);
-
-            // Update registry path
-            let parent_str = parent.to_string_lossy().to_string();
-            for e in &mut registry.entries {
-                if e.id == id {
-                    e.path = parent_str.clone();
-                }
-            }
-            // Update library paths in .constellation/libraries.json
-            let cdir = constellation_dir(parent);
-            let libs_path = cdir.join("libraries.json");
-            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
-                if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
-                    for lib in &mut libs {
-                        if lib.is_universe_notes {
-                            lib.path = parent_str.clone();
+                        if let Err(e) = fs::rename(&src, &dest) {
+                            eprintln!("[universe] Consolidation move failed for {}: {}", src.display(), e);
                         }
                     }
-                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        persist_json_best_effort(&libs_path, &json);
-                    }
                 }
             }
-            final_path = parent.to_path_buf();
-            eprintln!("[universe] Consolidation complete: {}", final_path.display());
+            // Only repoint if the critical config directory actually made it up. If it
+            // did NOT, keep the nested path (final_path is already universe_path) so the
+            // universe stays openable at its original, config-bearing location rather than
+            // being repointed at a parent with no .constellation.
+            if parent.join(".constellation").exists() {
+                // Remove the now-empty nested directory
+                let _ = fs::remove_dir(&universe_path);
+
+                // Update registry path
+                let parent_str = parent.to_string_lossy().to_string();
+                for e in &mut registry.entries {
+                    if e.id == id {
+                        e.path = parent_str.clone();
+                    }
+                }
+                // Update library paths in .constellation/libraries.json
+                let cdir = constellation_dir(parent);
+                let libs_path = cdir.join("libraries.json");
+                if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                    if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                        for lib in &mut libs {
+                            if lib.is_universe_notes {
+                                lib.path = parent_str.clone();
+                            }
+                        }
+                        if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                            persist_json_best_effort(&libs_path, &json);
+                        }
+                    }
+                }
+                final_path = parent.to_path_buf();
+                eprintln!("[universe] Consolidation complete: {}", final_path.display());
+            } else {
+                eprintln!(
+                    "[universe] Consolidation ABORTED: .constellation did not land at {} — keeping the nested path so the universe stays openable.",
+                    parent.display()
+                );
+            }
         }
     }
 
@@ -1599,13 +1618,16 @@ pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Va
                 // (the `!path.exists()` gate is satisfied by the partial file). Write
                 // to a temp then rename; only retire the legacy backup if the adopt
                 // committed (else the legacy stays and re-adoption retries next boot).
-                let tmp = dir.join("collections.json.tmp");
-                match fs::write(&tmp, &data).and_then(|_| fs::rename(&tmp, &path)) {
+                // 2026-07-25 inspection (PJ-140): use atomic_write (fsync before
+                // rename) — the prior temp+rename skipped the fsync, so power loss
+                // could land the rename over unflushed blocks, leaving a truncated
+                // collections.json that the `!path.exists()` gate then treats as
+                // "already adopted", permanently blocking re-adoption of the legacy file.
+                match atomic_write(&path, data.as_bytes()) {
                     Ok(_) => {
                         let _ = fs::rename(&legacy, dir.join("workbench.json.migrated"));
                     }
                     Err(e) => {
-                        let _ = fs::remove_file(&tmp);
                         eprintln!("[collections] legacy adoption failed (will retry next boot): {}", e);
                     }
                 }

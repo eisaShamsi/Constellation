@@ -344,7 +344,13 @@ pub fn cece_resolve_disambiguation(
         let conn = db_guard
             .as_ref()
             .ok_or("Search database not initialized")?;
-        crate::sources::read_suggestions(conn, &note_path).ok().flatten()
+        // 2026-07-25 PJ-140 #53: propagate a genuine DB failure instead of
+        // `.ok().flatten()`. MIG-080 §D made read_suggestions distinguish Ok(None)
+        // (no row — the normal no-op) from Err (locked/corrupt/parse); collapsing Err
+        // to None here would let this resolution proceed on a FALSE "no prior card",
+        // wrongly discarding a still-Split sibling axis. The fn returns Result, so `?`
+        // surfaces the error to the caller instead of silently mis-deciding.
+        crate::sources::read_suggestions(conn, &note_path)?
     };
     let composite_snapshot: Option<String> = prior.as_ref().and_then(|r| r.composite_json.clone());
 

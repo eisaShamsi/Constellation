@@ -230,6 +230,38 @@ pub fn library_name_for_path(libs: &[LibraryInfo], path: &str) -> Option<String>
         .map(|l| l.name.clone())
 }
 
+/// The normalized paths of every registered library EXCEPT the one at `self_path`.
+///
+/// 2026-07-25 — the Whole-Ecosystem Fix Law helper. universe_notes' path IS the
+/// Universe root, so ANY recursive walk starting there descends into every other
+/// registered library and folds it into the parent (a library shown as a folder of
+/// its parent; nested tags/tasks/links/word-index double-counted; a library reported
+/// as 0 notes). EVERY tree/folder/aggregate walker skips a subdirectory whose
+/// normalized path is in this set, so each library is walked once, under its own
+/// identity — the single builder read_dir_recursive, collect_folders,
+/// index_library_recursive, and the scan_*_recursive walkers all share, so they can
+/// never drift apart again. (Pairs with `library_name_for_path` for per-file
+/// attribution walkers, which additionally re-resolve each note's owning library.)
+pub fn nested_library_paths(
+    libs: &[LibraryInfo],
+    self_path: &str,
+) -> std::collections::HashSet<String> {
+    let norm = |p: &str| p.replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let me = norm(self_path);
+    libs.iter()
+        .map(|l| norm(&l.path))
+        .filter(|p| *p != me)
+        .collect()
+}
+
+/// True when `dir` is itself a registered library (present in an exclude set built by
+/// `nested_library_paths`) — the one check every tree/folder/aggregate walker uses to
+/// stop at a nested library boundary. Kept trivial so it inlines.
+pub(crate) fn is_nested_library(dir: &Path, exclude: &std::collections::HashSet<String>) -> bool {
+    let norm = dir.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+    exclude.contains(&norm)
+}
+
 /// Save registered libraries to the active universe's config.
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;
@@ -241,15 +273,14 @@ fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(
     // registration. The rename is atomic (same directory / filesystem), so a reader
     // always sees either the complete old file or the complete new one; a failed
     // rename leaves the old file intact (never truncated). Errors are surfaced.
-    let tmp = path.with_file_name(format!(
-        "{}.tmp",
-        path.file_name().and_then(|n| n.to_str()).unwrap_or("libraries.json")
-    ));
-    fs::write(&tmp, &data).map_err(|e| format!("Failed to write libraries config (tmp): {}", e))?;
-    fs::rename(&tmp, &path).map_err(|e| {
-        let _ = fs::remove_file(&tmp); // don't leave a stray temp on a failed commit
-        format!("Failed to commit libraries config: {}", e)
-    })?;
+    //
+    // 2026-07-25 inspection (PJ-140): this used to do the temp+rename WITHOUT an
+    // fsync of the temp file before the rename — so power loss could land the rename
+    // over unflushed data blocks, leaving a zero-length/garbage libraries.json under
+    // the final name (the exact failure temp+rename exists to prevent). Delegated to
+    // `atomic_write`, which fsyncs before the rename (MIG-100 §G6).
+    crate::universe::atomic_write(&path, data.as_bytes())
+        .map_err(|e| format!("Failed to write libraries config: {}", e))?;
     // Invalidate the in-memory cache so subsequent reads see the new list.
     invalidate_libraries_cache();
     Ok(())
@@ -456,16 +487,10 @@ pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<
     // under the Universe root" and "library under another library" at any depth.
     // The deeper data-model fix (the root library sharing the Universe's name and
     // claiming its path) is MIG-105.
-    let norm = |p: &str| p.replace('\\', "/").trim_end_matches('/').to_lowercase();
-    let self_norm = norm(&path);
-    let nested_library_paths: std::collections::HashSet<String> = libraries
-        .iter()
-        .map(|l| norm(&l.path))
-        .filter(|p| *p != self_norm)
-        .collect();
+    let nested = nested_library_paths(&libraries, &path);
 
     let depth = max_depth.unwrap_or(2);
-    let tree = read_dir_recursive(library_path, 0, depth, &nested_library_paths);
+    let tree = read_dir_recursive(library_path, 0, depth, &nested);
     Ok(tree)
 }
 
@@ -1025,6 +1050,62 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 // UNDER the lock (closes the :953 TOCTOU). The DB cascade + reindex stay OUTSIDE
 // the path locks (hard rule: no SearchState.db waits under a path lock — a SYNC
 // write_note parking on the path lock would re-freeze the dispatch thread).
+/// Migrate ALL of a single note's DB rows from `old_path` to `new_path` under a held
+/// connection. The one proven cascade used by every path-changing operation — a `.md`
+/// rename (rename_item_db_tail), a FOLDER rename (2026-07-25 PJ-140 #2 — folders used
+/// to skip this entirely), and a MOVE (PJ-140 #16 — move used delete+reinsert, which
+/// reset the review schedule). Covers note_meta, note_links.source_path, note_aliases,
+/// note_embeddings, and the review_schedule row (gated on the stamp). Does NOT stamp a
+/// 'rename' alias — that is title-rename-specific and folder/move must not add one.
+///
+/// `note_links.target_path` is deliberately NOT migrated: it is never populated (targets
+/// resolve by name), and the old UPDATE degenerated into an 11 s full scan of ~234k rows.
+fn migrate_note_db_paths(conn: &rusqlite::Connection, old_path: &str, new_path: &str) {
+    if old_path == new_path {
+        return;
+    }
+    // 2026-07-25 inspection: `note_meta.path` and `note_embeddings.path` are PRIMARY
+    // KEYs, so if a STALE phantom row already sits at `new_path` (e.g. a prior
+    // reindex_delete_note that ran on a None/locked conn, or an out-of-app delete),
+    // the UPDATE below would abort on the PK constraint and — swallowed by `let _` —
+    // silently leave the old-path row as an orphan. Clear any pre-existing destination
+    // row first, exactly as review_schedule does. (note_links/note_aliases are not
+    // path-keyed, so they cannot collide and need no pre-delete.)
+    let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", rusqlite::params![new_path]);
+    let _ = conn.execute("DELETE FROM note_embeddings WHERE path = ?1", rusqlite::params![new_path]);
+    let _ = conn.execute(
+        "UPDATE note_meta SET path = ?2 WHERE path = ?1",
+        rusqlite::params![old_path, new_path],
+    );
+    let _ = conn.execute(
+        "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
+        rusqlite::params![old_path, new_path],
+    );
+    let _ = conn.execute(
+        "UPDATE note_aliases SET path = ?2 WHERE path = ?1",
+        rusqlite::params![old_path, new_path],
+    );
+    let _ = conn.execute(
+        "UPDATE note_embeddings SET path = ?2 WHERE path = ?1",
+        rusqlite::params![old_path, new_path],
+    );
+    // MIG-083 §D — migrate the review_schedule row (gated on the stamp) so last_reviewed
+    // / interval / snooze survive; without it the row orphans at the dead path and the
+    // note re-enters the due queue as never-reviewed. Clear any stale row already at the
+    // destination first so the UPDATE can't hit the PRIMARY KEY and silently leave the
+    // orphan behind.
+    if crate::review::is_stamped(conn) {
+        let _ = conn.execute(
+            "DELETE FROM review_schedule WHERE path = ?1",
+            rusqlite::params![new_path],
+        );
+        let _ = conn.execute(
+            "UPDATE review_schedule SET path = ?2 WHERE path = ?1",
+            rusqlite::params![old_path, new_path],
+        );
+    }
+}
+
 #[tauri::command(async)]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &old_path)?;
@@ -1033,8 +1114,12 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         return Err("Item does not exist.".to_string());
     }
 
-    // Folder rename — legacy fs::rename-only path. DB cascade for
-    // recursively-renamed notes is out of scope for MIG-003 Step 5.
+    // Folder rename — fs::rename of the directory, THEN a DB path-cascade for every
+    // descendant note (2026-07-25 PJ-140 #2: this used to skip the cascade entirely,
+    // so every note under a renamed folder kept its OLD path in note_meta / note_links
+    // / notes_fts / review_schedule for the rest of the session — search, backlinks,
+    // and the review queue all pointing at dead paths, with the gated rename
+    // suppressing the watcher so nothing healed it).
     if !old.extension().map(|e| e == "md").unwrap_or(false) {
         validate_path_in_any_library(&app, &new_path)?;
         let new_p = Path::new(&new_path);
@@ -1043,6 +1128,35 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         }
         // MIG-076 §A2 — gated (journal + AV retry; folder-level).
         crate::write_gate::gate_rename(old, new_p, "rename_folder")?;
+        // DB cascade for every descendant note, on the same proven path a .md rename
+        // uses. A folder rename never changes a note's title, so no frontmatter rewrite
+        // and no 'rename' alias — only the path migration + a content-neutral reindex.
+        {
+            use tauri::Manager;
+            let search_state = app.state::<crate::search::SearchState>();
+            let libs = load_all_libraries(&app);
+            let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
+            collect_md_paths(new_p, &mut md_paths);
+            if let Ok(guard) = search_state.db.lock() {
+                if let Some(conn) = guard.as_ref() {
+                    for new_desc in &md_paths {
+                        if let Ok(rel) = new_desc.strip_prefix(new_p) {
+                            let old_desc = old.join(rel);
+                            migrate_note_db_paths(conn, &old_desc.to_string_lossy(), &new_desc.to_string_lossy());
+                        }
+                    }
+                }
+            }
+            // Refresh each note's content/links/library at the new path (outside the
+            // lock; reindex_single_note takes it itself). upsert_schedule_row then
+            // preserves the migrated schedule.
+            for new_desc in &md_paths {
+                let nd = new_desc.to_string_lossy().to_string();
+                if let Some(name) = library_name_for_path(&libs, &nd) {
+                    let _ = crate::search::reindex_single_note(&search_state, &nd, &name);
+                }
+            }
+        }
         return Ok(new_path);
     }
 
@@ -1161,54 +1275,7 @@ fn rename_item_db_tail(
         if let Ok(guard) = db_lock {
             if let Some(conn) = guard.as_ref() {
                 if old_path != new_path {
-                    match conn.execute(
-                        "UPDATE note_meta SET path = ?2 WHERE path = ?1",
-                        rusqlite::params![&old_path, &new_path],
-                    ) {
-                        Ok(n) => log(&format!("[rename-tail] note_meta path UPDATE affected {} row(s)", n)),
-                        Err(e) => log(&format!("[rename-tail] note_meta path UPDATE ERROR: {}", e)),
-                    }
-                    let _ = conn.execute(
-                        "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
-                        rusqlite::params![&old_path, &new_path],
-                    );
-                    // NOTE (rename-perf, 2026-06-28): the former
-                    //   UPDATE note_links SET target_path = ?2 WHERE target_path = ?1
-                    // was REMOVED. `note_links.target_path` is never populated — link
-                    // targets are tracked by `target_name` (resolved at read time via
-                    // COALESCE(target_path, target_name); see cece/wiring.rs, review.rs).
-                    // So that UPDATE matched ZERO rows on every rename, yet cost ~11 s:
-                    // an all-NULL indexed column degenerates the planner into a full scan
-                    // of all ~234k note_links rows (measured, Reproduce-First). Targets are
-                    // already migrated by the `[[name]]` wikilink cascade (update_links_on_rename)
-                    // + the note_meta_sky_au trigger's target_name rewrite. Dead + slow → cut.
-                    let _ = conn.execute(
-                        "UPDATE note_aliases SET path = ?2 WHERE path = ?1",
-                        rusqlite::params![&old_path, &new_path],
-                    );
-                    let _ = conn.execute(
-                        "UPDATE note_embeddings SET path = ?2 WHERE path = ?1",
-                        rusqlite::params![&old_path, &new_path],
-                    );
-                    // MIG-083 §D — migrate the review_schedule row to the new path
-                    // (gated on the stamp). Without this the old-path row is orphaned:
-                    // it is never deleted (rename != delete) and the indexed read would
-                    // surface it as a PHANTOM due-queue entry pointing at a dead path
-                    // (re-verify finding). Migrating also carries last_reviewed / interval
-                    // / snooze forward, so the note's ✓ history survives the rename (the
-                    // reindex below then preserves it via upsert_schedule_row).
-                    if crate::review::is_stamped(conn) {
-                        // Clear any stale row already at new_path first, so the migrate
-                        // can't hit the PRIMARY KEY and silently leave the old orphan.
-                        let _ = conn.execute(
-                            "DELETE FROM review_schedule WHERE path = ?1",
-                            rusqlite::params![&new_path],
-                        );
-                        let _ = conn.execute(
-                            "UPDATE review_schedule SET path = ?2 WHERE path = ?1",
-                            rusqlite::params![&old_path, &new_path],
-                        );
-                    }
+                    migrate_note_db_paths(conn, &old_path, &new_path);
                 } else {
                     log("[rename-tail] old==new path (canonical title-only rename); no note_meta path update");
                 }
@@ -1884,27 +1951,38 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
         let search_state = app.state::<crate::search::SearchState>();
         let libs = load_all_libraries(&app);
         let dest_str = dest.to_string_lossy().to_string();
-        let dest_lib_name = libs
-            .iter()
-            .filter(|l| dest_str.starts_with(&l.path))
-            .max_by_key(|l| l.path.len())
-            .map(|l| l.name.clone());
-        if dest.is_dir() {
+        // Build the (old → new) path pairs for every note the move touched.
+        let pairs: Vec<(String, String)> = if dest.is_dir() {
             let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
             collect_md_paths(&dest, &mut md_paths);
-            for new_p in &md_paths {
-                if let Ok(rel) = new_p.strip_prefix(&dest) {
-                    let old_p = source.join(rel);
-                    let _ = crate::search::reindex_delete_note(&search_state, &old_p.to_string_lossy());
-                }
-                if let Some(name) = &dest_lib_name {
-                    let _ = crate::search::reindex_single_note(&search_state, &new_p.to_string_lossy(), name);
+            md_paths
+                .iter()
+                .filter_map(|new_p| {
+                    new_p.strip_prefix(&dest).ok().map(|rel| {
+                        (source.join(rel).to_string_lossy().to_string(), new_p.to_string_lossy().to_string())
+                    })
+                })
+                .collect()
+        } else {
+            vec![(source_path.clone(), dest_str.clone())]
+        };
+        // 2026-07-25 PJ-140 #16: MIGRATE each note's DB rows old→new (the same proven
+        // cascade a rename uses) instead of delete-old + index-new. The old delete leg
+        // dropped the review_schedule row and orphaned note_aliases / note_embeddings at
+        // the dead path, and the index leg then wrote a FRESH default schedule — silently
+        // resetting the note's earned review history and active snooze on every move.
+        if let Ok(guard) = search_state.db.lock() {
+            if let Some(conn) = guard.as_ref() {
+                for (old_p, new_p) in &pairs {
+                    migrate_note_db_paths(conn, old_p, new_p);
                 }
             }
-        } else {
-            let _ = crate::search::reindex_delete_note(&search_state, &source_path);
-            if let Some(name) = &dest_lib_name {
-                let _ = crate::search::reindex_single_note(&search_state, &dest_str, name);
+        }
+        // Refresh content/links/library at the new path (reindex takes the lock itself;
+        // upsert_schedule_row preserves the migrated schedule). Longest-root-wins resolver.
+        for (_old_p, new_p) in &pairs {
+            if let Some(name) = library_name_for_path(&libs, new_p) {
+                let _ = crate::search::reindex_single_note(&search_state, new_p, &name);
             }
         }
     }
@@ -1953,12 +2031,28 @@ pub fn list_universe_folders(app: tauri::AppHandle) -> Result<Vec<UniverseFolder
     let libs = load_all_libraries(&app);
     let mut out: Vec<UniverseFolder> = Vec::new();
     for lib in &libs {
-        collect_folders(Path::new(&lib.path), &lib.id, &lib.name, 1, &mut out);
+        // 2026-07-25 (Boss-found): the Move picker walked each library WITHOUT stopping
+        // at nested registered libraries, so the universe_notes root (whose path IS the
+        // Universe root) swallowed every other library's folders under its own id — a
+        // library created at the root appeared as a FOLDER under it, and (deduped by the
+        // frontend) vanished from its own top-level slot, so notes could not be moved
+        // INTO it. Exclude subdirectories that are themselves registered libraries, so
+        // each library is walked once under its OWN identity — the SAME rule
+        // read_library_tree uses for the sidebar, keeping the two views consistent.
+        let nested = nested_library_paths(&libs, &lib.path);
+        collect_folders(Path::new(&lib.path), &lib.id, &lib.name, 1, &nested, &mut out);
     }
     Ok(out)
 }
 
-fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &mut Vec<UniverseFolder>) {
+fn collect_folders(
+    dir: &Path,
+    lib_id: &str,
+    lib_name: &str,
+    depth: u32,
+    exclude: &std::collections::HashSet<String>,
+    out: &mut Vec<UniverseFolder>,
+) {
     if depth > 30 {
         return;
     }
@@ -1976,6 +2070,13 @@ fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &m
             if !p.is_dir() {
                 continue;
             }
+            // A subdirectory that is itself a registered library is a Library, not a
+            // folder of THIS one — skip it (and its subtree); it is walked under its
+            // OWN identity by list_universe_folders. Same rule as read_dir_recursive.
+            let norm = p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+            if exclude.contains(&norm) {
+                continue;
+            }
             let name = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
             // skip hidden / system folders (.trash, .constellation, .git, .obsidian…)
             if name.starts_with('.') {
@@ -1988,7 +2089,7 @@ fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &m
                 name,
                 depth,
             });
-            collect_folders(&p, lib_id, lib_name, depth + 1, out);
+            collect_folders(&p, lib_id, lib_name, depth + 1, exclude, out);
         }
     }
 }
@@ -2944,7 +3045,8 @@ pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_n
     }
     let mut links = Vec::new();
     let re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]").unwrap();
-    scan_links_recursive(Path::new(&library_path), &re, &mut links, &library_name);
+    let nested = nested_library_paths(&load_all_libraries(&app), &library_path);
+    scan_links_recursive(Path::new(&library_path), &re, &mut links, &library_name, &nested);
     Ok(links)
 }
 
@@ -2988,20 +3090,27 @@ pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name
     collect_md_paths(Path::new(&library_path), &mut md_paths);
     let mut seen = 0usize;
     for p in &md_paths {
-        let ps = p.to_string_lossy();
+        let ps = p.to_string_lossy().to_string();
+        // 2026-07-25 (Whole-Ecosystem Fix Law): attribute PER FILE via longest-root-wins
+        // instead of stamping the walked library's name. collect_md_paths walks into
+        // nested registered libraries, and the boot fan-out races the root library's walk
+        // against each nested library's — a fixed name meant last-writer-wins,
+        // nondeterministically mis-attributing nested notes to universe_notes. Resolving
+        // per file makes the outcome order-independent and correct. (Each note may be
+        // reached twice on cold-start — root's walk + its own library's walk — but both
+        // now stamp the SAME correct name.)
+        let lib_name = library_name_for_path(&libraries, &ps).unwrap_or_else(|| library_name.clone());
         // reindex_single_note wraps index_note AND runs the MIG-079 §C.2a incoming-aggregate
         // diff post-commit — so a cold-started library's TARGET notes get correct backlink
-        // (incoming_count) values, not just outgoing. (index_note alone leaves incoming stale,
-        // because incoming is save-path-maintained, not trigger-maintained.) Locks per note
-        // internally (short holds); structural edges are already excluded from those counts (§3).
-        if crate::search::reindex_single_note(state.inner(), &ps, &library_name).is_ok() {
+        // (incoming_count) values, not just outgoing. Locks per note internally.
+        if crate::search::reindex_single_note(state.inner(), &ps, &lib_name).is_ok() {
             seen += 1;
         }
     }
     Ok(seen)
 }
 
-fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str) {
+fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str, exclude: &std::collections::HashSet<String>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3016,7 +3125,8 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
             continue;
         }
         if path.is_dir() {
-            scan_links_recursive(&path, re, links, library_name);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_links_recursive(&path, re, links, library_name, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // Use frontmatter title for canonical files (matching collect_library_notes)
@@ -3256,7 +3366,8 @@ pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<
         return Err("Access denied: not a registered library.".to_string());
     }
     let mut tags: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
-    scan_tags_recursive(Path::new(&library_path), &mut tags);
+    let nested = nested_library_paths(&load_all_libraries(&app), &library_path);
+    scan_tags_recursive(Path::new(&library_path), &mut tags, &nested);
     Ok(tags)
 }
 
@@ -3265,7 +3376,7 @@ pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<
 // #hashtags, quote-stripped, lowercased), counted ONCE PER NOTE to match the
 // boot-snapshot chip semantics. The old version counted inline OCCURRENCES
 // only, and its YAML branch was dead code that never counted anything.
-fn scan_tags_recursive(dir: &Path, tags: &mut std::collections::HashMap<String, u32>) {
+fn scan_tags_recursive(dir: &Path, tags: &mut std::collections::HashMap<String, u32>, exclude: &std::collections::HashSet<String>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3277,7 +3388,8 @@ fn scan_tags_recursive(dir: &Path, tags: &mut std::collections::HashMap<String, 
             continue;
         }
         if path.is_dir() {
-            scan_tags_recursive(&path, tags);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_tags_recursive(&path, tags, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let (_, note_tags, _) = crate::search::parse_frontmatter(&content);
@@ -3309,12 +3421,13 @@ pub fn notes_by_tag(app: tauri::AppHandle, library_path: String, tag: String) ->
     // literal quotes ("wiki-tag") until their note is next reindexed.
     let wanted = tag.trim().trim_matches(|c| c == '"' || c == '\'').to_lowercase();
     let mut results = Vec::new();
-    collect_notes_with_tag(Path::new(&library_path), &lib.id, &lib.name, &wanted, &mut results);
+    let nested = nested_library_paths(&libraries, &library_path);
+    collect_notes_with_tag(Path::new(&library_path), &lib.id, &lib.name, &wanted, &mut results, &nested);
     results.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(results)
 }
 
-fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, wanted: &str, results: &mut Vec<StarInfo>) {
+fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, wanted: &str, results: &mut Vec<StarInfo>, exclude: &std::collections::HashSet<String>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3324,7 +3437,8 @@ fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, wanted: &str
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            collect_notes_with_tag(&path, lib_id, lib_name, wanted, results);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            collect_notes_with_tag(&path, lib_id, lib_name, wanted, results, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // parse_frontmatter lowercases + quote-strips every tag
@@ -4000,18 +4114,20 @@ pub fn scan_note_stages(app: tauri::AppHandle, library_path: String) -> Result<V
         return Err("Access denied: not a registered library.".to_string());
     }
     let mut stages: Vec<(String, String)> = Vec::new();
-    scan_stages_recursive(Path::new(&library_path), &mut stages);
+    let nested = nested_library_paths(&libraries, &library_path);
+    scan_stages_recursive(Path::new(&library_path), &mut stages, &nested);
     Ok(stages)
 }
 
-fn scan_stages_recursive(dir: &Path, stages: &mut Vec<(String, String)>) {
+fn scan_stages_recursive(dir: &Path, stages: &mut Vec<(String, String)>, exclude: &std::collections::HashSet<String>) {
     let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            scan_stages_recursive(&path, stages);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_stages_recursive(&path, stages, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 if content.starts_with("---") {
@@ -4072,8 +4188,9 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
         "
     ).unwrap();
 
+    let nested = nested_library_paths(&libraries, &library_path);
     scan_index_words_recursive(
-        Path::new(&library_path), &md_strip, &stopwords, &mut index, &mut bigrams,
+        Path::new(&library_path), &md_strip, &stopwords, &mut index, &mut bigrams, &nested,
     );
 
     // Build single-word entries: pick most common casing variant
@@ -4369,6 +4486,7 @@ fn scan_index_words_recursive(
         std::collections::HashMap<String, u32>, u32, Vec<(String, String)>,
     )>,
     bigrams: &mut std::collections::HashMap<String, (String, u32, Vec<(String, String)>)>,
+    exclude: &std::collections::HashSet<String>,
 ) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -4381,7 +4499,8 @@ fn scan_index_words_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_index_words_recursive(&path, md_strip, stopwords, index, bigrams);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_index_words_recursive(&path, md_strip, stopwords, index, bigrams, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // MIG-008 Step 6: legacy index-words tokenizer also derives
@@ -4587,7 +4706,12 @@ fn build_term_match_clause(
 /// "via {lemma}" badge. See `MIG-010-INDEX-LEXICAL-BRIDGE-ARCHITECT.md`.
 /// When false, behaviour is byte-identical to pre-MIG-010 — exact phrase
 /// match only, every row's `via_lemma` is `None`.
-#[tauri::command]
+// 2026-07-25 PJ-140 #60: `(async)` — this re-tokenizes up to thousands of note bodies
+// in-process per Index-panel expand; as a plain sync command it ran on the WebView2 IPC
+// dispatch thread and froze the UI. Body opens+drops its own READ_ONLY connection with
+// no `.await`, so it runs whole on one runtime worker thread. Same fix as the 2026-07-03
+// note-open-freeze batch applied to the search.rs link commands.
+#[tauri::command(async)]
 pub fn read_term_mentions(
     app: tauri::AppHandle,
     term: String,
@@ -4753,7 +4877,8 @@ fn run_mentions_query(
 /// visited (law of large numbers on the tail). Users tuning for
 /// exhaustiveness can raise `sample_limit`; there's no correctness
 /// benefit past a few hundred.
-#[tauri::command]
+// 2026-07-25 PJ-140 #60: `(async)` — same freeze class as read_term_mentions above.
+#[tauri::command(async)]
 pub fn read_cooccurring_terms(
     app: tauri::AppHandle,
     term: String,
@@ -6335,6 +6460,20 @@ pub fn delete_path(
         return Err("Item does not exist.".to_string());
     }
 
+    // 2026-07-25 PJ-140 #3: snapshot every descendant note WHILE the tree still exists.
+    // reindex_delete_note does an exact-path DELETE, which matches ZERO rows for a
+    // FOLDER path (descendants are <folder>/x.md), so deleting a folder used to purge
+    // NOTHING from the index — every descendant's note_meta / notes_fts / note_links /
+    // review rows survived pointing at deleted paths, and the gated move suppressed the
+    // watcher so nothing healed it. Capture the paths now; purge them after the delete.
+    let folder_descendants: Vec<String> = if target.is_dir() {
+        let mut md = Vec::new();
+        collect_md_paths(target, &mut md);
+        md.into_iter().map(|p| p.to_string_lossy().to_string()).collect()
+    } else {
+        Vec::new()
+    };
+
     // Note-open-freeze Batch-2 §B2-4 (2026-07-03): every destructive step runs
     // under the path lock (gate_delete / with_path_lock) so a debounced editor
     // save serializes against the delete — it lands before (deleted with the
@@ -6360,11 +6499,19 @@ pub fn delete_path(
         other => return Err(format!("Unknown delete mode: {}", other)),
     }
 
-    // Drop the note from the search index in every case.
+    // Drop the deleted note(s) from the search index in every case. For a folder,
+    // purge every descendant snapshotted before the delete (an exact-path delete on the
+    // folder itself matches nothing — PJ-140 #3); for a single file, purge that path.
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        let _ = crate::search::reindex_delete_note(&search_state, &path);
+        if folder_descendants.is_empty() {
+            let _ = crate::search::reindex_delete_note(&search_state, &path);
+        } else {
+            for p in &folder_descendants {
+                let _ = crate::search::reindex_delete_note(&search_state, p);
+            }
+        }
     }
     Ok(())
 }
@@ -6428,6 +6575,14 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
     fs::create_dir_all(dst).map_err(|e| format!("Failed to create dir: {}", e))?;
     for entry in fs::read_dir(src).map_err(|e| format!("Failed to read dir: {}", e))? {
         let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        // 2026-07-25 PJ-140 #43: skip symlinks/junctions — the same guard the sibling
+        // walkers use (collect_md_paths, collect_folders). Without it, `from.is_dir()`
+        // follows a reparse point, so a directory-junction cycle inside a trashed folder
+        // recurses unboundedly (stack overflow / disk-fill). A reparse target must be
+        // neither followed nor copied into trash.
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
+            continue;
+        }
         let from = entry.path();
         let to = dst.join(entry.file_name());
         if from.is_dir() {
@@ -7060,5 +7215,168 @@ mod tests_nested_library_exclusion {
         assert!(find(&tree, "Folder A").is_some());
         assert!(find(&tree, "Note.md").is_some());
         let _ = fs::remove_dir_all(&root);
+    }
+}
+
+#[cfg(test)]
+mod tests_pj140_path_migrate {
+    //! 2026-07-25 PJ-140 #2/#16 — the shared DB-path migrate that folder-rename and
+    //! move now use (instead of skipping, or delete+reinsert). Proves a note's earned
+    //! review_schedule (and its aliases/embeddings/links) FOLLOW the note to its new
+    //! path rather than being reset to a fresh default.
+    use super::migrate_note_db_paths;
+    use rusqlite::Connection;
+
+    fn db(stamped: bool) -> Connection {
+        let c = Connection::open_in_memory().unwrap();
+        c.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_embeddings (path TEXT, embedding BLOB);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT, due_days INTEGER,
+               last_reviewed TEXT, interval INTEGER, snoozed_until TEXT);
+             CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER);",
+        ).unwrap();
+        if stamped {
+            c.execute("INSERT INTO schema_versions (module, version) VALUES ('review', 1)", []).unwrap();
+        }
+        c
+    }
+
+    fn seed(c: &Connection, p: &str) {
+        c.execute("INSERT INTO note_meta VALUES (?1, 'N')", [p]).unwrap();
+        c.execute("INSERT INTO note_links VALUES (?1, 'T')", [p]).unwrap();
+        c.execute("INSERT INTO note_aliases VALUES (?1, 'alias')", [p]).unwrap();
+        c.execute("INSERT INTO note_embeddings VALUES (?1, x'00')", [p]).unwrap();
+        c.execute("INSERT INTO review_schedule VALUES (?1,'stale',7,'2026-07-01',21,'2026-08-01')", [p]).unwrap();
+    }
+
+    fn count(c: &Connection, table: &str, col: &str, p: &str) -> i64 {
+        c.query_row(&format!("SELECT COUNT(*) FROM {} WHERE {} = ?1", table, col), [p], |r| r.get(0)).unwrap()
+    }
+
+    #[test]
+    fn every_row_and_the_earned_schedule_follow_the_note() {
+        let c = db(true);
+        let old = "E:/U/A/note.md";
+        let new = "E:/U/B/note.md";
+        seed(&c, old);
+        migrate_note_db_paths(&c, old, new);
+
+        for (t, col) in [("note_meta","path"),("note_links","source_path"),("note_aliases","path"),("note_embeddings","path"),("review_schedule","path")] {
+            assert_eq!(count(&c, t, col, old), 0, "{t} left an orphan at the old path");
+            assert_eq!(count(&c, t, col, new), 1, "{t} did not migrate to the new path");
+        }
+        // The EARNED values are intact — not reset to a fresh default row.
+        let (lr, iv): (String, i64) = c.query_row(
+            "SELECT last_reviewed, interval FROM review_schedule WHERE path=?1", [new],
+            |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(lr, "2026-07-01");
+        assert_eq!(iv, 21, "the note's earned interval must survive the move");
+    }
+
+    #[test]
+    fn a_stale_row_already_at_the_destination_is_replaced_not_orphaned() {
+        let c = db(true);
+        let old = "E:/U/A/n.md";
+        let new = "E:/U/B/n.md";
+        seed(&c, old);
+        // A pre-existing (stale) schedule at the destination path.
+        c.execute("INSERT INTO review_schedule VALUES (?1,'old',3,'2020-01-01',3,NULL)", [new]).unwrap();
+        migrate_note_db_paths(&c, old, new);
+        // Exactly one row at new, carrying the MIGRATED note's values.
+        assert_eq!(count(&c, "review_schedule", "path", new), 1);
+        let iv: i64 = c.query_row("SELECT interval FROM review_schedule WHERE path=?1", [new], |r| r.get(0)).unwrap();
+        assert_eq!(iv, 21, "the moved note's schedule wins, the stale destination row is cleared");
+    }
+
+    #[test]
+    fn a_stale_phantom_row_at_the_destination_does_not_strand_the_moved_note() {
+        // 2026-07-25 inspection: note_meta/note_embeddings are PK on path. A phantom
+        // row already at the destination must not make the migrate silently fail and
+        // orphan the moved note at its old path.
+        let c = db(true);
+        let old = "E:/U/A/n.md";
+        let new = "E:/U/B/n.md";
+        seed(&c, old);
+        // A stale phantom note_meta + embedding already sitting at the destination path.
+        c.execute("INSERT INTO note_meta VALUES (?1, 'PHANTOM')", [new]).unwrap();
+        c.execute("INSERT INTO note_embeddings VALUES (?1, x'ff')", [new]).unwrap();
+        migrate_note_db_paths(&c, old, new);
+        // Exactly one note_meta row at new, and it is the MOVED note (name 'N'), not the phantom.
+        assert_eq!(count(&c, "note_meta", "path", new), 1);
+        assert_eq!(count(&c, "note_meta", "path", old), 0, "the moved note must not be orphaned at its old path");
+        let nm: String = c.query_row("SELECT name FROM note_meta WHERE path=?1", [new], |r| r.get(0)).unwrap();
+        assert_eq!(nm, "N", "the moved note wins; the phantom is cleared");
+        assert_eq!(count(&c, "note_embeddings", "path", new), 1);
+    }
+
+    #[test]
+    fn without_the_review_stamp_the_schedule_is_left_untouched() {
+        // Before the review feature is stamped, the schedule table is not authoritative;
+        // the migrate must not touch it (matches rename_item_db_tail's gate).
+        let c = db(false);
+        let old = "E:/U/A/n.md";
+        let new = "E:/U/B/n.md";
+        seed(&c, old);
+        migrate_note_db_paths(&c, old, new);
+        assert_eq!(count(&c, "note_meta", "path", new), 1, "note_meta still migrates");
+        assert_eq!(count(&c, "review_schedule", "path", old), 1, "unstamped: schedule untouched");
+    }
+}
+
+#[cfg(test)]
+mod tests_nested_library_helpers {
+    //! 2026-07-25 Whole-Ecosystem Fix Law — the shared helpers every tree/folder/aggregate
+    //! walker uses so "Library != Folder" holds identically everywhere.
+    use super::{is_nested_library, library_name_for_path, nested_library_paths, LibraryInfo};
+    use std::path::Path;
+
+    fn lib(id: &str, name: &str, path: &str) -> LibraryInfo {
+        LibraryInfo { id: id.into(), name: name.into(), path: path.into(), is_universe_notes: name == "Root", canonical_mode: "native".into() }
+    }
+
+    fn universe() -> Vec<LibraryInfo> {
+        vec![
+            lib("u", "Root", "E:/U"),                    // universe_notes: path == Universe root
+            lib("e", "Eisa Test", "E:/U/Eisa Test"),     // nested at the root
+            lib("c", "Creating new library", "E:/U/Creating new library"),
+            lib("r", "Research Notes", "E:/U/Research Notes"), // sibling-prefix trap vs "Research"
+        ]
+    }
+
+    #[test]
+    fn the_root_excludes_every_other_library_but_not_itself() {
+        let libs = universe();
+        let ex = nested_library_paths(&libs, "E:/U");
+        assert!(ex.contains("e:/u/eisa test"));
+        assert!(ex.contains("e:/u/creating new library"));
+        assert!(ex.contains("e:/u/research notes"));
+        assert!(!ex.contains("e:/u"), "a library must never exclude ITSELF");
+        assert!(is_nested_library(Path::new("E:/U/Eisa Test"), &ex));
+        assert!(!is_nested_library(Path::new("E:/U/Daily Notes"), &ex), "an ordinary folder is not excluded");
+    }
+
+    #[test]
+    fn a_nested_library_excludes_only_deeper_libraries_not_its_parent() {
+        let libs = universe();
+        let ex = nested_library_paths(&libs, "E:/U/Eisa Test");
+        // From Eisa Test's own walk, the ROOT is excluded (it is another library), so
+        // Eisa Test never climbs back up; its own path is not excluded.
+        assert!(ex.contains("e:/u"));
+        assert!(!ex.contains("e:/u/eisa test"));
+    }
+
+    #[test]
+    fn attribution_is_longest_root_wins_not_first_match() {
+        let libs = universe();
+        // A note inside the nested library resolves to THAT library, not the root.
+        assert_eq!(library_name_for_path(&libs, "E:/U/Eisa Test/Note.md").as_deref(), Some("Eisa Test"));
+        // A note at the root resolves to the root.
+        assert_eq!(library_name_for_path(&libs, "E:/U/Loose.md").as_deref(), Some("Root"));
+        // Separator boundary: "Research Notes" must not be stolen by a "Research" prefix
+        // (there is no "Research" library here; the point is the bound holds).
+        assert_eq!(library_name_for_path(&libs, "E:/U/Research Notes/x.md").as_deref(), Some("Research Notes"));
     }
 }

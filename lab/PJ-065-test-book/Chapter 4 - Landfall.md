@@ -4,6 +4,10 @@ cid_cn: 20260627T120110Z_NOTE_A008
 kind: note
 created: 2026-06-27T12:01:10Z
 parent: "[[Part II - The Voyage]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Chapter 4 — Landfall

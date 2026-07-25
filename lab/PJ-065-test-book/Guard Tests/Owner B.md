@@ -5,6 +5,10 @@ kind: note
 created: 2026-06-27T12:03:10Z
 contains:
   - "[[Contested Child]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Owner B

@@ -93,6 +93,20 @@ watcher, reveal-in-tree) depends on discovering a nested library's notes *throug
 the parent's tree. That fix is deliberately scoped to the symptom; **it does not
 touch the data model.** This migration is where the data model itself is corrected.
 
+## Boss direction captured 2026-07-25 (icon-change conversation)
+
+> "It shouldn't have any icon after MIG-105. There isn't going to be anything under
+> the root, just the cUniverse(s) and Libraries." — Eisa
+
+This is a strong steer toward **end-state B/C flavour**: after MIG-105 the Universe
+root is a **pure container** — it holds **cUniverses and Libraries only**, with **no
+notes/folders directly under it** and therefore **no library-content icon** on the
+root row. Implication for the Architect phase: the auto-registered `universe_notes`
+library (root-as-library) is retired or demoted to a non-content container; every
+note lives inside a Library, never "loose at the root." The icon work done 2026-07-25
+already anticipates this — the root row renders **no icon** now (libraries = building
+icon, cUniverses = planet), so the visual is forward-compatible.
+
 ## Open questions for the Boss (Architect phase)
 
 1. **A, B, or C** — which end-state? (Leaning A; B looks identical from the UI but

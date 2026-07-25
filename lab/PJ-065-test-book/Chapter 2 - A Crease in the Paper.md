@@ -4,6 +4,10 @@ cid_cn: 20260627T120050Z_NOTE_A006
 kind: note
 created: 2026-06-27T12:00:50Z
 supports: "[[Chapter 1 - The Old Atlas]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Chapter 2 — A Crease in the Paper

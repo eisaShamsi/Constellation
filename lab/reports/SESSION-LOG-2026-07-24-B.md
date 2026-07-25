@@ -302,3 +302,77 @@ batch never edited. All 11 are the pre-existing whole-app backlog (≈7 already 
 PJ-140, ≈4 net-new register entries) — folded into PJ-140, NOT fixed inside this
 commit (WA#4 drive-by prohibition; PJ-140's ruling is already pending).
 Register: `lab/reports/INSPECTION-2026-07-25-wf_1b68be62.md`.
+
+---
+
+# THE WHOLE-ECOSYSTEM FIX LAW + the file-tree sweep (Boss-dictated 2026-07-25)
+
+## The law
+
+Boss, after finding the Move picker still showed nested libraries as folders (my
+sidebar fix left its sibling walker inconsistent): "You should be thorough when
+fixing anything… tackle everything related to the file tree/explorer in every
+function or aspect within the Constellation ecosystem. Consider this as a law."
+
+Codified as a top principal in CLAUDE.md ("The Whole-Ecosystem Fix Law") + memory
+`feedback_whole_ecosystem_fix_law.md`: fix the WHOLE concern across the ENTIRE
+ecosystem — every surface — not just the call site; grep exhaustively (spawn an
+audit workflow for broad concerns); shared helper so surfaces can't drift.
+
+## The sweep (an exhaustive 7-agent audit found 34 broken surfaces)
+
+The concern: enumerating/rendering/attributing the file tree & library structure,
+honoring "Library ≠ Folder" (a nested registered library must appear ONCE, not as a
+folder of its parent) and longest-root-wins attribution (never first-match, which
+always returns universe_notes at index 0). The root of every symptom: universe_notes'
+path IS the Universe root, so every naive walk from it swallows nested libraries.
+
+**Rust — 10 walkers fixed with two shared helpers** (`nested_library_paths` +
+`is_nested_library`, beside `library_name_for_path`):
+- **index_library_recursive (THE data-model core)** — was fixed-name + no-exclude, so
+  after any rebuild every nested-library note carried `library_name='universe_notes'`
+  and the nested library reported **0 notes** ("Eisa Test looks empty"), corrupting
+  every count/search/scope. Now attributes PER FILE via `library_name_for_path`
+  (matches the correct `reindex_md_descendants` model) + excludes nested libs.
+- **reindex_library** — same per-file attribution.
+- **7 aggregate walkers** (scan_links, scan_tags, notes_by_tag, scan_stages,
+  scan_index_words, scan_tasks, scan_dates) — exclude-set so a nested library's
+  links/tags/tasks/dates/stages/words are counted once, under its own library, not
+  double-counted into the parent (all called per-library, verified).
+- **read_dir_recursive + collect_folders** (the two Boss-found ones) consolidated onto
+  the shared helper.
+- **library_attribution_backfill.rs** (NEW) — a one-shot, versioned, completeness-
+  checked boot pass that re-attributes `note_meta.library_name` rows a PRIOR reconcile
+  corrupted, so an existing universe self-heals ("Eisa Test" regains its notes) without
+  a manual rebuild.
+
+**Frontend — 33 first-match sites → `libraryForPath` (longest-root-wins)** in
++layout.svelte (note-open attribution, tree refresh, rename collision scope, bookmark/
+collection stamping, copyRelativePath, ~11 overlay/panel open-note handlers). Regex
+sweep, 0 remaining. store.ts's `deriveLibraryForPath` was already longest-root-wins.
+
+**Dormant (Map/Sight OFF):** map.rs `build_library_node` noted for the same fix at
+re-enable (MIG-038).
+
+**Tests:** shared-helper tests (exclude-self, nested-depth, longest-root-wins);
+Rust 1157/0 + the new helper tests; svelte-check 0; vitest 616/616.
+
+This is the SYMPTOM fix across every surface; MIG-105 remains the data-model root
+cause (the root library sharing the Universe's name + claiming its path at index 0).
+
+## Per-build inspection over the whole-ecosystem sweep — `wv6f7sl7i`
+
+Whole-app again (PJ-124). **8 confirmed — 6 MED, 2 LOW; zero APP-KILLER/HIGH.**
+
+- **The 33-site frontend sweep + the 10 Rust walkers introduced NO new finding** —
+  no finding sits at a swept line.
+- **[5]/[6] — `migrate_note_db_paths` (my new helper) FIXED IN-PASS.** I'd guarded
+  review_schedule against a pre-existing destination row but not note_meta /
+  note_embeddings (both PK on path); a stale phantom row at the destination would
+  make the UPDATE silently fail and orphan the moved note. Since I *widened* this
+  helper's use to move + folder-rename (WA#6 + the law: fix what you touch), added
+  the delete-first guard for both PK tables + a collision test. 4 migrate tests green.
+- **Deferred (pre-existing, → PJ-140):** [0]/[1]/[2] store.ts editor-lifecycle
+  cluster (own migration); [3] search.rs sky maintenance gated on the incoming stamp
+  instead of the sky stamp (the #48 family); [4] BacklinksPanel linkMention (frontend
+  PJ-140 batch); [7] provenance.rs sync-command freeze.

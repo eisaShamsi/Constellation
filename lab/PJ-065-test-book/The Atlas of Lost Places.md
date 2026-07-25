@@ -7,6 +7,10 @@ contains:
   - "[[Part I - The Cartographer]]"
   - "[[Part II - The Voyage]]"
   - "[[Part III - The Shore]]"
+sources:
+  - perception
+content_type:
+  - higher-order-constructs
 ---
 
 # The Atlas of Lost Places

@@ -4,6 +4,10 @@ cid_cn: 20260627T120020Z_NOTE_A003
 kind: note
 created: 2026-06-27T12:00:20Z
 parent: "[[The Atlas of Lost Places]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Part II — The Voyage

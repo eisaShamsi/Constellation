@@ -3,6 +3,10 @@ title: "README - PJ-065 Test Book"
 cid_cn: 20260627T120400Z_NOTE_A010
 kind: note
 created: 2026-06-27T12:04:00Z
+sources:
+  - mass-transmission/meaning
+content_type:
+  - higher-order-constructs/wisdom/theoretical
 ---
 
 # README — PJ-065 Test Book

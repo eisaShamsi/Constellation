@@ -6213,10 +6213,20 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                 continue;
             }
             // MIG-003 Step 3: target_cid_cn via note_meta.name (case-folded); NULL when
-            // the target is unresolved (orphan), same as before.
+            // the target is unresolved (orphan).
+            // 2026-07-25 PJ-140 #27/#28: `tl.target` is already fold_match_key'd
+            // (full-Unicode NFC lowercase), but SQLite's LOWER() is ASCII-only, so
+            // `LOWER(name)=LOWER(?1)` never matched a non-ASCII-capital title (cid stayed
+            // NULL forever) AND was non-sargable — a full SCAN of note_meta (which drags
+            // the wide inline body_text) per link on every save (the PJ-066 22s landmine).
+            // Use the write-time Unicode-folded `name_lower` column (index idx_note_name_lower),
+            // exactly as resolve_incoming_target_paths does: the seek matches post-backfill
+            // rows, the fallback covers any not-yet-backfilled NULL name_lower.
             let target_cid_cn: Option<String> = conn
                 .query_row(
-                    "SELECT cid_cn FROM note_meta WHERE LOWER(name) = LOWER(?1) LIMIT 1",
+                    "SELECT cid_cn FROM note_meta WHERE name_lower = ?1 \
+                     UNION SELECT cid_cn FROM note_meta WHERE name_lower IS NULL AND LOWER(name) = LOWER(?1) \
+                     LIMIT 1",
                     params![tl.target],
                     |row| row.get(0),
                 )
@@ -6392,7 +6402,24 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
 }
 
 /// Index all notes in a library directory.
-fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, depth: u32) {
+/// 2026-07-25 (Whole-Ecosystem Fix Law): the bulk reconcile walker used to take a
+/// FIXED `library_name` and no exclude set. Because universe_notes (path == Universe
+/// root) is walked first, it descended into every nested library and stamped
+/// `index_note(nestedNote, "universe_notes")`; index_note's mtime gate then blocked
+/// the nested library's own later pass from correcting it — so after any rebuild EVERY
+/// nested-library note carried the parent's name and the nested library reported 0
+/// notes ("Eisa Test looks empty"), corrupting every name-scoped count/search/scope.
+/// Now it matches the live watcher path (`reindex_md_descendants`): resolve each note's
+/// owning library PER FILE via `library_name_for_path` (order-independent, immune to
+/// the mtime skip) AND skip subdirectories that are themselves registered libraries so
+/// each note is walked once, under its own identity.
+fn index_library_recursive(
+    conn: &Connection,
+    dir: &Path,
+    libs: &[crate::libraries::LibraryInfo],
+    exclude: &std::collections::HashSet<String>,
+    depth: u32,
+) {
     if depth > 20 { return; }
     let read_dir = match std::fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
     for entry in read_dir.flatten() {
@@ -6400,9 +6427,14 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            index_library_recursive(conn, &path, library_name, depth + 1);
+            let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+            if exclude.contains(&norm) { continue; }
+            index_library_recursive(conn, &path, libs, exclude, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let _ = index_note(conn, &path.to_string_lossy(), library_name, false);
+            let ps = path.to_string_lossy().to_string();
+            let lib_name = crate::libraries::library_name_for_path(libs, &ps)
+                .unwrap_or_else(|| "universe_notes".to_string());
+            let _ = index_note(conn, &ps, &lib_name, false);
         }
     }
 }
@@ -8426,7 +8458,11 @@ pub fn constellation_link_set_confidence(
 /// auto-promotion rule shipped, or sat at `hypothesis` because every click
 /// happened pre-P5-slice-3). Never downgrades; preserves user-set `contested`.
 /// Returns counts per tier so the UI can report how many rows moved.
-#[tauri::command]
+// 2026-07-25 PJ-140 #42: `(async)` — two full-table UPDATEs over note_links under the
+// writer mutex; as a plain sync command it froze the UI on the dispatch thread. Same
+// safety profile as the sibling constellation_link_archive (async since 2026-07-03);
+// this one was missed. DB-only, no note-file writes.
+#[tauri::command(async)]
 pub fn constellation_link_backfill_confidence(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
@@ -8592,11 +8628,26 @@ pub fn constellation_link_archived(app: tauri::AppHandle) -> Result<Vec<serde_js
 /// coordinates the checkpoint with the main connection at the WAL level, so
 /// this never touches `SearchState`'s mutex. Safe because the index is
 /// ephemeral — a checkpoint can't lose source-of-truth data.
+/// 2026-07-25 PJ-140 #57: newest daemon wins. `ensure_search_db_ready` spawns a
+/// checkpoint daemon once per init, and a universe switch (invalidate_search_state)
+/// makes the next ensure re-init and spawn ANOTHER — while the previous daemon's
+/// `loop` had no exit, so each switch leaked an immortal thread re-opening and
+/// checkpointing a now-stale universe's search.db forever. Same capture-at-start /
+/// re-check / stand-down pattern as the federation attach thread.
+static WAL_DAEMON_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 fn spawn_wal_checkpoint_daemon(path: PathBuf) {
+    use std::sync::atomic::Ordering;
+    let my_gen = WAL_DAEMON_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     std::thread::spawn(move || {
         // Let boot fully settle before the first (and largest) checkpoint.
         std::thread::sleep(std::time::Duration::from_secs(20));
         loop {
+            // Superseded by a newer daemon (universe switch) → exit, so only the
+            // current universe's daemon survives.
+            if WAL_DAEMON_GENERATION.load(Ordering::Relaxed) != my_gen {
+                return;
+            }
             // MIG-041 fix: stand down while the one-time bigram purge / VACUUM
             // runs. A TRUNCATE here collides with the migration at the WAL level
             // (and used to abort the purge with SQLITE_BUSY after ~600k rows).
@@ -9067,6 +9118,10 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // is copied inside SQLite (the 123 MB outlier never crosses into Rust).
     crate::note_body_backfill::maybe_schedule(app.clone());
     crate::props_reparse_backfill::maybe_schedule(app.clone());
+    // 2026-07-25 (Whole-Ecosystem Fix Law): heal note_meta.library_name rows a prior
+    // reconcile mis-attributed to the parent (universe_notes) instead of their nested
+    // library — so a nested library that shows 0 notes today self-corrects on boot.
+    crate::library_attribution_backfill::maybe_schedule(app.clone());
 
     // MIG-079 §C.1: schedule the one-shot tag_counts backfill on a background
     // thread. No-op once stamped. Builds the whole summary from note_meta in one
@@ -9362,7 +9417,8 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
 
     let libraries = crate::libraries::load_all_libraries(app);
     for lib in &libraries {
-        index_library_recursive(&walk_conn, Path::new(&lib.path), &lib.name, 0);
+        let exclude = crate::libraries::nested_library_paths(&libraries, &lib.path);
+        index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0);
     }
 
     // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
@@ -9517,6 +9573,14 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         };
         let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+        // 2026-07-25 PJ-140 #17: also purge the note's aliases + embedding. Left behind,
+        // a FUTURE note created at the same path inherits the deleted note's alias→cid
+        // binding (the alias INSERT OR IGNORE at index_note sees the stale row), silently
+        // rebinding inbound links to the wrong note; the orphan embedding keeps surfacing
+        // in semantic search. ALL alias rows for this path go (the note is gone — including
+        // any 'rename' aliases), unlike index_note which keeps non-frontmatter rows.
+        let _ = conn.execute("DELETE FROM note_aliases WHERE path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM note_embeddings WHERE path = ?1", params![note_path]);
         if let Some(old) = old_tags_json {
             let _ = crate::tag_counts::apply_delta(conn, &old, "[]");
         }

@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
+	import LibraryIcon from '$lib/components/LibraryIcon.svelte';
 
 	let {
 		sourceName,
@@ -23,7 +24,7 @@
 		confirmLabel = '',
 	}: {
 		sourceName: string;
-		folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[];
+		folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean; iconKind?: 'root' | 'library' | 'cuniverse'; color?: string }[];
 		loading?: boolean;
 		onConfirm: (targetFolder: string) => Promise<void> | void;
 		onCancel: () => void;
@@ -89,7 +90,7 @@
 						ondblclick={() => { selected = f.path; submit(); }}
 					>
 						{#if f.isLibraryRoot}
-							<svg class="folder-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/><ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/></svg>
+							<span class="folder-ic"><LibraryIcon kind={f.iconKind ?? 'library'} size={13} color={f.color ?? 'var(--interactive-accent)'} /></span>
 						{:else}
 							<svg class="folder-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
 						{/if}

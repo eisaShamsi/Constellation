@@ -4,6 +4,10 @@ cid_cn: 20260627T120200Z_NOTE_A00A
 kind: note
 created: 2026-06-27T12:02:00Z
 parent: "[[Loop Note Beta]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Loop Note Alpha

@@ -747,9 +747,32 @@ pub fn dismiss_note(
 pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
     let path = cdir.join("review-pulse.json");
     if path.exists() {
-        if let Ok(data) = fs::read_to_string(&path) {
-            if let Ok(pulse) = serde_json::from_str(&data) {
-                return pulse;
+        match fs::read_to_string(&path) {
+            Ok(data) => match serde_json::from_str(&data) {
+                Ok(pulse) => return pulse,
+                Err(e) => {
+                    // 2026-07-25 inspection (PJ-140): a parse failure used to fall
+                    // through to default() SILENTLY — a corrupt review-pulse.json
+                    // discarded ALL of the user's review history (last_reviewed,
+                    // intervals, snoozes; earned, lives only here) with no error and
+                    // no recoverable copy. Now: back the bad file aside before
+                    // starting fresh, so nothing is destroyed and it can be recovered.
+                    // (Mirrors try_load_libraries' corrupt-registry contract.)
+                    let aside = path.with_extension(format!(
+                        "corrupt-{}.json",
+                        chrono::Utc::now().format("%Y%m%dT%H%M%SZ")
+                    ));
+                    let _ = fs::rename(&path, &aside);
+                    eprintln!(
+                        "[review] review-pulse.json unparseable ({e}); backed up to {} and starting fresh",
+                        aside.display()
+                    );
+                }
+            },
+            Err(e) => {
+                // A read error (lock, transient IO) is NOT corruption — do not
+                // touch the file; just use defaults for this boot and retry next time.
+                eprintln!("[review] review-pulse.json unreadable ({e}); using defaults this session");
             }
         }
     }
@@ -759,7 +782,11 @@ pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
 fn save_pulse_data(cdir: &Path, pulse: &ReviewPulseData) -> Result<(), String> {
     let path = cdir.join("review-pulse.json");
     let json = serde_json::to_string_pretty(pulse).map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Failed to write review-pulse.json: {}", e))
+    // Atomic write (fsync-before-rename) — a plain fs::write could leave a
+    // truncated/garbage file on crash/power-loss, which the loader above would then
+    // (correctly) treat as corrupt and set aside, losing the session's review state.
+    crate::universe::atomic_write(&path, json.as_bytes())
+        .map_err(|e| format!("Failed to write review-pulse.json: {}", e))
 }
 
 pub(crate) fn today_str() -> String {
@@ -1251,6 +1278,55 @@ pub fn recompute_all_in(
         backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests_pulse_durability {
+    //! 2026-07-25 inspection (PJ-140): a corrupt review-pulse.json used to silently
+    //! fall through to default(), discarding ALL review history with no recoverable
+    //! copy. The loader now sets a corrupt file aside before starting fresh.
+    use super::{load_pulse_data, save_pulse_data, ReviewPulseData};
+    use std::fs;
+
+    fn tmp(tag: &str) -> std::path::PathBuf {
+        // Unique per test — Rust runs tests in parallel, so a shared dir name would
+        // let one test's cleanup race another's write.
+        let d = std::env::temp_dir().join(format!("cns-pulse-{}-{}", std::process::id(), tag));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn a_corrupt_pulse_is_backed_up_not_silently_discarded() {
+        let d = tmp("corrupt");
+        fs::write(d.join("review-pulse.json"), b"{ this is not valid json ]").unwrap();
+        // Loading must NOT delete or overwrite the corrupt file in place; it must be
+        // preserved under a .corrupt-*.json name so the history can be recovered.
+        let loaded = load_pulse_data(&d);
+        assert!(loaded.last_reviewed.is_empty(), "falls back to defaults for THIS session");
+        let backed_up = fs::read_dir(&d).unwrap().filter_map(Result::ok)
+            .any(|e| e.file_name().to_string_lossy().contains(".corrupt-"));
+        assert!(backed_up, "a corrupt pulse file must be set aside, never silently lost");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn a_valid_pulse_round_trips_atomically() {
+        let d = tmp("roundtrip");
+        let mut p = ReviewPulseData::default();
+        p.last_reviewed.insert("Note.md".into(), "2026-07-25".into());
+        p.intervals.insert("Note.md".into(), 14);
+        save_pulse_data(&d, &p).unwrap();
+        // No stray temp file left behind by the atomic write.
+        let stray = fs::read_dir(&d).unwrap().filter_map(Result::ok)
+            .any(|e| e.file_name().to_string_lossy().ends_with(".tmp"));
+        assert!(!stray, "atomic_write must not leave a .tmp file on success");
+        let back = load_pulse_data(&d);
+        assert_eq!(back.last_reviewed.get("Note.md").map(String::as_str), Some("2026-07-25"));
+        assert_eq!(back.intervals.get("Note.md").copied(), Some(14));
+        let _ = fs::remove_dir_all(&d);
+    }
 }
 
 #[cfg(test)]

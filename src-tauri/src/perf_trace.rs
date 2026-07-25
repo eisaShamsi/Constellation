@@ -36,6 +36,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// [`clear_perf_trace_log`] from the frontend.
 static TRACE_LOG: Mutex<Vec<(String, u64)>> = Mutex::new(Vec::new());
 
+/// 2026-07-25 PJ-140 #61: cap the trace. It is pushed on EVERY IPC dispatch, has no
+/// production clear path, and its only reader runs once at boot — so unbounded it grows
+/// for the whole session. Bounding it keeps the earliest (boot-window) entries, which
+/// are the diagnostic's entire purpose, and stops the leak. ~4096 short entries ≈ a few
+/// hundred KB, fixed.
+const MAX_TRACE_ENTRIES: usize = 4096;
+
 /// Append a command arrival record. Called from the `invoke_handler`
 /// wrapper in `lib.rs` before the generated dispatcher runs.
 pub fn record(cmd: &str) {
@@ -44,7 +51,9 @@ pub fn record(cmd: &str) {
         .unwrap_or_default()
         .as_millis() as u64;
     if let Ok(mut log) = TRACE_LOG.lock() {
-        log.push((cmd.to_string(), ts));
+        if log.len() < MAX_TRACE_ENTRIES {
+            log.push((cmd.to_string(), ts));
+        }
     }
 }
 

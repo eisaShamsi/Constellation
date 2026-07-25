@@ -242,6 +242,7 @@ fn scan_tasks_recursive(
     library_name: &str,
     library_path: &str,
     tasks: &mut Vec<TaskItem>,
+    exclude: &std::collections::HashSet<String>,
 ) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -254,7 +255,8 @@ fn scan_tasks_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_tasks_recursive(&path, library_name, library_path, tasks);
+            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_tasks_recursive(&path, library_name, library_path, tasks, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let file_path_str = path.to_string_lossy().to_string();
@@ -285,6 +287,7 @@ fn scan_dates_recursive(
     daily_dir: &Path,      // MIG-082 §A.1 — the resolved daily-note folder (for is_daily)
     daily_format: &str,    // MIG-082 §A.1 — dailyNoteFormat (for is_daily)
     entries: &mut Vec<NoteDateEntry>,
+    exclude: &std::collections::HashSet<String>,
 ) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -297,7 +300,8 @@ fn scan_dates_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_dates_recursive(&path, library_name, daily_dir, daily_format, entries);
+            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library != Folder
+            scan_dates_recursive(&path, library_name, daily_dir, daily_format, entries, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let file_path_str = path.to_string_lossy().to_string();
             // MIG-008 Step 4: scan_library_note_dates label uses frontmatter
@@ -388,7 +392,8 @@ pub fn scan_library_tasks(
     validate_path_in_any_library(&app, &library_path)?;
     let start = Instant::now();
     let mut tasks = Vec::new();
-    scan_tasks_recursive(Path::new(&library_path), &library_name, &library_path, &mut tasks);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    scan_tasks_recursive(Path::new(&library_path), &library_name, &library_path, &mut tasks, &nested);
     let total_count = tasks.len();
     Ok(TaskScanResult {
         tasks,
@@ -558,7 +563,8 @@ pub fn scan_library_note_dates(
         Path::new(&library_path).join(&folder)
     };
     let mut entries = Vec::new();
-    scan_dates_recursive(Path::new(&library_path), &library_name, &daily_dir, &fmt, &mut entries);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    scan_dates_recursive(Path::new(&library_path), &library_name, &daily_dir, &fmt, &mut entries, &nested);
 
     let mut map: HashMap<String, Vec<NoteDateEntry>> = HashMap::new();
     for entry in entries {

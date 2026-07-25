@@ -7,6 +7,10 @@ parent: "[[The Atlas of Lost Places]]"
 contains:
   - "[[Chapter 1 - The Old Atlas]]"
   - "[[Chapter 2 - A Crease in the Paper]]"
+sources:
+  - perception
+content_type:
+  - epistemic-states
 ---
 
 # Part I — The Cartographer

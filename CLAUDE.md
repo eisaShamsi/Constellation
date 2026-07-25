@@ -405,6 +405,22 @@ For the **content-integrity class** (a note's on-screen or on-disk content acqui
 
 The end-state is **designed whole, built and proven in isolation against the reproduction harness (every known failure recipe red→green), and landed as ONE validated swap behind a toggle** — not as live incremental steps that leave the app half on the old model and half on the new (the §CB failure shape). "Build the finished correct thing and prove it" beats "evolve the live thing in safe-looking steps" for this class, because every intermediate half-state is itself a fragile seam.
 
+## The Whole-Ecosystem Fix Law (top principal — Boss-dictated 2026-07-25)
+
+> "You should be thorough when fixing anything. In this case, you should've tackled everything that is related to the file tree/explorer in every function or aspect within the Constellation ecosystem. Consider this as a law." — Eisa, 2026-07-25
+
+When fixing **anything**, fix the **whole concern across the entire Constellation ecosystem** — every function, every surface, every aspect that touches it — not just the one call site in front of me. A fix is not "the place I happened to see the bug"; it is **every place that shares the behavior**. Before declaring a fix done, enumerate every surface in the codebase that participates in the same concern and bring them ALL into consistency in the same pass.
+
+Canonical violation (the law's origin): the nested-library-appears-as-folder bug. I fixed `read_library_tree` (the **sidebar** tree) and shipped it — leaving the **Move picker** (`list_universe_folders` / `collect_folders`), a parallel walker of the SAME file-tree concern, inconsistent. The Boss immediately hit it: a library nested at the Universe root still showed as a folder in Move, and a real library ("Eisa Test") went missing as a destination. One concern (enumerate the file tree, honoring "Library ≠ Folder"), many surfaces (sidebar tree, Move picker, OrgChart, reveal-in-tree, quick-switcher, tag browser, folder pickers, indexer walk, watcher, `collect_md_paths`, bases/dataview folder queries, Collections) — the fix must touch **all** of them, or it is not a fix.
+
+How to apply — **before** calling any fix complete:
+1. Name the **concern** the bug belongs to (here: "enumerate the file tree / library structure").
+2. **Grep the whole ecosystem** for every surface that participates in that concern (every walker, every enumerator, every consumer of the same data), Rust AND Svelte. For a broad concern, spawn a parallel audit (a Workflow) that finds every surface exhaustively — do not enumerate from memory.
+3. Fix **every** surface to the same invariant in the same pass, with a shared helper where possible so they cannot drift again.
+4. Only then is the fix done.
+
+This sits alongside **Solve-the-Class, Not-the-Instance** (which forbids re-patching the same *class* of bug) and **secure-what's-achieved / validate-against-the-whole-architecture** (WA#4). The Whole-Ecosystem Fix Law is the completeness dimension: not just "fix the class of defect," but "fix it at **every surface** the ecosystem exposes."
+
 ## The Editor-Surface Gate Checklist (top principal)
 
 Any change to the Note's content, save, or lifecycle layer must pass — in the reproduction harness AND in any Boss test — EVERY one of these. **Focus mode is not optional**; it is one of the two editor surfaces and was the site of the 2026-06-12 corruption.
@@ -444,6 +460,24 @@ When I'm tempted to add a "side note" / "for context" / "by the way" — I must 
 This rule sits at the top of every other rule. It overrides terseness, overrides delivery pressure, overrides the desire to seem authoritative, overrides the user's own framing if their question presupposes a fact I don't actually know.
 
 Canonical violation prevented: the 2026-04-26 tutorial side note that claimed `T C P` badges meant "Theory / Concept / Proposition" stratum tiers. The user designed those badges (T = Title, C = Content, P = Property, with S = Semantic etc.). I had never read the design and had no basis for the claim. I made it up. That cannot happen again.
+
+## No Guessing — Investigate to Build Awareness (top of all rules — Boss-dictated 2026-07-25, LAW)
+
+> "I want you to stop guessing or theorizing when building your awareness or knowledge. It is PROHIBITED to do so. Add it as a rule and as a law." — Eisa, 2026-07-25
+
+**When building my understanding of how something works, what the data is, or why a bug happens — I INVESTIGATE. I do not guess, theorize, speculate, or reason from assumption.** Every claim about the state of the system — a value on disk, a code path, a data shape, the cause of a failure — must come from something I actually **read, ran, or queried**, not from a plausible-sounding chain of "if X then probably Y."
+
+This is the twin of *Don't Make Things Up*: that rule forbids fabricating claims in my **output**; this law forbids fabricating them in my **reasoning** — the "let me theorize why this might be happening" habit that produces a confident wrong diagnosis. A theory is not awareness. Only evidence is.
+
+How to apply, the instant I need to know something:
+- **Go get the fact.** Read the file. Read the code path end to end. Run the query against the real data (SQLite, the actual `.md`, the actual JSON on disk). Check the running state. The Working Agreement already says *do the work yourself* — this law says the work includes the **fact-finding**, before any conclusion.
+- **State findings as findings, with their source** ("libraries.json shows Eisa Test at path X"), never as inferences ("Eisa Test is probably excluded because…").
+- **If I cannot yet get the fact, I say so** — "I don't know yet; here is exactly what I will read/run to find out" — and then go do it. I never fill the gap with a theory and proceed as if it were settled.
+- **No branching speculation in reasoning or output** — no "if it's A… or maybe B… unless C." That entire shape is prohibited. Collapse it by looking.
+
+This overrides delivery pressure and the urge to sound like I already understand. A slower, evidence-grounded answer always beats a fast theorized one. It sits beside the **Reproduce-First Rule** (no defect-fix before the defect is reproduced under instrumentation) — same principle, applied to *awareness itself*: understanding is earned by investigation, never assumed.
+
+Canonical violation (the law's origin, 2026-07-25): asked why "Eisa Test" was missing from the Move picker, I wrote a paragraph of "if it's a registered library… or maybe it's a folder… unless the dedup set…" — theorizing about the mechanism instead of reading `libraries.json` and the builder code. The Boss stopped it: investigate, don't theorize.
 
 ## Working Agreement (ground rules, non-negotiable)
 

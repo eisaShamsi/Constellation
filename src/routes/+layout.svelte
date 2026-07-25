@@ -94,6 +94,7 @@
 	import { emitNoteRenamed, emitNoteMoved, emitNoteDeleted, type NoteMovedEvent } from '$lib/noteMutations';
 	import RenameDialog from '$lib/components/RenameDialog.svelte';
 	import MoveDialog from '$lib/components/MoveDialog.svelte';
+	import LibraryIcon from '$lib/components/LibraryIcon.svelte';
 	import CatalogerView from '$lib/components/CatalogerView.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
 	import SlotIcon from '$lib/components/SlotIcon.svelte';
@@ -4097,7 +4098,7 @@
 	}
 
 	async function loadTensionReport(notePath: string) {
-		const lib = $libraryStats.find(l => notePath.startsWith(l.path));
+		const lib = libraryForPath(notePath);
 		if (!lib) return;
 		// MIG-080 §E — detect ONCE per library and cache (Rule 8: NOT per note-switch —
 		// the note-scoped slice happens client-side in the `tensionReport` $derived).
@@ -4122,7 +4123,7 @@
 	// MIG-080 §E — the O(1) reliability check (whether the open note was reliably
 	// analyzed). Cheap two-lookup IPC; cancel-previous guard for rapid switches.
 	async function loadNoteTensionStatus(notePath: string) {
-		const lib = $libraryStats.find(l => notePath.startsWith(l.path));
+		const lib = libraryForPath(notePath);
 		if (!lib) { tensionNoteStatus = null; return; }
 		const seq = ++_tensionStatusSeq;
 		// §E-fix #1 — clear the PREVIOUS note's status before the await. The report
@@ -4782,7 +4783,7 @@
 			// MIG-080 §A.2 fix — surface the (possibly newly-created) daily note in the
 			// file tree: refresh the owning library's tree + ensure it's expanded so the
 			// note is visible (creation via gate_create_exclusive doesn't update the tree).
-			const stat = $libraryStats.find(v => path.startsWith(v.path));
+			const stat = libraryForPath(path);
 			if (stat) {
 				if (!expandedLibraries.has(stat.library_id)) {
 					expandedLibraries.add(stat.library_id);
@@ -5921,11 +5922,11 @@
 	// MIG-077 §F — shared menu-action helpers (reuse existing ops; no reinvention).
 	function toggleBookmarkPath(type: 'note' | 'folder', path: string, name: string) {
 		// MIG-092 — bookmark ≡ Starred-collection membership (the unified shelf).
-		const libraryName = $libraryStats.find(l => path.startsWith(l.path))?.name ?? '';
+		const libraryName = libraryForPath(path)?.name ?? '';
 		toggleStarred({ type, path, name, libraryName });
 	}
 	function copyRelativePath(path: string) {
-		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const lib = libraryForPath(path);
 		const rel = lib ? path.slice(lib.path.length).replace(/^[\\/]+/, '') : path;
 		navigator.clipboard.writeText(rel).catch(() => {});
 	}
@@ -5937,7 +5938,7 @@
 		return get(collectionSets).map(c => ({ id: c.id, name: c.id === STARRED_ID ? starredLabel : c.name }));
 	}
 	function wireCollectionPickup(actions: ContextActions, path: string, name: string) {
-		const libraryName = $libraryStats.find(l => path.startsWith(l.path))?.name ?? '';
+		const libraryName = libraryForPath(path)?.name ?? '';
 		const item = { type: 'note' as const, path, name, libraryName };
 		actions.collectionsForPicker = collectionPicks();
 		actions.addToCollection = (_t, setId) => addToCollection(setId, item);
@@ -5960,7 +5961,7 @@
 		} else {
 			actions.open = () => handleNoteClick(it.path, displayName, undefined);
 			actions.openInNewTab = () => {
-				const lib = $libraryStats.find(l => it.path.startsWith(l.path));
+				const lib = libraryForPath(it.path);
 				if (lib) openNoteTab(it.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true);
 			};
 			actions.revealInTree = () => { revealInTree(it.path); };
@@ -6039,7 +6040,7 @@
 		} else {
 			actions.open = () => handleNoteClick(entry.path, displayName);
 			actions.openInNewTab = () => {
-				const lib = $libraryStats.find(l => entry.path.startsWith(l.path));
+				const lib = libraryForPath(entry.path);
 				if (lib) openNoteTab(entry.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true);
 			};
 			actions.rename = () => { renamingPath = entry.path; };
@@ -6089,7 +6090,7 @@
 	function buildNoteActions(path: string, name: string, ctx: NoteActionCtx = {}): ContextActions {
 		const { allowMutate = true, styleCategory, revealInTree: doReveal = true, onOpen } = ctx;
 		const isMd = path.toLowerCase().endsWith('.md');
-		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const lib = libraryForPath(path);
 		const actions: ContextActions = {
 			open: () => onOpen ? onOpen(path, name, false) : handleNoteClick(path, name, undefined),
 			openInNewTab: () => { if (onOpen) onOpen(path, name, true); else if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
@@ -6127,14 +6128,14 @@
 	// audit finding). Passed as ctx.onOpen so the shared menu's Open / Open-in-new-
 	// tab match each surface's direct node-click open.
 	function openNoteFromReviewer(path: string, _name: string, newTab = false) {
-		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const lib = libraryForPath(path);
 		if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, newTab);
 		showReviewer = false;
 		cameFromReviewer = true;
 		reviewerReturnPath = path;
 	}
 	function openNoteFromOrgChart(path: string, _name: string, newTab = false) {
-		const lib = $libraryStats.find(l => path.startsWith(l.path));
+		const lib = libraryForPath(path);
 		if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, newTab);
 		showOrgChart = false;
 		orgChartReturnPending = true;
@@ -6198,7 +6199,7 @@
 		switch (action) {
 			case 'open':
 			case 'openInNewTab': {
-				const lib = $libraryStats.find(l => path.startsWith(l.path));
+				const lib = libraryForPath(path);
 				if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, action === 'openInNewTab');
 				// MIG-096 §2 — offer "Return to OrgChart" ONLY if it was actually open.
 				// A second-screen-forwarded open (main's OrgChart closed) must not
@@ -6343,7 +6344,7 @@
 			if (!byLib.has(f.library_id)) byLib.set(f.library_id, []);
 			byLib.get(f.library_id)!.push(f);
 		}
-		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] = [];
+		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean; iconKind?: 'root' | 'library' | 'cuniverse'; color?: string }[] = [];
 		// Dedupe by path: a library nested INSIDE another (e.g. a library at the
 		// universe root, where universe_notes' own path IS the root) would otherwise
 		// appear twice — once from the parent's walk, once as its own root — and a
@@ -6354,7 +6355,14 @@
 			const rk = norm(lib.path);
 			if (!seen.has(rk)) {
 				seen.add(rk);
-				entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true });
+				// Icon per kind (2026-07-25): the Universe root has no icon, a cUniverse
+				// keeps the planet, every other library shows the building mark.
+				const iconKind: 'root' | 'library' | 'cuniverse' =
+					lib.is_universe_notes ? 'root' : isChildUniverseLib(lib.path) ? 'cuniverse' : 'library';
+				// The building icon in the library's own colour (Boss 2026-07-25) — same
+				// colour the sidebar uses; cUniverse keeps the planet's indigo.
+				const color = iconKind === 'cuniverse' ? '#6366f1' : (libraryColorMap[lib.name] || 'var(--interactive-accent)');
+				entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true, iconKind, color });
 			}
 			for (const f of byLib.get(lib.library_id) ?? []) {
 				const k = norm(f.path);
@@ -6382,7 +6390,15 @@
 		const filtered = entries.filter((e) => {
 			const ne = norm(e.path);
 			if (sourceIsDir && (ne === np || ne.startsWith(np + '/'))) return false; // self / descendant
-			if (ne === sourceParent) return false; // no-op (current folder)
+			// Hide the note's CURRENT folder (moving there is a no-op) — but NOT when that
+			// folder is a LIBRARY ROOT. 2026-07-25 (Boss-found): a note living directly in a
+			// library's root (e.g. 3sellaT in "Eisa Test") made this filter remove the whole
+			// Eisa Test entry, so its subfolders (Alpha, Beta, …) showed with no library
+			// header above them and the library looked MISSING. A library root is also the
+			// group header for its subfolders and the anchor a user scans for, so it stays
+			// visible; selecting it (the current location) is harmlessly refused by move_item's
+			// dest-exists guard. Only a plain sub-folder that IS the current folder is hidden.
+			if (ne === sourceParent && !e.isLibraryRoot) return false;
 			return true;
 		});
 		moveDialog = { ...moveDialog, loading: false, folders: filtered };
@@ -6463,7 +6479,7 @@
 				// G4 Phase 3 — byte-perfect round-trip: adding a tag to a CLOSED note
 				// must not destroy its rich frontmatter (the buildFullContent hazard).
 				await writeNote(path, composeUpdatedContent(content, addTagToProps(properties, t), body), 'add_tag');
-				const lib = $libraryStats.find(l => path.startsWith(l.path));
+				const lib = libraryForPath(path);
 				if (lib) await reindexNote(path, lib.name);
 			}
 			markOrgChartDirty();
@@ -6631,7 +6647,7 @@
 		// the Overwrite re-attempt (force); exclude a self-match (the title
 		// resolving back to the note being renamed — e.g. an alias).
 		if (!force && !isDir) {
-			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			const lib = libraryForPath(oldPath);
 			// MIG-099 §6 — index-only TITLE-collision check (self-match excluded below).
 			const existing = await resolveTitleCollision(lib?.path ?? parentDir, newName);
 			if (existing && normPathLC(existing.path) !== normPathLC(oldPath)) {
@@ -6854,7 +6870,7 @@
 			// final (the gate journals it before anything can stall) — refresh
 			// the tree so no stale row is left pointing at a dead path (the
 			// "displayed as the old name / cannot switch" trap).
-			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			const lib = libraryForPath(oldPath);
 			if (lib) { try { await refreshLibraryTree(lib.library_id); } catch { /* best-effort */ } }
 		}
 		} finally {
@@ -6887,7 +6903,7 @@
 
 	async function handleNoteClick(filePath: string, _noteName: string, highlightTerm?: string, e?: MouseEvent) {
 		skyViewSelectedPath = filePath;
-		const lib = $libraries.find(v => filePath.startsWith(v.path));
+		const lib = libraryForPath(filePath);
 		const libraryColor = lib ? libraryColorMap[lib.name] : '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
 		await openNoteTab(filePath, lib?.name ?? '', libraryColor, highlightTerm, newTab);
@@ -6906,7 +6922,7 @@
 		if (scOpen) {
 			secondScreenOpen = true; // sync local state
 			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-			const lib = $libraries.find(v => filePath.startsWith(v.path));
+			const lib = libraryForPath(filePath);
 			await sendNoteToScreen({
 				path: filePath,
 				name,
@@ -6925,7 +6941,7 @@
 		try {
 			const content: string = await invoke('read_note', { filePath });
 			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-			const lib = $libraries.find(v => filePath.startsWith(v.path));
+			const lib = libraryForPath(filePath);
 			const libraryColor = lib ? libraryColorMap[lib.name] : '#7c3aed';
 			indexNoteTab = {
 				id: `index_preview_${Date.now()}`,
@@ -7293,7 +7309,10 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
 					</button>
 					<button class="tb-btn" onclick={handleNewLibrary} title={$t('sidebar.newLibrary')}>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
+						<!-- No size: the `.tb-btn svg` rule sizes it via --sidebar-icon-size,
+						     exactly like the sibling toolbar icons (shares their Style Setter
+						     control). strokeWidth 2 matches their weight. -->
+						<LibraryIcon kind="library" strokeWidth={2} color="currentColor" />
 					</button>
 
 					<!-- §Build.5 — New Library dropdown removed; the toolbar "+ Library"
@@ -7512,11 +7531,8 @@
 								<svg class="v-chev" class:expanded={expandedLibraries.has(universeNotesStats.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.5" style="flex-shrink: 0;">
-									<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-									<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-									<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-								</svg>
+								<!-- Universe root: no icon (holds cUniverses + Libraries, not content;
+								     Boss 2026-07-25, forward-compatible with MIG-105). -->
 								<span class="library-name">{universeNotesStats.name}</span>
 								{#if universeNotesStats.star_count > 0}
 									<span class="child-universe-count">{universeNotesStats.star_count}</span>
@@ -7560,11 +7576,8 @@
 								<svg class="v-chev" class:expanded={expandedChildUniverses.has(child.path)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" style="flex-shrink: 0;">
-									<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-									<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-									<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-								</svg>
+								<!-- cUniverse (federated child universe): the planet mark. -->
+								<LibraryIcon kind="cuniverse" size={12} color="#6366f1" />
 								<span class="library-name">{child.name}</span>
 								<span class="child-universe-count">{child.library_count}</span>
 							</button>
@@ -7577,7 +7590,7 @@
 												<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 													<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 												</svg>
-												<span class="library-name">{lib.name}</span>
+												<LibraryIcon kind="library" size="var(--ft-library-icon-size, 13px)" color={libraryColorMap[lib.name] || 'var(--interactive-accent)'} /><span class="library-name">{lib.name}</span>
 											</button>
 											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id] && (!treeFilterActive || libHasMatches(lib.library_id))}
 												<div class="library-tree">
@@ -7614,7 +7627,7 @@
 								<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<span class="library-name">{lib.name}</span>
+								<LibraryIcon kind="library" size="var(--ft-library-icon-size, 13px)" color={libraryColorMap[lib.name] || 'var(--interactive-accent)'} /><span class="library-name">{lib.name}</span>
 							</button>
 							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id] && (!treeFilterActive || libHasMatches(lib.library_id))}
 								<div class="library-tree">
@@ -7937,7 +7950,7 @@
 				<TemplateStudio
 					onClose={() => (showTemplateStudio = false)}
 					onOpenExample={(path) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showTemplateStudio = false;
 					}}
@@ -7952,14 +7965,14 @@
 					staleGraceDays={$appSettings.review?.staleGraceDays ?? 1}
 					selectPath={reviewerReturnPath}
 					onNoteClick={(path, name) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
 						cameFromReviewer = true;
 						reviewerReturnPath = path;
 					}}
 					onOpenWithTab={(path, name, tab) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showReviewer = false;
 						cameFromReviewer = true;
@@ -7990,7 +8003,7 @@
 					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
 					{libraryColorMap}
 					onNoteClick={(path, name) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showConstellationMap = false;
 						mapReturnPending = true;
@@ -8053,7 +8066,7 @@
 						if (sidebarTab?.path && sidebarTab?.name) {
 							inspector360BackStack = [...inspector360BackStack, { path: sidebarTab.path, name: sidebarTab.name }];
 						}
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					}}
 					onBack={() => {
@@ -8061,7 +8074,7 @@
 						const next = [...inspector360BackStack];
 						const target = next.pop()!;
 						inspector360BackStack = next;
-						const lib = $libraryStats.find(l => target.path.startsWith(l.path));
+						const lib = libraryForPath(target.path);
 						if (lib) openNoteTab(target.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					}}
 					onClose={() => { showInspector360 = false; }}
@@ -8077,7 +8090,7 @@
 					{libraryColorMap}
 					fullscreen={true}
 					onNoteClick={(path, name) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showOrgChart = false;
 						orgChartReturnPending = true;
@@ -8097,7 +8110,7 @@
 				<CatalogerView
 					visible={showCataloger}
 					onNoteClick={(path, name) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showCataloger = false;
 					}}
@@ -8152,7 +8165,7 @@
 					searchMatchIds={searchHubMatchIds}
 					focusNoteId={pendingCnsFocusPath ?? undefined}
 					onNoteClick={(path, name, highlightTerm) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						const lib = libraryForPath(path);
 						if (lib) {
 							let hl = highlightTerm || '';
 							hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?|supports|contradicts|causes|exemplifies|generalizes|derives[- ]from|part[- ]of)\s*/gi, '');
@@ -9099,7 +9112,7 @@
 							libraryPath={sidebarTab?.libraryPath ?? null}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								const lib = libraryForPath(path);
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
@@ -9110,7 +9123,7 @@
 							chain={provenanceChain}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								const lib = libraryForPath(path);
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
@@ -9126,7 +9139,7 @@
 								if (sidebarTab?.path && sidebarTab?.name) {
 									inspector360BackStack = [...inspector360BackStack, { path: sidebarTab.path, name: sidebarTab.name }];
 								}
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								const lib = libraryForPath(path);
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 							onBack={() => {
@@ -9134,7 +9147,7 @@
 								const next = [...inspector360BackStack];
 								const target = next.pop()!;
 								inspector360BackStack = next;
-								const lib = $libraryStats.find(l => target.path.startsWith(l.path));
+								const lib = libraryForPath(target.path);
 								if (lib) openNoteTab(target.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
@@ -9155,7 +9168,7 @@
 						<SourceReviewPanel
 							activeNotePath={sidebarTab?.path ?? null}
 							onNoteClick={(path, name) => {
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								const lib = libraryForPath(path);
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
@@ -9397,7 +9410,7 @@
 		<CCSView
 			onClose={() => showCCS = false}
 			onNoteClick={(path, libraryName) => {
-				const lib = $libraryStats.find(l => l.name === libraryName) ?? $libraryStats.find(l => path.startsWith(l.path));
+				const lib = $libraryStats.find(l => l.name === libraryName) ?? libraryForPath(path);
 				if (lib) {
 					openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					showCCS = false;
@@ -9877,7 +9890,11 @@
 		color: var(--sidebar-btn-color, var(--text-muted));
 		cursor: pointer;
 	}
-	.tb-btn svg {
+	/* :global(svg) — the toolbar's icon-size control must reach EVERY icon in the
+	   button, including ones rendered by a child component (LibraryIcon's building).
+	   A plain `.tb-btn svg` is scoped to this file, so it skipped the foreign svg and
+	   the New Library icon didn't track --sidebar-icon-size (2026-07-25, Boss-found). */
+	.tb-btn :global(svg) {
 		width: var(--sidebar-icon-size, 16px);
 		height: var(--sidebar-icon-size, 16px);
 	}

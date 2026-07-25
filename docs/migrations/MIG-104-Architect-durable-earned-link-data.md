@@ -1,3 +1,27 @@
+<!-- ════════════════════════════════════════════════════════════════════
+BOSS RULINGS (2026-07-25) — these resolve the Open Questions below.
+  Q1 (location):  .constellation/  — inside the Universe's config dir.
+  Q2 (re-type):   KEEP history across a link re-type (type-free key).
+  Q4 (scope):     BUILD BOTH — the durability ledger AND the LINK
+                  authoring surface (links as openable, annotatable,
+                  searchable objects). The full CLAUDE.md vision, one job.
+  Q5 (sync):      NO SYNC. Local-by-default. BUT the Universe is PORTABLE
+                  on external storage and opened on multiple devices /
+                  BOTH OSes (Windows + macOS) — never concurrently.
+                  → No merge/conflict machinery needed at all.
+                  → HARD CONSTRAINT: the store must be OS-PORTABLE.
+                    Key on paths RELATIVE to the Universe root (never
+                    absolute / drive-letter); forward slashes; NFC
+                    normalization; `\n` line endings. A ledger written on
+                    Windows must read byte-correctly on macOS and back.
+                    Prefer keying on cid_cn (already portable) over path
+                    wherever a note has one; relative-path only as fallback.
+  Q6 (coalesced): (pending — default: accept coalesced counts.)
+  Q3 (review-state damage in-pass): (pending — default per WA#6: fix.)
+The Plan phase must fold Q4's authoring surface into the slices and
+apply the Q5 portability constraint to every stored key.
+════════════════════════════════════════════════════════════════════ -->
+
 All load-bearing claims verified independently. Writing the Architect document.
 
 # MIG-104 — The Durable Home for Earned Link Data

@@ -73,6 +73,7 @@ mod links_backfill;
 mod note_body_backfill;
 /// One-off: clear phantom properties the old list-item parser stored (2026-07-23).
 mod props_reparse_backfill;
+mod library_attribution_backfill;
 mod tag_counts;
 mod incoming_links_backfill;
 mod name_fold_backfill;

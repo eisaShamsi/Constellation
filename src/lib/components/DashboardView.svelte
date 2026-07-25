@@ -2,6 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import LibraryIcon from '$lib/components/LibraryIcon.svelte';
 	import {
 		libraries, libraryStats, loadAllStats,
 		openNoteTab,
@@ -180,11 +181,7 @@
 		{#if universeNotesStats}
 			<div class="dashboard-section">
 				<h3 class="dashboard-section-title">
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.5" style="flex-shrink: 0;">
-						<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-						<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-						<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-					</svg>
+					<!-- Universe root: no icon (Boss 2026-07-25). -->
 					{universeNotesStats.name}
 				</h3>
 				<div class="library-card-stats" style="--lib-color: var(--interactive-accent)">
@@ -211,11 +208,7 @@
 						{@const cuNotes = cuStats.reduce((sum, s) => sum + (s?.star_count ?? 0), 0)}
 						<div class="cu-group">
 							<div class="cu-header">
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" style="flex-shrink: 0;">
-									<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-									<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-									<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-								</svg>
+								<LibraryIcon kind="cuniverse" size={18} color="#6366f1" />
 								<span class="cu-name">{cu.name}</span>
 							</div>
 							<div class="cu-stat-boxes">
@@ -239,7 +232,7 @@
 										{@const color = libraryColorMap[lib.name] || '#7c3aed'}
 										<div class="library-card">
 											<div class="library-card-header">
-												<span class="lib-dot" style="background:{color}"></span>
+												<LibraryIcon kind="library" size={13} color={color} />
 												<span class="lib-name">{lib.name}</span>
 											</div>
 											<div class="library-card-stats">
@@ -269,7 +262,7 @@
 					{@const color = libraryColorMap[lib.name] || '#7c3aed'}
 					<div class="library-card">
 						<div class="library-card-header">
-							<span class="lib-dot" style="background:{color}"></span>
+							<LibraryIcon kind="library" size={13} color={color} />
 							<span class="lib-name">{lib.name}</span>
 						</div>
 						<div class="library-card-stats">
