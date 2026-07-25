@@ -133,13 +133,54 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - Full specification: `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`
 
 ### The Living Link Architecture
-- Links are **first-class knowledge objects** with the `LINK` file kind (`YYYYMMDDTHHMMSSZ_LINK_XXXX.md`).
-- **Dual-layer storage**: LINK files on disk (source of truth) + `note_links` SQLite table (fast index).
+- Links are **first-class knowledge objects**.
 - **Eight properties**: Type, Direction, Annotation, Weight, Confidence, Created, Last Traversed, Traversal Count.
 - **Four confidence levels**: hypothesis → evidence → established → contested.
 - **Weight is earned through use**: logarithmic growth on traversal, 5% monthly decay without use.
 - Links must be **searchable by all properties** in the user's own language.
 - Every link operation must be **reversible** — archival, not deletion.
+
+#### Storage — READ THIS BEFORE TRUSTING A LINK PROPERTY TO SURVIVE *(corrected 2026-07-24)*
+
+> **The target is dual-layer storage: LINK files on disk (source of truth) +
+> `note_links` SQLite table (fast index). TODAY ONLY THE SECOND LAYER EXISTS.**
+
+This section previously asserted the dual-layer design and a `LINK` file kind
+(`YYYYMMDDTHHMMSSZ_LINK_XXXX.md`) as though both were built. **They are not.** Verified
+2026-07-24 by exhaustive search of Rust and Svelte: **no code writes a LINK file, and no
+code persists a link's weight, confidence, traversal count, or archival state to any file
+on disk.** `constellation_link_traverse` (`search.rs`) and the archive command
+(`search.rs`, `status='archived'`) write to `search.db` and nowhere else;
+`set_review_priority` (`review.rs`) likewise.
+
+What that means, concretely:
+
+- **Recomputable from the `.md` files** (safe): a link's existence, its type, its target,
+  and its annotation — all re-parsed from the `[[type::target|annotation]]` wikilink body.
+- **Living ONLY in `search.db`** (lost if that file is lost): `traversal_count`, `weight`,
+  `last_traversed`, `confidence` promotions, `status='archived'`, `note_meta.review_priority`,
+  and the `review_schedule` rows (`last_reviewed`, `interval`, `snoozed_until`).
+- Because the wikilink stays in the note, **rebuilding the index resurrects every archived
+  link as active** — silently reversing the user's decision and contradicting
+  "every link operation must be reversible."
+
+Consequences for anyone working here:
+
+1. **`search.db` is NOT a disposable derived index.** It is currently the system of record
+   for the earned half of the Living Link Architecture. Never delete it, never "just
+   rebuild it", and treat any code that does as an app-killer until the disk layer exists.
+   (The 2026-07-24 inspection found exactly that: the schema-version gate deleted it, and
+   an *absent* version marker was enough to trigger the deletion. Fixed — the gate now
+   renames aside and never deletes — but the underlying exposure remains until the disk
+   layer lands.)
+2. **Write-Time Derivation's "persist the derived view, reads are cheap lookups" assumes the
+   source of truth is elsewhere.** For earned link data there is no elsewhere yet.
+3. **Do not cite this section as evidence that link data is durable on disk.** It is not.
+
+Closing this gap — implementing the disk layer so the index becomes genuinely
+rebuildable — is Boss-directed (2026-07-24) and `/migration`-sized: it changes the
+source-of-truth for a core subsystem and touches the write path, the indexer, rename/move,
+and sync. Amend this section again when it ships, and only then.
 
 ### Constraint as Design
 - Don't add features just because you can. Every feature must justify its existence.

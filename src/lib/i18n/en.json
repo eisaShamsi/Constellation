@@ -1542,7 +1542,10 @@
       "axis": {
         "horizontal": "Sources",
         "vertical": "Content type"
-      }
+      },
+      "acceptAllNoneTitle": "Nothing to approve — every queued card is one the catalogers split, which only you can decide.",
+      "confirmRejectAllCounted": "Clear all {N} suggestions in the queue without writing to any note? You can re-run the scan later to regenerate them.",
+      "confirmRejectAllSplitNote": "This includes the {M} cards where the catalogers split — Approve all leaves those for you, Reject all does not."
     }
   },
   "taxonomyTreePicker": {

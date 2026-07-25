@@ -11,15 +11,31 @@
 //! between embeddings. Cost: one atomic load per note (~2 ns).
 //!
 //! Per Performance Rule 1 + 3: the loop runs on a background thread,
-//! never on the main UI thread. Each note takes ~30ms (Tier 1 e5-small
-//! embedding + cosine to ~274 candidates + DB write). At that rate, a
-//! 7,000-note universe takes ~3.5 minutes.
+//! never on the main UI thread.
+//!
+//! COST — corrected 2026-07-24. This header used to claim "~30ms per note …
+//! a 7,000-note universe takes ~3.5 minutes". Measured on a real 7,339-note
+//! Universe the scan took **over an hour**, and the estimate was never revisited.
+//! The per-note database work alone measured ~155 ms warm (~19 min across the
+//! Universe) and far worse cold. Two of the three causes are fixed here and in
+//! `cece/wiring.rs` (the writer-lock grabs and the missing yield); the structural
+//! one — reloading the whole classified-neighbour set once per note rather than
+//! once per scan — is PJ-144 and needs its own migration. **Do not restore a
+//! throughput claim to this comment without measuring it on a large Universe.**
 
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::thread;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
+
+/// Hand the machine back between notes. Matches the sibling background jobs
+/// (`links_backfill`, `note_body_backfill`, `sky_backfill`, `review_backfill`,
+/// `props_reparse_backfill` at 50 ms; `nsc/backfill` at 30 ms). Without this the
+/// scan is an hour of uninterrupted disk + lock pressure with no gap for anything
+/// else on the system.
+const INTER_NOTE_SLEEP_MS: u64 = 30;
 
 #[derive(Default)]
 pub struct ScanState {
@@ -209,6 +225,16 @@ fn run_scan(app: AppHandle) -> Result<(), String> {
                 },
             );
         }
+
+        // 2026-07-24 scan-perf investigation. This was the ONLY background job in
+        // the codebase with no yield between items — every sibling has one:
+        // links_backfill.rs:51, note_body_backfill.rs:44, sky_backfill.rs:48,
+        // review_backfill.rs:24, props_reparse_backfill.rs:42 (50 ms), and
+        // nsc/backfill.rs:32 (30 ms). Over a 7,000-note Universe that is an hour of
+        // uninterrupted disk and lock pressure with no gap for anything else. The
+        // pause makes the scan marginally longer in wall-clock and gives the machine
+        // back while it runs — the same trade every sibling already makes.
+        thread::sleep(Duration::from_millis(INTER_NOTE_SLEEP_MS));
     }
 
     let _ = app.emit(

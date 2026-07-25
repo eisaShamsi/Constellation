@@ -3165,7 +3165,10 @@
       "edit": "Modifier",
       "reject": "Rejeter",
       "save": "Enregistrer",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "acceptAllNoneTitle": "Rien à approuver : pour chaque carte en file, les catalogueurs divergent et vous seul pouvez trancher.",
+      "confirmRejectAllCounted": "Effacer les {N} suggestions de la file sans écrire dans aucune note ? Vous pourrez relancer l’analyse plus tard.",
+      "confirmRejectAllSplitNote": "Cela inclut les {M} cartes en désaccord — « Tout approuver » les laisse, « Tout rejeter » non."
     },
     "evidence": {
       "perception": "Observation sensorielle directe",

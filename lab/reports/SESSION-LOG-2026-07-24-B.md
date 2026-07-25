@@ -154,3 +154,151 @@ the Boss to close it, then built cleanly.
 
 - Boss test of the destination flow (tutorial after the binary lands).
 - §1 use-side remainder (mixing heads-up), then D4 — per ledger v1.46 queue.
+
+---
+
+# Second batch (afternoon) — Boss-directed: 3 fixes · CLAUDE.md · scan freeze
+
+## 1. The search.db destruction gate — FIXED (`search.rs`)
+
+Three compounding defects, fixed together. **The gate never deletes now** — it
+RENAMES the old database aside (`search.db.pre-v7-<UTC>.db`), so even a real
+rebuild leaves the earned data recoverable.
+
+The subtle one and the most likely to fire: **absent is not stale.** A missing or
+unreadable `.version` marker used to mean "rebuild", so one absent 4-byte file
+authorised destroying a 1.93 GB database (a restore that skipped it, a sync
+filter, one failed write). Unknown now means adopt-and-stamp, never destroy.
+Also: the version is stamped ONLY if the set-aside actually succeeded (a failed
+rebuild recorded as done cancels the migration permanently), and the stamp's own
+failure is surfaced instead of swallowed (otherwise: full rebuild every launch,
+forever). Decision extracted to a pure `schema_gate()`; **5 tests** incl.
+whitespace-normalised markers and corrupt-vs-absent.
+
+## 2. CLAUDE.md — CORRECTED (the documentation was the bigger hazard)
+
+CLAUDE.md asserted *"Dual-layer storage: LINK files on disk (source of truth) +
+note_links SQLite table"* and a `LINK` file kind. **Neither is implemented** —
+verified by exhaustive search: no code writes a LINK file; no code persists
+weight/confidence/traversal/archival to any file. The section now leads with that,
+enumerates exactly which fields are recomputable from the `.md` files and which
+live only in `search.db`, and states that **search.db is currently the system of
+record** for the earned half of the Living Link Architecture — not a disposable
+index. A doc that promises a guarantee the code does not provide is how the next
+session confidently ships the next deletion.
+
+## 3. The hour-long Cataloger scan — diagnosed + partly fixed
+
+Multi-agent investigation with adversarial refutation (9 agents). Measured on the
+real 7,339-note Universe: ~19 min of the hour is database time alone, from TWO
+full-table scans per note, 7,339 times, whose answers never change during the run.
+
+**Fixed now (zero behaviour change):**
+- **The freeze** — both neighbour lookups took the WRITER lock for pure reads
+  (`cece/wiring.rs`), so for an hour every save/watcher/reindex queued behind the
+  scan. Now on the read-only connection (`with_read_conn`, PJ-066 §C3).
+- **The missing yield** — this was the ONLY background job in the codebase with no
+  inter-item pause; every sibling has 30–50 ms. Added at 30 ms (`scan_job.rs`).
+- **The lying header comment** — claimed "~30ms per note … ~3.5 minutes for 7,000
+  notes"; reality is >1 hour. Replaced with the measurement and a warning not to
+  restore a throughput claim without measuring on a large Universe.
+
+**Deliberately NOT applied — the report's own top fix.** It proposed making the
+dead link query fast by skipping rows. Root cause: `note_links.target_path` is
+empty on all 234,192 rows, so the Graph Cataloger abstains on every note. Verified
+why: `resolve_incoming_target_paths` is misleadingly named — it resolves a NAME to
+paths for aggregate maintenance and never writes `target_path`; the only writers
+are a one-time MIG-003 migration. **Making a broken query fast would cement the
+bug.** Filed as PJ-143 (correctness), and the structural per-scan-snapshot fix as
+PJ-144 (`/migration`).
+
+## 4. APP-KILLER — archiving a link was reversed by the next save (FIXED)
+
+Found independently by BOTH the safety inspection (finding 30) and the MIG-104
+architect pass — which is why it got promoted out of PJ-140 and fixed here.
+
+Archival is deliberately "archival, not deletion", so the `[[wikilink]]` stays in
+the note. But `index_note`'s unchanged-edge fast path requires `status=='active'`,
+so an archived edge NEVER matched, was deleted, and re-inserted with `status`
+hardcoded `'active'` — and the `preserved` map didn't carry status at all. One
+ordinary edit to the note un-retired the link, silently. Worse: it returned as
+ACTIVE with weight 0.0. No index loss required — this fired on any save.
+**Fixed:** status is preserved and RESTORED; `status != "active"` qualifies a row
+for preservation on its own (not relying on archive's weight=0.0 side effect).
+**5 tests** pin the rule, incl. that ordinary active links are still skipped.
+
+## 5. MIG-104 Architect document — WRITTEN, awaiting Boss ruling
+
+`docs/migrations/MIG-104-Architect-durable-earned-link-data.md` (13 agents; 4
+independent designs + a 4-judge panel). Recommends an **Earned-Life Ledger:
+snapshot + tail** — append-only, so the write mechanism is structurally incapable
+of destroying what it protects. Measured scale: of 234,192 links only **35** carry
+earned state — small enough to build now and prove the mechanism long before it
+carries years of reading. **5 open questions for the Boss.**
+
+**Rust 1149/0 · svelte-check 0 · vitest 616/616.** Binary rebuilt 18:39.
+
+---
+
+# Third batch — sidebar library duplication (Boss-found) + MIG-105 logged
+
+## The bug (Boss-found, live)
+
+Creating a library inside the Universe root duplicated it in the sidebar: once as
+a top-level library, once as a folder inside the root library "Eisa Cognitive
+Knowledge". Root cause: `ensure_universe_notes_folder` (universe.rs:403) registers
+the root library with `path` = the Universe ROOT, so `read_library_tree`'s recursive
+walk descended into every OTHER registered library nested under the root and rendered
+it as a folder. Violates "Library ≠ Folder".
+
+## Blast-radius verified BEFORE the fix (Explore agent)
+
+VERDICT: SAFE. The decisive check — does any FUNCTIONAL path find a nested
+library's notes by walking the PARENT tree? NO. Indexing is per-library via
+`index_library_recursive` (search.rs:9363-9366), NOT `read_library_tree`; the
+watcher attributes via `library_name_for_path` (longest-root-wins); reveal uses
+`libraryForPath` (longest-prefix). The only consumers of `read_library_tree` are the
+sidebar tree (the duplicate) and OrgChart (a double-count) — both FIXED, not broken,
+by the exclusion. `read_dir_recursive` has exactly one caller, so its signature is
+safe to change.
+
+## The fix — display-layer only (libraries.rs)
+
+`read_library_tree` builds a normalized set of all registered library paths EXCEPT
+the one being walked (from the `load_all_libraries` it already loads — zero extra
+cost), and threads it into `read_dir_recursive`, which `continue`s on any child dir
+whose normalized path is in the set. Self-scoping: covers "library under the Universe
+root" and "library under another library" at any depth, matching the longest-root-wins
+behaviour the indexer and Move dialog already use. OrgChart's double-count is fixed
+automatically (it calls the same command). Touches NO data model — that is MIG-105.
+3 tests (nested at root, nested at depth, empty-set regression guard) drive the real
+walker over a temp tree.
+
+## MIG-105 LOGGED (Boss-directed: "log it in its own /migration")
+
+`docs/migrations/MIG-105-root-library-vs-flat-universe.md` — the Boss's question
+"why not flat, like Obsidian?" reserved as its own migration. Concept + symptom +
+the six-patch evidence trail that this one design decision (root library named after
+the Universe, claiming its path, at index 0) is a ROOT CAUSE. Three options
+(exclusive-scope root / remove entirely / forbid nesting). Architect workflow to run
+after the current job closes. Filed as PJ-145.
+
+Also noted in MIG-105 as further evidence: `index_library_recursive` does NOT stop at
+nested library roots, so a nested note is indexed twice (root name, then nested name;
+nested wins by iteration order) — a pre-existing double-INDEX, out of scope for the
+display fix, a MIG-105 concern.
+
+**Rust 1152/0 (+3) · svelte-check 0.** Binary rebuilding; per-build safety
+inspection running over the changed index/lifecycle files.
+
+## Per-build safety inspection — PASS (no regression introduced)
+
+`wf_1b68be62-d7e` over the four changed index/lifecycle files. PJ-124 again → ran
+whole-app (31 agents, 14 scopes). **11 confirmed — 7 MED, 4 LOW; zero APP-KILLER,
+zero HIGH.** Checked every finding against the batch's exact `git diff` line ranges:
+**none is at a line this batch changed.** The five in touched files are all in other
+functions (move_item, save_libraries, incoming-aggregate diff, reindex commands) the
+batch never edited. All 11 are the pre-existing whole-app backlog (≈7 already in
+PJ-140, ≈4 net-new register entries) — folded into PJ-140, NOT fixed inside this
+commit (WA#4 drive-by prohibition; PJ-140's ruling is already pending).
+Register: `lab/reports/INSPECTION-2026-07-25-wf_1b68be62.md`.

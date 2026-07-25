@@ -3165,7 +3165,10 @@
       "edit": "Editar",
       "reject": "Rejeitar",
       "save": "Salvar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "acceptAllNoneTitle": "Nada a aprovar — em todos os cartões da fila os catalogadores divergem, e só você pode decidir.",
+      "confirmRejectAllCounted": "Limpar todas as {N} sugestões da fila sem escrever em nenhuma nota? Você pode repetir a varredura depois.",
+      "confirmRejectAllSplitNote": "Isso inclui os {M} cartões em que os catalogadores divergem — «Aprovar tudo» os mantém, «Rejeitar tudo» não."
     },
     "evidence": {
       "perception": "Observação sensorial direta",

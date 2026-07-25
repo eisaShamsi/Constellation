@@ -1189,22 +1189,35 @@
            note's panel wipe every pending suggestion across the Universe. The per-note
            rail uses the per-card Accept / Reject only. -->
       {#if !activeNotePath}
+        <!-- 2026-07-24 (Boss-found, live). These two read as a symmetrical pair and
+             are NOT: Approve all respects the split filter, Reject all ignores it
+             (DELETE with no WHERE). On a queue of 7,179 split cards that meant
+             Approve applied to 0 and Reject took all 7,179 — and the natural
+             recovery from "Approve did nothing" is to reach for the button beside
+             it. The scope now rides ON each button, so the asymmetry is visible at
+             the moment of decision rather than discovered afterwards. Same rule as
+             the note-destination prompt: propose, and SHOW what you proposed. -->
+        {@const eligible = queue.length - splitAwareSkipCount}
         <span class="srp-bulk-actions">
           <button
             class="srp-bulk-btn srp-bulk-accept"
             onclick={() => bulkConfirm = 'accept'}
-            disabled={bulkRunning}
-            title={$t('sources.review.acceptAllTitle') || 'Apply every queued suggestion to its note'}
+            disabled={bulkRunning || eligible === 0}
+            title={eligible === 0
+              ? ($t('sources.review.acceptAllNoneTitle') || 'Nothing to approve — every queued card is one the catalogers split, which only you can decide.')
+              : ($t('sources.review.acceptAllTitle') || 'Apply every queued suggestion to its note')}
           >
             {$t('sources.review.acceptAll') || 'Approve all'}
+            <span class="srp-bulk-scope">{eligible.toLocaleString()}</span>
           </button>
           <button
             class="srp-bulk-btn srp-bulk-reject"
             onclick={() => bulkConfirm = 'reject'}
-            disabled={bulkRunning}
+            disabled={bulkRunning || queue.length === 0}
             title={$t('sources.review.rejectAllTitle') || 'Clear every queued suggestion without writing'}
           >
             {$t('sources.review.rejectAll') || 'Reject all'}
+            <span class="srp-bulk-scope">{queue.length.toLocaleString()}</span>
           </button>
         </span>
       {/if}
@@ -1245,7 +1258,15 @@
               </div>
             {/if}
           {:else}
-            {$t('sources.review.confirmRejectAll') || 'Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.'}
+            <!-- State the SCOPE the same way the accept branch does — reject takes
+                 the whole queue, split cards included, which is the one thing the
+                 old copy ("every suggestion") left the reader to infer. -->
+            {($t('sources.review.confirmRejectAllCounted') || 'Clear all {N} suggestions in the queue without writing to any note? You can re-run the scan later to regenerate them.').replace('{N}', queue.length.toLocaleString())}
+            {#if splitAwareSkipCount > 0}
+              <div class="srp-bulk-confirm-aside">
+                {($t('sources.review.confirmRejectAllSplitNote') || 'This includes the {M} cards where the catalogers split — Approve all leaves those for you, Reject all does not.').replace('{M}', splitAwareSkipCount.toLocaleString())}
+              </div>
+            {/if}
           {/if}
         </div>
         <div class="srp-bulk-confirm-actions">
@@ -2068,6 +2089,17 @@
   }
   .srp-bulk-btn:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.05)); }
   .srp-bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* The count each button will actually act on. Tabular figures so the two line
+     up and the difference between them reads at a glance. `inline-block` +
+     margin-inline-start keeps it correct in RTL without a flip. */
+  .srp-bulk-scope {
+    display: inline-block;
+    margin-inline-start: 5px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-variant-numeric: tabular-nums;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+  }
   .srp-bulk-accept { color: #c9a227; border-color: rgba(201, 162, 39, 0.4); }
   .srp-bulk-reject { color: #a83232; border-color: rgba(168, 50, 50, 0.4); }
   .srp-bulk-progress {

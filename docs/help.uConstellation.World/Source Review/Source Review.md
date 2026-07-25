@@ -247,4 +247,6 @@ The right-sidebar **Source Review** tab and the full-page **Cataloger** are now 
 - **Right sidebar → Source Review** shows the pending suggestion for the **note you have open** — its own card and its per-card *Accept / Edit / Reject*.
 - **The Cataloger** (stacked-cards icon, left dock) shows the **whole-universe** review queue — every note awaiting a decision — together with the bulk **Approve all / Reject all** tools and the filter chips. Those bulk tools live *only* here, never beside a single note.
 
+Each bulk button shows the number of cards it will act on, because the two are **not** symmetrical. **Approve all** applies only to cards where the catalogers *agreed* — it deliberately leaves the split cards for you to decide, so its count can be much smaller than the queue (and it is disabled, greyed out, when that count is zero). **Reject all** clears the *entire* queue, split cards included. The counts on the buttons — and the confirmation before either runs — spell out exactly how many notes each will touch, so "Approve did nothing, let me try Reject" can never quietly wipe a queue you meant to keep.
+
 You can resize the Cataloger's text in **Style Setter → Cataloger → Text size**.

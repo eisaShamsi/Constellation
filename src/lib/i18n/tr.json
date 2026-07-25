@@ -3165,7 +3165,10 @@
       "edit": "Düzenle",
       "reject": "Reddet",
       "save": "Kaydet",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "acceptAllNoneTitle": "Onaylanacak bir şey yok — kuyruktaki her kartta kataloglayıcılar ayrıştı; kararı yalnızca siz verebilirsiniz.",
+      "confirmRejectAllCounted": "Kuyruktaki {N} önerinin tamamı, hiçbir nota yazılmadan temizlensin mi? Taramayı daha sonra yeniden çalıştırabilirsiniz.",
+      "confirmRejectAllSplitNote": "Buna kataloglayıcıların ayrıştığı {M} kart da dâhildir — «Tümünü onayla» onları bırakır, «Tümünü reddet» bırakmaz."
     },
     "evidence": {
       "perception": "Doğrudan duyusal gözlem",

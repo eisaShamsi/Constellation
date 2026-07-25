@@ -3165,7 +3165,10 @@
       "edit": "Editar",
       "reject": "Rechazar",
       "save": "Guardar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "acceptAllNoneTitle": "Nada que aprobar: en todas las tarjetas de la cola los catalogadores discrepan y solo tú puedes decidir.",
+      "confirmRejectAllCounted": "¿Descartar las {N} sugerencias de la cola sin escribir en ninguna nota? Puedes volver a ejecutar el escaneo más tarde.",
+      "confirmRejectAllSplitNote": "Esto incluye las {M} tarjetas con discrepancia — «Aprobar todo» las deja para ti, «Rechazar todo» no."
     },
     "evidence": {
       "perception": "Observación sensorial directa",

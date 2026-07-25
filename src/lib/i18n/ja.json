@@ -3165,7 +3165,10 @@
       "edit": "編集",
       "reject": "拒否",
       "save": "保存",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "acceptAllNoneTitle": "承認できるものはありません — キューのカードはすべて分類器の判断が割れており、決められるのはあなただけです。",
+      "confirmRejectAllCounted": "キューの{N}件の提案を、どのノートにも書き込まずに消去しますか？ 後でスキャンを再実行できます。",
+      "confirmRejectAllSplitNote": "判断が割れた{M}件も含まれます —「すべて承認」はそれらを残しますが、「すべて却下」は残しません。"
     },
     "evidence": {
       "perception": "直接的な感覚的観察",

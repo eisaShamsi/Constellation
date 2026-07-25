@@ -3165,7 +3165,10 @@
       "edit": "编辑",
       "reject": "拒绝",
       "save": "保存",
-      "cancel": "取消"
+      "cancel": "取消",
+      "acceptAllNoneTitle": "没有可批准的项目——队列中的每张卡片编目器都存在分歧，只能由你决定。",
+      "confirmRejectAllCounted": "清除队列中全部 {N} 条建议且不写入任何笔记？你可以稍后重新运行扫描。",
+      "confirmRejectAllSplitNote": "这包括编目器存在分歧的 {M} 张卡片——“全部批准”会保留它们，“全部拒绝”不会。"
     },
     "evidence": {
       "perception": "直接的感官观察",

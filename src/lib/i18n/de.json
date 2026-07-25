@@ -3165,7 +3165,10 @@
       "edit": "Bearbeiten",
       "reject": "Ablehnen",
       "save": "Speichern",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "acceptAllNoneTitle": "Nichts zu übernehmen — bei jeder Karte in der Warteschlange sind sich die Katalogisierer uneinig; das entscheiden nur Sie.",
+      "confirmRejectAllCounted": "Alle {N} Vorschläge in der Warteschlange verwerfen, ohne in eine Notiz zu schreiben? Sie können den Scan später erneut ausführen.",
+      "confirmRejectAllSplitNote": "Das schließt die {M} Karten mit uneinigen Katalogisierern ein — „Alle übernehmen“ lässt diese stehen, „Alle verwerfen“ nicht."
     },
     "evidence": {
       "perception": "Direkte sinnliche Wahrnehmung",

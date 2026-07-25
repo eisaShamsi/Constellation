@@ -442,8 +442,30 @@ pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<
         return Err("Library path does not exist.".to_string());
     }
 
+    // 2026-07-24 (Boss-found): a Library is a first-class citizen, not a folder.
+    // The universe_notes library's path IS the Universe root, so its tree walk used
+    // to descend into every OTHER registered library nested under the root and render
+    // it as an ordinary folder — a library created at the root appeared TWICE in the
+    // sidebar (once as itself, once inside the root). Every functional path
+    // (indexing via index_library_recursive, the watcher, reveal, search) already
+    // attributes a nested note to its OWN library via longest-root-wins, so a nested
+    // library's notes are reached through that library, never through this parent
+    // tree — excluding them here is purely a display correction (verified,
+    // blast-radius agent 2026-07-24). Self-scoping: the set is every registered
+    // library path EXCEPT the one being walked, so the same code covers "library
+    // under the Universe root" and "library under another library" at any depth.
+    // The deeper data-model fix (the root library sharing the Universe's name and
+    // claiming its path) is MIG-105.
+    let norm = |p: &str| p.replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let self_norm = norm(&path);
+    let nested_library_paths: std::collections::HashSet<String> = libraries
+        .iter()
+        .map(|l| norm(&l.path))
+        .filter(|p| *p != self_norm)
+        .collect();
+
     let depth = max_depth.unwrap_or(2);
-    let tree = read_dir_recursive(library_path, 0, depth);
+    let tree = read_dir_recursive(library_path, 0, depth, &nested_library_paths);
     Ok(tree)
 }
 
@@ -2734,7 +2756,17 @@ fn extract_frontmatter_status(path: &Path) -> Option<String> {
     None
 }
 
-fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<FileEntry> {
+/// `exclude` holds the normalized paths (`\`→`/`, no trailing slash, lowercased) of
+/// every registered library OTHER than the one whose tree is being read. Any child
+/// directory matching one is a first-class Library and is skipped, so it never
+/// renders as a folder inside the parent (see `read_library_tree`). Checked at every
+/// recursion level because a nested library can sit at any depth.
+fn read_dir_recursive(
+    dir: &Path,
+    current_depth: u32,
+    max_depth: u32,
+    exclude: &std::collections::HashSet<String>,
+) -> Vec<FileEntry> {
     let mut entries = Vec::new();
 
     let read_dir = match fs::read_dir(dir) {
@@ -2756,6 +2788,14 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
         }
 
         let is_dir = path.is_dir();
+        // A subdirectory that is itself a registered library is a Library, not a
+        // folder of THIS one — skip it (and its whole subtree).
+        if is_dir {
+            let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+            if exclude.contains(&norm) {
+                continue;
+            }
+        }
         let extension = if !is_dir {
             path.extension().map(|e| e.to_string_lossy().to_string())
         } else {
@@ -2778,7 +2818,7 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
         let size = if is_dir { None } else { meta.as_ref().map(|m| m.len()) };
 
         let children = if is_dir && current_depth < max_depth {
-            Some(read_dir_recursive(&path, current_depth + 1, max_depth))
+            Some(read_dir_recursive(&path, current_depth + 1, max_depth, exclude))
         } else if is_dir {
             Some(vec![]) // Indicate it's a folder but don't load children
         } else {
@@ -6933,5 +6973,92 @@ body", "New");
             "in-corpus cross-language term must produce ≥1 bridge term");
         // Bridge terms are pre-lowercased (M13 invariant).
         assert!(bridge.iter().all(|t| t == &t.to_lowercase()));
+    }
+}
+
+#[cfg(test)]
+mod tests_nested_library_exclusion {
+    //! 2026-07-24 (Boss-found): a Library is a first-class citizen, not a folder of
+    //! another Library. The universe_notes library's path IS the Universe root, so a
+    //! library created inside the root used to render TWICE in the sidebar — once as
+    //! itself, once as a folder inside the root. `read_dir_recursive` now skips any
+    //! subdirectory that is itself a registered library. These tests drive the real
+    //! walker over a temp tree.
+    use super::read_dir_recursive;
+    use std::collections::HashSet;
+    use std::fs;
+
+    fn norm(p: &std::path::Path) -> String {
+        p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase()
+    }
+
+    fn find<'a>(entries: &'a [super::FileEntry], name: &str) -> Option<&'a super::FileEntry> {
+        entries.iter().find(|e| e.name == name)
+    }
+
+    #[test]
+    fn a_nested_registered_library_is_not_rendered_as_a_folder() {
+        let root = std::env::temp_dir().join(format!("cns-nest-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        // A plain note and a plain folder at the root — both must survive.
+        fs::write(root.join("Root Note.md"), "x").unwrap();
+        fs::create_dir_all(root.join("Plain Folder")).unwrap();
+        fs::write(root.join("Plain Folder").join("Inner.md"), "x").unwrap();
+        // A folder that IS a registered library — must be excluded, subtree and all.
+        let nested = root.join("Nested Library");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("Secret.md"), "x").unwrap();
+
+        let exclude: HashSet<String> = [norm(&nested)].into_iter().collect();
+        let tree = read_dir_recursive(&root, 0, 5, &exclude);
+
+        assert!(find(&tree, "Root Note.md").is_some(), "the root's own note stays");
+        assert!(find(&tree, "Plain Folder").is_some(), "an ordinary folder stays");
+        assert!(
+            find(&tree, "Nested Library").is_none(),
+            "a nested REGISTERED library must not appear as a folder of its parent"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_exclusion_fires_at_any_depth() {
+        // A registered library two levels down (…/A/B/DeepLib) must still be skipped.
+        let root = std::env::temp_dir().join(format!("cns-nest-deep-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let deep_parent = root.join("A").join("B");
+        fs::create_dir_all(&deep_parent).unwrap();
+        let deep_lib = deep_parent.join("DeepLib");
+        fs::create_dir_all(&deep_lib).unwrap();
+        fs::write(deep_lib.join("Deep.md"), "x").unwrap();
+        fs::write(deep_parent.join("Sibling.md"), "x").unwrap();
+
+        let exclude: HashSet<String> = [norm(&deep_lib)].into_iter().collect();
+        let tree = read_dir_recursive(&root, 0, 10, &exclude);
+
+        let a = find(&tree, "A").unwrap().children.as_ref().unwrap();
+        let b = find(a, "B").unwrap().children.as_ref().unwrap();
+        assert!(find(b, "Sibling.md").is_some(), "an ordinary deep note stays");
+        assert!(
+            find(b, "DeepLib").is_none(),
+            "a registered library nested at depth must be excluded too"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn an_empty_exclusion_set_changes_nothing() {
+        // The regression guard: with nothing to exclude (the common case — a library
+        // with no nested libraries), every folder renders exactly as before.
+        let root = std::env::temp_dir().join(format!("cns-nest-none-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("Folder A")).unwrap();
+        fs::write(root.join("Note.md"), "x").unwrap();
+
+        let tree = read_dir_recursive(&root, 0, 5, &HashSet::new());
+        assert!(find(&tree, "Folder A").is_some());
+        assert!(find(&tree, "Note.md").is_some());
+        let _ = fs::remove_dir_all(&root);
     }
 }

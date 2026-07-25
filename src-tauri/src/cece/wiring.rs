@@ -148,10 +148,14 @@ fn knn_classified_neighbors(
 ) -> Result<Vec<NeighborRecord>, String> {
     crate::search::ensure_search_db_ready(app)?;
     let state = app.state::<crate::search::SearchState>();
-    let guard = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    let conn = guard
-        .as_ref()
-        .ok_or("Search DB not initialized")?;
+    // 2026-07-24 scan-perf investigation. This is a pure READ, but it took the
+    // WRITER lock — so for the hour a Cataloger scan runs, every note save, every
+    // watcher update and every reindex queued behind it. That is the mechanism that
+    // turned a background job into an app freeze. `with_read_conn` uses the
+    // dedicated read-only connection opened for exactly this reason (PJ-066 §C3,
+    // search.rs:791) and falls back to the writer only if the reader is absent, so
+    // the data returned is identical.
+    crate::search::with_read_conn(&state, |conn| {
 
     // Pull every note that has BOTH an embedding AND at least one
     // sources or content_type assignment.
@@ -204,6 +208,8 @@ fn knn_classified_neighbors(
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.truncate(k);
     Ok(scored.into_iter().map(|(r, _)| r).collect())
+
+    })
 }
 
 /// Typed-neighbor lookup for the Graph Cataloger. Joins note_links
@@ -215,10 +221,10 @@ fn load_typed_neighbors(
 ) -> Result<Vec<TypedNeighbor>, String> {
     crate::search::ensure_search_db_ready(app)?;
     let state = app.state::<crate::search::SearchState>();
-    let guard = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    let conn = guard
-        .as_ref()
-        .ok_or("Search DB not initialized")?;
+    // Pure read on the READ-ONLY connection — see the note in
+    // `knn_classified_neighbors`. Taking the writer lock here is what made a
+    // background scan block every save in the app for an hour.
+    crate::search::with_read_conn(&state, |conn| {
 
     // The note_links schema (search.rs:1679): source_path, target_path
     // (resolved when known), target_name (always present), link_type.
@@ -275,6 +281,8 @@ fn load_typed_neighbors(
         });
     }
     Ok(out)
+
+    })
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────

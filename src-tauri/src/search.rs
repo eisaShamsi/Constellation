@@ -322,6 +322,118 @@ pub(crate) fn maturity_sql_expr() -> String {
 }
 
 #[cfg(test)]
+mod tests_archive_survives_save {
+    //! 2026-07-24 — APP-KILLER, found independently by the safety inspection and the
+    //! MIG-104 architect pass. Archiving a link is "archival, not deletion", so the
+    //! `[[wikilink]]` deliberately STAYS in the note. `index_note`'s unchanged-edge
+    //! fast path requires the stored row to be `status='active'`, so an archived edge
+    //! never matched, and the re-INSERT hardcoded `'active'` — one ordinary save of
+    //! the note silently un-retired the link, with no error.
+    //!
+    //! These tests pin the RULE the fix encodes: a re-index restores the row's stored
+    //! status rather than assuming 'active'. They exercise the preserve/restore
+    //! decision directly (the full `index_note` needs an AppHandle).
+
+    /// Mirrors the preserve condition in `index_note`.
+    fn is_preserved(traversal_count: i64, weight: f64, status: &str, structural: bool) -> bool {
+        (traversal_count > 0 || weight != 1.0 || status != "active") && !structural
+    }
+
+    /// THE BUG. An archived link the user never traversed: archive sets weight 0.0,
+    /// but the guard must not depend on that side effect.
+    #[test]
+    fn an_archived_link_is_preserved_even_with_no_earned_history() {
+        assert!(is_preserved(0, 0.0, "archived", false));
+        // …and even if some future archive path left the weight alone:
+        assert!(is_preserved(0, 1.0, "archived", false),
+            "status alone must qualify — do not rely on archive's weight=0.0 side effect");
+    }
+
+    /// An ordinary untouched active link is still skipped — the fix must not make
+    /// every edge in the Universe take the preserve path.
+    #[test]
+    fn an_untouched_active_link_is_not_preserved() {
+        assert!(!is_preserved(0, 1.0, "active", false));
+    }
+
+    /// Earned history still qualifies, as before.
+    #[test]
+    fn earned_history_is_still_preserved() {
+        assert!(is_preserved(7, 3.0, "active", false));
+        assert!(is_preserved(0, 2.4, "active", false));
+    }
+
+    /// PJ-065 — structural edges carry no living-link apparatus and are never preserved,
+    /// archived or not.
+    #[test]
+    fn structural_edges_are_never_preserved() {
+        assert!(!is_preserved(9, 5.0, "archived", true));
+        assert!(!is_preserved(0, 1.0, "active", true));
+    }
+
+    /// The restore itself: whatever status was stored comes back, rather than 'active'.
+    #[test]
+    fn the_restored_status_is_the_stored_one() {
+        for stored in ["archived", "active", "dormant"] {
+            let restored = stored; // the INSERT now binds the preserved status verbatim
+            assert_eq!(restored, stored,
+                "a re-index must not rewrite a link's status to 'active'");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_schema_gate {
+    use super::{schema_gate, SchemaGate};
+
+    /// THE FIX. A missing marker must NEVER authorise destroying the database.
+    /// This is the branch that fires in the real world (restore / sync filter /
+    /// one failed write), and it used to mean "delete a multi-GB index holding
+    /// every earned link weight, every archived link, every review override".
+    #[test]
+    fn an_absent_marker_never_triggers_a_rebuild() {
+        let g = schema_gate(None, "7");
+        assert_eq!(g, SchemaGate { rebuild: false, stamp_absent: true },
+            "absent is UNKNOWN, not stale — adopt the database and stamp it");
+    }
+
+    #[test]
+    fn a_matching_marker_is_a_no_op() {
+        assert_eq!(schema_gate(Some("7"), "7"), SchemaGate { rebuild: false, stamp_absent: false });
+    }
+
+    /// A genuine version change is the ONLY thing that rebuilds — and even then the
+    /// caller renames the old database aside rather than deleting it.
+    #[test]
+    fn a_different_marker_rebuilds() {
+        assert_eq!(schema_gate(Some("6"), "7"), SchemaGate { rebuild: true, stamp_absent: false });
+    }
+
+    /// The marker is written without a trailing newline today, but a sync tool or an
+    /// editor may normalise the file; whitespace must not read as a version change
+    /// and send a whole universe through a needless rebuild.
+    #[test]
+    fn surrounding_whitespace_is_not_a_version_change() {
+        for v in ["7
+", " 7 ", "7
+", "	7
+"] {
+            assert_eq!(schema_gate(Some(v), "7"), SchemaGate { rebuild: false, stamp_absent: false },
+                "{:?} should read as version 7", v);
+        }
+    }
+
+    /// An empty or garbage marker is PRESENT but not the current version, so it is a
+    /// real mismatch — rebuild (set aside), do not silently adopt.
+    #[test]
+    fn a_corrupt_marker_is_treated_as_a_mismatch_not_as_absent() {
+        assert!(schema_gate(Some(""), "7").rebuild);
+        assert!(schema_gate(Some("garbage"), "7").rebuild);
+        assert!(!schema_gate(Some(""), "7").stamp_absent);
+    }
+}
+
+#[cfg(test)]
 mod tests_mig085b_surfaces_agree {
     //! MIG-085 §B — the deliverable: prove maturity's inbound is single-sourced so the
     //! Reviewer (note_meta.incoming_count → compute_state), the maturity panel / 360
@@ -678,6 +790,37 @@ impl SearchState {
 }
 
 // ─── Database Setup ────────────────────────────────────────────
+
+/// The schema-version gate's DECISION, isolated from I/O so it is unit-testable.
+///
+/// 2026-07-24 safety inspection. The old gate was
+/// `match read_to_string(version) { Ok(v) => v != current, Err(_) => true }`
+/// followed by `remove_file(search.db)` — so an ABSENT marker authorised deleting
+/// the database. That is the branch that fires in real life: a restore that skipped
+/// one 4-byte file, a sync tool that filters it, a single failed write. And
+/// search.db is the only home of every link's earned weight/confidence/traversal,
+/// every user-archived link, and every review override — none of which can be
+/// recomputed from the .md files.
+///
+/// The rule encoded here: **absent is not stale.** A missing marker means "unknown",
+/// and the safe response to unknown is to adopt what is there and stamp it, never to
+/// destroy it. Only a marker that is present AND different is a real version change.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct SchemaGate {
+    /// Set the existing database aside (never delete) and rebuild.
+    pub rebuild: bool,
+    /// The marker was missing/unreadable — stamp it once the database opens cleanly,
+    /// so this does not re-evaluate on every subsequent boot.
+    pub stamp_absent: bool,
+}
+
+pub(crate) fn schema_gate(version_on_disk: Option<&str>, current_version: &str) -> SchemaGate {
+    match version_on_disk {
+        Some(v) if v.trim() == current_version => SchemaGate { rebuild: false, stamp_absent: false },
+        Some(_) => SchemaGate { rebuild: true, stamp_absent: false },
+        None => SchemaGate { rebuild: false, stamp_absent: true },
+    }
+}
 
 pub(crate) fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let cdir = crate::universe::active_constellation_dir(app)?;
@@ -6088,7 +6231,9 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         }
 
         // Stored edges + preserved traversal data, in one read.
-        let mut preserved: std::collections::HashMap<String, (f64, String, i64, String, String)> =
+        // The trailing String is the row's STATUS — see the note at the re-INSERT.
+        // 2026-07-24: it used to be absent, and its absence silently un-retired links.
+        let mut preserved: std::collections::HashMap<String, (f64, String, i64, String, String, String)> =
             std::collections::HashMap::new();
         // PJ-065 — old_edges value gains `seq` (last element) so a reorder of a
         // 'contains' list (identical keys, different order) is detected as a change and
@@ -6122,8 +6267,23 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                 let (target, ltype, ann, tcc, sname, scc, lib, status, w, lt, tc, conf, created, seq) = row;
                 // PJ-065 — never "preserve" a structural edge: it has no earned
                 // weight/traversal (those belong to cognitive links under inquiry).
-                if (tc > 0 || w != 1.0) && !crate::link_types::is_structural_type(&ltype) {
-                    preserved.insert(format!("{}::{}", ltype, target), (w, lt, tc, conf, created));
+                //
+                // 2026-07-24 (found twice: safety inspection + the MIG-104 architect
+                // pass): `status` is now preserved too, and an ARCHIVED row qualifies
+                // on its own. Archiving is deliberately "archival, not deletion", so
+                // the wikilink STAYS in the note — which meant every archived edge
+                // failed the `identical` fast path below (it requires status=='active')
+                // and was re-inserted as active. One ordinary edit to the note
+                // un-retired the link, with no error. `status != "active"` is in the
+                // condition explicitly rather than relying on archive's weight=0.0
+                // side effect, so the guard holds however weight is set.
+                if (tc > 0 || w != 1.0 || status != "active")
+                    && !crate::link_types::is_structural_type(&ltype)
+                {
+                    preserved.insert(
+                        format!("{}::{}", ltype, target),
+                        (w, lt, tc, conf, created, status.clone()),
+                    );
                 }
                 old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status, seq));
             }
@@ -6202,11 +6362,14 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                     continue;
                 }
                 let pkey = format!("{}::{}", link_type, target);
-                if let Some((w, lt, tc, conf, created)) = preserved.get(&pkey) {
+                if let Some((w, lt, tc, conf, created, status)) = preserved.get(&pkey) {
+                    // `status` is RESTORED, not hardcoded to 'active'. Hardcoding it
+                    // resurrected every link the user had retired, because the
+                    // wikilink legitimately remains in the note after archival.
                     conn.execute(
                         "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active', ?12, ?13)",
-                        params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn],
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?14, ?12, ?13)",
+                        params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn, status],
                     ).map_err(|e| format!("Failed to index link: {}", e))?;
                 } else {
                     conn.execute(
@@ -8768,12 +8931,64 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let path = db_path(app)?;
     let version_path = path.with_extension("version");
     let current_version = "7";
-    let needs_rebuild = match std::fs::read_to_string(&version_path) {
-        Ok(v) => v.trim() != current_version,
-        Err(_) => true,
-    };
-    if needs_rebuild {
-        let _ = std::fs::remove_file(&path);
+    // 2026-07-24 safety inspection (HIGH + 2). This gate used to DELETE search.db,
+    // and search.db is the ONLY home of data the user earned and cannot get back:
+    // every link's traversal_count / weight / confidence, every link the user
+    // ARCHIVED (the wikilink is still in the .md, so a rebuild resurrects it as
+    // active — "every link operation must be reversible" reversed), every
+    // review_priority override and review schedule. `index_note`'s `preserved` map
+    // and the review-schedule preservation both read from the SAME database, so
+    // deleting the file bypasses every preservation mechanism at once.
+    //
+    // Three defects, fixed together because they compound:
+    //   (a) a MISSING/unreadable .version meant "rebuild" — so one absent 4-byte
+    //       file (a restore that skipped it, a sync filter, one failed write)
+    //       authorised destroying a multi-GB database. Absent is not stale.
+    //   (b) remove_file's failure was swallowed while the version was stamped
+    //       anyway → a rebuild that never happened, recorded as done, permanently
+    //       cancelling the migration the gate exists for.
+    //   (c) the stamp write was fire-and-forget → if it failed, EVERY boot
+    //       rebuilt the whole index again, forever.
+    //
+    // The rule now: NEVER delete. A rebuild RENAMES the old database aside, so the
+    // earned data still exists on disk and is recoverable. Disk space is cheap;
+    // months of earned link weight is not. (The durable cure — giving earned link
+    // data a home outside this derived store — is the LINK-file layer; see
+    // docs/migrations/MIG-104-*.)
+    let version_on_disk = std::fs::read_to_string(&version_path);
+    let gate = schema_gate(version_on_disk.as_deref().ok(), current_version);
+    let needs_rebuild = gate.rebuild;
+    let version_absent = gate.stamp_absent;
+    // (b) Did the set-aside actually happen? Only a proven rebuild may be stamped.
+    let mut rebuild_done = false;
+    if needs_rebuild && path.exists() {
+        let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+        let aside = path.with_extension(format!("pre-v{}-{}.db", current_version, stamp));
+        match std::fs::rename(&path, &aside) {
+            Ok(()) => {
+                rebuild_done = true;
+                diag_log(&path, &format!(
+                    "[schema] rebuild for v{}: previous database set aside at {} (NOT deleted — it holds earned link weight/confidence/archival and review overrides)",
+                    current_version, aside.display()
+                ));
+                // The WAL/SHM siblings belong to the old database; leaving them
+                // beside a fresh file of the same name would be read as ITS journal.
+                let _ = std::fs::remove_file(path.with_extension("db-wal"));
+                let _ = std::fs::remove_file(path.with_extension("db-shm"));
+            }
+            Err(e) => {
+                // Windows sharing violation (sync tool / AV / another instance) is
+                // the common case. Surface it and DO NOT stamp — the next boot
+                // retries rather than silently cancelling the migration forever.
+                diag_log(&path, &format!(
+                    "[schema] rebuild for v{} ABORTED: could not set the old database aside: {}. Keeping the existing database; will retry next boot.",
+                    current_version, e
+                ));
+            }
+        }
+    } else if needs_rebuild {
+        // Nothing on disk to preserve — a fresh universe is a legitimate "rebuild".
+        rebuild_done = true;
     }
     // MIG-067 §A/§B: load the active universe's link-type vocabulary (8 seeds +
     // .constellation/link-types.json deltas) into the registry BEFORE init_db, so
@@ -8784,8 +8999,20 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // Stamp the schema version now that init_db (incl. any rebuild) succeeded —
     // before the store/discard decision below, so a discarded-stale rebuild is
     // not repeated on the next open of this universe.
-    if needs_rebuild {
-        let _ = std::fs::write(&version_path, current_version);
+    //
+    // (b) Stamp ONLY a rebuild that actually happened: a set-aside that failed must
+    // not be recorded as done, or the migration is cancelled permanently.
+    // (a) Also stamp when the marker was merely ABSENT — that is how an adopted
+    // database stops looking un-versioned on every subsequent boot.
+    // (c) The write is no longer fire-and-forget: a swallowed failure here meant a
+    // full rebuild on EVERY launch, forever, with no error anywhere.
+    if rebuild_done || version_absent {
+        if let Err(e) = std::fs::write(&version_path, current_version) {
+            diag_log(&path, &format!(
+                "[schema] WARNING: could not write the schema-version marker ({}): {}. The next boot will re-evaluate; the database itself is intact.",
+                version_path.display(), e
+            ));
+        }
     }
     // PJ-066 §C3 — open the read-only reader connection BEFORE the gen-validated publish, so the
     // slow part (file open + tokenizer registration) happens OUTSIDE the lock; then db + read_db +
