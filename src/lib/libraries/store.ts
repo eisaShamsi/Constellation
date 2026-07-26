@@ -1126,6 +1126,97 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 	}
 }
 
+/**
+ * Replace the FIRST plain-text occurrence of `name` in `body` with `[[name]]`, skipping any
+ * occurrence that already sits inside an existing `[[wikilink]]` (so a note that already links
+ * the target elsewhere can't produce `[[[[name]]]]`). Scoped to the BODY only — never the
+ * frontmatter — so a title/tag/alias match can't inject `[[..]]` into YAML and corrupt it.
+ * Returns the new body, or `null` when there is no plain mention to link.
+ */
+function firstPlainMentionReplace(body: string, name: string): string | null {
+	const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const re = new RegExp(`\\b${esc}\\b`, 'gi');
+	let m: RegExpExecArray | null;
+	while ((m = re.exec(body)) !== null) {
+		const before = body.slice(0, m.index);
+		// Inside an open `[[…` that hasn't closed yet? → already-linked occurrence, try the next.
+		if (before.lastIndexOf('[[') > before.lastIndexOf(']]')) continue;
+		return before + `[[${name}]]` + body.slice(m.index + m[0].length);
+	}
+	return null;
+}
+
+/**
+ * PJ-140 [0] (HIGH — 2026-07-25). Turn a plain-text mention of `targetName` in `mentionPath`'s
+ * BODY into an inline `[[wikilink]]`, content-integrity-safe whether the mentioning note is OPEN
+ * or CLOSED. This replaces `BacklinksPanel.linkMention`'s raw `invoke('write_note')`, which had
+ * THREE silent failure modes the "link it" button must never have:
+ *   1. Open-model overwrite — it read the note from DISK and wrote behind the open in-memory
+ *      model, whose next autosave composed from the stale (pre-link) body and durably erased the
+ *      `[[link]]` (and, for a dirty note, the user's unsaved edits with it).
+ *   2. False success — a `catch {}` swallowed a failed write, so the user believed the mention
+ *      was linked while disk was unchanged.
+ *   3. Index divergence — no reindex, so the new backlink edge stayed invisible until a boot.
+ *
+ * The fix is the proven `toggleTaskReconciled` body-edit shape (single content ownership): gate
+ * the whole op → flush the open model to disk first (or ABORT rather than clobber) → mutate disk
+ * → the model adopts the mutated disk (remount) → reindex. Longest-root-wins library resolution
+ * (nested-library-correct — the PJ-140/PJ-141 class). Returns `true` when a link was written,
+ * `false` when there was no plain mention to link; THROWS on a genuine write failure so the
+ * caller can surface it (never swallowed).
+ */
+export async function linkMentionInNote(mentionPath: string, targetName: string): Promise<boolean> {
+	const name = (targetName || '').trim();
+	if (!name) return false;
+	const mNorm = normPath(mentionPath);
+	// longest-prefix = most-specific (nested/federated) — NOT first-match, which returns the
+	// root library whose path prefixes every nested one (the PJ-141 resolver bug).
+	const lib = get(libraryStats)
+		.filter((l) => mNorm === normPath(l.path) || mNorm.startsWith(normPath(l.path) + '/'))
+		.sort((a, b) => normPath(b.path).length - normPath(a.path).length)[0];
+	if (!lib) throw new Error(`linkMentionInNote: no library for ${mentionPath}`);
+
+	const openTab = get(openTabs).find((t) => t.path === mentionPath);
+	// Gate the WHOLE op (toggleTaskReconciled's F2 guard): mark BEFORE flush+mutate+reload so an
+	// open note's armed NotePane autosave can't fire mid-mutation and REVERT the new wikilink on disk.
+	if (openTab) markCascading(openTab.path);
+	try {
+		// Flush the open model to disk FIRST so the user's unsaved edits are never lost — and if the
+		// flush did NOT land (locked .md / keystroke-during-await), ABORT instead of mutating behind a
+		// dirty model (the exact clobber this HIGH is about). The ~10s save-health loop retries the flush.
+		if (openTab && !(await flushOpenTabOrAbort(openTab, 'link_mention_flush'))) return false;
+		// Closed-note cascade gate (addLinkToNote parity): don't write a pre-cascade read back over a
+		// rename walker's in-flight rewrite.
+		if (!openTab && isCascading(mentionPath)) return false;
+
+		const content = await readNote(mentionPath);
+		const { properties, body } = parseFrontmatter(content);
+		const newBody = firstPlainMentionReplace(body, name);
+		if (newBody === null) return false; // no plain mention in the BODY (already linked / frontmatter-only)
+
+		markRecentWrite(mentionPath);
+		// THROWS on a genuine write failure — the caller surfaces it, never the old silent catch{}.
+		await writeNote(mentionPath, composeUpdatedContent(content, properties, newBody), 'link_mention');
+
+		// Open note: the model ADOPTS the mutated disk + {#key} remount so the inline [[link]] shows at
+		// once. reloadTabsFromDisk skips the reseed if a keystroke re-dirtied the model (PJ-092), so a
+		// during-write edit is preserved rather than clobbered.
+		if (openTab) await reloadTabsFromDisk([mentionPath]);
+
+		// AWAIT the reindex so the caller can refresh the Backlinks / Unlinked-mentions panels
+		// deterministically the instant the new note_links edge exists — instead of waiting for
+		// an incidental trigger to re-run the panel effect (the felt 5-10s lag the Boss saw). This
+		// single-note reindex is fast: O(changed-edges) incoming/sky maintenance (only the one new
+		// target recomputes) and NO re-embed (index_note never embeds). A reindex FAILURE is
+		// non-fatal — the wikilink is already durable on disk and the index self-heals on the next
+		// boot reconcile — so it is logged, not thrown.
+		await reindexNote(mentionPath, lib.name).catch((e) => console.error('[linkMentionInNote] background reindex failed:', e));
+		return true;
+	} finally {
+		if (openTab) clearCascading(openTab.path);
+	}
+}
+
 /** §3-redo.1 — flush every dirty tab in the affected library to disk
  *  before a wikilink rename cascade walks them. Tabs are "dirty" if
  *  they have a writeAheadBuffer entry. Without this, the cascade reads

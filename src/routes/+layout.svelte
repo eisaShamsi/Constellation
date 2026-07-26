@@ -813,6 +813,15 @@
 				: l
 		);
 	}
+
+	/** PJ-140 [0] — after the Backlinks "link it" durably links + reindexes a mention
+	 *  (linkMentionInNote awaits both), re-fetch the active note's Backlinks +
+	 *  Unlinked-mentions NOW that the new note_links edge exists — so the backlink appears
+	 *  and the row leaves "Unlinked mentions" at once, instead of after an incidental
+	 *  ~5-10s trigger. Mirrors applyConfidence/ArchiveLocally's nonce bump. */
+	function applyMentionLinkedLocally() {
+		perNoteRefreshNonce++;
+	}
 	// P4.2: per-(source,target) traversal counts, derived from the boot
 	// graph PLUS any optimistic bumps fired by openNoteTab since the last
 	// fetch. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
@@ -1793,6 +1802,7 @@
 	let unlinkedDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const tab = sidebarTab;
+		void perNoteRefreshNonce; // re-scan after a mention is linked (Backlinks "link it") + any nonce bump
 		clearTimeout(unlinkedDebounce);
 		if (!tab) { currentUnlinkedMentions = []; return; }
 		unlinkedDebounce = setTimeout(async () => {
@@ -4358,6 +4368,10 @@
 				})].join('\n');
 				const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
 				await invoke('write_note', { filePath: newPath, content: fullContent, origin: 'template_create' });
+				// Whole-Ecosystem (PJ-140): create_note indexed the EMPTY stub; the template body was
+				// written after, so without this reindex search/backlinks stay blind to it until a boot
+				// reindex (the same index-divergence class as the backlinks HIGH). Fire-and-forget.
+				reindexNote(newPath, lib.name).catch((e) => console.error('[template_create] reindex failed:', e));
 			} catch { /* template write failed — note still created */ }
 		}
 
@@ -4775,6 +4789,9 @@
 						const result = await processTemplateAsync(tplBody, ctx, buildTemplateCallbacks());
 						const newContent = noteContent.trimEnd() + '\n' + result.content;
 						await invoke('write_note', { filePath: path, content: newContent, origin: 'daily_template' });
+						// Whole-Ecosystem (PJ-140): reindex so the applied daily-note template is searchable/
+						// backlinked at once, not only after a boot reindex (index-divergence class). Fire-and-forget.
+						reindexNote(path, firstLib.name).catch((e) => console.error('[daily_template] reindex failed:', e));
 					}
 				} catch { /* template not found — OK */ }
 			}
@@ -8575,6 +8592,7 @@
 													loading={panelLoading}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
+													onLinked={applyMentionLinkedLocally}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
 													{libraryColorMap}
@@ -8750,6 +8768,7 @@
 													loading={panelLoading}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
+													onLinked={applyMentionLinkedLocally}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
 													{libraryColorMap}
@@ -9012,6 +9031,7 @@
 							loading={panelLoading}
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
+							onLinked={applyMentionLinkedLocally}
 							activeNoteName={sidebarTab?.name ?? ''}
 							activeNotePath={sidebarTab?.path ?? ''}
 							{libraryColorMap}

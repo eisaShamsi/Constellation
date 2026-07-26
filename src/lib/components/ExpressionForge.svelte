@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
-	import { createNote, writeNote, buildFullContent } from '$lib/libraries/store';
+	import { createNote, writeNote, buildFullContent, reindexNote } from '$lib/libraries/store';
 	import type { SkyNode } from '$lib/libraries/store';
 
 	let {
@@ -142,6 +142,9 @@
 		try {
 			const newPath = await createNote(libraryPath, fileName);
 			await writeNote(newPath, content, 'expression_forge');
+			// Whole-Ecosystem (PJ-140): createNote indexed the empty stub; reindex the composed body
+			// so it is searchable/backlinked at once, not only after a boot reindex (index-divergence class).
+			reindexNote(newPath, libraryName).catch((e) => console.error('[expression_forge] reindex failed:', e));
 			onClose?.();
 		} catch (e) {
 			console.error('Export failed:', e);

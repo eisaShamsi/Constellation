@@ -163,15 +163,52 @@ LibraryPicker, StyleSetter tree preview.
 
 ---
 
+## Phase D — The PJ-140 [0] HIGH content-loss fix (Backlinks "link it")
+
+**Boss: "Fix the backlinks HIGH next."** The `wf_ae5d4d18` HIGH: `BacklinksPanel.linkMention`
+turned a plain-text mention into a `[[wikilink]]` via a raw `invoke('write_note')` — three
+silent failure modes: **open-model overwrite** (read disk, wrote behind the open model, whose
+next autosave erased the link + any unsaved edits), **false success** (a `catch {}` swallowed a
+failed write), **index divergence** (no reindex → the new backlink invisible until boot).
+
+**The fix (Solve-the-Class — single content ownership):** a new shared store primitive
+`linkMentionInNote(mentionPath, targetName)` on the proven `toggleTaskReconciled` body-edit shape —
+gate (`markCascading`) → **flush the open model to disk first, or ABORT rather than clobber** →
+mutate disk → model adopts the mutated disk (remount) → reindex. Longest-root-wins library
+resolution (nested-safe); body-scoped regex (never corrupts frontmatter); **throws** on a genuine
+write failure, surfaced via the existing save-health banner (`reportSaveFailure`).
+
+**Whole-Ecosystem (the no-reindex half):** the four sibling raw-write-then-no-reindex sites all got
+a `reindexNote`: `template_create` + `daily_template` (`+layout`), `ExpressionForge`, `SenseMakingCanvas`.
+
+**The 5-10s delay (Boss-flagged, investigated not guessed):** NOT the write, NOT the reindex
+(confirmed O(changed-edges), no re-embed). Root cause: nothing bumped `perNoteRefreshNonce`, so the
+backlink appeared only when an *incidental* trigger re-ran the panel effect seconds later. Fix:
+`linkMentionInNote` awaits the (fast) reindex → BacklinksPanel calls a new `onLinked` callback →
+`applyMentionLinkedLocally` bumps the nonce → both the Backlinks and Unlinked-mentions effects
+re-fetch at once. **Boss re-test: "almost instant."**
+
+**Reproduce-First:** `tests/pj-140/backlinksLinkMention.test.ts` (7 cases) drives the real primitive
+against a disk-backed mocked IPC bridge — incl. **T6** (open note, dirty model, locked file →
+ABORTS with `false`, no clobber — the HIGH's crux) and T7 (open clean → safe link + reindex).
+
+**Verification:** svelte-check **0** · vitest **623/623** (+7). Per-build safety inspection
+(`wf_45def36d`, whole-app — PJ-124 again): **0 new in-diff findings** (8 pre-existing → PJ-140).
+`/simplify`: one behavior-identical cleanup applied (`before` reuse); two follow-ups filed
+(PJ-147 resolver consolidation, PJ-148 `createNote(initialBody)` for the two export sites); the
+flush-gate-envelope extraction deferred to its 3rd occurrence (LL-014). **Boss-validated
+end-to-end: Stage 1 · Re-test A (timing) · Stage 2 (open-note content-integrity) all PASS.**
+
+*(Note: the `before`-reuse cleanup landed AFTER the Boss test; it is provably behavior-identical
+— reuse an already-computed substring — so it cannot change the validated behavior; not re-tested.)*
+
+---
+
 ## Open / carried forward
 
-- **PJ-140** — ~40 findings remain after this batch's 14+5. **Standout: a HIGH content-loss**
-  surfaced by `wf_ae5d4d18` — `BacklinksPanel.svelte:181` `linkMention` writes a `[[wikilink]]`
-  via raw `invoke('write_note')` bypassing the open model, with the error swallowed and no
-  reindex (open-model overwrite + false-success + index divergence, all silent). Plus
-  ExpressionForge / SenseMakingCanvas createNote-then-write-no-reindex (index divergence),
-  NotePane editor-init fallback, and the editor-lifecycle cluster (its own migration). **These
-  are the recommended next build — each needs its own fix + Boss test; NOT shipped in this PCS.**
+- **PJ-140** — ~37 findings remain (the [0] HIGH + the two index-divergence findings closed this
+  phase). The editor-lifecycle cluster (NoteEditor handleSave re-entrancy drop, etc.) is its own
+  migration; the rest await the Boss's sequencing ruling.
 - **MIG-105 Architect** (root library vs flat Universe — Boss-directed, ready to run) — the
   data-model root cause behind the whole resolver class this session patched at the surface.
 - **MIG-104 remaining questions** (durable earned-link home; location + re-type settled).

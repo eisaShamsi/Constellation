@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, libraries, readNote, appSettings, type LinkConfidence } from '$lib/libraries/store';
+	import { openNoteTab, libraries, linkMentionInNote, reportSaveFailure, appSettings, type LinkConfidence } from '$lib/libraries/store';
 	import { t, dir as uiDir, locale } from '$lib/i18n';
 	// PJ-114 §3b — `detectDir` (script DOMINANCE), not dir="auto" (first strong character):
 	// PJ-106 §A1 replaced auto for exactly this reason. A summary titled in Latin but written
@@ -13,7 +13,6 @@
 	import VirtualList from './VirtualList.svelte';
 	import ConfidencePicker from './ConfidencePicker.svelte';
 	import { get } from 'svelte/store';
-	import { invoke } from '@tauri-apps/api/core';
 	// MIG-044 Phase 2 — NSC summary headlines under each linked/unlinked row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
@@ -47,6 +46,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
+		onLinked = undefined as undefined | (() => void),
 		loading = false,
 	}: {
 		backlinks: BacklinkRow[];
@@ -56,6 +56,9 @@
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 		onArchive?: (sourcePath: string, targetName: string) => void;
+		/** Fired after a "link it" durably links + reindexes a mention, so the host can
+		 *  re-fetch the Backlinks / Unlinked-mentions panels at once (no 5-10s incidental wait). */
+		onLinked?: () => void;
 		/** MIG-079 §C.2b — the deferred edge list is still loading. Show a
 		 *  "Loading…" state instead of a misleading "no backlinks" empty. */
 		loading?: boolean;
@@ -169,18 +172,24 @@
 		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab, activeNotePath || undefined);
 	}
 
-	async function linkMention(mentionPath: string, e: MouseEvent) {
+	async function linkMention(mentionPath: string, mentionName: string, e: MouseEvent) {
 		e.stopPropagation();
 		if (!activeNoteName) return;
+		// PJ-140 [0] (HIGH) — the write now goes through the content-integrity-safe store
+		// primitive: it flushes an open mentioning note to disk first (never clobbers the model or
+		// the user's unsaved edits), reindexes so the new backlink appears at once, and THROWS on a
+		// real write failure instead of the old silent catch{} (which let a failed link read as done).
 		try {
-			const content = await readNote(mentionPath);
-			// Replace first plain-text occurrence with [[wikilink]]
-			const re = new RegExp(`\\b(${activeNoteName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i');
-			const newContent = content.replace(re, `[[${activeNoteName}]]`);
-			if (newContent !== content) {
-				await invoke('write_note', { filePath: mentionPath, content: newContent, origin: 'link_mention' });
-			}
-		} catch { /* ignore */ }
+			const linked = await linkMentionInNote(mentionPath, activeNoteName);
+			// linkMentionInNote awaits the reindex, so the note_links edge now exists — ask the host
+			// to re-fetch the panels immediately (the backlink appears at once, and this row leaves
+			// "Unlinked mentions") instead of waiting for an incidental trigger.
+			if (linked) onLinked?.();
+		} catch (err) {
+			// Surface the failed write through the app-wide save-health banner (with a Retry) so the
+			// user knows the link did NOT land — the false-success half of the fix.
+			reportSaveFailure(mentionPath, mentionName || mentionPath, err);
+		}
 	}
 </script>
 
@@ -250,7 +259,7 @@
 		     `data-linktip` silently removed that name — screen readers would have announced an
 		     unlabelled button. Any icon-only control converted to the app-drawn tooltip needs this. -->
 		<button class="bl-link-btn" aria-label={$t('backlinksPanel.linkIt')}
-			data-linktip={$t('backlinksPanel.linkIt')} onclick={(e) => linkMention(ul.path, e)}>
+			data-linktip={$t('backlinksPanel.linkIt')} onclick={(e) => linkMention(ul.path, ul.name, e)}>
 			<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
 				<path d="M6.5 10.5L9.5 7.5M5 8.5L3.5 10a2.12 2.12 0 003 3L8 11.5M8 7.5l1.5-1.5a2.12 2.12 0 013 3L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 			</svg>

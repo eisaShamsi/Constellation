@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, tn, isRTL as isRTLStore } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
-	import { createNote, writeNote, openNoteTab } from '$lib/libraries/store';
+	import { createNote, writeNote, openNoteTab, reindexNote } from '$lib/libraries/store';
 
 	let {
 		libraryPath = '',
@@ -269,6 +269,9 @@
 		try {
 			const newPath = await createNote(targetPath, fileName);
 			await writeNote(newPath, frontmatter + item.content, 'canvas_export');
+			// Whole-Ecosystem (PJ-140): createNote indexed the empty stub; reindex the promoted body
+			// so it is searchable/backlinked at once, not only after a boot reindex (index-divergence class).
+			reindexNote(newPath, targetName).catch((e) => console.error('[canvas_export] reindex failed:', e));
 			const noteName = promoteNoteName.trim();
 			item.content = `[[${noteName}]]`;
 			item.type = 'link';

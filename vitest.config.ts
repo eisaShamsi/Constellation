@@ -42,6 +42,9 @@ export default defineConfig({
 			'tests/mig-101/readOnlyWriteGuard.test.ts',
 			// PJ-130 Batch 1 (APP-KILLER) — display-only windows never write.
 			'tests/pj-130/displayOnlyNeverWrites.test.ts',
+			// PJ-140 [0] (HIGH) — Backlinks "link it" content-integrity (no open-model
+			// overwrite / no false-success / no index divergence).
+			'tests/pj-140/backlinksLinkMention.test.ts',
 
 			// MIG-080 §C.2 (2026-06-21) — natural-language task due-date resolution.
 			'tests/mig-080/taskDates.test.ts',
