@@ -1,9 +1,13 @@
 # MIG-105 — The Root Library vs. the Flat Universe
 
-**Status: LOGGED — Architect phase pending.** *(Boss-directed 2026-07-24: "Log it
-in its own /migration, where we are going to handle it as soon as we finish the
-job in hand.")* This file reserves the migration and states the territory so the
-Architect phase can start cleanly. **No design is decided here; no code is written.**
+**Status: SUPERSEDED — the Architect phase ran 2026-07-26 and the design is LOCKED by Boss
+rulings.** The Boss's *Brain / Core Organizer* concept (2026-07-26) re-founded the question: the
+entity **remains**, its scope is amended. Canonical current document:
+`MIG-105-Architect-root-library-vs-flat-universe.md` (v2, locked design + rulings), with companion
+verdicts `MIG-105-ArtDirector-verdict-Core-Organizer.md` and
+`MIG-105-Inspectors-verdict-Core-Organizer.md`. This file remains as the original 2026-07-24
+concept + evidence log. *(Original status: Boss-directed 2026-07-24: "Log it in its own /migration,
+where we are going to handle it as soon as we finish the job in hand." No design was decided here.)*
 
 ---
 
