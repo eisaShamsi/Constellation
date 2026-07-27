@@ -49,6 +49,26 @@ fn map() -> &'static Mutex<HashMap<PathBuf, Instant>> {
 /// expired entries before inserting. This bounds growth even when many marks
 /// happen with no intervening `was_recent` call (e.g. cascade rewrites a
 /// file the OS coalesces or the user deletes before the notify event fires).
+/// Mark `path` **and its containing directory** as recently-written — the shape every
+/// temp+rename must use.
+///
+/// MIG-104 Slice 1, belt-and-braces behind the watcher's `.constellation` predicate (which
+/// could be refactored away). Measured with a probe replicating notify's exact
+/// `ReadDirectoryChangesW` call: a temp+replace or a rename-aside reports a **bare-directory**
+/// event as well as the file events, and `was_recent` is EXACT-PATH keyed (`HashMap<PathBuf>`),
+/// so the directory is a separate key. Marking only the file paths leaves the bare-directory
+/// event unsuppressed — which is precisely the event the two filters below the predicate let
+/// through (`m.is_dir()` → pass) and the one that costs a full tree re-walk.
+///
+/// Callers doing an atomic replace must mark THREE keys: the temp path, the final path, and
+/// (via this helper) the containing directory.
+pub fn mark_with_parent(path: &Path) {
+    mark(path);
+    if let Some(dir) = path.parent() {
+        mark(dir);
+    }
+}
+
 pub fn mark(path: &Path) {
     if let Ok(mut guard) = map().lock() {
         if guard.len() >= SWEEP_THRESHOLD {
@@ -107,5 +127,29 @@ mod tests {
         mark(&p);
         sleep(TTL + Duration::from_millis(100));
         assert!(!was_recent(&p));
+    }
+}
+
+#[cfg(test)]
+mod tests_mig104_mark_with_parent {
+    //! MIG-104 Slice 1 — `was_recent` is exact-path keyed, so a bare-directory event is a
+    //! SEPARATE key from the file inside it. A temp+rename that marks only its file paths
+    //! leaves that event unsuppressed; this pins the three-key contract.
+    use super::{mark_with_parent, was_recent};
+    use std::path::Path;
+
+    #[test]
+    fn marks_the_containing_directory_as_well_as_the_file() {
+        let dir = Path::new(r"E:\U\ECK\.constellation");
+        let file = dir.join("earned.jsonl");
+        assert!(!was_recent(&file));
+        assert!(!was_recent(dir));
+        mark_with_parent(&file);
+        assert!(was_recent(&file), "the file path is suppressed");
+        assert!(
+            was_recent(dir),
+            "the bare-directory event must be suppressed too — it is a separate key, and it is \
+             the event that survives the metadata filter and costs a full tree re-walk"
+        );
     }
 }

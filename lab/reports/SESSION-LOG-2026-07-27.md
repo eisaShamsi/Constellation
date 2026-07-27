@@ -91,3 +91,39 @@ move wall-clock budget assertions into their own serial lane (`vitest --no-file-
 dedicated config, like `vitest.manual.config.mjs`), or convert them to operation-count/complexity
 assertions that are load-invariant. Until then, MIG-104 slices treat these two files as a **separate,
 serially-run gate** rather than part of the parallel suite.
+
+---
+
+## Slice 1 — the `.constellation` watcher predicate (LANDED)
+
+**Concept:** the app's own bookkeeping folder must never look like the user's knowledge changing.
+
+**Why first:** Boss ruling Q1 puts the ledger inside a folder that sits within a **recursive** watch —
+the Universe root IS a registered library and `watcher.rs` watches `RecursiveMode::Recursive`.
+`EXCLUDED_DIRS` names `.constellation` but is referenced only by the importers and `canonical.rs`,
+never by the watcher.
+
+**Change:** `is_app_bookkeeping_path` — one component-wise predicate, placed **FIRST** in the
+`watcher.rs` filter chain because it is the only filter that can reject the two shapes the existing
+checks deliberately PASS: a bare-directory event (`m.is_dir()` → pass) and any vanished path
+(`Err(_)` → pass). Both are produced by the ledger's own writes (an append reports a bare-directory
+event non-deterministically; a temp+replace or rename-aside reports both). Left unfiltered each costs
+a full `refreshLibraryTree` re-walk + `loadAllStats`, and a vanished non-`.md` path additionally
+drives `delete_rows_under_prefix` → the writer lock plus a lowercase scan of all 7,817 `note_meta`
+paths to find zero victims. **Live today (D3)** via `cece/reliability.rs`'s tempfile persist —
+so this slice fixes an existing stall, not just a future one.
+
+**Scoped deliberately to that ONE segment, not all dot-dirs** — `.trash` carries real `note_meta`
+rows (62 measured) and a restored note must still reach the indexer. Component-wise, never a
+substring, so a user folder named `My .constellation notes` can never be swallowed.
+
+**Belt-and-braces:** new `watcher_suppress::mark_with_parent` — `was_recent` is exact-path keyed
+(`HashMap<PathBuf>`), so the bare-directory event is a SEPARATE key. Every temp+rename the ledger
+performs must mark three keys (temp, final, containing dir); marking only the files leaves the
+directory event unsuppressed. Named as a rule because the predicate could be refactored away.
+
+**Tests:** 4 new (3 predicate + 1 suppression contract). Rust **1187/0** (+5) · vitest **607/607**
+(52 files, excluding the two PJ-132 load-sensitive perf files, run as their own serial gate).
+
+**Boss test:** pending — bundled with the next Boss-testable slice rather than shipping a binary for
+a change whose visible effect is "the file tree stops blinking."

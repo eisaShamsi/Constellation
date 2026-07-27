@@ -42,6 +42,7 @@ applied uniformly:
 
 | Recipe | Slice | What it reproduces | State |
 |---|---|---|---|
+| W1–W4 | 1 | The `.constellation` watcher predicate: rejects the bare directory event, the tail, a vanished `.tmp`, the rename-aside, and the live D3 `cataloger_reliability.json` persist; ACCEPTS the user's knowledge incl. `.trash/*.md` and a vanished user folder; matches a whole component so `My .constellation notes` survives. Plus the three-key suppression contract (`mark_with_parent` — the bare-directory event is a separate `HashMap<PathBuf>` key). | **GREEN** — 4/4 |
 | B1–B12 | 0 | The ledger contracts themselves: LF-only/NFC/relative-key encoding, the corrupt-store contract (one torn line costs one line), the link-life fold being idempotent *by arithmetic*, and the note-history stream **never** folding (`ma`→`mas`→`masadir` must survive as three events). | **GREEN** — 12/12 |
 
 *(Slices 1+ append their rows here. A row may not be marked GREEN until its RED state was
