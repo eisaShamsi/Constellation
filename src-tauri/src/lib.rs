@@ -34,6 +34,9 @@ mod link_life;
 /// MIG-104 Slice 5 — the one-shot seed that lifts the ALREADY-earned data out of `search.db`
 /// and into the ledger. The moment months of reading stops being single-copy.
 mod link_life_backfill;
+/// MIG-104 Slice 6 — the restore. Folds the ledger back into `note_links` after an index loss or
+/// rebuild, deriving `weight` rather than trusting a stored one. THE point of the migration.
+mod link_life_restore;
 mod mig003_step4;
 mod sight;
 mod sight_layout;

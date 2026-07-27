@@ -456,11 +456,34 @@ pub fn mark_seeded(line: String) -> String {
     }
 }
 
+/// The confidence tier DERIVABLE from a traversal count — the same thresholds
+/// `constellation_link_traverse` applies. Not stored in the ledger, because it is a function of
+/// `n`; computed wherever it is needed, exactly like `weight`.
+pub fn auto_tier(n: i64) -> &'static str {
+    if n >= 10 {
+        "established"
+    } else if n >= 3 {
+        "evidence"
+    } else {
+        "hypothesis"
+    }
+}
+
 /// True when `conf` is merely the tier derivable from `n` — i.e. carries no user judgment and
-/// must NOT be recorded. Mirrors the thresholds in `constellation_link_traverse`.
+/// must NOT be recorded.
 pub fn is_derivable_tier(conf: &str, n: i64) -> bool {
-    let auto = if n >= 10 { "established" } else if n >= 3 { "evidence" } else { "hypothesis" };
-    conf == auto
+    conf == auto_tier(n)
+}
+
+/// Rank a confidence tier so a restore can never DOWNGRADE a user's judgment to a derived one.
+/// `contested` is a deliberate stance, not a rung on the ladder, so it outranks everything.
+pub fn conf_rank(conf: &str) -> u8 {
+    match conf {
+        "contested" => 4,
+        "established" => 3,
+        "evidence" => 2,
+        _ => 1,
+    }
 }
 
 #[cfg(test)]

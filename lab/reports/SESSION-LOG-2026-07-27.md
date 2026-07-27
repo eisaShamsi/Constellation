@@ -374,3 +374,38 @@ The fix does not belong in the seed (refusing to guess is right). It is a **rule
 Recorded here and in `tests/mig104/README.md` so Slice 6 cannot quietly get it wrong; it needs its
 own RED-provable recipe (two same-named targets with DIFFERENT counts → the restore must skip, not
 average or max).
+
+---
+
+## Slice 6 — the restore (BUILT, binary @15:58, awaiting the HEADLINE Boss test)
+
+New `link_life_restore.rs` (~460 lines incl. 9 tests). Scheduled after the seed, after paint, own
+connection, stamped, failure non-fatal. Rust **1232/0** (+9; 50 MIG-104 tests total).
+
+**`weight` is DERIVED, never restored** — `1 + ln(1 + n)`. A stored weight is a cache of an
+arithmetic function of `n`, and 236 live rows carry values that function cannot produce. Recomputing
+heals all 236 for free and stops `index_note`'s live `weight != 1.0` clause treating them as earned
+forever.
+
+**Batched (50/txn)** because each `note_links` UPDATE fires `note_links_sky_au` (DELETE + INSERT over
+234k `sky_links` rows) plus the outgoing-aggregate pair's two `note_meta` UPDATEs.
+
+**The Boss's `banana` constraint is implemented and RED-provable:** a name-keyed record that matches
+several rows is SKIPPED and counted, never distributed. Its test gives the two same-named links
+DIFFERENT counts (5 and 1) and asserts **both stay 0** — proving the rule structurally rather than
+relying on today's data where both happen to be 1.
+
+**A gap my own test caught, and the fix is a design point not a patch.** `db_loss_round_trip` failed
+first time: a link with 7 walks restored its count but came back `confidence = 'hypothesis'`. Cause —
+`evidence` at n≥3 is the DERIVABLE tier, which the seed deliberately never records (it carries no
+user judgment). So the restore had nothing to write and preserved the rebuilt row's stale value. Fix:
+the restore now **derives the tier from `n`, exactly as it derives `weight`** — a recorded tier is a
+user judgment and wins; otherwise the tier is computed. New `link_life::auto_tier` +
+`conf_rank` ensure a restore can never DOWNGRADE a user's judgment (`contested` outranks everything,
+mirroring traverse's CASE WHEN preservation). This makes the symmetry explicit: **the ledger stores
+only what cannot be derived.**
+
+Also covered: a newer DB count is never ratcheted down by an older ledger; an unreadable store writes
+NOTHING (`refuse_write` honoured — that is precisely how a restore destroys what it was protecting);
+an identity-keyed record survives a TARGET rename, because the identity is the durable half of the key
+and the name is not.

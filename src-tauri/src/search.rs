@@ -9615,6 +9615,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // by arithmetic (absolute n + max-fold), so an interrupted pass simply re-runs next boot.
     crate::link_life_backfill::maybe_schedule(app.clone());
 
+    // MIG-104 Slice 6: fold the ledger back into note_links. Ordered AFTER the seed so a first
+    // boot seeds-then-restores coherently, and after paint like every other backfill. This is what
+    // makes losing or rebuilding search.db cost nothing the user created.
+    crate::link_life_restore::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free
