@@ -6113,7 +6113,22 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
     // happens at query time instead.
     let plain_body = normalize_arabic_for_search(&plain_body);
 
-    let props_json = serde_json::to_string(&properties).unwrap_or_default();
+    // MIG-104 Slice 2a — DETERMINISTIC key order. `properties` is a HashMap, whose iteration
+    // order varies per process, so serializing it directly wrote a byte-different
+    // `properties_json` for byte-identical frontmatter. The note_meta UPSERT's trigger guard
+    // is `OLD.properties_json IS NOT NEW.properties_json` (cece/history.rs), so every launch
+    // manufactured a fake "the user changed a property" history row.
+    //
+    // Measured on the live DB: of 10,299 properties_json history events, 2,861 (27.8%) have an
+    // `old` and `new` that parse to the IDENTICAL dict — 14.7% of all 19,481 history rows. The
+    // worst pair of notes holds 179 rows each, 175 of them no-ops, accruing at ~one row per app
+    // boot. This must land BEFORE any archiving: otherwise the time machine's raw material is
+    // mostly a record of HashMap iteration order, and the churn is what it would faithfully
+    // preserve. Same discipline as arabic/overrides.rs.
+    let props_json = serde_json::to_string(
+        &properties.iter().collect::<std::collections::BTreeMap<_, _>>(),
+    )
+    .unwrap_or_default();
     let tags_json = serde_json::to_string(&tags).unwrap_or_default();
     let links_json = serde_json::to_string(&wikilinks).unwrap_or_default();
     let headings_json = serde_json::to_string(&headings).unwrap_or_default();
@@ -10193,6 +10208,25 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
     // offline-drive guard (a legit rename then reads as ≤50% of the index, not a
     // near-total vanish).
     for p in &paths {
+        // MIG-104 Slice 2b — skip dot-segment paths (`.trash`, `.constellation`, …). Every
+        // OTHER walker already does this: the index walk (`if name.starts_with('.')`), the
+        // reconcile walk, and the Move picker. Pass 1 did not, and it is the PRODUCER of the
+        // 62 live `note_meta` rows sitting at `.trash` paths — verified, not assumed:
+        // trashing a note does `gate_rename` into `.trash` and then `reindex_delete_note`,
+        // which PURGES the row, so a row at a `.trash` path can only have been RE-CREATED
+        // afterwards; the watcher deliberately still passes `.trash` (a restore must reach the
+        // indexer), the file exists, it ends in `.md`, and a library owns the path — so Pass 1
+        // re-indexed it. `move_item` is not a candidate: it migrates existing rows and the Move
+        // picker excludes dot dirs.
+        //
+        // Consequence being fixed: 543 history rows across 40 trashed notes, two of them STILL
+        // ACCRUING history while sitting in the trash — i.e. deleted notes kept generating the
+        // very history the archive is meant to seal. Handled here at the indexer rather than in
+        // the watcher, on purpose: a note RESTORED from `.trash` moves to a normal path with no
+        // dot segment and is indexed as usual.
+        if crate::libraries::has_dot_segment_pub(p) {
+            continue;
+        }
         let pb = std::path::Path::new(p);
         if pb.is_dir() {
             // Existing directory — NEW side of an external folder rename/move, or a
@@ -13739,5 +13773,102 @@ mod tests_mig104_baseline {
             "MIG-104 BASELINE (200 iterations, 200-byte lines):\n  append (no fsync): median {}µs  p95 {}µs\n  append + fsync   : median {}µs  p95 {}µs",
             med(&plain), p95(&plain), med(&synced), p95(&synced)
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_mig104_slice2_determinism {
+    //! MIG-104 Slice 2 — the history stream must record what the USER changed, not what a
+    //! HashMap felt like serializing, and must not record anything for notes in the trash.
+    //! Both tests drive the REAL schema + the REAL trigger via init_db.
+    use super::*;
+
+    fn u() -> (tempfile::TempDir, Connection) {
+        let td = tempfile::tempdir().unwrap();
+        let cdir = td.path().join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let conn = init_db(&cdir.join("search.db")).unwrap();
+        (td, conn)
+    }
+
+    fn write(dir: &std::path::Path, rel: &str, body: &str) -> String {
+        let p = dir.join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(&p, body).unwrap();
+        p.to_string_lossy().to_string()
+    }
+
+    /// 2a — the serializer must be order-stable for identical content. Without the BTreeMap
+    /// this asserts nothing (a single process may happen to iterate consistently), so the
+    /// REAL proof is the trigger test below.
+    #[test]
+    fn props_json_is_byte_identical_for_identical_frontmatter() {
+        let fm = "---\nkind: note\ndomain: history\nstage: seed\nikhtilaf: none\nzzz: last\naaa: first\n---\nbody";
+        let ser = |c: &str| {
+            let (props, _, _) = parse_frontmatter(c);
+            serde_json::to_string(&props.iter().collect::<std::collections::BTreeMap<_, _>>()).unwrap()
+        };
+        let a = ser(fm);
+        let b = ser(fm);
+        assert_eq!(a, b, "identical frontmatter must serialize byte-identically");
+        // …and the order is the SORTED order, not insertion order.
+        assert!(a.find("\"aaa\"").unwrap() < a.find("\"zzz\"").unwrap(), "keys must be sorted");
+    }
+
+    /// 2a — THE ONE THAT MATTERS. Re-indexing a note whose frontmatter is unchanged must add
+    /// ZERO history rows. Before the fix this produced a second row on nearly every re-index,
+    /// because the HashMap serialized to different bytes and the trigger's
+    /// `OLD.properties_json IS NOT NEW.properties_json` guard fired. Live cost measured:
+    /// 2,861 of 10,299 property events (27.8%) were this artifact — one row per app boot.
+    #[test]
+    fn reindexing_an_unchanged_note_adds_no_history_row() {
+        let (td, conn) = u();
+        let p = write(td.path(), "n.md",
+            "---\nkind: note\ndomain: history\nstage: seed\nikhtilaf: none\nzzz: z\naaa: a\n---\nbody");
+        index_note(&conn, &p, "L", true).unwrap();
+        let after_first: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path=?1", [&p], |r| r.get(0))
+            .unwrap();
+        // Re-index the SAME bytes many times — simulating repeated boots.
+        for _ in 0..6 {
+            index_note(&conn, &p, "L", true).unwrap();
+        }
+        let after_many: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path=?1", [&p], |r| r.get(0))
+            .unwrap();
+        assert_eq!(
+            after_many, after_first,
+            "re-indexing unchanged content must not manufacture history (was ~1 row per boot)"
+        );
+    }
+
+    /// 2a — a REAL property edit must still be recorded. The determinism fix must not silence
+    /// the stream it exists to clean.
+    #[test]
+    fn a_real_property_edit_is_still_recorded() {
+        let (td, conn) = u();
+        let p = write(td.path(), "n.md", "---\nkind: note\nstage: seed\n---\nbody");
+        index_note(&conn, &p, "L", true).unwrap();
+        let before: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path=?1", [&p], |r| r.get(0))
+            .unwrap();
+        std::fs::write(&p, "---\nkind: note\nstage: grown\n---\nbody").unwrap();
+        index_note(&conn, &p, "L", true).unwrap();
+        let after: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path=?1", [&p], |r| r.get(0))
+            .unwrap();
+        assert!(after > before, "a genuine stage change MUST still produce a history row");
+    }
+
+    /// 2b — the dot-segment guard. A `.md` sitting in `.trash` must not be indexed by Pass 1.
+    /// Tested at the predicate + the index-walk level (the command itself needs an AppHandle).
+    #[test]
+    fn dot_segment_paths_are_excluded_from_indexing() {
+        assert!(crate::libraries::has_dot_segment_pub(r"E:\Lib\.trash\Foo.md"));
+        assert!(crate::libraries::has_dot_segment_pub(r"E:\Lib\.constellation\earned.jsonl"));
+        assert!(crate::libraries::has_dot_segment_pub("E:/Lib/.trash/Foo.md"));
+        // A restored note — moved OUT of .trash — must be indexable again.
+        assert!(!crate::libraries::has_dot_segment_pub(r"E:\Lib\Restored\Foo.md"));
+        assert!(!crate::libraries::has_dot_segment_pub(r"E:\Lib\Foo.md"));
     }
 }

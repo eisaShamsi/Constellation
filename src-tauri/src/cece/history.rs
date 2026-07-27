@@ -50,10 +50,17 @@ use serde::{Deserialize, Serialize};
 /// `captured_at` is Unix epoch milliseconds (matching the
 /// `cataloger_reliability.json` timestamp convention from V3-§9.C).
 /// `changes_json` is a JSON object whose keys are watched-field names
-/// and whose values are `{ "old": ..., "new": ... }` sub-objects;
-/// fields that didn't change are absent from the object (the trigger
-/// uses `CASE WHEN ... THEN ... ELSE NULL END` and `json_object`
-/// natively skips NULL values).
+/// and whose values are `{ "old": ..., "new": ... }` sub-objects.
+///
+/// ⚠ CORRECTED (MIG-104 Slice 2c, 2026-07-27). This comment previously claimed
+/// "fields that didn't change are absent from the object … `json_object`
+/// natively skips NULL values". That is FALSE — `json_object` stores an
+/// explicit JSON `null`, it does not omit the key — and the claim was
+/// contradicted by this file's own trigger doc ~40 lines below ("Fields that
+/// didn't change are recorded as `null` in the JSON") and by every row in the
+/// live database. Unchanged fields ARE present, with `null` values. Any reader
+/// of this stream — including MIG-104's archive and the future time-machine
+/// restore — must treat a key's presence as meaningless and test the VALUE.
 ///
 /// The covering index `(note_path, captured_at DESC)` matches the
 /// dominant access pattern: "show this note's history in chronological

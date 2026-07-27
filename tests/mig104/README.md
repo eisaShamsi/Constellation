@@ -42,6 +42,7 @@ applied uniformly:
 
 | Recipe | Slice | What it reproduces | State |
 |---|---|---|---|
+| D1–D4 | 2 | **Determinism + honesty.** D1 (RED-PROVEN): re-indexing a note with unchanged frontmatter manufactured **6 fake history rows in 6 re-indexes** (HashMap iteration order → byte-different `properties_json` → the trigger's `IS NOT` guard fires); with the sorted serializer, **0**. A real property edit is still recorded (the fix must not silence the stream it cleans). D4: the dot-segment guard — `.trash` / `.constellation` paths excluded from Pass 1, a RESTORED note (moved out of `.trash`) still indexable. | **GREEN** — 4/4 |
 | W1–W4 | 1 | The `.constellation` watcher predicate: rejects the bare directory event, the tail, a vanished `.tmp`, the rename-aside, and the live D3 `cataloger_reliability.json` persist; ACCEPTS the user's knowledge incl. `.trash/*.md` and a vanished user folder; matches a whole component so `My .constellation notes` survives. Plus the three-key suppression contract (`mark_with_parent` — the bare-directory event is a separate `HashMap<PathBuf>` key). | **GREEN** — 4/4 |
 | B1–B12 | 0 | The ledger contracts themselves: LF-only/NFC/relative-key encoding, the corrupt-store contract (one torn line costs one line), the link-life fold being idempotent *by arithmetic*, and the note-history stream **never** folding (`ma`→`mas`→`masadir` must survive as three events). | **GREEN** — 12/12 |
 

@@ -127,3 +127,41 @@ directory event unsuppressed. Named as a rule because the predicate could be ref
 
 **Boss test:** pending — bundled with the next Boss-testable slice rather than shipping a binary for
 a change whose visible effect is "the file tree stops blinking."
+
+---
+
+## Slice 2 — determinism + honesty (LANDED; must precede any archiving)
+
+**Concept:** the history stream must record what the USER changed — not what a HashMap felt like
+serializing.
+
+**2a — the churn (D1), RED-PROVEN.** `search.rs` serialized `parse_frontmatter`'s `HashMap` directly.
+Rust gives each `HashMap` instance its own hash keys, so identical frontmatter produced a
+byte-different `properties_json` per call → the CECE trigger's
+`OLD.properties_json IS NOT NEW.properties_json` guard fired → a fake "the user changed a property"
+row. **Reproduced exactly: 6 re-indexes → 6 fake rows; with the sorted serializer → 0.** That is the
+measured live pattern (~one row per app boot; 2,861 of 10,299 property events = 27.8% are this
+artifact, 14.7% of all 19,481 history rows; the worst note pair holds 179 rows of which 175 are
+no-ops). Fix: serialize through a `BTreeMap`. A genuine edit is still recorded — pinned by its own
+test, because a determinism fix must not silence the stream it exists to clean.
+
+**2b — the dot-segment guard (D4).** `reindex_changed_paths` Pass 1 was the ONE walker without the
+`has_dot_segment` check that the index walk, the reconcile walk and the Move picker all have.
+**Producer question settled by evidence, not assumption:** trashing a note does `gate_rename` into
+`.trash` then `reindex_delete_note`, which PURGES the row — so a row at a `.trash` path can only have
+been RE-CREATED afterwards, and Pass 1 is the only walker that would (the watcher deliberately still
+passes `.trash` so a restore reaches the indexer; the file exists, ends in `.md`, and a library owns
+it). `move_item` is excluded: it migrates existing rows and the Move picker excludes dot dirs. Live
+consequence fixed: 62 `note_meta` rows at `.trash` paths, 543 history rows across 40 trashed notes,
+two still ACCRUING history while sitting in the trash — deleted notes generating the very history the
+archive is meant to seal. Guarded at the indexer, not the watcher, on purpose: a restored note moves
+to a dot-free path and indexes normally. `has_dot_segment_pub` exported so there is ONE definition.
+
+**2c — the second false comment.** `cece/history.rs` claimed unchanged fields are "absent from the
+object (`json_object` natively skips NULL)". FALSE — `json_object` writes an explicit `null`; the
+claim was contradicted by this file's own trigger doc ~40 lines below and by every live row.
+Corrected, with the consequence stated for the archive + restore readers: **a key's presence is
+meaningless; test the VALUE.** (My own false comment from Stage 0 was corrected in `95390d3a`.)
+
+**Tests:** 4 new (byte-stable serialization · the RED-proven churn test · real-edit-still-recorded ·
+the dot-segment predicate incl. the restore case). Rust **1191/0** (+4).

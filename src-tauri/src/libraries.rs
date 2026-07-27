@@ -2697,6 +2697,14 @@ fn has_dot_segment(path: &str) -> bool {
     path.split(['/', '\\']).any(|seg| seg.starts_with('.'))
 }
 
+/// MIG-104 Slice 2b — the same predicate, reachable from `search.rs`'s `reindex_changed_paths`
+/// Pass 1, which was the one walker in the tree without it (and the verified producer of the
+/// live `note_meta` rows sitting at `.trash` paths). One definition, so the indexer and the
+/// name resolver can never disagree about what a hidden path is.
+pub(crate) fn has_dot_segment_pub(path: &str) -> bool {
+    has_dot_segment(path)
+}
+
 /// Query the active-universe index for every note path whose folded name OR
 /// folded alias equals the target. Returns ALL matches across the active DB;
 /// the caller filters by library prefix + dot-dir exclusion and applies the
