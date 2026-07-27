@@ -165,3 +165,42 @@ meaningless; test the VALUE.** (My own false comment from Stage 0 was corrected 
 
 **Tests:** 4 new (byte-stable serialization · the RED-proven churn test · real-edit-still-recorded ·
 the dot-segment predicate incl. the restore case). Rust **1191/0** (+4).
+
+---
+
+## Slice 3 — `link_life.rs`: the appender, the union reader, the contract (LANDED)
+
+**Purely additive** — a new module writing files nothing reads yet, so it cannot regress anything.
+~430 lines incl. 13 tests. Rust **1204/0** (+13).
+
+**Why an append, stated in the module docs so it survives a future refactor:** every other candidate
+design rewrote a file, and a rewriter holding a stale or empty in-memory map writes an empty store —
+destroying exactly what it exists to protect. An append has no such surface. This is the mechanism
+being *structurally incapable* of the failure, not disciplined against it.
+
+**Two streams, one appender.** `earned.jsonl` (+ `earned.snapshot.jsonl`) folds — `n` by MAX,
+decisions latest-wins, commutative and idempotent **by arithmetic**. `note-history.jsonl`
+**NEVER folds and never compacts** — the record IS the payload. `read_folded` is the ONLY fold in
+the module and reads Stream A only; it also *skips* any `nh`/`nd`/`nr` record defensively, so a
+hand-concatenated file cannot leak history into the fold. `read_history_for` orders by `hid`
+(the source ordinal) — never by `at`, which collides across 765 groups / 1,536 live rows.
+
+**The corrupt-store contract, implemented and tested:** absent = a FACT (an empty store, never an
+error); ONE unparseable line costs one line and is COUNTED (`LoadReport.skipped_lines`), with good
+lines loading on both sides of it; a structurally unusable store is renamed **aside** — never
+deleted — and sets `refuse_write`, because a blind overwrite destroys the backup that was about to
+save the user.
+
+**`.gitignore` (Boss decision #8), by NAME never by folder** — excluding `.constellation/` wholesale
+to skip the databases would exclude the earned data living inside it, in the same event it exists to
+survive. `*.db` rather than `search.db*` is what also catches the orphaned 939 MB
+`Constellation SV Test.db` (PJ-159); the test asserts all 8 machine files are excluded and that no
+ledger or config file is. `ensure_gitignore` never overwrites a user edit.
+
+**fsync is per-site, not uniform** — the Slice-0 measurement (3,418 µs vs 168 µs) is quoted in the
+module docs beside the `fsync` function, so the next reader knows why `append` deliberately does not
+call it.
+
+Also: `adopt_conflict_copies` folds Syncthing `.sync-conflict-*` copies back in then removes them
+(nearly free — the fold is already commutative), and `store_dir(conn)` derives the location from
+`conn.path()`'s parent, which is why no writer needs a path threaded to it.

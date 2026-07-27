@@ -26,6 +26,11 @@ mod fts5_tokenizer;
 mod inspector360;
 mod importers;
 mod libraries;
+/// MIG-104 — the Earned-Life Ledger: durable, plain-text, user-owned storage for the earned
+/// half of the Living Link Architecture AND a note's change history (the substrate the Boss's
+/// time-machine restore will read). Slice 3 is purely additive: it writes files nothing reads
+/// yet, so it cannot regress anything.
+mod link_life;
 mod mig003_step4;
 mod sight;
 mod sight_layout;
