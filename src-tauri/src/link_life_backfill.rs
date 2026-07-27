@@ -32,7 +32,15 @@ use tauri::Manager;
 use crate::search::SearchState;
 
 /// Bump to force a re-seed (e.g. if the record shape changes).
-pub(crate) const SCHEMA_VERSION: i64 = 1;
+///
+/// **v2 (2026-07-27)** — v1 shipped two defects the Boss found by reading his own ledger:
+/// the target join fanned out on duplicate note names (38 earned links became 44 records, 6 of
+/// them asserting links he never walked), and seeded decision timestamps were borrowed from
+/// `last_traversed` without saying so. Both fixed; the bump makes the corrected pass re-run.
+/// Re-running is safe by arithmetic (absolute `n` + max-fold), but the 6 spurious v1 records
+/// key on identities the corrected pass never writes, so they cannot be folded away — the v1
+/// `earned.jsonl` must be deleted before the re-seed, not merged with it.
+pub(crate) const SCHEMA_VERSION: i64 = 2;
 
 /// The ONE earned predicate — the single definition of "did the user earn anything here?".
 ///
@@ -137,15 +145,31 @@ fn run(app: &tauri::AppHandle) -> Result<SeedReport, String> {
 /// The seeding pass itself — separated from `run` so it is testable against a real `init_db`
 /// connection with no AppHandle.
 pub(crate) fn seed(conn: &Connection, dir: &std::path::Path) -> Result<SeedReport, String> {
+    // ONE output row per earned link row — never more.
+    //
+    // Boss-found 2026-07-27: this was a `LEFT JOIN note_meta tgt ON LOWER(tgt.name) = ...`, and a
+    // link whose target NAME is shared by several notes therefore fanned out into several records,
+    // each asserting a different target identity. Measured on the live index: 38 earned rows became
+    // 44 emitted, because 3 notes are named `السعودية`, 2 `فلسفة`, 2 `banana`, 2 `collision test`.
+    // The extra records claim the user walked links they never walked, and on restore could hand a
+    // count to the wrong link.
+    //
+    // The fix is not a better guess — it is a REFUSAL to guess. A correlated subquery resolves the
+    // target identity ONLY when exactly one indexed note carries the name; when the name is
+    // ambiguous it yields `''`, and the record keys on the target NAME instead. That is precisely
+    // what the fold's name-key fallback exists for, and it never invents a link.
     let sql = format!(
         "SELECT l.source_path, l.target_name, l.traversal_count, l.confidence, l.status,
                 COALESCE(src.cid_cn, '') AS src_cid,
-                COALESCE(tgt.cid_cn, '') AS tgt_cid,
-                COALESCE(tgt.name, l.target_name) AS tgt_label,
+                (SELECT CASE WHEN COUNT(*) = 1 THEN MAX(t.cid_cn) ELSE '' END
+                   FROM note_meta t
+                   WHERE LOWER(t.name) = LOWER(l.target_name) AND t.cid_cn != '') AS tgt_cid,
+                (SELECT CASE WHEN COUNT(*) = 1 THEN MAX(t.name) ELSE l.target_name END
+                   FROM note_meta t
+                   WHERE LOWER(t.name) = LOWER(l.target_name) AND t.cid_cn != '') AS tgt_label,
                 COALESCE(l.last_traversed, '') AS at
          FROM note_links l
          LEFT JOIN note_meta src ON src.path = l.source_path
-         LEFT JOIN note_meta tgt ON LOWER(tgt.name) = LOWER(l.target_name) AND tgt.cid_cn != ''
          WHERE {EARNED_PREDICATE}"
     );
     let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare seed: {}", e))?;
@@ -186,17 +210,23 @@ pub(crate) fn seed(conn: &Connection, dir: &std::path::Path) -> Result<SeedRepor
 
         // Only a NON-derivable confidence is a decision worth a record; a tier that merely
         // restates the count is not (see link_life::is_derivable_tier).
+        // The stamp is `last_traversed` — the only timestamp the index carries. For a WALK that is
+        // truthful; for a decision it is not (there is no "when was this archived" column), which
+        // the Boss's own data exposed: a Contested click at 09:21:25 seeded as 09:13:51, the walk's
+        // time. The time cannot be made true, so every seeded line is MARKED as derived — a reader
+        // can then tell a witnessed decision from a reconstructed one.
         let stamp = if at.is_empty() { chrono::Utc::now().to_rfc3339() } else { at };
+        let seeded = crate::link_life::mark_seeded;
         if n > 0 {
-            lines.push(crate::link_life::walk_line(&src_cid, &tgt_cid, &tgt_label, n, &stamp));
+            lines.push(seeded(crate::link_life::walk_line(&src_cid, &tgt_cid, &tgt_label, n, &stamp)));
         }
         if let Some(c) = conf.as_deref() {
             if c != "hypothesis" && !crate::link_life::is_derivable_tier(c, n) {
-                lines.push(crate::link_life::trust_line(&src_cid, &tgt_cid, &tgt_label, c, &stamp));
+                lines.push(seeded(crate::link_life::trust_line(&src_cid, &tgt_cid, &tgt_label, c, &stamp)));
             }
         }
         if status == "archived" {
-            lines.push(crate::link_life::retire_line(&src_cid, &tgt_cid, &tgt_label, &stamp));
+            lines.push(seeded(crate::link_life::retire_line(&src_cid, &tgt_cid, &tgt_label, &stamp)));
         }
         report.recorded += 1;
     }
@@ -362,6 +392,76 @@ mod tests_mig104_backfill {
         seed(&conn, td.path()).unwrap();
         let text2 = std::fs::read_to_string(td.path().join("earned.jsonl")).unwrap();
         assert!(text2.contains("\"t\":\"trust\""), "a manual tier that outranks the count IS a decision");
+    }
+
+    /// BOSS-FOUND 2026-07-27, RED before the fix. A link whose target NAME is shared by several
+    /// notes must produce exactly ONE record — and, because the name cannot identify which note
+    /// was meant, that record must key on the NAME, not on a guessed identity. The old LEFT JOIN
+    /// emitted one record per same-named note, each asserting a different target: 38 live earned
+    /// rows became 44 lines, claiming walks that never happened.
+    #[test]
+    fn an_ambiguous_target_name_emits_ONE_record_and_refuses_to_guess_an_identity() {
+        let (td, conn) = universe();
+        note(&conn, "/a.md", "A", "C_A");
+        // Three notes share one name — the live `السعودية` shape.
+        note(&conn, "/lib1/x.md", "السعودية", "C_X1");
+        note(&conn, "/lib2/x.md", "السعودية", "C_X2");
+        note(&conn, "/lib3/x.md", "السعودية", "C_X3");
+        link(&conn, "/a.md", "السعودية", 1, "hypothesis", "active", 1.693);
+
+        let r = seed(&conn, td.path()).unwrap();
+        assert_eq!(r.matched, 1, "ONE earned link row must yield ONE row — never one per same-named note");
+        assert_eq!(r.recorded, 1);
+
+        let text = std::fs::read_to_string(td.path().join("earned.jsonl")).unwrap();
+        assert_eq!(text.lines().count(), 1, "exactly one line on disk");
+        assert!(text.contains(r#""to":"""#), "an ambiguous name must NOT be resolved to a guessed identity");
+        for wrong in ["C_X1", "C_X2", "C_X3"] {
+            assert!(!text.contains(wrong), "must not assert a target it cannot identify: {wrong}");
+        }
+        // It still keys — by name, which is exactly what the fold's fallback exists for.
+        let (map, _) = link_life::read_folded(td.path());
+        assert_eq!(map.len(), 1);
+        assert!(map.keys().next().unwrap().starts_with("C_A>~"));
+    }
+
+    /// The unambiguous case must still resolve to the identity — the refusal above is scoped to
+    /// genuine ambiguity, not applied everywhere out of caution.
+    #[test]
+    fn a_unique_target_name_still_resolves_to_its_identity() {
+        let (td, conn) = universe();
+        note(&conn, "/a.md", "A", "C_A");
+        note(&conn, "/b.md", "Uniquely Named", "C_B");
+        link(&conn, "/a.md", "uniquely named", 2, "hypothesis", "active", 2.09);
+        seed(&conn, td.path()).unwrap();
+        let (map, _) = link_life::read_folded(td.path());
+        assert_eq!(map.get("C_A>C_B").unwrap().n, 2);
+        // …and the label is the note's real title, not the lowercased link text.
+        let text = std::fs::read_to_string(td.path().join("earned.jsonl")).unwrap();
+        assert!(text.contains(r#""tn":"Uniquely Named""#));
+    }
+
+    /// Seeded lines are marked as DERIVED, because a seeded decision's timestamp is borrowed from
+    /// `last_traversed` and is not when the decision happened (Boss-found: a Contested click at
+    /// 09:21:25 seeded as 09:13:51). Live-recorded lines carry no marker.
+    #[test]
+    fn seeded_lines_are_marked_derived_and_stay_valid_json() {
+        let (td, conn) = universe();
+        note(&conn, "/a.md", "A", "C_A");
+        note(&conn, "/b.md", "B", "C_B");
+        link(&conn, "/a.md", "B", 5, "contested", "archived", 0.0);
+        seed(&conn, td.path()).unwrap();
+        let text = std::fs::read_to_string(td.path().join("earned.jsonl")).unwrap();
+        for line in text.lines() {
+            let v: serde_json::Value = serde_json::from_str(line).expect("still valid JSON");
+            assert_eq!(v.get("seed").and_then(|x| x.as_i64()), Some(1), "every seeded line says so");
+        }
+        // The marker must not disturb the fold.
+        let e = link_life::read_folded(td.path()).0.get("C_A>C_B").cloned().unwrap();
+        assert_eq!((e.n, e.status.as_deref()), (5, Some("archived")));
+        // A live line carries no marker — the two are distinguishable.
+        let live = link_life::walk_line("C_A", "C_B", "B", 6, "2026-07-27T10:00:00Z");
+        assert!(!live.contains("\"seed\""));
     }
 
     #[test]

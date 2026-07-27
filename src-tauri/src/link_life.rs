@@ -440,6 +440,22 @@ pub fn priority_line(cid: &str, p: i64, at: &str) -> String {
     ])
 }
 
+/// Mark a line as SEEDED rather than observed — its timestamp is derived, not witnessed.
+///
+/// MIG-104 Slice 5, Boss-found 2026-07-27: the back-fill has no "when was this decided" column to
+/// read (`note_links` carries `created` and `last_traversed`, nothing else), so a seeded `trust` or
+/// `retire` necessarily borrows `last_traversed`. The Boss's own data made the gap visible — a
+/// Contested click at 09:21:25 was seeded as 09:13:51, the time of the walk. The timestamp cannot
+/// be made true, so the RECORD says it is derived. A reader (human or restore) can then tell a
+/// witnessed decision from a reconstructed one, and a future re-seed can be told apart from real
+/// activity. Additive: readers that do not know the field ignore it.
+pub fn mark_seeded(line: String) -> String {
+    match line.rfind('}') {
+        Some(i) => format!("{},\"seed\":1{}", &line[..i], &line[i..]),
+        None => line,
+    }
+}
+
 /// True when `conf` is merely the tier derivable from `n` — i.e. carries no user judgment and
 /// must NOT be recorded. Mirrors the thresholds in `constellation_link_traverse`.
 pub fn is_derivable_tier(conf: &str, n: i64) -> bool {

@@ -315,3 +315,35 @@ One test assertion of mine was too crude and I corrected it rather than the code
 `.gitignore` text does not contain "earned", but "earned" appears legitimately in the file's
 explanatory comment (which is the point — it tells a reader why the folder must not be excluded
 wholesale). It now asserts the SEMANTIC via `gitignore_excludes()` per ledger file.
+
+### Slice 5 — Boss test found TWO defects in the seed; both fixed (SCHEMA_VERSION → 2)
+
+The Boss read his seeded `earned.jsonl` and it held **44 lines**. Verified against the live index:
+the truth is **38 earned rows**. Both defects were mine.
+
+**(a) The target join fanned out on duplicate note names.** `LEFT JOIN note_meta tgt ON
+LOWER(tgt.name) = LOWER(l.target_name)` emits one row per same-named note. Measured live: **3** notes
+named `السعودية`, **2** `فلسفة`, **2** `banana`, **2** `collision test` → 38 earned links became 44
+records, and **6 asserted links the user never walked**, each naming a different target identity. On
+restore those could hand an earned count to the wrong link. His Arabic libraries are what exposed it —
+`السعودية`/`فلسفة` naturally recur across libraries; a single-language corpus would have sailed past.
+**Fix: a correlated subquery that resolves the identity ONLY when exactly one indexed note carries
+the name, and otherwise refuses to guess** — yielding `''` so the record keys on the target NAME,
+which is precisely what the fold's name-key fallback exists for. One output row per link row, always.
+
+**(b) Seeded decision timestamps were derived but presented as observed.** The index has no "when was
+this archived/judged" column, so a seeded `trust`/`retire` borrows `last_traversed`. His data made the
+gap visible: a Contested click at **09:21:25** was seeded as **09:13:51** — the walk's time. The
+timestamp cannot be made true, so every seeded line is now marked **`"seed":1`** (new
+`link_life::mark_seeded`): a reader — human or restore — can tell a witnessed decision from a
+reconstructed one, and a future re-seed from real activity. Additive, still valid JSON, does not
+disturb the fold.
+
+**Also corrected: the Plan's "33 recordable" is now 38** — not drift, but the Boss's own Slice-4 test
+adding real earned data (3 walks + an archive + a Contested). The predicate is unchanged.
+
+`SCHEMA_VERSION` → **2** to force the corrected pass. Documented on the constant: re-running is safe
+by arithmetic, but the 6 spurious v1 records key on identities the corrected pass never writes, so
+they cannot be folded away — the v1 file must be **deleted** before the re-seed, not merged with it.
+
+3 new tests (41 MIG-104 total). Rust **1223/0**. Binary @14:24.
