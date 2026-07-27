@@ -521,3 +521,38 @@ one.** Also found in the same pass: both modules had omitted `journal_mode=WAL` 
 
 Rust **1234/0** (52 MIG-104). Binary **@18:11**. The Boss's wiped state is still in place, so the next
 boot is the real proof.
+
+### ★★ SLICE 6 BOSS TEST — PASS. The earned layer survived being destroyed. (binary @18:11)
+
+Method (the small test): I snapshotted all 38 earned rows to `EARNED-SNAPSHOT.json`, then wiped the
+earned layer ONLY — counts to 0, confidence to `hypothesis`, retired links back to active, weights to
+1.0. Verified 0 earned rows left in the DB, `earned.jsonl` intact as the sole surviving copy. The Boss
+booted the fixed binary.
+
+```
+[link_life_restore] earned layer restored: 34 of 34 records written
+                    (0 already current, 0 no longer in the index, 1 ambiguous-skipped)
+```
+
+**Independent verification against the snapshot — every one of the 38 accounted for, none unexplained:**
+
+| Outcome | Count | Why |
+|---|---|---|
+| **Restored EXACTLY** (n, confidence, status, weight) | **34** | the promise of the migration |
+| of which had an arithmetically-impossible weight, healed | 1 | `weight` is derived from `n`, never trusted |
+| Correctly NEVER recorded | 2 | `james williamson (film pioneer)`, `target note_v1` — **source note absent from the index**, so the record is unkeyable and can never be restored to anything. The seed skipped and counted them by design; writing them would have been theatre. |
+| Correctly SKIPPED by the ambiguity rule | 2 | the `banana` pair — 2 notes share the name, 2 sibling link rows, ONE folded name-keyed record. The Boss-forced rule refuses to distribute one count across links that may have earned different amounts. |
+| **MISMATCHED** | **0** | — |
+
+Spot-checks in the app: `Earth ×1 + Contested`, `Madagascar ×1`, and **`France` id=408533 → n=1,
+status=`archived`** — a retirement decision surviving the destruction of the layer that held it, while
+the wikilink stayed in the note. That is the case a rebuild-from-notes could never recover, and the
+reason MIG-104 exists.
+
+**A verification error of mine, corrected for the record:** my first spot-check query used
+`source_path LIKE '%Africa.md'`, which also matches *East Africa.md* and *West Africa.md*, and
+`fetchone()` returned the wrong row — making France look unrestored. The app was right; the query was
+wrong. Checked by id thereafter.
+
+**MIG-104's core promise is now proven on live data: losing the index costs the user nothing they
+created.**
