@@ -9866,10 +9866,22 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         // surfaces — the summary, CECE state history, Sight layout, shape trail and
         // source suggestions stayed behind at the dead path forever. Those stale rows
         // are exactly the destination phantoms migrate_note_db_paths' pre-deletes must
-        // clear when a future note lands on the same path. The declared ON DELETE
-        // CASCADE on three of these tables is inert in production (FKs never enabled);
-        // these explicit purges STAY even if FKs are enabled later — they guard
-        // FK-off external writers and become harmless 0-row deletes.
+        // clear when a future note lands on the same path.
+        //
+        // ⚠ CORRECTION (2026-07-26, same day as the Stage-0 commit that wrote the
+        // sentence this replaces): the original comment claimed the declared
+        // ON DELETE CASCADE was "inert in production (FKs never enabled)". That is
+        // FALSE, and it contradicted tests_pj150_fk_enforcement_reality landed in the
+        // same commit: rusqlite enables `PRAGMA foreign_keys` on every connection, so
+        // the CASCADE FIRES at the `DELETE FROM note_meta` ~30 lines above, and the
+        // three FK-bearing purges below (note_summaries / note_state_history /
+        // sources_suggestions) match ZERO rows every time. Proven by
+        // tests_stage0_delete_order_defect. They are kept only as belt-and-braces for a
+        // hypothetical FK-off connection and for the two NON-FK tables
+        // (sight_v3_layout, shape_history) where they DO the work.
+        // CONSEQUENCE FOR MIG-104: an archive-before-purge hook must NOT be placed here —
+        // by this point the history is already gone. It belongs BEFORE the note_meta
+        // delete above. (MIG-104 Plan, slice: archive-before-purge.)
         // (shape_history is created lazily — a "no such table" failure is a correct no-op.)
         let _ = conn.execute("DELETE FROM note_summaries WHERE path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_state_history WHERE note_path = ?1", params![note_path]);
@@ -13628,5 +13640,49 @@ mod tests_pj150_fk_enforcement_reality {
             .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path='/b.md'", [], |r| r.get(0))
             .unwrap();
         assert_eq!((moved, child), (1, 1), "deferred-FK transaction moves the note and its history together");
+    }
+}
+
+#[cfg(test)]
+mod tests_stage0_delete_order_defect {
+    //! Verifies the MIG-104 Plan's finding against MIG-105 Stage 0 (commit 042802c5):
+    //! FK enforcement means `DELETE FROM note_meta` CASCADES to the child tables, so the
+    //! explicit purges added 30 lines LATER (search.rs:9874-9878) match ZERO rows. An
+    //! archive hook placed at the purge would archive nothing. The Stage-0 comment at
+    //! :9870 claiming the cascade is "inert in production" is FALSE — and is contradicted
+    //! by tests_pj150_fk_enforcement_reality landed in the same commit.
+    use super::*;
+
+    #[test]
+    fn on_delete_cascade_fires_at_the_parent_delete_not_at_the_later_purge() {
+        let td = tempfile::tempdir().unwrap();
+        let conn = init_db(&td.path().join("search.db")).unwrap();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, body_text, cid_cn)
+             VALUES ('/n.md','n','L',0,'','C1')", [],
+        ).unwrap();
+        for i in 0..5 {
+            conn.execute(
+                "INSERT INTO note_state_history (note_path, captured_at, changes_json) VALUES ('/n.md', ?1, '{}')",
+                [i],
+            ).unwrap();
+        }
+        let before: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path='/n.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(before, 5);
+
+        // Exactly what reindex_delete_note does, in its shipped order.
+        conn.execute("DELETE FROM note_meta WHERE path = ?1", params!["/n.md"]).unwrap();
+        let after_parent: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path='/n.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(after_parent, 0, "the CASCADE already destroyed the history — it is NOT inert");
+
+        // …so the explicit purge that follows is a no-op: nothing left to archive.
+        let purged = conn
+            .execute("DELETE FROM note_state_history WHERE note_path = ?1", params!["/n.md"])
+            .unwrap();
+        assert_eq!(purged, 0, "the later purge matches zero rows; an archive hook here archives nothing");
     }
 }
