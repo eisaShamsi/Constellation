@@ -197,10 +197,16 @@ pub fn inject_frontmatter(content: &str, fields: &FrontmatterFields) -> String {
 }
 
 /// Build a fresh frontmatter string from fields.
+///
+/// PJ-153 (MIG-105 C6): the identity is emitted under the namespaced key
+/// `cid_cn:` — NEVER the legacy `cid:`. `index_note`'s extractor reads only
+/// `cid_cn:` (search.rs `extract_frontmatter_cid_cn`), so a legacy emission
+/// indexed as cid_cn='' — an identity-less note invisible to every
+/// cid-keyed surface until first tab-open.
 fn build_frontmatter(fields: &FrontmatterFields) -> String {
     let mut fm = String::new();
     fm.push_str(&format!("title: \"{}\"\n", escape_yaml_string(&fields.title)));
-    fm.push_str(&format!("cid: {}\n", fields.cid));
+    fm.push_str(&format!("cid_cn: {}\n", fields.cid));
     fm.push_str(&format!("kind: {}\n", fields.kind.to_lowercase()));
     fm.push_str(&format!("created: {}\n", fields.created));
     if !fields.aliases.is_empty() {
@@ -227,6 +233,12 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
     let mut has_created = false;
     let mut has_aliases = false;
     let mut in_aliases_block = false;
+    // PJ-153 (MIG-105 C6): when the block already carries the namespaced
+    // `cid_cn:`, any legacy `cid:` line is DROPPED (a block must never end
+    // up with two identity keys).
+    let existing_has_cid_cn = existing
+        .lines()
+        .any(|l| l.trim_start().starts_with("cid_cn:"));
 
     for line in existing.lines() {
         let trimmed = line.trim_start();
@@ -235,10 +247,27 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
         if trimmed.starts_with("title:") {
             has_title = true;
         }
-        if trimmed.starts_with("cid:") {
+        if trimmed.starts_with("cid_cn:") {
+            // Existing namespaced identity — PRESERVED, never re-minted:
+            // cid_cn is the note's durable identity; overwriting it would
+            // sever every earned row (links, review, history) keyed to it.
+            if has_cid {
+                continue; // malformed duplicate — keep only the first
+            }
             has_cid = true;
-            // Always overwrite cid with ours
-            lines.push(format!("cid: {}", fields.cid));
+            lines.push(line.to_string());
+            continue;
+        }
+        if trimmed.starts_with("cid:") {
+            // Legacy key — rewritten as `cid_cn:` keeping ITS value (the
+            // migrate_cid_to_cid_cn transform: identity survives the merge),
+            // unless a `cid_cn:` line already owns identity.
+            if has_cid || existing_has_cid_cn {
+                continue;
+            }
+            has_cid = true;
+            let indent = &line[..line.len() - trimmed.len()];
+            lines.push(format!("{}cid_cn:{}", indent, &trimmed[4..]));
             continue;
         }
         if trimmed.starts_with("kind:") {
@@ -301,7 +330,8 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
         );
     }
     if !has_cid {
-        lines.push(format!("cid: {}", fields.cid));
+        // No identity key of either spelling — mint under the namespaced key.
+        lines.push(format!("cid_cn: {}", fields.cid));
     }
     if !has_kind {
         lines.push(format!("kind: {}", fields.kind.to_lowercase()));
@@ -894,9 +924,10 @@ pub struct DeCanonicalizeResult {
 /// Restore original filenames for all canonical files in a library.
 /// Renames files from canonical (20260411T...Z_NOTE_XXXX.md) back to human names.
 /// Uses frontmatter `title` or `original_filename` to determine the target name.
-/// Strips `kind` and `original_filename` from frontmatter but PRESERVES `cid` —
-/// the unique identifier stays on every note as a frontmatter property so
-/// Constellation's living-link system (traversal weights, typed edges, link
+/// Strips `kind` and `original_filename` from frontmatter but PRESERVES the
+/// note's identity — `cid_cn:` stays as-is, and a legacy `cid:` is migrated to
+/// `cid_cn:` (value kept) on the same pass (see `remove_canonical_fields`) —
+/// so Constellation's living-link system (traversal weights, typed edges, link
 /// history) keeps working without imposing filename conventions on the vault.
 /// Deletes `.meta.json` sidecars.
 #[tauri::command]
@@ -939,7 +970,8 @@ pub fn de_canonicalize_library(
                         });
                     let clean = if title.ends_with(".md") { title } else { format!("{}.md", title) };
 
-                    // Clean frontmatter: remove cid, kind, original_filename, aliases
+                    // Clean frontmatter: strip kind/original_filename/aliases;
+                    // KEEP identity (cid_cn preserved, legacy cid: migrated).
                     let cleaned = remove_canonical_fields(&content);
                     let parent = file_path.parent().unwrap_or(lib_path);
                     let target = unique_path(parent, &clean);
@@ -1380,7 +1412,8 @@ mod tests {
         };
         let result = inject_frontmatter(content, &fields);
         assert!(result.starts_with("---\n"));
-        assert!(result.contains("cid: 20260410T153045Z_NOTE_7F3A"));
+        assert!(result.contains("cid_cn: 20260410T153045Z_NOTE_7F3A"));
+        assert!(!result.contains("\ncid: "), "the legacy key is never emitted (PJ-153)");
         assert!(result.contains("kind: note"));
         assert!(result.contains("# Hello World"));
     }
@@ -1397,10 +1430,75 @@ mod tests {
             original_filename: None,
         };
         let result = inject_frontmatter(content, &fields);
-        assert!(result.contains("cid: 20260410T153045Z_NOTE_ABCD"));
+        assert!(result.contains("cid_cn: 20260410T153045Z_NOTE_ABCD"));
+        assert!(!result.contains("\ncid: "), "the legacy key is never emitted (PJ-153)");
         assert!(result.contains("tags:"));
         assert!(result.contains("- rust"));
         assert!(result.contains("Body text."));
+    }
+
+    /// PJ-153 (MIG-105 C6) — a legacy `cid:` line in existing frontmatter is
+    /// recognized and rewritten as `cid_cn:` with ITS value preserved (the
+    /// migrate_cid_to_cid_cn transform): identity survives a re-canonicalize /
+    /// re-import; the legacy key never survives (it would index as cid_cn='')
+    /// and is never duplicated.
+    #[test]
+    fn test_merge_migrates_legacy_cid_preserving_value() {
+        let content = "---\ntitle: Probe\ncid: 20260704T162439Z_NOTE_1B16\n---\n\nBody text.";
+        let fields = FrontmatterFields {
+            title: "Probe".to_string(),
+            cid: "20260726T000000Z_NOTE_FFFF".to_string(),
+            kind: "note".to_string(),
+            created: "2026-07-26T00:00:00Z".to_string(),
+            aliases: vec![],
+            original_filename: None,
+        };
+        let result = inject_frontmatter(content, &fields);
+        assert!(result.contains("cid_cn: 20260704T162439Z_NOTE_1B16"), "value preserved");
+        assert!(!result.contains("20260726T000000Z_NOTE_FFFF"), "not re-minted");
+        assert!(!result.contains("\ncid: "), "legacy key gone");
+        assert_eq!(result.matches("cid_cn:").count(), 1);
+        assert!(result.contains("Body text."));
+    }
+
+    /// PJ-153 (MIG-105 C6) — an existing `cid_cn:` is preserved untouched and
+    /// never duplicated by the add-missing branch.
+    #[test]
+    fn test_merge_preserves_existing_cid_cn() {
+        let content = "---\ntitle: N\ncid_cn: 20260704T162439Z_NOTE_351C\n---\nB";
+        let fields = FrontmatterFields {
+            title: "N".to_string(),
+            cid: "20260726T000000Z_NOTE_EEEE".to_string(),
+            kind: "note".to_string(),
+            created: "2026-07-26T00:00:00Z".to_string(),
+            aliases: vec![],
+            original_filename: None,
+        };
+        let result = inject_frontmatter(content, &fields);
+        assert!(result.contains("cid_cn: 20260704T162439Z_NOTE_351C"));
+        assert!(!result.contains("20260726T000000Z_NOTE_EEEE"));
+        assert_eq!(result.matches("cid_cn:").count(), 1);
+    }
+
+    /// PJ-153 (MIG-105 C6) — when BOTH keys exist, `cid_cn:` owns identity and
+    /// the legacy line is dropped: the merged block carries exactly one
+    /// identity key, regardless of line order.
+    #[test]
+    fn test_merge_drops_legacy_cid_when_cid_cn_present() {
+        let content = "---\ncid: OLDVAL\ncid_cn: 20260704T162439Z_NOTE_351C\ntitle: N\n---\nB";
+        let fields = FrontmatterFields {
+            title: "N".to_string(),
+            cid: "20260726T000000Z_NOTE_DDDD".to_string(),
+            kind: "note".to_string(),
+            created: "2026-07-26T00:00:00Z".to_string(),
+            aliases: vec![],
+            original_filename: None,
+        };
+        let result = inject_frontmatter(content, &fields);
+        assert!(result.contains("cid_cn: 20260704T162439Z_NOTE_351C"));
+        assert!(!result.contains("OLDVAL"), "the legacy line is dropped, not migrated into a duplicate");
+        assert_eq!(result.matches("cid_cn:").count(), 1);
+        assert!(!result.contains("\ncid: "));
     }
 
     #[test]

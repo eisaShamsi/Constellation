@@ -70,3 +70,87 @@ Stage 0 → Phase 2 Plan.
 
 **PJ ledger note:** reconciliation (SO#9) deferred to the Architect-phase close (Boss approval of
 the doc) — the §9 ledger list in the Architect doc is the staging list for that bump.
+
+---
+
+## Phase: MIG-105 STAGE 0 — the live-defect remediation (BUILT + Boss-validated)
+
+**Binary:** `src-tauri/target/release/constellation.exe` @ 21:42. **Gates:** Rust **1181/0** (10 ignored)
+· svelte-check **0 errors** · vitest **53 files / 626 tests**. Per-build safety inspection
+`wf_75a9d203-e96`: 41 confirmed whole-app (15 HIGH / 19 MED / 7 LOW), **ZERO in-diff** — verified
+mechanically by intersecting every finding's file:line against `git diff -U0` hunk ranges (±3).
+
+### Commits landed (C1-C7 + P0)
+
+- **C1 (PJ-157)** — `vitest.config.ts` 52-entry allow-list → **globs** (`tests/**`, `src/**`) with
+  explicit, reason-commented excludes; new `vitest.manual.config.mjs` + `npm test` /
+  `npm run test:red:frontmatter`. A test file can never again silently not-run. All 5 clauses verified
+  (52 collected, red-pin 4F/1P, exclusion holds, sight-v6 5 files, before==after).
+- **C2 (PJ-151)** — reconcile: the discarded `rusqlite::Error` is captured and named; the fabricated
+  "target busy/contended" message is gone; re-adopt `Err` surfaced; bounded ≤20 lines/boot + a forced
+  boot summary whenever anything failed.
+- **C3 (PJ-149)** — `migrate_note_db_paths` **5 → 11 tables** (+note_body, note_summaries,
+  note_state_history, sight_v3_layout, shape_history, sources_suggestions), destination pre-deletes,
+  lazy-table no-op for shape_history, every statement de-silenced. `reindex_delete_note` purges the
+  same five. `mig003_step4` delegation comment. **The new idempotence test caught a latent landmine:**
+  a repeat call with the same (old,new) DELETED the freshly-migrated destination rows → note indexed
+  NOWHERE. Guarded by a source-row existence check.
+- **C4 (PJ-154)** — cid-collision self-heal at the `index_note` funnel: owner-file gone → relocate the
+  dead row via the 11-table cascade → retry; owner-file live → index under the `''` sentinel, NEVER
+  steal. Covers all adoption surfaces at once.
+- **C5** — `relocate_row` delegated to the single shared cascade (no more drifted duplicate).
+- **C6 (PJ-153)** — `cid:` → `cid_cn:` at all three canonical emitters (value-preserving legacy
+  migration); healer injects for non-templates via `ensure_cid_cn` + reindex; template exemption after
+  index selection; `resolve_templates_dir_for_root` factored out. 19 tests.
+- **C7 (PJ-155/156)** — `collect_library_notes` exclude-set (second-screen duplicates/mislabels fixed);
+  new shared `owning_own_library_name` (own libraries only — MIG-065 §J) replacing the last three
+  first-match resolvers (bases/shape/tasks); callerless `get_library_mode` deleted; scoped_paths
+  boundary; store.ts `addLinkToNote` longest-root + sidecar-trash boundary guard. 11 Rust + 3 TS tests.
+- **P0 (PJ-161)** — **no app defect.** The "registry disagreement" was an observer artifact: Claude
+  sessions read a stale MSIX AppContainer shadow of `%APPDATA%`. Architect §5 corrected; standing
+  protocol recorded (never trust an in-container AppData read; never launch Constellation from inside
+  a Claude session; registry writes only from a Boss-launched process).
+
+### ★ THE DISCOVERY — foreign keys ARE enforced (overturns the PJ-150 diagnosis)
+
+The Boss's first Stage-1 boot logged `FOREIGN KEY constraint failed` from the cascade. A direct probe
+on a real `init_db` connection settled it: **`PRAGMA foreign_keys = 1`** — rusqlite enables FKs on
+every connection, so no PRAGMA appears in our source and a grep for the enabler could never find it.
+The child tables are `ON UPDATE NO ACTION` ⇒ **SQLite refuses the parent `note_meta.path` UPDATE for
+any note owning a summary / state-history / suggestions row.** That is the true root cause of the
+**1,591** "relocate deferred" failures — invisible for ~3 weeks, and unreproducible in every replica
+replay because the replicas ran FK-off. Fix: the cascade now runs under `PRAGMA defer_foreign_keys`
+inside a transaction (owned when the caller has none), so parent and children move together and are
+validated at COMMIT. **Red proven** by disabling the pragma — the harness reproduces the Boss's live
+log line verbatim — then green with it. Pinned permanently as `tests_pj150_fk_enforcement_reality`.
+
+### ★ TWO FALSE-SUCCESS BUGS I INTRODUCED, both fixed
+
+1. `index_note`'s heal logged "relocated … and re-indexed" **before** its retry → claimed victory on a
+   refused relocation while the note stayed invisible. Now reports the verified outcome
+   (OK / PARTIAL / FAILED) after re-reading the dead row.
+2. `relocate_row`, once delegated to the deliberately best-effort shared cascade, returned `Ok`
+   unconditionally → reconcile announced **"healed index drift: 14 relocated"** on a boot where
+   **nothing moved**. Now verifies the row actually moved before reporting success; the failure
+   sentinel is named distinctly in the reconcile log.
+Both are **LL-035** (added this session): a claim that something is inactive is a RUNTIME claim; and
+never log a success you have not verified.
+
+### Boss Stage-1 validation (2026-07-26, second binary) — PASS, verified in the DB not the log
+
+`Testing opened note.md` present at its real path with identity `20260711T142152Z_NOTE_2FDC`, dead row
+gone; **8/8** verifiable heal pairs healed (old=0 / new=1); **0** orphaned child rows in all three
+tables; note_meta total unchanged 7817 (no duplicates); root library 126 → 128. cid healer:
+`stale=17 templates=14 injected=3 still_empty=0` on the first healed boot — the single remaining
+empty-cid row is `.trash\ابن فضلان - Copy.md`, whose identity the duplicate-guard **correctly refused
+to steal** from the live original. (An earlier claim of mine that the healer "didn't fire" was wrong —
+the baseline was taken post-heal; corrected here.)
+
+### Open
+
+- **R2 ruling still needed** (gates C8): on a genuine note delete, does `note_state_history` die with
+  the note (CASCADE as declared) or get archived first? C8 (child-table rebuild to
+  `ON UPDATE CASCADE`) is now upgraded from optional hardening to the proper structural fix — the
+  deferred-FK cascade makes moves work, but the declaration is still wrong.
+- PJ-124 struck a **third** time (inspection ignored `args.files`, ran whole-app). 23 verifier agents
+  died on a session limit — their candidates are unverified, not cleared.

@@ -181,34 +181,68 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     //    next boot — NEVER falls to remove: falling to remove would destroy exactly
     //    the aux relocate exists to preserve, for a note that still exists. [audit]
     let mut relocated = 0usize;
+    let mut relocate_failed = 0usize;
     let mut remove: Vec<String> = Vec::new();
     for (dead, cid) in &stale {
+        // Empty-cid rows have no identity to relocate by, so they land in
+        // `remove`. PJ-153 (MIG-105 C6): the init_db boot healer now INJECTS
+        // cid_cn into every knowledge note that lacks one (and it runs before
+        // this reconcile — proven boot order), so the only rows that can still
+        // arrive here empty are kind-template rows (empty BY DESIGN, MIG-TPL
+        // §1 — a mold's identity IS its content; remove + re-adopt is lossless
+        // for it) and genuinely-deleted notes. A knowledge note can no longer
+        // be dropped here for lacking an identity.
         let target = if cid.is_empty() { None } else { orphan_by_cid.get(cid).cloned() };
         match target {
             Some(new_path) => {
-                let ok = {
+                let res = {
                     let guard = state.db.lock().map_err(|e| e.to_string())?;
                     let conn = guard.as_ref().ok_or("DB not initialized")?;
-                    relocate_row(conn, dead, &new_path).is_ok()
+                    relocate_row(conn, dead, &new_path)
                 };
-                if ok {
-                    let np = norm(&new_path);
-                    // Reindex the new path to refresh name/body (re-locks internally,
-                    // so it runs AFTER the relocate lock is released).
-                    if let Some(lib_name) = lib_for(&roots, &np) {
-                        let _ = reindex_single_note(&state, &new_path, lib_name);
+                match res {
+                    Ok(()) => {
+                        let np = norm(&new_path);
+                        // Reindex the new path to refresh name/body (re-locks internally,
+                        // so it runs AFTER the relocate lock is released).
+                        if let Some(lib_name) = lib_for(&roots, &np) {
+                            let _ = reindex_single_note(&state, &new_path, lib_name);
+                        }
+                        consumed.insert(np); // this orphan is the relocated row — don't re-adopt it
+                        relocated += 1;
                     }
-                    consumed.insert(np); // this orphan is the relocated row — don't re-adopt it
-                    relocated += 1;
-                } else {
-                    // Target busy (a concurrent writer already indexed it) or contended
-                    // → keep the dead row + its aux; a later boot relocates or the
-                    //   duplicate resolves. Do NOT remove.
-                    diag(app, &format!("[reconcile] relocate deferred (target busy/contended), kept for retry: {}", dead));
+                    Err(e) => {
+                        // PJ-151 (2026-07-26): this arm discarded the error for ~3 weeks
+                        // while asserting "target busy/contended" — wrong in 100% of the
+                        // 1,591 logged cases (live data shows NO row at any target path).
+                        // Surface the REAL error so the failing class can be named; keep
+                        // the dead row + its aux for retry next boot. Never fall to remove.
+                        relocate_failed += 1;
+                        if relocate_failed <= 20 {
+                            let kind = match e {
+                                // relocate_row's two sentinels, distinguished so the log
+                                // says WHICH invariant stopped the heal.
+                                rusqlite::Error::InvalidQuery => "target OCCUPIED (guard)",
+                                rusqlite::Error::StatementChangedRows(0) => {
+                                    "cascade moved NOTHING (see [migrate_note_db_paths] lines above)"
+                                }
+                                _ => "DB error",
+                            };
+                            diag(app, &format!(
+                                "[reconcile] relocate FAILED ({kind}) {dead} -> {new_path}: {e:?} — kept for retry"
+                            ));
+                        }
+                    }
                 }
             }
             None => remove.push(dead.clone()), // no orphan with this cid — removal CANDIDATE
         }
+    }
+    if relocate_failed > 20 {
+        diag(app, &format!(
+            "[reconcile] …plus {} more relocate failures this boot (first 20 detailed above)",
+            relocate_failed - 20
+        ));
     }
 
     // 8. De-index the truly-gone — but ONLY when the walk was COMPLETE (an
@@ -238,6 +272,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     //    App). Capped: a huge orphan set is a mid-initial-index race, not drift —
     //    the initial reindex owns that, so skip re-adopt there.
     let mut readopted = 0usize;
+    let mut readopt_failed = 0usize;
     if orphans.len() <= cap {
         for (p, _cid) in &orphans {
             let np = norm(p);
@@ -245,13 +280,32 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
                 continue;
             }
             if let Some(lib_name) = lib_for(&roots, &np) {
-                if reindex_single_note(&state, p, lib_name).is_ok() {
-                    readopted += 1;
+                match reindex_single_note(&state, p, lib_name) {
+                    Ok(_) => readopted += 1,
+                    Err(e) => {
+                        // PJ-154 (2026-07-26): this Err was 100% silent — an orphan that
+                        // can never index (e.g. a cid_cn UNIQUE collision with a dead row)
+                        // stayed invisible to search with no trace. Surface it, bounded.
+                        readopt_failed += 1;
+                        if readopt_failed <= 20 {
+                            diag(app, &format!("[reconcile] re-adopt FAILED {}: {}", p, e));
+                        }
+                    }
                 }
             }
         }
     } else {
         diag(app, &format!("[reconcile] {} orphan files (> cap {}) — skipping re-adopt (a full reindex is the right tool).", orphans.len(), cap));
+    }
+
+    // PJ-151 (2026-07-26): an all-deferred boot used to be COMPLETELY invisible —
+    // the (0,0,0) tuple looked like "nothing to do" while every relocate failed.
+    // Any failure now forces a boot summary regardless of the healed counts.
+    if relocate_failed > 0 || readopt_failed > 0 {
+        diag(app, &format!(
+            "[reconcile] boot summary: {} relocated, {} re-adopted, {} removed — {} relocate FAILURES, {} re-adopt failures (details above)",
+            relocated, readopted, removed, relocate_failed, readopt_failed
+        ));
     }
 
     Ok((relocated, readopted, removed))
@@ -270,29 +324,30 @@ fn relocate_row(conn: &rusqlite::Connection, old: &str, new: &str) -> rusqlite::
         return Err(rusqlite::Error::InvalidQuery);
     }
     conn.execute_batch("BEGIN IMMEDIATE")?;
-    let res = (|| -> rusqlite::Result<()> {
-        conn.execute("UPDATE note_meta SET path = ?2 WHERE path = ?1", [old, new])?;
-        conn.execute("UPDATE note_links SET source_path = ?2 WHERE source_path = ?1", [old, new])?;
-        conn.execute("UPDATE note_aliases SET path = ?2 WHERE path = ?1", [old, new])?;
-        conn.execute("UPDATE note_embeddings SET path = ?2 WHERE path = ?1", [old, new])?;
-        // review_schedule carries the note's ✓ history; migrate it (gated on the
-        // stamp, mirroring rename_item_db_tail). Clear any stale row at `new` first.
-        if crate::review::is_stamped(conn) {
-            conn.execute("DELETE FROM review_schedule WHERE path = ?1", [new])?;
-            conn.execute("UPDATE review_schedule SET path = ?2 WHERE path = ?1", [old, new])?;
-        }
-        Ok(())
-    })();
-    match res {
-        Ok(()) => {
-            conn.execute_batch("COMMIT")?;
-            Ok(())
-        }
-        Err(e) => {
-            let _ = conn.execute_batch("ROLLBACK");
-            Err(e)
-        }
+    // PJ-149 B / Stage-0 C5 (2026-07-26): this was a DUPLICATE 5-table cascade that
+    // had already drifted from the canonical one (no note_body/summaries/history/
+    // layout/shape/suggestions — the relocated note's earned aux stayed stranded at
+    // the dead path). Delegate to the ONE shared cascade so the two surfaces can
+    // never drift again (the Whole-Ecosystem law). The helper's note_meta destination
+    // pre-delete is a no-op here — the occupied-guard above already proved the
+    // destination row-free. Accepted trade (build-spec §2-C5): per-statement error
+    // propagation becomes logged-best-effort inside this still-atomic envelope.
+    crate::libraries::migrate_note_db_paths(conn, old, new);
+    // VERIFY, then report. The shared cascade is best-effort by contract (one failed
+    // statement must never abort a user's rename), so it cannot signal failure to us —
+    // and on 2026-07-26 that turned this function into a liar: FK enforcement refused
+    // every parent-path UPDATE, the cascade logged and moved on, this returned Ok, and
+    // reconcile reported "14 relocated" on a boot where NOTHING moved. A success this
+    // function reports must be a fact it checked.
+    let moved: bool = conn
+        .query_row("SELECT 1 FROM note_meta WHERE path = ?1", [new], |_| Ok(true))
+        .unwrap_or(false);
+    if !moved {
+        let _ = conn.execute_batch("ROLLBACK");
+        return Err(rusqlite::Error::StatementChangedRows(0));
     }
+    conn.execute_batch("COMMIT")?;
+    Ok(())
 }
 
 /// The most-specific (longest-path) accessible library whose root contains the

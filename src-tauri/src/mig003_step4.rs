@@ -199,6 +199,13 @@ pub(crate) fn run(conn: &mut Connection, db_path: &Path) -> rusqlite::Result<()>
 
         let tx = conn.transaction()?;
         {
+            // PJ-149 (2026-07-26): this is a DUPLICATE 4-table path cascade (no
+            // review_schedule, none of the six tables libraries.rs::migrate_note_db_paths
+            // now covers). DORMANT — schema_versions.mig003_step4 = 1 on every live DB,
+            // so this pass never re-runs. If MIG003_STEP4_VERSION is ever bumped, this
+            // block MUST delegate its per-note cascade to migrate_note_db_paths
+            // (keeping the extra target_path UPDATE only if still wanted) instead of
+            // extending this copy — two cascades WILL drift (the Whole-Ecosystem law).
             let mut upd_meta = tx.prepare("UPDATE note_meta SET path = ?2 WHERE path = ?1")?;
             let mut upd_links_src =
                 tx.prepare("UPDATE note_links SET source_path = ?2 WHERE source_path = ?1")?;

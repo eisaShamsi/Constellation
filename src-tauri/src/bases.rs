@@ -378,13 +378,14 @@ pub fn update_note_property(
     // libraries (non-recursive — MIG-065 §J: editing must never write to a
     // read-only cUniverse note), and capture the library name so the search
     // index can be refreshed after the write (MIG-065 §H).
-    let libraries = crate::libraries::load_libraries(&app);
-    let lib_name = libraries.iter().find(|v| {
-        fs::canonicalize(&file_path).ok()
-            .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
-            .unwrap_or(false)
-    }).map(|v| v.name.clone());
-    let Some(lib_name) = lib_name else {
+    // MIG-105 Stage-0 C7 (PJ-156): the shared longest-root resolver replaced
+    // the first-match fs::canonicalize `find`, which attributed a nested
+    // library's note to the parent library whose root prefixes it — stamping
+    // the WRONG library into note_meta via the reindex below. Two intended
+    // behavior changes: (i) a missing file no longer yields "Access denied"
+    // here — the gate_rmw read below surfaces the honest error; (ii) `..`
+    // paths are denied outright (no canonicalization).
+    let Some(lib_name) = crate::libraries::owning_own_library_name(&app, &file_path) else {
         return Err("Access denied: file is not in a registered library.".to_string());
     };
 

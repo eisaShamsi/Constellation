@@ -230,6 +230,42 @@ pub fn library_name_for_path(libs: &[LibraryInfo], path: &str) -> Option<String>
         .map(|l| l.name.clone())
 }
 
+/// The most-specific OWN-library name that owns `file_path`, for WRITE/REINDEX
+/// attribution — or None when the path is outside every own library or contains
+/// a `..` component (denied outright; no canonicalization, so a crafted path can
+/// never escape — or re-enter — a library root; callers pass registry/tree-derived
+/// absolute paths).
+///
+/// MIG-105 Stage-0 C7 (PJ-156): the ONE resolver behind update_note_property
+/// (bases.rs), apply_shape (shape.rs), and toggle_task (tasks.rs). Their old
+/// per-site first-match `fs::canonicalize` finds attributed a nested library's
+/// note to the parent library whose root prefixes it (universe_notes' root IS
+/// the Universe root), so every reindex stamped the WRONG library into
+/// note_meta. Longest-root-wins via `library_name_for_path` fixes all three
+/// through one helper that cannot drift (Whole-Ecosystem Fix Law).
+///
+/// MUST stay on `load_libraries` (the active universe's OWN libraries,
+/// non-recursive) — NEVER `load_all_libraries` — because every caller feeds a
+/// write or a reindex, and a write must never target a read-only cUniverse
+/// note (MIG-065 §J).
+pub(crate) fn owning_own_library_name(app: &tauri::AppHandle, file_path: &str) -> Option<String> {
+    owning_own_library_name_in(&load_libraries(app), file_path)
+}
+
+/// The decision itself, free of `AppHandle` so it can be tested directly
+/// (the `try_load_libraries_at` pattern).
+fn owning_own_library_name_in(libs: &[LibraryInfo], file_path: &str) -> Option<String> {
+    // Reject `..` outright (universe.rs template-folder precedent): the resolver
+    // is purely lexical — a ParentDir component would make the prefix check lie.
+    if Path::new(file_path)
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return None;
+    }
+    library_name_for_path(libs, file_path)
+}
+
 /// The normalized paths of every registered library EXCEPT the one at `self_path`.
 ///
 /// 2026-07-25 — the Whole-Ecosystem Fix Law helper. universe_notes' path IS the
@@ -430,15 +466,6 @@ pub fn set_library_canonical_mode(app: tauri::AppHandle, library_id: String, mod
     } else {
         Err("Library not found.".to_string())
     }
-}
-
-/// Get a library's canonical mode by path.
-pub fn get_library_mode(app: &tauri::AppHandle, folder_path: &str) -> String {
-    let libraries = load_all_libraries(app);
-    libraries.iter()
-        .find(|l| folder_path.starts_with(&l.path))
-        .map(|l| l.canonical_mode.clone())
-        .unwrap_or_else(|| "native".to_string())
 }
 
 /// Remove a library by ID (does NOT delete any files).
@@ -1053,56 +1080,154 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 /// Migrate ALL of a single note's DB rows from `old_path` to `new_path` under a held
 /// connection. The one proven cascade used by every path-changing operation — a `.md`
 /// rename (rename_item_db_tail), a FOLDER rename (2026-07-25 PJ-140 #2 — folders used
-/// to skip this entirely), and a MOVE (PJ-140 #16 — move used delete+reinsert, which
-/// reset the review schedule). Covers note_meta, note_links.source_path, note_aliases,
-/// note_embeddings, and the review_schedule row (gated on the stamp). Does NOT stamp a
-/// 'rename' alias — that is title-rename-specific and folder/move must not add one.
+/// to skip this entirely), a MOVE (PJ-140 #16 — move used delete+reinsert, which
+/// reset the review schedule), and reconcile's relocate (delegated, Stage 0 C5).
+/// Covers all 11 path-bearing per-note tables: note_meta, note_links.source_path,
+/// note_aliases, note_embeddings, review_schedule (stamp-gated), note_body,
+/// note_summaries, note_state_history, sight_v3_layout, shape_history,
+/// sources_suggestions. sky_nodes/sky_links/sight_v6_layout are trigger-covered
+/// (note_meta_sky_au / sight_v6_layout_invalidate_au) and must NOT be touched here.
+/// Does NOT stamp a 'rename' alias — that is title-rename-specific.
 ///
 /// `note_links.target_path` is deliberately NOT migrated: it is never populated (targets
 /// resolve by name), and the old UPDATE degenerated into an 11 s full scan of ~234k rows.
-fn migrate_note_db_paths(conn: &rusqlite::Connection, old_path: &str, new_path: &str) {
+pub(crate) fn migrate_note_db_paths(conn: &rusqlite::Connection, old_path: &str, new_path: &str) {
     if old_path == new_path {
         return;
     }
+    // PJ-149 (2026-07-26): the destination pre-deletes made a REPEATED call with the
+    // same (old,new) DESTRUCTIVE — the second call finds nothing at old_path and then
+    // deletes the freshly-migrated destination rows, leaving the note indexed NOWHERE
+    // (caught red by the new idempotence test). Nothing to migrate ⇒ touch nothing:
+    // the pre-deletes may only clear a destination when a real source row is moving in.
+    let src_exists: bool = conn
+        .query_row("SELECT 1 FROM note_meta WHERE path = ?1", [old_path], |_| Ok(true))
+        .unwrap_or(false);
+    if !src_exists {
+        return;
+    }
+    // FK REALITY (Stage-0 2026-07-26, proven by tests_pj150_fk_enforcement_reality):
+    // rusqlite enables `PRAGMA foreign_keys` on EVERY connection it opens — no PRAGMA
+    // appears in our source because none is needed, which is why a whole diagnosis
+    // concluded the FKs were inert. note_summaries / note_state_history /
+    // sources_suggestions reference note_meta(path) with ON UPDATE **NO ACTION**, so
+    // the parent UPDATE below is REFUSED outright for any note that owns one of those
+    // rows — silently, best-effort. That is the true root cause of the 1,591 "relocate
+    // deferred" lines (PJ-151): renames/moves/relocates of any note with a summary or
+    // a CECE history have been failing for weeks. No replica replay reproduced it
+    // because every replay ran FK-off.
+    //
+    // Fix: defer the FK checks to COMMIT so the parent and its children move together
+    // and are consistent by the time they are validated. The pragma has effect only
+    // inside a transaction and auto-resets at COMMIT/ROLLBACK, so own one when the
+    // caller doesn't (relocate_row and index_note's self-heal already do).
+    let owns_tx = conn.is_autocommit();
+    if owns_tx {
+        if let Err(e) = conn.execute_batch("BEGIN IMMEDIATE") {
+            eprintln!("[migrate_note_db_paths] could not begin {old_path} -> {new_path}: {e}");
+            return;
+        }
+    }
+    if let Err(e) = conn.execute_batch("PRAGMA defer_foreign_keys = ON") {
+        eprintln!("[migrate_note_db_paths] defer_foreign_keys failed: {e}");
+    }
+    // PJ-149 (2026-07-26): failures in this cascade were 100% silent (`let _ =`).
+    // Behavior stays best-effort — one failed statement must not abort a rename —
+    // but every failure is now visible (stderr + diagnostics.log beside the DB).
+    let run = |sql: &str, ps: &[&dyn rusqlite::ToSql]| {
+        if let Err(e) = conn.execute(sql, ps) {
+            eprintln!("[migrate_note_db_paths] FAILED {old_path} -> {new_path}: {sql}: {e}");
+            if let Some(p) = conn.path() {
+                if !p.is_empty() {
+                    crate::search::diag_log(
+                        std::path::Path::new(p),
+                        &format!("[migrate_note_db_paths] FAILED {old_path} -> {new_path}: {sql}: {e}"),
+                    );
+                }
+            }
+        }
+    };
     // 2026-07-25 inspection: `note_meta.path` and `note_embeddings.path` are PRIMARY
     // KEYs, so if a STALE phantom row already sits at `new_path` (e.g. a prior
     // reindex_delete_note that ran on a None/locked conn, or an out-of-app delete),
-    // the UPDATE below would abort on the PK constraint and — swallowed by `let _` —
-    // silently leave the old-path row as an orphan. Clear any pre-existing destination
-    // row first, exactly as review_schedule does. (note_links/note_aliases are not
-    // path-keyed, so they cannot collide and need no pre-delete.)
-    let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", rusqlite::params![new_path]);
-    let _ = conn.execute("DELETE FROM note_embeddings WHERE path = ?1", rusqlite::params![new_path]);
-    let _ = conn.execute(
-        "UPDATE note_meta SET path = ?2 WHERE path = ?1",
-        rusqlite::params![old_path, new_path],
-    );
-    let _ = conn.execute(
-        "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
-        rusqlite::params![old_path, new_path],
-    );
-    let _ = conn.execute(
-        "UPDATE note_aliases SET path = ?2 WHERE path = ?1",
-        rusqlite::params![old_path, new_path],
-    );
-    let _ = conn.execute(
-        "UPDATE note_embeddings SET path = ?2 WHERE path = ?1",
-        rusqlite::params![old_path, new_path],
-    );
+    // the UPDATE below would abort on the PK constraint and silently leave the
+    // old-path row as an orphan. Clear any pre-existing destination row first,
+    // exactly as review_schedule does. (note_links/note_aliases are not path-keyed,
+    // so they cannot collide and need no pre-delete.)
+    run("DELETE FROM note_meta WHERE path = ?1", &[&new_path]);
+    run("DELETE FROM note_embeddings WHERE path = ?1", &[&new_path]);
+    run("UPDATE note_meta SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    run("UPDATE note_links SET source_path = ?2 WHERE source_path = ?1", &[&old_path, &new_path]);
+    run("UPDATE note_aliases SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    run("UPDATE note_embeddings SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
     // MIG-083 §D — migrate the review_schedule row (gated on the stamp) so last_reviewed
     // / interval / snooze survive; without it the row orphans at the dead path and the
     // note re-enters the due queue as never-reviewed. Clear any stale row already at the
     // destination first so the UPDATE can't hit the PRIMARY KEY and silently leave the
     // orphan behind.
     if crate::review::is_stamped(conn) {
-        let _ = conn.execute(
-            "DELETE FROM review_schedule WHERE path = ?1",
-            rusqlite::params![new_path],
-        );
-        let _ = conn.execute(
-            "UPDATE review_schedule SET path = ?2 WHERE path = ?1",
-            rusqlite::params![old_path, new_path],
-        );
+        run("DELETE FROM review_schedule WHERE path = ?1", &[&new_path]);
+        run("UPDATE review_schedule SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    }
+    // PJ-149 (2026-07-26) — the cascade covered only 5 of the 11 path-bearing tables:
+    // every rename/move stranded the note's body shadow, summary, CECE state history,
+    // Sight layout and shape trail at the dead path (1,312 orphaned note_state_history
+    // rows measured live on the root library alone). Destination pre-delete first, per
+    // table: for the four path-PK tables it is REQUIRED (the UPDATE aborts on the PK
+    // otherwise); for the two AUTOINCREMENT append-logs (note_state_history,
+    // shape_history) it clears a DEAD note's trail at the destination so two notes'
+    // timelines are never silently merged under one path — the same semantics the
+    // tables' declared (but production-inert) ON DELETE CASCADE was designed for.
+    // All statements are PK- or index-keyed point lookups — no full scans.
+    run("DELETE FROM note_body WHERE path = ?1", &[&new_path]);
+    run("UPDATE note_body SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    run("DELETE FROM note_summaries WHERE path = ?1", &[&new_path]);
+    run("UPDATE note_summaries SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    run("DELETE FROM sources_suggestions WHERE note_path = ?1", &[&new_path]);
+    run("UPDATE sources_suggestions SET note_path = ?2 WHERE note_path = ?1", &[&old_path, &new_path]);
+    run("DELETE FROM sight_v3_layout WHERE note_path = ?1", &[&new_path]);
+    run("UPDATE sight_v3_layout SET note_path = ?2 WHERE note_path = ?1", &[&old_path, &new_path]);
+    run("DELETE FROM note_state_history WHERE note_path = ?1", &[&new_path]);
+    run("UPDATE note_state_history SET note_path = ?2 WHERE note_path = ?1", &[&old_path, &new_path]);
+    // shape_history is created LAZILY (shape::ensure_ready), so it may not exist on a
+    // virgin DB — that "no such table" failure is the correct no-op. Do NOT create the
+    // schema here: that would add a write onto every rename path. Swallow ONLY that
+    // error; anything else is logged like the rest.
+    let run_lazy = |sql: &str, ps: &[&dyn rusqlite::ToSql]| {
+        if let Err(e) = conn.execute(sql, ps) {
+            if !e.to_string().contains("no such table") {
+                eprintln!("[migrate_note_db_paths] FAILED {old_path} -> {new_path}: {sql}: {e}");
+                if let Some(p) = conn.path() {
+                    if !p.is_empty() {
+                        crate::search::diag_log(
+                            std::path::Path::new(p),
+                            &format!("[migrate_note_db_paths] FAILED {old_path} -> {new_path}: {sql}: {e}"),
+                        );
+                    }
+                }
+            }
+        }
+    };
+    run_lazy("DELETE FROM shape_history WHERE path = ?1", &[&new_path]);
+    run_lazy("UPDATE shape_history SET path = ?2 WHERE path = ?1", &[&old_path, &new_path]);
+    // Only when WE opened the transaction. When the caller owns it (relocate_row,
+    // index_note's self-heal), the deferred FK checks run at THEIR commit and a
+    // violation surfaces to them — which is correct: they decide the rollback.
+    if owns_tx {
+        if let Err(e) = conn.execute_batch("COMMIT") {
+            // A deferred FK violation surfaces HERE, at commit — not per-statement.
+            // Roll the whole cascade back rather than leave the note half-moved.
+            eprintln!("[migrate_note_db_paths] COMMIT FAILED {old_path} -> {new_path}: {e} — rolling back");
+            if let Some(p) = conn.path() {
+                if !p.is_empty() {
+                    crate::search::diag_log(
+                        std::path::Path::new(p),
+                        &format!("[migrate_note_db_paths] COMMIT FAILED {old_path} -> {new_path}: {e} — rolled back, note left at its old path"),
+                    );
+                }
+            }
+            let _ = conn.execute_batch("ROLLBACK");
+        }
     }
 }
 
@@ -3297,7 +3422,21 @@ pub fn scan_unlinked_mentions(
         if results.len() >= cap { break; }
         if path == note_path { continue; } // skip self
         if alias_holders.contains(&path) { continue; } // PJ-010: self-alias-match, not a mention
-        if !scoped_paths.is_empty() && !scoped_paths.iter().any(|lp| path.starts_with(lp.as_str())) {
+        // MIG-105 Stage-0 C7 (PJ-156 sweep): separator-BOUNDED prefix — a scope
+        // of ".../Research" must not include ".../Research Notes" candidates.
+        // Both separators are accepted at the boundary because a registry root
+        // stored with `/` gets `\`-joined children on Windows (no other
+        // normalization: both sides come from the same registry/index values,
+        // exactly as the raw compare before this guard assumed).
+        if !scoped_paths.is_empty()
+            && !scoped_paths.iter().any(|lp| {
+                let lp = lp.trim_end_matches(['/', '\\']);
+                path == lp
+                    || path
+                        .strip_prefix(lp)
+                        .is_some_and(|rest| rest.starts_with('/') || rest.starts_with('\\'))
+            })
+        {
             continue;
         }
         let content = match fs::read_to_string(&path) {
@@ -5603,11 +5742,21 @@ pub fn collect_library_notes(app: tauri::AppHandle, library_path: String) -> Res
         return Err("Access denied: not a registered library.".to_string());
     }
     let mut notes = Vec::new();
-    collect_notes_names_recursive(Path::new(&library_path), &mut notes);
+    // MIG-105 Stage-0 C7 (PJ-155): a nested registered library must not fold into
+    // the parent's batch (universe_notes' root IS the Universe root, so the root
+    // walk used to carry every nested library's notes twice — one copy stamped
+    // with the parent's libraryName by the second-screen consumer). Same exclude
+    // set every other tree/aggregate walker threads (Library != Folder).
+    let nested = nested_library_paths(&libraries, &library_path);
+    collect_notes_names_recursive(Path::new(&library_path), &mut notes, &nested);
     Ok(notes)
 }
 
-fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>) {
+fn collect_notes_names_recursive(
+    dir: &Path,
+    notes: &mut Vec<serde_json::Value>,
+    exclude: &std::collections::HashSet<String>,
+) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -5617,7 +5766,8 @@ fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>)
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            collect_notes_names_recursive(&path, notes);
+            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            collect_notes_names_recursive(&path, notes, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // Use frontmatter title for canonical files, file stem for human-named files
             let file_stem = path.file_stem()
@@ -7216,6 +7366,101 @@ mod tests_nested_library_exclusion {
         assert!(find(&tree, "Note.md").is_some());
         let _ = fs::remove_dir_all(&root);
     }
+
+    /// MIG-105 Stage-0 C7 (PJ-155): the autocomplete/second-screen walker
+    /// `collect_notes_names_recursive` honors the same boundary — a nested
+    /// registered library's notes never fold into the parent's batch, and the
+    /// nested library's own walk carries only its own notes.
+    #[test]
+    fn collect_library_notes_walk_stops_at_a_nested_registered_library() {
+        let root = std::env::temp_dir().join(format!("cns-nest-collect-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Root Note.md"), "x").unwrap();
+        let nested = root.join("Nested Library");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("Secret.md"), "x").unwrap();
+
+        // The root library's walk: the nested library is excluded, subtree and all.
+        let exclude: HashSet<String> = [norm(&nested)].into_iter().collect();
+        let mut notes = Vec::new();
+        super::collect_notes_names_recursive(&root, &mut notes, &exclude);
+        let names: Vec<&str> = notes.iter().filter_map(|n| n["name"].as_str()).collect();
+        assert!(names.contains(&"Root Note"), "the root's own note stays");
+        assert!(
+            !names.contains(&"Secret"),
+            "a nested registered library's note must not fold into the parent's walk"
+        );
+
+        // The nested library's own walk contains exactly its own note.
+        let exclude_b: HashSet<String> = [norm(&root)].into_iter().collect();
+        let mut nested_notes = Vec::new();
+        super::collect_notes_names_recursive(&nested, &mut nested_notes, &exclude_b);
+        let nested_names: Vec<&str> =
+            nested_notes.iter().filter_map(|n| n["name"].as_str()).collect();
+        assert_eq!(
+            nested_names,
+            vec!["Secret"],
+            "the nested library's own walk carries only its own note"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+}
+
+#[cfg(test)]
+mod tests_owning_own_library_name {
+    //! MIG-105 Stage-0 C7 (PJ-156) — the ONE write/reindex attribution resolver
+    //! (bases::update_note_property, shape::apply_shape, tasks::toggle_task).
+    //! Longest-root-wins (a nested library beats the parent whose root prefixes
+    //! it), `..` denied outright, outside-every-library = None.
+    use super::{owning_own_library_name_in, LibraryInfo};
+
+    fn lib(name: &str, path: &str) -> LibraryInfo {
+        LibraryInfo {
+            id: name.to_string(),
+            name: name.to_string(),
+            path: path.to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".to_string(),
+        }
+    }
+
+    /// The live shape: universe_notes at the Universe root (registry index 0)
+    /// with a registered library nested inside it — first-match returned the
+    /// root for the nested note (the PJ-156 index mis-write).
+    #[test]
+    fn a_nested_library_note_resolves_to_the_nested_library() {
+        let libs = vec![lib("Root", "E:/U"), lib("Nested", "E:/U/Nested Lib")];
+        assert_eq!(
+            owning_own_library_name_in(&libs, "E:/U/Nested Lib/note.md").as_deref(),
+            Some("Nested")
+        );
+    }
+
+    #[test]
+    fn a_root_note_resolves_to_the_root_library() {
+        let libs = vec![lib("Root", "E:/U"), lib("Nested", "E:/U/Nested Lib")];
+        assert_eq!(
+            owning_own_library_name_in(&libs, "E:/U/note.md").as_deref(),
+            Some("Root")
+        );
+    }
+
+    /// `..` components are denied outright — the resolver is purely lexical
+    /// (no canonicalization), so a ParentDir would make the prefix check lie.
+    #[test]
+    fn a_parent_dir_component_is_denied() {
+        let libs = vec![lib("Root", "E:/U")];
+        assert_eq!(owning_own_library_name_in(&libs, "E:/U/sub/../note.md"), None);
+    }
+
+    #[test]
+    fn a_path_outside_every_library_is_none() {
+        let libs = vec![lib("Root", "E:/U")];
+        assert_eq!(owning_own_library_name_in(&libs, "E:/Elsewhere/note.md"), None);
+        // Separator-bounded: "E:/University" is NOT inside "E:/U".
+        assert_eq!(owning_own_library_name_in(&libs, "E:/University/note.md"), None);
+    }
 }
 
 #[cfg(test)]
@@ -7236,7 +7481,26 @@ mod tests_pj140_path_migrate {
              CREATE TABLE note_embeddings (path TEXT, embedding BLOB);
              CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT, due_days INTEGER,
                last_reviewed TEXT, interval INTEGER, snoozed_until TEXT);
-             CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER);",
+             CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER);
+             -- PJ-149: the six tables the cascade previously stranded (schemas mirror
+             -- the production CREATEs: search.rs note_body/sight_v3_layout,
+             -- nsc/mod.rs note_summaries, cece/history.rs note_state_history,
+             -- shape.rs shape_history, sources/mod.rs sources_suggestions).
+             CREATE TABLE note_body (path TEXT PRIMARY KEY, body_text TEXT NOT NULL DEFAULT '');
+             CREATE TABLE note_summaries (path TEXT PRIMARY KEY, summary TEXT NOT NULL,
+               source TEXT NOT NULL, content_hash TEXT NOT NULL, updated_at INTEGER NOT NULL,
+               headline TEXT);
+             CREATE TABLE note_state_history (history_id INTEGER PRIMARY KEY AUTOINCREMENT,
+               note_path TEXT NOT NULL, captured_at INTEGER NOT NULL, changes_json TEXT NOT NULL);
+             CREATE TABLE sight_v3_layout (note_path TEXT NOT NULL, library_set_hash TEXT NOT NULL,
+               graph_version INTEGER NOT NULL, embed_x REAL, embed_y REAL, community_id INTEGER,
+               centrality_norm REAL, PRIMARY KEY (note_path, library_set_hash, graph_version));
+             CREATE TABLE shape_history (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL,
+               from_shape TEXT, to_shape TEXT, changed_at INTEGER, changed_by TEXT DEFAULT 'user',
+               undone INTEGER DEFAULT 0);
+             CREATE TABLE sources_suggestions (note_path TEXT PRIMARY KEY,
+               suggestions_json TEXT NOT NULL, classifier_tier TEXT NOT NULL,
+               created_at INTEGER NOT NULL, composite_json TEXT);",
         ).unwrap();
         if stamped {
             c.execute("INSERT INTO schema_versions (module, version) VALUES ('review', 1)", []).unwrap();
@@ -7250,6 +7514,12 @@ mod tests_pj140_path_migrate {
         c.execute("INSERT INTO note_aliases VALUES (?1, 'alias')", [p]).unwrap();
         c.execute("INSERT INTO note_embeddings VALUES (?1, x'00')", [p]).unwrap();
         c.execute("INSERT INTO review_schedule VALUES (?1,'stale',7,'2026-07-01',21,'2026-08-01')", [p]).unwrap();
+        c.execute("INSERT INTO note_body VALUES (?1, 'body')", [p]).unwrap();
+        c.execute("INSERT INTO note_summaries VALUES (?1,'sum','nsc','h1',1,'head')", [p]).unwrap();
+        c.execute("INSERT INTO note_state_history (note_path, captured_at, changes_json) VALUES (?1, 100, '{}')", [p]).unwrap();
+        c.execute("INSERT INTO sight_v3_layout VALUES (?1,'hash',3,0.1,0.2,1,0.5)", [p]).unwrap();
+        c.execute("INSERT INTO shape_history (path, from_shape, to_shape, changed_at) VALUES (?1,'a','b',100)", [p]).unwrap();
+        c.execute("INSERT INTO sources_suggestions VALUES (?1,'[]','fast',100,NULL)", [p]).unwrap();
     }
 
     fn count(c: &Connection, table: &str, col: &str, p: &str) -> i64 {
@@ -7310,6 +7580,64 @@ mod tests_pj140_path_migrate {
         let nm: String = c.query_row("SELECT name FROM note_meta WHERE path=?1", [new], |r| r.get(0)).unwrap();
         assert_eq!(nm, "N", "the moved note wins; the phantom is cleared");
         assert_eq!(count(&c, "note_embeddings", "path", new), 1);
+    }
+
+    /// PJ-149 — every one of the 11 path-bearing tables follows the note, phantoms
+    /// at the destination are cleared for the four path-PK tables, a dead note's
+    /// history/shape trail at the destination is CLEARED (never merged into the
+    /// moved note's timeline), and a second invocation is a no-op.
+    #[test]
+    fn all_eleven_tables_follow_and_destination_phantoms_clear() {
+        let c = db(true);
+        let old = "E:/U/A/n.md";
+        let new = "E:/U/B/n.md";
+        seed(&c, old);
+        // Stale phantoms already at the destination for the four path-PK tables…
+        c.execute("INSERT INTO note_body VALUES (?1, 'PHANTOM')", [new]).unwrap();
+        c.execute("INSERT INTO note_summaries VALUES (?1,'PHANTOM','nsc','h0',0,NULL)", [new]).unwrap();
+        c.execute("INSERT INTO sources_suggestions VALUES (?1,'PHANTOM','fast',0,NULL)", [new]).unwrap();
+        c.execute("INSERT INTO sight_v3_layout VALUES (?1,'hash',3,9.9,9.9,9,9.9)", [new]).unwrap();
+        // …and a DEAD note's audit trail at the destination for the two append-logs.
+        c.execute("INSERT INTO note_state_history (note_path, captured_at, changes_json) VALUES (?1, 1, 'DEAD')", [new]).unwrap();
+        c.execute("INSERT INTO shape_history (path, from_shape, to_shape, changed_at) VALUES (?1,'x','y',1)", [new]).unwrap();
+
+        migrate_note_db_paths(&c, old, new);
+
+        for (t, col) in [
+            ("note_meta","path"),("note_links","source_path"),("note_aliases","path"),
+            ("note_embeddings","path"),("review_schedule","path"),("note_body","path"),
+            ("note_summaries","path"),("note_state_history","note_path"),
+            ("sight_v3_layout","note_path"),("shape_history","path"),
+            ("sources_suggestions","note_path"),
+        ] {
+            assert_eq!(count(&c, t, col, old), 0, "{t} left an orphan at the old path");
+            assert_eq!(count(&c, t, col, new), 1, "{t} did not migrate (or kept a phantom) at the new path");
+        }
+        // The moved note's values won — not the phantom's / the dead note's.
+        let body: String = c.query_row("SELECT body_text FROM note_body WHERE path=?1", [new], |r| r.get(0)).unwrap();
+        assert_eq!(body, "body", "the moved note's body shadow wins over the phantom");
+        let hist: String = c.query_row("SELECT changes_json FROM note_state_history WHERE note_path=?1", [new], |r| r.get(0)).unwrap();
+        assert_eq!(hist, "{}", "the dead note's trail is cleared, never merged into the moved timeline");
+        // Idempotence — a second invocation matches zero rows and changes nothing.
+        migrate_note_db_paths(&c, old, new);
+        assert_eq!(count(&c, "note_meta", "path", new), 1);
+        assert_eq!(count(&c, "note_state_history", "note_path", new), 1);
+    }
+
+    /// PJ-149 — shape_history is created lazily (shape::ensure_ready); on a DB where
+    /// it does not exist yet the cascade must be a clean no-op for it, never a panic,
+    /// and every other table must still migrate.
+    #[test]
+    fn a_missing_lazily_created_table_is_a_clean_noop() {
+        let c = db(true);
+        c.execute_batch("DROP TABLE shape_history;").unwrap();
+        let old = "E:/U/A/n.md";
+        let new = "E:/U/B/n.md";
+        c.execute("INSERT INTO note_meta VALUES (?1, 'N')", [old]).unwrap();
+        c.execute("INSERT INTO note_body VALUES (?1, 'body')", [old]).unwrap();
+        migrate_note_db_paths(&c, old, new);
+        assert_eq!(count(&c, "note_meta", "path", new), 1);
+        assert_eq!(count(&c, "note_body", "path", new), 1);
     }
 
     #[test]

@@ -1826,8 +1826,18 @@ pub struct TemplateEntry {
 /// back to `"Templates"`. Traversal is refused: a relative folder may not escape the universe root.
 fn resolve_templates_dir(app: &tauri::AppHandle, folder: Option<String>) -> Result<PathBuf, String> {
     let root = active_universe_dir(app)?;
-    let raw = folder.unwrap_or_default();
-    let raw = raw.trim();
+    resolve_templates_dir_for_root(&root, folder.as_deref())
+}
+
+/// AppHandle-free core of `resolve_templates_dir`, factored out (PJ-153 /
+/// MIG-105 C6) so the boot cid_cn healer in search.rs — which runs inside
+/// `init_db`, before any AppHandle or frontend setting exists — can resolve
+/// the SAME folder from the universe root + the persisted `templateFolder`
+/// setting. Semantics must stay identical to the command path above: empty /
+/// None falls back to "Templates"; absolute is used as-is; a relative folder
+/// may not escape the universe root.
+pub(crate) fn resolve_templates_dir_for_root(root: &Path, folder: Option<&str>) -> Result<PathBuf, String> {
+    let raw = folder.unwrap_or_default().trim();
     let candidate = if raw.is_empty() {
         root.join("Templates")
     } else {

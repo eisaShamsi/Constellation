@@ -1068,7 +1068,14 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 	const tgt = (target || '').trim();
 	if (!tgt) return;
 	const srcNorm = normPath(sourcePath);
-	const lib = get(libraryStats).find((l) => srcNorm.startsWith(normPath(l.path)));
+	// MIG-105 Stage-0 C7 (PJ-156 E1): boundary-guarded LONGEST-prefix = most-specific
+	// (nested/federated) — NOT first-match, which returned the ROOT library whose path
+	// prefixes every nested one; the CLOSED branch below feeds lib.name to reindexNote,
+	// so first-match WROTE the wrong library into note_meta. Same shape as
+	// linkMentionInNote's resolver.
+	const lib = get(libraryStats)
+		.filter((l) => srcNorm === normPath(l.path) || srcNorm.startsWith(normPath(l.path) + '/'))
+		.sort((a, b) => normPath(b.path).length - normPath(a.path).length)[0];
 	if (!lib) throw new Error(`addLinkToNote: no library found for ${sourcePath}`);
 	const wikilink = `[[${tgt}]]`;
 	const openTab = get(openTabs).find((t) => t.path === sourcePath);
@@ -4765,8 +4772,12 @@ export async function resolveConflictMerge(
 
 		// Sidecar → trash (reversible, never hard-delete), banner row → dismiss. ONLY after durable success.
 		const libNorm = normPath(sidecarPath);
+		// MIG-105 Stage-0 C7 (PJ-156 E2): `+ '/'` boundary guard — without it a root like
+		// ".../Research" matched a ".../Research Notes" sidecar and trashed it via the
+		// WRONG library root. No-match now leaves the sidecar on disk (the banner is still
+		// dismissed) — strictly safer than trashing into another library's trash.
 		const lib = get(libraryStats)
-			.filter((l) => libNorm.startsWith(normPath(l.path)))
+			.filter((l) => libNorm === normPath(l.path) || libNorm.startsWith(normPath(l.path) + '/'))
 			.sort((a, b) => normPath(b.path).length - normPath(a.path).length)[0]; // longest-prefix = most-specific (nested/federated)
 		if (lib) {
 			try { await moveToTrash(sidecarPath, lib.path); } catch (e) { console.error('[PJ-088] conflict sidecar trash failed', e); }

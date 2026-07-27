@@ -429,7 +429,8 @@
       "Bash(bash regenerate.sh)",
       "Bash(grep -v \"^$\")",
       "Bash(git rm *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(grep -aE \"Test Files|Tests \" /tmp_red.log)"
     ]
   }
 }

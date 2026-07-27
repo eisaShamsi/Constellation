@@ -2813,6 +2813,37 @@ fn ensure_note_embeddings_mig003_columns(conn: &Connection) -> rusqlite::Result<
     Ok(())
 }
 
+/// PJ-153 (MIG-105 C6) — process-lifetime record of paths whose cid_cn
+/// inject/re-index failed, so the boot healer attempts a permanently-failing
+/// file (e.g. a persistent cid collision with a live owner) at most once per
+/// process run — record-and-skip, never a hot loop. A fresh boot gets one
+/// fresh attempt.
+fn cid_heal_failed() -> &'static Mutex<std::collections::HashSet<String>> {
+    static FAILED: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> =
+        std::sync::OnceLock::new();
+    FAILED.get_or_init(|| Mutex::new(std::collections::HashSet::new()))
+}
+
+/// PJ-153 (MIG-105 C6) — resolve the universe's templates folder WITHOUT an
+/// AppHandle (the healer runs inside `init_db`, before one exists): search.db
+/// lives at `{universe}/.constellation/search.db`, so the universe root is two
+/// parents up, and the user's `templateFolder` setting is read from the
+/// persisted appSettings at `.constellation/settings.json` (the frontend's
+/// `save_universe_settings` writes the whole appSettings object there; absent
+/// file/key falls back to the "Templates" default inside the shared resolver).
+/// Best-effort: when the DB does not sit in that layout (bare temp-dir test
+/// DBs), the resolved folder points at a path unrelated to any indexed note —
+/// harmless; the frontmatter-kind guard is the load-bearing exemption then.
+fn templates_dir_for_db(db_path: &Path) -> Option<PathBuf> {
+    let cdir = db_path.parent()?;
+    let root = cdir.parent()?;
+    let folder: Option<String> = std::fs::read_to_string(cdir.join("settings.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("templateFolder").and_then(|f| f.as_str().map(str::to_string)));
+    crate::universe::resolve_templates_dir_for_root(root, folder.as_deref()).ok()
+}
+
 /// MIG-003 Step 3 — boot-time soft re-backfill of cid_cn. In steady
 /// state this is an O(log n) index probe that finds 0 rows and returns
 /// immediately. When a note_meta row DID escape with an empty cid_cn
@@ -2828,19 +2859,48 @@ fn ensure_note_embeddings_mig003_columns(conn: &Connection) -> rusqlite::Result<
 /// defeated the index and forced a full SCAN of the 1.7 GB note_meta
 /// (inline body_text) on EVERY boot — the 26-41 s sweep that fired even
 /// when nothing needed repair.
+///
+/// PJ-153 (MIG-105 C6) — the healer is INJECT-CAPABLE for knowledge notes.
+/// The class invariant: **every kind-note row has a non-empty cid_cn;
+/// kind-template rows are empty BY DESIGN** (MIG-TPL §1, Boss ruling
+/// 2026-07-19 — a template is a MOLD; identity and birth belong to the CAST).
+/// Template rows are exempted by BOTH guards — frontmatter `kind: template`
+/// OR file under the universe's templates folder (belt and suspenders: a
+/// malformed template missing its `kind:` key must still not be stamped; a
+/// kind:template note outside the folder must still be exempt) — applied
+/// AFTER index selection, on the handful of probed candidates, so the
+/// steady-state cost is the index probe + an in-memory filter, never a
+/// per-boot re-read of mold files. A non-template row STILL empty after the
+/// re-extract gets its identity injected on the FILE via
+/// `canonical::ensure_cid_cn` (write-gated, journaled, frontmatter-only;
+/// migrates a legacy `cid:` keeping its value, mints a fresh id only when no
+/// key exists), then re-indexed so the row + dependent tables pick it up.
+/// `.trash` rows are included — a restored note keeps its identity and the
+/// aux keyed to it.
 pub(crate) fn mig003_step3_soft_rebackfill(
     conn: &mut Connection,
     db_dir: &Path,
 ) -> rusqlite::Result<()> {
-    // Index-friendly probe (see doc comment): `cid_cn = ''`, NOT
-    // `IS NULL OR cid_cn = ''`. Collect the offending paths so we can repair
+    // Index-friendly probe (see doc comment): the WHERE stays `cid_cn = ''`
+    // ALONE, NOT `IS NULL OR cid_cn = ''` — and the template filter runs
+    // in-memory on the selected candidates, never in the WHERE, so it cannot
+    // defeat the index selection. The kind is read from properties_json only
+    // for the matching rows. Collect the offending paths so we can repair
     // them at the source rather than from the (possibly truncated)
     // properties_json the old COALESCE(json_extract(...)) UPDATE relied on.
-    let stale: Vec<(String, String)> = {
-        let mut stmt =
-            conn.prepare("SELECT path, library_name FROM note_meta WHERE cid_cn = ''")?;
-        let rows =
-            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+    let stale: Vec<(String, String, String)> = {
+        let mut stmt = conn.prepare(
+            "SELECT path, library_name, \
+                    COALESCE(json_extract(properties_json, '$.kind'), '') \
+             FROM note_meta WHERE cid_cn = ''",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+            ))
+        })?;
         rows.filter_map(Result::ok).collect()
     };
     if stale.is_empty() {
@@ -2848,14 +2908,39 @@ pub(crate) fn mig003_step3_soft_rebackfill(
     }
     use std::time::Instant;
     let t = Instant::now();
+    // Template exemption (PJ-153 / MIG-TPL §1) — see doc comment. Applied
+    // AFTER index selection: mold rows are dropped from the working set
+    // before any file read, ending the old per-boot force-reindex of files
+    // that are empty by design.
+    let templates_dir = templates_dir_for_db(db_dir);
+    let is_template = |path: &str, kind: &str| {
+        kind == "template"
+            || templates_dir
+                .as_ref()
+                .is_some_and(|td| Path::new(path).starts_with(td))
+    };
+    let mut templates_skipped = 0usize;
+    let candidates: Vec<(String, String)> = stale
+        .iter()
+        .filter_map(|(path, lib, kind)| {
+            if is_template(path, kind) {
+                templates_skipped += 1;
+                None
+            } else {
+                Some((path.clone(), lib.clone()))
+            }
+        })
+        .collect();
     // Force a full re-index from the now-correctly-parsed file. Reuses
     // index_note (the single indexing source of truth); bounded to the stale
     // set (normally 0-1 rows); index_note brackets its own BEGIN IMMEDIATE /
     // COMMIT, and conn is in autocommit here (called from init_db, no open tx).
     let mut reindexed = 0usize;
+    let mut injected = 0usize;
     let mut still_empty = 0usize;
+    let mut skipped_failed = 0usize;
     let mut errors: Vec<String> = Vec::new();
-    for (path, lib) in &stale {
+    for (path, lib) in &candidates {
         // Capture the Result (P3 audit): index_note ROLLBACKs + returns Err on a
         // file-read failure or a cid_cn UNIQUE-index collision. Swallowing it
         // ('let _') made a failed repair indistinguishable from 'file has no
@@ -2872,25 +2957,96 @@ pub(crate) fn mig003_step3_soft_rebackfill(
                 |r| r.get(0),
             )
             .unwrap_or_default();
-        if now_cid.is_empty() {
-            // File genuinely lacks a frontmatter cid_cn (a legacy/external note
-            // that never went through canonical::ensure_cid_cn), or its path no
-            // longer exists (index_note no-ops). Left for mig003_backfill_cid_cn
-            // / Settings -> Rebuild Index to inject one (or the §A'.2 reconcile
-            // to drop a phantom row); bounded to <=1 row by the UNIQUE
-            // idx_note_meta_cid_cn, so this never recreates the full-scan sweep.
-            still_empty += 1;
-        } else {
+        if !now_cid.is_empty() {
             reindexed += 1;
+            continue;
+        }
+        // Row STILL empty after the re-extract: the FILE genuinely lacks any
+        // identity key, or carries only a legacy `cid:` line. PJ-153 (C6):
+        // inject/migrate it on disk, then re-index. (The previous comment here
+        // deferred these rows to "mig003_backfill_cid_cn / Settings -> Rebuild
+        // Index" and claimed the set was "bounded to <=1 row" — wrong on all
+        // three counts: the backfill is one-shot and stamped so it never
+        // re-fires, no rebuild_index command exists in Rust, and 17 such rows
+        // sat here burning a re-read per boot. Nothing healed them until C6.)
+        //
+        // Both template guards re-checked POST-re-extract: index_note just
+        // refreshed properties_json from the file, so a template whose DB kind
+        // was stale or missing now shows its true kind.
+        let fresh_kind: String = conn
+            .query_row(
+                "SELECT COALESCE(json_extract(properties_json, '$.kind'), '') \
+                 FROM note_meta WHERE path = ?1",
+                params![path],
+                |r| r.get(0),
+            )
+            .unwrap_or_default();
+        if is_template(path, &fresh_kind) {
+            templates_skipped += 1; // empty by design (MIG-TPL §1)
+            continue;
+        }
+        let p = Path::new(path.as_str());
+        if !p.is_file() {
+            // File gone — nothing to inject into (index_note no-oped above).
+            // Reconcile's remove branch owns this row (reconcile.rs step 7/8).
+            still_empty += 1;
+            continue;
+        }
+        // Bounded retries: one inject attempt per path per process run.
+        {
+            let failed = cid_heal_failed().lock().unwrap_or_else(|e| e.into_inner());
+            if failed.contains(path) {
+                skipped_failed += 1;
+                continue;
+            }
+        }
+        let heal = std::fs::read_to_string(p)
+            .map_err(|e| e.to_string())
+            .and_then(|content| {
+                crate::canonical::ensure_cid_cn(p, &content).map_err(|e| e.to_string())
+            })
+            .and_then(|_| index_note(conn, path, lib, true));
+        match heal {
+            Ok(()) => {
+                let healed_cid: String = conn
+                    .query_row(
+                        "SELECT cid_cn FROM note_meta WHERE path = ?1",
+                        params![path],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or_default();
+                if healed_cid.is_empty() {
+                    // Injected on disk but the row stayed empty (e.g. the
+                    // index_note collision guard degraded to the '' sentinel
+                    // because a LIVE note owns the same cid). Record so this
+                    // process run doesn't retry; the next boot gets one fresh
+                    // attempt.
+                    cid_heal_failed()
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .insert(path.clone());
+                    still_empty += 1;
+                } else {
+                    injected += 1;
+                }
+            }
+            Err(e) => {
+                cid_heal_failed()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .insert(path.clone());
+                errors.push(format!("{} -> inject: {}", path, e));
+            }
         }
     }
     // Propagate the freshly-populated cid_cn into the dependent tables for the
     // repaired paths ONLY — path-keyed point updates (all index-backed; no
     // full-table scan). index_note already rewrote note_links + frontmatter
     // aliases for these paths; this catches sky_nodes / note_embeddings /
-    // rename-or-import aliases whose cid_cn lagged.
+    // rename-or-import aliases whose cid_cn lagged. Template rows are not
+    // visited: their dependent rows keep cid_cn='' — empty by design.
     let mut dep = 0usize;
-    for (path, _) in &stale {
+    for (path, _) in &candidates {
         dep += conn
             .execute(
                 "UPDATE note_links \
@@ -2927,11 +3083,14 @@ pub(crate) fn mig003_step3_soft_rebackfill(
     diag_log(
         db_dir,
         &format!(
-            "[search] mig003_step3_soft_rebackfill: stale={} reindexed={} dependent_rows={} still_empty={} errors={}{} — elapsed={:?}",
+            "[search] mig003_step3_soft_rebackfill: stale={} templates={} reindexed={} injected={} dependent_rows={} still_empty={} skipped_failed={} errors={}{} — elapsed={:?}",
             stale.len(),
+            templates_skipped,
             reindexed,
+            injected,
             dep,
             still_empty,
+            skipped_failed,
             errors.len(),
             if errors.is_empty() {
                 String::new()
@@ -6040,7 +6199,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         // legacy live scan is the source of truth and this is skipped entirely.
         // None on a first-time INSERT (no prior row) → old multiset empty → +new.
         let tag_counts_on = crate::tag_counts::is_stamped(conn);
-        let old_tags_json: Option<String> = if tag_counts_on {
+        let mut old_tags_json: Option<String> = if tag_counts_on {
             conn.query_row(
                 "SELECT tags_json FROM note_meta WHERE path = ?1",
                 params![note_path],
@@ -6057,7 +6216,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         // stamps `review`. `content_hash` is nullable → query_row yields Option<String>,
         // and a first-time INSERT (no prior row) errs → None (treated as "changed").
         let review_on = crate::review::is_stamped(conn);
-        let old_content_hash: Option<String> = if review_on {
+        let mut old_content_hash: Option<String> = if review_on {
             conn.query_row(
                 "SELECT content_hash FROM note_meta WHERE path = ?1",
                 params![note_path],
@@ -6081,7 +6240,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             params![note_path, plain_body],
         ).map_err(|e| format!("Failed to write note_body {}: {}", note_path, e))?;
 
-        conn.execute(
+        const NOTE_META_UPSERT: &str =
             "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources, content_type, name_lower)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
              ON CONFLICT(path) DO UPDATE SET
@@ -6098,10 +6257,121 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                cid_cn              = excluded.cid_cn,
                sources             = excluded.sources,
                content_type        = excluded.content_type,
-               name_lower          = excluded.name_lower",
-            // MIG-085 §B.0 — write the Unicode-folded name key alongside the display name.
-            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json, content_type_json, fold_match_key(&name)],
-        ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+               name_lower          = excluded.name_lower";
+        // MIG-085 §B.0 — write the Unicode-folded name key alongside the display name.
+        let do_upsert = |cid_val: &str| {
+            conn.execute(
+                NOTE_META_UPSERT,
+                params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_val, sources_json, content_type_json, fold_match_key(&name)],
+            )
+        };
+        let mut upsert_res = do_upsert(&cid_cn);
+        // PJ-154 / PJ-151 (2026-07-26) — the cid-collision self-heal. `ON CONFLICT(path)`
+        // does NOT absorb a cid_cn UNIQUE violation: when a file MOVED outside a healthy
+        // rename (external move, interrupted cascade), its cid is still owned by a DEAD
+        // note_meta row at the old path, this upsert fails, and the file is PERMANENTLY
+        // invisible to search — reconcile's re-adopt hits the same wall every boot
+        // (14 wedged pairs measured live, incl. "Testing opened note.md"). Heal at the
+        // funnel: every adoption surface (boot walk, reconcile re-adopt, watcher, rename/
+        // move/save reindex) comes through here, so ONE arm covers them all.
+        // Matched EXACTLY (SQLITE_CONSTRAINT_UNIQUE + the note_meta.cid_cn message) —
+        // never any broader UNIQUE. Zero happy-path cost: everything below runs only
+        // inside the error arm.
+        if let Err(rusqlite::Error::SqliteFailure(ffi_err, Some(msg))) = &upsert_res {
+            let cid_conflict = ffi_err.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_UNIQUE
+                && msg.contains("note_meta.cid_cn");
+            if cid_conflict && !cid_cn.is_empty() {
+                // `AND cid_cn != ''` rides the PARTIAL unique index (see
+                // ensure_note_meta_mig003_unique_index's planner note).
+                let owner: Option<String> = conn
+                    .query_row(
+                        "SELECT path FROM note_meta WHERE cid_cn = ?1 AND cid_cn != ''",
+                        params![cid_cn],
+                        |r| r.get(0),
+                    )
+                    .ok();
+                if let Some(owner_path) = owner {
+                    if std::path::Path::new(&owner_path).exists() {
+                        // The owner's file is STILL ON DISK — a genuine duplicated cid
+                        // (two live files claiming one identity). NEVER steal: index this
+                        // file under the '' sentinel (the documented lazy-cid path) and
+                        // leave the duplicate for MIG-105's cid-regeneration ruling.
+                        if let Some(p) = conn.path() {
+                            if !p.is_empty() {
+                                diag_log(std::path::Path::new(p), &format!(
+                                    "[index_note] cid DUPLICATE (both files live): {} also claimed by {} — indexed {} with '' sentinel, NOT stolen",
+                                    cid_cn, owner_path, note_path
+                                ));
+                            }
+                        }
+                        upsert_res = do_upsert("");
+                    } else {
+                        // The owner's file is GONE — this file IS that note, moved.
+                        // RELOCATE the dead row here (the full 11-table cascade, so its
+                        // earned review/history/summary data follows), then retry once:
+                        // the upsert now takes the ON CONFLICT(path) UPDATE arm on the
+                        // same rowid, refreshing name/library/body, and note_meta_au
+                        // fires for FTS correctly.
+                        crate::libraries::migrate_note_db_paths(conn, &owner_path, note_path);
+                        // The migrate's destination pre-delete displaced the fresh
+                        // note_body shadow written above — restore it.
+                        let _ = conn.execute(
+                            "INSERT INTO note_body (path, body_text) VALUES (?1, ?2)
+                             ON CONFLICT(path) DO UPDATE SET body_text = excluded.body_text",
+                            params![note_path, plain_body],
+                        );
+                        // Re-capture the pre-upsert state from the MIGRATED row so the
+                        // tag_counts delta and the review change-signal transition from
+                        // the note's real old values, not from "no row".
+                        if tag_counts_on {
+                            old_tags_json = conn
+                                .query_row("SELECT tags_json FROM note_meta WHERE path = ?1", params![note_path], |r| r.get(0))
+                                .ok();
+                        }
+                        if review_on {
+                            old_content_hash = conn
+                                .query_row("SELECT content_hash FROM note_meta WHERE path = ?1", params![note_path], |r| r.get(0))
+                                .ok()
+                                .flatten();
+                        }
+                        upsert_res = do_upsert(&cid_cn);
+                        // Report the OUTCOME, never the attempt. The first cut of this
+                        // heal logged "relocated … and re-indexed" BEFORE the retry —
+                        // so when the relocation was refused (FK NO ACTION, the live
+                        // 2026-07-26 case) the log claimed a success that never
+                        // happened, while the note stayed invisible. A success line
+                        // must be evidence, not intent.
+                        if let Some(p) = conn.path() {
+                            if !p.is_empty() {
+                                let dead_left: i64 = conn
+                                    .query_row(
+                                        "SELECT COUNT(*) FROM note_meta WHERE path = ?1",
+                                        params![owner_path],
+                                        |r| r.get(0),
+                                    )
+                                    .unwrap_or(-1);
+                                let msg = match (&upsert_res, dead_left) {
+                                    (Ok(_), 0) => format!(
+                                        "[index_note] cid self-heal OK: {} -> {} (cid {}) — dead row gone, note indexed",
+                                        owner_path, note_path, cid_cn
+                                    ),
+                                    (Ok(_), n) => format!(
+                                        "[index_note] cid self-heal PARTIAL: {} -> {} (cid {}) — indexed, but {} row(s) remain at the old path",
+                                        owner_path, note_path, cid_cn, n
+                                    ),
+                                    (Err(e), _) => format!(
+                                        "[index_note] cid self-heal FAILED: {} -> {} (cid {}): {} — note remains unindexed",
+                                        owner_path, note_path, cid_cn, e
+                                    ),
+                                };
+                                diag_log(std::path::Path::new(p), &msg);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        upsert_res.map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // MIG-079 §C.1 — apply the write-time tag_counts ±delta inside this same
         // transaction (atomic with the note_meta write). O(tags-on-note); a
@@ -9592,6 +9862,20 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         // note_meta delete so the (future §BL.2) note_meta AFTER-DELETE trigger
         // can still read old body from note_body before it's gone.
         let _ = conn.execute("DELETE FROM note_body WHERE path = ?1", params![note_path]);
+        // PJ-149 E (2026-07-26): the delete path purged only 7 of the 12 per-note
+        // surfaces — the summary, CECE state history, Sight layout, shape trail and
+        // source suggestions stayed behind at the dead path forever. Those stale rows
+        // are exactly the destination phantoms migrate_note_db_paths' pre-deletes must
+        // clear when a future note lands on the same path. The declared ON DELETE
+        // CASCADE on three of these tables is inert in production (FKs never enabled);
+        // these explicit purges STAY even if FKs are enabled later — they guard
+        // FK-off external writers and become harmless 0-row deletes.
+        // (shape_history is created lazily — a "no such table" failure is a correct no-op.)
+        let _ = conn.execute("DELETE FROM note_summaries WHERE path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM note_state_history WHERE note_path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM sight_v3_layout WHERE note_path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM shape_history WHERE path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM sources_suggestions WHERE note_path = ?1", params![note_path]);
         if let Some(body) = old_body {
             // Best-effort: term_vocab maintenance failure must not fail
             // the file-level deletion. The file is gone; correctness is
@@ -12952,5 +13236,397 @@ mod tests_watcher_freshness {
         );
         let g = glitch.join("g.md").to_string_lossy().to_string();
         assert_eq!(row_count(&state, &g), 1, "the still-present note keeps its row");
+    }
+}
+
+#[cfg(test)]
+mod tests_pj154_cid_self_heal {
+    //! PJ-154 / PJ-151 (2026-07-26) — the cid-collision self-heal at the index_note
+    //! funnel. The live shape this reproduces: a file MOVED outside a healthy rename
+    //! (external move / interrupted cascade); its cid is still owned by a DEAD
+    //! note_meta row at the old path; the note_meta upsert fails with
+    //! SQLITE_CONSTRAINT_UNIQUE (`ON CONFLICT(path)` cannot absorb a cid_cn
+    //! violation) and the file is PERMANENTLY invisible to search — reconcile's
+    //! re-adopt hit the same wall every boot (14 wedged pairs measured live,
+    //! including the Boss's "Testing opened note.md"). Uses the REAL schema via
+    //! init_db so the heal is proven against the production triggers and indexes.
+    use super::*;
+
+    fn universe() -> (tempfile::TempDir, Connection) {
+        let td = tempfile::tempdir().unwrap();
+        let conn = init_db(&td.path().join("search.db")).unwrap();
+        (td, conn)
+    }
+
+    fn write_note(dir: &std::path::Path, rel: &str, cid: &str, body: &str) -> String {
+        let p = dir.join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(&p, format!("---\ncid_cn: {cid}\n---\n{body}")).unwrap();
+        p.to_string_lossy().to_string()
+    }
+
+    /// t1 — the exact live shape (RED before the heal): the dead row owns the cid at
+    /// the OLD path, the file lives at a NEW path. index_note(new) must RELOCATE the
+    /// dead row (the 11-table cascade, so earned aux follows the identity) and index
+    /// the file — not error out.
+    #[test]
+    fn a_moved_files_dead_row_is_relocated_not_fatal() {
+        let (td, conn) = universe();
+        let old = write_note(td.path(), "A/n.md", "20260711T142152Z_NOTE_2FDC", "first body");
+        index_note(&conn, &old, "L", true).unwrap();
+        // The external move: the file moves; the DB row stays at the dead path.
+        let new = td.path().join("B").join("n.md");
+        std::fs::create_dir_all(new.parent().unwrap()).unwrap();
+        std::fs::rename(&old, &new).unwrap();
+        let new_s = new.to_string_lossy().to_string();
+        index_note(&conn, &new_s, "L", true)
+            .expect("the cid collision must self-heal, not fail the index");
+        let n_old: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path=?1", [&old], |r| r.get(0))
+            .unwrap();
+        let n_new: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        assert_eq!((n_old, n_new), (0, 1), "the dead row relocates to the file's real path");
+        let cid: String = conn
+            .query_row("SELECT cid_cn FROM note_meta WHERE path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        assert_eq!(cid, "20260711T142152Z_NOTE_2FDC", "identity survives the relocation");
+        let body: String = conn
+            .query_row("SELECT body_text FROM note_body WHERE path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        assert!(body.contains("first body"), "the fresh body shadow wins, not the dead row's");
+    }
+
+    /// THE LIVE FAILURE SHAPE (2026-07-26). t1's note owned no child rows, so it
+    /// passed while the Boss's real notes failed: every one of the 14 stranded notes
+    /// owns a note_state_history row, and the FK is ON UPDATE NO ACTION, so the
+    /// parent path UPDATE was REFUSED and the heal silently did nothing (while
+    /// logging success — both defects fixed together). RED before the deferred-FK
+    /// cascade; GREEN after.
+    #[test]
+    fn a_moved_note_that_owns_child_rows_still_heals() {
+        let (td, conn) = universe();
+        let old = write_note(td.path(), "A/n.md", "20260711T142152Z_NOTE_CCCC", "body");
+        index_note(&conn, &old, "L", true).unwrap();
+        // The shape that broke it live: CECE state history + a summary on the note.
+        conn.execute(
+            "INSERT INTO note_state_history (note_path, captured_at, changes_json) VALUES (?1, 1, '{}')",
+            params![&old],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO note_summaries (path, summary, source, content_hash, updated_at) VALUES (?1,'s','nsc','h',1)",
+            params![&old],
+        ).unwrap();
+
+        let new = td.path().join("B").join("n.md");
+        std::fs::create_dir_all(new.parent().unwrap()).unwrap();
+        std::fs::rename(&old, &new).unwrap();
+        let new_s = new.to_string_lossy().to_string();
+
+        index_note(&conn, &new_s, "L", true).expect("the heal must survive FK enforcement");
+
+        let dead: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path=?1", [&old], |r| r.get(0))
+            .unwrap();
+        assert_eq!(dead, 0, "the dead row must actually be gone — not merely logged as gone");
+        let hist: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        let summ: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_summaries WHERE path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        assert_eq!((hist, summ), (1, 1), "the note's earned history and summary follow it");
+        let orphan_hist: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path NOT IN (SELECT path FROM note_meta)", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(orphan_hist, 0, "no child row may be left pointing at a dead parent");
+    }
+
+    /// t2 — the steal guard: BOTH files exist on disk with the same cid (a genuine
+    /// duplicated identity). The second file indexes under the '' sentinel; the
+    /// owner keeps its row AND its cid. Never re-point a live note's identity.
+    #[test]
+    fn a_live_duplicate_cid_is_never_stolen() {
+        let (td, conn) = universe();
+        let a = write_note(td.path(), "A/a.md", "20260711T142152Z_NOTE_AAAA", "a");
+        index_note(&conn, &a, "L", true).unwrap();
+        let b = write_note(td.path(), "B/b.md", "20260711T142152Z_NOTE_AAAA", "b");
+        index_note(&conn, &b, "L", true)
+            .expect("a live duplicate must degrade to the sentinel, not fail the index");
+        let cid_a: String = conn
+            .query_row("SELECT cid_cn FROM note_meta WHERE path=?1", [&a], |r| r.get(0))
+            .unwrap();
+        let cid_b: String = conn
+            .query_row("SELECT cid_cn FROM note_meta WHERE path=?1", [&b], |r| r.get(0))
+            .unwrap();
+        assert_eq!(cid_a, "20260711T142152Z_NOTE_AAAA", "the owner keeps its identity");
+        assert_eq!(cid_b, "", "the duplicate indexes under the sentinel — never stolen");
+    }
+
+    /// t3 — after a self-heal, a late rename-tail cascade on the OLD path must be a
+    /// harmless no-op (the src_exists guard): it must NOT clear the healed row.
+    #[test]
+    fn late_rename_tail_on_the_old_path_is_harmless() {
+        let (td, conn) = universe();
+        let old = write_note(td.path(), "A/n.md", "20260711T142152Z_NOTE_BBBB", "x");
+        index_note(&conn, &old, "L", true).unwrap();
+        let new = td.path().join("B").join("n.md");
+        std::fs::create_dir_all(new.parent().unwrap()).unwrap();
+        std::fs::rename(&old, &new).unwrap();
+        let new_s = new.to_string_lossy().to_string();
+        index_note(&conn, &new_s, "L", true).unwrap();
+        // The straggler: some queued tail still tries to migrate old -> elsewhere.
+        crate::libraries::migrate_note_db_paths(&conn, &old, &format!("{}.other", new_s));
+        let n_new: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path=?1", [&new_s], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n_new, 1, "a stale tail on the dead path must not disturb the healed row");
+    }
+}
+
+#[cfg(test)]
+mod tests_pj153_cid_creation_heal {
+    //! PJ-153 (MIG-105 C6) — the cid_cn creation-path fix + the inject-capable
+    //! boot healer. Live shape reproduced: 17 rows with cid_cn='' — 14 mold
+    //! templates (empty BY DESIGN, MIG-TPL §1), 2 import probes carrying only
+    //! the LEGACY `cid:` key (the canonical.rs writers emitted `cid:` while
+    //! index_note reads only `cid_cn:`), and 1 pre-MIG-003 note with no key at
+    //! all. Nothing healed them: the injecting backfill is one-shot + stamped,
+    //! the old soft healer was extract-only, and the frontend lazy injector
+    //! fires only on tab-open (which trashed files never get). Uses the REAL
+    //! schema via init_db AND the production {universe}/.constellation/search.db
+    //! layout so templates_dir_for_db resolves the fixture root's Templates
+    //! folder (the path half of the double guard is genuinely exercised).
+    use super::*;
+
+    fn universe() -> (tempfile::TempDir, Connection, std::path::PathBuf) {
+        let td = tempfile::tempdir().unwrap();
+        let cdir = td.path().join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let db = cdir.join("search.db");
+        let conn = init_db(&db).unwrap();
+        (td, conn, db)
+    }
+
+    fn write_file(root: &Path, rel: &str, content: &str) -> String {
+        let p = root.join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(&p, content).unwrap();
+        p.to_string_lossy().to_string()
+    }
+
+    fn row_cid(conn: &Connection, path: &str) -> String {
+        conn.query_row("SELECT cid_cn FROM note_meta WHERE path=?1", [path], |r| r.get(0))
+            .unwrap_or_default()
+    }
+
+    /// (1) A kind-note carrying only the legacy `cid: X` heals to `cid_cn: X`
+    /// — value PRESERVED (identity durability), legacy key gone, body
+    /// byte-identical, DB row = X. Second pass is a no-op (no rewrite loop).
+    #[test]
+    fn legacy_cid_note_heals_to_cid_cn_preserving_value() {
+        let (td, mut conn, db) = universe();
+        let content =
+            "---\ntitle: Probe\ncid: 20260704T162439Z_NOTE_1B16\nkind: note\n---\nProbe body α\n";
+        let path = write_file(td.path(), "Notes/probe.md", content);
+        index_note(&conn, &path, "L", true).unwrap();
+        assert_eq!(row_cid(&conn, &path), "", "red precondition: legacy key indexes empty");
+        mig003_step3_soft_rebackfill(&mut conn, &db).unwrap();
+        assert_eq!(
+            row_cid(&conn, &path),
+            "20260704T162439Z_NOTE_1B16",
+            "identity migrated with its value preserved"
+        );
+        let healed = std::fs::read_to_string(&path).unwrap();
+        assert!(healed.contains("cid_cn: 20260704T162439Z_NOTE_1B16"));
+        assert!(!healed.contains("\ncid: "), "legacy key gone from the file");
+        assert_eq!(
+            split_frontmatter(&healed).unwrap().1,
+            split_frontmatter(content).unwrap().1,
+            "body byte-identical"
+        );
+        mig003_step3_soft_rebackfill(&mut conn, &db).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            healed,
+            "second pass leaves the healed file untouched"
+        );
+    }
+
+    /// (2) A cid-less kind-note gets a FRESH, canonical-shaped cid_cn injected;
+    /// body byte-identical; the DB row and the file agree.
+    #[test]
+    fn cidless_note_gets_fresh_valid_cid() {
+        let (td, mut conn, db) = universe();
+        let content = "---\ntitle: Banana\nkind: note\n---\nBanana body\n";
+        let path = write_file(td.path(), "Notes/banana.md", content);
+        index_note(&conn, &path, "L", true).unwrap();
+        assert_eq!(row_cid(&conn, &path), "");
+        mig003_step3_soft_rebackfill(&mut conn, &db).unwrap();
+        let cid = row_cid(&conn, &path);
+        assert!(!cid.is_empty(), "a knowledge note must not stay identity-less");
+        assert!(
+            regex::Regex::new(r"^\d{8}T\d{6}Z_[A-Z0-9]+_[0-9A-F]+$").unwrap().is_match(&cid),
+            "fresh cid is canonical-shaped: {cid}"
+        );
+        let healed = std::fs::read_to_string(&path).unwrap();
+        assert!(healed.contains(&format!("cid_cn: {cid}")), "file and row agree");
+        assert_eq!(
+            split_frontmatter(&healed).unwrap().1,
+            split_frontmatter(content).unwrap().1,
+            "body byte-identical"
+        );
+    }
+
+    /// (3) Templates are never selected and stay byte-identical — all three
+    /// exemption shapes: kind:template inside the folder, kind:template
+    /// OUTSIDE the folder (kind guard), and a kind-LESS file INSIDE the
+    /// folder (path guard — the malformed-template case both guards exist for).
+    #[test]
+    fn templates_are_exempt_and_byte_identical() {
+        let (td, mut conn, db) = universe();
+        let mold = "---\ntitle: Mold\nkind: template\n---\nMold body {{title}}\n";
+        let in_dir = write_file(td.path(), "Templates/mold.md", mold);
+        let stray = "---\ntitle: Stray\nkind: template\n---\nStray mold\n";
+        let outside = write_file(td.path(), "Notes/stray.md", stray);
+        let kindless = "---\ntitle: NoKind\n---\nKindless mold\n";
+        let malformed = write_file(td.path(), "Templates/nokind.md", kindless);
+        for p in [&in_dir, &outside, &malformed] {
+            index_note(&conn, p, "L", true).unwrap();
+            assert_eq!(row_cid(&conn, p), "");
+        }
+        mig003_step3_soft_rebackfill(&mut conn, &db).unwrap();
+        assert_eq!(std::fs::read_to_string(&in_dir).unwrap(), mold, "mold untouched");
+        assert_eq!(
+            std::fs::read_to_string(&outside).unwrap(),
+            stray,
+            "kind guard holds outside the templates folder"
+        );
+        assert_eq!(
+            std::fs::read_to_string(&malformed).unwrap(),
+            kindless,
+            "path guard holds for a template missing its kind key"
+        );
+        for p in [&in_dir, &outside, &malformed] {
+            assert_eq!(row_cid(&conn, p), "", "template rows stay empty by design (MIG-TPL §1)");
+        }
+    }
+
+    /// (4) The canonicalize/import writer output (inject_frontmatter — the one
+    /// funnel behind canonicalize_execute, auto_canonicalize_all AND
+    /// importers.rs import_execute) emits `cid_cn:` and indexes non-empty on
+    /// the FIRST pass — no lazy tab-open needed.
+    #[test]
+    fn canonicalize_import_output_indexes_nonempty_immediately() {
+        let (td, conn, _db) = universe();
+        let fields = crate::canonical::FrontmatterFields {
+            title: "Imported".to_string(),
+            cid: "20260726T101010Z_NOTE_ABCD".to_string(),
+            kind: "note".to_string(),
+            created: "2026-07-26T10:10:10Z".to_string(),
+            aliases: vec![],
+            original_filename: Some("Imported.md".to_string()),
+        };
+        let enriched = crate::canonical::inject_frontmatter("Imported body.\n", &fields);
+        assert!(enriched.contains("cid_cn: 20260726T101010Z_NOTE_ABCD"));
+        assert!(!enriched.contains("\ncid: "), "the legacy key is never emitted");
+        let path = write_file(td.path(), "Notes/imported.md", &enriched);
+        index_note(&conn, &path, "L", true).unwrap();
+        assert_eq!(
+            row_cid(&conn, &path),
+            "20260726T101010Z_NOTE_ABCD",
+            "indexes non-empty immediately"
+        );
+    }
+
+    /// (6) The write gate performs the heal on a `.trash` path — TESTED, not
+    /// assumed (PJ-153 named risk: if gated writes refused .trash, the heal
+    /// would silently no-op and the probe would fire forever). The file on
+    /// disk must actually change, and a restore keeps the original identity.
+    #[test]
+    fn trash_rows_heal_through_the_write_gate() {
+        let (td, mut conn, db) = universe();
+        let content =
+            "---\ntitle: Probe Two\ncid: 20260704T162439Z_NOTE_351C\nkind: note\n---\nTrash probe body\n";
+        let path = write_file(td.path(), ".trash/probe2.md", content);
+        index_note(&conn, &path, "L", true).unwrap();
+        assert_eq!(row_cid(&conn, &path), "");
+        mig003_step3_soft_rebackfill(&mut conn, &db).unwrap();
+        let healed = std::fs::read_to_string(&path).unwrap();
+        assert!(
+            healed.contains("cid_cn: 20260704T162439Z_NOTE_351C"),
+            "the gated write really landed on the .trash file"
+        );
+        assert!(!healed.contains("\ncid: "));
+        assert_eq!(
+            row_cid(&conn, &path),
+            "20260704T162439Z_NOTE_351C",
+            "restore keeps identity (and the aux keyed to it)"
+        );
+        assert_eq!(
+            split_frontmatter(&healed).unwrap().1,
+            split_frontmatter(content).unwrap().1,
+            "body byte-identical"
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_pj150_fk_enforcement_reality {
+    //! Stage-0 (2026-07-26) — PINS the FK reality that a whole diagnosis got wrong.
+    //!
+    //! The PJ-150 investigation concluded production never enforces foreign keys
+    //! ("the sole `PRAGMA foreign_keys` is inside a #[test]") and therefore that the
+    //! declared `ON DELETE CASCADE` relationships were inert. The Boss's live boot
+    //! then logged `FOREIGN KEY constraint failed` from the path cascade. This test
+    //! is the arbiter, and the answer is: **rusqlite enables foreign keys by default
+    //! on every connection it opens** — no PRAGMA appears in our source because none
+    //! is needed. Consequences, all load-bearing:
+    //!   * the child FKs are `ON UPDATE NO ACTION`, so ANY note that owns a
+    //!     note_summaries / note_state_history / sources_suggestions row CANNOT have
+    //!     its `note_meta.path` updated — the rename/move/relocate silently fails.
+    //!     That is the true root cause of the 1,591 "relocate deferred" lines (PJ-151),
+    //!     which no replica replay reproduced because the replays ran FK-off.
+    //!   * therefore the C8 child-table rebuild (`ON UPDATE CASCADE`) is not an
+    //!     optional hardening — it is the fix.
+    //! If this test ever fails, the platform default changed and every conclusion
+    //! above must be re-derived before touching the cascade.
+    use super::*;
+
+    #[test]
+    fn production_connections_enforce_foreign_keys_and_no_action_blocks_a_path_update() {
+        let td = tempfile::tempdir().unwrap();
+        let conn = init_db(&td.path().join("search.db")).unwrap();
+
+        let fk: i64 = conn.query_row("PRAGMA foreign_keys", [], |r| r.get(0)).unwrap();
+        assert_eq!(fk, 1, "rusqlite opens connections with FK enforcement ON — the cascade must be designed for it");
+
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, body_text, cid_cn)
+             VALUES ('/a.md','a','L',0,'','C1')", [],
+        ).unwrap();
+        // A note that owns CECE state history — the shape 19,443 live rows are in.
+        conn.execute(
+            "INSERT INTO note_state_history (note_path, captured_at, changes_json) VALUES ('/a.md', 1, '{}')", [],
+        ).unwrap();
+
+        let blocked = conn.execute("UPDATE note_meta SET path='/b.md' WHERE path='/a.md'", []);
+        assert!(blocked.is_err(), "ON UPDATE NO ACTION must block the parent path move (this is the live defect)");
+
+        // The surgical fix available without a schema rebuild: defer the FK check to
+        // COMMIT so parent and children can move together inside one transaction.
+        conn.execute_batch("BEGIN IMMEDIATE; PRAGMA defer_foreign_keys = ON;").unwrap();
+        conn.execute("UPDATE note_meta SET path='/b.md' WHERE path='/a.md'", []).unwrap();
+        conn.execute("UPDATE note_state_history SET note_path='/b.md' WHERE note_path='/a.md'", []).unwrap();
+        conn.execute_batch("COMMIT").expect("deferred checks pass once parent and children agree");
+
+        let moved: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path='/b.md'", [], |r| r.get(0))
+            .unwrap();
+        let child: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_state_history WHERE note_path='/b.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!((moved, child), (1, 1), "deferred-FK transaction moves the note and its history together");
     }
 }

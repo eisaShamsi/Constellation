@@ -525,12 +525,12 @@ pub fn toggle_task(
     // not fail the toggle (the watcher / next full reindex would catch it).
     // (bases.rs:745 pattern — resolve the library name from the path, then reindex.)
     {
-        let libraries = crate::libraries::load_libraries(&app);
-        let lib_name = libraries.iter().find(|v| {
-            fs::canonicalize(&file_path).ok()
-                .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
-                .unwrap_or(false)
-        }).map(|v| v.name.clone());
+        // MIG-105 Stage-0 C7 (PJ-156): shared longest-root resolver — the old
+        // first-match fs::canonicalize `find` attributed a nested library's note
+        // to the parent library whose root prefixes it, stamping the wrong
+        // library into note_meta on this reindex. None (outside every own
+        // library, or a `..` path) skips the reindex, exactly as before.
+        let lib_name = crate::libraries::owning_own_library_name(&app, &file_path);
         if let Some(lib_name) = lib_name {
             use tauri::Manager;
             let search_state = app.state::<crate::search::SearchState>();

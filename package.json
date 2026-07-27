@@ -9,6 +9,8 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "vitest run",
+		"test:red:frontmatter": "vitest run -c vitest.manual.config.mjs",
 		"tauri": "tauri",
 		"build:tradition-manifests": "node scripts/build-tradition-manifests.mjs",
 		"predev": "node scripts/build-tradition-manifests.mjs",

@@ -158,17 +158,14 @@ pub fn read_shape_from_disk(content: &str) -> Option<String> {
 
 /// Resolve the library that owns `file_path` within the ACTIVE universe's OWN
 /// libraries (non-recursive — a write must never land in a read-only cUniverse).
+/// MIG-105 Stage-0 C7 (PJ-156): delegates to the shared longest-root resolver —
+/// the old first-match fs::canonicalize `find` attributed a nested library's
+/// note to the parent library whose root prefixes it (wrong library stamped
+/// into note_meta on reindex). Intended behavior changes: a missing file now
+/// resolves lexically (the gate_rmw read surfaces the honest error downstream);
+/// `..` paths are denied (None → Access denied).
 fn owning_library(app: &tauri::AppHandle, file_path: &str) -> Result<String, String> {
-    let libraries = crate::libraries::load_libraries(app);
-    libraries
-        .iter()
-        .find(|v| {
-            fs::canonicalize(file_path)
-                .ok()
-                .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
-                .unwrap_or(false)
-        })
-        .map(|v| v.name.clone())
+    crate::libraries::owning_own_library_name(app, file_path)
         .ok_or_else(|| "Access denied: file is not in a registered library.".to_string())
 }
 

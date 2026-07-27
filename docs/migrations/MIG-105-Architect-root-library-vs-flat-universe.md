@@ -358,9 +358,18 @@ logs (R8); the un-inspected appearance/i18n/Style-Setter surface (its own inspec
 | R8 | The 939 MB orphan `Constellation SV Test.db` + uncapped logs | Delete the orphan, cap the logs — as its own PJ |
 | Token | Exact stored-name format for Core entries (§3.6 constraint is locked) | `"_Core — <Universe name>"` frozen at migration; confirm at Plan approval |
 
-**Step-1 blocker (unchanged):** the app-data registry `universes.json` (Roaming) lists only
-كون عيسى while ECK is demonstrably the universe in use — instrument `save_registry` and read the
-answer before the migration names its target.
+**Step-1 blocker — RESOLVED by diagnosis (Stage 0, 2026-07-26): there is NO app defect.** The
+"registry disagreement" was an artifact of the *observer*: Claude sessions run inside the Claude
+desktop MSIX AppContainer, whose AppData virtualization redirects reads of
+`%APPDATA%\world.uconstellation.app\` to a stale shadow copy under
+`…\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\` (shadow verified on disk; it also shows
+Constellation was once launched *from inside* a Claude session, on Jul 18 — which is how the
+shadow froze on كون عيسى). `save_registry` needs no instrumentation. **Standing protocol instead:**
+(1) any registry-touching MIG-105 step starts with the Boss reading the REAL `universes.json` from
+a normal (non-Claude-spawned) process and pasting it — an in-container read is never trusted;
+(2) registry writes are executed only by a Boss-launched process; (3) never launch Constellation
+from inside a Claude session; (4) agent-side verification uses the E:-drive `.constellation`
+artifacts (outside AppData virtualization) or the app's own `get_active_universe_path`.
 
 ---
 
