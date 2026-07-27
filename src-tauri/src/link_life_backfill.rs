@@ -123,6 +123,10 @@ fn run(app: &tauri::AppHandle) -> Result<SeedReport, String> {
         .to_path_buf();
 
     let conn = Connection::open(&path).map_err(|e| format!("open link_life_backfill conn: {}", e))?;
+    // The pragmas `link_boot_index` sets and I omitted when cloning it. A dedicated connection
+    // that does not declare them is not the pattern this file claims to follow.
+    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+        .map_err(|e| format!("pragma: {}", e))?;
     conn.busy_timeout(Duration::from_secs(30))
         .map_err(|e| format!("busy_timeout: {}", e))?;
 

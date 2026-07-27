@@ -58,6 +58,9 @@ pub struct RestoreReport {
     pub weights_healed: usize,
     /// Unparseable ledger lines (each cost one line, never the file).
     pub skipped_lines: usize,
+    /// Writes PLANNED. `planned > 0` with `restored == 0` means every batch FAILED — an
+    /// ambiguity the first cut could not express, so "0 written" read as "nothing needed doing".
+    pub planned: usize,
     /// The index held no links at all — a rebuild in progress, not an absence of earned data.
     /// Nothing is written and nothing is concluded; the next boot retries.
     pub index_not_ready: bool,
@@ -103,6 +106,10 @@ fn run(app: &tauri::AppHandle) -> Result<RestoreReport, String> {
     let path = crate::search::db_path(app)?;
     let dir = path.parent().ok_or("search.db has no parent dir")?.to_path_buf();
     let conn = Connection::open(&path).map_err(|e| format!("open link_life_restore conn: {}", e))?;
+    // The pragmas `link_boot_index` sets and I omitted when cloning it. A dedicated connection
+    // that does not declare them is not the pattern this file claims to follow.
+    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+        .map_err(|e| format!("pragma: {}", e))?;
     conn.busy_timeout(Duration::from_secs(30))
         .map_err(|e| format!("busy_timeout: {}", e))?;
 
@@ -249,6 +256,8 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
         }
     }
 
+    report.planned = writes.len();
+
     // Apply in batches. Every UPDATE fires the sky trigger (DELETE + INSERT over 234k rows) and the
     // outgoing-aggregate pair, so an unbatched loop would hold the writer lock far too long at boot.
     for chunk in writes.chunks(BATCH) {
@@ -263,7 +272,20 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
                 rusqlite::params![w.id, w.n, w.conf, w.status, w.weight, w.at],
             );
             if let Err(e) = res {
-                eprintln!("[link_life_restore] row {} failed: {e}", w.id);
+                // NEVER eprintln! a failure a user needs: Windows GUI release builds send stderr
+                // nowhere (search.rs documents this in-code). This exact swallow is why the Boss's
+                // 2026-07-27 restore reported "0 of 34 written" with 33 records unaccounted for and
+                // no reason recorded anywhere. Log the row AND the values, so one boot names it.
+                let msg = format!(
+                    "[link_life_restore] row {} UPDATE FAILED: {e} — (n={}, conf={:?}, status={}, w={:.4}, at={:?})",
+                    w.id, w.n, w.conf, w.status, w.weight, w.at
+                );
+                eprintln!("{msg}");
+                if let Some(p) = conn.path() {
+                    if !p.is_empty() {
+                        crate::search::diag_log(std::path::Path::new(p), &msg);
+                    }
+                }
                 ok = false;
                 break;
             }

@@ -450,3 +450,41 @@ deleted ALL links to simulate one vanished link, which is now (correctly) indist
 rebuild in progress; it now deletes one link and keeps the index healthy.
 
 Rust **1233/0** (51 MIG-104). Binary **@17:03**.
+
+### Slice 6 small-test — the restore reported "0 of 34 written" and I could not say WHY (instrumentation shipped)
+
+The small test worked as a test: I snapshotted all 38 earned rows (`EARNED-SNAPSHOT.json`, my
+reversible net) and wiped the earned layer only — 0 earned rows left in the DB, `earned.jsonl` intact
+as the sole remaining copy. The Boss booted; the badges did not come back. **The DB confirms nothing
+was restored.**
+
+**The log line, and the tell:**
+```
+earned layer restored: 0 of 34 records written
+  (0 already current, 0 no longer in the index, 1 ambiguous-skipped), 0 weights healed
+```
+34 records, and only **1** is accounted for. **33 vanished from the tally** — they were planned as
+writes and the batch FAILED. And the failure went to `eprintln!`, which Windows GUI release builds
+send nowhere (documented in-code at `search.rs:884-887`). **Third occurrence of this exact class in
+two days** (reconcile's discarded error; the two false-success lines).
+
+**Established, not theorized:** the SQL is NOT at fault. Ran the exact UPDATE from Python against the
+live DB with `PRAGMA foreign_keys = ON` (matching rusqlite's default) — one row, then **all 38 in a
+single transaction, rolled back: 0 failures.** Triggers fire in that path too. So the cause is
+environmental (a concurrent writer during boot), not the statement — and it cannot be reproduced
+outside the running app. **Per Reproduce-First, the only shippable work is the instrumentation.**
+
+**Shipped:**
+1. **The batch error is now logged** (row id + n/conf/status/weight/at) instead of going to stderr.
+2. **New `planned` counter.** "0 written" was ambiguous between *nothing needed doing* and
+   *everything failed* — precisely the ambiguity that cost this cycle. The line now reads
+   `N of M PLANNED writes applied`, and appends **"ALL BATCHES FAILED, see the row error above"**
+   when `planned > 0 && restored == 0`.
+3. **A real omission found by re-reading the pattern I cloned:** `link_boot_index` sets
+   `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;` on its dedicated connection and I left that
+   out of BOTH `link_life_backfill` and `link_life_restore`. A dedicated connection that does not
+   declare the pragmas is not the pattern these files claim to follow. Restored in both. Whether it
+   is the cause is unknown — it is a genuine deviation either way.
+
+Rust **1233/0**. Binary **@17:30**. The Boss's wiped state is preserved for the next boot, so the
+instrumented run reproduces the failure exactly.
