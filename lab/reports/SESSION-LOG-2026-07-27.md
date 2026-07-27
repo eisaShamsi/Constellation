@@ -347,3 +347,30 @@ by arithmetic, but the 6 spurious v1 records key on identities the corrected pas
 they cannot be folded away — the v1 file must be **deleted** before the re-seed, not merged with it.
 
 3 new tests (41 MIG-104 total). Rust **1223/0**. Binary @14:24.
+
+### Slice 5 re-test — PASS, verified against the DB (2026-07-27, binary @14:24)
+
+Boss's corrected `earned.jsonl`: **38 lines = exactly the 38 earned rows** in `note_links`
+(36 `walk` + 1 `trust` + 1 `retire`, from 36 recorded links — the 2 `structural` rows correctly
+skipped in the loop). **All 38 carry `"seed":1`.** **5 records refuse to guess** (`"to":""`):
+`فلسفة`, `السعودية`, `collision test`, `banana` ×2 — the fan-out is gone (`السعودية` 3 records → 1,
+`فلسفة` 2 → 1). Folds to **34 distinct links**; the two `The Four Books` and two `banana` lines
+collapse, which is Q2's type-free key working as ruled. **Zero spurious identities.**
+
+### ★ A LIMITATION THE RE-TEST EXPOSED — a hard constraint on Slice 6 (the restore)
+
+The two `banana` records are **two genuinely different links** (one source note → two different notes
+both named "Banana"). Neither target is identifiable, so both key on the NAME and therefore fold to
+ONE entry. Harmless in the live data — both carry `n=1`, so restoring 1 to both is correct — but if
+their counts differed (5 and 2), the max-fold would restore **5 to both**, handing one link three
+walks it never earned.
+
+The fix does not belong in the seed (refusing to guess is right). It is a **rule for Slice 6**:
+> **A NAME-KEYED record (`to` empty) may be restored ONLY when it resolves to exactly ONE
+> `note_links` row. If several rows match, SKIP it and report the skip — never distribute one
+> folded count across links that may have earned different amounts.**
+> An identity-keyed record (`to` non-empty) is unambiguous and restores normally.
+
+Recorded here and in `tests/mig104/README.md` so Slice 6 cannot quietly get it wrong; it needs its
+own RED-provable recipe (two same-named targets with DIFFERENT counts → the restore must skip, not
+average or max).

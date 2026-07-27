@@ -38,6 +38,20 @@ applied uniformly:
   At 3.4 ms per save it would be the most expensive thing on a debounced save; at 168 µs it is
   noise. Measure again at the slice.
 
+## ★ A constraint Slice 6 (restore) MUST honour — discovered by the Slice-5 re-test
+
+When a target name is ambiguous the seed correctly **refuses to guess** and keys the record on the
+NAME. But two *different* links from one source to two *different* same-named notes then fold to ONE
+record (live: `banana` ×2). Both happen to carry `n=1` today, so nothing is wrong yet — but if their
+counts differed, a max-fold restore would give the lower link a count it never earned.
+
+> **RULE: a name-keyed record (`to` empty) may restore ONLY when it resolves to exactly ONE
+> `note_links` row. If several match, SKIP and report — never distribute one folded count across
+> links that may have earned different amounts.** Identity-keyed records restore normally.
+
+Needs its own RED-provable recipe at Slice 6: two same-named targets with DIFFERENT counts → the
+restore skips both and says so.
+
 ## Recipe registry
 
 | Recipe | Slice | What it reproduces | State |
