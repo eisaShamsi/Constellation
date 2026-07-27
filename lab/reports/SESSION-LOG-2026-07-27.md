@@ -556,3 +556,231 @@ wrong. Checked by id thereafter.
 
 **MIG-104's core promise is now proven on live data: losing the index costs the user nothing they
 created.**
+
+---
+
+# MIG-104 Slice 7 — the snapshot + the 2 MB compactor
+
+**Function in hand:** the Earned-Life Ledger's **snapshot + compactor**.
+**Concept (the horse):** *the cost of reading the ledger must be bounded by how much you have
+EARNED, not by how long you have been using Constellation.*
+
+An append-only store has exactly one weakness — it only grows, and a store that is read in full on
+every boot forever eventually costs the boot. This slice removes that weakness without giving up
+the property that made append-only the right choice: **nothing is ever rewritten in place, and
+nothing is ever deleted.**
+
+## What landed
+
+`earned.snapshot.jsonl` — one line per earned link (plus one per note-level decision), carrying the
+current folded state. Compaction fires on a **byte threshold (2 MB) and never on a timer**, so an
+idle Universe produces zero writes.
+
+**The order is the safety argument, and it is the reverse of the intuitive one:**
+
+1. build every line from the folded state (pure, in memory)
+2. write to a **unique temp** in the same directory (PJ-087 — never a fixed `<name>.tmp`)
+3. **fsync the temp**
+4. persist it over `earned.snapshot.jsonl` (atomic rename within the volume)
+5. rename `earned.jsonl` aside to `earned.tail-<UTC>.jsonl` — **never delete** (invariant #4)
+
+A crash anywhere before step 5 leaves snapshot + full tail, which the fold reads as the state it
+already had — duplicated input, identical answer. There is no window in which the state lives only
+in a file that is not read. Step 3's fsync is mandatory *here* (unlike the walk path's) precisely
+because step 5 makes the snapshot the only file in the load path that holds the folded history.
+
+`note-history.jsonl` is structurally excluded: **`maybe_compact` has no stream parameter.** Folding
+Stream B would collapse a thought into a keystroke (the live rows `hid` 8251/8252/8253 record one
+property being typed, `ma` → `mas` → `masadir`). Making the stream a parameter would turn that
+prohibition into a code-review convention; leaving it out makes it a fact about the signature.
+
+## ★ Three defects the slice exposed — all fixed in-pass (WA#6)
+
+Building a compactor means asking "can the loaded state re-express every record the writers emit?"
+That question found three things a green 52-test suite did not:
+
+**1. `priority` records were written since Slice 4 and never read back.**
+`set_review_priority` appends **and fsyncs** a `priority` line before touching the DB. The fold's
+key function required a target, so every one of those records was silently dropped, and the Plan's
+Slice-6 clause *"restores review priority too"* was never true. **Losing `search.db` still cost the
+user every review priority they had set** — in the one pass whose whole job is that it must not.
+Now folded (`LedgerState.notes`), snapshotted, and restored, with `-1` mapping back to SQL `NULL`
+and the same one-row-or-skip rule that governs an ambiguous link record. Had this not been caught,
+compaction would have moved those records out of the loaded store permanently.
+
+**2. The `refuse_write` guard could not fire.** `link_life_restore`'s *"do NOT write a thing from a
+store we could not read"* read as a live protection while being **structurally unable to trigger**:
+the flag was set only inside `link_life::quarantine`, which returns its *own* report, while every
+reader built a fresh one in which it was `false`. This is the **LL-035 shape** — a claim that a
+protection is active is a *runtime* claim. The reader now OBSERVES the quarantine on disk (an
+`earned.corrupt-*.jsonl` beside the store = un-acknowledged; acknowledging is the user moving the
+file away — File-Over-App, no hidden flag to drift). Both the restore's guard and the compactor's
+are now real, and a test puts the store in the state that fires them.
+
+**3. A false log line.** The restore's diagnostics ended `— stamped` while the pass is deliberately
+**unstamped** (that stamp was the Slice-6b bug). LL-035 rule 2: a log line must be evidence, never
+intent. Removed. Also defused the related trap: the Boss's live DB still carries a
+`schema_versions` row `link_life_restore = 1` from the first cut, and the module now says in-code
+that it must never be consulted.
+
+Also removed two unused imports in `link_life_restore.rs` (pre-existing).
+
+## Correctness detail worth keeping
+
+An absent timestamp now round-trips as **absent**, not as `""`. The snapshot must write the `at`
+field regardless (field order is part of the format), so `""` on the way out would have folded back
+to `Some("")` on the way in — making the state after a compaction differ from the state before.
+Nothing user-visible would have broken, which is exactly why it would have gone unnoticed.
+
+## Verification
+
+| Gate | Result |
+|---|---|
+| Rust `cargo test --lib` | **1258 passed / 0 failed** (11 ignored) — was 1234 |
+| `svelte-check` | **0 errors** (268 warnings, pre-existing) |
+| vitest main lane | **52 files / 607 tests passed** |
+| vitest **Sight perf, SERIAL lane** (PJ-172) | **2 files / 31 tests passed** (`--no-file-parallelism --maxWorkers=1`) |
+| Slice 7 modules | `tests_mig104_compact` **19/19**, restore additions **5/5** |
+
+**Live store before/after (Rule 8):** `earned.jsonl` **6,222 B → 6,222 B, unchanged**; no snapshot
+written. The threshold is 2 MB, so this Universe is ~340× below it and the pass costs one
+`metadata()` call per boot. That is the intended steady state, and the reason the Plan marks this
+slice not-Boss-testable — the *compactor* has no user-visible surface until a Universe has recorded
+on the order of 10,000 decisions. **The priority restore added in-pass DOES have one, and is
+Boss-tested below.**
+
+## Still open, stated rather than parked
+
+`link_life::quarantine` has **no production caller** — nothing yet decides that a store is
+"structurally unusable". Its *effect* is now observable and both guards honour it, but the detector
+itself is a Slice-3 gap. The compactor's own "the fold is empty while the tail is not" refusal
+covers the shape that actually occurs (a truncated or garbage store), so there is no silent-loss
+exposure today. Filed for a Boss ruling rather than silently parked (WA#6).
+
+## ★★ The safety inspection found a real app-killer IN THIS SLICE'S OWN NEW CODE — fixed before commit
+
+The per-build inspection (standing order) confirmed, via **three independent verifier agents**, an
+unguarded **TOCTOU in `maybe_compact`** — code written an hour earlier in this same slice.
+
+**The mechanism.** `maybe_compact` folded the tail at one moment and renamed it aside at another,
+and between those two moments it wrote and fsync'd a multi-megabyte snapshot — tens of
+milliseconds. `append` took **no lock of any kind**. Every record appended inside that window was
+renamed into `earned.tail-<stamp>.jsonl`, **which nothing ever reads back** (that is precisely what
+bounds the load). On Windows the rename even succeeds while an append handle is open
+(`FILE_SHARE_DELETE`), so the handle keeps writing into the aside file.
+
+**The appenders are provably concurrent.** `constellation_link_traverse`, `record_decision`
+(retire / restore / trust) and `set_review_priority` all append from Tauri command threads **after
+deliberately dropping the DB guard** — at any moment of an interactive session, while the boot
+thread compacts.
+
+**Why it is worse than a missing line — and why it is exactly the class MIG-104 exists to prevent.**
+The restore treats the ledger as authoritative for DECISIONS (confidence, retired/active, review
+priority). A decision lost this way is not merely absent: on the next boot the fold still carries
+the *pre-decision* value, disagrees with the DB, and **writes the old value back** — silently
+un-retiring a link or reverting a priority the user set, with every step logging success. Walk
+counts self-heal (absolute `n`, max-fold), so the permanent loss lands precisely on the data this
+migration was built to make durable.
+
+**My own error, named.** The comment I had written in `link_life_restore` said compaction riding
+the restore's thread made the race *"impossible instead of unlikely."* That was a **sequencing**
+argument mistaken for an **exclusion** argument: it covered restore-vs-compact and said nothing
+about the live appenders, who are unaffected by which thread compaction runs on. The comment is
+corrected in-tree to say so explicitly, because the next person to read it would have inherited the
+same false confidence.
+
+**The fix.** A module-level `FILE_LOCK` in `link_life.rs` serializing every operation that MUTATES
+the store — `append`, `fsync`, `quarantine`, and the whole read→write→fsync→rename sequence of
+`maybe_compact`. Deliberate details: the threshold probe stays **outside** the lock (one
+`metadata()` call, run on every boot of every Universe, must never contend); the size is re-read
+**inside** it (another pass may have already handled the tail); reads stay lock-free (the
+write-snapshot-first ordering already makes every intermediate state fold correctly); and a
+poisoned lock uses `into_inner()` rather than `unwrap()`, because a panic elsewhere must never stop
+the ledger from writing the user's earned data. This is a dedicated FILE lock, not the DB lock —
+PJ-066's "never hold the DB lock across file I/O" is untouched, and no call site takes the two in
+conflicting orders.
+
+**Reproduce-First, and a second lesson inside it.** The first regression test I wrote **passed
+without the fix** — a fixed-count appender that finished before compaction reached the window. A
+regression test that cannot see the regression is worse than none, so it was rebuilt twice:
+
+1. the appender now runs **until compaction returns** (atomic stop flag), so its writes are
+   guaranteed to span the window rather than race it;
+2. the fixture was changed from 700 links × 24 rounds to **20,000 distinct links** — the old one
+   folded to a 700-line snapshot that was too fast to write to expose anything. *The window being
+   tested is the snapshot write, so the fixture has to make that write slow.*
+
+**RED proven across 3 consecutive runs with the exclusion removed: 666 of 730 and 1,110 of 1,168
+decisions silently lost per run.** GREEN across 3 consecutive runs with it restored.
+
+A third test — `a_stale_fold_strands_a_decision_in_the_aside_tail` — performs the interleaving **by
+hand, with no threads**, so the mechanism is pinned deterministically for whoever next touches this
+code, independent of timing.
+
+## Also confirmed in MIG-104's territory — NOT fixed here, flagged for a ruling (WA#6)
+
+`ConfidencePicker.svelte:61,70` — the **only** user entry to the trust/retire decisions — wraps
+both calls in `catch { /* ignore */ }`. Slice 4's Rust contract deliberately **fails closed** ("if
+the record cannot be made durable, the DB change must NOT happen; the error propagates and the user
+is told"), and the popover throws that error away. The DB correctly stays unchanged and the UI
+correctly does not update — so the user clicks *Contested*, the menu closes, and **nothing happens,
+with no explanation.**
+
+Not fixed in this commit deliberately: it needs an error surface (there is no toast system; the
+in-repo pattern is an inline message like `conflict.mergeSaveError`) plus a new key across **15
+locales**, and *where* the message appears is a design decision. The Plan already has **Slice 14 —
+adjacent defects** for exactly this class. Filed as **PJ-173**; recommend folding into Slice 14.
+
+## PJ-166 struck a FOURTH time
+
+The inspection was invoked diff-scoped (`args.files = [link_life.rs, link_life_restore.rs]`) and
+returned `mode: "whole-app"` — `args.files` ignored again. 83 agents, 0 errors, ~10.1 M tokens,
+31 minutes. **The upside was real** (the whole-app pass is what surfaced the TOCTOU at all), but the
+per-build gate the standing order asks for still does not exist, and a 31-minute whole-app sweep
+cannot run per build. The sweep also produced a large whole-app confirmed register — including an
+**APP-KILLER at `+layout.svelte:6779`** (the rename cascade's protection sets are pre-walk snapshots,
+so a tab opened DURING the multi-second walk is never frozen, never flushed, yet still force-adopted)
+and a **silent-data-loss at `PropertyEditor.svelte:852`**. Those are **per-cycle** findings, not
+this build's — appended to the Charter register and filed in the PJ ledger, NOT absorbed silently
+into this slice.
+
+## ★ BOSS TEST — PASS (2026-07-27)
+
+The compactor itself has no user-visible surface yet (6 KB store, ~340× below the 2 MB threshold),
+so the Boss test targeted the clause this slice discovered was missing: **a review priority
+surviving the loss of the index.**
+
+1. Boss set **Priority = 80** on `Africa` via the right-sidebar Review Pulse panel, and confirmed
+   the record had landed in `earned.jsonl`:
+   `{"v":1,"t":"priority","cid":"20260414T092241Z_NOTE_7AB7","p":80,"at":"2026-07-27T15:52:03…"}`
+2. **I erased it from the index myself** (WA#1 — not handed to the Boss):
+   `UPDATE note_meta SET review_priority = NULL WHERE cid_cn = '20260414T092241Z_NOTE_7AB7'`.
+   Verified `review_priority IS NOT NULL` went from **1 row to 0 across the whole index**, and that
+   `review-pulse.json` carries no priority data and never mentions the note — so **the ledger line
+   was the only copy of that number anywhere on disk.** (Keyed on `cid_cn`, never
+   `LIKE '%Africa.md'` — that also matches *East Africa.md* / *West Africa.md*.)
+3. Boss reopened: **Priority reads 80 with the `manual` tag, "Computed would be 30".** Diagnostics:
+
+```
+[link_life_restore] earned layer restored: 0 of 34 records written (34 already current,
+0 no longer in the index, 1 ambiguous-skipped), 0 weights healed,
+1 priorities restored (0 already current, 0 unresolved), 0 bad lines
+```
+
+Every number is the designed one: the link layer was already correct (`34 already current` — the
+steady state, silent by design), the `banana` pair was **skipped by the ambiguity rule** rather than
+handed a count it might not have earned, and **the priority came back from a plain-text file the
+database had no memory of.**
+
+### A false mechanism in my own comment, corrected by the surgery
+
+Clearing the column required deciding whether a bare connection could do it (LL-036). Reading the
+live triggers rather than assuming: **`note_meta_au` is guarded** — `WHEN OLD.name IS NOT NEW.name
+OR OLD.body_text IS NOT NEW.body_text` — so a review-priority write never reaches `notes_fts`,
+which the bare `sqlite3` UPDATE then confirmed by succeeding with no tokenizer registered. My
+comment on the priority batch had claimed it fires `note_meta_au` and that this is *why* the
+connection needs the tokenizer. **Wrong mechanism, right conclusion for the wrong loop** — the
+tokenizer is required by the `note_links` writes, not this one. Corrected in-tree, with the
+verification recorded, plus the fact that actually applies: `sight_v6_layout_invalidate_au` is
+**unguarded** and drops the note's cached layout row on every `note_meta` update (harmless — derived
+— but it is the real per-row cost that justifies the batching).

@@ -32,9 +32,6 @@
 
 use rusqlite::Connection;
 use std::time::Duration;
-use tauri::Manager;
-
-use crate::search::SearchState;
 
 /// How many `note_links` UPDATEs per transaction. Each one fires the sky trigger (DELETE + INSERT
 /// on 234k rows) and the outgoing-aggregate pair, so the batch bounds how long the writer lock is
@@ -64,6 +61,13 @@ pub struct RestoreReport {
     /// The index held no links at all — a rebuild in progress, not an absence of earned data.
     /// Nothing is written and nothing is concluded; the next boot retries.
     pub index_not_ready: bool,
+    /// Note-level review priorities written back.
+    pub priorities_restored: usize,
+    /// Priorities the DB already agreed with.
+    pub priorities_already_current: usize,
+    /// Priority records whose note is no longer in the index — or whose identity matches more
+    /// than one row, which is skipped by the same rule that governs ambiguous link records.
+    pub priorities_unresolved: usize,
 }
 
 /// Runs on EVERY boot — deliberately not stamped.
@@ -80,26 +84,85 @@ pub struct RestoreReport {
 /// otherwise) and cheap (bounded by earned-link count — 34, not 234,233), so running it every boot
 /// is the correct shape. It is the same discipline `reconcile::maybe_schedule` already follows for
 /// index-vs-disk drift, and for the same reason: the condition it repairs can recur at any time.
+///
+/// ⚠ **A `schema_versions` row named `link_life_restore` exists on databases that ran the first
+/// cut** (the Boss's live DB carries `version = 1`, verified 2026-07-27). Nothing reads it and
+/// nothing writes it any more. **Do not add a gate here that consults it** — that row is the
+/// artefact of the exact mistake described above, not a signal, and reintroducing the gate would
+/// reintroduce the bug on every database that already has the row.
 pub fn maybe_schedule(app: tauri::AppHandle) {
     let app_bg = app.clone();
-    std::thread::spawn(move || match run(&app_bg) {
-        Ok(r) if r.index_not_ready => diag(
-            &app_bg,
-            "[link_life_restore] index still rebuilding (0 links) — nothing concluded, will retry next boot",
-        ),
-        Ok(r) if r.records == 0 => {} // no ledger yet: silent, this runs every boot
-        Ok(r) if r.restored == 0 && r.already_current == r.records => {} // steady state: silent
-        Ok(r) => diag(
-            &app_bg,
-            &format!(
-                "[link_life_restore] earned layer restored: {} of {} records written ({} already current, \
-                 {} no longer in the index, {} ambiguous-skipped), {} weights healed, {} bad lines — stamped",
-                r.restored, r.records, r.already_current, r.no_matching_row,
-                r.ambiguous_skipped, r.weights_healed, r.skipped_lines
+    std::thread::spawn(move || {
+        match run(&app_bg) {
+            Ok(r) if r.index_not_ready => diag(
+                &app_bg,
+                "[link_life_restore] index still rebuilding (0 links) — nothing concluded, will retry next boot",
             ),
-        ),
-        Err(e) => diag(&app_bg, &format!("[link_life_restore] FAILED (non-fatal): {}", e)),
+            Ok(r) if r.records == 0 && r.priorities_restored == 0 => {} // no ledger yet: silent, this runs every boot
+            Ok(r) if r.restored == 0 && r.priorities_restored == 0 && r.already_current == r.records => {} // steady state
+            Ok(r) => diag(
+                &app_bg,
+                &format!(
+                    "[link_life_restore] earned layer restored: {} of {} records written ({} already current, \
+                     {} no longer in the index, {} ambiguous-skipped), {} weights healed, \
+                     {} priorities restored ({} already current, {} unresolved), {} bad lines",
+                    r.restored, r.records, r.already_current, r.no_matching_row,
+                    r.ambiguous_skipped, r.weights_healed,
+                    r.priorities_restored, r.priorities_already_current, r.priorities_unresolved,
+                    r.skipped_lines
+                ),
+            ),
+            Err(e) => diag(&app_bg, &format!("[link_life_restore] FAILED (non-fatal): {}", e)),
+        }
+
+        // Slice 7 — compaction rides THIS thread, strictly after the restore, so the restore
+        // never reads a store that is being rewritten underneath it.
+        //
+        // ⚠ That is a SEQUENCING argument and it covers restore-vs-compact ONLY. An earlier draft
+        // of this comment claimed the single thread made the race "impossible"; the safety
+        // inspection showed that was an overclaim — the live appenders (`constellation_link_traverse`,
+        // `record_decision`, `set_review_priority`) all write from Tauri command threads and are
+        // completely unaffected by which thread compaction runs on. Exclusion against THEM is
+        // `link_life::FILE_LOCK`, and it lives in the module that owns the files. Do not read this
+        // comment as covering it.
+        //
+        // Everything here is file I/O with no DB lock held (PJ-066).
+        match compact(&app_bg) {
+            Ok(crate::link_life::CompactOutcome::Compacted(r)) => diag(
+                &app_bg,
+                &format!(
+                    "[link_life] ledger compacted: {} lines snapshotted, tail {} B → snapshot {} B, \
+                     tail kept at {}",
+                    r.lines, r.tail_bytes, r.snapshot_bytes, r.tail_renamed_to.display()
+                ),
+            ),
+            // A refusal is NOT a quiet success — it means the store needs a human.
+            Ok(crate::link_life::CompactOutcome::Refused(why)) => diag(
+                &app_bg,
+                &format!("[link_life] compaction REFUSED — {why}"),
+            ),
+            // The overwhelmingly common case. Silent, because an idle store must cost nothing,
+            // including a log line every boot.
+            Ok(crate::link_life::CompactOutcome::BelowThreshold { .. }) => {}
+            Err(e) => diag(&app_bg, &format!("[link_life] compaction FAILED (non-fatal): {}", e)),
+        }
     });
+}
+
+/// The compaction pass. Pure file I/O against the store beside `search.db` — no connection, no
+/// lock, nothing that can block a boot.
+fn compact(app: &tauri::AppHandle) -> Result<crate::link_life::CompactOutcome, String> {
+    // Compaction WRITES, so the Plan's promise that "toggle off = today's behaviour byte-for-byte"
+    // has to cover it — a store left over from a run with writes ON must not be rewritten by a
+    // build with them off. The const makes this branch vanish rather than cost a check.
+    if !crate::link_life::EARNED_LEDGER_WRITE {
+        return Ok(crate::link_life::CompactOutcome::BelowThreshold { tail_bytes: 0 });
+    }
+    let path = crate::search::db_path(app)?;
+    let dir = path.parent().ok_or("search.db has no parent dir")?;
+    // Second-granular UTC, so a tail-aside name is legible; `unique_aside` handles a collision.
+    let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+    crate::link_life::maybe_compact(dir, &stamp)
 }
 
 fn run(app: &tauri::AppHandle) -> Result<RestoreReport, String> {
@@ -173,7 +236,8 @@ fn rows_for_key(conn: &Connection, key: &str) -> Vec<i64> {
 
 /// The restore pass. Separated from `run` so it is testable with no AppHandle.
 pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<RestoreReport, String> {
-    let (folded, load) = crate::link_life::read_folded(dir);
+    let (state, load) = crate::link_life::read_state(dir);
+    let folded = &state.links;
     let mut report = RestoreReport {
         records: folded.len(),
         skipped_lines: load.skipped_lines,
@@ -207,7 +271,7 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
     }
     let mut writes: Vec<Write> = Vec::new();
 
-    for (key, e) in &folded {
+    for (key, e) in folded {
         let ids = rows_for_key(conn, key);
         if ids.is_empty() {
             report.no_matching_row += 1;
@@ -271,7 +335,57 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
         }
     }
 
-    report.planned = writes.len();
+    // ── Note-level decisions ────────────────────────────────────────────────────────────────
+    //
+    // Review priority is a decision the user made about a NOTE, so it has no `(source, target)`
+    // key and never entered the link plan above. Slice 4 has been appending and fsyncing these
+    // records since it shipped; nothing has ever read them back. The Plan's Slice 6 says
+    // "restores review priority too" and the code did not — found while building the compactor,
+    // because a fold-and-rewrite would have moved the records out of the loaded store for good.
+    //
+    // The ledger is authoritative here, and that is a property of the WRITE order rather than a
+    // preference: `set_review_priority` appends and fsyncs BEFORE it touches the DB, so the file
+    // can never be behind. (Contrast the walk count, which is DB-first and therefore max-folded.)
+    struct NoteWrite {
+        path: String,
+        p: Option<i64>,
+    }
+    let mut note_writes: Vec<NoteWrite> = Vec::new();
+    for (cid, ne) in &state.notes {
+        if cid.is_empty() {
+            continue;
+        }
+        // Exactly ONE row, by the same rule that governs an ambiguous link record: a decision is
+        // never distributed across notes it might not belong to.
+        let mut paths: Vec<String> = Vec::new();
+        if let Ok(mut stmt) =
+            conn.prepare("SELECT path FROM note_meta WHERE cid_cn = ?1 AND cid_cn != '' LIMIT 2")
+        {
+            if let Ok(rows) = stmt.query_map(rusqlite::params![cid], |r| r.get::<_, String>(0)) {
+                paths.extend(rows.flatten());
+            }
+        }
+        if paths.len() != 1 {
+            report.priorities_unresolved += 1;
+            continue;
+        }
+        // `-1` is what `set_review_priority` writes for "cleared" — it maps back to SQL NULL.
+        let want: Option<i64> = if ne.p < 0 { None } else { Some(ne.p) };
+        let cur: Option<i64> = conn
+            .query_row(
+                "SELECT review_priority FROM note_meta WHERE path = ?1",
+                rusqlite::params![&paths[0]],
+                |r| r.get(0),
+            )
+            .unwrap_or(None);
+        if cur == want {
+            report.priorities_already_current += 1;
+            continue;
+        }
+        note_writes.push(NoteWrite { path: paths.remove(0), p: want });
+    }
+
+    report.planned = writes.len() + note_writes.len();
 
     // Apply in batches. Every UPDATE fires the sky trigger (DELETE + INSERT over 234k rows) and the
     // outgoing-aggregate pair, so an unbatched loop would hold the writer lock far too long at boot.
@@ -312,6 +426,49 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
             let _ = conn.execute_batch("ROLLBACK");
         }
     }
+
+    // Batched because `UPDATE note_meta` fires `sight_v6_layout_invalidate_au`, which is
+    // UNGUARDED (`AFTER UPDATE ON note_meta`, no `WHEN`) and deletes the note's cached layout row
+    // on every single update. Harmless — it is a derived cache — but it is per-row work.
+    //
+    // It does NOT reach `notes_fts`: `note_meta_au` carries `WHEN OLD.name IS NOT NEW.name OR
+    // OLD.body_text IS NOT NEW.body_text`, and a review-priority write changes neither. Verified
+    // 2026-07-27 by performing exactly this UPDATE on the live database from a bare connection
+    // with no tokenizer registered — it succeeded. Stated precisely because the first version of
+    // this comment claimed the opposite and would have taught the next reader a false mechanism:
+    // the tokenizer this module registers is required by the `note_links` writes above (LL-036),
+    // not by this loop.
+    for chunk in note_writes.chunks(BATCH) {
+        conn.execute_batch("BEGIN IMMEDIATE")
+            .map_err(|e| format!("begin priority batch: {}", e))?;
+        let mut ok = true;
+        for w in chunk {
+            if let Err(e) = conn.execute(
+                "UPDATE note_meta SET review_priority = ?2 WHERE path = ?1",
+                rusqlite::params![w.path, w.p],
+            ) {
+                let msg = format!(
+                    "[link_life_restore] review_priority UPDATE FAILED for {}: {e} — (p={:?})",
+                    w.path, w.p
+                );
+                eprintln!("{msg}");
+                if let Some(p) = conn.path() {
+                    if !p.is_empty() {
+                        crate::search::diag_log(std::path::Path::new(p), &msg);
+                    }
+                }
+                ok = false;
+                break;
+            }
+        }
+        if ok {
+            conn.execute_batch("COMMIT").map_err(|e| format!("commit priority batch: {}", e))?;
+            report.priorities_restored += chunk.len();
+        } else {
+            let _ = conn.execute_batch("ROLLBACK");
+        }
+    }
+
     Ok(report)
 }
 
@@ -550,18 +707,114 @@ mod tests_mig104_restore {
         assert_eq!(row(&conn, "/a.md", "B").0, 7);
     }
 
-    /// A store that could not be read must cause NO writes — that is how a restore destroys the
-    /// thing it was protecting.
+    /// An ABSENT store is a fact — an empty store, not an error — so this is a clean no-op.
+    /// (Renamed from `an_unreadable_store_writes_nothing`, which is a different condition
+    /// entirely and is now covered by the test below.)
     #[test]
-    fn an_unreadable_store_writes_nothing() {
+    fn an_absent_store_writes_nothing() {
         let (td, conn) = universe();
         let s = store(&td);
         note(&conn, "/a.md", "A", "C_A");
         link(&conn, "/a.md", "B", 3, "evidence", "active", 2.386);
-        // No ledger at all — absent is a FACT (an empty store), so this is a clean no-op.
         let r = restore(&conn, &s).unwrap();
         assert_eq!((r.records, r.restored), (0, 0));
         assert_eq!(row(&conn, "/a.md", "B").0, 3, "the DB is left exactly as it was");
+    }
+
+    /// ★ SLICE-7 FINDING. The `refuse_write` guard above the write planner could not fire: the
+    /// flag was set ONLY inside `link_life::quarantine`, which returns its own report, while the
+    /// reader always built a fresh one in which it was `false`. A dead branch that read as a live
+    /// protection — the LL-035 shape ("X is inactive" is a runtime claim). The reader now observes
+    /// the quarantine file on disk, so the guard is real; this test puts the store in the state
+    /// that fires it and asserts nothing is written.
+    #[test]
+    fn a_quarantined_store_writes_nothing() {
+        let (td, conn) = universe();
+        let s = store(&td);
+        note(&conn, "/a.md", "A", "C_A");
+        note(&conn, "/b.md", "B", "C_B");
+        link(&conn, "/a.md", "B", 6, "evidence", "active", 2.95);
+        link_life_backfill::seed(&conn, &s).unwrap();
+        conn.execute("UPDATE note_links SET traversal_count = 0, weight = 1.0", []).unwrap();
+
+        // The store went structurally unusable and was renamed aside; the user has not dealt
+        // with it yet. The DB is the survivor (§3.7) and must not be written from a store we
+        // could not read.
+        std::fs::write(s.join("earned.corrupt-2026-07-27T000000Z.jsonl"), "\u{0}garbage").unwrap();
+        let r = restore(&conn, &s).unwrap();
+        assert_eq!(r.restored, 0, "a quarantined store must produce NO writes");
+        assert_eq!(row(&conn, "/a.md", "B").0, 0, "the DB is left exactly as it was");
+
+        // Acknowledging is moving the file away — then the restore proceeds normally.
+        std::fs::remove_file(s.join("earned.corrupt-2026-07-27T000000Z.jsonl")).unwrap();
+        assert_eq!(restore(&conn, &s).unwrap().restored, 1);
+        assert_eq!(row(&conn, "/a.md", "B").0, 6);
+    }
+
+    /// ★ SLICE-7 FINDING — the Plan's Slice 6 says "restores review priority too", and the code
+    /// did not. `set_review_priority` has been appending and fsyncing `priority` records since
+    /// Slice 4, and nothing ever read one back: the fold's key function required a target, so
+    /// every one was silently dropped. Losing `search.db` therefore still cost the user every
+    /// review priority they had set — in the one pass whose whole job is that it must not.
+    #[test]
+    fn a_review_priority_survives_losing_the_index() {
+        let (td, conn) = universe();
+        let s = store(&td);
+        note(&conn, "/a.md", "A", "C_A");
+        note(&conn, "/b.md", "B", "C_B");
+        link(&conn, "/a.md", "B", 1, "hypothesis", "active", 1.693);
+        conn.execute("UPDATE note_meta SET review_priority = 5 WHERE path = '/a.md'", []).unwrap();
+        // The record the live command writes, file-first and fsync'd, before touching the DB.
+        link_life::append(&s, link_life::Stream::Earned,
+            &[link_life::priority_line("C_A", 5, "2026-07-27T09:00:00Z")]).unwrap();
+
+        // Total loss of the index: the note comes back from the file with no priority at all.
+        conn.execute("UPDATE note_meta SET review_priority = NULL", []).unwrap();
+
+        let r = restore(&conn, &s).unwrap();
+        assert_eq!(r.priorities_restored, 1, "the decision must come back");
+        let p: Option<i64> = conn.query_row(
+            "SELECT review_priority FROM note_meta WHERE path = '/a.md'", [], |r| r.get(0)).unwrap();
+        assert_eq!(p, Some(5));
+
+        // Idempotent, like everything else in this pass.
+        let again = restore(&conn, &s).unwrap();
+        assert_eq!((again.priorities_restored, again.priorities_already_current), (0, 1));
+    }
+
+    /// `-1` is what `set_review_priority` writes for "cleared". Clearing is itself a decision and
+    /// must restore as SQL NULL — not as the number -1, and not by being ignored.
+    #[test]
+    fn a_cleared_priority_restores_as_null_not_as_minus_one() {
+        let (td, conn) = universe();
+        let s = store(&td);
+        note(&conn, "/a.md", "A", "C_A");
+        link(&conn, "/a.md", "B", 1, "hypothesis", "active", 1.693);
+        link_life::append(&s, link_life::Stream::Earned, &[
+            link_life::priority_line("C_A", 5, "2026-07-27T09:00:00Z"),
+            link_life::priority_line("C_A", -1, "2026-07-27T10:00:00Z"), // the user cleared it
+        ]).unwrap();
+        conn.execute("UPDATE note_meta SET review_priority = 5 WHERE path = '/a.md'", []).unwrap();
+
+        let r = restore(&conn, &s).unwrap();
+        assert_eq!(r.priorities_restored, 1);
+        let p: Option<i64> = conn.query_row(
+            "SELECT review_priority FROM note_meta WHERE path = '/a.md'", [], |r| r.get(0)).unwrap();
+        assert_eq!(p, None, "the LAST decision was to clear it");
+    }
+
+    /// The same refusal that governs an ambiguous link record: a decision is never applied to a
+    /// note we cannot identify uniquely.
+    #[test]
+    fn a_priority_for_a_note_that_is_gone_is_counted_not_applied() {
+        let (td, conn) = universe();
+        let s = store(&td);
+        note(&conn, "/a.md", "A", "C_A");
+        link(&conn, "/a.md", "B", 1, "hypothesis", "active", 1.693);
+        link_life::append(&s, link_life::Stream::Earned,
+            &[link_life::priority_line("C_VANISHED", 4, "2026-07-27T09:00:00Z")]).unwrap();
+        let r = restore(&conn, &s).unwrap();
+        assert_eq!((r.priorities_restored, r.priorities_unresolved), (0, 1));
     }
 
     /// ★ THE 2026-07-27 REGRESSION TEST, and an indictment of the other tests in this module.

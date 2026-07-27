@@ -401,3 +401,50 @@ REACHABLE and FIXED — commit `b6310479` (window-level disarm belt + ignore OS 
 PJ-116→114, PJ-120→072) or re-confirm existing backlog (PJ-073/074/075/085/087/099/100/101…). The
 per-build diff safety-inspection on the fix commits (`wf_8a0c0e99-ab1`) returned **zero findings in
 the edited functions** — all 12 it surfaced are pre-existing.
+
+---
+
+## MIG-104 Slice-7 build inspection → whole-app sweep register (2026-07-27)
+
+Invoked **diff-scoped** for the per-build gate (`args.files = [link_life.rs, link_life_restore.rs]`)
+and returned `mode: "whole-app"` — **PJ-166's FOURTH strike**; `args.files` ignored again
+(`wf_7ed5952a-bd7`, 83 agents, 0 errors, ~10.1 M tokens, 31 min). **50 unique confirmed:
+3 APP-KILLER · 20 HIGH · 24 MED · 4 LOW.** Full register:
+`lab/reports/SAFETY-INSPECTION-2026-07-27-whole-app.md`.
+
+### The build gate itself — one finding in the diff, FIXED before the commit
+
+**`link_life.rs:592` — unguarded TOCTOU in Slice 7's own new code, confirmed by three independent
+verifiers.** `maybe_compact` folded the tail at one moment and renamed it aside at another, writing
+and fsyncing a multi-megabyte snapshot in between while `append` took no lock — so any record
+appended in that window landed in `earned.tail-*.jsonl`, which **nothing reads back**. Because the
+restore treats the ledger as authoritative for *decisions*, the next boot would then write the
+**pre-decision value back over the DB** — silently un-retiring a link or reverting a review
+priority, with every step logging success. Fixed with a module-level `FILE_LOCK` over every
+store-mutating operation. **RED proven across 3 runs (666/730 and 1,110/1,168 decisions lost);
+GREEN across 3.**
+
+This is the Charter's thesis in miniature: the defect was written, tested (52 green tests), and
+would have shipped the same hour — and the adversarial sweep caught it at the build that introduced
+it, which is exactly what the two cadences exist for.
+
+**A methodological note worth keeping.** The first regression test written for it **passed without
+the fix** (a fixed-count appender that finished before the window opened), and the fixture folded to
+a 700-line snapshot too fast to write to expose anything. *A race test must make the raced window
+wide and must span it, not sample it.* Rebuilt to run the appender until compaction returns, over a
+20,000-distinct-link fixture, plus a thread-free deterministic test that performs the interleaving
+by hand.
+
+### Not absorbed into MIG-104 — filed, not parked
+
+- **`ConfidencePicker.svelte:61,70`** → **PJ-173**. The only user entry to trust/retire wraps both
+  calls in `catch { /* ignore */ }`, discarding the error from a Rust path that deliberately **fails
+  closed** ("if the record cannot be made durable, the DB change must NOT happen"). The user clicks
+  *Contested*, the menu closes, nothing happens, nothing is said. Needs an error surface + 15
+  locales + a design call on where it appears → **fold into MIG-104 Slice 14 (adjacent defects)**.
+- **The remaining 48** → **PJ-174**, a per-CYCLE triage owed a pass with the Boss. Headline:
+  an **APP-KILLER at `+layout.svelte:6779`** (the rename cascade's freeze/flush protection sets are
+  all snapshots taken *before* a multi-second walk, so a tab opened DURING the walk is never frozen,
+  never flushed, yet still force-adopted from disk) and **two APP-KILLERs in `PropertyEditor.svelte`
+  (851/852)** (a stale whole-props replay erasing frontmatter another writer already persisted; two
+  instances bound to one tabId).

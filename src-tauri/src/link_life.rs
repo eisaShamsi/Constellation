@@ -20,9 +20,16 @@
 //! | bounded by | earned-link count (33 live) | history events, forever |
 //!
 //! Folding the history stream would collapse a thought into a keystroke: the live rows
-//! `hid` 8251/8252/8253 record `ma` → `mas` → `masadir`, a property being typed. `read_folded`
+//! `hid` 8251/8252/8253 record `ma` → `mas` → `masadir`, a property being typed. `read_state`
 //! is the ONLY fold implementation in this module, and it reads Stream A only;
 //! `read_history_for` deliberately has none.
+//!
+//! **The one weakness of an append-only store is that it only grows — so Stream A is compacted**
+//! (`maybe_compact`): past a byte threshold the folded state is written to
+//! `earned.snapshot.jsonl` and the tail is renamed aside, never deleted. Load is then
+//! `snapshot + tail`, both bounded. Stream B is structurally excluded from that machinery —
+//! `maybe_compact` has no stream parameter — because a compactor that could reach it would
+//! eventually be pointed at it.
 //!
 //! **Ordering is by `hid` (the source row ordinal), never by `at`** — 765 `captured_at` groups
 //! collide across 1,536 live rows, with 2,066 order inversions.
@@ -61,8 +68,9 @@ impl Stream {
     }
 }
 
-/// `earned.snapshot.jsonl` — one line per earned link, current state. Bounded by earned count,
-/// never by history, which is what keeps the load bounded (Slice 7 writes it).
+/// `earned.snapshot.jsonl` — one line per earned link (plus one per note decision), current
+/// folded state. Bounded by what the user has earned, never by how long they have been using the
+/// app, which is what keeps the load bounded. Written by `maybe_compact`.
 pub const SNAPSHOT_FILE: &str = "earned.snapshot.jsonl";
 
 /// The store's directory, derived from the connection itself: `conn.path()`'s parent IS the
@@ -97,9 +105,51 @@ pub struct Earned {
     pub status: Option<String>,
     /// Last-writer-wins timestamp of the newest record folded in.
     pub at: Option<String>,
+    /// The target's NAME as last written — the only human-legible part of a line, and the
+    /// fallback key when the target has no identity. Folded so the SNAPSHOT can re-emit it:
+    /// a snapshot rebuilt from the key alone would read `{"to":"20260512T144233Z_NOTE_77C9"}`
+    /// with no clue what that is, silently trading File-Over-App legibility for compaction.
+    pub tn: Option<String>,
+    /// Whether the record that supplied `at` was a SEEDED one (`"seed":1`) — i.e. whether this
+    /// record's timestamp is derived rather than witnessed (Slice 5, Boss-found). Folded so the
+    /// snapshot can carry the marker forward; without it, compaction would silently relabel every
+    /// reconstructed timestamp as an observed one.
+    pub at_seeded: bool,
+}
+
+/// One folded NOTE-level record. Today only review priority, which is a decision about a note
+/// rather than about a link and therefore has no `(source, target)` key.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct NoteEarned {
+    /// The review-priority override. **`-1` means CLEARED** — that is what `set_review_priority`
+    /// writes for `None` (`review.rs`), and the restore maps it back to SQL `NULL`.
+    pub p: i64,
+    pub at: Option<String>,
+    pub at_seeded: bool,
 }
 
 pub type FoldedMap = std::collections::HashMap<String, Earned>;
+pub type NoteMap = std::collections::HashMap<String, NoteEarned>;
+
+/// **Everything Stream A means, after folding — and the ONLY thing the snapshot is written from.**
+///
+/// That sentence is the whole safety argument for compaction: the compactor rewrites the store
+/// from this value, so compaction is lossless **iff this type can re-express every record the
+/// ledger accepts**. Anything a writer appends that this type cannot hold is data the compactor
+/// would quietly drop — so a new record kind must land here in the same change that introduces it.
+///
+/// That is not hypothetical. Slice 4 shipped `priority` records that `set_review_priority`
+/// appends **and fsyncs**, while the fold's key function required a target and therefore dropped
+/// every one of them. Nothing consumed them, so nothing failed — until this slice, where a
+/// fold-and-rewrite would have moved them out of the loaded store for good. Found and fixed here
+/// (WA#6); `notes` is the field that holds them.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct LedgerState {
+    /// Earned link state, keyed `cid>TARGET_CID` or `cid>~target-name`.
+    pub links: FoldedMap,
+    /// Note-level decisions, keyed by the note's `cid_cn`.
+    pub notes: NoteMap,
+}
 
 /// One note-history record, as archived. The record IS the payload — see the module docs.
 #[derive(Debug, Clone, PartialEq)]
@@ -111,15 +161,52 @@ pub struct HistRecord {
     pub raw: String,
 }
 
+/// Serializes every operation that MUTATES the store's files against every other one.
+///
+/// ★ **The bug this exists to prevent — found by the safety inspection on the Slice-7 build, in
+/// the slice's own new code.** `maybe_compact` folds the tail into a snapshot and then renames the
+/// tail aside. Between those two steps it writes and fsyncs a multi-megabyte file — tens of
+/// milliseconds — and `append` took no lock of any kind. Every record appended in that window was
+/// moved into `earned.tail-<stamp>.jsonl`, which **nothing ever reads back** (that is exactly what
+/// bounds the load). On Windows the rename even succeeds while an append handle is open
+/// (`FILE_SHARE_DELETE`), so the handle keeps writing into the aside file.
+///
+/// The appenders are provably concurrent with a boot-thread compaction: `constellation_link_traverse`
+/// (`search.rs`), `record_decision` (retire / restore / trust) and `set_review_priority`
+/// (`review.rs`) all append **after deliberately dropping the DB guard**, from Tauri command
+/// threads, at any moment of an interactive session.
+///
+/// **And the damage is worse than a missing line.** The restore treats the ledger as authoritative
+/// for DECISIONS (confidence, retired/active, review priority). A decision lost this way is not
+/// merely absent: on the next boot the fold still carries the *pre-decision* value, disagrees with
+/// the DB, and **writes the old value back** — silently reversing a retirement or a priority the
+/// user had set, while every step logs success. Walk counts self-heal (absolute `n`, max-fold), so
+/// the permanent loss lands precisely on the data this migration exists to make durable.
+///
+/// My own comment in `link_life_restore` claimed this was impossible because compaction rides the
+/// restore's thread. That reasoning covered restore-vs-compact and nothing else — a sequencing
+/// argument mistaken for an exclusion argument. Corrected there too.
+///
+/// A poisoned lock must never stop the ledger writing: `into_inner()` rather than `unwrap()`.
+static FILE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn file_guard() -> std::sync::MutexGuard<'static, ()> {
+    FILE_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 /// Append lines to a stream. ONE `write_all` per line including its `\n`, in append mode, so a
 /// concurrent reader always sees whole lines and a crash can only truncate the last one.
 ///
 /// Deliberately does NOT fsync — see the module docs on the 20× cost. Call `fsync` explicitly
 /// at the sites where the only other copy is about to be destroyed.
+///
+/// Takes `FILE_LOCK` so an append can never be in flight while `maybe_compact` is moving the tail
+/// out from under it. ~168 µs held; the walk path is already fire-and-forget off the click path.
 pub fn append(dir: &Path, s: Stream, lines: &[String]) -> Result<(), String> {
     if lines.is_empty() {
         return Ok(());
     }
+    let _g = file_guard();
     let path = dir.join(s.file_name());
     let mut h = std::fs::OpenOptions::new()
         .create(true)
@@ -140,6 +227,9 @@ pub fn append(dir: &Path, s: Stream, lines: &[String]) -> Result<(), String> {
 /// Force the stream's bytes to disk. Use at the archive-before-purge site and after a user
 /// decision; NOT on the walk path (Slice 0 measured 3.4 ms vs 168 µs).
 pub fn fsync(dir: &Path, s: Stream) -> Result<(), String> {
+    // Under the same lock as `append`: opening the tail while a compaction is renaming it would
+    // otherwise recreate an empty file and sync that instead.
+    let _g = file_guard();
     let path = dir.join(s.file_name());
     let h = std::fs::OpenOptions::new()
         .create(true)
@@ -169,6 +259,27 @@ fn earned_key(v: &serde_json::Value) -> Option<String> {
     Some(format!("{cid}>~{}", tn.to_lowercase()))
 }
 
+/// An un-acknowledged quarantine sitting beside the store, if there is one.
+///
+/// **Why this is an existence check and not a flag someone remembered to set.** `quarantine`
+/// returns a `LoadReport` with `refuse_write = true`, and until this slice that was the ONLY thing
+/// that ever set it — so the guard in `link_life_restore` (*"do NOT write a thing from a store we
+/// could not read"*) read as a live protection while being structurally unable to fire: the reader
+/// built its own fresh report, in which the flag was always `false`. Found while wiring the
+/// compactor's identical guard, and fixed here rather than duplicated (LL-035: a claim that a
+/// protection is active is a RUNTIME claim, and only something observable can establish it).
+///
+/// The observable fact is the file. `quarantine` renames the suspect store to
+/// `earned.corrupt-<stamp>.jsonl` and never deletes it, so its presence IS the un-acknowledged
+/// state, and **acknowledging is the user moving or deleting that file** — File-Over-App, no UI
+/// required and no hidden flag to get out of step with the disk.
+pub fn quarantine_pending(dir: &Path) -> Option<PathBuf> {
+    std::fs::read_dir(dir).ok()?.flatten().find_map(|e| {
+        let name = e.file_name().to_string_lossy().to_string();
+        (name.starts_with("earned.corrupt-") && name.ends_with(".jsonl")).then(|| e.path())
+    })
+}
+
 /// Read one JSONL file, skipping (and counting) unparseable lines. Never throws on content.
 fn read_lines(path: &Path, report: &mut LoadReport) -> Vec<serde_json::Value> {
     let text = match std::fs::read_to_string(path) {
@@ -189,40 +300,97 @@ fn read_lines(path: &Path, report: &mut LoadReport) -> Vec<serde_json::Value> {
     out
 }
 
-/// Load the link-life state: snapshot + tail, both bounded. THE ONLY FOLD IN THIS MODULE.
+/// Load the whole Stream-A state: snapshot + tail, both bounded. **THE ONLY FOLD IN THIS MODULE.**
 ///
 /// Idempotent by ARITHMETIC, not by rule: `n` is written absolute and folds by max, so a
 /// duplicated region, a re-appended restored copy, or a "keep both" merge resolution all fold
 /// to the same answer. Later records win for decisions.
-pub fn read_folded(dir: &Path) -> (FoldedMap, LoadReport) {
+///
+/// **The snapshot is read FIRST and the tail second, and that order is the correctness argument
+/// for compaction** — the tail is, by construction, everything appended *after* the snapshot was
+/// written, so plain file order already means "later wins" for decisions. It also means a crash
+/// between writing the snapshot and renaming the tail aside is harmless: both are read, and the
+/// duplicated region folds to the same answer it had before.
+pub fn read_state(dir: &Path) -> (LedgerState, LoadReport) {
     let mut report = LoadReport::default();
-    let mut map: FoldedMap = FoldedMap::new();
+    // The refusal must be OBSERVED, not remembered — see `quarantine_pending`. Every reader now
+    // gets the same answer from the same fact on disk, so a guard that says "refuse" can actually
+    // fire, and a test can put it in the state that makes it fire.
+    if let Some(p) = quarantine_pending(dir) {
+        report.corrupt_renamed_to = Some(p);
+        report.refuse_write = true;
+    }
+    let mut state = LedgerState::default();
     // Snapshot first, then the tail — the tail is newer by construction.
     let mut all = read_lines(&dir.join(SNAPSHOT_FILE), &mut report);
     all.extend(read_lines(&dir.join(Stream::Earned.file_name()), &mut report));
     for v in &all {
+        let t = parse_str(v, "t").unwrap_or_default();
         // Stream B records can never enter the fold, even if a file is concatenated by hand.
-        if matches!(parse_str(v, "t").as_deref(), Some("nh") | Some("nd") | Some("nr")) {
+        if matches!(t.as_str(), "nh" | "nd" | "nr") {
             continue;
         }
+        // A seeded line's timestamp is DERIVED, not witnessed (Slice 5). Carried, not dropped.
+        let seeded = v.get("seed").is_some();
+
+        // A note-level decision has no target and therefore no link key. Before this slice the
+        // key function returned `None` here and the record vanished from the loaded state.
+        if t == "priority" {
+            let Some(cid) = parse_str(v, "cid").filter(|c| !c.is_empty()) else { continue };
+            let e = state.notes.entry(cid).or_default();
+            if let Some(p) = v.get("p").and_then(|x| x.as_i64()) {
+                e.p = p; // a DECISION: latest wins, including the `-1` that means "cleared"
+            }
+            // NON-EMPTY only — see the identical guard on the link branch below for why.
+            if let Some(at) = parse_str(v, "at").filter(|s| !s.is_empty()) {
+                e.at = Some(at);
+                e.at_seeded = seeded;
+            }
+            continue;
+        }
+
         let Some(key) = earned_key(v) else { continue };
-        let e = map.entry(key).or_default();
+        let e = state.links.entry(key).or_default();
         if let Some(n) = v.get("n").and_then(|x| x.as_i64()) {
             e.n = e.n.max(n); // MAX, so a replay can never ratchet a count down
         }
         if let Some(c) = parse_str(v, "conf") {
             e.conf = Some(c);
         }
-        match parse_str(v, "t").as_deref() {
-            Some("retire") => e.status = Some("archived".to_string()),
-            Some("restore") => e.status = Some("active".to_string()),
+        match t.as_str() {
+            "retire" => e.status = Some("archived".to_string()),
+            "restore" => e.status = Some("active".to_string()),
             _ => {}
         }
-        if let Some(at) = parse_str(v, "at") {
+        // An EXPLICIT status field, which is what a folded `state` line carries. `retire` /
+        // `restore` remain the sugar a live writer emits; this is the general form the snapshot
+        // needs so one line can express a link that was walked AND retired.
+        if let Some(s) = parse_str(v, "status").filter(|s| !s.is_empty()) {
+            e.status = Some(s);
+        }
+        if let Some(tn) = parse_str(v, "tn").filter(|s| !s.is_empty()) {
+            e.tn = Some(tn);
+        }
+        // NON-EMPTY only, and this is what makes the snapshot round trip EXACTLY. A record with
+        // no timestamp folds to `at: None`; the snapshot has to write the field anyway (the field
+        // order is part of the format), so it writes `"at":""` — which, read back naively, would
+        // fold to `Some("")` and make the state after a compaction differ from the state before.
+        // Nothing user-visible would break (every consumer treats `""` as absent), which is
+        // exactly why it would have gone unnoticed. Treating empty as absent on the way IN keeps
+        // "compaction cannot change what the store means" literally true.
+        if let Some(at) = parse_str(v, "at").filter(|s| !s.is_empty()) {
             e.at = Some(at);
+            e.at_seeded = seeded;
         }
     }
-    (map, report)
+    (state, report)
+}
+
+/// The link half of `read_state`. A thin projection, deliberately NOT a second fold — one
+/// implementation is what keeps the snapshot writer and every reader from ever disagreeing.
+pub fn read_folded(dir: &Path) -> (FoldedMap, LoadReport) {
+    let (state, report) = read_state(dir);
+    (state.links, report)
 }
 
 /// Read a note's archived history, ordinal-ordered. **No fold** — every event survives.
@@ -312,10 +480,185 @@ pub fn adopt_conflict_copies(dir: &Path) -> usize {
     adopted
 }
 
+// ─── Slice 7: the snapshot + the compactor ───────────────────────────────────
+//
+// **The concept (the horse).** The cost of reading the ledger must be bounded by how much the
+// user has EARNED, not by how long they have been using Constellation. Without this, a store that
+// only ever grows is read in full on every boot forever — the one serious defect of an
+// append-only design, and the reason a snapshot exists at all.
+//
+// **Why a byte threshold and never a timer.** An idle Universe must produce zero writes. A timer
+// would rewrite a store nobody touched, which is both pointless I/O inside a watched folder and a
+// recurring chance to corrupt a file that was perfectly fine.
+//
+// **The order is the safety argument, and it is the reverse of the intuitive one.** Write the new
+// snapshot first, make it durable, and only THEN rename the tail aside:
+//
+//   1. build every line from the folded state          (pure, in memory)
+//   2. write them to a UNIQUE temp in the same dir     (PJ-087: never a fixed `<name>.tmp`)
+//   3. fsync the temp                                  (see below — this one is mandatory)
+//   4. persist it over `earned.snapshot.jsonl`         (atomic rename within the volume)
+//   5. rename `earned.jsonl` aside, NEVER delete it    (invariant #4)
+//
+// A crash at any point before 5 leaves snapshot + full tail, which the fold reads as the same
+// state it already had — duplicated input, identical answer. A crash after 5 has the snapshot on
+// disk holding everything the tail held. There is no window in which the state is only in a file
+// that is not read.
+//
+// **Why step 3's fsync is not optional here, when the walk path's is.** The moment step 5 lands,
+// the snapshot is the ONLY file the loader reads that contains the folded history — the
+// renamed-aside tail is a safety copy, deliberately outside the load path so the load stays
+// bounded. An unsynced snapshot plus a power loss would therefore cost the user real earned data
+// that no automatic pass would recover. That is exactly the "the other copy is about to stop
+// being read" test the fsync policy is written against.
+
+/// Compaction fires when the TAIL alone reaches this. The snapshot is not counted: it is already
+/// bounded by the number of earned links, which is what makes the whole scheme bounded.
+///
+/// 2 MB is ~10,000 records at the live line width (~200 B). Measured for scale, not guessed: the
+/// live tail is **6,222 bytes** after seeding 33 earned links, so this Universe compacts for the
+/// first time somewhere around its 10,000th recorded decision.
+pub const COMPACT_THRESHOLD_BYTES: u64 = 2 * 1024 * 1024;
+
+/// What one compaction actually did — every number surfaced, none implied.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompactReport {
+    /// Lines written to the new snapshot (links + note decisions).
+    pub lines: usize,
+    /// Size of the tail that was folded in and renamed aside.
+    pub tail_bytes: u64,
+    /// Size of the snapshot that replaced it.
+    pub snapshot_bytes: u64,
+    /// Where the tail went. It is KEPT — this is a rename, never a delete.
+    pub tail_renamed_to: PathBuf,
+}
+
+/// The three genuinely different outcomes, kept apart so a caller can never read "nothing to do"
+/// as "done" or a refusal as a success (LL-035: a log line must be evidence, never intent).
+#[derive(Debug, Clone, PartialEq)]
+pub enum CompactOutcome {
+    /// Under the threshold. **Nothing was read and nothing was written** — the idle case, and by
+    /// far the common one.
+    BelowThreshold { tail_bytes: u64 },
+    /// Compaction was possible but REFUSED, with the reason. Never silently treated as success.
+    Refused(&'static str),
+    Compacted(CompactReport),
+}
+
+/// Pick a tail-aside name that cannot overwrite an existing one.
+///
+/// The stamp is second-granular, so two compactions inside one second would otherwise collide and
+/// the second `rename` would silently destroy the first aside copy — turning "never delete" into
+/// "usually never delete". Cheap to make structural.
+fn unique_aside(dir: &Path, stamp: &str) -> PathBuf {
+    let base = format!("earned.tail-{stamp}");
+    let mut p = dir.join(format!("{base}.jsonl"));
+    let mut i = 2;
+    while p.exists() {
+        p = dir.join(format!("{base}-{i}.jsonl"));
+        i += 1;
+    }
+    p
+}
+
+/// Fold the tail into a bounded snapshot, once it is worth doing.
+///
+/// **There is no `Stream` parameter, and that is deliberate.** `note-history.jsonl` must NEVER be
+/// compacted: its records ARE the payload, and folding two of them destroys the intermediate state
+/// that is their entire value (the live rows `hid` 8251/8252/8253 record one property being typed,
+/// `ma` → `mas` → `masadir`). If its size ever becomes a concern the only legal operation is time
+/// segmentation into `note-history-<year>.jsonl`. Making the stream a parameter would turn that
+/// prohibition into a code-review convention; leaving it out makes it a fact about the signature.
+///
+/// `stamp` is supplied by the caller — never a clock inside, so the tail-aside name is
+/// deterministic under test (the same discipline `quarantine` follows).
+pub fn maybe_compact(dir: &Path, stamp: &str) -> Result<CompactOutcome, String> {
+    let tail = dir.join(Stream::Earned.file_name());
+    // The threshold probe is deliberately OUTSIDE the lock: it is one `metadata()` call, it is
+    // what runs on every boot of every Universe, and it must never contend with an appender.
+    let tail_bytes = std::fs::metadata(&tail).map(|m| m.len()).unwrap_or(0);
+    if tail_bytes < COMPACT_THRESHOLD_BYTES {
+        return Ok(CompactOutcome::BelowThreshold { tail_bytes });
+    }
+
+    // ★ From here to the rename is ONE critical section, and it has to be: the whole operation is
+    // "decide what the tail contains, then declare that content handled". An append landing
+    // between those two halves is a record that no reader will ever see again. Held only on the
+    // rare occasion the threshold is actually crossed — see `FILE_LOCK` for the failure it stops.
+    let _g = file_guard();
+    // Re-read the size under the lock. Between the probe and the lock, another compaction (or a
+    // quarantine) may have already dealt with this tail.
+    let tail_bytes = std::fs::metadata(&tail).map(|m| m.len()).unwrap_or(0);
+    if tail_bytes < COMPACT_THRESHOLD_BYTES {
+        return Ok(CompactOutcome::BelowThreshold { tail_bytes });
+    }
+
+    let (state, load) = read_state(dir);
+    if load.refuse_write {
+        // The store was structurally unusable and renamed aside. Writing a snapshot from a store
+        // we could not read is how a compactor destroys the thing it exists to protect.
+        return Ok(CompactOutcome::Refused(
+            "store quarantined — refusing to snapshot from a store that could not be read",
+        ));
+    }
+    if state.links.is_empty() && state.notes.is_empty() {
+        // A megabytes-long tail that folds to nothing is not an empty store; it is a store we do
+        // not understand. Replacing it with an empty snapshot would read as a successful
+        // compaction while moving every byte out of the load path.
+        return Ok(CompactOutcome::Refused(
+            "the fold is empty while the tail is not — refusing to snapshot nothing over something",
+        ));
+    }
+
+    let lines = snapshot_lines(&state);
+    let snapshot = dir.join(SNAPSHOT_FILE);
+
+    // Step 2 — a UNIQUE temp in the SAME directory (same volume, so the persist is a rename and
+    // not a copy). PJ-087: never `universe::atomic_write`'s fixed `<name>.tmp`, which two writers
+    // can collide on.
+    let mut tmp = tempfile::Builder::new()
+        .prefix("earned.snapshot.")
+        .suffix(".tmp")
+        .tempfile_in(dir)
+        .map_err(|e| format!("compact temp in {}: {e}", dir.display()))?;
+    for line in &lines {
+        let mut buf = line.clone();
+        if !buf.ends_with('\n') {
+            buf.push('\n');
+        }
+        tmp.write_all(buf.as_bytes())
+            .map_err(|e| format!("compact write: {e}"))?;
+    }
+    // Step 3 — mandatory here; see the note above the threshold constant.
+    tmp.as_file()
+        .sync_all()
+        .map_err(|e| format!("compact fsync: {e}"))?;
+    // Step 4 — atomic replace. If THIS fails the tail is untouched and the old snapshot still
+    // stands: the store is exactly as it was, and the next boot simply tries again.
+    let snapshot_bytes = tmp.as_file().metadata().map(|m| m.len()).unwrap_or(0);
+    tmp.persist(&snapshot)
+        .map_err(|e| format!("compact persist {}: {e}", snapshot.display()))?;
+
+    // Step 5 — the tail is RENAMED, never deleted. Everything in it is now in the snapshot, but
+    // "now in the snapshot" is a claim about code, and the aside copy is what makes the claim
+    // recoverable if the claim is ever wrong.
+    let dest = unique_aside(dir, stamp);
+    std::fs::rename(&tail, &dest)
+        .map_err(|e| format!("compact rename tail to {}: {e}", dest.display()))?;
+
+    Ok(CompactOutcome::Compacted(CompactReport {
+        lines: lines.len(),
+        tail_bytes,
+        snapshot_bytes,
+        tail_renamed_to: dest,
+    }))
+}
+
 /// The store is structurally unusable (not merely one bad line) → rename it aside and REFUSE to
 /// write a fresh one until acknowledged. `stamp` is supplied by the caller (never `Date::now`
 /// inside, so the name is deterministic in tests).
 pub fn quarantine(dir: &Path, s: Stream, stamp: &str) -> LoadReport {
+    let _g = file_guard(); // it renames the live store — same exclusion as compaction
     let src = dir.join(s.file_name());
     let dest = dir.join(format!("earned.corrupt-{stamp}.jsonl"));
     let mut report = LoadReport::default();
@@ -438,6 +781,91 @@ pub fn priority_line(cid: &str, p: i64, at: &str) -> String {
         ("p", Val::I(p)),
         ("at", Val::S(at)),
     ])
+}
+
+/// A FOLDED link record — one line carrying the whole current state of one earned link. This is
+/// the snapshot's vocabulary, and the only record type that is a *conclusion* rather than an
+/// *event*: `walk` / `trust` / `retire` say what happened, `state` says where things stand.
+///
+/// `conf` and `status` are omitted when unset, so a link that was only ever walked still reads as
+/// one short, obvious sentence in a text editor.
+pub fn state_line(
+    cid: &str,
+    to: &str,
+    tn: &str,
+    n: i64,
+    conf: Option<&str>,
+    status: Option<&str>,
+    at: &str,
+) -> String {
+    let mut f: Vec<(&str, Val)> = vec![
+        ("v", Val::I(1)),
+        ("t", Val::S("state")),
+        ("cid", Val::S(cid)),
+        ("to", Val::S(to)),
+        ("tn", Val::S(tn)),
+        ("n", Val::I(n)),
+    ];
+    if let Some(c) = conf {
+        f.push(("conf", Val::S(c)));
+    }
+    if let Some(s) = status {
+        f.push(("status", Val::S(s)));
+    }
+    f.push(("at", Val::S(at)));
+    obj(&f)
+}
+
+/// Render the entire folded state as the lines of a snapshot.
+///
+/// **Sorted by key**, for three reasons that all matter more than the microseconds: a human
+/// scanning the file gets a stable order, two compactions of the same state produce byte-identical
+/// files (which is what `compaction_is_lossless` can then assert), and a git diff of the store
+/// shows what actually changed instead of a rehashed `HashMap` order.
+///
+/// Every line must fold back to the key it was written from — pinned by
+/// `every_snapshot_line_folds_back_to_its_own_key`. That is the property the whole slice rests on:
+/// if it does not hold, compaction silently re-keys the user's earned history.
+pub fn snapshot_lines(state: &LedgerState) -> Vec<String> {
+    let mut out = Vec::with_capacity(state.links.len() + state.notes.len());
+
+    let mut keys: Vec<&String> = state.links.keys().collect();
+    keys.sort();
+    for k in keys {
+        let e = &state.links[k];
+        let (cid, rest) = match k.split_once('>') {
+            Some(p) => p,
+            None => continue, // not a key this module ever writes
+        };
+        // Reconstruct the two halves the key encodes: identity-keyed carries the target's cid,
+        // name-keyed carries `~name` and no identity at all.
+        let (to, name_from_key) = match rest.strip_prefix('~') {
+            Some(name) => ("", name),
+            None => (rest, ""),
+        };
+        // Prefer the label as last written (real capitalisation); fall back to the key's lowered
+        // copy. Either folds to the same key, because `earned_key` lowercases the name.
+        let tn = e.tn.as_deref().unwrap_or(name_from_key);
+        let line = state_line(
+            cid,
+            to,
+            tn,
+            e.n,
+            e.conf.as_deref(),
+            e.status.as_deref(),
+            e.at.as_deref().unwrap_or(""),
+        );
+        out.push(if e.at_seeded { mark_seeded(line) } else { line });
+    }
+
+    let mut cids: Vec<&String> = state.notes.keys().collect();
+    cids.sort();
+    for cid in cids {
+        let e = &state.notes[cid];
+        let line = priority_line(cid, e.p, e.at.as_deref().unwrap_or(""));
+        out.push(if e.at_seeded { mark_seeded(line) } else { line });
+    }
+    out
 }
 
 /// Mark a line as SEEDED rather than observed — its timestamp is derived, not witnessed.
@@ -650,6 +1078,583 @@ mod tests_mig104_link_life {
         let k = map.keys().next().unwrap();
         assert!(!k.contains('\\') && !k.contains(':'), "no path separators or drive letters in a key: {k}");
         assert_eq!(k, "A>~the four books", "an unresolved target folds case-insensitively by name");
+    }
+}
+
+#[cfg(test)]
+mod tests_mig104_compact {
+    //! MIG-104 Slice 7 — the snapshot + compactor.
+    //!
+    //! The property every test here circles: **compaction may change how the store is written,
+    //! never what it means.** `read_state` before == `read_state` after, for every record kind
+    //! the writers can emit.
+    use super::*;
+
+    fn dir() -> tempfile::TempDir {
+        tempfile::tempdir().unwrap()
+    }
+
+    /// Fill the tail past the threshold with real records, so compaction has something to do.
+    /// Returns how many distinct links were written.
+    fn fill_past_threshold(d: &Path) -> usize {
+        // ~143 B per line at these key widths, so 700 × 24 ≈ 2.4 MB clears the threshold with
+        // margin. Distinct links, ascending counts — the shape a real store reaches after long use.
+        let links = 700;
+        let mut lines = Vec::new();
+        for round in 1..=24 {
+            for i in 0..links {
+                lines.push(walk_line(
+                    &format!("20260703T091101Z_NOTE_{i:04X}"),
+                    &format!("20260512T144233Z_NOTE_{i:04X}"),
+                    "the four books",
+                    round,
+                    "2026-07-03T09:11:05Z",
+                ));
+            }
+        }
+        append(d, Stream::Earned, &lines).unwrap();
+        assert!(
+            std::fs::metadata(d.join("earned.jsonl")).unwrap().len() >= COMPACT_THRESHOLD_BYTES,
+            "fixture must actually cross the threshold or the test proves nothing"
+        );
+        links as usize
+    }
+
+    /// THE headline property: the store's MEANING is identical across a compaction.
+    #[test]
+    fn compaction_is_lossless() {
+        let d = dir();
+        let links = fill_past_threshold(d.path());
+        // Every other record kind too, so "lossless" is not proven on walks alone.
+        append(d.path(), Stream::Earned, &[
+            trust_line("C_A", "C_B", "B", "contested", "2026-07-18T08:17:49Z"),
+            retire_line("C_A", "C_C", "banana", "2026-07-18T08:20:02Z"),
+            mark_seeded(walk_line("C_A", "C_D", "D", 5, "2026-07-01T00:00:00Z")),
+            walk_line("C_A", "", "unresolved target", 2, "2026-07-02T00:00:00Z"),
+            priority_line("C_NOTE", 2, "2026-07-18T08:21:00Z"),
+        ]).unwrap();
+
+        let (before, rep_before) = read_state(d.path());
+        assert_eq!(rep_before.skipped_lines, 0);
+
+        let out = maybe_compact(d.path(), "2026-07-27T120000Z").unwrap();
+        let CompactOutcome::Compacted(r) = out else { panic!("expected a compaction, got {out:?}") };
+        assert_eq!(r.lines, links + 4 + 1, "one line per link, plus the note decision");
+
+        let (after, rep_after) = read_state(d.path());
+        assert_eq!(rep_after.skipped_lines, 0, "the snapshot must be parseable in full");
+        assert_eq!(before, after, "compaction changed the store's MEANING — that is the one thing it may not do");
+        assert!(r.snapshot_bytes < r.tail_bytes, "…and it must actually be smaller");
+    }
+
+    /// Every kind of decision must survive, individually named so a failure says which one broke.
+    #[test]
+    fn every_record_kind_survives_a_compaction() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        append(d.path(), Stream::Earned, &[
+            walk_line("C_S", "C_T", "Target Note", 9, "2026-07-01T00:00:00Z"),
+            trust_line("C_S", "C_T", "Target Note", "contested", "2026-07-02T00:00:00Z"),
+            retire_line("C_S", "C_T", "Target Note", "2026-07-03T00:00:00Z"),
+            priority_line("C_S", 7, "2026-07-04T00:00:00Z"),
+        ]).unwrap();
+        maybe_compact(d.path(), "S").unwrap();
+
+        let (st, _) = read_state(d.path());
+        let e = st.links.get("C_S>C_T").expect("the link survived");
+        assert_eq!(e.n, 9, "the walk count");
+        assert_eq!(e.conf.as_deref(), Some("contested"), "the user's judgment");
+        assert_eq!(e.status.as_deref(), Some("archived"), "the retirement — a walked AND retired link needs BOTH on one line");
+        assert_eq!(e.tn.as_deref(), Some("Target Note"), "the human-legible label, with its real capitalisation");
+        assert_eq!(st.notes.get("C_S").map(|n| n.p), Some(7), "the note-level decision");
+    }
+
+    /// Slice 4 appends `priority` records and fsyncs them. Before this slice the fold dropped
+    /// every one (the key function required a target), so a fold-and-rewrite compactor would have
+    /// moved them permanently out of the loaded store. RED without the `notes` map.
+    #[test]
+    fn a_note_priority_survives_the_fold_and_the_compaction() {
+        let d = dir();
+        append(d.path(), Stream::Earned, &[priority_line("C_NOTE", 3, "2026-07-18T08:21:00Z")]).unwrap();
+        let (st, _) = read_state(d.path());
+        assert_eq!(st.notes.get("C_NOTE").map(|n| n.p), Some(3), "a review priority is earned data, not noise");
+
+        // …and the LAST decision wins, including clearing it (`-1`).
+        append(d.path(), Stream::Earned, &[priority_line("C_NOTE", -1, "2026-07-19T00:00:00Z")]).unwrap();
+        assert_eq!(read_state(d.path()).0.notes.get("C_NOTE").map(|n| n.p), Some(-1), "clearing a priority is itself a decision");
+
+        fill_past_threshold(d.path());
+        maybe_compact(d.path(), "S").unwrap();
+        assert_eq!(read_state(d.path()).0.notes.get("C_NOTE").map(|n| n.p), Some(-1), "and it survives compaction");
+    }
+
+    /// The property the whole slice rests on. If a snapshot line folded to a DIFFERENT key than
+    /// the record it was written from, compaction would silently re-key the user's history — the
+    /// count would still be there, attached to the wrong link.
+    #[test]
+    fn every_snapshot_line_folds_back_to_its_own_key() {
+        let d = dir();
+        append(d.path(), Stream::Earned, &[
+            walk_line("C_A", "C_B", "Capitalised Name", 3, "t1"),      // identity-keyed
+            walk_line("C_A", "", "Banana", 4, "t2"),                    // name-keyed, mixed case
+            walk_line("C_A", "", "قهوة", 1, "t3"),                      // name-keyed, non-Latin
+            retire_line("C_A", "C_E", "E", "t4"),                       // a decision with n = 0
+        ]).unwrap();
+        let (state, _) = read_state(d.path());
+        assert_eq!(state.links.len(), 4);
+
+        for (key, line) in state.links.keys().cloned().collect::<Vec<_>>().iter().zip(snapshot_lines(&state)) {
+            let _ = key; // ordering differs; the assertion below is over the whole set
+            let v: serde_json::Value = serde_json::from_str(&line).expect("a snapshot line is valid JSON");
+            let k = earned_key(&v).expect("a snapshot line must key");
+            assert!(state.links.contains_key(&k), "snapshot line re-keyed to something the fold never had: {line}");
+        }
+        // And the round trip as a whole is an identity.
+        let d2 = dir();
+        append(d2.path(), Stream::Earned, &snapshot_lines(&state)).unwrap();
+        assert_eq!(read_state(d2.path()).0, state, "writing the state and reading it back must be an identity");
+    }
+
+    /// Invariant #4. The tail holds the user's raw history; "it is all in the snapshot now" is a
+    /// claim about code, and the aside copy is what makes that claim recoverable if it is wrong.
+    #[test]
+    fn compaction_renames_the_tail_never_deletes_it() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        let original = std::fs::read_to_string(d.path().join("earned.jsonl")).unwrap();
+
+        let CompactOutcome::Compacted(r) = maybe_compact(d.path(), "2026-07-27T120000Z").unwrap()
+            else { panic!("expected a compaction") };
+
+        assert!(!d.path().join("earned.jsonl").exists(), "the tail is moved out of the load path…");
+        assert!(r.tail_renamed_to.exists(), "…but it still EXISTS");
+        assert_eq!(std::fs::read_to_string(&r.tail_renamed_to).unwrap(), original,
+            "and it is byte-identical — a rename, not a rewrite");
+        assert_eq!(r.tail_renamed_to.file_name().unwrap().to_string_lossy(),
+            "earned.tail-2026-07-27T120000Z.jsonl");
+    }
+
+    /// The renamed-aside tail must sit OUTSIDE the load path — otherwise compaction bounds
+    /// nothing and every boot re-reads the whole history it just archived.
+    #[test]
+    fn the_aside_tail_is_not_read_back_so_the_load_stays_bounded() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        maybe_compact(d.path(), "S").unwrap();
+        // A second pass sees only the (small) snapshot: the tail is gone from the load path, so
+        // there is nothing left to compact.
+        assert!(matches!(maybe_compact(d.path(), "S2").unwrap(), CompactOutcome::BelowThreshold { tail_bytes: 0 }));
+        let snap = std::fs::metadata(d.path().join(SNAPSHOT_FILE)).unwrap().len();
+        assert!(snap < COMPACT_THRESHOLD_BYTES, "the bounded copy is what boot reads: {snap} bytes");
+    }
+
+    /// Two compactions in the same second must not let the second silently destroy the first
+    /// aside copy — that would turn "never delete" into "usually never delete".
+    #[test]
+    fn two_compactions_in_one_second_keep_both_aside_copies() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        let CompactOutcome::Compacted(a) = maybe_compact(d.path(), "SAME").unwrap() else { panic!() };
+        fill_past_threshold(d.path());
+        let CompactOutcome::Compacted(b) = maybe_compact(d.path(), "SAME").unwrap() else { panic!() };
+        assert_ne!(a.tail_renamed_to, b.tail_renamed_to);
+        assert!(a.tail_renamed_to.exists() && b.tail_renamed_to.exists(), "both survive");
+    }
+
+    /// PJ-087 regression: a FIXED `<name>.tmp` is what two writers collide on. `tempfile_in`
+    /// gives every attempt its own name, in the same directory so the persist stays a rename.
+    #[test]
+    fn temp_names_are_unique_and_land_in_the_same_directory() {
+        let d = dir();
+        let mk = || tempfile::Builder::new().prefix("earned.snapshot.").suffix(".tmp")
+            .tempfile_in(d.path()).unwrap();
+        let (a, b, c) = (mk(), mk(), mk());
+        let names: std::collections::HashSet<_> =
+            [&a, &b, &c].iter().map(|t| t.path().to_path_buf()).collect();
+        assert_eq!(names.len(), 3, "a fixed temp name is the PJ-087 collision");
+        assert_eq!(a.path().parent().unwrap(), d.path(),
+            "same directory ⇒ same volume ⇒ persist is an atomic rename, not a copy");
+    }
+
+    /// An idle Universe must produce ZERO writes. A timer-driven compactor would rewrite a store
+    /// nobody touched — pointless I/O inside a watched folder, and a fresh chance to corrupt a
+    /// file that was fine.
+    #[test]
+    fn threshold_is_bytes_not_time_so_an_idle_store_is_never_rewritten() {
+        let d = dir();
+        append(d.path(), Stream::Earned, &[walk_line("C_A", "C_B", "B", 1, "t")]).unwrap();
+        let before = std::fs::read(d.path().join("earned.jsonl")).unwrap();
+        let stamp_before = std::fs::metadata(d.path().join("earned.jsonl")).unwrap().modified().unwrap();
+
+        for i in 0..100 {
+            let out = maybe_compact(d.path(), &format!("cycle-{i}")).unwrap();
+            assert!(matches!(out, CompactOutcome::BelowThreshold { .. }), "cycle {i} wrote something");
+        }
+        assert_eq!(std::fs::read(d.path().join("earned.jsonl")).unwrap(), before);
+        assert_eq!(std::fs::metadata(d.path().join("earned.jsonl")).unwrap().modified().unwrap(), stamp_before);
+        assert!(!d.path().join(SNAPSHOT_FILE).exists(), "no snapshot is created for an idle store");
+        assert_eq!(std::fs::read_dir(d.path()).unwrap().count(), 1, "no aside copies, no temps left behind");
+    }
+
+    /// Stream B's records ARE the payload; folding two of them destroys the intermediate state
+    /// that is their whole value. The compactor cannot be pointed at it — there is no parameter
+    /// to point — and this asserts the file is untouched even when it is the larger of the two.
+    #[test]
+    fn note_history_is_never_compacted() {
+        let d = dir();
+        // The real shape: one property being typed, three events, one timestamp.
+        let hist: Vec<String> = (8251..=8253).map(|hid| serde_json::json!({
+            "v":1,"t":"nh","cid":"C","hid":hid,"at":1785131711000i64,"ev":{"to":"ma"}
+        }).to_string()).collect();
+        let mut bulk = hist.clone();
+        for i in 0..40_000 {
+            bulk.push(serde_json::json!({"v":1,"t":"nh","cid":"C","hid":30000+i,"at":1785131711000i64,"ev":{"x":i}}).to_string());
+        }
+        append(d.path(), Stream::NoteHistory, &bulk).unwrap();
+        let hp = d.path().join("note-history.jsonl");
+        let before = std::fs::read(&hp).unwrap();
+        assert!(before.len() as u64 > COMPACT_THRESHOLD_BYTES, "the history file is over the threshold…");
+
+        fill_past_threshold(d.path());
+        maybe_compact(d.path(), "S").unwrap();
+
+        assert_eq!(std::fs::read(&hp).unwrap(), before, "…and compaction must not have touched one byte of it");
+        assert_eq!(read_history_for(d.path(), "C").0.len(), 40_003, "every event still individually there");
+        assert!(!std::fs::read_dir(d.path()).unwrap().flatten()
+            .any(|e| e.file_name().to_string_lossy().starts_with("note-history.tail-")),
+            "no aside copy of the history stream may ever be produced");
+    }
+
+    /// The crash window. Between the snapshot landing and the tail being renamed aside, BOTH
+    /// files are in the load path — which is exactly why the snapshot is written first.
+    #[test]
+    fn a_crash_between_the_snapshot_and_the_rename_loses_nothing() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        append(d.path(), Stream::Earned, &[
+            trust_line("C_A", "C_B", "B", "contested", "t1"),
+            priority_line("C_N", 4, "t2"),
+        ]).unwrap();
+        let (before, _) = read_state(d.path());
+
+        // Reproduce the interrupted state: snapshot written, tail NOT yet renamed.
+        let lines = snapshot_lines(&before);
+        std::fs::write(d.path().join(SNAPSHOT_FILE),
+            lines.iter().map(|l| format!("{l}\n")).collect::<String>()).unwrap();
+
+        let (mid, rep) = read_state(d.path());
+        assert_eq!(rep.skipped_lines, 0);
+        assert_eq!(mid, before, "reading snapshot + the whole tail is the SAME state — duplicated input, identical answer");
+
+        // Finishing the job afterwards is still an identity.
+        maybe_compact(d.path(), "S").unwrap();
+        assert_eq!(read_state(d.path()).0, before);
+    }
+
+    /// The documented revert path: `cat` the snapshot and every aside tail back into
+    /// `earned.jsonl`, delete the snapshot. Tested, not just written in a commit message.
+    #[test]
+    fn the_revert_recipe_restores_a_single_pre_slice7_file() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        append(d.path(), Stream::Earned, &[
+            retire_line("C_A", "C_B", "B", "t1"),
+            priority_line("C_N", 1, "t2"),
+        ]).unwrap();
+        let (before, _) = read_state(d.path());
+        maybe_compact(d.path(), "STAMP").unwrap();
+
+        // The recipe, exactly as the commit message states it.
+        let mut merged = std::fs::read_to_string(d.path().join(SNAPSHOT_FILE)).unwrap();
+        for e in std::fs::read_dir(d.path()).unwrap().flatten() {
+            let n = e.file_name().to_string_lossy().to_string();
+            if n.starts_with("earned.tail-") {
+                merged.push_str(&std::fs::read_to_string(e.path()).unwrap());
+                std::fs::remove_file(e.path()).unwrap();
+            }
+        }
+        std::fs::write(d.path().join("earned.jsonl"), merged).unwrap();
+        std::fs::remove_file(d.path().join(SNAPSHOT_FILE)).unwrap();
+
+        let (after, rep) = read_state(d.path());
+        assert_eq!(rep.skipped_lines, 0);
+        assert_eq!(after, before, "a reverted store means exactly what it meant before Slice 7");
+    }
+
+    /// A store we could not read must never be the source of a rewrite — that is precisely how a
+    /// compactor destroys the data it exists to protect. Driven through the REAL path: `quarantine`
+    /// leaves an `earned.corrupt-*.jsonl` behind, and that file IS the un-acknowledged state.
+    #[test]
+    fn an_unacknowledged_quarantine_refuses_compaction() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        // The store went structurally unusable at some point and was renamed aside; the user has
+        // not dealt with it yet, and a new tail has accrued since.
+        std::fs::write(d.path().join("earned.corrupt-2026-07-27T000000Z.jsonl"), "\u{0}\u{0}garbage").unwrap();
+
+        let out = maybe_compact(d.path(), "S").unwrap();
+        assert!(matches!(out, CompactOutcome::Refused(_)), "expected a refusal, got {out:?}");
+        assert!(!d.path().join(SNAPSHOT_FILE).exists(), "nothing may have been written…");
+        assert!(d.path().join("earned.jsonl").exists(), "…and the tail is left exactly where it was");
+
+        // Acknowledging is the user moving the file away. Then it compacts normally.
+        std::fs::remove_file(d.path().join("earned.corrupt-2026-07-27T000000Z.jsonl")).unwrap();
+        assert!(matches!(maybe_compact(d.path(), "S").unwrap(), CompactOutcome::Compacted(_)));
+    }
+
+    /// ★ The guard above could not fire before this slice. `refuse_write` was set ONLY inside
+    /// `quarantine`, which hands back its own report — so every reader's report carried `false`,
+    /// and `link_life_restore`'s *"do NOT write a thing from a store we could not read"* was a
+    /// dead branch that read as a live protection. This pins the fix: the reader now OBSERVES the
+    /// quarantine on disk (LL-035 — a protection being active is a runtime claim).
+    #[test]
+    fn the_reader_reports_a_pending_quarantine_so_the_refuse_guard_can_actually_fire() {
+        let d = dir();
+        append(d.path(), Stream::Earned, &[walk_line("C_A", "C_B", "B", 1, "t")]).unwrap();
+        assert!(!read_state(d.path()).1.refuse_write, "a healthy store refuses nothing");
+
+        let aside = quarantine(d.path(), Stream::Earned, "2026-07-27T000000Z")
+            .corrupt_renamed_to.expect("renamed aside");
+        let (_, report) = read_state(d.path());
+        assert!(report.refuse_write, "the guard must fire from what is ON DISK, not from a flag someone passed along");
+        assert_eq!(report.corrupt_renamed_to.as_deref(), Some(aside.as_path()), "…and it must name the file to deal with");
+
+        std::fs::remove_file(&aside).unwrap();
+        assert!(!read_state(d.path()).1.refuse_write, "acknowledging is moving the file away");
+    }
+
+    /// A megabytes-long tail that folds to nothing is not an empty store — it is a store we do not
+    /// understand. Replacing it with an empty snapshot would read as a successful compaction while
+    /// moving every byte out of the load path.
+    #[test]
+    fn a_tail_that_folds_to_nothing_refuses_rather_than_snapshotting_emptiness() {
+        let d = dir();
+        std::fs::write(d.path().join("earned.jsonl"), "x".repeat(COMPACT_THRESHOLD_BYTES as usize + 1)).unwrap();
+        let out = maybe_compact(d.path(), "S").unwrap();
+        assert!(matches!(out, CompactOutcome::Refused(_)), "expected a refusal, got {out:?}");
+        assert!(!d.path().join(SNAPSHOT_FILE).exists());
+        assert!(d.path().join("earned.jsonl").exists(), "the bytes we could not read are KEPT");
+    }
+
+    /// A refusal is not a success. Kept as three distinct outcomes so no caller can log
+    /// "compacted" for a store it declined to touch (LL-035: a log line is evidence, not intent).
+    #[test]
+    fn the_three_outcomes_are_distinguishable() {
+        let d = dir();
+        assert!(matches!(maybe_compact(d.path(), "S").unwrap(), CompactOutcome::BelowThreshold { tail_bytes: 0 }));
+        fill_past_threshold(d.path());
+        assert!(matches!(maybe_compact(d.path(), "S").unwrap(), CompactOutcome::Compacted(_)));
+    }
+
+    /// A seeded record's timestamp is DERIVED, not witnessed (Slice 5, Boss-found). Compaction
+    /// must not quietly relabel it as observed.
+    #[test]
+    fn the_seeded_marker_survives_compaction_and_a_live_record_clears_it() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        append(d.path(), Stream::Earned, &[
+            mark_seeded(walk_line("C_SEED", "C_T", "T", 2, "2026-07-01T00:00:00Z")),
+            walk_line("C_LIVE", "C_T", "T", 2, "2026-07-01T00:00:00Z"),
+        ]).unwrap();
+        maybe_compact(d.path(), "S").unwrap();
+
+        let snap = std::fs::read_to_string(d.path().join(SNAPSHOT_FILE)).unwrap();
+        let seeded_line = snap.lines().find(|l| l.contains("C_SEED")).unwrap();
+        let live_line = snap.lines().find(|l| l.contains("C_LIVE")).unwrap();
+        assert!(seeded_line.contains("\"seed\":1"), "a reconstructed timestamp must still say so");
+        assert!(!live_line.contains("\"seed\""), "a witnessed one must not be marked as derived");
+        assert!(serde_json::from_str::<serde_json::Value>(seeded_line).is_ok(), "still valid JSON");
+
+        let (st, _) = read_state(d.path());
+        assert!(st.links["C_SEED>C_T"].at_seeded);
+        assert!(!st.links["C_LIVE>C_T"].at_seeded);
+    }
+
+    /// A snapshot line is meant to be read by a human in a text editor. If the label were dropped,
+    /// a compacted store would be a wall of opaque identities — File-Over-App in name only.
+    #[test]
+    fn a_snapshot_line_is_still_legible_to_a_human() {
+        let d = dir();
+        fill_past_threshold(d.path());
+        append(d.path(), Stream::Earned, &[
+            walk_line("20260703T091101Z_NOTE_A1B2", "20260512T144233Z_NOTE_77C9", "the four books", 3, "2026-07-03T09:11:05Z"),
+            retire_line("20260703T091101Z_NOTE_A1B2", "20260512T144233Z_NOTE_77C9", "the four books", "2026-07-18T08:20:02Z"),
+        ]).unwrap();
+        maybe_compact(d.path(), "S").unwrap();
+        let snap = std::fs::read_to_string(d.path().join(SNAPSHOT_FILE)).unwrap();
+        let l = snap.lines().find(|l| l.contains("A1B2")).unwrap();
+        assert_eq!(l, r#"{"v":1,"t":"state","cid":"20260703T091101Z_NOTE_A1B2","to":"20260512T144233Z_NOTE_77C9","tn":"the four books","n":3,"status":"archived","at":"2026-07-18T08:20:02Z"}"#);
+    }
+
+    /// A store whose SNAPSHOT is large, so the write+fsync window between "decide what the tail
+    /// contains" and "declare it handled" is wide. `fill_past_threshold` writes many rounds over
+    /// few links and therefore snapshots to only 700 lines — fast to write, and the race window
+    /// closes before an appender can reach it. The exclusion bug is about that window, so the
+    /// fixture that tests it has to open it.
+    fn fill_with_many_distinct_links(d: &Path) -> usize {
+        let links = 20_000;
+        let lines: Vec<String> = (0..links).map(|i| walk_line(
+            &format!("20260703T091101Z_NOTE_{i:05}"),
+            &format!("20260512T144233Z_NOTE_{i:05}"),
+            "the four books", 1, "2026-07-03T09:11:05Z",
+        )).collect();
+        append(d, Stream::Earned, &lines).unwrap();
+        assert!(std::fs::metadata(d.join("earned.jsonl")).unwrap().len() >= COMPACT_THRESHOLD_BYTES);
+        links
+    }
+
+    /// ★ THE MECHANISM, deterministically. No threads, no timing: perform by hand exactly what an
+    /// interleaved append does to a compaction — fold the store, THEN let a decision land, THEN
+    /// finish the compaction from the stale fold. The record ends up in the aside tail, which no
+    /// reader touches, so it is gone from the store while every step reported success.
+    ///
+    /// This test does not exercise the guard (the next one does); it pins WHY the guard exists, so
+    /// that a future change which reopens the window has something that explains the damage.
+    #[test]
+    fn a_stale_fold_strands_a_decision_in_the_aside_tail() {
+        let d = dir();
+        fill_past_threshold(d.path());
+
+        // 1. What the compactor read.
+        let (stale, _) = read_state(d.path());
+        // 2. The user retires a link while the snapshot is being written and fsync'd.
+        append(d.path(), Stream::Earned,
+            &[retire_line("C_LATE", "C_TGT", "target", "2026-07-27T10:00:00Z")]).unwrap();
+        assert!(read_state(d.path()).0.links.contains_key("C_LATE>C_TGT"), "it IS in the store now");
+        // 3. The compactor finishes from its stale fold and renames the tail aside.
+        std::fs::write(d.path().join(SNAPSHOT_FILE),
+            snapshot_lines(&stale).iter().map(|l| format!("{l}\n")).collect::<String>()).unwrap();
+        let aside = d.path().join("earned.tail-STALE.jsonl");
+        std::fs::rename(d.path().join("earned.jsonl"), &aside).unwrap();
+
+        // The decision is gone from the store — and the file it is in is never read back.
+        let (after, _) = read_state(d.path());
+        assert!(!after.links.contains_key("C_LATE>C_TGT"),
+            "this is the damage the exclusion prevents");
+        assert!(std::fs::read_to_string(&aside).unwrap().contains("C_LATE"),
+            "the bytes survive on disk — but nothing in the app will ever look at them again");
+    }
+
+    /// ★ THE SAFETY-INSPECTION FINDING (2026-07-27), reproduced. A decision appended WHILE a
+    /// compaction is in flight was moved into the aside tail — which nothing ever reads back — so
+    /// the record vanished from the store with every step reporting success.
+    ///
+    /// Worse than a missing line: the restore treats the ledger as authoritative for decisions, so
+    /// on the NEXT boot the fold still carries the pre-decision value, disagrees with the DB, and
+    /// **writes the old value back** — silently un-retiring a link or reverting a priority.
+    ///
+    /// RED without `FILE_LOCK`: verified by removing the guard from `maybe_compact`, which loses
+    /// records on essentially every run (the compaction writes ~2.4 MB while the appender runs).
+    #[test]
+    fn a_decision_appended_during_a_compaction_is_never_lost() {
+        let d = dir();
+        fill_with_many_distinct_links(d.path());
+        let path = d.path().to_path_buf();
+
+        // The live shape: a user retiring links from command threads while the boot thread
+        // compacts. The appender runs until compaction has RETURNED, so its writes are guaranteed
+        // to span the read→write→fsync→rename window rather than racing it — the first cut used a
+        // fixed count and passed by timing luck even with the exclusion removed, which would have
+        // shipped a regression test that could not see the regression.
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+        use std::sync::Arc;
+        let stop = Arc::new(AtomicBool::new(false));
+        let written = Arc::new(AtomicUsize::new(0));
+        let (s2, w2) = (stop.clone(), written.clone());
+        let appender = std::thread::spawn(move || {
+            while !s2.load(Ordering::Relaxed) {
+                let i = w2.load(Ordering::Relaxed);
+                append(&path, Stream::Earned, &[retire_line(
+                    &format!("C_DECISION_{i:05}"), &format!("C_T_{i:05}"), "t", "2026-07-27T10:00:00Z",
+                )]).unwrap();
+                w2.store(i + 1, Ordering::Relaxed);
+            }
+        });
+        let out = maybe_compact(d.path(), "RACE").unwrap();
+        stop.store(true, Ordering::Relaxed);
+        appender.join().unwrap();
+        assert!(matches!(out, CompactOutcome::Compacted(_)), "the fixture must actually compact");
+        let n = written.load(Ordering::Relaxed);
+        assert!(n > 0, "the appender must have written during the compaction");
+
+        // Every single decision must still be in the LOADED state — not merely on disk somewhere.
+        let (state, _) = read_state(d.path());
+        let missing: Vec<usize> = (0..n)
+            .filter(|i| !state.links.contains_key(&format!("C_DECISION_{i:05}>C_T_{i:05}")))
+            .collect();
+        assert!(missing.is_empty(), "{} of {n} decisions were moved out of the load path: {:?}",
+            missing.len(), &missing[..missing.len().min(10)]);
+        for i in 0..n {
+            let e = &state.links[&format!("C_DECISION_{i:05}>C_T_{i:05}")];
+            assert_eq!(e.status.as_deref(), Some("archived"), "record {i} lost its decision");
+        }
+    }
+
+    /// The same exclusion, from the other side: a compaction must not start while an append is
+    /// mid-flight, or on Windows the rename succeeds under the open handle (`FILE_SHARE_DELETE`)
+    /// and the appender keeps writing into a file nobody reads.
+    #[test]
+    fn appends_and_compaction_never_interleave() {
+        let d = dir();
+        fill_with_many_distinct_links(d.path());
+        let path = d.path().to_path_buf();
+        let handles: Vec<_> = (0..4).map(|t| {
+            let p = path.clone();
+            std::thread::spawn(move || {
+                for i in 0..50 {
+                    append(&p, Stream::Earned,
+                        &[walk_line(&format!("C_T{t}_{i:02}"), "C_X", "x", 1, "t")]).unwrap();
+                }
+            })
+        }).collect();
+        maybe_compact(d.path(), "RACE2").unwrap();
+        for h in handles { h.join().unwrap(); }
+
+        let (state, report) = read_state(d.path());
+        assert_eq!(report.skipped_lines, 0, "no line may be torn by an interleaved write");
+        for t in 0..4 {
+            for i in 0..50 {
+                assert!(state.links.contains_key(&format!("C_T{t}_{i:02}>C_X")),
+                    "thread {t} record {i} was lost");
+            }
+        }
+    }
+
+    /// A record with no timestamp must round-trip as *no timestamp*. The snapshot writes the
+    /// field regardless (field order is part of the format), so `""` on the way out has to read
+    /// back as absent on the way in — otherwise compaction changes the state it just wrote.
+    #[test]
+    fn a_record_with_no_timestamp_round_trips_as_absent_not_as_empty_string() {
+        let d = dir();
+        // A hand-written / truncated line, which is the shape that actually produces this.
+        std::fs::write(d.path().join("earned.jsonl"),
+            "{\"v\":1,\"t\":\"walk\",\"cid\":\"C_A\",\"to\":\"C_B\",\"tn\":\"B\",\"n\":3}\n\
+             {\"v\":1,\"t\":\"priority\",\"cid\":\"C_N\",\"p\":2}\n").unwrap();
+        let (before, _) = read_state(d.path());
+        assert_eq!(before.links["C_A>C_B"].at, None);
+        assert_eq!(before.notes["C_N"].at, None);
+
+        // Write the snapshot and read it back — the identity compaction relies on.
+        let d2 = dir();
+        append(d2.path(), Stream::Earned, &snapshot_lines(&before)).unwrap();
+        assert_eq!(read_state(d2.path()).0, before, "an absent timestamp must not become an empty one");
+    }
+
+    /// Sorted output: a human gets a stable order, and two compactions of the same state produce
+    /// byte-identical files instead of a rehashed `HashMap` order.
+    #[test]
+    fn the_snapshot_is_deterministic_across_runs() {
+        let d = dir();
+        append(d.path(), Stream::Earned, &[
+            walk_line("C_C", "C_X", "x", 1, "t"), walk_line("C_A", "C_X", "x", 1, "t"),
+            walk_line("C_B", "C_X", "x", 1, "t"), priority_line("C_Z", 1, "t"),
+        ]).unwrap();
+        let (st, _) = read_state(d.path());
+        let a = snapshot_lines(&st);
+        assert_eq!(a, snapshot_lines(&read_state(d.path()).0), "same state ⇒ byte-identical snapshot");
+        let cids: Vec<&str> = a.iter().filter(|l| l.contains("\"state\""))
+            .map(|l| if l.contains("C_A") { "A" } else if l.contains("C_B") { "B" } else { "C" }).collect();
+        assert_eq!(cids, vec!["A", "B", "C"], "sorted by key");
     }
 }
 

@@ -668,6 +668,22 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
+## LL-037: A SEQUENCING Argument Is Not an EXCLUSION Argument — and a Race Test Must SPAN the Window, Not Sample It
+
+**Symptom (MIG-104 Slice 7, 2026-07-27, found by the per-build safety inspection roughly one hour after the code was written — three independent verifiers, 52 tests green).** The new ledger compactor folded the append-only tail into a bounded snapshot and then renamed the tail aside. Between those two steps it wrote and fsync'd a multi-megabyte file — **tens of milliseconds** — and `append` took **no lock of any kind**. Every record appended inside that window was renamed into `earned.tail-<stamp>.jsonl`, a file that **nothing ever reads back** (not reading it is exactly what bounds the load). On Windows the rename even succeeds while an append handle is open (`FILE_SHARE_DELETE`), so the handle keeps writing into the orphaned file.
+
+**Why it was an app-killer rather than a lost line.** The restore treats the ledger as authoritative for **decisions** (confidence, retired/active, review priority). A decision lost this way is not merely absent: on the next boot the fold still carries the *pre-decision* value, disagrees with the DB, and **writes the old value back** — silently un-retiring a link or reverting a priority the user set, with the append, the compaction and the restore all logging success. Walk counts self-heal (absolute `n`, max-fold), so the permanent damage landed precisely on the data the migration existed to protect.
+
+**Root cause — the reasoning error, which is the point of this entry.** I had written, in-code: *"compaction rides THIS thread, strictly after the restore … one thread makes it impossible instead of unlikely."* That sentence is true and irrelevant. It establishes an ORDER between two passes on one thread; it says nothing about **who else can write the file**, and the real writers — `constellation_link_traverse`, `record_decision`, `set_review_priority` — append from Tauri command threads *after deliberately dropping the DB guard*, entirely unaffected by which thread compaction runs on. **A sequencing argument answers "in what order do A and B run?"; an exclusion argument answers "who else can touch this while I hold it?" They are different questions, and satisfying the first feels like satisfying the second.** The comment made the gap invisible to the next reader, including me.
+
+**The second half — the regression test that could not see the regression.** The first test written for this **passed with the fix removed**. Two independent reasons, both worth naming: (a) the appender ran a **fixed count** and finished before the window opened, so it *sampled* the race instead of spanning it; (b) the fixture wrote many rounds over few links, folding to a 700-line snapshot that was **too fast to write** for the window to exist at all. Rebuilt: the appender now runs **until compaction returns** (atomic stop flag), over a **20,000-distinct-link** fixture that makes the snapshot write genuinely slow — after which the failure was reproducible on every run (**666 of 730 and 1,110 of 1,168 decisions lost**).
+
+**Rules:**
+1. **Never accept a sequencing argument as an exclusion argument.** When code claims a race is impossible, the claim must name **every writer of the resource**, not the order of two of them. If the answer is "the other writers are on other threads and nothing stops them", the mechanism needs a lock — and the lock belongs in the module that **owns the files**, not in the caller that happens to schedule the pass.
+2. **A "read state, then declare that state handled" pair is ONE critical section.** Any operation that decides what a resource contains and then acts on that decision — compact-then-rename, read-then-truncate, snapshot-then-delete — must hold exclusion across BOTH halves. The cheap probe that decides *whether* to start can stay outside; the decision itself cannot.
+3. **A race test must SPAN the window, not sample it: run the competing work until the operation under test RETURNS, and size the fixture so the raced window is actually wide.** A fixed-count competitor and a fast fixture produce a test that passes for timing reasons and will keep passing after the guard is deleted. **Verify RED by removing the fix** — repeatedly, since one green run of a flaky race proves nothing. Pair it with a **thread-free deterministic test** that performs the interleaving by hand, so the mechanism stays pinned independent of timing.
+4. **Corollary to LL-035/036:** this is the third consecutive defect in this family that a green suite could not see — an inactive guard, an over-privileged fixture, and now a test that samples instead of spans. The suite proves what it *exercises*; say out loud what a given test cannot fail on.
+
 ## LL-036: When You Clone a Proven Pattern, Clone Its PRECONDITIONS — the Comment Explaining *Why It Is Safe* Is Part of the Code
 
 **Symptom (MIG-104 Slice 6, 2026-07-27, found by the Boss's live test).** The earned-life restore ran on every boot and wrote **nothing**, losing all 33 planned writes. Its log line said `0 of 34 records written` with **33 records unaccounted for in its own tally** — because the per-row failure went to `eprintln!`, which Windows GUI release builds discard (`search.rs:884-887` documents this in-code). Instrumented, one boot named it exactly: **`row 569079 UPDATE FAILED: no such tokenizer: constellation`**.
@@ -705,7 +721,15 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-07-16 (LL-034 added — PJ-106: bidi text has two engines; render fixes without
+*Last updated: 2026-07-27 (LL-037 added — MIG-104 Slice 7: the compactor folded the tail and
+renamed it aside with no exclusion against concurrent appenders, so records written in the window
+landed in a file nothing reads back — and because the restore treats the ledger as authoritative
+for decisions, the next boot wrote the pre-decision value back over the DB. The in-code defence was
+a SEQUENCING argument ("one thread") mistaken for an EXCLUSION argument, and the first regression
+test PASSED without the fix because it sampled the window instead of spanning it. A read-then-act
+pair is one critical section; a race test must run until the operation returns, over a fixture wide
+enough for the window to exist; verify RED by removing the fix, repeatedly).*
+*Earlier: 2026-07-16 (LL-034 added — PJ-106: bidi text has two engines; render fixes without
 the motion facet ship half the recipe, and every desync class (§A2/SI2-3/§B4) was this same shape.
 Assert render↔motion same-frame agreement, live; sweep plain-text direction marks against every
 text-parsing consumer).*
