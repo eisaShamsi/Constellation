@@ -9608,6 +9608,13 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // backfill, whose stamp is already set on existing universes).
     crate::link_boot_index::maybe_schedule(app.clone());
 
+    // MIG-104 Slice 5: seed the Earned-Life Ledger from the index, once, after paint. This is the
+    // moment the ALREADY-earned data (33 links walked over months, and the confidence tiers those
+    // walks produced) stops existing only inside a renameable, 2 GB, badly-syncing database.
+    // Background thread + own connection + stamped, so it never touches boot latency; idempotent
+    // by arithmetic (absolute n + max-fold), so an interrupted pass simply re-runs next boot.
+    crate::link_life_backfill::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free

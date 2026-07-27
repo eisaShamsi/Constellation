@@ -275,3 +275,43 @@ Rust **1212/0** after the change.
 **Filed:** `note_links.target_name` is stored lowercased, which is also why the Outgoing/Backlinks
 panels display link targets in lowercase (`earth`, `france`) rather than the note's real title — a
 pre-existing display-fidelity issue in a knowledge app, now visible. → **PJ-170**.
+
+---
+
+## Slice 5 — the back-fill: seed the ledger from the index (BUILT, binary @13:47, awaiting Boss test)
+
+**This is the slice where the already-earned data stops being single-copy.** New
+`link_life_backfill.rs` (~380 lines incl. 8 tests), cloned from the proven `link_boot_index` shape:
+background thread after paint, own connection, 30 s busy timeout, `schema_versions` stamp written
+LAST and only on success, failure non-fatal and logged. Rust **1220/0** (+8).
+
+**The ONE earned predicate**, as a named constant with its two prohibitions written into the doc
+comment so nobody "improves" it: `traversal_count > 0 OR status <> 'active' OR (confidence NOT IN
+('hypothesis','structural'))`. **Forbidden:** `weight <> 1.0` (236 live rows carry values the earned
+curve cannot produce — 115 at 0.526, 119 at 0.564, all with `traversal_count = 0`; decay residue,
+and seeding them would put 236 junk records in the durable store) and `last_traversed <> ''`
+(non-empty on ALL 234,233 rows — it identifies nothing).
+
+**Structural rows are filtered in the LOOP, not the WHERE clause** — a structural edge can carry
+`traversal_count > 0`, so the predicate alone cannot exclude it. Counted, not silently dropped.
+
+**Records nothing it cannot key, and says how many it skipped.** A row whose SOURCE note has no
+identity can never be restored to anything; writing it would be theatre and dropping it silently
+would be dishonest. The diagnostics line states `recorded / matched / skipped-no-identity /
+skipped-structural`.
+
+**Two things deliberately NOT done, both verified:** no force-stamping of missing identities
+(`ensure_cid_cn` WRITES the note file, and the cid-less notes are templates and `.trash` copies —
+stamping a template changes what every future note spawned from it emits; zero live content notes
+lack an identity), and no recording of the 236 off-curve weights (`weight` is DERIVED from `n` on
+restore, which heals all 236 for free).
+
+**Idempotence is arithmetic, not the stamp** — its own test runs the seed three times without
+consulting the stamp and asserts an identical fold. Stated in the module docs as the right way
+round: *a correctness guard that can be lost with a restored database is not a guard.* A companion
+test proves a newer walk already in the store is never ratcheted down by a seed from an older DB.
+
+One test assertion of mine was too crude and I corrected it rather than the code: it asserted the
+`.gitignore` text does not contain "earned", but "earned" appears legitimately in the file's
+explanatory comment (which is the point — it tells a reader why the folder must not be excluded
+wholesale). It now asserts the SEMANTIC via `gitignore_excludes()` per ledger file.

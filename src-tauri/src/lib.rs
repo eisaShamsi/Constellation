@@ -31,6 +31,9 @@ mod libraries;
 /// time-machine restore will read). Slice 3 is purely additive: it writes files nothing reads
 /// yet, so it cannot regress anything.
 mod link_life;
+/// MIG-104 Slice 5 — the one-shot seed that lifts the ALREADY-earned data out of `search.db`
+/// and into the ledger. The moment months of reading stops being single-copy.
+mod link_life_backfill;
 mod mig003_step4;
 mod sight;
 mod sight_layout;
