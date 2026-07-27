@@ -105,11 +105,26 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 fn run(app: &tauri::AppHandle) -> Result<RestoreReport, String> {
     let path = crate::search::db_path(app)?;
     let dir = path.parent().ok_or("search.db has no parent dir")?.to_path_buf();
-    let conn = Connection::open(&path).map_err(|e| format!("open link_life_restore conn: {}", e))?;
-    // The pragmas `link_boot_index` sets and I omitted when cloning it. A dedicated connection
-    // that does not declare them is not the pattern this file claims to follow.
+    let mut conn =
+        Connection::open(&path).map_err(|e| format!("open link_life_restore conn: {}", e))?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
+
+    // ★ THE CAUSE OF THE 2026-07-27 SILENT FAILURE — register the custom FTS5 tokenizer.
+    //
+    // `UPDATE note_links` is not a leaf write. It fires `note_links_outgoing_au`, which UPDATEs
+    // `note_meta`, which fires `note_meta_au`, which writes `notes_fts` — an FTS5 table declared
+    // with `tokenize = 'constellation'`. That tokenizer is registered PER CONNECTION (inside
+    // `init_db`), so a bare `Connection::open` cannot service the write and every row failed with
+    // `no such tokenizer: constellation`. All 33 planned writes were lost, silently.
+    //
+    // This module was cloned from `link_boot_index`, whose own docs state the precondition that
+    // made ITS bare connection sufficient: *"CREATE INDEX is pure DDL — it fires NO row triggers —
+    // so no FTS tokenizer registration is needed."* I copied the connection setup and not the
+    // sentence explaining when it is safe. **A cloned pattern's PRECONDITIONS are part of the
+    // pattern.** Any dedicated connection that writes a table with row triggers must register the
+    // tokenizer; verified trigger chain above.
+    crate::search::register_fts5_tokenizer(&mut conn)?;
     conn.busy_timeout(Duration::from_secs(30))
         .map_err(|e| format!("busy_timeout: {}", e))?;
 
@@ -547,6 +562,54 @@ mod tests_mig104_restore {
         let r = restore(&conn, &s).unwrap();
         assert_eq!((r.records, r.restored), (0, 0));
         assert_eq!(row(&conn, "/a.md", "B").0, 3, "the DB is left exactly as it was");
+    }
+
+    /// ★ THE 2026-07-27 REGRESSION TEST, and an indictment of the other tests in this module.
+    ///
+    /// Every test here builds its DB with `init_db`, which registers the custom FTS5 tokenizer —
+    /// so the fixture was MORE CAPABLE than production, where `run()` opens a bare
+    /// `Connection::open`. All 51 tests passed while the live restore lost all 33 writes to
+    /// `no such tokenizer: constellation`.
+    ///
+    /// This test reproduces PRODUCTION's connection: raw open, no tokenizer. It asserts the
+    /// precondition is REAL (the write fails without registration) and that registering it — what
+    /// `run()` now does — makes the restore work. If someone removes that call, this goes red.
+    #[test]
+    fn a_bare_connection_cannot_write_note_links_and_registering_the_tokenizer_fixes_it() {
+        let td = tempfile::tempdir().unwrap();
+        let cdir = td.path().join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let dbp = cdir.join("search.db");
+        {
+            let conn = crate::search::init_db(&dbp).unwrap();
+            note(&conn, "/a.md", "A", "C_A");
+            note(&conn, "/b.md", "B", "C_B");
+            link(&conn, "/a.md", "B", 6, "evidence", "active", 2.95);
+            link_life_backfill::seed(&conn, &cdir).unwrap();
+            conn.execute("UPDATE note_links SET traversal_count = 0, weight = 1.0", []).unwrap();
+        } // closed — the tokenizer registration died with that connection
+
+        // PRODUCTION's shape: a bare connection, exactly what `run()` opens.
+        let mut bare = Connection::open(&dbp).unwrap();
+        bare.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;").unwrap();
+
+        // The precondition is real: the write reaches notes_fts through
+        // note_links_outgoing_au -> note_meta -> note_meta_au, and cannot be serviced.
+        let unregistered = bare.execute(
+            "UPDATE note_links SET traversal_count = 6, weight = 2.95 WHERE source_path = '/a.md'", [],
+        );
+        let msg = unregistered.map(|_| String::new()).unwrap_err().to_string();
+        assert!(
+            msg.contains("tokenizer"),
+            "a bare connection must fail on the FTS trigger chain — that is the whole precondition; got: {msg}"
+        );
+
+        // What run() now does — after which the restore lands.
+        crate::search::register_fts5_tokenizer(&mut bare).unwrap();
+        let r = restore(&bare, &cdir).unwrap();
+        assert_eq!(r.planned, 1, "one write planned");
+        assert_eq!(r.restored, 1, "and APPLIED — the tokenizer is what makes the write serviceable");
+        assert_eq!(row(&bare, "/a.md", "B").0, 6);
     }
 
     /// An identity-keyed record must still resolve after the TARGET has been renamed — the identity

@@ -123,10 +123,14 @@ fn run(app: &tauri::AppHandle) -> Result<SeedReport, String> {
         .to_path_buf();
 
     let conn = Connection::open(&path).map_err(|e| format!("open link_life_backfill conn: {}", e))?;
-    // The pragmas `link_boot_index` sets and I omitted when cloning it. A dedicated connection
-    // that does not declare them is not the pattern this file claims to follow.
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
+    // NO FTS tokenizer registration here, and the reason is the precondition — stated, not assumed
+    // (the lesson of the 2026-07-27 restore failure): this pass only READS `note_links` and writes
+    // one `schema_versions` row, and `schema_versions` carries no triggers. Nothing it writes can
+    // reach `notes_fts`. **If a writer is ever added to this module, it must register the tokenizer**
+    // (see `link_life_restore::run`) — an UPDATE on `note_links` or `note_meta` reaches the FTS
+    // table through the trigger chain and fails with `no such tokenizer: constellation` without it.
     conn.busy_timeout(Duration::from_secs(30))
         .map_err(|e| format!("busy_timeout: {}", e))?;
 

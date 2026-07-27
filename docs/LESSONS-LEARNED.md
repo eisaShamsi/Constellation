@@ -668,6 +668,21 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
+## LL-036: When You Clone a Proven Pattern, Clone Its PRECONDITIONS — the Comment Explaining *Why It Is Safe* Is Part of the Code
+
+**Symptom (MIG-104 Slice 6, 2026-07-27, found by the Boss's live test).** The earned-life restore ran on every boot and wrote **nothing**, losing all 33 planned writes. Its log line said `0 of 34 records written` with **33 records unaccounted for in its own tally** — because the per-row failure went to `eprintln!`, which Windows GUI release builds discard (`search.rs:884-887` documents this in-code). Instrumented, one boot named it exactly: **`row 569079 UPDATE FAILED: no such tokenizer: constellation`**.
+
+**Root cause.** `UPDATE note_links` is not a leaf write. It fires `note_links_outgoing_au` → which UPDATEs `note_meta` → which fires `note_meta_au` → **which writes `notes_fts`**, an FTS5 table declared `tokenize = 'constellation'`. That tokenizer is registered **per connection**, inside `init_db`. The module opened a bare `Connection::open` on a dedicated thread — the shape it correctly cloned from `link_boot_index` — and could not service the trigger chain.
+
+**The actual mistake, and why it is worth a law.** `link_boot_index`'s own module docs state the precondition that makes ITS bare connection sufficient: *"CREATE INDEX is pure DDL — it fires NO row triggers — so no FTS tokenizer registration is needed."* The sentence was right there, two lines above the code I copied. I copied the connection setup and not the condition under which it is safe — then wrote a module that violates that condition on its first statement.
+
+**Why 52 tests missed it — the second half of the lesson.** Every test in the module built its database via `init_db`, **which registers the tokenizer**. The fixture was therefore *more capable than production*, where the code path opens a raw connection. The suite was green while the live feature lost 100% of its writes. A test fixture that is more privileged than the production caller cannot fail the way production fails. The regression test now reproduces **production's** connection shape (raw open, no tokenizer), asserts the precondition is real (the write fails without registration), and then asserts the fix works — so removing the registration turns it red.
+
+**Rules:**
+1. **When cloning a pattern, copy its stated preconditions into the new site and verify each one holds.** If the original documents *why* something was unnecessary, that "why" is a guard clause in prose — re-check it, or restate it. Corollary now applied in-tree: `link_life_backfill` carries an explicit comment saying it needs no tokenizer *because* it only reads `note_links` and writes trigger-free `schema_versions` — **and that any writer added later must register one.**
+2. **A dedicated background connection is not a plain connection.** Any such connection that WRITES a table carrying row triggers must reproduce every per-connection facility the trigger chain needs (custom tokenizers, collations, functions, pragmas) — not merely the pragmas that were visible in the file you copied.
+3. **Build test fixtures at the privilege level of the PRODUCTION caller, not the most convenient constructor.** If production opens a bare connection, at least one test must too. (Third companion to LL-035: a green suite proved nothing here because the harness was stronger than the app.)
+
 ## LL-035: "Feature X Is Off" Must Be PROVEN BY RUNNING IT — Grepping For Its Enabler Proves Nothing (and: never log a success you did not verify)
 
 **Symptom (MIG-105 Stage 0, 2026-07-26):** reconcile's relocate had failed **1,591 times in ~3 weeks**, discarding its error at `reconcile.rs:192` and logging a fabricated cause ("target busy/contended" — wrong in 100% of cases). A dedicated diagnosis agent replayed every candidate cause against a full-schema replica and **refuted them all**, concluding the failure had to be connection-level. In parallel, the PJ-150 diagnosis concluded that foreign keys were **never enforced in production** — evidence: `grep -rn "foreign_keys" src-tauri/src` returns exactly ONE hit, inside a `#[cfg(test)]`. Both conclusions were confidently reasoned, cited real file:line evidence, and were **wrong**.

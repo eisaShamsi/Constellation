@@ -488,3 +488,36 @@ outside the running app. **Per Reproduce-First, the only shippable work is the i
 
 Rust **1233/0**. Binary **@17:30**. The Boss's wiped state is preserved for the next boot, so the
 instrumented run reproduces the failure exactly.
+
+### ROOT CAUSE FOUND AND FIXED — `no such tokenizer: constellation` (LL-036)
+
+The instrumented boot named it in one line:
+
+    row 569079 UPDATE FAILED: no such tokenizer: constellation — (n=1, conf=Some("hypothesis"), ...)
+
+**Verified mechanism (trigger chain read from the live schema, not assumed):** `UPDATE note_links`
+fires `note_links_outgoing_au` → UPDATEs `note_meta` → fires `note_meta_au` → **writes `notes_fts`**,
+an FTS5 table declared `tokenize='constellation'`. That tokenizer is registered **per connection**
+inside `init_db`. `run()` opened a bare `Connection::open`, so every row failed and all 33 planned
+writes were lost.
+
+**The mistake:** `link_boot_index` — the module I cloned — documents the precondition that made ITS
+bare connection sufficient, two lines above the code I copied: *"CREATE INDEX is pure DDL — it fires
+NO row triggers — so no FTS tokenizer registration is needed."* I copied the setup and not the
+condition, then wrote a module that violates it on its first statement. → **LL-036: when cloning a
+proven pattern, clone its PRECONDITIONS; the comment explaining why it is safe is part of the code.**
+
+**Why 52 tests missed it — the sharper half.** Every test in the module builds its DB with `init_db`,
+**which registers the tokenizer**, so the fixture was *more capable than production*. Green suite,
+100% write loss live. The new regression test reproduces PRODUCTION's shape (raw `Connection::open`,
+no tokenizer), asserts the precondition is real (the write fails with a tokenizer error), then asserts
+registration makes the restore land — so deleting the call goes red.
+
+**Fixed:** `register_fts5_tokenizer(&mut conn)` in `link_life_restore::run`. `link_life_backfill` gets
+a documented precondition instead of a cargo-culted call (it only reads `note_links` and writes
+trigger-free `schema_versions`) **plus an explicit warning that any writer added later must register
+one.** Also found in the same pass: both modules had omitted `journal_mode=WAL` /
+`synchronous=NORMAL` — restored.
+
+Rust **1234/0** (52 MIG-104). Binary **@18:11**. The Boss's wiped state is still in place, so the next
+boot is the real proof.
