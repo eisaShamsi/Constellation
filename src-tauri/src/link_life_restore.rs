@@ -36,9 +36,6 @@ use tauri::Manager;
 
 use crate::search::SearchState;
 
-/// Bump to force a re-restore.
-pub(crate) const SCHEMA_VERSION: i64 = 1;
-
 /// How many `note_links` UPDATEs per transaction. Each one fires the sky trigger (DELETE + INSERT
 /// on 234k rows) and the outgoing-aggregate pair, so the batch bounds how long the writer lock is
 /// held in one go while still amortising the transaction cost.
@@ -61,20 +58,34 @@ pub struct RestoreReport {
     pub weights_healed: usize,
     /// Unparseable ledger lines (each cost one line, never the file).
     pub skipped_lines: usize,
+    /// The index held no links at all — a rebuild in progress, not an absence of earned data.
+    /// Nothing is written and nothing is concluded; the next boot retries.
+    pub index_not_ready: bool,
 }
 
+/// Runs on EVERY boot — deliberately not stamped.
+///
+/// ★ THE BUG THIS FIXES (Boss-found 2026-07-27, live). The first cut gated this on a
+/// `schema_versions` stamp like the one-shot backfills. On a REBUILT index the pass raced the
+/// initial indexing, found that none of the 34 records had a link to attach to yet, reported
+/// "34 no longer in the index" — and **stamped itself complete**. It would never have run again,
+/// and the earned data would never have come back. Exactly the scenario the whole migration
+/// exists for, defeated by the wrong gate.
+///
+/// The error was conceptual, not incidental: a **reconciler must not carry a migration's stamp.**
+/// This pass is idempotent (it writes only where the DB disagrees, and reports `already_current`
+/// otherwise) and cheap (bounded by earned-link count — 34, not 234,233), so running it every boot
+/// is the correct shape. It is the same discipline `reconcile::maybe_schedule` already follows for
+/// index-vs-disk drift, and for the same reason: the condition it repairs can recur at any time.
 pub fn maybe_schedule(app: tauri::AppHandle) {
-    let state = app.state::<SearchState>();
-    let needs_run = {
-        let Ok(guard) = state.db.lock() else { return };
-        let Some(conn) = guard.as_ref() else { return };
-        !is_stamped(conn)
-    };
-    if !needs_run {
-        return;
-    }
     let app_bg = app.clone();
     std::thread::spawn(move || match run(&app_bg) {
+        Ok(r) if r.index_not_ready => diag(
+            &app_bg,
+            "[link_life_restore] index still rebuilding (0 links) — nothing concluded, will retry next boot",
+        ),
+        Ok(r) if r.records == 0 => {} // no ledger yet: silent, this runs every boot
+        Ok(r) if r.restored == 0 && r.already_current == r.records => {} // steady state: silent
         Ok(r) => diag(
             &app_bg,
             &format!(
@@ -88,16 +99,6 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
     });
 }
 
-pub(crate) fn is_stamped(conn: &Connection) -> bool {
-    conn.query_row(
-        "SELECT version FROM schema_versions WHERE module = 'link_life_restore'",
-        [],
-        |r| r.get::<_, i64>(0),
-    )
-    .unwrap_or(0)
-        >= SCHEMA_VERSION
-}
-
 fn run(app: &tauri::AppHandle) -> Result<RestoreReport, String> {
     let path = crate::search::db_path(app)?;
     let dir = path.parent().ok_or("search.db has no parent dir")?.to_path_buf();
@@ -105,15 +106,7 @@ fn run(app: &tauri::AppHandle) -> Result<RestoreReport, String> {
     conn.busy_timeout(Duration::from_secs(30))
         .map_err(|e| format!("busy_timeout: {}", e))?;
 
-    let report = restore(&conn, &dir)?;
-
-    conn.execute(
-        "INSERT INTO schema_versions (module, version, updated_at) VALUES ('link_life_restore', ?1, ?2)
-         ON CONFLICT(module) DO UPDATE SET version = excluded.version, updated_at = excluded.updated_at",
-        rusqlite::params![SCHEMA_VERSION, chrono::Utc::now().timestamp()],
-    )
-    .map_err(|e| format!("stamp: {}", e))?;
-    Ok(report)
+    restore(&conn, &dir)
 }
 
 /// Resolve a folded key back to the `note_links` rows it refers to.
@@ -164,6 +157,17 @@ pub(crate) fn restore(conn: &Connection, dir: &std::path::Path) -> Result<Restor
         skipped_lines: load.skipped_lines,
         ..Default::default()
     };
+    // Never draw a conclusion from an index that has not been populated yet. On a REBUILT database
+    // this pass can start while indexing is still running, and every record would look like a link
+    // that no longer exists. Report the state honestly and leave the work for the next boot — which
+    // is safe precisely because this pass is unstamped and re-runs.
+    let links_total: i64 = conn
+        .query_row("SELECT COUNT(*) FROM note_links", [], |r| r.get(0))
+        .unwrap_or(0);
+    if links_total == 0 {
+        report.index_not_ready = true;
+        return Ok(report);
+    }
     if load.refuse_write {
         // The store was structurally unusable and has been renamed aside. Do NOT write a thing
         // from a store we could not read — that is how a restore destroys what it was protecting.
@@ -460,18 +464,53 @@ mod tests_mig104_restore {
     }
 
     /// A record whose link no longer exists is counted, not an error — the user may have deleted
-    /// the wikilink since.
+    /// that wikilink since. NOTE the fixture keeps another link alive: an index with ZERO links is
+    /// a different condition entirely (a rebuild in progress) and is handled by the guard below.
     #[test]
     fn a_record_whose_link_is_gone_is_counted_not_fatal() {
         let (td, conn) = universe();
         let s = store(&td);
         note(&conn, "/a.md", "A", "C_A");
         note(&conn, "/b.md", "B", "C_B");
+        note(&conn, "/c.md", "C", "C_C");
         link(&conn, "/a.md", "B", 4, "evidence", "active", 2.6);
+        link(&conn, "/a.md", "C", 2, "evidence", "active", 2.09);
         link_life_backfill::seed(&conn, &s).unwrap();
+        // The user deleted ONE wikilink; the index is otherwise healthy.
+        conn.execute("DELETE FROM note_links WHERE LOWER(target_name) = 'b'", []).unwrap();
+        let r = restore(&conn, &s).unwrap();
+        assert!(!r.index_not_ready, "one missing link is not a rebuild in progress");
+        assert_eq!(r.no_matching_row, 1, "the vanished link's record is counted");
+    }
+
+    /// ★ THE BOSS-FOUND BUG (live, 2026-07-27). On a REBUILT index this pass can start while
+    /// indexing is still running. Every record then looks like a link that no longer exists — and
+    /// the first cut *stamped itself complete* on exactly that reading, so the earned data would
+    /// never have come back. Two guards now: it draws NO conclusion from an unpopulated index, and
+    /// it carries no stamp at all, so the next boot retries.
+    #[test]
+    fn an_index_still_rebuilding_concludes_nothing_and_writes_nothing() {
+        let (td, conn) = universe();
+        let s = store(&td);
+        note(&conn, "/a.md", "A", "C_A");
+        note(&conn, "/b.md", "B", "C_B");
+        link(&conn, "/a.md", "B", 7, "evidence", "active", 3.079);
+        link_life_backfill::seed(&conn, &s).unwrap();
+
+        // The state the Boss hit: the ledger is full, the index is not yet populated.
         conn.execute("DELETE FROM note_links", []).unwrap();
         let r = restore(&conn, &s).unwrap();
-        assert_eq!((r.no_matching_row, r.restored), (1, 0));
+        assert!(r.index_not_ready, "an empty index must be reported as NOT READY…");
+        assert_eq!(r.no_matching_row, 0, "…never as 'the links are gone'");
+        assert_eq!(r.restored, 0);
+
+        // …and once indexing finishes, a later pass restores everything. This is only possible
+        // because the pass is unstamped: a stamp here would have made the loss permanent.
+        link(&conn, "/a.md", "B", 0, "hypothesis", "active", 1.0);
+        let r2 = restore(&conn, &s).unwrap();
+        assert!(!r2.index_not_ready);
+        assert_eq!(r2.restored, 1, "the retry after the rebuild is what saves the earned data");
+        assert_eq!(row(&conn, "/a.md", "B").0, 7);
     }
 
     /// A store that could not be read must cause NO writes — that is how a restore destroys the

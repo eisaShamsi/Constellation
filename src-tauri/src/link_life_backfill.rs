@@ -132,6 +132,18 @@ fn run(app: &tauri::AppHandle) -> Result<SeedReport, String> {
 
     let report = seed(&conn, &dir)?;
 
+    // ★ Do NOT stamp against an index that holds no links (Boss-found 2026-07-27, same class as the
+    // restore's wrong gate). On a REBUILT database this pass can run while indexing is still going;
+    // it then legitimately finds 0 earned rows and — if it stamped — would never lift the earned
+    // layer out of the index again. "I found nothing" and "there is nothing" are different claims,
+    // and only the second may be recorded as done.
+    let links_total: i64 = conn
+        .query_row("SELECT COUNT(*) FROM note_links", [], |r| r.get(0))
+        .unwrap_or(0);
+    if links_total == 0 {
+        return Ok(report);
+    }
+
     conn.execute(
         "INSERT INTO schema_versions (module, version, updated_at) VALUES ('link_life_backfill', ?1, ?2)
          ON CONFLICT(module) DO UPDATE SET version = excluded.version, updated_at = excluded.updated_at",

@@ -409,3 +409,44 @@ Also covered: a newer DB count is never ratcheted down by an older ledger; an un
 NOTHING (`refuse_write` honoured — that is precisely how a restore destroys what it was protecting);
 an identity-keyed record survives a TARGET rename, because the identity is the durable half of the key
 and the name is not.
+
+### ★ Slice 6 Boss test FAILED — and it found the exact bug the migration exists to prevent
+
+The Boss renamed `search.db` aside and rebooted. The status bar sat at "68 notes"; four minutes later
+the index was at 221 notes / 7,431 links — **progressing, not stuck** (a full rebuild of 7,817 notes is
+far slower than loading an existing index; the Slice-0 baseline of ~35 s is a LOAD figure). He closed
+the app mid-rebuild. His `earned.jsonl` (38 lines) and the 2 GB `search.db.MOVED.db` are both intact —
+nothing lost.
+
+**The bug, from his own diagnostics line:**
+```
+[link_life_restore] earned layer restored: 0 of 34 records written
+                    (34 no longer in the index) — stamped
+```
+The restore raced the initial indexing, found that none of the 34 records had a link to attach to yet,
+read that as "the links are gone" — and **stamped itself complete.** It would never have run again and
+the earned data would never have come back. **The precise scenario MIG-104 exists for, defeated by the
+wrong gate.**
+
+**The error was conceptual, not incidental: I gave a RECONCILER a MIGRATION's stamp.** The restore
+writes only where the DB disagrees, reports `already_current` otherwise, and is bounded by earned-link
+count (34, not 234,233). Its correct shape is to run on EVERY boot — the same discipline
+`reconcile::maybe_schedule` already follows for index-vs-disk drift, and for the same reason: the
+condition it repairs can recur at any time. A one-shot stamp is only ever right for a pass whose work
+cannot recur.
+
+**Two fixes:**
+1. **The restore is now unstamped** — `SCHEMA_VERSION` / `is_stamped` deleted, runs every boot, silent
+   in the steady state (no log line when nothing differs or no ledger exists).
+2. **Neither pass may conclude anything from an unpopulated index.** New `index_not_ready` guard: if
+   `note_links` holds **zero** rows the restore reports NOT-READY and writes nothing, rather than
+   counting every record as vanished. The seed gets the same guard on its stamp — *"I found nothing"
+   and "there is nothing" are different claims, and only the second may be recorded as done.*
+
+**Tests:** the new `an_index_still_rebuilding_concludes_nothing_and_writes_nothing` pins both halves —
+an empty index reports NOT-READY (never "gone"), and a LATER pass restores everything, which is only
+possible because the pass is unstamped. One existing test was corrected rather than the code: it
+deleted ALL links to simulate one vanished link, which is now (correctly) indistinguishable from a
+rebuild in progress; it now deletes one link and keeps the index healthy.
+
+Rust **1233/0** (51 MIG-104). Binary **@17:03**.
