@@ -7807,15 +7807,19 @@ pub fn constellation_link_traverse(
             .unwrap_or_default();
         // The target's identity, when the name resolves to exactly one indexed note. An
         // unresolved target is not an error — the line falls back to keying on `tn`.
-        let tgt_cid: String = conn
+        let (tgt_cid, tgt_name): (String, String) = conn
             .query_row(
-                "SELECT cid_cn FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
+                "SELECT cid_cn, name FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
                 params![target_lower],
-                |r| r.get(0),
+                |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .unwrap_or_default();
+        // The target note's own name, so a walk and a decision on the SAME link never disagree
+        // about its spelling (Boss-found 2026-07-27). Falls back to the clicked text when the
+        // target is unresolved — which is also the case the name-key fallback exists for.
+        let label = if tgt_name.is_empty() { target_name.clone() } else { tgt_name };
         if !src_cid.is_empty() {
-            ledger.push(crate::link_life::walk_line(&src_cid, &tgt_cid, &target_name, max_tc, &now));
+            ledger.push(crate::link_life::walk_line(&src_cid, &tgt_cid, &label, max_tc, &now));
         }
     }
     (updated, ledger, crate::link_life::store_dir(conn))
@@ -8771,18 +8775,24 @@ fn ledger_ids(
     conn: &Connection,
     source_path: &str,
     target_lower: &str,
-) -> (String, String, Option<std::path::PathBuf>) {
+) -> (String, String, String, Option<std::path::PathBuf>) {
     let src = conn
         .query_row("SELECT cid_cn FROM note_meta WHERE path = ?1", params![source_path], |r| r.get(0))
         .unwrap_or_default();
-    let tgt = conn
+    // Resolve the target's identity AND its DISPLAY name in one hop. Boss-found 2026-07-27:
+    // the ledger recorded the same link as "France" from a walk (the editor passes the wikilink
+    // text as typed) and "france" from a decision (the panel passes note_links.target_name, which
+    // is stored lowercased). Harmless to the fold — the key is the cid pair — but this file exists
+    // to be READ by the user, and one link under two spellings makes a record harder to trust.
+    // The target note's own `name` is the single truthful answer for both streams.
+    let (tgt, tgt_name): (String, String) = conn
         .query_row(
-            "SELECT cid_cn FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
+            "SELECT cid_cn, name FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
             params![target_lower],
-            |r| r.get(0),
+            |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .unwrap_or_default();
-    (src, tgt, crate::link_life::store_dir(conn))
+    (src, tgt, tgt_name, crate::link_life::store_dir(conn))
 }
 
 /// MIG-104 Slice 4 — the DECISION write order, as a governing rule rather than a habit at four
@@ -8823,10 +8833,10 @@ pub fn constellation_link_set_confidence(
     let target_lower = target_name.to_lowercase();
 
     // Identity + store resolved under the lock; the lock then DROPS (no file I/O under it).
-    let (src_cid, tgt_cid, store, max_n) = {
+    let (src_cid, tgt_cid, tgt_label, store, max_n) = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("Search DB not initialized")?;
-        let (s, t, dir) = ledger_ids(conn, &source_path, &target_lower);
+        let (s, t, tname, dir) = ledger_ids(conn, &source_path, &target_lower);
         let n: i64 = conn
             .query_row(
                 "SELECT COALESCE(MAX(traversal_count), 0) FROM note_links
@@ -8835,7 +8845,7 @@ pub fn constellation_link_set_confidence(
                 |r| r.get(0),
             )
             .unwrap_or(0);
-        (s, t, dir, n)
+        (s, t, if tname.is_empty() { target_name.clone() } else { tname }, dir, n)
     };
 
     // Record ONLY a user judgment. If this value is merely the tier derivable from the count
@@ -8845,7 +8855,7 @@ pub fn constellation_link_set_confidence(
         record_decision(
             &store,
             crate::link_life::trust_line(
-                &src_cid, &tgt_cid, &target_name, &confidence,
+                &src_cid, &tgt_cid, &tgt_label, &confidence,
                 &chrono::Utc::now().to_rfc3339(),
             ),
         )?;
@@ -8916,10 +8926,11 @@ pub fn constellation_link_archive(
     let state = app.state::<SearchState>();
     let target_lower = target_name.to_lowercase();
 
-    let (src_cid, tgt_cid, store) = {
+    let (src_cid, tgt_cid, tgt_label, store) = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("Search DB not initialized")?;
-        ledger_ids(conn, &source_path, &target_lower)
+        let (s, t, tname, dir) = ledger_ids(conn, &source_path, &target_lower);
+        (s, t, if tname.is_empty() { target_name.clone() } else { tname }, dir)
     };
 
     // FILE FIRST. Retiring is archival, not deletion — the wikilink stays in the note — so the
@@ -8928,7 +8939,7 @@ pub fn constellation_link_archive(
     if !src_cid.is_empty() {
         record_decision(
             &store,
-            crate::link_life::retire_line(&src_cid, &tgt_cid, &target_name, &chrono::Utc::now().to_rfc3339()),
+            crate::link_life::retire_line(&src_cid, &tgt_cid, &tgt_label, &chrono::Utc::now().to_rfc3339()),
         )?;
     }
 
@@ -8989,10 +9000,11 @@ pub fn constellation_link_unarchive(
     // The hook lives at the COMMAND, not in `unarchive_link_rows`: that helper receives a
     // borrowed connection from a caller that holds the lock, so writing the file inside it
     // would put filesystem I/O under the DB lock. One production caller, so nothing is missed.
-    let (src_cid, tgt_cid, store) = {
+    let (src_cid, tgt_cid, tgt_label, store) = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("Search DB not initialized")?;
-        ledger_ids(conn, &source_path, &target_lower)
+        let (s, t, tname, dir) = ledger_ids(conn, &source_path, &target_lower);
+        (s, t, if tname.is_empty() { target_name.clone() } else { tname }, dir)
     };
 
     // FILE FIRST — un-retiring is as much a decision as retiring, and the pair must be
@@ -9000,7 +9012,7 @@ pub fn constellation_link_unarchive(
     if !src_cid.is_empty() {
         record_decision(
             &store,
-            crate::link_life::restore_line(&src_cid, &tgt_cid, &target_name, &chrono::Utc::now().to_rfc3339()),
+            crate::link_life::restore_line(&src_cid, &tgt_cid, &tgt_label, &chrono::Utc::now().to_rfc3339()),
         )?;
     }
 

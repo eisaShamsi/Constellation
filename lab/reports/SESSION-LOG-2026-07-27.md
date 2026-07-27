@@ -245,3 +245,33 @@ escaped by serde, so the output is always valid JSON). The comment is corrected 
 **Environment note:** `cargo test`/`build` intermittently hit `LNK1104` — a transient Windows lock
 on a freshly-linked test exe (no process holds it; a retry succeeds). Not a code fault; the C7 agent
 hit the same. Builds are now run with a small retry loop.
+
+### Slice 4 — Boss test PASS (2026-07-27, binary @12:40), verified in the DB not the log
+
+Boss's `earned.jsonl` after 3 link clicks + Archive link + Contested — **exactly the 5 predicted
+lines**, correct field order, correct shapes:
+```
+walk   Africa -> Madagascar  n=1  09:13:20
+walk   Africa -> Earth       n=1  09:13:51
+walk   Africa -> France      n=1  09:14:03
+retire Africa -> France           09:20:51
+trust  Africa -> Earth  conf=contested  09:21:25
+```
+**DB cross-check (read-only):** `france` → `status='archived'`, `weight=0.0`; `earth` →
+`confidence='contested'`; all three `traversal_count=1` with `last_traversed` matching the ledger
+timestamps to the second; weight 1.693 = `1+ln(2)`, the earned formula for one walk. **File-first
+ordering held on every decision** — the line exists AND the DB changed, in that order. No `walk`
+line for the auto-tier promotions, as designed.
+
+**One defect the Boss found by reading the file (fixed in-pass, WA#6).** The same link was recorded
+as `"France"` from a walk and `"france"` from a decision: walks take the target name from the EDITOR
+(the wikilink text as typed), decisions from the PANEL (which passes `note_links.target_name`, stored
+lowercased). Harmless to the fold — the key is the cid pair — but this file exists to be READ by the
+user, and one link under two spellings makes a record harder to trust. `ledger_ids` now resolves the
+target's identity AND its display `name` in one hop, and all four writers use it; the clicked text
+remains the fallback for an unresolved target, which is the same case the name-key fallback covers.
+Rust **1212/0** after the change.
+
+**Filed:** `note_links.target_name` is stored lowercased, which is also why the Outgoing/Backlinks
+panels display link targets in lowercase (`earth`, `france`) rather than the note's real title — a
+pre-existing display-fidelity issue in a knowledge app, now visible. → **PJ-170**.
