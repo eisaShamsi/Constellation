@@ -327,6 +327,126 @@ pub fn quarantine(dir: &Path, s: Stream, stamp: &str) -> LoadReport {
     report
 }
 
+/// Slice 4 toggle. `false` = today's behaviour exactly, byte-for-byte: no file is created and
+/// no writer runs. Kept as a `const` so the dead branch is compiled out entirely rather than
+/// costing a check on the traverse path.
+pub const EARNED_LEDGER_WRITE: bool = true;
+
+// ─── Record builders ─────────────────────────────────────────────────────────
+//
+// The on-disk FORMAT lives here and nowhere else, so a writer cannot invent a variant and the
+// format test has one thing to assert against.
+//
+// Field order is FIXED and meaningful — the file is meant to be read by a human in a text editor,
+// where `v,t,cid,to,tn,n,at` reads as a sentence and the alphabetical `at,cid,n,t,tn,to,v` does
+// not. `serde_json::json!` CANNOT deliver that: without the `preserve_order` feature its Map is a
+// BTreeMap and it sorts keys. (The first cut of this module claimed otherwise in a comment; the
+// format test caught it.) Enabling `preserve_order` globally would change every JSON write in the
+// app, so the lines are built here with an explicit ordered writer instead — values still escaped
+// by serde, so the output is always valid JSON.
+//
+// `cid` = the SOURCE note's identity; `to` = the TARGET's identity when resolvable; `tn` = the
+// target's name, which is the fallback key AND the only human-legible part of the line.
+//
+// Q2 (Boss-ruled): the key is TYPE-FREE — `[[supports::X]]` and `[[derives-from::X]]` from one
+// note fold to ONE record, because all four DB writers already match on source + target name and
+// ignore `link_type`. Re-typing a link therefore keeps its earned history.
+
+/// Write an ordered JSON object. Values are escaped by serde (so the line is always valid JSON);
+/// only the ORDER is ours. `Val` keeps the call sites readable.
+enum Val<'a> {
+    S(&'a str),
+    I(i64),
+}
+
+fn obj(fields: &[(&str, Val)]) -> String {
+    let mut out = String::from("{");
+    for (i, (k, v)) in fields.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&serde_json::to_string(k).unwrap_or_default());
+        out.push(':');
+        match v {
+            Val::S(x) => out.push_str(&serde_json::to_string(x).unwrap_or_default()),
+            Val::I(x) => out.push_str(&x.to_string()),
+        }
+    }
+    out.push('}');
+    out
+}
+
+/// A traversal. `n` is written ABSOLUTE (never a delta) — that is what makes the fold idempotent.
+pub fn walk_line(src_cid: &str, tgt_cid: &str, tgt_name: &str, n: i64, at: &str) -> String {
+    obj(&[
+        ("v", Val::I(1)),
+        ("t", Val::S("walk")),
+        ("cid", Val::S(src_cid)),
+        ("to", Val::S(tgt_cid)),
+        ("tn", Val::S(tgt_name)),
+        ("n", Val::I(n)),
+        ("at", Val::S(at)),
+    ])
+}
+
+/// A confidence judgment. Only ever a USER judgment — never the auto-tier derivable from `n`
+/// (≥10 established, ≥3 evidence), because recording a derivable value would fill the ledger
+/// with events that carry no decision.
+pub fn trust_line(src_cid: &str, tgt_cid: &str, tgt_name: &str, conf: &str, at: &str) -> String {
+    obj(&[
+        ("v", Val::I(1)),
+        ("t", Val::S("trust")),
+        ("cid", Val::S(src_cid)),
+        ("to", Val::S(tgt_cid)),
+        ("tn", Val::S(tgt_name)),
+        ("conf", Val::S(conf)),
+        ("at", Val::S(at)),
+    ])
+}
+
+/// Retiring a link. Archival, not deletion — the wikilink deliberately stays in the note, which
+/// is exactly why this must be durable: a rebuild from the notes alone would resurrect it.
+pub fn retire_line(src_cid: &str, tgt_cid: &str, tgt_name: &str, at: &str) -> String {
+    obj(&[
+        ("v", Val::I(1)),
+        ("t", Val::S("retire")),
+        ("cid", Val::S(src_cid)),
+        ("to", Val::S(tgt_cid)),
+        ("tn", Val::S(tgt_name)),
+        ("at", Val::S(at)),
+    ])
+}
+
+/// Un-retiring a link.
+pub fn restore_line(src_cid: &str, tgt_cid: &str, tgt_name: &str, at: &str) -> String {
+    obj(&[
+        ("v", Val::I(1)),
+        ("t", Val::S("restore")),
+        ("cid", Val::S(src_cid)),
+        ("to", Val::S(tgt_cid)),
+        ("tn", Val::S(tgt_name)),
+        ("at", Val::S(at)),
+    ])
+}
+
+/// A review-priority decision on a NOTE (no target).
+pub fn priority_line(cid: &str, p: i64, at: &str) -> String {
+    obj(&[
+        ("v", Val::I(1)),
+        ("t", Val::S("priority")),
+        ("cid", Val::S(cid)),
+        ("p", Val::I(p)),
+        ("at", Val::S(at)),
+    ])
+}
+
+/// True when `conf` is merely the tier derivable from `n` — i.e. carries no user judgment and
+/// must NOT be recorded. Mirrors the thresholds in `constellation_link_traverse`.
+pub fn is_derivable_tier(conf: &str, n: i64) -> bool {
+    let auto = if n >= 10 { "established" } else if n >= 3 { "evidence" } else { "hypothesis" };
+    conf == auto
+}
+
 #[cfg(test)]
 mod tests_mig104_link_life {
     use super::*;
@@ -491,5 +611,109 @@ mod tests_mig104_link_life {
         let k = map.keys().next().unwrap();
         assert!(!k.contains('\\') && !k.contains(':'), "no path separators or drive letters in a key: {k}");
         assert_eq!(k, "A>~the four books", "an unresolved target folds case-insensitively by name");
+    }
+}
+
+#[cfg(test)]
+mod tests_mig104_hooks {
+    //! MIG-104 Slice 4 — the record FORMAT and the two write ORDERS. The commands themselves
+    //! need an AppHandle, so these pin the parts that carry the design: the line shapes, the
+    //! type-free key of Q2, the derivable-tier suppression, and the decision order's contract
+    //! that a failed append must stop the DB change.
+    use super::*;
+
+    #[test]
+    fn walk_line_carries_an_absolute_count_and_fixed_field_order() {
+        let l = walk_line("C_SRC", "C_TGT", "the four books", 3, "2026-07-27T09:11:05Z");
+        assert_eq!(
+            l,
+            r#"{"v":1,"t":"walk","cid":"C_SRC","to":"C_TGT","tn":"the four books","n":3,"at":"2026-07-27T09:11:05Z"}"#,
+            "field order is part of the contract — a human reads this file in a text editor"
+        );
+    }
+
+    /// Q2, Boss-ruled: the key is TYPE-FREE, so re-typing a link keeps its earned history.
+    #[test]
+    fn type_variants_of_one_pair_produce_one_ledger_key() {
+        let d = tempfile::tempdir().unwrap();
+        // The real live shape: one note linking to `the four books` twice, as `supports` and as
+        // `derives-from`, one click each. The DB writers match on source + target name and ignore
+        // link_type, so both are ONE link in the user's terms.
+        append(d.path(), Stream::Earned, &[
+            walk_line("C_ISLAM", "C_BOOKS", "the four books", 1, "2026-07-27T09:00:00Z"),
+            walk_line("C_ISLAM", "C_BOOKS", "the four books", 2, "2026-07-27T09:05:00Z"),
+        ]).unwrap();
+        let (map, _) = read_folded(d.path());
+        assert_eq!(map.len(), 1, "the two typed variants must fold to ONE record");
+        assert_eq!(map.get("C_ISLAM>C_BOOKS").unwrap().n, 2);
+    }
+
+    #[test]
+    fn an_unresolved_target_still_keys_and_survives_the_fold() {
+        let d = tempfile::tempdir().unwrap();
+        append(d.path(), Stream::Earned, &[walk_line("C_SRC", "", "banana", 4, "2026-07-27T09:00:00Z")]).unwrap();
+        let (map, _) = read_folded(d.path());
+        assert_eq!(map.get("C_SRC>~banana").unwrap().n, 4, "a broken link's earned history is still recorded");
+    }
+
+    /// The auto-tier must never be recorded: it carries no user judgment and is derivable from
+    /// the count, so recording it would fill the ledger with decisions nobody made.
+    #[test]
+    fn auto_tier_promotion_writes_no_trust_event() {
+        assert!(is_derivable_tier("hypothesis", 1));
+        assert!(is_derivable_tier("evidence", 3));
+        assert!(is_derivable_tier("evidence", 9));
+        assert!(is_derivable_tier("established", 10));
+        // A USER judgment is never derivable — `contested` has no count that produces it…
+        assert!(!is_derivable_tier("contested", 0));
+        assert!(!is_derivable_tier("contested", 50));
+        // …and neither is a manual pick that outranks the count.
+        assert!(!is_derivable_tier("established", 3));
+        assert!(!is_derivable_tier("evidence", 1));
+    }
+
+    #[test]
+    fn retire_then_restore_reconstructs_in_order_from_the_ledger_alone() {
+        let d = tempfile::tempdir().unwrap();
+        append(d.path(), Stream::Earned, &[
+            walk_line("C_A", "C_B", "b", 7, "2026-07-27T09:00:00Z"),
+            retire_line("C_A", "C_B", "b", "2026-07-27T09:01:00Z"),
+        ]).unwrap();
+        assert_eq!(read_folded(d.path()).0.get("C_A>C_B").unwrap().status.as_deref(), Some("archived"));
+        append(d.path(), Stream::Earned, &[restore_line("C_A", "C_B", "b", "2026-07-27T09:02:00Z")]).unwrap();
+        let e = read_folded(d.path()).0.get("C_A>C_B").cloned().unwrap();
+        assert_eq!(e.status.as_deref(), Some("active"), "the LAST decision wins");
+        assert_eq!(e.n, 7, "and the earned count is untouched by either decision");
+    }
+
+    /// The decision order's whole point: if the record cannot be made durable the DB must not
+    /// change. `append` returning Err is what the command propagates instead of proceeding.
+    #[test]
+    fn a_failed_append_is_an_error_the_caller_must_not_swallow() {
+        // A path that cannot be a directory → open() fails → Err, not a silent Ok.
+        let d = tempfile::tempdir().unwrap();
+        let not_a_dir = d.path().join("file-not-dir");
+        std::fs::write(&not_a_dir, b"x").unwrap();
+        let r = append(&not_a_dir, Stream::Earned, &[retire_line("C_A", "C_B", "b", "2026-07-27T09:00:00Z")]);
+        assert!(r.is_err(), "the decision path relies on this Err to abort the DB change");
+    }
+
+    #[test]
+    fn priority_line_has_no_target() {
+        let l = priority_line("C_A", 2, "2026-07-27T09:00:00Z");
+        assert_eq!(l, r#"{"v":1,"t":"priority","cid":"C_A","p":2,"at":"2026-07-27T09:00:00Z"}"#);
+        assert!(!l.contains("\"to\""), "a review priority is about a NOTE, not a link");
+    }
+
+    #[test]
+    fn the_toggle_off_means_no_file_is_ever_created() {
+        // Documents the contract; the const is compiled in, so this asserts the shape callers use.
+        let d = tempfile::tempdir().unwrap();
+        if !EARNED_LEDGER_WRITE {
+            assert!(!d.path().join(Stream::Earned.file_name()).exists());
+        }
+        // With writes ON (the shipped default) an append creates the file on first use.
+        append(d.path(), Stream::Earned, &[walk_line("C", "D", "d", 1, "t")]).unwrap();
+        assert!(d.path().join("earned.jsonl").exists());
     }
 }

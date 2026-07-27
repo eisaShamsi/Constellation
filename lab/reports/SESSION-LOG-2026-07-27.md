@@ -204,3 +204,44 @@ call it.
 Also: `adopt_conflict_copies` folds Syncthing `.sync-conflict-*` copies back in then removes them
 (nearly free — the fold is already commutative), and `store_dir(conn)` derives the location from
 `conn.path()`'s parent, which is why no writer needs a path threaded to it.
+
+---
+
+## Slice 4 — the 6 link-life write hooks (BUILT, binary @12:40, awaiting Boss test)
+
+**The load-bearing part was the lock boundary.** `constellation_link_traverse` held
+`state.db.lock()` to the end of its body. Every DB touch is now inside an explicit scope whose
+guard DROPS before the ledger append — never hold the DB lock across filesystem I/O, which is the
+canonical freeze shape (PJ-066). The append costs 168 µs with **no lock held at all**.
+
+**Two write orders, each stated as a rule rather than a habit at four call sites:**
+- **Walks — DB first, then a plain append, no fsync, failure logged and swallowed.** A walk count
+  is cheap to re-earn and feeds a logarithm; losing one must never fail the navigation the user
+  asked for. 168 µs is what makes Boss decision #1 (no coalescing) affordable.
+- **Decisions (retire / restore / trust / priority) — FILE FIRST + fsync, THEN the DB, and the
+  error PROPAGATES.** New shared `record_decision`. Retiring is archival, not deletion — the
+  wikilink deliberately stays in the note — so the DB is the only record and a rebuild from the
+  notes would resurrect it. If the record cannot be made durable, the change must not happen.
+  fsync is 3,418 µs, invisible on an action taken a few times a day.
+
+**Hooked:** traverse (`walk`) · set_confidence (`trust`) · archive (`retire`) · unarchive
+(`restore`) · set_review_priority (`priority`). The unarchive hook lives at the COMMAND, not in
+`unarchive_link_rows`, because that helper borrows a connection from a lock-holding caller — writing
+inside it would put file I/O under the lock. One production caller, so nothing is missed.
+
+**The auto-tier is never recorded.** A confidence that is merely derivable from the count
+(≥10 established, ≥3 evidence) carries no user judgment; recording it would fill the ledger with
+decisions nobody made. `is_derivable_tier` + its test.
+
+**A test caught a false claim of mine.** I wrote that `serde_json::json!` preserves insertion order.
+It does not — without the `preserve_order` feature its map is a BTreeMap and it SORTS keys, so the
+lines came out as `at,cid,n,t,tn,to,v`. The file is meant to be read by a human in a text editor,
+where `v,t,cid,to,tn,n,at` reads as a sentence. Enabling `preserve_order` globally would change
+every JSON write in the app, so the lines are now built by an explicit ordered writer (values still
+escaped by serde, so the output is always valid JSON). The comment is corrected in place.
+
+**Tests:** 9 new (30 in the module). Rust **1212/0**. Binary rebuilt 12:40.
+
+**Environment note:** `cargo test`/`build` intermittently hit `LNK1104` — a transient Windows lock
+on a freshly-linked test exe (no process holds it; a retry succeeds). Not a code fault; the C7 agent
+hit the same. Builds are now run with a small retry loop.

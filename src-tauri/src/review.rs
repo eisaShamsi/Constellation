@@ -638,6 +638,45 @@ pub fn set_review_priority(
     priority: Option<i64>,
 ) -> Result<(), String> {
     let value: Option<i64> = priority.map(|p| p.clamp(0, 100));
+
+    // MIG-104 Slice 4 — review priority is a USER decision about a note, and it lives ONLY in
+    // `note_meta.review_priority` (a column that `ensure_note_meta_review_columns` has been
+    // observed to DROP — Slice 14). Identity + store are read under the lock; the lock DROPS;
+    // the record is appended and fsync'd; only then is the DB changed. Same governing order as
+    // the link decisions, for the same reason: if the record cannot be made durable, the change
+    // must not happen.
+    let (cid, store) = {
+        let Some(state) = app.try_state::<crate::search::SearchState>() else {
+            return Err("database not ready".to_string());
+        };
+        let Ok(guard) = state.db.lock() else {
+            return Err("database not ready".to_string());
+        };
+        let Some(conn) = guard.as_ref() else {
+            return Err("database not ready".to_string());
+        };
+        let cid: String = conn
+            .query_row(
+                "SELECT cid_cn FROM note_meta WHERE path = ?1",
+                rusqlite::params![&note_path],
+                |r| r.get(0),
+            )
+            .unwrap_or_default();
+        (cid, crate::link_life::store_dir(conn))
+    };
+
+    if crate::link_life::EARNED_LEDGER_WRITE && !cid.is_empty() {
+        if let Some(dir) = &store {
+            let line = crate::link_life::priority_line(
+                &cid,
+                value.unwrap_or(-1),
+                &chrono::Utc::now().to_rfc3339(),
+            );
+            crate::link_life::append(dir, crate::link_life::Stream::Earned, &[line])?;
+            crate::link_life::fsync(dir, crate::link_life::Stream::Earned)?;
+        }
+    }
+
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {

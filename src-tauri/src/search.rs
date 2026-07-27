@@ -7728,11 +7728,17 @@ pub fn constellation_link_traverse(
     target_name: String,
 ) -> Result<serde_json::Value, String> {
     let state = app.state::<SearchState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or("Search DB not initialized")?;
-
     let now = chrono::Utc::now().to_rfc3339();
     let target_lower = target_name.to_lowercase();
+
+    // MIG-104 Slice 4 — THE LOCK BOUNDARY. Every DB touch happens inside this scope so the
+    // guard is DROPPED before the ledger append below. Never hold `state.db.lock()` across
+    // filesystem I/O: that is the canonical freeze shape (PJ-066) — an awaited invoke parking
+    // on the writer lock while another thread waits on the disk. The append is 168 µs measured
+    // (Slice 0) and it happens with no lock held at all.
+    let (updated, ledger, store) = {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
 
     // Two-step: read current traversal_count, compute new weight in Rust, then update.
     // This avoids reliance on SQLite math functions (ln) which need SQLITE_ENABLE_MATH_FUNCTIONS.
@@ -7747,6 +7753,7 @@ pub fn constellation_link_traverse(
       .collect();
 
     let mut updated: usize = 0;
+    let mut max_tc: i64 = 0;
     for (id, tc) in &links {
         let new_tc = tc + 1;
         let new_weight = earned_link_weight(new_tc);
@@ -7782,6 +7789,49 @@ pub fn constellation_link_traverse(
             params![new_tc, now, new_weight, id, new_confidence],
         ).map_err(|e| format!("Failed to record traversal: {}", e))?;
         updated += 1;
+        max_tc = max_tc.max(new_tc);
+    }
+
+    // Build the ledger line while the connection is still in hand, but do NOT write it here.
+    // Q2 (type-free key): every matching row is one link in the user's terms — `[[supports::X]]`
+    // and `[[derives-from::X]]` from one note fold to ONE record — so a single line carries the
+    // MAX absolute count across the rows updated, never one line per row.
+    //
+    // Traverse records a `walk` ONLY. The confidence it may promote above is the tier DERIVABLE
+    // from the count, which carries no user judgment; recording it would fill the ledger with
+    // decisions nobody made (the Architect's Option-A graft).
+    let mut ledger: Vec<String> = Vec::new();
+    if crate::link_life::EARNED_LEDGER_WRITE && updated > 0 {
+        let src_cid: String = conn
+            .query_row("SELECT cid_cn FROM note_meta WHERE path = ?1", params![source_path], |r| r.get(0))
+            .unwrap_or_default();
+        // The target's identity, when the name resolves to exactly one indexed note. An
+        // unresolved target is not an error — the line falls back to keying on `tn`.
+        let tgt_cid: String = conn
+            .query_row(
+                "SELECT cid_cn FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
+                params![target_lower],
+                |r| r.get(0),
+            )
+            .unwrap_or_default();
+        if !src_cid.is_empty() {
+            ledger.push(crate::link_life::walk_line(&src_cid, &tgt_cid, &target_name, max_tc, &now));
+        }
+    }
+    (updated, ledger, crate::link_life::store_dir(conn))
+    }; // ← the DB guard is released HERE, before any filesystem access
+
+    // The append: no lock held, no fsync. A walk count is the one earned value that is cheap to
+    // re-earn and feeds a logarithm, so it takes the 168 µs plain append rather than the 3,418 µs
+    // fsync (both measured in Slice 0). Boss decision #1 rejected coalescing, which this cost is
+    // what makes affordable. A failure is logged, never propagated: losing a walk count must
+    // never fail the navigation the user actually asked for.
+    if !ledger.is_empty() {
+        if let Some(dir) = store {
+            if let Err(e) = crate::link_life::append(&dir, crate::link_life::Stream::Earned, &ledger) {
+                diag_log(&dir.join("search.db"), &format!("[link_life] walk append failed: {e}"));
+            }
+        }
     }
 
     Ok(serde_json::json!({
@@ -8711,6 +8761,50 @@ pub fn constellation_ccs_snapshot(app: tauri::AppHandle) -> Result<serde_json::V
     }))
 }
 
+/// MIG-104 Slice 4 — resolve the ledger identity for a (source, target-name) pair.
+///
+/// Returns `(source cid_cn, target cid_cn, store dir)`. An empty target cid is NOT an error: the
+/// ledger line then keys on the target NAME, which is what the fold's fallback exists for. An
+/// empty SOURCE cid means the note has no identity yet, and the caller must skip recording — a
+/// record we cannot key is a record we cannot ever restore.
+fn ledger_ids(
+    conn: &Connection,
+    source_path: &str,
+    target_lower: &str,
+) -> (String, String, Option<std::path::PathBuf>) {
+    let src = conn
+        .query_row("SELECT cid_cn FROM note_meta WHERE path = ?1", params![source_path], |r| r.get(0))
+        .unwrap_or_default();
+    let tgt = conn
+        .query_row(
+            "SELECT cid_cn FROM note_meta WHERE LOWER(name) = ?1 AND cid_cn != '' LIMIT 1",
+            params![target_lower],
+            |r| r.get(0),
+        )
+        .unwrap_or_default();
+    (src, tgt, crate::link_life::store_dir(conn))
+}
+
+/// MIG-104 Slice 4 — the DECISION write order, as a governing rule rather than a habit at four
+/// call sites: **the file lands, fsync'd, BEFORE the DB is changed.**
+///
+/// A decision (retire / restore / trust / priority) is rare, user-made, and irreplaceable, and the
+/// DB is not its home — a rebuild from the notes alone would resurrect a retired link, because
+/// archival deliberately leaves the wikilink in the text. So if the record cannot be made durable,
+/// the DB change must NOT happen; the error propagates and the user is told. This is the inverse of
+/// the walk path, where the count is cheap to re-earn and a failure is logged and swallowed.
+///
+/// fsync here costs 3,418 µs measured (Slice 0) — invisible on a click that happens a few times
+/// a day, and the entire point of the slice.
+fn record_decision(store: &Option<std::path::PathBuf>, line: String) -> Result<(), String> {
+    if !crate::link_life::EARNED_LEDGER_WRITE {
+        return Ok(());
+    }
+    let Some(dir) = store else { return Ok(()) };
+    crate::link_life::append(dir, crate::link_life::Stream::Earned, &[line])?;
+    crate::link_life::fsync(dir, crate::link_life::Stream::Earned)
+}
+
 /// Update a link's confidence level.
 // Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
 // Discovery-verified async-only-safe: DB-only / mutex-covered body, no note-file writes,
@@ -8726,10 +8820,40 @@ pub fn constellation_link_set_confidence(
         return Err(format!("Invalid confidence level: {}", confidence));
     }
     let state = app.state::<SearchState>();
+    let target_lower = target_name.to_lowercase();
+
+    // Identity + store resolved under the lock; the lock then DROPS (no file I/O under it).
+    let (src_cid, tgt_cid, store, max_n) = {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Search DB not initialized")?;
+        let (s, t, dir) = ledger_ids(conn, &source_path, &target_lower);
+        let n: i64 = conn
+            .query_row(
+                "SELECT COALESCE(MAX(traversal_count), 0) FROM note_links
+                 WHERE source_path = ?1 AND LOWER(target_name) = ?2",
+                params![source_path, target_lower],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        (s, t, dir, n)
+    };
+
+    // Record ONLY a user judgment. If this value is merely the tier derivable from the count
+    // (>=10 established, >=3 evidence), it carries no decision and would fill the ledger with
+    // events nobody made — the Architect's Option-A graft.
+    if !src_cid.is_empty() && !crate::link_life::is_derivable_tier(&confidence, max_n) {
+        record_decision(
+            &store,
+            crate::link_life::trust_line(
+                &src_cid, &tgt_cid, &target_name, &confidence,
+                &chrono::Utc::now().to_rfc3339(),
+            ),
+        )?;
+    }
+
+    // The DB mirror, only after the record is durable.
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
-
-    let target_lower = target_name.to_lowercase();
     conn.execute(
         "UPDATE note_links SET confidence = ?1 WHERE source_path = ?2 AND LOWER(target_name) = ?3",
         params![confidence, source_path, target_lower],
@@ -8790,10 +8914,26 @@ pub fn constellation_link_archive(
     target_name: String,
 ) -> Result<(), String> {
     let state = app.state::<SearchState>();
+    let target_lower = target_name.to_lowercase();
+
+    let (src_cid, tgt_cid, store) = {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Search DB not initialized")?;
+        ledger_ids(conn, &source_path, &target_lower)
+    };
+
+    // FILE FIRST. Retiring is archival, not deletion — the wikilink stays in the note — so the
+    // DB is the ONLY record of the decision and a rebuild from the notes would resurrect the
+    // link. If the record cannot be made durable, the archive must not happen.
+    if !src_cid.is_empty() {
+        record_decision(
+            &store,
+            crate::link_life::retire_line(&src_cid, &tgt_cid, &target_name, &chrono::Utc::now().to_rfc3339()),
+        )?;
+    }
+
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
-
-    let target_lower = target_name.to_lowercase();
     conn.execute(
         "UPDATE note_links SET status = 'archived', weight = 0.0 WHERE source_path = ?1 AND LOWER(target_name) = ?2",
         params![source_path, target_lower],
@@ -8844,10 +8984,28 @@ pub fn constellation_link_unarchive(
     target_name: String,
 ) -> Result<(), String> {
     let state = app.state::<SearchState>();
+    let target_lower = target_name.to_lowercase();
+
+    // The hook lives at the COMMAND, not in `unarchive_link_rows`: that helper receives a
+    // borrowed connection from a caller that holds the lock, so writing the file inside it
+    // would put filesystem I/O under the DB lock. One production caller, so nothing is missed.
+    let (src_cid, tgt_cid, store) = {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Search DB not initialized")?;
+        ledger_ids(conn, &source_path, &target_lower)
+    };
+
+    // FILE FIRST — un-retiring is as much a decision as retiring, and the pair must be
+    // reconstructible in order from the ledger alone.
+    if !src_cid.is_empty() {
+        record_decision(
+            &store,
+            crate::link_life::restore_line(&src_cid, &tgt_cid, &target_name, &chrono::Utc::now().to_rfc3339()),
+        )?;
+    }
+
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
-
-    let target_lower = target_name.to_lowercase();
     unarchive_link_rows(conn, &source_path, &target_lower)?;
 
     Ok(())
