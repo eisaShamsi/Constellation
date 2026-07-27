@@ -2,7 +2,22 @@
 
 **The Earned-Life Ledger — one append-only mechanism, two streams.**
 
-Status: **for Boss approval.** No code written. Date 2026-07-27. Repo `main` @ `042802c5` (MIG-105 Stage 0).
+Status: **APPROVED by the Boss 2026-07-27 — BUILD IN PROGRESS.**
+
+> **APPROVAL RECORD (Boss, 2026-07-27).** All eight checklist decisions settled:
+> **#1** accept (walks append immediately, no coalescing) · **#2** accept (Q3 = fix all four + PJ-163)
+> · **#3** accept (one store per Universe in `.constellation/`, per Q1) · **#4 "Ok"** → **BUILD the
+> continuous note-history mirror** (Slice 9 — the 19,481 existing rows stop being single-copy) ·
+> **#5** accept (archive former names) · **#6 "Yes"** → **ARCHIVE THE NOTE BODY TOO** (new sub-slice
+> 8b: the time machine must survive an emptied Recycle Bin, ~35 KB per deleted note) · **#7 "Ok"** →
+> the LINK authoring surface ships as **sibling MIG-106**, opened immediately after Slice 6 validates
+> (PJ-169); Q4's "build both" is honored by sequencing, not reduced · **#8** accept (the corrected
+> `.gitignore` list — takes `.constellation/` from 2,836 MB to 38 KB).
+>
+> Plan approval = build approval: the slices cascade without per-step sign-off, stopping only at
+> Boss-testable verification clauses and at genuine architectural surprise.
+
+Original status line: for Boss approval. No code written at authoring time. Date 2026-07-27. Repo `main` @ `042802c5` (MIG-105 Stage 0).
 All measurements in this document were taken **this session** against
 `E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db` opened read-only
 (`mode=ro`), or read out of the tree at that commit. Every mechanism claim carries a `file:line`.

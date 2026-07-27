@@ -13686,3 +13686,58 @@ mod tests_stage0_delete_order_defect {
         assert_eq!(purged, 0, "the later purge matches zero rows; an archive hook here archives nothing");
     }
 }
+
+#[cfg(test)]
+mod tests_mig104_baseline {
+    //! MIG-104 Slice 0 — the Rule-8 baseline. Two facts the Plan needs measured, not argued:
+    //! (1) `conn.path()`'s parent IS the `.constellation` dir, which is the whole reason the
+    //!     ledger needs no path plumbing at any writer (Plan §3.1);
+    //! (2) the real cost of one ~200-byte append + fsync on the Boss's storage — the Plan
+    //!     marked this [UNVERIFIED] because no in-repo precedent fsyncs (review.rs is a bare
+    //!     fs::write; classifier/correction_log.rs appends unsynced).
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn conn_path_parent_is_the_constellation_dir() {
+        let td = tempfile::tempdir().unwrap();
+        let cdir = td.path().join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let conn = init_db(&cdir.join("search.db")).unwrap();
+        let p = conn.path().expect("a file-backed connection reports its path");
+        let parent = std::path::Path::new(p).parent().unwrap();
+        assert_eq!(parent.file_name().unwrap(), ".constellation",
+            "the ledger's location is derivable from any connection — no plumbing needed");
+    }
+
+    /// Not an assertion of speed — a RECORDED MEASUREMENT. Prints via panic so the number
+    /// lands in the session log; the Plan forbids any later slice from committing without a
+    /// before/after against it. Run: cargo test --release mig104_measure -- --ignored
+    #[test]
+    #[ignore]
+    fn mig104_measure_append_fsync_cost() {
+        let td = tempfile::tempdir().unwrap();
+        let f = td.path().join("earned.jsonl");
+        let line = format!("{}\n", "x".repeat(199));
+        let mut plain = Vec::new();
+        let mut synced = Vec::new();
+        for _ in 0..200 {
+            let t0 = std::time::Instant::now();
+            let mut h = std::fs::OpenOptions::new().create(true).append(true).open(&f).unwrap();
+            h.write_all(line.as_bytes()).unwrap();
+            plain.push(t0.elapsed().as_micros());
+            let t1 = std::time::Instant::now();
+            let mut h2 = std::fs::OpenOptions::new().create(true).append(true).open(&f).unwrap();
+            h2.write_all(line.as_bytes()).unwrap();
+            h2.sync_all().unwrap();
+            synced.push(t1.elapsed().as_micros());
+        }
+        plain.sort(); synced.sort();
+        let med = |v: &Vec<u128>| v[v.len()/2];
+        let p95 = |v: &Vec<u128>| v[(v.len()*95)/100];
+        panic!(
+            "MIG-104 BASELINE (200 iterations, 200-byte lines):\n  append (no fsync): median {}µs  p95 {}µs\n  append + fsync   : median {}µs  p95 {}µs",
+            med(&plain), p95(&plain), med(&synced), p95(&synced)
+        );
+    }
+}
