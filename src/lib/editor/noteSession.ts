@@ -16,6 +16,7 @@
  * the only thing the Boss test still has to confirm; the logic is proven here.
  */
 import * as M from './noteModel';
+import { bumpProps } from './propsSignal';
 import type { Text } from '@codemirror/state';
 import type { FrontmatterProperty } from '$lib/libraries/store';
 
@@ -52,6 +53,7 @@ export type SaveOutcome =
 /** Open a note's session from its on-disk content (tab open / nav / reload). */
 export function open(id: string, path: string, diskContent: string): void {
 	M.openModel(id, path, diskContent);
+	bumpProps(); // MIG-107 — a freshly-seeded model has new props; panels must look again
 }
 
 /**
@@ -65,6 +67,7 @@ export function ensure(id: string, path: string, diskContent: string): void {
 	const m = M.getModel(id);
 	if (m && m.path === path) return;
 	M.openModel(id, path, diskContent);
+	bumpProps(); // MIG-107 — see `open`
 }
 
 /** Any editor view (NotePane OR FocusPane) → the one model. Accepts the CM6
@@ -75,15 +78,75 @@ export function editBody(id: string, text: string | Text, expectPath?: string): 
 	M.setBody(id, text, expectPath);
 }
 
-/** Property editor → the one model. `expectPath` identity-guards the write (see editBody). */
+/**
+ * Property editor → the one model, WHOLESALE. `expectPath` identity-guards the write (see editBody).
+ *
+ * ⚠ MIG-107: a wholesale replace is only correct for a caller that genuinely means "replace
+ * everything" and has just read the model. For "change one property", use the intents below —
+ * a whole array assembled from a stale projection is what silently deletes another writer's
+ * frontmatter (§3.5.1).
+ */
 export function editProps(id: string, props: FrontmatterProperty[], expectPath?: string): void {
 	M.setProps(id, props, expectPath);
+	bumpProps();
+}
+
+// ─── MIG-107 Slice 2 — the property INTENTS ─────────────────────────────────────────────────────
+//
+// Thin wrappers whose only job beyond the model call is to ANNOUNCE. The announcement lives here
+// rather than inside `noteModel` because that module is deliberately non-reactive (§C-2), so the
+// set of call sites that tick the signal has to stay explicit and reviewable — see `propsSignal.ts`.
+//
+// Each returns whether the model actually changed, so a caller can skip a pointless save, and the
+// signal is ticked ONLY on a real change — an announcement for a no-op would wake every panel for
+// nothing.
+
+/** Set ONE property's value. */
+export function editPropValue(
+	id: string,
+	key: string,
+	value: string,
+	opts?: { listItems?: string[]; type?: FrontmatterProperty['type'] },
+	expectPath?: string,
+): boolean {
+	const changed = M.setPropValue(id, key, value, opts, expectPath);
+	if (changed) bumpProps();
+	return changed;
+}
+
+/** Add a NEW property. Refuses an empty key, and refuses to overwrite an existing one. */
+export function addPropTo(id: string, prop: FrontmatterProperty, expectPath?: string): boolean {
+	const changed = M.addProp(id, prop, expectPath);
+	if (changed) bumpProps();
+	return changed;
+}
+
+/** Remove ONE property. */
+export function removePropFrom(id: string, key: string, expectPath?: string): boolean {
+	const changed = M.removeProp(id, key, expectPath);
+	if (changed) bumpProps();
+	return changed;
+}
+
+/** Rename a property's key. Returns false on a collision — the caller surfaces it to the user. */
+export function renamePropKeyIn(id: string, oldKey: string, newKey: string, expectPath?: string): boolean {
+	const changed = M.renamePropKey(id, oldKey, newKey, expectPath);
+	if (changed) bumpProps();
+	return changed;
+}
+
+/** Move a property before another (or to the end when `beforeKey` is null). */
+export function reorderPropsIn(id: string, key: string, beforeKey: string | null, expectPath?: string): boolean {
+	const changed = M.reorderProps(id, key, beforeKey, expectPath);
+	if (changed) bumpProps();
+	return changed;
 }
 
 /** PJ-088 — replace the model's whole content (frontmatter + body) from a merged source, re-basing
  *  so compose emits it verbatim. `expectPath` identity-guards the write (see editBody). */
 export function replaceContent(id: string, content: string, expectPath?: string): void {
 	M.replaceContent(id, content, expectPath);
+	bumpProps(); // MIG-107 — a merge rebase replaces props wholesale (legitimately); panels re-read
 }
 
 /**
@@ -250,7 +313,12 @@ export function setDiskBaseline(id: string, trueDiskContent: string): void {
 
 /** External change (file watcher / second screen) — freshness-gated; returns whether adopted. */
 export function externalChange(id: string, diskContent: string, expectPath?: string): boolean {
-	return M.adoptDisk(id, diskContent, expectPath);
+	const adopted = M.adoptDisk(id, diskContent, expectPath);
+	// MIG-107 — an adopted external change rewrites props wholesale (legitimately, and it re-bases).
+	// Ticked ONLY when it actually adopted: adoptDisk returns false for an echo or a dirty refusal,
+	// and announcing those would wake every panel for a change that did not happen.
+	if (adopted) bumpProps();
+	return adopted;
 }
 
 /** Unsaved edits beyond the last persisted version. */

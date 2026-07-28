@@ -216,6 +216,133 @@ export function setProps(id: string, props: FrontmatterProperty[], expectPath?: 
 	m.version++;
 }
 
+// ─── MIG-107 Slice 2: the PROPERTY INTENTS ──────────────────────────────────────────────────────
+//
+// **Why these exist.** `setProps` replaces the WHOLE array. That is correct for a caller that means
+// "replace everything" (there are exactly two — `replaceContent` and `adoptDisk`, both of which also
+// re-base), and it is the defect for a caller that means "change one property", because the array it
+// submits was assembled from a projection of the file as it looked when the note was opened. Two such
+// callers cancel each other out: MIG-107 §3.5.1, reproduced in `tests/pj-174/propsOwnership.test.ts`.
+//
+// An intent names the ONE property it is about and applies to whatever the model currently holds, so
+// adding a tag cannot touch `stage` — the loss becomes unrepresentable rather than guarded against.
+//
+// **Keyed by KEY, and that was measured, not assumed** (MIG-107 §5.4, `propsContract.test.ts`):
+// `composeFrontmatter` addresses frontmatter by key via `Map`s, so the persisted form structurally
+// cannot hold duplicates and position is not identity. A row id would invent an identity the file
+// format cannot store.
+//
+// **These do NOT announce.** This module stays deliberately non-reactive (see the header, and the
+// §C-2 lesson: a store update inside a `{#key}` teardown re-enters the render the store drives). The
+// reactive signal that lets panels observe changes lives OUTSIDE, in `propsSignal.ts`, ticked by the
+// `noteSession` wrappers — so the choice of which call sites announce stays explicit and reviewable.
+//
+// Every intent: identity-guarded like `setProps`, a no-op when the model is absent, and it bumps
+// `version` (→ dirty) ONLY when it actually changed something — a no-op edit must not mark the note
+// unsaved. Each returns whether it mutated, so callers can skip pointless saves.
+
+/** Set (or update) ONE property's value. Returns false when the key is absent or unchanged. */
+export function setPropValue(
+	id: string,
+	key: string,
+	value: string,
+	opts?: { listItems?: string[]; type?: FrontmatterProperty['type'] },
+	expectPath?: string,
+): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	const i = m.props.findIndex((p) => p.key === key);
+	if (i === -1) return false;
+	const cur = m.props[i];
+	const nextType = opts?.type ?? cur.type;
+	const nextItems = opts?.listItems;
+	const sameItems =
+		JSON.stringify(cur.listItems ?? null) === JSON.stringify(nextItems ?? cur.listItems ?? null);
+	if (cur.value === value && cur.type === nextType && sameItems) return false; // no-op: stay clean
+	const next = cloneProps(m.props);
+	next[i] = { ...cur, value, type: nextType, ...(nextItems ? { listItems: [...nextItems] } : {}) };
+	m.props = next;
+	m.cid = cidOf(m.props);
+	m.version++;
+	return true;
+}
+
+/**
+ * Add a NEW property. Refuses an empty key and refuses to overwrite an existing one — a collision is
+ * the caller's to resolve, never a silent last-wins (MIG-107 §5.4). Refusing the empty key is also
+ * what closes PJ-178: a half-typed panel row can no longer reach the file as a literal `"": ""`.
+ */
+export function addProp(id: string, prop: FrontmatterProperty, expectPath?: string): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	if (!prop.key || !prop.key.trim()) return false;
+	if (m.props.some((p) => p.key === prop.key)) return false;
+	m.props = [...cloneProps(m.props), ...cloneProps([prop])];
+	m.cid = cidOf(m.props);
+	m.version++;
+	return true;
+}
+
+/** Remove ONE property. Returns false when the key was not there. */
+export function removeProp(id: string, key: string, expectPath?: string): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	if (!m.props.some((p) => p.key === key)) return false;
+	m.props = cloneProps(m.props).filter((p) => p.key !== key);
+	m.cid = cidOf(m.props);
+	m.version++;
+	return true;
+}
+
+/**
+ * Rename a property's KEY in place (compose turns this into a remove + an add — §5.4).
+ * **Refuses a collision** rather than silently overwriting the other property: per the Boss-approved
+ * ruling, a rename onto an existing key is reported to the user, not resolved by last-wins.
+ */
+export function renamePropKey(id: string, oldKey: string, newKey: string, expectPath?: string): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	if (!newKey || !newKey.trim() || oldKey === newKey) return false;
+	const i = m.props.findIndex((p) => p.key === oldKey);
+	if (i === -1) return false;
+	if (m.props.some((p) => p.key === newKey)) return false; // collision — caller surfaces it
+	const next = cloneProps(m.props);
+	next[i] = { ...next[i], key: newKey };
+	m.props = next;
+	m.cid = cidOf(m.props);
+	m.version++;
+	return true;
+}
+
+/**
+ * Move `key` to the position currently held by `beforeKey` (or to the end when `beforeKey` is null).
+ *
+ * Order does NOT survive to disk for existing keys — compose rewrites values in place and only
+ * APPENDS genuinely new ones (`propsContract.test.ts` pins that shuffling alone is a byte-identical
+ * write). It is preserved here because it is what the panel displays, and because a future
+ * order-preserving serializer should not need the panel rewritten to support it.
+ */
+export function reorderProps(id: string, key: string, beforeKey: string | null, expectPath?: string): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	const from = m.props.findIndex((p) => p.key === key);
+	if (from === -1) return false;
+	const next = cloneProps(m.props);
+	const [moved] = next.splice(from, 1);
+	const to = beforeKey === null ? next.length : next.findIndex((p) => p.key === beforeKey);
+	if (beforeKey !== null && to === -1) return false; // unknown anchor — refuse rather than guess
+	next.splice(to, 0, moved);
+	if (next.every((p, i) => p.key === m.props[i].key)) return false; // no-op move
+	m.props = next;
+	m.version++;
+	return true;
+}
+
 /**
  * PJ-088 — replace the model's ENTIRE content (frontmatter + body) from an authored/merged source,
  * RE-BASING so compose emits it byte-consistently. Distinct from setProps+setBody: those leave the

@@ -1092,3 +1092,75 @@ svelte-check **0 errors** (after replacing a `!.base` non-null assertion with an
 
 **Next: Slice 2** — the intents + the `propsVersion` signal in the model, with `setProps` retained
 for the two legitimate wholesale callers. Nothing consumes them yet; inert by construction.
+
+---
+
+# MIG-107 Slice 2 — the intents + the read bridge (2026-07-28). Inert by construction.
+
+## The design constraint that shaped where things went
+
+`noteModel`'s own header states it is **deliberately non-reactive**, and gives the reason as a scar:
+*"a store update inside a `{#key}` teardown re-enters the render the store drives"* (§C-2). So the
+reactive signal could **not** go in the model — making the authority announce its own changes would
+re-create exactly that hazard, and the PropertyEditor `onDestroy` flush (`:512`) is a props write
+*during teardown*.
+
+Resolution: the signal is a **new leaf module `propsSignal.ts`**, ticked by the `noteSession`
+wrappers. The model stays inert; **which call sites announce stays explicit and reviewable** instead
+of being buried inside the authority. Three rules are written into that module, each load-bearing:
+
+1. **Never key a `{#key}` block on it** — that is the §C-2 hazard restated. `reloadVersion` remains
+   the only remount signal.
+2. **It carries no payload** — a payload would be a second copy of the truth, which is the very
+   defect being removed. Subscribers are told *"look again"* and must read the model.
+3. **One global counter, not a store per note** — safe because an untouched note's `props` array
+   **reference** is unchanged, so a `$derived` over it sees nothing and no panel re-renders. Cheaper
+   than a map of stores, and it cannot leak an entry when a note closes.
+
+## What landed
+
+Five intents in `noteModel`, each identity-guarded like `setProps`, each bumping `version` **only on
+a real change** (a no-op edit must not mark a note unsaved), each returning whether it mutated:
+
+| intent | refuses |
+|---|---|
+| `setPropValue` | an absent key; an unchanged value |
+| `addProp` | an **empty key** (this is what closes **PJ-178**) and an **existing key** |
+| `removeProp` | a key that is not there |
+| `renamePropKey` | empty/no-op, and a **collision** — reported, never silently merged (§5.4 ruling) |
+| `reorderProps` | an unknown anchor — refuses rather than guessing |
+
+`setProps` is retained, now documented as wholesale-only, for the two callers that legitimately mean
+"replace everything" (`replaceContent`, `adoptDisk` — both of which also re-base).
+
+## The test that carries the argument
+
+`propsIntents.test.ts` 19/19. The one that matters: **"no intent can touch a property it was not
+named"** — a panel issues every operation it has (set / add / remove / rename / reorder) and another
+writer's `tags` entry is byte-identical afterwards. That is what makes the AK-2/AK-3 loss
+*unrepresentable* rather than guarded against. Plus: the model can never be left holding an empty or
+duplicate key (matching exactly what compose can persist), and the signal **does not tick on body
+typing** — invariant #3, pinned with a 25-keystroke burst.
+
+## Inert — verified, not asserted
+
+`grep` for every intent and for the signal, outside their own modules and the tests: **no app
+consumer.** The announce sites *are* wired now (`open`, `ensure`, `editProps`, `replaceContent`,
+`externalChange`), so Slice 3 only has to add the subscriber — and with zero subscribers a tick is a
+counter increment and nothing else.
+
+## Safety inspection — deliberately deferred to Slice 4, and why
+
+The standing order asks for a diff-scoped inspection per build. This diff adds code that **nothing
+can reach**: a silent-failure hunt over unreachable functions has no target, and the risk lands at
+Slice 4 where the panel is actually swapped onto them. It runs there, on the wiring. Stated rather
+than skipped quietly. (PJ-166 also still forces every run whole-app — five strikes — at ~32 min and
+~10 M tokens, which is its own argument against spending it on an inert slice.)
+
+## Gates
+
+vitest **57 files / 647 passed + 2 expected-fail** · Sight perf SERIAL lane **31/31** ·
+svelte-check **0 errors**.
+
+**Next: Slice 3** — PropertyEditor READS from the model behind the toggle, still writing whole
+arrays. First Boss-testable step: both panels showing the same truth.
