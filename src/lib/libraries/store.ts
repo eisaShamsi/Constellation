@@ -14,7 +14,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, editBody as editNoteBody, bodyForView as modelBodyForView, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
 import { splitFrontmatter, composeFrontmatter, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -1434,6 +1434,22 @@ export async function flushOpenTabOrAbort(openTab: OpenTab, origin: string): Pro
 	return r.ok;
 }
 
+/**
+ * MIG-107 — the "updated" / "modified" auto-date rule, extracted so the intent commit path applies
+ * exactly the same rule as the legacy whole-array path. One definition, not two that can drift.
+ */
+export function withAutoUpdatedDate(properties: FrontmatterProperty[]): FrontmatterProperty[] {
+	const now = new Date();
+	const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+	return properties.map((p) => {
+		const k = p.key.toLowerCase();
+		if ((k === 'updated' || k === 'modified' || k === 'حُدث' || k === 'تعديل') && p.type === 'date') {
+			return { ...p, value: dateStr };
+		}
+		return p;
+	});
+}
+
 export async function saveTabContent(
 	tabId: string,
 	filePath: string,
@@ -1445,24 +1461,22 @@ export async function saveTabContent(
 	// on the 533-link note, measured). Passing `bodyUnchanged` flips the embed to
 	// `force: false`, which makes the Rust command skip when the note is already
 	// embedded (and still embed it if it never was — safe). Body edits leave it false.
-	bodyUnchanged: boolean = false
+	bodyUnchanged: boolean = false,
+	/**
+	 * MIG-107 Slice 4 — the caller has ALREADY put its edit into the model, one property at a time
+	 * (`propsCommit`), so this must not replace the model's array from `properties`. That replace is
+	 * the defect: an array assembled from one panel's view deletes whatever another writer changed
+	 * in the meantime. Everything downstream is unchanged — compose still reads the model.
+	 */
+	propsAlreadyInModel: boolean = false
 ): Promise<void> {
-	// Auto-update the "updated" / "حُدث" property if it exists.
-	const now = new Date();
-	const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-	const updatedProps = properties.map(p => {
-		const k = p.key.toLowerCase();
-		if ((k === 'updated' || k === 'modified' || k === 'حُدث' || k === 'تعديل') && p.type === 'date') {
-			return { ...p, value: dateStr };
-		}
-		return p;
-	});
+	const updatedProps = withAutoUpdatedDate(properties);
 	// Save-Durability (2026-07-08) — push props to the MODEL (the source of truth)
 	// BEFORE the single-flight write guard, so a concurrent property edit arriving while
 	// a slow write is in flight is NEVER dropped: it lands in the model (dirty) and the
 	// next save/flush persists it. The guard serializes the WRITE, never the model update.
 	// (Fixes the saveLocks-drop silent-loss — same class as this migration; wf_5f9b257d.)
-	if (SINGLE_OWNERSHIP) editNoteProps(tabId, updatedProps, filePath);
+	if (SINGLE_OWNERSHIP && !propsAlreadyInModel) editNoteProps(tabId, updatedProps, filePath);
 	// PropertyEditor's frontmatter edits land here directly, so the same F2 post-cascade-stomp gate
 	// NoteEditor uses must apply here too (see `isCascading`) — it gates the DISK WRITE.
 	//
@@ -3915,7 +3929,30 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 			if (!keepUserModel) {
 				openNoteModel(t.id, effectivePath, fresh!);
 				adoptedFreshDisk = true;
+			} else if (fresh !== null) {
+				// ★ PJ-174 #1d (safety inspection, 2026-07-28) — APP-KILLER, introduced by #1b itself.
+				//
+				// #1b correctly stopped destroying the user's typing, but it kept the model by calling
+				// `repathNoteModel` ALONE — and `setPath` moves `m.path` and nothing else. The model's
+				// G4 write-base stayed at the PRE-rename bytes, while `rename_item` had just rewritten
+				// `title:` on disk and appended the old title to `aliases`. compose then diffs
+				// base.props against props, sees ZERO difference, and re-emits the OLD frontmatter
+				// verbatim — so the next debounced save silently reverted the title, deleted the alias,
+				// and left every wikilink the cascade had just rewritten pointing at a title that
+				// existed nowhere. For a canonical note (title lives only in frontmatter) that undoes
+				// the whole rename. Nothing surfaced it: the write is watcher-suppressed, and markSaved
+				// + diskBaseline then made the stale model permanently self-consistent.
+				//
+				// Keep the user's BODY — the point of #1b — but RE-BASE the frontmatter to the renamed
+				// file, which is what the clean branch above gets for free from `openNoteModel`.
+				const dirtyBody = modelBodyForView(t.id);
+				replaceContentInModel(t.id, fresh, t.path); // props + base ← the post-rename disk
+				repathNoteModel(t.id, effectivePath);
+				editNoteBody(t.id, dirtyBody, effectivePath); // …and the user's unsaved body back on top
 			} else {
+				// Flush FAILED: there is no trustworthy disk to re-base from, and the dirty model plus
+				// its retained net are the only copy of the user's work. Move the identity and leave
+				// everything else alone; save-health retries the write.
 				repathNoteModel(t.id, effectivePath);
 			}
 			// Path comes from Rust (may equal oldPath for canonical files).

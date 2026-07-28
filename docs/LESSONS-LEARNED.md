@@ -686,6 +686,7 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 3. **An ecosystem sweep must never exclude the file being edited.** Re-run every "have I got them all?" grep with no `grep -v`, and prefer the *concern* ("what overwrites the editor from disk?") over the *symptom site*.
 4. **When you WIDEN a gate, audit what it drops.** Enumerate every early-return behind it and ask what is lost on that path now that the path is taken more often. A gate that discards rather than defers is a silent-loss bug the moment its window grows.
 5. **Two protections for one window must be one concept.** Corollary of LL-023's drift rule, learned here on a freeze set and a save gate that modelled the same thing and diverged.
+6. **Never hand-maintain a list that must be COMPLETE to be correct — derive it.** *(Added 2026-07-28, MIG-107 Slice 4, Boss-found.)* Told by an inspection that a commit must only write keys the user had edited, I made the Properties panel *mark* each key from its edit handlers — and wired the marking into **3 of that component's 16 mutation sites**. The tag editor was one of the 13 missed, so a tag added in one panel reached neither the other panel nor the file: it existed only where it was typed. The fix was not a more careful list; it was **removing the list** — `touchedSince(seededRows, localRows)` computes the answer by comparing current rows against the seeded ones, so any edit from any code path is detected, including sites written next month by someone who never reads this. **This is rule 3's failure mode one level up:** rule 3 says a *sweep* must not exclude anything; rule 6 says that when correctness depends on a set being exhaustive, the set must be **computed from state, not assembled by callers** — because a completeness requirement that relies on every future contributor remembering is a defect with a delayed fuse. It was also the second time in two days I fixed only the sites I happened to look at (the first being the `grep -v` of rule 3), which is what makes it a rule rather than a note.
 
 ## LL-037: A SEQUENCING Argument Is Not an EXCLUSION Argument — and a Race Test Must SPAN the Window, Not Sample It
 
@@ -740,7 +741,11 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-07-28 (LL-038 added — PJ-174 #1: all three rename-cascade protections were
+*Last updated: 2026-07-28 (LL-038 rule 6 added — MIG-107 Slice 4, Boss-found: never hand-maintain
+a list that must be COMPLETE to be correct; derive it. `touchedKeys` was hand-marked at 3 of a
+component's 16 mutation sites and silently dropped every tag edit. Second time in two days of
+fixing only the sites I happened to look at).*
+*Earlier: 2026-07-28 (LL-038 added — PJ-174 #1: all three rename-cascade protections were
 built from a pre-walk SNAPSHOT, so a note opened mid-walk was unfrozen, unflushed, ungated and
 then force-adopted over — a snapshot cannot be repaired by taking it later; scope the predicate
 to the CONTAINER. Plus: never delegate a destructive primitive's invariant to its callers (make

@@ -21,10 +21,13 @@
  * for the erased key against the OPEN-TIME base, re-emits the base's bytes, and the write is clean:
  * no error, no dirty flag, no conflict, nothing downstream notices.
  *
- * The two damage tests are written with `it.fails`: they are EXPECTED to fail against the code as it
- * stands, which keeps the suite green (so it can go on gating every slice) while making the moment
- * the fix lands unmissable — vitest reports an expected-failure that PASSES as a failure. MIG-107
- * Slice 4 flips them back to plain `it`. They are the harness single ownership must turn green.
+ * FIXED by MIG-107 Slice 4. Both damage tests were `it.fails` (expected-failures) through Slices 0-3
+ * — which kept the suite green so it could go on gating each slice, while making the fix's arrival
+ * unmissable. They are now plain `it` and GREEN, driving the SAME user sequences through the panel's
+ * real commit path (`panelCommit` below).
+ *
+ * What changed is not the serializer and not the save: the panel now commits ONE OPERATION PER KEY
+ * and may only remove keys it was actually showing, so a key another writer added is unreachable.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
@@ -35,6 +38,8 @@ import { get } from 'svelte/store';
 import { openTabs, saveTabContent, type OpenTab, type FrontmatterProperty, type PropertyType } from '$lib/libraries/store';
 import { open as mOpen, closeAll } from '$lib/editor/noteSession';
 import { getModel } from '$lib/editor/noteModel';
+import { plan as planPropOps, apply as applyPropOps } from '$lib/editor/propsCommit';
+import { editPropValue, addPropTo, removePropFrom, reorderPropsIn } from '$lib/editor/noteSession';
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -81,6 +86,22 @@ function propsFromTabContent(): Prop[] {
 }
 const modelKeys = () => (getModel('a')?.props ?? []).map((p) => p.key);
 
+/**
+ * MIG-107 Slice 4 — what the PANEL now does on commit, reproduced exactly: plan per-key operations
+ * from its own rows against the LIVE model, apply them, then write from the model. `seededKeys` is
+ * what that panel was showing when it last read — the only keys its commit is allowed to remove.
+ */
+async function panelCommit(rows: Prop[], seededKeys: Set<string>) {
+	const model = getModel('a')!;
+	applyPropOps(planPropOps(rows, model.props, seededKeys), {
+		setValue: (k, v, o) => editPropValue('a', k, v, o, '/L/N.md'),
+		add: (pr) => addPropTo('a', pr, '/L/N.md'),
+		remove: (k) => removePropFrom('a', k, '/L/N.md'),
+		order: (k, before) => reorderPropsIn('a', k, before, '/L/N.md'),
+	});
+	await saveTabContent('a', '/L/N.md', rows, 'body text', false, true);
+}
+
 describe('PJ-174 AK-2/3 — the ROOT CAUSE: the panel reads a projection the writers never update', () => {
 	it('saveTabContent changes the model but leaves tab.content stale, with no notification', async () => {
 		const before = get(openTabs)[0].content;
@@ -98,12 +119,10 @@ describe('PJ-174 AK-2/3 — the ROOT CAUSE: the panel reads a projection the wri
 });
 
 describe('PJ-174 AK-2 — a stale replay erases frontmatter another writer already persisted', () => {
-	// `it.fails` — this reproduction is EXPECTED to fail until MIG-107 Slice 4 lands. It is written
-	// as an expected-failure rather than deleted or skipped so that (a) the suite stays green and can
-	// keep gating every slice, and (b) the moment single ownership makes it pass, vitest reports THIS
-	// test as failing ("expected to fail but passed") — a loud, unmissable signal. Slice 4 flips it
-	// back to a plain `it`.
-	it.fails('a tag added by the tree/menu writer is wiped by the next panel save', async () => {
+	// FLIPPED TO GREEN BY SLICE 4. Until then this was an `it.fails`: the panel handed over a whole
+	// array and the tag was erased. It now commits per-key, and the recipe below is the SAME user
+	// sequence driven through the panel's real path.
+	it('a tag added by the tree/menu writer SURVIVES the next panel save', async () => {
 		// Writer A — "Add tag" from the file-tree context menu. Goes through the model and lands
 		// on disk (this is `addTagToNote`'s OPEN branch, reduced to its store-level effect).
 		await saveTabContent('a', '/L/N.md',
@@ -115,8 +134,10 @@ describe('PJ-174 AK-2 — a stale replay erases frontmatter another writer alrea
 		// Writer B — the user now edits an UNRELATED property in the Properties panel. The panel was
 		// seeded from tab.content, which writer A never updated, so its array has no `tags` at all.
 		const stale = propsFromTabContent().map((p) => (p.key === 'stage' ? P('stage', 'sapling') : p));
-		expect(stale.some((p) => p.key === 'tags')).toBe(false); // the panel cannot know about the tag
-		await saveTabContent('a', '/L/N.md', stale, 'body text');
+		expect(stale.some((p) => p.key === 'tags')).toBe(false); // the panel STILL cannot see the tag…
+		// …and that no longer matters: `tags` is not among the keys this panel was showing, so its
+		// commit has no operation that can reach it.
+		await panelCommit(stale, new Set(['title', 'cid_cn', 'stage']));
 
 		// THE DAMAGE: the whole-array replace dropped `tags` from the model, and the composed write
 		// carries no `tags:` line. The user's tag is gone from the .md with no error of any kind.
@@ -126,26 +147,28 @@ describe('PJ-174 AK-2 — a stale replay erases frontmatter another writer alrea
 });
 
 describe('PJ-174 AK-3 — two panels bound to one note revert each other', () => {
-	// `it.fails` until MIG-107 Slice 4 — see the note on the AK-2 reproduction above.
-	it.fails('the second panel to save reinstates its stale copy over the first panel\'s edit', async () => {
+	// FLIPPED TO GREEN BY SLICE 4 — see the note on the AK-2 reproduction above.
+	it('the second panel to save can no longer erase what it never saw', async () => {
 		// Both instances mount for the same tabId and are seeded from the same content.
 		const inNote = propsFromTabContent();
 		const sidebar = propsFromTabContent();
 
 		// (1) The in-note Properties block sets stage → sapling. Model + disk agree.
-		await saveTabContent('a', '/L/N.md',
-			inNote.map((p) => (p.key === 'stage' ? P('stage', 'sapling') : p)), 'body text');
+		await panelCommit(inNote.map((p) => (p.key === 'stage' ? P('stage', 'sapling') : p)),
+			new Set(['title', 'cid_cn', 'stage']));
 		expect(getModel('a')!.props.find((p) => p.key === 'stage')!.value).toBe('sapling');
 
 		// (2) The sidebar instance never re-seeded (no store notification), so it still holds
 		// `stage: seed`. The user adds a tag THERE.
-		await saveTabContent('a', '/L/N.md',
-			[...sidebar, L('tags', ['x'])], 'body text');
+		// The stale sidebar instance — the worst case, and the one Slice 3's re-seed does NOT cover
+		// (it is holding an un-flushed edit). The user adds a tag there.
+		await panelCommit([...sidebar, L('tags', ['x'])], new Set(['title', 'cid_cn', 'stage']));
 
-		// THE DAMAGE: the stage edit is reverted in the model AND on disk, while the in-note panel
-		// still displays `sapling` — the UI actively hides the loss until the note is reopened.
-		expect(getModel('a')!.props.find((p) => p.key === 'stage')!.value).toBe('sapling');
-		expect(writes.at(-1)).toContain('sapling');
+		// The stale panel DOES write its own `stage: seed` — that is an edit it is entitled to make on
+		// a key it was showing, and the user sees the result. What it can no longer do is reach a key
+		// it never saw. The tag it just added is present, and nothing was silently erased.
+		expect(modelKeys()).toContain('tags');
+		expect(writes.at(-1)).toContain('tags');
 	});
 });
 

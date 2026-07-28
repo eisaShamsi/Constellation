@@ -13,6 +13,9 @@
 	import { PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { getModel } from '$lib/editor/noteModel';
 	import { propsVersion } from '$lib/editor/propsSignal';
+	import { plan as planPropOps, apply as applyPropOps, touchedSince } from '$lib/editor/propsCommit';
+	import { editPropValue, addPropTo, removePropFrom, reorderPropsIn } from '$lib/editor/noteSession';
+	import { withAutoUpdatedDate } from '$lib/libraries/store';
 
 	// Share the user's configured pill shape with BacklinksPanel /
 	// OutgoingLinksPanel / CCSView so frontmatter tag pills track
@@ -184,6 +187,24 @@
 	});
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
+	/**
+	 * MIG-107 Slice 4 — the keys this panel was showing when it last read the model.
+	 *
+	 * This is the ONLY thing a commit is allowed to delete from. A key that appears afterwards —
+	 * a tag added from the file-tree menu, a property set in the other panel — is not in this set,
+	 * so there is no path by which this panel's next save can remove it. See propsCommit.ts.
+	 * Deliberately NOT `$state`: it is bookkeeping for the commit, never rendered.
+	 */
+	let seededKeys = new Set<string>();
+	/**
+	 * MIG-107 #1e — the rows exactly as this panel was seeded with them.
+	 *
+	 * A commit may only SET keys that DIFFER from these, so a value another writer changed on a key
+	 * both panels show is never written back stale. Derived at commit time (`touchedSince`) rather
+	 * than hand-marked in the edit handlers: the hand-marked version was wired at 3 of this
+	 * component's 16 mutation sites and silently dropped tag edits entirely.
+	 */
+	let seededRows: FrontmatterProperty[] = [];
 	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 	let mounted = true; // §C — guards the async Hijri converter from writing after teardown
 	let focusRaf: number | null = null;
@@ -398,6 +419,8 @@
 			// that is a different note, and its pending edit is flushed by the teardown path.
 			const localEditPending = saveTimeout !== undefined;
 			if ((!saving && !localEditPending) || tabChanged) {
+				seededKeys = new Set(sourceProps.map(p => p.key).filter(k => !!k && !!k.trim()));
+				seededRows = sourceProps.map(p => ({ ...p, listItems: p.listItems ? [...p.listItems] : undefined }));
 				editableProps = sourceProps.map(p => {
 					// Apply registered type override if available
 					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
@@ -415,8 +438,13 @@
 						listItems
 					};
 				});
+				// ★ PJ-174 #1e — advance the snapshot ONLY when we actually re-seeded. It used to advance
+				// even on the skip path, marking a model change "seen" that never reached the rows —
+				// so it never re-seeded later either (propsChanged was false forever after), and the
+				// panel displayed a stale value indefinitely. Inside the branch, a skipped change is
+				// retried on the next tick instead.
+				prevPropsSnapshot = currentSnapshot;
 			}
-			prevPropsSnapshot = currentSnapshot;
 			if (tabChanged) {
 				prevTabId = tabId;
 				tagInputs = {};
@@ -543,7 +571,10 @@
 				/* Direct mutation so onflush reads fresh properties */
 				const tab = get(openTabs).find(t => t.id === mountedTabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
-				saveTabContent(mountedTabId, mountedFilePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
+				// MIG-107 Slice 4 — the teardown flush commits through the SAME intent path. It used to
+				// replay this instance's whole array, which is how an unmount reverted another writer's
+				// frontmatter; now it can only touch keys this panel was actually showing.
+				commitAndSave(mountedTabId, mountedFilePath).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
 	});
@@ -860,6 +891,44 @@
 		debouncedSave();
 	}
 
+	/**
+	 * MIG-107 Slice 4 — THE SWAP. Put this panel's edit into the model one property at a time, then
+	 * write from the model.
+	 *
+	 * The old path handed `editableProps` to `saveTabContent`, which replaced the model's whole
+	 * array. That is the defect: an array assembled from one panel's view silently deletes whatever
+	 * another writer changed in the meantime (PJ-174 AK-2/AK-3). Now the planner turns the panel's
+	 * rows into per-key operations, and it may only REMOVE keys in `seededKeys` — so a key this
+	 * panel never saw cannot be reached at all.
+	 *
+	 * `propsAlreadyInModel: true` tells `saveTabContent` not to push an array; compose reads the
+	 * model, which the intents have already updated. The auto-"updated" date rule is applied here
+	 * through the SAME shared helper the legacy path uses, so the two cannot drift.
+	 */
+	async function commitAndSave(id: string, path: string): Promise<void> {
+		if (!PROPS_SINGLE_OWNERSHIP) {
+			await saveTabContent(id, path, editableProps, body);
+			return;
+		}
+		const model = getModel(id);
+		if (!model) { await saveTabContent(id, path, editableProps, body); return; } // no model → legacy
+		const touched = touchedSince(seededRows, editableProps);
+		const ops = planPropOps(withAutoUpdatedDate(editableProps), model.props, seededKeys, touched);
+		applyPropOps(ops, {
+			setValue: (k, v, o) => editPropValue(id, k, v, o, path),
+			add: (pr) => addPropTo(id, pr, path),
+			remove: (k) => removePropFrom(id, k, path),
+			order: (k, before) => reorderPropsIn(id, k, before, path),
+		});
+		// The panel now knows about everything the model holds — including keys another writer added
+		// that this commit deliberately left alone. Without this, the NEXT commit would still treat
+		// them as unseen and could never remove them even when the user does delete them.
+		seededKeys = new Set(getModel(id)?.props.map((p) => p.key) ?? []);
+		// Committed: the panel's rows are now the model's, so nothing of this panel's is ahead of it.
+		seededRows = (getModel(id)?.props ?? []).map((p) => ({ ...p, listItems: p.listItems ? [...p.listItems] : undefined }));
+		await saveTabContent(id, path, editableProps, body, false, true);
+	}
+
 	function debouncedSave() {
 		// G3 — a read-only view never persists a property edit (WA#6). Returning here
 		// keeps the note's model clean so the cross-window freshness sync always adopts.
@@ -883,7 +952,7 @@
 				   This ensures onflush reads fresh properties when the tab is closed. */
 				const tab = get(openTabs).find(t => t.id === tabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
-				await saveTabContent(tabId, filePath, editableProps, body);
+				await commitAndSave(tabId, filePath);
 			} catch (err) {
 				console.error('Failed to save:', err);
 			}

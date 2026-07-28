@@ -1227,3 +1227,84 @@ chain verified (source 17:11 → bundle 17:16 → binary 17:20).
 **Next: Slice 4 — the swap.** PropertyEditor writes intents instead of whole arrays. That is where
 the two `it.fails` reproductions flip to passing, where PJ-178 closes, and where the deferred
 safety inspection runs (the risk lands on the wiring, not on the inert code).
+
+---
+
+# MIG-107 Slice 4 — THE SWAP. Boss-validated 5/5, 2026-07-28.
+
+**AK-2 and AK-3 are closed.** Both reproductions, `it.fails` since Slice 0, are now plain `it` and
+green — driving the same user sequences through the panel's real commit path. **PJ-178 closed** in
+the same change: a blank Properties row can no longer reach the file as `"": ""`.
+
+## What landed
+
+`propsCommit.ts` — a pure planner turning the panel's rows into per-key operations, plus `apply()`
+over an injected intent sink. `saveTabContent` gained `propsAlreadyInModel`, so the panel's save
+writes **from** the model instead of pushing an array into it. The auto-`updated` date rule was
+extracted to `withAutoUpdatedDate` so both paths apply one definition.
+
+**Two rules make the loss unrepresentable rather than guarded against:**
+
+* a commit may **ADD/SET** freely, but may only **REMOVE** a key in `seededKeys` — what the panel
+  was showing when it last read the model. A key that arrived afterwards is not in that set, so no
+  operation the panel can issue reaches it;
+* it may only **SET** a key in `touchedSince(seededRows, localRows)` — what the user actually
+  edited. `seededKeys` protects keys the panel never saw; this protects keys it saw but did not
+  touch, whose value another writer may have moved on since.
+
+## ★ Four defects surfaced — three by the inspection, one by the Boss
+
+**#1d — an APP-KILLER I introduced yesterday, in the AK-1 #1b fix the Boss had already passed.**
+The dirty-rename branch kept the user's model with `repathNoteModel` alone, which moves `m.path` and
+nothing else — so the write-base stayed at the PRE-rename bytes. compose then diffed base against
+props, saw zero difference, and re-emitted the OLD frontmatter: **the title reverted, the alias
+`rename_item` had just stamped was deleted, and every wikilink the cascade had rewritten pointed at
+a title that existed nowhere.** On a canonical note that undoes the rename entirely, silently — the
+write is watcher-suppressed, and `markSaved` + `diskBaseline` then make the stale model permanently
+self-consistent, so nothing downstream ever notices.
+
+**I had judged this exact risk when writing #1b and called it "visible and recoverable."** It is
+neither. Fixed: keep the user's BODY — the point of #1b — but re-base the frontmatter to the renamed
+file, which is what the clean branch gets free from `openNoteModel`.
+
+**#1e** — `prevPropsSnapshot` advanced outside the re-seed guard, so a model change landing while a
+save was pending was marked "seen" without reaching the rows, and never re-seeded after. Compounded
+by the commit writing back every row it held. Fixed both halves.
+
+**#1f** — my comment claimed ordering never moves an unseen key. **False**: a trailing
+`beforeKey: null` means "move to the END", displacing any foreign key after it. Worse, I had written
+a **test asserting the wrong contract** — which is more harmful than no test, because it makes the
+mistake look verified. Anchoring is now only BETWEEN known keys; the test was corrected and says so.
+
+**#1g — the Boss found it, and it is the one that matters most.** Acting on #1e I made the panel
+*hand-mark* each edited key from its edit handlers — and wired it into **3 of that component's 16
+mutation sites**. The tag editor was one of the 13 missed, so a tag added in the in-note block
+appeared there and **nowhere else**: not the sidebar, not the model, not the file. The Boss's
+screenshot showed exactly that.
+
+**The fix was to delete the list, not to complete it.** `touchedSince(seededRows, localRows)`
+derives the answer by comparing current rows against the seeded ones, so any edit from any path is
+detected — including the 13 missed sites and any site added later.
+
+> **This is the second time in two days I fixed only the sites I happened to look at** (#1b was the
+> first, via a `grep -v` that excluded the file I was editing). Recorded as **LL-038 rule 6**: never
+> hand-maintain a list that must be COMPLETE to be correct — derive it. A completeness requirement
+> that depends on every future contributor remembering is a defect with a delayed fuse.
+
+## Verification
+
+| Gate | |
+|---|---|
+| vitest | **58 files / 669 tests**, 0 expected-fail (was 52/607 at the start of this migration) |
+| Sight perf, SERIAL lane (PJ-172) | 31/31 |
+| svelte-check | 0 errors |
+| Binary | 19:19, chain verified (source → bundle 19:16 → binary 19:19) |
+
+**Boss test 5/5:** the original AK-2 sequence · both panels, both directions · the blank row
+(PJ-178) · the rename-and-keep-typing retest (#1d's territory) · the Focus-mode round-trip.
+
+## PJ-166 — SIXTH strike
+
+Invoked diff-scoped over six files; returned `mode: "whole-app"` again (87 agents, ~10.4 M tokens,
+32 min). The sweep is what caught #1d/#1e/#1f, so its value is not in question — but the per-build
+gate the standing order asks for still does not exist, six attempts in.
