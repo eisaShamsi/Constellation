@@ -1032,3 +1032,63 @@ corollary); claiming otherwise would repeat LL-036's over-privileged-fixture mis
 
 **Next: Slice 1** — read the three remaining prop writers (`NoteEditor.svelte:205`, `:478`,
 `+layout.svelte:5064`) and classify each as intent or legitimate wholesale. No behaviour change.
+
+---
+
+# MIG-107 Slice 1 — every prop writer classified (2026-07-28). No behaviour change.
+
+Swept **with no exclusions** (LL-038 rule 3 — the rule exists because yesterday's sweep excluded the
+file being edited and hid an APP-KILLER). **Seven** writers of a model's props, all classified:
+
+| site | reads its array FROM | await between read & write? | verdict |
+|---|---|---|---|
+| `store.ts:1465` (`saveTabContent`) | the panel's `editableProps` — a projection captured at open | stale **by construction** | ⚠ **THE DEFECT** |
+| `NoteEditor.svelte:205` (stage) | `getModel(tab.id).props` | **none** | ✅ sound |
+| `NoteEditor.svelte:478` (shape) | `model.props` | **none** | ✅ sound |
+| `+layout.svelte:5064` (template apply) | `getModel(tab.id).props` | **none** | ✅ sound |
+| `noteModel.ts:234` (`replaceContent`) | merged content, **re-bases `m.base`** | — | ✅ legitimate wholesale — KEEP |
+| `noteModel.ts:362` (`adoptDisk`) | disk, **re-bases + syncs baseline** | — | ✅ legitimate wholesale — KEEP |
+| `noteModel.ts:214` (`setProps`) | the caller's array | — | the primitive, kept for the two above |
+
+## The finding that changes what the intent API is FOR
+
+**The three non-panel writers are not defects.** Each reads the model and writes back a derived array
+with **no intervening `await`**, so what it writes is derived from current truth. The bug is unique
+to the PropertyEditor path, where the array originates from a projection captured minutes earlier.
+
+⇒ Slice 5 converts them **for uniformity, not repair** — so that a correct read-modify-write cannot
+later regress into a stale one (someone adding an `await` between the read and the write). That
+makes Slice 5 the lowest-risk slice rather than a second front. Saying "all four writers were
+broken" would have been the easier story and it would have been false.
+
+## The mechanism, exactly — why the panel path is the broken one
+
+`setProps` changes `m.props` **without advancing `m.base`**, unlike `replaceContent` / `adoptDisk`
+which both re-base. That is correct and deliberate — the base must stay at last-known-disk bytes for
+the byte-perfect in-place contract — but it means **every compose diffs against the file as it was at
+open.** With ONE source that is complete. With two:
+
+1. Writer A adds `tags` → model has it, disk has it, **`m.base` does not.**
+2. Writer B submits an array from the open-time projection → also no `tags`.
+3. compose: `tags` is in **neither** `oldByKey` nor `newByKey` → no REMOVE, no ADD, and the CST is
+   re-parsed from `m.base.rawYaml`, the open-time bytes.
+4. Clean write, tag simply absent.
+
+## ★ The design PROVEN at the substrate, before it is built
+
+`propsOwnership.test.ts` now runs the identical two-writer sequence with exactly one change — writer
+B sources its array from the **model** instead of the projection — and **it is lossless**: the tag
+and the stage edit both survive, in the model and in what reached disk.
+
+`composeFrontmatter`'s diff was never wrong. **It was being fed a lie.** That de-risks Slice 4
+substantially: the swap has to change where the panel reads from, not how anything is serialised.
+A second test pins the base-does-not-advance mechanism so the reasoning cannot be re-derived wrongly.
+
+## Gates
+
+vitest **56 files / 628 passed + 2 expected-fail** · Sight perf SERIAL lane **31/31** ·
+svelte-check **0 errors** (after replacing a `!.base` non-null assertion with an explicit
+`typeof === 'string'` check, so the comparison cannot pass vacuously on two `undefined`s).
+
+**Next: Slice 2** — the intents + the `propsVersion` signal in the model, with `setProps` retained
+for the two legitimate wholesale callers. Nothing consumes them yet; inert by construction.

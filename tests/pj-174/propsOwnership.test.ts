@@ -148,3 +148,48 @@ describe('PJ-174 AK-3 — two panels bound to one note revert each other', () =>
 		expect(writes.at(-1)).toContain('sapling');
 	});
 });
+
+describe('MIG-107 Slice 1 — the DESIGN, proven at the substrate before it is built', () => {
+	/**
+	 * The same two-writer sequence that loses the tag above, with ONE change: writer B builds its
+	 * array from the MODEL instead of from the stale projection. Nothing else differs — same
+	 * `saveTabContent`, same compose, same base.
+	 *
+	 * It passes. That is the whole argument for single ownership, demonstrated on the real code
+	 * paths rather than asserted in a design document: `composeFrontmatter`'s diff was never wrong,
+	 * it was being fed an array that had been assembled from the file as it looked at open time.
+	 */
+	it('reading from the MODEL makes the very same sequence lossless', async () => {
+		// Writer A — "Add tag" from the tree menu.
+		await saveTabContent('a', '/L/N.md',
+			[P('title', 'N'), P('cid_cn', 'C1'), P('stage', 'seed'), L('tags', ['research'])],
+			'body text');
+
+		// Writer B — the panel edits an unrelated property, but sources its array from the model
+		// (what a single-owner panel does) rather than from tab.content.
+		const fromModel = (getModel('a')!.props ?? []).map((p) =>
+			p.key === 'stage' ? P('stage', 'sapling') : p);
+		expect(fromModel.some((p) => p.key === 'tags')).toBe(true); // it can SEE the other writer's work
+		await saveTabContent('a', '/L/N.md', fromModel, 'body text');
+
+		// Both survive — the tag AND the stage edit, in the model and in what reached disk.
+		expect(modelKeys()).toContain('tags');
+		expect(getModel('a')!.props.find((p) => p.key === 'stage')!.value).toBe('sapling');
+		expect(writes.at(-1)).toContain('tags');
+		expect(writes.at(-1)).toContain('stage: sapling');
+	});
+
+	/**
+	 * The mechanism behind it, pinned: `setProps` deliberately does NOT advance `m.base` (unlike
+	 * replaceContent/adoptDisk, which re-base). So compose always diffs against the OPEN-TIME bytes
+	 * — correct with one source of truth, and the reason two sources silently cancel each other.
+	 */
+	it('setProps does not advance the write-base — which is correct, and why one source is required', async () => {
+		const baseBefore = getModel('a')?.base?.rawYaml;
+		// Assert the base EXISTS, so the comparison below cannot pass vacuously on two undefineds.
+		expect(typeof baseBefore).toBe('string');
+		await saveTabContent('a', '/L/N.md',
+			[P('title', 'N'), P('cid_cn', 'C1'), P('stage', 'sapling')], 'body text');
+		expect(getModel('a')?.base?.rawYaml).toBe(baseBefore);
+	});
+});

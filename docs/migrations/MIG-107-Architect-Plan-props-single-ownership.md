@@ -93,15 +93,50 @@ export function setProps(id, props, expectPath?) {
 There is an identity guard (`expectPath`) but **no freshness guard**. A panel holding a 20-minute-old
 array can replace the model's current one in full.
 
-### 3.5 The write surface is BOUNDED — counted, not estimated
+### 3.5 The write surface is BOUNDED — counted, not estimated · **CLASSIFIED at Slice 1 (2026-07-28)**
 
-Non-model callers of `editProps` / `editNoteProps`: **four.**
+Swept with **no exclusions** (LL-038 rule 3, which exists because yesterday's sweep excluded the file
+being edited and hid an APP-KILLER). Every writer of a model's props, all seven:
 
-| site | intent |
-|---|---|
-| `store.ts:1465` (`saveTabContent`) | the panel path — **the defect** |
-| `NoteEditor.svelte:205`, `:478` | ⟵ to be read at Slice 1; both pass a whole array |
-| `+layout.svelte:5064` | appends derived props (`[...existing, ...added]`) |
+| site | reads its array FROM | await between read & write? | verdict |
+|---|---|---|---|
+| `store.ts:1465` (`saveTabContent`) | **the panel's `editableProps`** — a projection captured at open | stale **by construction** | ⚠ **THE DEFECT** → intents |
+| `NoteEditor.svelte:205` (stage promote/demote) | `getModel(tab.id).props` | **none** | ✅ sound; convert for uniformity |
+| `NoteEditor.svelte:478` (shape) | `model.props` | **none** | ✅ sound; convert for uniformity |
+| `+layout.svelte:5064` (template apply) | `getModel(tab.id).props` | **none** | ✅ sound; a batch of `addProp` |
+| `noteModel.ts:234` (`replaceContent`) | authored/merged content, **and re-bases `m.base`** | — | ✅ **legitimate wholesale — KEEP** |
+| `noteModel.ts:362` (`adoptDisk`) | disk, **re-bases + syncs `diskBaseline`** | — | ✅ **legitimate wholesale — KEEP** |
+| `noteModel.ts:214` (`setProps`) | the caller's array | — | the primitive; retained for the two above |
+
+**The finding that matters, stated honestly: the three non-panel writers are NOT defects.** Each reads
+the model and writes back a derived array **with no intervening `await`**, so the array it writes is
+derived from current truth. The bug is unique to the PropertyEditor path, where the array originates
+from a projection captured minutes earlier.
+
+⇒ **The intent API is not needed to *fix* these three — it is needed to make the shape uniform so a
+correct read-modify-write cannot later regress into a stale one** (e.g. someone adding an `await`
+between the read and the write). Slice 5 converts them for that reason, not to repair them, and it
+is therefore the lowest-risk slice rather than a second front.
+
+### 3.5.1 Why the panel path is the broken one — the mechanism, exactly
+
+`setProps` changes `m.props` **without advancing `m.base`** (contrast `replaceContent` and
+`adoptDisk`, which both re-base). That is correct and deliberate: the base must stay at the
+last-known-disk bytes for the byte-perfect in-place contract. But it means **every compose is a diff
+against the file as it was when the note was opened.**
+
+With ONE source for the new array that is fine — the diff is complete. With two, it is not:
+
+1. Writer A adds `tags`. Model has `tags`; disk gets `tags`; **`m.base` still has none.**
+2. Writer B (panel) submits an array built from the open-time projection — also no `tags`.
+3. compose: `tags` is in **neither** `oldByKey` (the base) nor `newByKey` → **no REMOVE is emitted
+   and no ADD is emitted**, and the CST is re-parsed from `m.base.rawYaml`, the open-time bytes.
+4. The write is clean, and the tag is simply **not in it**.
+
+**This is precisely why single ownership fixes it rather than papering over it:** once writer B reads
+the model, its array *contains* `tags`, so compose sees `tags` present in `newByKey` but absent from
+the base — an **ADD** — and emits it. The existing diff algorithm is already correct; it was being
+fed a lie.
 
 Inside `PropertyEditor.svelte`, `editableProps` is mutated at ~10 sites (`:334`, `:526`, `:570`,
 `:592`, `:605`, `:609`, `:660-661`, `:668`), every one a simple array operation — set-one-field,
@@ -242,11 +277,11 @@ Each lands alone, each has a verification clause. **Toggle: `PROPS_SINGLE_OWNERS
 | # | What lands | Files | Boss-testable? |
 |---|---|---|---|
 | **0** | ✅ **DONE 2026-07-28.** §5.4 answered by measurement (**KEY**, not row id) + the substrate contract pinned: duplicates collapse last-wins, position is not identity, remove splices only its key, rename = remove+add, untouched keys are never rewritten. Uncovered **PJ-178** (a blank row is written as `"": ""`). `propsContract.test.ts` 6/6 | `tests/pj-174/` | no |
-| **1** | **Read the two `NoteEditor` callers** (`:205`, `:478`) and `+layout.svelte:5064`; classify each as intent or legitimate wholesale. No behaviour change | — | no |
+| **1** | ✅ **DONE 2026-07-28.** All **seven** prop writers swept (no exclusions) and classified — §3.5. The three non-panel writers are **sound** (each reads the model with no intervening await); the two model-internal ones legitimately re-base and are **kept**. Mechanism pinned in §3.5.1, and **the design proven at the substrate**: the identical two-writer sequence is lossless when writer B reads from the model. No behaviour change | — | no |
 | **2** | **The intents + `propsVersion` signal** in the model, with `setProps` retained for the two legitimate callers. Nothing consumes them yet — inert | `noteModel.ts`, `noteSession.ts` | no |
 | **3** | **PropertyEditor reads from the model** behind the toggle; still writes whole arrays. Proves the read half in isolation | `PropertyEditor.svelte` | **yes** |
 | **4** | **PropertyEditor writes intents.** The swap. Both panels live on one authority | `PropertyEditor.svelte`, `store.ts` | **yes (headline)** |
-| **5** | **The other three writers** to intents where §1 said so | `NoteEditor.svelte`, `+layout.svelte` | **yes** |
+| **5** | **The other three writers** to intents — for UNIFORMITY, not repair (§3.5): they are sound today, and converting them removes the ability for a correct read-modify-write to regress into a stale one. Lowest-risk slice | `NoteEditor.svelte`, `+layout.svelte` | **yes** |
 | **6** | Remove the toggle + the dead whole-array path; `/simplify`; safety-inspection; docs ×15 | — | no |
 
 **Not coverable by vitest, and not pretended otherwise.** The Editor-Surface Gate items that need
