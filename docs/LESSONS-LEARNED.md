@@ -668,6 +668,25 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
+## LL-038: A Guard Built From a SNAPSHOT Protects Only What Existed When It Was Taken — and WIDENING a Guard Is a Change to Everything It Drops
+
+**Symptom (PJ-174 #1, 2026-07-27/28 — three confirmed APP-KILLER verdicts, one of them on the fix for the other two).** Renaming a note starts a multi-second library walk. All three of the protections around it — the read-only freeze overlay, the `markCascading` save gate, and the pre-flush exclude list — were built from `tabsInLibrary(lib.path)` **before** the walk. The sidebar is never blocked during it, so a note opened mid-walk was in none of them: not frozen, not flushed, not gated — and the cascade's `reloadTabsFromDisk` then force-adopted disk over it, erasing whatever had just been typed from the model, the screen **and** the write-ahead net, after which `isDirty` reported `false` so nothing downstream could tell work had been lost.
+
+**Root cause 1 — the snapshot.** A snapshot answers *"which things existed at time T?"*. The question the guard actually needed to answer is *"is this thing inside the region I am currently rewriting?"* **You cannot repair a snapshot by taking it later — there is no "later" that is after every tab the user might open.** The cure is to change what the predicate is *about*: mark the **container** (the library), so membership is evaluated at ask-time and is automatically true for things that did not exist at mark-time. Corollary: when two protections model the same window in two representations (a path set for the overlay, a path map for the gate), collapse them into one concept with one boundary rule — two representations of one truth will eventually disagree.
+
+**Root cause 2 — an invariant delegated to callers, inside a destructive primitive.** `reloadTabsFromDisk`'s own docstring said a dirty path must never reach it and that *"the guard lives UPSTREAM at every caller"*. Upstream was the snapshot. **An invariant that every caller must uphold, in a function whose entire job is destructive re-seeding, is a promise waiting to be broken** — and one caller's comment already asserted the guard existed when it did not. Enforce it where the damage happens. And make the destructive behaviour **opt-in by name**: the WA#4 consumer sweep found that exactly one of nine callers (`discardFailedSave`, the user's explicit "Discard my changes") *depends* on force-adopting over a dirty model, so a blanket refusal would have silently broken a feature. `discardLocalEdits: true` — destroying a user's edits should have to be asked for.
+
+**Root cause 3 — the sweep that excluded its own file.** Asked "have I covered every surface of this concern?", I ran `grep openNoteModel | grep -v libraries/store.ts` — filtering out the file I was editing — and concluded the primitive I had just fixed was the only one. That file holds **seven** such call sites, and one was an unguarded APP-KILLER in `renameItem` (typing during the rename's own await window, net cleared three lines earlier). Its sibling `drainCidEnsure` already carried the correct guard *with a comment explaining it*. This is the Whole-Ecosystem Fix Law's canonical failure shape, committed while applying the Whole-Ecosystem Fix Law.
+
+**Root cause 4 — widening a gate changes what the gate DROPS.** Making the cascade gate live took it from "tabs open at rename time" to "the whole library for the duration". `saveTabContent`'s cascade check sat **above** its model push, so a property edited during a cascade was neither written nor kept — and the comment two lines below states the governing rule it was breaking (*"the guard serializes the WRITE, never the model update"*). Shipping the widening without that fix would have made an existing silent loss fire far more often: **a fix that broadens a guard is a behaviour change for everything the guard suppresses.**
+
+**Rules:**
+1. **A guard built from a snapshot protects only what existed when it was taken.** If the guarded window is long enough for the user to create new things (open a tab, start an edit), the predicate must be scoped to a **container**, not enumerated over members. Ask "what is this guard *about*?", not "when should I re-take it?".
+2. **Enforce a destructive primitive's invariant inside the primitive**, never as a contract delegated to callers — and make the destructive path require an explicitly named opt-in, so the one caller that wants it says so and the other eight cannot inherit it by accident.
+3. **An ecosystem sweep must never exclude the file being edited.** Re-run every "have I got them all?" grep with no `grep -v`, and prefer the *concern* ("what overwrites the editor from disk?") over the *symptom site*.
+4. **When you WIDEN a gate, audit what it drops.** Enumerate every early-return behind it and ask what is lost on that path now that the path is taken more often. A gate that discards rather than defers is a silent-loss bug the moment its window grows.
+5. **Two protections for one window must be one concept.** Corollary of LL-023's drift rule, learned here on a freeze set and a save gate that modelled the same thing and diverged.
+
 ## LL-037: A SEQUENCING Argument Is Not an EXCLUSION Argument — and a Race Test Must SPAN the Window, Not Sample It
 
 **Symptom (MIG-104 Slice 7, 2026-07-27, found by the per-build safety inspection roughly one hour after the code was written — three independent verifiers, 52 tests green).** The new ledger compactor folded the append-only tail into a bounded snapshot and then renamed the tail aside. Between those two steps it wrote and fsync'd a multi-megabyte file — **tens of milliseconds** — and `append` took **no lock of any kind**. Every record appended inside that window was renamed into `earned.tail-<stamp>.jsonl`, a file that **nothing ever reads back** (not reading it is exactly what bounds the load). On Windows the rename even succeeds while an append handle is open (`FILE_SHARE_DELETE`), so the handle keeps writing into the orphaned file.
@@ -721,7 +740,14 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-07-27 (LL-037 added — MIG-104 Slice 7: the compactor folded the tail and
+*Last updated: 2026-07-28 (LL-038 added — PJ-174 #1: all three rename-cascade protections were
+built from a pre-walk SNAPSHOT, so a note opened mid-walk was unfrozen, unflushed, ungated and
+then force-adopted over — a snapshot cannot be repaired by taking it later; scope the predicate
+to the CONTAINER. Plus: never delegate a destructive primitive's invariant to its callers (make
+the destructive path opt-in by name); never exclude the file you are editing from an ecosystem
+sweep (that miss hid an APP-KILLER in renameItem); and WIDENING a gate is a behaviour change for
+everything the gate drops).*
+*Earlier: 2026-07-27 (LL-037 added — MIG-104 Slice 7: the compactor folded the tail and
 renamed it aside with no exclusion against concurrent appenders, so records written in the window
 landed in a file nothing reads back — and because the restore treats the ledger as authoritative
 for decisions, the next boot wrote the pre-decision value back over the DB. The in-code defence was

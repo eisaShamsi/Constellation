@@ -514,7 +514,11 @@ export async function saveRecoveredCopy(path: string): Promise<string | null> {
  */
 export async function discardFailedSave(path: string): Promise<void> {
 	const tab = get(openTabs).find((t) => t.path === path);
-	if (tab) await reloadTabsFromDisk([path]);
+	// `discardLocalEdits` is REQUIRED here and nowhere else: since PJ-174 #1 the reload primitive
+	// refuses to force-adopt over a dirty model, and this is the single path where discarding the
+	// dirty model IS the user's stated intent. Saying so explicitly is what keeps that refusal safe
+	// to apply everywhere else by default.
+	if (tab) await reloadTabsFromDisk([path], { discardLocalEdits: true });
 	clearWriteAhead(path); // belt — the reload clears it only on its success path
 	clearSaveFailure(path);
 }
@@ -749,13 +753,50 @@ export function clearCascading(path: string) {
  *  Cheap O(1) early-exit on the steady-state empty map skips the path
  *  normalisation cost on the keystroke flush hot path. */
 export function isCascading(path: string): boolean {
-	if (cascadingPaths.size === 0) return false;
-	return cascadingPaths.has(normPath(path));
+	if (cascadingPaths.size === 0 && cascadingLibraries.size === 0) return false;
+	const key = normPath(path);
+	if (cascadingPaths.has(key)) return true;
+	// PJ-174 #1 — the LIVE half: a tab opened after the path snapshot was taken is still inside a
+	// cascading library. Separator boundary, so `/Foo/Bar2` never matches a cascade on `/Foo/Bar`
+	// (same rule as `tabsInLibrary`).
+	for (const lib of cascadingLibraries.keys()) {
+		if (key === lib || key.startsWith(lib + '/')) return true;
+	}
+	return false;
 }
 /** §3-redo.7 — clear every cascading entry. Used by the Universe-switch
  *  path so a cascade in flight in the previous Universe doesn't leave
  *  stale entries that gate edits in the new Universe. */
-export function clearAllCascading() { cascadingPaths.clear(); }
+export function clearAllCascading() { cascadingPaths.clear(); cascadingLibraries.clear(); }
+
+/** PJ-174 #1 — LIBRARY-scoped cascade marks, refcounted like `cascadingPaths`.
+ *
+ *  ★ Why a second map instead of more entries in the first one. `cascadingPaths` is populated from
+ *  `tabsInLibrary(lib.path)` — a SNAPSHOT taken before a multi-second library walk. The sidebar
+ *  tree is not blocked during that walk (the freeze overlay covers editor panes only), so the user
+ *  can open a note mid-walk; that tab is in no snapshot, so `isCascading` returned FALSE for it and
+ *  its autosave ran ungated against a file the walker was rewriting.
+ *
+ *  A path snapshot cannot be repaired by taking it later — there is no "later" that is after every
+ *  tab that might be opened. The predicate has to stop being a snapshot: marking the LIBRARY makes
+ *  `isCascading` answer "is this path inside a library currently cascading?", which is true for a
+ *  tab that does not exist yet at mark time. Reproduced by
+ *  `tests/pj-174/renameCascadeMidWalkTab.test.ts`.
+ *
+ *  Hot-path cost: `isCascading` keeps its O(1) early-exit while BOTH maps are empty — the steady
+ *  state. The prefix loop runs only inside a cascade window, over a map that holds one entry. */
+const cascadingLibraries = new Map<string, number>();
+export function markCascadingLibrary(libraryPath: string) {
+	const key = normPath(libraryPath).replace(/\/+$/, '');
+	cascadingLibraries.set(key, (cascadingLibraries.get(key) ?? 0) + 1);
+}
+export function clearCascadingLibrary(libraryPath: string) {
+	const key = normPath(libraryPath).replace(/\/+$/, '');
+	const n = cascadingLibraries.get(key);
+	if (n === undefined) return;
+	if (n <= 1) cascadingLibraries.delete(key);
+	else cascadingLibraries.set(key, n - 1);
+}
 
 /** MIG-076 §D1: the REACTIVE freeze signal for the quiesce overlay. Holds the
  *  `tab.path` strings of every open pane currently inside a rename/cascade window.
@@ -764,7 +805,31 @@ export function clearAllCascading() { cascadingPaths.clear(); }
  *  non-reactive write-gate Map) on purpose: the editor surfaces subscribe to this
  *  for the read-only overlay, while the hot-path save gate stays a plain Map
  *  lookup (no reactivity on the keystroke path, Rule 1). */
+/**
+ *  PJ-174 #1 — this now holds the cascading LIBRARY ROOTS, not a snapshot of tab paths.
+ *
+ *  It was `new Set(tabsInLibrary(lib.path).map(t => t.path))`, taken before a multi-second walk, so
+ *  a note opened mid-walk got no read-only overlay — the user could type into a file the walker was
+ *  actively rewriting. Same defect as the save gate, same cure, and holding roots means the freeze
+ *  and the gate are now ONE concept with one boundary rule instead of two representations that can
+ *  disagree. Membership goes through `isPathFrozen`.
+ */
 export const cascadeFreeze = writable<Set<string>>(new Set());
+
+/** Is `path` inside one of the frozen library roots? Separator-boundary matched, so a cascade on
+ *  `/Foo/Bar` never freezes `/Foo/Bar2`. Shared by every consumer so the rule cannot drift. */
+export function isPathFrozen(path: string, frozen: Set<string>): boolean {
+	if (!path || frozen.size === 0) return false;
+	const key = normPath(path);
+	for (const raw of frozen) {
+		// Normalise BOTH sides here rather than trusting each caller to do it — the one place this
+		// was done by hand produced a broken regex, which is the argument for it living in one
+		// function that every consumer shares.
+		const root = normPath(raw).replace(/\/+$/, '');
+		if (key === root || key.startsWith(root + '/')) return true;
+	}
+	return false;
+}
 
 /** §3-redo.7 — open tabs whose path lies under `libraryPath`. Both sides
  *  are normalised to forward-slash form, and the prefix match enforces a
@@ -809,11 +874,32 @@ export function tabsInLibrary(libraryPath: string): OpenTab[] {
  *  note callers abort on a non-durable flush. A future edit MUST NOT leak a dirty path
  *  into this function.
  */
-export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
-	if (filePaths.length === 0) return;
+export async function reloadTabsFromDisk(
+	filePaths: string[],
+	opts?: {
+		/**
+		 * The user's EXPLICIT decision to throw away unsaved work and keep what is on disk —
+		 * today only PJ-102c "Discard my changes". Without it a dirty model is never force-adopted.
+		 *
+		 * This is opt-in rather than the default because exactly one of the nine call sites wants
+		 * it, and a blanket dirty-refusal would have silently broken that feature (caught by the
+		 * WA#4 consumer sweep before it shipped). Destroying a user's edits should have to be
+		 * asked for by name.
+		 */
+		discardLocalEdits?: boolean;
+		/**
+		 * Where a genuine conflict goes: the model is dirty AND disk moved underneath it. Same
+		 * signature and same handler as the watcher's external-change path, so a cascade conflict
+		 * and a Syncthing conflict produce the same `.conflict` sidecar and the same banner
+		 * instead of two policies for one situation.
+		 */
+		conflict?: (notePath: string, noteName: string, diskContent: string) => void | Promise<void>;
+	},
+): Promise<string[]> {
+	if (filePaths.length === 0) return [];
 	const tabs = get(openTabs);
 	const targets = filePaths.filter((fp) => tabs.some((t) => t.path === fp));
-	if (targets.length === 0) return;
+	if (targets.length === 0) return [];
 
 	const reads = await Promise.all(
 		targets.map((fp) =>
@@ -827,7 +913,37 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 	);
 	const byPath = new Map<string, string>();
 	for (const r of reads) if (r) byPath.set(r.fp, r.content);
-	if (byPath.size === 0) return;
+	if (byPath.size === 0) return [];
+
+	// ★ PJ-174 #1 — ENFORCE THE INVARIANT THIS FUNCTION ALREADY DOCUMENTS.
+	//
+	// The docstring above says a dirty path must never be handed here and that "the guard lives
+	// UPSTREAM at every caller". Upstream for the rename cascade is a path snapshot taken before a
+	// multi-second walk, and a note opened mid-walk is in no snapshot — so the invariant leaked,
+	// and this function force-adopted over a dirty model: the user's unsaved paragraph erased from
+	// the model, the screen AND the write-ahead net, with `isDirty` then reporting false so nothing
+	// downstream could even tell work had been lost.
+	//
+	// An invariant that every caller must uphold, in a function whose only job is destructive
+	// re-seeding, is a promise waiting to be broken. It is enforced here, where the damage happens.
+	// (`linkMentionInNote` already carried a comment asserting this guard existed — it did not.)
+	const refused: string[] = [];
+	const conflicted: Array<{ path: string; name: string; disk: string }> = [];
+	if (!opts?.discardLocalEdits) {
+		for (const t of get(openTabs)) {
+			const disk = byPath.get(t.path);
+			if (disk === undefined || disk === t.content) continue;
+			if (!isNoteDirty(t.id)) continue;
+			byPath.delete(t.path); // never force-adopted below
+			refused.push(t.path);
+			// Dirty AND disk genuinely moved → a real conflict. Route it to the SAME handler the
+			// watcher uses (clean→adopt, dirty→`.conflict` sidecar + banner) so the user's edits
+			// stay live in the editor and the incoming version is preserved rather than either one
+			// being silently dropped.
+			if (diskDiffersFromBaseline(t.id, disk)) conflicted.push({ path: t.path, name: t.name, disk });
+		}
+	}
+	if (byPath.size === 0 && conflicted.length === 0) return refused;
 
 	openTabs.update((ts) => {
 		let mutated = false;
@@ -842,9 +958,14 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 		});
 		return mutated ? next : ts;
 	});
-	// The cascade just authored canonical disk content; any in-flight
-	// write-ahead buffer for these paths is now stale.
+	// The cascade just authored canonical disk content; any in-flight write-ahead buffer for these
+	// paths is now stale. ONLY for paths we actually adopted — a refused dirty tab KEEPS its net,
+	// because that net is now part of the only copy of the user's work (mirrors the same rule in
+	// `adoptExternalChangeIntoTabs`, invariant #10).
 	for (const fp of byPath.keys()) clearWriteAhead(fp);
+
+	for (const c of conflicted) await opts?.conflict?.(c.path, c.name, c.disk);
+	return refused;
 }
 
 /** PJ-070 — paths whose NotePane is mid-REMOUNT from a watcher/external adopt (a reloadVersion
@@ -1326,9 +1447,6 @@ export async function saveTabContent(
 	// embedded (and still embed it if it never was — safe). Body edits leave it false.
 	bodyUnchanged: boolean = false
 ): Promise<void> {
-	// PropertyEditor's frontmatter edits land here directly, so the same F2
-	// post-cascade-stomp gate NoteEditor uses must apply here too (see `isCascading`).
-	if (isCascading(filePath)) return;
 	// Auto-update the "updated" / "حُدث" property if it exists.
 	const now = new Date();
 	const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1345,6 +1463,26 @@ export async function saveTabContent(
 	// next save/flush persists it. The guard serializes the WRITE, never the model update.
 	// (Fixes the saveLocks-drop silent-loss — same class as this migration; wf_5f9b257d.)
 	if (SINGLE_OWNERSHIP) editNoteProps(tabId, updatedProps, filePath);
+	// PropertyEditor's frontmatter edits land here directly, so the same F2 post-cascade-stomp gate
+	// NoteEditor uses must apply here too (see `isCascading`) — it gates the DISK WRITE.
+	//
+	// ★ PJ-174 #1c — this gate used to sit ABOVE `editNoteProps`, so a property edited during a
+	// rename-cascade window was not written AND not kept: it never reached the model, and the panel
+	// holds no record of its own, so it was simply gone. That is precisely the drop the comment
+	// directly above rules out for the write-lock — "the guard serializes the WRITE, never the model
+	// update" — and the cascade gate was breaking the same rule two lines earlier.
+	//
+	// It matters more now than it did: the cascade gate became LIVE and library-scoped in this same
+	// change (PJ-174 #1), so it covers far more of the app for the duration. Widening a gate that
+	// silently discards edits would have turned a fix into a regression. The right-sidebar
+	// PropertyEditor is reachable during the window too — the freeze overlay covers editor panes,
+	// not the sidebar.
+	//
+	// Now the edit lands in the model (dirty) and only the write waits. The cascade's own reload
+	// then sees a dirty model and — since PJ-174 #1 — refuses to force-adopt over it, raising a
+	// conflict instead. So the property survives and the user is told, rather than the edit
+	// vanishing with the app reporting success.
+	if (isCascading(filePath)) return;
 	if (saveLocks.get(tabId)) return; // a write is already in flight; the model has this edit
 	saveLocks.set(tabId, true);
 	try {
@@ -3742,12 +3880,17 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	// The save-health auto-retry persists it once the lock clears.
 	let fresh: string | null = null;
 	if (renameFlushOk) {
-		clearWriteAhead(oldPath);
-		clearWriteAhead(effectivePath);
 		try {
 			fresh = await readNote(effectivePath);
 		} catch { /* folder rename / unreadable target — path/name update only */ }
 	}
+
+	// ★ PJ-174 #1b (safety inspection, 2026-07-28) — the net is cleared ONLY for a tab that
+	// actually adopts fresh disk, and that decision is made below, AFTER every await. It used to
+	// be cleared here, before `readNote`, purely on `renameFlushOk` — so a keystroke typed during
+	// the rename lost its recovery net a moment before the model that held it was overwritten.
+	// Same rule as `drainCidEnsure` and `reloadTabsFromDisk`: only adopters clear their net.
+	let adoptedFreshDisk = false;
 
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === oldPath) {
@@ -3755,8 +3898,26 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 			// next save's compose would refuse the new path. A rename rewrites
 			// frontmatter (title), so re-seed from fresh disk content when we
 			// have it; otherwise just move the path.
-			if (fresh !== null) openNoteModel(t.id, effectivePath, fresh);
-			else repathNoteModel(t.id, effectivePath);
+			//
+			// ★ PJ-174 #1b — …but ONLY when the model is still CLEAN. `markCascading` (set at the
+			// top of this function) gates disk WRITES — `handleSave` / `handleFlush` — it does NOT
+			// gate `onDocChange → editBody`, so the editor keeps accepting keystrokes into the
+			// model throughout `invoke('rename_item')` and `readNote()`. And the freeze overlay
+			// cannot cover this window either: it is raised by the caller only AFTER this function
+			// returns. "Rename the title, press Enter, keep writing" is the natural gesture, and
+			// the caret is already back in the body — so an unconditional re-seed here silently
+			// destroyed whatever was typed, from the model, the screen AND (above) the net.
+			//
+			// The correct behaviour was already in this function as the flush-failed branch: keep
+			// the user's model and just move its identity. Its sibling `drainCidEnsure` (:2841)
+			// carries the identical guard with the identical reasoning; this site never got it.
+			const keepUserModel = fresh === null || isNoteDirty(t.id);
+			if (!keepUserModel) {
+				openNoteModel(t.id, effectivePath, fresh!);
+				adoptedFreshDisk = true;
+			} else {
+				repathNoteModel(t.id, effectivePath);
+			}
 			// Path comes from Rust (may equal oldPath for canonical files).
 			// Display name follows the user's intent — for canonical files
 			// the title changed even though the filename didn't.
@@ -3764,8 +3925,8 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 				...t,
 				path: effectivePath,
 				name: derivedName || t.name,
-				...(fresh !== null
-					? { content: fresh, reloadVersion: (t.reloadVersion ?? 0) + 1 }
+				...(!keepUserModel
+					? { content: fresh!, reloadVersion: (t.reloadVersion ?? 0) + 1 }
 					: {}),
 			};
 		}
@@ -3777,6 +3938,13 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		}
 		return t;
 	}));
+	// PJ-174 #1b — the net goes ONLY when its content was superseded by disk we actually adopted.
+	// A tab that kept the user's model keeps its net too: that buffer is now part of the only copy
+	// of unsaved work, exactly as in `adoptExternalChangeIntoTabs` (invariant #10).
+	if (adoptedFreshDisk) {
+		clearWriteAhead(oldPath);
+		clearWriteAhead(effectivePath);
+	}
 	// APP-KILLER #2 — on a FAILED pre-rename flush, re-point the save-health failure from the
 	// old path to the renamed path so the banner's Retry + the ~10 s auto-retry target the
 	// note's CURRENT (tab-owned) path (retrySaveFailure looks the tab up BY path). For a

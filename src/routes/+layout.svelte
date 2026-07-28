@@ -27,7 +27,8 @@
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
 		adoptExternalChangeIntoTabs, reportExternalConflict,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, isCascading, isReseeding,
-		tabsInLibrary, quickCapture, cascadeFreeze,
+		markCascadingLibrary, clearCascadingLibrary,
+		tabsInLibrary, quickCapture, cascadeFreeze, isPathFrozen,
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
@@ -1553,7 +1554,7 @@
 	// the "Updating…" overlay — the parity NotePane already has (its panes render
 	// CascadeFreezeOverlay + NoteEditor's isCascading save-gate). Without it FocusPane was the one
 	// editable surface outside the freeze → typed-during-cascade keystrokes were silently discarded.
-	let focusFrozen = $derived(!!focusSessionPath && $cascadeFreeze.has(focusSessionPath));
+	let focusFrozen = $derived(!!focusSessionPath && isPathFrozen(focusSessionPath, $cascadeFreeze));
 	// PJ-070 (hazard #7) — FocusPane is NOT under the reloadVersion {#key} and ignores `value`
 	// after mount, so a watcher/external adopt can't refresh it by a store update alone. A bump
 	// of focusReloadVersion remounts FocusPane (it re-seeds from the freshly-adopted model via
@@ -3413,7 +3414,11 @@
 			// reloaded here either. This listener is defence-in-depth for the SAME cascade; without the
 			// filter it would re-do exactly the reload the belt skipped, clobbering the dirty model.
 			const paths = (event.payload?.paths ?? []).filter((p) => !renameCascadeExcludedKeys.has(normPathLC(p).normalize('NFC')));
-			await reloadTabsFromDisk(paths);
+			// PJ-174 #1 — a dirty model is no longer force-adopted; a genuine conflict goes to the
+			// SAME `.conflict` sidecar + banner the watcher's external-change path uses, so the
+			// user's edits stay live and the cascade's version is preserved rather than either
+			// being silently dropped.
+			await reloadTabsFromDisk(paths, { conflict: reportExternalConflict });
 		});
 		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
 
@@ -6751,9 +6756,12 @@
 				// freeze NOW (after renameItem, BEFORE the slow tree refresh) so the
 				// overlay is near-instant. Stays in the proven-safe POST-rename
 				// reactive context; raising it BEFORE renameItem aborted the cascade
-				// when an edited tab was open (bisection-proven this session). Path-
-				// keyed: the renamed tab already holds its new path here.
-				if (willCascade) cascadeFreeze.set(new Set(tabsInLibrary(lib.path).map(t => t.path)));
+				// when an edited tab was open (bisection-proven this session).
+				// PJ-174 #1 — freeze the LIBRARY ROOT, not a snapshot of the tabs open right now.
+				// A note opened during the walk was in no snapshot and so got no overlay at all,
+				// leaving the user free to type into a file the walker was actively rewriting.
+				// `isPathFrozen` normalises both sides, so the raw library path is what goes in.
+				if (willCascade) cascadeFreeze.set(new Set([lib.path]));
 				try {
 				await refreshLibraryTree(lib.library_id);
 				// Auto-update links — wikilink rename cascade.
@@ -6778,6 +6786,14 @@
 					//     anywhere above doesn't leave editors silenced.
 					const tabs = tabsInLibrary(lib.path);
 					for (const t of tabs) markCascading(t.path);
+					// PJ-174 #1 — the LIVE mark. Everything above this line is a SNAPSHOT taken
+					// before a multi-second walk, and the sidebar tree is not blocked during it
+					// (the freeze overlay covers editor panes only), so a note opened mid-walk was
+					// in none of the three protection sets: not frozen, not flushed, not gated —
+					// and `reloadTabsFromDisk` below still force-adopted over it, erasing whatever
+					// had just been typed. Marking the LIBRARY makes `isCascading` true for tabs
+					// that do not exist yet at this moment, which a path snapshot can never be.
+					markCascadingLibrary(lib.path);
 					try {
 						// PJ-092 — the open notes whose unsaved edits could NOT be flushed (a locked .md).
 						const excludedPaths = await flushAllTabsInLibrary(lib.path);
@@ -6808,7 +6824,14 @@
 								reloadPaths = kept;
 							}
 						}
-						await reloadTabsFromDisk(reloadPaths);
+						// PJ-174 #1 — never force-adopt over a dirty model. A note opened mid-walk
+						// (in none of the pre-walk protection sets) previously had its unsaved text
+						// erased here; now it is refused and routed to the conflict sidecar + banner.
+						const refusedDirty = await reloadTabsFromDisk(reloadPaths, { conflict: reportExternalConflict });
+						if (refusedDirty.length > 0) {
+							console.warn('[handleRenameComplete] PJ-174 — dirty tabs refused the cascade reload (edits preserved, conflict raised):', refusedDirty);
+							invoke('journal_frontend_marker', { surface: 'cascade_reload_refused_dirty', detail: refusedDirty.join('|') }).catch(() => {});
+						}
 						// PJ-092 H3 (③) — FocusPane is NOT under the reloadVersion {#key}; if the note open
 						// in Focus mode was rewritten, remount FocusPane on the freshly-reseeded model (mirror
 						// adoptExternalChangeIntoTabs), or the next Focus keystroke composes from stale text
@@ -6865,6 +6888,11 @@
 						}
 					} finally {
 						for (const t of tabs) clearCascading(t.path);
+						// Paired with the markCascadingLibrary above, in the SAME finally: a throw
+						// anywhere in the cascade must never leave a library permanently marked,
+						// which would silently gate every save inside it — a save-loss worse than
+						// the bug the mark fixes.
+						clearCascadingLibrary(lib.path);
 					}
 				}
 				} finally {

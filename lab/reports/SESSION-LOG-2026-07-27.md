@@ -784,3 +784,183 @@ tokenizer is required by the `note_links` writes, not this one. Corrected in-tre
 verification recorded, plus the fact that actually applies: `sight_v6_layout_invalidate_au` is
 **unguarded** and drops the note's cached layout row on every `note_meta` update (harmless — derived
 — but it is the real per-row cost that justifies the batching).
+
+---
+
+# ⟲ PIVOT — state-of-standing record (SO#5), 2026-07-27
+
+**Boss ruling:** *"Divert now — fix the 3 app-killers."* The MIG-104 cascade is PAUSED at the
+Slice 7/8 boundary. This record exists so the pause is resumable without rediscovery.
+
+### (a) Verified-shipped & protected
+- **MIG-104 Slices 0–7** — pushed, `a86bf3ca`, tree clean. Slice 6 Boss-validated on live data
+  (34/34 restored, a retired link returned still retired); **Slice 7 Boss-validated today** (a review
+  priority restored from the ledger after the index was wiped of it: `1 priorities restored`).
+- **MIG-105 Stage 0** — nine live defects fixed; FK-enforcement reality pinned by test.
+- Gates at the pause point: Rust **1261/0** · svelte-check **0** · vitest **52 files/607** ·
+  Sight perf **31/31** in a serial lane. Binary `constellation.exe` @ 19:41 = the tested one.
+
+### (b) At-risk / in-flight
+**Nothing uncommitted.** The MIG-104 cascade resumes at **Slice 8 + 8b** with one hard constraint
+already proven by test: the archive hook must go **BEFORE `DELETE FROM note_meta`**
+(`search.rs:9845`) — FK enforcement fires the CASCADE there, so a hook at the later explicit purge
+archives **nothing** (`tests_stage0_delete_order_defect`). 8b adds the note body (Boss decision #6).
+
+### (c) Known-broken — THE PIVOT TARGET
+Three confirmed APP-KILLERs, none introduced by Slice 7, all live in the build the Boss runs daily.
+Full text: `lab/reports/SAFETY-INSPECTION-2026-07-27-whole-app.md`. Filed as PJ-174.
+
+1. **`+layout.svelte:6779` — the rename cascade's protection sets are PRE-WALK SNAPSHOTS.**
+   `tabsInLibrary` (:6779), the freeze set (:6756) and `flushAllTabsInLibrary`'s own snapshot (:6783)
+   are all taken before a multi-second library walk, but `reloadTabsFromDisk` (:6811) force-reseeds
+   whatever is in `openTabs` **at reload time**. The sidebar is not blocked during the walk, so a
+   note opened and typed in mid-walk is never frozen, never flushed — and is still force-adopted
+   from disk. Either the paragraph is erased wholesale, or an ungated autosave lands after the
+   walker and re-introduces the old wikilink while the index records the rewritten text.
+2. **`PropertyEditor.svelte:852` — a stale whole-props replay erases frontmatter another writer
+   already persisted.** The panel's `properties` prop derives from `tab.content`, which the
+   model-based writers (`saveTabContent` / `addTagToNote`) deliberately never update or notify.
+3. **`PropertyEditor.svelte:851` — two PropertyEditor instances are mounted for the SAME tabId**
+   (NotePane-embedded + right-sidebar), each with its own snapshot, and the save mutates
+   `tab.content` directly ("no store.update = no cascade") so neither re-seeds from the other.
+
+> **(2) and (3) are one root cause, not two bugs:** props have **no single owner in the UI layer**.
+> Every PropertyEditor keeps its own `editableProps` derived from a stale projection, and every
+> writer REPLACES `model.props` wholesale from its own snapshot. This is the **content-integrity
+> class** whose three-strike law is already spent (LL-014; BUG-012 / 015 / 019 / 023), so
+> **Solve-the-Class applies: the fix is single content ownership for PROPS — the model is the
+> authority every reader and writer goes through — not another symptom patch.** MIG-076 did this
+> for the note BODY and stopped there.
+
+### (d) Pending, not started
+MIG-104 Slices 8–15 · MIG-105 Phase 2 · MIG-106/PJ-169 · PJ-173 (folds into Slice 14) ·
+the other 47 sweep findings (20 HIGH / 24 MED / 4 LOW) · PJ-171 · PJ-172.
+
+### (e) Process
+- **PJ-166, fourth strike** — `args.files` ignored again; the per-build diff gate the standing order
+  requires still does not exist. A 31-minute, 10.1 M-token whole-app run cannot serve as one.
+- Sight perf tests still need a **permanent** serial lane (PJ-172); run manually as one this job.
+
+**Order of work from here:** Reproduce-First on all three — no fix is designed before its defect
+fires on demand under instrumentation.
+
+---
+
+# AK-1 — the rename cascade's unprotected mid-walk tab (PJ-174 #1) — FIXED
+
+**Boss ruling:** divert from the MIG-104 cascade and fix the three app-killers. This is the first.
+
+## Reproduce-First — RED before any design
+
+`tests/pj-174/renameCascadeMidWalkTab.test.ts`. The failing assertions were exactly the damage:
+
+```
+AssertionError: expected 'links to [[New]]' to contain 'my unsaved paragraph'
+AssertionError: expected false to be true          // isDirty('b') after the reload
+```
+
+The paragraph was replaced by disk text **and** `isDirty` flipped to false — so after the loss the
+app no longer knew there had ever been unsaved work. That is what made it silent: nothing to
+retry, nothing to surface, no net (it was cleared in the same breath).
+
+## Three holes, not one
+
+**#1 — the protection sets were PRE-WALK SNAPSHOTS.** `cascadeFreeze` (:6756), `markCascading`
+(:6779) and `flushAllTabsInLibrary` (:6783) are all built from `tabsInLibrary(lib.path)` *before* a
+multi-second walk, while the sidebar stays clickable throughout. A note opened mid-walk was in none
+of them. **A snapshot cannot be repaired by taking it later — there is no "later" that is after
+every tab the user might open.** So the predicate stopped being a snapshot: `markCascadingLibrary`
+makes `isCascading` answer *"is this path inside a library currently cascading?"*, which is true for
+a tab that does not exist yet at mark time. `cascadeFreeze` now holds library ROOTS through a shared
+`isPathFrozen`, collapsing the freeze and the gate into ONE concept with one boundary rule instead
+of two representations that could disagree.
+
+**#2 — `reloadTabsFromDisk` force-adopted over a dirty model.** Its own docstring says a dirty path
+must never reach it and that *"the guard lives UPSTREAM at every caller"* — and upstream was the
+stale snapshot. An invariant every caller must uphold, inside a function whose only job is
+destructive re-seeding, is a promise waiting to be broken; it is now enforced where the damage
+happens. A dirty model is refused and routed to the SAME `.conflict` sidecar + banner the watcher's
+external-change path uses, so the user's edits stay live and the cascade's version is preserved.
+
+> **The WA#4 consumer sweep earned its keep here.** One of the nine callers — `discardFailedSave`,
+> the PJ-102c *"Discard my changes"* button — **depends** on force-adopting over a dirty model. A
+> blanket refusal would have silently broken it. So destroying edits is now opt-in **by name**
+> (`discardLocalEdits: true`), which exactly one call site passes. `linkMentionInNote` already
+> carried a comment asserting this guard existed; it now does.
+
+**#3 — the freeze overlay had the same snapshot hole**, so the pane most at risk (one being
+rewritten under the cursor) was the one pane with no overlay. Fixed with the same library-root model.
+
+## ★ The inspection found a FOURTH hole — in my own blind spot
+
+The per-build inspection on this fix confirmed an **APP-KILLER at `store.ts:3879`**: `renameItem`
+re-seeds the model from disk after `await invoke('rename_item')` and `await readNote()` with **no
+dirty re-check**, having cleared the write-ahead net three lines earlier.
+
+`markCascading` gates disk WRITES (`handleSave` / `handleFlush`) — it does **not** gate
+`onDocChange → editBody`, so the model keeps accepting keystrokes; and the freeze overlay cannot
+cover this window because the caller raises it only *after* `renameItem` returns. NotePane's Enter
+handler focuses the **body**, so *"rename the title, press Enter, keep writing"* — an ordinary
+gesture — lands the caret exactly where typing was unprotected. The text was then gone from the
+model, the screen and the net, with the only tripwire being DEV-only and therefore invisible in the
+release build the Boss runs.
+
+**This is my miss, and it is the Whole-Ecosystem Fix Law's own failure shape committed while
+applying it.** When I swept for other force-reseed surfaces I ran
+`grep openNoteModel | grep -v libraries/store.ts` — excluding the file I was editing — and concluded
+"`reloadTabsFromDisk` was the single primitive." Re-run without the exclusion, `store.ts` holds
+seven call sites, and one of them was this. The sibling `drainCidEnsure` (:2841) already carries the
+correct guard **with a comment explaining it**; `renameItem` never got it. Fixed by mirroring that
+sibling, using the correct branch this function already had (`repathNoteModel` — keep the user's
+model, move its identity), and by clearing the net **only for a tab that actually adopted disk**.
+
+## And a fix that would have become a regression
+
+`store.ts:1452` — HIGH — the cascade gate in `saveTabContent` returned **before** `editNoteProps`
+pushed the edit into the model, so a property edited during a cascade was neither written nor kept.
+The comment two lines below states the governing rule for the write-lock — *"the guard serializes
+the WRITE, never the model update"* — and the cascade gate was breaking it.
+
+**Making the gate LIVE widened that window from "tabs open at rename time" to "the whole library",
+so shipping #1 without this would have made an existing silent loss fire more often.** The gate now
+sits after the model push: the property lands in the model (dirty), only the write waits, and the
+cascade's reload then refuses to adopt over it and raises a conflict. Preserved and surfaced instead
+of dropped. The control test asserts the gate still blocks the disk write (F2 post-cascade-stomp is
+still prevented).
+
+## Verification
+
+RED proven by removing each guard: #1 (paragraph → disk text, `isDirty` false), #1b (2 of 3 fail:
+*expected 'first line' to contain 'the next sentence'*), #1c (the property never reaches the model).
+Every one GREEN with the guard, and each carries a control test that the fix does **not** over-block
+— a clean tab still adopts the cascade, a clean model still adopts the rename, Discard-my-changes
+still discards, and the cascade gate still gates the write.
+
+| Gate | Result |
+|---|---|
+| vitest | **54 files / 619 tests** (was 52/607) |
+| Sight perf, **SERIAL lane** (PJ-172) | **2 files / 31** |
+| svelte-check | **0 errors** |
+| Rust | **1261 / 0** |
+
+## PJ-166 — FIFTH strike
+
+Invoked diff-scoped, returned `mode: "whole-app"` again (84 agents, ~10.3 M tokens, 32 min).
+46 unique confirmed: **3 APP-KILLER · 10 HIGH · 27 MED · 6 LOW** →
+`lab/reports/SAFETY-INSPECTION-2026-07-28-ak1-build.md`. Two in the same family are filed, not
+absorbed: **`moveItem` (:3913) has neither `markCascading` nor a pre-move flush** — the exact
+two-part gate its sibling `renameItem` carries — and **`deleteWithSetting` (:3986) never calls
+`closeNoteModel`**, so a deleted note's surviving model can be re-created by the teardown flush.
+
+## ★ BOSS TEST — AK-1 PASS, both stages (2026-07-28)
+
+- **Stage 1 (#1b — the everyday gesture).** Rename via the title bar, press Enter, keep typing
+  immediately. Boss: *"Stage 1 passed, sentence survived."* Before this build that sentence was
+  destroyed as the rename completed — from the model, the screen and the recovery net.
+- **Stage 2 (#1/#3 — the mid-walk freeze).** Renamed `Doi (identifier)` in Biology (535 of that
+  library's 550 notes link to it — the longest possible walk) and opened a different Biology note
+  during the cascade. Boss: *"Pass. I saw the 'Updating links…'. It was so fast, I just got a
+  glimpse of it."* The glimpse is the point: that note previously had **no** overlay at all and was
+  freely typeable while the walker rewrote it.
+
+Committed after the pass, per the mandatory Boss-test gate.

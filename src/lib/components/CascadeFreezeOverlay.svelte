@@ -4,8 +4,16 @@
 	 *
 	 * A self-contained read-only overlay shown over an editor pane while that
 	 * pane's note is inside a rename + wikilink-cascade window (the ~7s scan).
-	 * It subscribes to the reactive `cascadeFreeze` store (the set of frozen
-	 * tab.path strings) and renders only when THIS pane's `path` is in it.
+	 * It subscribes to the reactive `cascadeFreeze` store and renders when THIS
+	 * pane's `path` falls inside it.
+	 *
+	 * PJ-174 #1 — that store now holds cascading LIBRARY ROOTS, not a snapshot of
+	 * the tab paths open when the rename started. The snapshot could not cover a
+	 * note the user opened DURING the multi-second walk (the sidebar tree is never
+	 * blocked), so exactly the pane most at risk — one being rewritten under the
+	 * user's cursor — was the one pane that got no overlay. Membership goes through
+	 * the shared `isPathFrozen`, which normalises both sides and enforces the
+	 * separator boundary.
 	 *
 	 * Self-contained by design (CLAUDE.md self-contained-components rule): owns
 	 * its own styling, blocks all pointer/keyboard input to the pane beneath it
@@ -14,7 +22,7 @@
 	 * cascade performs mid-window. Mount it as the last child of a
 	 * position:relative pane container; it absolutely fills that container.
 	 */
-	import { cascadeFreeze } from '$lib/libraries/store';
+	import { cascadeFreeze, isPathFrozen } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 
 	// Two modes: pass `path` and the overlay self-derives from the cascadeFreeze store
@@ -22,7 +30,7 @@
 	// boolean (FocusPane, which is a fixed-position self-contained surface and already
 	// computes its freeze state). `frozen` wins when provided.
 	let { path, frozen: frozenProp }: { path?: string | null; frozen?: boolean } = $props();
-	let frozen = $derived(frozenProp ?? (!!path && $cascadeFreeze.has(path)));
+	let frozen = $derived(frozenProp ?? (!!path && isPathFrozen(path, $cascadeFreeze)));
 </script>
 
 {#if frozen}
