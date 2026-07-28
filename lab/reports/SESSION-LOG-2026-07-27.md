@@ -1164,3 +1164,66 @@ svelte-check **0 errors**.
 
 **Next: Slice 3** — PropertyEditor READS from the model behind the toggle, still writing whole
 arrays. First Boss-testable step: both panels showing the same truth.
+
+---
+
+# MIG-107 Slice 3 — the READ half. Boss-validated 2026-07-28.
+
+## What landed
+
+`PROPS_SINGLE_OWNERSHIP` (in the existing `ownershipFlag.ts`, beside `SINGLE_OWNERSHIP` — same
+rollback discipline: the model is maintained either way, so flipping it back is instant with no
+half-state). Behind it, PropertyEditor seeds from **`sourceProps`** — `getModel(tabId)?.props`,
+invalidated by `$propsVersion` — instead of the `properties` prop, which is a projection of
+`tab.content` and therefore of the file as it looked when the note was opened.
+
+Three details that carry weight:
+
+* **`?? properties` fallback.** A host may mount this panel before its model exists (index preview,
+  dashboard). Falling back to the projection is strictly better than rendering nothing, and it is
+  the same content the panel would have shown anyway.
+* **A new guard: never re-seed over an un-flushed local edit.** The model now changes far more often
+  than `tab.content` ever did — every writer ticks the signal — so without this, a keystroke in one
+  field could be reverted by an unrelated property change elsewhere. A pending debounce means
+  `editableProps` holds at least one value newer than the model; it wins until it flushes. A tab
+  change always re-seeds (different note; its pending edit is flushed by the teardown path).
+* **The signal is read, never keyed.** `void $propsVersion` inside `$derived.by` subscribes; nothing
+  `{#key}`s on it. That is propsSignal.ts rule 1, and it is the §C-2 hazard restated.
+
+## What Slice 3 fixes, and what it deliberately does not
+
+Stated precisely, because it would be easy to overclaim from a passing Boss test:
+
+* **Fixed — the common sequence.** The panels refresh from the truth whenever it changes, so
+  "add a tag from the file tree, then edit a property in a panel" no longer loses the tag: the panel
+  now *sees* the tag before it writes its array.
+* **NOT fixed — the race.** If a panel holds an un-flushed keystroke at the moment another writer
+  commits, it skips the re-seed (by the guard above) and its next whole-array write can still
+  overwrite. Slice 4 removes that by making each edit name the one property it is about.
+
+The Boss was told this explicitly before testing, so the pass is not mistaken for a closed bug.
+`propsOwnership.test.ts`'s two `it.fails` reproductions remain expected-failures — they exercise the
+store path directly and are unaffected by a component-level read change, which is exactly why they
+stay red until Slice 4.
+
+## A pre-existing Rule-2 shape, noted and deliberately NOT touched here
+
+The seeding `$effect` both reads and writes `prevPropsSnapshot`, which is `$state` — the shape
+CLAUDE.md Rule 2 warns about. It converges (the write makes the condition false on re-run) so it is
+not biting today, and it predates this migration. I deliberately did **not** change its timing in
+the same slice that changes where its data comes from — that is the live-half-migration shape this
+class of bug punishes. It is noted for Slice 4, where `editableProps` largely disappears anyway.
+
+## Boss test — PASS
+
+Both panels visible at once; a change in the in-note block appeared in the sidebar without
+reopening the note, and the reverse direction likewise. Boss: *"Pass, both panels updated."*
+
+## Gates
+
+vitest **57 files / 647 passed + 2 expected-fail** · svelte-check **0 errors** · binary 17:20,
+chain verified (source 17:11 → bundle 17:16 → binary 17:20).
+
+**Next: Slice 4 — the swap.** PropertyEditor writes intents instead of whole arrays. That is where
+the two `it.fails` reproductions flip to passing, where PJ-178 closes, and where the deferred
+safety inspection runs (the risk lands on the wiring, not on the inert code).

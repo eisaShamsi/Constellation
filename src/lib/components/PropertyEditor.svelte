@@ -9,6 +9,10 @@
 	import { appSettings } from '$lib/libraries/store';
 	import { culturalDateString, applyCalendarPrefs, frontmatterKey, type CalendarSystem } from '$lib/calendar/calendarMath'; // §C — Gregorian→cultural property converter
 	import { invoke } from '@tauri-apps/api/core';
+	// MIG-107 Slice 3 — the READ half of single ownership for properties.
+	import { PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+	import { getModel } from '$lib/editor/noteModel';
+	import { propsVersion } from '$lib/editor/propsSignal';
 
 	// Share the user's configured pill shape with BacklinksPanel /
 	// OutgoingLinksPanel / CCSView so frontmatter tag pills track
@@ -157,6 +161,27 @@
 	const STRUCTURAL_LIST_LINK_KEYS = new Set(['parent', 'contains']);
 	const structuralKeyType = (key: string): PropertyType | null =>
 		STRUCTURAL_LIST_LINK_KEYS.has(key) ? 'list' : null;
+
+	// ─── MIG-107 Slice 3 — WHERE THIS PANEL'S TRUTH COMES FROM ──────────────────────────────────
+	//
+	// The `properties` PROP is a projection of `tab.content`: the file as it looked when the note was
+	// opened. The model-based writers deliberately never refresh it (`saveTabContent` — "Do NOT update
+	// the store during autosave"), so it is stale the moment ANY writer runs, and the two mounted
+	// panels drift apart from each other and from the file (PJ-174 AK-2/AK-3).
+	//
+	// With the flag on, this panel reads the MODEL — the same array `compose` writes to disk — and
+	// `$propsVersion` is what tells it to look again. The signal carries no payload on purpose; it
+	// says "look", never "here is the value", because a payload would be the second copy all over
+	// again (see propsSignal.ts).
+	//
+	// The `?? properties` fallback matters: a host may mount this panel before its model exists
+	// (index preview, dashboard). Falling back to the projection is strictly better than rendering
+	// nothing, and it is the same content the panel would have shown anyway.
+	const sourceProps = $derived.by(() => {
+		if (!PROPS_SINGLE_OWNERSHIP) return properties;
+		void $propsVersion; // subscribe — re-read the model whenever some note's props change
+		return getModel(tabId)?.props ?? properties;
+	});
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
 	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -358,13 +383,22 @@
 		}
 	}
 	$effect(() => {
-		const currentSnapshot = JSON.stringify(properties.map(p => ({ k: p.key, v: p.value, t: p.type })));
+		// MIG-107 Slice 3 — seed from `sourceProps` (the model when the flag is on), not from the
+		// stale projection. Everything below is unchanged.
+		const currentSnapshot = JSON.stringify(sourceProps.map(p => ({ k: p.key, v: p.value, t: p.type })));
 		const tabChanged = tabId !== prevTabId;
 		const propsChanged = currentSnapshot !== prevPropsSnapshot;
 
 		if (tabChanged || propsChanged) {
-			if (!saving || tabChanged) {
-				editableProps = properties.map(p => {
+			// MIG-107 Slice 3 — do NOT re-seed over an edit the user has typed but not yet flushed.
+			// The model now changes far more often than `tab.content` ever did (every writer ticks the
+			// signal), so without this a keystroke in one field could be reverted by an unrelated
+			// property change elsewhere. A pending debounce means `editableProps` holds at least one
+			// value newer than the model; it wins until it flushes. A tab change always re-seeds —
+			// that is a different note, and its pending edit is flushed by the teardown path.
+			const localEditPending = saveTimeout !== undefined;
+			if ((!saving && !localEditPending) || tabChanged) {
+				editableProps = sourceProps.map(p => {
 					// Apply registered type override if available
 					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
 					// PJ-065 — structural link keys ALWAYS render as 'list' chips, overriding any
