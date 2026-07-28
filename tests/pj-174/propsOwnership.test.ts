@@ -21,8 +21,10 @@
  * for the erased key against the OPEN-TIME base, re-emits the base's bytes, and the write is clean:
  * no error, no dirty flag, no conflict, nothing downstream notices.
  *
- * These tests are RED against the code as it stands. They are the harness the structural fix
- * (single ownership for props) must turn green — every one, before it lands.
+ * The two damage tests are written with `it.fails`: they are EXPECTED to fail against the code as it
+ * stands, which keeps the suite green (so it can go on gating every slice) while making the moment
+ * the fix lands unmissable — vitest reports an expected-failure that PASSES as a failure. MIG-107
+ * Slice 4 flips them back to plain `it`. They are the harness single ownership must turn green.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
@@ -30,14 +32,15 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 import { invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
 
-import { openTabs, saveTabContent, type OpenTab } from '$lib/libraries/store';
+import { openTabs, saveTabContent, type OpenTab, type FrontmatterProperty, type PropertyType } from '$lib/libraries/store';
 import { open as mOpen, closeAll } from '$lib/editor/noteSession';
 import { getModel } from '$lib/editor/noteModel';
 
 const mockInvoke = vi.mocked(invoke);
 
-type Prop = { key: string; value: string; type: string; listItems?: string[] };
-const P = (key: string, value: string, type = 'text'): Prop => ({ key, value, type });
+/** The REAL shape — not a local look-alike, so the harness cannot drift from production types. */
+type Prop = FrontmatterProperty;
+const P = (key: string, value: string, type: PropertyType = 'text'): Prop => ({ key, value, type });
 /** A `list` prop carries its items in `listItems`; `value` is the display string. */
 const L = (key: string, items: string[]): Prop =>
 	({ key, value: items.join(', '), type: 'list', listItems: items });
@@ -58,8 +61,8 @@ beforeEach(() => {
 	openTabs.set([]);
 	writes = [];
 	mockInvoke.mockReset();
-	mockInvoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
-		if (cmd === 'write_note') writes.push(String(args?.content ?? ''));
+	mockInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
+		if (cmd === 'write_note') writes.push(String((args as { content?: unknown })?.content ?? ''));
 		return undefined;
 	});
 	openTabs.set([tab('a', '/L/N.md', CONTENT)]);
@@ -95,7 +98,12 @@ describe('PJ-174 AK-2/3 — the ROOT CAUSE: the panel reads a projection the wri
 });
 
 describe('PJ-174 AK-2 — a stale replay erases frontmatter another writer already persisted', () => {
-	it('a tag added by the tree/menu writer is wiped by the next panel save', async () => {
+	// `it.fails` — this reproduction is EXPECTED to fail until MIG-107 Slice 4 lands. It is written
+	// as an expected-failure rather than deleted or skipped so that (a) the suite stays green and can
+	// keep gating every slice, and (b) the moment single ownership makes it pass, vitest reports THIS
+	// test as failing ("expected to fail but passed") — a loud, unmissable signal. Slice 4 flips it
+	// back to a plain `it`.
+	it.fails('a tag added by the tree/menu writer is wiped by the next panel save', async () => {
 		// Writer A — "Add tag" from the file-tree context menu. Goes through the model and lands
 		// on disk (this is `addTagToNote`'s OPEN branch, reduced to its store-level effect).
 		await saveTabContent('a', '/L/N.md',
@@ -118,7 +126,8 @@ describe('PJ-174 AK-2 — a stale replay erases frontmatter another writer alrea
 });
 
 describe('PJ-174 AK-3 — two panels bound to one note revert each other', () => {
-	it('the second panel to save reinstates its stale copy over the first panel\'s edit', async () => {
+	// `it.fails` until MIG-107 Slice 4 — see the note on the AK-2 reproduction above.
+	it.fails('the second panel to save reinstates its stale copy over the first panel\'s edit', async () => {
 		// Both instances mount for the same tabId and are seeded from the same content.
 		const inNote = propsFromTabContent();
 		const sidebar = propsFromTabContent();

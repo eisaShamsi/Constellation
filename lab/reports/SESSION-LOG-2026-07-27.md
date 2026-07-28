@@ -964,3 +964,71 @@ two-part gate its sibling `renameItem` carries — and **`deleteWithSetting` (:3
   freely typeable while the walker rewrote it.
 
 Committed after the pass, per the mandatory Boss-test gate.
+
+---
+
+# MIG-107 Slice 0 — the substrate contract, and the design question ANSWERED (2026-07-28)
+
+Boss approved MIG-107 with an explicit ruling on the one recommendation that ran against instinct:
+**keep both Properties panels.** Two *views* of one truth is correct; two *copies* is the bug.
+
+## §5.4 resolved by MEASUREMENT, not reasoning: intents key on the KEY
+
+The Plan flagged one `[UNVERIFIED]` that could have changed the design's shape — do intents address a
+property by its **key**, or by a stable **row id**? The evidence for row-ids looked strong:
+`addProperty()` (`PropertyEditor.svelte:605`) appends `{ key: '', … }` and **nothing filters empty
+keys**, so two blank rows can coexist in a panel.
+
+Rather than reason from that, I probed the real `composeFrontmatter` (No-Guessing law):
+
+```
+duplicate keys  →  "stage: wilting"      // last wins; the first is silently discarded
+empty-key row   →  "\"\": \"\""            // written into the user's frontmatter
+```
+
+**`composeFrontmatter` is entirely key-addressed** (`yamlDoc.ts:338-343` — `oldByKey` / `newByKey`
+are `Map`s keyed by `p.key`), so **the persisted representation structurally cannot carry duplicate
+keys.** Position is not identity either: shuffling the array with no value change produces
+byte-identical output.
+
+⇒ **Intents key on the property key** — the only identity the file format actually has. Row ids
+would invent an identity the substrate cannot persist.
+
+**The blank-row objection dissolves rather than being overridden:** a half-typed row is an *editing
+state of one panel*, not a state of the shared authority. It stays local until it has a non-empty
+key, then becomes an `addProp` intent. The model therefore holds exactly what can be persisted.
+A key **collision** on rename stops being a silent last-wins drop and becomes an explicit decision —
+ruled: **reject the rename and tell the user.**
+
+## PJ-178 — a live defect this slice uncovered
+
+Reachable **today**, independently of the migration: click "+" in Properties, then edit any other
+property → the blank row is flushed with the array and serialised as a literal `"": ""` line in the
+note's frontmatter. Pinned by `propsContract.test.ts::an_empty_key_row_is_written_to_the_file`,
+which asserts the **broken** behaviour today and flips to `not.toContain` when Slice 4 lands. The
+single-ownership design closes it structurally, so it is fixed by the migration rather than patched
+separately.
+
+## A red reproduction inside a green suite
+
+The two AK-2/AK-3 damage tests are `it.fails` — **expected**-failures. That keeps the suite green so
+it can go on gating every slice, while making the fix's arrival unmissable: vitest reports an
+expected-failure that PASSES as a failure. Slice 4 flips them to plain `it`.
+
+## Scope stated honestly in the Plan
+
+Added to §7: the Editor-Surface Gate items that need the **running app** — Focus mode, the
+standalone PropertyEditor, the second screen, render↔state same-frame agreement — are **live-gate
+items on Slices 3/4, not harness tests.** jsdom proves the offset-pure half only (LL-034's
+corollary); claiming otherwise would repeat LL-036's over-privileged-fixture mistake.
+
+## Gates
+
+| | |
+|---|---|
+| vitest | **56 files / 626 passed + 2 expected-fail** |
+| Sight perf, SERIAL lane (PJ-172) | **31/31** |
+| svelte-check | **0 errors** — after replacing my local look-alike `Prop` type with the real `FrontmatterProperty`/`PropertyType`, so the harness cannot drift from production types |
+
+**Next: Slice 1** — read the three remaining prop writers (`NoteEditor.svelte:205`, `:478`,
+`+layout.svelte:5064`) and classify each as intent or legitimate wholesale. No behaviour change.

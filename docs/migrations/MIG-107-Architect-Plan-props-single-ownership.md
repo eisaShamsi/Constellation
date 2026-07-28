@@ -183,13 +183,40 @@ Each applies to the model's **current** array. `setProps` (wholesale) survives *
 callers that genuinely mean "replace everything": opening/re-seeding a note, and the PJ-088
 conflict-merge rebase.
 
-### 5.4 Ordering by key, and the one honest wrinkle
+### 5.4 Key vs. row id — ANSWERED at Slice 0 (2026-07-28): **KEY**
 
-Intents are keyed by property **key**, so a rename (`renamePropKey`) and a reorder need explicit
-operations rather than falling out of array-index arithmetic. Duplicate keys in frontmatter are
-therefore a question I must answer at Slice 1 rather than assume: **[UNVERIFIED]** whether the
-current panel permits two rows with the same key. If it does, intents key on a stable row id instead.
-**This is the one design detail that could change shape, and it is checked before code.**
+Measured, not reasoned — `tests/pj-174/propsContract.test.ts`, 6 tests, all green:
+
+* **`composeFrontmatter` is entirely key-addressed** (`yamlDoc.ts:338-343` builds `oldByKey` /
+  `newByKey` as `Map`s keyed by `p.key`), so the persisted representation **structurally cannot
+  carry duplicate keys**. Probed on the real function: `stage: sapling` + `stage: wilting` →
+  `stage: wilting`, the first silently discarded, and no arrangement of the array yields two
+  `stage:` lines.
+* **Position is not identity**: shuffling the array with no value change produces byte-identical
+  output.
+
+⇒ **Intents key on the property key**, which is the only identity the file format has. Row ids would
+invent an identity the substrate cannot persist.
+
+**The objection that made this look impossible, and its resolution.** `addProperty()`
+(`PropertyEditor.svelte:605`) appends `{ key: '', value: '', type: 'text' }`, and nothing filters
+empty keys — so two blank rows *can* coexist in a panel. But that is an **editing state of one
+panel, not a state of the shared authority**: a half-typed row stays local to the panel until it has
+a non-empty key, and only then becomes an `addProp` intent. The model therefore holds exactly what
+can be persisted — well-formed, key-unique properties.
+
+A **key collision on rename** (typing a key that already exists) stops being a silent last-wins drop
+and becomes an explicit, surfaced decision. Design ruling: **reject the rename and tell the user**,
+rather than overwrite a property they did not mean to touch.
+
+### 5.5 A live defect Slice 0 uncovered — PJ-178
+
+Reachable **today**, independently of this migration: click "+" in Properties, then edit any other
+property, and the blank row is flushed with the array into `composeFrontmatter`, which serialises it
+as a literal `"": ""` line in the note's frontmatter. Pinned by
+`propsContract.test.ts::an_empty_key_row_is_written_to_the_file`, which currently asserts the
+**broken** behaviour and flips to `not.toContain` when the fix lands. The single-ownership design
+closes it structurally (§5.4), so it is fixed by Slice 4 rather than separately patched.
 
 ---
 
@@ -214,13 +241,19 @@ Each lands alone, each has a verification clause. **Toggle: `PROPS_SINGLE_OWNERS
 
 | # | What lands | Files | Boss-testable? |
 |---|---|---|---|
-| **0** | **Answer §5.4** (duplicate keys → key-vs-row-id) + extend the harness to the full recipe set: reorder, key-rename, remove, nested-map round-trip, Focus-mode, standalone instance | `tests/pj-174/` | no |
+| **0** | ✅ **DONE 2026-07-28.** §5.4 answered by measurement (**KEY**, not row id) + the substrate contract pinned: duplicates collapse last-wins, position is not identity, remove splices only its key, rename = remove+add, untouched keys are never rewritten. Uncovered **PJ-178** (a blank row is written as `"": ""`). `propsContract.test.ts` 6/6 | `tests/pj-174/` | no |
 | **1** | **Read the two `NoteEditor` callers** (`:205`, `:478`) and `+layout.svelte:5064`; classify each as intent or legitimate wholesale. No behaviour change | — | no |
 | **2** | **The intents + `propsVersion` signal** in the model, with `setProps` retained for the two legitimate callers. Nothing consumes them yet — inert | `noteModel.ts`, `noteSession.ts` | no |
 | **3** | **PropertyEditor reads from the model** behind the toggle; still writes whole arrays. Proves the read half in isolation | `PropertyEditor.svelte` | **yes** |
 | **4** | **PropertyEditor writes intents.** The swap. Both panels live on one authority | `PropertyEditor.svelte`, `store.ts` | **yes (headline)** |
 | **5** | **The other three writers** to intents where §1 said so | `NoteEditor.svelte`, `+layout.svelte` | **yes** |
 | **6** | Remove the toggle + the dead whole-array path; `/simplify`; safety-inspection; docs ×15 | — | no |
+
+**Not coverable by vitest, and not pretended otherwise.** The Editor-Surface Gate items that need
+the running app — **Focus mode** (enter/type/exit round-trip and the teardown flush), the
+**standalone PropertyEditor** instance, the **second screen**, and render↔state same-frame agreement
+— are live-gate items on Slices 3/4, not harness tests. jsdom can prove the offset-pure half only
+(LL-034's corollary); claiming otherwise would be the over-privileged-fixture mistake of LL-036.
 
 **Slices 3 and 4 are separated deliberately.** The read half is provable on its own (both panels show
 the same truth), and if the swap has to be reverted, reverting Slice 4 alone leaves a correct,
