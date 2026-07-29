@@ -256,15 +256,48 @@ export function markRecentWrite(filePath: string) {
 	setTimeout(() => recentWrites.delete(filePath), 2000);
 }
 
+/** One entry in the write-ahead net.
+ *
+ *  `snapshot` (PJ-181) records WHY the entry exists — the thing it never recorded before:
+ *
+ *    snapshot !== true  → the net holds work the disk never had (a real recovery copy)
+ *    snapshot === true  → `content` was ALREADY DURABLE on disk when it was stashed
+ *
+ *  Without it the entry recorded WHAT it held and never WHY, and `resolveNoteContent` was
+ *  asked to tell a recovery copy from a stale snapshot using information that was never
+ *  written down. It answered with `cid_cn`, which is the note's IDENTITY and says nothing
+ *  about its VERSION — so the copy left by merely VIEWING a note beat a newer file.
+ *
+ *  A flag rather than a copy of the baseline bytes, deliberately: for a snapshot the
+ *  baseline IS `content`, so the bytes would be stored twice. This blob is persisted to
+ *  localStorage, is never pruned or capped, and `setWriteAhead` swallows a quota exception
+ *  with an empty catch — so doubling every viewed note's entry would have silently pushed
+ *  the whole net toward the point where it stops persisting at all, which is exactly the
+ *  crash recovery it exists to provide.
+ *
+ *  Optional on purpose: a legacy localStorage entry has no `snapshot`, and its absence
+ *  means "cannot prove this is a snapshot" → treated as real work, which is the pre-PJ-181
+ *  behaviour and the direction that never discards the user's edits.
+ */
+type WriteAheadEntry = { content: string; cursorPos: number; scrollTop: number; snapshot?: boolean };
+
 /** Write-ahead buffer: holds content/cursor/scroll that hasn't been written to disk yet.
  *  When opening a note, check this first — it's synchronous and always has the latest data. */
-const writeAheadBuffer = new Map<string, { content: string; cursorPos: number; scrollTop: number }>();
+const writeAheadBuffer = new Map<string, WriteAheadEntry>();
 /** localStorage key for the crash-safe wab backup. Single source of truth so
  *  the five readers/writers can't drift apart on a typo. */
 const WAB_LS_KEY = 'constellation-wab';
 
-export function setWriteAhead(filePath: string, content: string, cursorPos: number, scrollTop: number) {
-	const entry = { content, cursorPos, scrollTop };
+/**
+ * @param snapshot PJ-181 — pass `true` when `content` is ALREADY DURABLE on disk (a mere
+ *        view, nothing typed). Such an entry recovers nothing, and must never outrank a
+ *        newer file on reopen. Omit it for a real recovery copy (net-before-write, or any
+ *        stash of work not yet on disk) — omission is the safe default.
+ */
+export function setWriteAhead(filePath: string, content: string, cursorPos: number, scrollTop: number, snapshot?: boolean) {
+	const entry: WriteAheadEntry = snapshot
+		? { content, cursorPos, scrollTop, snapshot: true }
+		: { content, cursorPos, scrollTop };
 	writeAheadBuffer.set(filePath, entry);
 	/* Also persist to localStorage as crash-safe backup (survives app restart).
 	   This is synchronous and fast for single-note content. */
@@ -275,7 +308,7 @@ export function setWriteAhead(filePath: string, content: string, cursorPos: numb
 	} catch {}
 }
 
-export function getWriteAhead(filePath: string): { content: string; cursorPos: number; scrollTop: number } | undefined {
+export function getWriteAhead(filePath: string): WriteAheadEntry | undefined {
 	/* Check in-memory buffer first (faster), fall back to localStorage */
 	const mem = writeAheadBuffer.get(filePath);
 	if (mem) return mem;
@@ -2488,10 +2521,26 @@ async function resolveNoteContent(
 		const wabBody = parseFrontmatter(wab.content).body.trim();
 		const diskBody = parseFrontmatter(diskContent).body.trim();
 		const emptyResurrection = wabBody === '' && diskBody !== '';
-		if (!identityProven || emptyResurrection) {
+		// PJ-181 (APP-KILLER) — IDENTITY is not FRESHNESS. `cid_cn` is the note's identity
+		// and is unchanged by an edit, so every check above passes for a note edited
+		// OUTSIDE Constellation (Syncthing, a second device, `git pull`) — while the net
+		// still holds the copy left by merely VIEWING it (NoteEditor's teardown stashes one
+		// even when nothing was typed, and nothing clears it for a closed note). The stale
+		// view then won the screen, the model was born DIRTY with it, and the first tab
+		// switch wrote it over the newer file and reindexed on it. Reproduced end to end:
+		// the flush returned `{ok:true}` and the externally-added paragraph was gone.
+		//
+		// The entry now says which it is. `snapshot` means its content was ALREADY DURABLE
+		// when it was stashed — so the bytes it holds ARE the baseline it was taken against,
+		// and if disk no longer matches them, someone else has written since and is simply
+		// newer. A net holding real unsaved work (the PJ-102 failed-save recovery) is
+		// untouched by this, and so is a legacy entry with no flag: unprovable → real work.
+		const staleSnapshot = wab.snapshot === true && diskContent !== wab.content;
+		if (!identityProven || emptyResurrection || staleSnapshot) {
 			console.warn(
 				'[resolveNoteContent] write-ahead-buffer rejected for', filePath,
-				identityProven ? '(empty-body resurrection)' : '(identity unproven)',
+				staleSnapshot ? '(stale snapshot — disk moved on)'
+					: identityProven ? '(empty-body resurrection)' : '(identity unproven)',
 				'— preferring disk',
 			);
 			// MIG-100 hotfix-inspection: the RESTORE path must not destroy the

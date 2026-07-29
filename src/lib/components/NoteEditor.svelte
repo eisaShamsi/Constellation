@@ -24,7 +24,7 @@
 	// model is not yet READ for seed/save — that swap lands flag-gated next,
 	// so the app behaves identically to the §C-1 safe state right now.
 	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession, editPropValue, addPropTo, removePropFrom } from '$lib/editor/noteSession';
-	import { compose, getModel } from '$lib/editor/noteModel';
+	import { compose, getModel, isDirty as isModelDirty } from '$lib/editor/noteModel';
 	import { propsVersion } from '$lib/editor/propsSignal';
 	import { getActiveEditorForPath } from '$lib/editor/activeEditor';
 	import { SINGLE_OWNERSHIP, PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -366,8 +366,29 @@
 		}
 		if (!needsDiskSave) {
 			// No disk write (nothing changed since last save) — still stash the current
-			// buffer for crash recovery, then done.
-			setWriteAhead(filePath, content, cursorPos, scrollTop);
+			// buffer for crash recovery (and for cursor/scroll across a restart), then done.
+			//
+			// PJ-181 — flag this entry a SNAPSHOT (content the disk already holds) so it can
+			// never outrank a NEWER file on reopen: merely viewing a note leaves one of
+			// these, nothing clears it for a closed note, and an external edit (Syncthing /
+			// another device / `git pull`) does not change `cid_cn`, so the stale view used
+			// to win the screen and the next tab switch wrote it over the newer file.
+			//
+			// ★ The flag comes from the MODEL, never from `needsDiskSave`. This originally
+			// passed a bare `true` on the reasoning that `!needsDiskSave` means "nothing
+			// changed since the last durable save" — it does NOT. `needsDiskSave` is
+			// NotePane's view-level `dirty`, which `doSave()` clears at save-REQUEST time
+			// (NotePane.svelte:340, before the write is even attempted) and never restores
+			// on failure. So it is ALSO false while a FAILED or in-flight save's only copy
+			// is still unwritten — and flagging that as "already durable" made the reopen
+			// reject and DELETE the user's sole recovery copy. The build's own safety
+			// inspection caught it, measured, before it shipped.
+			//
+			// The model tracks DURABILITY: `markSaved` trails the durable write, so clean
+			// ⟺ every byte here is already on disk. Under `SINGLE_OWNERSHIP = false` there
+			// is no model, so the flag stays false = "real work" = pre-PJ-181 behaviour,
+			// which is the direction that never discards.
+			setWriteAhead(filePath, content, cursorPos, scrollTop, SINGLE_OWNERSHIP && !isModelDirty(tab.id));
 			return;
 		}
 		markRecentWrite(filePath);

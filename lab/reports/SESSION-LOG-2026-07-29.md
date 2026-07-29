@@ -336,6 +336,152 @@ note A's properties onto note B, durably and silently. Filed as **PJ-187** (the 
 **Gates after the inspection fix:** vitest **62 files / 716** · Rust **1280 / 0** ·
 svelte-check **0 errors** · Sight perf SERIAL **31 / 31**.
 
+### §7 — PJ-181 (APP-KILLER): a merely-VIEWED note overwriting a newer external edit
+
+**Function in hand:** the write-ahead recovery net — its restore on note open
+(`store.ts::resolveNoteContent`) and its arbitration against the bytes just read from disk.
+
+**SO#8 start-guard:** entry cross-checked against orientation v3.75 §preamble and the
+2026-07-27/29 session logs. Fresh, never worked, names the function correctly.
+
+#### §7.1 Reproduced, and the first reproduction was WRONG
+
+Recipe V: view a note (type nothing) → close → the file is edited outside Constellation →
+reopen. Driven through the REAL `openNoteTab` against a mocked IPC bridge (the
+`tests/mig-076/reopenRecoveryClobber.test.ts` harness pattern).
+
+**The first run of the second assertion PASSED — for a harness bug.** `flushIfDirty(id, ENV,
+origin)` takes the save ENV as its second argument and I passed the path string, so `e.write`
+was undefined, the save returned `write_failed`, and the test went green while the defect was
+fully live. Caught by instrumenting rather than trusting it. **Measured with a real env:**
+
+```
+disk before flush : "...the original body\n\nEXTERNAL WORK"
+flush result      : {"ok":true}                ← reported SUCCESS
+disk after flush  : "...the original body"     ← the external edit is GONE
+```
+
+That is LL-037 rule 3 in miniature, inside the very session that wrote LL-039.
+
+#### §7.2 The root — the net recorded WHAT it held and never WHY
+
+The entry was `{ content, cursorPos, scrollTop }`. `resolveNoteContent` was asked to tell a
+genuine recovery copy from a stale snapshot using information that was never written down,
+and answered with `cid_cn` — the note's **identity**, which says nothing about its **version**.
+Every check passed for an externally-edited note, so the stale view won the screen, the model
+was born DIRTY (`markModelRecoveredFromNet`), and the first departure wrote it over the file.
+
+Three premises, each verified by reading before any design:
+1. `NoteEditor.svelte` `!needsDiskSave` branch stashes an entry even when nothing changed
+   (`needsDiskSave` is NotePane's own dirty flag) — merely viewing leaves one;
+2. nothing clears it for a CLOSED note;
+3. the manual-open path marks the model dirty from it, unlike `restoreSessionTabs`, which
+   passes `preserveNet` and seeds the TRUE disk baseline so a restored tab is born clean.
+
+#### §7.3 The fix — the entry now says WHY it exists
+
+`WriteAheadEntry` gains an optional `snapshot?: boolean`; `resolveNoteContent` rejects the net
+when `wab.snapshot === true && diskContent !== wab.content`, taking the same path as the two
+pre-existing rejections. Absent flag (every legacy localStorage entry) → treated as real work,
+i.e. pre-PJ-181 behaviour, the direction that never discards the user's edits.
+
+**A flag, not a copy of the baseline bytes — and that was a correction to my own first
+version.** I first stored the baseline content itself. Then checked the store: the net's
+localStorage blob is **never pruned and never capped**, and `setWriteAhead` swallows a quota
+exception with an empty `catch`. Storing the baseline would have put a SECOND FULL COPY of
+every viewed note's content in that blob — doubling the growth of an unbounded store whose
+failure mode is silently ceasing to persist, which is the crash recovery it exists to provide.
+For a snapshot the baseline IS the content, so a boolean carries the same information at no
+size cost. *(The unbounded, uncapped, silently-failing WAB blob is pre-existing and now filed.)*
+
+**LL-039 applied to this fix:** every `setWriteAhead` call site swept with no `grep -v` —
+three live sites. Only the snapshot stash gets the flag; the two save-path stashes
+(`NoteEditor`'s legacy branch and `standardSaveEnv.setNet`) hold work not yet on disk, where
+omitting it is correct. `getWriteAhead` is read by exactly one consumer.
+
+#### §7.4 Verification
+
+RED-proven twice — once for the baseline version, once after the refactor to the flag — by
+neutering `staleSnapshot`: **2 failed / 3 passed**, and the 3 that hold are the controls,
+including the one that matters most: **Recipe S (PJ-102), where a genuine failed-save recovery
+copy must still win and still be born dirty.** A fix that merely "prefers disk" fails that
+control, and that failure would be the user's unsaved work.
+
+| Gate | Result |
+|---|---|
+| vitest | **63 files / 721 tests** (was 62/716) |
+| svelte-check | **0 errors** |
+| Sight perf, SERIAL lane | **31 / 31** |
+| Rust | untouched — frontend-only change |
+
+**Boss-validated on the live Universe:** view → close → external append via the shell → reopen
+shows BOTH paragraphs → tab switch and back → the externally-added paragraph is still on disk.
+
+#### §7.5 The build's own inspection found an APP-KILLER **in this fix** — measured, before it shipped
+
+A focused adversarial hunt over the PJ-181 diff (four lenses, every candidate refuted before
+confirmation) returned one confirmed APP-KILLER, and it broke the very invariant the fix
+existed to protect.
+
+**`needsDiskSave` does not mean what I wrote in the comment.** It is NotePane's view-level
+`dirty`, and `doSave()` clears it at **save-REQUEST** time (`NotePane.svelte:340`) — before the
+write is attempted — and never restores it on failure. Its three assignments are: init false,
+cleared on request, true on `docChanged`. So `!needsDiskSave` is ALSO true while a **failed or
+in-flight** save's only copy is still unwritten.
+
+The first version of the fix hard-coded `snapshot: true` in that branch. Consequence: after a
+failed save (the documented `.md`-locked case) **any** teardown — a tab switch, the app-close
+`beforeunload`, switching to Focus — re-stashed the user's ONLY copy flagged *already durable*,
+and `resolveNoteContent`'s new branch then rejected it and **cleared it**. The fix would have
+deleted precisely what the net exists to protect, with no error anywhere.
+
+**My error, precisely:** I verified WHERE `needsDiskSave` came from and never checked what it
+MEANT — I read the name and the neighbouring comment and inferred "durable". That is the
+No-Guessing law, broken in the session that wrote LL-039 about this exact habit.
+
+**Fixed:** the flag is now derived from the MODEL, which tracks durability (`markSaved` trails
+the durable write) — `SINGLE_OWNERSHIP && !isModelDirty(tab.id)`. Under `SINGLE_OWNERSHIP=false`
+there is no model, so the flag stays false = "real work" = pre-PJ-181 behaviour.
+
+#### §7.6 Two of my three new tests were worthless when written
+
+1. The Recipe-V flush case **passed for a harness bug** (a path string where a save ENV was
+   expected → `e.write` undefined → `write_failed`), while the defect was fully live.
+2. The new failed-save control **passed with the flag hard-coded to `true`** — it round-tripped
+   through a reopen, and the round-trip re-stashed an UNFLAGGED entry that masked the flag
+   entirely. It proved nothing about the thing it was written to prove.
+
+The second is the sharper lesson and is now **LL-040**: *a test that exercises the CONSEQUENCE
+cannot pin a DECISION whose whole purpose is that the consequence is ambiguous.* Recipe V and
+the failed-save case are mechanically identical downstream — a snapshot-flagged entry differing
+from disk — and differ only in which side is newer, which is exactly what the downstream code
+cannot know. The surviving test asserts the **predicate at the point of decision**, and is
+proven load-bearing: it fails against the old hard-coded flag and passes against the new one.
+
+#### §7.7 A third correction — the localStorage blob
+
+The first fix stored the baseline BYTES on each entry. Checking the store before committing:
+the net's localStorage blob is **never pruned, never capped**, and `setWriteAhead` swallows a
+quota exception with an empty `catch`. Storing the baseline would have put a SECOND FULL COPY
+of every viewed note into that blob — doubling the growth of an unbounded store whose failure
+mode is silently ceasing to persist, i.e. the crash recovery it exists to provide. Replaced
+with a boolean: for a snapshot the baseline IS the content, so the flag carries the same
+information at no size cost. *(The unbounded/uncapped/silently-failing WAB blob is
+pre-existing — filed as PJ-188.)*
+
+**Also filed (PJ-189):** entries written by the PREVIOUS build carry no flag and therefore keep
+the pre-fix behaviour until the note is next opened-and-closed under the new build. Deliberate —
+an unflagged entry is treated as real work, the direction that never discards — but it means
+the fix self-heals per note rather than instantly.
+
+**Gates after the correction:** vitest **63 files / 722 tests** · svelte-check **0 errors** ·
+Sight perf SERIAL 31/31 · Rust untouched. **Boss re-validated** on the rebuilt binary, both the
+external-edit recipe and the type-a-word-and-close-immediately case.
+
+*(Boss test note: the tutorial handed over a `bash` `printf` command on a PowerShell box — the
+third environment-unchecked instruction of the session, after two Bases columns that could not
+be edited / could not display. The commands I run are verified; the ones I hand over were not.)*
+
 ### §6.7 Binary
 
 `npm run build` then `cargo build --release` (clean on the first attempt). Chain verified by
