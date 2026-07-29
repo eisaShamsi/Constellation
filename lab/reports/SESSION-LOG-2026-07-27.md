@@ -1370,3 +1370,17 @@ from the in-note panel · and it stuck after reopening. All four surfaces now ag
 
 The stage dropdown highlights the **first** entry (Spark) rather than the note's **current** stage
 (Growth). Cosmetic, unrelated to this migration's data flow — taken up next.
+
+## PJ-179 — the stage picker opened on the wrong entry (Boss-found, 2026-07-29)
+
+Spotted while testing Slice 5. A note at **Growth** opened its stage list with **Spark** highlighted
+— two steps BACKWARDS — so one careless Enter would have moved the note the wrong way. Not
+cosmetic: a picker for a value that already exists must show where you ARE, not where the list
+begins.
+
+`stageIndexOf(opts, current)` now resolves the note's own stage, and every open path uses it —
+focus, click, and the arrow keys (which then move *from* there, standard combobox behaviour). It
+still falls back to the first entry in the one case where that is the truth: a **custom** per-note
+stage term, which is not among the offered options, so no current entry exists.
+
+Pinned by `tests/pj-174/stagePickerHighlight.test.ts`. Boss-validated.

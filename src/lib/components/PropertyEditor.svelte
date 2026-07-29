@@ -238,6 +238,22 @@
 	// 6 paired stages (`spark-<suffix>`, `birth-<suffix>`, …) with the
 	// suffix being either the part after the dash or the whole input.
 	// Per Stages Concept Paper v1.2 §4: per-note scope; nothing Universe-wide.
+	/**
+	 * Which option the stage list should open on: the one the note is ALREADY at.
+	 *
+	 * Boss-found 2026-07-29 — it always opened on the first entry (Spark), so a note at Growth
+	 * offered "Spark" as the highlighted choice and one careless Enter would send it backwards.
+	 * A picker for a value that already exists should show you where you ARE, not where the list
+	 * happens to begin. Falls back to 0 when the current value is not one of the offered options
+	 * (a custom per-note term), which is the only case where "no current entry" is the truth.
+	 */
+	function stageIndexOf(opts: Array<{ value: string }>, current: string): number {
+		const c = (current ?? '').trim().toLowerCase();
+		if (!c) return 0;
+		const i = opts.findIndex((o) => o.value.toLowerCase() === c);
+		return i >= 0 ? i : 0;
+	}
+
 	function buildStageOptions(inputVal: string): Array<{ value: string; emoji: string }> {
 		const trimmed = inputVal.trim();
 		const lcTrimmed = trimmed.toLowerCase();
@@ -500,16 +516,22 @@
 		}
 	}
 
+	/** The row's current stage text — the keydown handler has the row index, not the row. */
+	function currentStageValue(idx: number): string {
+		return editableProps[idx]?.value ?? '';
+	}
+
 	function handleStageKeydown(e: KeyboardEvent, idx: number, opts: Array<{ value: string; emoji: string }>) {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
 			stageUserNavigated = true;
-			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = 0; return; }
+			// Opening with a key starts from where the note IS, then moves — standard combobox behaviour.
+			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = stageIndexOf(opts, currentStageValue(idx)); return; }
 			stageHighlight = Math.min(stageHighlight + 1, opts.length - 1);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			stageUserNavigated = true;
-			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = opts.length - 1; return; }
+			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = stageIndexOf(opts, currentStageValue(idx)); return; }
 			stageHighlight = Math.max(stageHighlight - 1, 0);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
@@ -1135,8 +1157,8 @@
 						value={prop.value}
 						placeholder={$t('propertyEditor.stagePlaceholder')}
 						oninput={(e) => { updateValue(idx, (e.target as HTMLInputElement).value); stageUserNavigated = false; stageMenuOpen = idx; }}
-						onfocus={() => { stageMenuOpen = idx; stageHighlight = 0; stageUserNavigated = false; }}
-						onclick={(e) => { e.stopPropagation(); stageMenuOpen = idx; }}
+						onfocus={() => { stageMenuOpen = idx; stageHighlight = stageIndexOf(opts, prop.value); stageUserNavigated = false; }}
+						onclick={(e) => { e.stopPropagation(); if (stageMenuOpen !== idx) stageHighlight = stageIndexOf(opts, prop.value); stageMenuOpen = idx; }}
 						onkeydown={(e) => handleStageKeydown(e, idx, opts)}
 					/>
 					{#if stageMenuOpen === idx}
