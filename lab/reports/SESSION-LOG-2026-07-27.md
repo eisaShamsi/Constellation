@@ -1308,3 +1308,65 @@ detected — including the 13 missed sites and any site added later.
 Invoked diff-scoped over six files; returned `mode: "whole-app"` again (87 agents, ~10.4 M tokens,
 32 min). The sweep is what caught #1d/#1e/#1f, so its value is not in question — but the per-build
 gate the standing order asks for still does not exist, six attempts in.
+
+---
+
+# MIG-107 Slice 5 — the last three writers, + the stage-surface fix. Boss-validated 4/4.
+
+## The conversion (uniformity, not repair)
+
+`NoteEditor` stage · `NoteEditor` shape · `+layout` template-apply now issue per-key intents. Slice 1
+had already proved all three sound (each reads the model and writes back with no intervening
+`await`), so this removes the **ability** for a correct read-modify-write to drift into a stale one —
+and after it **there is no whole-array property write left in the app.**
+
+**One detail a mechanical conversion would have lost.** The stage and shape setters matched their key
+**case-insensitively** (`p.key.toLowerCase() === 'stage'`); the intents match exactly. So the
+conversion resolves the note's OWN spelling first — a note whose frontmatter says `Stage:` would
+otherwise have gained a second `stage:` key instead of having its own updated. Pinned by a test.
+
+**A small gain:** the template rule *"a template may add properties but must never overwrite yours"*
+used to depend on the caller filtering correctly. `addProp` independently refuses an existing key,
+so it is now enforced by the write primitive rather than by the caller remembering.
+
+## ★ Boss-found: four surfaces show a note's stage, and two of them didn't update
+
+Promoting from the **sidebar** Properties panel changed both Properties panels but left the **header
+badge** and the **file-tree icon** on the old stage.
+
+**Not a Slice-5 regression — verified against the pre-migration file:** `PropertyEditor` has *never*
+called `openTabs.update()`, so nothing that derives from `tab.content` has ever refreshed on a panel
+edit. The migration merely made it visible: now that both panels agree, a header that disagrees is
+obvious.
+
+**The actual cause is a wiring asymmetry.** The same component is mounted twice, and only one mount
+was given the callback: NotePane forwards `onstagechange → onpromote → onStageChanged → stageMap`,
+while the sidebar mount (`+layout:9029`) passes no `onstagechange` at all.
+
+**Fixed by removing the dependency, not by adding the missing callback.** Passing it would fix this
+mount and leave the next one to be forgotten — the same shape as the `touchedKeys` mistake the Boss
+caught yesterday. Instead:
+
+* the header badge now derives `stage` from the **model** via `$propsVersion` (falling back to the
+  projection when no model exists — index preview, dashboard);
+* `stageMap` (the file-tree emoji) is now kept true by an effect over the same signal, walking the
+  open tabs and writing only where the value actually differs.
+
+**There is no callback left to omit**, so no mount point — including one added later — can be wired
+wrongly. This is the migration's own principle applied one level out: *a surface that DISPLAYS a
+property should read it, not be told about it.* It is also memory `feedback_self_contained_components`
+("a shared component can still drift per host") arriving as a data-flow problem rather than a styling
+one.
+
+## Verification
+
+vitest **58 files / 671 tests** · Sight perf SERIAL lane **31/31** · svelte-check **0** ·
+binary 05:24, chain verified.
+
+**Boss test 4/4:** stage from the sidebar (the route that failed) · from the header Promote button ·
+from the in-note panel · and it stuck after reopening. All four surfaces now agree.
+
+## Open, reported by the Boss during this test
+
+The stage dropdown highlights the **first** entry (Spark) rather than the note's **current** stage
+(Growth). Cosmetic, unrelated to this migration's data flow — taken up next.

@@ -45,7 +45,10 @@
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
-	import { editBody as editNoteBody, editProps as editNoteProps, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
+	import { editBody as editNoteBody, editProps as editNoteProps, addPropTo, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
+	import { PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+	import { propsVersion } from '$lib/editor/propsSignal';
+	import { getModel as getNoteModel } from '$lib/editor/noteModel';
 	import { compose as composeNoteModel, getModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { FM_PLUS_ENABLED } from '$lib/editor/fmPlusFlag'; // PJ-114 — FM+ build kill-switch
@@ -1093,9 +1096,35 @@
 	 *  tree's stage emoji updates reactively for every consumer. */
 	function handleStageChanged(path: string, stage: string) {
 		const key = normalizePathKey(path);
-		if (stage) stageMap.set(key, stage);
-		else stageMap.delete(key);
+		if (stage) { if (stageMap.get(key) !== stage) stageMap.set(key, stage); }
+		else if (stageMap.has(key)) stageMap.delete(key);
 	}
+
+	/**
+	 * MIG-107 — keep the file tree's stage emoji true for EVERY writer.
+	 *
+	 * `handleStageChanged` used to be driven only by `onStageChanged`, which NoteEditor fires from
+	 * its own Promote button. The in-note Properties panel reaches it too (NotePane forwards
+	 * `onstagechange` → `onpromote`), but the SIDEBAR Properties panel was mounted without that
+	 * callback — so changing the stage there updated both Properties panels and left the tree icon
+	 * (and the header badge) showing the old stage. Boss-found 2026-07-28.
+	 *
+	 * One shared component, two mount points, wired differently — the drift that memory
+	 * `feedback_self_contained_components` is about. Passing the missing callback would fix this
+	 * mount and leave the next one to be forgotten, so instead the tree now derives the stage from
+	 * the MODEL, which every writer already updates. There is no callback left to omit.
+	 *
+	 * Cost: `propsVersion` ticks only on a real property change (never on typing), and this walks the
+	 * open tabs — a handful — writing only where the value actually differs.
+	 */
+	$effect(() => {
+		void $propsVersion;
+		for (const t of $openTabs) {
+			const m = getNoteModel(t.id);
+			if (!m) continue;
+			handleStageChanged(t.path, m.props.find((p) => p.key.toLowerCase() === 'stage')?.value ?? '');
+		}
+	});
 	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, skyVersion ($state) triggers re-render
@@ -5061,7 +5090,17 @@
 			const added = tplProps.filter(
 				(p) => !IDENTITY.has(p.key.toLowerCase()) && !have.has(p.key.toLowerCase()),
 			);
-			if (added.length) editNoteProps(tab.id, [...existing, ...added], tab.path);
+			// MIG-107 Slice 5 — one `addProp` per genuinely-new key instead of a whole-array write.
+			// Sound before (Slice 1: it reads the model with no intervening await) and unchanged in
+			// behaviour: `added` is already filtered to keys the note does not have, and `addProp`
+			// independently refuses an existing or empty key — so a template can only ever ADD, never
+			// overwrite a property the note already carries. That is the anti-Evernote rule the
+			// IDENTITY set above states, now enforced by the write primitive rather than by the
+			// caller remembering to filter.
+			if (added.length) {
+				if (PROPS_SINGLE_OWNERSHIP) for (const p of added) addPropTo(tab.id, p, tab.path);
+				else editNoteProps(tab.id, [...existing, ...added], tab.path);
+			}
 
 			// Body: dispatch into the live editor so it flows through the ONE write
 			// path (updateListener → model → debounced save), exactly as if typed.

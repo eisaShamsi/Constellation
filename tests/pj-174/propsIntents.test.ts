@@ -187,3 +187,35 @@ describe('MIG-107 Slice 2 — THE PROPERTY THIS MIGRATION RESTS ON', () => {
 		expect(new Set(ks).size).toBe(ks.length); // no duplicates — matches what compose can persist
 	});
 });
+
+describe('MIG-107 Slice 5 — the three converted writers keep their existing semantics', () => {
+	/**
+	 * The stage / shape setters matched their key CASE-INSENSITIVELY when they built whole arrays
+	 * (`p.key.toLowerCase() === 'stage'`). The intents match exactly, so the conversion resolves the
+	 * note's own spelling first. Without that, a note whose frontmatter says `Stage:` would have
+	 * gained a SECOND `stage:` key instead of having its own updated — a silent frontmatter
+	 * corruption, and precisely the kind of detail a "mechanical" conversion loses.
+	 */
+	it('updates a note\'s own capitalisation rather than adding a second key', () => {
+		closeAll();
+		mOpen('c', '/L/C.md', `---\ntitle: N\nStage: seed\n---\nbody`);
+		const existing = getModel('c')!.props.find((p) => p.key.toLowerCase() === 'stage')!.key;
+		expect(existing).toBe('Stage'); // the note's spelling, not ours
+
+		expect(editPropValue('c', existing, 'sapling')).toBe(true);
+		const keys = getModel('c')!.props.map((p) => p.key);
+		expect(keys).toEqual(['title', 'Stage']);           // no duplicate key appeared
+		expect(getModel('c')!.props.find((p) => p.key === 'Stage')!.value).toBe('sapling');
+	});
+
+	/** The template writer's anti-Evernote rule is now enforced by the primitive, not the caller. */
+	it('a template can only ADD — it can never overwrite a property the note already has', () => {
+		closeAll();
+		mOpen('d', '/L/D.md', `---\ntitle: Mine\ncid_cn: C1\n---\nbody`);
+		expect(addPropTo('d', { key: 'title', value: 'Template Title', type: 'text' })).toBe(false);
+		expect(addPropTo('d', { key: 'cid_cn', value: 'OTHER', type: 'text' })).toBe(false);
+		expect(getModel('d')!.props.find((p) => p.key === 'title')!.value).toBe('Mine');
+		expect(getModel('d')!.cid).toBe('C1'); // identity is the NOTE's, never the template's
+		expect(addPropTo('d', { key: 'status', value: 'draft', type: 'text' })).toBe(true);
+	});
+});

@@ -16,17 +16,18 @@
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
 		isCascading, isReseeding,
-		type FrontmatterProperty
+		type FrontmatterProperty, type PropertyType
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
 	// MIG-076 §C — single content ownership. This step (foundation) only
 	// MAINTAINS the model (ensure on tab change + live push per edit); the
 	// model is not yet READ for seed/save — that swap lands flag-gated next,
 	// so the app behaves identically to the §C-1 safe state right now.
-	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession } from '$lib/editor/noteSession';
+	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession, editPropValue, addPropTo, removePropFrom } from '$lib/editor/noteSession';
 	import { compose, getModel } from '$lib/editor/noteModel';
+	import { propsVersion } from '$lib/editor/propsSignal';
 	import { getActiveEditorForPath } from '$lib/editor/activeEditor';
-	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+	import { SINGLE_OWNERSHIP, PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import type { Text } from '@codemirror/state';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
@@ -136,7 +137,25 @@
 	});
 	let body = $derived(parsed.body);
 	let noteDir = $derived(detectDir(body) || $dir);
-	let stage = $derived(parsed.properties.find((p: FrontmatterProperty) => p.key.toLowerCase() === 'stage')?.value ?? '');
+	/**
+	 * MIG-107 — the header's stage badge reads the MODEL, not `tab.content`.
+	 *
+	 * `parsed` comes from `tab.content`, which only refreshes when someone calls `openTabs.update()`.
+	 * The header's own Promote button does; a Properties panel never has. So changing the stage from
+	 * the sidebar left this badge showing the OLD stage while both Properties panels showed the new
+	 * one — Boss-found, 2026-07-28, and pre-existing (PropertyEditor has never notified the tab
+	 * store, verified against the pre-migration file).
+	 *
+	 * Reading the model makes the badge correct for EVERY writer, present and future, instead of
+	 * correct for the writers that remember to notify. Falls back to the projection when no model
+	 * exists yet (index preview, dashboard).
+	 */
+	let stage = $derived.by(() => {
+		void $propsVersion; // re-read when any note's properties change
+		const fromModel = getModel(tab.id)?.props;
+		const src = fromModel ?? parsed.properties;
+		return src.find((p: FrontmatterProperty) => p.key.toLowerCase() === 'stage')?.value ?? '';
+	});
 
 	// MIG-043 Phase 1 — the active note's NSC summary headline (1-line).
 	// Fetched via the shared NSC store when tab.path changes. The store is
@@ -202,7 +221,20 @@
 		}
 		let fc: string;
 		if (SINGLE_OWNERSHIP) {
-			editProps(tab.id, newProps, tab.path);
+			// MIG-107 Slice 5 — say WHICH property changed instead of handing over the whole array.
+			// This site was already sound (Slice 1: it reads the model and writes back with no
+			// intervening await), so this is uniformity, not repair: after it, there is no
+			// whole-array write left that a future `await` could turn stale.
+			// The lookup preserves the CASE-INSENSITIVE match the array version had — a note whose
+			// frontmatter says `Stage:` must keep its own spelling, not gain a second key.
+			if (PROPS_SINGLE_OWNERSHIP) {
+				const existing = getModel(tab.id)?.props.find(p => p.key.toLowerCase() === 'stage')?.key;
+				if (!nextStage) { if (existing) removePropFrom(tab.id, existing, tab.path); }
+				else if (existing) editPropValue(tab.id, existing, nextStage, undefined, tab.path);
+				else addPropTo(tab.id, { key: 'stage', value: nextStage, type: 'text' as PropertyType }, tab.path);
+			} else {
+				editProps(tab.id, newProps, tab.path);
+			}
 			const r = compose(tab.id, tab.path);
 			if (!r.ok) return; // identity refusal — never write a frankenstein
 			fc = r.content; // for the in-store tab display update below (NOT marked saved here)
@@ -475,7 +507,15 @@
 				});
 				if (!updated) newProps.push({ key: 'shape', value: next, type: 'text' as any });
 			}
-			editProps(tab.id, newProps, tab.path);
+			// MIG-107 Slice 5 — same conversion as the stage setter above, and for the same reason.
+			if (PROPS_SINGLE_OWNERSHIP) {
+				const existing = model.props.find((p) => p.key.toLowerCase() === 'shape')?.key;
+				if (!next) { if (existing) removePropFrom(tab.id, existing, tab.path); }
+				else if (existing) editPropValue(tab.id, existing, next, undefined, tab.path);
+				else addPropTo(tab.id, { key: 'shape', value: next, type: 'text' as PropertyType }, tab.path);
+			} else {
+				editProps(tab.id, newProps, tab.path);
+			}
 			const r = compose(tab.id, tab.path);
 			if (!r.ok) return; // identity refusal — never write a frankenstein
 			const fc = r.content;
