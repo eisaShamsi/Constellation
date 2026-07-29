@@ -41,6 +41,26 @@ export type PropOp =
 export const committable = (p: FrontmatterProperty) => !!p.key && !!p.key.trim();
 
 /**
+ * PJ-187 — may rows seeded from `seededForPath` be committed to `targetPath`?
+ *
+ * The rows a panel holds have PROVENANCE, and until this existed nothing recorded it. Every
+ * other identity guard in the chain (`expectPath` on each intent) asks whether the tab id
+ * and the path agree — which they always do — and none asks whether the ROWS belong to that
+ * note. So a panel holding note A's rows could commit them to note B, and every guard passed.
+ *
+ * Reachable by an ordinary gesture: edit a property in the right-sidebar panel, then click a
+ * wikilink within the 800 ms debounce. That is an in-place navigation — the same tab id with
+ * a new path — and the sidebar panel is mounted without a `{#key}`, so it survives it.
+ * Measured before the guard: note B gained note A's key, and B's own value was overwritten.
+ *
+ * Lives here, beside `plan`, rather than inside the component: it is a pure decision about
+ * two strings, and a decision that can only be tested by mounting a component is a decision
+ * that will not be tested. (`null` = the panel has not seeded yet → nothing to mismatch.)
+ */
+export const rowsBelongToTarget = (seededForPath: string | null, targetPath: string): boolean =>
+	seededForPath === null || seededForPath === targetPath;
+
+/**
  * The keys a panel showing `rows` was displaying — i.e. the only keys its next commit may REMOVE.
  * Derived rather than tracked alongside the rows: they were two fields kept in lockstep at two
  * sites, and they had already drifted (one filtered blank keys, the other did not). LL-038 rule 5.

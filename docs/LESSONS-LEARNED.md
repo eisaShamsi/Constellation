@@ -668,6 +668,28 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
+## LL-041: A Guard That Two IDENTIFIERS Agree Is Not a Guard That the PAYLOAD Belongs to Them
+
+**Symptom (PJ-187, 2026-07-29 — the headline of the whole-app register, reproduced and fixed the same day).** Edit a property in the RIGHT-SIDEBAR Properties panel, then click a wikilink within the 800 ms save debounce. Note B's `.md` gained note A's `secret_a` key, and B's own `stage` was overwritten with A's edited value. Silently, durably, with no error and no conflict sidecar.
+
+**Root cause — the guards were all present, all passing, and all asking the wrong question.** The commit chain is thoroughly identity-guarded: every intent (`editPropValue`, `addPropTo`, `removePropFrom`) takes an `expectPath` and refuses when the model's path does not match. Those guards exist because of a previous app-killer and they work. But what each one verifies is **"does this tab id and this path refer to the same note?"** — and after an in-place navigation they DO. The tab was reused (same id, new path) and the model was re-pointed to note B, so id and path agree perfectly. The thing nobody checked is whether the **rows being written** belonged to that note. They were note A's.
+
+**Why the surrounding protections all missed it, each for its own good reason:**
+- the navigation **does** flush before re-pointing — but it flushes the MODEL (`isNoteDirty`), and a pending panel debounce has never reached the model, so the model is clean and the flush is correctly skipped;
+- the panel's seed `$effect` re-seeds on `tabChanged` — but `tabChanged` is `tabId !== prevTabId`, and the tab id never changed;
+- the `localEditPending` guard (added by MIG-107 to stop an unrelated model change reverting a keystroke) then blocks the props-changed re-seed as well — a correct guard whose effect here is to *preserve* the wrong note's rows;
+- the panel's own onDestroy identity gate is correct and never runs, because the sidebar instance is mounted **without a `{#key}`** and is therefore never destroyed. Its twin embedded in `NoteEditor` IS keyed, and was safe the whole time.
+
+**The general shape.** Identity guards protect against *the wrong destination*. They cannot protect against *the wrong payload*, and a system that has many of the first kind reads as thoroughly guarded while having none of the second. Ask of every such guard: **it proves the address is right — what proves the letter is?**
+
+**Rules:**
+1. **Data that outlives the thing it was read from needs PROVENANCE, not just a destination check.** Any buffer that survives a navigation, a remount, or an await — panel rows, a composed payload, a queued write — should record *what it was read from*, and the write should refuse when that no longer matches. `expectPath` answers "is this the note I think it is?"; provenance answers "is this content actually its?".
+2. **Enforce it at the point of damage, not by keying the mount.** Keying the sidebar panel would also have fixed this instance, and it is worth doing, but a widget guard holds only while every caller keeps the widget inert — the same argument this codebase already makes for `immutableBlockKeys` and `adoptDisk`. The refusal belongs in the commit.
+3. **Put the decision where it can be tested.** The predicate lives in `propsCommit.rowsBelongToTarget`, not inside the `.svelte` file, because this repo has no component-test harness — and *a decision that can only be tested by mounting a component is a decision that will not be tested*. (LL-040 rule 3, applied at the point of design rather than after the fact.)
+4. **When two instances of one component exist and only one is keyed, that asymmetry IS the bug report.** The embedded twin's `{#key}` was the evidence that this class was already known and handled — in one of the two places it occurs.
+
+---
+
 ## LL-040: A Flag Named for an INTENT Is Not a Fact About DURABILITY — and a Test of the CONSEQUENCE Cannot Pin a DECISION Whose Consequence Is Ambiguous
 
 **Symptom (PJ-181, 2026-07-29, caught by the build's own safety inspection before it shipped).** The fix for a content-loss app-killer *introduced a worse one*. The write-ahead net — the last-resort copy of unsaved work — gained a `snapshot` flag meaning "this content is already durable on disk, so it must never outrank a newer file". `NoteEditor`'s teardown set that flag to a hard-coded `true` inside the `if (!needsDiskSave)` branch, on the reasoning — written into the code comment — that *"reaching here means nothing changed since the last durable save."*

@@ -769,6 +769,13 @@ Uma lista como `tags:` ou `aliases:` pode ser escrita de quatro maneiras, e toda
 > [!important] Corrigido na 0.1
 > A forma sem recuo era lida como uma lista *vazia*. Os itens continuavam no ficheiro, mas o painel não mostrava nada — e acrescentar uma única etiqueta nova substituía a lista inteira, fazendo desaparecer os itens anteriores. Agora todos os estilos são lidos corretamente. A mesma falha afetava `aliases:`, que é como se resolvem as ligações aos outros nomes de uma nota, e ligações tipadas como `supports:` e `contains:`, que alimentam o grafo de conexões.
 
+### Editar uma propriedade e sair de imediato
+
+As alterações de propriedades são guardadas cerca de 0,8 segundos depois de parar de escrever. Se alterar uma propriedade na **barra lateral direita** e seguir uma ligação nesse intervalo, o Constellation **descarta** a alteração pendente — ela não é levada para a nota para onde foi.
+
+> [!important] Corrigido na 0.1
+> Até à 0.1, essa alteração pendente era aplicada à **nota para onde acabara de ir**: uma propriedade pertencente apenas à primeira nota podia aparecer na segunda, e o valor próprio desta podia ser substituído — em silêncio, e no disco. Para que uma alteração fique, faça uma breve pausa antes de navegar, ou edite-a no bloco de propriedades **dentro** da nota.
+
 ### Blocos de texto longo
 
 `description: |` seguido de linhas com recuo guarda várias linhas de texto como um único valor. O Constellation mostra essa linha **apenas para leitura**, com uma pré-visualização da primeira linha — a mesma regra dos campos aninhados: o que não pode reescrever com segurança, não reescreve. Edite-o diretamente no ficheiro `.md`.

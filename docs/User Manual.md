@@ -1177,6 +1177,18 @@ thing. Constellation reads all four and shows the same chips:
 > which is how links to a note's other names are resolved, and typed links such as
 > `supports:` and `contains:`, which feed the connection graph.
 
+### Editing a property, then immediately navigating away
+
+Property edits save about 0.8 seconds after you stop. If you change a property in the **right
+sidebar** and follow a link within that moment, Constellation **discards the pending edit** —
+it is not carried over to the note you moved to.
+
+> [!important] Fixed in 0.1
+> Until 0.1 that pending edit was applied to **the note you had just moved to**: a property
+> belonging only to the first note could appear on the second, and the second note's own value
+> could be overwritten — silently, and on disk. To make an edit stick, pause briefly before
+> navigating, or edit in the properties block **inside** the note.
+
 ### Long text blocks
 
 `description: |` followed by indented lines holds several lines of prose as one value.

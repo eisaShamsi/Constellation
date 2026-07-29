@@ -706,6 +706,13 @@ Une liste comme `tags:` ou `aliases:` peut s'écrire de quatre façons, qui sign
 > [!important] Corrigé en 0.1
 > La forme non indentée était lue comme une liste *vide*. Les éléments étaient toujours dans le fichier, mais le panneau n'affichait rien — et ajouter une seule nouvelle étiquette remplaçait alors la liste entière, faisant disparaître les éléments précédents. Tous les styles sont désormais lus correctement. Le même défaut touchait `aliases:`, qui sert à résoudre les liens vers les autres noms d'une note, ainsi que les liens typés comme `supports:` et `contains:`, qui alimentent le graphe de connexions.
 
+### Modifier une propriété puis quitter aussitôt
+
+Les modifications de propriétés sont enregistrées environ 0,8 seconde après que vous arrêtez de taper. Si vous modifiez une propriété dans le **panneau latéral droit** et suivez un lien dans cet intervalle, Constellation **abandonne** la modification en attente : elle n'est pas reportée sur la note où vous êtes arrivé.
+
+> [!important] Corrigé en 0.1
+> Jusqu'à la 0.1, cette modification en attente était appliquée à **la note où vous veniez d'arriver** : une propriété appartenant uniquement à la première note pouvait apparaître sur la seconde, et la valeur propre de celle-ci pouvait être écrasée — silencieusement, et sur le disque. Pour qu'une modification soit prise en compte, marquez une courte pause avant de naviguer, ou modifiez-la dans le bloc de propriétés **à l'intérieur** de la note.
+
 ### Blocs de texte long
 
 `description: |` suivi de lignes indentées contient plusieurs lignes de prose en une seule valeur. Constellation affiche cette ligne **en lecture seule** avec un aperçu de la première ligne — la même règle que pour les champs imbriqués : ce qu'il ne peut pas réécrire sans risque, il ne le réécrit pas. Modifiez-la directement dans le fichier `.md`.

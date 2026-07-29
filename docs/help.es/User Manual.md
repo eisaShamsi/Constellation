@@ -706,6 +706,13 @@ Una lista como `tags:` o `aliases:` puede escribirse de cuatro maneras, y todas 
 > [!important] Corregido en 0.1
 > La forma sin sangría se leía como una lista *vacía*. Los elementos seguían en el archivo, pero el panel no mostraba nada — y añadir una sola etiqueta nueva reemplazaba toda la lista, de modo que los elementos anteriores se perdían. Ahora todos los estilos se leen correctamente. El mismo fallo afectaba a `aliases:`, que es como se resuelven los enlaces a los otros nombres de una nota, y a los enlaces tipados como `supports:` y `contains:`, que alimentan el grafo de conexiones.
 
+### Editar una propiedad y salir de inmediato
+
+Los cambios en las propiedades se guardan unos 0,8 segundos después de que dejas de escribir. Si cambias una propiedad en la **barra lateral derecha** y sigues un enlace dentro de ese instante, Constellation **descarta** el cambio pendiente: no se traslada a la nota a la que fuiste.
+
+> [!important] Corregido en 0.1
+> Hasta la 0.1, ese cambio pendiente se aplicaba a **la nota a la que acababas de ir**: una propiedad que solo pertenecía a la primera nota podía aparecer en la segunda, y el valor propio de esta podía quedar sobrescrito — en silencio y en el disco. Para que un cambio cuaje, haz una breve pausa antes de navegar, o edítalo en el bloque de propiedades **dentro** de la nota.
+
 ### Bloques de texto largo
 
 `description: |` seguido de líneas con sangría guarda varias líneas de prosa como un único valor. Constellation muestra esa fila **de solo lectura** con una vista previa de la primera línea — la misma regla que para los campos anidados: lo que no puede reescribir con seguridad, no lo reescribe. Edítalo directamente en el archivo `.md`.

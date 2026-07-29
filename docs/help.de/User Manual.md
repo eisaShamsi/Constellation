@@ -739,6 +739,13 @@ Eine Liste wie `tags:` oder `aliases:` kann auf vier Arten geschrieben werden, u
 > [!important] Behoben in 0.1
 > Die nicht eingerückte Form wurde bisher als *leere* Liste gelesen. Die Einträge standen weiterhin in der Datei, aber das Panel zeigte nichts an — und ein einziges neues Schlagwort ersetzte dann die ganze Liste, sodass die früheren Einträge verloren gingen. Alle Stile werden jetzt korrekt gelesen. Derselbe Fehler betraf `aliases:` (worüber Verweise auf die anderen Namen einer Notiz aufgelöst werden) sowie typisierte Verknüpfungen wie `supports:` und `contains:`, die den Verbindungsgraphen speisen.
 
+### Eine Eigenschaft bearbeiten und sofort weg navigieren
+
+Änderungen an Eigenschaften werden etwa 0,8 Sekunden nach der letzten Eingabe gespeichert. Wenn Sie eine Eigenschaft in der **rechten Seitenleiste** ändern und innerhalb dieses Moments einem Link folgen, **verwirft** Constellation die noch ausstehende Änderung — sie wird nicht auf die Notiz übertragen, zu der Sie gewechselt haben.
+
+> [!important] Behoben in 0.1
+> Bis 0.1 wurde diese ausstehende Änderung auf **die Notiz angewendet, zu der Sie gerade gewechselt hatten**: Eine Eigenschaft, die nur zur ersten Notiz gehörte, konnte auf der zweiten auftauchen, und deren eigener Wert konnte überschrieben werden — lautlos und auf der Festplatte. Damit eine Änderung sicher greift, warten Sie kurz, bevor Sie navigieren, oder bearbeiten Sie sie im Eigenschaftenblock **innerhalb** der Notiz.
+
 ### Lange Textblöcke
 
 `description: |` gefolgt von eingerückten Zeilen hält mehrere Zeilen Fließtext als einen einzigen Wert. Constellation zeigt diese Zeile **schreibgeschützt** mit einer Vorschau der ersten Zeile — dieselbe Regel wie bei verschachtelten Feldern: Was nicht sicher neu geschrieben werden kann, wird gar nicht neu geschrieben. Bearbeiten Sie sie direkt in der `.md`-Datei.

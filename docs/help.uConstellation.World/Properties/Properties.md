@@ -337,6 +337,24 @@ Each edit affects only the field you touched, so working in one panel never dist
 was changed somewhere else in the meantime. You can use whichever panel is convenient without
 keeping track of which one you used last.
 
+### Editing a property, then immediately navigating away
+
+Property edits save a moment after you stop — about 0.8 seconds. If you change a property in
+the **right sidebar** and then follow a link (or click another note, or press Back) *within
+that moment*, the note in the sidebar changes before the save runs.
+
+In that situation Constellation **discards the pending edit** rather than applying it. It
+does not carry over to the note you moved to.
+
+> [!important] Fixed in 0.1
+> Until version 0.1 that pending edit was applied to **the note you had just moved to** — the
+> panel was still holding the previous note's properties, and nothing checked whether they
+> belonged to the note receiving them. A property that existed only on the first note could
+> appear on the second, and the second note's own value could be overwritten. Silently.
+>
+> If you want an edit to stick, pause briefly before navigating — or make it in the
+> properties block **inside** the note, which commits when you leave it.
+
 > [!tip] Choosing a stage
 > The stage field opens its list **on the stage the note is currently at** — so pressing ↓ moves it
 > one step forward and ↑ one step back. If the note uses a custom stage term of your own, the list

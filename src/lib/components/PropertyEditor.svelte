@@ -14,7 +14,7 @@
 	import { getModel, cloneProps } from '$lib/editor/noteModel';
 	import { isDirty as isNoteDirty } from '$lib/editor/noteSession';
 	import { propsVersion } from '$lib/editor/propsSignal';
-	import { plan as planPropOps, apply as applyPropOps, touchedSince, seededKeysOf } from '$lib/editor/propsCommit';
+	import { plan as planPropOps, apply as applyPropOps, touchedSince, seededKeysOf, rowsBelongToTarget } from '$lib/editor/propsCommit';
 	import { editPropValue, addPropTo, removePropFrom, reorderPropsIn } from '$lib/editor/noteSession';
 	import { withAutoUpdatedDate } from '$lib/libraries/store';
 
@@ -197,6 +197,25 @@
 	 * component's 16 mutation sites and silently dropped tag edits entirely.
 	 */
 	let seededRows: FrontmatterProperty[] = [];
+	/**
+	 * PJ-187 — the PATH the rows in `editableProps` / `seededRows` were seeded from.
+	 *
+	 * The rows have provenance and nothing used to record it. Every identity guard in the
+	 * commit chain (`expectPath` on each intent) checks that the tab id and the path AGREE —
+	 * which they always do — and none of them checks that the ROWS belong to that note.
+	 *
+	 * That gap is reachable by an ordinary gesture: edit a property in the RIGHT-SIDEBAR
+	 * panel, then click a wikilink within the 800 ms debounce. That is an in-place
+	 * navigation — `openNoteTab` reuses the SAME tab (same id, new path) and re-points the
+	 * model — and this panel is mounted WITHOUT a `{#key}` in `+layout.svelte`, so it
+	 * survives. Its seed `$effect` then declines to re-seed (`tabChanged` is false because
+	 * the id never changed, and a pending timer blocks the props-changed branch), so the
+	 * rows are still note A's when the timer fires against note B.
+	 *
+	 * Measured before this guard: note B's `.md` gained A's `secret_a` key and B's own
+	 * `stage` was overwritten with A's edited value. Silently, and durably.
+	 */
+	let seededForPath: string | null = null;
 	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 	let mounted = true; // §C — guards the async Hijri converter from writing after teardown
 	let focusRaf: number | null = null;
@@ -427,6 +446,7 @@
 			// that is a different note, and its pending edit is flushed by the teardown path.
 			const localEditPending = saveTimeout !== undefined;
 			if ((!saving && !localEditPending) || tabChanged) {
+				seededForPath = filePath; // PJ-187 — the rows about to be seeded belong to THIS note
 				seededRows = cloneProps(sourceProps);
 				editableProps = sourceProps.map(p => {
 					// Apply registered type override if available
@@ -919,6 +939,31 @@
 	 * through the SAME shared helper the legacy path uses, so the two cannot drift.
 	 */
 	async function commitAndSave(id: string, path: string): Promise<void> {
+		// PJ-187 (APP-KILLER) — REFUSE to commit rows that belong to a different note.
+		//
+		// This is the one guard the chain was missing. Every `expectPath` below checks that
+		// the tab id and the path agree; none of them knows whether the ROWS do. On an
+		// in-place navigation (same tab id, new path — a wikilink click, a file-tree row,
+		// Alt+Left) this panel survives, declines to re-seed because a debounce is pending,
+		// and then fires against the NEW note holding the OLD note's rows. Measured: note B
+		// gained note A's `secret_a` key and B's own `stage` was overwritten with A's value.
+		//
+		// Enforced HERE rather than by keying the mount, for the reason this codebase states
+		// elsewhere: refusing at the point of damage protects the data however the panel is
+		// mounted — a widget guard only holds while every caller keeps it inert.
+		//
+		// The pending edit is DROPPED, not redirected: by this point the model at `id` has
+		// already been re-pointed to the new note, so there is nothing left to write it to.
+		// That matches what the teardown path already does (its identity gate skips for the
+		// same reason). Saving it to its own note instead requires flushing pending PANEL
+		// edits at navigation time, the way the nav already flushes a dirty MODEL — filed.
+		if (!rowsBelongToTarget(seededForPath, path)) {
+			console.warn(
+				'[PropertyEditor] refusing to commit rows seeded for', seededForPath,
+				'onto', path, '— the note changed under a pending edit (PJ-187)',
+			);
+			return;
+		}
 		if (!PROPS_SINGLE_OWNERSHIP) {
 			await saveTabContent(id, path, editableProps, body);
 			return;

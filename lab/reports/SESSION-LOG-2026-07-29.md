@@ -482,6 +482,57 @@ external-edit recipe and the type-a-word-and-close-immediately case.
 third environment-unchecked instruction of the session, after two Bases columns that could not
 be edited / could not display. The commands I run are verified; the ones I hand over were not.)*
 
+### §8 — PJ-187 headline (APP-KILLER): cross-note property bleed
+
+**Function in hand:** the right-sidebar Properties panel's debounced commit — specifically
+what it targets when the tab it is mounted against navigates in place.
+
+**Reproduced** (`tests/pj-187/crossNotePropertyBleed.test.ts`), driving the real
+`openNoteTab` in-place reuse, the real `plan`/`apply` intents and the real `saveTabContent`.
+Measured on note B's disk:
+
+```yaml
+cid_cn: BBBB            # identity survived — untouched keys are filtered by touchedKeys
+title: Note B           # survived
+stage: EDITED-ON-A      # B's OWN value, overwritten by A's edit
+secret_a: only-on-A     # a key that existed only on A, ADDED to B
+body of B               # body survived — the model owns it
+```
+
+Narrower than the register's description (identity and body survive), and still an
+APP-KILLER: silent, durable corruption of one note's frontmatter with another's data.
+
+**Root cause — every guard was present, passing, and asking the wrong question.** The chain
+is thoroughly identity-guarded (each intent takes an `expectPath`), but those guards verify
+*"do this tab id and this path refer to the same note?"* — and after an in-place navigation
+they do. **Nothing checked whether the ROWS belonged to that note.** Each neighbour missed it
+for its own good reason: the nav-flush is gated on `isNoteDirty` and a pending panel edit
+never reached the model; `tabChanged` is `tabId !== prevTabId` and the id never changed;
+MIG-107's `localEditPending` guard then blocked the props-changed re-seed, correctly
+preserving rows that happened to be the wrong note's; and the panel's onDestroy identity gate
+never ran, because the sidebar instance is mounted **without a `{#key}`** — while its twin
+inside `NoteEditor` IS keyed and was safe throughout. **That asymmetry was the bug report.**
+
+**Fixed** with `rowsBelongToTarget(seededForPath, targetPath)` in `propsCommit.ts` — the rows
+gain provenance, enforced at the COMMIT rather than by keying the mount, and placed in a pure
+module because *a decision that can only be tested by mounting a component is a decision that
+will not be tested* (this repo has no jsdom, no testing-library, no component tests at all).
+
+**Honest scope note:** the pending edit is DROPPED, not redirected — by then the model has
+already been re-pointed, so there is nothing left to write it to. That matches the teardown
+path's existing behaviour. Saving it to its own note instead is **PJ-190**.
+
+**Verification:** RED-proven by neutering the predicate; the no-navigation control stays
+green. vitest **64 files / 724** · svelte-check **0** · Rust untouched. Boss-validated.
+
+**LL-041** — *a guard that two IDENTIFIERS agree is not a guard that the PAYLOAD belongs to
+them.* Also filed: **PJ-191** (key the sidebar panel for symmetry with its protected twin).
+
+**Docs updated ×15 IN THIS COMMIT** — the Properties help topic and the User Manual in all 14
+translations. Deliberately not a catch-up: the PJ-181 commit shipped without them, the Boss
+caught it, and the audit showed only 2 of the last 20 commits carried manual/help and none of
+the three named "session-close PCS" did.
+
 ### §6.7 Binary
 
 `npm run build` then `cargo build --release` (clean on the first attempt). Chain verified by

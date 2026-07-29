@@ -706,6 +706,13 @@ Constellation özellik türlerini otomatik olarak algılar:
 > [!important] 0.1 sürümünde giderildi
 > Girintisiz biçim şimdiye kadar *boş* liste olarak okunuyordu. Ögeler dosyada duruyordu ama panel hiçbir şey göstermiyordu — ve tek bir yeni etiket eklemek listenin tamamını değiştirdiği için önceki ögeler kayboluyordu. Artık her biçim doğru okunuyor. Aynı kusur, bir notun diğer adlarına giden bağlantıların çözümlendiği `aliases:` alanını ve bağlantı grafiğini besleyen `supports:`, `contains:` gibi türlü bağlantıları da etkiliyordu.
 
+### Bir özelliği düzenleyip hemen başka yere geçmek
+
+Özellik değişiklikleri, yazmayı bıraktıktan yaklaşık 0,8 saniye sonra kaydedilir. **Sağ kenar çubuğunda** bir özelliği değiştirip bu süre içinde bir bağlantıya giderseniz, Constellation bekleyen değişikliği **atar** — geçtiğiniz nota taşınmaz.
+
+> [!important] 0.1 sürümünde giderildi
+> 0.1'e kadar bu bekleyen değişiklik **az önce geçtiğiniz nota uygulanıyordu**: yalnızca ilk nota ait bir özellik ikincisinde belirebiliyor, ikincinin kendi değeri de üzerine yazılabiliyordu — sessizce ve diskte. Bir değişikliğin yerleşmesi için gitmeden önce kısa bir an bekleyin ya da notun **içindeki** özellikler bloğunda düzenleyin.
+
 ### Uzun metin blokları
 
 `description: |` ve ardından gelen girintili satırlar, birkaç satırlık metni tek bir değer olarak tutar. Constellation bu satırı, ilk satırın önizlemesiyle birlikte **salt okunur** gösterir — iç içe alanlarla aynı kural: güvenle yeniden yazamadığı şeyi hiç yeniden yazmaz. Düzenlemek için `.md` dosyasını doğrudan açın.
