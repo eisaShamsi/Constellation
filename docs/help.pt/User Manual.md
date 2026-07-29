@@ -750,6 +750,22 @@ Constellation detecta os tipos de propriedades automaticamente:
 
 Alterne a exibicao de propriedades em **Configuracoes > Editor > Propriedades no documento** (Visivel / Oculto / Fonte).
 
+### Estilos de lista
+
+Uma lista como `tags:` ou `aliases:` pode ser escrita de quatro maneiras, e todas significam a mesma coisa. O Constellation lê as quatro e mostra as mesmas etiquetas:
+
+- **Com recuo** — `tags:` e abaixo `  - a`. É assim que o Constellation escreve.
+- **Sem recuo** — `tags:` e abaixo `- a` a partir da margem esquerda. É YAML válido, e é o que muitas outras ferramentas produzem, por isso é comum em bibliotecas importadas.
+- **Numa única linha** — `tags: [a, b]`.
+- **Na linha seguinte** — `tags:` e abaixo `  [a, b]`.
+
+> [!important] Corrigido na 0.1
+> A forma sem recuo era lida como uma lista *vazia*. Os itens continuavam no ficheiro, mas o painel não mostrava nada — e acrescentar uma única etiqueta nova substituía a lista inteira, fazendo desaparecer os itens anteriores. Agora todos os estilos são lidos corretamente. A mesma falha afetava `aliases:`, que é como se resolvem as ligações aos outros nomes de uma nota, e ligações tipadas como `supports:` e `contains:`, que alimentam o grafo de conexões.
+
+### Blocos de texto longo
+
+`description: |` seguido de linhas com recuo guarda várias linhas de texto como um único valor. O Constellation mostra essa linha **apenas para leitura**, com uma pré-visualização da primeira linha — a mesma regra dos campos aninhados: o que não pode reescrever com segurança, não reescreve. Edite-o diretamente no ficheiro `.md`.
+
 ---
 
 ## 10b. Revisão de Origem (Constellation Epistemic Content Engine — CECE)

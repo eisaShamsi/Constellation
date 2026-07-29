@@ -43,6 +43,7 @@
 import { Text } from '@codemirror/state';
 import { parseFrontmatter, buildFullContent, type FrontmatterProperty } from '$lib/libraries/store';
 import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc';
+import { sameList, sameNested, cloneRows, type SetPropOpts } from './propRow';
 
 /**
  * G4 Phase 2 — the model's WRITE goes through the round-trip-safe yamlDoc CST
@@ -109,13 +110,12 @@ export function cloneProps(props: FrontmatterProperty[]): FrontmatterProperty[] 
 	}));
 }
 
-/**
- * Element-wise list equality. Lives HERE, the lowest layer that needs it, and is re-exported upward
- * by `propsCommit` — one definition of "these list items are the same", instead of the four
- * `JSON.stringify` spellings this concept had across yamlDoc / noteModel / propsCommit.
- */
-export const sameList = (a?: string[], b?: string[]): boolean =>
-	a === b || (!a?.length && !b?.length) || (!!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]));
+// PJ-182 — row equality now lives in `propRow.ts`, a leaf module `yamlDoc` can import
+// without a runtime cycle. Re-exported here so every existing consumer keeps one import.
+// (It used to live here as "the lowest layer that needs it" — then the COMPOSER needed it,
+// and the composer is lower still. Its absence there is what dropped an ikhtilāf write.)
+export { sameList, sameNested, samePropRow, cloneRows } from './propRow';
+export type { SetPropOpts } from './propRow';
 
 function cidOf(props: FrontmatterProperty[]): string | null {
 	const p = props.find((x) => x.key.toLowerCase() === 'cid_cn');
@@ -259,7 +259,7 @@ export function setPropValue(
 	id: string,
 	key: string,
 	value: string,
-	opts?: { listItems?: string[]; type?: FrontmatterProperty['type'] },
+	opts?: SetPropOpts,
 	expectPath?: string,
 ): boolean {
 	const m = models.get(id);
@@ -270,12 +270,20 @@ export function setPropValue(
 	const cur = m.props[i];
 	const nextType = opts?.type ?? cur.type;
 	const nextItems = opts?.listItems;
+	const nextNested = opts?.nestedObjects;
 	// `undefined` means "not supplying list items" — the scalar case, and by far the common one.
 	// Comparing `cur.listItems` to itself was guaranteed-equal work on every value edit.
 	const sameItems = nextItems === undefined || sameList(cur.listItems, nextItems);
-	if (cur.value === value && cur.type === nextType && sameItems) return false; // no-op: stay clean
+	const sameRows = nextNested === undefined || sameNested(cur.nestedObjects, nextNested);
+	if (cur.value === value && cur.type === nextType && sameItems && sameRows) return false; // no-op: stay clean
 	const next = m.props.slice(); // entries are REPLACED, never mutated in place — no deep clone needed
-	next[i] = { ...cur, value, type: nextType, ...(nextItems ? { listItems: [...nextItems] } : {}) };
+	next[i] = {
+		...cur,
+		value,
+		type: nextType,
+		...(nextItems ? { listItems: [...nextItems] } : {}),
+		...(nextNested ? { nestedObjects: cloneRows(nextNested) } : {}),
+	};
 	m.props = next;
 	m.cid = cidOf(m.props);
 	m.version++;

@@ -233,6 +233,9 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
     let mut has_created = false;
     let mut has_aliases = false;
     let mut in_aliases_block = false;
+    // PJ-182 — the indentation the EXISTING alias items use, so an appended one joins
+    // their sequence rather than nesting under the last of them.
+    let mut alias_indent: Option<String> = None;
     // PJ-153 (MIG-105 C6): when the block already carries the namespaced
     // `cid_cn:`, any legacy `cid:` line is DROPPED (a block must never end
     // up with two identity keys).
@@ -289,14 +292,23 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
             continue;
         }
         if in_aliases_block {
-            if trimmed.starts_with("- ") {
+            if crate::yaml_lines::is_seq_item(line) {
+                // PJ-182 — remember the block's OWN indentation. Appending at a hardcoded
+                // "  " into a block whose items sit at column 0 mixes two indentations
+                // inside one sequence: the emitted YAML still parses, but the appended
+                // line is read as a CONTINUATION of the previous item, so the user's last
+                // alias silently becomes `Older Name - "Injected"`.
+                if alias_indent.is_none() {
+                    alias_indent = Some(crate::yaml_lines::indent_of(line).to_string());
+                }
                 lines.push(line.to_string());
                 continue;
             } else {
                 in_aliases_block = false;
                 // Before leaving aliases block, add our aliases
+                let ind = alias_indent.as_deref().unwrap_or("  ");
                 for alias in &fields.aliases {
-                    let alias_line = format!("  - \"{}\"", escape_yaml_string(alias));
+                    let alias_line = format!("{}- \"{}\"", ind, escape_yaml_string(alias));
                     // Don't duplicate
                     if !lines.iter().any(|l| {
                         l.trim().trim_matches('"').trim_matches('\'')
@@ -314,8 +326,9 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
 
     // If we were still in aliases block at end of frontmatter
     if in_aliases_block {
+        let ind = alias_indent.as_deref().unwrap_or("  ");
         for alias in &fields.aliases {
-            let alias_line = format!("  - \"{}\"", escape_yaml_string(alias));
+            let alias_line = format!("{}- \"{}\"", ind, escape_yaml_string(alias));
             if !lines.iter().any(|l| l.contains(alias.as_str())) {
                 lines.push(alias_line);
             }
@@ -1083,7 +1096,9 @@ fn remove_canonical_fields(content: &str) -> String {
             continue;
         }
         if in_aliases {
-            if t.starts_with("- ") { continue; }
+            // PJ-182 — the shared rule, so this sibling of `merge_frontmatter` cannot
+            // drift from it on a bare `-` or a tab-separated item.
+            if crate::yaml_lines::is_seq_item(line) { continue; }
             in_aliases = false;
         }
         if strip_keys.iter().any(|k| t.starts_with(k)) { continue; }
@@ -1375,6 +1390,73 @@ pub fn repair_external_libraries_on_startup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-182 — an alias appended into a ZERO-INDENT `aliases:` block must join that
+    /// block's sequence, not start a deeper one.
+    ///
+    /// `merge_frontmatter` reads a zero-indent block correctly (it trims before testing
+    /// for `- `), but APPENDED with a hardcoded two-space indent. The result still parses
+    /// — which is what made it invisible — but `  - "X"` after a column-0 `- Older Name`
+    /// is read as a CONTINUATION of that item, so the user's last alias silently becomes
+    /// `Older Name - "X"`. Reached by canonicalize / de-canonicalize and by the importer.
+    #[test]
+    fn pj182_merge_frontmatter_appends_at_the_blocks_own_indent() {
+        let existing = "---\ntitle: T\naliases:\n- Old Name\n- Older Name\nstage: seed\n---\nbody";
+        let fields = FrontmatterFields {
+            title: "T".into(),
+            cid: "ABCD".into(),
+            kind: "note".into(),
+            created: "2026-07-29T00:00:00Z".into(),
+            aliases: vec!["Injected".into()],
+            original_filename: None,
+        };
+        let out = merge_frontmatter(existing, &fields);
+
+        // Every item of the aliases sequence shares ONE indentation.
+        let mut in_aliases = false;
+        let mut indents: Vec<usize> = Vec::new();
+        for line in out.lines() {
+            let t = line.trim();
+            if t.is_empty() {
+                continue;
+            }
+            if t.starts_with("aliases:") {
+                in_aliases = true;
+                continue;
+            }
+            if in_aliases {
+                if crate::yaml_lines::is_seq_item(line) {
+                    indents.push(line.len() - line.trim_start().len());
+                } else {
+                    in_aliases = false;
+                }
+            }
+        }
+        assert!(indents.len() >= 3, "expected the two authored aliases plus ours:\n{out}");
+        assert!(
+            indents.iter().all(|i| *i == indents[0]),
+            "mixed indentation inside one block sequence:\n{out}"
+        );
+        assert!(out.contains("- Old Name"), "authored alias lost:\n{out}");
+        assert!(out.contains("- Older Name"), "authored alias lost:\n{out}");
+    }
+
+    /// The control: an INDENTED block still gets an indented append (unchanged behaviour).
+    #[test]
+    fn pj182_merge_frontmatter_indented_block_is_unchanged() {
+        let existing = "---\ntitle: T\naliases:\n  - Old Name\nstage: seed\n---\nbody";
+        let fields = FrontmatterFields {
+            title: "T".into(),
+            cid: "ABCD".into(),
+            kind: "note".into(),
+            created: "2026-07-29T00:00:00Z".into(),
+            aliases: vec!["Injected".into()],
+            original_filename: None,
+        };
+        let out = merge_frontmatter(existing, &fields);
+        assert!(out.contains("  - Old Name"), "{out}");
+        assert!(out.contains("  - \"Injected\""), "{out}");
+    }
 
     #[test]
     fn test_canonical_name_format() {

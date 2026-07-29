@@ -1,0 +1,70 @@
+
+########## zero-indent seq-of-maps ##########
+SOURCE: "---\ntitle: T\nauthors:\n- name: X\n  role: Y\n- name: Z\n  role: W\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"authors","value":"","type":"text"},{"key":"- name","value":"X","type":"text"},{"key":"- name","value":"Z","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\nauthors: \n- name: X\n- name: Z\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## tab-indented list ##########
+SOURCE: "---\ntitle: T\ntags:\n\t- alpha\n\t- beta\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"alpha, beta","type":"list","listItems":["alpha","beta"]},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ntags:\n  - alpha\n  - beta\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          []
+yamlDoc hasErrors:      true
+
+########## zero-indent ikhtilaf ##########
+SOURCE: "---\ntitle: T\nikhtilāf:\n- school: Hanafī\n  position: permissible\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"ikhtilāf","value":"","type":"nested-object-list"},{"key":"- school","value":"Hanafī","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\nikhtilāf: \n- school: Hanafī\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## CRLF zero-indent list ##########
+SOURCE: "---\r\ntitle: T\r\ntags:\r\n- alpha\r\n- beta\r\nstage: spark-seed\r\n---\r\n\r\nbody\r\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"","type":"list","listItems":[]},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ntags: \nstage: spark-seed\n---\n\r\nbody\r\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"alpha, beta","type":"list","listItems":["alpha","beta"]},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## zero-indent nested map (invalid YAML at 0) ##########
+SOURCE: "---\ntitle: T\nsource:\ntitle2: X\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"source","value":"","type":"text"},{"key":"title2","value":"X","type":"text"}]
+buildFullContent:       "---\ntitle: T\nsource: \ntitle2: X\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"source","value":"","type":"text"},{"key":"title2","value":"X","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## block scalar | ##########
+SOURCE: "---\ntitle: T\ndesc: |\n  line1\n  line2\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"desc","value":"|","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ndesc: \"|\"\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"desc","value":"line1\nline2\n","type":"text"},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## flow seq on next line ##########
+SOURCE: "---\ntitle: T\ntags:\n  [a, b]\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"","type":"nested-map","nestedKeys":[],"nestedRaw":["  [a, b]"]},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ntags:\n  [a, b]\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"a, b","type":"list","listItems":["a","b"]},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## comment inside block list ##########
+SOURCE: "---\ntitle: T\ntags:\n  # a comment\n  - alpha\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"","type":"nested-map","nestedKeys":[],"nestedRaw":["  # a comment","  - alpha"]},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ntags:\n  # a comment\n  - alpha\nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"alpha","type":"list","listItems":["alpha"]},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## zero-indent list w/ comment ##########
+SOURCE: "---\ntitle: T\ntags:\n# a comment\n- alpha\nstage: spark-seed\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"","type":"list","listItems":[]},{"key":"stage","value":"spark-seed","type":"text"}]
+buildFullContent:       "---\ntitle: T\ntags: \nstage: spark-seed\n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"tags","value":"alpha","type":"list","listItems":["alpha"]},{"key":"stage","value":"spark-seed","type":"text"}]
+yamlDoc hasErrors:      false
+
+########## zero-indent empty-ish list of one ##########
+SOURCE: "---\ntitle: T\naliases:\n- Only One\n---\n\nbody\n"
+store.parseFrontmatter: [{"key":"title","value":"T","type":"text"},{"key":"aliases","value":"","type":"list","listItems":[]}]
+buildFullContent:       "---\ntitle: T\naliases: \n---\n\nbody\n"
+yamlDoc props:          [{"key":"title","value":"T","type":"text"},{"key":"aliases","value":"Only One","type":"list","listItems":["Only One"]}]
+yamlDoc hasErrors:      false

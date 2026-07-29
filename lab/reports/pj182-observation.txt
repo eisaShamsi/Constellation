@@ -1,0 +1,114 @@
+
+===== A. parseFrontmatter projection =====
+[
+ {
+  "key": "cid_cn",
+  "value": "ABCD",
+  "type": "text"
+ },
+ {
+  "key": "title",
+  "value": "Imported Probe",
+  "type": "text"
+ },
+ {
+  "key": "tags",
+  "value": "",
+  "type": "list",
+  "listItems": []
+ },
+ {
+  "key": "aliases",
+  "value": "",
+  "type": "list",
+  "listItems": []
+ },
+ {
+  "key": "stage",
+  "value": "spark-seed",
+  "type": "text"
+ }
+]
+BODY: "\nbody text\n"
+
+===== B. buildFullContent (the tab.content cache) =====
+"---\ncid_cn: ABCD\ntitle: Imported Probe\ntags: \naliases: \nstage: spark-seed\n---\n\nbody text\n"
+
+===== C. compose after editing a NEIGHBOURING key (stage) =====
+"---\ncid_cn: ABCD\ntitle: Imported Probe\ntags:\n- alpha\n- beta\naliases:\n- Old Name\n- Older Name\nstage: growth-seed\n---\n\nbody text\n"
+
+===== D. compose after ADDING A TAG (addTagToNote path) =====
+"---\ncid_cn: ABCD\ntitle: Imported Probe\naliases:\n- Old Name\n- Older Name\nstage: spark-seed\ntags:\n  - gamma\n---\n\nbody text\n"
+
+===== E. composeUpdatedContent (CLOSED-note tag add) =====
+"---\ncid_cn: ABCD\ntitle: Imported Probe\naliases:\n- Old Name\n- Older Name\nstage: spark-seed\ntags:\n  - gamma\n---\n\nbody text\n"
+
+===== F. re-parse of D (does anything notice?) =====
+[
+ {
+  "key": "cid_cn",
+  "value": "ABCD",
+  "type": "text"
+ },
+ {
+  "key": "title",
+  "value": "Imported Probe",
+  "type": "text"
+ },
+ {
+  "key": "aliases",
+  "value": "",
+  "type": "list",
+  "listItems": []
+ },
+ {
+  "key": "stage",
+  "value": "spark-seed",
+  "type": "text"
+ },
+ {
+  "key": "tags",
+  "value": "gamma",
+  "type": "list",
+  "listItems": [
+   "gamma"
+  ]
+ }
+]
+
+===== G. yamlDoc.parseFrontmatterDoc — the OTHER parser =====
+[
+ {
+  "key": "cid_cn",
+  "value": "ABCD",
+  "type": "text"
+ },
+ {
+  "key": "title",
+  "value": "Imported Probe",
+  "type": "text"
+ },
+ {
+  "key": "tags",
+  "value": "alpha, beta",
+  "type": "list",
+  "listItems": [
+   "alpha",
+   "beta"
+  ]
+ },
+ {
+  "key": "aliases",
+  "value": "Old Name, Older Name",
+  "type": "list",
+  "listItems": [
+   "Old Name",
+   "Older Name"
+  ]
+ },
+ {
+  "key": "stage",
+  "value": "spark-seed",
+  "type": "text"
+ }
+]

@@ -53,11 +53,37 @@ describe('G4 Phase 3 — composeUpdatedContent preserves rich frontmatter on a c
 		expect(parseFrontmatter(out).properties.find((p) => p.key === 'tags')).toBeTruthy();
 	});
 
-	it('demonstrates the hazard it replaces: the old buildFullContent DESTROYS the same note', () => {
-		// This locks in WHY Phase 3 exists — the legacy path is lossy on this note.
+	/**
+	 * This case locks in WHY Phase 3 exists: `buildFullContent` rebuilds frontmatter from
+	 * the projection instead of editing the real bytes, so it is not byte-perfect.
+	 *
+	 * ★ UPDATED BY PJ-182 (2026-07-29). It used to assert the *content loss* directly —
+	 * `expect(legacy).not.toContain('first line')`, i.e. the block scalar collapsed to a
+	 * literal `"|"` and its prose was dropped. That loss is now FIXED at the source: the
+	 * parser projects a block scalar READ-ONLY with its bytes verbatim, so the legacy
+	 * composer can no longer destroy it. Asserting the old damage would now be pinning a
+	 * defect in place.
+	 *
+	 * What remains true — and is the real reason to prefer `composeUpdatedContent` — is
+	 * that the legacy path still RE-SERIALIZES: the single-quoted `'He said: "hi"'` comes
+	 * back double-quoted with escapes. Same value, different bytes, on every write.
+	 * (`buildFullContent` being a lossier composer than `compose()` is carried as PJ-180.)
+	 */
+	it('the legacy buildFullContent is still not byte-perfect on the same note', () => {
 		const { properties, body } = parseFrontmatter(RICH);
 		const legacy = buildFullContent(properties, body);
-		// the block scalar collapses to the literal "|" and the nested children vanish
-		expect(legacy).not.toContain('first line'); // proof the old path drops it
+
+		// PJ-182 — no longer destroyed: the block scalar and the nested map both survive.
+		expect(legacy).toContain('description: |');
+		expect(legacy).toContain('first line');
+		expect(legacy).toContain('second line');
+		expect(legacy).toContain('author: Ibn Khaldun');
+		expect(legacy).not.toContain('description: "|"'); // the old corruption signature
+
+		// But it re-quotes, so it is NOT a byte-perfect round trip — which is the point.
+		expect(legacy).not.toBe(RICH);
+		expect(legacy).toContain('quote: "He said: \\"hi\\""');
+		// …whereas the CST path IS byte-perfect (asserted above too).
+		expect(composeUpdatedContent(RICH, properties, body)).toBe(RICH);
 	});
 });

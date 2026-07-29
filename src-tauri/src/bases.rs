@@ -136,24 +136,25 @@ pub fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
         let line = lines[i];
         if let Some(colon) = line.find(':') {
             let key = line[..colon].trim();
-            // Skip indented lines (part of nested YAML)
-            if key.is_empty() || line.starts_with(' ') || line.starts_with('\t') {
+            // PJ-182 — skip nested lines AND sequence items. A column-0 `- name: X` has a
+            // colon and no indent, so it used to be read here as a property called
+            // `- name` (this is the READER in the same file whose two writers were the
+            // reported defect — the Whole-Ecosystem Fix Law's own failure shape).
+            if key.is_empty() || !crate::yaml_lines::is_top_level_key_line(line) {
                 i += 1;
                 continue;
             }
             let mut value = line[colon + 1..].trim().to_string();
 
-            // Handle multi-line list values (key:\n  - item1\n  - item2)
+            // Handle multi-line list values (key:\n  - item1\n  - item2), at ANY indent.
             if value.is_empty() && i + 1 < end_idx {
                 let next = lines.get(i + 1).unwrap_or(&"");
-                if next.trim_start().starts_with("- ") {
+                if crate::yaml_lines::is_seq_item(next) {
                     let mut items = Vec::new();
                     let mut j = i + 1;
                     while j < end_idx {
-                        let item_line = lines[j].trim();
-                        if item_line.starts_with("- ") {
-                            let item = item_line[2..].trim();
-                            let item = item.trim_matches('"').trim_matches('\'');
+                        if let Some(item) = crate::yaml_lines::seq_item_value(lines[j]) {
+                            let item = item.trim().trim_matches('"').trim_matches('\'');
                             items.push(item.to_string());
                             j += 1;
                         } else {
@@ -465,10 +466,20 @@ pub(crate) fn remove_frontmatter_property(content: &str, key: &str) -> String {
 
     for line in inner.split_inclusive('\n') {
         let text = line.trim_end_matches(['\r', '\n']);
-        let is_top_level = !text.starts_with(' ') && !text.starts_with('\t');
+        // PJ-182 — see `update_frontmatter_property` below: `is_top_level` must exclude
+        // sequence items, or a column-0 `- alpha` counts as a key AND survives the
+        // continuation-line skip, leaving the removed key's items orphaned at root.
+        let is_top_level = crate::yaml_lines::is_top_level_key_line(text);
 
         if skipping_list_items {
-            if !is_top_level && text.trim_start().starts_with("- ") {
+            // A comment among the block's items is the user's, not the value's: keep it,
+            // and stay inside the block so the items after it are still dropped. Ending
+            // the skip here would emit them under the removed key — orphaned.
+            if crate::yaml_lines::is_comment(text) {
+                rebuilt.push_str(line);
+                continue;
+            }
+            if crate::yaml_lines::is_block_value_line(text) {
                 continue;
             }
             skipping_list_items = false;
@@ -534,11 +545,30 @@ pub(crate) fn update_frontmatter_property(content: &str, key: &str, value: &str)
 
     for line in inner.split_inclusive('\n') {
         let text = line.trim_end_matches(['\r', '\n']);
-        let is_top_level = !text.starts_with(' ') && !text.starts_with('\t');
+        // **PJ-182.** `is_top_level` used to be `!starts_with(' ') && !starts_with('\t')`,
+        // which is TRUE for a column-0 `- alpha` — a valid zero-indent block-sequence item.
+        // Two things went wrong at once: the continuation-line skip below required
+        // `!is_top_level`, so the old items were NOT dropped when the key was replaced, and
+        // the key branch accepted `- name: X` as a key called `- name`. Editing a `tags`
+        // cell in a Bases table therefore emitted `tags: gamma` with `- alpha` / `- beta`
+        // still sitting beneath it at root — frontmatter that no longer parses, with no
+        // error surfaced and the note's whole property block dead from then on.
+        let is_top_level = crate::yaml_lines::is_top_level_key_line(text);
 
         // Drop the continuation lines of a replaced multi-line list value.
+        //
+        // `is_block_value_line` covers BOTH a sequence item at any indentation and an
+        // indented continuation (a seq-of-map's `role: Y`). The old test was seq-items
+        // only, so replacing `authors:` dropped each `- name: X` and left every `role: Y`
+        // orphaned under the new scalar.
         if skipping_list_items {
-            if !is_top_level && text.trim_start().starts_with("- ") {
+            // A comment among the items is the user's, not the value's — keep it, and stay
+            // inside the block so the items after it are still dropped.
+            if crate::yaml_lines::is_comment(text) {
+                rebuilt.push_str(line);
+                continue;
+            }
+            if crate::yaml_lines::is_block_value_line(text) {
                 continue;
             }
             skipping_list_items = false;
@@ -763,6 +793,128 @@ fn format_yaml_value(value: &str) -> String {
         format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         value.to_string()
+    }
+}
+
+#[cfg(test)]
+mod pj182_zero_indent_tests {
+    use super::{remove_frontmatter_property, update_frontmatter_property};
+
+    const PROBE: &str =
+        "---\ncid_cn: ABCD\ntags:\n- alpha\n- beta\naliases:\n- Old Name\nstage: spark-seed\n---\nbody text\n";
+
+    /// Collect any line that is a sequence item NOT belonging to a still-open block —
+    /// i.e. orphaned under a scalar. Any hit means the emitted YAML no longer parses.
+    fn orphan_seq_items(out: &str) -> Vec<String> {
+        let fm = out.split("---").nth(1).unwrap_or("");
+        let mut orphans = Vec::new();
+        let mut block_open = false;
+        for line in fm.lines() {
+            let t = line.trim();
+            if t.is_empty() {
+                continue;
+            }
+            if crate::yaml_lines::is_seq_item(line) {
+                if !block_open {
+                    orphans.push(line.to_string());
+                }
+                continue;
+            }
+            // A key whose inline value is empty opens a block; anything else closes one.
+            block_open = t.ends_with(':');
+        }
+        orphans
+    }
+
+    /// PJ-182 — replacing a list-valued property from a Bases table cell used to leave the
+    /// old items orphaned at root, because the continuation-line skip required
+    /// `!is_top_level` and a column-0 `- alpha` IS top-level by the old test.
+    #[test]
+    fn pj182_replacing_a_zero_indent_list_drops_its_items() {
+        let out = update_frontmatter_property(PROBE, "tags", "gamma");
+        assert!(out.contains("tags: gamma"), "the edit must land:\n{out}");
+        assert!(!out.contains("- alpha"), "old item orphaned:\n{out}");
+        assert!(!out.contains("- beta"), "old item orphaned:\n{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "invalid YAML emitted:\n{out}");
+        // The NEIGHBOURING zero-indent block is untouched.
+        assert!(out.contains("aliases:\n- Old Name"), "neighbour damaged:\n{out}");
+        assert!(out.contains("stage: spark-seed"), "neighbour damaged:\n{out}");
+    }
+
+    #[test]
+    fn pj182_removing_a_zero_indent_list_takes_its_items() {
+        let out = remove_frontmatter_property(PROBE, "tags");
+        assert!(!out.contains("tags:"), "key not removed:\n{out}");
+        assert!(!out.contains("- alpha"), "old item orphaned:\n{out}");
+        assert!(!out.contains("- beta"), "old item orphaned:\n{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "invalid YAML emitted:\n{out}");
+        assert!(out.contains("aliases:\n- Old Name"), "neighbour damaged:\n{out}");
+    }
+
+    /// A zero-indent seq-of-maps must never be REPLACED as though it were a key.
+    ///
+    /// `- name: X` at column 0 is unindented and has a colon, so the old key branch
+    /// accepted it as a key called `- name` and would rewrite that line in place —
+    /// destroying the row while orphaning its `role: Y` continuation under nothing.
+    /// (A key the writer does not find is still APPENDED, by design; what matters is that
+    /// the authored rows are not rewritten and nothing is left dangling.)
+    #[test]
+    fn pj182_a_column_zero_dash_line_is_never_matched_as_a_key() {
+        let src = "---\ntitle: T\nauthors:\n- name: X\n  role: Y\n- name: Z\n---\nbody";
+        let out = update_frontmatter_property(src, "- name", "hijacked");
+        assert!(out.contains("- name: X"), "the authored row must survive:\n{out}");
+        assert!(out.contains("  role: Y"), "the continuation line must survive:\n{out}");
+        assert!(out.contains("- name: Z"), "the second authored row must survive:\n{out}");
+        assert!(
+            !out.contains("- name: hijacked\n  role: Y"),
+            "the first row was rewritten in place:\n{out}"
+        );
+
+        // And editing a REAL neighbouring key leaves the whole block byte-intact.
+        let out2 = update_frontmatter_property(src, "title", "T2");
+        assert!(out2.contains("title: T2"), "{out2}");
+        assert!(out2.contains("authors:\n- name: X\n  role: Y\n- name: Z"), "block damaged:\n{out2}");
+    }
+
+    /// Found by the `/simplify` altitude pass on the PJ-182 fix itself: widening the
+    /// continuation-skip to a dash-based test left TWO shapes still orphaning items.
+    ///
+    /// A COMMENT among the items is neither a sequence item nor a key, so it ended the
+    /// skip — and every item after it was emitted beneath the new scalar. An indented
+    /// CONTINUATION line (a seq-of-map's `role: Y`) was never skipped at all. Both produce
+    /// frontmatter that no longer parses, which is the outcome this whole change exists to
+    /// prevent. (LL-038 rule 4: widening a guard is a behaviour change for what it drops.)
+    #[test]
+    fn pj182_a_comment_among_the_items_does_not_orphan_the_rest() {
+        let src = "---\ntags:\n- alpha\n# a note of mine\n- beta\nstage: seed\n---\nbody";
+        let out = update_frontmatter_property(src, "tags", "gamma");
+        assert!(out.contains("tags: gamma"), "the edit must land:\n{out}");
+        assert!(out.contains("# a note of mine"), "the user's comment must survive:\n{out}");
+        assert!(!out.contains("- alpha"), "old item orphaned:\n{out}");
+        assert!(!out.contains("- beta"), "old item orphaned:\n{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "invalid YAML emitted:\n{out}");
+        assert!(out.contains("stage: seed"), "neighbour damaged:\n{out}");
+    }
+
+    #[test]
+    fn pj182_a_seq_of_maps_continuation_line_is_not_orphaned() {
+        let src = "---\nauthors:\n  - name: X\n    role: Y\n  - name: Z\nstage: seed\n---\nbody";
+        let out = update_frontmatter_property(src, "authors", "Someone");
+        assert!(out.contains("authors: Someone"), "the edit must land:\n{out}");
+        assert!(!out.contains("role: Y"), "continuation line orphaned under a scalar:\n{out}");
+        assert!(!out.contains("- name: X"), "{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "invalid YAML emitted:\n{out}");
+        assert!(out.contains("stage: seed"), "neighbour damaged:\n{out}");
+    }
+
+    /// CONTROL — the two-space form behaves exactly as it did before.
+    #[test]
+    fn pj182_indented_control_is_unchanged() {
+        let src = "---\ncid_cn: ABCD\ntags:\n  - alpha\n  - beta\nstage: spark-seed\n---\nbody text\n";
+        let out = update_frontmatter_property(src, "tags", "gamma");
+        assert!(out.contains("tags: gamma"), "{out}");
+        assert!(!out.contains("- alpha"), "{out}");
+        assert!(out.contains("stage: spark-seed"), "{out}");
     }
 }
 

@@ -4925,9 +4925,12 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
                     continue;
                 }
                 if in_tags {
-                    if trimmed.starts_with("- ") {
+                    // PJ-182 — one predicate, one extractor. `&trimmed[2..]` behind a
+                    // hand-rolled `starts_with("- ")` is the slice that panics the moment
+                    // a bare `-` reaches it.
+                    if let Some(item) = crate::yaml_lines::seq_item_value(line) {
                         // `- "wiki-tag"` must index as `wiki-tag`, not `"wiki-tag"`.
-                        let tag = decode_yaml_scalar(&trimmed[2..]).to_lowercase();
+                        let tag = decode_yaml_scalar(item).to_lowercase();
                         if !tag.is_empty() { tags.push(tag); }
                         i += 1;
                         continue;
@@ -4949,7 +4952,11 @@ pub(crate) fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<
                 //
                 // The tags branch above already consumes ITS list items; this covers every
                 // other list — notable_works, doctoral_advisor, aliases, influenced_by…
-                if trimmed.starts_with("- ") {
+                //
+                // PJ-182 — this rule, written HERE and nowhere else, is what the whole fix
+                // was: nine sites needed it and one had it. It now delegates to the shared
+                // predicate so the sentence and the eight other callers cannot drift apart.
+                if crate::yaml_lines::is_seq_item(line) {
                     i += 1; // MUST advance — this is a `while i < …` loop, not a for-loop.
                     continue;
                 }
@@ -5639,9 +5646,20 @@ fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
 
     for line in frontmatter.lines() {
         let trimmed = line.trim_start();
-        let is_indented = line.len() != trimmed.len();
-
-        if !is_indented {
+        // PJ-182 — a block sequence may sit at its parent key's indentation, so a
+        // column-0 `- "[[Alpha]]"` is a VALUE under the key above, not a new top-level
+        // line. Testing indentation alone reset `current_key`, then found no colon, and
+        // returned nothing: every typed link written as a zero-indent block list —
+        // `supports:` / `contradicts:` / `contains:` / `parent:` — was silently missing
+        // from `note_links`, and the body scan cannot catch them because `index_note`
+        // scans the frontmatter-STRIPPED body. The doc comment above says this function
+        // is "block-aware like `extract_aliases`"; `extract_aliases` trims and accepts a
+        // dash at any indent, and this one did not. (LL-036: the sentence was right there.)
+        //
+        // Expressed as `is_top_level_key_line` rather than a local
+        // `indented || is_seq_item` so the module that owns the rule keeps owning it —
+        // a locally-spelled negation is how the ninth opinion gets written.
+        if crate::yaml_lines::is_top_level_key_line(line) {
             // A new top-level line resets the active property (matches extract_aliases:
             // any non-list line ends the prior block). Capture the new key + inline value.
             current_key = None;
@@ -5656,7 +5674,7 @@ fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
             continue;
         }
 
-        // Indented line — a value (list item) under the current property.
+        // A value (list item, or a nested line) under the current property.
         if let Some(key) = current_key.as_deref() {
             emit_frontmatter_links(wl, key, trimmed, &mut out, &mut seen);
         }
@@ -5717,6 +5735,37 @@ mod tests_mig086_frontmatter_links {
             .collect();
         v.sort();
         v
+    }
+
+    /// PJ-182 — a typed link written as a ZERO-INDENT block list must still reach
+    /// `note_links`. It did not: the extractor treated a column-0 `- "[[Alpha]]"` as a new
+    /// top-level line, which reset the active key and then found no colon, so the edge was
+    /// dropped entirely. There is no safety net behind it — `index_note` scans the
+    /// frontmatter-STRIPPED body, so the Living Link graph simply lost those edges.
+    #[test]
+    fn pj182_zero_indent_block_list_typed_by_key() {
+        let md = "---\ntitle: X\nsupports:\n- \"[[Alpha]]\"\n- \"[[Beta]]\"\ncontains:\n- \"[[Kid]]\"\n---\nbody";
+        assert_eq!(
+            pairs(md),
+            vec![
+                ("contains".to_string(), "kid".to_string()),
+                ("supports".to_string(), "alpha".to_string()),
+                ("supports".to_string(), "beta".to_string()),
+            ]
+        );
+    }
+
+    /// A key that follows a zero-indent block is still a KEY — the block must not run on.
+    #[test]
+    fn pj182_a_key_after_a_zero_indent_block_still_registers() {
+        let md = "---\nsupports:\n- \"[[Alpha]]\"\ncontradicts:\n- \"[[Beta]]\"\n---\nbody";
+        assert_eq!(
+            pairs(md),
+            vec![
+                ("contradicts".to_string(), "beta".to_string()),
+                ("supports".to_string(), "alpha".to_string()),
+            ]
+        );
     }
 
     #[test]

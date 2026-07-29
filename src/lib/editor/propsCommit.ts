@@ -27,10 +27,12 @@
  * glue into the light).
  */
 import type { FrontmatterProperty } from '$lib/libraries/store';
-import { sameList } from './noteModel';
+import { samePropRow, cloneRows, type SetPropOpts } from './propRow';
+
+export type { SetPropOpts };
 
 export type PropOp =
-	| { op: 'set'; key: string; value: string; type: FrontmatterProperty['type']; listItems?: string[] }
+	| ({ op: 'set'; key: string; value: string; type: FrontmatterProperty['type'] } & SetPropOpts)
 	| { op: 'add'; prop: FrontmatterProperty }
 	| { op: 'remove'; key: string }
 	| { op: 'order'; key: string; beforeKey: string | null };
@@ -47,9 +49,10 @@ export function seededKeysOf(rows: FrontmatterProperty[]): Set<string> {
 	return new Set(rows.filter(committable).map((p) => p.key));
 }
 
-// One definition of list equality, from the layer below — see noteModel.sameList. Element-wise, so
-// a commit no longer JSON.stringifies every list on the note ~40 times.
-export { sameList } from './noteModel';
+// One definition of row equality, from the leaf that owns it — see `propRow.ts`. Element-wise, so
+// a commit no longer JSON.stringifies every list on the note ~40 times. Re-exported so a consumer
+// needs one import, and so `sameNested` is not reached through a different module than `sameList`.
+export { sameList, sameNested, samePropRow } from './propRow';
 
 /**
  * Work out what the model must be told, given what the panel is showing.
@@ -92,10 +95,11 @@ export function plan(
 		// displaying something older. Writing it back is how a value another writer changed gets
 		// silently reverted on a key both panels show.
 		if (touchedKeys && !touchedKeys.has(row.key)) continue;
-		if (cur.value !== row.value || cur.type !== row.type || !sameList(cur.listItems, row.listItems)) {
+		if (!samePropRow(cur, row)) {
 			ops.push({
 				op: 'set', key: row.key, value: row.value, type: row.type,
 				...(row.listItems ? { listItems: [...row.listItems] } : {}),
+				...(row.nestedObjects ? { nestedObjects: cloneRows(row.nestedObjects) } : {}),
 			});
 		}
 	}
@@ -147,7 +151,10 @@ export function touchedSince(
 	const touched = new Set<string>();
 	for (const row of localRows.filter(committable)) {
 		const was = seededByKey.get(row.key);
-		if (!was || was.value !== row.value || was.type !== row.type || !sameList(was.listItems, row.listItems)) {
+		// PJ-182 — `samePropRow` includes the ROWS of a nested-object-list. Comparing only
+		// the display summary made an edit that changes rows without changing the summary
+		// invisible here, and the same omission one layer down dropped the write.
+		if (!was || !samePropRow(was, row)) {
 			touched.add(row.key);
 		}
 	}
@@ -161,7 +168,7 @@ export function touchedSince(
 
 /** The intent functions this planner drives, injected so the planner stays pure and testable. */
 export interface IntentSink {
-	setValue: (key: string, value: string, opts?: { listItems?: string[]; type?: FrontmatterProperty['type'] }) => boolean;
+	setValue: (key: string, value: string, opts?: SetPropOpts) => boolean;
 	add: (prop: FrontmatterProperty) => boolean;
 	remove: (key: string) => boolean;
 	order: (key: string, beforeKey: string | null) => boolean;
@@ -175,7 +182,12 @@ export function apply(ops: PropOp[], sink: IntentSink): boolean {
 			case 'remove': changed = sink.remove(op.key) || changed; break;
 			case 'add': changed = sink.add(op.prop) || changed; break;
 			case 'set':
-				changed = sink.setValue(op.key, op.value, { listItems: op.listItems, type: op.type }) || changed;
+				changed =
+					sink.setValue(op.key, op.value, {
+						listItems: op.listItems,
+						type: op.type,
+						nestedObjects: op.nestedObjects,
+					}) || changed;
 				break;
 			case 'order': changed = sink.order(op.key, op.beforeKey) || changed; break;
 		}

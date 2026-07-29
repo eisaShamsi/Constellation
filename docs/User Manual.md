@@ -1148,6 +1148,31 @@ Constellation detects property types automatically:
 
 Toggle property display in **Settings > Editor > Properties in document** (Visible / Hidden / Source).
 
+### List styles
+
+A list such as `tags:` or `aliases:` can be written four ways, and they all mean the same
+thing. Constellation reads all four and shows the same chips:
+
+- **Indented** — `tags:` then `  - a` on the lines below. This is what Constellation writes.
+- **Not indented** — `tags:` then `- a` starting at the left margin. Valid YAML, and what
+  many other tools emit, so it is common in imported vaults.
+- **On one line** — `tags: [a, b]`.
+- **On the next line** — `tags:` then `  [a, b]` below it.
+
+> [!important] Fixed in 0.1
+> The unindented form used to read as an *empty* list. The items were still in the file, but
+> the panel showed nothing — and adding a single new tag then replaced the whole list, so the
+> earlier items were lost. Every style now reads correctly. The same bug affected `aliases:`,
+> which is how links to a note's other names are resolved, and typed links such as
+> `supports:` and `contains:`, which feed the connection graph.
+
+### Long text blocks
+
+`description: |` followed by indented lines holds several lines of prose as one value.
+Constellation shows that row **read-only** with a preview of the first line — the same rule
+as nested fields: what it cannot rewrite safely, it does not rewrite. Edit it in the `.md`
+file directly.
+
 ---
 
 ## 10b. Source Review (Constellation Epistemic Content Engine — CECE)

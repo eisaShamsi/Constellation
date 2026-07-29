@@ -141,6 +141,43 @@ file keeps the nested fields exactly as you wrote them.
 **To edit them today**, open the `.md` file in any text editor — the fields are ordinary
 YAML and nothing in Constellation will overwrite your changes.
 
+### Lists written in different YAML styles
+
+A list such as `tags:` or `aliases:` can be written four ways, and they all mean the same
+thing. Constellation reads every one of them and shows you the same set of chips:
+
+- **Indented** — `tags:` then `  - alpha` on the lines below. This is what Constellation
+  itself writes.
+- **Not indented** — `tags:` then `- alpha` starting at the left margin. Perfectly valid
+  YAML, and what many other note apps and export tools produce, so it is common in
+  imported vaults and in notes written by hand.
+- **On one line** — `tags: [alpha, beta]`.
+- **On the next line** — `tags:` then `  [alpha, beta]` on the line below it.
+
+> [!important] If you imported a vault
+> Until version 0.1, the **unindented** style above was read as an *empty* list. Your tags
+> and aliases were still safely in the file, but the panel showed the property as empty —
+> and adding one new tag replaced the whole list, so the earlier items were lost from the
+> file. This is fixed: every style now reads correctly, and nothing is replaced.
+>
+> If you have notes where tags or aliases went missing, they will be in your backups or in
+> your sync history — Constellation never deleted the file, only the list inside it.
+
+### Long text blocks
+
+A property can hold several lines of prose instead of a single value:
+
+```yaml
+description: |
+  The first line of a longer note about this source.
+  It continues on the second line.
+```
+
+The `|` tells YAML "everything indented below is one long piece of text". Constellation
+shows this row **read-only**, with a preview of the first line, for the same reason nested
+fields are read-only: what it cannot rewrite safely, it will not rewrite at all. The text
+stays exactly as you wrote it. To change it, edit the `.md` file in any text editor.
+
 ### Adding a new property
 
 Click the **+ Add property** button below the properties list. A new row appears with an empty key and value. Type the key name and press **Tab** to move to the value.

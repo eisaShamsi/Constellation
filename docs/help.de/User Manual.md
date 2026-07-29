@@ -720,6 +720,22 @@ Constellation erkennt Eigenschaftstypen automatisch:
 
 Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im Dokument** (Sichtbar / Ausgeblendet / Quelltext).
 
+### Listenstile
+
+Eine Liste wie `tags:` oder `aliases:` kann auf vier Arten geschrieben werden, und alle bedeuten dasselbe. Constellation liest alle vier und zeigt dieselben Chips:
+
+- **Eingerückt** — `tags:`, darunter `  - a`. So schreibt Constellation selbst.
+- **Nicht eingerückt** — `tags:`, darunter `- a` am linken Rand. Gültiges YAML, und was viele andere Werkzeuge erzeugen — daher häufig in importierten Bibliotheken.
+- **In einer Zeile** — `tags: [a, b]`.
+- **In der nächsten Zeile** — `tags:`, darunter `  [a, b]`.
+
+> [!important] Behoben in 0.1
+> Die nicht eingerückte Form wurde bisher als *leere* Liste gelesen. Die Einträge standen weiterhin in der Datei, aber das Panel zeigte nichts an — und ein einziges neues Schlagwort ersetzte dann die ganze Liste, sodass die früheren Einträge verloren gingen. Alle Stile werden jetzt korrekt gelesen. Derselbe Fehler betraf `aliases:` (worüber Verweise auf die anderen Namen einer Notiz aufgelöst werden) sowie typisierte Verknüpfungen wie `supports:` und `contains:`, die den Verbindungsgraphen speisen.
+
+### Lange Textblöcke
+
+`description: |` gefolgt von eingerückten Zeilen hält mehrere Zeilen Fließtext als einen einzigen Wert. Constellation zeigt diese Zeile **schreibgeschützt** mit einer Vorschau der ersten Zeile — dieselbe Regel wie bei verschachtelten Feldern: Was nicht sicher neu geschrieben werden kann, wird gar nicht neu geschrieben. Bearbeiten Sie sie direkt in der `.md`-Datei.
+
 ---
 
 ## 10b. Quellen-Prüfung (Constellation Epistemic Content Engine — CECE)

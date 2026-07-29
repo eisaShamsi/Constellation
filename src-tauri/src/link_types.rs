@@ -394,8 +394,13 @@ pub fn structural_frontmatter_targets(frontmatter: &str) -> std::collections::Ha
     let mut current_structural = false;
     for line in frontmatter.lines() {
         let trimmed = line.trim_start();
-        let is_indented = line.len() != trimmed.len();
-        let scan_text: Option<&str> = if !is_indented {
+        // PJ-182 — a column-0 `- "[[Chapter One]]"` is a list item under the key above.
+        // Testing indentation alone made this return an EMPTY set for a zero-indent
+        // `contains:` block, so the guard at `search.rs` FAILED OPEN and the structural
+        // TOC targets were counted as cognitive outgoing links — while the sibling
+        // extractor was simultaneously missing the real structural edge. Both directions
+        // wrong on the same note.
+        let scan_text: Option<&str> = if crate::yaml_lines::is_top_level_key_line(line) {
             current_structural = false;
             match trimmed.find(':') {
                 Some(colon) if reg.is_structural(&trimmed[..colon].trim().to_lowercase()) => {
@@ -565,6 +570,31 @@ mod tests {
             color: "#123456".into(), order, builtin: false, emoji: None, desc: None,
             structural: false,
         }
+    }
+
+    /// PJ-182 — the structural-link guard must see a ZERO-INDENT `contains:` block.
+    ///
+    /// It returned an EMPTY set for that shape, so the exclusion at `search.rs` had
+    /// nothing to exclude and FAILED OPEN: a structural table-of-contents placement was
+    /// counted as a cognitive outgoing link, in `note_meta.outgoing_links_json` and every
+    /// view fed from it. The sibling extractor was missing the real structural edge on the
+    /// very same note — both directions wrong at once.
+    #[test]
+    fn pj182_structural_targets_see_a_zero_indent_block() {
+        let fm = "title: Part I\ncontains:\n- \"[[Chapter One]]\"\n- \"[[Chapter Two]]\"\n";
+        let mut got: Vec<String> = structural_frontmatter_targets(fm).into_iter().collect();
+        got.sort();
+        assert_eq!(got, vec!["chapter one".to_string(), "chapter two".to_string()]);
+
+        // CONTROL — the indented form is unchanged.
+        let indented = "title: Part I\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n";
+        let mut got2: Vec<String> = structural_frontmatter_targets(indented).into_iter().collect();
+        got2.sort();
+        assert_eq!(got2, got);
+
+        // A COGNITIVE key's zero-indent block must NOT be treated as structural.
+        let cognitive = "supports:\n- \"[[Alpha]]\"\n";
+        assert!(structural_frontmatter_targets(cognitive).is_empty());
     }
 
     #[test]

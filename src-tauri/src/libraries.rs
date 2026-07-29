@@ -896,7 +896,12 @@ fn merge_initial_frontmatter(extra: &str) -> Vec<String> {
         if line.trim().is_empty() {
             continue;
         }
-        let is_top_level = !line.starts_with(' ') && !line.starts_with('\t');
+        // PJ-182 — a column-0 `- item` is unindented but is NOT a key. Without the
+        // sequence-item exclusion, a template whose FILTERED key held a zero-indent block
+        // (`kind:` then `- template`) dropped the key and kept its items, emitting a bare
+        // sequence entry between two mapping keys — structurally invalid YAML in a
+        // brand-new note.
+        let is_top_level = crate::yaml_lines::is_top_level_key_line(line);
         if is_top_level {
             let t = line.trim_start();
             // Identity belongs to the CAST, minted fresh — never inherited from the
@@ -1752,6 +1757,9 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
     let mut found_aliases = false;
     let mut old_title_in_aliases = false;
     let mut in_alias_list = false;
+    // PJ-182 — the existing block's own indentation, so an appended alias joins it
+    // instead of starting a second, differently-indented sequence.
+    let mut alias_indent: Option<String> = None;
 
     for line in fm.lines() {
         let t = line.trim();
@@ -1763,30 +1771,46 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
         // value, orphaning its siblings, and emitting YAML that no longer parses.
         // (2026-07-21 inspection, APP-KILLER; same class as the
         // `merge_initial_frontmatter` line-trimming bug fixed the same day.)
-        let indented = line.starts_with(' ') || line.starts_with('\t');
-        let is_list_item = indented && t.starts_with("- ");
+        // PJ-182 — one predicate for "this line opens a ROOT key", which also excludes a
+        // column-0 sequence item and treats NBSP/ideographic indentation as indentation
+        // (the ASCII-only spelling this replaced did not — and `title:` matched at root is
+        // the 2026-07-21 app-killer shape).
+        let root_key = crate::yaml_lines::is_top_level_key_line(line);
+        // The DASH makes it a list item, not the indentation. This read
+        // `indented && t.starts_with("- ")`, so a valid zero-indent alias block
+        // (`aliases:` then `- Old Name` at column 0 — what hand-authored and imported
+        // vaults contain) failed the test on its FIRST item: the list was closed
+        // immediately and the new alias spliced in ABOVE the user's items at a
+        // different indentation. A mapping and a column-0 sequence then shared one
+        // level — frontmatter that no longer parses, after which every later property
+        // edit on the note was silently discarded.
+        let is_list_item = crate::yaml_lines::is_seq_item(line);
+        // The indentation the appended alias must use: whatever the block already uses.
+        if is_list_item && in_alias_list && alias_indent.is_none() {
+            alias_indent = Some(crate::yaml_lines::indent_of(line).to_string());
+        }
 
-        // Any line that is not an indented list item ENDS the alias list. This has to
-        // happen before the key branches below: with `aliases:` written above
-        // `title:`, the old code fell through the title branch with the list still
-        // open and appended the alias AFTER the title line — a stray `- "A"` under a
-        // root key, which is invalid YAML.
+        // Any line that is not a list item ENDS the alias list. This has to happen
+        // before the key branches below: with `aliases:` written above `title:`, the
+        // old code fell through the title branch with the list still open and appended
+        // the alias AFTER the title line — a stray `- "A"` under a root key, which is
+        // invalid YAML.
         if in_alias_list && !is_list_item {
             in_alias_list = false;
             if !old_title_in_aliases {
-                new_lines.push(format!("  - \"{}\"", esc_old));
+                new_lines.push(format!("{}- \"{}\"", alias_indent.as_deref().unwrap_or("  "), esc_old));
             }
         }
 
         // Replace title field — only at the root.
-        if !indented && t.starts_with("title:") {
+        if root_key && t.starts_with("title:") {
             found_title = true;
             new_lines.push(format!("title: \"{}\"", esc_new));
             continue;
         }
 
         // Handle aliases field — only at the root.
-        if !indented && t.starts_with("aliases:") {
+        if root_key && t.starts_with("aliases:") {
             found_aliases = true;
             let value = t["aliases:".len()..].trim();
 
@@ -1818,7 +1842,10 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
 
         // Collect alias list items (the list is closed above, not here).
         if in_alias_list && is_list_item {
-            let alias_val = t[2..].trim().trim_matches('"').trim_matches('\'');
+            // `t[2..]` would PANIC on a bare `-` (an empty sequence entry), which
+            // `is_seq_item` accepts and the old `starts_with("- ")` test did not. Strip
+            // the dash and let an empty remainder be an empty alias.
+            let alias_val = t[1..].trim().trim_matches('"').trim_matches('\'');
             if alias_val == old_title {
                 old_title_in_aliases = true;
             }
@@ -1831,7 +1858,7 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
 
     // If alias list was the last thing in frontmatter
     if in_alias_list && !old_title_in_aliases {
-        new_lines.push(format!("  - \"{}\"", esc_old));
+        new_lines.push(format!("{}- \"{}\"", alias_indent.as_deref().unwrap_or("  "), esc_old));
     }
 
     // Add missing fields
@@ -1879,17 +1906,27 @@ fn set_frontmatter_parent(content: &str, new_parent: &str) -> String {
     //
     // So: match at column 0 only, and when the old value was a block list, consume
     // its items too.
+    //
+    // 3. PJ-182 — and the fix for (2) required the item to be INDENTED, so a zero-indent
+    //    `parent:` block (valid YAML, and what an imported note carries) still left its
+    //    items orphaned under the new scalar. The comment above already called that
+    //    outcome an APP-KILLER; the fix simply did not cover the shape. The dash is what
+    //    makes a line a sequence item — indentation never was.
     let mut in_old_list = false;
     for line in fm.lines() {
-        let indented = line.starts_with(' ') || line.starts_with('\t');
         if in_old_list {
-            // Still inside the replaced list? Drop the item. Anything else ends it.
-            if indented && line.trim_start().starts_with("- ") {
+            // Still inside the replaced block? Drop it. A comment among the items is the
+            // user's — keep it and stay in the block. Anything else ends it.
+            if crate::yaml_lines::is_comment(line) {
+                new_lines.push(line.to_string());
+                continue;
+            }
+            if crate::yaml_lines::is_block_value_line(line) {
                 continue;
             }
             in_old_list = false;
         }
-        if !indented && line.starts_with("parent:") {
+        if crate::yaml_lines::is_top_level_key_line(line) && line.starts_with("parent:") {
             found = true;
             // An empty value means the real value is on the following lines.
             in_old_list = line["parent:".len()..].trim().is_empty();
@@ -1958,8 +1995,11 @@ fn remove_frontmatter_contains_item(content: &str, child: &str) -> String {
             continue;
         }
         if in_list {
-            if t.starts_with("- ") {
-                if matches_target(&t[2..]) {
+            // PJ-182 — one definition of "sequence item", and one extractor for its value.
+            // The hand-rolled `t.starts_with("- ")` + `t[2..]` pair here missed a bare `-`
+            // and `-\titem`, and slicing `[2..]` behind a widened predicate is a panic.
+            if let Some(item) = crate::yaml_lines::seq_item_value(line) {
+                if matches_target(item) {
                     continue; // drop this item
                 }
                 kept_in_list += 1;
@@ -7083,6 +7123,69 @@ body", "New");
             "block-scalar content is prose, not a key:\n{after}"
         );
         assert!(after.contains("title: \"B\""));
+    }
+
+    /// PJ-182 — REPRODUCE-FIRST. A ZERO-INDENT `aliases:` block is valid YAML (a block
+    /// sequence may sit at its parent key's indentation), but `is_list_item` required the
+    /// item to be INDENTED. So the very first `- Old One` looked like "not a list item",
+    /// which CLOSED the alias list and spliced the new alias in at the INDENTED level —
+    /// leaving a mapping and a column-0 sequence sharing one level:
+    ///
+    ///     title: "B"
+    ///     aliases:
+    ///       - "A"        <- inserted here, indented
+    ///     - Old One      <- the user's items, at column 0
+    ///     - Old Two
+    ///
+    /// Observed 2026-07-30: the real YAML parser reports THREE errors on that
+    /// ("a block sequence may not be used as an implicit map key"). The note's
+    /// frontmatter no longer parses, so `composeFrontmatter`'s H1 passthrough fires and
+    /// EVERY later property edit on that note is silently discarded — the app reports
+    /// success and the file never changes.
+    ///
+    /// The dash alone identifies a sequence item: a YAML mapping key can never start with
+    /// `- `. `search::parse_frontmatter` has carried exactly that rule all along.
+    #[test]
+    fn pj182_rename_keeps_a_zero_indent_alias_block_valid() {
+        let before = "---\ntitle: A\naliases:\n- Old One\n- Old Two\nstage: seed\n---\nbody";
+        let after = update_frontmatter_title(before, "B", "A");
+
+        // The user's aliases survive.
+        assert!(after.contains("- Old One"), "existing alias lost:\n{after}");
+        assert!(after.contains("- Old Two"), "existing alias lost:\n{after}");
+        // The old title is added as an alias.
+        assert!(after.contains("\"A\""), "old title not added as an alias:\n{after}");
+
+        // Every item of the aliases block shares ONE indentation — the block's own.
+        let fm = after.split("---").nth(1).unwrap();
+        let mut in_aliases = false;
+        let mut indents: Vec<usize> = Vec::new();
+        for line in fm.lines() {
+            let t = line.trim();
+            if t.is_empty() {
+                continue;
+            }
+            if t.starts_with("aliases:") {
+                in_aliases = true;
+                continue;
+            }
+            if in_aliases {
+                if t.starts_with("- ") {
+                    indents.push(line.len() - line.trim_start().len());
+                } else {
+                    in_aliases = false;
+                }
+            }
+        }
+        assert_eq!(indents.len(), 3, "expected three alias items:\n{after}");
+        assert!(
+            indents.iter().all(|i| *i == indents[0]),
+            "mixed indentation inside one block sequence is invalid YAML:\n{after}"
+        );
+
+        // And nothing else moved.
+        assert!(after.contains("stage: seed"), "other keys must survive:\n{after}");
+        assert!(after.contains("title: \"B\""), "title must be renamed:\n{after}");
     }
 
     #[test]

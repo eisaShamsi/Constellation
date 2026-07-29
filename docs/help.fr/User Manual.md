@@ -687,6 +687,22 @@ Constellation detecte automatiquement les types de proprietes :
 
 Basculez l'affichage des proprietes dans **Parametres > Editeur > Proprietes dans le document** (Visible / Masque / Source).
 
+### Styles de liste
+
+Une liste comme `tags:` ou `aliases:` peut s'écrire de quatre façons, qui signifient toutes la même chose. Constellation lit les quatre et affiche les mêmes puces :
+
+- **Indentée** — `tags:` puis `  - a` en dessous. C'est ce qu'écrit Constellation.
+- **Non indentée** — `tags:` puis `- a` en partant de la marge gauche. YAML parfaitement valide, et ce que produisent beaucoup d'autres outils : c'est donc courant dans les bibliothèques importées.
+- **Sur une seule ligne** — `tags: [a, b]`.
+- **Sur la ligne suivante** — `tags:` puis `  [a, b]` en dessous.
+
+> [!important] Corrigé en 0.1
+> La forme non indentée était lue comme une liste *vide*. Les éléments étaient toujours dans le fichier, mais le panneau n'affichait rien — et ajouter une seule nouvelle étiquette remplaçait alors la liste entière, faisant disparaître les éléments précédents. Tous les styles sont désormais lus correctement. Le même défaut touchait `aliases:`, qui sert à résoudre les liens vers les autres noms d'une note, ainsi que les liens typés comme `supports:` et `contains:`, qui alimentent le graphe de connexions.
+
+### Blocs de texte long
+
+`description: |` suivi de lignes indentées contient plusieurs lignes de prose en une seule valeur. Constellation affiche cette ligne **en lecture seule** avec un aperçu de la première ligne — la même règle que pour les champs imbriqués : ce qu'il ne peut pas réécrire sans risque, il ne le réécrit pas. Modifiez-la directement dans le fichier `.md`.
+
 ---
 
 ## 10b. Révision des Sources (Constellation Epistemic Content Engine — CECE)

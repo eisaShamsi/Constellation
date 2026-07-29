@@ -242,7 +242,7 @@ pub fn extract_sources(content: &str) -> Vec<String> {
     for line in frontmatter.lines() {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("sources:") {
+        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("sources:") {
             in_block = true;
             let value = trimmed["sources:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
@@ -478,7 +478,14 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
     let mut skip_block = false;
     for line in fm.lines() {
         let trimmed = line.trim_start();
-        if trimmed.starts_with("sources:") {
+        // PJ-182 (found by the build's own safety inspection, on the PJ-182 fix itself).
+        // The key match ran on the TRIMMED line, so an INDENTED `sources:` — one belonging
+        // to a nested map, or a line of prose inside a block scalar — was matched as the
+        // note's own `sources:` key and DELETED. The first pass routed the block-skip half
+        // through the shared rule and left the key-match half hand-rolled; every sibling
+        // frontmatter writer already uses `is_top_level_key_line` here. Half a sweep is
+        // the failure the Whole-Ecosystem Fix Law names.
+        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("sources:") {
             // Determine if scalar/inline (single line) vs block (multi-line).
             let value = trimmed["sources:".len()..].trim();
             if value.is_empty() {
@@ -488,7 +495,10 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
             continue; // drop this line either way
         }
         if skip_block {
-            if trimmed.starts_with("- ") {
+            // PJ-182 — the shared rule. `starts_with("- ")` alone missed a bare `-` and a
+            // tab-separated item, either of which would have been left orphaned under the
+            // removed key.
+            if crate::yaml_lines::is_seq_item(line) {
                 continue; // still inside the dropped block
             } else if !trimmed.is_empty() {
                 skip_block = false;
@@ -956,7 +966,7 @@ pub fn extract_content_type(content: &str) -> Vec<String> {
     for line in frontmatter.lines() {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("content_type:") {
+        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("content_type:") {
             in_block = true;
             let value = trimmed["content_type:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
@@ -1090,7 +1100,8 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
     let mut skip_block = false;
     for line in fm.lines() {
         let trimmed = line.trim_start();
-        if trimmed.starts_with("content_type:") {
+        // PJ-182 — the ROOT key only; see the sibling in `rewrite_frontmatter_sources`.
+        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("content_type:") {
             let value = trimmed["content_type:".len()..].trim();
             if value.is_empty() {
                 skip_block = true;
@@ -1098,7 +1109,8 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
             continue;
         }
         if skip_block {
-            if trimmed.starts_with("- ") {
+            // PJ-182 — the shared rule; see the sibling in `strip_sources_block`.
+            if crate::yaml_lines::is_seq_item(line) {
                 continue;
             } else if !trimmed.is_empty() {
                 skip_block = false;
@@ -1324,6 +1336,46 @@ pub fn sources_get_vertical_taxonomy() -> Vec<VerticalNodePayload> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-182 — an INDENTED `sources:` belongs to a nested map (or is prose inside a block
+    /// scalar); it is not the note's own key and must never be deleted.
+    ///
+    /// Found by the build's own safety inspection ON the PJ-182 fix: the first pass routed
+    /// the block-SKIP half through the shared rule and left the key-MATCH half testing the
+    /// trimmed line. Half a sweep is the exact failure the Whole-Ecosystem Fix Law names.
+    #[test]
+    fn pj182_an_indented_sources_key_is_not_the_notes_own() {
+        let content = "---\ntitle: Foo\ncitation:\n  sources: interview transcript\n---\n\nbody";
+        let out = rewrite_frontmatter_sources(content, &["testimony".to_string()]);
+        assert!(
+            out.contains("  sources: interview transcript"),
+            "a nested key's value was deleted:\n{out}"
+        );
+        assert!(out.contains("citation:"), "its parent must survive:\n{out}");
+        assert!(out.contains("testimony"), "the real edit must still land:\n{out}");
+    }
+
+    #[test]
+    fn pj182_an_indented_content_type_key_is_not_the_notes_own() {
+        let content = "---\ntitle: Foo\nmeta:\n  content_type: notes-of-mine\n---\n\nbody";
+        let out = rewrite_frontmatter_content_type(content, &["semantic-contents".to_string()]);
+        assert!(
+            out.contains("  content_type: notes-of-mine"),
+            "a nested key's value was deleted:\n{out}"
+        );
+        assert!(out.contains("semantic-contents"), "the real edit must still land:\n{out}");
+    }
+
+    /// CONTROL — the note's OWN root key is still replaced, block form included.
+    #[test]
+    fn pj182_the_root_sources_key_is_still_replaced() {
+        let content = "---\ntitle: Foo\nsources:\n- perception\n- memory\nstage: seed\n---\n\nbody";
+        let out = rewrite_frontmatter_sources(content, &["testimony".to_string()]);
+        assert!(!out.contains("perception"), "old block not stripped:\n{out}");
+        assert!(!out.contains("memory"), "old block not stripped:\n{out}");
+        assert!(out.contains("testimony"), "{out}");
+        assert!(out.contains("stage: seed"), "neighbour damaged:\n{out}");
+    }
 
     #[test]
     fn extract_sources_handles_scalar() {

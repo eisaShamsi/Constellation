@@ -25,6 +25,7 @@
  */
 import { Parser, CST, parseDocument, stringify as yamlStringify, isSeq, isMap, isScalar } from 'yaml';
 import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
+import { samePropRow } from './propRow';
 
 /**
  * Keys whose seq-of-maps value the system round-trips LOSSLESSLY as a structured,
@@ -185,7 +186,17 @@ function immutableBlockKeys(yaml: string): Set<string> {
 		// A seq of pure scalars stays editable (the ordinary tags/aliases list); a seq
 		// holding ANY non-scalar item is a block whose bytes the flat projection cannot
 		// round-trip.
-		const isBlock = isMap(v) || (isSeq(v) && !v.items.every((it) => isScalar(it)));
+		//
+		// PJ-182 — and a BLOCK SCALAR (`desc: |` / `desc: >`) is a third block shape. It
+		// is `isScalar`, so neither test above saw it, and `store.parseFrontmatter` used
+		// to project it as editable TEXT valued `"|"`. Slice 4 made the panel render it
+		// read-only, but that is only the widget half: proven by running, a props array
+		// that merely OMITS the row deleted `desc: |` and both prose lines from the file,
+		// and one that changed it wrote `desc: typed over` over the block. This module's
+		// own comment says why that is not good enough — *"refusing here means the block
+		// survives however the panel behaves"*. Now it does.
+		const blockScalar = isScalar(v) && (v.type === 'BLOCK_LITERAL' || v.type === 'BLOCK_FOLDED');
+		const isBlock = isMap(v) || blockScalar || (isSeq(v) && !v.items.every((it) => isScalar(it)));
 		if (isBlock) out.add(key);
 	}
 	return out;
@@ -357,8 +368,15 @@ export function composeFrontmatter(
 	const addLines: string[] = [];
 	for (const [key, np] of newByKey) {
 		const op = oldByKey.get(key);
-		if (op && op.value === np.value && op.type === np.type &&
-			JSON.stringify(op.listItems ?? null) === JSON.stringify(np.listItems ?? null)) {
+		// PJ-182 — this was the LAST LINK, and it had not been moved. The check used to be
+		// `value === value && type === type && JSON.stringify(listItems) === …`, which
+		// decides a `nested-object-list` from `value` — a ` | `-joined DISPLAY SUMMARY.
+		// Delete a row from an ikhtilāf block without the summary happening to change and
+		// the write was dropped: `touchedSince`, `plan` and `setPropValue` had all been
+		// taught to carry the rows, and the composer still said "unchanged". It was also
+		// the fifth spelling of list equality, in the very codebase where `sameList`
+		// exists to collapse them. One predicate now, in `propRow.ts`.
+		if (op && samePropRow(op, np)) {
 			continue; // unchanged — never rewrite a key the user did not edit
 		}
 		const item = findItem(cst, key);

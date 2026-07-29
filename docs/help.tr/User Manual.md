@@ -687,6 +687,22 @@ Constellation özellik türlerini otomatik olarak algılar:
 
 Özellik görüntülemeyi **Ayarlar > Düzenleyici > Belgede özellikler** (Görünür / Gizli / Kaynak) bölümünden değiştirin.
 
+### Liste yazım biçimleri
+
+`tags:` veya `aliases:` gibi bir liste dört biçimde yazılabilir ve hepsi aynı anlama gelir. Constellation dördünü de okur ve aynı etiketleri gösterir:
+
+- **Girintili** — `tags:` ve altında `  - a`. Constellation'ın kendi yazdığı biçim budur.
+- **Girintisiz** — `tags:` ve altında sol kenardan başlayan `- a`. Geçerli YAML'dır ve pek çok başka aracın ürettiği biçimdir; bu yüzden içe aktarılmış kitaplıklarda sık görülür.
+- **Tek satırda** — `tags: [a, b]`.
+- **Bir alt satırda** — `tags:` ve altında `  [a, b]`.
+
+> [!important] 0.1 sürümünde giderildi
+> Girintisiz biçim şimdiye kadar *boş* liste olarak okunuyordu. Ögeler dosyada duruyordu ama panel hiçbir şey göstermiyordu — ve tek bir yeni etiket eklemek listenin tamamını değiştirdiği için önceki ögeler kayboluyordu. Artık her biçim doğru okunuyor. Aynı kusur, bir notun diğer adlarına giden bağlantıların çözümlendiği `aliases:` alanını ve bağlantı grafiğini besleyen `supports:`, `contains:` gibi türlü bağlantıları da etkiliyordu.
+
+### Uzun metin blokları
+
+`description: |` ve ardından gelen girintili satırlar, birkaç satırlık metni tek bir değer olarak tutar. Constellation bu satırı, ilk satırın önizlemesiyle birlikte **salt okunur** gösterir — iç içe alanlarla aynı kural: güvenle yeniden yazamadığı şeyi hiç yeniden yazmaz. Düzenlemek için `.md` dosyasını doğrudan açın.
+
 ---
 
 ## 10b. Kaynak Gözden Geçirme (Constellation Epistemic Content Engine — CECE)

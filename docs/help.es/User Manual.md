@@ -687,6 +687,22 @@ Constellation detecta los tipos de propiedades automaticamente:
 
 Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedades en el documento** (Visible / Oculto / Fuente).
 
+### Estilos de lista
+
+Una lista como `tags:` o `aliases:` puede escribirse de cuatro maneras, y todas significan lo mismo. Constellation lee las cuatro y muestra las mismas etiquetas:
+
+- **Con sangría** — `tags:` y debajo `  - a`. Así es como escribe Constellation.
+- **Sin sangría** — `tags:` y debajo `- a` empezando en el margen izquierdo. Es YAML válido, y lo que producen muchas otras herramientas, así que es habitual en bibliotecas importadas.
+- **En una sola línea** — `tags: [a, b]`.
+- **En la línea siguiente** — `tags:` y debajo `  [a, b]`.
+
+> [!important] Corregido en 0.1
+> La forma sin sangría se leía como una lista *vacía*. Los elementos seguían en el archivo, pero el panel no mostraba nada — y añadir una sola etiqueta nueva reemplazaba toda la lista, de modo que los elementos anteriores se perdían. Ahora todos los estilos se leen correctamente. El mismo fallo afectaba a `aliases:`, que es como se resuelven los enlaces a los otros nombres de una nota, y a los enlaces tipados como `supports:` y `contains:`, que alimentan el grafo de conexiones.
+
+### Bloques de texto largo
+
+`description: |` seguido de líneas con sangría guarda varias líneas de prosa como un único valor. Constellation muestra esa fila **de solo lectura** con una vista previa de la primera línea — la misma regla que para los campos anidados: lo que no puede reescribir con seguridad, no lo reescribe. Edítalo directamente en el archivo `.md`.
+
 ---
 
 ## 10b. Revisión de Fuentes (Constellation Epistemic Content Engine — CECE)

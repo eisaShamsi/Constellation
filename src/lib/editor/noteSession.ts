@@ -19,6 +19,7 @@ import * as M from './noteModel';
 import { bumpProps } from './propsSignal';
 import type { Text } from '@codemirror/state';
 import type { FrontmatterProperty } from '$lib/libraries/store';
+import type { SetPropOpts } from './propRow';
 
 export type DiskWriter = (path: string, content: string, origin: string) => void | Promise<void>;
 export type SaveResult = M.ComposeResult;
@@ -106,7 +107,7 @@ export function editPropValue(
 	id: string,
 	key: string,
 	value: string,
-	opts?: { listItems?: string[]; type?: FrontmatterProperty['type'] },
+	opts?: SetPropOpts,
 	expectPath?: string,
 ): boolean {
 	const changed = M.setPropValue(id, key, value, opts, expectPath);

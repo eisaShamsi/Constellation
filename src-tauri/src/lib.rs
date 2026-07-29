@@ -108,6 +108,9 @@ mod tasks;
 mod universe;
 mod watcher;
 mod watcher_suppress;
+/// PJ-182 — the single definition of "is this frontmatter line a sequence item / a
+/// top-level key", shared by every hand-rolled frontmatter scanner.
+mod yaml_lines;
 // MIG-092 §3 — Collections' batched hydration read (membership → live facts).
 mod collections;
 pub mod write_gate;
