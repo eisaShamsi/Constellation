@@ -98,6 +98,13 @@ No necesitas hacer nada: Constellation mantiene su índice de búsqueda al día 
 
 **Fusionar las dos versiones.** El aviso de conflicto también incluye un botón **Fusionar…**. Abre una vista a pantalla completa de dos columnas —**Tu versión** a la izquierda (editable) junto a la **Copia externa** a la derecha (de solo lectura)—, con las diferencias resaltadas y las partes idénticas plegadas. Junto a cada diferencia hay un botón **Copiar a la mía** que incorpora ese cambio externo a tu versión; también puedes editar libremente la columna de la izquierda para combinar ambas a mano. Cuando termines, **Guardar fusión** escribe tu nota reconciliada y mueve la copia aparte a la papelera de la biblioteca (recuperable, nunca se elimina); **Cancelar** no cambia nada — ambas versiones quedan exactamente como estaban. Constellation nunca fusiona automáticamente — la reconciliación es siempre tu decisión.
 
+**Si la nota modificada estaba CERRADA en ese momento**, al volver a abrirla verás el archivo más reciente. Constellation guarda una copia de seguridad de cada nota que abres — es lo que protege el trabajo sin guardar si un guardado falla — y hasta la versión 0.1 esa copia podía imponerse a una nota editada en otro lugar mientras estaba cerrada: la reabrías, veías el texto *antiguo*, y la siguiente vez que cambiabas de pestaña Constellation escribía la versión antigua sobre el archivo más reciente. En silencio, informando de un guardado correcto.
+
+> [!important] Corregido en 0.1
+> La copia de seguridad ahora registra si contiene trabajo que nunca se escribió en disco, o si es solo una copia de lo ya guardado. Solo la primera puede imponerse. Así, una nota editada en otro dispositivo, por `git pull` o por cualquier herramienta de sincronización mientras estaba cerrada se abre mostrando **el archivo más reciente** — y el trabajo sin guardar sigue protegido igual que antes.
+>
+> Un detalle: las copias hechas por la versión anterior no llevan esa marca, así que el comportamiento antiguo persiste en una nota hasta la primera vez que vuelvas a abrirla y cerrarla.
+
 ### Universos Secundarios
 
 Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.

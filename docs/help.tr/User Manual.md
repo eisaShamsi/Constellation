@@ -112,6 +112,13 @@ Herhangi bir şey yapmanıza gerek yoktur: Constellation, dosyalarınız diskte 
 
 **İki sürümü birleştirme.** Bu çakışma şeridinde ayrıca bir **Birleştir…** düğmesi de bulunur. Bu düğme, tam ekran, iki sütunlu bir görünüm açar — solda **Sizin sürümünüz** (düzenlenebilir), sağında ise **Dış kopya** (salt okunur) — farklılıklar vurgulanır, aynı olan kısımlar ise katlanarak gizlenir. Her farkın yanında, o dıştan gelen değişikliği sizin sürümünüze aktaran bir **Sürümüme kopyala** düğmesi bulunur; ayrıca ikisini elle birleştirmek için sol sütunu serbestçe düzenleyebilirsiniz. İşiniz bittiğinde, **Birleştirileni kaydet** uzlaştırdığınız notu yazar ve yan kopyayı kütüphane çöp kutusuna taşır (geri alınabilir, asla silinmez); **İptal** hiçbir şeyi değiştirmez — her iki sürüm de tam olarak eskisi gibi kalır. Constellation asla otomatik olarak birleştirme yapmaz — uzlaştırma her zaman sizin seçiminizdir.
 
+**Değişen not o sırada KAPALIYSA**, yeniden açtığınızda daha yeni dosyayı görürsünüz. Constellation açtığınız her notun bir güvenlik kopyasını tutar — bir kaydetme başarısız olduğunda kaydedilmemiş çalışmayı koruyan budur — ve 0.1 sürümüne kadar bu kopya, not kapalıyken başka bir yerde düzenlenmiş bir nota üstün gelebiliyordu: notu yeniden açıyordunuz, *eski* metni görüyordunuz ve bir sonraki sekme değişiminde Constellation eski sürümü daha yeni dosyanın üzerine yazıyordu. Sessizce ve başarılı bir kaydetme olarak bildirerek.
+
+> [!important] 0.1 sürümünde giderildi
+> Güvenlik kopyası artık, diske hiç yazılmamış bir çalışma mı yoksa zaten kaydedilmiş olanın bir kopyası mı olduğunu kaydediyor. Yalnızca ilki üstün gelebilir. Böylece kapalıyken başka bir cihazda, `git pull` ile ya da herhangi bir eşitleme aracıyla düzenlenen bir not **daha yeni dosyayı** göstererek açılır — kaydedilmemiş çalışma ise eskisi gibi korunur.
+>
+> Bilinmesi gereken bir ayrıntı: önceki sürümün oluşturduğu kopyalarda bu işaret bulunmaz; dolayısıyla bir not için eski davranış, onu ilk kez yeniden açıp kapatana dek sürer.
+
 ### Alt Evrenler
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.

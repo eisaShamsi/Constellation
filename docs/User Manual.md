@@ -282,6 +282,17 @@ Constellation follows **File Over App** — your notes are plain `.md` files on 
 
 You don't need to do anything: Constellation keeps its search index in step with your files as they change on disk. *(One detail: renaming a folder from **outside** the app resets those notes' review-schedule and link-weight history — the note text itself is untouched. Renaming folders **inside** Constellation preserves everything.)*
 
+**If the changed note was CLOSED at the time**, reopening it shows you the newer file. Constellation keeps a safety copy of every note you open — that is what protects unsaved work if a save fails — and until version 0.1 that copy could win over a note edited elsewhere while it was closed: you reopened it, saw the *old* text, and the next time you switched tabs Constellation wrote the old version back over the newer file. Silently, reported as a successful save.
+
+> [!important] Fixed in 0.1
+> The safety copy now records whether it holds work that was never written to disk, or is
+> just a copy of what was already saved. Only the first kind can win. So a note edited on
+> another device, or by `git pull`, or by any sync tool while it was closed, opens showing
+> **the newer file** — and unsaved work is still protected exactly as before.
+>
+> One detail worth knowing: copies made by the previous version carry no such marking, so
+> the old behaviour persists for a note until the first time you open and close it again.
+
 **If the changed note is currently OPEN in a tab**, Constellation brings it up to date safely — your work is never silently overwritten:
 
 - If you have **no unsaved changes** in that note, the open note quietly refreshes to show the outside edit, so your next keystroke builds on the new version. *(Previously, an open note kept showing the old text and your next keystroke could silently save over the outside edit — that can no longer happen.)*

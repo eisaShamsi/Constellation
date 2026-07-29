@@ -112,6 +112,13 @@ Vous n'avez rien à faire : Constellation maintient son index de recherche synch
 
 **Fusionner les deux versions.** La bannière de conflit comporte aussi un bouton **Fusionner…**. Il ouvre une vue plein écran à deux colonnes — **Votre version** à gauche (modifiable) à côté de la **Copie externe** à droite (en lecture seule) — avec les différences mises en évidence et les parties identiques repliées. À côté de chaque différence, un bouton **Copier vers la vôtre** reporte cette modification externe dans votre version ; vous pouvez aussi modifier librement la colonne de gauche pour combiner les deux à la main. Une fois terminé, **Enregistrer la fusion** écrit votre note réconciliée et déplace la copie annexe vers la corbeille de la bibliothèque (récupérable, jamais supprimée) ; **Annuler** ne change rien — les deux versions restent exactement telles qu'elles étaient. Constellation ne fusionne jamais automatiquement — la réconciliation est toujours votre choix.
 
+**Si la note modifiée était FERMÉE à ce moment-là**, sa réouverture vous montre le fichier le plus récent. Constellation conserve une copie de sauvegarde de chaque note que vous ouvrez — c'est elle qui protège le travail non enregistré en cas d'échec d'une sauvegarde — et jusqu'à la version 0.1 cette copie pouvait l'emporter sur une note modifiée ailleurs pendant qu'elle était fermée : vous la rouvriez, vous voyiez l'*ancien* texte, et au changement d'onglet suivant Constellation réécrivait l'ancienne version par-dessus le fichier plus récent. Silencieusement, en signalant une sauvegarde réussie.
+
+> [!important] Corrigé en 0.1
+> La copie de sauvegarde indique désormais si elle contient du travail qui n'a jamais été écrit sur le disque, ou seulement une copie de ce qui était déjà enregistré. Seule la première peut l'emporter. Une note modifiée sur un autre appareil, par `git pull` ou par un outil de synchronisation pendant qu'elle était fermée s'ouvre donc sur **le fichier le plus récent** — et le travail non enregistré reste protégé exactement comme avant.
+>
+> Un détail à connaître : les copies faites par la version précédente ne portent pas cette marque, donc l'ancien comportement subsiste pour une note jusqu'à la première fois où vous la rouvrez et la refermez.
+
 ### Univers enfants
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.

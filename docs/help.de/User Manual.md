@@ -99,6 +99,13 @@ Sie müssen nichts tun: Constellation hält seinen Suchindex im Gleichschritt mi
 
 **Die beiden Versionen zusammenführen.** Das Konflikt-Banner besitzt außerdem eine Schaltfläche **Zusammenführen…**. Sie öffnet eine zweispaltige Vollbildansicht — links **Deine Version** (bearbeitbar) neben der **Externen Kopie** rechts (schreibgeschützt) —, wobei die Unterschiede hervorgehoben und die identischen Teile eingeklappt werden. Neben jedem Unterschied befindet sich eine Schaltfläche **In deine übernehmen**, die diese externe Änderung in Ihre Version zieht; Sie können die linke Spalte auch frei bearbeiten, um beide von Hand zu kombinieren. Wenn Sie fertig sind, schreibt **Zusammengeführt speichern** Ihre abgeglichene Notiz und verschiebt die Nebenkopie in den Papierkorb der Bibliothek (wiederherstellbar, nie gelöscht); **Abbrechen** ändert nichts — beide Versionen bleiben genau so, wie sie waren. Constellation führt niemals automatisch zusammen — der Abgleich ist immer Ihre Entscheidung.
 
+**Wenn die geänderte Notiz zu diesem Zeitpunkt GESCHLOSSEN war**, zeigt Ihnen das erneute Öffnen die neuere Datei. Constellation bewahrt von jeder geöffneten Notiz eine Sicherungskopie — sie schützt ungespeicherte Arbeit, falls ein Speichervorgang fehlschlägt — und bis Version 0.1 konnte diese Kopie eine Notiz überstimmen, die anderswo geändert wurde, während sie geschlossen war: Sie öffneten sie erneut, sahen den *alten* Text, und beim nächsten Tabwechsel schrieb Constellation die alte Fassung über die neuere Datei. Lautlos, gemeldet als erfolgreiches Speichern.
+
+> [!important] Behoben in 0.1
+> Die Sicherungskopie hält jetzt fest, ob sie Arbeit enthält, die nie auf die Festplatte geschrieben wurde, oder nur eine Kopie des bereits Gespeicherten ist. Nur die erste Art kann gewinnen. Eine Notiz, die auf einem anderen Gerät, per `git pull` oder durch ein Synchronisierungswerkzeug geändert wurde, während sie geschlossen war, öffnet sich also mit **der neueren Datei** — und ungespeicherte Arbeit bleibt genauso geschützt wie zuvor.
+>
+> Ein Detail: Kopien der vorherigen Version tragen diese Kennzeichnung nicht, daher bleibt für eine Notiz das alte Verhalten bestehen, bis Sie sie das erste Mal wieder öffnen und schließen.
+
 ### Kind-Universen
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.

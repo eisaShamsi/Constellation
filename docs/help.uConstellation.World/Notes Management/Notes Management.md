@@ -263,4 +263,18 @@ Constellation is built so that **no ordinary action can silently lose the text y
 
 - **When a note is edited outside Constellation while it's open.** If the same note is changed by another program or a sync tool while you have it open, Constellation adopts the outside change if you have no unsaved edits; if you *do* have unsaved edits, it keeps **both** — your version stays on screen and the outside version is saved as a separate `.conflict` side-copy. A banner offers **Merge…** (a side-by-side view where you reconcile the two, with a "Copy to mine" button per difference) and **Show copy** (reveals the side-copy in your file explorer). Nothing is ever overwritten without your choice.
 
+- **When a note is edited outside Constellation while it's CLOSED.** Reopening it shows you
+  the newer file. This is worth stating explicitly, because until version 0.1 it did not:
+  the recovery net mentioned above keeps a copy of every note you open, and that copy could
+  win over a file edited elsewhere while the note was closed. You reopened the note, saw the
+  *old* text, and the next time you switched tabs Constellation wrote the old version back
+  over the newer file — silently, and reported as a successful save.
+
+  The net now records whether it holds work that was never written to disk, or merely a copy
+  of what was already saved. Only the first kind can win, so a note edited on another device,
+  by `git pull`, or by any sync tool while it was closed now opens showing the newer file —
+  and unsaved work is protected exactly as before. *(Copies made by the previous version
+  carry no such marking, so the old behaviour persists for a given note until the first time
+  you open and close it again.)*
+
 **Closing the app is a save point too.** When you close Constellation, every note with unsaved typing is written to its file **before** the window closes — including words typed in the very last second before you clicked ✕. A normal close (nothing unsaved) is instant, exactly as before; when there is something to write, the window may stay open for a brief moment (capped at five seconds) while your notes land safely on disk.

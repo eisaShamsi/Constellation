@@ -98,6 +98,13 @@ Você não precisa fazer nada: o Constellation mantém o seu índice de busca em
 
 **Mesclando as duas versões.** A faixa de conflito também tem um botão **Mesclar…**. Ele abre uma visualização em tela cheia, em duas colunas — **Sua versão** à esquerda (editável) ao lado da **Cópia externa** à direita (somente leitura) — com as diferenças destacadas e as partes idênticas recolhidas. Ao lado de cada diferença há um botão **Copiar para a minha** que traz aquela alteração externa para a sua versão; você também pode editar livremente a coluna da esquerda para combinar as duas manualmente. Quando terminar, **Salvar mesclado** grava a sua nota reconciliada e move a cópia paralela para a lixeira da biblioteca (recuperável, nunca excluída); **Cancelar** não altera nada — as duas versões permanecem exatamente como estavam. O Constellation nunca mescla automaticamente — a reconciliação é sempre a sua escolha.
 
+**Se a nota alterada estava FECHADA nesse momento**, ao reabri-la verá o ficheiro mais recente. O Constellation guarda uma cópia de segurança de cada nota que abre — é ela que protege o trabalho não guardado se uma gravação falhar — e até à versão 0.1 essa cópia podia prevalecer sobre uma nota editada noutro lado enquanto estava fechada: reabria-a, via o texto *antigo*, e da vez seguinte que mudava de separador o Constellation escrevia a versão antiga por cima do ficheiro mais recente. Em silêncio, comunicando uma gravação bem-sucedida.
+
+> [!important] Corrigido na 0.1
+> A cópia de segurança regista agora se contém trabalho que nunca foi escrito no disco, ou se é apenas uma cópia do que já estava guardado. Só a primeira pode prevalecer. Assim, uma nota editada noutro dispositivo, por `git pull` ou por qualquer ferramenta de sincronização enquanto estava fechada abre mostrando **o ficheiro mais recente** — e o trabalho não guardado continua protegido exatamente como antes.
+>
+> Um detalhe: as cópias feitas pela versão anterior não têm essa marca, por isso o comportamento antigo mantém-se numa nota até à primeira vez que a reabrir e fechar.
+
 ### Universos Secundarios
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
