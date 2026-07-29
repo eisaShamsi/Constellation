@@ -11,9 +11,10 @@
 	import { invoke } from '@tauri-apps/api/core';
 	// MIG-107 Slice 3 — the READ half of single ownership for properties.
 	import { PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
-	import { getModel } from '$lib/editor/noteModel';
+	import { getModel, cloneProps } from '$lib/editor/noteModel';
+	import { isDirty as isNoteDirty } from '$lib/editor/noteSession';
 	import { propsVersion } from '$lib/editor/propsSignal';
-	import { plan as planPropOps, apply as applyPropOps, touchedSince } from '$lib/editor/propsCommit';
+	import { plan as planPropOps, apply as applyPropOps, touchedSince, seededKeysOf } from '$lib/editor/propsCommit';
 	import { editPropValue, addPropTo, removePropFrom, reorderPropsIn } from '$lib/editor/noteSession';
 	import { withAutoUpdatedDate } from '$lib/libraries/store';
 
@@ -187,15 +188,6 @@
 	});
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
-	/**
-	 * MIG-107 Slice 4 — the keys this panel was showing when it last read the model.
-	 *
-	 * This is the ONLY thing a commit is allowed to delete from. A key that appears afterwards —
-	 * a tag added from the file-tree menu, a property set in the other panel — is not in this set,
-	 * so there is no path by which this panel's next save can remove it. See propsCommit.ts.
-	 * Deliberately NOT `$state`: it is bookkeeping for the commit, never rendered.
-	 */
-	let seededKeys = new Set<string>();
 	/**
 	 * MIG-107 #1e — the rows exactly as this panel was seeded with them.
 	 *
@@ -435,8 +427,7 @@
 			// that is a different note, and its pending edit is flushed by the teardown path.
 			const localEditPending = saveTimeout !== undefined;
 			if ((!saving && !localEditPending) || tabChanged) {
-				seededKeys = new Set(sourceProps.map(p => p.key).filter(k => !!k && !!k.trim()));
-				seededRows = sourceProps.map(p => ({ ...p, listItems: p.listItems ? [...p.listItems] : undefined }));
+				seededRows = cloneProps(sourceProps);
 				editableProps = sourceProps.map(p => {
 					// Apply registered type override if available
 					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
@@ -935,8 +926,8 @@
 		const model = getModel(id);
 		if (!model) { await saveTabContent(id, path, editableProps, body); return; } // no model → legacy
 		const touched = touchedSince(seededRows, editableProps);
-		const ops = planPropOps(withAutoUpdatedDate(editableProps), model.props, seededKeys, touched);
-		applyPropOps(ops, {
+		const ops = planPropOps(withAutoUpdatedDate(editableProps), model.props, seededKeysOf(seededRows), touched);
+		const changed = applyPropOps(ops, {
 			setValue: (k, v, o) => editPropValue(id, k, v, o, path),
 			add: (pr) => addPropTo(id, pr, path),
 			remove: (k) => removePropFrom(id, k, path),
@@ -945,9 +936,15 @@
 		// The panel now knows about everything the model holds — including keys another writer added
 		// that this commit deliberately left alone. Without this, the NEXT commit would still treat
 		// them as unseen and could never remove them even when the user does delete them.
-		seededKeys = new Set(getModel(id)?.props.map((p) => p.key) ?? []);
-		// Committed: the panel's rows are now the model's, so nothing of this panel's is ahead of it.
-		seededRows = (getModel(id)?.props ?? []).map((p) => ({ ...p, listItems: p.listItems ? [...p.listItems] : undefined }));
+		// `apply` reports whether anything actually changed, and propsCommit's own docs say that is
+		// "so a caller can skip a pointless write" — but this caller was ignoring it, so a debounce
+		// that fired with nothing to do still paid a full compose + write-ahead + disk IPC. Skip only
+		// when the model is ALSO clean: a pending body edit still needs persisting.
+		if (!changed && !isNoteDirty(id)) return;
+		// Committed: the panel's rows are now the model's, so nothing of this panel's is ahead of it —
+		// including keys another writer added that this commit deliberately left alone. Without the
+		// re-seed the NEXT commit would still treat them as unseen and could never remove them.
+		seededRows = cloneProps(getModel(id)?.props ?? []);
 		await saveTabContent(id, path, editableProps, body, false, true);
 	}
 

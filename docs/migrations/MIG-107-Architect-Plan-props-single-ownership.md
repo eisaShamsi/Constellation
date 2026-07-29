@@ -282,7 +282,7 @@ Each lands alone, each has a verification clause. **Toggle: `PROPS_SINGLE_OWNERS
 | **3** | DONE 2026-07-28, **Boss-validated**. `PROPS_SINGLE_OWNERSHIP` added; the panel seeds from `sourceProps` (the model, invalidated by `$propsVersion`) instead of the `tab.content` projection, with a `?? properties` fallback for hosts that mount before a model exists. Guard added: never re-seed over an un-flushed local edit. Still writes whole arrays — the race is Slice 4 | `PropertyEditor.svelte`, `ownershipFlag.ts` | yes |
 | **4** | DONE 2026-07-28, **Boss-validated (5/5)**. The swap: `propsCommit.plan/apply` turns the panel's rows into per-key operations; `saveTabContent(..., propsAlreadyInModel)` writes from the model. A commit may ADD/SET freely but may only REMOVE a key in `seededKeys`, and may only SET a key in `touchedSince()`. Both AK reproductions flipped to green; **PJ-178 closed**. Four defects fixed in-pass — see 5.6 | `PropertyEditor.svelte`, `propsCommit.ts` (new), `store.ts` | yes |
 | **5** | DONE 2026-07-29, **Boss-validated 4/4**. All three converted; the case-insensitive key match preserved (a note spelling it `Stage:` must not gain a second key). **No whole-array property write remains in the app.** Plus a Boss-found fix: the header badge and file-tree stage icon now derive from the MODEL, because the sidebar Properties mount was never given the `onstagechange` callback the in-note mount has — fixed by removing the dependency, not by adding the missing wire | `NoteEditor.svelte`, `+layout.svelte` | yes |
-| **6** | Remove the toggle + the dead whole-array path; `/simplify`; safety-inspection; docs ×15 | — | no |
+| **6** | DONE 2026-07-29. `/simplify` (4 agents) applied — a real aliasing bug (my hand-rolled clone missed `nestedObjects`), a quadratic ~100-allocations-per-edit ordering waste, a no-op commit still hitting disk, and redundant already-drifted state. Docs: User Manual + Properties help topic. Safety inspection run. **Toggle RETAINED by Boss ruling** — removed when MIG-104 closes | — | no |
 
 **Not coverable by vitest, and not pretended otherwise.** The Editor-Surface Gate items that need
 the running app — **Focus mode** (enter/type/exit round-trip and the teardown flush), the
@@ -359,3 +359,29 @@ making the swap larger than it needs to be.
 | **#1g** | **The Boss found it.** `touchedKeys` was hand-marked from the panel's edit handlers — wired at **3 of this component's 16** mutation sites. The tag editor was one of the 13 missed, so a tag added in one panel reached neither the other panel nor the file. **Fixed by removing the hand-marking entirely:** `touchedSince(seededRows, localRows)` derives it by comparison, so any edit from any path is detected, including sites added later. | Boss test |
 
 **#1g is the second time in two days I fixed only the sites I happened to look at** (#1b was the first). The durable correction is not "be more careful with the list" — it is **stop keeping a list**: a completeness requirement that depends on every future contributor remembering is a defect waiting for its next author. Recorded as LL-038 rule 6.
+
+
+---
+
+## 5.7 Slice 6 — what was NOT done, and why
+
+**The toggle stays.** Boss-ruled 2026-07-29. The trade was put honestly: a rollback flag is only
+worth having if the path behind it still works, and that path has not been exercised since Slice 3.
+Against that, this migration produced seven in-pass defects and **four were found by the Boss in
+live testing, not by the suite**. Removal moves to the MIG-104 close.
+
+**Two false claims from the Slice-5 commit, corrected.** The altitude review caught them and I
+verified both by grep: (a) *"no whole-array property write remains in the app"* — `addTagToNote`
+(`+layout.svelte:6536`) still does one, and it is the exact writer `propsCommit`'s header names as
+the canonical foreign key; (b) *"there is no callback left to omit"* — the push channel
+(`onStageChanged`, `+layout:8533`/`:8742`) is still fully wired, so I added a pull mechanism BESIDE
+it rather than replacing it. That display fact now has two owners — the same shape as the defect
+this migration removes, one layer up.
+
+**PJ-180 — the altitude review's larger findings**, deferred as a second pass rather than patched at
+the end of a long session: a by-name `setPropByName` intent (so the case-fold / empty-means-remove
+triad has one home); a generic `noteProp(id, key)` read facade so *any* display surface reads a
+property the same way — which is what lets the push channel be **deleted** rather than shadowed;
+splitting `saveTabContent`'s two modes; moving the seed/commit/re-seed bookkeeping into a
+`propsCommit` draft handle; and `buildFullContent`, which is a **lossier** composer than the
+`compose()` every other writer uses.

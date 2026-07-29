@@ -96,13 +96,26 @@ export function toText(s: string): Text {
 	return Text.of(s.split('\n'));
 }
 
-function cloneProps(props: FrontmatterProperty[]): FrontmatterProperty[] {
+/**
+ * Deep-copy property rows. EXPORTED (MIG-107 Slice 6): PropertyEditor was hand-rolling this and its
+ * copy missed `nestedObjects`, so the panel's seed aliased the model's nested rows. One clone that
+ * tracks `FrontmatterProperty`'s shape, not several that must each remember every field.
+ */
+export function cloneProps(props: FrontmatterProperty[]): FrontmatterProperty[] {
 	return props.map((p) => ({
 		...p,
 		listItems: p.listItems ? [...p.listItems] : undefined,
 		nestedObjects: p.nestedObjects ? p.nestedObjects.map((o) => ({ ...o })) : undefined,
 	}));
 }
+
+/**
+ * Element-wise list equality. Lives HERE, the lowest layer that needs it, and is re-exported upward
+ * by `propsCommit` — one definition of "these list items are the same", instead of the four
+ * `JSON.stringify` spellings this concept had across yamlDoc / noteModel / propsCommit.
+ */
+export const sameList = (a?: string[], b?: string[]): boolean =>
+	a === b || (!a?.length && !b?.length) || (!!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]));
 
 function cidOf(props: FrontmatterProperty[]): string | null {
 	const p = props.find((x) => x.key.toLowerCase() === 'cid_cn');
@@ -257,10 +270,11 @@ export function setPropValue(
 	const cur = m.props[i];
 	const nextType = opts?.type ?? cur.type;
 	const nextItems = opts?.listItems;
-	const sameItems =
-		JSON.stringify(cur.listItems ?? null) === JSON.stringify(nextItems ?? cur.listItems ?? null);
+	// `undefined` means "not supplying list items" — the scalar case, and by far the common one.
+	// Comparing `cur.listItems` to itself was guaranteed-equal work on every value edit.
+	const sameItems = nextItems === undefined || sameList(cur.listItems, nextItems);
 	if (cur.value === value && cur.type === nextType && sameItems) return false; // no-op: stay clean
-	const next = cloneProps(m.props);
+	const next = m.props.slice(); // entries are REPLACED, never mutated in place — no deep clone needed
 	next[i] = { ...cur, value, type: nextType, ...(nextItems ? { listItems: [...nextItems] } : {}) };
 	m.props = next;
 	m.cid = cidOf(m.props);
@@ -279,7 +293,7 @@ export function addProp(id: string, prop: FrontmatterProperty, expectPath?: stri
 	if (expectPath !== undefined && m.path !== expectPath) return false;
 	if (!prop.key || !prop.key.trim()) return false;
 	if (m.props.some((p) => p.key === prop.key)) return false;
-	m.props = [...cloneProps(m.props), ...cloneProps([prop])];
+	m.props = [...m.props, ...cloneProps([prop])]; // deep-clone only the INCOMING row (caller may alias it)
 	m.cid = cidOf(m.props);
 	m.version++;
 	return true;
@@ -291,7 +305,7 @@ export function removeProp(id: string, key: string, expectPath?: string): boolea
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
 	if (!m.props.some((p) => p.key === key)) return false;
-	m.props = cloneProps(m.props).filter((p) => p.key !== key);
+	m.props = m.props.filter((p) => p.key !== key);
 	m.cid = cidOf(m.props);
 	m.version++;
 	return true;
@@ -310,7 +324,7 @@ export function renamePropKey(id: string, oldKey: string, newKey: string, expect
 	const i = m.props.findIndex((p) => p.key === oldKey);
 	if (i === -1) return false;
 	if (m.props.some((p) => p.key === newKey)) return false; // collision — caller surfaces it
-	const next = cloneProps(m.props);
+	const next = m.props.slice();
 	next[i] = { ...next[i], key: newKey };
 	m.props = next;
 	m.cid = cidOf(m.props);
@@ -332,12 +346,17 @@ export function reorderProps(id: string, key: string, beforeKey: string | null, 
 	if (expectPath !== undefined && m.path !== expectPath) return false;
 	const from = m.props.findIndex((p) => p.key === key);
 	if (from === -1) return false;
-	const next = cloneProps(m.props);
+	// Decide BEFORE allocating. `plan` used to emit an order op per adjacent pair, and each one
+	// cloned the whole array only to discover it changed nothing — O(N^2) spreads per commit for a
+	// result that was thrown away every time. Establish the move is real first, then copy once.
+	const to = beforeKey === null
+		? m.props.length - 1
+		: m.props.findIndex((p) => p.key === beforeKey) - (m.props.findIndex((p) => p.key === beforeKey) > from ? 1 : 0);
+	if (beforeKey !== null && m.props.findIndex((p) => p.key === beforeKey) === -1) return false; // unknown anchor
+	if (to === from) return false; // already where it belongs — no allocation, no version bump
+	const next = m.props.slice();
 	const [moved] = next.splice(from, 1);
-	const to = beforeKey === null ? next.length : next.findIndex((p) => p.key === beforeKey);
-	if (beforeKey !== null && to === -1) return false; // unknown anchor — refuse rather than guess
 	next.splice(to, 0, moved);
-	if (next.every((p, i) => p.key === m.props[i].key)) return false; // no-op move
 	m.props = next;
 	m.version++;
 	return true;

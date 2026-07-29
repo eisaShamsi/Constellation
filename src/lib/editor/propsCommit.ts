@@ -27,6 +27,7 @@
  * glue into the light).
  */
 import type { FrontmatterProperty } from '$lib/libraries/store';
+import { sameList } from './noteModel';
 
 export type PropOp =
 	| { op: 'set'; key: string; value: string; type: FrontmatterProperty['type']; listItems?: string[] }
@@ -35,10 +36,20 @@ export type PropOp =
 	| { op: 'order'; key: string; beforeKey: string | null };
 
 /** A row is committable once it has a real key — a blank row stays the panel's own business. */
-const committable = (p: FrontmatterProperty) => !!p.key && !!p.key.trim();
+export const committable = (p: FrontmatterProperty) => !!p.key && !!p.key.trim();
 
-const sameList = (a?: string[], b?: string[]) =>
-	JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+/**
+ * The keys a panel showing `rows` was displaying — i.e. the only keys its next commit may REMOVE.
+ * Derived rather than tracked alongside the rows: they were two fields kept in lockstep at two
+ * sites, and they had already drifted (one filtered blank keys, the other did not). LL-038 rule 5.
+ */
+export function seededKeysOf(rows: FrontmatterProperty[]): Set<string> {
+	return new Set(rows.filter(committable).map((p) => p.key));
+}
+
+// One definition of list equality, from the layer below — see noteModel.sameList. Element-wise, so
+// a commit no longer JSON.stringifies every list on the note ~40 times.
+export { sameList } from './noteModel';
 
 /**
  * Work out what the model must be told, given what the panel is showing.
@@ -100,8 +111,15 @@ export function plan(
 	// "move to the END of the model array", which pushes any foreign key sitting after it. Anchoring
 	// only BETWEEN two known keys keeps every operation inside the panel's own span, so an unseen
 	// key keeps its position as well as its value.
-	for (let i = 0; i < rows.length - 1; i++) {
-		ops.push({ op: 'order', key: rows[i].key, beforeKey: rows[i + 1].key });
+	// Emit these ONLY when the model's relative order of these keys actually differs from the
+	// panel's. Emitting one per adjacent pair unconditionally made a single value edit cost an
+	// order op per property, each of which the model then had to evaluate and discard.
+	const modelOrder = modelProps.map((p) => p.key).filter((k) => localKeys.has(k));
+	const localOrder = rows.map((p) => p.key).filter((k) => byModelKey.has(k));
+	if (modelOrder.length === localOrder.length && !modelOrder.every((k, i) => k === localOrder[i])) {
+		for (let i = 0; i < rows.length - 1; i++) {
+			ops.push({ op: 'order', key: rows[i].key, beforeKey: rows[i + 1].key });
+		}
 	}
 
 	return ops;

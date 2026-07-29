@@ -1384,3 +1384,129 @@ still falls back to the first entry in the one case where that is the truth: a *
 stage term, which is not among the offered options, so no current entry exists.
 
 Pinned by `tests/pj-174/stagePickerHighlight.test.ts`. Boss-validated.
+
+---
+
+# MIG-107 Slice 6 — the close (in progress, 2026-07-29)
+
+## Boss ruling: the toggle STAYS one more cycle
+
+The plan had Slice 6 deleting `PROPS_SINGLE_OWNERSHIP` and the legacy whole-array path. Put to the
+Boss with the trade stated honestly — a rollback flag is only worth having if the path behind it
+still works, and that path has not been exercised since Slice 3, so it is an emergency exit nobody
+has opened. Against that: this migration produced **seven** in-pass defects and **four of them were
+found by the Boss in live testing, not by the suite.**
+
+**Ruled: keep the toggle.** It is removed when MIG-104 closes, not today. Slice 6 therefore ships
+without the deletion, and the plan is amended rather than quietly diverged from.
+
+## Docs (SO#2)
+
+MIG-107 fixes defects rather than adding UI, so there are no new `$t()` strings and no ×15 locale
+churn. What DID become true for the user is worth stating, and is now in both places:
+
+* **`docs/User Manual.md`** — a new *"Two panels, one note"* section (the two Properties surfaces are
+  windows onto one note; the header badge and file-tree icon follow; each edit affects only the field
+  you touched) and a *"Choosing a stage"* note for PJ-179.
+* **`docs/help.uConstellation.World/Properties/Properties.md`** — the same, in help-topic voice.
+
+**Stated honestly rather than papered over:** the Properties help topic exists in **English only** —
+none of the 14 translated help dirs carry it. That is the pre-existing **PJ-146** gap (translated
+help is a partial subset), not something this migration introduced, and inventing 14 translations of
+a topic those dirs do not have would be fabricating coverage rather than creating it.
+
+## Running at the time of writing
+
+`/simplify` (4 parallel quality agents: reuse · simplification · efficiency · altitude) and the
+standing-order safety inspection, both over the MIG-107 diff. Findings and their disposition follow
+below before this slice is committed.
+
+## /simplify — four agents, applied
+
+**Reuse.** `cloneProps` already existed in `noteModel` and I had hand-rolled it twice in
+PropertyEditor — and **my copy missed `nestedObjects`, so the panel's seed aliased the model's
+nested rows.** Exported and reused. `committable` / `seededKeysOf` now have one definition in
+`propsCommit`; the duplicate `getModel` import in `+layout` is gone.
+
+**Simplification.** `seededKeys` deleted — it was fully derivable from `seededRows`, assigned in
+lockstep at two sites, and **the two had already drifted** (one filtered blank keys, the other did
+not). That is LL-038 rule 5 — *two representations of one truth* — committed inside the migration
+that produced the rule.
+
+**Efficiency — the one that mattered.** `plan()` emitted an `order` op for **every adjacent row
+pair, unconditionally**, and each one made the model **deep-clone the whole array before
+discovering the move was a no-op**. One value edit on a 10-property note cost **~90 discarded object
+spreads, growing as N²**. Now: ordering ops only when the order genuinely differs; `reorderProps`
+decides before allocating; the other intents shallow-copy the array (entries are replaced, never
+mutated) and deep-clone only an incoming row; `sameList` is element-wise instead of four
+`JSON.stringify` spellings across three modules. **~100 allocations per edit → ~2.**
+
+Also: `apply()` returns whether anything changed, `propsCommit`'s own doc says that exists "so a
+caller can skip a pointless write" — **and the caller ignored it**, so a debounce firing with
+nothing to do still paid a full compose + write-ahead + disk IPC. Now skipped when the model is also
+clean.
+
+The efficiency agent also **verified two load-bearing claims I had only asserted**: body typing
+provably cannot tick `propsVersion` (traced every call site), and Svelte 5.53's `$derived` really
+does short-circuit on reference equality — so the global counter is defensible, not merely
+well-argued.
+
+## ★ Two claims in my Slice 5 commit were FALSE — found by the altitude agent, verified by me
+
+1. **"No whole-array property write remains in the app."** `addTagToNote` (`+layout.svelte:6536`)
+   still calls `saveTabContent` with a whole array — and it is the exact writer `propsCommit`'s own
+   header names as the canonical foreign key ("a tag added from the file-tree menu").
+2. **"There is no callback left to omit."** The push channel (`onstagechange` → `onStageChanged`,
+   wired at `+layout:8533` and `:8742`) is **still fully wired**. I added a pull mechanism beside it
+   rather than replacing it — so that display fact now has *two* owners, which is the same shape as
+   the defect this migration exists to remove, one layer up.
+
+Both verified by grep, not taken on the agent's word. Corrected here; the commit messages stand as
+written since history is not rewritten, and this entry is the correction of record.
+
+## Deferred with reasons (NOT silently parked) — filed as PJ-180
+
+The altitude review's larger findings are real and are a second pass, not a patch: a by-name
+`setPropByName` intent so the case-fold/empty-means-remove triad has one home; a generic
+`noteProp(id, key)` read facade so *any* display surface reads a property the same way (and the push
+channel can then be deleted rather than shadowed); splitting `saveTabContent`'s two modes
+(`propsAlreadyInModel` deletes the function's first half rather than tuning it); moving the
+seed/commit/re-seed bookkeeping into a `propsCommit` draft handle; and the `buildFullContent`
+projection, which is a *lossier* composer than the `compose()` every other writer uses.
+
+Filed as **PJ-180** rather than attempted at the end of a long session on a migration the Boss has
+already tested five times.
+
+## Slice-6 safety inspection — PJ-166's SEVENTH strike, and two confirmed findings (neither in this diff)
+
+**PJ-181 — APP-KILLER, `store.ts:2448` `resolveNoteContent`.** The write-ahead net is restored on a
+`cid_cn` identity match with **no freshness comparison against the disk bytes it has just read** —
+and NotePane's teardown stashes a net entry for **merely-VIEWED** notes (open a note, close it, zero
+keystrokes). Nothing clears it for a CLOSED note. So: view a note → close it → it is edited
+externally (Syncthing / a second device / git pull — `cid_cn` is unchanged by construction, and the
+watcher ignores it because the note is closed) → reopen it and the **stale pre-edit content is
+shown, with the model born dirty** → the first tab switch writes it over the newer file and
+reindexes on it. No error, no conflict sidecar, no save-health entry. The codebase already solves
+this on the sibling path — `restoreSessionTabs` passes `preserveNet` and sets the true disk baseline
+— so the manual-open path is missing arbitration its own neighbour has.
+
+**PJ-182 — content-loss, `store.ts:2009`. Reproduced, and I verified it independently rather than
+taking the agent's word:**
+
+```
+parseFrontmatter('---\ncid_cn: ABCD\ntitle: T\ntags:\n- alpha\n- beta\n---\nbody')
+  →  tags: { value: '', listItems: [], type: 'list' }
+```
+
+A **zero-indent YAML block list** — entirely valid YAML, what PyYAML emits, common in imported and
+hand-authored vaults — projects as an **empty list**, because all three multi-line branches require
+a leading space. The panel therefore shows `tags` as empty, and the next property write takes
+compose's ADD branch and replaces the whole block: **`alpha` and `beta` are deleted from the `.md`**,
+with no error, and the result re-parses cleanly so nothing downstream notices. The same holds for
+**`aliases`**, which is a link-resolution key — losing it silently breaks every backlink through
+that alias. `addTagToNote` is a trigger, and the batch tagger multiplies the blast radius.
+
+**Neither is in the Slice-6 diff and neither was introduced by MIG-107** — the per-build gate covers
+the build's own changes, and these are pre-existing. But PJ-182 sits squarely in the property-write
+territory this migration has been in all day, and it is *reproduced*, not argued. **Recommend it as
+the next job after the session close, ahead of resuming MIG-104.**

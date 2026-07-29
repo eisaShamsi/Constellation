@@ -281,3 +281,26 @@ Properties fully support right-to-left (RTL) languages:
 
 > [!tip] Use templates for consistency
 > Create a `Templates/default.md` in your library to ensure every new note starts with the same properties structure.
+
+---
+
+## Two panels, one note
+
+A note's properties appear in two places at once — the **Properties block inside the note** and the
+**Properties tab in the right sidebar**. These are two windows onto the same note, not two copies of
+it.
+
+- Change a property in either panel and the other updates within a moment.
+- The **stage badge** in the note's header and the **stage icon** in the file tree follow too.
+- Properties changed from outside the panels appear everywhere immediately as well: adding a tag by
+  right-clicking the note in the file tree, promoting the stage from the header, or applying a
+  template.
+
+Each edit affects only the field you touched, so working in one panel never disturbs a property that
+was changed somewhere else in the meantime. You can use whichever panel is convenient without
+keeping track of which one you used last.
+
+> [!tip] Choosing a stage
+> The stage field opens its list **on the stage the note is currently at** — so pressing ↓ moves it
+> one step forward and ↑ one step back. If the note uses a custom stage term of your own, the list
+> opens at the top instead, because your term is not one of the standard entries.

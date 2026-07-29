@@ -48,7 +48,6 @@
 	import { editBody as editNoteBody, editProps as editNoteProps, addPropTo, seedBody, save as saveNoteSession, close as closeNoteSession } from '$lib/editor/noteSession';
 	import { PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { propsVersion } from '$lib/editor/propsSignal';
-	import { getModel as getNoteModel } from '$lib/editor/noteModel';
 	import { compose as composeNoteModel, getModel } from '$lib/editor/noteModel';
 	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { FM_PLUS_ENABLED } from '$lib/editor/fmPlusFlag'; // PJ-114 — FM+ build kill-switch
@@ -1120,7 +1119,7 @@
 	$effect(() => {
 		void $propsVersion;
 		for (const t of $openTabs) {
-			const m = getNoteModel(t.id);
+			const m = getModel(t.id);
 			if (!m) continue;
 			handleStageChanged(t.path, m.props.find((p) => p.key.toLowerCase() === 'stage')?.value ?? '');
 		}

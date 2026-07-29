@@ -7,7 +7,7 @@
  * the whole of AK-2 and AK-3.
  */
 import { describe, it, expect } from 'vitest';
-import { plan, apply, touchedSince, type PropOp, type IntentSink } from '$lib/editor/propsCommit';
+import { plan, apply, touchedSince, sameList, type PropOp, type IntentSink } from '$lib/editor/propsCommit';
 import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 
 const P = (key: string, value: string, type: PropertyType = 'text'): FrontmatterProperty => ({ key, value, type });
@@ -196,5 +196,42 @@ describe('MIG-107 #1g — touchedSince: derived, so it cannot be forgotten', () 
 			{ op: 'set', key: 'tags', value: 'test, Eisa', type: 'list', listItems: ['test', 'Eisa'] },
 		]);
 		expect(JSON.stringify(ops)).not.toContain('stage');
+	});
+});
+
+describe('MIG-107 Slice 6 — /simplify: the quadratic ordering, removed', () => {
+	/**
+	 * `plan` used to emit an `order` op for EVERY adjacent row pair, unconditionally — and each one
+	 * made the model deep-clone its whole array before discovering the move was a no-op. A single
+	 * value edit on a 10-property note cost ~90 discarded object spreads, growing as N².
+	 * Now the ops appear only when the order genuinely differs.
+	 */
+	it('emits NO ordering ops when the model already matches the panel', () => {
+		const rows = [P('a', '1'), P('b', '2'), P('c', '3')];
+		expect(ofKind(plan(rows, rows, seed('a', 'b', 'c'), new Set()), 'order')).toEqual([]);
+	});
+
+	it('still emits them when the order genuinely differs', () => {
+		const model = [P('a', '1'), P('b', '2')];
+		const rows = [P('b', '2'), P('a', '1')];
+		expect(ofKind(plan(rows, model, seed('a', 'b'), new Set()), 'order').length).toBeGreaterThan(0);
+	});
+
+	it('a value edit alone costs no ordering work', () => {
+		const model = [P('a', '1'), P('b', '2'), P('c', '3')];
+		const rows = [P('a', '9'), P('b', '2'), P('c', '3')];
+		const ops = plan(rows, model, seed('a', 'b', 'c'), new Set(['a']));
+		expect(ofKind(ops, 'order')).toEqual([]);
+		expect(ofKind(ops, 'set')).toHaveLength(1);
+	});
+
+	/** Element-wise now, not four JSON.stringify spellings across three modules. */
+	it('sameList compares element-wise and treats empty/absent alike', () => {
+		expect(sameList(['a', 'b'], ['a', 'b'])).toBe(true);
+		expect(sameList(['a'], ['b'])).toBe(false);
+		expect(sameList(['a'], ['a', 'b'])).toBe(false);
+		expect(sameList(undefined, undefined)).toBe(true);
+		expect(sameList(undefined, [])).toBe(true);
+		expect(sameList(undefined, ['a'])).toBe(false);
 	});
 });

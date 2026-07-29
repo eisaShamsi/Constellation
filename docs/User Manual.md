@@ -1289,6 +1289,28 @@ Each field renders with the type-appropriate editor:
   text editor and Constellation will preserve your changes exactly.
 - **`ikhtilāf` → custom widget** with two side-by-side inputs per row (school + position) plus a remove button per row, and an "Add school" button at the bottom. The widget reads from + writes to the structured YAML, so round-trips preserve every field.
 
+### Two panels, one note
+
+A note's properties appear in two places at once: the **Properties block inside the note** and the
+**Properties tab in the right sidebar**. They are two windows onto the same note, not two copies of
+it — change a property in either one and the other updates within a moment, along with the stage
+badge in the note's header and the stage icon in the file tree.
+
+The same is true of properties changed from outside the panels: adding a tag by right-clicking the
+note in the file tree, promoting its stage from the header, or applying a template all show up
+everywhere immediately.
+
+You can therefore work in whichever panel is convenient without keeping track of which one you used
+last. Editing a property in one place never disturbs a different property somebody — or something —
+changed elsewhere: each edit affects only the field you touched.
+
+### Choosing a stage
+
+The **stage** field is a picker. Clicking it (or pressing ↓) opens the list **on the stage the note
+is currently at**, so pressing ↓ once moves it one step forward and ↑ once moves it one step back.
+If the note uses a custom stage term of your own, the list opens at the top instead, because your
+term is not one of the standard entries.
+
 ### What about `supersedes`?
 
 `supersedes` is a *relationship between notes* (this note replaces an earlier one), not a property of a single note. Constellation handles it as a **typed link**, not a YAML scalar:
