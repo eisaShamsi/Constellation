@@ -6,7 +6,8 @@
 what was deferred) → **`docs/LESSONS-LEARNED.md` LL-037 and LL-038 (incl. rule 6) — all three
 written this session, all three from my own mistakes.**
 
-**Branch:** `main` @ **`11a199e5`**, pushed. Working tree **clean**.
+**Branch:** `main` @ **`e119f083`**, pushed. Working tree **clean**.
+*(`11a199e5` was the last CODE commit; `e119f083` is this session-close PCS on top of it.)*
 **Gates:** vitest **59 files / 678 tests** · Sight perf **SERIAL lane** (PJ-172) **31/31** ·
 svelte-check **0 errors** · Rust **1261/0** (11 ignored).
 **Binary:** `src-tauri/target/release/constellation.exe` — rebuild before any Boss test; the last
@@ -121,7 +122,7 @@ PJ-171 · PJ-172.
 ## ► READY-TO-PASTE NEXT-SESSION PROMPT
 
 ```
-Continue Constellation on branch main (@11a199e5, clean). First: git pull; read
+Continue Constellation on branch main (@e119f083, clean). First: git pull; read
 docs/Constellation Orientation & Onboarding v3.74.md, then docs/Constellation Pending Jobs v1.56.md
 (► Next action), then lab/reports/HANDOVER-2026-07-29-session-close.md. Note LL-037 and LL-038
 (including rule 6) in docs/LESSONS-LEARNED.md — all three written last session from defects the Boss
