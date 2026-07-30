@@ -1,6 +1,6 @@
 # MIG-108 — One Universe, One Location — Architect (Phase 1)
 
-**Date** 2026-07-30 · **Status** Phase 1 complete, awaiting Boss rulings → Phase 2 (Plan)
+**Date** 2026-07-30 · **Status** Phase 1 complete · **D1–D4 RULED** (see the Plan) → Phase 2 awaiting approval
 **Boss rulings (2026-07-29/30):** (1) one central `.trash` at the universe root — the scope
 setting collapses to one option; (2) *"unify the whole 'Eisa Cognitive Knowledge' content under
 E:\Constellation Universes\ … and make sure there's only one universe location that holds its

@@ -90,3 +90,14 @@ decision points (layout D1, copy-vs-move D2, PJ-065-test-book D3, timing D4). Ma
 archived in scratchpad; key excerpts inline in the doc.
 
 Awaiting Boss rulings on D1–D4 → Phase 2 (Plan).
+
+## §4 — MIG-108 Phase 2 (Plan) drafted; Boss rulings D1–D4 received
+
+D1 layout=FLAT `<root>\<name>` · D2 bring-in=ASK (Copy default / Move) · D3
+PJ-065-test-book=relocate BY COPY (repo originals stay as git-tracked fixtures; the other 17
+are true moves) · D4 order=MIG-108 first, MIG-104 Slice 8 after.
+
+Plan: `docs/MIG-108-One-Universe-One-Location-Plan.md` — 8 slices (0 pre-work walkers ·
+1 journal/classifier/snapshot · 2 move+rewrite+verify · 3 trash+settings+PJ-192 ·
+4 proposal UI ⏸ Stage-A on a scratch copy · 5 bring-in flows · 6 full-copy rehearsal ·
+7 live run ⏸ Stage-B · 8 docs + Phase-4 audit). Awaiting Boss approval of the Plan → Build.
