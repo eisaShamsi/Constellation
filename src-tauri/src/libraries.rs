@@ -417,7 +417,22 @@ pub fn list_libraries(app: tauri::AppHandle) -> Vec<LibraryInfo> {
     load_libraries(&app)
 }
 
-/// Add a library by its folder path.
+/// MIG-108 — the One-Location rule, enforced at the choke point every registration flow
+/// funnels through: a universe's content lives UNDER its root. External folders are brought
+/// in via `bring_in_library` (Copy/Move, the user's choice), never referenced in place.
+/// Pure so it is testable without an AppHandle.
+pub(crate) fn ensure_under_active_root(path: &str, root: &str) -> Result<(), String> {
+    if crate::mig108::norm_under(path, root) {
+        Ok(())
+    } else {
+        Err(
+            "This folder lives outside the universe. Use Bring in a library to copy or move it under the universe folder."
+                .to_string(),
+        )
+    }
+}
+
+/// Add a library by its folder path (which MUST lie under the active universe root — MIG-108).
 #[tauri::command]
 pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, String> {
     let library_path = Path::new(&path);
@@ -425,6 +440,10 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
     if !library_path.exists() || !library_path.is_dir() {
         return Err("Path does not exist or is not a folder.".to_string());
     }
+
+    // MIG-108 — One Universe, One Location.
+    let root = crate::universe::active_universe_dir(&app)?.to_string_lossy().to_string();
+    ensure_under_active_root(&path, &root)?;
 
     // Any directory is accepted as a library — no .obsidian or .md requirement
 
@@ -2960,35 +2979,9 @@ pub async fn pick_folder() -> Result<Option<String>, String> {
     Ok(result.map(|p| p.to_string_lossy().to_string()))
 }
 
-/// Pick a parent folder, create a named subfolder, and register it as a library.
-#[tauri::command]
-pub async fn create_new_library(app: tauri::AppHandle, name: String) -> Result<Option<LibraryInfo>, String> {
-    // §152 hardening: validate the user-supplied name BEFORE touching the
-    // filesystem. Blocks `..`, `/`, `\` — same rule as `create_folder`.
-    let safe_name = sanitize_name(&name)?;
-
-    // 1. Pick parent location
-    let parent = rfd::FileDialog::new()
-        .set_title("Choose location for new library")
-        .pick_folder();
-    let parent_path = match parent {
-        Some(p) => p,
-        None => return Ok(None), // user cancelled
-    };
-
-    // 2. Create the library folder
-    let library_dir = parent_path.join(&safe_name);
-    if library_dir.exists() {
-        return Err(format!("Folder '{}' already exists at that location", safe_name));
-    }
-    fs::create_dir_all(&library_dir)
-        .map_err(|e| format!("Failed to create library folder: {}", e))?;
-
-    // 3. Register it as a library
-    let path_str = library_dir.to_string_lossy().to_string();
-    let library = add_library(app, path_str)?;
-    Ok(Some(library))
-}
+// `create_new_library` (legacy pick-AFTER-Create flow) RETIRED by MIG-108 Slice 5 —
+// every creation goes through `create_new_library_at` (root-constrained) and every
+// external folder through `bring_in_library`.
 
 /// MIG-008 §Build.5 — create a library at an explicit parent path. Used by
 /// the shared `CreateItemDialog` which collects the parent location via its
@@ -3010,6 +3003,9 @@ pub fn create_new_library_at(
     // §152 hardening: validate the user-supplied name BEFORE touching the
     // filesystem. Blocks `..`, `/`, `\`.
     let safe_name = sanitize_name(&name)?;
+    // MIG-108 — a NEW library is always created under the universe root.
+    let root = crate::universe::active_universe_dir(&app)?.to_string_lossy().to_string();
+    ensure_under_active_root(&parent_path, &root)?;
     let library_dir = Path::new(&parent_path).join(&safe_name);
     if library_dir.exists() {
         return Err(format!("Folder '{}' already exists at that location", safe_name));

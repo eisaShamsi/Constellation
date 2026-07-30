@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "Un Coffre de Coffres"
+    "tagline": "Un seul Univers pour tout votre savoir"
   },
   "settings": {
     "linkTypes": {
@@ -1269,8 +1269,8 @@
     "welcomeSubtitle": "Ajoutez votre premier coffre depuis la barre latérale",
     "addLibraryCta": "+ Ajouter une bibliothèque",
     "selectNote": "Sélectionnez une note depuis la barre latérale",
-    "linkLibrary": "Lier une bibliothèque existante",
-    "linkLibraryDesc": "Connecter un dossier existant en tant que bibliothèque",
+    "linkLibrary": "Faire entrer une bibliothèque",
+    "linkLibraryDesc": "Copier ou déplacer un dossier de notes existant dans votre Univers",
     "newLibrary": "Créer une bibliothèque",
     "newLibraryDesc": "Créer un nouveau dossier de bibliothèque vide"
   },
@@ -1313,7 +1313,7 @@
   },
   "libraryManager": {
     "title": "Gérer les bibliothèques",
-    "openLibrary": "+ Ouvrir une bibliothèque",
+    "openLibrary": "+ Faire entrer une bibliothèque",
     "manageLibraries": "Gérer les bibliothèques...",
     "openFolder": "Ouvrir le dossier",
     "remove": "Supprimer",
@@ -1693,8 +1693,8 @@
       "importLocationLabel": "Emplacement d'importation",
       "importPreviewHeading": "Aperçu",
       "importingNotes": "Importation des notes...",
-      "linkLibrary": "Lier une bibliothèque existante",
-      "linkLibraryDesc": "Connecter un dossier de notes existant"
+      "linkLibrary": "Faire entrer une bibliothèque",
+      "linkLibraryDesc": "Copier ou déplacer un dossier de notes existant dans cet Univers"
     },
     "manager": {
       "heading": "Gestionnaire d'Univers",
@@ -4086,5 +4086,14 @@
     "title": "Réunissez votre univers en un seul endroit",
     "unify": "Unifier",
     "verifyFailedNote": "La dernière tentative s’est arrêtée au contrôle de sécurité et toutes les modifications de la base ont été annulées. La reprise refera le contrôle."
+  },
+  "bringIn": {
+    "body": "Un univers garde tout son savoir dans un seul dossier ; cette bibliothèque y vivra. Choisissez le sort de l’original :",
+    "cancel": "Annuler",
+    "copy": "Copier",
+    "copyDesc": "Le contenu est copié dans l’univers. Le dossier d’origine reste exactement où il est, intact.",
+    "move": "Déplacer",
+    "moveDesc": "Le dossier lui-même déménage dans l’univers. Son ancien emplacement sera vide ensuite.",
+    "title": "Faire entrer ce dossier dans votre univers"
   }
 }

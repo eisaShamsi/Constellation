@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "保管庫の保管庫"
+    "tagline": "すべての知識をひとつのユニバースに"
   },
   "settings": {
     "linkTypes": {
@@ -1709,8 +1709,8 @@
     "selectNote": "サイドバーからノートを選択してください",
     "addLibrary": "+ 保管庫を追加",
     "addLibraryCta": "+ 保管庫を追加",
-    "linkLibrary": "既存のライブラリをリンク",
-    "linkLibraryDesc": "既存のフォルダーをライブラリとして接続します",
+    "linkLibrary": "ライブラリを取り込む",
+    "linkLibraryDesc": "既存のノートフォルダーをユニバースにコピーまたは移動",
     "newLibrary": "新規ライブラリを作成",
     "newLibraryDesc": "空の新しいライブラリフォルダーを作成します"
   },
@@ -2122,8 +2122,8 @@
       "importLocationLabel": "インポート先",
       "importPreviewHeading": "プレビュー",
       "importingNotes": "ノートをインポート中…",
-      "linkLibrary": "既存のライブラリをリンク",
-      "linkLibraryDesc": "既存のノートのフォルダーを接続します"
+      "linkLibrary": "ライブラリを取り込む",
+      "linkLibraryDesc": "既存のノートフォルダーをこのユニバースにコピーまたは移動"
     },
     "manager": {
       "heading": "ユニバースマネージャー",
@@ -2253,7 +2253,7 @@
     "addLibrary": "+ ボールトを追加",
     "manageLibraries": "ボールト管理...",
     "noLibraries": "登録されたボールトがありません",
-    "openLibrary": "+ ボールトを開く"
+    "openLibrary": "+ ライブラリを取り込む"
   },
   "tabs": {
     "newTab": "新規タブ",
@@ -4059,5 +4059,14 @@
     "title": "ユニバースを一つの場所にまとめる",
     "unify": "統合する",
     "verifyFailedNote": "前回は安全チェックで停止し、データベースの変更はすべてロールバックされました。再開するとチェックをもう一度行います。"
+  },
+  "bringIn": {
+    "body": "ユニバースはすべての知識を一つのフォルダーに保ちます。このライブラリはその中に置かれます。元のフォルダーの扱いを選んでください：",
+    "cancel": "キャンセル",
+    "copy": "コピーする",
+    "copyDesc": "内容がユニバースにコピーされます。元のフォルダーはそのまま残り、変更されません。",
+    "move": "移動する",
+    "moveDesc": "フォルダーごとユニバースに移動します。元の場所は空になります。",
+    "title": "このフォルダーをユニバースに取り込む"
   }
 }

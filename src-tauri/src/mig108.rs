@@ -1720,6 +1720,107 @@ pub fn mig108_resume(app: tauri::AppHandle) -> Result<(), String> {
     run_with_events(&app, &mut journal, &cdir)
 }
 
+// ─── Slice 5 — bring an external folder in (the standing D2 flow) ──────────────────────────
+
+/// Pure planning half: destination under the root, basename de-collided against the fs.
+pub(crate) fn bring_in_dest(source: &str, universe_root: &str) -> Result<PathBuf, String> {
+    let base = Path::new(source)
+        .file_name()
+        .ok_or("Cannot determine the folder's name")?
+        .to_string_lossy()
+        .to_string();
+    let taken: HashSet<String> = std::fs::read_dir(universe_root)
+        .map(|rd| {
+            rd.flatten()
+                .filter_map(|e| e.file_name().to_str().map(|s| s.to_lowercase()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let (name, _) = free_name(&base, &taken);
+    Ok(Path::new(universe_root).join(name))
+}
+
+/// Boss D2 — "ask each time": the dialog collected Copy (default) or Move; this executes it.
+/// Copy leaves the original untouched and unmanaged; Move takes ownership (same-volume
+/// rename, cross-volume copy+remove). Either way the DESTINATION is registered — which
+/// `add_library` accepts, because it is under the root by construction.
+#[tauri::command(async)]
+pub fn bring_in_library(
+    app: tauri::AppHandle,
+    source_path: String,
+    mode: String,
+) -> Result<crate::libraries::LibraryInfo, String> {
+    let src = Path::new(&source_path);
+    if !src.is_dir() {
+        return Err("That folder does not exist.".to_string());
+    }
+    let root = crate::universe::active_universe_dir(&app)?
+        .to_string_lossy()
+        .to_string();
+    if norm_under(&source_path, &root) {
+        return Err("That folder is already inside the universe — use Add library.".to_string());
+    }
+    // H6 — never ingest another universe's root or child.
+    let foreign = assemble_foreign_roots(&app, &root);
+    if let Some(reason) = foreign_reason(&source_path, &foreign) {
+        return Err(format!("That folder cannot be brought in: it {}.", reason));
+    }
+    // A registered external library is the MIGRATION's business, not this flow's — bringing
+    // it in here would strand its index rows at the old path (the proposal dialog relocates
+    // registered externals with the full rewrite).
+    let libs = crate::libraries::load_all_libraries(&app);
+    if libs.iter().any(|l| norm(&l.path) == norm(&source_path)) {
+        return Err(
+            "That folder is a registered library — the unification proposal relocates it safely."
+                .to_string(),
+        );
+    }
+
+    let dest = bring_in_dest(&source_path, &root)?;
+    match mode.as_str() {
+        "move" => {
+            if same_volume(src, Path::new(&root)) {
+                crate::write_gate::gate_rename(src, &dest, "bring_in")
+                    .map_err(|e| format!("Move failed: {}", e))?;
+            } else {
+                crate::libraries::copy_dir_recursive(src, &dest)?;
+                std::fs::remove_dir_all(src).map_err(|e| format!("Move cleanup failed: {}", e))?;
+            }
+        }
+        _ => {
+            crate::libraries::copy_dir_recursive(src, &dest)?;
+        }
+    }
+    crate::libraries::add_library(app, dest.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod slice5_tests {
+    use super::*;
+
+    #[test]
+    fn ensure_under_active_root_is_the_one_location_law() {
+        let root = "E:/Universe";
+        assert!(crate::libraries::ensure_under_active_root("E:/Universe/Lib", root).is_ok());
+        assert!(crate::libraries::ensure_under_active_root("E:\\Universe\\Lib", root).is_ok());
+        assert!(crate::libraries::ensure_under_active_root("E:/Universe", root).is_ok());
+        assert!(crate::libraries::ensure_under_active_root("E:/Elsewhere/Lib", root).is_err());
+        // separator-bounded: a sibling sharing the prefix is OUTSIDE
+        assert!(crate::libraries::ensure_under_active_root("E:/UniverseTwo/Lib", root).is_err());
+    }
+
+    #[test]
+    fn bring_in_dest_decollides_against_the_root() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        std::fs::create_dir_all(root.join("Notes")).unwrap();
+        let dest = bring_in_dest("E:/Anywhere/Notes", &root.to_string_lossy()).unwrap();
+        assert_eq!(dest.file_name().unwrap().to_string_lossy(), "Notes 2");
+        let dest2 = bring_in_dest("E:/Anywhere/Fresh", &root.to_string_lossy()).unwrap();
+        assert_eq!(dest2.file_name().unwrap().to_string_lossy(), "Fresh");
+    }
+}
+
 #[cfg(test)]
 mod slice3_tests {
     use super::*;

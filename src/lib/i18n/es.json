@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "Una Biblioteca de Bibliotecas"
+    "tagline": "Un solo Universo para todo tu conocimiento"
   },
   "settings": {
     "linkTypes": {
@@ -1269,8 +1269,8 @@
     "welcomeSubtitle": "Añade tu primera biblioteca desde la barra lateral",
     "addLibraryCta": "+ Añadir biblioteca",
     "selectNote": "Selecciona una nota desde la barra lateral",
-    "linkLibrary": "Vincular biblioteca existente",
-    "linkLibraryDesc": "Conecta una carpeta existente como biblioteca",
+    "linkLibrary": "Traer una biblioteca",
+    "linkLibraryDesc": "Copia o mueve una carpeta de notas existente a tu Universo",
     "newLibrary": "Crear biblioteca nueva",
     "newLibraryDesc": "Crea una carpeta de biblioteca nueva y vacía"
   },
@@ -1313,7 +1313,7 @@
   },
   "libraryManager": {
     "title": "Administrar bibliotecas",
-    "openLibrary": "+ Abrir biblioteca",
+    "openLibrary": "+ Traer una biblioteca",
     "manageLibraries": "Administrar bibliotecas...",
     "openFolder": "Abrir carpeta",
     "remove": "Eliminar",
@@ -1693,8 +1693,8 @@
       "importLocationLabel": "Ubicación de importación",
       "importPreviewHeading": "Vista previa",
       "importingNotes": "Importando notas...",
-      "linkLibrary": "Vincular biblioteca existente",
-      "linkLibraryDesc": "Conecta una carpeta de notas existente"
+      "linkLibrary": "Traer una biblioteca",
+      "linkLibraryDesc": "Copia o mueve una carpeta de notas existente a este Universo"
     },
     "manager": {
       "heading": "Gestor de Universos",
@@ -4086,5 +4086,14 @@
     "title": "Reúne tu universo en un solo lugar",
     "unify": "Unificar",
     "verifyFailedNote": "El último intento se detuvo en la comprobación de seguridad y todos los cambios de la base de datos se revirtieron. Al reanudar se comprobará de nuevo."
+  },
+  "bringIn": {
+    "body": "Un universo guarda todo su conocimiento en una sola carpeta, así que esta biblioteca vivirá dentro. Elige qué pasa con el original:",
+    "cancel": "Cancelar",
+    "copy": "Copiar dentro",
+    "copyDesc": "El contenido se copia al universo. La carpeta original queda exactamente donde está, intacta.",
+    "move": "Mover dentro",
+    "moveDesc": "La carpeta se traslada al universo. Su ubicación anterior quedará vacía.",
+    "title": "Trae esta carpeta a tu universo"
   }
 }

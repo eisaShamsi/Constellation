@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "Eine Bibliothek der Bibliotheken"
+    "tagline": "Ein Universum für dein gesamtes Wissen"
   },
   "settings": {
     "linkTypes": {
@@ -1269,8 +1269,8 @@
     "welcomeSubtitle": "Fügen Sie Ihre erste Bibliothek über die Seitenleiste hinzu",
     "addLibraryCta": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
-    "linkLibrary": "Vorhandene Bibliothek verknüpfen",
-    "linkLibraryDesc": "Einen vorhandenen Ordner als Bibliothek einbinden",
+    "linkLibrary": "Bibliothek hereinholen",
+    "linkLibraryDesc": "Einen bestehenden Notizordner in dein Universum kopieren oder verschieben",
     "newLibrary": "Neue Bibliothek erstellen",
     "newLibraryDesc": "Einen neuen, leeren Bibliotheksordner erstellen"
   },
@@ -1313,7 +1313,7 @@
   },
   "libraryManager": {
     "title": "Bibliotheken verwalten",
-    "openLibrary": "+ Bibliothek öffnen",
+    "openLibrary": "+ Bibliothek hereinholen",
     "manageLibraries": "Bibliotheken verwalten...",
     "openFolder": "Ordner öffnen",
     "remove": "Entfernen",
@@ -1693,8 +1693,8 @@
       "importLocationLabel": "Importort",
       "importPreviewHeading": "Vorschau",
       "importingNotes": "Notizen werden importiert …",
-      "linkLibrary": "Vorhandene Bibliothek verknüpfen",
-      "linkLibraryDesc": "Einen vorhandenen Notizordner einbinden"
+      "linkLibrary": "Bibliothek hereinholen",
+      "linkLibraryDesc": "Einen bestehenden Notizordner in dieses Universum kopieren oder verschieben"
     },
     "manager": {
       "heading": "Universum-Manager",
@@ -4086,5 +4086,14 @@
     "title": "Bring dein Universum an einen Ort",
     "unify": "Vereinen",
     "verifyFailedNote": "Der letzte Versuch stoppte an der Sicherheitsprüfung; alle Datenbankänderungen wurden zurückgerollt. Beim Fortsetzen wird erneut geprüft."
+  },
+  "bringIn": {
+    "body": "Ein Universum bewahrt sein gesamtes Wissen in einem Ordner auf; diese Bibliothek wird darin leben. Wähle, was mit dem Original geschieht:",
+    "cancel": "Abbrechen",
+    "copy": "Kopieren",
+    "copyDesc": "Die Inhalte werden in das Universum kopiert. Der Originalordner bleibt unangetastet, wo er ist.",
+    "move": "Verschieben",
+    "moveDesc": "Der Ordner selbst zieht in das Universum um. Sein alter Ort ist danach leer.",
+    "title": "Diesen Ordner in dein Universum holen"
   }
 }

@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "库中之库"
+    "tagline": "一个宇宙，容纳你的全部知识"
   },
   "settings": {
     "linkTypes": {
@@ -1709,8 +1709,8 @@
     "selectNote": "从侧边栏选择一篇笔记",
     "addLibrary": "+ 添加仓库",
     "addLibraryCta": "+ 添加仓库",
-    "linkLibrary": "链接现有库",
-    "linkLibraryDesc": "将现有文件夹连接为库",
+    "linkLibrary": "带入库",
+    "linkLibraryDesc": "将现有笔记文件夹复制或移动到你的宇宙中",
     "newLibrary": "新建库",
     "newLibraryDesc": "创建一个新的空库文件夹"
   },
@@ -2122,8 +2122,8 @@
       "importLocationLabel": "导入位置",
       "importPreviewHeading": "预览",
       "importingNotes": "正在导入笔记……",
-      "linkLibrary": "链接现有库",
-      "linkLibraryDesc": "连接一个现有的笔记文件夹"
+      "linkLibrary": "带入库",
+      "linkLibraryDesc": "将现有笔记文件夹复制或移动到这个宇宙中"
     },
     "manager": {
       "heading": "宇宙管理器",
@@ -2253,7 +2253,7 @@
     "addLibrary": "+ 添加保险库",
     "manageLibraries": "管理保险库...",
     "noLibraries": "没有已注册的保险库",
-    "openLibrary": "+ 打开保险库"
+    "openLibrary": "+ 带入库"
   },
   "tabs": {
     "newTab": "新建标签页",
@@ -4059,5 +4059,14 @@
     "title": "将你的宇宙汇聚到一处",
     "unify": "统一",
     "verifyFailedNote": "上次尝试在安全检查处停止，数据库的所有更改已回滚。继续后将重新检查。"
+  },
+  "bringIn": {
+    "body": "宇宙将全部知识保存在一个文件夹中；这个库将安放其内。请选择如何处理原文件夹：",
+    "cancel": "取消",
+    "copy": "复制进来",
+    "copyDesc": "内容会复制到宇宙中。原文件夹原封不动地留在原处。",
+    "move": "移动进来",
+    "moveDesc": "文件夹本身移入宇宙。之后其旧位置将为空。",
+    "title": "将此文件夹带入你的宇宙"
   }
 }

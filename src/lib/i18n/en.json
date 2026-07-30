@@ -40,7 +40,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "A Vault of Vaults"
+    "tagline": "One Universe for all your knowledge"
   },
   "settings": {
     "title": "Settings",
@@ -1871,8 +1871,8 @@
     "welcomeSubtitle": "Add your first library from the sidebar",
     "addLibraryCta": "+ Add Library",
     "selectNote": "Select a note from the sidebar",
-    "linkLibrary": "Link Existing Library",
-    "linkLibraryDesc": "Connect an existing folder as a library",
+    "linkLibrary": "Bring In a Library",
+    "linkLibraryDesc": "Copy or move an existing folder of notes into your Universe",
     "newLibrary": "Create New Library",
     "newLibraryDesc": "Create a new empty library folder"
   },
@@ -1915,7 +1915,7 @@
   },
   "libraryManager": {
     "title": "Manage libraries",
-    "openLibrary": "+ Open library",
+    "openLibrary": "+ Bring in a library",
     "manageLibraries": "Manage libraries...",
     "openFolder": "Open folder",
     "remove": "Remove",
@@ -2275,8 +2275,8 @@
       "importLocationLabel": "Import Location",
       "importPreviewHeading": "Preview",
       "importingNotes": "Importing notes...",
-      "linkLibrary": "Link Existing Library",
-      "linkLibraryDesc": "Connect an existing folder of notes",
+      "linkLibrary": "Bring In a Library",
+      "linkLibraryDesc": "Copy or move an existing folder of notes into this Universe",
       "starterKit": "Starter Kit",
       "starterKitDesc": "Begin with a pre-made collection of notes"
     },
@@ -4207,5 +4207,14 @@
     "title": "Bring your universe into one place",
     "unify": "Unify",
     "verifyFailedNote": "The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again."
+  },
+  "bringIn": {
+    "body": "A universe keeps all of its knowledge in one folder, so this library will live inside it. Choose what happens to the original:",
+    "cancel": "Cancel",
+    "copy": "Copy in",
+    "copyDesc": "The contents are copied into the universe. The original folder stays exactly where it is, untouched.",
+    "move": "Move in",
+    "moveDesc": "The folder itself moves into the universe. Its old location will be empty afterwards.",
+    "title": "Bring this folder into your universe"
   }
 }

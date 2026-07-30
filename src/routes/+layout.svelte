@@ -10,7 +10,7 @@
 		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadLibraries, loadAllStats, addLibrary, createNewLibrary, createNewLibraryAt,
+		loadLibraries, loadAllStats, addLibrary, bringInLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
@@ -148,6 +148,7 @@
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
 	import Mig108UnifyDialog from '$lib/components/Mig108UnifyDialog.svelte';
+	import BringInDialog from '$lib/components/BringInDialog.svelte';
 	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
@@ -4540,7 +4541,7 @@
 	function handleNewLibrary() {
 		createDialog = {
 			kind: 'library',
-			parentPath: '',
+			parentPath: get(libraries).find(v => v.is_universe_notes)?.path ?? '',
 			onCreate: async ({ name, location }) => {
 				await createNewLibraryAt(location, name);
 				await refreshLibraryCaches();
@@ -5766,6 +5767,10 @@
 		}
 	}
 
+	// MIG-108 Slice 5 — an external pick opens the Bring-In choice (Copy default / Move);
+	// an under-root pick registers directly. One Universe, One Location.
+	let showBringInChoice = $state(false);
+
 	async function handleAddLibrary() {
 		adding = true;
 		error = '';
@@ -5773,6 +5778,15 @@
 			// Step 1: Pick folder
 			const folderPath: string | null = await invoke('pick_folder');
 			if (!folderPath) { adding = false; return; }
+			const root = get(libraries).find(v => v.is_universe_notes)?.path ?? '';
+			const rn = normalizePathKey(root);
+			const pn = normalizePathKey(folderPath);
+			if (rn && !(pn === rn || pn.startsWith(rn + '/'))) {
+				pendingLibraryPath = folderPath;
+				showBringInChoice = true;
+				adding = false;
+				return;
+			}
 			// Step 2: Add as a compatible library — ALWAYS. External files
 			// (existing Obsidian vaults, etc.) are never renamed on import.
 			// We only inject a `cid` property into the frontmatter of each
@@ -5806,6 +5820,19 @@
 			// filesystem untouched until the note is genuinely accessed.
 			await invoke('add_library', { path: pendingLibraryPath });
 
+			await loadLibraries();
+			await loadAllStats();
+			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+		} catch (e) { error = String(e); }
+		adding = false;
+	}
+
+	async function handleBringInChoice(mode: 'copy' | 'move') {
+		showBringInChoice = false;
+		adding = true;
+		try {
+			await bringInLibrary(pendingLibraryPath, mode);
 			await loadLibraries();
 			await loadAllStats();
 			await refreshLibraryCaches();
@@ -9524,9 +9551,23 @@
 		<Mig108UnifyDialog />
 	{/if}
 
+	{#if showBringInChoice}
+		<BringInDialog
+			sourcePath={pendingLibraryPath}
+			onChoose={handleBringInChoice}
+			onCancel={() => { showBringInChoice = false; }}
+		/>
+	{/if}
+
 	{#if showImporter}
 		<ImporterModal
-			libraries={$libraries.map(v => ({ name: v.name, path: v.path }))}
+			libraries={$libraries.filter(v => {
+				// MIG-108 Slice 5 — import targets are OWN libraries only: a copy into a
+				// read-only federated cUniverse library violates the per-universe boundary.
+				const root = $libraries.find(x => x.is_universe_notes)?.path ?? '';
+				const rn = normalizePathKey(root); const pn = normalizePathKey(v.path);
+				return rn !== '' && (pn === rn || pn.startsWith(rn + '/'));
+			}).map(v => ({ name: v.name, path: v.path }))}
 			onClose={() => showImporter = false}
 			onImportComplete={(libPath?: string) => {
 				// F2′ — import writes are watcher-suppressed; surface the new notes.

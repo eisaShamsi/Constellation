@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "Um Cofre de Cofres"
+    "tagline": "Um Universo para todo o seu conhecimento"
   },
   "settings": {
     "linkTypes": {
@@ -1709,8 +1709,8 @@
     "selectNote": "Selecione uma nota na barra lateral",
     "addLibrary": "+ Adicionar cofre",
     "addLibraryCta": "+ Adicionar cofre",
-    "linkLibrary": "Associar biblioteca existente",
-    "linkLibraryDesc": "Ligar uma pasta existente como biblioteca",
+    "linkLibrary": "Trazer uma biblioteca",
+    "linkLibraryDesc": "Copie ou mova uma pasta de notas existente para o seu Universo",
     "newLibrary": "Criar nova biblioteca",
     "newLibraryDesc": "Criar uma nova pasta de biblioteca vazia"
   },
@@ -2122,8 +2122,8 @@
       "importLocationLabel": "Local de importação",
       "importPreviewHeading": "Pré-visualização",
       "importingNotes": "A importar notas...",
-      "linkLibrary": "Associar biblioteca existente",
-      "linkLibraryDesc": "Ligar uma pasta de notas existente"
+      "linkLibrary": "Trazer uma biblioteca",
+      "linkLibraryDesc": "Copie ou mova uma pasta de notas existente para este Universo"
     },
     "manager": {
       "heading": "Gerenciador de Universos",
@@ -2253,7 +2253,7 @@
     "addLibrary": "+ Adicionar cofre",
     "manageLibraries": "Gerenciar cofres...",
     "noLibraries": "Nenhum cofre registrado",
-    "openLibrary": "+ Abrir cofre"
+    "openLibrary": "+ Trazer uma biblioteca"
   },
   "tabs": {
     "newTab": "Novo separador",
@@ -4086,5 +4086,14 @@
     "title": "Reúna o seu universo num só lugar",
     "unify": "Unificar",
     "verifyFailedNote": "A última tentativa parou na verificação de segurança e todas as alterações à base de dados foram revertidas. Ao retomar, a verificação repete-se."
+  },
+  "bringIn": {
+    "body": "Um universo guarda todo o seu conhecimento numa única pasta; esta biblioteca viverá lá dentro. Escolha o destino do original:",
+    "cancel": "Cancelar",
+    "copy": "Copiar",
+    "copyDesc": "O conteúdo é copiado para o universo. A pasta original fica exatamente onde está, intacta.",
+    "move": "Mover",
+    "moveDesc": "A própria pasta muda-se para o universo. A localização antiga ficará vazia.",
+    "title": "Trazer esta pasta para o seu universo"
   }
 }

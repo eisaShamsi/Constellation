@@ -69,7 +69,7 @@
   },
   "app": {
     "name": "Constellation",
-    "tagline": "Kasaların Kasası"
+    "tagline": "Tüm bilgin için tek bir Evren"
   },
   "settings": {
     "linkTypes": {
@@ -1709,8 +1709,8 @@
     "selectNote": "Kenar çubuğundan bir not seçin",
     "addLibrary": "+ Kasa ekle",
     "addLibraryCta": "+ Kasa Ekle",
-    "linkLibrary": "Mevcut Kütüphaneyi Bağla",
-    "linkLibraryDesc": "Mevcut bir klasörü kütüphane olarak bağla",
+    "linkLibrary": "Kütüphane getir",
+    "linkLibraryDesc": "Mevcut bir not klasörünü Evrenine kopyala veya taşı",
     "newLibrary": "Yeni Kütüphane Oluştur",
     "newLibraryDesc": "Yeni ve boş bir kütüphane klasörü oluştur"
   },
@@ -2122,8 +2122,8 @@
       "importLocationLabel": "İçe Aktarma Konumu",
       "importPreviewHeading": "Önizleme",
       "importingNotes": "Notlar içe aktarılıyor...",
-      "linkLibrary": "Mevcut Kütüphaneyi Bağla",
-      "linkLibraryDesc": "Mevcut bir not klasörünü bağla"
+      "linkLibrary": "Kütüphane getir",
+      "linkLibraryDesc": "Mevcut bir not klasörünü bu Evrene kopyala veya taşı"
     },
     "manager": {
       "heading": "Evren Yöneticisi",
@@ -2253,7 +2253,7 @@
     "addLibrary": "+ Kasa ekle",
     "manageLibraries": "Kasaları yönet...",
     "noLibraries": "Kayıtlı kasa yok",
-    "openLibrary": "+ Kasa aç"
+    "openLibrary": "+ Kütüphane getir"
   },
   "tabs": {
     "newTab": "Yeni Sekme",
@@ -4086,5 +4086,14 @@
     "title": "Evrenini tek bir yerde topla",
     "unify": "Birleştir",
     "verifyFailedNote": "Son deneme güvenlik denetiminde durdu ve tüm veritabanı değişiklikleri geri alındı. Devam edince denetim yeniden yapılır."
+  },
+  "bringIn": {
+    "body": "Evren, tüm bilgisini tek bir klasörde tutar; bu kütüphane onun içinde yaşayacak. Orijinaline ne olacağını seç:",
+    "cancel": "İptal",
+    "copy": "Kopyala",
+    "copyDesc": "İçerik evrene kopyalanır. Orijinal klasör olduğu yerde, el değmemiş kalır.",
+    "move": "Taşı",
+    "moveDesc": "Klasörün kendisi evrene taşınır. Eski konumu sonrasında boş kalır.",
+    "title": "Bu klasörü evrenine getir"
   }
 }

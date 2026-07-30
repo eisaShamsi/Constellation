@@ -272,3 +272,30 @@ rows = 0 on every cycle since the copy-class fix.
 
 Slice 6's deliverable exists and has run three times green: the maker + the env-driven
 harness + the independent verifier ARE the mechanical rehearsal.
+
+## §12 — MIG-108 Slice 5 landed: the One-Location law becomes standing behaviour
+
+- `ensure_under_active_root` (pure, tested) enforced at `add_library` — the choke point
+  every registration flow funnels through. External paths are REJECTED with a message that
+  names the bring-in flow; nothing can reference content in place again.
+- `bring_in_library(source, mode)` — the D2 backend: Copy (original untouched, unmanaged)
+  or Move (same-volume rename, cross-volume fallback), destination de-collided at the root,
+  then registered + background-reindexed. Refuses: paths already under the root, foreign
+  universe roots/children (H6), and REGISTERED external libraries (those belong to the
+  unification proposal, which relocates them WITH their index rows — bringing one in here
+  would strand its rows at the old path).
+- `create_new_library_at`: parent constrained under the root; legacy `create_new_library`
+  (pick-AFTER-Create) retired command+wrapper; `handleNewLibrary` defaults the location to
+  the universe root.
+- `BringInDialog.svelte` — the ask-each-time UI (Copy default / Move / Cancel), wired into
+  `handleAddLibrary`: an under-root pick registers directly, an external pick asks.
+- Importer targets restricted to OWN libraries (a copy into a read-only federated cUniverse
+  library violated the per-universe boundary).
+- Doctrine strings rewritten ×15: "Link Existing Library" → "Bring In a Library" (+Desc,
+  setup variants, libraryManager), and `app.tagline` "A Vault of Vaults" → "One Universe
+  for all your knowledge" — which also retires the last forbidden "vault" in the UI.
+
+Gates: Rust **1305/0** (2 new slice-5 tests) · vitest **67/715** · svelte-check **0**.
+NOT done in this slice (recorded): the `link_library_as_universe` double-entry
+registration fix — deferred to Slice 8's registry-normalization note; it conforms to
+One-Location already (its own root) and the dedup-by-path keeps resolve correct.

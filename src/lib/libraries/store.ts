@@ -3408,12 +3408,12 @@ export async function addLibrary(): Promise<LibraryInfo | null> {
 }
 
 /** Create a new empty library folder and register it. */
-export async function createNewLibrary(name: string): Promise<LibraryInfo | null> {
-	const library: LibraryInfo | null = await invoke('create_new_library', { name });
-	if (library) {
-		await loadLibraries();
-		await loadAllStats();
-	}
+// `createNewLibrary` (legacy pick-AFTER-Create) retired by MIG-108 Slice 5; creation goes
+// through `createNewLibraryAt` (root-constrained) and external folders through
+// `bringInLibrary` (Copy/Move — the user's choice).
+export async function bringInLibrary(sourcePath: string, mode: 'copy' | 'move'): Promise<LibraryInfo> {
+	const library: LibraryInfo = await invoke('bring_in_library', { sourcePath, mode });
+	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name, onlyIfUnindexed: false }).catch(() => {});
 	return library;
 }
 
