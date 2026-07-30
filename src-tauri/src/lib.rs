@@ -38,6 +38,7 @@ mod link_life_backfill;
 /// rebuild, deriving `weight` rather than trusting a stored one. THE point of the migration.
 mod link_life_restore;
 mod mig003_step4;
+pub mod mig108;
 mod sight;
 mod sight_layout;
 mod sources;

@@ -113,3 +113,23 @@ pre-registration index can never keep serving (or shadowing behind) a now-foreig
 resolve_embed reads the registry ONCE for both its own exclusion and the cross-library
 fallback. Proofs: 3 new tests, each with a no-exclusion control proving the guard
 load-bearing. Rust **1290 passed / 0 failed**.
+
+## §6 — MIG-108 Build: Slice 1 landed
+
+New `src-tauri/src/mig108.rs` — the engine's three foundations:
+- **Journal** (`.constellation/mig108-journal.json`): phases Planned → Snapshotted → Moving →
+  Moved → DbRewritten → JsonRewritten → Done (+ VerifyFailed), per-entry moved flags,
+  per-store rewritten flags, the pre-move Baseline aggregates. Written via atomic_write
+  BEFORE each mutating step; a corrupt journal is SURFACED, never silently discarded (it is
+  the only record of a possibly half-moved universe — the boot reconcile hard-aborts at this
+  scale, Architect H4).
+- **Classifier** (pure, AppHandle-free): UnderRoot / Move / Copy (D3) / ForeignUniverse (H6)
+  / Missing; flat destinations (D1) with basename de-collision against the fs AND the plan
+  itself (H7); one normalization rule (NFC + separators + case, H3); same-volume detection
+  per entry.
+- **Snapshot** (H5): wal_checkpoint(TRUNCATE) → copy search.db (+ non-empty sidecars) →
+  reopen read-only and assert the Baseline matches → copy the 8 path-bearing JSON stores.
+
+Proofs: 7 tests — every classifier class incl. foreign-under-root and both de-collision
+sources; journal round-trip/resume/corrupt-surfacing; snapshot verify incl.
+"complete-without-its-WAL". Rust **1297 passed / 0 failed**.
