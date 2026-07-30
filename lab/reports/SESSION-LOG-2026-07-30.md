@@ -233,3 +233,22 @@ unfinished journal, never silently continues; VerifyFailed gets its own explanat
 i18n: the `mig108.*` group — 25 keys × 15 locales, all translated in-pass.
 
 Gates: Rust **1303/0** (16 engine tests) · vitest **67/715** · svelte-check **0**.
+
+## §10 — Stage-A ready: the rehearsal world + the binary
+
+`lab/tools/mig108_make_rehearsal.py` — builds a COMPLETE, self-consistent scratch copy: root
+(minus the stale SV-Test db trio) + all 18 external trees + libraries.json re-pointed + a
+78,931-distinct-path DB remap (triggers dropped; init_db recreates on boot) + the 8 JSON
+stores deep-remapped + the universe renamed "MIG108 Rehearsal". Without the DB remap the
+scratch db would still point at the REAL trees and the rehearsal would "pass" without
+exercising the rewrite at all — the maker asserts ZERO leftover references to the real
+universe before declaring READY. Two defects found while building it: Windows MAX_PATH broke
+shutil on a ~200-char attachment filename (fixed with the extended-length prefix; the Rust
+engine is immune — std handles it internally), and my first prefix fix itself was mangled by
+shell escaping (caught by asserting longpath's output before use).
+
+Disk-verified (not log-trusted): 18 external dirs · 7,684 .md notes (the exact real count) ·
+registry entries outside the scratch world: none. Real universe: read-only throughout.
+
+Binary: bundle 11:30 → constellation.exe 11:35; mig108_execute in the JS chunk,
+mig108_preflight in the exe. Stage-A tutorial delivered to the Boss.
