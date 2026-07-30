@@ -6772,7 +6772,7 @@ pub fn export_note_html(app: tauri::AppHandle, file_path: String) -> Result<Stri
 ///
 /// One helper, one rule: search for a free name, and if the gate says it was taken, search again.
 /// The loop converges because each attempt claims a different slot.
-enum TrashMoveOutcome {
+pub(crate) enum TrashMoveOutcome {
     /// The rename landed. This is where the item now lives.
     Moved(#[allow(dead_code)] PathBuf),
     /// The gate refused for a reason that is NOT a name collision — a cross-device rename is the
@@ -6782,7 +6782,7 @@ enum TrashMoveOutcome {
 
 /// The de-collide search: `claimed` if it is free, otherwise `<stem> <n>.<ext>` for the first free
 /// `n`. Re-runnable by design — the whole point is that the answer can go stale under contention.
-fn free_trash_name(source: &Path, trash_dir: &Path, claimed: &Path) -> Result<PathBuf, String> {
+pub(crate) fn free_trash_name(source: &Path, trash_dir: &Path, claimed: &Path) -> Result<PathBuf, String> {
     if !claimed.exists() {
         return Ok(claimed.to_path_buf());
     }
@@ -6804,7 +6804,7 @@ fn free_trash_name(source: &Path, trash_dir: &Path, claimed: &Path) -> Result<Pa
 /// Rename `source` into `trash_dir` under a free name, retrying the search whenever the gate
 /// refuses because someone else took that name first. `Err` only when there is genuinely no free
 /// name left — every other refusal comes back as `NotRenamed` for the caller to decide about.
-fn trash_move_decolliding(
+pub(crate) fn trash_move_decolliding(
     source: &Path,
     trash_dir: &Path,
     origin: &str,
@@ -6833,8 +6833,12 @@ fn trash_move_decolliding(
     unreachable!("the loop returns on every path")
 }
 
-#[tauri::command(async)]
-pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) -> Result<(), String> {
+/// PJ-192 (closed by MIG-108 Slice 3) — no longer a #[tauri::command]. The frontend
+/// stopped invoking it in PJ-187 (every displacement path routes through delete_path);
+/// the ONE remaining caller is Rust-side Template-Studio undo (universe.rs), which
+/// passes the UNIVERSE ROOT — exactly what the collapsed one-trash setting now means,
+/// so the old "setting-blind" complaint resolves by construction.
+pub(crate) fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) -> Result<(), String> {
     // Verify the file is within a registered library (not just any caller-supplied library_path)
     validate_path_in_any_library(&app, &path)?;
     validate_path_in_library(&path, &library_path)?;
@@ -6888,7 +6892,7 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
 ///   - "permanent" → remove the file/folder (the only non-recoverable mode);
 ///   - "trash"     → move into `<trash_root>/.trash`, de-colliding on a name
 ///                   clash; `trash_root` is the note's LIBRARY root or the
-///                   UNIVERSE root, chosen by the frontend per `trashFolderScope`;
+///                   UNIVERSE root (MIG-108: always the root — the scope setting is retired);
 ///   - "system"    → move to the OS Recycle Bin (the `trash` crate).
 /// Every mode drops the note from the search index — it no longer lives at its
 /// indexed path (gone, or in an excluded `.trash`/OS-trash dir).
@@ -7015,7 +7019,7 @@ fn move_into_trash_folder(source: &Path, trash_root: &Path) -> Result<(), String
 
 /// Recursive directory copy (std has no built-in) — for the cross-volume
 /// trash fallback when a folder is deleted to a different-drive trash root.
-fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
+pub(crate) fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
     fs::create_dir_all(dst).map_err(|e| format!("Failed to create dir: {}", e))?;
     for entry in fs::read_dir(src).map_err(|e| format!("Failed to read dir: {}", e))? {
         let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;

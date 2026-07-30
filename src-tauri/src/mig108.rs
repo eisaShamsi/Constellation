@@ -668,3 +668,832 @@ mod tests {
         }
     }
 }
+
+// ═══ Slice 2 — move + rewrite + verify ══════════════════════════════════════════════════════
+
+/// Component-wise path remap: if `stored` lies under `old_root` (compared NFC + case- +
+/// separator-insensitively), rebuild it as `new_root` + the ORIGINAL raw suffix components.
+///
+/// Component-wise because NFC can change a component's LENGTH (an NFD-stored Arabic name has
+/// more codepoints than its NFC form), so byte-offset prefix slicing is unsound (H3). The
+/// suffix components are carried VERBATIM — the row keeps whatever separator/encoding
+/// convention it had, only the root prefix changes, so every equality-keyed consumer that
+/// found the row before finds it after.
+pub(crate) fn remap_path(stored: &str, old_root: &str, new_root: &str) -> Option<String> {
+    fn parts(p: &str) -> Vec<&str> {
+        p.split(['/', '\\']).filter(|s| !s.is_empty()).collect()
+    }
+    fn norm_component(c: &str) -> String {
+        use unicode_normalization::UnicodeNormalization;
+        c.nfc().collect::<String>().to_lowercase()
+    }
+    let stored_parts = parts(stored);
+    let old_parts = parts(old_root);
+    if stored_parts.len() < old_parts.len() || old_parts.is_empty() {
+        return None;
+    }
+    for (i, op) in old_parts.iter().enumerate() {
+        if norm_component(stored_parts[i]) != norm_component(op) {
+            return None;
+        }
+    }
+    let mut out = std::path::PathBuf::from(new_root);
+    for part in &stored_parts[old_parts.len()..] {
+        out.push(part);
+    }
+    Some(out.to_string_lossy().to_string())
+}
+
+/// First (old_root, new_root) pair that remaps `stored`, applied. None = not under any moved root.
+pub(crate) fn remap_any(stored: &str, pairs: &[(String, String)]) -> Option<String> {
+    for (old, new) in pairs {
+        if let Some(r) = remap_path(stored, old, new) {
+            return Some(r);
+        }
+    }
+    None
+}
+
+// ─── Move phase ─────────────────────────────────────────────────────────────────────────────
+
+/// Execute every not-yet-moved entry's fs operation, journaling around each. Halts with Err
+/// on the first failure (open handle, permissions) — the journal names exactly where; a
+/// re-run resumes from the first unmoved entry (idempotent: `moved` entries are skipped, and
+/// an entry whose new_path already exists while old_path is gone is adopted as moved).
+pub fn run_move_phase(journal: &mut Journal, constellation_dir: &Path) -> Result<(), String> {
+    journal.phase = Phase::Moving;
+    journal.save(constellation_dir)?;
+
+    for i in 0..journal.entries.len() {
+        if journal.entries[i].moved {
+            continue;
+        }
+        let (old_p, new_p, action) = {
+            let e = &journal.entries[i];
+            (PathBuf::from(&e.old_path), PathBuf::from(&e.new_path), e.action.clone())
+        };
+        // Crash-window adoption: a previous run may have completed this move AFTER the
+        // journal recorded intent but BEFORE it recorded completion.
+        let already_done = new_p.is_dir() && (action == "copy" || !old_p.exists());
+        if !already_done {
+            if new_p.exists() {
+                return Err(format!(
+                    "mig108 move: destination already exists (and source still present): {}",
+                    new_p.display()
+                ));
+            }
+            match action.as_str() {
+                "copy" => {
+                    crate::libraries::copy_dir_recursive(&old_p, &new_p)
+                        .map_err(|e| format!("mig108 copy {} -> {}: {}", old_p.display(), new_p.display(), e))?;
+                }
+                _ => {
+                    if same_volume(&old_p, &new_p) {
+                        crate::write_gate::gate_rename(&old_p, &new_p, "mig108_move")
+                            .map_err(|e| format!("mig108 move {} -> {}: {}", old_p.display(), new_p.display(), e))?;
+                    } else {
+                        crate::libraries::copy_dir_recursive(&old_p, &new_p)
+                            .map_err(|e| format!("mig108 cross-volume copy: {}", e))?;
+                        std::fs::remove_dir_all(&old_p)
+                            .map_err(|e| format!("mig108 cross-volume source removal: {}", e))?;
+                    }
+                }
+            }
+        }
+        journal.entries[i].moved = true;
+        journal.save(constellation_dir)?;
+    }
+
+    journal.phase = Phase::Moved;
+    journal.save(constellation_dir)
+}
+
+// ─── DB rewrite phase ───────────────────────────────────────────────────────────────────────
+
+/// The path-bearing tables the straggler sweep patrols after the per-note cascade: rows
+/// under an old prefix with no note_meta parent (legacy orphans), or rows the cascade's
+/// gates skipped (an unstamped review_schedule). Path-PK tables get a destination
+/// pre-delete so the UPDATE can never abort on a phantom.
+const SWEEP: &[(&str, &str, bool)] = &[
+    ("note_links", "source_path", false),
+    ("note_aliases", "path", false),
+    ("sky_nodes", "path", true),
+    ("sky_links", "source_path", false),
+    ("review_schedule", "path", true),
+];
+
+/// One transaction: per-note proven cascade + straggler sweep + cache/cursor hygiene +
+/// aggregate recompute + hard verification. COMMIT only when every invariant holds;
+/// otherwise ROLLBACK and journal `VerifyFailed` (fs moves stand, recorded per entry —
+/// the resume path surfaces the state instead of guessing).
+pub fn run_db_rewrite(
+    conn: &rusqlite::Connection,
+    journal: &mut Journal,
+    constellation_dir: &Path,
+) -> Result<(), String> {
+    let pairs: Vec<(String, String)> = journal
+        .entries
+        .iter()
+        .filter(|e| e.action == "move") // copy-class content was never indexed under the root
+        .map(|e| (e.old_path.clone(), e.new_path.clone()))
+        .collect();
+    let baseline = journal
+        .baseline
+        .clone()
+        .ok_or("mig108 db rewrite: journal carries no baseline (snapshot must run first)")?;
+
+    conn.execute_batch("BEGIN IMMEDIATE")
+        .map_err(|e| format!("mig108 BEGIN failed: {}", e))?;
+
+    let result = (|| -> Result<(), String> {
+        conn.execute_batch("PRAGMA defer_foreign_keys = ON")
+            .map_err(|e| e.to_string())?;
+        // H2 — the ungated per-edge outgoing recompute is O(N^2) across a bulk rewrite
+        // (+17 s measured at 216k links). The sky triggers stay ACTIVE: note_meta_sky_au is
+        // the proven cascade for sky_nodes/sky_links/note_aliases, exactly as every live
+        // single-note move runs it today.
+        crate::search::drop_outgoing_link_triggers(conn)?;
+
+        // The per-note proven cascade, enumerated Rust-side with normalized matching (H3) —
+        // never SQL replace()/LIKE.
+        let all_paths: Vec<String> = {
+            let mut stmt = conn
+                .prepare("SELECT path FROM note_meta")
+                .map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map([], |r| r.get::<_, String>(0))
+                .map_err(|e| e.to_string())?;
+            rows.filter_map(|r| r.ok()).collect()
+        };
+        for old in &all_paths {
+            if let Some(new) = remap_any(old, &pairs) {
+                crate::libraries::migrate_note_db_paths(conn, old, &new);
+            }
+        }
+
+        // Straggler sweep — universal end-state guarantee for rows the cascade cannot see.
+        for (table, col, pre_delete) in SWEEP {
+            let sql = format!("SELECT DISTINCT {c} FROM {t}", c = col, t = table);
+            let stale: Vec<String> = match conn.prepare(&sql) {
+                Ok(mut stmt) => stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| e.to_string())?
+                    .filter_map(|r| r.ok())
+                    .filter(|p| remap_any(p, &pairs).is_some())
+                    .collect(),
+                // Lazily-created tables may not exist — the correct no-op.
+                Err(e) if e.to_string().contains("no such table") => continue,
+                Err(e) => return Err(e.to_string()),
+            };
+            for old in stale {
+                let new = remap_any(&old, &pairs).expect("filtered above");
+                if *pre_delete {
+                    conn.execute(
+                        &format!("DELETE FROM {t} WHERE {c} = ?1", t = table, c = col),
+                        [&new],
+                    )
+                    .map_err(|e| e.to_string())?;
+                }
+                conn.execute(
+                    &format!("UPDATE {t} SET {c} = ?2 WHERE {c} = ?1", t = table, c = col),
+                    [&old, &new],
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // H11 hygiene — all tolerant of absent tables.
+        for sql in [
+            "DELETE FROM sky_backfill_cursor",
+            "DELETE FROM links_outgoing_backfill_cursor",
+            "DELETE FROM review_backfill_cursor",
+            "DELETE FROM note_body_backfill_cursor",
+            "DELETE FROM sight_v3_layout",
+            "DELETE FROM sight_v3_layout_cursor",
+            "DELETE FROM sight_v3_graph_version",
+            "DELETE FROM sight_v3_density_grid",
+            "DELETE FROM link_stats_cache",
+        ] {
+            if let Err(e) = conn.execute_batch(sql) {
+                if !e.to_string().contains("no such table") {
+                    return Err(e.to_string());
+                }
+            }
+        }
+
+        // Restore the aggregate machinery, then recompute once (the reconcile precedent).
+        crate::search::create_outgoing_link_triggers(conn)?;
+        crate::links_backfill::recompute_all_outgoing(conn).map_err(|e| e.to_string())?;
+
+        // ── Verification (I2) — inside the transaction, before COMMIT ──
+        let after = read_baseline(conn)?;
+        if after != baseline {
+            return Err(format!(
+                "mig108 verify: aggregates diverged — before {:?}, after {:?}",
+                baseline, after
+            ));
+        }
+        let mut stale_left = 0i64;
+        for (table, col, _) in SWEEP {
+            let sql = format!("SELECT {c} FROM {t}", c = col, t = table);
+            if let Ok(mut stmt) = conn.prepare(&sql) {
+                let rows = stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| e.to_string())?;
+                stale_left += rows
+                    .filter_map(|r| r.ok())
+                    .filter(|p| remap_any(p, &pairs).is_some())
+                    .count() as i64;
+            }
+        }
+        {
+            let mut stmt = conn.prepare("SELECT path FROM note_meta").map_err(|e| e.to_string())?;
+            let rows = stmt.query_map([], |r| r.get::<_, String>(0)).map_err(|e| e.to_string())?;
+            stale_left += rows
+                .filter_map(|r| r.ok())
+                .filter(|p| remap_any(p, &pairs).is_some())
+                .count() as i64;
+        }
+        if stale_left != 0 {
+            return Err(format!("mig108 verify: {} rows still under an old prefix", stale_left));
+        }
+        for e in &journal.entries {
+            if !Path::new(&e.new_path).is_dir() {
+                return Err(format!("mig108 verify: moved dir missing: {}", e.new_path));
+            }
+        }
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => {
+            conn.execute_batch("COMMIT").map_err(|e| {
+                let _ = conn.execute_batch("ROLLBACK");
+                format!("mig108 COMMIT failed (deferred FK?): {}", e)
+            })?;
+            journal.phase = Phase::DbRewritten;
+            journal.save(constellation_dir)
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            journal.phase = Phase::VerifyFailed;
+            journal.save(constellation_dir)?;
+            Err(e)
+        }
+    }
+}
+
+// ─── JSON rewrite phase ─────────────────────────────────────────────────────────────────────
+
+/// Deep-remap every string (object KEYS included — `folderTemplates` is keyed by absolute
+/// folder path) that lies under a moved root. Uniform on purpose: in these stores, a string
+/// under a moved library's old absolute path IS a reference to moved content — one rule,
+/// no per-store field list to drift (H12).
+pub(crate) fn remap_json_value(v: &mut serde_json::Value, pairs: &[(String, String)]) {
+    match v {
+        serde_json::Value::String(s) => {
+            if let Some(new) = remap_any(s, pairs) {
+                *s = new;
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                remap_json_value(item, pairs);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            let keys: Vec<String> = map.keys().cloned().collect();
+            for k in keys {
+                if let Some(new_key) = remap_any(&k, pairs) {
+                    if let Some(val) = map.remove(&k) {
+                        map.insert(new_key, val);
+                    }
+                }
+            }
+            for (_, val) in map.iter_mut() {
+                remap_json_value(val, pairs);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The stores the rewrite touches (superset of the snapshot list — session.prev.json is the
+/// session reader's fallback and must not resurrect old paths).
+pub const REWRITE_STORES: &[&str] = &[
+    "libraries.json",
+    "review-pulse.json",
+    "workspaces.json",
+    "session.json",
+    "session.prev.json",
+    "collections.json",
+    "settings.json",
+    "bookmarks.json",
+];
+
+pub fn run_json_rewrites(journal: &mut Journal, constellation_dir: &Path) -> Result<(), String> {
+    let pairs: Vec<(String, String)> = journal
+        .entries
+        .iter()
+        .map(|e| (e.old_path.clone(), e.new_path.clone()))
+        .collect();
+
+    for store in REWRITE_STORES {
+        if journal.json_rewritten.iter().any(|s| s == store) {
+            continue; // idempotent resume
+        }
+        let path = constellation_dir.join(store);
+        if path.exists() {
+            let raw = std::fs::read_to_string(&path)
+                .map_err(|e| format!("mig108 {} read: {}", store, e))?;
+            let mut v: serde_json::Value = serde_json::from_str(&raw)
+                .map_err(|e| format!("mig108 {} parse: {}", store, e))?;
+            remap_json_value(&mut v, &pairs);
+            let out = serde_json::to_string_pretty(&v).map_err(|e| e.to_string())?;
+            crate::universe::atomic_write(&path, out.as_bytes())
+                .map_err(|e| format!("mig108 {} write: {}", store, e))?;
+        }
+        journal.json_rewritten.push(store.to_string());
+        journal.save(constellation_dir)?;
+    }
+
+    journal.phase = Phase::JsonRewritten;
+    journal.save(constellation_dir)
+}
+
+// ─── Orchestrator ───────────────────────────────────────────────────────────────────────────
+
+/// Run (or resume) everything after planning: snapshot → moves → DB → JSON. Idempotent per
+/// journal state; the caller (Slice 4's command) handles the freeze envelope and the trash
+/// consolidation step (Slice 3) around it.
+pub fn run_engine(
+    conn: &rusqlite::Connection,
+    db_path: &Path,
+    journal: &mut Journal,
+    constellation_dir: &Path,
+) -> Result<(), String> {
+    if matches!(journal.phase, Phase::Planned) {
+        let (db_backup, json_backups, baseline) = take_snapshot(conn, db_path, constellation_dir)?;
+        journal.snapshot_db = Some(db_backup);
+        journal.json_backups = json_backups;
+        journal.baseline = Some(baseline);
+        journal.phase = Phase::Snapshotted;
+        journal.save(constellation_dir)?;
+    }
+    if matches!(journal.phase, Phase::Snapshotted | Phase::Moving) {
+        run_move_phase(journal, constellation_dir)?;
+    }
+    if matches!(journal.phase, Phase::Moved | Phase::VerifyFailed) {
+        run_db_rewrite(conn, journal, constellation_dir)?;
+    }
+    if matches!(journal.phase, Phase::DbRewritten) {
+        run_json_rewrites(journal, constellation_dir)?;
+    }
+    if matches!(journal.phase, Phase::JsonRewritten) {
+        journal.phase = Phase::Done;
+        journal.save(constellation_dir)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod slice2_tests {
+    use super::*;
+    use crate::libraries::LibraryInfo;
+
+    fn lib(id: &str, name: &str, path: &str) -> LibraryInfo {
+        LibraryInfo {
+            id: id.into(),
+            name: name.into(),
+            path: path.into(),
+            is_universe_notes: false,
+            canonical_mode: "compatible".into(),
+        }
+    }
+
+    // ── remap_path ──
+
+    #[test]
+    fn remap_preserves_the_raw_suffix_and_matches_across_conventions() {
+        // Backslash-stored row, forward-slash root — matches, suffix verbatim.
+        let got = remap_path("E:\\Old Tree\\Lib\\Sub\\Note.md", "E:/Old Tree/Lib", "E:/Root/Lib").unwrap();
+        assert_eq!(norm(&got), norm("E:/Root/Lib/Sub/Note.md"));
+        // Case-insensitive on the prefix.
+        assert!(remap_path("e:/old tree/lib/n.md", "E:/Old Tree/Lib", "E:/R").is_some());
+        // NOT under → None; sibling prefix must not match (separator-bounded by components).
+        assert!(remap_path("E:/Old Tree/Library2/n.md", "E:/Old Tree/Lib", "E:/R").is_none());
+    }
+
+    #[test]
+    fn remap_is_nfc_safe_on_arabic_components() {
+        // NFD-stored component vs NFC root: same text, different codepoint counts.
+        let nfc = "\u{0623}\u{062f}\u{0628}"; // أدب (NFC: U+0623 = hamza-on-alef precomposed)
+        let nfd = "\u{0627}\u{0654}\u{062f}\u{0628}"; // alef + combining hamza + د + ب
+        let stored = format!("E:/Tree/{}/Note.md", nfd);
+        let root = format!("E:/Tree/{}", nfc);
+        let got = remap_path(&stored, &root, "E:/Root/Adab").unwrap();
+        assert_eq!(norm(&got), norm("E:/Root/Adab/Note.md"));
+    }
+
+    // ── the end-to-end fixture ──
+
+    struct Fixture {
+        _td: tempfile::TempDir,
+        root: String,
+        cdir: PathBuf,
+        conn: rusqlite::Connection,
+        db_path: PathBuf,
+        ext_a: String, // moving external (ASCII)
+        ext_b: String, // moving external (Arabic name)
+        book: String,  // copy-class
+    }
+
+    fn build_fixture() -> Fixture {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        let cdir = root.join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+
+        let ext_a = td.path().join("Tree").join("LibA");
+        let ext_b = td.path().join("Tree").join("مكتبة عربية");
+        let book = td.path().join("Repo").join("Book");
+        for d in [&ext_a, &ext_b, &book] {
+            std::fs::create_dir_all(d).unwrap();
+        }
+        std::fs::write(ext_a.join("a.md"), "alpha").unwrap();
+        std::fs::write(ext_b.join("b.md"), "beta").unwrap();
+        std::fs::write(book.join("k.md"), "kappa").unwrap();
+
+        let db_path = cdir.join("search.db");
+        let conn = rusqlite::Connection::open(&db_path).unwrap();
+        conn.execute_batch(
+            "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
+             CREATE TABLE note_meta (
+                 path TEXT PRIMARY KEY, name TEXT,
+                 outgoing_count INTEGER DEFAULT 0, outgoing_link_types TEXT DEFAULT '',
+                 outgoing_link_types_json TEXT DEFAULT '{}', outgoing_top_rank INTEGER DEFAULT 99
+             );
+             CREATE TABLE note_links (
+                 source_path TEXT, target_name TEXT, link_type TEXT DEFAULT 'associative',
+                 status TEXT DEFAULT 'active', weight REAL,
+                 UNIQUE(source_path, target_name, link_type)
+             );
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT, PRIMARY KEY (path, alias_lower));
+             CREATE TABLE note_embeddings (path TEXT PRIMARY KEY);
+             CREATE TABLE note_body (path TEXT PRIMARY KEY, body TEXT);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, last_reviewed TEXT);
+             CREATE TABLE note_summaries (
+                 path TEXT PRIMARY KEY, summary TEXT,
+                 FOREIGN KEY (path) REFERENCES note_meta(path) ON DELETE CASCADE
+             );
+             CREATE TABLE sources_suggestions (note_path TEXT PRIMARY KEY);
+             CREATE TABLE sight_v3_layout (note_path TEXT);
+             CREATE TABLE note_state_history (id INTEGER PRIMARY KEY AUTOINCREMENT, note_path TEXT);
+             CREATE TABLE sky_nodes (path TEXT PRIMARY KEY);
+             CREATE TABLE sky_links (source_path TEXT, target_name TEXT, link_type TEXT,
+                 UNIQUE(source_path, target_name, link_type));",
+        )
+        .unwrap();
+
+        // Seed: one note per moving library. LibA's row uses BACKSLASH separators; the Arabic
+        // library's row is stored in a DIFFERENT normalization than the fs path to prove H3.
+        let a_note = format!("{}\\a.md", ext_a.to_string_lossy().replace('/', "\\"));
+        let b_note = format!("{}/b.md", ext_b.to_string_lossy());
+        conn.execute("INSERT INTO note_meta (path, name) VALUES (?1, 'a')", [&a_note]).unwrap();
+        conn.execute("INSERT INTO note_meta (path, name) VALUES (?1, 'b')", [&b_note]).unwrap();
+        conn.execute(
+            "INSERT INTO note_links (source_path, target_name, weight) VALUES (?1, 'b', 1.5), (?1, 'c', 2.5)",
+            [&a_note],
+        )
+        .unwrap();
+        conn.execute("INSERT INTO note_aliases VALUES (?1, 'alias-a')", [&a_note]).unwrap();
+        conn.execute("INSERT INTO review_schedule VALUES (?1, '2026-07-01')", [&a_note]).unwrap();
+        // The FK child that REFUSES a bare parent UPDATE without deferral (H1).
+        conn.execute("INSERT INTO note_summaries VALUES (?1, 'sum')", [&a_note]).unwrap();
+        conn.execute("INSERT INTO sky_nodes VALUES (?1)", [&a_note]).unwrap();
+        conn.execute("INSERT INTO sky_links VALUES (?1, 'b', 'associative')", [&a_note]).unwrap();
+
+        // JSON stores.
+        std::fs::write(
+            cdir.join("libraries.json"),
+            serde_json::to_string_pretty(&vec![
+                lib("u", "Universe", &root.to_string_lossy()),
+                lib("a", "LibA", &ext_a.to_string_lossy()),
+                lib("b", "Arabic", &ext_b.to_string_lossy()),
+                lib("k", "Book", &book.to_string_lossy()),
+            ])
+            .unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            cdir.join("review-pulse.json"),
+            serde_json::json!({
+                "last_reviewed": { a_note.clone(): "2026-07-01" },
+                "snoozed": {}, "intervals": { a_note.clone(): 4 }, "dismissed": [b_note.clone()]
+            })
+            .to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            cdir.join("workspaces.json"),
+            serde_json::json!([{ "name": "W", "tabs": [{ "path": a_note }], "activeTabPath": a_note }])
+                .to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            cdir.join("settings.json"),
+            serde_json::json!({
+                "folderTemplates": { format!("{}/Ideas", ext_a.to_string_lossy()): "Idea" },
+                "trashDestination": "local"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            cdir.join("collections.json"),
+            serde_json::json!([{ "id": "starred", "items": [{ "type": "note", "path": b_note }] }])
+                .to_string(),
+        )
+        .unwrap();
+
+        Fixture {
+            _td: td,
+            root: root.to_string_lossy().to_string(),
+            cdir,
+            conn,
+            db_path,
+            ext_a: ext_a.to_string_lossy().to_string(),
+            ext_b: ext_b.to_string_lossy().to_string(),
+            book: book.to_string_lossy().to_string(),
+        }
+    }
+
+    fn plan(f: &Fixture) -> Journal {
+        let libs = vec![
+            lib("u", "Universe", &f.root),
+            lib("a", "LibA", &f.ext_a),
+            lib("b", "Arabic", &f.ext_b),
+            lib("k", "Book", &f.book),
+        ];
+        let report = classify(&f.root, &libs, &[f.book.clone()], &[]);
+        Journal::new(&f.root, &report)
+    }
+
+    #[test]
+    fn end_to_end_moves_rewrites_and_verifies() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+
+        run_engine(&f.conn, &f.db_path, &mut j, &f.cdir).unwrap();
+        assert_eq!(j.phase, Phase::Done);
+
+        // fs — moves moved, copy-class original retained.
+        assert!(Path::new(&f.root).join("LibA").join("a.md").is_file());
+        assert!(Path::new(&f.root).join("مكتبة عربية").join("b.md").is_file());
+        assert!(!Path::new(&f.ext_a).exists(), "moved source gone");
+        assert!(Path::new(&f.book).join("k.md").is_file(), "copy-class original untouched");
+        assert!(Path::new(&f.root).join("Book").join("k.md").is_file(), "copy landed");
+
+        // db — nothing under old prefixes; earned data intact; FK child moved with parent.
+        let count = |sql: &str| -> i64 { f.conn.query_row(sql, [], |r| r.get(0)).unwrap() };
+        assert_eq!(count("SELECT COUNT(*) FROM note_meta"), 2);
+        let weight: f64 = f
+            .conn
+            .query_row("SELECT SUM(weight) FROM note_links", [], |r| r.get(0))
+            .unwrap();
+        assert!((weight - 4.0).abs() < 1e-9);
+        let paths: Vec<String> = {
+            let mut st = f.conn.prepare("SELECT path FROM note_meta").unwrap();
+            let v = st.query_map([], |r| r.get(0)).unwrap().filter_map(|r| r.ok()).collect();
+            v
+        };
+        for p in &paths {
+            assert!(
+                norm_under(p, &f.root),
+                "every note_meta row lives under the root now: {}",
+                p
+            );
+        }
+        let sum_path: String = f
+            .conn
+            .query_row("SELECT path FROM note_summaries", [], |r| r.get(0))
+            .unwrap();
+        assert!(norm_under(&sum_path, &f.root), "FK child moved with its parent");
+        let sky: String = f.conn.query_row("SELECT path FROM sky_nodes", [], |r| r.get(0)).unwrap();
+        assert!(norm_under(&sky, &f.root));
+        let sched: String = f
+            .conn
+            .query_row("SELECT path FROM review_schedule", [], |r| r.get(0))
+            .unwrap();
+        assert!(norm_under(&sched, &f.root), "unstamped review row caught by the sweep");
+
+        // json — keys AND values remapped in every store.
+        let libs_txt = std::fs::read_to_string(f.cdir.join("libraries.json")).unwrap();
+        assert!(!libs_txt.contains(&f.ext_a.replace('\\', "\\\\")), "libraries.json re-pointed");
+        let settings: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(f.cdir.join("settings.json")).unwrap()).unwrap();
+        let ft = settings["folderTemplates"].as_object().unwrap();
+        assert_eq!(ft.len(), 1);
+        assert!(
+            norm_under(ft.keys().next().unwrap(), &f.root),
+            "folderTemplates KEY remapped: {:?}",
+            ft.keys().next()
+        );
+        let pulse: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(f.cdir.join("review-pulse.json")).unwrap()).unwrap();
+        assert!(norm_under(pulse["last_reviewed"].as_object().unwrap().keys().next().unwrap(), &f.root));
+        assert!(norm_under(pulse["dismissed"][0].as_str().unwrap(), &f.root));
+        let ws: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(f.cdir.join("workspaces.json")).unwrap()).unwrap();
+        assert!(norm_under(ws[0]["tabs"][0]["path"].as_str().unwrap(), &f.root));
+        let coll: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(f.cdir.join("collections.json")).unwrap()).unwrap();
+        assert!(norm_under(coll[0]["items"][0]["path"].as_str().unwrap(), &f.root));
+
+        // The snapshot still holds the PRE-move truth.
+        let backup = j.snapshot_db.as_ref().unwrap();
+        let check = rusqlite::Connection::open_with_flags(
+            backup,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .unwrap();
+        let old_paths: Vec<String> = {
+            let mut st = check.prepare("SELECT path FROM note_meta").unwrap();
+            let v = st.query_map([], |r| r.get(0)).unwrap().filter_map(|r| r.ok()).collect();
+            v
+        };
+        assert!(old_paths.iter().any(|p| !norm_under(p, &f.root)), "backup keeps old paths");
+    }
+
+    #[test]
+    fn interrupt_after_moves_resumes_to_done() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+
+        // Phase 1 run: snapshot + moves only (simulated crash before the DB rewrite).
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+        drop(j); // "crash"
+
+        // Boot: reload from disk, resume.
+        let mut j2 = Journal::load(&f.cdir).unwrap().expect("journal survives");
+        assert!(j2.is_unfinished());
+        assert_eq!(j2.phase, Phase::Moved);
+        run_engine(&f.conn, &f.db_path, &mut j2, &f.cdir).unwrap();
+        assert_eq!(j2.phase, Phase::Done);
+
+        let p: String = f.conn.query_row("SELECT path FROM note_summaries", [], |r| r.get(0)).unwrap();
+        assert!(norm_under(&p, &f.root));
+    }
+
+    /// RED — a divergent aggregate must ROLL BACK the whole rewrite and journal VerifyFailed.
+    #[test]
+    fn verify_failure_rolls_back_and_journals() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+
+        let (db_backup, json_backups, mut baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        baseline.note_links_rows += 1; // sabotage: the verify MUST catch this
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+
+        let err = run_db_rewrite(&f.conn, &mut j, &f.cdir).unwrap_err();
+        assert!(err.contains("aggregates diverged"), "{}", err);
+        assert_eq!(j.phase, Phase::VerifyFailed);
+
+        // ROLLBACK held: the DB still holds the OLD paths (fs moves stand, recorded).
+        let paths: Vec<String> = {
+            let mut st = f.conn.prepare("SELECT path FROM note_meta").unwrap();
+            let v = st.query_map([], |r| r.get(0)).unwrap().filter_map(|r| r.ok()).collect();
+            v
+        };
+        assert!(paths.iter().all(|p| !norm_under(p, &f.root)), "db untouched after rollback");
+    }
+}
+
+// ═══ Slice 3 — trash consolidation ══════════════════════════════════════════════════════════
+
+/// Move every top-level entry of each `<library>/.trash` into `<root>/.trash`, de-colliding
+/// via the shared helper (names CAN clash across libraries and with suffixed names already at
+/// the destination); remove each emptied source `.trash`. Idempotent — a universe with no
+/// per-library trash is a no-op — and standalone: it also serves universes that never needed
+/// relocation (the pre-MIG-108 scope setting left per-library trash behind).
+///
+/// Entries are moved as UNITS (a trashed FOLDER moves whole, with any attachments inside);
+/// nothing is read or rewritten — dot-paths are invisible to the index by construction, so
+/// no DB work accompanies this.
+pub fn consolidate_trash(universe_root: &Path, library_paths: &[String]) -> Result<usize, String> {
+    let root_trash = universe_root.join(".trash");
+    let mut moved = 0usize;
+
+    for lib in library_paths {
+        let lib_path = Path::new(lib);
+        // The root's own .trash is the destination, not a source.
+        if norm(&lib_path.to_string_lossy()) == norm(&universe_root.to_string_lossy()) {
+            continue;
+        }
+        let src_trash = lib_path.join(".trash");
+        if !src_trash.is_dir() {
+            continue;
+        }
+        if !root_trash.exists() {
+            std::fs::create_dir_all(&root_trash).map_err(|e| e.to_string())?;
+        }
+        let entries: Vec<PathBuf> = std::fs::read_dir(&src_trash)
+            .map_err(|e| format!("consolidate: read {} failed: {}", src_trash.display(), e))?
+            .flatten()
+            .map(|e| e.path())
+            .collect();
+        for entry in entries {
+            match crate::libraries::trash_move_decolliding(&entry, &root_trash, "mig108_trash")? {
+                crate::libraries::TrashMoveOutcome::Moved(_) => moved += 1,
+                crate::libraries::TrashMoveOutcome::NotRenamed { error, .. } => {
+                    // Cross-volume leftovers: copy+remove, never overwriting (fresh name).
+                    let dest = crate::libraries::free_trash_name(
+                        &entry,
+                        &root_trash,
+                        &root_trash.join(entry.file_name().ok_or("nameless trash entry")?),
+                    )?;
+                    if entry.is_dir() {
+                        crate::libraries::copy_dir_recursive(&entry, &dest)?;
+                        std::fs::remove_dir_all(&entry).map_err(|e| e.to_string())?;
+                    } else {
+                        std::fs::copy(&entry, &dest)
+                            .map_err(|e| format!("consolidate fallback ({}): {} — rename had said: {}", entry.display(), e, error))?;
+                        std::fs::remove_file(&entry).map_err(|e| e.to_string())?;
+                    }
+                    moved += 1;
+                }
+            }
+        }
+        // Source .trash is empty now — remove it so nothing recreates the two-trash state.
+        if std::fs::read_dir(&src_trash).map(|mut d| d.next().is_none()).unwrap_or(false) {
+            let _ = std::fs::remove_dir(&src_trash);
+        }
+    }
+    Ok(moved)
+}
+
+#[cfg(test)]
+mod slice3_tests {
+    use super::*;
+
+    #[test]
+    fn consolidation_moves_decollides_and_removes_empty_sources() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        let lib_a = root.join("LibA");
+        let lib_b = root.join("LibB");
+        for d in [&lib_a, &lib_b] {
+            std::fs::create_dir_all(d.join(".trash")).unwrap();
+        }
+        // Same-named trashed note in BOTH libraries + a trashed FOLDER with an attachment.
+        std::fs::write(lib_a.join(".trash").join("Note.md"), "FROM A").unwrap();
+        std::fs::write(lib_b.join(".trash").join("Note.md"), "FROM B").unwrap();
+        let folder = lib_a.join(".trash").join("Old Folder");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join("pic.png"), "img").unwrap();
+        // A suffixed name ALREADY at the destination.
+        std::fs::create_dir_all(root.join(".trash")).unwrap();
+        std::fs::write(root.join(".trash").join("Note 1.md"), "ALREADY HERE").unwrap();
+
+        let libs = vec![
+            root.to_string_lossy().to_string(),
+            lib_a.to_string_lossy().to_string(),
+            lib_b.to_string_lossy().to_string(),
+        ];
+        let moved = consolidate_trash(&root, &libs).unwrap();
+        assert_eq!(moved, 3);
+
+        let bodies: Vec<String> = std::fs::read_dir(root.join(".trash"))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().is_file())
+            .map(|e| std::fs::read_to_string(e.path()).unwrap())
+            .collect();
+        assert!(bodies.contains(&"FROM A".to_string()));
+        assert!(bodies.contains(&"FROM B".to_string()));
+        assert!(bodies.contains(&"ALREADY HERE".to_string()), "pre-existing entry never clobbered");
+        assert!(
+            root.join(".trash").join("Old Folder").join("pic.png").is_file(),
+            "a trashed folder moves as a unit, attachments included"
+        );
+        assert!(!lib_a.join(".trash").exists(), "emptied source .trash removed");
+        assert!(!lib_b.join(".trash").exists());
+
+        // Idempotent: a second run is a clean no-op.
+        assert_eq!(consolidate_trash(&root, &libs).unwrap(), 0);
+    }
+}
