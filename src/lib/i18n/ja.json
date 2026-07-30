@@ -282,11 +282,6 @@
       "deletedFilesDesc": "削除されたファイルの移動先",
       "systemTrash": "システムのごみ箱",
       "trashFolder": ".trash フォルダ",
-      "permanentDelete": "完全に削除",
-      "trashFolderScope": "ゴミ箱フォルダーの場所",
-      "trashFolderScopeDesc": "削除したファイルを移動する .trash フォルダーの場所",
-      "scopeLibrary": "ノートのライブラリ内",
-      "scopeUniverse": "ユニバースのルート",
       "libraryRoot": "ライブラリルートフォルダ"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "名前をコピー"
   },
   "dialogs": {
-    "batchDeleteTrash": "{noun}を削除しますか？ .trash フォルダーに移動します。",
     "batchDeleteSystem": "{noun}を削除しますか？ ごみ箱に移動します。",
     "confirmDelete": "「{name}」を削除してもよろしいですか？",
     "delete": "削除",

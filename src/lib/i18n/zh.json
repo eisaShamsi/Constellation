@@ -282,11 +282,6 @@
       "deletedFilesDesc": "已删除文件的移动位置",
       "systemTrash": "系统回收站",
       "trashFolder": ".trash 文件夹",
-      "permanentDelete": "永久删除",
-      "trashFolderScope": "回收站文件夹位置",
-      "trashFolderScopeDesc": "删除的文件移入的 .trash 文件夹所在位置",
-      "scopeLibrary": "在笔记所属库内",
-      "scopeUniverse": "在宇宙根目录",
       "libraryRoot": "资料库根文件夹"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "复制名称"
   },
   "dialogs": {
-    "batchDeleteTrash": "删除{noun}？将移至 .trash 文件夹。",
     "batchDeleteSystem": "删除{noun}？将移至回收站。",
     "confirmDelete": "确定要删除 \"{name}\" 吗？",
     "delete": "删除",

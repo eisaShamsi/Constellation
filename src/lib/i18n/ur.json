@@ -282,11 +282,6 @@
       "deletedFilesDesc": "حذف شدہ فائلیں کہاں منتقل ہوتی ہیں",
       "systemTrash": "سسٹم ری سائیکل بن",
       "trashFolder": ".trash فولڈر",
-      "permanentDelete": "مستقل حذف",
-      "trashFolderScope": "ردی فولڈر کا مقام",
-      "trashFolderScopeDesc": "حذف شدہ فائلیں جہاں منتقل ہوتی ہیں وہ .trash فولڈر کہاں ہے",
-      "scopeLibrary": "نوٹ کی لائبریری کے اندر",
-      "scopeUniverse": "کائنات کی جڑ میں",
       "libraryRoot": "لائبریری روٹ فولڈر"
     },
     "appearance": {
@@ -1011,7 +1006,6 @@
     "copyName": "نام کاپی کریں"
   },
   "dialogs": {
-    "batchDeleteTrash": "کیا {noun} حذف کریں؟ حذف شدہ مواد ‎.trash‎ فولڈر میں منتقل ہو جائے گا۔",
     "batchDeleteSystem": "کیا {noun} حذف کریں؟ حذف شدہ مواد ری سائیکل بِن میں منتقل ہو جائے گا۔",
     "confirmDelete": "کیا آپ واقعی \"{name}\" کو حذف کرنا چاہتے ہیں؟",
     "delete": "حذف کریں",

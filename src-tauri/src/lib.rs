@@ -540,7 +540,6 @@ pub fn run() {
             canvas::write_canvas,
             canvas::create_canvas,
             libraries::export_note_html,
-            libraries::move_to_trash,
             libraries::delete_path,
             write_gate::read_write_journal_stats,
             write_gate::journal_frontend_marker,

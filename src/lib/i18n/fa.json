@@ -282,11 +282,6 @@
       "deletedFilesDesc": "محل انتقال فایل‌های حذف‌شده",
       "systemTrash": "سطل زباله سیستم",
       "trashFolder": "پوشه .trash",
-      "permanentDelete": "حذف دائمی",
-      "trashFolderScope": "محل پوشهٔ زباله‌دان",
-      "trashFolderScopeDesc": "محل پوشهٔ .trash هنگام انتقال پرونده‌های حذف‌شده به آن",
-      "scopeLibrary": "درون کتابخانهٔ یادداشت",
-      "scopeUniverse": "در ریشهٔ کیهان",
       "libraryRoot": "ریشه کتابخانه"
     },
     "appearance": {
@@ -1011,7 +1006,6 @@
     "copyName": "کپی نام"
   },
   "dialogs": {
-    "batchDeleteTrash": "حذف {noun}؟ به پوشهٔ .trash منتقل می‌شود.",
     "batchDeleteSystem": "حذف {noun}؟ به سطل بازیافت منتقل می‌شود.",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید \"{name}\" را حذف کنید؟",
     "delete": "حذف",

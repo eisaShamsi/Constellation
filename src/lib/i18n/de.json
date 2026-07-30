@@ -282,11 +282,6 @@
       "deletedFilesDesc": "Wohin gelöschte Dateien verschoben werden",
       "systemTrash": "System-Papierkorb",
       "trashFolder": ".trash-Ordner",
-      "permanentDelete": "Dauerhaft löschen",
-      "trashFolderScope": "Speicherort des Papierkorb-Ordners",
-      "trashFolderScopeDesc": "Wo der .trash-Ordner liegt, wenn gelöschte Dateien dorthin verschoben werden",
-      "scopeLibrary": "In der Bibliothek der Notiz",
-      "scopeUniverse": "Im Universum-Stammverzeichnis",
       "libraryRoot": "Bibliothek-Stammordner"
     },
     "appearance": {
@@ -1011,7 +1006,6 @@
     "copyName": "Namen kopieren"
   },
   "dialogs": {
-    "batchDeleteTrash": "{noun} in den .trash-Ordner verschieben?",
     "batchDeleteSystem": "{noun} in den Papierkorb verschieben?",
     "confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",
     "delete": "Löschen",

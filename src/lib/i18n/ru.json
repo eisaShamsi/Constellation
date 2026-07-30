@@ -282,11 +282,6 @@
       "deletedFilesDesc": "Куда перемещаются удалённые файлы",
       "systemTrash": "Системная корзина",
       "trashFolder": "Папка .trash",
-      "permanentDelete": "Удалить навсегда",
-      "trashFolderScope": "Расположение папки корзины",
-      "trashFolderScopeDesc": "Где находится папка .trash, куда перемещаются удалённые файлы",
-      "scopeLibrary": "В библиотеке заметки",
-      "scopeUniverse": "В корне вселенной",
       "libraryRoot": "Корневая папка библиотеки"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "Копировать имя"
   },
   "dialogs": {
-    "batchDeleteTrash": "Будет удалено {noun}. Перемещаем в папку .trash?",
     "batchDeleteSystem": "Будет удалено {noun}. Перемещаем в Корзину?",
     "confirmDelete": "Вы уверены, что хотите удалить \"{name}\"?",
     "delete": "Удалить",

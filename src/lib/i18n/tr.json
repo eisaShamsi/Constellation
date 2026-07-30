@@ -282,11 +282,6 @@
       "deletedFilesDesc": "Silinen dosyaların taşınacağı yer",
       "systemTrash": "Sistem geri dönüşüm kutusu",
       "trashFolder": ".trash klasörü",
-      "permanentDelete": "Kalıcı olarak sil",
-      "trashFolderScope": "Çöp klasörü konumu",
-      "trashFolderScopeDesc": "Silinen dosyalar taşındığında .trash klasörünün bulunduğu yer",
-      "scopeLibrary": "Notun kitaplığında",
-      "scopeUniverse": "Evren kökünde",
       "libraryRoot": "Kütüphane kök klasörü"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "Adı kopyala"
   },
   "dialogs": {
-    "batchDeleteTrash": "{noun} silinsin mi? .trash klasörüne taşınacak.",
     "batchDeleteSystem": "{noun} silinsin mi? Geri Dönüşüm Kutusu'na taşınacak.",
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
     "delete": "Sil",

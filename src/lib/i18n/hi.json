@@ -282,11 +282,6 @@
       "deletedFilesDesc": "हटाई गई फ़ाइलें कहाँ ले जाई जाती हैं",
       "systemTrash": "सिस्टम रीसायकल बिन",
       "trashFolder": ".trash फ़ोल्डर",
-      "permanentDelete": "स्थायी रूप से हटाएँ",
-      "trashFolderScope": "ट्रैश फ़ोल्डर स्थान",
-      "trashFolderScopeDesc": "हटाई गई फ़ाइलें जहाँ ले जाई जाती हैं वह .trash फ़ोल्डर कहाँ रहता है",
-      "scopeLibrary": "नोट की लाइब्रेरी के भीतर",
-      "scopeUniverse": "ब्रह्मांड की जड़ में",
       "libraryRoot": "पुस्तकालय रूट फ़ोल्डर"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "नाम कॉपी करें"
   },
   "dialogs": {
-    "batchDeleteTrash": "क्या {noun} हटाना है? .trash फ़ोल्डर में ले जाया जाएगा।",
     "batchDeleteSystem": "क्या {noun} हटाना है? रीसायकल बिन में ले जाया जाएगा।",
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",
     "delete": "हटाएँ",

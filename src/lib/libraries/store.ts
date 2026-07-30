@@ -4387,15 +4387,11 @@ export function resolveTrashDestination(path: string): { mode: 'trash' | 'system
 	// 'permanent' is no longer a user choice (Boss 2026-06-14 — deletes are always
 	// recoverable); anything not 'local' resolves to System trash.
 	if (s.trashDestination !== 'local') return { mode: 'system', trashRoot: null };
-	let trashRoot: string | null;
-	if (s.trashFolderScope === 'universe') {
-		trashRoot = get(libraries).find(v => v.is_universe_notes)?.path ?? null;
-	} else {
-		const matches = get(libraryStats).filter(v => path.startsWith(v.path));
-		trashRoot = matches.length
-			? matches.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path
-			: null;
-	}
+	// MIG-108 (Boss ruling, 2026-07-29): ONE central .trash, always at the universe root.
+	// The per-library scope option is retired — a universe has one trash the way it has one
+	// root; `path` no longer participates in the decision.
+	void path;
+	const trashRoot = get(libraries).find(v => v.is_universe_notes)?.path ?? null;
 	if (!trashRoot) throw new Error('Could not resolve a .trash location for this path.');
 	return { mode: 'trash', trashRoot };
 }
@@ -5579,9 +5575,6 @@ export interface AppSettings {
 	/** Boss 2026-06-14 — 'permanent' dropped as a user choice; deletes are always
 	 *  recoverable. Legacy 'permanent' is migrated to 'system' on load + at use. */
 	trashDestination: 'system' | 'local';
-	/** MIG-076 §E-follow-up — when trashDestination is 'local' (.trash folder),
-	 *  whether .trash lives in the note's own library or at the universe root. */
-	trashFolderScope: 'library' | 'universe';
 
 	// Appearance & Themes
 	titleAlignment: 'start' | 'center';
@@ -6055,7 +6048,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	showTypedLinkLabels: true,
 	confirmDelete: true,
 	trashDestination: 'system',
-	trashFolderScope: 'library',
 	titleAlignment: 'center',
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
@@ -6300,6 +6292,11 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 	// Boss 2026-06-14 — 'permanent' is no longer a valid delete destination
 	// (deletes are always recoverable). Migrate any saved 'permanent' to System trash.
 	if (parsed.trashDestination === 'permanent') parsed.trashDestination = 'system';
+	// MIG-108 — the scope axis is retired (one trash at the universe root). The spread over
+	// DEFAULT_SETTINGS below carries UNKNOWN keys into the runtime object, and saveSettings
+	// round-trips the whole object — so without this purge the stale key would live in
+	// settings.json forever.
+	delete (parsed as Record<string, unknown>).trashFolderScope;
 
 	appSettings.set({
 		...DEFAULT_SETTINGS,
@@ -6667,14 +6664,53 @@ export interface Workspace {
 
 export const workspaces = writable<Workspace[]>([]);
 
+/**
+ * MIG-108 inspection (APP-KILLER) — workspaces.json is what MIG-100's own comment calls
+ * "the precious file": the user's NAMED snapshots, with no `.prev` rotation (session.json
+ * got one; this never did) and no second copy anywhere.
+ *
+ * There was no load-success latch. A transiently unreadable file (lock, sync, AV, or a
+ * corrupt sync-conflict JSON) left the store at `[]` — indistinguishable from "no
+ * workspaces yet" — and the first **Save workspace** click atomically replaced the file with
+ * that ONE workspace, destroying every earlier snapshot. Same shape as the collections bug
+ * PJ-187 fixed; same cure: `loaded` means a read SUCCEEDED, and writes are refused until it
+ * does. The corrupt-JSON variant re-armed on every boot, so it was not even self-healing.
+ */
+let workspacesLoaded = false;
+export const workspacesError = writable<string | null>(null);
+
 export async function loadWorkspaces() {
 	try {
 		const data = await invoke<unknown[]>('read_universe_workspaces');
-		if (data && Array.isArray(data) && data.length > 0) workspaces.set(data as Workspace[]);
-	} catch { /* ignore */ }
+		if (data && Array.isArray(data)) {
+			// An empty array from a SUCCESSFUL read is a real answer — adopt it, and note
+			// that a successful read is the ONLY thing that unlocks writing.
+			if (data.length > 0) workspaces.set(data as Workspace[]);
+			workspacesLoaded = true;
+			workspacesError.set(null);
+		}
+	} catch (e) {
+		workspacesError.set(String(e));
+		console.error('[workspaces] read failed — saving is disabled this session to protect the file:', e);
+	}
+}
+
+/** The boot bundle can only report `[]` for BOTH "empty" and "read failed", so it may not
+ *  latch; it defers to `loadWorkspaces`, which can tell them apart. */
+export function markWorkspacesLoadedFromBundle(list: unknown[]): void {
+	if (Array.isArray(list) && list.length > 0) {
+		workspaces.set(list as Workspace[]);
+		workspacesLoaded = true;
+		workspacesError.set(null);
+	}
 }
 
 function persistWorkspaces() {
+	if (!workspacesLoaded) {
+		console.error('[workspaces] refusing to write: the file was never read successfully');
+		workspacesError.set('Workspaces could not be read, so saving is disabled to protect your saved layouts.');
+		return;
+	}
 	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(e => console.error('[save] workspaces failed:', e));
 }
 

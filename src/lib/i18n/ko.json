@@ -282,11 +282,6 @@
       "deletedFilesDesc": "삭제된 파일이 이동되는 위치",
       "systemTrash": "시스템 휴지통",
       "trashFolder": ".trash 폴더",
-      "permanentDelete": "영구 삭제",
-      "trashFolderScope": "휴지통 폴더 위치",
-      "trashFolderScopeDesc": "삭제된 파일을 옮길 .trash 폴더의 위치",
-      "scopeLibrary": "노트의 라이브러리 안",
-      "scopeUniverse": "유니버스 루트",
       "libraryRoot": "라이브러리 루트 폴더"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "이름 복사"
   },
   "dialogs": {
-    "batchDeleteTrash": "{noun}를 삭제할까요? .trash 폴더로 이동합니다.",
     "batchDeleteSystem": "{noun}를 삭제할까요? 휴지통으로 이동합니다.",
     "confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",
     "delete": "삭제",

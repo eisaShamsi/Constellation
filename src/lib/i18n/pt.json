@@ -282,11 +282,6 @@
       "deletedFilesDesc": "Para onde os arquivos excluídos são movidos",
       "systemTrash": "Lixeira do sistema",
       "trashFolder": "Pasta .trash",
-      "permanentDelete": "Excluir permanentemente",
-      "trashFolderScope": "Local da pasta de lixo",
-      "trashFolderScopeDesc": "Onde fica a pasta .trash quando os arquivos excluídos são movidos para ela",
-      "scopeLibrary": "Dentro da biblioteca da nota",
-      "scopeUniverse": "Na raiz do universo",
       "libraryRoot": "Pasta raiz da biblioteca"
     },
     "appearance": {
@@ -1451,7 +1446,6 @@
     "copyName": "Copiar nome"
   },
   "dialogs": {
-    "batchDeleteTrash": "Excluir {noun}? O conteúdo irá para a pasta .trash.",
     "batchDeleteSystem": "Excluir {noun}? O conteúdo irá para a Lixeira.",
     "confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",
     "delete": "Excluir",

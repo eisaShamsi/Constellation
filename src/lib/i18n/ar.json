@@ -282,11 +282,6 @@
       "deletedFilesDesc": "أين يتم نقل الملفات المحذوفة",
       "systemTrash": "سلة مهملات النظام",
       "trashFolder": "مجلد .trash",
-      "permanentDelete": "حذف نهائي",
-      "trashFolderScope": "موقع مجلد المهملات",
-      "trashFolderScopeDesc": "أين يوجد مجلد .trash عند نقل الملفات المحذوفة إليه",
-      "scopeLibrary": "داخل مكتبة الملاحظة",
-      "scopeUniverse": "في جذر الكون",
       "libraryRoot": "جذر المكتبة"
     },
     "appearance": {
@@ -1551,7 +1546,6 @@
     "copyName": "نسخ الاسم"
   },
   "dialogs": {
-    "batchDeleteTrash": "ستُحذف {noun}، ثم تُنقل إلى مجلد .trash. أتريد المتابعة؟",
     "batchDeleteSystem": "ستُحذف {noun}، ثم تُنقل إلى سلة المحذوفات. أتريد المتابعة؟",
     "confirmDelete": "هل أنت متأكد من حذف \"{name}\"؟",
     "delete": "حذف",

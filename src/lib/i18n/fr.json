@@ -282,11 +282,6 @@
       "deletedFilesDesc": "Où les fichiers supprimés sont déplacés",
       "systemTrash": "Corbeille du système",
       "trashFolder": "Dossier .trash",
-      "permanentDelete": "Supprimer définitivement",
-      "trashFolderScope": "Emplacement du dossier corbeille",
-      "trashFolderScopeDesc": "Où se trouve le dossier .trash lorsque les fichiers supprimés y sont déplacés",
-      "scopeLibrary": "Dans la bibliothèque de la note",
-      "scopeUniverse": "À la racine de l'univers",
       "libraryRoot": "Racine de la bibliothèque"
     },
     "appearance": {
@@ -1011,7 +1006,6 @@
     "copyName": "Copier le nom"
   },
   "dialogs": {
-    "batchDeleteTrash": "Supprimer {noun} ? Le contenu sera déplacé vers le dossier .trash.",
     "batchDeleteSystem": "Supprimer {noun} ? Le contenu sera déplacé vers la Corbeille.",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{name}\" ?",
     "delete": "Supprimer",

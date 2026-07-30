@@ -895,18 +895,6 @@
 						</select>
 					</div>
 
-					{#if $appSettings.trashDestination === 'local'}
-						<div class="setting-item sub-setting">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.files.trashFolderScope')}</div>
-								<div class="setting-desc">{$t('settings.files.trashFolderScopeDesc')}</div>
-							</div>
-							<select class="setting-control" value={$appSettings.trashFolderScope} onchange={(e) => updateSettings({ trashFolderScope: (e.target as HTMLSelectElement).value as any })}>
-								<option value="library">{$t('settings.files.scopeLibrary')}</option>
-								<option value="universe">{$t('settings.files.scopeUniverse')}</option>
-							</select>
-						</div>
-					{/if}
 
 					<div class="setting-section-heading">{$t('settings.universe.templates')}</div>
 

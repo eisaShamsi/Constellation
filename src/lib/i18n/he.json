@@ -282,11 +282,6 @@
       "deletedFilesDesc": "לאן קבצים שנמחקו מועברים",
       "systemTrash": "סל המחזור של המערכת",
       "trashFolder": "תיקיית .trash",
-      "permanentDelete": "מחיקה לצמיתות",
-      "trashFolderScope": "מיקום תיקיית האשפה",
-      "trashFolderScopeDesc": "היכן נמצאת תיקיית ‎.trash כשקבצים שנמחקו מועברים אליה",
-      "scopeLibrary": "בתוך הספרייה של הפתק",
-      "scopeUniverse": "בשורש היקום",
       "libraryRoot": "תיקיית שורש הספריה"
     },
     "appearance": {
@@ -1011,7 +1006,6 @@
     "copyName": "העתק שם"
   },
   "dialogs": {
-    "batchDeleteTrash": "למחוק {noun}? היעד: תיקיית ‎.trash.",
     "batchDeleteSystem": "למחוק {noun}? היעד: סל המיחזור.",
     "confirmDelete": "האם אתה בטוח שברצונך למחוק את \"{name}\"?",
     "delete": "מחק",

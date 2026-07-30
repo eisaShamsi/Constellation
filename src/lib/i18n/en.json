@@ -246,12 +246,7 @@
       "deletedFiles": "Deleted files",
       "deletedFilesDesc": "Where deleted files are moved to",
       "systemTrash": "System trash",
-      "trashFolder": ".trash folder",
-      "permanentDelete": "Permanently delete",
-      "trashFolderScope": "Trash folder location",
-      "trashFolderScopeDesc": "Where the .trash folder lives when deleted files are moved to it",
-      "scopeLibrary": "Within the note's library",
-      "scopeUniverse": "At the universe root"
+      "trashFolder": ".trash folder"
     },
     "links": {
       "intro": "How links behave — formatting, auto-updates, and the Living-Link lifecycle. (Link types & colours live in the Style Setter; panel visibility lives in Panels.)",
@@ -1616,7 +1611,6 @@
     "copyName": "Copy Name"
   },
   "dialogs": {
-    "batchDeleteTrash": "Delete {noun}? The selection will be moved to the .trash folder.",
     "batchDeleteSystem": "Delete {noun}? The selection will be moved to the Recycle Bin.",
     "confirmDelete": "Are you sure you want to delete \"{name}\"?",
     "delete": "Delete",
