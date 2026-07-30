@@ -217,6 +217,9 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     }
 
     let mut completed: usize = 0;
+    // PJ-187 — notes whose frontmatter landed on disk but whose search entry could not be
+    // updated. Counted, not swallowed: the batch still succeeds, but the panel is told.
+    let mut mirror_failures: usize = 0;
     // 2026-07-24 inspection (APP-KILLER). Every note whose frontmatter this batch
     // actually rewrote must be ANNOUNCED: the write goes through the gate, which
     // marks the path watcher-suppressed, so without this an OPEN note keeps its
@@ -241,7 +244,16 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
         }
 
         match accept_one(&app, &note_path) {
-            Ok(wrote) => announce_pending.record(&note_path, wrote),
+            Ok(outcome) => {
+                // ANNOUNCE FIRST — the bytes are on disk regardless of what step 4 did.
+                announce_pending.record(&note_path, outcome.wrote);
+                if let Some(e) = outcome.mirror_error {
+                    mirror_failures += 1;
+                    if let Ok(mut g) = state.last_error.lock() {
+                        *g = Some(format!("{}: {}", note_path, e));
+                    }
+                }
+            }
             Err(e) => {
                 // Record but don't abort.
                 if let Ok(mut g) = state.last_error.lock() {
@@ -278,7 +290,14 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
             phase: "done".into(),
             total,
             completed,
-            error: None,
+            error: if mirror_failures > 0 {
+                Some(format!(
+                    "{} note(s) were updated on disk, but their search entries could not be refreshed.",
+                    mirror_failures
+                ))
+            } else {
+                None
+            },
         },
     );
     Ok(())
@@ -333,7 +352,20 @@ fn flush_announce(app: &AppHandle, buffer: &mut AnnounceBuffer) {
 /// caller batches an announce for those paths so an OPEN note re-bases instead of
 /// silently overwriting the accepted blocks on its next save (2026-07-24
 /// inspection, APP-KILLER).
-fn accept_one(app: &AppHandle, note_path: &str) -> Result<bool, String> {
+/// What accepting ONE note produced.
+///
+/// PJ-187 — `wrote` and `mirror_error` are deliberately separate. Step 3 puts the accepted
+/// `sources:` / `content_type:` blocks on DISK through the gate, which marks the path
+/// watcher-suppressed; step 4 only mirrors that into SQLite. When step 4 used `?`, a mirror
+/// failure returned `Err` and the caller skipped `announce_pending.record` — so an OPEN note kept
+/// its open-time frontmatter base and its next debounced save ERASED from disk the blocks the user
+/// had just accepted. The announce must follow the DISK write, never the mirror.
+struct AcceptOutcome {
+    wrote: bool,
+    mirror_error: Option<String>,
+}
+
+fn accept_one(app: &AppHandle, note_path: &str) -> Result<AcceptOutcome, String> {
     // 1. Read the suggestion record from the queue.
     let record_opt = {
         let search_state = app.state::<crate::search::SearchState>();
@@ -345,7 +377,10 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<bool, String> {
     };
     let record = match record_opt {
         Some(r) => r,
-        None => return Ok(false), // already cleared by another path; nothing to do
+        None => {
+            // already cleared by another path; nothing to do
+            return Ok(AcceptOutcome { wrote: false, mirror_error: None });
+        }
     };
 
     // 2. Split by axis + validate (defense-in-depth: strip any IDs the
@@ -392,17 +427,33 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<bool, String> {
     // needs announcing — see the caller, which batches the announce.
     let wrote = matches!(outcome, crate::write_gate::WriteOutcome::Ok);
 
-    // 4. Update the SQLite mirror + clear the suggestion row.
+    // 4. Update the SQLite mirror + clear the suggestion row. The disk write above has already
+    //    happened and is irreversible from here, so NOTHING in this step may abort the outcome —
+    //    every error is captured and handed back for the caller to count and surface.
+    let mirror_error = mirror_to_db(app, note_path, &merged_h, &merged_v).err();
+
+    Ok(AcceptOutcome {
+        wrote,
+        mirror_error,
+    })
+}
+
+/// Step 4 in isolation, so its failures are values rather than early returns.
+fn mirror_to_db(
+    app: &AppHandle,
+    note_path: &str,
+    merged_h: &[String],
+    merged_v: &[String],
+) -> Result<(), String> {
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard
         .as_ref()
         .ok_or("Search database not initialized")?;
-    write_sources_to_db(conn, note_path, &merged_h)?;
-    write_content_type_to_db(conn, note_path, &merged_v)?;
+    write_sources_to_db(conn, note_path, merged_h)?;
+    write_content_type_to_db(conn, note_path, merged_v)?;
     clear_suggestions(conn, note_path)?;
-
-    Ok(wrote)
+    Ok(())
 }
 
 /// V3-§8.r5.5: Check if a composite_json blob reports a Split regime

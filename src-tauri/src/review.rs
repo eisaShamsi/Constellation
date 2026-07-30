@@ -725,7 +725,7 @@ pub fn mark_reviewed(
 
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — cache the action into the schedule row (no-op until §C stamps).
-    sync_action_to_row(&app, |conn| review_row_mark(conn, &note_path, &today, next));
+    sync_action_to_row(&app, |conn| review_row_mark(conn, &note_path, &today, next))?;
     Ok(())
 }
 
@@ -749,7 +749,7 @@ pub fn snooze_note(
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — push the schedule row's due day out (Lens-1) + record snoozed_until
     // (Lens-2) so the read excludes it from BOTH lenses.
-    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, &snooze_until));
+    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, &snooze_until))?;
     Ok(())
 }
 
@@ -772,7 +772,7 @@ pub fn dismiss_note(
 
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — mark the schedule row dismissed (persists across re-index).
-    sync_action_to_row(&app, |conn| review_row_dismiss(conn, &note_path));
+    sync_action_to_row(&app, |conn| review_row_dismiss(conn, &note_path))?;
     Ok(())
 }
 
@@ -1111,19 +1111,34 @@ pub fn delete_schedule_row(conn: &rusqlite::Connection, path: &str) -> Result<()
 // stamped (the row doesn't exist before the §C back-fill anyway).
 
 /// Run `f` against the search DB iff it's ready and `review` is stamped.
+/// PJ-187 — this used to be `-> ()` with `let _ = f(conn);`, wrapped in three `if let`s that
+/// each silently did nothing. Four ways to no-op invisibly: no SearchState, a poisoned/held
+/// lock, no connection (a review action during boot), not yet stamped — plus the discarded
+/// error itself. The caller had already written the pulse JSON by this point, so the user's
+/// ✓ Reviewed / Snooze / Dismiss looked accepted while the SCHEDULE row never learned about
+/// it: the note came straight back in the queue, and nothing anywhere said why.
+///
+/// Now it reports. `Ok(())` means the row was written; `Err` names which layer refused. The
+/// not-yet-stamped case stays a deliberate, NAMED no-op (§B-2 predates §C's stamp) rather
+/// than an anonymous one — a skip must never be indistinguishable from success (LL-033).
 fn sync_action_to_row(
     app: &tauri::AppHandle,
     f: impl FnOnce(&rusqlite::Connection) -> Result<(), String>,
-) {
-    if let Some(state) = app.try_state::<crate::search::SearchState>() {
-        if let Ok(db) = state.db.lock() {
-            if let Some(conn) = db.as_ref() {
-                if is_stamped(conn) {
-                    let _ = f(conn);
-                }
-            }
-        }
+) -> Result<(), String> {
+    let state = app
+        .try_state::<crate::search::SearchState>()
+        .ok_or_else(|| "review: search state unavailable".to_string())?;
+    let db = state
+        .db
+        .lock()
+        .map_err(|_| "review: db lock poisoned".to_string())?;
+    let conn = db
+        .as_ref()
+        .ok_or_else(|| "review: no db connection yet".to_string())?;
+    if !is_stamped(conn) {
+        return Ok(()); // deliberate: the schedule table is not in play yet (§B-2 before §C)
     }
+    f(conn)
 }
 
 /// ✓ Reviewed: cache the new last_reviewed + interval and recompute reason/due
