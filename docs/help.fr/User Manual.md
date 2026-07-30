@@ -142,6 +142,13 @@ La structure du dossier univers suit le modele Obsidian : les notes vont directe
 
 ---
 
+
+### Un univers, un seul lieu
+
+Un univers est **un dossier qui contient tout son savoir**. Chaque bibliothèque y vit — sauvegarder, synchroniser ou déménager votre savoir revient à manipuler un seul dossier. **Faire entrer une bibliothèque** copie ou déplace (votre choix, à chaque fois) un dossier de notes existant dans votre univers ; *Copier* laisse l'original intact, *Déplacer* déménage le dossier lui-même. Les nouvelles bibliothèques naissent toujours dedans.
+
+Si vous ouvrez un univers dont des bibliothèques vivent encore dehors, Constellation propose l'**unification** : un dialogue listant chaque bibliothèque externe et sa destination, avec Déplacer/Copier par entrée. Rien ne bouge avant votre clic sur **Unifier**. Une sauvegarde vérifiée est d'abord rangée dans le dossier de l'univers ; chaque étape est journalisée — même une coupure de courant reprend exactement où cela s'était arrêté. Notes, liens, leur histoire et vos plannings de révision survivent octet par octet, vérifié avant la fin. Et l'univers a **une** corbeille, à sa racine.
+
 ## 3. Creer et modifier des notes
 
 ### Creer une note

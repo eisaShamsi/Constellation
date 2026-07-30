@@ -129,6 +129,13 @@ Die Ordnerstruktur des Universums folgt dem Obsidian-Modell: Notizen befinden si
 
 ---
 
+
+### Ein Universum, ein Ort
+
+Ein Universum ist **ein Ordner, der sein gesamtes Wissen enthält**. Jede Bibliothek lebt darin — Sichern, Synchronisieren oder Umziehen deines Wissens heißt: einen Ordner handhaben. **Bibliothek hereinholen** kopiert oder verschiebt (deine Wahl, jedes Mal) einen bestehenden Notizordner in dein Universum; *Kopieren* lässt das Original unberührt, *Verschieben* zieht den Ordner selbst um. Neue Bibliotheken entstehen immer im Universum-Ordner.
+
+Öffnest du ein Universum, dessen Bibliotheken noch außerhalb liegen, schlägt Constellation die **Vereinigung** vor: ein Dialog, der jede externe Bibliothek und ihr Ziel nennt, mit Verschieben/Kopieren pro Eintrag. Nichts bewegt sich vor deinem Klick auf **Vereinen**. Vorher wird eine verifizierte Sicherung im Universum-Ordner abgelegt; jeder Schritt ist protokolliert — selbst ein Stromausfall mittendrin setzt exakt dort fort. Notizen, Verknüpfungen, deren Geschichte und Wiedervorlage-Pläne überleben Byte für Byte, geprüft vor dem Abschluss. Und das Universum hat **einen** Papierkorb, an seiner Wurzel.
+
 ## 2b. Der Datei-Explorer
 
 Der **Datei-Explorer** ist der Dateibaum in der linken Seitenleiste — Ihr Zuhause für die Dateiverwaltung. Er zeigt Ihre Bibliotheken, Ordner und Notizen genau so, wie sie auf der Festplatte liegen, und ist der eine Ort, an dem Sie Notizen anlegen, umbenennen, verschieben und löschen. Er kümmert sich ausschließlich um das Dateisystem: Er durchsucht *Namen*, niemals den Inhalt einer Notiz — die Volltextsuche im Notiztext gehört zum **Suchzentrum** (`Ctrl+Shift+F`).

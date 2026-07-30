@@ -142,6 +142,13 @@ Evren klasör yapısı Obsidian modelini takip eder: notlar doğrudan kök klas�
 
 ---
 
+
+### Tek evren, tek yer
+
+Evren, **tüm bilgisini barındıran tek bir klasördür**. Her kütüphane onun içinde yaşar — yedeklemek, eşitlemek ya da taşımak tek bir klasörü ele almak demektir. **Kütüphane getir**, mevcut bir not klasörünü (her seferinde senin seçiminle) kopyalar veya taşır; *Kopyala* orijinali olduğu gibi bırakır, *Taşı* klasörün kendisini getirir. Yeni kütüphaneler her zaman içeride oluşturulur.
+
+Kütüphaneleri hâlâ dışarıda olan bir evren açarsan Constellation **birleştirme** önerir: her dış kütüphaneyi ve gideceği yeri listeleyen, giriş başına Taşı/Kopyala seçimli bir pencere. **Birleştir**'e tıklamadan hiçbir şey kımıldamaz. Önce doğrulanmış bir yedek evren klasörüne kaydedilir; her adım günlüğe yazılır — ortasında elektrik kesilse bile tam kaldığı yerden sürer. Notlar, bağlantılar, geçmişleri ve gözden geçirme planları bayt bayt korunur ve bitmeden doğrulanır. Ve evrenin **tek** çöp kutusu vardır: kökünde.
+
 ## 3. Not Oluşturma ve Düzenleme
 
 ### Not Oluşturma

@@ -331,6 +331,27 @@ The universe folder structure follows the Obsidian model: notes go directly in t
 
 ---
 
+### One Universe, One Location
+
+A universe is **one folder that holds all of its knowledge**. Every library lives inside the
+universe's folder — owning, backing up, syncing, or moving your knowledge means handling that
+one folder. Constellation enforces this everywhere:
+
+- **Bring In a Library** (previously "Link Existing Library") copies **or** moves an existing
+  folder of notes into your universe — your choice, each time. *Copy in* leaves the original
+  untouched where it was; *Move in* relocates the folder itself. Nothing is ever referenced
+  in place from outside the universe.
+- **New libraries** are always created inside the universe folder.
+- If you open a universe whose libraries still live outside its folder (created before this
+  rule, or imported from another app), Constellation **proposes a unification**: one dialog
+  listing every outside library and where it will go, with a per-library Move/Copy choice.
+  Nothing moves until you click **Unify**. Before anything moves, a verified backup of the
+  knowledge index and every settings file is stored inside the universe folder; every step is
+  journaled, so even a power cut mid-way resumes exactly where it stopped. Your notes, links,
+  link history and review schedules all survive byte-for-byte — the unification is verified
+  against those numbers before it completes, and refuses to finish otherwise. On a large
+  universe it can take several minutes.
+
 ## 3. Creating and Editing Notes
 
 ### Creating a Note
@@ -597,7 +618,7 @@ The file tree for browsing **and organizing** your notes and folders. Beyond the
 
 **Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to your trash first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered). It goes to the **same place a deleted note goes**, chosen by your **Deleted files** setting — the Recycle Bin, or the `.trash` folder at whichever scope you picked, or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
 
-**Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in the File Explorer's batch bar — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or a **`.trash` folder** kept either inside the note's own library or at the universe root (your choice, in the same setting). Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
+**Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in the File Explorer's batch bar — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or the universe's own **`.trash` folder**. A universe has exactly **one** `.trash`, at its root — the way it has one root — so everything you delete, from any library, is found in one place. Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
 **Two files with the same name are both recoverable**: if you delete `Notes.md` from one folder and
 then `Notes.md` from another, the second is filed beside the first under a numbered name — the
 earlier one is never replaced, however quickly the two deletes follow each other. And notes sitting

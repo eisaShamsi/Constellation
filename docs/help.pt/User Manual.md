@@ -170,6 +170,13 @@ Sua seleção e a posição de rolagem são preservadas ao alternar entre as aba
 
 ---
 
+
+### Um universo, um só lugar
+
+Um universo é **uma pasta que contém todo o seu conhecimento**. Cada biblioteca vive lá dentro — fazer backup, sincronizar ou mudar o seu conhecimento é lidar com uma única pasta. **Trazer uma biblioteca** copia ou move (a sua escolha, de cada vez) uma pasta de notas existente para o universo; *Copiar* deixa o original intacto, *Mover* desloca a própria pasta. Bibliotecas novas nascem sempre lá dentro.
+
+Se abrir um universo cujas bibliotecas ainda vivem fora, o Constellation propõe a **unificação**: um diálogo que lista cada biblioteca externa e o seu destino, com Mover/Copiar por entrada. Nada se move antes de clicar em **Unificar**. Primeiro guarda-se uma cópia de segurança verificada dentro da pasta do universo; cada passo fica registado — até um corte de energia a meio retoma exatamente onde parou. Notas, ligações, a sua história e os planos de revisão sobrevivem byte a byte, verificado antes de concluir. E o universo tem **um** lixo, na sua raiz.
+
 ## 3. Criar e Editar Notas
 
 ### Criar uma Nota

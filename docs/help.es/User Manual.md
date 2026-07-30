@@ -142,6 +142,13 @@ El **Explorador de Archivos** (el árbol de archivos de la barra lateral) es la 
 
 ---
 
+
+### Un universo, un lugar
+
+Un universo es **una carpeta que contiene todo su conocimiento**. Cada biblioteca vive dentro — respaldar, sincronizar o mudar tu conocimiento es manejar una sola carpeta. **Traer una biblioteca** copia o mueve (tú eliges, cada vez) una carpeta de notas existente a tu universo; *Copiar* deja el original intacto, *Mover* traslada la carpeta misma. Las bibliotecas nuevas siempre se crean dentro.
+
+Si abres un universo cuyas bibliotecas aún viven fuera, Constellation propone la **unificación**: un diálogo con cada biblioteca externa y su destino, con Mover/Copiar por entrada. Nada se mueve hasta que pulsas **Unificar**. Antes se guarda una copia de seguridad verificada dentro de la carpeta del universo; cada paso queda registrado — incluso un corte de luz a mitad continúa exactamente donde quedó. Tus notas, enlaces, su historia y tus calendarios de repaso sobreviven byte a byte, verificado antes de terminar. Y el universo tiene **una** papelera, en su raíz.
+
 ## 3. Crear y Editar Notas
 
 ### Crear una Nota

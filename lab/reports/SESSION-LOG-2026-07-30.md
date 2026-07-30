@@ -299,3 +299,17 @@ Gates: Rust **1305/0** (2 new slice-5 tests) · vitest **67/715** · svelte-chec
 NOT done in this slice (recorded): the `link_library_as_universe` double-entry
 registration fix — deferred to Slice 8's registry-normalization note; it conforms to
 One-Location already (its own root) and the dedup-by-path keeps resolve correct.
+
+## §13 — MIG-108 Slice 8 (docs half) landed
+
+CLAUDE.md Knowledge Hierarchy AMENDED — the "any path… never copied — read in place"
+sentence is formally REPEALED, replaced by the One-Location rule + the bring-in semantics +
+the unification engine's one-paragraph description (amended in step with the behaviour, as
+the Architect doc required). User Manual EN: the stale scope-choice paragraph corrected to
+one-trash; new "One Universe, One Location" section in §2; the same section translated and
+inserted ×14. Orientation **v3.79** (the full MIG-108 build record). PJ ledger **v1.62**
+(PJ-192 closed; MIG-105 raised with the Boss's Stage-A connection recorded; Stage-B
+hard-gate restated). MoCh-2026-07-30-1100.
+
+Remaining for MIG-108: Slice 7 (Stage-B live run) + the Phase-4 three-agent audit — BOTH
+gated on the Aug-1 limit reset (complete inspection first). Then MIG-104 Slice 8 + 8b.
