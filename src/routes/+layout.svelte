@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
+		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -28,7 +28,7 @@
 		adoptExternalChangeIntoTabs, reportExternalConflict,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, isCascading, isReseeding,
 		markCascadingLibrary, clearCascadingLibrary,
-		tabsInLibrary, quickCapture, cascadeFreeze, isPathFrozen,
+		tabsInLibrary, quickCapture, cascadeFreeze, isPathFrozen, markFreeze, clearFreeze,
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
@@ -3339,6 +3339,10 @@
 		// go current WITHOUT a reboot. The watcher was emit-only (Rule-8 gap); this
 		// set feeds the scoped reindex_changed_paths command on the flush below.
 		let pendingReindex: Set<string> = new Set();
+		// PJ-187 — how many times the CURRENT batch has been re-queued after a rejected
+		// reindex. Bounded so a permanently-failing path can never spin the flush forever.
+		let reindexRetries = 0;
+		const REINDEX_MAX_RETRIES = 3;
 		// Batch rapid file changes (300ms window)
 		const scheduleWatcherFlush = () => {
 			clearTimeout(watcherDebounce);
@@ -3378,12 +3382,32 @@
 				// fresh; allNotes/counts refresh via .then() when the reindex settles.
 				const BURST_AWAIT_CAP = 250;
 				if (reindexPaths.length) {
+					// PJ-187 — a rejected reindex used to be swallowed whole. The note read
+					// correctly on screen (it was adopted into the model above), but search, the
+					// quick switcher and backlinks kept serving the OLD text until the next
+					// restart, with nothing to say so. Put the paths back and re-arm the flush,
+					// bounded, so a transient lock (a sync tool, antivirus, a busy DB) heals
+					// itself and a permanent failure still gives up instead of spinning.
+					const requeue = (e: unknown) => {
+						console.warn('[watcher] reindex_changed_paths rejected:', e);
+						if (reindexRetries >= REINDEX_MAX_RETRIES) {
+							reindexRetries = 0;
+							console.error('[watcher] giving up reindexing', reindexPaths.length, 'path(s) after', REINDEX_MAX_RETRIES, 'attempts');
+							return;
+						}
+						reindexRetries++;
+						for (const p of reindexPaths) pendingReindex.add(p);
+						scheduleWatcherFlush();
+					};
 					if (reindexPaths.length <= BURST_AWAIT_CAP) {
-						try { await invoke('reindex_changed_paths', { paths: reindexPaths }); } catch {}
+						try {
+							await invoke('reindex_changed_paths', { paths: reindexPaths });
+							reindexRetries = 0;
+						} catch (e) { requeue(e); }
 					} else {
 						invoke('reindex_changed_paths', { paths: reindexPaths })
-							.then(() => { void loadAllStats(); void refreshLibraryCaches(); })
-							.catch(() => {});
+							.then(() => { reindexRetries = 0; void loadAllStats(); void refreshLibraryCaches(); })
+							.catch(requeue);
 					}
 				}
 				await loadAllStats();
@@ -4342,7 +4366,7 @@
 					onChangeName: (newName) => { collisionDialog = null; createNoteWithTemplate(lib, location, newName); },
 					onOverwrite: async () => {
 						collisionDialog = null;
-						await moveToTrash(existing.path, existing.library_path);
+						await moveToTrash(existing.path);
 						await createNoteWithTemplate(lib, location, name, true);
 					},
 				};
@@ -4391,7 +4415,11 @@
 				const canonicalKeys = new Set(['title', 'cid', 'cid_cn', 'kind']);
 				const canonicalFields: string[] = parsed.properties
 					.filter(p => canonicalKeys.has(p.key.toLowerCase()))
-					.map(p => `${p.key}: ${p.value}`);
+					// PJ-187 — quote the value. Concatenating it emitted invalid frontmatter for
+					// any canonical field needing quotes: creating a note whose NAME contains a
+					// colon, `#`, `[` or a leading `-` inside a folder that applies a template
+					// left the new note's property block malformed from birth.
+					.map(p => `${p.key}: ${quoteIfNeeded(p.value)}`);
 				const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
 				const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
 				const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
@@ -6534,8 +6562,19 @@
 				const { properties, body } = parseFrontmatter(r.content);
 				await saveTabContent(tab.id, path, addTagToProps(properties, t), body);
 			} else {
+				// PJ-187 — the two guards `addLinkToNote`'s closed-note branch carries and this
+				// sibling never got (MIG-090 §9 fixed one and missed the other).
+				//
+				// isCascading: a rename cascade rewrites this note's links ON DISK while it is
+				// closed. Reading it here and writing the result back a moment later reverts the
+				// cascade's corrections — the read is already stale by the time the write lands.
+				//
+				// markRecentWrite: without it the watcher sees our own write as an EXTERNAL
+				// change and the app treats the note as edited by another program.
+				if (isCascading(path)) return;
 				const content = await readNote(path);
 				const { properties, body } = parseFrontmatter(content);
+				markRecentWrite(path);
 				// G4 Phase 3 — byte-perfect round-trip: adding a tag to a CLOSED note
 				// must not destroy its rich frontmatter (the buildFullContent hazard).
 				await writeNote(path, composeUpdatedContent(content, addTagToProps(properties, t), body), 'add_tag');
@@ -6718,7 +6757,7 @@
 					onChangeName: (n) => { collisionDialog = null; handleRenameComplete(oldPath, n); },
 					onOverwrite: async () => {
 						collisionDialog = null;
-						await moveToTrash(existing.path, existing.library_path);
+						await moveToTrash(existing.path);
 						await handleRenameComplete(oldPath, newName, true);
 					},
 				};
@@ -6799,7 +6838,10 @@
 				// A note opened during the walk was in no snapshot and so got no overlay at all,
 				// leaving the user free to type into a file the walker was actively rewriting.
 				// `isPathFrozen` normalises both sides, so the raw library path is what goes in.
-				if (willCascade) cascadeFreeze.set(new Set([lib.path]));
+				// PJ-187 — REFCOUNTED. Two overlapping renames in the same library shared one
+				// boolean, so the first to finish lifted the overlay while the second cascade was
+				// still rewriting files. markFreeze/clearFreeze keep a depth per library root.
+				if (willCascade) markFreeze(lib.path);
 				try {
 				await refreshLibraryTree(lib.library_id);
 				// Auto-update links — wikilink rename cascade.
@@ -6934,7 +6976,7 @@
 					}
 				}
 				} finally {
-					if (willCascade) cascadeFreeze.set(new Set()); // §D1 — lift the freeze
+					if (willCascade) clearFreeze(lib.path); // §D1 — lift THIS cascade's freeze
 				}
 			}
 			// MIG-096 §1 — refresh-after-mutate. Emitted HERE, on the success path,

@@ -487,7 +487,18 @@ function rebrandCopyFrontmatter(content: string, copySuffix: string): string {
 	const m = content.match(/^(---\r?\n[\s\S]*?\r?\n---)/);
 	if (!m) return content;
 	let fm = m[1].replace(/^cid_cn:[^\n]*\r?\n/m, '');
-	fm = fm.replace(/^title:[ \t]*"?([^"\r\n]*?)"?[ \t]*$/m, (_, title: string) => `title: ${title} (${copySuffix})`);
+	// PJ-187 — RE-QUOTE the rebuilt title. This used to concatenate `title: ${title} (…)`
+	// after stripping the surrounding quotes off in the match, so any title needing quotes
+	// produced frontmatter that no longer parses — or that parses into the wrong TYPE.
+	// Measured: `"Plan: phase two"` came back with 1 parse error and the title decoding as
+	// the map `{Plan: "phase two (recovered copy)"}`; `"#hashtag"` parsed clean but decoded
+	// as NULL (the `#` starts a comment); `"[bracket]"` decoded as an array.
+	// This is the LAST-RESORT recovery path — the copy the user makes when their note is
+	// locked — so a broken title here lands on the one file they were trying to rescue.
+	fm = fm.replace(
+		/^title:[ \t]*"?([^"\r\n]*?)"?[ \t]*$/m,
+		(_, title: string) => `title: ${quoteIfNeeded(`${title} (${copySuffix})`)}`,
+	);
 	return fm + content.slice(m[1].length);
 }
 
@@ -606,6 +617,29 @@ function flushOutgoing(tabId: string, origin = 'nav_flush'): Promise<FlushResult
 	if (displayOnlyWindow) return Promise.resolve({ ok: true });
 	const tab = get(openTabs).find((t) => t.id === tabId);
 	if (!tab || !isNoteDirty(tabId)) return Promise.resolve({ ok: true });
+	// PJ-187 — a note whose links a rename cascade is REWRITING on disk must not be flushed
+	// from memory: the in-memory body still carries the OLD link text, and writing it back
+	// silently reverts the cascade's corrections. NoteEditor already refuses to save under
+	// this condition at four sites; the departure path is the fifth, and it was open.
+	//
+	// ★ Safety inspection 2026-07-29 (APP-KILLER, found in THIS fix's first version): the
+	// refusal returned `{ok:true}` — but the contract (noteSession.ts:266) is explicit that
+	// `ok:true` means "safe to proceed with the nav/replace", and every departure site then
+	// DESTROYED the dirty model: openNoteTab/loadTabHistoryEntry re-seeded it, closeTab and
+	// the universe-switch sweep disposed it. The unsaved edit existed nowhere afterwards —
+	// not on disk, not in the net (NoteEditor's own stash sites sit BELOW its cascade gate),
+	// no banner. A refusal-to-write is `ok:false` — that is precisely "a durable write could
+	// not be proven". The nav sites then keep the user on the note until the cascade lifts.
+	//
+	// And because closeTab / the departure sweep proceed REGARDLESS of the result (by
+	// contract — the tab is being dismissed), the model's current content is stashed into
+	// the write-ahead net FIRST, unflagged (it is real unsaved work, so the PJ-181 stale-
+	// snapshot check never discards it): reopen restores it, the documented recovery route.
+	if (isCascading(tab.path)) {
+		const r = composeNoteModel(tabId, tab.path);
+		if (r.ok) setWriteAhead(tab.path, r.content, tab.cursorPos ?? 0, tab.scrollTop ?? 0);
+		return Promise.resolve({ ok: false, reason: 'cascading' });
+	}
 	markRecentWrite(tab.path);
 	return flushOutgoingModel(tabId, navFlushEnv(tab, origin));
 }
@@ -848,6 +882,33 @@ export function clearCascadingLibrary(libraryPath: string) {
  *  disagree. Membership goes through `isPathFrozen`.
  */
 export const cascadeFreeze = writable<Set<string>>(new Set());
+
+/**
+ * PJ-187 — REFCOUNTED freeze, mirroring `markCascadingLibrary` / `clearCascadingLibrary`.
+ *
+ * The two call sites used to be bare `cascadeFreeze.set(new Set([lib.path]))` and
+ * `cascadeFreeze.set(new Set())`, so two overlapping renames in the same library shared one
+ * boolean: the first to finish published the EMPTY set and lifted the overlay while the second
+ * cascade was still rewriting files. The user could then type into a note the walker was
+ * mid-rewrite — exactly the window the overlay exists to close. The non-reactive save-gate
+ * beside it (`cascadingLibraries`) has been refcounted since MIG-076; this is its reactive twin
+ * and it was not. A Map of depths, published as its key set, makes the pairing structural.
+ */
+const freezeDepth = new Map<string, number>();
+const publishFreeze = () => cascadeFreeze.set(new Set(freezeDepth.keys()));
+export function markFreeze(libraryPath: string) {
+	const key = normPath(libraryPath).replace(/\/+$/, '');
+	freezeDepth.set(key, (freezeDepth.get(key) ?? 0) + 1);
+	publishFreeze();
+}
+export function clearFreeze(libraryPath: string) {
+	const key = normPath(libraryPath).replace(/\/+$/, '');
+	const n = freezeDepth.get(key);
+	if (n === undefined) return;
+	if (n <= 1) freezeDepth.delete(key);
+	else freezeDepth.set(key, n - 1);
+	publishFreeze();
+}
 
 /** Is `path` inside one of the frozen library roots? Separator-boundary matched, so a cascade on
  *  `/Foo/Bar` never freezes `/Foo/Bar2`. Shared by every consumer so the rule cannot drift. */
@@ -1681,23 +1742,38 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 				return;
 			}
 		}
+		// Sweep-2026-07-18 #10 — resolveNoteContent (NOT a raw read) so a note whose ONLY copy
+		// of unsaved edits lives in the write-ahead net (a failed save whose tab was closed) is
+		// recovered on Alt-nav — the documented reopen-restore route, previously bypassed here.
+		// Mirrors openNoteTab (store.ts:2121); displayOnlyWindow preserves the shared net (PJ-108).
+		//
+		// PJ-187 — the READ comes FIRST, exactly as openNoteTab orders it. When the flush ran
+		// first, the incoming note's disk read sat between the flush and the model re-seed, and
+		// every keystroke typed during that read landed in a model that was about to be replaced
+		// — typed after the flush captured the body, discarded by openNoteModel below. The flush
+		// now sits immediately before the synchronous swap, which is the audited ordering.
+		const resolved = await resolveNoteContent(filePath, { preserveNet: displayOnlyWindow });
+		if (resolved === null) { _traceNav('loadTabHistoryEntry:unreadable', tabId, filePath); return; }
+		// ★ Inspection 2026-07-29 — the read above CONSUMED the incoming note's write-ahead
+		// entry (its only copy of a failed save's work). Every abort below this line must put
+		// it back, or an aborted nav silently destroys the recovery the net exists to provide.
+		// Unflagged on re-stash: it is real unsaved work, exactly as it was stored.
+		const restashConsumedNet = () => {
+			if (resolved.recoveredFromNet) {
+				setWriteAhead(filePath, resolved.content, resolved.cursorPos ?? 0, resolved.scrollTop ?? 0);
+			}
+		};
+		// If a later nav has superseded this one, don't stomp its result.
+		if (_navTokens.get(tabId) !== myToken) { restashConsumedNet(); return; }
 		// Alt+←/→ is a DEPARTURE: flush the OUTGOING dirty model to disk before this tab's
 		// id-slot is re-seeded below (openNoteModel). Sources the old path from the model. A
 		// failed flush ABORTS the nav (user stays on the note + save-health banner); a nav that
 		// superseded us during the flush also bails.
 		if (NAV_FLUSH_ENABLED) {
 			const f = await flushOutgoing(tabId, 'nav_flush');
-			if (!f.ok) { _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
-			if (_navTokens.get(tabId) !== myToken) return; // superseded during the flush await
+			if (!f.ok) { restashConsumedNet(); _traceNav('loadTabHistoryEntry:flushAbort', tabId, filePath); return; }
+			if (_navTokens.get(tabId) !== myToken) { restashConsumedNet(); return; } // superseded during the flush await
 		}
-		// Sweep-2026-07-18 #10 — resolveNoteContent (NOT a raw read) so a note whose ONLY copy
-		// of unsaved edits lives in the write-ahead net (a failed save whose tab was closed) is
-		// recovered on Alt-nav — the documented reopen-restore route, previously bypassed here.
-		// Mirrors openNoteTab (store.ts:2121); displayOnlyWindow preserves the shared net (PJ-108).
-		const resolved = await resolveNoteContent(filePath, { preserveNet: displayOnlyWindow });
-		if (resolved === null) { _traceNav('loadTabHistoryEntry:unreadable', tabId, filePath); return; }
-		// If a later nav has superseded this one, don't stomp its result.
-		if (_navTokens.get(tabId) !== myToken) return;
 		const content = resolved.content;
 
 		// Name: mirror openNoteTab (shared deriveTabName). Without this parity
@@ -1752,10 +1828,59 @@ export { STARRED_ID, COLLECTION_ITEM_CAP, collectionKey } from './collectionsLog
 
 export const collectionSets = writable<CL.Collection[]>([]);
 
-function saveCollections() {
-	invoke('save_universe_collections', { collections: get(collectionSets) }).catch(e =>
-		console.error('[save] collections failed:', e)
-	);
+/**
+ * PJ-187 — collections membership lives ONLY here (the comment above says so: *"Membership
+ * ONLY lives here"*, and adding a note never writes its file). So this is the sole writer of
+ * user-authored data, and it had two independent ways to lose it:
+ *
+ *  1. it was FIRE-AND-FORGET with a `console.error` — which release builds discard entirely
+ *     (`feedback_devtools_dev_only`). Starring a note appeared to work and was gone next boot.
+ *  2. worse, `loadCollections` swallowed a failed READ and left the store at its empty
+ *     default — so the next star/unstar wrote that emptiness over a perfectly good file.
+ *     A momentary lock from a sync tool was enough to erase every collection.
+ *
+ * Now: the load must SUCCEED before any write is permitted (`collectionsLoaded`), the write
+ * is awaited with one retry, and a final failure raises a visible state instead of a log line
+ * nobody sees. Refusing to write is the safe direction — it can only ever lose the change the
+ * user just made, never the ones they made before.
+ */
+let collectionsLoaded = false;
+
+/** PJ-187 — surfaced when collections could not be read or written; the panel shows it
+ *  rather than silently presenting an empty list as the truth. */
+export const collectionsError = writable<string | null>(null);
+
+// ★ Inspection 2026-07-29 — saves are SINGLE-FLIGHT, and each reads the store at ITS turn.
+// The first version snapshotted the payload at call time: two rapid toggles could interleave
+// as save1(old) → save2(new) → save1's RETRY(old), leaving the file missing the newer change.
+// Chaining serialises the writes, and reading `collectionSets` inside the queued task means
+// the last write to land always carries the newest list.
+let _collectionsSaveChain: Promise<void> = Promise.resolve();
+
+function saveCollections(): Promise<void> {
+	if (!collectionsLoaded) {
+		// Never overwrite a file we failed to read — that is how the whole set is lost.
+		collectionsError.set('not-loaded');
+		console.warn('[collections] refusing to save: the collections file was never read successfully');
+		return Promise.resolve();
+	}
+	const run = _collectionsSaveChain.then(async () => {
+		const payload = get(collectionSets); // read at WRITE time, after prior writes settled
+		for (let attempt = 0; attempt < 2; attempt++) {
+			try {
+				await invoke('save_universe_collections', { collections: payload });
+				collectionsError.set(null);
+				return;
+			} catch (e) {
+				if (attempt === 1) {
+					collectionsError.set(String(e));
+					console.error('[save] collections failed after retry:', e);
+				}
+			}
+		}
+	});
+	_collectionsSaveChain = run.catch(() => {}); // a failed save never wedges the chain
+	return run;
 }
 
 /** Create a new named collection; returns its id. */
@@ -1853,6 +1978,14 @@ export function migrateCollectionPath(oldPath: string, newPath: string) {
  *  note/folder/search targets) — idempotent (CL.migrateBookmarks no-ops when
  *  Starred exists); the legacy bookmarks.json is left intact as a backup. */
 export async function loadCollections() {
+	// ★ Inspection 2026-07-29 — reset BOTH the permission latch and the list BEFORE reading.
+	// Without this, a universe SWITCH whose read fails kept `collectionsLoaded = true` and the
+	// store still holding the PREVIOUS universe's collections — so the next star wrote
+	// universe A's collections over universe B's file. The latch must mean "THIS universe's
+	// file was read", never "some universe's file was once read". (No subscriber auto-saves
+	// on `collectionSets`, so the reset itself can never trigger a write.)
+	collectionsLoaded = false;
+	collectionSets.set([]);
 	try {
 		const data = await invoke<unknown[]>('read_universe_collections');
 		const base = (Array.isArray(data) ? data : []) as CL.Collection[];
@@ -1863,8 +1996,19 @@ export async function loadCollections() {
 		} catch { /* no bookmarks to migrate */ }
 		const r = CL.migrateBookmarks(base, bms, Date.now());
 		collectionSets.set(r.list);
-		if (r.migrated) saveCollections(); // persist the seeded Starred so it never re-runs
-	} catch { /* ignore — empty until first save */ }
+		// PJ-187 — the read SUCCEEDED, so writes are now permitted. Until this line runs,
+		// `saveCollections` refuses: an empty store after a FAILED read is indistinguishable
+		// from a genuinely empty one, and writing it back destroys every collection the user
+		// had. This flag is the difference between "you have none" and "I could not read it".
+		collectionsLoaded = true;
+		collectionsError.set(null);
+		if (r.migrated) void saveCollections(); // persist the seeded Starred so it never re-runs
+	} catch (e) {
+		// Do NOT set collectionsLoaded. The store keeps its default and the panel shows the
+		// error state instead of presenting emptiness as the truth.
+		collectionsError.set(String(e));
+		console.error('[collections] read failed — saves are disabled until a successful load:', e);
+	}
 }
 
 /** Hydrate a collection's NOTE members' live facts (folder/search members are
@@ -2202,10 +2346,25 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 
 /** MIG-022 §A.1 — shared YAML value quoter. Used by reconstructFrontmatter
  *  for both flat values and nested-object-list field values. Strings with
- *  YAML special chars get double-quoted with embedded `"` escaped. */
-function quoteIfNeeded(v: string): string {
+ *  YAML special chars get double-quoted with embedded `"` escaped.
+ *
+ *  PJ-187 — EXPORTED, because two other places were hand-building a `key: value`
+ *  frontmatter line by concatenation and emitting invalid YAML for any value needing
+ *  quotes: `rebrandCopyFrontmatter` above, and the template merge in `+layout.svelte`.
+ *  One quoter for everything that emits a frontmatter line. */
+export function quoteIfNeeded(v: string): string {
 	if (v === '') return '""';
 	const needsQuoting = /[:{}\[\],&*?|>!%@`#]/.test(v) ||
+		// PJ-187 — a leading SEQUENCE INDICATOR. `- ` (dash + space) or a bare `-` opens a
+		// block sequence, so `title: - dash lead` is not a string at all; the parser reports
+		// two errors on it. Found by routing the recovery-copy title through this quoter and
+		// then through the real parser — the quoter had covered every other indicator
+		// character and not this one. Note `--dashes--` is a perfectly ordinary plain scalar
+		// (only dash-SPACE and a lone dash are indicators), so it stays unquoted.
+		/^-(\s|$)/.test(v) ||
+		// Leading or trailing whitespace does not survive a plain scalar — it is stripped on
+		// read, so a value that depends on it must be quoted to round-trip.
+		v !== v.trim() ||
 		v.startsWith("'") || v.startsWith('"') ||
 		v === 'true' || v === 'false' ||
 		v === 'null' || v === 'yes' || v === 'no';
@@ -2679,7 +2838,16 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			// this predicate protects exactly the recovery case while leaving the cmd's
 			// two real jobs — inject a missing cid / migrate legacy `cid:` — untouched
 			// (both only ever apply to cid_cn-less content).
-			if (updated && updated !== content && !extractCidCn(content)) content = updated;
+			if (updated && updated !== content && !extractCidCn(content)) {
+				content = updated;
+				// PJ-187 — the injection WROTE the note's permanent identity to disk through the
+				// gate, which marks the path watcher-suppressed, so nothing else tells the index
+				// it changed. Until the user happened to edit and save that note, note_meta held
+				// no cid_cn for it and every identity-keyed lookup — collection membership,
+				// link resolution by identity — silently missed it. Fire-and-forget: the note is
+				// already open and correct on screen; this only catches the index up.
+				invoke('constellation_search_reindex', { notePath: filePath, libraryName }).catch(() => {});
+			}
 		} catch { /* non-fatal: CID stays absent, note still opens */ }
 	}
 	// For canonical files, extract title from frontmatter; fallback to filename stem
@@ -2740,8 +2908,15 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			const navToken = (_navTokens.get(currentTab.id) ?? 0) + 1;
 			_navTokens.set(currentTab.id, navToken);
 			const f = await flushOutgoing(currentTab.id, 'nav_flush');
-			if (!f.ok) { _traceNav('openNoteTab:flushAbort', currentTab.id, filePath); return; }
-			if (_navTokens.get(currentTab.id) !== navToken) { _traceNav('openNoteTab:superseded', currentTab.id, filePath); return; }
+			// ★ Inspection 2026-07-29 — resolveNoteContent (above) already consumed the INCOMING
+			// note's write-ahead entry; an abort here must put it back or the recovery is lost.
+			const restashConsumedNet = () => {
+				if (resolved.recoveredFromNet) {
+					setWriteAhead(filePath, resolved.content, resolved.cursorPos ?? 0, resolved.scrollTop ?? 0);
+				}
+			};
+			if (!f.ok) { restashConsumedNet(); _traceNav('openNoteTab:flushAbort', currentTab.id, filePath); return; }
+			if (_navTokens.get(currentTab.id) !== navToken) { restashConsumedNet(); _traceNav('openNoteTab:superseded', currentTab.id, filePath); return; }
 		}
 		// Push to tab's history (trim forward history)
 		const trimmedHistory = currentTab.history.slice(0, currentTab.historyIndex + 1);
@@ -2973,7 +3148,14 @@ async function drainCidEnsure(tab: OpenTab): Promise<void> {
 			await saveNoteSession(tab.id, tab.path, standardSaveEnv({ origin: 'cid_ensure_flush', name: tab.name }), 'cid_ensure_flush');
 		}
 		// MIG-TPL §1 — never stamp a template (identity belongs to the cast, not the mold).
-		if (!isTemplatePath(tab.path)) await invoke('ensure_cid_cn_cmd', { filePath: tab.path });
+		if (!isTemplatePath(tab.path)) {
+			await invoke('ensure_cid_cn_cmd', { filePath: tab.path });
+			// ★ Inspection 2026-07-29 — the ensure WRITES the note's permanent identity through
+			// the gate (watcher-suppressed), so nothing else tells the index. The sweep closed
+			// this exact gap in openNoteTab and missed this sibling. Fire-and-forget: the tab
+			// is already correct on screen; this only catches note_meta up.
+			invoke('constellation_search_reindex', { notePath: tab.path, libraryName: tab.libraryName }).catch(() => {});
+		}
 		// Guarded adopt — deliberately NOT reloadTabsFromDisk: its
 		// unconditional model re-seed would discard keystrokes typed during
 		// the awaits above (markCascading blocks saves, not typing). The model
@@ -4111,7 +4293,26 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 }
 
 export async function moveItem(sourcePath: string, targetFolder: string): Promise<string> {
-	const newPath = await invoke<string>('move_item', { sourcePath, targetFolder });
+	// PJ-187 — the same flush-before-cascade envelope `renameItem` has carried since Batch-2
+	// §B2-4, which this sibling never got. `move_item` is async and reads DISK; a dirty open
+	// tab's last ≤1.5 s of typing lives only in the model, and the armed autosave was still
+	// free to fire mid-move — writing the newest words to the note's OLD path, which the move
+	// then leaves behind. The result on disk is two notes: the moved one, and a stray copy in
+	// the old folder carrying the user's latest text, with nothing to say which is real.
+	// markCascading gates the armed autosave; the explicit flush puts the newest bytes on disk
+	// BEFORE the move reads them; the finally releases the gate on every exit path.
+	const movedTab = get(openTabs).find((t) => t.path === sourcePath);
+	if (movedTab) markCascading(movedTab.path);
+	let newPath: string;
+	try {
+		if (movedTab && isNoteDirty(movedTab.id)) {
+			markRecentWrite(movedTab.path);
+			await saveNoteSession(movedTab.id, movedTab.path, standardSaveEnv({ origin: 'move_flush', name: movedTab.name }), 'move_flush');
+		}
+		newPath = await invoke<string>('move_item', { sourcePath, targetFolder });
+	} finally {
+		if (movedTab) clearCascading(movedTab.path);
+	}
 	// §140: same path-keyed migration as renameItem — buffer follows file.
 	migratePathKeyedAuxStateOnRename(sourcePath, newPath);
 	// Update any open tabs that reference the old path
@@ -4162,39 +4363,75 @@ export async function deletePath(path: string, mode: 'permanent' | 'trash' | 'sy
  *  Recycle Bin). Replaces the old always-permanent delete at every call site.
  *  Resolves the .trash root from the libraries list, then closes any open tabs
  *  + clears path-keyed aux state, exactly as `deleteItem` did. */
-export async function deleteWithSetting(path: string): Promise<void> {
+/**
+ * PJ-187 — the ONE answer to *"where does a note go when Constellation removes it from its
+ * place?"*, honouring **Settings → Universe & Libraries → Deleted files**.
+ *
+ * It was the private opening of `deleteWithSetting`, so DELETE honoured the setting and the three
+ * other displacement paths — Overwrite on create, Overwrite on rename, and the PJ-088 conflict
+ * sidecar — did not: they called `moveToTrash(path, libraryPath)`, which hardcoded
+ * `<library>/.trash` and never read the setting at all.
+ *
+ * Measured on the Boss's universe (2026-07-29, Stage 1): with `trashDestination: 'local'` and
+ * `trashFolderScope: 'universe'`, Delete filed to the universe root while Overwrite filed to the
+ * library — and because that universe's libraries live OUTSIDE its root, those are different
+ * TREES, not neighbouring folders. The note stayed recoverable, but not where the app says it
+ * puts things, which is the same thing as lost to anyone who goes looking. With the DEFAULT
+ * `trashDestination: 'system'` it is worse: Delete uses the Recycle Bin while Overwrite silently
+ * creates a `.trash` folder inside the library the user never opted into.
+ *
+ * Exported so every displacement path shares one implementation and they cannot drift again.
+ */
+export function resolveTrashDestination(path: string): { mode: 'trash' | 'system'; trashRoot: string | null } {
 	const s = get(appSettings);
 	// 'permanent' is no longer a user choice (Boss 2026-06-14 — deletes are always
 	// recoverable); anything not 'local' resolves to System trash.
-	const dest = s.trashDestination === 'local' ? 'local' : 'system';
-	let mode: 'trash' | 'system' = 'system';
-	let trashRoot: string | null = null;
-	if (dest === 'local') {
-		mode = 'trash';
-		if (s.trashFolderScope === 'universe') {
-			trashRoot = get(libraries).find(v => v.is_universe_notes)?.path ?? null;
-		} else {
-			const matches = get(libraryStats).filter(v => path.startsWith(v.path));
-			trashRoot = matches.length
-				? matches.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path
-				: null;
-		}
-		if (!trashRoot) throw new Error('Could not resolve a .trash location for this path.');
+	if (s.trashDestination !== 'local') return { mode: 'system', trashRoot: null };
+	let trashRoot: string | null;
+	if (s.trashFolderScope === 'universe') {
+		trashRoot = get(libraries).find(v => v.is_universe_notes)?.path ?? null;
+	} else {
+		const matches = get(libraryStats).filter(v => path.startsWith(v.path));
+		trashRoot = matches.length
+			? matches.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path
+			: null;
 	}
+	if (!trashRoot) throw new Error('Could not resolve a .trash location for this path.');
+	return { mode: 'trash', trashRoot };
+}
+
+export async function deleteWithSetting(path: string): Promise<void> {
+	const { mode, trashRoot } = resolveTrashDestination(path);
 	await deletePath(path, mode, trashRoot);
 	// §140 — drop the path's aux state + close any tabs at/under it (as deleteItem did).
 	clearPathKeyedAuxStateOnDelete(path);
+	// PJ-187 — dropping a tab from the list is NOT disposing its model. Every other departure
+	// (closeTab, the universe-switch sweep) calls closeNoteModel; this one filtered the tabs and
+	// left each deleted note's full body, base and props resident for the rest of the session.
+	// Collect what the filter drops, then dispose it.
+	const removed: OpenTab[] = [];
 	openTabs.update(tabs => tabs.filter(t => {
-		if (t.path === path) return false;
-		if (t.path.startsWith(path + '/') || t.path.startsWith(path + '\\')) return false;
-		return true;
+		const gone = t.path === path || t.path.startsWith(path + '/') || t.path.startsWith(path + '\\');
+		if (gone) removed.push(t);
+		return !gone;
 	}));
+	for (const t of removed) closeNoteModel(t.id);
 }
 
-/** MIG-076 §E1b — move an existing note to the library's `.trash` (recoverable),
- *  used by the collision dialog's "Overwrite" before the create/rename proceeds. */
-export async function moveToTrash(path: string, libraryPath: string): Promise<void> {
-	await invoke('move_to_trash', { path, libraryPath });
+/**
+ * MIG-076 §E1b — displace an existing note to the trash (recoverable), used by the collision
+ * dialog's "Overwrite" before the create/rename proceeds, and by the PJ-088 conflict sidecar.
+ *
+ * PJ-187 — now routed through `resolveTrashDestination` + `deletePath`, the SAME pair Delete
+ * uses, so a displaced note lands exactly where the user's "Deleted files" setting says it will.
+ * It previously invoked `move_to_trash`, which derives its trash root from the library path it
+ * also validates against — so it can never honour universe scope for a library that lives outside
+ * the universe root, which is the ordinary case here. The Rust command keeps its own caller
+ * (`universe.rs` Template-Studio undo) and is untouched.
+ */
+export async function moveToTrash(path: string): Promise<void> {
+	const { mode, trashRoot } = resolveTrashDestination(path);
+	await deletePath(path, mode, trashRoot);
 }
 
 /** MIG-076 §E-2 — write-journal diagnostics snapshot for Settings → Security &
@@ -5102,7 +5339,7 @@ export async function resolveConflictMerge(
 			.filter((l) => libNorm === normPath(l.path) || libNorm.startsWith(normPath(l.path) + '/'))
 			.sort((a, b) => normPath(b.path).length - normPath(a.path).length)[0]; // longest-prefix = most-specific (nested/federated)
 		if (lib) {
-			try { await moveToTrash(sidecarPath, lib.path); } catch (e) { console.error('[PJ-088] conflict sidecar trash failed', e); }
+			try { await moveToTrash(sidecarPath); } catch (e) { console.error('[PJ-088] conflict sidecar trash failed', e); }
 		}
 		dismissConflict(sidecarPath);
 		return { ok: true };
