@@ -1436,7 +1436,8 @@
     "sortByFile": "ファイルで並べ替え",
     "search": "タスクを検索...",
     "allLibraries": "すべての保管庫",
-    "groupByLibrary": "保管庫でグループ化"
+    "groupByLibrary": "保管庫でグループ化",
+    "taskActionFailed": "問題が発生しました — タスクが最新でない可能性があり、最後の変更は保存されませんでした。"
   },
   "tabContextMenu": {
     "pin": "ピン留め",
@@ -1609,7 +1610,8 @@
     "nestedMapReadOnly": "読み取り専用",
     "nestedMapHint": "入れ子のフィールドはファイル内のまま保持され、ここでは編集できません。",
     "nestedMapEmpty": "フィールドなし",
-    "typeNestedMap": "入れ子フィールド"
+    "typeNestedMap": "入れ子フィールド",
+    "commitRefused": "この変更をノートに保存できませんでした。ここには表示されていますが、書き込まれていません。"
   },
   "editor": {
     "undo": "元に戻す",
@@ -3787,7 +3789,8 @@
       "due": "読み直して今も妥当か確認し、レビュー済みとして設定しましょう。",
       "never": "初めてのレビューを行いましょう——通読して、確認するか練り直しましょう。",
       "checkpoint": "この見解を再検討しましょう——確認する、修正する、または取って代わらせましょう。"
-    }
+    },
+    "prioritySaveFailed": "優先度を保存できませんでした — 変更されずに残っています。"
   },
   "plurals": {
     "notes": {

@@ -220,6 +220,8 @@
 	let mounted = true; // §C — guards the async Hijri converter from writing after teardown
 	let focusRaf: number | null = null;
 	let saving = $state(false);
+	/** PJ-187 — TRUE when the model refused this panel's last commit; the edit did NOT land. */
+	let commitRefused = $state(false);
 	let prevTabId = $state('');
 	let tagInputs = $state<Record<number, string>>({});
 
@@ -972,7 +974,7 @@
 		if (!model) { await saveTabContent(id, path, editableProps, body); return; } // no model → legacy
 		const touched = touchedSince(seededRows, editableProps);
 		const ops = planPropOps(withAutoUpdatedDate(editableProps), model.props, seededKeysOf(seededRows), touched);
-		const changed = applyPropOps(ops, {
+		const { changed, refused } = applyPropOps(ops, {
 			setValue: (k, v, o) => editPropValue(id, k, v, o, path),
 			add: (pr) => addPropTo(id, pr, path),
 			remove: (k) => removePropFrom(id, k, path),
@@ -985,6 +987,20 @@
 		// "so a caller can skip a pointless write" — but this caller was ignoring it, so a debounce
 		// that fired with nothing to do still paid a full compose + write-ahead + disk IPC. Skip only
 		// when the model is ALSO clean: a pending body edit still needs persisting.
+		// PJ-187 — a refusal is NOT "nothing to do". Every add/set/remove in the plan was computed
+		// against the model's current props and is expected to land; one that reports no change was
+		// rejected inside the model, and the user's edit is about to vanish with no warning at all.
+		// Surface it and keep the panel's rows as they are (the next commit retries them) instead of
+		// re-seeding from a model that does not hold them.
+		if (refused.length) {
+			commitRefused = true;
+			console.error(
+				'[PropertyEditor] the model REFUSED', refused.length, 'of', ops.length,
+				'property intent(s) for', path, '—', refused.map((o) => ('key' in o ? o.key : o.prop.key)).join(', '),
+			);
+			return;
+		}
+		commitRefused = false;
 		if (!changed && !isNoteDirty(id)) return;
 		// Committed: the panel's rows are now the model's, so nothing of this panel's is ahead of it —
 		// including keys another writer added that this commit deliberately left alone. Without the
@@ -1036,6 +1052,11 @@
 			<span class="pe-saving">{$t('propertyEditor.saving')}</span>
 		{/if}
 	</div>
+
+	<!-- PJ-187 — a refused commit used to be completely silent. -->
+	{#if commitRefused}
+		<div class="pe-refused">{$t('propertyEditor.commitRefused') || 'This change could not be saved to the note. It is still shown here, but it has not been written.'}</div>
+	{/if}
 
 	{#if !collapsed}
 	<!-- G3 — in read-only mode the whole property body is inert (non-interactive), so it
@@ -1405,6 +1426,7 @@
 	.pe-chevron { transition: transform 0.2s; flex-shrink: 0; color: var(--text-muted); }
 	.pe-chevron.collapsed { transform: rotate(-90deg); }
 	:global([dir="rtl"]) .pe-chevron.collapsed { transform: rotate(90deg); }
+	.pe-refused { padding: 4px 8px; font-size: 11px; color: var(--text-error); line-height: 1.35; }
 	.pe-saving { font-size: calc(0.7rem * var(--rs-scale, 1)); color: var(--interactive-accent); }
 
 	.pe-row {

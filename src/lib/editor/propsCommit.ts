@@ -194,23 +194,50 @@ export interface IntentSink {
 	order: (key: string, beforeKey: string | null) => boolean;
 }
 
-/** Apply a plan. Returns whether anything actually changed, so a caller can skip a pointless write. */
-export function apply(ops: PropOp[], sink: IntentSink): boolean {
+/**
+ * PJ-187 — what a plan actually did.
+ *
+ * `apply` used to return a bare boolean, and the caller read `false` as "nothing to do". But an
+ * intent returns `false` for FOUR different reasons — no model for that id, an `expectPath`
+ * identity mismatch, the key not being there, and a genuine no-op — and only the last is
+ * "nothing to do". So a REFUSED edit finished the save path looking exactly like an unchanged
+ * one: no warning anywhere, and the user's change simply never reached the file.
+ *
+ * The distinction is free, because `plan` has already compared every op against the model's
+ * CURRENT props: it emits `set` only where the row differs, `add` only where the key is absent,
+ * `remove` only where it is present. Every add/set/remove it emits is therefore EXPECTED to
+ * change something, and one that reports no change was refused.
+ *
+ * `order` is deliberately excluded: `plan` emits one per adjacent pair whenever the two orders
+ * differ, so a move that is already in position legitimately reports no change.
+ */
+export interface ApplyResult {
+	/** Did anything actually reach the model? Callers skip a pointless write when false. */
+	changed: boolean;
+	/** Ops the model refused — never empty without something being wrong. */
+	refused: PropOp[];
+}
+
+/** Apply a plan. See `ApplyResult` for why the refusals are reported separately. */
+export function apply(ops: PropOp[], sink: IntentSink): ApplyResult {
 	let changed = false;
+	const refused: PropOp[] = [];
 	for (const op of ops) {
+		let took = false;
 		switch (op.op) {
-			case 'remove': changed = sink.remove(op.key) || changed; break;
-			case 'add': changed = sink.add(op.prop) || changed; break;
+			case 'remove': took = sink.remove(op.key); break;
+			case 'add': took = sink.add(op.prop); break;
 			case 'set':
-				changed =
-					sink.setValue(op.key, op.value, {
-						listItems: op.listItems,
-						type: op.type,
-						nestedObjects: op.nestedObjects,
-					}) || changed;
+				took = sink.setValue(op.key, op.value, {
+					listItems: op.listItems,
+					type: op.type,
+					nestedObjects: op.nestedObjects,
+				});
 				break;
-			case 'order': changed = sink.order(op.key, op.beforeKey) || changed; break;
+			case 'order': took = sink.order(op.key, op.beforeKey); break;
 		}
+		changed = took || changed;
+		if (!took && op.op !== 'order') refused.push(op);
 	}
-	return changed;
+	return { changed, refused };
 }

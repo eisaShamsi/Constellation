@@ -725,6 +725,8 @@
 	// Styles + this Universe's custom-theme Styles + the user's saved Styles); clicking one APPLIES it
 	// (non-destructive merge), "+ Save current" captures the look incl. the new styleOverride section.
 	let savedStyles = $state<StylePreset[]>([]);
+	/** PJ-187 — a failed style write used to be silent; the gallery lied until the next launch. */
+	let styleSaveError = $state<string | null>(null);
 
 	let activeSurface = $state('editor');
 	let activeCategory = $state('interface');
@@ -955,11 +957,31 @@
 	}
 	// Save the CURRENT look as a named Style: Keep first (so the unsaved draft is captured into
 	// styleOverride), then capture the default-on sections (incl. the styleOverride/Setter look).
+	/**
+	 * PJ-187 — persist, and ROLL BACK if the write fails.
+	 *
+	 * `savedStyles` was mutated first and the await left unguarded, so a failed write left the
+	 * gallery showing a style that does not exist on disk — created, renamed or deleted
+	 * exactly as if it had worked, and gone at the next launch with no warning.
+	 */
+	async function persistStyles(next: StylePreset[], previous: StylePreset[]): Promise<void> {
+		try {
+			await saveStylePresets($state.snapshot(next) as StylePreset[]);
+			styleSaveError = null;
+		} catch (e) {
+			savedStyles = previous; // the gallery must never show what disk does not have
+			styleSaveError = String(e);
+			console.error('[StyleSetter] saving styles failed:', e);
+		}
+	}
+
 	async function saveAsStyle() {
 		keep();
 		const keys = SECTION_CATALOGUE.filter((s) => s.defaultOn).map((s) => s.key);
-		savedStyles = [...savedStyles, newPresetFromCurrent(draftName, keys)];
-		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		const previous = savedStyles;
+		const next = [...savedStyles, newPresetFromCurrent(draftName, keys)];
+		savedStyles = next;
+		await persistStyles(next, previous);
 	}
 
 	// MIG-071 audit HIGH — restore saved-style IMPORT (its only caller, StylePresetsPanel, was deleted
@@ -968,8 +990,10 @@
 		try {
 			const p = await importPreset();
 			if (!p) return; // cancelled
-			savedStyles = [...savedStyles, p];
-			await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+			const previous = savedStyles;
+			const next = [...savedStyles, p];
+			savedStyles = next;
+			await persistStyles(next, previous);
 		} catch { /* invalid style file — ignore */ }
 	}
 
@@ -980,13 +1004,17 @@
 	function startRename(p: StylePreset) { renamingId = p.id; renameValue = p.name; }
 	async function confirmRename() {
 		const id = renamingId;
-		savedStyles = savedStyles.map((s) => (s.id === id ? { ...s, name: renameValue.trim() || s.name } : s));
+		const previous = savedStyles;
+		const next = savedStyles.map((s) => (s.id === id ? { ...s, name: renameValue.trim() || s.name } : s));
+		savedStyles = next;
 		renamingId = null;
-		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		await persistStyles(next, previous);
 	}
 	async function removeStyle(p: StylePreset) {
-		savedStyles = savedStyles.filter((s) => s.id !== p.id);
-		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		const previous = savedStyles;
+		const next = savedStyles.filter((s) => s.id !== p.id);
+		savedStyles = next;
+		await persistStyles(next, previous);
 	}
 	// §C — UPDATE an existing style with the CURRENT look (overwrite its captured sections, keep its
 	// id + name). Keep() first so the unsaved draft is captured. Distinct from "+ Save current as a
@@ -997,8 +1025,11 @@
 		keep();
 		const keys = SECTION_CATALOGUE.filter((s) => s.defaultOn).map((s) => s.key);
 		const fresh = newPresetFromCurrent(p.name, keys);
-		savedStyles = savedStyles.map((s) => (s.id === p.id ? { ...fresh, id: p.id, createdAt: p.createdAt ?? fresh.createdAt } : s));
-		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		const previous = savedStyles;
+		const next = savedStyles.map((s) => (s.id === p.id ? { ...fresh, id: p.id, createdAt: p.createdAt ?? fresh.createdAt } : s));
+		savedStyles = next;
+		await persistStyles(next, previous);
+		if (styleSaveError) return; // don't flash ✓ for a save that did not happen
 		updatedId = p.id;
 		if (_updTimer) clearTimeout(_updTimer);
 		_updTimer = setTimeout(() => { if (updatedId === p.id) updatedId = null; }, 1500);
@@ -1252,6 +1283,7 @@
 						{/if}
 					{/each}
 					{#if !savedStyles.length}<div class="ss-srow-empty">{L('Design a look, then save it as a named style you can reuse.')}</div>{/if}
+					{#if styleSaveError}<div class="ss-srow-err">{L('Could not save your styles — the list has been put back the way it was.')}</div>{/if}
 					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ {L('Save current as a style')}</button>
 					<button class="ss-srow ss-srow-save" onclick={importStyle}>↥ {L('Import a style')}</button>
 				</div>
@@ -1850,6 +1882,7 @@
 	.ss-srow { text-align: start; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.ss-srow:hover { border-color: var(--c-accent); }
 	.ss-srow-save { border-style: dashed; color: var(--c-muted); text-align: center; }
+	.ss-srow-err { font-size: 11px; color: var(--text-error, #c0392b); padding: 4px 8px; line-height: 1.35; }
 	.ss-srow-empty { font-size: 11.5px; color: var(--c-muted); padding: 4px 6px; line-height: 1.4; }
 	/* §C Phase 6.3 — per-row CRUD (export / rename / delete), revealed on hover. */
 	.ss-srow-wrap { display: flex; align-items: center; gap: 2px; }

@@ -1601,7 +1601,8 @@
     "groupByPriority": "Group by priority",
     "groupByDue": "Group by due date",
     "sortByFile": "Sort by file",
-    "search": "Search tasks..."
+    "search": "Search tasks...",
+    "taskActionFailed": "Something went wrong — your tasks may not be up to date, and your last change was not saved."
   },
   "tabContextMenu": {
     "pin": "Pin",
@@ -1771,7 +1772,8 @@
     "nestedMapReadOnly": "read-only",
     "nestedMapHint": "Nested fields are kept exactly as written in the file and cannot be edited here.",
     "nestedMapEmpty": "no fields",
-    "typeNestedMap": "Nested fields"
+    "typeNestedMap": "Nested fields",
+    "commitRefused": "This change could not be saved to the note. It is still shown here, but it has not been written."
   },
   "editor": {
     "undo": "Undo",
@@ -4004,7 +4006,8 @@
       "due": "Re-read it and confirm it still holds, then mark it reviewed.",
       "never": "Give it its first review — read it through, then confirm or refine.",
       "checkpoint": "Re-examine this view — confirm it, revise it, or supersede it."
-    }
+    },
+    "prioritySaveFailed": "Could not save the priority — it has been left unchanged."
   },
   "plurals": {
     "notes": {

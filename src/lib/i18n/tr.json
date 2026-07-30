@@ -1436,7 +1436,8 @@
     "sortByFile": "Dosyaya göre sırala",
     "search": "Görev ara...",
     "allLibraries": "Tüm kasalar",
-    "groupByLibrary": "Kasaya göre grupla"
+    "groupByLibrary": "Kasaya göre grupla",
+    "taskActionFailed": "Bir şeyler ters gitti — görevleriniz güncel olmayabilir ve son değişikliğiniz kaydedilmedi."
   },
   "tabContextMenu": {
     "pin": "Sabitle",
@@ -1609,7 +1610,8 @@
     "nestedMapReadOnly": "salt okunur",
     "nestedMapHint": "İç içe alanlar dosyadaki hâliyle korunur ve burada düzenlenemez.",
     "nestedMapEmpty": "alan yok",
-    "typeNestedMap": "İç içe alanlar"
+    "typeNestedMap": "İç içe alanlar",
+    "commitRefused": "Bu değişiklik nota kaydedilemedi. Burada hâlâ görünüyor, ancak yazılmadı."
   },
   "editor": {
     "undo": "Geri al",
@@ -3787,7 +3789,8 @@
       "due": "Yeniden oku ve hâlâ geçerli olduğunu doğrula, sonra incelendi olarak işaretle.",
       "never": "İlk incelemesini yap — baştan sona oku, sonra doğrula ya da iyileştir.",
       "checkpoint": "Bu görüşü yeniden incele — doğrula, gözden geçir ya da yerine yenisini koy."
-    }
+    },
+    "prioritySaveFailed": "Öncelik kaydedilemedi — değiştirilmeden bırakıldı."
   },
   "plurals": {
     "notes": {

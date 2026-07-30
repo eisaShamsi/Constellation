@@ -955,6 +955,8 @@
   let bulkCompleted = $state(0);
   let bulkTotal = $state(0);
   let bulkCancelling = $state(false);
+  /** PJ-187 — the batch's `done` event now carries a partial-failure message; show it. */
+  let bulkError = $state<string | null>(null);
 
   async function startBulkAccept() {
     bulkConfirm = null;
@@ -1046,7 +1048,7 @@
 
     // MIG-021v2 §1F'.b — bulk-accept progress events drive the inline
     // progress bar + auto-reload the queue when it finishes.
-    const unlistenBulk = await listen<{ phase: string; total: number; completed: number }>(
+    const unlistenBulk = await listen<{ phase: string; total: number; completed: number; error?: string | null }>(
       'sources:bulk_accept',
       (ev) => {
         const p = ev.payload;
@@ -1055,6 +1057,7 @@
           bulkCompleted = 0;
           bulkTotal = p.total;
           bulkCancelling = false;
+          bulkError = null;
         } else if (p.phase === 'progress') {
           bulkCompleted = p.completed;
           bulkTotal = p.total;
@@ -1064,6 +1067,7 @@
           bulkTotal = p.total;
           bulkRunning = false;
           bulkCancelling = false;
+          bulkError = p.error ?? null;
           loadQueue();
         }
       },
@@ -1242,6 +1246,11 @@
           {$t('sources.review.bulkCancel') || 'Cancel'}
         </button>
       </div>
+    {/if}
+
+    {#if bulkError}
+      <!-- PJ-187 — a batch that wrote to disk but could not refresh the search index. -->
+      <div class="srp-bulk-error">{bulkError}</div>
     {/if}
 
     {#if bulkConfirm}
@@ -2102,6 +2111,7 @@
   }
   .srp-bulk-accept { color: #c9a227; border-color: rgba(201, 162, 39, 0.4); }
   .srp-bulk-reject { color: #a83232; border-color: rgba(168, 50, 50, 0.4); }
+  .srp-bulk-error { padding: 6px 10px; font-size: 12px; color: var(--text-error, #c0392b); line-height: 1.4; }
   .srp-bulk-progress {
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px; padding: 6px 8px;

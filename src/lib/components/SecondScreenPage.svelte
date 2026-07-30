@@ -17,6 +17,8 @@
 		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
+	// PJ-187 — model disposal for the peek pane + workspace restore (see the call sites below).
+	import { close as closeNoteModel } from '$lib/editor/noteSession';
 	import { detectDir, renderMarkdown } from '$lib/utils';
 	// G3 — the freshness-gated adopt primitive (adoptDisk): a clean model takes the
 	// fresh disk content, a dirty model is never clobbered. Same primitive the main
@@ -307,6 +309,12 @@
 
 	async function loadPeekPreview(note: { name: string; path: string; libraryName: string; libraryColor: string }) {
 		const gen = ++peekGeneration;
+		// PJ-187 — the peek pane mounts a real NoteEditor, which opens a content MODEL keyed by
+		// `peek-<path>`. Replacing or clearing `peekTab` only drops the reference; the model —
+		// full body, base and props — stayed resident. Peeking through a session's worth of
+		// backlinks accumulated one per note, for the life of the window. Dispose before
+		// replacing, exactly as every tab departure does.
+		if (peekTab) closeNoteModel(peekTab.id);
 		peekNote = note;
 		try {
 			const content = await invoke<string>('read_note', { filePath: note.path });
@@ -330,6 +338,7 @@
 	}
 
 	function closePeek() {
+		if (peekTab) closeNoteModel(peekTab.id); // PJ-187 — dispose the model, not just the reference
 		peekNote = null;
 		peekTab = null;
 	}
@@ -715,6 +724,10 @@
 
 		// Listen for workspace restore from main
 		const u7 = await onWorkspaceRestore(async (state: ScreenState) => {
+			// PJ-187 — a restore REPLACES the whole tab list. Clearing the store leaves every
+			// outgoing tab's model orphaned in memory; each restore leaked the previous
+			// workspace. Dispose them first, the same rule closeTab follows.
+			for (const t of get(openTabs)) closeNoteModel(t.id);
 			openTabs.set([]);
 			activeTabId.set(null);
 			for (const saved of state.tabs) {

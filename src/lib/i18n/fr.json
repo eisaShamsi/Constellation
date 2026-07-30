@@ -996,7 +996,8 @@
     "groupByPriority": "Grouper par priorité",
     "groupByDue": "Grouper par date d'échéance",
     "sortByFile": "Trier par fichier",
-    "search": "Rechercher des tâches..."
+    "search": "Rechercher des tâches...",
+    "taskActionFailed": "Un problème est survenu — vos tâches ne sont peut-être pas à jour, et votre dernière modification n'a pas été enregistrée."
   },
   "tabContextMenu": {
     "pin": "Épingler",
@@ -1169,7 +1170,8 @@
     "nestedMapReadOnly": "lecture seule",
     "nestedMapHint": "Les champs imbriqués sont conservés tels quels dans le fichier et ne sont pas modifiables ici.",
     "nestedMapEmpty": "aucun champ",
-    "typeNestedMap": "Champs imbriqués"
+    "typeNestedMap": "Champs imbriqués",
+    "commitRefused": "Cette modification n'a pas pu être enregistrée dans la note. Elle est toujours affichée ici, mais elle n'a pas été écrite."
   },
   "editor": {
     "undo": "Annuler",
@@ -3787,7 +3789,8 @@
       "due": "Relisez-la et confirmez qu’elle tient toujours, puis marquez-la comme révisée.",
       "never": "Donnez-lui sa première révision — lisez-la en entier, puis confirmez-la ou affinez-la.",
       "checkpoint": "Réexaminez cette vue — confirmez-la, révisez-la ou remplacez-la."
-    }
+    },
+    "prioritySaveFailed": "Impossible d'enregistrer la priorité — elle reste inchangée."
   },
   "plurals": {
     "notes": {

@@ -996,7 +996,8 @@
     "groupByPriority": "Agrupar por prioridad",
     "groupByDue": "Agrupar por fecha de vencimiento",
     "sortByFile": "Ordenar por archivo",
-    "search": "Buscar tareas..."
+    "search": "Buscar tareas...",
+    "taskActionFailed": "Algo salió mal: puede que tus tareas no estén actualizadas y tu último cambio no se guardó."
   },
   "tabContextMenu": {
     "pin": "Fijar",
@@ -1169,7 +1170,8 @@
     "nestedMapReadOnly": "solo lectura",
     "nestedMapHint": "Los campos anidados se conservan tal cual en el archivo y no se pueden editar aquí.",
     "nestedMapEmpty": "sin campos",
-    "typeNestedMap": "Campos anidados"
+    "typeNestedMap": "Campos anidados",
+    "commitRefused": "No se pudo guardar este cambio en la nota. Sigue mostrándose aquí, pero no se ha escrito."
   },
   "editor": {
     "undo": "Deshacer",
@@ -3787,7 +3789,8 @@
       "due": "Reléela y confirma que sigue siendo válida; luego márcala como revisada.",
       "never": "Dale su primera revisión — léela por completo, luego confírmala o refínala.",
       "checkpoint": "Reexamina esta postura — confírmala, revísala o sustitúyela."
-    }
+    },
+    "prioritySaveFailed": "No se pudo guardar la prioridad: se ha dejado sin cambios."
   },
   "plurals": {
     "notes": {

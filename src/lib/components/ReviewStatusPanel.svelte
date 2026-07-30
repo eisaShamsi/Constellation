@@ -91,10 +91,25 @@
 	const effective = $derived(effectivePriority(status?.priority_override, computed));
 	const isManual = $derived(status?.priority_override != null);
 	let priorityDraft = $state<number | null>(null);
+	/** PJ-187 — a visible failure state; the panel showed none, so a failed save was invisible. */
+	let priorityError = $state<string | null>(null);
 	$effect(() => { notePath; priorityDraft = null; }); // reset on note change
 	async function commitPriority(value: number | null) {
 		if (!notePath) return;
-		try { await invoke('set_review_priority', { notePath, priority: value }); await load(); onRefresh?.(); } catch {}
+		// PJ-187 — this was `catch {}`: the slider stayed exactly where the user dragged it and
+		// NOTHING was saved. They found out later, when the note came back at the old priority.
+		// On failure, drop the draft so the control snaps back to the stored value (the user can
+		// SEE it did not take) and surface the error the way the panel's other failures are.
+		try {
+			await invoke('set_review_priority', { notePath, priority: value });
+			priorityError = null;
+			await load();
+			onRefresh?.();
+		} catch (e) {
+			priorityDraft = null;
+			priorityError = String(e);
+			console.error('[ReviewStatusPanel] set_review_priority failed:', e);
+		}
 	}
 
 	// The primary Mode-1/3 status line (separate from the stale lens below).
@@ -150,6 +165,11 @@
 			<span class="rsp-prio-val">{priorityDraft ?? effective}</span>
 			{#if isManual}<span class="rsp-prio-tag">{$t('reviewer.manual') || 'manual'}</span>{/if}
 		</div>
+		<!-- PJ-187 — a failed priority save used to be invisible (`catch {}`): the slider stayed
+		     where it was dragged and nothing was written. Now the control snaps back and says so. -->
+		{#if priorityError}
+			<div class="rsp-prio-error">{$t('reviewer.prioritySaveFailed') || 'Could not save the priority — it has been left unchanged.'}</div>
+		{/if}
 		{#if isManual}
 			<div class="rsp-prio-override">
 				{($t('reviewer.computedWouldBe') || 'Computed would be {n}').replace('{n}', String(computed))}
@@ -184,6 +204,8 @@
 	.rsp-priority label { font-size: calc(0.74rem * var(--rs-scale, 1)); color: var(--text-muted); flex-shrink: 0; }
 	.rsp-priority input[type="range"] { flex: 1; accent-color: var(--interactive-accent, #7c3aed); min-width: 0; }
 	.rsp-prio-val { font-size: calc(0.76rem * var(--rs-scale, 1)); color: var(--text-normal); width: 2.2em; text-align: end; }
+	/* PJ-187 — the visible failure state for a priority save. */
+	.rsp-prio-error { font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-error, #c0392b); margin-block-start: 2px; }
 	.rsp-prio-tag { font-size: calc(0.62rem * var(--rs-scale, 1)); color: var(--text-on-accent, #fff); background: var(--interactive-accent, #7c3aed); border-radius: 4px; padding: 1px 5px; }
 	.rsp-prio-override { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: calc(0.68rem * var(--rs-scale, 1)); color: var(--text-faint); }
 	.rsp-reset { border: none; background: none; cursor: pointer; color: var(--interactive-accent, #7c3aed); font-family: inherit; font-size: inherit; padding: 0; text-decoration: underline; }

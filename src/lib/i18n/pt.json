@@ -1436,7 +1436,8 @@
     "sortByFile": "Ordenar por arquivo",
     "search": "Pesquisar tarefas...",
     "allLibraries": "Todos os cofres",
-    "groupByLibrary": "Agrupar por cofre"
+    "groupByLibrary": "Agrupar por cofre",
+    "taskActionFailed": "Algo deu errado — suas tarefas podem não estar atualizadas, e sua última alteração não foi salva."
   },
   "tabContextMenu": {
     "pin": "Fixar",
@@ -1609,7 +1610,8 @@
     "nestedMapReadOnly": "somente leitura",
     "nestedMapHint": "Os campos aninhados são mantidos exatamente como no arquivo e não podem ser editados aqui.",
     "nestedMapEmpty": "sem campos",
-    "typeNestedMap": "Campos aninhados"
+    "typeNestedMap": "Campos aninhados",
+    "commitRefused": "Não foi possível salvar esta alteração na nota. Ela ainda aparece aqui, mas não foi gravada."
   },
   "editor": {
     "undo": "Desfazer",
@@ -3787,7 +3789,8 @@
       "due": "Releia-a e confirme que ainda se sustenta, depois marque-a como revista.",
       "never": "Dê-lhe a primeira revisão — leia-a por inteiro, depois confirme ou refine.",
       "checkpoint": "Reexamine esta perspetiva — confirme-a, reveja-a ou substitua-a."
-    }
+    },
+    "prioritySaveFailed": "Não foi possível salvar a prioridade — ela ficou inalterada."
   },
   "plurals": {
     "notes": {

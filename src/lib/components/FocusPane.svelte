@@ -153,6 +153,12 @@
 			view?.focus();
 		}
 		if (e.key === 'Escape') {
+			// PJ-187 — Escape here is not "cancel the title", it is the app-wide "leave Focus
+			// mode" gesture, and it fired straight past the only commit path: a retyped title
+			// was discarded silently, the note keeping its old name. Clicking away commits
+			// (handleTitleBlur), Enter commits (it blurs the input) — Escape did not. Route it
+			// through the same function so there is ONE commit path, not two-and-a-hole.
+			handleTitleBlur();
 			reportCaret();
 			onexit?.();
 		}

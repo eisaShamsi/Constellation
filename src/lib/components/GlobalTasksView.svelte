@@ -17,6 +17,8 @@
 	let allTasks = $state<TaskItem[]>([]);
 	let loading = $state(true);
 	let scanTime = $state(0);
+	/** PJ-187 — a visible failure state; a failed scan or toggle was console-only. */
+	let taskError = $state<string | null>(null);
 
 	// Filters
 	let statusFilter = $state<'all' | 'incomplete' | 'completed'>('incomplete');
@@ -127,19 +129,32 @@
 			allTasks = results.flatMap(r => r.tasks);
 			scanTime = Math.round(performance.now() - start);
 		} catch (e) {
+			// PJ-187 — a failed scan used to leave the panel showing "No tasks found", which
+			// reads as "your libraries have no tasks" rather than "we could not look".
+			if (seq === _loadSeq) taskError = String(e);
 			console.error('Failed to scan tasks:', e);
 		}
 		if (seq === _loadSeq) loading = false;
 	}
 
-	async function handleToggle(filePath: string, lineNumber: number) {
+	/**
+	 * PJ-187 — the checkbox is a plain DOM control (`checked={task.completed}`, one-way). Clicking
+	 * it flips the box in the browser BEFORE anything is written, and the failure path used to be a
+	 * bare `console.error` — so a task whose file could not be written stayed ticked on screen and
+	 * untouched on disk, for the rest of the session. The box is now put back, and the panel says so.
+	 */
+	async function handleToggle(filePath: string, lineNumber: number, el?: HTMLInputElement) {
+		const wasChecked = el ? !el.checked : null; // the state the model still holds
 		try {
 			// §A.3 — reconciled toggle so an OPEN note's model adopts the change (was a latent
 			// single-ownership gap: a plain toggle could be reverted by the note's next save).
 			await toggleTaskReconciled(filePath, lineNumber);
+			taskError = null;
 			// Refresh
 			await loadAllTasks();
 		} catch (e) {
+			if (el && wasChecked !== null) el.checked = wasChecked; // un-tick what was never written
+			taskError = String(e);
 			console.error('Failed to toggle task:', e);
 		}
 	}
@@ -266,9 +281,13 @@
 
 	<!-- Content -->
 	<div class="gt-content">
+		{#if taskError}
+			<!-- PJ-187 — never let a failure read as "you have nothing to do". -->
+			<div class="gt-error">{$t('globalTasks.taskActionFailed') || 'Something went wrong — your tasks may not be up to date, and your last change was not saved.'}</div>
+		{/if}
 		{#if loading}
 			<div class="gt-loading">{$t('globalTasks.scanning')}</div>
-		{:else if filteredTasks.length === 0}
+		{:else if filteredTasks.length === 0 && !taskError}
 			<div class="gt-empty">{$t('globalTasks.noTasksFound')}</div>
 		{:else}
 			{#each groupedTasks as group}
@@ -284,7 +303,7 @@
 							<input
 								type="checkbox"
 								checked={task.completed}
-								onchange={() => handleToggle(task.file_path, task.line_number)}
+								onchange={(e) => handleToggle(task.file_path, task.line_number, e.currentTarget as HTMLInputElement)}
 							/>
 						</label>
 						<div class="gt-task-body">
@@ -418,6 +437,7 @@
 		overflow-y: auto;
 		padding: 4px 0;
 	}
+	.gt-error { padding: 8px 12px; font-size: 12px; color: var(--text-error, #c0392b); line-height: 1.4; }
 	.gt-loading, .gt-empty {
 		padding: 40px 16px;
 		text-align: center;

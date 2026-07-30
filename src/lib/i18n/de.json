@@ -996,7 +996,8 @@
     "groupByPriority": "Nach Priorität gruppieren",
     "groupByDue": "Nach Fälligkeitsdatum gruppieren",
     "sortByFile": "Nach Datei sortieren",
-    "search": "Aufgaben suchen..."
+    "search": "Aufgaben suchen...",
+    "taskActionFailed": "Etwas ist schiefgelaufen — deine Aufgaben sind möglicherweise nicht aktuell, und deine letzte Änderung wurde nicht gespeichert."
   },
   "tabContextMenu": {
     "pin": "Anheften",
@@ -1169,7 +1170,8 @@
     "nestedMapReadOnly": "schreibgeschützt",
     "nestedMapHint": "Verschachtelte Felder bleiben exakt wie in der Datei und sind hier nicht bearbeitbar.",
     "nestedMapEmpty": "keine Felder",
-    "typeNestedMap": "Verschachtelte Felder"
+    "typeNestedMap": "Verschachtelte Felder",
+    "commitRefused": "Diese Änderung konnte nicht in der Notiz gespeichert werden. Sie wird hier noch angezeigt, wurde aber nicht geschrieben."
   },
   "editor": {
     "undo": "Rückgängig",
@@ -3787,7 +3789,8 @@
       "due": "Lies sie erneut und bestätige, dass sie weiterhin gilt, dann markiere sie als geprüft.",
       "never": "Gib ihr ihre erste Prüfung — lies sie durch, dann bestätige oder verfeinere sie.",
       "checkpoint": "Überdenke diese Sichtweise — bestätige sie, überarbeite sie oder löse sie ab."
-    }
+    },
+    "prioritySaveFailed": "Die Priorität konnte nicht gespeichert werden — sie bleibt unverändert."
   },
   "plurals": {
     "notes": {

@@ -104,14 +104,14 @@ describe('MIG-107 Slice 4 — apply()', () => {
 	it('drives each intent once, and reports whether anything changed', () => {
 		const { s, calls } = sink();
 		const ops = plan([P('title', 'N'), P('new', 'v')], [P('title', 'N'), P('gone', 'x')], seed('title', 'gone'));
-		expect(apply(ops, s)).toBe(true);
+		expect(apply(ops, s).changed).toBe(true);
 		expect(calls).toEqual(['remove:gone', 'add:new']);
 	});
 
 	it('reports NO change when every intent no-ops — so a pointless disk write is skipped', () => {
 		const s: IntentSink = { setValue: () => false, add: () => false, remove: () => false, order: () => false };
 		const same = [P('title', 'N')];
-		expect(apply(plan(same, same, seed('title')), s)).toBe(false);
+		expect(apply(plan(same, same, seed('title')), s).changed).toBe(false);
 	});
 });
 
