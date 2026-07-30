@@ -4038,7 +4038,7 @@
     "actionHint": "点击在“移入”与“复制”之间切换",
     "actionMove": "移入",
     "backupNote": "在移动任何内容之前，知识索引和所有设置文件的已验证备份会保存在宇宙文件夹内。不会删除任何内容。",
-    "dontClose": "请保持 Constellation 打开。通常远不到一分钟。",
+    "dontClose": "请保持 Constellation 打开。在大型宇宙中这可能需要几分钟——上方的步骤会随时告知进度。",
     "intro": "宇宙是一个包含其全部知识的文件夹。你的 {n} 个库目前位于此文件夹之外。Constellation 可以将它们移入——笔记、链接和历史记录完全保持原样。",
     "notNow": "暂不",
     "phaseDone": "完成。",

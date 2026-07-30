@@ -193,7 +193,7 @@
 				<h2>{$t('mig108.runningTitle') || 'Unifying your universe…'}</h2>
 				<div class="m108-spinner" aria-hidden="true"></div>
 				<p class="m108-phase">{phaseText(phaseLabel)}</p>
-				<p class="m108-wait">{$t('mig108.dontClose') || 'Please keep Constellation open. This usually takes well under a minute.'}</p>
+				<p class="m108-wait">{$t('mig108.dontClose') || 'Please keep Constellation open. On a large universe this can take several minutes — the steps above will keep you informed.'}</p>
 			{:else if mode === 'summary'}
 				<h2>{$t('mig108.summaryTitle') || 'Your universe is in one place'}</h2>
 				<p class="m108-intro">

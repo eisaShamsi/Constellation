@@ -4065,7 +4065,7 @@
     "actionHint": "Haz clic para alternar entre Mover y Copiar",
     "actionMove": "Mover dentro",
     "backupNote": "Antes de mover nada, se guarda dentro de la carpeta del universo una copia de seguridad verificada del índice y de todos los archivos de configuración. No se borra nada.",
-    "dontClose": "Mantén Constellation abierto. Suele tardar bastante menos de un minuto.",
+    "dontClose": "Mantén Constellation abierto. En un universo grande esto puede tardar varios minutos — los pasos de arriba te mantienen informado.",
     "intro": "Un universo es una carpeta que contiene todo su conocimiento. {n} de tus bibliotecas viven fuera de la carpeta de este universo. Constellation puede moverlas dentro — tus notas, enlaces e historial quedan exactamente igual.",
     "notNow": "Ahora no",
     "phaseDone": "Terminado.",

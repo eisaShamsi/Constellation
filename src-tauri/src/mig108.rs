@@ -714,6 +714,31 @@ pub(crate) fn remap_any(stored: &str, pairs: &[(String, String)]) -> Option<Stri
     None
 }
 
+/// The BOOLEAN fast path for "is `stored` under any of these roots?".
+///
+/// Stage-A timing round 2: the in-tx verify alone took **205 s**, because it answered this
+/// yes/no question by attempting the full component-splitting, per-component-NFC
+/// `remap_path` against every row x every pair (~68M NFC normalizations across ~470k rows).
+/// For a membership test, normalize each PREFIX once and each ROW once, then compare with a
+/// separator-bounded starts_with. `remap_path` stays the authority for actual rewriting —
+/// which only ever runs on the matched minority.
+pub(crate) struct NormPrefixes(Vec<String>);
+
+impl NormPrefixes {
+    pub(crate) fn new<'a>(roots: impl Iterator<Item = &'a str>) -> Self {
+        NormPrefixes(roots.map(norm).collect())
+    }
+    pub(crate) fn matches(&self, stored: &str) -> bool {
+        let n = norm(stored);
+        self.0.iter().any(|r| {
+            n == *r
+                || (n.len() > r.len()
+                    && n.as_bytes()[r.len()] == b'/'
+                    && n.starts_with(r.as_str()))
+        })
+    }
+}
+
 // ─── Move phase ─────────────────────────────────────────────────────────────────────────────
 
 /// Execute every not-yet-moved entry's fs operation, journaling around each. Halts with Err
@@ -846,13 +871,17 @@ pub fn run_db_rewrite(
                 .map_err(|e| e.to_string())?;
             rows.filter_map(|r| r.ok()).collect()
         };
+        let t_loop = std::time::Instant::now();
         for old in &all_paths {
             if let Some(new) = remap_any(old, &pairs) {
                 crate::libraries::migrate_note_db_paths(conn, old, &new);
             }
         }
+        eprintln!("[mig108 timing] per-note cascade loop: {:.1}s", t_loop.elapsed().as_secs_f64());
 
         // Straggler sweep — universal end-state guarantee for rows the cascade cannot see.
+        let t_sweep = std::time::Instant::now();
+        let old_prefixes = NormPrefixes::new(pairs.iter().map(|(o, _)| o.as_str()));
         for (table, col, pre_delete) in SWEEP {
             let sql = format!("SELECT DISTINCT {c} FROM {t}", c = col, t = table);
             let stale: Vec<String> = match conn.prepare(&sql) {
@@ -860,7 +889,7 @@ pub fn run_db_rewrite(
                     .query_map([], |r| r.get::<_, String>(0))
                     .map_err(|e| e.to_string())?
                     .filter_map(|r| r.ok())
-                    .filter(|p| remap_any(p, &pairs).is_some())
+                    .filter(|p| old_prefixes.matches(p))
                     .collect(),
                 // Lazily-created tables may not exist — the correct no-op.
                 Err(e) if e.to_string().contains("no such table") => continue,
@@ -883,7 +912,10 @@ pub fn run_db_rewrite(
             }
         }
 
+        eprintln!("[mig108 timing] straggler sweep: {:.1}s", t_sweep.elapsed().as_secs_f64());
+
         // H11 hygiene — all tolerant of absent tables.
+        let t_h = std::time::Instant::now();
         for sql in [
             "DELETE FROM sky_backfill_cursor",
             "DELETE FROM links_outgoing_backfill_cursor",
@@ -901,12 +933,16 @@ pub fn run_db_rewrite(
                 }
             }
         }
+        eprintln!("[mig108 timing] cache/cursor hygiene: {:.1}s", t_h.elapsed().as_secs_f64());
 
         // Restore the aggregate machinery, then recompute once (the reconcile precedent).
+        let t_rc = std::time::Instant::now();
         crate::search::create_outgoing_link_triggers(conn)?;
         crate::links_backfill::recompute_all_outgoing(conn).map_err(|e| e.to_string())?;
+        eprintln!("[mig108 timing] recompute_all_outgoing: {:.1}s", t_rc.elapsed().as_secs_f64());
 
         // ── Verification (I2) — inside the transaction, before COMMIT ──
+        let t_v = std::time::Instant::now();
         let after = read_baseline(conn)?;
         if after != baseline {
             return Err(format!(
@@ -923,7 +959,7 @@ pub fn run_db_rewrite(
                     .map_err(|e| e.to_string())?;
                 stale_left += rows
                     .filter_map(|r| r.ok())
-                    .filter(|p| remap_any(p, &pairs).is_some())
+                    .filter(|p| old_prefixes.matches(p))
                     .count() as i64;
             }
         }
@@ -932,7 +968,7 @@ pub fn run_db_rewrite(
             let rows = stmt.query_map([], |r| r.get::<_, String>(0)).map_err(|e| e.to_string())?;
             stale_left += rows
                 .filter_map(|r| r.ok())
-                .filter(|p| remap_any(p, &pairs).is_some())
+                .filter(|p| old_prefixes.matches(p))
                 .count() as i64;
         }
         if stale_left != 0 {
@@ -943,15 +979,18 @@ pub fn run_db_rewrite(
                 return Err(format!("mig108 verify: moved dir missing: {}", e.new_path));
             }
         }
+        eprintln!("[mig108 timing] in-tx verify: {:.1}s", t_v.elapsed().as_secs_f64());
         Ok(())
     })();
 
     match result {
         Ok(()) => {
+            let t_c = std::time::Instant::now();
             conn.execute_batch("COMMIT").map_err(|e| {
                 let _ = conn.execute_batch("ROLLBACK");
                 format!("mig108 COMMIT failed (deferred FK?): {}", e)
             })?;
+            eprintln!("[mig108 timing] COMMIT: {:.1}s", t_c.elapsed().as_secs_f64());
             journal.phase = Phase::DbRewritten;
             journal.save(constellation_dir)
         }
@@ -1789,7 +1828,16 @@ mod rehearsal_harness {
 
         let conn = rusqlite::Connection::open(&db_path).unwrap();
         let t0 = std::time::Instant::now();
-        run_engine(&conn, &db_path, &mut journal, &cdir).unwrap();
+        loop {
+            let before = journal.phase.clone();
+            if matches!(before, Phase::Done) { break; }
+            let tp = std::time::Instant::now();
+            run_engine_step(&conn, &db_path, &mut journal, &cdir).unwrap();
+            println!(
+                "rehearsal: phase {:?} -> {:?} in {:.1}s",
+                before, journal.phase, tp.elapsed().as_secs_f64()
+            );
+        }
         let took = t0.elapsed();
         println!("rehearsal: engine completed in {:.1}s", took.as_secs_f64());
         assert_eq!(journal.phase, Phase::Done);
@@ -1797,15 +1845,14 @@ mod rehearsal_harness {
         // The independent wider-net check (LL-040: never only the engine's own verify):
         // zero rows under ANY journal old path, copy-class included.
         let mut stale = 0i64;
+        let old_prefixes = NormPrefixes::new(journal.entries.iter().map(|e| e.old_path.as_str()));
         for (table, col, _) in SWEEP {
             if let Ok(mut stmt) = conn.prepare(&format!("SELECT {c} FROM {t}", c = col, t = table)) {
                 stale += stmt
                     .query_map([], |r| r.get::<_, String>(0))
                     .unwrap()
                     .filter_map(|r| r.ok())
-                    .filter(|p| {
-                        journal.entries.iter().any(|e| remap_path(p, &e.old_path, "X").is_some())
-                    })
+                    .filter(|p| old_prefixes.matches(p))
                     .count() as i64;
             }
         }
@@ -1815,7 +1862,7 @@ mod rehearsal_harness {
                 .query_map([], |r| r.get::<_, String>(0))
                 .unwrap()
                 .filter_map(|r| r.ok())
-                .filter(|p| journal.entries.iter().any(|e| remap_path(p, &e.old_path, "X").is_some()))
+                .filter(|p| old_prefixes.matches(p))
                 .count() as i64;
         }
         assert_eq!(stale, 0, "wider-net stale check must be ZERO (copy-class included)");

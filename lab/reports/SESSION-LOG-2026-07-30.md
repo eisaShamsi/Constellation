@@ -252,3 +252,23 @@ registry entries outside the scratch world: none. Real universe: read-only throu
 
 Binary: bundle 11:30 → constellation.exe 11:35; mig108_execute in the JS chunk,
 mig108_preflight in the exe. Stage-A tutorial delivered to the Boss.
+
+## §11 — Three rehearsal cycles, measured to the honest number
+
+Cycle 1 (Boss, Stage-A): ~25 min — sky triggers active through the bulk. Cycle 2 (headless,
+post-fix): 555 s; instrumentation split it — in-tx verify alone 205 s (my remap_any answering
+a BOOLEAN with ~68M per-component NFC normalizations) + ~357 s unaccounted. Cycle 3 (fast
+path + full spans): **455 s total** — verify 205→12.7 s (NormPrefixes: normalize each prefix
+and each row ONCE); the blind region resolved to sweep 20.3 s + hygiene 0.1 s + COMMIT 80.3 s.
+Run-to-run variance on identical work (loop 64→261 s, recompute 1.4→52 s) carries the
+AV/OS-cache signature, not a code signature. Structural floor: real I/O — the ~1 GB WAL
+COMMIT, the 2 GB snapshot copy, 160k point-statements through the PROVEN per-note cascade.
+
+**Ruling taken:** 5–10 minutes on a universe this size is the honest number; batching the
+cascade into hand-rolled SQL to shave minutes off a ONCE-per-universe migration is the wrong
+trade against proven-ness (Constraint as Design). The dialog now promises "several minutes"
+×15 locales; the timing spans stay (stderr-only, they feed Stage-B's report). Wider-net stale
+rows = 0 on every cycle since the copy-class fix.
+
+Slice 6's deliverable exists and has run three times green: the maker + the env-driven
+harness + the independent verifier ARE the mechanical rehearsal.

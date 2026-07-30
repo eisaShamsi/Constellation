@@ -4065,7 +4065,7 @@
     "actionHint": "Klicken, um zwischen Verschieben und Kopieren zu wechseln",
     "actionMove": "Verschieben",
     "backupNote": "Bevor irgendetwas verschoben wird, wird eine verifizierte Sicherung des Wissensindex und aller Einstellungsdateien im Universum-Ordner abgelegt. Nichts wird gelöscht.",
-    "dontClose": "Bitte lass Constellation geöffnet. Das dauert in der Regel deutlich unter einer Minute.",
+    "dontClose": "Bitte lass Constellation geöffnet. Bei einem großen Universum kann das mehrere Minuten dauern — die Schritte oben halten dich auf dem Laufenden.",
     "intro": "Ein Universum ist ein Ordner, der sein gesamtes Wissen enthält. {n} deiner Bibliotheken liegen derzeit außerhalb dieses Universum-Ordners. Constellation kann sie hineinverschieben — Notizen, Verknüpfungen und Verlauf bleiben exakt erhalten.",
     "notNow": "Jetzt nicht",
     "phaseDone": "Fertig.",

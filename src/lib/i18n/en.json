@@ -4186,7 +4186,7 @@
     "actionHint": "Click to switch between Move and Copy",
     "actionMove": "Move in",
     "backupNote": "Before anything moves, a verified backup of the knowledge index and every settings file is stored inside the universe folder. Nothing is deleted.",
-    "dontClose": "Please keep Constellation open. This usually takes well under a minute.",
+    "dontClose": "Please keep Constellation open. On a large universe this can take several minutes — the steps above will keep you informed.",
     "intro": "A universe is one folder that holds all of its knowledge. {n} of your libraries currently live outside this universe’s folder. Constellation can move them in — your notes, links and history all stay exactly as they are.",
     "notNow": "Not now",
     "phaseDone": "Finished.",

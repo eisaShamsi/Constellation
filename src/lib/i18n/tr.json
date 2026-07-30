@@ -4065,7 +4065,7 @@
     "actionHint": "Taşı ile Kopyala arasında geçiş için tıkla",
     "actionMove": "Taşı",
     "backupNote": "Herhangi bir şey taşınmadan önce, bilgi dizininin ve tüm ayar dosyalarının doğrulanmış bir yedeği evren klasörünün içine kaydedilir. Hiçbir şey silinmez.",
-    "dontClose": "Lütfen Constellation’ı açık tut. Genellikle bir dakikadan çok daha kısa sürer.",
+    "dontClose": "Lütfen Constellation açık kalsın. Büyük bir evrende bu birkaç dakika sürebilir — yukarıdaki adımlar seni bilgilendirir.",
     "intro": "Bir evren, tüm bilgisini barındıran tek bir klasördür. Kütüphanelerinden {n} tanesi şu anda bu klasörün dışında. Constellation onları içeri taşıyabilir — notların, bağlantıların ve geçmişin aynen kalır.",
     "notNow": "Şimdi değil",
     "phaseDone": "Bitti.",

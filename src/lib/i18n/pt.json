@@ -4065,7 +4065,7 @@
     "actionHint": "Clique para alternar entre Mover e Copiar",
     "actionMove": "Mover",
     "backupNote": "Antes de mover algo, uma cópia de segurança verificada do índice e de todos os ficheiros de definições é guardada dentro da pasta do universo. Nada é apagado.",
-    "dontClose": "Mantenha o Constellation aberto. Normalmente demora bem menos de um minuto.",
+    "dontClose": "Mantenha o Constellation aberto. Num universo grande isto pode demorar vários minutos — os passos acima mantêm-no informado.",
     "intro": "Um universo é uma pasta que contém todo o seu conhecimento. {n} das suas bibliotecas vivem fora da pasta deste universo. O Constellation pode movê-las para dentro — as notas, ligações e histórico ficam exatamente como estão.",
     "notNow": "Agora não",
     "phaseDone": "Concluído.",
