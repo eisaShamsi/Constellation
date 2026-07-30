@@ -4032,5 +4032,32 @@
     "clashMerge": "把这些字段加进去",
     "merged": "已添加：{fields}",
     "undoRefused": "该模板此后已被修改 —— 保持原样。"
+  },
+  "mig108": {
+    "actionCopy": "复制",
+    "actionHint": "点击在“移入”与“复制”之间切换",
+    "actionMove": "移入",
+    "backupNote": "在移动任何内容之前，知识索引和所有设置文件的已验证备份会保存在宇宙文件夹内。不会删除任何内容。",
+    "dontClose": "请保持 Constellation 打开。通常远不到一分钟。",
+    "intro": "宇宙是一个包含其全部知识的文件夹。你的 {n} 个库目前位于此文件夹之外。Constellation 可以将它们移入——笔记、链接和历史记录完全保持原样。",
+    "notNow": "暂不",
+    "phaseDone": "完成。",
+    "phaseMoving": "正在移动库文件夹…",
+    "phaseRewriting": "正在更新知识索引…",
+    "phaseSnapshot": "正在备份…",
+    "phaseStores": "正在更新已保存的列表与布局…",
+    "phaseTrash": "正在合并回收站…",
+    "reloadNow": "重新加载 Constellation",
+    "resumeBody": "Constellation 在移动库时被中断（{total} 个中已移动 {done} 个）。一切均已记录，备份完好——可以从停下的地方精确继续。",
+    "resumeButton": "继续并完成",
+    "resumeTitle": "发现未完成的统一",
+    "runningTitle": "正在统一你的宇宙…",
+    "skipForeign": "属于另一个宇宙——已跳过",
+    "skipMissing": "磁盘上未找到——已跳过",
+    "summaryBody": "已移入 {moved} 个库，复制 {copied} 个。备份会保留在宇宙文件夹中，直到你选择删除。",
+    "summaryTitle": "你的宇宙已汇聚于一处",
+    "title": "将你的宇宙汇聚到一处",
+    "unify": "统一",
+    "verifyFailedNote": "上次尝试在安全检查处停止，数据库的所有更改已回滚。继续后将重新检查。"
   }
 }

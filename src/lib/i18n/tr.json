@@ -4059,5 +4059,32 @@
     "clashMerge": "Bu alanları ona ekle",
     "merged": "Eklendi: {fields}",
     "undoRefused": "O şablon o zamandan beri düzenlendi — dokunulmuyor."
+  },
+  "mig108": {
+    "actionCopy": "Kopyala",
+    "actionHint": "Taşı ile Kopyala arasında geçiş için tıkla",
+    "actionMove": "Taşı",
+    "backupNote": "Herhangi bir şey taşınmadan önce, bilgi dizininin ve tüm ayar dosyalarının doğrulanmış bir yedeği evren klasörünün içine kaydedilir. Hiçbir şey silinmez.",
+    "dontClose": "Lütfen Constellation’ı açık tut. Genellikle bir dakikadan çok daha kısa sürer.",
+    "intro": "Bir evren, tüm bilgisini barındıran tek bir klasördür. Kütüphanelerinden {n} tanesi şu anda bu klasörün dışında. Constellation onları içeri taşıyabilir — notların, bağlantıların ve geçmişin aynen kalır.",
+    "notNow": "Şimdi değil",
+    "phaseDone": "Bitti.",
+    "phaseMoving": "Kütüphane klasörleri taşınıyor…",
+    "phaseRewriting": "Bilgi dizini güncelleniyor…",
+    "phaseSnapshot": "Yedek alınıyor…",
+    "phaseStores": "Kayıtlı listeler ve düzenler güncelleniyor…",
+    "phaseTrash": "Çöp kutusu birleştiriliyor…",
+    "reloadNow": "Constellation’ı yeniden yükle",
+    "resumeBody": "Kütüphaneler taşınırken Constellation kesintiye uğradı ({total} içinden {done} taşındı). Her şey günlükte kayıtlı ve yedek sağlam — kaldığı yerden aynen devam edebilir.",
+    "resumeButton": "Devam et ve bitir",
+    "resumeTitle": "Tamamlanmamış bir birleştirme bulundu",
+    "runningTitle": "Evrenin birleştiriliyor…",
+    "skipForeign": "başka bir evrene ait — atlandı",
+    "skipMissing": "diskte bulunamadı — atlandı",
+    "summaryBody": "{moved} kütüphane taşındı, {copied} kopyalandı. Yedek, sen kaldırmayı seçene kadar evren klasöründe tutulur.",
+    "summaryTitle": "Evrenin artık tek bir yerde",
+    "title": "Evrenini tek bir yerde topla",
+    "unify": "Birleştir",
+    "verifyFailedNote": "Son deneme güvenlik denetiminde durdu ve tüm veritabanı değişiklikleri geri alındı. Devam edince denetim yeniden yapılır."
   }
 }

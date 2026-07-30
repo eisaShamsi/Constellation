@@ -4059,5 +4059,32 @@
     "clashMerge": "Adicionar estes campos",
     "merged": "Adicionado: {fields}",
     "undoRefused": "Esse modelo foi editado desde então — fica intacto."
+  },
+  "mig108": {
+    "actionCopy": "Copiar",
+    "actionHint": "Clique para alternar entre Mover e Copiar",
+    "actionMove": "Mover",
+    "backupNote": "Antes de mover algo, uma cópia de segurança verificada do índice e de todos os ficheiros de definições é guardada dentro da pasta do universo. Nada é apagado.",
+    "dontClose": "Mantenha o Constellation aberto. Normalmente demora bem menos de um minuto.",
+    "intro": "Um universo é uma pasta que contém todo o seu conhecimento. {n} das suas bibliotecas vivem fora da pasta deste universo. O Constellation pode movê-las para dentro — as notas, ligações e histórico ficam exatamente como estão.",
+    "notNow": "Agora não",
+    "phaseDone": "Concluído.",
+    "phaseMoving": "A mover as pastas das bibliotecas…",
+    "phaseRewriting": "A atualizar o índice de conhecimento…",
+    "phaseSnapshot": "A criar a cópia de segurança…",
+    "phaseStores": "A atualizar listas e disposições guardadas…",
+    "phaseTrash": "A consolidar o lixo…",
+    "reloadNow": "Recarregar o Constellation",
+    "resumeBody": "O Constellation foi interrompido ao mover as bibliotecas ({done} de {total} movidas). Tudo está registado e a cópia de segurança intacta — pode continuar exatamente onde parou.",
+    "resumeButton": "Retomar e concluir",
+    "resumeTitle": "Foi encontrada uma unificação por terminar",
+    "runningTitle": "A unificar o seu universo…",
+    "skipForeign": "pertence a outro universo — ignorada",
+    "skipMissing": "não encontrada no disco — ignorada",
+    "summaryBody": "{moved} bibliotecas movidas, {copied} copiadas. A cópia de segurança fica na pasta do universo até que decida removê-la.",
+    "summaryTitle": "O seu universo está num só lugar",
+    "title": "Reúna o seu universo num só lugar",
+    "unify": "Unificar",
+    "verifyFailedNote": "A última tentativa parou na verificação de segurança e todas as alterações à base de dados foram revertidas. Ao retomar, a verificação repete-se."
   }
 }

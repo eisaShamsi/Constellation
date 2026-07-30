@@ -4032,5 +4032,32 @@
     "clashMerge": "이 필드를 추가하기",
     "merged": "추가됨: {fields}",
     "undoRefused": "그 템플릿은 그 뒤로 편집되었습니다 — 그대로 둡니다."
+  },
+  "mig108": {
+    "actionCopy": "복사",
+    "actionHint": "클릭하여 이동과 복사를 전환",
+    "actionMove": "이동",
+    "backupNote": "옮기기 전에 지식 인덱스와 모든 설정 파일의 검증된 백업이 유니버스 폴더 안에 저장됩니다. 아무것도 삭제되지 않습니다.",
+    "dontClose": "Constellation을 열어 두세요. 보통 1분도 걸리지 않습니다.",
+    "intro": "유니버스는 모든 지식을 담는 하나의 폴더입니다. 현재 라이브러리 {n}개가 이 폴더 밖에 있습니다. Constellation이 안으로 옮길 수 있으며 — 노트, 링크, 기록은 그대로 유지됩니다.",
+    "notNow": "나중에",
+    "phaseDone": "완료.",
+    "phaseMoving": "라이브러리 폴더 이동 중…",
+    "phaseRewriting": "지식 인덱스 업데이트 중…",
+    "phaseSnapshot": "백업 생성 중…",
+    "phaseStores": "저장된 목록과 레이아웃 업데이트 중…",
+    "phaseTrash": "휴지통 통합 중…",
+    "reloadNow": "Constellation 다시 불러오기",
+    "resumeBody": "라이브러리를 옮기던 중 Constellation이 중단되었습니다({total}개 중 {done}개 완료). 모두 기록되어 있고 백업도 온전합니다 — 멈춘 지점에서 정확히 이어갈 수 있습니다.",
+    "resumeButton": "재개하여 마치기",
+    "resumeTitle": "끝나지 않은 통합이 발견됨",
+    "runningTitle": "유니버스 통합 중…",
+    "skipForeign": "다른 유니버스 소속 — 건너뜀",
+    "skipMissing": "디스크에서 찾을 수 없음 — 건너뜀",
+    "summaryBody": "라이브러리 {moved}개 이동, {copied}개 복사. 백업은 삭제할 때까지 유니버스 폴더에 보관됩니다.",
+    "summaryTitle": "유니버스가 한곳에 모였습니다",
+    "title": "유니버스를 한곳으로 모으기",
+    "unify": "통합",
+    "verifyFailedNote": "마지막 시도는 안전 검사에서 멈추었고 데이터베이스 변경은 모두 되돌려졌습니다. 재개하면 검사를 다시 실행합니다."
   }
 }

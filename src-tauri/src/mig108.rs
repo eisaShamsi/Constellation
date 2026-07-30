@@ -1050,10 +1050,28 @@ pub fn run_engine(
         run_json_rewrites(journal, constellation_dir)?;
     }
     if matches!(journal.phase, Phase::JsonRewritten) {
-        journal.phase = Phase::Done;
-        journal.save(constellation_dir)?;
+        finish_with_trash_consolidation(journal, constellation_dir)?;
     }
     Ok(())
+}
+
+/// T step + Done — consolidate per-library trash into the root's (idempotent, so a resume
+/// re-entering here is safe). The registry was just rewritten, so its paths are the NEW
+/// locations; a missing/unreadable registry skips consolidation rather than guessing
+/// (nothing is lost — the standalone pass can run any time).
+fn finish_with_trash_consolidation(
+    journal: &mut Journal,
+    constellation_dir: &Path,
+) -> Result<(), String> {
+    let libs_file = constellation_dir.join("libraries.json");
+    if let Ok(raw) = std::fs::read_to_string(&libs_file) {
+        if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&raw) {
+            let paths: Vec<String> = libs.iter().map(|l| l.path.clone()).collect();
+            consolidate_trash(Path::new(&journal.universe_root), &paths)?;
+        }
+    }
+    journal.phase = Phase::Done;
+    journal.save(constellation_dir)
 }
 
 #[cfg(test)]
@@ -1444,6 +1462,165 @@ pub fn consolidate_trash(universe_root: &Path, library_paths: &[String]) -> Resu
         }
     }
     Ok(moved)
+}
+
+// ─── Slice 4 — the command surface ──────────────────────────────────────────────────────────
+//
+// Thin wrappers; every decision lives in the tested engine above. The PROPOSAL is the
+// contract (The Constellation Way): `mig108_preflight` is read-only and feeds the dialog;
+// nothing mutates until the user's explicit `mig108_execute`, whose `copy_paths` carries the
+// per-entry Move/Copy choices the dialog collected (Boss D2/D3 — entries default to Move and
+// any can be flipped to Copy).
+
+#[derive(Serialize)]
+pub struct JournalState {
+    pub phase: Phase,
+    pub entries_total: usize,
+    pub entries_moved: usize,
+    pub universe_root: String,
+}
+
+fn active_cdir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    crate::universe::active_constellation_dir(app)
+}
+
+fn assemble_foreign_roots(app: &tauri::AppHandle, own_root: &str) -> Vec<String> {
+    let mut roots: Vec<String> = Vec::new();
+    for r in crate::universe::registered_universe_roots(app) {
+        let rs = r.to_string_lossy().to_string();
+        // Children of ANY registered universe are foreign content too (H6) — including the
+        // active universe's own cUniverses.
+        for c in crate::universe::resolve_child_universe_roots_recursive(&r) {
+            roots.push(c.to_string_lossy().to_string());
+        }
+        if norm(&rs) != norm(own_root) {
+            roots.push(rs);
+        }
+    }
+    roots
+}
+
+/// Read-only: classify the active universe for the proposal dialog. `copy_paths` lets the
+/// dialog re-run the plan as the user flips entries between Move and Copy.
+#[tauri::command(async)]
+pub fn mig108_preflight(
+    app: tauri::AppHandle,
+    copy_paths: Option<Vec<String>>,
+) -> Result<PreflightReport, String> {
+    let root = crate::universe::active_universe_dir(&app)?
+        .to_string_lossy()
+        .to_string();
+    let libs = crate::libraries::load_all_libraries(&app);
+    let foreign = assemble_foreign_roots(&app, &root);
+    Ok(classify(&root, &libs, &copy_paths.unwrap_or_default(), &foreign))
+}
+
+/// The unfinished-journal probe for boot (None = nothing to resume).
+#[tauri::command(async)]
+pub fn mig108_journal_state(app: tauri::AppHandle) -> Result<Option<JournalState>, String> {
+    let cdir = active_cdir(&app)?;
+    Ok(Journal::load(&cdir)?
+        .filter(|j| j.is_unfinished())
+        .map(|j| JournalState {
+            entries_total: j.entries.len(),
+            entries_moved: j.entries.iter().filter(|e| e.moved).count(),
+            universe_root: j.universe_root.clone(),
+            phase: j.phase,
+        }))
+}
+
+fn emit_phase(app: &tauri::AppHandle, phase: &str) {
+    use tauri::Emitter;
+    let _ = app.emit("mig108:progress", phase);
+}
+
+/// One engine phase per call (run_engine advances through all of them; this steps, so the
+/// wrapper can emit progress between phases — the honest granularity, since the moves are
+/// near-instant renames and the DB rewrite is one indivisible transaction).
+fn run_engine_step(
+    conn: &rusqlite::Connection,
+    db_path: &Path,
+    journal: &mut Journal,
+    constellation_dir: &Path,
+) -> Result<(), String> {
+    match journal.phase {
+        Phase::Planned => {
+            let (b, jb, base) = take_snapshot(conn, db_path, constellation_dir)?;
+            journal.snapshot_db = Some(b);
+            journal.json_backups = jb;
+            journal.baseline = Some(base);
+            journal.phase = Phase::Snapshotted;
+            journal.save(constellation_dir)
+        }
+        Phase::Snapshotted | Phase::Moving => run_move_phase(journal, constellation_dir),
+        Phase::Moved | Phase::VerifyFailed => run_db_rewrite(conn, journal, constellation_dir),
+        Phase::DbRewritten => run_json_rewrites(journal, constellation_dir),
+        Phase::JsonRewritten => finish_with_trash_consolidation(journal, constellation_dir),
+        Phase::Done => Ok(()),
+    }
+}
+
+fn run_with_events(
+    app: &tauri::AppHandle,
+    journal: &mut Journal,
+    cdir: &Path,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_ref().ok_or("Search database not initialized")?;
+    let db_path = crate::search::db_path(app).map_err(|e| e.to_string())?;
+
+    let label = |p: &Phase| match p {
+        Phase::Planned => "snapshot",
+        Phase::Snapshotted | Phase::Moving => "moving",
+        Phase::Moved | Phase::VerifyFailed => "rewriting",
+        Phase::DbRewritten => "stores",
+        Phase::JsonRewritten => "trash",
+        Phase::Done => "done",
+    };
+    loop {
+        emit_phase(app, label(&journal.phase));
+        if matches!(journal.phase, Phase::Done) {
+            return Ok(());
+        }
+        let before = journal.phase.clone();
+        run_engine_step(conn, &db_path, journal, cdir)?;
+        if journal.phase == before {
+            return Err(format!("mig108: phase {:?} did not advance", before));
+        }
+    }
+}
+
+/// Execute the unification the user just approved. The frontend holds the freeze envelope
+/// (dirty tabs flushed, second screen closed, watchers down) around this call and reloads
+/// the window on success.
+#[tauri::command(async)]
+pub fn mig108_execute(app: tauri::AppHandle, copy_paths: Vec<String>) -> Result<(), String> {
+    let cdir = active_cdir(&app)?;
+    if let Some(j) = Journal::load(&cdir)? {
+        if j.is_unfinished() {
+            return Err("A previous unification is unfinished - resume it instead.".to_string());
+        }
+    }
+    let report = mig108_preflight(app.clone(), Some(copy_paths))?;
+    let mut journal = Journal::new(&report.universe_root, &report);
+    if journal.entries.is_empty() {
+        return Err("Nothing to unify.".to_string());
+    }
+    journal.save(&cdir)?;
+    run_with_events(&app, &mut journal, &cdir)
+}
+
+/// Resume an unfinished run found at boot. Same engine, same journal.
+#[tauri::command(async)]
+pub fn mig108_resume(app: tauri::AppHandle) -> Result<(), String> {
+    let cdir = active_cdir(&app)?;
+    let mut journal = Journal::load(&cdir)?.ok_or("No unification journal to resume")?;
+    if !journal.is_unfinished() {
+        return Ok(());
+    }
+    run_with_events(&app, &mut journal, &cdir)
 }
 
 #[cfg(test)]

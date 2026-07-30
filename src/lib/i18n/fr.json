@@ -4059,5 +4059,32 @@
     "clashMerge": "Ajouter ces champs",
     "merged": "Ajouté : {fields}",
     "undoRefused": "Ce modèle a été modifié depuis — il reste intact."
+  },
+  "mig108": {
+    "actionCopy": "Copier",
+    "actionHint": "Cliquez pour basculer entre Déplacer et Copier",
+    "actionMove": "Déplacer",
+    "backupNote": "Avant tout déplacement, une sauvegarde vérifiée de l’index et de tous les fichiers de réglages est conservée dans le dossier de l’univers. Rien n’est supprimé.",
+    "dontClose": "Gardez Constellation ouvert. Cela prend généralement bien moins d’une minute.",
+    "intro": "Un univers est un dossier qui contient tout son savoir. {n} de vos bibliothèques vivent actuellement hors du dossier de cet univers. Constellation peut les y déplacer — vos notes, liens et historique restent exactement tels quels.",
+    "notNow": "Pas maintenant",
+    "phaseDone": "Terminé.",
+    "phaseMoving": "Déplacement des dossiers de bibliothèques…",
+    "phaseRewriting": "Mise à jour de l’index…",
+    "phaseSnapshot": "Sauvegarde en cours…",
+    "phaseStores": "Mise à jour des listes et dispositions enregistrées…",
+    "phaseTrash": "Consolidation de la corbeille…",
+    "reloadNow": "Recharger Constellation",
+    "resumeBody": "Constellation a été interrompu pendant le déplacement de vos bibliothèques ({done} sur {total} déplacées). Tout est journalisé et la sauvegarde est intacte — la reprise continue exactement où cela s’est arrêté.",
+    "resumeButton": "Reprendre et terminer",
+    "resumeTitle": "Une unification inachevée a été trouvée",
+    "runningTitle": "Unification de votre univers…",
+    "skipForeign": "appartient à un autre univers — ignorée",
+    "skipMissing": "introuvable sur le disque — ignorée",
+    "summaryBody": "{moved} bibliothèques déplacées, {copied} copiées. La sauvegarde reste dans le dossier de l’univers jusqu’à ce que vous choisissiez de la retirer.",
+    "summaryTitle": "Votre univers est en un seul endroit",
+    "title": "Réunissez votre univers en un seul endroit",
+    "unify": "Unifier",
+    "verifyFailedNote": "La dernière tentative s’est arrêtée au contrôle de sécurité et toutes les modifications de la base ont été annulées. La reprise refera le contrôle."
   }
 }

@@ -209,3 +209,27 @@ block shape (interior comment in a flat list) (HIGH ×2) · settings.json has th
 latch as its two siblings (HIGH) · rename_universe repoints libraries.json even when the
 folder rename was skipped (MED) · set_review_priority ignores its affected-row count (MED) ·
 two parser-fidelity LOWs (quote-blind list split, `\"` unescaping).
+
+## §9 — MIG-108 Slice 4 landed: proposal · progress · resume-on-boot
+
+Rust: `mig108_preflight` (read-only, feeds the dialog; re-runnable as the user flips entries)
+· `mig108_journal_state` (the boot probe) · `mig108_execute(copy_paths)` · `mig108_resume` —
+all thin over the tested engine; `run_engine_step` steps one phase per call so the wrapper
+emits `mig108:progress` between phases (the honest granularity: moves are near-instant
+renames, the DB rewrite is one indivisible tx). Trash consolidation joined the resumable flow
+(JsonRewritten → Done, idempotent).
+
+Frontend: `Mig108UnifyDialog.svelte` — self-probing (renders nothing unless there is
+something to unify or resume), four states (proposal / running / summary / resume). The
+proposal lists every entry old→new with a per-entry Move/Copy flip (Boss D2/D3 generalized:
+the dialog IS the copy_paths selector, so no repo-detection hack for PJ-065-test-book — the
+Boss flips it to Copy at Stage-B). Skips shown with plain-language reasons; the backup named
+before the button. The run envelope lives in the dialog: flush dirty tabs → close the second
+screen (H9) → unwatch every library (H10) → engine → summary → RELOAD (boot re-reads the
+rewritten registry, rewatches at new paths, restores the session against rewritten tab paths
+— the wake choreography through the one already-proven path). Resume-on-boot surfaces an
+unfinished journal, never silently continues; VerifyFailed gets its own explanation.
+
+i18n: the `mig108.*` group — 25 keys × 15 locales, all translated in-pass.
+
+Gates: Rust **1303/0** (16 engine tests) · vitest **67/715** · svelte-check **0**.

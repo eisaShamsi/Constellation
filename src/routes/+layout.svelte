@@ -147,6 +147,7 @@
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
+	import Mig108UnifyDialog from '$lib/components/Mig108UnifyDialog.svelte';
 	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
@@ -9514,6 +9515,13 @@
 				<p class="canonical-note">{$t('canonical.migrationNote')}</p>
 			</div>
 		</div>
+	{/if}
+
+	<!-- MIG-108 — self-probing: renders nothing unless the active universe has external
+	     libraries to unify, or an unfinished unification journal to resume. Gated on
+	     librariesLoaded so the probe runs against the ACTIVE universe, post-boot. -->
+	{#if librariesLoaded}
+		<Mig108UnifyDialog />
 	{/if}
 
 	{#if showImporter}

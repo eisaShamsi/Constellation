@@ -4059,5 +4059,32 @@
     "clashMerge": "Diese Felder hinzufügen",
     "merged": "Hinzugefügt: {fields}",
     "undoRefused": "Diese Vorlage wurde seither bearbeitet — sie bleibt unangetastet."
+  },
+  "mig108": {
+    "actionCopy": "Kopieren",
+    "actionHint": "Klicken, um zwischen Verschieben und Kopieren zu wechseln",
+    "actionMove": "Verschieben",
+    "backupNote": "Bevor irgendetwas verschoben wird, wird eine verifizierte Sicherung des Wissensindex und aller Einstellungsdateien im Universum-Ordner abgelegt. Nichts wird gelöscht.",
+    "dontClose": "Bitte lass Constellation geöffnet. Das dauert in der Regel deutlich unter einer Minute.",
+    "intro": "Ein Universum ist ein Ordner, der sein gesamtes Wissen enthält. {n} deiner Bibliotheken liegen derzeit außerhalb dieses Universum-Ordners. Constellation kann sie hineinverschieben — Notizen, Verknüpfungen und Verlauf bleiben exakt erhalten.",
+    "notNow": "Jetzt nicht",
+    "phaseDone": "Fertig.",
+    "phaseMoving": "Bibliotheksordner werden verschoben…",
+    "phaseRewriting": "Wissensindex wird aktualisiert…",
+    "phaseSnapshot": "Sicherung wird erstellt…",
+    "phaseStores": "Gespeicherte Listen und Layouts werden aktualisiert…",
+    "phaseTrash": "Papierkorb wird zusammengeführt…",
+    "reloadNow": "Constellation neu laden",
+    "resumeBody": "Constellation wurde beim Verschieben deiner Bibliotheken unterbrochen ({done} von {total} verschoben). Alles ist protokolliert und die Sicherung intakt — es kann genau dort weitermachen.",
+    "resumeButton": "Fortsetzen und abschließen",
+    "resumeTitle": "Eine unvollendete Vereinigung wurde gefunden",
+    "runningTitle": "Dein Universum wird vereint…",
+    "skipForeign": "gehört zu einem anderen Universum — übersprungen",
+    "skipMissing": "nicht auf der Festplatte gefunden — übersprungen",
+    "summaryBody": "{moved} Bibliotheken verschoben, {copied} kopiert. Die Sicherung bleibt im Universum-Ordner, bis du sie entfernst.",
+    "summaryTitle": "Dein Universum ist an einem Ort",
+    "title": "Bring dein Universum an einen Ort",
+    "unify": "Vereinen",
+    "verifyFailedNote": "Der letzte Versuch stoppte an der Sicherheitsprüfung; alle Datenbankänderungen wurden zurückgerollt. Beim Fortsetzen wird erneut geprüft."
   }
 }

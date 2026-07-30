@@ -4180,5 +4180,32 @@
     "clashMerge": "Add these fields to it",
     "merged": "Added: {fields}",
     "undoRefused": "That template has been edited since — leaving it alone."
+  },
+  "mig108": {
+    "actionCopy": "Copy in",
+    "actionHint": "Click to switch between Move and Copy",
+    "actionMove": "Move in",
+    "backupNote": "Before anything moves, a verified backup of the knowledge index and every settings file is stored inside the universe folder. Nothing is deleted.",
+    "dontClose": "Please keep Constellation open. This usually takes well under a minute.",
+    "intro": "A universe is one folder that holds all of its knowledge. {n} of your libraries currently live outside this universe’s folder. Constellation can move them in — your notes, links and history all stay exactly as they are.",
+    "notNow": "Not now",
+    "phaseDone": "Finished.",
+    "phaseMoving": "Moving library folders…",
+    "phaseRewriting": "Updating the knowledge index…",
+    "phaseSnapshot": "Backing everything up…",
+    "phaseStores": "Updating saved lists and layouts…",
+    "phaseTrash": "Consolidating the trash…",
+    "reloadNow": "Reload Constellation",
+    "resumeBody": "Constellation was interrupted while bringing your libraries into the universe folder ({done} of {total} moved). Everything is journaled and the backup is intact — it can pick up exactly where it stopped.",
+    "resumeButton": "Resume and finish",
+    "resumeTitle": "An unfinished unification was found",
+    "runningTitle": "Unifying your universe…",
+    "skipForeign": "belongs to another universe — skipped",
+    "skipMissing": "not found on disk — skipped",
+    "summaryBody": "{moved} libraries moved in, {copied} copied in. The backup is kept inside the universe folder until you choose to remove it.",
+    "summaryTitle": "Your universe is in one place",
+    "title": "Bring your universe into one place",
+    "unify": "Unify",
+    "verifyFailedNote": "The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again."
   }
 }

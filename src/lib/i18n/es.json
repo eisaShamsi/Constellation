@@ -4059,5 +4059,32 @@
     "clashMerge": "Añadir estos campos",
     "merged": "Añadido: {fields}",
     "undoRefused": "Esa plantilla se editó después — se deja intacta."
+  },
+  "mig108": {
+    "actionCopy": "Copiar dentro",
+    "actionHint": "Haz clic para alternar entre Mover y Copiar",
+    "actionMove": "Mover dentro",
+    "backupNote": "Antes de mover nada, se guarda dentro de la carpeta del universo una copia de seguridad verificada del índice y de todos los archivos de configuración. No se borra nada.",
+    "dontClose": "Mantén Constellation abierto. Suele tardar bastante menos de un minuto.",
+    "intro": "Un universo es una carpeta que contiene todo su conocimiento. {n} de tus bibliotecas viven fuera de la carpeta de este universo. Constellation puede moverlas dentro — tus notas, enlaces e historial quedan exactamente igual.",
+    "notNow": "Ahora no",
+    "phaseDone": "Terminado.",
+    "phaseMoving": "Moviendo carpetas de bibliotecas…",
+    "phaseRewriting": "Actualizando el índice de conocimiento…",
+    "phaseSnapshot": "Creando la copia de seguridad…",
+    "phaseStores": "Actualizando listas y diseños guardados…",
+    "phaseTrash": "Consolidando la papelera…",
+    "reloadNow": "Recargar Constellation",
+    "resumeBody": "Constellation se interrumpió mientras movía tus bibliotecas ({done} de {total} movidas). Todo está registrado y la copia de seguridad intacta — puede continuar justo donde se detuvo.",
+    "resumeButton": "Reanudar y terminar",
+    "resumeTitle": "Se encontró una unificación sin terminar",
+    "runningTitle": "Unificando tu universo…",
+    "skipForeign": "pertenece a otro universo — omitida",
+    "skipMissing": "no se encuentra en el disco — omitida",
+    "summaryBody": "{moved} bibliotecas movidas, {copied} copiadas. La copia de seguridad se conserva en la carpeta del universo hasta que decidas eliminarla.",
+    "summaryTitle": "Tu universo está en un solo lugar",
+    "title": "Reúne tu universo en un solo lugar",
+    "unify": "Unificar",
+    "verifyFailedNote": "El último intento se detuvo en la comprobación de seguridad y todos los cambios de la base de datos se revirtieron. Al reanudar se comprobará de nuevo."
   }
 }
