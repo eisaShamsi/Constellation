@@ -192,12 +192,32 @@ fn sweep_tmp_orphans(library_path: &str) {
         Ok(e) => e,
         Err(_) => return,
     };
+    // PJ-187 — only sweep temps that are actually ORPHANS. `save` writes through a NamedTempFile
+    // in this same directory, and `load_or_default` (which calls this) can run on another thread
+    // while that write is in flight — deleting the live temp made the user's correction vanish
+    // with no error. A plain re-lock is not available here: update_reliability_from_correction
+    // already holds the non-reentrant RELIABILITY_LOCK by the time it reaches load_or_default.
+    // An age floor is the one guard that cannot deadlock: anything younger than a minute belongs
+    // to a write that may still be running; anything older cannot be.
+    const ORPHAN_MIN_AGE: std::time::Duration = std::time::Duration::from_secs(60);
+    let now = std::time::SystemTime::now();
     for entry in entries.flatten() {
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
-        if name_str.starts_with(".cataloger_reliability.") && name_str.ends_with(".tmp") {
-            let _ = fs::remove_file(entry.path());
+        if !(name_str.starts_with(".cataloger_reliability.") && name_str.ends_with(".tmp")) {
+            continue;
         }
+        let young = entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|m| now.duration_since(m).ok())
+            .map(|age| age < ORPHAN_MIN_AGE)
+            .unwrap_or(true); // unreadable mtime → assume live, leave it alone
+        if young {
+            continue;
+        }
+        let _ = fs::remove_file(entry.path());
     }
 }
 
@@ -390,6 +410,43 @@ pub fn weight_for(profile: &ReliabilityProfile, cataloger: &str, axis: Axis) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-187 — `sweep_tmp_orphans` deleted EVERY `.cataloger_reliability.*.tmp` it found. But
+    /// `save` writes through a NamedTempFile in that same directory, and `load_or_default`
+    /// (which calls this sweep) can run on another thread while that write is still in flight —
+    /// so the sweep deleted the LIVE temp and the user's correction silently did not stick.
+    /// Only an orphan — a temp old enough that no write could still own it — may be removed.
+    #[test]
+    fn pj187_sweep_leaves_a_write_in_flight_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        let cns = dir.path().join(".constellation");
+        std::fs::create_dir_all(&cns).unwrap();
+
+        // A temp written a moment ago — indistinguishable from a save happening right now.
+        let live = cns.join(".cataloger_reliability.abc123.tmp");
+        std::fs::write(&live, "{}").unwrap();
+
+        // A genuine orphan from a previous kill-mid-write, back-dated past the age floor.
+        let orphan = cns.join(".cataloger_reliability.dead99.tmp");
+        std::fs::write(&orphan, "{}").unwrap();
+        let old = std::time::SystemTime::now() - std::time::Duration::from_secs(3600);
+        std::fs::File::options()
+            .write(true)
+            .open(&orphan)
+            .unwrap()
+            .set_modified(old)
+            .unwrap();
+
+        // An unrelated file must never be touched, whatever its age.
+        let keep = cns.join("cataloger_reliability.json");
+        std::fs::write(&keep, "{}").unwrap();
+
+        sweep_tmp_orphans(&dir.path().to_string_lossy());
+
+        assert!(live.exists(), "a temp younger than the floor belongs to a live write");
+        assert!(!orphan.exists(), "a genuinely old temp is still swept");
+        assert!(keep.exists(), "the real profile file is never a sweep target");
+    }
 
     #[test]
     fn uniform_weight_until_enough_samples() {

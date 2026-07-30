@@ -556,7 +556,10 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
 }
 
 /// Write content to a markdown file inside a library.
-#[tauri::command]
+// PJ-187 — `async` so a slow write (synced drive, antivirus, another writer holding the same
+// path's gate lock) does not hold the IPC dispatch thread and freeze the whole window. The body
+// has no `.await`; ordering per path is already guaranteed by gate_write's per-path lock.
+#[tauri::command(async)]
 pub fn write_note(
     app: tauri::AppHandle,
     file_path: String,
@@ -2166,6 +2169,14 @@ fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
             if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
                 continue;
             }
+            // PJ-187 — skip hidden / system entries (.trash, .constellation, .git, .obsidian…),
+            // the same guard every sibling walker applies. Without it a folder move re-indexed
+            // the notes sitting in `.trash`, so DELETED notes came back in search results and
+            // link suggestions.
+            let name = entry.file_name();
+            if name.to_string_lossy().starts_with('.') {
+                continue;
+            }
             let p = entry.path();
             if p.is_dir() {
                 collect_md_paths(&p, out);
@@ -2191,7 +2202,10 @@ pub struct UniverseFolder {
 /// List every folder across the whole universe (all libraries + federated child
 /// universes), folders ONLY — a lightweight Rust-side walk so the frontend never
 /// reads thousands of note rows just to populate the Move picker (Rule 3).
-#[tauri::command]
+// PJ-187 — `async` so the whole-universe folder walk runs off the IPC dispatch thread. On a
+// large universe this walk is seconds of blocking disk I/O, and a SYNC command holds the
+// dispatch thread for its whole duration: opening "Move to…" froze the entire window.
+#[tauri::command(async)]
 pub fn list_universe_folders(app: tauri::AppHandle) -> Result<Vec<UniverseFolder>, String> {
     let libs = load_all_libraries(&app);
     let mut out: Vec<UniverseFolder> = Vec::new();
@@ -6220,7 +6234,11 @@ fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
 
 #[cfg(test)]
 mod cascade_walker_tests {
-    use super::{path_identity_key, rewrite_for_test, update_links_recursive, CascadeResult};
+    use super::{
+        collect_md_paths, free_trash_name, move_into_trash_folder, path_identity_key,
+        rewrite_for_test, trash_move_decolliding, update_links_recursive, CascadeResult,
+        TrashMoveOutcome,
+    };
     use std::collections::HashSet;
     use std::path::Path;
 
@@ -6279,6 +6297,179 @@ mod cascade_walker_tests {
         );
         assert_eq!(std::fs::read_to_string(&rewritten).unwrap(), "links [[New]] here");
         assert_eq!(hit.len(), 1, "the exclude entry matched a walked file");
+    }
+
+    /// PJ-187 — `collect_md_paths` feeds `reindex_single_note` after a folder move and on a
+    /// library's first index. Every sibling walker skips dot-entries; this one did not, so the
+    /// notes sitting in `.trash` were handed to the indexer — and notes the user had DELETED
+    /// came back in search results and link suggestions.
+    #[test]
+    fn pj187_collect_md_paths_skips_dot_directories() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("Real.md"), "kept").unwrap();
+
+        let trash = dir.path().join(".trash");
+        std::fs::create_dir_all(&trash).unwrap();
+        std::fs::write(trash.join("Deleted.md"), "the user deleted this").unwrap();
+
+        let hidden_note = dir.path().join(".hidden.md");
+        std::fs::write(&hidden_note, "a dot FILE too").unwrap();
+
+        let nested = dir.path().join("Sub");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("Nested.md"), "kept").unwrap();
+
+        let mut out = Vec::new();
+        collect_md_paths(dir.path(), &mut out);
+
+        let names: Vec<String> = out
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert!(names.contains(&"Real.md".to_string()), "a real note is still collected");
+        assert!(names.contains(&"Nested.md".to_string()), "recursion into normal folders is intact");
+        assert!(
+            !names.contains(&"Deleted.md".to_string()),
+            "a note inside .trash must NEVER be handed to the indexer: {:?}",
+            names
+        );
+        assert!(!names.contains(&".hidden.md".to_string()), "dot FILES are skipped too: {:?}", names);
+    }
+
+    /// PJ-187 — deleting two files with the SAME NAME at the same moment must never make one
+    /// of them unrecoverable.
+    ///
+    /// The de-collide search (`Note.md` taken → try `Note 1.md`) runs OUTSIDE the gate's lock,
+    /// so two concurrent deletes can both settle on the same free name. The gate then refuses
+    /// the loser with "already exists" — and the old code threw that reason away
+    /// (`gate_rename(..).is_err()`) and fell through to a copy+remove fallback that OVERWRITES
+    /// the destination. The winner's file, already sitting in the trash, was destroyed: the
+    /// user deleted two files and could only ever recover one.
+    ///
+    /// Concurrency is the only way to reach it — a sequential pair never collides, because the
+    /// pre-check has nothing racing it. Every delete carries a UNIQUE body, so a single
+    /// overwrite is visible as a missing body rather than merely a count.
+    #[test]
+    fn pj187_concurrent_deletes_of_the_same_name_are_all_recoverable() {
+        const THREADS: usize = 4;
+        const PER_THREAD: usize = 6;
+
+        let root = tempfile::tempdir().unwrap();
+        let root_path = root.path().to_path_buf();
+        // Every source is named "Note.md" — they differ only by which folder they came from.
+        let mut work_dirs = Vec::new();
+        for t in 0..THREADS {
+            let dir = root_path.join(format!("work{}", t));
+            std::fs::create_dir_all(&dir).unwrap();
+            for i in 0..PER_THREAD {
+                std::fs::write(dir.join(format!("src{}.md", i)), format!("BODY-{}-{}", t, i)).unwrap();
+            }
+            work_dirs.push(dir);
+        }
+
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(THREADS));
+        let mut handles = Vec::new();
+        for (t, dir) in work_dirs.into_iter().enumerate() {
+            let root_path = root_path.clone();
+            let barrier = std::sync::Arc::clone(&barrier);
+            handles.push(std::thread::spawn(move || {
+                barrier.wait(); // start together, so the de-collide searches overlap
+                for i in 0..PER_THREAD {
+                    // Rename each source to the SHARED name immediately before trashing it, so
+                    // every thread hands `move_into_trash_folder` a file called "Note.md".
+                    let staged = dir.join("Note.md");
+                    std::fs::rename(dir.join(format!("src{}.md", i)), &staged).unwrap();
+                    move_into_trash_folder(&staged, &root_path)
+                        .unwrap_or_else(|e| panic!("thread {} delete {} failed: {}", t, i, e));
+                }
+            }));
+        }
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        let trash = root_path.join(".trash");
+        let mut bodies: Vec<String> = std::fs::read_dir(&trash)
+            .unwrap()
+            .flatten()
+            .map(|e| std::fs::read_to_string(e.path()).unwrap())
+            .collect();
+        bodies.sort();
+        bodies.dedup();
+        assert_eq!(
+            bodies.len(),
+            THREADS * PER_THREAD,
+            "every deleted file must still be recoverable — a missing body is one that got              overwritten in the trash by a colliding delete. Recovered: {:?}",
+            bodies
+        );
+    }
+
+    /// PJ-187 (Whole-Ecosystem Fix Law) — the OTHER surface of the trash de-collide concern.
+    ///
+    /// `move_to_trash` is what the collision dialog's **Overwrite** runs, and what the PJ-088
+    /// conflict-sidecar path runs. It carried its own private copy of the de-collide search and a
+    /// single `gate_rename`, so a name claimed between the check and the rename came back to the
+    /// user as *"An item with this name already exists at the destination"* — an error about a
+    /// trash filename they never chose and cannot see, for an operation they had confirmed.
+    ///
+    /// Both surfaces now share `trash_move_decolliding`, so this asserts the shared contract
+    /// directly: repeated moves of the same name always land, each under a distinct name, and
+    /// nothing already in the trash is replaced.
+    #[test]
+    fn pj187_the_shared_trash_move_never_replaces_and_never_refuses() {
+        let root = tempfile::tempdir().unwrap();
+        let work = root.path().join("work");
+        let trash = root.path().join(".trash");
+        std::fs::create_dir_all(&work).unwrap();
+        std::fs::create_dir_all(&trash).unwrap();
+
+        for i in 0..5 {
+            let src = work.join("Note.md");
+            std::fs::write(&src, format!("BODY-{}", i)).unwrap();
+            match trash_move_decolliding(&src, &trash, "test").unwrap() {
+                TrashMoveOutcome::Moved(dest) => {
+                    assert!(dest.starts_with(&trash), "landed inside the trash");
+                }
+                TrashMoveOutcome::NotRenamed { error, .. } => {
+                    panic!("move {} was refused instead of de-colliding: {}", i, error)
+                }
+            }
+        }
+
+        let mut bodies: Vec<String> = std::fs::read_dir(&trash)
+            .unwrap()
+            .flatten()
+            .map(|e| std::fs::read_to_string(e.path()).unwrap())
+            .collect();
+        bodies.sort();
+        assert_eq!(
+            bodies,
+            vec!["BODY-0", "BODY-1", "BODY-2", "BODY-3", "BODY-4"],
+            "every trashed copy survives under its own name"
+        );
+    }
+
+    /// The de-collide search itself: it must return the FIRST free slot, and re-running it after
+    /// its answer goes stale must return a different one (that re-runnability is the whole fix).
+    #[test]
+    fn pj187_free_trash_name_is_re_runnable() {
+        let root = tempfile::tempdir().unwrap();
+        let trash = root.path().join(".trash");
+        std::fs::create_dir_all(&trash).unwrap();
+        let source = root.path().join("Note.md");
+        std::fs::write(&source, "x").unwrap();
+
+        let first = free_trash_name(&source, &trash, &trash.join("Note.md")).unwrap();
+        assert_eq!(first.file_name().unwrap(), "Note.md", "an empty trash takes the plain name");
+
+        std::fs::write(&first, "taken").unwrap();
+        let second = free_trash_name(&source, &trash, &first).unwrap();
+        assert_eq!(second.file_name().unwrap(), "Note 1.md");
+
+        // Someone claims that one too, while we were reaching for it.
+        std::fs::write(&second, "taken").unwrap();
+        let third = free_trash_name(&source, &trash, &second).unwrap();
+        assert_eq!(third.file_name().unwrap(), "Note 2.md");
     }
 
     #[test]
@@ -6564,6 +6755,80 @@ pub fn export_note_html(app: tauri::AppHandle, file_path: String) -> Result<Stri
 /// Move item to system trash (or ".trash" folder inside library)
 // MIG-099 §3: `(async)` — now drops the index row (below), which takes the writer
 // lock; off the WebView2 IPC dispatch thread, matching delete_path.
+/// Where a de-colliding trash move ended up.
+///
+/// PJ-187 (Whole-Ecosystem Fix Law) — this exists because the SAME concern had **two independent
+/// implementations**: `move_to_trash` (reached by the collision dialog's **Overwrite**, and by the
+/// PJ-088 conflict-sidecar path) and `move_into_trash_folder` (reached by **Delete**). Both did an
+/// `exists()` pre-check OUTSIDE the gate's lock and then a single `gate_rename`, so a concurrent
+/// trash move of a same-named file could claim the name in between — and the two then diverged in
+/// how badly they handled it. Delete fell through to a copy+remove that OVERWROTE the item already
+/// in the trash (measured: 13 of 24 concurrently-deleted files destroyed). Overwrite propagated the
+/// gate's error, so the user's Overwrite failed citing a destination they never named.
+///
+/// One helper, one rule: search for a free name, and if the gate says it was taken, search again.
+/// The loop converges because each attempt claims a different slot.
+enum TrashMoveOutcome {
+    /// The rename landed. This is where the item now lives.
+    Moved(#[allow(dead_code)] PathBuf),
+    /// The gate refused for a reason that is NOT a name collision — a cross-device rename is the
+    /// expected one. `dest` was free when last checked, for a caller with a copy+remove fallback.
+    NotRenamed { dest: PathBuf, error: String },
+}
+
+/// The de-collide search: `claimed` if it is free, otherwise `<stem> <n>.<ext>` for the first free
+/// `n`. Re-runnable by design — the whole point is that the answer can go stale under contention.
+fn free_trash_name(source: &Path, trash_dir: &Path, claimed: &Path) -> Result<PathBuf, String> {
+    if !claimed.exists() {
+        return Ok(claimed.to_path_buf());
+    }
+    let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("item");
+    let ext = source.extension().and_then(|s| s.to_str());
+    for n in 1..=9999 {
+        let candidate_name = match ext {
+            Some(e) => format!("{} {}.{}", stem, n, e),
+            None => format!("{} {}", stem, n),
+        };
+        let candidate = trash_dir.join(&candidate_name);
+        if !candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    Err("Trash already holds too many items with this name.".to_string())
+}
+
+/// Rename `source` into `trash_dir` under a free name, retrying the search whenever the gate
+/// refuses because someone else took that name first. `Err` only when there is genuinely no free
+/// name left — every other refusal comes back as `NotRenamed` for the caller to decide about.
+fn trash_move_decolliding(
+    source: &Path,
+    trash_dir: &Path,
+    origin: &str,
+) -> Result<TrashMoveOutcome, String> {
+    const TRASH_RENAME_ATTEMPTS: usize = 32;
+    let file_name = source.file_name().ok_or("Invalid path")?;
+    let mut dest = free_trash_name(source, trash_dir, &trash_dir.join(file_name))?;
+    for attempt in 0..TRASH_RENAME_ATTEMPTS {
+        match crate::write_gate::gate_rename(source, &dest, origin) {
+            Ok(_) => return Ok(TrashMoveOutcome::Moved(dest)),
+            Err(error) => {
+                if !error.contains("already exists") {
+                    return Ok(TrashMoveOutcome::NotRenamed { dest, error });
+                }
+                if attempt + 1 == TRASH_RENAME_ATTEMPTS {
+                    return Err(format!(
+                        "Could not find a free name in the trash for {} after {} attempts.",
+                        source.display(),
+                        TRASH_RENAME_ATTEMPTS
+                    ));
+                }
+                dest = free_trash_name(source, trash_dir, &dest)?;
+            }
+        }
+    }
+    unreachable!("the loop returns on every path")
+}
+
 #[tauri::command(async)]
 pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) -> Result<(), String> {
     // Verify the file is within a registered library (not just any caller-supplied library_path)
@@ -6576,40 +6841,21 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
     }
 
     let source = Path::new(&path);
-    let file_name = source.file_name()
-        .ok_or("Invalid path")?;
-    let mut dest = trash_dir.join(file_name);
 
-    // MIG-076 §E1b — de-collide on a name clash inside .trash (Obsidian-style
-    // numeric suffix, Boss-approved 2026-06-13). Without this, trashing a second
-    // note that shares a filename with one already in .trash atomically
-    // replaces — and silently loses — the earlier trashed copy (observed in the
-    // §E-1 Stage-2 validation). Suffix the stem with " {n}" to match
-    // Constellation's own create-collision naming. Never clobber.
-    if dest.exists() {
-        let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("note");
-        let ext = source.extension().and_then(|s| s.to_str());
-        let mut placed = false;
-        for n in 1..=9999 {
-            let candidate_name = match ext {
-                Some(e) => format!("{} {}.{}", stem, n, e),
-                None => format!("{} {}", stem, n),
-            };
-            let candidate = trash_dir.join(&candidate_name);
-            if !candidate.exists() {
-                dest = candidate;
-                placed = true;
-                break;
-            }
-        }
-        if !placed {
-            return Err("Trash already holds too many notes with this name.".to_string());
-        }
+    // MIG-076 §E1b — de-collide on a name clash inside .trash (Obsidian-style numeric suffix,
+    // Boss-approved 2026-06-13), so trashing a second note that shares a filename with one
+    // already there never replaces the earlier copy.
+    // MIG-076 §A2 — gated: a trash move serializes against any in-flight editor flush of the
+    // same file (delete-vs-save race).
+    // PJ-187 — both of those now come from the SHARED helper, which also RETRIES when the gate
+    // reports the name was taken between the check and the rename. This site used to
+    // `?`-propagate that refusal, so an Overwrite failed with "An item with this name already
+    // exists at the destination" — an error about a trash filename the user never chose and
+    // cannot see, for an operation they had already confirmed.
+    match trash_move_decolliding(source, &trash_dir, "trash")? {
+        TrashMoveOutcome::Moved(_) => {}
+        TrashMoveOutcome::NotRenamed { error, .. } => return Err(error),
     }
-
-    // MIG-076 §A2 — gated: a trash move serializes against any in-flight
-    // editor flush of the same file (delete-vs-save race).
-    crate::write_gate::gate_rename(source, &dest, "trash")?;
 
     // MIG-099 §3 — drop the moved note from the search index. Without this the
     // note_meta row lingered at the pre-trash path (index↔disk divergence): the
@@ -6725,45 +6971,41 @@ fn move_into_trash_folder(source: &Path, trash_root: &Path) -> Result<(), String
         fs::create_dir_all(&trash_dir)
             .map_err(|e| format!("Failed to create .trash folder: {}", e))?;
     }
-    let file_name = source.file_name().ok_or("Invalid path")?;
-    let mut dest = trash_dir.join(file_name);
-    if dest.exists() {
-        let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("item");
-        let ext = source.extension().and_then(|s| s.to_str());
-        let mut placed = false;
-        for n in 1..=9999 {
-            let candidate_name = match ext {
-                Some(e) => format!("{} {}.{}", stem, n, e),
-                None => format!("{} {}", stem, n),
-            };
-            let candidate = trash_dir.join(&candidate_name);
-            if !candidate.exists() { dest = candidate; placed = true; break; }
+
+    // PJ-187 — the de-collide + gated rename + collision retry, shared with `move_to_trash`.
+    let mut dest = match trash_move_decolliding(source, &trash_dir, "delete_trash")? {
+        TrashMoveOutcome::Moved(_) => return Ok(()),
+        TrashMoveOutcome::NotRenamed { dest, error } => {
+            eprintln!(
+                "[trash] rename into .trash failed ({}); falling back to copy+remove for {}",
+                error,
+                source.display()
+            );
+            dest
         }
-        if !placed {
-            return Err("Trash already holds too many items with this name.".to_string());
-        }
-    }
-    // Gate against an in-flight editor flush of the same file, then move.
+    };
+
     // On a cross-device failure, fall back to copy + remove.
-    // Batch-2 §B2-4: the fallback pair runs under the SOURCE path lock — a
-    // save landing between the copy and the remove used to be silently lost
-    // (written to a file that is removed a moment later); now it serializes.
-    // (gate_rename has already RELEASED its locks by the time the fallback
-    // runs, so taking the source lock here cannot self-deadlock.)
-    if crate::write_gate::gate_rename(source, &dest, "delete_trash").is_err() {
-        crate::write_gate::with_path_lock(source, || -> Result<(), String> {
-            if source.is_dir() {
-                copy_dir_recursive(source, &dest)?;
-                fs::remove_dir_all(source)
-                    .map_err(|e| format!("Failed to remove source folder after copy: {}", e))?;
-            } else {
-                fs::copy(source, &dest).map_err(|e| format!("Failed to copy to trash: {}", e))?;
-                fs::remove_file(source)
-                    .map_err(|e| format!("Failed to remove source file after copy: {}", e))?;
-            }
-            Ok(())
-        })?;
-    }
+    // Batch-2 §B2-4: the fallback pair runs under the SOURCE path lock — a save landing between
+    // the copy and the remove used to be silently lost (written to a file that is removed a
+    // moment later); now it serializes. (gate_rename has already RELEASED its locks by the time
+    // the fallback runs, so taking the source lock here cannot self-deadlock.)
+    // The fallback OVERWRITES `dest`, so re-resolve a free name first: it must never land on a
+    // name that was claimed while we were deciding to come here.
+    dest = free_trash_name(source, &trash_dir, &dest)?;
+    let dest = &dest;
+    crate::write_gate::with_path_lock(source, || -> Result<(), String> {
+        if source.is_dir() {
+            copy_dir_recursive(source, dest)?;
+            fs::remove_dir_all(source)
+                .map_err(|e| format!("Failed to remove source folder after copy: {}", e))?;
+        } else {
+            fs::copy(source, dest).map_err(|e| format!("Failed to copy to trash: {}", e))?;
+            fs::remove_file(source)
+                .map_err(|e| format!("Failed to remove source file after copy: {}", e))?;
+        }
+        Ok(())
+    })?;
     Ok(())
 }
 

@@ -10204,8 +10204,14 @@ pub fn reindex_single_note(
         // MIG-079 §C.2a — capture the incoming signature BEFORE the rebuild so the
         // post-save diff recomputes only the notes whose backlink-from-this-note
         // changed. None (skip) until the incoming aggregate is stamped.
+        // PJ-187 — the signature is captured UNCONDITIONALLY, because two independent
+        // consumers need it and only one of them is gated by the incoming stamp. Sky
+        // maintenance used to sit inside `if let Some(inc_old)`, so on a fresh install (or
+        // any boot where the incoming aggregate is not yet stamped) EVERY save skipped sky
+        // maintenance and the Sky View silently froze at stale sizes and levels.
+        let sig_old = incoming_signature(conn, note_path).ok();
         let inc_old = if crate::incoming_links_backfill::is_stamped(conn) {
-            incoming_signature(conn, note_path).ok()
+            sig_old.clone()
         } else {
             None
         };
@@ -10248,10 +10254,13 @@ pub fn reindex_single_note(
             if let Err(e) = maintain_incoming_after_save(conn, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
             }
-            // PJ-066 §B3 — maintain sky stratum/maturity write-time from the SAME pre-save
-            // signature (replaces the per-edge sky triggers dropped in §B4). Only the changed
-            // targets + the source recompute; a text-only edit recomputes nothing. Best-effort;
-            // recompute_all_sky (reconcile) is the authoritative self-heal.
+        }
+        // PJ-066 §B3 — maintain sky stratum/maturity write-time from the pre-save signature
+        // (replaces the per-edge sky triggers dropped in §B4). Only the changed targets + the
+        // source recompute; a text-only edit recomputes nothing. Best-effort; recompute_all_sky
+        // (reconcile) is the authoritative self-heal. PJ-187: independent of the INCOMING
+        // stamp — sky has its own back-fill and its own completion stamp.
+        if let Some((old_t, old_n, old_a)) = sig_old {
             if let Err(e) = maintain_sky_after_save(conn, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[sky] maintain after save failed for {}: {}", note_path, e);
             }

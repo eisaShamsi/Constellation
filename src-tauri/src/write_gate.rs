@@ -246,8 +246,15 @@ fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
     // Suppress watcher events for BOTH paths involved in the swap — temp
     // creation and the final replace each emit; either leaking re-opens the
     // F3 watcher-loop class (Rename Concept Paper).
+    // PJ-187 — mark the containing DIRECTORY too. `mark_with_parent` was written for exactly
+    // this, documents a THREE-key contract ("the temp path, the final path, and the containing
+    // directory"), and had ZERO production callers — a guard that existed and could never fire
+    // (the LL-035 shape). A temp+replace emits a BARE-DIRECTORY event as well as the file
+    // events, `was_recent` is exact-path keyed, so the directory was a separate unsuppressed
+    // key — and a bare-directory event is the one that costs a full tree re-walk. Net effect
+    // before this: every note save woke the watcher into re-scanning its whole library.
     crate::watcher_suppress::mark(&tmp);
-    crate::watcher_suppress::mark(path);
+    crate::watcher_suppress::mark_with_parent(path);
 
     {
         let mut f = fs::File::create(&tmp)
@@ -595,8 +602,10 @@ pub fn gate_rename(old: &Path, new: &Path, surface: &str) -> Result<WriteOutcome
         return Err("An item with this name already exists at the destination.".to_string());
     }
 
-    crate::watcher_suppress::mark(old);
-    crate::watcher_suppress::mark(new);
+    // PJ-187 — both parents: a move crosses directories, so each end emits its own
+    // bare-directory event.
+    crate::watcher_suppress::mark_with_parent(old);
+    crate::watcher_suppress::mark_with_parent(new);
 
     let mut attempt: u64 = 0;
     loop {
@@ -722,8 +731,9 @@ pub fn gate_rmw_rename(
         return Ok(WriteOutcome::Ok); // pure title change — no move
     }
 
-    crate::watcher_suppress::mark(old);
-    crate::watcher_suppress::mark(new);
+    // PJ-187 — both parents; see `atomic_write`.
+    crate::watcher_suppress::mark_with_parent(old);
+    crate::watcher_suppress::mark_with_parent(new);
     let mut attempt: u64 = 0;
     loop {
         match fs::rename(old, new) {
@@ -760,7 +770,8 @@ pub fn gate_delete(path: &Path, mode: DeleteMode, surface: &str) -> Result<Write
         Ok(g) => g,
         Err(p) => p.into_inner(),
     };
-    crate::watcher_suppress::mark(path);
+    // PJ-187 — a delete emits a bare-directory event for the containing folder.
+    crate::watcher_suppress::mark_with_parent(path);
     let mut attempt: u64 = 0;
     loop {
         let res = match mode {
@@ -822,6 +833,32 @@ pub fn with_path_lock<R>(path: &Path, f: impl FnOnce() -> R) -> R {
 mod tests_write_gate {
     use super::*;
     use std::thread;
+
+    /// PJ-187 — every gated write must suppress the CONTAINING DIRECTORY, not just the file.
+    ///
+    /// `watcher_suppress::mark_with_parent` was written for this, documents a THREE-key
+    /// contract ("the temp path, the final path, and the containing directory"), and had ZERO
+    /// production callers — it existed and could never fire (the LL-035 shape). Because a
+    /// temp+replace also emits a BARE-DIRECTORY event and `was_recent` is exact-path keyed,
+    /// the directory was an unsuppressed key — and the bare-directory event is precisely the
+    /// one that costs a full tree re-walk. Every note save was waking the watcher into
+    /// re-scanning its whole library.
+    #[test]
+    fn pj187_a_gated_write_suppresses_the_containing_directory() {
+        let dir = tdir("pj187_parent_suppress");
+        let file = dir.join("note.md");
+        gate_write(&file, "---\ntitle: T\n---\nbody", None, "test").expect("gated write must succeed");
+
+        assert!(
+            crate::watcher_suppress::was_recent(&file),
+            "the file itself must be suppressed",
+        );
+        assert!(
+            crate::watcher_suppress::was_recent(&dir),
+            "the CONTAINING DIRECTORY must be suppressed — the bare-directory event is the one \
+             that triggers a full tree re-walk",
+        );
+    }
 
     fn tdir(tag: &str) -> PathBuf {
         let d = std::env::temp_dir().join(format!("wg_{}_{}", tag, std::process::id()));

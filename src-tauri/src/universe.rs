@@ -113,10 +113,30 @@ fn load_registry(app: &tauri::AppHandle) -> UniverseRegistry {
 /// parse error and falls back to empty (silently dropping the user's registry /
 /// settings / workspaces / collections / property-types). The rename is atomic on
 /// the same directory; a failed rename leaves the old file intact (never truncated).
+/// PJ-187 — the temp name must be UNIQUE PER WRITE.
+///
+/// It used to be `<target>.tmp`: one fixed name, no lock. Every persisted-state file in the
+/// app goes through this one function — the universe registry, `universe.json`, `settings.json`,
+/// `workspaces.json`, the tab session, `collections.json`, `property-types.json` — so two
+/// writers of the SAME file (two windows, or a settings save racing the session autosave)
+/// both created, wrote and fsync'd *the same temp path*. Whoever renamed second could publish
+/// the other's half-written bytes under the final name, and the loser's `remove_file` could
+/// delete a temp the winner was still using. The failure mode is exactly what the temp+rename
+/// dance exists to prevent, and every loader here **swallows the parse error and falls back to
+/// empty** — so a corrupted registry does not error, it silently presents as "no universes",
+/// "no collections", "no saved workspaces", and the next save writes that emptiness back.
+///
+/// `write_gate::atomic_write` already had the answer two files away — `.{stem}.{pid}-{n}.cnstmp`
+/// — and `link_life.rs` states the rule outright: PJ-087, never reuse a fixed temp name.
+static STATE_TMP_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 pub(crate) fn atomic_write(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    let stem = path.file_name().and_then(|n| n.to_str()).unwrap_or("state.json");
     let tmp = path.with_file_name(format!(
-        "{}.tmp",
-        path.file_name().and_then(|n| n.to_str()).unwrap_or("state.json")
+        ".{}.{}-{}.cnstmp",
+        stem,
+        std::process::id(),
+        STATE_TMP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
     ));
     // MIG-100 / G6 hardening: fsync BEFORE the rename — otherwise power loss
     // can land the rename while the data blocks are still unflushed, leaving
@@ -2433,6 +2453,58 @@ fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
 mod tests {
     use super::*;
     use tempfile::TempDir;
+
+    /// PJ-187 — concurrent writers of the SAME state file must never share a temp path.
+    ///
+    /// Every persisted-state file (registry, universe.json, settings, workspaces, session,
+    /// collections, property-types) is written through this one function. With the old fixed
+    /// `<target>.tmp` name, two writers created and fsync'd the same temp, so one could publish
+    /// the other's half-written bytes under the final name — and every loader here swallows a
+    /// parse error and falls back to EMPTY, so the corruption presents as "you have no
+    /// collections / no workspaces / no universes" and the next save writes that back.
+    #[test]
+    fn pj187_concurrent_state_writes_never_share_a_temp_name() {
+        use std::sync::{Arc, Barrier};
+        let dir = TempDir::new().unwrap();
+        let target = Arc::new(dir.path().join("settings.json"));
+
+        // Two threads writing DIFFERENT contents to the same path, released together.
+        let barrier = Arc::new(Barrier::new(2));
+        let mut handles = Vec::new();
+        for (i, byte) in [b'A', b'B'].into_iter().enumerate() {
+            let t = Arc::clone(&target);
+            let b = Arc::clone(&barrier);
+            handles.push(std::thread::spawn(move || {
+                let payload = vec![byte; 64 * 1024]; // large enough that the writes overlap
+                b.wait();
+                for _ in 0..25 {
+                    atomic_write(&t, &payload).unwrap_or_else(|e| panic!("writer {i} failed: {e}"));
+                }
+            }));
+        }
+        for h in handles {
+            h.join().expect("a writer panicked");
+        }
+
+        // The survivor must be ENTIRELY one writer's bytes — never a mixture, and never empty.
+        let got = std::fs::read(&*target).expect("target must exist");
+        assert!(!got.is_empty(), "target was left empty");
+        let first = got[0];
+        assert!(
+            got.iter().all(|b| *b == first),
+            "the published file interleaved two writers' bytes — a shared temp path",
+        );
+        assert_eq!(got.len(), 64 * 1024, "the published file was truncated");
+
+        // And no temp files may be left behind.
+        let leftovers: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .filter(|n| n.ends_with(".cnstmp") || n.ends_with(".tmp"))
+            .collect();
+        assert!(leftovers.is_empty(), "temp files left behind: {leftovers:?}");
+    }
 
     // ── MIG-103 §4 Slice 2 — the mold a kept kind produces ──────────────────
 
