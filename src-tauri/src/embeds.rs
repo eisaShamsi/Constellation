@@ -154,9 +154,14 @@ fn vault_index_cache() -> &'static Mutex<HashMap<String, VaultIndex>> {
 
 const IGNORED_DIRS: &[&str] = &[".git", ".obsidian", ".trash", "node_modules", ".DS_Store"];
 
-pub fn build_vault_index(library_path: &Path) -> VaultIndex {
+/// MIG-108 Slice 0 — `exclude` = `nested_library_paths`: a subdirectory that is itself a
+/// REGISTERED LIBRARY is skipped ("Library ≠ Folder"). Without it, the universe_notes
+/// library's index (path == universe root) absorbed every nested library's files, so a
+/// nested file could shadow same-named files via first-wins `or_insert` — and post-MIG-108
+/// every library is nested under the root.
+pub fn build_vault_index(library_path: &Path, exclude: &std::collections::HashSet<String>) -> VaultIndex {
     let mut files: HashMap<String, PathBuf> = HashMap::new();
-    walk(library_path, &mut |path, depth| {
+    walk(library_path, exclude, &mut |path, depth| {
         if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
             // Primary key: lowercased original name
             files.entry(name.to_lowercase()).or_insert_with(|| path.to_path_buf());
@@ -195,8 +200,13 @@ pub fn normalize_digits(s: &str) -> String {
     out
 }
 
-fn walk<F: FnMut(&Path, usize)>(root: &Path, callback: &mut F) {
-    fn inner<F: FnMut(&Path, usize)>(dir: &Path, depth: usize, cb: &mut F) {
+fn walk<F: FnMut(&Path, usize)>(root: &Path, exclude: &std::collections::HashSet<String>, callback: &mut F) {
+    fn inner<F: FnMut(&Path, usize)>(
+        dir: &Path,
+        depth: usize,
+        exclude: &std::collections::HashSet<String>,
+        cb: &mut F,
+    ) {
         let Ok(entries) = fs::read_dir(dir) else { return; };
         for e in entries.flatten() {
             let path = e.path();
@@ -205,13 +215,14 @@ fn walk<F: FnMut(&Path, usize)>(root: &Path, callback: &mut F) {
             }
             let md = match e.metadata() { Ok(m) => m, Err(_) => continue };
             if md.is_dir() {
-                inner(&path, depth + 1, cb);
+                if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library ≠ Folder
+                inner(&path, depth + 1, exclude, cb);
             } else if md.is_file() {
                 cb(&path, depth);
             }
         }
     }
-    inner(root, 0, callback);
+    inner(root, 0, exclude, callback);
 }
 
 // Batch-W (2026-07-04): single-flight guard for the cold build. With
@@ -221,7 +232,7 @@ fn walk<F: FnMut(&Path, usize)>(root: &Path, callback: &mut F) {
 // Tokio blocking threads — never on the dispatch thread.
 static BUILD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-pub fn get_or_build_vault_index(library_path: &str) -> HashMap<String, PathBuf> {
+pub fn get_or_build_vault_index(library_path: &str, exclude: &std::collections::HashSet<String>) -> HashMap<String, PathBuf> {
     if let Ok(c) = vault_index_cache().lock() {
         if let Some(idx) = c.get(library_path) {
             return idx.files.clone();
@@ -235,7 +246,7 @@ pub fn get_or_build_vault_index(library_path: &str) -> HashMap<String, PathBuf> 
             return idx.files.clone();
         }
     }
-    let idx = build_vault_index(Path::new(library_path));
+    let idx = build_vault_index(Path::new(library_path), exclude);
     let files = idx.files.clone();
     if let Ok(mut c) = vault_index_cache().lock() {
         c.insert(library_path.into(), idx);
@@ -246,6 +257,16 @@ pub fn get_or_build_vault_index(library_path: &str) -> HashMap<String, PathBuf> 
 pub fn invalidate_vault_index(library_path: &str) {
     if let Ok(mut c) = vault_index_cache().lock() {
         c.remove(library_path);
+    }
+}
+
+/// MIG-108 Slice 0 — clear EVERY cached index. Called whenever the library REGISTRY
+/// changes (save_libraries): registering or removing a library changes which subtrees the
+/// parent library's index must exclude, and a stale pre-registration index would keep
+/// serving the now-foreign files until its next unrelated invalidation.
+pub fn invalidate_all_vault_indexes() {
+    if let Ok(mut c) = vault_index_cache().lock() {
+        c.clear();
     }
 }
 
@@ -398,6 +419,7 @@ fn resolve_path(
     note_path: &str,
     target: &str,
     cfg: &VaultConfig,
+    exclude: &std::collections::HashSet<String>,
 ) -> ResolutionResult {
     let lib = Path::new(library_path);
     let mut tried: Vec<PathBuf> = Vec::new();
@@ -465,12 +487,12 @@ fn resolve_path(
     // 5. Vault-wide filename index (Obsidian's default — finds the file regardless
     //    of how deeply it's nested). Rebuild on miss so newly-added files are seen.
     if !target.contains('/') && !target.contains('\\') {
-        if let Some(p) = lookup_in_library_index(library_path, target) {
+        if let Some(p) = lookup_in_library_index(library_path, target, exclude) {
             return ResolutionResult { matched: Some(p), tried };
         }
         // Miss — force a fresh index and retry (handles files added since last scan)
         invalidate_vault_index(library_path);
-        if let Some(p) = lookup_in_library_index(library_path, target) {
+        if let Some(p) = lookup_in_library_index(library_path, target, exclude) {
             return ResolutionResult { matched: Some(p), tried };
         }
     }
@@ -488,11 +510,11 @@ fn resolve_path(
 /// stores both forms for names containing non-ASCII digits), with the `.md`
 /// fallback for extensionless note transclusions. Cache-through: builds the
 /// index on first use (BUILD_LOCK single-flight).
-fn lookup_in_library_index(library_path: &str, target: &str) -> Option<PathBuf> {
+fn lookup_in_library_index(library_path: &str, target: &str, exclude: &std::collections::HashSet<String>) -> Option<PathBuf> {
     let key = target.to_lowercase();
     let normalized_key = normalize_digits(&key);
     let try_keys: Vec<&str> = if normalized_key != key { vec![&key, &normalized_key] } else { vec![&key] };
-    let index = get_or_build_vault_index(library_path);
+    let index = get_or_build_vault_index(library_path, exclude);
     for k in &try_keys {
         if let Some(p) = index.get(*k) { if p.is_file() { return Some(p.clone()); } }
     }
@@ -520,16 +542,22 @@ pub fn resolve_embed(
     let parsed = parse_target(&target);
     let cfg = read_vault_config(Path::new(&library_path));
 
-    let res = resolve_path(&library_path, &note_path, &parsed.path, &cfg);
+    // MIG-108 Slice 0 — one registry read serves this library's exclusion set AND the
+    // cross-library fallback below.
+    let all_libs = crate::libraries::load_all_libraries(&app);
+    let exclude = crate::libraries::nested_library_paths(&all_libs, &library_path);
+
+    let res = resolve_path(&library_path, &note_path, &parsed.path, &cfg, &exclude);
     let mut matched = res.matched;
     // Cross-library fallback (Boss-found 2026-07-05): the `![[` picker offers
     // notes from EVERY registered library — mirroring wikilink resolution —
     // so a bare target that misses in the note's own library is looked up in
     // the other libraries' indexes before being declared missing.
     if matched.is_none() && !parsed.path.contains('/') && !parsed.path.contains('\\') {
-        for lib in crate::libraries::load_all_libraries(&app) {
+        for lib in &all_libs {
             if lib.path == library_path { continue; }
-            if let Some(p) = lookup_in_library_index(&lib.path, &parsed.path) {
+            let lib_exclude = crate::libraries::nested_library_paths(&all_libs, &lib.path);
+            if let Some(p) = lookup_in_library_index(&lib.path, &parsed.path, &lib_exclude) {
                 matched = Some(p);
                 break;
             }
@@ -538,8 +566,8 @@ pub fn resolve_embed(
     let Some(abs) = matched else {
         // Miss: compute "did you mean" suggestions from the vault index so the
         // user can see what files ARE present that might be a near-match.
-        let similar = find_similar_in_index(&library_path, &parsed.path);
-        let vault_file_count = get_or_build_vault_index(&library_path).len() as u64;
+        let similar = find_similar_in_index(&library_path, &parsed.path, &exclude);
+        let vault_file_count = get_or_build_vault_index(&library_path, &exclude).len() as u64;
         let (folder_resolved, folder_listing) = list_expected_attachment_folder(&library_path, &note_path, &cfg);
         return EmbedResolution {
             kind: "missing".into(),
@@ -692,8 +720,8 @@ fn list_expected_attachment_folder(
 ///   2. Same file extension alone (returns up to 8 arbitrary matches of that
 ///      type — helps the user see that e.g. "there are PNGs in the vault,
 ///      just not one with this name")
-fn find_similar_in_index(library_path: &str, target: &str) -> Vec<String> {
-    let index = get_or_build_vault_index(library_path);
+fn find_similar_in_index(library_path: &str, target: &str, exclude: &std::collections::HashSet<String>) -> Vec<String> {
+    let index = get_or_build_vault_index(library_path, exclude);
     let target_norm = normalize_digits(&target.to_lowercase());
     let target_ext = Path::new(target).extension()
         .and_then(|s| s.to_str())
@@ -737,4 +765,64 @@ pub fn read_vault_config_cmd(library_path: String) -> VaultConfig {
 #[tauri::command]
 pub fn invalidate_vault_index_cmd(library_path: String) {
     invalidate_vault_index(&library_path);
+}
+
+#[cfg(test)]
+mod mig108_slice0_tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    fn norm_key(p: &std::path::Path) -> String {
+        p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase()
+    }
+
+    /// MIG-108 Slice 0 — the vault index must stop at a nested registered library's
+    /// boundary. Post-MIG-108 every library sits under the universe root, whose own
+    /// universe_notes library is walked with the root as its path: without the boundary
+    /// the root's index absorbed every nested library's files, and first-wins `or_insert`
+    /// let a nested file SHADOW the root's own same-named file (or vice versa), silently
+    /// changing which image or note an `![[embed]]` resolves to.
+    #[test]
+    fn vault_index_stops_at_a_nested_library_boundary() {
+        let root = tempfile::tempdir().unwrap();
+        std::fs::write(root.path().join("own.png"), b"root's own file").unwrap();
+        std::fs::write(root.path().join("shared.png"), b"ROOT copy").unwrap();
+
+        let nested = root.path().join("Nested Library");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("inner.png"), b"nested-only file").unwrap();
+        std::fs::write(nested.join("shared.png"), b"NESTED copy").unwrap();
+
+        let exclude: HashSet<String> = [norm_key(&nested)].into_iter().collect();
+        let idx = build_vault_index(root.path(), &exclude);
+
+        assert!(idx.files.contains_key("own.png"), "the root's own files are indexed");
+        assert!(
+            !idx.files.contains_key("inner.png"),
+            "a nested REGISTERED library's files are its own, never the parent's: {:?}",
+            idx.files.keys().collect::<Vec<_>>()
+        );
+        assert_eq!(
+            idx.files.get("shared.png").unwrap(),
+            &root.path().join("shared.png"),
+            "a same-named file inside the nested library must not shadow the root's own"
+        );
+
+        // And WITHOUT the exclusion the absorption is real — the guard is load-bearing.
+        let unbounded = build_vault_index(root.path(), &HashSet::new());
+        assert!(unbounded.files.contains_key("inner.png"), "control: no exclude → absorbed");
+    }
+
+    /// An ordinary (unregistered) subfolder is still walked — the boundary is
+    /// "registered library", not "any subdirectory".
+    #[test]
+    fn ordinary_subfolders_are_still_indexed() {
+        let root = tempfile::tempdir().unwrap();
+        let sub = root.path().join("Attachments");
+        std::fs::create_dir_all(&sub).unwrap();
+        std::fs::write(sub.join("pic.png"), b"x").unwrap();
+
+        let idx = build_vault_index(root.path(), &HashSet::new());
+        assert!(idx.files.contains_key("pic.png"));
+    }
 }

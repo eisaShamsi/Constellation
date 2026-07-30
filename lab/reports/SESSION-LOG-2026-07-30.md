@@ -101,3 +101,15 @@ Plan: `docs/MIG-108-One-Universe-One-Location-Plan.md` — 8 slices (0 pre-work 
 1 journal/classifier/snapshot · 2 move+rewrite+verify · 3 trash+settings+PJ-192 ·
 4 proposal UI ⏸ Stage-A on a scratch copy · 5 bring-in flows · 6 full-copy rehearsal ·
 7 live run ⏸ Stage-B · 8 docs + Phase-4 audit). Awaiting Boss approval of the Plan → Build.
+
+## §5 — MIG-108 Build: Slice 0 landed
+
+Plan APPROVED by the Boss; cascade begun. Slice 0: `canonical.rs::collect_files_recursive`
+(+ its 6 call sites, incl. the boot repair probe) and `embeds.rs::build_vault_index` (+ the
+walk/lookup/resolve chain) gain the `nested_library_paths` exclusion — the last two walkers
+outside the Library ≠ Folder discipline. New `invalidate_all_vault_indexes()` hooked into
+`save_libraries`: any registry change clears the embed index cache, so a stale
+pre-registration index can never keep serving (or shadowing behind) a now-foreign subtree.
+resolve_embed reads the registry ONCE for both its own exclusion and the cross-library
+fallback. Proofs: 3 new tests, each with a no-exclusion control proving the guard
+load-bearing. Rust **1290 passed / 0 failed**.

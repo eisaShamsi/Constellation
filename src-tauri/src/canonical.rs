@@ -450,7 +450,8 @@ pub fn canonicalize_preview(
     };
 
     // Walk all files
-    let files = collect_files_recursive(lib_path);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    let files = collect_files_recursive(lib_path, &nested);
     result.total_files = files.len();
 
     for file_path in &files {
@@ -518,7 +519,8 @@ pub fn canonicalize_execute(
     };
 
     // Collect all files first
-    let files = collect_files_recursive(lib_path);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    let files = collect_files_recursive(lib_path, &nested);
     result.total_files = files.len();
 
     // Phase 1: Build the rename map + enriched content
@@ -711,7 +713,8 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
         let lib_path = Path::new(&lib.path);
         if !lib_path.is_dir() { continue; }
 
-        let files = collect_files_recursive(lib_path);
+        let nested = crate::libraries::nested_library_paths(&libraries, &lib.path);
+        let files = collect_files_recursive(lib_path, &nested);
         total.total_files += files.len();
         for file_path in files {
             if is_canonical_filename(&file_path) { continue; }
@@ -851,7 +854,8 @@ pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result
         rename_map: HashMap::new(),
     };
 
-    let files = collect_files_recursive(lib_path);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    let files = collect_files_recursive(lib_path, &nested);
     let md_files: Vec<&PathBuf> = files.iter()
         .filter(|f| f.extension().map(|e| e == "md" || e == "markdown").unwrap_or(false))
         .collect();
@@ -954,7 +958,8 @@ pub fn de_canonicalize_library(
         return Err("Library path is not a directory".to_string());
     }
 
-    let files = collect_files_recursive(lib_path);
+    let nested = crate::libraries::nested_library_paths(&crate::libraries::load_all_libraries(&app), &library_path);
+    let files = collect_files_recursive(lib_path, &nested);
     let mut result = DeCanonicalizeResult { restored: 0, errors: Vec::new() };
 
     // Collect canonical files
@@ -1187,11 +1192,22 @@ pub fn is_canonical_filename(path: &Path) -> bool {
 
 /// Recursively collect all files in a directory (skipping hidden dirs and excluded dirs).
 /// Depth-limited to 30 levels to prevent stack overflow on pathological directory structures.
-fn collect_files_recursive(dir: &Path) -> Vec<PathBuf> {
-    collect_files_recursive_depth(dir, 0)
+///
+/// MIG-108 Slice 0 — `exclude` is the `nested_library_paths` set: a subdirectory that is
+/// itself a REGISTERED LIBRARY is another library's territory, not this one's files
+/// ("Library ≠ Folder"). Without the boundary, walking the universe_notes library — whose
+/// path IS the universe root — folded every nested library into it: the boot repair probe
+/// walked all of them per outer library (quadratic), and post-MIG-108 every library is
+/// nested under the root, so this walker would have double-processed the whole universe.
+fn collect_files_recursive(dir: &Path, exclude: &std::collections::HashSet<String>) -> Vec<PathBuf> {
+    collect_files_recursive_depth(dir, 0, exclude)
 }
 
-fn collect_files_recursive_depth(dir: &Path, depth: u32) -> Vec<PathBuf> {
+fn collect_files_recursive_depth(
+    dir: &Path,
+    depth: u32,
+    exclude: &std::collections::HashSet<String>,
+) -> Vec<PathBuf> {
     if depth > 30 { return Vec::new(); }
     let mut files = Vec::new();
     let entries = match fs::read_dir(dir) {
@@ -1215,7 +1231,8 @@ fn collect_files_recursive_depth(dir: &Path, depth: u32) -> Vec<PathBuf> {
             {
                 continue;
             }
-            files.extend(collect_files_recursive_depth(&path, depth + 1));
+            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library ≠ Folder
+            files.extend(collect_files_recursive_depth(&path, depth + 1, exclude));
         } else {
             files.push(path);
         }
@@ -1333,8 +1350,8 @@ pub fn ensure_cid_cn_cmd(file_path: String) -> Result<String, String> {
 
 /// Returns true if any .md file in `lib_path` is in canonical filename
 /// format. Cheap probe — used to decide whether to run the revert.
-fn library_has_canonical_md(lib_path: &Path) -> bool {
-    let files = collect_files_recursive(lib_path);
+fn library_has_canonical_md(lib_path: &Path, exclude: &std::collections::HashSet<String>) -> bool {
+    let files = collect_files_recursive(lib_path, exclude);
     files.iter().any(|f| {
         f.extension().and_then(|e| e.to_str()) == Some("md")
             && is_canonical_filename(f)
@@ -1364,13 +1381,13 @@ pub fn repair_external_libraries_on_startup(
     let mut repaired: Vec<String> = Vec::new();
     let libraries = crate::libraries::load_all_libraries(&app);
     eprintln!("[CANONICAL] Checking {} libraries for canonical-format files to repair", libraries.len());
-    for lib in libraries {
+    for lib in &libraries {
         let lib_path = Path::new(&lib.path);
         if !lib_path.is_dir() {
             eprintln!("[CANONICAL]   - {}: path not accessible, skipped", lib.path);
             continue;
         }
-        if !library_has_canonical_md(lib_path) {
+        if !library_has_canonical_md(lib_path, &crate::libraries::nested_library_paths(&libraries, &lib.path)) {
             eprintln!("[CANONICAL]   - {}: no canonical-format files, clean", lib.name);
             continue;
         }
@@ -1591,5 +1608,48 @@ mod tests {
             sp.file_name().unwrap().to_str().unwrap(),
             "20260410T153045Z_IMG_E5F6.png.meta.json"
         );
+    }
+}
+
+#[cfg(test)]
+mod mig108_slice0_tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    /// MIG-108 Slice 0 — the canonical file walker must stop at a nested registered
+    /// library's boundary. `repair_external_libraries_on_startup` probes EVERY library
+    /// with this walker; for the universe_notes library the walk starts at the universe
+    /// ROOT, so without the boundary it walked every nested library's files per probe —
+    /// and a canonical-repair decision for the ROOT library was being made from OTHER
+    /// libraries' files.
+    #[test]
+    fn canonical_walker_stops_at_a_nested_library_boundary() {
+        let root = tempfile::tempdir().unwrap();
+        std::fs::write(root.path().join("own.md"), "root note").unwrap();
+
+        let nested = root.path().join("Nested Library");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("inner.md"), "nested note").unwrap();
+
+        let norm = |p: &std::path::Path| {
+            p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase()
+        };
+        let exclude: HashSet<String> = [norm(&nested)].into_iter().collect();
+
+        let files = collect_files_recursive(root.path(), &exclude);
+        let names: Vec<String> = files
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert!(names.contains(&"own.md".to_string()));
+        assert!(
+            !names.contains(&"inner.md".to_string()),
+            "a nested registered library's files are its own: {:?}",
+            names
+        );
+
+        // Control — no exclusion absorbs the nested subtree (the guard is load-bearing).
+        let unbounded = collect_files_recursive(root.path(), &HashSet::new());
+        assert!(unbounded.iter().any(|p| p.ends_with("inner.md")));
     }
 }

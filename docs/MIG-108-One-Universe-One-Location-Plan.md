@@ -1,6 +1,6 @@
 # MIG-108 — One Universe, One Location — Plan (Phase 2)
 
-**Date** 2026-07-30 · **Status** awaiting Boss approval → Build
+**Date** 2026-07-30 · **Status** APPROVED (Boss, 2026-07-30) → Build in progress
 **Architect:** `docs/MIG-108-One-Universe-One-Location-Architect.md` (hazards H1–H12,
 invariants I1–I10 referenced below).
 

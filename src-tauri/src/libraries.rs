@@ -319,6 +319,10 @@ fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(
         .map_err(|e| format!("Failed to write libraries config: {}", e))?;
     // Invalidate the in-memory cache so subsequent reads see the new list.
     invalidate_libraries_cache();
+    // MIG-108 Slice 0 — a registry change alters every walker's nested-library exclusion
+    // set; a stale embed index would keep serving a now-foreign subtree (or keep shadowing
+    // files behind one) until some unrelated invalidation. Clear them all; rebuilt lazily.
+    crate::embeds::invalidate_all_vault_indexes();
     Ok(())
 }
 
