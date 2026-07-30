@@ -68,3 +68,25 @@ silent-failures · core store/layout · panels+i18n · docs/reports/ledger), the
 Books written in this close: MoCh-2026-07-29-2100 · Orientation **v3.78** · PJ ledger **v1.61**
 (files PJ-193 trash-browser UI; supersedes the "Consolidate trash" button into the migration
 back-fill; records PJ-166's ninth strike). `tests/pj-187/zz-out.txt` (debug scratch) removed.
+
+## §3 — MIG-108 Phase 1 (Architect) — "One Universe, One Location"
+
+Boss: "Go." Territory mapped by a 7-slice workflow + completeness critic (run
+`wf_1e0af182-c53`, 8/8 agents, ~1.24M tokens): sqlite (16 path-bearing tables, trigger
+gating, FK hazards), json-state (17 stores ranked), frontend-state (localStorage/boot/
+watcher/SS), move-machinery (gate_rename reuse; NAME-based links → zero body rewrites,
+proven), import-linking (add_library the choke point; cUniverse out of scope by
+construction), trash-settings (collapse mechanics §D-F), prior-art (Lightroom re-link
+shape; index-only-data horror stories = our search.db exposure). Critic findings: the
+reconcile hard-abort cap invalidates it as a crash net (journal required); WAL-blind
+snapshot hazard; cross-registry entanglement; basename collisions; two walkers without
+nested-library exclusion (canonical.rs, embeds.rs); SS outside every freeze channel;
+earned.jsonl path-fallback claim REFUTED from code (cid/name only).
+
+**Architect doc:** `docs/MIG-108-One-Universe-One-Location-Architect.md` — concept,
+measured scope, 12 hazards → mitigations, run design (P/S/F/M/R/T/V/W), standing
+constraints, 10 audit invariants, rehearsal protocol (full-copy dry run first), 4 Boss
+decision points (layout D1, copy-vs-move D2, PJ-065-test-book D3, timing D4). Maps
+archived in scratchpad; key excerpts inline in the doc.
+
+Awaiting Boss rulings on D1–D4 → Phase 2 (Plan).
