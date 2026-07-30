@@ -133,3 +133,79 @@ New `src-tauri/src/mig108.rs` — the engine's three foundations:
 Proofs: 7 tests — every classifier class incl. foreign-under-root and both de-collision
 sources; journal round-trip/resume/corrupt-surfacing; snapshot verify incl.
 "complete-without-its-WAL". Rust **1297 passed / 0 failed**.
+
+## §7 — MIG-108 Build: Slices 2 + 3 code-complete (uncommitted, inspection in flight)
+
+**Slice 2 — move + rewrite + verify** (mig108.rs +~700 lines):
+- `remap_path` — component-wise, NFC-safe (an NFD-stored Arabic component has a different
+  LENGTH than its NFC form, so byte-offset prefix slicing is unsound); suffix components
+  carried VERBATIM so every equality-keyed consumer that found a row before finds it after.
+- `run_move_phase` — journaled per entry; crash-window adoption (dest exists + source gone
+  = moved); copy-class copies without deleting the source (D3); cross-volume fallback.
+- `run_db_rewrite` — ONE transaction: defer FKs, drop the O(N²) outgoing triggers (sky
+  triggers stay ACTIVE — the proven live-move cascade), loop the proven
+  `migrate_note_db_paths` per enumerated note (it joins the outer tx via is_autocommit),
+  straggler sweep over note_links/note_aliases/sky_nodes/sky_links/review_schedule (catches
+  FK-orphans + the unstamped-review gate), cursor resets + sight_v3/link_stats wipes,
+  recreate triggers + recompute_all_outgoing once, then IN-TX VERIFY (baseline aggregates
+  byte-equal; zero rows under any old prefix; every moved dir present) — COMMIT only on
+  green, else ROLLBACK + journal VerifyFailed.
+- `run_json_rewrites` — ONE deep remapper over keys AND values (folderTemplates is keyed by
+  absolute path) across 8 stores incl. session.prev.json; per-store journaled resume.
+- `run_engine` — the resumable orchestrator.
+- Proofs: end-to-end fixture (backslash-stored rows, NFD-vs-NFC Arabic, FK child, unstamped
+  review row, copy-class, 5 JSON stores) · interrupt-after-moves resume · RED verify-failure
+  rollback · remap unit proofs. Rust 1302/0 at slice close.
+
+**Slice 3 — trash consolidation + settings collapse + PJ-192**:
+- `consolidate_trash` — per-library `.trash` top-level entries → root `.trash` via the shared
+  de-collide pair; folders move as units (attachments included); emptied sources removed;
+  idempotent (proof incl. cross-library same-name + pre-existing suffixed destination).
+- PJ-192 CLOSED: `move_to_trash` demoted from #[tauri::command] to pub(crate) (frontend
+  stopped invoking it in PJ-187; the sole Rust caller passes the universe root, which is now
+  the only meaning the collapsed setting has).
+- Frontend: `trashFolderScope` retired — type, default, resolver arm, Settings row, and an
+  explicit purge in applyParsedSettings (the spread-over-defaults load resurrects stale keys
+  and saveSettings round-trips them forever); i18n −6 keys ×15 (incl. the two verified
+  orphans: settings.files.permanentDelete, dialogs.batchDeleteTrash).
+- `tests/pj-187/trashDestination.test.ts` REWRITTEN for the collapsed contract (6 tests,
+  incl. legacy-key purge + Overwrite≡Delete at the backend boundary).
+
+Gates: Rust **1303/0** · vitest **66/710** · svelte-check **0**. Commits deferred until the
+batched diff-scoped safety inspection (run `wf_013fa5cc-4ba`) clears — the sweep precedent:
+one inspection before the commit series, every confirmed finding fixed first.
+
+## §8 — MIG-108 Slices 2+3 LANDED; the inspection was PARTIAL (limit-truncated)
+
+Commits `1be3d098` (Slice 2), `4243dc78` (Slice 3 + PJ-192 closed), `13e9a96d` (the two
+inspection APP-KILLERs). Gates: Rust **1303/0** · vitest **67 files / 715** · svelte-check **0**.
+
+### ⚠ THE INSPECTION DID NOT FINISH — re-run required
+Run `wf_013fa5cc-4ba`: **11 of 28 agents died on the weekly usage limit** (resets Aug 1). Only
+**3 of 14 scopes** actually ran — cross-window-integrity, frontmatter-property-writes,
+persisted-json-state. The eleven that never ran include every scope most relevant to this
+build: rename-move-delete-gate, note-save-index, notemodel-ownership, editor-lifecycle,
+rename-cascade-integrity, derived-index-triggers, boot-init-ordering, reactivity-concurrency,
+freeze-and-leaks, frontend-write-callers, cece-sources-derived. **MIG-108 must not reach its
+live run (Slice 7) until a complete inspection has covered the engine.** Recorded here rather
+than in a passing sentence because a truncated inspection reads exactly like a clean one.
+
+### What the 3 completed scopes found (12 confirmed; 2 APP-KILLERs fixed in `13e9a96d`)
+Both APP-KILLERs are the PJ-187 collections bug living unfixed on sibling stores — a
+Whole-Ecosystem gap, and both are files MIG-108's own rewrite phase replaces:
+- **workspaces.json** ("the precious file", MIG-100's words; no `.prev` rotation): a failed
+  read left `[]`, and the first Save workspace replaced every named snapshot with one entry.
+- **property-types.json**: a failed read left `{}`, and one type assignment wiped every
+  property-type assignment in the universe.
+Both now latch on a SUCCESSFUL read, refuse to write otherwise, and surface it. **My first
+property-types fix carried the bug its own test caught** — `{}` is truthy AND an object, so
+the obvious guard latched on precisely the ambiguous empty-bundle case it existed to reject
+(LL-040's shape again: the predicate must be "a read succeeded", not "no error was recorded").
+
+**Filed, not fixed** (pre-existing, outside MIG-108's blast radius — for the next PJ triage):
+SecondScreenPage never repaths/closes on rename/move/delete (HIGH) and never clears tabs on
+universe switch (MED) · yamlDoc.ts:311 malformed-YAML passthrough + :199 a FOURTH unguarded
+block shape (interior comment in a flat list) (HIGH ×2) · settings.json has the same missing
+latch as its two siblings (HIGH) · rename_universe repoints libraries.json even when the
+folder rename was skipped (MED) · set_review_priority ignores its affected-row count (MED) ·
+two parser-fidelity LOWs (quote-blind list split, `\"` unescaping).
