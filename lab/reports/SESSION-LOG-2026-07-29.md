@@ -538,3 +538,256 @@ the three named "session-close PCS" did.
 `npm run build` then `cargo build --release` (clean on the first attempt). Chain verified by
 mtime: `store.ts 12:26 → build/index.html 13:15 → constellation.exe 13:19`, and both bundles
 grep-confirmed to carry the new parser. **Awaiting the Boss test — nothing is committed.**
+
+---
+
+## §7 — PJ-187, the S-cost sweep (29 sites, ONE pass)
+
+**Boss ruling** (AskUserQuestion, 2026-07-29): *"All 29 small ones in one sweep."* Delivered as
+one uncommitted change set held for a single consolidated Boss test, to be landed as per-family
+commits after the pass.
+
+Full write-up with the family breakdown, the measured evidence and the proof table:
+`lab/reports/PJ-187-S-SWEEP-2026-07-29.md`.
+
+**Files touched (18 source + 15 locales + 3 test files):** `universe.rs`, `write_gate.rs`,
+`libraries.rs`, `search.rs`, `review.rs`, `sources/bulk_ops.rs`, `cece/reliability.rs`,
+`store.ts`, `propsCommit.ts`, `+layout.svelte`, `PropertyEditor.svelte`,
+`ReviewStatusPanel.svelte`, `StyleSetter.svelte`, `GlobalTasksView.svelte`,
+`SourceReviewPanel.svelte`, `SecondScreenPage.svelte`, `FocusPane.svelte`, i18n ×15.
+
+### §7.1 What the sweep changed, in one line each
+
+- **A — concurrent writers**: `universe.rs` atomic_write gains the pid+counter unique temp
+  (APP-KILLER); trash de-collide now discriminates the gate's "already exists" refusal and
+  **loops** the retry.
+- **B — a failed READ presenting as empty**: collections refuse to write until a read has
+  actually succeeded; `saveCollections` retries once and raises a visible error.
+- **C — silent failures** (7 sites): `sync_action_to_row` returns `Result`; `apply` returns
+  `{ changed, refused }`; four panels gained a visible failure line; the watcher's re-index
+  requeues on rejection (bounded); bulk-accept announces the DISK write even when the SQLite
+  mirror fails, and carries a partial-failure count into its `done` event.
+- **D — stale reads written back** (5 sites): `flushOutgoing` gains the `isCascading` gate;
+  `addTagToNote` gains both guards its `addLinkToNote` sibling carries; `moveItem` gains
+  `renameItem`'s flush envelope; `loadTabHistoryEntry` is reordered to `openNoteTab`'s ordering;
+  `cascadeFreeze` is refcounted.
+- **E — index↔disk divergence** (4 sites): `mark_with_parent` at all four gated write/rename/
+  delete sites; a re-index after the first cid_cn injection; `collect_md_paths` skips dot-dirs
+  (deleted notes were coming back in search); sky maintenance no longer gated by the INCOMING
+  stamp.
+- **F — blocking + leaks** (5 sites): two commands moved to `(async)`; three model-disposal
+  gaps closed; the reliability sweep no longer deletes a live temp.
+- **G — hand-built YAML** (2 sites): both now go through `quoteIfNeeded`.
+
+### §7.2 A fix the proof rejected
+
+The trash-collision fix as prescribed (retry ONCE) still failed under contention: the fresh name
+can be taken again while you reach for it. The concurrency harness surfaced it as a real sharing
+violation, not a theory. Measured pre-fix loss: **13 of 24 concurrently-deleted files destroyed**.
+Only the bounded retry loop passes — five runs out of five. This is the fourth consecutive
+PJ-18x fix whose first version contained a defect that only a proof caught (LL-039/040/041).
+
+### §7.3 Verification
+
+Rust **1285 passed / 0 failed** (5 new pj187 tests) · vitest **69 files / 782 tests** (8 new) ·
+svelte-check **0 errors**. Every new proof RED-proven by reverting its own mechanism and
+restored. Three fixes carry **no** automated proof — the Escape-commits-title fix and the four
+visible-failure panels — because this repo has no component-test harness; named, not hidden.
+
+**Whole-Ecosystem Fix Law check** run for the three multi-surface concerns (watcher suppression,
+tab-drop→dispose-model, hand-built frontmatter lines) — all surfaces enumerated and consistent.
+
+**PJ ledger (SO#9)**: reconciled at the close of this job — 29 register findings flip to Done,
+the remaining 19 (M-cost) stay open and re-ranked. Nothing is committed yet.
+
+### §7.4 Stage-1 finding — the sweep contained its own Whole-Ecosystem violation
+
+**Boss, on Test 2:** *"We designed Constellation to NOT accept title duplication. You should
+know that."* Correct — the test asked for something the app refuses by design, and the User
+Manual states it three lines above the paragraph this same sweep edited.
+
+Investigating the correct path exposed the real defect. **The trash de-collide concern has two
+independent implementations** and the sweep touched one of them:
+
+- `move_into_trash_folder` — the **Delete** path. Fixed in the sweep.
+- `move_to_trash` — the collision dialog's **Overwrite**, and the PJ-088 conflict-sidecar path.
+  Its own private copy of the de-collide search plus a single `gate_rename`, so a name claimed
+  between the check and the rename came back to the user as *"An item with this name already
+  exists at the destination"* — an error naming a trash filename they never chose and cannot see,
+  for an operation they had already confirmed.
+
+The law's canonical shape, committed inside the sweep whose report claimed the concern was swept.
+**Fixed** with one shared helper (`trash_move_decolliding` + the re-runnable `free_trash_name`);
+both call sites now route through it. `move_to_trash` keeps its no-fallback contract and gains the
+retry; `move_into_trash_folder` keeps its cross-device fallback and re-resolves a free name first.
+
+Two more proofs; **Rust 1287 passed / 0 failed**. Lesson recorded in the sweep report: *a
+per-concern grep is only as good as the concern's name* — the check was run against the concerns
+I had already assigned the fixes to, and never asked whether "trash de-collide" was itself
+multi-surface, because the triage entry named a single line.
+
+### §7.5 Predecessor → Replacement (Predecessor Lookup Rule) — the trash DESTINATION
+
+Written BEFORE any code edit, per the rule.
+
+**Where it lives now.** `moveToTrash(path, libraryPath)` — `src/lib/libraries/store.ts:4342`,
+introduced MIG-076 §E1b — invokes the Rust command `move_to_trash`
+(`src-tauri/src/libraries.rs:6833`), which hardcodes `<library_path>/.trash` and constrains the
+file to `library_path` via `validate_path_in_library`. Three frontend call sites:
+`+layout.svelte:4369` (Overwrite on create), `+layout.svelte:6760` (Overwrite on rename),
+`store.ts:5252` (PJ-088 conflict sidecar). None reads `trashDestination` / `trashFolderScope`.
+
+**Measured on the Boss's universe.** `settings.json` holds `trashDestination: 'local'`,
+`trashFolderScope: 'universe'`. Delete put `Trash Test.md` / `Trash Test 1.md` in
+`E:\Constellation Universes\Eisa Cognitive Knowledge\.trash` — correct. Overwrite put
+`Overwrite Test.md` / `Overwrite Test 1.md` in `E:\Cognitive Knowledge\Eisa Test\.trash` — a
+folder the setting never names. **This universe's libraries live entirely OUTSIDE its root**, so
+the two destinations are not merely different sub-folders; they are different trees.
+
+**Why `move_to_trash` structurally cannot be fixed in place.** It validates the file against the
+same `library_path` it derives the trash root from, so it can never honour universe scope for a
+library that sits outside the universe root. `delete_path` can: it takes `trash_root` separately
+and validates with `validate_path_in_any_library`.
+
+**Where its replacement lives. THE SAME PLACE.** `moveToTrash` keeps its name and its home in
+`store.ts`; only its body changes — it resolves the destination through a new shared
+`resolveTrashDestination(path)` (extracted verbatim from `deleteWithSetting`, so there is ONE
+implementation) and calls `deletePath`, the same command Delete uses. Signature drops the now-
+meaningless `libraryPath` argument; all three call sites updated.
+
+**What gets cut, and what is kept.** No IPC command is retired: the Rust `move_to_trash` keeps a
+legitimate caller at `universe.rs:2426` (Template Studio undo), which deliberately passes the
+universe root for a template file. **That path remains a knowing exception** — it is Rust-side
+and has no access to the frontend setting. Surfaced to the Boss for a ruling rather than changed
+silently; filed as **PJ-192**.
+
+### §7.6 Stage-1 Part B — PASSED, and the search for the files found a real bug
+
+**Part B verdict: PASS.** `Eisa Test/.trash/Overwrite Test.md` = `VERSION ONE`;
+`Overwrite Test 1.md` = `VERSION TWO`; `Alpha/Overwrite Test.md` = the live third note. The
+de-collide worked, nothing was clobbered, and the Overwrite did not refuse — which is exactly
+what §7.4's shared helper was meant to guarantee. The step "failed" only because **my instruction
+named the wrong folder**.
+
+**Why it named the wrong folder — the bug.** Four paths displace a note, and they did not agree
+on where it goes. Fixed per §7.5's predecessor entry: `resolveTrashDestination(path)` extracted
+from `deleteWithSetting` and exported, with `moveToTrash` rerouted through it + `deletePath`.
+
+| Path | Before | After |
+|---|---|---|
+| Delete | honours `trashDestination` + `trashFolderScope` | unchanged |
+| Overwrite (create) | hardcoded `<library>/.trash` | honours the setting |
+| Overwrite (rename) | hardcoded `<library>/.trash` | honours the setting |
+| PJ-088 conflict sidecar | hardcoded `<library>/.trash` | honours the setting |
+| Template-Studio undo (Rust) | universe root, by design | **unchanged — PJ-192**, Boss ruling owed |
+
+Worth stating plainly: with the DEFAULT `trashDestination: 'system'`, Delete used the Recycle Bin
+while Overwrite silently created a `.trash` folder inside the library. The user had chosen the
+Recycle Bin and got a folder they never opted into, holding notes they would never find.
+
+**Proof:** `tests/pj-187/trashDestination.test.ts`, 7 assertions, RED-proven by restoring the
+pre-fix body — 4 of 7 fail, including the direct `trashRoot` mismatch and `move_to_trash` still
+being reached. Gates: **65 files / 705 tests** in the normal lane, **Sight 5 files / 84 tests**
+in the PJ-172 SERIAL lane (`--no-file-parallelism --maxWorkers=1`; it fails in the parallel lane
+on CPU contention — 23.4 ms vs the 16 ms budget — which is PJ-172, not a regression),
+svelte-check **0**, Rust **1287 passed / 0 failed**.
+
+**Two tests of mine were wrong in a row** (Test 2 asked for a universe-wide-blocked duplicate;
+Part B named the wrong folder). Both errors were about the app's *user-facing rules*, not its
+internals — and both times the Boss's correction exposed a real defect underneath. Recorded
+because the pattern is the point: I was writing test steps from the code I had just edited
+instead of from how the app actually behaves.
+
+---
+
+## §8 — BOSS RULING: one universe, one location (and one central trash)
+
+**Two rulings, 2026-07-29, in order:**
+
+1. **One central `.trash`, at the universe root** — not inside `.constellation`. The scope
+   dropdown ("Within the note's library" / "At the universe root") is **removed**; the
+   destination choice (Recycle Bin / `.trash` folder) stays. Reasoning accepted: `.constellation`
+   is machine state carrying its own `.gitignore` (`*.db`, `boot-perf.*`, `diagnostics.log`) and
+   currently holds a 2.0 GB `search.db` plus a stale 939 MB one — the folder a user clears when
+   the app misbehaves. A recoverable note must not inherit a cache directory's risk profile
+   (File Over App). Prior art agrees: Obsidian keeps `.trash` at the **vault root**, not inside
+   `.obsidian/`. Federation is not a complication — child-universe notes are read-only and
+   skipped by delete.
+
+2. **One universe, one location.** *"Let's unify the whole 'Eisa Cognitive Knowledge' content
+   under E:\Constellation Universes\. And let's make sure there's only one universe location
+   that holds its content, even if users imported it from other PKM apps."*
+
+### §8.1 This REVERSES a documented invariant
+
+`CLAUDE.md` → Constellation Knowledge Hierarchy currently states:
+
+> *"Additional libraries can have **any path** (subfolders or external). **Libraries are never
+> copied — Constellation reads them in place.**"*
+
+The ruling replaces that with: **a universe's content lives under the universe root**, including
+content imported from other PKM apps. This is not a bug fix — it is a change to the hierarchy's
+core rule, and `CLAUDE.md` must be amended by the migration that implements it, not before.
+
+### §8.2 Measured scope on the Boss's universe
+
+| | |
+|---|---|
+| Libraries registered | **20** |
+| Already inside the universe root | 2 |
+| **Outside — must relocate** | **18** |
+| **Notes to relocate** | **7,684** (297.8 MB) |
+| Drives involved | **E: only** — same volume as the universe root (moves are renames, not copies) |
+
+One of the 18 is `E:\مشاريع كلاود\Constellation\lab\PJ-065-test-book` — a library registered
+from inside the **source repo**. Under the new rule that becomes illegal; needs a ruling
+(unregister vs relocate).
+
+### §8.3 THE RISK, quantified — why this is not a file move
+
+`search.db` keys every note by **absolute path**: 7,825 `note_meta` rows, all absolute, **7,672
+of them pointing under `E:\Cognitive Knowledge`**. Every one is invalidated by the relocation.
+
+And per `CLAUDE.md`'s own storage note, `search.db` is **currently the system of record** for the
+earned half of the Living Link Architecture — there is no disk layer yet. Measured, live:
+
+| Lives ONLY in `search.db` | Rows |
+|---|---|
+| `note_links` carrying a **weight** | **234,234** |
+| `note_links` with a traversal count | 34 |
+| `note_links` archived by the user | 1 |
+| `review_schedule` rows | **7,825** |
+
+**A "move the files and re-index" approach destroys all of it**, and none of it can be rebuilt
+from the `.md` files. The migration MUST rewrite paths **in place** in SQLite under a
+transaction, never drop-and-rebuild.
+
+**CORRECTION (same session, after the Boss supplied context).** I first wrote that this was *"the
+single largest data-loss exposure the project has faced."* That was **overstated**. The Boss then
+told me the 18 libraries were created *"for the purpose of examining and testing Constellation,
+during its development journey"* — so the 234,234 weights and 7,825 schedules are
+test-generated, not irreplaceable knowledge. The mechanics above are accurate and unchanged; the
+stakes I attached to them were not.
+
+**The correct framing is the opposite one.** That universe is the only realistic migration
+rehearsal this project has — 7,684 notes, 18 libraries nested three deep, Arabic and English
+names, spaces and `&` in paths, libraries outside the root, and a fully-populated earned-link
+table. Its value as a fixture is exactly that it is disposable: if the relocation corrupts
+something, it is found on 7,684 throwaway notes rather than on a future user's real knowledge
+base. Same engineering rigour, no fear.
+
+**What does NOT change:** the back-fill is a product requirement regardless. Constellation shipped
+documenting external library paths as supported ("libraries can have any path… never copied —
+read in place"), so any user who took the app at its word will have libraries outside their root,
+and THEIR earned data has no second copy. The Boss's ruling was explicitly future-facing —
+*"even if users imported it from other PKM apps."*
+
+### §8.4 Sequencing proposed to the Boss
+
+1. Finish Stage 1 (Tests 3/4/5) and land the 29-site sweep — several of its fixes (move/rename
+   flush envelope, cascading gates, watcher suppression, index↔disk consistency) are in the exact
+   paths a mass relocation exercises. Landing them first de-risks the migration.
+2. Then `/migration` Phase 1 (Architect) for **"One Universe, One Location"**, which subsumes
+   ruling 1 — once every library sits under the root, the universe-root `.trash` is trivially
+   correct AND same-volume for every note.
+3. No file is moved before an approved plan. Stated to the Boss explicitly.

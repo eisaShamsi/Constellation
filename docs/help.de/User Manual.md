@@ -329,6 +329,13 @@ Sie muessen sich nie Sorgen machen, dass eine gesperrte oder kurzzeitig nicht ve
 
 ---
 
+
+### Wenn etwas nicht gespeichert werden kann, sagt Constellation es jetzt
+
+Dieselbe Ehrlichkeit gilt über den Notiztext hinaus. Lässt sich eine **Eigenschaft** nicht schreiben, sagt das Eigenschaften-Panel es und behält deine Änderung auf dem Bildschirm, statt sie stillschweigend zu verwerfen. Lässt sich eine **Review-Priorität** nicht speichern, springt der Regler mit einem kurzen Hinweis auf den gespeicherten Wert zurück, statt dort zu bleiben, wo du ihn hingezogen hast. Lässt sich ein **gespeicherter Stil** nicht schreiben, wird die Stil-Galerie zurückgesetzt, statt einen Stil zu zeigen, den es auf der Festplatte nicht gibt. Lässt sich ein **Aufgaben-Häkchen** nicht in seine Notiz schreiben, wird es wieder entfernt und über der Liste erscheint eine Zeile. Früher war das Verhalten an all diesen Stellen Schweigen — die Änderung sah angenommen aus, und du hast es später gemerkt, oder nie.
+
+**Zwei Dateien mit demselben Namen sind beide wiederherstellbar**: Löschst du `Notes.md` aus einem Ordner und danach `Notes.md` aus einem anderen, wird die zweite unter einem nummerierten Namen neben der ersten abgelegt — die frühere wird nie ersetzt, wie schnell die beiden Löschvorgänge auch aufeinanderfolgen. Und Notizen im Papierkorb bleiben aus Suchergebnissen und Link-Vorschlägen heraus; eine gelöschte Notiz kommt nicht zurück.
+
 ## 4. Suche
 
 Constellation verfuegt ueber eine hybride mehrsprachige Suchmaschine auf Basis von SQLite FTS5 mit BM25-Ranking, strukturierten Abfragefiltern und arabisch-optimierter Normalisierung. Die Suche ist ueber die Seitenleiste erreichbar.

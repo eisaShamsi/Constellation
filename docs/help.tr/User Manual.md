@@ -296,6 +296,13 @@ Kilitli veya kısa süreliğine erişilemeyen bir dosyanın size bir düzenleme 
 
 ---
 
+
+### Bir şey kaydedilemediğinde artık size söylenir
+
+Aynı dürüstlük not gövdesinin ötesinde de geçerlidir. Bir **özellik** yazılamıyorsa, Özellikler paneli bunu söyler ve değişikliğinizi sessizce atmak yerine ekranda tutar. Bir **gözden geçirme önceliği** kaydedilemiyorsa, kaydırıcı kısa bir notla kayıtlı değere geri döner; işe yaramış gibi sürüklediğiniz yerde kalmaz. **Kaydedilmiş bir stil** yazılamıyorsa, stil galerisi eski hâline döndürülür; diskte olmayan bir stili göstermez. Bir **görev kutusu** kendi notuna yazılamıyorsa, kutunun işareti kaldırılır ve listenin üstünde bir satır belirir. Eskiden bütün bu yerlerde davranış sessizlikti — değişiklik kabul edilmiş görünürdü ve bunu sonradan öğrenirdiniz ya da hiç öğrenmezdiniz.
+
+**Aynı ada sahip iki dosyanın ikisi de kurtarılabilir**: bir klasörden `Notes.md` dosyasını, ardından başka bir klasörden `Notes.md` dosyasını silerseniz, ikincisi numaralı bir adla birincinin yanına yerleştirilir — iki silme birbirini ne kadar hızlı izlerse izlesin, öncekinin üzerine hiç yazılmaz. Ayrıca çöp kutusundaki notlar arama sonuçlarının ve bağlantı önerilerinin dışında kalır; silinen bir not geri gelmez.
+
 ## 4. Arama
 
 Constellation, SQLite FTS5 tabanlı BM25 sıralama, yapılandırılmış sorgu filtreleri ve Arapçaya optimize edilmiş normalizasyon ile hibrit çok dilli bir arama motoruna sahiptir. Arama, kenar çubuğu araç çubuğundan erişilebilir.

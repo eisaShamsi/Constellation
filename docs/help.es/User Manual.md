@@ -296,6 +296,13 @@ Nunca tienes que preocuparte de que un archivo bloqueado o momentáneamente no d
 
 ---
 
+
+### Cuando algo no se puede guardar, ahora se te dice
+
+La misma honestidad se aplica más allá del cuerpo de la nota. Si una **propiedad** no se puede escribir, el panel de Propiedades lo dice y mantiene tu cambio en pantalla en lugar de descartarlo en silencio. Si una **prioridad de revisión** no se puede guardar, el control vuelve al valor almacenado con una nota breve, en vez de quedarse donde lo arrastraste como si hubiera funcionado. Si un **estilo guardado** no se puede escribir, la galería de estilos vuelve a como estaba en lugar de mostrar un estilo que no existe en el disco. Si una **casilla de tarea** no se puede escribir en su nota, la casilla se desmarca y aparece una línea sobre la lista. Antes, en todos estos lugares el comportamiento era el silencio: el cambio parecía aceptado y te enterabas más tarde, o nunca.
+
+**Dos archivos con el mismo nombre son ambos recuperables**: si eliminas `Notes.md` de una carpeta y luego `Notes.md` de otra, el segundo se archiva junto al primero con un nombre numerado — el anterior nunca se reemplaza, por rápido que se sucedan las dos eliminaciones. Y las notas que están en la papelera quedan fuera de los resultados de búsqueda y de las sugerencias de enlaces; una nota eliminada no vuelve.
+
 ## 4. Busqueda
 
 Constellation incluye un motor de busqueda hibrido multilingue basado en SQLite FTS5 con clasificacion BM25, filtros de consulta estructurados y normalizacion optimizada para arabe. La busqueda es accesible desde la barra lateral.

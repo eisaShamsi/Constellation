@@ -296,6 +296,13 @@ Vous n'avez jamais à craindre qu'un fichier verrouillé ou momentanément indis
 
 ---
 
+
+### Quand quelque chose ne peut pas être enregistré, Constellation vous le dit
+
+La même honnêteté s'applique au-delà du corps de la note. Si une **propriété** ne peut pas être écrite, le panneau Propriétés le dit et conserve votre modification à l'écran au lieu de l'abandonner en silence. Si une **priorité de revue** ne peut pas être enregistrée, le curseur revient à la valeur enregistrée avec une brève mention, au lieu de rester là où vous l'avez glissé comme si cela avait marché. Si un **style enregistré** ne peut pas être écrit, la galerie de styles est remise dans son état précédent au lieu d'afficher un style qui n'existe pas sur le disque. Si une **case de tâche** ne peut pas être écrite dans sa note, la case est décochée et une ligne apparaît au-dessus de la liste. Auparavant, le comportement à tous ces endroits était le silence — la modification semblait acceptée, et vous le découvriez plus tard, ou jamais.
+
+**Deux fichiers portant le même nom sont tous deux récupérables** : si vous supprimez `Notes.md` d'un dossier puis `Notes.md` d'un autre, le second est rangé à côté du premier sous un nom numéroté — le précédent n'est jamais remplacé, aussi rapprochées que soient les deux suppressions. Et les notes placées dans la corbeille restent hors des résultats de recherche et des suggestions de liens ; une note supprimée ne revient pas.
+
 ## 4. Recherche
 
 Constellation dispose d'un moteur de recherche hybride multilingue base sur SQLite FTS5 avec classement BM25, filtres de requete structures et normalisation optimisee pour l'arabe. La recherche est accessible depuis la barre laterale.

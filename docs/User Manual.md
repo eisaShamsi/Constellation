@@ -298,7 +298,7 @@ You don't need to do anything: Constellation keeps its search index in step with
 - If you have **no unsaved changes** in that note, the open note quietly refreshes to show the outside edit, so your next keystroke builds on the new version. *(Previously, an open note kept showing the old text and your next keystroke could silently save over the outside edit — that can no longer happen.)*
 - If you **do have unsaved edits** in that note at the same moment an outside change arrives — a genuine conflict — Constellation never touches your unsaved work. It keeps **your** version in the editor, writes the incoming outside version to a **side-copy** next to the note (named `<note>.conflict-<timestamp>.md.txt`, so nothing is ever lost), and shows a banner: *"An external edit to {note} was kept as a separate copy — your version is unchanged."* Click **Show copy** to open the folder to that side-copy. The side-copy is an inert `.txt` file — it never appears in your sidebar or search and never triggers another sync.
 
-**Merging the two versions.** The conflict banner also has a **Merge…** button. It opens a full-screen, two-column view — **Your version** on the left (editable) beside the **Outside copy** on the right (read-only) — with the differences highlighted and the identical parts folded away. Next to each difference is a **Copy to mine** button that pulls that outside change into your version; you can also edit the left column freely to combine the two by hand. When you're done, **Save merged** writes your reconciled note and moves the side-copy to the library trash (recoverable, never deleted); **Cancel** changes nothing — both versions stay exactly as they were. Constellation never merges automatically — the reconciliation is always your choice.
+**Merging the two versions.** The conflict banner also has a **Merge…** button. It opens a full-screen, two-column view — **Your version** on the left (editable) beside the **Outside copy** on the right (read-only) — with the differences highlighted and the identical parts folded away. Next to each difference is a **Copy to mine** button that pulls that outside change into your version; you can also edit the left column freely to combine the two by hand. When you're done, **Save merged** writes your reconciled note and moves the side-copy to your trash (recoverable, never deleted — to the same place a deleted note goes, per your **Deleted files** setting); **Cancel** changes nothing — both versions stay exactly as they were. Constellation never merges automatically — the reconciliation is always your choice.
 
 ### Universe Notes Folder
 
@@ -514,6 +514,16 @@ If a save ever **fails** — for example a sync tool (iCloud / OneDrive / Syncth
 
 You never have to worry about a locked or briefly-unavailable file costing you an edit.
 
+**And when something else can't be saved, Constellation now tells you.** The same honesty applies
+beyond the note body. If a **property** can't be written, the Properties panel says so and keeps
+your change on screen rather than quietly dropping it. If a **review priority** can't be saved,
+the slider snaps back to the stored value with a short note, instead of sitting where you dragged
+it as though it had worked. If a **saved style** can't be written, the style gallery is put back
+the way it was rather than showing a style that does not exist on disk. If a **task checkbox**
+can't be written to its note, the box is un-ticked again and a line appears above the list. In
+every one of these places the old behaviour was silence — the change looked accepted, and you
+found out later, or never.
+
 ---
 
 ## 4. Notes Management Sidebar
@@ -585,9 +595,13 @@ The file tree for browsing **and organizing** your notes and folders. Beyond the
 
 **Renaming updates links automatically.** When you rename a note — from the file tree (right-click → Rename) or by editing its title at the top of the page — Constellation rewrites every `[[link]]` pointing to it across the library to the new name, so links never silently break. A brief "Updating links…" overlay appears on the affected note(s) while this runs (the editor pauses typing for that moment); the old title is kept as an alias so existing links still resolve.
 
-**Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to its library's `.trash` first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered), or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
+**Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to your trash first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered). It goes to the **same place a deleted note goes**, chosen by your **Deleted files** setting — the Recycle Bin, or the `.trash` folder at whichever scope you picked, or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
 
 **Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in the File Explorer's batch bar — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or a **`.trash` folder** kept either inside the note's own library or at the universe root (your choice, in the same setting). Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
+**Two files with the same name are both recoverable**: if you delete `Notes.md` from one folder and
+then `Notes.md` from another, the second is filed beside the first under a numbered name — the
+earlier one is never replaced, however quickly the two deletes follow each other. And notes sitting
+in the trash stay out of search results and link suggestions; a deleted note does not come back.
 
 ### OrgChart Mode (Sky View)
 

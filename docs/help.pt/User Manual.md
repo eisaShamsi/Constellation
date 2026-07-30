@@ -324,6 +324,13 @@ Você nunca precisa se preocupar que um arquivo bloqueado ou brevemente indispon
 
 ---
 
+
+### Quando algo não pode ser guardado, agora somos claros
+
+A mesma honestidade aplica-se para além do corpo da nota. Se uma **propriedade** não puder ser escrita, o painel de Propriedades di-lo e mantém a sua alteração no ecrã em vez de a descartar em silêncio. Se uma **prioridade de revisão** não puder ser guardada, o controlo volta ao valor guardado com uma nota breve, em vez de ficar onde o arrastou como se tivesse funcionado. Se um **estilo guardado** não puder ser escrito, a galeria de estilos é reposta como estava, em vez de mostrar um estilo que não existe no disco. Se uma **caixa de tarefa** não puder ser escrita na sua nota, a caixa é desmarcada e aparece uma linha acima da lista. Antes, em todos estes lugares o comportamento era o silêncio — a alteração parecia aceite, e descobria mais tarde, ou nunca.
+
+**Dois ficheiros com o mesmo nome são ambos recuperáveis**: se apagar `Notes.md` de uma pasta e depois `Notes.md` de outra, o segundo é arquivado ao lado do primeiro com um nome numerado — o anterior nunca é substituído, por mais rápido que os dois apagamentos se sucedam. E as notas que estão no lixo ficam fora dos resultados de pesquisa e das sugestões de ligações; uma nota apagada não volta.
+
 ## 4. Pesquisa
 
 Constellation inclui um motor de busca hibrido multilingue baseado em SQLite FTS5 com classificacao BM25, filtros de consulta estruturados e normalizacao otimizada para arabe. A pesquisa e acessivel pela barra lateral.

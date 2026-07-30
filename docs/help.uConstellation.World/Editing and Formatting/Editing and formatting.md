@@ -317,6 +317,19 @@ Type `#` to open the tag autocomplete. Existing tags from your libraries are sug
 
 ---
 
+## Renaming a note from its title line
+
+Every note carries its title above the text, and you can rename the note by typing straight into
+it. However you leave that field, the new title is kept:
+
+- **Press Enter** — the cursor returns to the body and the rename is applied.
+- **Click anywhere else** — the rename is applied as you leave.
+- **Press Escape** — this is the "take me back to writing" key, and it now applies the rename too.
+
+Previously Escape was the one exit that threw the new title away without a word, so a note you had
+just renamed kept its old name. If you want to abandon a rename, put the old title back before you
+leave the field.
+
 ## Editor settings
 
 You can customize the editor behavior in **Settings > Editor**. Settings are organized into three sections:
