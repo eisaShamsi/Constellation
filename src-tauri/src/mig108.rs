@@ -791,10 +791,17 @@ pub fn run_db_rewrite(
     journal: &mut Journal,
     constellation_dir: &Path,
 ) -> Result<(), String> {
+    // Stage-A finding B: COPY entries are included. The index rows key the note's IDENTITY,
+    // and the REGISTRATION moves to the root copy — so the rows follow it; the retained
+    // original becomes an unregistered plain folder, correctly invisible to the index. The
+    // first version filtered copies out ("never indexed under the root" — wrong: they were
+    // indexed at their OLD path), which orphaned 70 rows at Stage-A — and because the in-tx
+    // verify used this same pair set, it was BLIND to them (LL-040: a verifier built from
+    // the decision's own assumptions cannot catch the decision's error; the independent
+    // rehearsal check with a wider net did).
     let pairs: Vec<(String, String)> = journal
         .entries
         .iter()
-        .filter(|e| e.action == "move") // copy-class content was never indexed under the root
         .map(|e| (e.old_path.clone(), e.new_path.clone()))
         .collect();
     let baseline = journal
@@ -809,10 +816,24 @@ pub fn run_db_rewrite(
         conn.execute_batch("PRAGMA defer_foreign_keys = ON")
             .map_err(|e| e.to_string())?;
         // H2 — the ungated per-edge outgoing recompute is O(N^2) across a bulk rewrite
-        // (+17 s measured at 216k links). The sky triggers stay ACTIVE: note_meta_sky_au is
-        // the proven cascade for sky_nodes/sky_links/note_aliases, exactly as every live
-        // single-note move runs it today.
+        // (+17 s measured at 216k links).
         crate::search::drop_outgoing_link_triggers(conn)?;
+        // Stage-A finding C — the sky triggers came OFF too. The first version kept them
+        // ("the proven cascade, exactly as every live single-note move runs it") — true at
+        // single-note scale, and ~25 MINUTES at 7,800-notes-in-one-transaction scale: the
+        // per-fire enrichment EXISTS probes and per-edge sky_links delete+reinsert multiply.
+        // The straggler sweep below rewrites sky_nodes / sky_links / note_aliases directly
+        // (proven by the fixture, which runs with these triggers absent). Recreation:
+        // idempotent init_db — the command layer calls it post-commit for the live session,
+        // and the next boot's init_db covers every crash window (the same self-heal the
+        // rehearsal maker already relied on, proven live when the Boss's boot recreated 17).
+        conn.execute_batch(
+            "DROP TRIGGER IF EXISTS note_meta_sky_au;
+             DROP TRIGGER IF EXISTS note_links_sky_ai;
+             DROP TRIGGER IF EXISTS note_links_sky_ad;
+             DROP TRIGGER IF EXISTS note_links_sky_au;",
+        )
+        .map_err(|e| format!("mig108: dropping sky triggers failed: {}", e))?;
 
         // The per-note proven cascade, enumerated Rust-side with normalized matching (H3) —
         // never SQL replace()/LIKE.
@@ -1190,6 +1211,11 @@ mod slice2_tests {
         conn.execute("INSERT INTO note_summaries VALUES (?1, 'sum')", [&a_note]).unwrap();
         conn.execute("INSERT INTO sky_nodes VALUES (?1)", [&a_note]).unwrap();
         conn.execute("INSERT INTO sky_links VALUES (?1, 'b', 'associative')", [&a_note]).unwrap();
+        // Stage-A finding B — the COPY-class library's note was indexed at its OLD path too;
+        // its rows must follow the registration to the root copy.
+        let k_note = format!("{}/k.md", book.to_string_lossy());
+        conn.execute("INSERT INTO note_meta (path, name) VALUES (?1, 'k')", [&k_note]).unwrap();
+        conn.execute("INSERT INTO review_schedule VALUES (?1, '2026-07-02')", [&k_note]).unwrap();
 
         // JSON stores.
         std::fs::write(
@@ -1275,7 +1301,7 @@ mod slice2_tests {
 
         // db — nothing under old prefixes; earned data intact; FK child moved with parent.
         let count = |sql: &str| -> i64 { f.conn.query_row(sql, [], |r| r.get(0)).unwrap() };
-        assert_eq!(count("SELECT COUNT(*) FROM note_meta"), 2);
+        assert_eq!(count("SELECT COUNT(*) FROM note_meta"), 3);
         let weight: f64 = f
             .conn
             .query_row("SELECT SUM(weight) FROM note_links", [], |r| r.get(0))
@@ -1300,11 +1326,25 @@ mod slice2_tests {
         assert!(norm_under(&sum_path, &f.root), "FK child moved with its parent");
         let sky: String = f.conn.query_row("SELECT path FROM sky_nodes", [], |r| r.get(0)).unwrap();
         assert!(norm_under(&sky, &f.root));
-        let sched: String = f
+        let scheds: Vec<String> = {
+            let mut st = f.conn.prepare("SELECT path FROM review_schedule").unwrap();
+            let v = st.query_map([], |r| r.get(0)).unwrap().filter_map(|r| r.ok()).collect();
+            v
+        };
+        for p in &scheds {
+            assert!(norm_under(p, &f.root), "unstamped review rows caught by the sweep: {}", p);
+        }
+        // Stage-A finding B — the copy-class note's rows moved to the ROOT COPY's path,
+        // even though the original files remain on disk at the old location.
+        let k_now: String = f
             .conn
-            .query_row("SELECT path FROM review_schedule", [], |r| r.get(0))
+            .query_row("SELECT path FROM note_meta WHERE name = 'k'", [], |r| r.get(0))
             .unwrap();
-        assert!(norm_under(&sched, &f.root), "unstamped review row caught by the sweep");
+        assert!(
+            norm_under(&k_now, &f.root),
+            "copy-class rows follow the REGISTRATION, not the retained original: {}",
+            k_now
+        );
 
         // json — keys AND values remapped in every store.
         let libs_txt = std::fs::read_to_string(f.cdir.join("libraries.json")).unwrap();
@@ -1571,6 +1611,23 @@ fn run_with_events(
     let conn = guard.as_ref().ok_or("Search database not initialized")?;
     let db_path = crate::search::db_path(app).map_err(|e| e.to_string())?;
 
+    // Stage-A findings A + C, both owed to the same fact: this process OUTLIVES the
+    // migration (the post-Unify reload restarts only the webview). So the command layer
+    // must (A) invalidate the process-lifetime registry + embed-index caches the engine's
+    // direct libraries.json write bypassed — without this, read_library_tree's
+    // Library-≠-Folder exclusion set still holds the PRE-migration paths and every
+    // relocated library ALSO renders as a folder of the root (the Boss's screenshot) — and
+    // (C) recreate the dropped triggers for the live session via idempotent init_db.
+    let finish_in_process = |db_path: &Path| {
+        crate::libraries::invalidate_libraries_cache();
+        crate::embeds::invalidate_all_vault_indexes();
+        if let Err(e) = crate::search::init_db(db_path) {
+            // Non-fatal: the next boot's init_db recreates the triggers regardless; the
+            // session merely runs without live sky maintenance until then. Surfaced loudly.
+            eprintln!("[mig108] post-run init_db failed (triggers restored at next boot): {e}");
+        }
+    };
+
     let label = |p: &Phase| match p {
         Phase::Planned => "snapshot",
         Phase::Snapshotted | Phase::Moving => "moving",
@@ -1582,6 +1639,7 @@ fn run_with_events(
     loop {
         emit_phase(app, label(&journal.phase));
         if matches!(journal.phase, Phase::Done) {
+            finish_in_process(&db_path);
             return Ok(());
         }
         let before = journal.phase.clone();
@@ -1672,5 +1730,95 @@ mod slice3_tests {
 
         // Idempotent: a second run is a clean no-op.
         assert_eq!(consolidate_trash(&root, &libs).unwrap(), 0);
+    }
+}
+
+#[cfg(test)]
+mod rehearsal_harness {
+    //! Slice-6 — the mechanical rehearsal: run the REAL engine against a scratch universe
+    //! built by `lab/tools/mig108_make_rehearsal.py`, headless, timed, invariants asserted.
+    //!
+    //! Deliberately `#[ignore]`d: it touches a caller-supplied path on the real filesystem.
+    //! Drive it explicitly:
+    //!
+    //!   MIG108_REHEARSAL_ROOT="E:\...\MIG108 Rehearsal" \
+    //!   MIG108_COPY_BASENAMES="PJ-065-test-book" \
+    //!   cargo test --lib mig108_rehearsal_run -- --ignored --nocapture
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn mig108_rehearsal_run() {
+        let root = match std::env::var("MIG108_REHEARSAL_ROOT") {
+            Ok(r) => r,
+            Err(_) => {
+                eprintln!("MIG108_REHEARSAL_ROOT not set — skipping");
+                return;
+            }
+        };
+        let copy_basenames: Vec<String> = std::env::var("MIG108_COPY_BASENAMES")
+            .unwrap_or_default()
+            .split(';')
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_lowercase())
+            .collect();
+        let cdir = Path::new(&root).join(".constellation");
+        let db_path = cdir.join("search.db");
+        let libs: Vec<crate::libraries::LibraryInfo> = serde_json::from_str(
+            &std::fs::read_to_string(cdir.join("libraries.json")).unwrap(),
+        )
+        .unwrap();
+        let copy_paths: Vec<String> = libs
+            .iter()
+            .filter(|l| {
+                Path::new(&l.path)
+                    .file_name()
+                    .map(|n| copy_basenames.contains(&n.to_string_lossy().to_lowercase()))
+                    .unwrap_or(false)
+            })
+            .map(|l| l.path.clone())
+            .collect();
+
+        let report = classify(&root, &libs, &copy_paths, &[]);
+        let actionable = report.to_move().count();
+        println!("rehearsal: {} actionable entries ({} copy)", actionable, copy_paths.len());
+        assert!(actionable > 0, "nothing to rehearse — is this scratch already unified?");
+
+        let mut journal = Journal::new(&root, &report);
+        journal.save(&cdir).unwrap();
+
+        let conn = rusqlite::Connection::open(&db_path).unwrap();
+        let t0 = std::time::Instant::now();
+        run_engine(&conn, &db_path, &mut journal, &cdir).unwrap();
+        let took = t0.elapsed();
+        println!("rehearsal: engine completed in {:.1}s", took.as_secs_f64());
+        assert_eq!(journal.phase, Phase::Done);
+
+        // The independent wider-net check (LL-040: never only the engine's own verify):
+        // zero rows under ANY journal old path, copy-class included.
+        let mut stale = 0i64;
+        for (table, col, _) in SWEEP {
+            if let Ok(mut stmt) = conn.prepare(&format!("SELECT {c} FROM {t}", c = col, t = table)) {
+                stale += stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .unwrap()
+                    .filter_map(|r| r.ok())
+                    .filter(|p| {
+                        journal.entries.iter().any(|e| remap_path(p, &e.old_path, "X").is_some())
+                    })
+                    .count() as i64;
+            }
+        }
+        {
+            let mut stmt = conn.prepare("SELECT path FROM note_meta").unwrap();
+            stale += stmt
+                .query_map([], |r| r.get::<_, String>(0))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .filter(|p| journal.entries.iter().any(|e| remap_path(p, &e.old_path, "X").is_some()))
+                .count() as i64;
+        }
+        assert_eq!(stale, 0, "wider-net stale check must be ZERO (copy-class included)");
+        println!("rehearsal: wider-net stale rows = 0 — PASS");
     }
 }
