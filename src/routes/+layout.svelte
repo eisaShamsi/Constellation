@@ -29,6 +29,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, isCascading, isReseeding,
 		markCascadingLibrary, clearCascadingLibrary,
 		tabsInLibrary, quickCapture, cascadeFreeze, isPathFrozen, markFreeze, clearFreeze,
+		markWorkspacesLoadedFromBundle,
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
@@ -2575,8 +2576,12 @@
 			// Workspaces — array set directly. (Bookmarks are migrated into the
 			// Starred collection by loadCollections, which reads read_universe_bookmarks
 			// directly — the boot bundle no longer carries a bookmarks field.)
-			if (Array.isArray(bundle.workspaces) && bundle.workspaces.length > 0) {
-				workspaces.set(bundle.workspaces as any);
+			// MIG-108 inspection — route through the latch: a non-empty bundle list proves a
+			// successful read and unlocks saving; an empty one is ambiguous (the bundle maps a
+			// read FAILURE to []), so it defers to loadWorkspaces, which can tell them apart.
+			markWorkspacesLoadedFromBundle((bundle.workspaces as unknown[]) ?? []);
+			if (!Array.isArray(bundle.workspaces) || bundle.workspaces.length === 0) {
+				void loadWorkspaces();
 			}
 
 			// MIG-100 §3 — the auto-session snapshot rides the bundle; the
