@@ -41,9 +41,10 @@
 		entries_total: number;
 		entries_moved: number;
 		universe_root: string;
+		restorable: boolean;
 	}
 
-	let { onDone }: { onDone?: () => void } = $props();
+	let { onDone, onDismiss }: { onDone?: () => void; onDismiss?: () => void } = $props();
 
 	let visible = $state(false);
 	let mode = $state<'proposal' | 'running' | 'summary' | 'resume'>('proposal');
@@ -55,6 +56,9 @@
 	let errorText = $state<string | null>(null);
 	let summary = $state<{ moved: number; copied: number; skipped: number } | null>(null);
 	let unlisten: (() => void) | null = null;
+	let unlistenClose: (() => void) | null = null;
+	/** The user tried to close the window mid-run; Rust refused it (Phase-4 audit). */
+	let closeBlocked = $state(false);
 
 	const actionable = (r: PreflightReport | null) =>
 		r?.entries.filter((e) => e.class.kind === 'move' || e.class.kind === 'copy') ?? [];
@@ -65,6 +69,11 @@
 		unlisten = await listen<string>('mig108:progress', (ev) => {
 			phaseLabel = ev.payload;
 		});
+		// Phase-4 audit — the user clicked the window's X mid-run and Rust refused it. Say so
+		// on the running screen, so the refusal reads as deliberate rather than as a freeze.
+		unlistenClose = await listen('mig108:close-blocked', () => {
+			closeBlocked = true;
+		});
 		try {
 			const js = await invoke<JournalState | null>('mig108_journal_state');
 			if (js) {
@@ -73,6 +82,17 @@
 				visible = true;
 				return;
 			}
+		} catch (e) {
+			// Phase-4 audit — a CORRUPT journal is the only record of a possibly half-moved
+			// universe; it must reach the USER, not a dev-only console. Surface it in the
+			// resume card with no resume/restore offered (the journal cannot be trusted).
+			errorText = String(e);
+			resumeState = null;
+			mode = 'resume';
+			visible = true;
+			return;
+		}
+		try {
 			const r = await invoke<PreflightReport>('mig108_preflight', { copyPaths: [] });
 			if (r.entries.some((e) => e.class.kind === 'move' || e.class.kind === 'copy')) {
 				report = r;
@@ -80,11 +100,18 @@
 				visible = true;
 			}
 		} catch (e) {
-			// A failed probe must never block boot — this dialog is a proposal, not a gate.
+			// A failed preflight probe must never block boot — the proposal is not a gate.
 			console.error('[mig108] preflight probe failed:', e);
 		}
+		// Safety inspection 2026-08-01 — EVERY path out of this probe must release the boot
+		// gate. The layout parks the whole watcher/session fan-out on a promise only this
+		// component resolves; if we finish WITHOUT becoming visible (the layout saw a journal
+		// and we did not, a preflight throw, nothing actionable to propose) there is no button
+		// left to press and the app would sit with no watchers and no tabs, forever. Releasing
+		// here is always safe: not-visible means we are not asking the user for anything.
+		if (!visible) onDismiss?.();
 	});
-	onDestroy(() => unlisten?.());
+	onDestroy(() => { unlisten?.(); unlistenClose?.(); });
 
 	function toggleCopy(oldPath: string) {
 		const next = new Set(copySet);
@@ -120,9 +147,35 @@
 			mode = 'summary';
 		} catch (e) {
 			errorText = String(e);
-			// Back to where the user can decide; an unfinished journal will re-surface as a
-			// resume proposal on the next boot either way.
-			mode = resumeState ? 'resume' : 'proposal';
+			// Phase-4 audit — THAW on failure: the envelope stopped every watcher; leaving
+			// them off ran the live session blind against a possibly-changed disk. Rewatch
+			// everything (idempotent), then re-probe the journal so a failed FIRST run
+			// switches this dialog into resume mode (Unify would only error
+			// "resume it instead" — the button the user needs is Resume/Restore).
+			for (const lib of get(libraries)) {
+				try { await invoke('watch_library', { libraryId: lib.id, libraryPath: lib.path }); } catch { /* best-effort */ }
+			}
+			try {
+				const js = await invoke<JournalState | null>('mig108_journal_state');
+				resumeState = js;
+				mode = js ? 'resume' : 'proposal';
+			} catch {
+				mode = resumeState ? 'resume' : 'proposal';
+			}
+		}
+	}
+
+	async function restoreNow() {
+		errorText = null;
+		mode = 'running';
+		phaseLabel = 'restore';
+		try {
+			await invoke('mig108_restore');
+			// Everything is back at its old paths; reload through the proven boot path.
+			window.location.href = '/';
+		} catch (e) {
+			errorText = String(e);
+			mode = 'resume';
 		}
 	}
 
@@ -133,6 +186,10 @@
 
 	function dismiss() {
 		visible = false; // per-session dismissal — the proposal returns at next activation
+		// Phase-4 audit — releases the boot gate: while an unfinished journal is present the
+		// layout holds the watcher/session fan-out for this dialog, so dismissing must hand
+		// it back or the session runs on with no watchers and no restored tabs.
+		onDismiss?.();
 	}
 
 	const phaseText = (p: string) =>
@@ -142,6 +199,7 @@
 			rewriting: $t('mig108.phaseRewriting') || 'Updating the knowledge index…',
 			stores: $t('mig108.phaseStores') || 'Updating saved lists and layouts…',
 			trash: $t('mig108.phaseTrash') || 'Consolidating the trash…',
+			restore: $t('mig108.phaseRestore') || 'Putting everything back…',
 			done: $t('mig108.phaseDone') || 'Finished.',
 		})[p] ?? p;
 </script>
@@ -194,6 +252,9 @@
 				<div class="m108-spinner" aria-hidden="true"></div>
 				<p class="m108-phase">{phaseText(phaseLabel)}</p>
 				<p class="m108-wait">{$t('mig108.dontClose') || 'Please keep Constellation open. On a large universe this can take several minutes — the steps above will keep you informed.'}</p>
+				{#if closeBlocked}
+					<p class="m108-error">{$t('mig108.closeBlocked') || 'Constellation cannot be closed while your libraries are being moved — closing now would leave the move half-finished. It will close normally as soon as this is done.'}</p>
+				{/if}
 			{:else if mode === 'summary'}
 				<h2>{$t('mig108.summaryTitle') || 'Your universe is in one place'}</h2>
 				<p class="m108-intro">
@@ -204,19 +265,32 @@
 				<div class="m108-actions">
 					<button class="m108-primary" onclick={reloadNow}>{$t('mig108.reloadNow') || 'Reload Constellation'}</button>
 				</div>
-			{:else if mode === 'resume' && resumeState}
+			{:else if mode === 'resume'}
 				<h2>{$t('mig108.resumeTitle') || 'An unfinished unification was found'}</h2>
-				<p class="m108-intro">
-					{($t('mig108.resumeBody') || 'Constellation was interrupted while bringing your libraries into the universe folder ({done} of {total} moved). Everything is journaled and the backup is intact — it can pick up exactly where it stopped.')
-						.replace('{done}', String(resumeState.entries_moved))
-						.replace('{total}', String(resumeState.entries_total))}
-				</p>
-				{#if resumeState.phase === 'verify_failed'}
-					<p class="m108-error">{$t('mig108.verifyFailedNote') || 'The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again.'}</p>
+				{#if resumeState}
+					<p class="m108-intro">
+						{($t('mig108.resumeBody') || 'Constellation was interrupted while bringing your libraries into the universe folder ({done} of {total} moved). Everything is journaled and the backup is intact — it can pick up exactly where it stopped.')
+							.replace('{done}', String(resumeState.entries_moved))
+							.replace('{total}', String(resumeState.entries_total))}
+					</p>
+					{#if resumeState.phase === 'verify_failed'}
+						<p class="m108-error">{$t('mig108.verifyFailedNote') || 'The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again.'}</p>
+					{/if}
+				{:else}
+					<!-- Phase-4 audit — the journal could not be read: the one state where neither
+					     resuming nor restoring can be offered honestly. -->
+					<p class="m108-error">{$t('mig108.journalUnreadable') || 'The unification journal could not be read. Nothing will be touched automatically — the backup and journal files are in the universe folder under .constellation; please report this before continuing.'}</p>
 				{/if}
 				{#if errorText}<p class="m108-error">{errorText}</p>{/if}
 				<div class="m108-actions">
-					<button class="m108-primary" onclick={() => runEnvelopeThen('mig108_resume')}>{$t('mig108.resumeButton') || 'Resume and finish'}</button>
+					<!-- Phase-4 audit — NEVER wedge the app behind this modal. -->
+					<button class="m108-secondary" onclick={dismiss}>{$t('mig108.notNow') || 'Not now'}</button>
+					{#if resumeState?.restorable}
+						<button class="m108-secondary" onclick={restoreNow}>{$t('mig108.restoreButton') || 'Put everything back'}</button>
+					{/if}
+					{#if resumeState}
+						<button class="m108-primary" onclick={() => runEnvelopeThen('mig108_resume')}>{$t('mig108.resumeButton') || 'Resume and finish'}</button>
+					{/if}
 				</div>
 			{/if}
 		</div>

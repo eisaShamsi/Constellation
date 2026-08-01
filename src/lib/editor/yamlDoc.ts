@@ -380,7 +380,18 @@ export function composeFrontmatter(
 			continue; // unchanged — never rewrite a key the user did not edit
 		}
 		const item = findItem(cst, key);
-		if (item && item.value && 'type' in item.value && item.value.type === 'scalar' && np.type !== 'list') {
+		// Safety inspection 2026-08-01 — `nested-object-list` must never take the
+		// scalar SET fast-path. When the key pre-exists on disk as a SCALAR (a flat
+		// `ikhtilāf: old` later given structured rows by the panel widget),
+		// `setScalarValue` wrote `np.value` — the ` | `-joined DISPLAY SUMMARY — and
+		// the user's rows never reached disk. Excluded exactly like `list`, so it
+		// falls through to the splice-and-append branch below, which replaces the
+		// scalar item and emits `serializeLine`'s block rows. (Type-union sweep:
+		// `nested-map` is the only other block-shaped type, but `serializeLine` has
+		// no block branch for it by design — its bytes are preserved verbatim in the
+		// CST via `immutableBlockKeys`, read from the FILE, so it never reaches this
+		// loop. Every remaining type is genuinely scalar.)
+		if (item && item.value && 'type' in item.value && item.value.type === 'scalar' && np.type !== 'list' && np.type !== 'nested-object-list') {
 			CST.setScalarValue(item.value as CST.FlowScalar, np.value);
 		} else {
 			const idx = findItemIndex(cst, key);

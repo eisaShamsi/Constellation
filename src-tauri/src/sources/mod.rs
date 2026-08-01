@@ -1226,7 +1226,10 @@ pub fn content_type_set_manual(
 
     let effective =
         rewrite_note_content_type_on_disk(&note_path, &content_type, merge.unwrap_or(false))?;
-        announce_frontmatter_write(&app, &note_path);
+    // Indentation matters here: over-indented, this safety-critical line read as though it
+    // sat inside a conditional. It is unconditional — the bytes are on disk, so an OPEN note
+    // must be told to re-base whatever happens below (2026-07-22 APP-KILLER).
+    announce_frontmatter_write(&app, &note_path);
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;

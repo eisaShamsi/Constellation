@@ -97,12 +97,13 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
 
     let settings = time_step!(
         "read_universe_settings",
-        crate::universe::read_universe_settings(app.clone())
+        // None = ambient active universe — correct at boot (the pointer is stable here).
+        crate::universe::read_universe_settings(app.clone(), None)
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
     );
     let workspaces = time_step!(
         "read_universe_workspaces",
-        crate::universe::read_universe_workspaces(app.clone())
+        crate::universe::read_universe_workspaces(app.clone(), None)
             .unwrap_or(serde_json::Value::Array(vec![]))
     );
     // MIG-100 — the auto-session snapshot. The root is resolved HERE, passed
@@ -127,7 +128,7 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
     });
     let property_types = time_step!(
         "read_universe_property_types",
-        crate::universe::read_universe_property_types(app.clone())
+        crate::universe::read_universe_property_types(app.clone(), None)
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
     );
     // MIG-067 §C — resolved link-type vocabulary (self-loads the active universe's

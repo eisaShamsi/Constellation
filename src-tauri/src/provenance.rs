@@ -97,7 +97,14 @@ pub fn get_provenance_chain(
 }
 
 /// Batch compute origin type for all notes in a library (for GraphMind glow).
-#[tauri::command]
+// Safety-inspection 2026-08-01 — `(async)`: recursively reads EVERY note's full
+// content (scan_notes_recursive); as a plain sync command it parked the WebView2
+// IPC dispatch thread for the whole walk, freezing the app and blocking every
+// other IPC. Same class + same fix as its enrichment-loop siblings
+// compute_note_strata (strata.rs) / compute_note_maturity (maturity.rs) from the
+// 2026-07-03 sweep; this one was missed. Body has no .await (pure
+// thread-offload); invoke contract unchanged.
+#[tauri::command(async)]
 pub fn compute_note_origins(
     app: tauri::AppHandle,
     library_path: String,

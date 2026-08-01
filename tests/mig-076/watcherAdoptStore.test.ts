@@ -145,3 +145,52 @@ describe('spurious-dirty class fix (safety-inspection finding [7] + altitude A1)
 		expect(isDirty('t')).toBe(true); // bumps: the hot path must NOT pay an O(N) content compare
 	});
 });
+
+/**
+ * Safety inspection 2026-08-01 (APP-KILLER, self-inflicted) — WINDOWS PATHS.
+ *
+ * Every test above drives POSIX `/n.md` paths, where `normPath` is the identity function.
+ * That is precisely why the whole suite stayed green while the 2026-08-01 half-normalization
+ * (byPath keyed by normPath, looked up with the RAW tab path) silently disabled the entire
+ * external-adopt/conflict arbitration on Windows — the ONLY platform Constellation ships on
+ * today, where every tab path is a backslash string from `read_dir_recursive`.
+ *
+ * These cases pin BOTH halves of the arbitration to a real Windows-shaped path. Under the
+ * broken version the clean case adopts nothing (the model keeps v1, reloadVersion stays 0)
+ * and the dirty case never reaches the conflict hook — a silent overwrite on the next save.
+ */
+describe('adoptExternalChangeIntoTabs — Windows backslash paths (the shipping platform)', () => {
+	const WIN = 'E:\\Constellation Universes\\Eisa Cognitive Knowledge\\Lib\\Ideas.md';
+
+	it('a CLEAN tab at a backslash path still adopts the external disk', async () => {
+		openOne('t', WIN, note('N', 'v1'));
+		const external = note('N', 'v1\nEXTERNAL');
+		await adoptExternalChangeIntoTabs([WIN], {}, async () => external);
+
+		expect(bodyForView('t')).toBe('v1\nEXTERNAL');
+		expect(reloadVersionOf(WIN)).toBe(1);
+		expect(contentOf(WIN)).toBe(external);
+	});
+
+	it('a DIRTY tab at a backslash path still reaches the conflict hook (never a silent clobber)', async () => {
+		openOne('t', WIN, note('N', 'v1'));
+		editBody('t', 'v1\nmy unsaved work');
+		const external = note('N', 'v1\nEXTERNAL');
+		const conflict = vi.fn();
+		await adoptExternalChangeIntoTabs([WIN], { conflict }, async () => external);
+
+		expect(conflict).toHaveBeenCalledTimes(1);
+		expect(bodyForView('t')).toBe('v1\nmy unsaved work');
+		expect(reloadVersionOf(WIN)).toBe(0);
+	});
+
+	it('a MIXED-separator announce path resolves to the same tab (the finding-37 producer shape)', async () => {
+		openOne('t', WIN, note('N', 'v1'));
+		const external = note('N', 'v1\nEXTERNAL');
+		// The watcher/announce side may carry forward slashes for the same file.
+		await adoptExternalChangeIntoTabs([WIN.replace(/\\/g, '/')], {}, async () => external);
+
+		expect(bodyForView('t')).toBe('v1\nEXTERNAL');
+		expect(reloadVersionOf(WIN)).toBe(1);
+	});
+});

@@ -36,7 +36,8 @@
     "inLibrary": "Ya en: {library}"
   },
   "cascade": {
-    "updating": "Actualizando enlaces…"
+    "updating": "Actualizando enlaces…",
+    "failedSome": "Renombrado, pero {count} nota(s) siguen enlazando a «{old}»: no se pudieron actualizar sus enlaces (los archivos están bloqueados, son de solo lectura o están en uso): {notes}"
   },
   "styles": {
     "title": "Estilos",
@@ -781,7 +782,11 @@
     "newBase": "Nueva Base",
     "newFolder": "Nueva carpeta",
     "rename": "Renombrar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "tagNoIdentity": "No se pudo añadir la etiqueta a «{note}»: esta nota aún no tiene una identidad estable (todavía se está abriendo, o cambió en esta pestaña). Ábrela e inténtalo de nuevo.",
+    "tagBusy": "No se pudo añadir la etiqueta a «{note}»: la nota está ocupada (un cambio de nombre o una recarga la está actualizando). Inténtalo en un momento.",
+    "tagWriteFailed": "No se pudo añadir la etiqueta a «{note}»: {error}",
+    "moveBatchFailed": "No se pudieron mover {count} elemento(s): {items}"
   },
   "createDialog": {
     "titleFolder": "Nueva carpeta",
@@ -1445,7 +1450,8 @@
     "preset_muted": "Atenuado",
     "preset_bold": "Intenso",
     "preset_warm": "Cálido",
-    "preset_invisible": "Invisible"
+    "preset_invisible": "Invisible",
+    "saveFailed": "No se pudo guardar el lienzo: tu último cambio no está en el disco."
   },
   "inspector360": {
     "untyped": "Sin tipo",
@@ -4085,7 +4091,11 @@
     "summaryTitle": "Tu universo está en un solo lugar",
     "title": "Reúne tu universo en un solo lugar",
     "unify": "Unificar",
-    "verifyFailedNote": "El último intento se detuvo en la comprobación de seguridad y todos los cambios de la base de datos se revirtieron. Al reanudar se comprobará de nuevo."
+    "verifyFailedNote": "El último intento se detuvo en la comprobación de seguridad y todos los cambios de la base de datos se revirtieron. Al reanudar se comprobará de nuevo.",
+    "restoreButton": "Devolver todo a su sitio",
+    "phaseRestore": "Devolviendo todo a su sitio…",
+    "journalUnreadable": "No se pudo leer el diario de unificación. No se tocará nada automáticamente — la copia de seguridad y el diario están en la carpeta del universo bajo .constellation; informa de esto antes de continuar.",
+    "closeBlocked": "Constellation no puede cerrarse mientras se mueven tus bibliotecas: cerrarlo ahora dejaría el traslado a medias. Se cerrará con normalidad en cuanto termine."
   },
   "bringIn": {
     "body": "Un universo guarda todo su conocimiento en una sola carpeta, así que esta biblioteca vivirá dentro. Elige qué pasa con el original:",
@@ -4095,5 +4105,11 @@
     "move": "Mover dentro",
     "moveDesc": "La carpeta se traslada al universo. Su ubicación anterior quedará vacía.",
     "title": "Trae esta carpeta a tu universo"
+  },
+  "storeHealth": {
+    "collections": "No se pudieron leer tus colecciones, así que Constellation no guardará cambios en ellas durante esta sesión, para no sobrescribir el archivo con una lista vacía. Reinicia para volver a intentarlo.",
+    "workspaces": "No se pudieron leer tus diseños guardados, así que Constellation no guardará cambios en ellos durante esta sesión, para no sobrescribirlos. Reinicia para volver a intentarlo.",
+    "settings": "No se pudieron guardar tus ajustes. Los cambios que hagas ahora no sobrevivirán a un reinicio: comprueba que la carpeta del universo tenga permisos de escritura y no esté bloqueada por una herramienta de sincronización.",
+    "index": "Una nota se guardó en el disco pero no se pudo añadir al índice de búsqueda, así que la búsqueda y los retroenlaces pueden no mostrar su texto más reciente. Ajustes, luego Reconstruir índice lo restaura."
   }
 }

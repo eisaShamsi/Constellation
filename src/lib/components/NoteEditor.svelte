@@ -15,7 +15,7 @@
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
-		isCascading, isReseeding,
+		isCascading, isReseeding, reindexNote,
 		type FrontmatterProperty, type PropertyType
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
@@ -259,7 +259,7 @@
 				name: tab.name,
 				onSaved: (savedPath) => {
 					broadcastNoteSaved(savedPath);
-					invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+					void reindexNote(savedPath, tab.libraryName);
 				},
 			}), 'stage_promote');
 		} else {
@@ -298,10 +298,7 @@
 				onSaved: (savedPath) => {
 					broadcastNoteSaved(savedPath);
 					// Reindex for search (non-blocking) — FTS5, tags, links, word_count.
-					invoke('constellation_search_reindex', {
-						notePath: savedPath,
-						libraryName: tab.libraryName,
-					}).catch(() => {});
+					void reindexNote(savedPath, tab.libraryName);
 					// MIG-071 — re-embed for semantic search (vector went stale after edits).
 					if (get(appSettings).enabledFeatures?.semanticSearch) {
 						invoke('constellation_embed_notes', {
@@ -326,7 +323,7 @@
 			writeNote(filePath, content, 'editor_save')
 				.then(() => {
 					broadcastNoteSaved(filePath);
-					invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
+					void reindexNote(filePath, tab.libraryName);
 				})
 				.catch(() => {})
 				.finally(() => { saving = false; });
@@ -403,10 +400,7 @@
 				scrollTop,
 				onSaved: (savedPath) => {
 					broadcastNoteSaved(savedPath);
-					invoke('constellation_search_reindex', {
-						notePath: savedPath,
-						libraryName: tab.libraryName,
-					}).catch(() => {});
+					void reindexNote(savedPath, tab.libraryName);
 					if (get(appSettings).enabledFeatures?.semanticSearch) {
 						invoke('constellation_embed_notes', {
 							notes: [{ path: savedPath, name: tab.name, content: text }],
@@ -421,7 +415,7 @@
 				.then(() => {
 					clearWriteAhead(filePath);
 					broadcastNoteSaved(filePath);
-					invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
+					void reindexNote(filePath, tab.libraryName);
 				})
 				.catch(() => {});
 		}
@@ -552,7 +546,7 @@
 				name: tab.name,
 				onSaved: (savedPath) => {
 					broadcastNoteSaved(savedPath);
-					invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+					void reindexNote(savedPath, tab.libraryName);
 				},
 			}), 'shape_set');
 		} else {

@@ -397,13 +397,25 @@ pub fn update_note_property(
 
     // MIG-065 §H — refresh the search index so the Base table (and any later
     // sort / add-column re-query, which reads `note_meta` — not the file)
-    // reflects the edit immediately. Best-effort: the disk write is the source
-    // of truth; a reindex glitch must not fail the edit (the watcher / next
-    // full reindex would catch it anyway).
+    // reflects the edit immediately. Best-effort in the sense that the disk write is the
+    // source of truth and a reindex glitch must not fail the edit — but NOT silent.
+    //
+    // Safety inspection 2026-08-01 — the old rationale ("the watcher / next full reindex
+    // would catch it anyway") is FALSE for this write: it goes through `gate_rmw`, which
+    // marks the path watcher-SUPPRESSED, and boot never re-walks an already-indexed library.
+    // So a dropped reindex here left the Base cell edited on disk and stale in every derived
+    // surface, permanently, with nothing to say so. Journaled like its `create_note` sibling.
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        let _ = crate::search::reindex_single_note(&search_state, &file_path, &lib_name);
+        if let Err(e) = crate::search::reindex_single_note(&search_state, &file_path, &lib_name) {
+            if let Ok(p) = crate::search::db_path(&app) {
+                crate::search::diag_log(
+                    &p,
+                    &format!("[update_note_property] reindex FAILED for {}: {}", file_path, e),
+                );
+            }
+        }
     }
     Ok(())
 }

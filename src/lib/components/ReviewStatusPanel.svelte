@@ -6,6 +6,7 @@
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { computedPriority, effectivePriority } from '$lib/reviewer/priorities';
+	import { activeUniverseRootSync } from '$lib/libraries/store';
 
 	interface NoteReviewStatus {
 		reason: string | null;          // never_reviewed | interval_due | checkpoint | dismissed | null
@@ -71,11 +72,18 @@
 	async function act(cmd: 'mark_reviewed' | 'snooze_note' | 'dismiss_note') {
 		if (!notePath) return;
 		try {
-			if (cmd === 'snooze_note') await invoke(cmd, { notePath, days: 7 });
-			else await invoke(cmd, { notePath });
+			// 2026-08-01 inspection — universeRoot captured at click time: a review action
+			// racing a universe switch must land in THIS universe's pulse file, not the next.
+			const universeRoot = activeUniverseRootSync();
+			if (cmd === 'snooze_note') await invoke(cmd, { notePath, days: 7, universeRoot });
+			else await invoke(cmd, { notePath, universeRoot });
+			priorityError = null;
 			await load();
 			onRefresh?.();
-		} catch {}
+		} catch (e) {
+			priorityError = String(e);
+			console.error('[ReviewStatusPanel] review action failed:', e);
+		}
 	}
 
 	// MIG-084 §F.2 — the priority lever, mirrored from the Reviewer's detail pane. The

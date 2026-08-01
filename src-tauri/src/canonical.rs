@@ -128,7 +128,12 @@ fn extract_created_from_frontmatter(content: &str) -> Option<DateTime<Utc>> {
 
     for line in fm.lines() {
         let t = line.trim();
-        if t.starts_with("created:") {
+        // Root key only (2026-08-01 sweep of the 2026-07-21 trimmed-line class): a
+        // nested `created:` child belongs to another map, and a block scalar's prose
+        // may open with the word — neither is the note's created date. Block-scalar
+        // content must be more-indented than its key, so the indentation test covers
+        // it (same reliance as update_frontmatter_title).
+        if crate::yaml_lines::is_top_level_key_line(line) && t.starts_with("created:") {
             let val = t["created:".len()..].trim().trim_matches('"').trim_matches('\'');
             // Try full RFC 3339 / ISO 8601
             if let Ok(dt) = DateTime::parse_from_rfc3339(val) {
@@ -236,61 +241,33 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
     // PJ-182 — the indentation the EXISTING alias items use, so an appended one joins
     // their sequence rather than nesting under the last of them.
     let mut alias_indent: Option<String> = None;
+    // The ROOT alias block's item VALUES, parsed the way the block is written (dash
+    // stripped, surrounding quotes stripped), so the dedup below compares exact
+    // values like-for-like. The substring test this replaced (`l.contains(alias)`)
+    // silently suppressed a genuinely-absent alias whenever its text merely appeared
+    // inside the title line, a longer alias, or a URL (2026-08-01 inspection, LOW).
+    let mut existing_alias_values: Vec<String> = Vec::new();
     // PJ-153 (MIG-105 C6): when the block already carries the namespaced
     // `cid_cn:`, any legacy `cid:` line is DROPPED (a block must never end
-    // up with two identity keys).
+    // up with two identity keys). Root keys only — a NESTED `cid_cn:` is a
+    // user map's child, not the note's identity.
     let existing_has_cid_cn = existing
         .lines()
-        .any(|l| l.trim_start().starts_with("cid_cn:"));
+        .any(|l| crate::yaml_lines::is_top_level_key_line(l) && l.starts_with("cid_cn:"));
 
     for line in existing.lines() {
         let trimmed = line.trim_start();
+        // INDENTATION IS DATA (the 2026-07-21 app-killer class, fixed in
+        // update_frontmatter_title and never swept into this sibling): a nested map's
+        // `kind:` / `aliases:` / `cid_cn:` child and a block scalar's prose lines are
+        // INDENTED, so matching the TRIMMED line treated them as root keys — replacing
+        // a nested `kind:` with a column-0 line, opening the alias block inside a
+        // foreign map, and letting a nested `cid_cn:` suppress minting the note's real
+        // identity. Every key matcher below fires at the root only. (Block-scalar
+        // content must be more-indented than its key, so the indentation test excludes
+        // it — the same reliance update_frontmatter_title has.)
+        let root_key = crate::yaml_lines::is_top_level_key_line(line);
 
-        // Track what already exists
-        if trimmed.starts_with("title:") {
-            has_title = true;
-        }
-        if trimmed.starts_with("cid_cn:") {
-            // Existing namespaced identity — PRESERVED, never re-minted:
-            // cid_cn is the note's durable identity; overwriting it would
-            // sever every earned row (links, review, history) keyed to it.
-            if has_cid {
-                continue; // malformed duplicate — keep only the first
-            }
-            has_cid = true;
-            lines.push(line.to_string());
-            continue;
-        }
-        if trimmed.starts_with("cid:") {
-            // Legacy key — rewritten as `cid_cn:` keeping ITS value (the
-            // migrate_cid_to_cid_cn transform: identity survives the merge),
-            // unless a `cid_cn:` line already owns identity.
-            if has_cid || existing_has_cid_cn {
-                continue;
-            }
-            has_cid = true;
-            let indent = &line[..line.len() - trimmed.len()];
-            lines.push(format!("{}cid_cn:{}", indent, &trimmed[4..]));
-            continue;
-        }
-        if trimmed.starts_with("kind:") {
-            has_kind = true;
-            // Always overwrite kind with ours
-            lines.push(format!("kind: {}", fields.kind.to_lowercase()));
-            continue;
-        }
-        if trimmed.starts_with("created:") && !has_created {
-            has_created = true;
-            // Keep existing created date
-        }
-        if trimmed.starts_with("aliases:") {
-            has_aliases = true;
-            in_aliases_block = true;
-            lines.push(line.to_string());
-            // Append our aliases that aren't already there
-            // (we'll check in a second pass)
-            continue;
-        }
         if in_aliases_block {
             if crate::yaml_lines::is_seq_item(line) {
                 // PJ-182 — remember the block's OWN indentation. Appending at a hardcoded
@@ -301,24 +278,75 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
                 if alias_indent.is_none() {
                     alias_indent = Some(crate::yaml_lines::indent_of(line).to_string());
                 }
+                if let Some(v) = crate::yaml_lines::seq_item_value(line) {
+                    existing_alias_values
+                        .push(v.trim().trim_matches('"').trim_matches('\'').to_string());
+                }
                 lines.push(line.to_string());
                 continue;
-            } else {
-                in_aliases_block = false;
-                // Before leaving aliases block, add our aliases
-                let ind = alias_indent.as_deref().unwrap_or("  ");
-                for alias in &fields.aliases {
-                    let alias_line = format!("{}- \"{}\"", ind, escape_yaml_string(alias));
-                    // Don't duplicate
-                    if !lines.iter().any(|l| {
-                        l.trim().trim_matches('"').trim_matches('\'')
-                            == alias.as_str()
-                            || l.contains(alias.as_str())
-                    }) {
-                        lines.push(alias_line);
-                    }
-                }
             }
+            // Any non-item line ENDS the block, and this must run BEFORE the key
+            // branches below (update_frontmatter_title's rule): a root key directly
+            // after the items would otherwise be consumed by its own branch with the
+            // block still open, and the appended aliases would land AFTER that key —
+            // orphaned sequence items under a scalar, YAML that no longer parses.
+            in_aliases_block = false;
+            let ind = alias_indent.as_deref().unwrap_or("  ");
+            for alias in &fields.aliases {
+                // Exact value match, never substring.
+                if existing_alias_values.iter().any(|v| v == alias) {
+                    continue;
+                }
+                lines.push(format!("{}- \"{}\"", ind, escape_yaml_string(alias)));
+                existing_alias_values.push(alias.clone());
+            }
+            // The line that closed the block falls through to normal processing.
+        }
+
+        // Track what already exists
+        if root_key && trimmed.starts_with("title:") {
+            has_title = true;
+        }
+        if root_key && trimmed.starts_with("cid_cn:") {
+            // Existing namespaced identity — PRESERVED, never re-minted:
+            // cid_cn is the note's durable identity; overwriting it would
+            // sever every earned row (links, review, history) keyed to it.
+            if has_cid {
+                continue; // malformed duplicate — keep only the first
+            }
+            has_cid = true;
+            lines.push(line.to_string());
+            continue;
+        }
+        if root_key && trimmed.starts_with("cid:") {
+            // Legacy key — rewritten as `cid_cn:` keeping ITS value (the
+            // migrate_cid_to_cid_cn transform: identity survives the merge),
+            // unless a `cid_cn:` line already owns identity.
+            if has_cid || existing_has_cid_cn {
+                continue;
+            }
+            has_cid = true;
+            // A root key is unindented, so the rewrite emits at column 0.
+            lines.push(format!("cid_cn:{}", &trimmed[4..]));
+            continue;
+        }
+        if root_key && trimmed.starts_with("kind:") {
+            has_kind = true;
+            // Always overwrite kind with ours
+            lines.push(format!("kind: {}", fields.kind.to_lowercase()));
+            continue;
+        }
+        if root_key && trimmed.starts_with("created:") && !has_created {
+            has_created = true;
+            // Keep existing created date
+        }
+        if root_key && trimmed.starts_with("aliases:") {
+            has_aliases = true;
+            in_aliases_block = true;
+            lines.push(line.to_string());
+            // Append our aliases that aren't already there
+            // (checked as the block's items stream past)
+            continue;
         }
 
         lines.push(line.to_string());
@@ -328,10 +356,12 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
     if in_aliases_block {
         let ind = alias_indent.as_deref().unwrap_or("  ");
         for alias in &fields.aliases {
-            let alias_line = format!("{}- \"{}\"", ind, escape_yaml_string(alias));
-            if !lines.iter().any(|l| l.contains(alias.as_str())) {
-                lines.push(alias_line);
+            // Exact value match, never substring (same rule as the mid-block site).
+            if existing_alias_values.iter().any(|v| v == alias) {
+                continue;
             }
+            lines.push(format!("{}- \"{}\"", ind, escape_yaml_string(alias)));
+            existing_alias_values.push(alias.clone());
         }
     }
 
@@ -359,7 +389,12 @@ fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
         }
     }
     if let Some(ref orig) = fields.original_filename {
-        if !lines.iter().any(|l| l.trim_start().starts_with("original_filename:")) {
+        // Root key only — a nested `original_filename:` child is the user's data and
+        // must not suppress recording the note's own.
+        if !lines
+            .iter()
+            .any(|l| crate::yaml_lines::is_top_level_key_line(l) && l.starts_with("original_filename:"))
+        {
             lines.push(format!(
                 "original_filename: \"{}\"",
                 escape_yaml_string(orig)
@@ -1068,7 +1103,12 @@ fn extract_fm_field(content: &str, key: &str) -> Option<String> {
     let end = after.find("\n---")?;
     for line in after[..end].lines() {
         let t = line.trim();
-        if t.starts_with(key) && t[key.len()..].trim_start().starts_with(':') {
+        // Root key only (2026-08-01 sweep of the 2026-07-21 trimmed-line class): an
+        // indented match is a nested map's child or block-scalar prose, not the field.
+        if crate::yaml_lines::is_top_level_key_line(line)
+            && t.starts_with(key)
+            && t[key.len()..].trim_start().starts_with(':')
+        {
             let val = t[key.len()..].trim_start().trim_start_matches(':').trim();
             let val = val.trim_matches('"').trim_matches('\'');
             if !val.is_empty() { return Some(val.to_string()); }
@@ -1096,7 +1136,13 @@ fn remove_canonical_fields(content: &str) -> String {
 
     for line in fm.lines() {
         let t = line.trim();
-        if t.starts_with("aliases:") {
+        // Root keys only (2026-08-01 sweep of the 2026-07-21 trimmed-line class —
+        // PJ-182 fixed only the seq-item half of this loop): an INDENTED `aliases:` /
+        // `kind:` / `original_filename:` / `cid:` is a user map's child (or a block
+        // scalar's prose), and stripping it — plus, for `aliases:`, every item under
+        // it — destroys the user's data.
+        let root_key = crate::yaml_lines::is_top_level_key_line(line);
+        if root_key && t.starts_with("aliases:") {
             in_aliases = true;
             continue;
         }
@@ -1106,12 +1152,11 @@ fn remove_canonical_fields(content: &str) -> String {
             if crate::yaml_lines::is_seq_item(line) { continue; }
             in_aliases = false;
         }
-        if strip_keys.iter().any(|k| t.starts_with(k)) { continue; }
-        // Migrate legacy `cid:` → `cid_cn:` at the same time
-        if t.starts_with("cid:") && !t.starts_with("cid_cn") {
-            let indent_len = line.len() - t.len();
-            let indent = &line[..indent_len];
-            new_lines.push(format!("{}cid_cn:{}", indent, &t[4..]));
+        if root_key && strip_keys.iter().any(|k| t.starts_with(k)) { continue; }
+        // Migrate legacy `cid:` → `cid_cn:` at the same time. A root key is
+        // unindented, so the rewrite emits at column 0.
+        if root_key && t.starts_with("cid:") && !t.starts_with("cid_cn") {
+            new_lines.push(format!("cid_cn:{}", &t[4..]));
             continue;
         }
         new_lines.push(line.to_string());
@@ -1264,10 +1309,15 @@ pub fn migrate_cid_to_cid_cn(content: &str) -> String {
         .lines()
         .map(|line| {
             let t = line.trim_start();
-            if t.starts_with("cid:") && !t.starts_with("cid_cn") {
-                let indent_len = line.len() - t.len();
-                let indent = &line[..indent_len];
-                format!("{}cid_cn:{}", indent, &t[4..])
+            // Root key only (2026-08-01 sweep of the 2026-07-21 trimmed-line class):
+            // an INDENTED `cid:` is a user map's child — the `cid_cn` namespace exists
+            // precisely so the user's own `cid:` properties are never touched. A root
+            // key is unindented, so the rewrite emits at column 0.
+            if crate::yaml_lines::is_top_level_key_line(line)
+                && t.starts_with("cid:")
+                && !t.starts_with("cid_cn")
+            {
+                format!("cid_cn:{}", &t[4..])
             } else {
                 line.to_string()
             }
@@ -1598,6 +1648,154 @@ mod tests {
         assert!(!result.contains("OLDVAL"), "the legacy line is dropped, not migrated into a duplicate");
         assert_eq!(result.matches("cid_cn:").count(), 1);
         assert!(!result.contains("\ncid: "));
+    }
+
+    /// Shared probe fields for the 2026-08-01 nested-key inspection tests.
+    fn probe_fields(cid: &str, aliases: Vec<String>) -> FrontmatterFields {
+        FrontmatterFields {
+            title: "T".to_string(),
+            cid: cid.to_string(),
+            kind: "note".to_string(),
+            created: "2026-08-01T00:00:00Z".to_string(),
+            aliases,
+            original_filename: None,
+        }
+    }
+
+    /// 2026-08-01 inspection (APP-KILLER) — a nested map's `kind:` child is the
+    /// USER's data. Matching the trimmed line replaced it with a column-0
+    /// `kind: <ours>`, destroying the nested value and the map's structure. The
+    /// nested child must survive byte-identically while the note's real root
+    /// `kind:` is still minted — and a genuine root `kind:` is still normalized.
+    #[test]
+    fn merge_preserves_nested_kind_child_and_still_normalizes_root_kind() {
+        let content = "---\ntitle: T\nsource:\n  kind: article\n  publisher: X\n---\nBody.";
+        let result = inject_frontmatter(content, &probe_fields("20260801T000000Z_NOTE_AAAA", vec![]));
+        assert!(
+            result.contains("source:\n  kind: article\n  publisher: X"),
+            "nested map mangled:\n{result}"
+        );
+        assert_eq!(
+            result.lines().filter(|l| l.starts_with("kind:")).count(),
+            1,
+            "root kind minted exactly once:\n{result}"
+        );
+        assert!(result.contains("\nkind: note\n"), "{result}");
+
+        // Control — a genuine ROOT `kind:` is still overwritten with ours.
+        let root = inject_frontmatter(
+            "---\ntitle: T\nkind: IDEA\n---\nB",
+            &probe_fields("20260801T000000Z_NOTE_AAAB", vec![]),
+        );
+        assert!(!root.contains("IDEA"), "{root}");
+        assert_eq!(root.lines().filter(|l| l.starts_with("kind:")).count(), 1, "{root}");
+    }
+
+    /// 2026-08-01 inspection (APP-KILLER) — a nested `aliases:` belongs to a user
+    /// map: it must not open the alias-injection block, and the injected alias
+    /// lands in a fresh ROOT block instead.
+    #[test]
+    fn merge_does_not_open_alias_block_inside_nested_map() {
+        let content = "---\ntitle: T\nsource:\n  aliases:\n    - Foreign One\ntags:\n- t1\n---\nB";
+        let result = inject_frontmatter(
+            content,
+            &probe_fields("20260801T000000Z_NOTE_AAAC", vec!["Injected".to_string()]),
+        );
+        assert!(
+            result.contains("source:\n  aliases:\n    - Foreign One\ntags:\n- t1"),
+            "nested map / neighbours mangled:\n{result}"
+        );
+        assert!(
+            result.contains("\naliases:\n  - \"Injected\""),
+            "alias not minted at the root:\n{result}"
+        );
+        assert_eq!(result.matches("Injected").count(), 1, "{result}");
+    }
+
+    /// 2026-08-01 inspection (MED) — de-canonicalize strips ONLY the root canonical
+    /// fields; a nested `aliases:` (with its items), `kind:`, and
+    /// `original_filename:` inside a user map survive byte-identically.
+    #[test]
+    fn decanonicalize_strips_only_root_canonical_fields() {
+        let content = "---\ntitle: T\nsource:\n  aliases:\n    - Keep Me\n  kind: book\n  original_filename: keep.pdf\naliases:\n  - Real Alias\nkind: note\noriginal_filename: \"real.md\"\n---\nB";
+        let out = remove_canonical_fields(content);
+        assert!(
+            out.contains("source:\n  aliases:\n    - Keep Me\n  kind: book\n  original_filename: keep.pdf"),
+            "nested user map stripped:\n{out}"
+        );
+        assert!(!out.lines().any(|l| l.starts_with("aliases:")), "{out}");
+        assert!(!out.contains("- Real Alias"), "root alias items not removed:\n{out}");
+        assert!(!out.lines().any(|l| l.starts_with("kind:")), "{out}");
+        assert!(!out.lines().any(|l| l.starts_with("original_filename:")), "{out}");
+    }
+
+    /// 2026-08-01 inspection (APP-KILLER) — a nested `cid_cn:` is a user map's
+    /// child, not the note's identity: it must not suppress minting the real root
+    /// `cid_cn:`, nor suppress migrating a root legacy `cid:`.
+    #[test]
+    fn nested_cid_cn_does_not_suppress_root_identity() {
+        let content = "---\ntitle: N\nwrapper:\n  cid_cn: NESTED123\n---\nB";
+        let result = inject_frontmatter(content, &probe_fields("20260801T000000Z_NOTE_AAAD", vec![]));
+        assert!(
+            result.contains("wrapper:\n  cid_cn: NESTED123"),
+            "nested child mangled:\n{result}"
+        );
+        assert!(
+            result.contains("\ncid_cn: 20260801T000000Z_NOTE_AAAD"),
+            "root identity not minted:\n{result}"
+        );
+        assert_eq!(result.lines().filter(|l| l.starts_with("cid_cn:")).count(), 1, "{result}");
+
+        // A root LEGACY `cid:` still migrates (its value preserved) even with a
+        // nested `cid_cn:` present.
+        let legacy = inject_frontmatter(
+            "---\ntitle: N\ncid: LEGACYVAL\nwrapper:\n  cid_cn: NESTED123\n---\nB",
+            &probe_fields("20260801T000000Z_NOTE_AAAE", vec![]),
+        );
+        assert!(legacy.contains("\ncid_cn: LEGACYVAL"), "legacy identity lost:\n{legacy}");
+        assert!(!legacy.contains("\ncid: "), "{legacy}");
+        assert!(!legacy.contains("20260801T000000Z_NOTE_AAAE"), "re-minted over legacy:\n{legacy}");
+        assert!(legacy.contains("wrapper:\n  cid_cn: NESTED123"), "{legacy}");
+        assert_eq!(legacy.lines().filter(|l| l.starts_with("cid_cn:")).count(), 1, "{legacy}");
+    }
+
+    /// 2026-08-01 inspection (LOW) — alias dedup is an exact value comparison, not
+    /// a substring test: the alias IS appended when its text merely appears inside
+    /// the title line, and a genuinely-present alias is still not duplicated.
+    /// Covers both append sites (mid-block and end-of-frontmatter).
+    #[test]
+    fn alias_dedup_is_exact_value_not_substring() {
+        let aliases = vec!["My Note".to_string(), "Other".to_string()];
+        // Mid-block site: `stage:` closes the alias block.
+        let mid = inject_frontmatter(
+            "---\ntitle: My Note Extended\naliases:\n  - Other\nstage: seed\n---\nB",
+            &probe_fields("20260801T000000Z_NOTE_AAAF", aliases.clone()),
+        );
+        assert!(
+            mid.contains("  - \"My Note\""),
+            "absent alias suppressed by substring match against the title:\n{mid}"
+        );
+        assert!(!mid.contains("- \"Other\""), "present alias duplicated:\n{mid}");
+        assert_eq!(mid.matches("- Other").count(), 1, "{mid}");
+
+        // End-of-frontmatter site: the alias block is the last thing in the block.
+        let tail = inject_frontmatter(
+            "---\ntitle: My Note Extended\naliases:\n  - Other\n---\nB",
+            &probe_fields("20260801T000000Z_NOTE_AAAG", aliases),
+        );
+        assert!(tail.contains("  - \"My Note\""), "{tail}");
+        assert!(!tail.contains("- \"Other\""), "{tail}");
+    }
+
+    /// 2026-08-01 sweep — `migrate_cid_to_cid_cn` renames the ROOT legacy key only;
+    /// a nested `cid:` (a user map's child — the very collision the namespace
+    /// exists to avoid) is untouched.
+    #[test]
+    fn migrate_cid_keeps_nested_cid_child() {
+        let out = migrate_cid_to_cid_cn("---\ntitle: T\ncid: ROOTVAL\nref:\n  cid: BOOKID\n---\nB");
+        assert!(out.contains("\ncid_cn: ROOTVAL"), "{out}");
+        assert!(out.contains("ref:\n  cid: BOOKID"), "nested user cid rewritten:\n{out}");
+        assert!(!out.lines().any(|l| l.starts_with("cid:")), "{out}");
     }
 
     #[test]

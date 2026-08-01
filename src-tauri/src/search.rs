@@ -1348,6 +1348,58 @@ mod tests_c2a_target_name_lower_idempotent {
         assert!(affected2.is_empty(), "text-only edit recomputes nothing");
     }
 
+    /// Safety-inspection 2026-08-01 — re-typing a link ([[supports::B]] →
+    /// [[contradicts::B]]) changes NO target name, so the old name-only signature
+    /// recomputed nothing and the target's incoming type breakdown / top rank —
+    /// and the type-dependent sky signals — stayed stale forever. The widened
+    /// (name + type) signature must trip BOTH diffs.
+    #[test]
+    fn type_only_change_trips_incoming_and_sky_diffs() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, name_lower TEXT,
+                incoming_count INTEGER NOT NULL DEFAULT 0,
+                incoming_link_types TEXT NOT NULL DEFAULT '',
+                incoming_link_types_json TEXT NOT NULL DEFAULT '{}',
+                incoming_top_rank INTEGER NOT NULL DEFAULT 9);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_links (source_path TEXT, source_name TEXT, target_name TEXT,
+                link_type TEXT, status TEXT,
+                target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
+             CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);
+             INSERT INTO note_meta(path,name) VALUES ('/X.md','X'),('/A.md','Alpha');
+             INSERT INTO note_links(source_path,source_name,target_name,link_type,status)
+               VALUES ('/X.md','X','Alpha','supports','active');",
+        )
+        .unwrap();
+        // Seed Alpha's aggregate to the current (supports) state.
+        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        let before: String = conn
+            .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(before, "supports (1)");
+
+        // Capture the signature, then re-type the edge — the target NAME set is unchanged.
+        let (old_t, old_n, old_a) = incoming_signature(&conn, "/X.md").unwrap();
+        conn.execute(
+            "UPDATE note_links SET link_type='contradicts' WHERE source_path='/X.md'",
+            [],
+        )
+        .unwrap();
+
+        // The sky diff sees the change: target (inbound moved) + source (outgoing signals).
+        let affected = sky_affected_paths(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        assert!(affected.contains("/A.md"), "target recomputed on a type-only change");
+        assert!(affected.contains("/X.md"), "source recomputed on a type-only change");
+
+        // The incoming diff refreshes the target's type breakdown.
+        maintain_incoming_after_save(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        let after: String = conn
+            .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(after, "contradicts (1)", "type breakdown refreshed on a type-only change");
+    }
+
     /// PJ-066 §C2 — diff-edges: adding ONE link must leave the note's OTHER edges' rows
     /// physically untouched (same rowid → not delete+re-inserted) AND keep their earned
     /// traversal data. The new edge is added fresh. End-to-end via index_note on a temp file.
@@ -1482,8 +1534,11 @@ pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), Str
 /// `reconcile_filesystem` to suppress the per-edge recompute during a full
 /// re-index; `create_outgoing_link_triggers` + `recompute_all_outgoing` restore
 /// correctness afterward. Idempotent (IF EXISTS). On a crash mid-reconcile the
-/// next boot's `init_db` recreates them (CREATE IF NOT EXISTS) and the next
-/// reconcile repopulates, so a dropped state self-heals.
+/// next boot's `init_db` recreates the triggers AND — via the
+/// `outgoing_triggers_dropped` marker reconcile persists before dropping — runs
+/// `recompute_all_outgoing` once, so a dropped state self-heals at boot. (Boot is
+/// walk-free: no reconcile is scheduled that would otherwise repopulate — the
+/// earlier claim that "the next reconcile repopulates" presumed one.)
 pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "DROP TRIGGER IF EXISTS note_links_outgoing_ai;
@@ -1491,6 +1546,42 @@ pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), Strin
          DROP TRIGGER IF EXISTS note_links_outgoing_au;",
     )
     .map_err(|e| format!("drop outgoing-link triggers: {}", e))
+}
+
+/// Safety-inspection 2026-08-01 — persistent crash marker for the reconcile
+/// trigger-drop window. `reconcile_filesystem` sets it BEFORE dropping the
+/// outgoing-link triggers for its multi-minute bulk walk and clears it only after
+/// the triggers are recreated AND `recompute_all_outgoing` succeeds. If the app
+/// dies mid-walk, the marker survives; `init_db` reads it on the next boot and
+/// runs the recompute once. Stored as a `schema_versions` row (the `links_vocab`
+/// fingerprint-stamp pattern — no new table).
+pub(crate) fn outgoing_triggers_dropped_marker(conn: &Connection) -> bool {
+    conn.query_row(
+        "SELECT version FROM schema_versions WHERE module = 'outgoing_triggers_dropped'",
+        [],
+        |r| r.get::<_, i64>(0),
+    )
+    .unwrap_or(0)
+        != 0
+}
+
+pub(crate) fn set_outgoing_triggers_dropped_marker(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('outgoing_triggers_dropped', 1, strftime('%s','now'))",
+        [],
+    )
+    .map(|_| ())
+    .map_err(|e| format!("set outgoing_triggers_dropped marker: {}", e))
+}
+
+pub(crate) fn clear_outgoing_triggers_dropped_marker(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "DELETE FROM schema_versions WHERE module = 'outgoing_triggers_dropped'",
+        [],
+    )
+    .map(|_| ())
+    .map_err(|e| format!("clear outgoing_triggers_dropped marker: {}", e))
 }
 
 /// MIG-079 §C.2a — SQL `UPDATE … SET` assignments that recompute the INCOMING
@@ -1542,11 +1633,34 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     )
 }
 
+/// Separator between the target-name and link-type halves of an incoming-signature
+/// element. U+001F (unit separator) — a control character that cannot appear in a
+/// note title (the FTS tokenizer's BIGRAM_SEP makes the same choice).
+const SIG_TYPE_SEP: char = '\u{1F}';
+
+/// The target-NAME half of a composite signature element ("name\u{1F}type" → "name").
+/// Tolerates a bare name (no separator) so resolution never breaks on legacy input.
+fn sig_target_name(element: &str) -> &str {
+    element.split(SIG_TYPE_SEP).next().unwrap_or(element)
+}
+
 /// MIG-079 §C.2a — capture a note's "incoming signature" for the save-path diff:
-/// the set of distinct lowercased target names of its ACTIVE outgoing links, plus
-/// its own lowercased name + alias set. Comparing old (pre-save) vs new (post-save)
-/// tells us which OTHER notes' backlink counts changed, and whether THIS note's own
-/// incoming changed (its name/aliases moved).
+/// the set of distinct lowercased (target name, link type) pairs of its ACTIVE
+/// outgoing links (halves joined by `SIG_TYPE_SEP`), plus its own lowercased name
+/// + alias set. Comparing old (pre-save) vs new (post-save) tells us which OTHER
+/// notes' backlink data changed, and whether THIS note's own incoming changed
+/// (its name/aliases moved).
+///
+/// Safety-inspection 2026-08-01 — the signature is keyed by name AND type, not
+/// name alone: a link change that alters only the TYPE (re-typing
+/// `[[supports::B]]` → `[[contradicts::B]]`, or deleting one of two
+/// differently-typed links to the same target) leaves the name set identical, so
+/// the old name-only signature recomputed NOTHING — B's `incoming_link_types` /
+/// `_json` / `_top_rank` and the type-dependent sky stratum signals stayed stale
+/// with no self-heal. The diff/comparison logic is unchanged; only the elements
+/// got finer. Resolve an element back to note paths via `sig_target_name` (the
+/// type half is diff-trigger data, not a lookup key). The WHERE is untouched
+/// (still the `idx_link_source` seek); only the SELECT list changed.
 fn incoming_signature(
     conn: &Connection,
     path: &str,
@@ -1554,7 +1668,10 @@ fn incoming_signature(
     let mut targets = std::collections::HashSet::new();
     {
         let mut stmt = conn.prepare(
-            "SELECT DISTINCT LOWER(target_name) FROM note_links WHERE source_path = ?1 AND status != 'archived'",
+            // char(31) == SIG_TYPE_SEP (U+001F). SELECT-list-only change; the WHERE
+            // stays the plain idx_link_source-seeking form.
+            "SELECT DISTINCT LOWER(target_name) || char(31) || LOWER(COALESCE(link_type, '')) \
+             FROM note_links WHERE source_path = ?1 AND status != 'archived'",
         )?;
         let rows = stmt.query_map([path], |r| r.get::<_, String>(0))?;
         for r in rows {
@@ -1635,9 +1752,10 @@ fn maintain_incoming_after_save(
 ) -> rusqlite::Result<()> {
     let (new_targets, new_name, new_aliases) = incoming_signature(conn, note_path)?;
     let mut affected: std::collections::HashSet<String> = std::collections::HashSet::new();
-    // Targets this note started/stopped linking to → their backlink count changed.
+    // Targets this note started/stopped linking to — or re-typed a link to (the
+    // composite name+type element differs) → their backlink data changed.
     for t in old_targets.symmetric_difference(&new_targets) {
-        resolve_incoming_target_paths(conn, t, &mut affected)?;
+        resolve_incoming_target_paths(conn, sig_target_name(t), &mut affected)?;
     }
     // If this note's own name/aliases changed, the links that match IT changed →
     // recompute its own incoming too.
@@ -1671,9 +1789,10 @@ fn sky_affected_paths(
 ) -> rusqlite::Result<std::collections::HashSet<String>> {
     let (new_targets, new_name, new_aliases) = incoming_signature(conn, note_path)?;
     let mut affected: std::collections::HashSet<String> = std::collections::HashSet::new();
-    // Targets this note started/stopped linking to → their inbound changed → recompute.
+    // Targets this note started/stopped linking to — or re-typed a link to (the
+    // composite name+type element differs) → their inbound changed → recompute.
     for t in old_targets.symmetric_difference(&new_targets) {
-        resolve_incoming_target_paths(conn, t, &mut affected)?;
+        resolve_incoming_target_paths(conn, sig_target_name(t), &mut affected)?;
     }
     // The source itself recomputes when its outgoing set changed (stratum depends on
     // outgoing count + outgoing 'generalizes'/'causes'/'supports' signals) OR its
@@ -1750,9 +1869,11 @@ pub(crate) fn drop_sky_aggregate_triggers(conn: &Connection) -> Result<(), Strin
 /// `save_universe_link_types`). Two effects, both idempotent and non-blocking:
 ///   1. Recreate the outgoing-link triggers so subsequent live edge writes use the
 ///      new rank `CASE` + IN-list (drop+recreate reads the now-current registry).
-///   2. Schedule the background re-materialize of existing `note_meta` rows — the
-///      fingerprint gate in `links_backfill::is_needed` now reports "needed", and
-///      the batched / resumable pass refreshes every row under the new vocabulary.
+///   2. Schedule the background re-materialize of existing `note_meta` rows —
+///      OUTGOING and INCOMING both: the fingerprint gates in
+///      `links_backfill::is_needed` and `incoming_links_backfill::is_stamped` now
+///      report "needed", and the batched passes refresh every row under the new
+///      vocabulary.
 /// The boot + universe-switch paths already get (1)+(2) via `init_db` +
 /// `maybe_schedule`; this covers the in-session edit. Trigger recreation holds the
 /// DB lock only briefly; the re-materialize runs on a background thread.
@@ -1772,6 +1893,12 @@ pub fn on_link_vocabulary_changed(app: &tauri::AppHandle) {
         }
     }
     crate::links_backfill::maybe_schedule(app.clone());
+    // Safety-inspection 2026-08-01 — the INCOMING aggregates are just as
+    // vocabulary-derived as the outgoing ones (type breakdown + top rank), but only
+    // the outgoing re-materialize was scheduled here. The incoming vocab-fingerprint
+    // gate now reports "needed" after an edit, and is_stamped=false keeps every
+    // gated reader on the live getBacklinks path until this pass completes.
+    crate::incoming_links_backfill::maybe_schedule(app.clone());
 }
 
 /// MIG-041 — purge every bigram row from `term_vocab`.
@@ -4403,6 +4530,65 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // now runs as a save-path Rust diff (maintain_incoming_after_save) that
     // recomputes ONLY changed targets, and reconcile recomputes all authoritatively.
     let _ = drop_incoming_link_triggers(&conn);
+
+    // Safety-inspection 2026-08-01 — crash-mid-reconcile self-heal for the OUTGOING
+    // aggregates. reconcile_filesystem persists the `outgoing_triggers_dropped`
+    // marker before dropping the triggers for its bulk walk and clears it only
+    // after a successful restore. Still set here ⇒ a prior reconcile died mid-walk:
+    // the triggers were just recreated (above), but edits made during the
+    // trigger-free window left note_meta.outgoing_* stale — and boot is walk-free,
+    // so nothing else would ever recompute them. Heal once (batched + busy-retry);
+    // on failure KEEP the marker so the next boot retries — never fail boot over
+    // it. Normal boots pay one indexed schema_versions SELECT.
+    if outgoing_triggers_dropped_marker(&conn) {
+        // Safety inspection 2026-08-01 — heal ALL THREE derived families, not just outgoing.
+        // The marker records "a reconcile died mid-walk"; during that walk the INCOMING
+        // aggregates and the sky stratum/maturity were equally unmaintained (the incoming
+        // triggers are dropped just above, and the per-edge sky triggers were retired by
+        // PJ-066 §B4 — both now depend on the reconcile tail that never ran). Healing only
+        // outgoing left the other two permanently stale, since boot is walk-free.
+        //
+        // The marker is cleared only if EVERY recompute succeeded; any failure keeps it so
+        // the next boot retries. Never fails boot.
+        let mut all_ok = true;
+        match crate::links_backfill::recompute_all_outgoing(&conn) {
+            Ok(n) => eprintln!(
+                "[links_backfill] boot self-heal after interrupted reconcile: {} notes' outgoing aggregates recomputed",
+                n
+            ),
+            Err(e) => {
+                all_ok = false;
+                eprintln!(
+                    "[links_backfill] boot self-heal recompute_all_outgoing failed (marker kept; retried next boot): {}",
+                    e
+                );
+            }
+        }
+        // Incoming: only when the aggregate has been BUILT — before the first backfill the
+        // columns are inert and the backfill itself owns populating them.
+        if crate::incoming_links_backfill::is_built(&conn) {
+            let _ = conn.execute_batch(
+                "CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);",
+            );
+            if let Err(e) = crate::links_backfill::recompute_all_incoming(&conn) {
+                all_ok = false;
+                eprintln!(
+                    "[links_backfill] boot self-heal recompute_all_incoming failed (marker kept): {}",
+                    e
+                );
+            }
+        }
+        // Sky: idempotent, and a no-op on an empty sky_nodes (pre-backfill).
+        if let Err(e) = crate::links_backfill::recompute_all_sky(&conn) {
+            all_ok = false;
+            eprintln!("[links_backfill] boot self-heal recompute_all_sky failed (marker kept): {}", e);
+        }
+        if all_ok {
+            if let Err(e) = clear_outgoing_triggers_dropped_marker(&conn) {
+                eprintln!("[links_backfill] boot self-heal: clear marker failed: {}", e);
+            }
+        }
+    }
 
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
@@ -8999,6 +9185,18 @@ pub fn constellation_link_archive(
         params![source_path, target_lower],
     ).map_err(|e| format!("Failed to archive link: {}", e))?;
 
+    // Safety-inspection 2026-08-01 — a DB-only write: no note save follows, so the
+    // save-path maintenance never fires for it. Recompute the affected derived rows
+    // now (target incoming aggregates + both endpoints' sky stratum/maturity).
+    // Best-effort like the save-path maintenance — the archive itself is already
+    // durable; reconcile's recompute_all_* remains the authoritative self-heal.
+    if let Err(e) = recompute_after_link_status_change(conn, &source_path, &target_lower) {
+        eprintln!(
+            "[link-archive] derived-row recompute failed ({} -> {}): {}",
+            source_path, target_lower, e
+        );
+    }
+
     Ok(())
 }
 
@@ -9032,6 +9230,62 @@ pub(crate) fn unarchive_link_rows(
         ).map_err(|e| format!("Failed to unarchive link: {}", e))?;
     }
     Ok(rows.len())
+}
+
+/// Safety-inspection 2026-08-01 — recompute the derived rows a DB-only link status
+/// flip (archive / unarchive) invalidates. The per-edge incoming + sky triggers
+/// are gone (MIG-079 §C.2a / PJ-066 §B4), and the save-path diffs
+/// (`maintain_incoming_after_save` / `maintain_sky_after_save`) fire only on a
+/// note SAVE — which never happens here (archival is a DB-only decision; the
+/// wikilink stays in the note). Without this, the target's `note_meta.incoming_*`
+/// and both endpoints' `sky_nodes.stratum`/`maturity` stayed stale, and NO future
+/// save of the source could heal them (its captured signature already excludes
+/// archived edges, so old == new → zero recomputes). Reuses the smallest existing
+/// recompute units for exactly the affected notes: the index-seeking
+/// `incoming_aggregate_assignments` per resolved target path (gated on the
+/// incoming stamp, like the save path) and the shared stratum/maturity exprs for
+/// the source + target sky rows. Never a full backfill.
+fn recompute_after_link_status_change(
+    conn: &Connection,
+    source_path: &str,
+    target_lower: &str,
+) -> Result<(), String> {
+    // The target name resolves to note path(s) by name OR alias — the same
+    // resolver the save-path diff uses. Unresolved (a red link) → no target rows.
+    let mut target_paths: std::collections::HashSet<String> = std::collections::HashSet::new();
+    resolve_incoming_target_paths(conn, target_lower, &mut target_paths)
+        .map_err(|e| format!("resolve target paths: {}", e))?;
+
+    // Incoming aggregates — gated on the incoming stamp exactly like the save
+    // path (before the backfill stamps, the columns are inert and reads fall
+    // back to the live getBacklinks path).
+    if crate::incoming_links_backfill::is_built(conn) && !target_paths.is_empty() {
+        let sql = format!(
+            "UPDATE note_meta SET {assign} WHERE path = ?1",
+            assign = incoming_aggregate_assignments("note_meta"),
+        );
+        for p in &target_paths {
+            conn.execute(&sql, params![p])
+                .map_err(|e| format!("incoming recompute for {}: {}", p, e))?;
+        }
+    }
+
+    // Sky stratum/maturity — the target's inbound changed AND the source's
+    // outgoing signals changed (stratum reads outgoing type signals). PJ-187:
+    // sky is independent of the incoming stamp. A missing sky_nodes row is a
+    // harmless 0-row UPDATE.
+    let sky_sql = format!(
+        "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
+        stratum = stratum_sql_expr(),
+        maturity = maturity_sql_expr(),
+    );
+    let mut sky_paths = target_paths;
+    sky_paths.insert(source_path.to_string());
+    for p in &sky_paths {
+        conn.execute(&sky_sql, params![p])
+            .map_err(|e| format!("sky recompute for {}: {}", p, e))?;
+    }
+    Ok(())
 }
 
 // Note-open-freeze Batch-2 §B2-2 (2026-07-03): `(async)` — off the IPC dispatch thread.
@@ -9068,6 +9322,17 @@ pub fn constellation_link_unarchive(
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
     unarchive_link_rows(conn, &source_path, &target_lower)?;
+
+    // Safety-inspection 2026-08-01 — the unarchive twin of the archive command's
+    // recompute: the edge is active again, so the target's incoming aggregates and
+    // both endpoints' sky stratum/maturity must reflect it. Same best-effort
+    // semantics (the restore itself is already durable).
+    if let Err(e) = recompute_after_link_status_change(conn, &source_path, &target_lower) {
+        eprintln!(
+            "[link-unarchive] derived-row recompute failed ({} -> {}): {}",
+            source_path, target_lower, e
+        );
+    }
 
     Ok(())
 }
@@ -9922,6 +10187,14 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     walk_conn
         .busy_timeout(std::time::Duration::from_secs(30))
         .map_err(|e| format!("walk_conn busy_timeout: {}", e))?;
+    // Safety-inspection 2026-08-01 — persist the crash marker BEFORE the drop. If
+    // the app dies during the multi-minute trigger-free walk, live saves in later
+    // sessions would silently stop being covered for the walk window's stale rows
+    // (init_db recreates the triggers, but nothing recomputed the aggregates —
+    // boot is walk-free). init_db reads this marker at boot and runs
+    // recompute_all_outgoing once. If the marker cannot be persisted, do NOT
+    // enter the unprotected window.
+    set_outgoing_triggers_dropped_marker(&walk_conn)?;
     let _ = drop_outgoing_link_triggers(&walk_conn);
     // MIG-079 §C.2a — incoming maintenance is a save-path Rust diff, not triggers;
     // drop any incoming triggers a prior build left (harmless cleanup).
@@ -9939,16 +10212,38 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
 
     // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
     // then repopulate every note's aggregate in one pass.
-    let _ = create_outgoing_link_triggers(&walk_conn);
-    if let Err(e) = crate::links_backfill::recompute_all_outgoing(&walk_conn) {
-        eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
+    // Safety-inspection 2026-08-01 — failures here are no longer eprintln-only: the
+    // walk dropped the triggers, so a failed restore means live saves keep serving
+    // stale outgoing aggregates while the command reports Ok. The error surfaces in
+    // this command's Err (below, after the remaining self-heal passes still run),
+    // and the `outgoing_triggers_dropped` marker stays set so the next boot's
+    // init_db recompute self-heals regardless. Cleared only when the recreate AND
+    // the recompute both succeed.
+    let mut outgoing_restore_err: Option<String> = None;
+    if let Err(e) = create_outgoing_link_triggers(&walk_conn) {
+        eprintln!("[links_backfill] recreate outgoing triggers after reconcile failed: {}", e);
+        outgoing_restore_err = Some(e);
+    }
+    match crate::links_backfill::recompute_all_outgoing(&walk_conn) {
+        Ok(_) => {
+            if outgoing_restore_err.is_none() {
+                if let Err(e) = clear_outgoing_triggers_dropped_marker(&walk_conn) {
+                    eprintln!("[links_backfill] clear outgoing_triggers_dropped marker failed: {}", e);
+                    outgoing_restore_err = Some(e);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
+            outgoing_restore_err = Some(format!("recompute_all_outgoing: {}", e));
+        }
     }
 
     // MIG-079 §C.2a — recompute every note's incoming aggregate authoritatively
     // (only when the §C.2a backfill has stamped; before that the columns are inert
     // and reads fall back to getBacklinks). No triggers to recreate — maintenance
     // is a save-path Rust diff; this full pass is the periodic self-heal.
-    if crate::incoming_links_backfill::is_stamped(&walk_conn) {
+    if crate::incoming_links_backfill::is_built(&walk_conn) {
         // Defensive: the §C.2a backfill builds this; ensure it exists so the
         // recompute seeks (it persists, so normally a no-op here).
         let _ = walk_conn.execute_batch(
@@ -10009,6 +10304,16 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     ).unwrap_or(0);
     let index_size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 
+    // Safety-inspection 2026-08-01 — surface the failed outgoing restore to the
+    // caller instead of a silent Ok. The walk itself completed and the marker is
+    // still set, so the next boot self-heals even if this Err is ignored.
+    if let Some(e) = outgoing_restore_err {
+        return Err(format!(
+            "reconcile walk completed but restoring the outgoing-link aggregates failed: {}",
+            e
+        ));
+    }
+
     Ok(SearchIndexStats { note_count, index_size_bytes: index_size })
 }
 
@@ -10046,6 +10351,13 @@ pub fn constellation_search_reindex(
     note_path: String,
     library_name: String,
 ) -> Result<(), String> {
+    // Safety inspection 2026-08-01 — ensure-first, the discipline every other search command
+    // follows (`constellation_search_init` above, `reindex_changed_paths` below, which cites
+    // this exact hazard). Without it, a save landing in the cold-boot init window found
+    // `state.db` as None; that used to be a silent success and is now an error, but erroring
+    // when we could simply have waited for the DB is not the behaviour the user wants — the
+    // note IS on disk and DOES belong in the index.
+    ensure_search_db_ready(&app)?;
     let state = app.state::<SearchState>();
     reindex_single_note(&state, &note_path, &library_name)
 }
@@ -10082,21 +10394,31 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         // MIG-079 §C.2a — capture this note's outgoing targets BEFORE deleting its
         // links, so afterward we recompute those targets (they lose this note as a
         // backlink source). None until the incoming aggregate is stamped.
-        let inc_targets = if crate::incoming_links_backfill::is_stamped(conn) {
+        let inc_targets = if crate::incoming_links_backfill::is_built(conn) {
             incoming_signature(conn, note_path).ok().map(|(t, _, _)| t)
         } else {
             None
         };
-        let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
-        let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+        // Safety-inspection 2026-08-01 — the four CORE de-index writes must not be
+        // swallowed: a busy/locked failure (writer connections can hold the lock far
+        // past the 5 s busy_timeout) left the rows live while the caller was told Ok
+        // — a silent index↔disk divergence. Propagate, naming the table; the
+        // best-effort purges below (tag_counts, review, note_body, PJ-149 surfaces)
+        // keep their existing forgiveness.
+        conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
+            .map_err(|e| format!("de-index {}: DELETE note_links failed: {}", note_path, e))?;
+        conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
+            .map_err(|e| format!("de-index {}: DELETE note_meta failed: {}", note_path, e))?;
         // 2026-07-25 PJ-140 #17: also purge the note's aliases + embedding. Left behind,
         // a FUTURE note created at the same path inherits the deleted note's alias→cid
         // binding (the alias INSERT OR IGNORE at index_note sees the stale row), silently
         // rebinding inbound links to the wrong note; the orphan embedding keeps surfacing
         // in semantic search. ALL alias rows for this path go (the note is gone — including
         // any 'rename' aliases), unlike index_note which keeps non-frontmatter rows.
-        let _ = conn.execute("DELETE FROM note_aliases WHERE path = ?1", params![note_path]);
-        let _ = conn.execute("DELETE FROM note_embeddings WHERE path = ?1", params![note_path]);
+        conn.execute("DELETE FROM note_aliases WHERE path = ?1", params![note_path])
+            .map_err(|e| format!("de-index {}: DELETE note_aliases failed: {}", note_path, e))?;
+        conn.execute("DELETE FROM note_embeddings WHERE path = ?1", params![note_path])
+            .map_err(|e| format!("de-index {}: DELETE note_embeddings failed: {}", note_path, e))?;
         if let Some(old) = old_tags_json {
             let _ = crate::tag_counts::apply_delta(conn, &old, "[]");
         }
@@ -10148,7 +10470,9 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         if let Some(targets) = inc_targets {
             let mut affected = std::collections::HashSet::new();
             for t in &targets {
-                let _ = resolve_incoming_target_paths(conn, t, &mut affected);
+                // Composite name+type elements since the safety-inspection widening —
+                // resolve by the NAME half only.
+                let _ = resolve_incoming_target_paths(conn, sig_target_name(t), &mut affected);
             }
             let sql = format!(
                 "UPDATE note_meta SET {} WHERE path = ?1",
@@ -10170,6 +10494,15 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
                 let _ = conn.execute(&sky_sql, params![p]);
             }
         }
+    } else {
+        // Safety-inspection 2026-08-01 — Ok-on-None was a false success: the caller
+        // believed the note was de-indexed while NOTHING was purged (index↔disk
+        // divergence with no surfaced error, e.g. a delete racing a universe
+        // switch). Report the skip so callers can distinguish purged from skipped.
+        return Err(format!(
+            "search DB not initialized — de-index skipped for {}",
+            note_path
+        ));
     }
     Ok(())
 }
@@ -10210,7 +10543,7 @@ pub fn reindex_single_note(
         // any boot where the incoming aggregate is not yet stamped) EVERY save skipped sky
         // maintenance and the Sky View silently froze at stale sizes and levels.
         let sig_old = incoming_signature(conn, note_path).ok();
-        let inc_old = if crate::incoming_links_backfill::is_stamped(conn) {
+        let inc_old = if crate::incoming_links_backfill::is_built(conn) {
             sig_old.clone()
         } else {
             None
@@ -10265,6 +10598,18 @@ pub fn reindex_single_note(
                 eprintln!("[sky] maintain after save failed for {}: {}", note_path, e);
             }
         }
+    } else {
+        // Safety inspection 2026-08-01 — the SAVE-side twin of the de-index false success
+        // fixed above. The whole body sat inside `if let Some(conn)` with no `else`, so a
+        // save-path reindex during the cold-boot DB window reported SUCCESS while indexing
+        // nothing: the note is durable on disk, but search, the quick switcher and backlinks
+        // keep serving its old text with nothing to say so (boot never re-walks an indexed
+        // library, and the app's own write is watcher-suppressed, so nothing heals it).
+        // Fixing only the delete side today was the asymmetry the inspection caught.
+        return Err(format!(
+            "search DB not initialized — reindex skipped for {}",
+            note_path
+        ));
     }
     Ok(())
 }

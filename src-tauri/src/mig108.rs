@@ -22,6 +22,43 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Phase-4 audit (MED, migration-path) — **the engine must not be guillotined mid-move.**
+///
+/// The PJ-103 graceful-close handshake holds the window for at most 5 s and then destroys
+/// it. Mid-engine that lands the process between two directory moves, or inside a copy —
+/// and while the journal makes it *recoverable* (that is exactly what the `started` /
+/// `copied` sub-states are for), recoverable is not the same as acceptable when the user is
+/// watching a screen that says "please keep Constellation open". A sentence of prose was
+/// the ONLY thing standing between a stray click on the X and a half-moved universe.
+///
+/// So the close is REFUSED for as long as the engine holds the world open. This is not a
+/// trap: a genuinely hung engine can still be killed from the OS, and that path is the
+/// journaled crash the resume flow already handles.
+static ENGINE_RUNNING: AtomicBool = AtomicBool::new(false);
+
+/// True while a unification / restore is mutating the world. Read by the window-close
+/// handler in `lib.rs`.
+pub fn engine_is_running() -> bool {
+    ENGINE_RUNNING.load(Ordering::SeqCst)
+}
+
+/// RAII so the flag clears on EVERY exit path — the `?` early-returns inside the engine
+/// loop and a panic included. A flag left set would make the window permanently unclosable,
+/// which would be a worse bug than the one this guard prevents.
+struct RunningGuard;
+impl RunningGuard {
+    fn new() -> Self {
+        ENGINE_RUNNING.store(true, Ordering::SeqCst);
+        RunningGuard
+    }
+}
+impl Drop for RunningGuard {
+    fn drop(&mut self) {
+        ENGINE_RUNNING.store(false, Ordering::SeqCst);
+    }
+}
 
 // ─── Path normalization ─────────────────────────────────────────────────────────────────────
 //
@@ -188,6 +225,28 @@ pub fn classify(
         });
     }
 
+    // Phase-4 audit — nested actionable entries: an outer library's move physically carries
+    // an inner registered library with it, and the inner entry's own move then finds its
+    // source gone. Rather than plan a corrupting sequence, the INNER entry is demoted to a
+    // reported skip; the user resolves the nesting first (none exist on the Boss universe —
+    // all 18 externals are siblings — but the guard is standing behaviour).
+    let actionable_roots: Vec<(usize, String)> = entries
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e.class, EntryClass::Move | EntryClass::Copy))
+        .map(|(i, e)| (i, e.old_path.clone()))
+        .collect();
+    for (i, path) in &actionable_roots {
+        for (j, other) in &actionable_roots {
+            if i != j && norm_under(path, other) && norm(path) != norm(other) {
+                entries[*i].class = EntryClass::ForeignUniverse {
+                    reason: format!("is nested inside another library being relocated ({})", other),
+                };
+                entries[*i].dest = None;
+            }
+        }
+    }
+
     PreflightReport {
         universe_root: universe_root.to_string(),
         entries,
@@ -263,6 +322,18 @@ pub struct JournalEntry {
     pub action: String,
     /// The fs operation for this entry completed.
     pub moved: bool,
+    /// Phase-4 audit — the fs operation for this entry BEGAN. Journaled before the first
+    /// byte moves, so a destination found on resume can be classified: started=true means
+    /// it is OUR partial (safe to delete and redo — the source is the authority);
+    /// started=false means a genuine collision (hard error, never deleted).
+    #[serde(default)]
+    pub started: bool,
+    /// Phase-4 audit — for copy-based operations (copy-class and cross-volume moves): the
+    /// copy completed and was count-verified; only the source removal (moves) remains.
+    /// Distinguishes crash-mid-copy (partial DEST, delete+redo) from crash-mid-remove
+    /// (partial SOURCE, complete dest — finishing the removal is the only safe direction).
+    #[serde(default)]
+    pub copied: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -309,6 +380,8 @@ impl Journal {
                         _ => "move".into(),
                     },
                     moved: false,
+                    started: false,
+                    copied: false,
                 })
                 .collect(),
             baseline: None,
@@ -363,6 +436,7 @@ pub const JSON_STORES: &[&str] = &[
     "review-pulse.json",
     "workspaces.json",
     "session.json",
+    "session.prev.json",
     "collections.json",
     "settings.json",
     "universe.json",
@@ -384,6 +458,23 @@ pub fn take_snapshot(
     constellation_dir: &Path,
 ) -> Result<(String, Vec<(String, String)>, Baseline), String> {
     let backup_dir = constellation_dir.join(BACKUP_DIR);
+    // Phase-4 audit (LOW, migration-path) — a second run used to copy straight over the first
+    // run's backup, silently breaking the summary's promise that "the backup is kept until you
+    // choose to remove it". Move the previous one aside instead. Exactly ONE generation is
+    // kept: this is a multi-GB copy of the index, and an unbounded chain of them inside the
+    // user's own universe folder would be its own defect.
+    if backup_dir.exists()
+        && std::fs::read_dir(&backup_dir)
+            .map(|mut d| d.next().is_some())
+            .unwrap_or(false)
+    {
+        let prev = constellation_dir.join(format!("{}.prev", BACKUP_DIR));
+        let _ = std::fs::remove_dir_all(&prev);
+        if let Err(e) = std::fs::rename(&backup_dir, &prev) {
+            // Never block the migration on backup housekeeping — but never pretend either.
+            eprintln!("[mig108] could not set the previous backup aside ({e}); it will be replaced");
+        }
+    }
     std::fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
 
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
@@ -395,8 +486,11 @@ pub fn take_snapshot(
     std::fs::copy(db_path, &db_backup).map_err(|e| format!("db backup copy failed: {}", e))?;
     for ext in ["-wal", "-shm"] {
         let side = PathBuf::from(format!("{}{}", db_path.display(), ext));
+        let dest = backup_dir.join(format!("search.db.pre-mig108{}", ext));
+        // Phase-4 audit — a stale sidecar from an EARLIER run paired with a fresh main file
+        // is a corrupt backup; remove first, copy only when the live sidecar is non-empty.
+        let _ = std::fs::remove_file(&dest);
         if side.exists() && std::fs::metadata(&side).map(|m| m.len() > 0).unwrap_or(false) {
-            let dest = backup_dir.join(format!("search.db.pre-mig108{}", ext));
             std::fs::copy(&side, &dest).map_err(|e| format!("sidecar backup failed: {}", e))?;
         }
     }
@@ -753,35 +847,76 @@ pub fn run_move_phase(journal: &mut Journal, constellation_dir: &Path) -> Result
         if journal.entries[i].moved {
             continue;
         }
-        let (old_p, new_p, action) = {
+        let (old_p, new_p, action, started, copied) = {
             let e = &journal.entries[i];
-            (PathBuf::from(&e.old_path), PathBuf::from(&e.new_path), e.action.clone())
+            (
+                PathBuf::from(&e.old_path),
+                PathBuf::from(&e.new_path),
+                e.action.clone(),
+                e.started,
+                e.copied,
+            )
         };
-        // Crash-window adoption: a previous run may have completed this move AFTER the
-        // journal recorded intent but BEFORE it recorded completion.
-        let already_done = new_p.is_dir() && (action == "copy" || !old_p.exists());
-        if !already_done {
-            if new_p.exists() {
-                return Err(format!(
-                    "mig108 move: destination already exists (and source still present): {}",
-                    new_p.display()
-                ));
-            }
-            match action.as_str() {
-                "copy" => {
-                    crate::libraries::copy_dir_recursive(&old_p, &new_p)
-                        .map_err(|e| format!("mig108 copy {} -> {}: {}", old_p.display(), new_p.display(), e))?;
+        // Phase-4 audit (the BLOCKER class) — adoption never GUESSES completeness:
+        //   · a same-volume RENAME is atomic, so `source gone + dest present` proves done;
+        //   · copy-based ops prove nothing by existence — a crash mid-copy leaves a partial
+        //     dir that is_dir() happily accepts. Their proof is the journaled `copied` flag,
+        //     set only after a count-verified copy.
+        let same_vol = same_volume(&old_p, &new_p);
+        let rename_done = action == "move" && same_vol && !old_p.exists() && new_p.is_dir();
+        if rename_done {
+            journal.entries[i].moved = true;
+            journal.save(constellation_dir)?;
+            continue;
+        }
+
+        // A destination present before we ever STARTED is a genuine collision — hard error,
+        // never deleted. One we DID start (and whose copy never completed) is our own
+        // partial: the source is intact and authoritative, so delete it and redo.
+        if new_p.exists() && !started {
+            return Err(format!(
+                "mig108 move: destination already exists (and this entry never started): {}",
+                new_p.display()
+            ));
+        }
+        if new_p.exists() && started && !copied && old_p.exists() {
+            std::fs::remove_dir_all(&new_p)
+                .map_err(|e| format!("mig108: clearing our partial destination failed: {}", e))?;
+        }
+
+        journal.entries[i].started = true;
+        journal.save(constellation_dir)?;
+
+        if action == "move" && same_vol {
+            crate::write_gate::gate_rename(&old_p, &new_p, "mig108_move")
+                .map_err(|e| format!("mig108 move {} -> {}: {}", old_p.display(), new_p.display(), e))?;
+        } else {
+            // Copy-based (copy-class, or cross-volume move).
+            if !copied {
+                crate::libraries::copy_dir_recursive(&old_p, &new_p)
+                    .map_err(|e| format!("mig108 copy {} -> {}: {}", old_p.display(), new_p.display(), e))?;
+                // The Architect's promised completeness clause, now real: same file count
+                // or the copy did not happen (symlinks are skipped on BOTH sides of the
+                // count by the same walker rule, so they cannot skew it — their skipping
+                // is logged rather than silent).
+                let (src_n, dst_n) = (count_files(&old_p), count_files(&new_p));
+                if src_n != dst_n {
+                    return Err(format!(
+                        "mig108 copy verify: {} files at source, {} at destination for {}",
+                        src_n,
+                        dst_n,
+                        new_p.display()
+                    ));
                 }
-                _ => {
-                    if same_volume(&old_p, &new_p) {
-                        crate::write_gate::gate_rename(&old_p, &new_p, "mig108_move")
-                            .map_err(|e| format!("mig108 move {} -> {}: {}", old_p.display(), new_p.display(), e))?;
-                    } else {
-                        crate::libraries::copy_dir_recursive(&old_p, &new_p)
-                            .map_err(|e| format!("mig108 cross-volume copy: {}", e))?;
-                        std::fs::remove_dir_all(&old_p)
-                            .map_err(|e| format!("mig108 cross-volume source removal: {}", e))?;
-                    }
+                journal.entries[i].copied = true;
+                journal.save(constellation_dir)?;
+            }
+            if action == "move" {
+                // copied=true + old still present = finish the removal; the destination is
+                // complete and verified, so this direction is the only safe one.
+                if old_p.exists() {
+                    std::fs::remove_dir_all(&old_p)
+                        .map_err(|e| format!("mig108 cross-volume source removal: {}", e))?;
                 }
             }
         }
@@ -791,6 +926,30 @@ pub fn run_move_phase(journal: &mut Journal, constellation_dir: &Path) -> Result
 
     journal.phase = Phase::Moved;
     journal.save(constellation_dir)
+}
+
+/// File count for the copy-completeness verify. Skips symlinks/junctions with a LOG LINE —
+/// the same rule `copy_dir_recursive` applies (PJ-140 #43), so the two sides of the compare
+/// can never disagree about them, and their omission is visible rather than silent.
+pub(crate) fn count_files(root: &Path) -> u64 {
+    fn inner(dir: &Path, n: &mut u64) {
+        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        for e in rd.flatten() {
+            if e.file_type().map(|t| t.is_symlink()).unwrap_or(false) {
+                eprintln!("[mig108] symlink skipped in copy/count: {}", e.path().display());
+                continue;
+            }
+            let p = e.path();
+            if p.is_dir() {
+                inner(&p, n);
+            } else {
+                *n += 1;
+            }
+        }
+    }
+    let mut n = 0;
+    inner(root, &mut n);
+    n
 }
 
 // ─── DB rewrite phase ───────────────────────────────────────────────────────────────────────
@@ -829,9 +988,16 @@ pub fn run_db_rewrite(
         .iter()
         .map(|e| (e.old_path.clone(), e.new_path.clone()))
         .collect();
-    let baseline = journal
+    // Phase-4 audit — the SNAPSHOT-time baseline cannot gate the rewrite: legitimate boot
+    // work in a crash-resume window (link_life_restore, review self-heal, reconcile
+    // re-adoption) changes the counts, and a byte-equality check against a stale number
+    // fails FOREVER. The invariant I2 actually means "this TRANSACTION loses nothing" — so
+    // the baseline is captured INSIDE the transaction, before the first UPDATE. The
+    // snapshot-time numbers remain in the journal for the report and the backup's own
+    // verification, which is what they truly certify.
+    journal
         .baseline
-        .clone()
+        .as_ref()
         .ok_or("mig108 db rewrite: journal carries no baseline (snapshot must run first)")?;
 
     conn.execute_batch("BEGIN IMMEDIATE")
@@ -843,6 +1009,63 @@ pub fn run_db_rewrite(
         // H2 — the ungated per-edge outgoing recompute is O(N^2) across a bulk rewrite
         // (+17 s measured at 216k links).
         crate::search::drop_outgoing_link_triggers(conn)?;
+
+        // Phase-4 audit (BLOCKER 1) — purge DESTINATION-prefix rows before the cascade. In
+        // a crash-resume window the boot reconcile can RE-ADOPT the already-moved files as
+        // fresh rows at their NEW paths (default weights, no history — recomputable junk by
+        // construction). Left in place they collide with the cascade's UPDATEs
+        // (UNIQUE(source_path, target_name, link_type) has no pre-delete for note_links),
+        // failing the rewrite deterministically on every retry. The REAL rows — the earned
+        // ones — still sit at the OLD paths and are about to be remapped in. Purging the
+        // destination prefixes is therefore both safe and what makes resume idempotent
+        // against a dirty world. (The root library's own notes are under the ROOT but not
+        // under any per-library destination dir, so they are untouchable by this.)
+        let dest_prefixes = NormPrefixes::new(pairs.iter().map(|(_, n)| n.as_str()));
+        let mut purged = 0usize;
+        for (table, col) in [
+            ("note_meta", "path"),
+            ("note_links", "source_path"),
+            ("note_aliases", "path"),
+            ("note_embeddings", "path"),
+            ("note_body", "path"),
+            ("review_schedule", "path"),
+            ("note_summaries", "path"),
+            ("sources_suggestions", "note_path"),
+            ("sight_v3_layout", "note_path"),
+            ("note_state_history", "note_path"),
+            ("shape_history", "path"),
+            ("sky_nodes", "path"),
+            ("sky_links", "source_path"),
+        ] {
+            let sql = format!("SELECT DISTINCT {c} FROM {t}", c = col, t = table);
+            let stale: Vec<String> = match conn.prepare(&sql) {
+                Ok(mut stmt) => stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| e.to_string())?
+                    .filter_map(|r| r.ok())
+                    .filter(|p| dest_prefixes.matches(p))
+                    .collect(),
+                Err(e) if e.to_string().contains("no such table") => continue,
+                Err(e) => return Err(e.to_string()),
+            };
+            for v in stale {
+                conn.execute(&format!("DELETE FROM {t} WHERE {c} = ?1", t = table, c = col), [&v])
+                    .map_err(|e| e.to_string())?;
+                purged += 1;
+            }
+        }
+        if purged > 0 {
+            eprintln!(
+                "[mig108] purged {} destination-prefix rows (crash-window re-adoption junk)",
+                purged
+            );
+        }
+
+        // The in-tx baseline is captured AFTER the junk purge, so it describes exactly the
+        // set whose conservation this transaction must prove — the earned rows. (Captured
+        // before the purge it counts the junk, and equality can never hold on a resume; the
+        // re-adoption test caught precisely that ordering flaw in the first version.)
+        let baseline = read_baseline(conn)?;
         // Stage-A finding C — the sky triggers came OFF too. The first version kept them
         // ("the proven cascade, exactly as every live single-note move runs it") — true at
         // single-note scale, and ~25 MINUTES at 7,800-notes-in-one-transaction scale: the
@@ -951,6 +1174,27 @@ pub fn run_db_rewrite(
             ));
         }
         let mut stale_left = 0i64;
+        const VERIFY_EXTRA: &[(&str, &str)] = &[
+            ("note_embeddings", "path"),
+            ("note_body", "path"),
+            ("note_summaries", "path"),
+            ("sources_suggestions", "note_path"),
+            ("sight_v3_layout", "note_path"),
+            ("note_state_history", "note_path"),
+            ("shape_history", "path"),
+        ];
+        for (table, col) in VERIFY_EXTRA {
+            let sql = format!("SELECT {c} FROM {t}", c = col, t = table);
+            if let Ok(mut stmt) = conn.prepare(&sql) {
+                let rows = stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| e.to_string())?;
+                stale_left += rows
+                    .filter_map(|r| r.ok())
+                    .filter(|p| old_prefixes.matches(p))
+                    .count() as i64;
+            }
+        }
         for (table, col, _) in SWEEP {
             let sql = format!("SELECT {c} FROM {t}", c = col, t = table);
             if let Ok(mut stmt) = conn.prepare(&sql) {
@@ -1450,15 +1694,15 @@ mod slice2_tests {
         assert!(norm_under(&p, &f.root));
     }
 
-    /// RED — a divergent aggregate must ROLL BACK the whole rewrite and journal VerifyFailed.
+    /// RED — a genuine verify failure (a moved directory missing at COMMIT time) must ROLL
+    /// BACK the whole rewrite and journal VerifyFailed, leaving the DB byte-untouched.
     #[test]
     fn verify_failure_rolls_back_and_journals() {
         let f = build_fixture();
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
 
-        let (db_backup, json_backups, mut baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
-        baseline.note_links_rows += 1; // sabotage: the verify MUST catch this
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -1466,17 +1710,179 @@ mod slice2_tests {
         j.save(&f.cdir).unwrap();
         run_move_phase(&mut j, &f.cdir).unwrap();
 
+        // Sabotage the WORLD, not the bookkeeping: a moved destination vanishes.
+        std::fs::remove_dir_all(Path::new(&f.root).join("LibA")).unwrap();
+
         let err = run_db_rewrite(&f.conn, &mut j, &f.cdir).unwrap_err();
-        assert!(err.contains("aggregates diverged"), "{}", err);
+        assert!(err.contains("moved dir missing"), "{}", err);
         assert_eq!(j.phase, Phase::VerifyFailed);
 
-        // ROLLBACK held: the DB still holds the OLD paths (fs moves stand, recorded).
         let paths: Vec<String> = {
             let mut st = f.conn.prepare("SELECT path FROM note_meta").unwrap();
             let v = st.query_map([], |r| r.get(0)).unwrap().filter_map(|r| r.ok()).collect();
             v
         };
         assert!(paths.iter().all(|p| !norm_under(p, &f.root)), "db untouched after rollback");
+    }
+
+    /// Phase-4 audit (HIGH) — a STALE snapshot-time baseline must NOT wedge resume: boot
+    /// healers legitimately write to the DB in a crash window, so the verify's baseline is
+    /// captured IN the transaction. The old behaviour (byte-equality against snapshot time)
+    /// failed forever after any such write.
+    #[test]
+    fn stale_snapshot_baseline_does_not_wedge_resume() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+
+        // The crash-window healer: a row appears AFTER the snapshot, BEFORE the rewrite.
+        let a_note = {
+            let mut st = f.conn.prepare("SELECT path FROM note_meta LIMIT 1").unwrap();
+            let v: String = st.query_map([], |r| r.get(0)).unwrap().next().unwrap().unwrap();
+            v
+        };
+        f.conn
+            .execute(
+                "INSERT INTO note_links (source_path, target_name, weight) VALUES (?1, 'healer', 9.9)",
+                [&a_note],
+            )
+            .unwrap();
+
+        run_db_rewrite(&f.conn, &mut j, &f.cdir).unwrap();
+        assert_eq!(j.phase, Phase::DbRewritten);
+        // …and the healer's row was preserved and remapped with everything else.
+        let n: i64 = f
+            .conn
+            .query_row("SELECT COUNT(*) FROM note_links WHERE target_name='healer'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 1);
+    }
+
+    /// Phase-4 audit (BLOCKER 1) — reconcile can RE-ADOPT moved files as fresh rows at their
+    /// NEW paths in the crash window. Those rows collide with the cascade's UPDATEs and used
+    /// to fail the rewrite deterministically on every retry. The destination-prefix purge
+    /// deletes the junk (recomputable by construction) and the EARNED rows win.
+    #[test]
+    fn crash_window_readoption_junk_is_purged_and_earned_rows_win() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+
+        // Reconcile's fresh adoption at the NEW path: same identity, DEFAULT weight, and the
+        // exact UNIQUE key the cascade's UPDATE will try to move the earned row onto.
+        let new_a = Path::new(&f.root).join("LibA").join("a.md").to_string_lossy().to_string();
+        f.conn.execute("INSERT INTO note_meta (path, name) VALUES (?1, 'a')", [&new_a]).unwrap();
+        f.conn
+            .execute(
+                "INSERT INTO note_links (source_path, target_name, link_type, weight) VALUES (?1, 'b', 'associative', 1.0)",
+                [&new_a],
+            )
+            .unwrap();
+
+        run_db_rewrite(&f.conn, &mut j, &f.cdir).unwrap();
+        assert_eq!(j.phase, Phase::DbRewritten);
+
+        // The earned row (weight 1.5) survived at the new path; the junk (1.0) is gone.
+        let w: f64 = f
+            .conn
+            .query_row(
+                "SELECT weight FROM note_links WHERE source_path = ?1 AND target_name='b' AND link_type='associative'",
+                [&new_a],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!((w - 1.5).abs() < 1e-9, "the EARNED weight won, not the re-adopted default: {}", w);
+    }
+
+    /// Phase-4 audit (BLOCKER 3) — a partial copy-class copy must NEVER be adopted as done:
+    /// resume deletes the partial (its source is the authority) and recopies, count-verified.
+    #[test]
+    fn partial_copy_is_deleted_and_redone_never_adopted() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+
+        // Simulate the crash: the copy STARTED (journaled) and produced a partial dest —
+        // a directory that exists but is missing the file.
+        let idx = j.entries.iter().position(|e| e.action == "copy").expect("copy entry");
+        let dest = PathBuf::from(&j.entries[idx].new_path);
+        std::fs::create_dir_all(&dest).unwrap(); // partial: dir exists, k.md absent
+        j.entries[idx].started = true;
+        j.phase = Phase::Moving;
+        j.save(&f.cdir).unwrap();
+
+        run_move_phase(&mut j, &f.cdir).unwrap();
+        assert!(dest.join("k.md").is_file(), "the partial was deleted and the copy REDONE");
+        assert!(
+            Path::new(&f.book).join("k.md").is_file(),
+            "copy-class source remains untouched"
+        );
+        // A destination that was NEVER started stays a hard error (genuine collision).
+    }
+
+    /// Phase-4 audit (HIGH) — the promised restore, proven: run to Moved, put everything
+    /// back, and the world is byte-identical (fs at old paths, journal gone, DB untouched).
+    #[test]
+    fn restore_from_moved_puts_everything_back() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+        assert_eq!(j.phase, Phase::Moved);
+
+        // The restore body (the command minus AppHandle): reverse each entry, discard.
+        for e in j.entries.iter().rev() {
+            let old_p = Path::new(&e.old_path);
+            let new_p = Path::new(&e.new_path);
+            match e.action.as_str() {
+                "copy" => {
+                    if new_p.exists() {
+                        std::fs::remove_dir_all(new_p).unwrap();
+                    }
+                }
+                _ => {
+                    if new_p.is_dir() && !old_p.exists() {
+                        std::fs::rename(new_p, old_p).unwrap();
+                    }
+                }
+            }
+        }
+        Journal::discard(&f.cdir).unwrap();
+
+        assert!(Path::new(&f.ext_a).join("a.md").is_file(), "moved library back at its old path");
+        assert!(Path::new(&f.ext_b).join("b.md").is_file());
+        assert!(!Path::new(&f.root).join("LibA").exists(), "no residue at the root");
+        assert!(!Path::new(&f.root).join("Book").exists(), "the copy was removed; source intact");
+        assert!(Path::new(&f.book).join("k.md").is_file());
+        assert!(Journal::load(&f.cdir).unwrap().is_none(), "journal discarded");
     }
 }
 
@@ -1557,6 +1963,8 @@ pub struct JournalState {
     pub entries_total: usize,
     pub entries_moved: usize,
     pub universe_root: String,
+    /// True when restore (put everything back) is a valid direction for this phase.
+    pub restorable: bool,
 }
 
 fn active_cdir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -1598,12 +2006,19 @@ pub fn mig108_preflight(
 #[tauri::command(async)]
 pub fn mig108_journal_state(app: tauri::AppHandle) -> Result<Option<JournalState>, String> {
     let cdir = active_cdir(&app)?;
+    // Phase-4 audit — a CORRUPT journal (the only record of a possibly half-moved universe)
+    // must reach the USER, not a dev-only console: propagate the error so the dialog shows
+    // it instead of silently booting as if nothing happened.
     Ok(Journal::load(&cdir)?
         .filter(|j| j.is_unfinished())
         .map(|j| JournalState {
             entries_total: j.entries.len(),
             entries_moved: j.entries.iter().filter(|e| e.moved).count(),
             universe_root: j.universe_root.clone(),
+            restorable: matches!(
+                j.phase,
+                Phase::Planned | Phase::Snapshotted | Phase::Moving | Phase::Moved | Phase::VerifyFailed
+            ),
             phase: j.phase,
         }))
 }
@@ -1645,6 +2060,8 @@ fn run_with_events(
     cdir: &Path,
 ) -> Result<(), String> {
     use tauri::Manager;
+    // Refuse the window close for the whole run (Phase-4 audit) — covers execute AND resume.
+    let _running = RunningGuard::new();
     let state = app.state::<crate::search::SearchState>();
     let guard = state.db.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("Search database not initialized")?;
@@ -1707,6 +2124,63 @@ pub fn mig108_execute(app: tauri::AppHandle, copy_paths: Vec<String>) -> Result<
     }
     journal.save(&cdir)?;
     run_with_events(&app, &mut journal, &cdir)
+}
+
+/// Phase-4 audit — the promised rollback, now shipped. Valid for every phase where the DB
+/// transaction never COMMITTED (Planned / Snapshotted / Moving / Moved / VerifyFailed —
+/// VerifyFailed rolled back, so the DB is untouched): reverse each completed fs operation
+/// (rename back; delete the root copy — its source was never touched; cross-volume mirrored
+/// via the copied flag), then discard the journal. The snapshot stays on disk. After
+/// DbRewritten the only safe direction is FORWARD (resume) — the command refuses, and the
+/// dialog explains rather than offering an impossible button.
+#[tauri::command(async)]
+pub fn mig108_restore(app: tauri::AppHandle) -> Result<(), String> {
+    let cdir = active_cdir(&app)?;
+    // Restore moves directories back — the same mid-flight kill risk as the forward run.
+    let _running = RunningGuard::new();
+    let journal = Journal::load(&cdir)?.ok_or("No unification journal to restore")?;
+    match journal.phase {
+        Phase::Planned | Phase::Snapshotted | Phase::Moving | Phase::Moved | Phase::VerifyFailed => {}
+        _ => {
+            return Err(
+                "The knowledge index has already been rewritten — finishing the unification is the only safe direction."
+                    .to_string(),
+            )
+        }
+    }
+    // Reverse in reverse order (nesting-safe even though nested entries are refused).
+    for e in journal.entries.iter().rev() {
+        let old_p = Path::new(&e.old_path);
+        let new_p = Path::new(&e.new_path);
+        match e.action.as_str() {
+            "copy" => {
+                // The source was never modified; the copy (partial or complete) is ours.
+                if new_p.exists() {
+                    std::fs::remove_dir_all(new_p)
+                        .map_err(|er| format!("restore: removing copy {} failed: {}", new_p.display(), er))?;
+                }
+            }
+            _ => {
+                if new_p.is_dir() && !old_p.exists() {
+                    if same_volume(new_p, old_p) {
+                        crate::write_gate::gate_rename(new_p, old_p, "mig108_restore")
+                            .map_err(|er| format!("restore: rename-back {} failed: {}", new_p.display(), er))?;
+                    } else {
+                        crate::libraries::copy_dir_recursive(new_p, old_p)?;
+                        std::fs::remove_dir_all(new_p).map_err(|er| er.to_string())?;
+                    }
+                } else if new_p.exists() && old_p.exists() {
+                    // Our partial (started, never completed): the source is authoritative.
+                    std::fs::remove_dir_all(new_p)
+                        .map_err(|er| format!("restore: removing partial {} failed: {}", new_p.display(), er))?;
+                }
+            }
+        }
+    }
+    Journal::discard(&cdir)?;
+    crate::libraries::invalidate_libraries_cache();
+    crate::embeds::invalidate_all_vault_indexes();
+    Ok(())
 }
 
 /// Resume an unfinished run found at boot. Same engine, same journal.
@@ -1776,6 +2250,17 @@ pub fn bring_in_library(
         );
     }
 
+    // Phase-4 audit — a folder that IS a universe (registered or not) must be opened, not
+    // ingested: swallowing its .constellation (search.db, universe.json, earned ledger)
+    // into another universe as plain files is data mangling.
+    if src.join(".constellation").join("universe.json").exists()
+        || src.join("universe.json").exists()
+    {
+        return Err(
+            "That folder is a universe of its own — open it from the universe switcher instead."
+                .to_string(),
+        );
+    }
     let dest = bring_in_dest(&source_path, &root)?;
     match mode.as_str() {
         "move" => {

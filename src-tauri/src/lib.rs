@@ -545,6 +545,7 @@ pub fn run() {
             mig108::mig108_execute,
             mig108::mig108_resume,
             mig108::bring_in_library,
+            mig108::mig108_restore,
             write_gate::read_write_journal_stats,
             write_gate::journal_frontend_marker,
             libraries::scan_library_index,
@@ -715,6 +716,17 @@ pub fn run() {
                     // Notify frontend that screen was closed
                     let _ = window.emit("screen-hidden", ());
                 } else if window.label() == "main" {
+                    // MIG-108 Phase-4 audit — NEVER guillotine the unification engine. The
+                    // handshake below proceeds after 5s no matter what; mid-engine that
+                    // kills the process between two directory moves. While the engine holds
+                    // the world open the close is refused outright and the running screen
+                    // says so. (A hung engine is still killable from the OS — that path is
+                    // the journaled crash the resume flow handles.)
+                    if crate::mig108::engine_is_running() {
+                        api.prevent_close();
+                        let _ = window.emit("mig108:close-blocked", ());
+                        return;
+                    }
                     // MIG-100 §4b + PJ-103 — graceful-close final flush. A DOM
                     // beforeunload + fire-and-forget invoke is NOT proven to
                     // survive webview teardown (PJ-103 proved it live: the

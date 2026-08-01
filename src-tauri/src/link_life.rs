@@ -429,6 +429,8 @@ pub const GITIGNORE_CONTENT: &str = "\
 boot-perf.*
 diagnostics.log
 sv-trace.log
+mig108-journal.json
+mig108-backup*/
 ";
 
 /// Write the `.gitignore` once. NEVER overwrites — the user may have edited it.
@@ -450,6 +452,8 @@ pub fn gitignore_excludes(name: &str) -> bool {
         || n.starts_with("boot-perf.")
         || n == "diagnostics.log"
         || n == "sv-trace.log"
+        || n == "mig108-journal.json"
+        || n.starts_with("mig108-backup")
 }
 
 /// Fold Syncthing `.sync-conflict-*` copies back in, then remove them. Nearly free because the
@@ -1031,6 +1035,7 @@ mod tests_mig104_link_life {
             "Constellation SV Test.db", // the orphaned 939 MB one — `search.db*` would MISS it
             "boot-perf.latest.json", "boot-perf.history.jsonl",
             "diagnostics.log", "sv-trace.log",
+            "mig108-journal.json", "mig108-backup", "mig108-backup.prev", // MIG-108 crash state — single-machine, never synced
         ] {
             assert!(gitignore_excludes(excluded), "must be excluded from sync: {excluded}");
         }

@@ -36,7 +36,8 @@
     "inLibrary": "Already in: {library}"
   },
   "cascade": {
-    "updating": "Updating links…"
+    "updating": "Updating links…",
+    "failedSome": "Renamed — but {count} note(s) still link to “{old}”: their links could not be updated (the files are locked, read-only, or in use): {notes}"
   },
   "app": {
     "name": "Constellation",
@@ -750,7 +751,11 @@
     "newBase": "New Base",
     "newFolder": "New Folder",
     "rename": "Rename",
-    "delete": "Delete"
+    "delete": "Delete",
+    "tagNoIdentity": "Could not add the tag to “{note}” — this note has no stable identity yet (it is still opening, or it changed under this tab). Open it, then try again.",
+    "tagBusy": "Could not add the tag to “{note}” — the note is busy (a rename or reload is updating it). Try again in a moment.",
+    "tagWriteFailed": "Could not add the tag to “{note}”: {error}",
+    "moveBatchFailed": "{count} item(s) could not be moved: {items}"
   },
   "createDialog": {
     "titleFolder": "New Folder",
@@ -2047,7 +2052,8 @@
     "preset_muted": "Muted",
     "preset_bold": "Bold",
     "preset_warm": "Warm",
-    "preset_invisible": "Invisible"
+    "preset_invisible": "Invisible",
+    "saveFailed": "Could not save the canvas — your latest change is not on disk."
   },
   "inspector360": {
     "title": "360.3D",
@@ -4206,7 +4212,11 @@
     "summaryTitle": "Your universe is in one place",
     "title": "Bring your universe into one place",
     "unify": "Unify",
-    "verifyFailedNote": "The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again."
+    "verifyFailedNote": "The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again.",
+    "restoreButton": "Put everything back",
+    "phaseRestore": "Putting everything back…",
+    "journalUnreadable": "The unification journal could not be read. Nothing will be touched automatically — the backup and journal files are in the universe folder under .constellation; please report this before continuing.",
+    "closeBlocked": "Constellation cannot be closed while your libraries are being moved — closing now would leave the move half-finished. It will close normally as soon as this is done."
   },
   "bringIn": {
     "body": "A universe keeps all of its knowledge in one folder, so this library will live inside it. Choose what happens to the original:",
@@ -4216,5 +4226,11 @@
     "move": "Move in",
     "moveDesc": "The folder itself moves into the universe. Its old location will be empty afterwards.",
     "title": "Bring this folder into your universe"
+  },
+  "storeHealth": {
+    "collections": "Your collections could not be read, so Constellation is not saving changes to them this session — to avoid overwriting the file with an empty list. Restart to try again.",
+    "workspaces": "Your saved layouts could not be read, so Constellation is not saving changes to them this session — to avoid overwriting them. Restart to try again.",
+    "settings": "Your settings could not be saved. Changes you make now will not survive a restart — check that the universe folder is writable and not locked by a sync tool.",
+    "index": "A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Rebuild Index will restore it."
   }
 }

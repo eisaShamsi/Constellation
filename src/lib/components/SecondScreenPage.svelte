@@ -539,6 +539,16 @@
 	let unlisteners: (() => void)[] = [];
 	let libraryChangeTimer: ReturnType<typeof setTimeout> | null = null;
 
+	// 2026-08-01 inspection (LOW) — same stale-result shape as skyviewGeneration /
+	// peekGeneration / scGeneration: two broadcasts for one path run two concurrent
+	// awaited `read_note` calls; if the OLDER read resolves LAST it must not adopt an
+	// older disk snapshot over the newer one. Per-path for the adopt helper (concurrent
+	// adopts of DIFFERENT paths are legitimate and must not cancel each other);
+	// per-concern counters for the cockpit / split-companion re-reads in u2.
+	const adoptGenerations = new Map<string, number>();
+	let epContentGeneration = 0;
+	let splitContentGeneration = 0;
+
 	/**
 	 * G3 §2/§3 — adopt fresh disk content for `path` into EVERY second-screen note
 	 * view that shows it, freshness-gated. The SS holds up to 7 NoteEditor mounts: the
@@ -561,10 +571,13 @@
 		const shownHere = get(openTabs).some((t) => t.path === path)
 			|| [peekTab].some((c) => c?.path === path);
 		if (!shownHere) return;
+		const gen = (adoptGenerations.get(path) ?? 0) + 1;
+		adoptGenerations.set(path, gen);
 		let content: string;
 		try {
 			content = await invoke<string>('read_note', { filePath: path });
 		} catch { return; }
+		if (gen !== adoptGenerations.get(path)) return; // a newer adopt for this path owns the write
 		// Store openTabs (active editor + tab list). Adopt per tab (freshness-gated),
 		// then bump reloadVersion ONLY on the tabs that actually adopted — so a mounted
 		// view remounts to show the new truth while a dirty editable-mode edit is never
@@ -617,20 +630,29 @@
 			if (wasRecentlyWritten(path)) return; // we saved it ourselves — skip reload
 			// Re-read the focused note's content so the cockpit's lenses stay current (INV-2/INV-6)
 			if (editorPanelsActive && editorPanelsData?.notePath === path) {
+				// Generation-guarded (no early return — the rest of the handler must still run);
+				// re-check the focused path too, in case the cockpit moved while the read flew.
+				const gen = ++epContentGeneration;
 				try {
 					const content = await invoke<string>('read_note', { filePath: path });
-					editorPanelsData = { ...editorPanelsData, content };
+					if (gen === epContentGeneration && editorPanelsData?.notePath === path) {
+						editorPanelsData = { ...editorPanelsData, content };
+					}
 				} catch {}
 			}
 			if (splitCompanionActive && splitCompanionData?.notes?.some(n => n.notePath === path)) {
-				// Re-read the changed note's content and reload all panels
+				// Re-read the changed note's content and reload all panels (generation-guarded,
+				// same shape as above; the split set may have been replaced mid-read)
+				const gen = ++splitContentGeneration;
 				try {
 					const content = await invoke<string>('read_note', { filePath: path });
-					const updatedNotes = splitCompanionData.notes!.map(n =>
-						n.notePath === path ? { ...n, content } : n
-					);
-					splitCompanionData = { ...splitCompanionData, notes: updatedNotes };
-					await loadSplitCompanionPanelData(splitCompanionData);
+					if (gen === splitContentGeneration && splitCompanionData?.notes?.some(n => n.notePath === path)) {
+						const updatedNotes = splitCompanionData.notes!.map(n =>
+							n.notePath === path ? { ...n, content } : n
+						);
+						splitCompanionData = { ...splitCompanionData, notes: updatedNotes };
+						await loadSplitCompanionPanelData(splitCompanionData);
+					}
 				} catch {}
 			}
 			// G3 §2 — adopt the main window's save into EVERY SS editor view of this
@@ -657,6 +679,14 @@
 
 		// Listen for universe switch
 		const u3 = await onUniverseSwitch(async () => {
+			// 2026-08-01 inspection (LOW) — a universe switch REPLACES the whole context,
+			// exactly like a workspace restore (u7 below): dispose every outgoing tab's
+			// model and clear the SS tab list, or the PREVIOUS universe's tabs and their
+			// full-body models stay mounted for the life of the window.
+			for (const t of get(openTabs)) closeNoteModel(t.id);
+			openTabs.set([]);
+			activeTabId.set(null);
+			closePeek(); // the peek pane's model is a previous-universe resident too
 			try {
 				const universes = await listUniverses();
 				if (universes.length > 0) {
@@ -689,7 +719,20 @@
 		unlisteners.push(u4);
 
 		// Listen for library file changes
-		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async () => {
+		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async (event) => {
+			// 2026-08-01 inspection (MED) — an EXTERNAL edit (outside program / sync engine)
+			// must reach the SS's DISPLAYED note views, not just the flat note list: route the
+			// event's paths through the G3 adopt helper (freshness-gated — a dirty SS edit is
+			// never clobbered), same call shape as the 'screen:note-saved' wiring (u2).
+			// libraryId === '' marks a Rust-side ANNOUNCE (announce_frontmatter_writes /
+			// announce_disk_write) — the app's own gated write asking open notes to re-base.
+			// It must BYPASS wasRecentlyWritten, exactly as the main window's watcher
+			// listener rules (+layout.svelte:3453); genuine watcher paths keep the filter so
+			// this window's own saves don't echo back.
+			const isAnnounce = event.payload?.libraryId === '';
+			for (const p of event.payload?.paths ?? []) {
+				if (isAnnounce || !wasRecentlyWritten(p)) await adoptFreshDiskIntoSS(p);
+			}
 			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
 			libraryChangeTimer = setTimeout(async () => { await loadAllData(); }, 3000);
 		});

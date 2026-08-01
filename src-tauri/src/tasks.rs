@@ -534,7 +534,17 @@ pub fn toggle_task(
         if let Some(lib_name) = lib_name {
             use tauri::Manager;
             let search_state = app.state::<crate::search::SearchState>();
-            let _ = crate::search::reindex_single_note(&search_state, &file_path, &lib_name);
+            // Safety inspection 2026-08-01 — never `let _ =` here: this write went through
+            // the gate (watcher-SUPPRESSED) and boot does not re-walk an indexed library, so
+            // a dropped reindex leaves the toggled checkbox stale in search/backlinks forever.
+            if let Err(e) = crate::search::reindex_single_note(&search_state, &file_path, &lib_name) {
+                if let Ok(p) = crate::search::db_path(&app) {
+                    crate::search::diag_log(
+                        &p,
+                        &format!("[toggle_task] reindex FAILED for {}: {}", file_path, e),
+                    );
+                }
+            }
         }
     }
 

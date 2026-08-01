@@ -10,6 +10,7 @@
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { computedPriority, effectivePriority, type ComputedPriority } from '$lib/reviewer/priorities';
+	import { activeUniverseRootSync } from '$lib/libraries/store';
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 	import VirtualList from './VirtualList.svelte';
 	import RelatedCandidates from './RelatedCandidates.svelte';
@@ -221,14 +222,21 @@
 
 	async function act(cmd: 'mark_reviewed' | 'snooze_note' | 'dismiss_note', n: DueNote) {
 		try {
-			if (cmd === 'snooze_note') await invoke(cmd, { notePath: n.note_path, days: 7 });
-			else await invoke(cmd, { notePath: n.note_path });
+			// 2026-08-01 inspection — universeRoot captured at click time: a review action
+			// racing a universe switch must land in THIS universe's pulse file, not the next.
+			const universeRoot = activeUniverseRootSync();
+			if (cmd === 'snooze_note') await invoke(cmd, { notePath: n.note_path, days: 7, universeRoot });
+			else await invoke(cmd, { notePath: n.note_path, universeRoot });
+			priorityError = null;
 			await load();
 			// The acted row usually leaves the queue; if the selection is now stale, move it
 			// to the first remaining note so a row stays highlighted (matches the detail
 			// pane's fallback). Writing selectedKey here is fine — not inside a $effect.
 			if (!ranked.some(x => keyOf(x) === selectedKey)) selectedKey = ranked[0] ? keyOf(ranked[0]) : null;
-		} catch {}
+		} catch (e) {
+			priorityError = String(e);
+			console.error('[Reviewer] review action failed:', e);
+		}
 	}
 
 	// MIG-086 §F2 — after a one-click connect, OPTIMISTICALLY drop the in-hand note's
@@ -281,13 +289,36 @@
 	// Priority override: dragging commits an explicit override; Reset clears it (NULL =
 	// use computed). Either reloads so the queue re-ranks by the new effective priority.
 	const isManual = $derived(selected != null && selected.priority_override != null);
+	// 2026-08-01 inspection — this was `catch {}`, the exact defect PJ-187 fixed in
+	// ReviewStatusPanel (a Whole-Ecosystem miss): the slider stayed where the user dragged it
+	// and NOTHING was written. Same treatment: snap the draft back so the control shows the
+	// stored value, and say so.
+	let priorityError = $state<string | null>(null);
 	async function commitPriority(value: number) {
 		if (!selected) return;
-		try { await invoke('set_review_priority', { notePath: selected.note_path, priority: value }); priorityDraft = null; await load(); } catch {}
+		try {
+			await invoke('set_review_priority', { notePath: selected.note_path, priority: value });
+			priorityError = null;
+			priorityDraft = null;
+			await load();
+		} catch (e) {
+			priorityDraft = null;
+			priorityError = String(e);
+			console.error('[Reviewer] set_review_priority failed:', e);
+		}
 	}
 	async function resetPriority() {
 		if (!selected) return;
-		try { await invoke('set_review_priority', { notePath: selected.note_path, priority: null }); priorityDraft = null; await load(); } catch {}
+		try {
+			await invoke('set_review_priority', { notePath: selected.note_path, priority: null });
+			priorityError = null;
+			priorityDraft = null;
+			await load();
+		} catch (e) {
+			priorityDraft = null;
+			priorityError = String(e);
+			console.error('[Reviewer] set_review_priority failed:', e);
+		}
 	}
 
 	// The healthy PRESCRIPTION — the one remedy that cures this note's condition (the verb
@@ -440,6 +471,9 @@
 								onchange={(e) => commitPriority(Number((e.currentTarget as HTMLInputElement).value))} />
 							<span class="rv-prio-val">{priorityDraft ?? n._effective}</span>
 						</div>
+						{#if priorityError}
+							<div class="rv-prio-error">{$t('reviewer.prioritySaveFailed') || 'Could not save the priority — it has been left unchanged.'}</div>
+						{/if}
 					</div>
 
 					<div class="rv-d-facts">
@@ -580,6 +614,7 @@
 	.rv-d-priority { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 	.rv-d-priority input[type="range"] { flex: 1; accent-color: var(--interactive-accent, #7c3aed); }
 	.rv-prio-val { font-size: calc(0.85rem * var(--rs-scale, 1)); color: var(--text-normal); width: 2.5em; text-align: end; }
+	.rv-prio-error { font-size: calc(0.72rem * var(--rs-scale, 1)); color: var(--text-error, #c0392b); margin-block-start: 2px; }
 
 	.rv-d-actions { display: flex; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
 	.rv-btn {

@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, tn, dir, getSearchOps } from '$lib/i18n';
-	import { libraries, appSettings, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
+	import { libraries, appSettings, moveItem, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { detectDir } from '$lib/utils';
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
@@ -251,10 +251,17 @@
 		if (isDescendant(dragSource, targetNode)) { dragSource = null; return; }
 
 		try {
-			await invoke('move_item', {
-				sourcePath: dragSource.path,
-				targetFolder: targetNode.path,
-			});
+			// 2026-08-01 inspection (latent APP-KILLER) — the store's `moveItem`, NEVER a raw
+			// invoke('move_item'). The wrapper IS the move: it gates the armed autosave
+			// (markCascading), flushes the moved note's dirty model to disk BEFORE the move
+			// reads it, then repaths the note model + every open tab and migrates the
+			// path-keyed aux state (write-ahead net, recentWrites). A raw invoke skips all of
+			// it — the last ≤1.5s of typing lands at the OLD path as a stray copy, and the
+			// open tab keeps pointing at a file that is no longer there. This drag-drop tree
+			// is presently unreachable (its `sidebarMode === 'skyview'` branch is never
+			// entered — nothing assigns that mode), so this is a latent defect made
+			// impossible rather than an observed one; one concern, one implementation.
+			await moveItem(dragSource.path, targetNode.path);
 			// Reload tree after move
 			await loadData();
 		} catch (err: any) {

@@ -71,6 +71,26 @@ pub fn active_constellation_dir(app: &tauri::AppHandle) -> Result<PathBuf, Strin
     Ok(constellation_dir(&root))
 }
 
+/// Resolve the .constellation/ dir for an EXPLICIT universe root when given,
+/// else fall back to the ambient active universe.
+///
+/// 2026-08-01 safety inspection (cross-window-clobber class): the active
+/// pointer flips BEFORE the frontend switch handler runs (UniverseManager
+/// awaits set_active_universe first), so an ambient-keyed save racing a
+/// universe switch writes universe A's data into universe B's file. Same
+/// treatment as the MIG-100 session.json commands (which take the explicit
+/// root for exactly this reason), kept backward-compatible via Option so
+/// existing call sites keep working until the frontend passes the root.
+pub fn resolve_constellation_dir(
+    app: &tauri::AppHandle,
+    universe_root: Option<String>,
+) -> Result<PathBuf, String> {
+    match universe_root {
+        Some(root) => Ok(constellation_dir(Path::new(&root))),
+        None => active_constellation_dir(app),
+    }
+}
+
 // ─── Registry Helpers ───
 
 /// Path to the global universe registry: {app_data_dir}/universes.json
@@ -1457,10 +1477,11 @@ pub fn read_child_universe_libraries(_app: tauri::AppHandle, child_path: String)
 // ─── Data File I/O Commands ───
 // All data files live inside .constellation/
 
-/// Read settings.json from the active universe.
+/// Read settings.json from the active universe (or an explicit root — the
+/// session.json precedent, mirrored on the load side 2026-08-01).
 #[tauri::command]
-pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn read_universe_settings(app: tauri::AppHandle, universe_root: Option<String>) -> Result<serde_json::Value, String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let path = dir.join("settings.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -1476,9 +1497,13 @@ pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value
 // now fsync (hardened atomic_write); a sync command would park the WebView2
 // dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
 // disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — the frontend writer is a 300ms debounce that can fire after
+// set_active_universe flips the pointer; resolve_constellation_dir pins the
+// write to the universe the save was composed in (session.json precedent).
 #[tauri::command(async)]
-pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value) -> Result<(), String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value, universe_root: Option<String>) -> Result<(), String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     atomic_write(&dir.join("settings.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save settings: {}", e))
@@ -1501,10 +1526,11 @@ pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Valu
     }
 }
 
-/// Read workspaces.json from the active universe.
+/// Read workspaces.json from the active universe (or an explicit root — the
+/// session.json precedent, mirrored on the load side 2026-08-01).
 #[tauri::command]
-pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn read_universe_workspaces(app: tauri::AppHandle, universe_root: Option<String>) -> Result<serde_json::Value, String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let path = dir.join("workspaces.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -1520,9 +1546,13 @@ pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Val
 // now fsync (hardened atomic_write); a sync command would park the WebView2
 // dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
 // disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — the frontend writer is fire-and-forget and can land after a
+// universe switch; resolve_constellation_dir pins the write to the universe
+// the save was composed in (session.json precedent).
 #[tauri::command(async)]
-pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::Value) -> Result<(), String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::Value, universe_root: Option<String>) -> Result<(), String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let json = serde_json::to_string_pretty(&workspaces).map_err(|e| e.to_string())?;
     atomic_write(&dir.join("workspaces.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save workspaces: {}", e))
@@ -1623,9 +1653,11 @@ pub fn save_universe_session(universe_root: String, session: serde_json::Value) 
 /// `collections.json` and retained as `workbench.json.migrated`. Idempotent:
 /// runs only when `collections.json` does not yet exist, so once adopted it is
 /// never re-read; the retained backup keeps the change reversible.
+// (or an explicit root — the session.json precedent, mirrored on the load side
+// 2026-08-01.)
 #[tauri::command]
-pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn read_universe_collections(app: tauri::AppHandle, universe_root: Option<String>) -> Result<serde_json::Value, String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let path = dir.join("collections.json");
     if !path.exists() {
         // Adopt a legacy workbench.json (same shape) exactly once.
@@ -1667,18 +1699,24 @@ pub fn read_universe_collections(app: tauri::AppHandle) -> Result<serde_json::Va
 // now fsync (hardened atomic_write); a sync command would park the WebView2
 // dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
 // disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — a collections save chained in universe A that lands after
+// set_active_universe flips the pointer would write A's whole collections list
+// over universe B's collections.json; resolve_constellation_dir pins the write
+// to the universe the save was composed in (session.json precedent).
 #[tauri::command(async)]
-pub fn save_universe_collections(app: tauri::AppHandle, collections: serde_json::Value) -> Result<(), String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn save_universe_collections(app: tauri::AppHandle, collections: serde_json::Value, universe_root: Option<String>) -> Result<(), String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let json = serde_json::to_string_pretty(&collections).map_err(|e| e.to_string())?;
     atomic_write(&dir.join("collections.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save collections: {}", e))
 }
 
-/// Read property-types.json from the active universe.
+/// Read property-types.json from the active universe (or an explicit root —
+/// the session.json precedent, mirrored on the load side 2026-08-01).
 #[tauri::command]
-pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn read_universe_property_types(app: tauri::AppHandle, universe_root: Option<String>) -> Result<serde_json::Value, String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let path = dir.join("property-types.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -1694,9 +1732,13 @@ pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json:
 // now fsync (hardened atomic_write); a sync command would park the WebView2
 // dispatch thread for the fsync (100ms–seconds on network/USB/AV-scanned
 // disks). Same one-word fix as the read commands above (universe.rs Batch-S).
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — the frontend writer is a 500ms debounce that can fire after
+// set_active_universe flips the pointer; resolve_constellation_dir pins the
+// write to the universe the save was composed in (session.json precedent).
 #[tauri::command(async)]
-pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Value) -> Result<(), String> {
-    let dir = active_constellation_dir(&app)?;
+pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Value, universe_root: Option<String>) -> Result<(), String> {
+    let dir = resolve_constellation_dir(&app, universe_root)?;
     let json = serde_json::to_string_pretty(&types).map_err(|e| e.to_string())?;
     atomic_write(&dir.join("property-types.json"), json.as_bytes())
         .map_err(|e| format!("Failed to save property types: {}", e))

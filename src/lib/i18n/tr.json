@@ -36,7 +36,8 @@
     "inLibrary": "Zaten burada: {library}"
   },
   "cascade": {
-    "updating": "Bağlantılar güncelleniyor…"
+    "updating": "Bağlantılar güncelleniyor…",
+    "failedSome": "Yeniden adlandırıldı — ancak {count} not hâlâ “{old}” ögesine bağlanıyor: bağlantıları güncellenemedi (dosyalar kilitli, salt okunur veya kullanımda): {notes}"
   },
   "styles": {
     "title": "Stiller",
@@ -781,7 +782,11 @@
     "newBase": "Yeni Temel",
     "newFolder": "Yeni Klasör",
     "rename": "Yeniden Adlandır",
-    "delete": "Sil"
+    "delete": "Sil",
+    "tagNoIdentity": "“{note}” notuna etiket eklenemedi — bu notun henüz kalıcı bir kimliği yok (hâlâ açılıyor ya da bu sekmede değişti). Notu açıp yeniden deneyin.",
+    "tagBusy": "“{note}” notuna etiket eklenemedi — not meşgul (bir yeniden adlandırma veya yeniden yükleme onu güncelliyor). Birazdan yeniden deneyin.",
+    "tagWriteFailed": "“{note}” notuna etiket eklenemedi: {error}",
+    "moveBatchFailed": "{count} öge taşınamadı: {items}"
   },
   "createDialog": {
     "titleFolder": "Yeni Klasör",
@@ -1874,7 +1879,8 @@
     "preset_muted": "Soluk",
     "preset_bold": "Kalın",
     "preset_warm": "Sıcak",
-    "preset_invisible": "Görünmez"
+    "preset_invisible": "Görünmez",
+    "saveFailed": "Tuval kaydedilemedi — en son değişikliğiniz diskte değil."
   },
   "inspector360": {
     "untyped": "Türsüz",
@@ -4085,7 +4091,11 @@
     "summaryTitle": "Evrenin artık tek bir yerde",
     "title": "Evrenini tek bir yerde topla",
     "unify": "Birleştir",
-    "verifyFailedNote": "Son deneme güvenlik denetiminde durdu ve tüm veritabanı değişiklikleri geri alındı. Devam edince denetim yeniden yapılır."
+    "verifyFailedNote": "Son deneme güvenlik denetiminde durdu ve tüm veritabanı değişiklikleri geri alındı. Devam edince denetim yeniden yapılır.",
+    "restoreButton": "Her şeyi geri koy",
+    "phaseRestore": "Her şey geri konuyor…",
+    "journalUnreadable": "Birleştirme günlüğü okunamadı. Hiçbir şeye otomatik dokunulmayacak — yedek ve günlük, evren klasöründe .constellation altında; devam etmeden önce lütfen bildir.",
+    "closeBlocked": "Kitaplıklarınız taşınırken Constellation kapatılamaz — şimdi kapatmak taşımayı yarım bırakır. İşlem biter bitmez normal şekilde kapanacaktır."
   },
   "bringIn": {
     "body": "Evren, tüm bilgisini tek bir klasörde tutar; bu kütüphane onun içinde yaşayacak. Orijinaline ne olacağını seç:",
@@ -4095,5 +4105,11 @@
     "move": "Taşı",
     "moveDesc": "Klasörün kendisi evrene taşınır. Eski konumu sonrasında boş kalır.",
     "title": "Bu klasörü evrenine getir"
+  },
+  "storeHealth": {
+    "collections": "Koleksiyonlarınız okunamadı; bu oturumda üzerlerindeki değişiklikler kaydedilmeyecek — dosyanın boş bir listeyle üzerine yazılmaması için. Yeniden denemek için uygulamayı yeniden başlatın.",
+    "workspaces": "Kayıtlı düzenleriniz okunamadı; bu oturumda üzerlerindeki değişiklikler kaydedilmeyecek — üzerlerine yazılmaması için. Yeniden denemek için uygulamayı yeniden başlatın.",
+    "settings": "Ayarlarınız kaydedilemedi. Şimdi yaptığınız değişiklikler yeniden başlatmadan sonra kalmayacak — evren klasörünün yazılabilir olduğunu ve bir eşitleme aracınca kilitlenmediğini denetleyin.",
+    "index": "Bir not diske kaydedildi ancak arama dizinine eklenemedi; arama ve geri bağlantılar en güncel metni göstermeyebilir. Ayarlar, ardından Dizini Yeniden Oluştur, bunu geri getirir."
   }
 }

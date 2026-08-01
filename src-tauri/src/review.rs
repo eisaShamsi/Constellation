@@ -703,12 +703,19 @@ static PULSE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — a review action racing a universe switch would otherwise do
+// its read-modify-write of review-pulse.json against the WRONG universe
+// (the active pointer flips before the frontend switch handler runs).
+// resolve_constellation_dir pins the RMW to the universe the action was
+// composed in (session.json precedent).
 #[tauri::command(async)]
 pub fn mark_reviewed(
     app: tauri::AppHandle,
     note_path: String,
+    universe_root: Option<String>,
 ) -> Result<(), String> {
-    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
     let today = today_str();
@@ -733,13 +740,17 @@ pub fn mark_reviewed(
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — pins the review-pulse.json RMW to the universe the action
+// was composed in (see mark_reviewed above; session.json precedent).
 #[tauri::command(async)]
 pub fn snooze_note(
     app: tauri::AppHandle,
     note_path: String,
     days: u32,
+    universe_root: Option<String>,
 ) -> Result<(), String> {
-    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
 
@@ -757,12 +768,16 @@ pub fn snooze_note(
 // Note-open-freeze class fix (2026-07-03): `(async)` moves this off the WebView2 IPC
 // dispatch thread so a writer-lock wait (background reindex) can never freeze the app.
 // Body has no .await (pure thread-offload); invoke contract unchanged. See SESSION-LOG-2026-07-03.
+// 2026-08-01 safety inspection (cross-window-clobber class): optional explicit
+// universe_root — pins the review-pulse.json RMW to the universe the action
+// was composed in (see mark_reviewed above; session.json precedent).
 #[tauri::command(async)]
 pub fn dismiss_note(
     app: tauri::AppHandle,
     note_path: String,
+    universe_root: Option<String>,
 ) -> Result<(), String> {
-    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
     let mut pulse = load_pulse_data(&cdir);
 

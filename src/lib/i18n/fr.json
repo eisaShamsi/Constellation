@@ -36,7 +36,8 @@
     "inLibrary": "Déjà dans : {library}"
   },
   "cascade": {
-    "updating": "Mise à jour des liens…"
+    "updating": "Mise à jour des liens…",
+    "failedSome": "Renommé — mais {count} note(s) pointent toujours vers « {old} » : leurs liens n’ont pas pu être mis à jour (fichiers verrouillés, en lecture seule ou en cours d’utilisation) : {notes}"
   },
   "styles": {
     "title": "Styles",
@@ -781,7 +782,11 @@
     "newBase": "Nouvelle Base",
     "newFolder": "Nouveau dossier",
     "rename": "Renommer",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "tagNoIdentity": "Impossible d’ajouter l’étiquette à « {note} » — cette note n’a pas encore d’identité stable (elle est encore en cours d’ouverture, ou elle a changé dans cet onglet). Ouvrez-la, puis réessayez.",
+    "tagBusy": "Impossible d’ajouter l’étiquette à « {note} » — la note est occupée (un renommage ou un rechargement la met à jour). Réessayez dans un instant.",
+    "tagWriteFailed": "Impossible d’ajouter l’étiquette à « {note} » : {error}",
+    "moveBatchFailed": "{count} élément(s) n’ont pas pu être déplacés : {items}"
   },
   "createDialog": {
     "titleFolder": "Nouveau dossier",
@@ -1445,7 +1450,8 @@
     "preset_muted": "Atténué",
     "preset_bold": "Vif",
     "preset_warm": "Chaud",
-    "preset_invisible": "Invisible"
+    "preset_invisible": "Invisible",
+    "saveFailed": "Impossible d’enregistrer le canevas — votre dernière modification n’est pas sur le disque."
   },
   "inspector360": {
     "untyped": "Non typé",
@@ -4085,7 +4091,11 @@
     "summaryTitle": "Votre univers est en un seul endroit",
     "title": "Réunissez votre univers en un seul endroit",
     "unify": "Unifier",
-    "verifyFailedNote": "La dernière tentative s’est arrêtée au contrôle de sécurité et toutes les modifications de la base ont été annulées. La reprise refera le contrôle."
+    "verifyFailedNote": "La dernière tentative s’est arrêtée au contrôle de sécurité et toutes les modifications de la base ont été annulées. La reprise refera le contrôle.",
+    "restoreButton": "Tout remettre en place",
+    "phaseRestore": "Remise en place de tout…",
+    "journalUnreadable": "Le journal d’unification n’a pas pu être lu. Rien ne sera touché automatiquement — la sauvegarde et le journal sont dans le dossier de l’univers sous .constellation ; signalez ceci avant de continuer.",
+    "closeBlocked": "Constellation ne peut pas être fermé pendant le déplacement de vos bibliothèques — fermer maintenant laisserait le déplacement à moitié fait. Il se fermera normalement dès que ce sera terminé."
   },
   "bringIn": {
     "body": "Un univers garde tout son savoir dans un seul dossier ; cette bibliothèque y vivra. Choisissez le sort de l’original :",
@@ -4095,5 +4105,11 @@
     "move": "Déplacer",
     "moveDesc": "Le dossier lui-même déménage dans l’univers. Son ancien emplacement sera vide ensuite.",
     "title": "Faire entrer ce dossier dans votre univers"
+  },
+  "storeHealth": {
+    "collections": "Vos collections n’ont pas pu être lues : Constellation n’enregistrera aucune modification les concernant durant cette session, pour ne pas écraser le fichier par une liste vide. Redémarrez pour réessayer.",
+    "workspaces": "Vos dispositions enregistrées n’ont pas pu être lues : Constellation n’enregistrera aucune modification les concernant durant cette session, pour ne pas les écraser. Redémarrez pour réessayer.",
+    "settings": "Vos réglages n’ont pas pu être enregistrés. Les modifications faites maintenant ne survivront pas à un redémarrage — vérifiez que le dossier de l’univers est accessible en écriture et non verrouillé par un outil de synchronisation.",
+    "index": "Une note a été enregistrée sur le disque mais n’a pas pu être ajoutée à l’index de recherche : la recherche et les rétroliens peuvent ne pas afficher son texte le plus récent. Réglages, puis Reconstruire l’index le rétablit."
   }
 }

@@ -31,9 +31,46 @@ use crate::search::SearchState;
 /// semantics change). Parallel to `LINKS_OUTGOING_SCHEMA_VERSION`.
 pub(crate) const SCHEMA_VERSION: i64 = 1;
 
-/// True once the incoming aggregate has been built + stamped. The read-flip in
-/// `constellation_search_link_counts` and the reconcile recompute gate on this.
+/// True once the incoming aggregate has been built + stamped **under the current
+/// link-type vocabulary**. The read-flip in `constellation_search_link_counts`,
+/// the save-path maintenance gate, and the reconcile recompute gate all sit on this.
+///
+/// Safety-inspection 2026-08-01 — vocabulary-fingerprint gate, mirroring
+/// `links_backfill::is_needed` (MIG-067 §B): `incoming_link_types` / `_json` /
+/// `_top_rank` are derived from the active link-type vocabulary (the registry's
+/// IN-list + rank CASE), so a vocabulary edit leaves the stored rows stale. A
+/// fingerprint mismatch reads as NOT stamped, which (a) re-schedules this backfill
+/// (`maybe_schedule`, also called from `on_link_vocabulary_changed`) and (b) flips
+/// every gated reader back to the live `getBacklinks` path until the
+/// re-materialize completes — stale aggregates are never served. A universe last
+/// backfilled before this gate existed has no vocab stamp (0 ≠ fingerprint) and
+/// re-materializes once — the same one-time upgrade path as outgoing §A→§B.
 pub(crate) fn is_stamped(conn: &Connection) -> bool {
+    is_built(conn) && stored_vocab_fingerprint(conn) == crate::link_types::snapshot().fingerprint()
+}
+
+/// **Structure exists** — the aggregate has been built at least once, whatever vocabulary it
+/// was built under. This is the correct gate for the WRITE side, and the distinction matters:
+///
+/// Safety inspection 2026-08-01 — the fingerprint gate above (added earlier the same day)
+/// reads as NOT stamped for the whole duration of a vocabulary re-materialize. Gating the
+/// SAVE-PATH maintenance on it therefore switched maintenance off across that window, while
+/// the re-materialize's ascending cursor cannot revisit a target it has already passed. A
+/// note saved mid-run whose target sat BEHIND the cursor was left permanently stale — and
+/// then served, because the stamp lands at the end and flips every reader onto the stored
+/// columns. Two different questions were being asked of one predicate:
+///
+///   · READERS ask "are these columns TRUSTWORTHY right now?" → `is_stamped`
+///     (version AND fingerprint). Unchanged: stale aggregates are never served; readers fall
+///     back to the live `getBacklinks` path until the re-materialize completes.
+///   · WRITERS ask "do these columns EXIST to be maintained?" → `is_built` (version only).
+///     Maintaining during the re-materialize is free of risk: the values are recomputed from
+///     `note_links`, which is the source of truth, so a maintenance write and the backfill's
+///     own pass agree — and nothing behind the cursor is stranded.
+///
+/// Before the FIRST backfill the columns are genuinely inert, so both predicates are false
+/// and the save path correctly skips the work.
+pub(crate) fn is_built(conn: &Connection) -> bool {
     conn.query_row(
         "SELECT version FROM schema_versions WHERE module = 'incoming_links'",
         [],
@@ -41,6 +78,18 @@ pub(crate) fn is_stamped(conn: &Connection) -> bool {
     )
     .unwrap_or(0)
         >= SCHEMA_VERSION
+}
+
+/// The vocabulary fingerprint stamped at the last completed incoming backfill
+/// (0 if never). Parallel to `links_backfill::stored_vocab_fingerprint`
+/// (`links_vocab`); this module stamps `incoming_links_vocab`.
+fn stored_vocab_fingerprint(conn: &Connection) -> i64 {
+    conn.query_row(
+        "SELECT version FROM schema_versions WHERE module = 'incoming_links_vocab'",
+        [],
+        |r| r.get::<_, i64>(0),
+    )
+    .unwrap_or(0)
 }
 
 /// Schedule the one-shot backfill on a background thread. Silent no-op once
@@ -93,15 +142,32 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);")
         .map_err(|e| format!("create idx_nl_tnl: {}", e))?;
 
+    // Safety-inspection 2026-08-01 — capture the vocabulary fingerprint for THIS
+    // run up-front (the links_backfill MIG-067 §B pattern): if the vocabulary
+    // changes mid-run, the stamp below differs from the then-current fingerprint,
+    // is_stamped stays false, and the next schedule re-runs — eventual consistency.
+    let run_fp = crate::link_types::snapshot().fingerprint();
+
     let n = crate::links_backfill::recompute_all_incoming(&conn)
         .map_err(|e| format!("recompute: {}", e))?;
 
-    conn.execute(
+    // Stamp version + vocabulary fingerprint atomically (mirrors
+    // links_backfill::finalize) so a crash between the two can't leave a stamped
+    // backfill carrying a missing/foreign vocab stamp.
+    let tx = conn.transaction().map_err(|e| format!("stamp begin: {}", e))?;
+    tx.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
          VALUES ('incoming_links', ?1, strftime('%s','now'))",
         params![SCHEMA_VERSION],
     )
     .map_err(|e| format!("stamp: {}", e))?;
+    tx.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('incoming_links_vocab', ?1, strftime('%s','now'))",
+        params![run_fp],
+    )
+    .map_err(|e| format!("vocab stamp: {}", e))?;
+    tx.commit().map_err(|e| format!("stamp commit: {}", e))?;
     Ok(n as usize)
 }
 
@@ -166,6 +232,101 @@ mod tests {
         // name); archived S4 excluded. B: S3.
         assert_eq!(a, 2, "dedupe-by-source + alias + case-insensitive; archived excluded");
         assert_eq!(b, 1);
+    }
+
+    /// Safety inspection 2026-08-01 — the read/write gate split.
+    ///
+    /// A vocabulary change makes the stored aggregates untrustworthy (readers must fall back)
+    /// but does NOT un-build them (writers must keep maintaining). Collapsing both questions
+    /// into one predicate switched save-path maintenance off for the whole re-materialize,
+    /// and the backfill's ascending cursor cannot revisit a target it has already passed — so
+    /// a note saved mid-run left its target permanently stale, then served once the stamp
+    /// landed. `is_built` must therefore stay TRUE across a fingerprint mismatch.
+    #[test]
+    fn is_built_survives_a_vocabulary_change_while_is_stamped_does_not() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER NOT NULL,
+                 updated_at INTEGER NOT NULL DEFAULT 0);",
+        )
+        .unwrap();
+
+        // Never built: both false — the columns are genuinely inert, so the save path is
+        // right to skip the work.
+        assert!(!is_built(&conn), "never built");
+        assert!(!is_stamped(&conn), "never built ⇒ never stamped");
+
+        // Built and stamped under the CURRENT vocabulary: both true.
+        let fp = crate::link_types::snapshot().fingerprint();
+        conn.execute(
+            "INSERT INTO schema_versions(module,version) VALUES ('incoming_links',?1)",
+            [SCHEMA_VERSION],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO schema_versions(module,version) VALUES ('incoming_links_vocab',?1)",
+            [fp],
+        )
+        .unwrap();
+        assert!(is_built(&conn));
+        assert!(is_stamped(&conn), "current vocabulary ⇒ trustworthy");
+
+        // The vocabulary changes: readers must stop trusting the columns, writers must NOT
+        // stop maintaining them. This is the whole point of the split.
+        conn.execute(
+            "UPDATE schema_versions SET version = ?1 WHERE module = 'incoming_links_vocab'",
+            [fp.wrapping_add(1)],
+        )
+        .unwrap();
+        assert!(
+            !is_stamped(&conn),
+            "vocabulary drifted ⇒ readers fall back to the live path"
+        );
+        assert!(
+            is_built(&conn),
+            "…but the aggregate still EXISTS, so save-path maintenance must keep running — \
+             otherwise every target behind the re-materialize cursor is stranded stale"
+        );
+    }
+
+    /// Safety-inspection 2026-08-01 — the vocabulary-fingerprint gate (the mirror
+    /// of `links_backfill::vocab_fingerprint_gate_triggers_rematerialize`): with
+    /// the version stamped, `is_stamped` is driven by the stored-vs-current
+    /// vocabulary fingerprint — absent (a pre-gate universe) → not stamped;
+    /// matching → stamped; differing (a vocabulary edit) → not stamped again,
+    /// which both re-schedules the backfill and flips readers to the fallback.
+    #[test]
+    fn vocab_fingerprint_gate_unstamps_incoming() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO schema_versions (module, version) VALUES ('incoming_links', ?1)",
+            params![SCHEMA_VERSION],
+        )
+        .unwrap();
+
+        // Version stamped but no vocab stamp → 0 ≠ the seed fingerprint → not stamped.
+        assert!(!is_stamped(&conn), "missing vocab stamp must read as NOT stamped");
+
+        let fp = crate::link_types::snapshot().fingerprint();
+        assert_ne!(fp, 0, "seed registry fingerprint is non-zero");
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('incoming_links_vocab', ?1)",
+            params![fp],
+        )
+        .unwrap();
+        assert!(is_stamped(&conn), "matching vocab stamp reads as stamped");
+
+        // A vocabulary edit → differing stored fingerprint → unstamped again.
+        conn.execute(
+            "UPDATE schema_versions SET version = ?1 WHERE module = 'incoming_links_vocab'",
+            params![fp ^ 0x5555],
+        )
+        .unwrap();
+        assert!(!is_stamped(&conn), "changed vocab fingerprint must unstamp");
     }
 
     #[test]

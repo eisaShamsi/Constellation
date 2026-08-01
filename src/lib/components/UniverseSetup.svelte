@@ -10,6 +10,9 @@
 	} from '$lib/universe/store';
 	import { importPickSource, importPreview, importExecute } from '$lib/importers/store';
 	import type { ImportFormat, ImportPreview } from '$lib/importers/types';
+	import { bringInLibrary } from '$lib/libraries/store';
+	import { normalizePathKey } from '$lib/utils';
+	import BringInDialog from './BringInDialog.svelte';
 
 	let {
 		onCreated,
@@ -34,6 +37,8 @@
 	let addedChildren = $state<{ name: string; path: string }[]>([]);
 	let adding = $state(false);
 	let starterKit = $state(true);
+	/** MIG-108 — an external pick awaiting the Copy/Move choice (Boss D2: ask each time). */
+	let bringInSource = $state<string | null>(null);
 
 	// Import state (steps 3 & 4)
 	let selectedImportFormat = $state<ImportFormat>('obsidian');
@@ -139,8 +144,32 @@
 		try {
 			const folderPath: string | null = await invoke('pick_folder');
 			if (!folderPath) { adding = false; return; }
+			// MIG-108 One Universe, One Location — an external pick is not a dead-end error:
+			// it opens the same Copy/Move choice the main window offers (Boss D2).
+			const rn = normalizePathKey(createdEntry?.path ?? '');
+			const pn = normalizePathKey(folderPath);
+			if (rn && !(pn === rn || pn.startsWith(rn + '/'))) {
+				bringInSource = folderPath;
+				adding = false;
+				return;
+			}
 			const lib: { id: string; name: string; path: string } = await invoke('add_library', { path: folderPath });
 			addedLibraries = [...addedLibraries, lib];
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+		adding = false;
+	}
+
+	async function handleBringInChoice(mode: 'copy' | 'move') {
+		const src = bringInSource;
+		bringInSource = null;
+		if (!src) return;
+		adding = true;
+		error = '';
+		try {
+			const lib = await bringInLibrary(src, mode);
+			addedLibraries = [...addedLibraries, { id: lib.id, name: lib.name, path: lib.path }];
 		} catch (e: unknown) {
 			error = e instanceof Error ? e.message : String(e);
 		}
@@ -581,6 +610,14 @@
 		{/if}
 	</div>
 </div>
+
+{#if bringInSource}
+	<BringInDialog
+		sourcePath={bringInSource}
+		onChoose={handleBringInChoice}
+		onCancel={() => (bringInSource = null)}
+	/>
+{/if}
 
 <style>
 	.us-overlay {

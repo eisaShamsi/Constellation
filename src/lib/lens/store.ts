@@ -123,15 +123,38 @@ export async function updateBaseOrder(filePath: string, order: LensSort[]): Prom
  * property edit), then reload the model from disk.
  */
 export async function updateNoteProperty(filePath: string, key: string, value: string): Promise<void> {
-	const { openTabs, markCascading, clearCascading, reloadTabsFromDisk, flushOpenTabOrAbort } = await import('$lib/libraries/store');
+	const { openTabs, markCascading, clearCascading, reloadTabsFromDisk, flushOpenTabOrAbort, reportExternalConflict } =
+		await import('$lib/libraries/store');
 	const { get } = await import('svelte/store');
 	const openTab = get(openTabs).find((t) => t.path === filePath);
 	if (openTab) markCascading(openTab.path);
 	try {
 		// PJ-092 H4 — bounded flush; if not durable, DON'T rewrite+reload (clobber/hang guard); save-health retries.
-		if (openTab && !(await flushOpenTabOrAbort(openTab, 'base_edit_flush'))) return;
+		//
+		// Safety inspection 2026-08-01 — THROW, never return normally. A bare `return` resolved
+		// the promise, so `BaseTab.commitEdit`'s catch never fired and it ran its optimistic
+		// `row.dimensions[dim] = next`: the table painted the cell as saved while nothing had
+		// been written, and the flush-abort means the note's own unsaved text is still only in
+		// editor memory. The single caller surfaces the throw in `saveError`, which is the
+		// honest outcome — the edit did not happen.
+		if (openTab && !(await flushOpenTabOrAbort(openTab, 'base_edit_flush'))) {
+			throw new Error(
+				'This note has unsaved changes that could not be written to disk, so the property was not changed. Resolve the save problem, then try again.',
+			);
+		}
 		await invoke('update_note_property', { filePath, key, value });
-		if (openTab) await reloadTabsFromDisk([filePath]); // model ADOPTS the edited disk
+		// ★ 2026-08-01 inspection — the fourth site of the flush→RMW→reload recipe, given the same
+		// third guard as its three siblings in libraries/store.ts. A keystroke landing during the
+		// gated RMW above re-dirties the model; PJ-174 then REFUSES this reseed, so the model never
+		// learns about the property edit and its next debounced save composes from the pre-edit base
+		// and silently REVERTS the cell the user just typed into the table. Take the refusal and route
+		// the incoming disk version to the same `.conflict` sidecar + banner the watcher path uses.
+		if (openTab) {
+			const refused = await reloadTabsFromDisk([filePath], { conflict: reportExternalConflict }); // model ADOPTS the edited disk
+			if (refused.length > 0) {
+				console.warn('[updateNoteProperty] PJ-174 — dirty model refused the post-edit reload (edits kept, conflict raised):', refused);
+			}
+		}
 	} finally {
 		if (openTab) clearCascading(openTab.path);
 	}

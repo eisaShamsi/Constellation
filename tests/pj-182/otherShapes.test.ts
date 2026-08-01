@@ -171,3 +171,43 @@ describe('PJ-182 §4.2 — a flow sequence on the line after its key', () => {
 		expect(tags.listItems).toEqual(['alpha', 'beta']);
 	});
 });
+
+/**
+ * Safety inspection 2026-08-01 — a QUOTED COMMA inside a flow sequence.
+ *
+ * The inline-list branch split on RAW commas and stripped quotes per fragment, so
+ * `tags: [alpha, "beta, gamma"]` projected as THREE items — `alpha`, `beta`, `gamma` — one of
+ * which never existed and one of which had lost half its text. An unedited note was protected by
+ * `samePropRow` (no diff → the CST re-emits the bytes verbatim), but the projection BECOMES the
+ * write the moment the user touches that key, so the file silently gained and lost items with no
+ * error and a clean re-parse afterwards. A quoted comma is how a comma-bearing title survives
+ * frontmatter at all (`"[[Foo, Bar]]"`), so this is the ordinary case for anything needing quotes.
+ */
+describe('inspection 2026-08-01 — a comma inside a quoted flow-sequence item', () => {
+	it('SAME-LINE — the quoted item stays ONE item', () => {
+		const note = ['---', 'tags: [alpha, "beta, gamma"]', '---', '', 'body', ''].join('\n');
+		const tags = parseFrontmatter(note).properties.find((p) => p.key === 'tags')!;
+		// Before: ['alpha', 'beta', 'gamma'] — three items from two.
+		expect(tags.listItems).toEqual(['alpha', 'beta, gamma']);
+	});
+
+	it('BLOCK-POSITION — the `flowOnly` hand-off inherits the same split', () => {
+		const note = ['---', 'tags:', "  [alpha, 'beta, gamma', delta]", '---', '', 'body', ''].join('\n');
+		const tags = parseFrontmatter(note).properties.find((p) => p.key === 'tags')!;
+		expect(tags.type).toBe('list');
+		expect(tags.listItems).toEqual(['alpha', 'beta, gamma', 'delta']);
+	});
+
+	it('a quoted wikilink with a comma in the note title survives whole', () => {
+		const note = ['---', 'supports: ["[[Foo, Bar]]", "[[Baz]]"]', '---', '', 'body', ''].join('\n');
+		const supports = parseFrontmatter(note).properties.find((p) => p.key === 'supports')!;
+		expect(supports.listItems).toEqual(['[[Foo, Bar]]', '[[Baz]]']);
+	});
+
+	it('REGRESSION — unquoted items, empty lists, and stray whitespace are unchanged', () => {
+		const p = (line: string) => parseFrontmatter(['---', line, '---', '', 'body', ''].join('\n')).properties[0];
+		expect(p('tags: [alpha,beta ,  gamma]').listItems).toEqual(['alpha', 'beta', 'gamma']);
+		expect(p('tags: []').listItems).toEqual([]);
+		expect(p("tags: ['a', \"b\"]").listItems).toEqual(['a', 'b']);
+	});
+});

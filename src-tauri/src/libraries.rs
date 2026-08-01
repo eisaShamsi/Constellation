@@ -326,6 +326,104 @@ fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(
     Ok(())
 }
 
+/// 2026-08-01 safety inspection — carry the LIBRARY REGISTRY through a folder
+/// rename/move/delete. A registered library nested under (or being) the affected
+/// folder otherwise keeps its dead pre-op path in libraries.json: it silently
+/// vanishes from every list/tree/resolver until the user re-registers it by hand.
+/// Detection is NFC+case-safe (`mig108::norm_under`); the rewrite splices the
+/// entry's ORIGINAL-cased tail onto `new_root` component-by-component
+/// (`rebase_path_under`) so the stored path is never lowercased/renormalized as
+/// a side effect. `new_root == None` ⇒ the folder was deleted: the registration
+/// is removed (the library's files went with the folder) and the removal logged.
+/// Best-effort by design: the fs op already succeeded and must not be reported
+/// as failed over a registry-write error — that error is logged instead.
+/// Operates on the ACTIVE universe's own libraries.json (`load_libraries`, not
+/// the federated resolver) — the only registry these commands can write.
+fn retarget_registered_libraries(app: &tauri::AppHandle, old_root: &str, new_root: Option<&str>) {
+    // Safety inspection 2026-08-01 — `try_load_libraries`, never `load_libraries`. The latter
+    // returns an EMPTY vec for a read/parse FAILURE as well as for a genuinely absent file,
+    // and this function would then quietly conclude there was nothing to retarget — leaving
+    // libraries.json pointing at a path that no longer exists, which is exactly the silent
+    // vanishing this helper was added to prevent. "Absent is a fact, unreadable is an
+    // unknown": on an unknown we must NOT write, and must say so loudly.
+    let mut libs = match try_load_libraries(app) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!(
+                "[libraries] registry UNREADABLE during a folder op ({e}) — registrations under \
+                 {old_root} were NOT retargeted and may now point at a dead path. The registry \
+                 was left untouched rather than overwritten from an empty view."
+            );
+            return;
+        }
+    };
+    let mut changed = false;
+    if let Some(new_root) = new_root {
+        for lib in libs.iter_mut() {
+            if !crate::mig108::norm_under(&lib.path, old_root) {
+                continue;
+            }
+            if let Some(rebased) = rebase_path_under(&lib.path, old_root, new_root) {
+                eprintln!(
+                    "[libraries] folder op carried registered library '{}': {} -> {}",
+                    lib.name, lib.path, rebased
+                );
+                lib.path = rebased;
+                changed = true;
+            }
+        }
+    } else {
+        let before = libs.len();
+        libs.retain(|lib| {
+            let doomed = crate::mig108::norm_under(&lib.path, old_root);
+            if doomed {
+                eprintln!(
+                    "[libraries] folder delete removed registered library '{}' at {}",
+                    lib.name, lib.path
+                );
+            }
+            !doomed
+        });
+        changed = libs.len() != before;
+    }
+    if changed {
+        // save_libraries invalidates the libraries cache + embed indexes itself.
+        if let Err(e) = save_libraries(app, &libs) {
+            eprintln!(
+                "[libraries] FAILED to update libraries.json after folder op on {}: {}",
+                old_root, e
+            );
+        }
+    }
+}
+
+/// `lib_path` re-rooted from `old_root` onto `new_root`, comparing components
+/// NFC+case-insensitively (the same rule as `mig108::norm_under`) while keeping
+/// the tail's ORIGINAL casing. `None` when `lib_path` is not under `old_root`.
+fn rebase_path_under(lib_path: &str, old_root: &str, new_root: &str) -> Option<String> {
+    use unicode_normalization::UnicodeNormalization;
+    let fwd = |p: &str| p.nfc().collect::<String>().replace('\\', "/");
+    let lp = fwd(lib_path);
+    let lp = lp.trim_end_matches('/');
+    let or = fwd(old_root);
+    let or = or.trim_end_matches('/');
+    let lib_comps: Vec<&str> = lp.split('/').collect();
+    let root_comps: Vec<&str> = or.split('/').collect();
+    if lib_comps.len() < root_comps.len() {
+        return None;
+    }
+    for (r, l) in root_comps.iter().zip(lib_comps.iter()) {
+        if r.to_lowercase() != l.to_lowercase() {
+            return None;
+        }
+    }
+    let mut out = std::path::PathBuf::from(new_root);
+    for c in &lib_comps[root_comps.len()..] {
+        out.push(c);
+    }
+    Some(out.to_string_lossy().to_string())
+}
+
 /// Validate that a file path is contained within a library directory.
 /// Prevents path traversal attacks by canonicalizing both paths.
 fn validate_path_in_library(file_path: &str, library_path: &str) -> Result<PathBuf, String> {
@@ -449,8 +547,10 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
 
     let mut libraries = try_load_libraries(&app)?; // never write on an unreadable registry
 
-    // Check for duplicates
-    if libraries.iter().any(|v| v.path == path) {
+    // Check for duplicates — normalized (separators/case/NFC), not raw string equality,
+    // so a re-registration attempt with a different separator convention cannot slip by
+    // (Phase-4 audit note; every MIG-108 comparison uses the same rule).
+    if libraries.iter().any(|v| crate::mig108::norm(&v.path) == crate::mig108::norm(&path)) {
         return Err("This library is already registered.".to_string());
     }
 
@@ -1282,8 +1382,23 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         if new_p.exists() {
             return Err("An item with this name already exists.".to_string());
         }
+        // 2026-08-01 inspection — ensure-or-refuse BEFORE the fs op (same treatment
+        // as move_item/delete_path): the descendant DB cascade below is guarded by
+        // `if let Some(conn)` and silently skips while state.db is still None (the
+        // cold-boot init window) — the folder would rename on disk while every
+        // index row stays at the dead old path. Never half-do it.
+        crate::search::ensure_search_db_ready(&app)?;
+        let was_dir = old.is_dir();
         // MIG-076 §A2 — gated (journal + AV retry; folder-level).
         crate::write_gate::gate_rename(old, new_p, "rename_folder")?;
+        // 2026-08-01 inspection — carry any registered library nested under the
+        // renamed folder (or being it) to its new path in libraries.json; its entry
+        // otherwise points at the dead pre-rename path and the library silently
+        // vanishes. Runs BEFORE the reindex below so library attribution resolves
+        // against the NEW registry paths (save_libraries invalidated the cache).
+        if was_dir {
+            retarget_registered_libraries(&app, &old_path, Some(&new_path));
+        }
         // DB cascade for every descendant note, on the same proven path a .md rename
         // uses. A folder rename never changes a note's title, so no frontmatter rewrite
         // and no 'rename' alias — only the path migration + a content-neutral reindex.
@@ -1318,6 +1433,12 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
 
     // .md file rename — unified cascade flow.
     validate_path_in_any_library(&app, &new_path)?;
+    // Safety inspection 2026-08-01 — ensure-or-refuse BEFORE the fs op, the same treatment
+    // the folder branch above and `move_item` / `delete_path` received. This branch was the
+    // one sibling left without it: during the cold-boot DB window the note renamed on disk
+    // while `migrate_note_db_paths`, the reindex and the 'rename' alias were all silently
+    // skipped — and the gated rename suppresses the watcher, so nothing healed it.
+    crate::search::ensure_search_db_ready(&app)?;
     let new_p = Path::new(&new_path);
     if new_p.exists() && new_p != old {
         // Fast-path pre-check (user-facing collision error). The authoritative
@@ -1749,9 +1870,20 @@ fn extract_frontmatter_title(content: &str) -> Option<String> {
     let end = after.find("\n---")?;
     let fm = &after[..end];
     for line in fm.lines() {
-        let t = line.trim();
-        if t.starts_with("title:") {
-            let val = t["title:".len()..].trim().trim_matches('"').trim_matches('\'');
+        // 2026-08-01 inspection — top-level-key discipline (the same rule
+        // update_frontmatter_title enforces below via is_top_level_key_line; the
+        // 2026-07-21 app-killer class): matching the TRIMMED line returned a
+        // NESTED `title:` (`source:\n  title: Muqaddimah`) or a block-scalar
+        // prose line as the NOTE's title — which then fed rename_item's
+        // old_title and read_note_title → getOldTitleForCascade, cascading a
+        // rename against a title the note never had. Only a ROOT-level
+        // `title:` (column 0, not a sequence item) counts.
+        if !crate::yaml_lines::is_top_level_key_line(line) {
+            continue;
+        }
+        let t = line.trim_end();
+        if let Some(rest) = t.strip_prefix("title:") {
+            let val = rest.trim().trim_matches('"').trim_matches('\'');
             if !val.is_empty() { return Some(val.to_string()); }
         }
     }
@@ -1998,7 +2130,17 @@ fn remove_frontmatter_contains_item(content: &str, child: &str) -> String {
 
     for line in fm.lines() {
         let t = line.trim();
-        if t.starts_with("contains:") {
+        // Safety inspection 2026-08-01 (APP-KILLER) — indentation is DATA. Matching
+        // `contains:` on the TRIMMED line treated a NESTED child (`source:` → `  contains:
+        // three chapters`) and a block-scalar prose line as the note's own root key: its line
+        // was DELETED by the tail guard below, or an indented inline array was re-emitted at
+        // column 0 as a DUPLICATE root key — which makes the document unparseable, at which
+        // point yamlDoc's H1 branch passes the frontmatter through verbatim and every later
+        // property edit on that note is silently discarded while every save reports success.
+        // This was the last unswept site of the class fixed in `update_frontmatter_title`
+        // (2026-07-21), `set_frontmatter_parent` (2026-07-22) and the six 2026-08-01 sites;
+        // PJ-182 routed only this function's seq-item half (below) through `yaml_lines`.
+        if t.starts_with("contains:") && crate::yaml_lines::is_top_level_key_line(line) {
             let value = t["contains:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
                 // Inline array.
@@ -2115,6 +2257,13 @@ pub fn resolve_structural_conflict(
 pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &source_path)?;
     validate_path_in_any_library(&app, &target_folder)?;
+    // 2026-08-01 inspection — the DB tail below is guarded by `if let Some(conn)`
+    // and silently skips while state.db is still None (the cold-boot init window):
+    // the fs move would succeed while every index row stays at the dead old path
+    // (and the follow-up reindex_single_note no-ops too). Ready the DB up front
+    // and REFUSE before the fs op if it cannot be readied — never half-do a move
+    // whose bookkeeping is known-lost.
+    crate::search::ensure_search_db_ready(&app)?;
     let source = Path::new(&source_path);
     if !source.exists() {
         return Err("Source item does not exist.".to_string());
@@ -2129,56 +2278,84 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     if dest.exists() {
         return Err("An item with this name already exists in the target folder.".to_string());
     }
+    let source_is_dir = source.is_dir();
     // MIG-076 §A2 — gated rename (both paths locked, AV retry, journaled).
     crate::write_gate::gate_rename(source, &dest, "move_item")?;
 
-    // MIG-077 A3-R3 — reindex on move (mirrors rename_item Step 6). move_item
-    // previously did NOT reindex, so the FTS/links index kept the old path and a
-    // cross-library move would index the note under the wrong library. Drop the
-    // old entry, add the moved note(s) under the destination library. Handles a
-    // folder move by reindexing every .md descendant at its new path.
-    {
-        use tauri::Manager;
-        let search_state = app.state::<crate::search::SearchState>();
-        let libs = load_all_libraries(&app);
-        let dest_str = dest.to_string_lossy().to_string();
-        // Build the (old → new) path pairs for every note the move touched.
-        let pairs: Vec<(String, String)> = if dest.is_dir() {
-            let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
-            collect_md_paths(&dest, &mut md_paths);
-            md_paths
-                .iter()
-                .filter_map(|new_p| {
-                    new_p.strip_prefix(&dest).ok().map(|rel| {
-                        (source.join(rel).to_string_lossy().to_string(), new_p.to_string_lossy().to_string())
-                    })
+    let dest_str = dest.to_string_lossy().to_string();
+
+    // 2026-08-01 inspection — carry any registered library nested under the moved
+    // folder (or being it) to its new path in libraries.json (the same concern as
+    // rename_item's folder branch; see retarget_registered_libraries). Runs before
+    // the detached tail so its load_all_libraries sees the NEW registry paths.
+    if source_is_dir {
+        retarget_registered_libraries(&app, &source_path, Some(&dest_str));
+    }
+
+    // §B2-4 stall fix (2026-08-01 inspection — the same detach rename_item's tail
+    // got): the DB tail parks on the UNBOUNDED SearchState writer mutex, and on an
+    // awaited `(async)` invoke that park is invisible — the promise never settles
+    // and the frontend's post-move orchestration silently never runs. The fs state
+    // is FINAL here and every statement in the tail is best-effort, so the tail is
+    // detached to a worker: the IPC settles the moment the file state is final.
+    let tail_app = app.clone();
+    let tail_source = source_path.clone();
+    let tail_dest = dest_str.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        move_item_db_tail(&tail_app, &tail_source, &tail_dest);
+    });
+
+    Ok(dest_str)
+}
+
+/// The move's DB bookkeeping, detached from the awaited IPC surface (§B2-4 —
+/// see move_item). Best-effort; the fs state (already final) is the source of
+/// truth and the watcher / next reindex heals any miss.
+///
+/// MIG-077 A3-R3 — reindex on move (mirrors rename_item Step 6). move_item
+/// previously did NOT reindex, so the FTS/links index kept the old path and a
+/// cross-library move would index the note under the wrong library. Handles a
+/// folder move by reindexing every .md descendant at its new path.
+fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) {
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    let libs = load_all_libraries(app);
+    let source = Path::new(source_path);
+    let dest = Path::new(dest_str);
+    // Build the (old → new) path pairs for every note the move touched.
+    let pairs: Vec<(String, String)> = if dest.is_dir() {
+        let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
+        collect_md_paths(dest, &mut md_paths);
+        md_paths
+            .iter()
+            .filter_map(|new_p| {
+                new_p.strip_prefix(dest).ok().map(|rel| {
+                    (source.join(rel).to_string_lossy().to_string(), new_p.to_string_lossy().to_string())
                 })
-                .collect()
-        } else {
-            vec![(source_path.clone(), dest_str.clone())]
-        };
-        // 2026-07-25 PJ-140 #16: MIGRATE each note's DB rows old→new (the same proven
-        // cascade a rename uses) instead of delete-old + index-new. The old delete leg
-        // dropped the review_schedule row and orphaned note_aliases / note_embeddings at
-        // the dead path, and the index leg then wrote a FRESH default schedule — silently
-        // resetting the note's earned review history and active snooze on every move.
-        if let Ok(guard) = search_state.db.lock() {
-            if let Some(conn) = guard.as_ref() {
-                for (old_p, new_p) in &pairs {
-                    migrate_note_db_paths(conn, old_p, new_p);
-                }
-            }
-        }
-        // Refresh content/links/library at the new path (reindex takes the lock itself;
-        // upsert_schedule_row preserves the migrated schedule). Longest-root-wins resolver.
-        for (_old_p, new_p) in &pairs {
-            if let Some(name) = library_name_for_path(&libs, new_p) {
-                let _ = crate::search::reindex_single_note(&search_state, new_p, &name);
+            })
+            .collect()
+    } else {
+        vec![(source_path.to_string(), dest_str.to_string())]
+    };
+    // 2026-07-25 PJ-140 #16: MIGRATE each note's DB rows old→new (the same proven
+    // cascade a rename uses) instead of delete-old + index-new. The old delete leg
+    // dropped the review_schedule row and orphaned note_aliases / note_embeddings at
+    // the dead path, and the index leg then wrote a FRESH default schedule — silently
+    // resetting the note's earned review history and active snooze on every move.
+    if let Ok(guard) = search_state.db.lock() {
+        if let Some(conn) = guard.as_ref() {
+            for (old_p, new_p) in &pairs {
+                migrate_note_db_paths(conn, old_p, new_p);
             }
         }
     }
-
-    Ok(dest.to_string_lossy().to_string())
+    // Refresh content/links/library at the new path (reindex takes the lock itself;
+    // upsert_schedule_row preserves the migrated schedule). Longest-root-wins resolver.
+    for (_old_p, new_p) in &pairs {
+        if let Some(name) = library_name_for_path(&libs, new_p) {
+            let _ = crate::search::reindex_single_note(&search_state, new_p, &name);
+        }
+    }
 }
 
 /// Recursively collect every `.md` file path under `dir` (MIG-077 A3-R3 — used to
@@ -5797,7 +5974,12 @@ pub fn clear_index_history(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 /// Collect all note names in a library (for autocomplete).
-#[tauri::command]
+// 2026-08-01 inspection — `(async)`: this walks the whole library tree and opens
+// every canonical note for its title. As a plain sync command it ran on the IPC
+// dispatch thread (the second screen re-triggers it during normal editing),
+// freezing every other invoke for the walk's duration — the same class its
+// converted siblings (list_universe_folders, delete_path, move_item) fixed.
+#[tauri::command(async)]
 pub fn collect_library_notes(app: tauri::AppHandle, library_path: String) -> Result<Vec<serde_json::Value>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
@@ -5849,8 +6031,31 @@ fn collect_notes_names_recursive(
 }
 
 /// Quick frontmatter title extraction (reads first 1KB only).
+///
+/// 2026-08-01 inspection — this HONORS the 1KB contract now. It used
+/// `read_to_string` (the ENTIRE file) despite the doc comment, so the
+/// collect_library_notes walk read every canonical note's full body just to get
+/// a title. A frontmatter block whose close fence lies beyond 1KB yields `None`
+/// (callers fall back to the file stem) — the documented quick-path tradeoff.
 fn extract_frontmatter_title_quick(path: &Path) -> Option<String> {
-    let content = std::fs::read_to_string(path).ok()?;
+    use std::io::Read;
+    let mut f = std::fs::File::open(path).ok()?;
+    let mut buf = [0u8; 1024];
+    let mut filled = 0usize;
+    loop {
+        match f.read(&mut buf[filled..]) {
+            Ok(0) => break,
+            Ok(n) => {
+                filled += n;
+                if filled == buf.len() { break; }
+            }
+            Err(_) => return None,
+        }
+    }
+    // Lossy: a multi-byte codepoint cut at the 1KB boundary must not abort the
+    // parse (strict from_utf8 would); the replacement char can only land in the
+    // final truncated line, where the title scan simply fails to match it.
+    let content = String::from_utf8_lossy(&buf[..filled]);
     extract_frontmatter_title(&content)
 }
 
@@ -6113,14 +6318,46 @@ pub fn update_links_on_rename(
         let reindex_app = app.clone();
         let reindex_paths = result.rewritten.clone();
         let reindex_lib = library_name.clone();
+        // 2026-08-01 inspection — CLOSE WINDOW, documented: this JoinHandle is
+        // deliberately dropped (best-effort tail; the rewrites are already on
+        // disk), and no Rust-side pending-work registry exists — PJ-103's close
+        // flush only handshakes the FRONTEND's flush — so an app close mid-loop
+        // kills it and the remaining rewritten notes stay stale in the index
+        // until their next touch/reconcile. The START/END journal lines below
+        // make that window decidable from diagnostics.log: a START whose path
+        // list has no matching END means the close killed the loop, and the
+        // listed paths are exactly the reindex candidates.
         tauri::async_runtime::spawn_blocking(move || {
             use tauri::Manager;
+            let dbp = crate::search::db_path(&reindex_app).ok();
+            let log = |m: &str| { if let Some(p) = &dbp { crate::search::diag_log(p, m); } };
+            log(&format!(
+                "[cascade-reindex] START {} note(s): {}",
+                reindex_paths.len(),
+                reindex_paths.join(" | ")
+            ));
             let search_state = reindex_app.state::<crate::search::SearchState>();
+            // 2026-08-01 inspection — per-file library attribution (the 2026-07-25
+            // fix every sibling walker got): a rewritten referrer living in a
+            // NESTED registered library must reindex under ITS OWN library, not
+            // the renamed note's. Longest-root-wins; the caller's library_name
+            // stays as the fallback so a resolver miss never skips the reindex.
+            let libs = load_all_libraries(&reindex_app);
+            let (mut ok, mut failed) = (0usize, 0usize);
             for path in &reindex_paths {
-                if let Err(e) = crate::search::reindex_single_note(&search_state, path, &reindex_lib) {
-                    eprintln!("[update_links_on_rename] reindex skipped path={} err={}", path, e);
+                let lib = library_name_for_path(&libs, path).unwrap_or_else(|| reindex_lib.clone());
+                match crate::search::reindex_single_note(&search_state, path, &lib) {
+                    Ok(_) => ok += 1,
+                    Err(e) => {
+                        failed += 1;
+                        eprintln!("[update_links_on_rename] reindex skipped path={} err={}", path, e);
+                    }
                 }
             }
+            log(&format!(
+                "[cascade-reindex] END ok={} failed={} of {}",
+                ok, failed, reindex_paths.len()
+            ));
         });
     }
 
@@ -6151,6 +6388,14 @@ fn update_links_recursive(
         Err(_) => return,
     };
     for entry in read_dir.flatten() {
+        // 2026-08-01 inspection (PJ-140 #43 pattern): skip symlinks/junctions —
+        // the same guard every sibling walker uses (collect_md_paths,
+        // copy_dir_recursive). This was the ONE tree walker without it, so a
+        // directory-junction cycle inside a library recursed unboundedly
+        // (stack overflow / hang) on every rename cascade.
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
+            continue;
+        }
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
@@ -6643,7 +6888,10 @@ pub fn save_clipboard_image(app: tauri::AppHandle, library_path: String, image_d
 /// Resolve an image embed filename to a base64 data URL.
 /// Searches: note's folder → library/attachments/ → library root.
 /// Returns `data:image/...;base64,...` or an empty string if not found.
-#[tauri::command]
+// 2026-08-01 inspection — `(async)`: full-file read + base64 of an image on the
+// IPC dispatch thread froze every other invoke for its duration; the sibling
+// resolve_embed (embeds.rs) got the same attribute for the same reason.
+#[tauri::command(async)]
 pub fn resolve_embed_image(
     library_path: String,
     note_path: String,
@@ -6797,6 +7045,43 @@ pub(crate) fn free_trash_name(source: &Path, trash_dir: &Path, claimed: &Path) -
     Err("Trash already holds too many items with this name.".to_string())
 }
 
+/// 2026-08-01 inspection — the CROSS-DEVICE-FALLBACK variant of `free_trash_name`:
+/// CLAIMS the returned name with an exclusive create before handing it back. The
+/// bare `exists()` probe alone races — two concurrent fallbacks could resolve to
+/// the SAME slot and the later `fs::copy` silently overwrote the earlier trashed
+/// item. Dirs claim via `create_dir` (fails atomically on AlreadyExists); files
+/// via `create_new(true)`. On AlreadyExists the search resumes from that
+/// candidate. The gate_rename path does NOT use this (a pre-created dest would
+/// make the gate itself refuse); the gate's own exists-check + retry loop is its
+/// collision handling.
+fn claim_free_trash_name(source: &Path, trash_dir: &Path, first: &Path) -> Result<PathBuf, String> {
+    let mut candidate = free_trash_name(source, trash_dir, first)?;
+    loop {
+        let claim: std::io::Result<()> = if source.is_dir() {
+            std::fs::create_dir(&candidate)
+        } else {
+            std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&candidate)
+                .map(|_| ())
+        };
+        match claim {
+            Ok(()) => return Ok(candidate),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                candidate = free_trash_name(source, trash_dir, &candidate)?;
+            }
+            Err(e) => {
+                return Err(format!(
+                    "Failed to claim trash destination {}: {}",
+                    candidate.display(),
+                    e
+                ))
+            }
+        }
+    }
+}
+
 /// Rename `source` into `trash_dir` under a free name, retrying the search whenever the gate
 /// refuses because someone else took that name first. `Err` only when there is genuinely no free
 /// name left — every other refusal comes back as `NotRenamed` for the caller to decide about.
@@ -6903,10 +7188,16 @@ pub fn delete_path(
     trash_root: Option<String>,
 ) -> Result<(), String> {
     validate_path_in_any_library(&app, &path)?;
+    // 2026-08-01 inspection — ensure-or-refuse BEFORE the fs op (same treatment as
+    // move_item): the index purge below silently no-ops while state.db is still
+    // None (the cold-boot init window), so a delete would remove the files while
+    // every descendant's index rows survive at dead paths. Never half-do it.
+    crate::search::ensure_search_db_ready(&app)?;
     let target = Path::new(&path);
     if !target.exists() {
         return Err("Item does not exist.".to_string());
     }
+    let target_was_dir = target.is_dir();
 
     // 2026-07-25 PJ-140 #3: snapshot every descendant note WHILE the tree still exists.
     // reindex_delete_note does an exact-path DELETE, which matches ZERO rows for a
@@ -6947,17 +7238,38 @@ pub fn delete_path(
         other => return Err(format!("Unknown delete mode: {}", other)),
     }
 
+    // 2026-08-01 inspection — a registered library nested under (or being) the
+    // deleted folder went with it in EVERY mode (gone / recycle bin / .trash):
+    // remove its libraries.json registration, which otherwise points at a dead
+    // path forever (see retarget_registered_libraries; removals are logged).
+    if target_was_dir {
+        retarget_registered_libraries(&app, &path, None);
+    }
+
     // Drop the deleted note(s) from the search index in every case. For a folder,
     // purge every descendant snapshotted before the delete (an exact-path delete on the
     // folder itself matches nothing — PJ-140 #3); for a single file, purge that path.
+    // 2026-08-01 inspection — failures SURFACED (diag_log), not `let _ =`-swallowed:
+    // a swallowed failure leaves a deleted note silently live in search/backlinks
+    // at a dead path. Same handling as the sibling move_to_trash. Still best-effort
+    // (the fs delete already happened — the command must not report it as failed).
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
+        let surface = |p: &str, e: String| {
+            if let Ok(dbp) = crate::search::db_path(&app) {
+                crate::search::diag_log(&dbp, &format!("[delete_path] reindex_delete FAILED for {}: {}", p, e));
+            }
+        };
         if folder_descendants.is_empty() {
-            let _ = crate::search::reindex_delete_note(&search_state, &path);
+            if let Err(e) = crate::search::reindex_delete_note(&search_state, &path) {
+                surface(&path, e);
+            }
         } else {
             for p in &folder_descendants {
-                let _ = crate::search::reindex_delete_note(&search_state, p);
+                if let Err(e) = crate::search::reindex_delete_note(&search_state, p) {
+                    surface(p, e);
+                }
             }
         }
     }
@@ -6994,9 +7306,11 @@ fn move_into_trash_folder(source: &Path, trash_root: &Path) -> Result<(), String
     // the copy and the remove used to be silently lost (written to a file that is removed a
     // moment later); now it serializes. (gate_rename has already RELEASED its locks by the time
     // the fallback runs, so taking the source lock here cannot self-deadlock.)
-    // The fallback OVERWRITES `dest`, so re-resolve a free name first: it must never land on a
-    // name that was claimed while we were deciding to come here.
-    dest = free_trash_name(source, &trash_dir, &dest)?;
+    // The fallback OVERWRITES `dest`, so re-resolve a free name first — and CLAIM it with an
+    // exclusive create (2026-08-01 inspection): a bare probe could hand two concurrent
+    // fallbacks the same slot, and the later copy then silently destroyed the earlier trashed
+    // item. The copy below overwriting the claimed empty placeholder is correct — it is OURS.
+    dest = claim_free_trash_name(source, &trash_dir, &dest)?;
     let dest = &dest;
     crate::write_gate::with_path_lock(source, || -> Result<(), String> {
         if source.is_dir() {
@@ -7162,6 +7476,50 @@ mod tests_pj065_resolve {
         let c = "---\ntitle: \"X\"\n---\n\nB";
         let out = remove_frontmatter_contains_item(c, "Nope");
         assert_eq!(out, c, "no contains: → unchanged (so the command's no-op guard fires)");
+    }
+
+    /// Safety inspection 2026-08-01 (APP-KILLER) — a NESTED `contains:` child belongs to the
+    /// user's own map and is NOT this note's structural key. Before the guard, the tail
+    /// "nothing kept → drop the header" rule deleted that line outright.
+    #[test]
+    fn remove_contains_never_touches_a_nested_child() {
+        let c = "---\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\nsource:\n  contains: three chapters\n---\n\nbody";
+        let out = remove_frontmatter_contains_item(c, "Chapter One");
+        assert!(!out.contains("[[Chapter One]]"), "the real item was removed");
+        assert!(out.contains("[[Chapter Two]]"), "its sibling survived");
+        assert!(
+            out.contains("  contains: three chapters"),
+            "the NESTED child must survive verbatim, indentation included:\n{out}"
+        );
+    }
+
+    /// The duplicate-root-key variant: an INDENTED inline array must not be re-emitted at
+    /// column 0 beside the real root key — that makes the document unparseable, after which
+    /// every later property edit on the note is silently dropped.
+    #[test]
+    fn remove_contains_never_promotes_a_nested_inline_array_to_root() {
+        let c = "---\ncontains: [\"[[A]]\", \"[[B]]\"]\nsource:\n  contains: [x, y]\n---\n\nbody";
+        let out = remove_frontmatter_contains_item(c, "A");
+        assert!(!out.contains("[[A]]"));
+        assert!(out.contains("[[B]]"));
+        assert!(out.contains("  contains: [x, y]"), "nested array kept in place:\n{out}");
+        assert_eq!(
+            out.lines().filter(|l| l.starts_with("contains:")).count(),
+            1,
+            "exactly ONE root `contains:` — a duplicate would break the parser:\n{out}"
+        );
+    }
+
+    /// A block scalar's prose line may legitimately begin with the word — it is content.
+    #[test]
+    fn remove_contains_never_eats_block_scalar_prose() {
+        let c = "---\ncontains:\n  - \"[[A]]\"\nnote: |\n  contains: chapters and notes\n  more prose\n---\n\nbody";
+        let out = remove_frontmatter_contains_item(c, "A");
+        assert!(
+            out.contains("  contains: chapters and notes"),
+            "block-scalar prose is content, never a key:\n{out}"
+        );
+        assert!(out.contains("  more prose"));
     }
 }
 

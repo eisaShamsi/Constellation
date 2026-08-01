@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { t, tn, isRTL as isRTLStore } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { createNote, writeNote, openNoteTab, reindexNote } from '$lib/libraries/store';
@@ -51,6 +52,11 @@
 	let availableCanvases = $state<any[]>([]);
 	let newCanvasName = $state('');
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	// True from the moment a change requests a save until write_canvas succeeds.
+	// This is the dirtiness authority for the destroy/switch flush — it is ONLY set by
+	// debouncedSave() (i.e. after a real mutation), so a plain unmount never writes.
+	let saveDirty = false;
+	let saveError = $state(false);
 
 	// ─── Cynefin quadrants (positioned at fixed world coordinates) ───
 	const QUADRANTS = [
@@ -82,6 +88,7 @@
 	});
 
 	async function openCanvas(path: string) {
+		await flushPendingSave();
 		try {
 			const data: any = await invoke('read_canvas', { canvasPath: path });
 			canvasPath = path;
@@ -93,6 +100,7 @@
 
 	async function createNewCanvas() {
 		if (!newCanvasName.trim() || !libraryPath) return;
+		await flushPendingSave();
 		try {
 			const path: string = await invoke('create_canvas', { libraryPath, name: newCanvasName.trim() });
 			canvasPath = path;
@@ -139,15 +147,45 @@
 		viewY = (h - contentH * viewScale) / 2 - minY * viewScale;
 	}
 
+	// Single write path — every canvas save (debounced, switch-flush, destroy-flush) goes
+	// through here so failures always surface via saveError + a prefixed console.error.
+	async function writeCanvasNow(): Promise<void> {
+		if (!canvasPath) return;
+		try {
+			await invoke('write_canvas', { canvasPath, data: { title: canvasTitle, items } });
+			saveDirty = false;
+			saveError = false; // a later successful save heals the banner
+		} catch (e) {
+			saveError = true;
+			console.error('[SenseMakingCanvas] write_canvas failed — latest change is not on disk:', e);
+		}
+	}
+
 	function debouncedSave() {
+		saveDirty = true;
 		if (saveTimer) clearTimeout(saveTimer);
-		saveTimer = setTimeout(async () => {
-			if (!canvasPath) return;
-			try {
-				await invoke('write_canvas', { canvasPath, data: { title: canvasTitle, items } });
-			} catch {}
+		saveTimer = setTimeout(() => {
+			saveTimer = null;
+			writeCanvasNow();
 		}, 1000);
 	}
+
+	// Flush a pending debounced save BEFORE canvasPath/items are replaced (canvas switch /
+	// create) — otherwise the timer would fire 1s later reading the NEW canvas's state and
+	// the old canvas's last change would be silently dropped (same class as the destroy gap).
+	async function flushPendingSave(): Promise<void> {
+		if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+		if (saveDirty) await writeCanvasNow();
+	}
+
+	onDestroy(() => {
+		if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+		if (saveDirty) {
+			// Fire-and-forget is acceptable at destroy; writeCanvasNow still routes any
+			// failure through saveError + the prefixed console.error above.
+			writeCanvasNow();
+		}
+	});
 
 	// ─── Pan & Zoom ───
 	function onWheel(e: WheelEvent) {
@@ -291,6 +329,12 @@
 </script>
 
 <div class="smc" dir={$isRTLStore ? 'rtl' : 'ltr'}>
+	{#if saveError}
+		<div class="smc-save-error" role="alert">
+			<span>{$t('senseMakingCanvas.saveFailed') || 'Could not save the canvas — your latest change is not on disk.'}</span>
+			<button class="smc-save-error-dismiss" aria-label="Dismiss" onclick={() => saveError = false}>×</button>
+		</div>
+	{/if}
 	{#if showCanvasPicker}
 		<!-- Canvas picker -->
 		<div class="smc-picker">
@@ -434,6 +478,16 @@
 
 <style>
 	.smc { display: flex; flex-direction: column; flex: 1; overflow: hidden; background: #f8f8fc; }
+	.smc-save-error {
+		display: flex; align-items: center; gap: 8px; padding: 4px 16px;
+		background: rgba(239, 68, 68, 0.12); color: #b91c1c;
+		border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+		font-size: 0.78rem; flex-shrink: 0;
+	}
+	.smc-save-error-dismiss {
+		margin-inline-start: auto; border: none; background: none; cursor: pointer;
+		color: inherit; font-size: 1rem; line-height: 1; padding: 0 4px; font-family: inherit;
+	}
 	.smc-header {
 		display: flex; align-items: center; gap: 8px; padding: 6px 16px;
 		border-bottom: 1px solid var(--background-modifier-border); background: var(--background-primary);

@@ -36,7 +36,8 @@
     "inLibrary": "Bereits in: {library}"
   },
   "cascade": {
-    "updating": "Links werden aktualisiert…"
+    "updating": "Links werden aktualisiert…",
+    "failedSome": "Umbenannt — aber {count} Notiz(en) verweisen weiterhin auf „{old}“: Ihre Verweise konnten nicht aktualisiert werden (die Dateien sind gesperrt, schreibgeschützt oder in Benutzung): {notes}"
   },
   "styles": {
     "title": "Stile",
@@ -781,7 +782,11 @@
     "newBase": "Neue Basis",
     "newFolder": "Neuer Ordner",
     "rename": "Umbenennen",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "tagNoIdentity": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden — diese Notiz hat noch keine feste Identität (sie wird noch geöffnet oder hat sich in diesem Tab geändert). Öffne sie und versuche es erneut.",
+    "tagBusy": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden — die Notiz ist beschäftigt (eine Umbenennung oder ein Neuladen aktualisiert sie). Versuche es gleich noch einmal.",
+    "tagWriteFailed": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden: {error}",
+    "moveBatchFailed": "{count} Element(e) konnten nicht verschoben werden: {items}"
   },
   "createDialog": {
     "titleFolder": "Neuer Ordner",
@@ -1445,7 +1450,8 @@
     "preset_muted": "Gedämpft",
     "preset_bold": "Kräftig",
     "preset_warm": "Warm",
-    "preset_invisible": "Unsichtbar"
+    "preset_invisible": "Unsichtbar",
+    "saveFailed": "Die Arbeitsfläche konnte nicht gespeichert werden — deine letzte Änderung liegt nicht auf der Festplatte."
   },
   "inspector360": {
     "untyped": "Untypisiert",
@@ -4085,7 +4091,11 @@
     "summaryTitle": "Dein Universum ist an einem Ort",
     "title": "Bring dein Universum an einen Ort",
     "unify": "Vereinen",
-    "verifyFailedNote": "Der letzte Versuch stoppte an der Sicherheitsprüfung; alle Datenbankänderungen wurden zurückgerollt. Beim Fortsetzen wird erneut geprüft."
+    "verifyFailedNote": "Der letzte Versuch stoppte an der Sicherheitsprüfung; alle Datenbankänderungen wurden zurückgerollt. Beim Fortsetzen wird erneut geprüft.",
+    "restoreButton": "Alles zurücklegen",
+    "phaseRestore": "Alles wird zurückgelegt…",
+    "journalUnreadable": "Das Vereinigungs-Journal konnte nicht gelesen werden. Nichts wird automatisch angefasst — Sicherung und Journal liegen im Universum-Ordner unter .constellation; bitte vor dem Fortfahren melden.",
+    "closeBlocked": "Constellation kann nicht geschlossen werden, während deine Bibliotheken verschoben werden — jetzt zu schließen würde den Umzug halb fertig zurücklassen. Es lässt sich normal schließen, sobald das erledigt ist."
   },
   "bringIn": {
     "body": "Ein Universum bewahrt sein gesamtes Wissen in einem Ordner auf; diese Bibliothek wird darin leben. Wähle, was mit dem Original geschieht:",
@@ -4095,5 +4105,11 @@
     "move": "Verschieben",
     "moveDesc": "Der Ordner selbst zieht in das Universum um. Sein alter Ort ist danach leer.",
     "title": "Diesen Ordner in dein Universum holen"
+  },
+  "storeHealth": {
+    "collections": "Deine Sammlungen konnten nicht gelesen werden. Constellation speichert in dieser Sitzung keine Änderungen daran — um die Datei nicht mit einer leeren Liste zu überschreiben. Starte neu, um es erneut zu versuchen.",
+    "workspaces": "Deine gespeicherten Layouts konnten nicht gelesen werden. Constellation speichert in dieser Sitzung keine Änderungen daran — um sie nicht zu überschreiben. Starte neu, um es erneut zu versuchen.",
+    "settings": "Deine Einstellungen konnten nicht gespeichert werden. Jetzt vorgenommene Änderungen überstehen keinen Neustart — prüfe, ob der Universum-Ordner beschreibbar und nicht von einem Sync-Tool gesperrt ist.",
+    "index": "Eine Notiz wurde gespeichert, konnte aber nicht in den Suchindex aufgenommen werden. Suche und Rückverweise zeigen womöglich nicht den neuesten Text. Einstellungen, dann Index neu aufbauen stellt das wieder her."
   }
 }

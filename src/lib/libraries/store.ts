@@ -295,6 +295,15 @@ const WAB_LS_KEY = 'constellation-wab';
  *        stash of work not yet on disk) — omission is the safe default.
  */
 export function setWriteAhead(filePath: string, content: string, cursorPos: number, scrollTop: number, snapshot?: boolean) {
+	// 2026-08-01 inspection — a VIEWING stash (snapshot: content already durable) must never
+	// REPLACE a real-work entry holding different bytes: a note reopened after a failed save
+	// is born clean from DISK, and its teardown would otherwise burn the only recovery copy
+	// the save-health banner still points at. The real-work entry is cleared by the durable
+	// save that supersedes it, never by a mere view of the note.
+	if (snapshot) {
+		const existing = getWriteAhead(filePath);
+		if (existing && existing.snapshot !== true && existing.content !== content) return;
+	}
 	const entry: WriteAheadEntry = snapshot
 		? { content, cursorPos, scrollTop, snapshot: true }
 		: { content, cursorPos, scrollTop };
@@ -473,7 +482,7 @@ export async function retrySaveFailure(path: string): Promise<void> {
 		origin: 'retry_save',
 		name: tab.name,
 		onSaved: (savedPath) => {
-			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+			void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
 		},
 	}), 'retry_save');
 }
@@ -529,8 +538,12 @@ export async function saveRecoveredCopy(path: string): Promise<string | null> {
 	const copyContent = rebrandCopyFrontmatter(content, copySuffix);
 	const dirPath = path.replace(/[\\/][^\\/]+$/, '');
 	const stem = (path.split(/[\\/]/).pop() ?? 'note').replace(/\.(md|markdown)$/, '');
+	// 2026-08-01 inspection — join with the ORIGINAL path's separator, never a hard-coded '/':
+	// a mixed-separator tab path defeats every raw-equality dedup gate downstream (a later open
+	// of the same file via its canonical Rust form would mint a second tab + second model).
+	const sep = path.includes('\\') ? '\\' : '/';
 	for (let i = 0; i < 20; i++) {
-		const candidate = `${dirPath}/${stem} (${copySuffix}${i === 0 ? '' : ' ' + (i + 1)}).md`;
+		const candidate = `${dirPath}${sep}${stem} (${copySuffix}${i === 0 ? '' : ' ' + (i + 1)}).md`;
 		const exists = await invoke<string>('read_note', { filePath: candidate }).then(() => true, () => false);
 		if (exists) continue;
 		try {
@@ -562,7 +575,21 @@ export async function discardFailedSave(path: string): Promise<void> {
 	// refuses to force-adopt over a dirty model, and this is the single path where discarding the
 	// dirty model IS the user's stated intent. Saying so explicitly is what keeps that refusal safe
 	// to apply everywhere else by default.
-	if (tab) await reloadTabsFromDisk([path], { discardLocalEdits: true });
+	if (tab) {
+		// 2026-08-01 inspection — the hazard-#6 bracket every other reload caller has: gate the
+		// armed autosave and span the {#key} remount, so the outgoing (stale) editor's teardown
+		// flush can't re-poison the re-seeded model with the very content the user chose to
+		// discard (and later durably write it back over the disk version they chose to keep).
+		markCascading(path);
+		markReseeding(path);
+		try {
+			await reloadTabsFromDisk([path], { discardLocalEdits: true });
+			await tick();
+		} finally {
+			clearReseeding(path);
+			clearCascading(path);
+		}
+	}
 	clearWriteAhead(path); // belt — the reload clears it only on its success path
 	clearSaveFailure(path);
 }
@@ -580,7 +607,7 @@ function navFlushEnv(tab: { id: string; name: string; libraryName: string }, ori
 		name: tab.name,
 		onSaved: (savedPath) => {
 			emit('screen:note-saved', { path: savedPath }).catch(() => {});
-			invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+			void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
 			if (get(appSettings).enabledFeatures?.semanticSearch) {
 				const body = getNoteModel(tab.id)?.body.toString() ?? '';
 				invoke('constellation_embed_notes', {
@@ -1118,8 +1145,11 @@ export async function adoptExternalChangeIntoTabs(
 ): Promise<void> {
 	if (paths.length === 0) return;
 	const tabs = get(openTabs);
-	const openPaths = new Set(tabs.map((t) => t.path));
-	const targets = paths.filter((fp) => openPaths.has(fp)); // invariant #9 — O(changed + open), not O(changed × open)
+	// 2026-08-01 inspection — the arbitration matches on NORMALIZED keys: a tab whose stored
+	// separator form differs from the watcher's canonical form must not be invisible here
+	// (it would neither adopt an external edit NOR reach the dirty conflict-sidecar branch).
+	const openPaths = new Set(tabs.map((t) => normPath(t.path)));
+	const targets = paths.filter((fp) => openPaths.has(normPath(fp))); // invariant #9 — O(changed + open), not O(changed × open)
 	if (targets.length === 0) return;
 
 	// Read each changed open path once (reuse the 300ms-flush read; a deleted file's rejection is
@@ -1127,14 +1157,14 @@ export async function adoptExternalChangeIntoTabs(
 	const reads = await Promise.all(
 		targets.map((fp) => readDisk(fp).then((content) => ({ fp, content }) as const).catch(() => null)),
 	);
-	const byPath = new Map<string, string>();
-	for (const r of reads) if (r) byPath.set(r.fp, r.content);
+	const byPath = new Map<string, string>(); // keyed by normPath
+	for (const r of reads) if (r) byPath.set(normPath(r.fp), r.content);
 	if (byPath.size === 0) return;
 
 	// ── ROLLBACK path (WATCHER_ADOPT_ENABLED off): today's content-only update, no adopt, no remount. ──
 	if (!WATCHER_ADOPT_ENABLED) {
 		openTabs.update((ts) => ts.map((t) => {
-			const c = byPath.get(t.path);
+			const c = byPath.get(normPath(t.path)); // byPath is normPath-keyed — see line ~1161
 			return c !== undefined ? { ...t, content: c } : t;
 		}));
 		return;
@@ -1153,7 +1183,13 @@ export async function adoptExternalChangeIntoTabs(
 	// the moment it is used. (2026-07-21 inspection, APP-KILLER; `adoptDisk`'s new
 	// expectPath guard is the second line of defence, not the first.)
 	for (const t of get(openTabs)) {
-		const disk = byPath.get(t.path);
+		// `byPath` is keyed by normPath (line ~1161) — the lookup MUST normalize too. Half-
+		// normalizing this function (keys normalized, lookups raw) made every Windows tab miss,
+		// silently disabling the whole external-adopt/conflict arbitration: no adopt, no
+		// `.conflict` sidecar, no banner, and the next keystroke's save overwrote the external
+		// edit. Caught by the 2026-08-01 verification inspection; the POSIX-path unit tests
+		// could not see it, because normPath is the identity function on `/`-paths.
+		const disk = byPath.get(normPath(t.path));
 		if (disk === undefined) continue;
 		if (isCascading(t.path)) continue; // invariant #3 — a rename cascade owns this path; its force-adopt runs there
 		const isFocusTab = focusPathNorm !== null && normPath(t.path) === focusPathNorm;
@@ -1182,7 +1218,7 @@ export async function adoptExternalChangeIntoTabs(
 		try {
 			openTabs.update((ts) => ts.map((t) =>
 				adopted.has(t.path)
-					? { ...t, content: byPath.get(t.path)!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
+					? { ...t, content: byPath.get(normPath(t.path))!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
 					: t,
 			));
 			for (const p of adopted) clearWriteAhead(p); // invariant #10 — only adopters (a dirty refuser keeps its net)
@@ -1227,7 +1263,18 @@ export async function toggleTaskReconciled(filePath: string, lineNumber: number)
 		// PJ-092 H4 — bounded flush; if not durable, DON'T toggle+reload (clobber/hang guard); save-health retries.
 		if (openTab && !(await flushOpenTabOrAbort(openTab, 'task_toggle_flush'))) return;
 		await toggleTask(filePath, lineNumber);
-		await reloadTabsFromDisk([filePath]); // model ADOPTS the toggled disk + {#key} remount
+		// ★ 2026-08-01 inspection — the RMW recipe's missing third guard. The flush above proves the
+		// model is clean at that instant; `toggle_task` then reads and rewrites disk across an await
+		// during which the editor still accepts keystrokes (markCascading gates WRITES, not
+		// `editBody`). One keystroke there re-dirties the model, PJ-174's dirty-refusal makes this
+		// reload a NO-OP, and the model never learns about the toggle — so the next debounced save
+		// composes from the pre-toggle base and silently REVERTS the checkbox on disk. Route it the
+		// same way the cascade and watcher paths route theirs: `.conflict` sidecar + banner, so the
+		// toggled version is preserved and the user's keystroke stays live in the editor.
+		const refused = await reloadTabsFromDisk([filePath], { conflict: reportExternalConflict }); // model ADOPTS the toggled disk + {#key} remount
+		if (refused.length > 0) {
+			console.warn('[toggleTaskReconciled] PJ-174 — dirty model refused the post-toggle reload (edits kept, conflict raised):', refused);
+		}
 	} finally {
 		if (openTab) clearCascading(openTab.path);
 	}
@@ -1318,7 +1365,15 @@ export async function addLinkToNote(sourcePath: string, linkType: string, target
 		// Belt: if the model is still dirty (the write didn't land), skip the view-refresh — the new
 		// property already shows in the dirty model; save-health retries the write.
 		if (isNoteDirty(openTab.id)) return;
-		await reloadTabsFromDisk([sourcePath]);
+		// ★ 2026-08-01 inspection — same treatment as its three sibling flush→rewrite→reload
+		// callers, for the keystroke that lands between the dirty check above and the read inside.
+		// (Here the refusal is benign by construction — the disk was written FROM this model, so
+		// its baseline is current and `diskDiffersFromBaseline` never fires a spurious sidecar —
+		// but the check is what makes "benign" a measured fact rather than an assumption.)
+		const refusedLink = await reloadTabsFromDisk([sourcePath], { conflict: reportExternalConflict });
+		if (refusedLink.length > 0) {
+			console.warn('[addLinkToNote] PJ-174 — dirty model refused the post-connect view refresh (edits kept):', refusedLink);
+		}
 	} else {
 		// CLOSED: gated writeNote + reindex; index_note derives the note_links row (and
 		// bumps the target's incoming_count). Adding a frontmatter property necessarily
@@ -1423,7 +1478,17 @@ export async function linkMentionInNote(mentionPath: string, targetName: string)
 		// Open note: the model ADOPTS the mutated disk + {#key} remount so the inline [[link]] shows at
 		// once. reloadTabsFromDisk skips the reseed if a keystroke re-dirtied the model (PJ-092), so a
 		// during-write edit is preserved rather than clobbered.
-		if (openTab) await reloadTabsFromDisk([mentionPath]);
+		// ★ 2026-08-01 inspection — "skips the reseed" is only half the story: the skipped model never
+		// learns about the `[[link]]` this function just wrote, so its next debounced save composes
+		// from the pre-link base and REVERTS the write — the very silent-revert this helper exists to
+		// end (failure mode #1 in the header). Take the refusal and route the incoming disk version to
+		// the `.conflict` sidecar + banner, the same handler the watcher and cascade paths use.
+		if (openTab) {
+			const refused = await reloadTabsFromDisk([mentionPath], { conflict: reportExternalConflict });
+			if (refused.length > 0) {
+				console.warn('[linkMentionInNote] PJ-174 — dirty model refused the post-link reload (edits kept, conflict raised):', refused);
+			}
+		}
 
 		// AWAIT the reindex so the caller can refresh the Backlinks / Unlinked-mentions panels
 		// deterministically the instant the new note_links edge exists — instead of waiting for
@@ -1485,7 +1550,11 @@ export async function flushAllTabsInLibrary(libraryPath: string): Promise<string
 			markRecentWrite(tab.path);
 			const p = tab.path;
 			flushes.push(
-				flushOutgoingModel(tab.id, standardSaveEnv({ origin: 'flush_all', name: tab.name }), 'flush_all')
+				// 2026-08-01 inspection — navFlushEnv, not a bare standardSaveEnv: a note flushed
+				// here but NOT rewritten by the walker never got its flushed content reindexed
+				// (index↔disk divergence) and the second screen was never told. navFlushEnv's
+				// onSaved carries both — the exact gap its own doc comment names.
+				flushOutgoingModel(tab.id, navFlushEnv(tab, 'flush_all'), 'flush_all')
 					.then((r) => { if (!r.ok) failed.push(p); })
 					.catch((err) => {
 						console.error('[flushAllTabsInLibrary] model flush threw for', p, err);
@@ -1607,7 +1676,7 @@ export async function saveTabContent(
 			emit('screen:note-saved', { path: savedPath }).catch(() => {});
 			const tab = get(openTabs).find(t => t.path === savedPath);
 			if (tab) {
-				invoke('constellation_search_reindex', { notePath: savedPath, libraryName: tab.libraryName }).catch(() => {});
+				void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
 			}
 			if (get(appSettings).enabledFeatures?.semanticSearch && tab) {
 				invoke('constellation_embed_notes', {
@@ -1735,7 +1804,7 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 		// concurrent open of the SAME path during the awaited flush/resolve below could still
 		// mint a second model — an extremely narrow disk-latency TOCTOU, not introduced here.)
 		if (DEDUP_ALL_TABS_ENABLED) {
-			const existing = get(openTabs).find(t => t.path === filePath && t.id !== tabId);
+			const existing = get(openTabs).find(t => normPath(t.path) === normPath(filePath) && t.id !== tabId);
 			if (existing) {
 				if (get(splitActive)) focusedTabId.set(existing.id); else activeTabId.set(existing.id);
 				_traceNav('loadTabHistoryEntry:dedupExisting', existing.id, filePath);
@@ -1864,11 +1933,14 @@ function saveCollections(): Promise<void> {
 		console.warn('[collections] refusing to save: the collections file was never read successfully');
 		return Promise.resolve();
 	}
+	// 2026-08-01 inspection — root captured at CALL time: a queued save landing after a
+	// universe switch writes to the universe the change belonged to, never the new one's file.
+	const universeRoot = activeUniverseRootSync();
 	const run = _collectionsSaveChain.then(async () => {
 		const payload = get(collectionSets); // read at WRITE time, after prior writes settled
 		for (let attempt = 0; attempt < 2; attempt++) {
 			try {
-				await invoke('save_universe_collections', { collections: payload });
+				await invoke('save_universe_collections', { collections: payload, universeRoot });
 				collectionsError.set(null);
 				return;
 			} catch (e) {
@@ -2102,6 +2174,43 @@ const unquote = (v: string) =>
 	(v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")) ? v.slice(1, -1) : v;
 
 /**
+ * ★ 2026-08-01 inspection — split a YAML FLOW sequence's interior (`alpha, "beta, gamma"`)
+ * into its items. **A comma inside a quoted scalar is DATA, not a separator.**
+ *
+ * The inline-list branch used to `.split(',')` the raw text and strip quotes per fragment, so
+ * `tags: [alpha, "beta, gamma"]` projected as THREE items — and one of them (`"beta`) carried a
+ * quote that no longer had a partner. Unedited notes were protected by the CST write path's
+ * `samePropRow` (no diff → the bytes are re-emitted verbatim), but the projection IS the write
+ * the moment the user touches that key: the file then gains an item that never existed and loses
+ * the one that did, with no error and a clean re-parse afterwards. A quoted comma is exactly how
+ * a title with a comma survives frontmatter — `"[[Foo, Bar]]"`, `"Al-Ghazālī, Abū Ḥāmid"` — so
+ * this is the ordinary case for the notes that need quoting at all, not an exotic one.
+ *
+ * Deliberately a scanner, not a YAML parser: one pass, no allocation per character, and it stays
+ * in this file next to the other line-scanners. Quote-stripping is delegated to `unquote` (the
+ * file's ONE quote-stripper — LL-038 rule 5), which strips a MATCHING pair and does not decode
+ * escapes; a `\"` inside a double-quoted item therefore stops the item being split in the wrong
+ * place but rides through verbatim, which is what every other quoted value here already does.
+ */
+function splitFlowSeqItems(inner: string): string[] {
+	const items: string[] = [];
+	let start = 0;
+	let quote: string | null = null;
+	for (let i = 0; i < inner.length; i++) {
+		const ch = inner[i];
+		if (quote) {
+			if (ch === '\\' && quote === '"') i++; // YAML escapes only exist in double quotes
+			else if (ch === quote) quote = null;
+			continue;
+		}
+		if (ch === '"' || ch === "'") quote = ch;
+		else if (ch === ',') { items.push(inner.slice(start, i)); start = i + 1; }
+	}
+	items.push(inner.slice(start));
+	return items.map((s) => unquote(s.trim())).filter(Boolean);
+}
+
+/**
  * Index one past the block's last non-blank child line, with trailing blanks dropped.
  * `isChild` decides what belongs — the block-scalar body wants indented lines only, an
  * ordinary block wants sequence items and comments too.
@@ -2314,13 +2423,12 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 			// Strip quotes
 			value = unquote(value);
 
-			// Inline list: [a, b, c]
+			// Inline list: [a, b, c] — and the block-position flow list (`tags:` / `  [a, b]`)
+			// handed here by the `flowOnly` branch above, which sets `value` to the same text.
+			// ONE split for both shapes; see `splitFlowSeqItems` for why it cannot be `.split(',')`.
 			let parsedListItems: string[] | undefined;
 			if (value.startsWith('[') && value.endsWith(']')) {
-				parsedListItems = value.slice(1, -1)
-					.split(',')
-					.map(s => s.trim().replace(/^["']|["']$/g, ''))
-					.filter(Boolean);
+				parsedListItems = splitFlowSeqItems(value.slice(1, -1));
 				value = parsedListItems.join(', ');
 			}
 
@@ -2677,6 +2785,18 @@ async function resolveNoteContent(
 		const wabCid = extractCidCn(wab.content);
 		const diskCid = extractCidCn(diskContent);
 		const identityProven = !!wabCid && !!diskCid && wabCid === diskCid;
+		// 2026-08-01 inspection — "not proven" and "DISPROVEN" are not the same fact, and the
+		// clear-the-net decision below turns on exactly that difference:
+		//   · DISPROVEN (both cids readable and DIFFERENT) — the entry belongs to ANOTHER
+		//     note that used to live at this path (delete + recreate). Keeping it would let a
+		//     later resolve restore a different note's body into this file: cross-note
+		//     contamination, the content-integrity class. It must be cleared.
+		//   · merely UNPROVEN (either cid missing) — cannot be attributed OR disowned, and a
+		//     cid-less entry is exactly what the app's own failed-save flow produces (templates
+		//     are cid-exempt by design, and for a regular note `ensure_cid_cn_cmd` fails under
+		//     the SAME file lock that made the save fail). Clearing it destroys what may be the
+		//     only copy of the user's unsaved work. It must be kept.
+		const identityDisproven = !!wabCid && !!diskCid && wabCid !== diskCid;
 		const wabBody = parseFrontmatter(wab.content).body.trim();
 		const diskBody = parseFrontmatter(diskContent).body.trim();
 		const emptyResurrection = wabBody === '' && diskBody !== '';
@@ -2707,7 +2827,17 @@ async function resolveNoteContent(
 			// note whose save failed) is identity-unproven by construction,
 			// yet may be the ONLY copy of unsaved edits. Disk wins the view;
 			// the net stays for manual recovery.
-			if (!opts.preserveNet) clearWriteAhead(filePath);
+			//
+			// 2026-08-01 inspection — the MANUAL path clears only what is PROVEN worthless
+			// or proven to belong elsewhere: a stale snapshot (its bytes were already
+			// durable), an empty-body resurrection (nothing to keep), or a DISPROVEN
+			// identity (another note's work — clearing it is what prevents cross-note
+			// contamination; see the note above). A merely-unprovable cid-less entry is
+			// kept, because the lock that creates the recovery need is the same lock that
+			// prevents the cid from ever being written.
+			if (!opts.preserveNet && (staleSnapshot || emptyResurrection || identityDisproven)) {
+				clearWriteAhead(filePath);
+			}
 			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
 		}
 	}
@@ -2767,7 +2897,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// If the same file is already the active tab, just update highlight
 	const currentTab = get(splitActive) ? get(focusedTab) : get(activeTab);
 	_traceNav('openNoteTab:entry', currentTab?.id, filePath, fromNotePath ?? currentTab?.path);
-	if (currentTab && currentTab.path === filePath) {
+	if (currentTab && normPath(currentTab.path) === normPath(filePath)) {
 		if (highlightTerm) {
 			openTabs.update(tabs => tabs.map(t => t.id === currentTab.id ? { ...t, highlightTerm } : t));
 		}
@@ -2785,7 +2915,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// that tab instead of minting a second tab + second model for the same path — regardless
 	// of newTab / Ctrl+click. Runs before the file read (no I/O needed to focus an open tab).
 	if (DEDUP_ALL_TABS_ENABLED) {
-		const existing = get(openTabs).find(t => t.path === filePath);
+		// 2026-08-01 inspection — normPath on BOTH sides: a mixed-separator stored path
+		// must not slip past dedup and mint a second tab + second model for one file.
+		const existing = get(openTabs).find(t => normPath(t.path) === normPath(filePath));
 		if (existing) {
 			if (get(splitActive)) focusedTabId.set(existing.id); else activeTabId.set(existing.id);
 			if (highlightTerm) openTabs.update(tabs => tabs.map(t => t.id === existing.id ? { ...t, highlightTerm } : t));
@@ -2846,7 +2978,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				// no cid_cn for it and every identity-keyed lookup — collection membership,
 				// link resolution by identity — silently missed it. Fire-and-forget: the note is
 				// already open and correct on screen; this only catches the index up.
-				invoke('constellation_search_reindex', { notePath: filePath, libraryName }).catch(() => {});
+				void reindexNote(filePath, libraryName); // bounded retry + surfaced failure inside
 			}
 		} catch { /* non-fatal: CID stays absent, note still opens */ }
 	}
@@ -2878,7 +3010,16 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// risk the same class of desync the mountedFilePath /
 			// supersede-token guards defend against.
 			queueMicrotask(() => bumpLinkTraversal(_fromNotePath, nameLower));
-			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
+			// ★ 2026-08-01 inspection — fire-and-forget STAYS (this is a click path; a retry loop
+			// here would put IPC on a navigation gesture), but the rejection is no longer swallowed.
+			// `constellation_link_traverse` legitimately errors "Search DB not initialized" whenever
+			// `state.db` is None, and traversal_count / weight / last_traversed live ONLY in
+			// search.db — there is no disk layer for earned link data yet (CLAUDE.md, "READ THIS
+			// BEFORE TRUSTING A LINK PROPERTY TO SURVIVE"). An empty catch meant a persistently
+			// failing traversal write silently lost the earned half of the Living Link Architecture
+			// with nothing anywhere to say so. Logged with a distinctive prefix, never thrown.
+			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name })
+				.catch((e) => console.error('[link-traverse] earned link data NOT recorded for', _fromNotePath, '→', name, e));
 		}
 	}
 
@@ -3069,10 +3210,9 @@ export async function flushAllForAppClose(): Promise<void> {
 		}).catch(() => {});
 	}
 	await Promise.all(
-		dirty.map((t) =>
-			invoke('constellation_search_reindex', { notePath: t.path, libraryName: t.libraryName })
-				.catch(() => {})
-		)
+		// reindexNote: one bounded retry (parallel — at most +1.5s inside the close's 5s cap),
+		// never rejects, and a final failure at least logs instead of vanishing.
+		dirty.map((t) => reindexNote(t.path, t.libraryName))
 	);
 }
 
@@ -3154,7 +3294,7 @@ async function drainCidEnsure(tab: OpenTab): Promise<void> {
 			// the gate (watcher-suppressed), so nothing else tells the index. The sweep closed
 			// this exact gap in openNoteTab and missed this sibling. Fire-and-forget: the tab
 			// is already correct on screen; this only catches note_meta up.
-			invoke('constellation_search_reindex', { notePath: tab.path, libraryName: tab.libraryName }).catch(() => {});
+			void reindexNote(tab.path, tab.libraryName); // bounded retry + surfaced failure inside
 		}
 		// Guarded adopt — deliberately NOT reloadTabsFromDisk: its
 		// unconditional model re-seed would discard keystrokes typed during
@@ -3510,9 +3650,33 @@ export async function constellationSearch(request: ConstellationSearchRequest): 
 	return invoke('constellation_search', { request });
 }
 
-/** Reindex a single note after file change. */
+/** Surfaced when a save-path reindex has failed even after the retry — the note reads
+ *  correctly on screen but search/switcher/backlinks serve its OLD text until reindexed. */
+export const indexHealthError = writable<string | null>(null);
+
+/** Reindex a single note after file change.
+ *
+ *  2026-08-01 inspection — the swallowed-reindex class fix, at the ONE choke point: every
+ *  caller used to fire-and-forget with `.catch(() => {})`, and because boot never re-walks
+ *  an indexed library and the watcher ignores app-own writes, a single failed reindex left
+ *  that note's index row permanently divergent with no retry and no log. One bounded retry
+ *  absorbs a transient writer-lock (a backfill can hold it longer than the 5s busy_timeout);
+ *  a final failure is surfaced. NEVER rejects — call sites need no catch. */
 export async function reindexNote(notePath: string, libraryName: string): Promise<void> {
-	return invoke('constellation_search_reindex', { notePath, libraryName });
+	for (let attempt = 0; attempt < 2; attempt++) {
+		try {
+			await invoke('constellation_search_reindex', { notePath, libraryName });
+			if (attempt > 0) indexHealthError.set(null); // the retry healed it
+			return;
+		} catch (e) {
+			if (attempt === 0) {
+				await new Promise((r) => setTimeout(r, 1500));
+				continue;
+			}
+			indexHealthError.set(`${notePath}: ${String(e)}`);
+			console.error('[reindex] failed after retry — search index diverged for', notePath, e);
+		}
+	}
 }
 
 /** Store a pre-computed embedding vector for a note (from JS semantic engine). */
@@ -4307,7 +4471,25 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 	try {
 		if (movedTab && isNoteDirty(movedTab.id)) {
 			markRecentWrite(movedTab.path);
-			await saveNoteSession(movedTab.id, movedTab.path, standardSaveEnv({ origin: 'move_flush', name: movedTab.name }), 'move_flush');
+			const mf = await saveNoteSession(movedTab.id, movedTab.path, standardSaveEnv({ origin: 'move_flush', name: movedTab.name }), 'move_flush');
+			// ★ 2026-08-01 inspection — READ THE OUTCOME. `saveNoteSession` does NOT throw on a
+			// failed write: it RETURNS `{ok:false, reason:'write_failed'}` (or a compose refusal)
+			// and surfaces the save-health row. Ignoring it meant the envelope above was only
+			// half an envelope — the gate was taken, the flush was attempted, and the move then
+			// proceeded regardless, relocating the file out from under a model whose newest bytes
+			// had never reached disk. `renameItem`'s `renameFlushOk` is the same gate; it can keep
+			// going because it has somewhere safe to land (keep the dirty model, repath it, retry).
+			// A move has no such branch to fall into and nothing here re-seeds, so the honest
+			// answer is the one both callers already handle: ABORT, leave the file exactly where
+			// it is, and let the save-health banner (+ its ~10 s auto-retry) drive the write at the
+			// UNCHANGED path. `handleMoveConfirm` shows this message inline in MoveDialog, the
+			// batch path logs and skips the item, OrgChart alerts — no silent half-move anywhere.
+			if (!mf.ok) {
+				throw new Error(
+					"Move cancelled: this note's unsaved changes could not be written to disk first. " +
+					'Nothing was moved — retry once the file is writable.',
+				);
+			}
 		}
 		newPath = await invoke<string>('move_item', { sourcePath, targetFolder });
 	} finally {
@@ -4345,6 +4527,18 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 		}
 		return t;
 	}));
+	// ★ 2026-08-01 inspection — the save-health entry FOLLOWS THE FILE, exactly as
+	// `renameItem`'s APP-KILLER #2 re-point does. `retrySaveFailure` looks the tab up BY PATH,
+	// so a row left keyed at the pre-move path can never find its (now repathed) tab again:
+	// the banner's Retry silently no-ops and the ~10 s auto-retry drives nothing — the whole
+	// save-retry surface defeated for that note, with the row stuck on screen forever. Placed
+	// after the repath so the entry and the tab agree on one path. (Unconditional, unlike
+	// renameItem's `!renameFlushOk` branch: with the abort gate above a failed move-flush never
+	// reaches here, but a row left by an EARLIER failed save still has to follow the move.)
+	if (newPath !== sourcePath) {
+		const stale = get(saveHealth).get(sourcePath);
+		if (stale) { clearSaveFailure(sourcePath); reportSaveFailure(newPath, stale.name, stale.error); }
+	}
 	return newPath;
 }
 
@@ -5269,7 +5463,14 @@ export async function resolveStructuralConflict(notePath: string, field: 'parent
 		// PJ-092 H4 — bounded flush; if not durable, DON'T rewrite+reload (clobber/hang guard); save-health retries.
 		if (openTab && !(await flushOpenTabOrAbort(openTab, 'structural_resolve_flush'))) return;
 		await invoke('resolve_structural_conflict', { notePath, field, targetName });
-		await reloadTabsFromDisk([notePath]); // model ADOPTS the resolved disk + {#key} remount
+		// ★ 2026-08-01 inspection — same missing third guard as `toggleTaskReconciled` (:1258): a
+		// keystroke landing during the gated RMW above re-dirties the model, PJ-174 refuses the
+		// reseed, and the next debounced save composes from the pre-resolve base and REVERTS the
+		// structural resolve on disk. Refusal → the `.conflict` sidecar + banner, never silence.
+		const refused = await reloadTabsFromDisk([notePath], { conflict: reportExternalConflict }); // model ADOPTS the resolved disk + {#key} remount
+		if (refused.length > 0) {
+			console.warn('[resolveStructuralConflict] PJ-174 — dirty model refused the post-resolve reload (edits kept, conflict raised):', refused);
+		}
 	} finally {
 		if (openTab) clearCascading(openTab.path);
 	}
@@ -6495,19 +6696,91 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 }
 
 export async function loadSettings() {
+	// 2026-08-01 inspection — a universe switch re-loads settings through here; a pending
+	// debounced save still belongs to the OUTGOING universe. Flush it first (with its
+	// arm-time root), or the timer fires after appSettings is replaced and writes the new
+	// universe's settings over the old universe's file (or vice versa).
+	await flushPendingSettingsSave();
+	// Safety inspection 2026-08-01 — settings.json was the ONE persisted store with no
+	// "a read SUCCEEDED" latch (collections, workspaces and property-types all have one).
+	// A failed or ambiguous read left `appSettings` at DEFAULTS — or, on a universe switch,
+	// at the PREVIOUS universe's settings — and the very next `saveSettings()` atomically
+	// wrote that over the user's real file. `loaded` means a read succeeded, nothing else.
+	settingsLoaded = false;
 	try {
 		const parsed = await invoke<Record<string, unknown>>('read_universe_settings');
 		applyParsedSettings(parsed);
-	} catch { /* ignore */ }
+		settingsLoaded = true;
+		settingsError.set(null);
+	} catch (e) {
+		settingsError.set(String(e));
+		console.error('[settings] read failed — saving is disabled this session to protect the file:', e);
+	}
 }
 
 let saveSettingsTimer: ReturnType<typeof setTimeout> | null = null;
+/** Safety inspection 2026-08-01 — the read-succeeded latch (the collections/workspaces/
+ *  property-types rule, applied to the last store that lacked it). A write is REFUSED until
+ *  a read has succeeded, because writing a default-shaped object over a file we could not
+ *  read is how a whole settings file is lost. */
+let settingsLoaded = false;
+
+/** The boot bundle carries settings inline; a NON-EMPTY object proves the read succeeded and
+ *  may latch. An empty one proves nothing (the bundle maps a read error to `{}`), so it must
+ *  not — the explicit `loadSettings()` fallback can tell the two apart. Same rule, same
+ *  reasoning, as `seedFromBundle` in the property-type registry. */
+export function markSettingsLoadedFromBundle(parsed: unknown): void {
+	if (parsed && typeof parsed === 'object' && Object.keys(parsed as object).length > 0) {
+		settingsLoaded = true;
+		settingsError.set(null);
+	}
+}
+/** 2026-08-01 inspection — the universe root captured when the debounce ARMED, so a timer
+ *  firing after a universe switch still writes to the universe the change belonged to. */
+let pendingSettingsRoot: string | undefined;
+/** Surfaced when the settings write fails (mirrors collectionsError — a release build has no
+ *  devtools, so console.error alone means every change this session silently reverts). */
+export const settingsError = writable<string | null>(null);
+
+/** The active universe root, synchronously: the universe_notes library's path IS the root. */
+export function activeUniverseRootSync(): string | undefined {
+	return get(libraries).find((v) => v.is_universe_notes)?.path ?? undefined;
+}
 
 export function saveSettings() {
+	// The latch: never overwrite a file we could not read (see `settingsLoaded`).
+	if (!settingsLoaded) {
+		settingsError.set('not-loaded');
+		console.warn('[settings] refusing to save: the settings file was never read successfully');
+		return;
+	}
 	if (saveSettingsTimer) clearTimeout(saveSettingsTimer);
+	else pendingSettingsRoot = activeUniverseRootSync(); // first arm of this window
 	saveSettingsTimer = setTimeout(() => {
-		invoke('save_universe_settings', { settings: get(appSettings) }).catch(e => console.error('[save] settings failed:', e));
+		saveSettingsTimer = null;
+		const universeRoot = pendingSettingsRoot;
+		pendingSettingsRoot = undefined;
+		invoke('save_universe_settings', { settings: get(appSettings), universeRoot })
+			.then(() => settingsError.set(null))
+			.catch(e => { settingsError.set(String(e)); console.error('[save] settings failed:', e); });
 	}, 300);
+}
+
+/** 2026-08-01 inspection — fire the pending debounced settings write NOW (app close and
+ *  universe switch): a change made inside the 300ms window must never silently revert. */
+export async function flushPendingSettingsSave(): Promise<void> {
+	if (!saveSettingsTimer) return;
+	clearTimeout(saveSettingsTimer);
+	saveSettingsTimer = null;
+	const universeRoot = pendingSettingsRoot ?? activeUniverseRootSync();
+	pendingSettingsRoot = undefined;
+	try {
+		await invoke('save_universe_settings', { settings: get(appSettings), universeRoot });
+		settingsError.set(null);
+	} catch (e) {
+		settingsError.set(String(e));
+		console.error('[save] settings flush failed:', e);
+	}
 }
 
 export function updateSettings(partial: Partial<AppSettings>) {
@@ -6711,7 +6984,13 @@ function persistWorkspaces() {
 		workspacesError.set('Workspaces could not be read, so saving is disabled to protect your saved layouts.');
 		return;
 	}
-	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(e => console.error('[save] workspaces failed:', e));
+	// 2026-08-01 inspection — root captured at CALL time (a fire-and-forget landing after a
+	// universe switch must not clobber the new universe's file), and a write failure sets
+	// workspacesError (it was set on the read-refusal path only — the write half was silent).
+	const universeRoot = activeUniverseRootSync();
+	invoke('save_universe_workspaces', { workspaces: get(workspaces), universeRoot })
+		.then(() => workspacesError.set(null))
+		.catch(e => { workspacesError.set(String(e)); console.error('[save] workspaces failed:', e); });
 }
 
 export function saveWorkspace(name: string, layout?: WorkspaceLayout, secondScreenState?: WorkspaceSecondScreen) {

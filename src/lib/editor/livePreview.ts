@@ -263,7 +263,39 @@ const checkboxUncheckedDeco = Decoration.replace({ widget: new CheckboxWidget(fa
 
 // Cache resolved image data URLs to avoid repeated IPC calls.
 // Key: "libraryPath|notePath|filename", Value: data URL or '' (not found).
+//
+// Safety inspection 2026-08-01 (freeze-and-leaks) — this and `_embedCache` below
+// are BOUNDED LRUs now. Entries are full base64 payloads / complete embed
+// resolutions (including transcluded note bodies) and previously grew for the
+// whole session, in every window, with no eviction. Maps iterate in insertion
+// order, so the first key is always the least-recently-used: `lruSet` evicts it
+// once past the cap, and a HIT refreshes recency via delete+re-set. Both ops are
+// O(1) and run only inside widget `toDOM()` (viewport-driven DOM materialization),
+// never inside the decoration build loop — the read path stays allocation-free.
+// No note-saved/cascade event is imported by this module, so there is no free
+// invalidation hook — the cap alone bounds memory, and stale entries age out.
+const IMAGE_CACHE_MAX = 100; // modest cap — each entry is a big base64 data-URL
 const _imageCache = new Map<string, string>();
+
+/** Bounded-LRU read: a hit is re-inserted so insertion order tracks recency. */
+function lruGet<V>(cache: Map<string, V>, key: string): V | undefined {
+	const v = cache.get(key);
+	if (v !== undefined) {
+		cache.delete(key);
+		cache.set(key, v);
+	}
+	return v;
+}
+
+/** Bounded-LRU write: evicts the least-recently-used entry once past `max`. */
+function lruSet<V>(cache: Map<string, V>, key: string, value: V, max: number): void {
+	if (cache.has(key)) cache.delete(key);
+	else if (cache.size >= max) {
+		const oldest = cache.keys().next().value;
+		if (oldest !== undefined) cache.delete(oldest);
+	}
+	cache.set(key, value);
+}
 
 /** Cache for resolve_embed results so repeat renders don't spam IPC. */
 interface EmbedResolution {
@@ -282,6 +314,7 @@ interface EmbedResolution {
 	attachment_folder_listing?: string[];
 	attachment_folder_resolved?: string;
 }
+const EMBED_CACHE_MAX = 200; // bounded LRU — see the _imageCache note above
 const _embedCache = new Map<string, EmbedResolution>();
 /** Circular-guard for note transclusion: tracks paths currently being rendered. */
 const _transcludeStack = new Set<string>();
@@ -331,7 +364,7 @@ class ImageWidget extends WidgetType {
 		}
 
 		const cacheKey = `${this.libraryPath}|${this.notePath}|${this.filename}`;
-		const cached = _imageCache.get(cacheKey);
+		const cached = lruGet(_imageCache, cacheKey);
 
 		if (cached) {
 			// Cache hit — render immediately
@@ -355,18 +388,18 @@ class ImageWidget extends WidgetType {
 				filename: this.filename,
 			}).then(dataUrl => {
 				if (dataUrl) {
-					_imageCache.set(cacheKey, dataUrl);
+					lruSet(_imageCache, cacheKey, dataUrl, IMAGE_CACHE_MAX);
 					wrap.innerHTML = '';
 					const img = document.createElement('img');
 					img.src = dataUrl;
 					img.alt = this.alt || '';
 					wrap.appendChild(img);
 				} else {
-					_imageCache.set(cacheKey, '');
+					lruSet(_imageCache, cacheKey, '', IMAGE_CACHE_MAX);
 					this._showFallback(wrap);
 				}
 			}).catch(() => {
-				_imageCache.set(cacheKey, '');
+				lruSet(_imageCache, cacheKey, '', IMAGE_CACHE_MAX);
 				this._showFallback(wrap);
 			});
 		}
@@ -404,7 +437,7 @@ class UniversalEmbedWidget extends WidgetType {
 		const wrap = document.createElement('div');
 		wrap.className = 'cm-md-embed';
 		const cacheKey = `${this.libraryPath}|${this.notePath}|${this.target}`;
-		const cached = _embedCache.get(cacheKey);
+		const cached = lruGet(_embedCache, cacheKey);
 		if (cached) {
 			this._render(wrap, cached);
 			return wrap;
@@ -416,7 +449,7 @@ class UniversalEmbedWidget extends WidgetType {
 			notePath: this.notePath,
 			target: this.target,
 		}).then(res => {
-			_embedCache.set(cacheKey, res);
+			lruSet(_embedCache, cacheKey, res, EMBED_CACHE_MAX);
 			wrap.innerHTML = '';
 			this._render(wrap, res);
 		}).catch(() => {

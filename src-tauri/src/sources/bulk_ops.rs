@@ -224,9 +224,34 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     // actually rewrote must be ANNOUNCED: the write goes through the gate, which
     // marks the path watcher-suppressed, so without this an OPEN note keeps its
     // open-time frontmatter base and its next debounced save silently erases the
-    // accepted `sources:` / `content_type:` blocks from disk. Accumulated and
-    // flushed in chunks (never one event per note — Performance Rule 3), on the
-    // SAME boundary as the progress event, and drained on every exit path.
+    // accepted `sources:` / `content_type:` blocks from disk.
+    //
+    // 2026-08-01 inspection (HIGH, same class). The announce used to ride the
+    // `% 5` PROGRESS boundary, so a written note could wait up to four more notes'
+    // worth of file I/O before the frontend heard about it — and a debounced editor
+    // save firing inside that window composes from the STALE base, erases the
+    // just-accepted blocks, and leaves the later announce a byte-identical no-op.
+    // The DELAY is the bug, so the announce now leaves Rust in the SAME loop
+    // iteration as the disk write; only the progress event is still throttled.
+    //
+    // Why one emit per written note does not violate Performance Rule 3:
+    //   * Rust cannot tell which notes are OPEN — verified, not assumed: no managed
+    //     state in lib.rs holds an open-note registry, no command reports open tabs,
+    //     and the only tab snapshot on disk (MIG-100 `.constellation/session.json`)
+    //     is a frontend-written ~1s debounce that is DELETED outright when the
+    //     "remember tabs" toggle is off. With no cheap discriminator, announcing only
+    //     the first N notes would leave every open note deeper in the queue exposed
+    //     to exactly this bug — a half-fix for an app-killer class.
+    //   * The emit count is bounded by the notes the user explicitly chose to accept,
+    //     and each one is gated behind a per-note fsync'd read-modify-write — nothing
+    //     like the per-keystroke IPC storm Rule 3 forbids.
+    //   * Both listeners early-return when none of the announced paths is open
+    //     (`adoptExternalChangeIntoTabs` in +layout.svelte, `adoptFreshDiskIntoSS` in
+    //     SecondScreenPage), and the expensive half — reindex + stats + cache refresh —
+    //     stays coalesced behind the frontend's existing 300ms watcher-flush debounce,
+    //     so more events do NOT multiply the work.
+    // The buffer stays: it is what makes double-announcing impossible and keeps every
+    // exit path (cancel, post-loop) drained by construction.
     let mut announce_pending = AnnounceBuffer::default();
     for note_path in pending_paths {
         if state.cancel.load(Ordering::Relaxed) {
@@ -245,8 +270,12 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
 
         match accept_one(&app, &note_path) {
             Ok(outcome) => {
-                // ANNOUNCE FIRST — the bytes are on disk regardless of what step 4 did.
+                // ANNOUNCE FIRST — the bytes are on disk regardless of what step 4 did —
+                // and announce NOW: an open note's re-base must not queue behind the next
+                // four notes' file I/O (see the schedule note above). A no-op accept
+                // recorded nothing, so this is a no-op emit for it.
                 announce_pending.record(&note_path, outcome.wrote);
+                flush_announce(&app, &mut announce_pending);
                 if let Some(e) = outcome.mirror_error {
                     mirror_failures += 1;
                     if let Ok(mut g) = state.last_error.lock() {
@@ -265,9 +294,10 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
         completed += 1;
         state.completed.store(completed, Ordering::Relaxed);
 
-        // Throttle event emission per Performance Rule 3.
+        // Throttle the PROGRESS event per Performance Rule 3. Only the progress
+        // counter rides this boundary — the announce above must not, because a
+        // deferred re-base is how the accepted blocks get erased.
         if completed % 5 == 0 || completed == total {
-            flush_announce(&app, &mut announce_pending);
             let _ = app.emit(
                 "sources:bulk_accept",
                 BulkAcceptEvent {
@@ -280,8 +310,9 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
         }
     }
 
-    // Belt-and-braces: the loop flushes on its own boundary, but an early `break`
-    // or a total that never hits the modulus must never strand an un-announced write.
+    // Belt-and-braces: the loop now flushes every iteration, so this is normally a
+    // no-op — it stays because the drain contract must hold on EVERY exit path,
+    // including any future early `break` added above.
     flush_announce(&app, &mut announce_pending);
 
     let _ = app.emit(
@@ -303,13 +334,14 @@ fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// Bookkeeping for the batched announce, kept PURE (no Tauri) so the property that
-/// actually matters is unit-testable: **every note whose frontmatter was rewritten is
-/// announced exactly once, on whichever exit path the run takes** — the modulus
-/// boundary, cancellation, or normal completion. The emit itself is a one-liner
-/// re-using the event shape already proven at the four per-card seams; the drain
-/// schedule is the part that can silently strand a path, and a stranded path is the
-/// app-killer coming straight back.
+/// Bookkeeping for the announce, kept PURE (no Tauri) so the two properties that
+/// actually matter are unit-testable: **every note whose frontmatter was rewritten is
+/// announced exactly once**, and **it is announced in its OWN iteration** — never
+/// deferred behind another note's progress (2026-08-01 inspection). Whichever exit
+/// path the run takes — its own iteration, cancellation, or normal completion —
+/// nothing is left buffered. The emit itself is a one-liner re-using the event shape
+/// already proven at the four per-card seams; the drain schedule is the part that can
+/// silently strand a path, and a stranded path is the app-killer coming straight back.
 #[derive(Default)]
 struct AnnounceBuffer {
     pending: Vec<String>,
@@ -335,8 +367,11 @@ impl AnnounceBuffer {
     }
 }
 
-/// Announce the accumulated frontmatter writes as ONE `library-changed` event and
-/// clear the buffer. Re-uses the existing adopt path (`adoptExternalChangeIntoTabs`):
+/// Announce whatever frontmatter writes are buffered as ONE `library-changed` event
+/// and clear the buffer (in the accept loop that is the single note just written —
+/// the buffer is drained every iteration; the multi-path form is what keeps the
+/// cancel and post-loop exits correct by construction). Empty buffer → no event.
+/// Re-uses the existing adopt path (`adoptExternalChangeIntoTabs`):
 /// a CLEAN open model adopts the new bytes, a DIRTY one keeps its unsaved work and
 /// preserves the incoming change to a `.conflict` sidecar.
 fn flush_announce(app: &AppHandle, buffer: &mut AnnounceBuffer) {
@@ -505,23 +540,27 @@ mod tests {
     use super::AnnounceBuffer;
 
     /// Replays `run_bulk_accept`'s announce schedule against a scripted run, returning
-    /// the batches that would have been emitted. Mirrors the loop exactly: flush on
-    /// `completed % 5 == 0 || completed == total`, flush on cancel, flush after the loop.
+    /// each emitted batch paired with the `completed` counter at the moment it was
+    /// emitted. Mirrors the loop exactly: record + flush INSIDE the iteration that
+    /// wrote the note (2026-08-01 — the announce no longer rides the `% 5` progress
+    /// boundary), flush on cancel, flush after the loop.
     ///
     /// `outcomes` is one entry per queued note: `Some(true)` wrote, `Some(false)` was a
     /// no-op, `None` errored. `cancel_before` cancels the run before that index.
-    fn replay(outcomes: &[Option<bool>], cancel_before: Option<usize>) -> Vec<Vec<String>> {
-        let total = outcomes.len();
+    fn replay(outcomes: &[Option<bool>], cancel_before: Option<usize>) -> Vec<(usize, Vec<String>)> {
         let mut buf = AnnounceBuffer::default();
-        let mut batches: Vec<Vec<String>> = Vec::new();
+        let mut batches: Vec<(usize, Vec<String>)> = Vec::new();
         let mut completed = 0usize;
+        fn flush(buf: &mut AnnounceBuffer, completed: usize, out: &mut Vec<(usize, Vec<String>)>) {
+            let b = buf.drain();
+            if !b.is_empty() {
+                out.push((completed, b));
+            }
+        }
 
         for (i, outcome) in outcomes.iter().enumerate() {
             if cancel_before == Some(i) {
-                let b = buf.drain();
-                if !b.is_empty() {
-                    batches.push(b);
-                }
+                flush(&mut buf, completed, &mut batches);
                 return batches; // the cancel path returns immediately
             }
             let path = format!("note{}.md", i);
@@ -530,22 +569,16 @@ mod tests {
                 None => {} // an error records nothing, exactly like the real loop
             }
             completed += 1;
-            if completed % 5 == 0 || completed == total {
-                let b = buf.drain();
-                if !b.is_empty() {
-                    batches.push(b);
-                }
-            }
+            // The announce leaves in this iteration; only the progress event is
+            // throttled on `completed % 5 == 0 || completed == total`.
+            flush(&mut buf, completed, &mut batches);
         }
-        let b = buf.drain();
-        if !b.is_empty() {
-            batches.push(b);
-        }
+        flush(&mut buf, completed, &mut batches);
         batches
     }
 
-    fn announced(batches: &[Vec<String>]) -> Vec<String> {
-        batches.iter().flatten().cloned().collect()
+    fn announced(batches: &[(usize, Vec<String>)]) -> Vec<String> {
+        batches.iter().flat_map(|(_, b)| b.iter().cloned()).collect()
     }
 
     #[test]
@@ -566,9 +599,9 @@ mod tests {
         assert!(buf.drain().is_empty());
     }
 
-    /// THE PROPERTY. Whatever the queue length, every written path is announced
-    /// exactly once — including the tail that never reaches the `% 5` boundary,
-    /// which is the shape that would silently strand a write.
+    /// THE FIRST PROPERTY. Whatever the queue length, every written path is announced
+    /// exactly once, in queue order — a stranded path (never announced) and a doubled
+    /// one (a peek instead of a drain) are both regressions of the 2026-07-24 app-killer.
     #[test]
     fn every_write_is_announced_exactly_once_for_any_queue_length() {
         for total in 0..40usize {
@@ -597,6 +630,45 @@ mod tests {
         }
     }
 
+    /// THE SECOND PROPERTY (2026-08-01 inspection, HIGH). A note's announce leaves in
+    /// the SAME iteration as its disk write — never queued behind other notes' progress.
+    /// The old `% 5` schedule failed this: `note0.md` was not announced until four more
+    /// notes had been rewritten, and a debounced editor save landing in that window
+    /// composes from the stale base, erases the just-accepted blocks, and reduces the
+    /// late announce to a byte-identical no-op.
+    #[test]
+    fn a_write_is_announced_in_its_own_iteration_never_deferred() {
+        // Interleave no-ops and errors so the property is not an artefact of a
+        // write-every-time run: whatever else the loop does, a written note's announce
+        // lands at `completed == its own index + 1`.
+        let outcomes: Vec<Option<bool>> = (0..23)
+            .map(|i| match i % 4 {
+                0 => Some(false), // no-op
+                1 => None,        // error
+                _ => Some(true),  // wrote
+            })
+            .collect();
+        let batches = replay(&outcomes, None);
+        for (completed_at, batch) in &batches {
+            assert_eq!(batch.len(), 1, "an announce carried more than its own note: {:?}", batch);
+            let idx: usize = batch[0]
+                .trim_start_matches("note")
+                .trim_end_matches(".md")
+                .parse()
+                .unwrap();
+            assert_eq!(
+                *completed_at,
+                idx + 1,
+                "note{} was announced after {} completions — deferred behind {} other note(s)",
+                idx,
+                completed_at,
+                completed_at - idx - 1
+            );
+        }
+        // …and the run really did announce every write (the loop above is vacuous otherwise).
+        assert_eq!(batches.len(), outcomes.iter().filter(|o| **o == Some(true)).count());
+    }
+
     /// Cancelling must not strand the writes already made — they are on disk, so an
     /// open note still has to re-base or it will overwrite them on the next keystroke.
     #[test]
@@ -609,10 +681,12 @@ mod tests {
         assert_eq!(got, expected);
     }
 
-    /// A cancel landing between the modulus boundary and the next flush is the
-    /// tightest window — notes 5 and 6 were written after the flush at 5.
+    /// The window a cancel used to expose: under the `% 5` schedule, notes 5 and 6 were
+    /// written after the flush at 5 and rescued only by the cancel-path drain. Nothing is
+    /// buffered at all now, so the cancel drain is a no-op — but the property it guarded
+    /// (a written note is announced before the run can exit) still has to hold.
     #[test]
-    fn cancel_inside_the_unflushed_window_strands_nothing() {
+    fn cancel_after_the_old_modulus_window_strands_nothing() {
         let outcomes: Vec<Option<bool>> = (0..10).map(|_| Some(true)).collect();
         let batches = replay(&outcomes, Some(7));
         let got = announced(&batches);

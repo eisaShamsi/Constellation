@@ -32,7 +32,8 @@
 		markWorkspacesLoadedFromBundle,
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
-		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
+		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings, flushPendingSettingsSave, markSettingsLoadedFromBundle,
+		collectionsError, workspacesError, settingsError, indexHealthError,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		resolveTitleCollision,
@@ -157,7 +158,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { restoreSessionThenTrack, stopSessionTracking, persistSessionNow } from '$lib/libraries/session';
-	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
+	import { loadPropertyTypes, flushPendingPropertyTypesSave } from '$lib/libraries/propertyTypeRegistry';
 	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitEditorPanels, onLensChangeRequest, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { normalizeGraphStyle } from '$lib/cockpitFlag';
 	import { page } from '$app/state';
@@ -527,7 +528,51 @@
 	// build (devtools is dev-only), so "nothing happened" was the entire user-facing
 	// report. A silent failure is the class this project exists to remove; the error
 	// now surfaces where the user is looking.
+	//
+	// Safety inspection 2026-08-01 — this is THE user-visible action-failure surface of
+	// this file (the `.tpl-err` alert bar, dismissible, rendered at the top of the app
+	// shell). It keeps its template-era name, but it is no longer template-only: the
+	// rename cascade, the tag action and the batch move now report their partial
+	// failures here too, because a dropped user action with no message is the same
+	// silent-failure class. The newest message replaces the previous one.
 	let templateActionError = $state('');
+	/**
+	 * Safety inspection 2026-08-01 — the four persistent store-health conditions, in one
+	 * line. `collectionsError` and `workspacesError` (both pre-existing) and `settingsError`
+	 * / `indexHealthError` (added by this inspection) were all SET and never READ by any
+	 * component: replacing a console.error with a store nobody renders leaves the failure
+	 * exactly as invisible as it was. One concern, one surface (Whole-Ecosystem law).
+	 *
+	 * Order is worst-first: a refused WRITE means changes are being dropped right now; a
+	 * diverged index means the note is safe on disk but search is stale.
+	 */
+	const storeHealthError = $derived(
+		$collectionsError
+			? tOr('storeHealth.collections', 'Your collections could not be read, so Constellation is not saving changes to them this session — to avoid overwriting the file with an empty list. Restart to try again.')
+			: $workspacesError
+				? tOr('storeHealth.workspaces', 'Your saved layouts could not be read, so Constellation is not saving changes to them this session — to avoid overwriting them. Restart to try again.')
+				: $settingsError
+					? tOr('storeHealth.settings', 'Your settings could not be saved. Changes you make now will not survive a restart — check that the universe folder is writable and not locked by a sync tool.')
+					: $indexHealthError
+						? tOr('storeHealth.index', 'A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Rebuild Index will restore it.')
+						: '',
+	);
+	// Safety inspection 2026-08-01 — `$t` returns the KEY ITSELF when a key is missing
+	// (i18n/index.ts — documented there), so the usual `$t(k) || 'fallback'` chain never
+	// fires on a miss. These notices are the ONLY report the user gets for a dropped
+	// action, so they resolve their English text explicitly rather than risk showing a
+	// raw dotted key in a red alert bar.
+	function tOr(key: string, fallback: string, params?: Record<string, string>): string {
+		const s = $t(key, params);
+		return s === key ? fallback : s;
+	}
+	/** A path as the user reads it in the sidebar: the item's own name, no folder chain, no `.md`. */
+	function noteLabel(p: string): string { return (p.split(/[/\\]/).slice(-1)[0] || p).replace(/\.md$/i, ''); }
+	/** A capped, comma-joined list of item names for a failure notice — a 500-item batch stays readable. */
+	function failedList(paths: string[], cap = 5): string {
+		const names = paths.slice(0, cap).map(noteLabel);
+		return paths.length > names.length ? `${names.join(', ')} (+${paths.length - names.length})` : names.join(', ');
+	}
 	// MIG-103 D2 — the note the template door belongs to. Carried explicitly so an
 	// apply can never land on merely-the-focused note (the split-view app-killer).
 	let applyTemplateTargetPath = $state('');
@@ -1832,15 +1877,37 @@
 	// Unlinked mentions for current note (already debounced — no change needed)
 	let currentUnlinkedMentions: { name: string; path: string; context: string; libraryName: string }[] = $state([]);
 	let unlinkedDebounce: ReturnType<typeof setTimeout> | undefined;
+	// Safety inspection 2026-08-01 — the note the CURRENTLY RENDERED mention rows belong
+	// to. A mention row carries only the MENTIONING note ({name, path, context,
+	// libraryName}); its link TARGET is the active note, supplied separately to
+	// BacklinksPanel (`activeNoteName`). So rows and target must never come from two
+	// different notes — BacklinksPanel's "link it" (BacklinksPanel.svelte:183) would then
+	// write a wikilink for the WRONG target into the mentioning note (cross-note
+	// corruption). Two seams allowed that: an out-of-order scan result, and rows left on
+	// screen across a note switch. Both are closed below.
+	let _unlinkedRowsForPath = '';
 	$effect(() => {
 		const tab = sidebarTab;
 		void perNoteRefreshNonce; // re-scan after a mention is linked (Backlinks "link it") + any nonce bump
 		clearTimeout(unlinkedDebounce);
-		if (!tab) { currentUnlinkedMentions = []; return; }
+		if (!tab) { currentUnlinkedMentions = []; _unlinkedRowsForPath = ''; return; }
+		// Seam 2 — the rows on screen belong to the PREVIOUS note until the new scan lands
+		// (500 ms debounce + IPC). During that window `activeNoteName` is already the new
+		// note, so a click paired a stale row with the new target. Drop them the instant
+		// the note changes. A nonce-only re-run (same note) keeps its rows — no flicker.
+		if (_unlinkedRowsForPath !== tab.path) { currentUnlinkedMentions = []; _unlinkedRowsForPath = tab.path; }
+		const scanPath = tab.path;
 		unlinkedDebounce = setTimeout(async () => {
 			try {
-				currentUnlinkedMentions = await scanUnlinkedMentions(tab.name, tab.path);
-			} catch { currentUnlinkedMentions = []; }
+				const rows = await scanUnlinkedMentions(tab.name, tab.path);
+				// Seam 1 — the stale-result guard, the same idiom the sibling per-note-links
+				// effect uses above (`sidebarTab?.path === tabPath`): a timer that has already
+				// fired cannot be cleared, so two overlapping scans can resolve out of order.
+				// Discard any result whose note is no longer the one being shown.
+				if (sidebarTab?.path === scanPath) currentUnlinkedMentions = rows;
+			} catch {
+				if (sidebarTab?.path === scanPath) currentUnlinkedMentions = [];
+			}
 		}, 500);
 	});
 
@@ -2573,6 +2640,14 @@
 			try {
 				const parsed = (bundle.settings as Record<string, unknown>) || {};
 				applyParsedSettings(parsed);
+				// Safety inspection 2026-08-01 — route through the read-succeeded latch, exactly
+				// as workspaces/property-types do. This is the ONLY settings load path (the
+				// comment above records that `loadSettings()` has no callers), so without this
+				// the latch would refuse every save. A NON-EMPTY bundle object proves the read
+				// succeeded; an empty one is ambiguous (the bundle maps a read FAILURE to `{}`),
+				// so it defers to the explicit `loadSettings()` below, which can tell them apart.
+				markSettingsLoadedFromBundle(parsed);
+				if (!parsed || Object.keys(parsed).length === 0) void loadSettings();
 			} catch { /* settings schema mismatch — fall through with defaults */ }
 
 			// Workspaces — array set directly. (Bookmarks are migrated into the
@@ -2595,6 +2670,11 @@
 			try {
 				const reg = await import('$lib/libraries/propertyTypeRegistry');
 				reg.seedFromBundle(bundle.property_types);
+				// Safety inspection 2026-08-01 — an empty payload is ambiguous (the bundle maps
+				// a read FAILURE to `{}`), so it does not latch. Resolve it explicitly, exactly
+				// as workspaces does, or the registry stays read-only for the whole session.
+				const pt = bundle.property_types as Record<string, unknown> | null | undefined;
+				if (!pt || Object.keys(pt).length === 0) void reg.loadPropertyTypes();
 			} catch { /* on-demand load on first use */ }
 
 			// Link types (MIG-067 §C) — seed the link-type registry from the
@@ -2669,7 +2749,45 @@
 		// Runs on both the bundle and fallback paths + every universe switch.
 		loadCollections().catch(() => {});
 
-		librariesLoaded = true;
+		// MIG-108 Phase-4 audit — the crash-resume BOOT GATE: while an unfinished unification
+		// journal exists, the fan-out below (watchers, reindex, canonical repair, session
+		// restore) must NOT run against a half-moved universe — every one of them is a way
+		// for half-moved files to be re-adopted at their new paths while the move is still
+		// in flight. The resume dialog owns the next step.
+		//
+		// It WAITS rather than returns. Two of the dialog's exits reload the app (finish →
+		// reload, restore → reload) and re-enter boot clean, but "Not now" does not — and a
+		// bare `return` there would leave the session with no watchers and no restored tabs
+		// until the user restarted, which is a worse and more visible failure than the dirt
+		// this gate avoids. So every exit releases boot: dismissing runs the fan-out at once.
+		// (The gate is defence-in-depth, not a correctness requirement — the engine's resume
+		// is idempotent against a dirty world by construction: the destination-prefix purge
+		// exists precisely because boot healers can run before the user clicks Resume.)
+		// A failed PROBE also waits: if we cannot prove there is no half-finished move, the
+		// dialog says so ("the journal could not be read") and the user still holds the exit.
+		let mig108Pending = false;
+		try { mig108Pending = (await invoke('mig108_journal_state')) != null; } catch { mig108Pending = true; }
+		librariesLoaded = true; // paints the UI AND mounts the dialog that releases this gate
+		if (mig108Pending) {
+			console.warn('[mig108] unfinished unification journal — boot fan-out held for the resume dialog');
+			// Safety inspection 2026-08-01 — a gate with a single release site is a freeze
+			// waiting for one unhandled path. The dialog releases on every exit (including
+			// "I have nothing to show"), and this timeout is the belt: if it never mounts,
+			// throws before its probe, or is unmounted by an ancestor, boot proceeds anyway
+			// after 30s. Running the fan-out over a half-moved universe is recoverable — the
+			// engine's resume is idempotent against a dirty world by construction. A session
+			// with no watchers and no tabs, with no way back, is not.
+			await new Promise<void>((resolve) => {
+				let done = false;
+				const release = () => { if (!done) { done = true; resolve(); } };
+				mig108BootRelease = release;
+				setTimeout(() => {
+					if (!done) console.warn('[mig108] resume dialog never released the boot gate — proceeding after 30s');
+					release();
+				}, 30_000);
+			});
+			console.warn('[mig108] boot fan-out released');
+		}
 		performance.mark('boot:libraries-loaded');
 
 		// ═══ BOOT RULE: ZERO FILESYSTEM WALKS ════════════════════════════
@@ -2991,6 +3109,15 @@
 			try {
 				await flushAllForAppClose();
 			} catch { /* per-note: net + banner + journal hold it; the close proceeds */ }
+			// 2026-08-01 inspection — the debounced settings (300ms) and property-type (500ms)
+			// writers had NO close-time flush: a change made inside those windows silently
+			// reverted next boot. Both flushes are no-ops when nothing is pending.
+			try {
+				await flushPendingSettingsSave();
+			} catch { /* surfaced via settingsError; the close proceeds */ }
+			try {
+				await flushPendingPropertyTypesSave();
+			} catch { /* console-surfaced; the close proceeds */ }
 			invoke('session_flush_ack').catch(() => {});
 		});
 		cleanupFns.push(unlistenFinalFlush);
@@ -3433,12 +3560,26 @@
 		};
 		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
 			const { libraryId, paths } = event.payload;
-			pendingTreeRefresh.add(libraryId);
+			// 2026-08-01 inspection (APP-KILLER) — libraryId === '' marks a Rust-side
+			// ANNOUNCE (announce_frontmatter_writes / announce_disk_write): the app's own
+			// gated write asking open notes to RE-BASE. It must never pass through
+			// wasRecentlyWritten — that filter exists to keep FRONTEND saves from echoing
+			// back, but an accept within ~2s of a save is exactly when the re-base matters
+			// most; discarding it recreates the erasure the announce was built to prevent.
+			// Announces also adopt NOW, not after the 300ms flush debounce, to shrink the
+			// window in which a pending debounced save composes from the stale base.
+			// (The residual save-side race is the content-integrity class — its ruled
+			// end-state is MIG-076's single content ownership, not another filter here.)
+			const isAnnounce = libraryId === '';
+			if (!isAnnounce) pendingTreeRefresh.add(libraryId);
 			for (const p of paths) {
-				if (!wasRecentlyWritten(p)) {
+				if (isAnnounce || !wasRecentlyWritten(p)) {
 					pendingTabReloads.add(p);
 					pendingReindex.add(p); // external change → reindex into note_meta
 				}
+			}
+			if (isAnnounce) {
+				void adoptExternalChangeIntoTabs(paths, adoptExternalHooks());
 			}
 			scheduleWatcherFlush();
 		});
@@ -5770,6 +5911,9 @@
 	// MIG-108 Slice 5 — an external pick opens the Bring-In choice (Copy default / Move);
 	// an under-root pick registers directly. One Universe, One Location.
 	let showBringInChoice = $state(false);
+	/** MIG-108 Phase-4 audit — resolves the boot gate above when the resume dialog is
+	 *  dismissed, so "Not now" never leaves the session without watchers or tabs. */
+	let mig108BootRelease: (() => void) | null = null;
 
 	async function handleAddLibrary() {
 		adding = true;
@@ -6533,8 +6677,18 @@
 			const items = writableSelection;
 			moveDialog = null;
 			const moved: NoteMovedEvent[] = [];
+			// Safety inspection 2026-08-01 — collect WHICH items failed. A per-item catch
+			// keeps the batch going (correct: one locked file must not strand the rest, and
+			// a failed pre-move flush now aborts that item's move rather than moving it),
+			// but console.error alone is invisible in a release build — the user saw N
+			// selected, some silently left behind, and no way to know which.
+			const failedMoves: string[] = [];
 			for (const p of items) {
-				try { moved.push({ oldPath: p, newPath: await moveItem(p, targetFolder) }); } catch (e) { console.error('[batch move] failed for', p, e); }
+				try { moved.push({ oldPath: p, newPath: await moveItem(p, targetFolder) }); } catch (e) { failedMoves.push(p); console.error('[batch move] failed for', p, e); }
+			}
+			if (failedMoves.length > 0) {
+				const names = failedList(failedMoves);
+				templateActionError = tOr('actions.moveBatchFailed', `${failedMoves.length} item(s) could not be moved: ${names}`, { count: String(failedMoves.length), items: names });
 			}
 			await refreshAllLoadedTrees();
 			clearTreeSelection();
@@ -6584,14 +6738,28 @@
 	// body edits, identity-guarded). CLOSED notes use the gated writeNote +
 	// reindex. A disk write behind an open model is NEVER done (the model would
 	// later overwrite it, losing the tag).
+	//
+	// Safety inspection 2026-08-01 — all THREE exits that drop the user's tag action
+	// (the identity refusal, the cascade gate, and a failed write) now say so on the
+	// action-notice bar. Each keeps its own honest wording: refusing to write and
+	// failing to write are different facts, and "try again in a moment" is only true
+	// for the transient one. Previously the first two returned in total silence and
+	// the third logged to a console the release build does not have.
 	async function addTagToNote(path: string, tag: string) {
 		const t = tag.trim().replace(/^#+/, '').trim();
 		if (!t) return;
 		const tab = get(openTabs).find(tb => tb.path === path);
+		const note = noteLabel(path);
 		try {
 			if (tab) {
 				const r = composeNoteModel(tab.id, path);
-				if (!r.ok) return; // identity refusal — don't write
+				if (!r.ok) {
+					// composeNoteModel refuses when the tab has no model yet, or when its id
+					// slot now holds a DIFFERENT note. Writing anyway would put this tag on
+					// the wrong note, so the refusal is correct — it just has to be visible.
+					templateActionError = tOr('actions.tagNoIdentity', `Could not add the tag to “${note}” — this note has no stable identity yet (it is still opening, or it changed under this tab). Open it, then try again.`, { note });
+					return;
+				}
 				const { properties, body } = parseFrontmatter(r.content);
 				await saveTabContent(tab.id, path, addTagToProps(properties, t), body);
 			} else {
@@ -6604,7 +6772,10 @@
 				//
 				// markRecentWrite: without it the watcher sees our own write as an EXTERNAL
 				// change and the app treats the note as edited by another program.
-				if (isCascading(path)) return;
+				if (isCascading(path)) {
+					templateActionError = tOr('actions.tagBusy', `Could not add the tag to “${note}” — the note is busy (a rename or reload is updating it). Try again in a moment.`, { note });
+					return;
+				}
 				const content = await readNote(path);
 				const { properties, body } = parseFrontmatter(content);
 				markRecentWrite(path);
@@ -6616,6 +6787,10 @@
 			}
 			markOrgChartDirty();
 		} catch (e) {
+			// The write (model save, or the closed-note frontmatter RMW) did not land —
+			// the tag is NOT on the note. Show the real error text: in a release build,
+			// with devtools disabled, this bar is the only diagnostic that exists.
+			templateActionError = tOr('actions.tagWriteFailed', `Could not add the tag to “${note}”: ${String(e)}`, { note, error: String(e) });
 			console.error('Failed to add tag:', e);
 		}
 	}
@@ -6917,6 +7092,32 @@
 						invoke('journal_frontend_marker', { surface: 'cascade_dispatch', detail: `${oldName} -> ${newName}` }).catch(() => {});
 						// The walker NEVER rewrites an excluded note's disk (matched by file identity).
 						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName, excludedPaths);
+						// Safety inspection 2026-08-01 — SURFACE the cascade's per-file failures.
+						// `result.failed` is `[path, error]` for every referrer the walker tried to
+						// rewrite and could NOT (libraries.rs — the gate_rmw error arm: the file is
+						// locked, read-only, or behind a permission boundary), capped at 100 with the
+						// overflow counted in `failed_truncated`. NO frontend consumer read either
+						// field: the rename reported success and the user was never told which notes
+						// still point at the old title — a wrong link that looks like a right one.
+						// The cascade is per-file atomic but not transactional across files
+						// (Concept Paper D3), so a partial rewrite is an expected outcome that has
+						// to be reportable. Read here, immediately after the IPC returns, so a throw
+						// anywhere in the reload work below can never swallow the report.
+						const cascadeFailed = (result.failed?.length ?? 0) + (result.failed_truncated ?? 0);
+						if (cascadeFailed > 0) {
+							// Name the first few; `+N` covers both the ones past the display cap and
+							// the ones Rust never sent (failed_truncated), so the count is honest.
+							const names = (result.failed ?? []).slice(0, 5).map(([fp]) => noteLabel(fp));
+							const hidden = cascadeFailed - names.length;
+							const notes = hidden > 0 ? `${names.join(', ')} (+${hidden})` : names.join(', ');
+							templateActionError = tOr(
+								'cascade.failedSome',
+								`Renamed — but ${cascadeFailed} note(s) still link to “${oldName}”: their links could not be updated (the files are locked, read-only, or in use): ${notes}`,
+								{ count: String(cascadeFailed), old: oldName, notes },
+							);
+							console.error('[handleRenameComplete] cascade could not rewrite:', result.failed, 'truncated:', result.failed_truncated);
+							invoke('journal_frontend_marker', { surface: 'cascade_rewrite_failed', detail: `${cascadeFailed}|${(result.failed ?? []).map(([fp, err]) => `${fp}::${err}`).join('|')}` }).catch(() => {});
+						}
 						// PJ-092 fail-CLOSED belt (①): a note we could not flush must never be in
 						// result.rewritten. If one leaks (a path-normalization contract breach), NEVER
 						// reload it — force-reseeding the dirty model IS the data-loss — drop it + surface it.
@@ -7201,6 +7402,16 @@
 		<div class="tpl-err" role="alert" dir="auto">
 			<span>{templateActionError}</span>
 			<button class="tpl-err-x" onclick={() => (templateActionError = '')} aria-label={$t('common.close')}>✕</button>
+		</div>
+	{/if}
+	<!-- Safety inspection 2026-08-01 — the PERSISTENT "your data is not being saved" surface.
+	     Four stores recorded exactly this condition and NOTHING rendered any of them, so the
+	     failure stayed as invisible as the bare console.error each replaced (release builds
+	     have no devtools). Not dismissible: unlike an action failure, the condition is still
+	     true after you look away, and every further change in that store is also being lost. -->
+	{#if storeHealthError}
+		<div class="store-err" role="alert" dir="auto">
+			<span>{storeHealthError}</span>
 		</div>
 	{/if}
 	<!-- PJ-088 — the conflict-resolution side-by-side MERGE overlay (mounts when a merge target is set) -->
@@ -9548,7 +9759,7 @@
 	     libraries to unify, or an unfinished unification journal to resume. Gated on
 	     librariesLoaded so the probe runs against the ACTIVE universe, post-boot. -->
 	{#if librariesLoaded}
-		<Mig108UnifyDialog />
+		<Mig108UnifyDialog onDismiss={() => { mig108BootRelease?.(); mig108BootRelease = null; }} />
 	{/if}
 
 	{#if showBringInChoice}
@@ -10625,6 +10836,16 @@
 		border-bottom: 1px solid var(--background-modifier-border);
 	}
 	.tpl-err span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+	/* Persistent store-health condition — same visual family as .tpl-err, no dismiss. */
+	.store-err {
+		display: flex; align-items: center; gap: 10px;
+		padding: 8px 16px;
+		background: var(--background-modifier-error, #fdecea);
+		color: var(--text-error, #a12b1e);
+		font-size: 0.85rem;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.store-err span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 	.tpl-err-x { border: none; background: none; color: inherit; cursor: pointer; font-size: 0.9rem; }
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--center-zone-bg, #e8e8ec); }
 	.content-area.content-hidden { display: none; }

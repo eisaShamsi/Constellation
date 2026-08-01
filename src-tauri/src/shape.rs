@@ -203,12 +203,22 @@ fn apply_shape(
 
     record_change(app, file_path, from.as_deref(), to, changed_by);
 
-    // Best-effort index refresh: the disk write is the source of truth, and a
-    // reindex glitch must not fail the edit (the watcher would catch it anyway).
+    // Index refresh: the disk write is the source of truth and a reindex glitch must not fail
+    // the edit — but it must not vanish either.
+    //
+    // Safety inspection 2026-08-01 — "the watcher would catch it anyway" is FALSE for a gated
+    // write (watcher-SUPPRESSED by design) and boot never re-walks an indexed library.
     {
         use tauri::Manager;
         if let Some(state) = app.try_state::<crate::search::SearchState>() {
-            let _ = crate::search::reindex_single_note(&state, file_path, &lib_name);
+            if let Err(e) = crate::search::reindex_single_note(&state, file_path, &lib_name) {
+                if let Ok(p) = crate::search::db_path(&app) {
+                    crate::search::diag_log(
+                        &p,
+                        &format!("[set_note_shape] reindex FAILED for {}: {}", file_path, e),
+                    );
+                }
+            }
         }
     }
     Ok(from)
