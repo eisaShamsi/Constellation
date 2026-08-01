@@ -47,3 +47,4 @@ lab/tmp_*
 # Note-repair backups (MIG-078 importer cleanup) — large note .bak copies, keep local only
 lab/backups/
 .tmpprobe/
+__pycache__/
