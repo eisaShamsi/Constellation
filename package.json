@@ -10,6 +10,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run",
+		"i18n:parity": "node scripts/i18n-parity.mjs",
 		"test:red:frontmatter": "vitest run -c vitest.manual.config.mjs",
 		"tauri": "tauri",
 		"build:tradition-manifests": "node scripts/build-tradition-manifests.mjs",

@@ -1500,9 +1500,6 @@
     },
     "noteStage": "— 段階 —"
   },
-  "focusPane": {
-    "promote": "永続に昇格"
-  },
   "commandPalette": {
     "placeholder": "コマンドを入力...",
     "noResults": "結果なし"
@@ -3000,7 +2997,8 @@
     "content": "内",
     "property": "属",
     "wikilink": "鏈",
-    "semantic": "意"
+    "semantic": "意",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "表示するノートがありません",
@@ -3164,7 +3162,29 @@
       "cancel": "キャンセル",
       "acceptAllNoneTitle": "承認できるものはありません — キューのカードはすべて分類器の判断が割れており、決められるのはあなただけです。",
       "confirmRejectAllCounted": "キューの{N}件の提案を、どのノートにも書き込まずに消去しますか？ 後でスキャンを再実行できます。",
-      "confirmRejectAllSplitNote": "判断が割れた{M}件も含まれます —「すべて承認」はそれらを残しますが、「すべて却下」は残しません。"
+      "confirmRejectAllSplitNote": "判断が割れた{M}件も含まれます —「すべて承認」はそれらを残しますが、「すべて却下」は残しません。",
+      "title": "典拠レビュー",
+      "refresh": "キューを更新",
+      "loading": "提案を読み込んでいます…",
+      "errorTitle": "提案を読み込めませんでした",
+      "emptyTitle": "レビューする項目はありません",
+      "emptySub": "任意のノートを右クリック →「このノートの典拠を提案」でこのキューに追加されます。または「設定 → AI」からバックグラウンドスキャンを実行してください。",
+      "pending": "保留中",
+      "pendingPlural": "保留中",
+      "tierLabel": "分類器のティア（T1 = 同梱、T2 = より大きなモデル）",
+      "classifyActive": "開いているノートを分類",
+      "classifying": "分類しています…",
+      "acceptAll": "すべて承認",
+      "acceptAllTitle": "キュー内のすべての提案を各ノートに適用します（提案された典拠とコンテンツ種別を各ノートのフロントマターに書き込みます）",
+      "rejectAll": "すべて却下",
+      "rejectAllTitle": "キュー内のすべての提案を、何も書き込まずに消去します——後でスキャンを再実行すれば作り直せます",
+      "confirmAcceptAll": "キュー内のすべての提案を各ノートに適用しますか？この操作は両軸の最上位の提案を {N} 件のノートのフロントマターに書き込みます。処理はバックグラウンドで実行され、中止できます。",
+      "confirmAcceptAllSplitAware": "カタロガーの判断が一致した {N} 件のノートに提案を適用します。",
+      "confirmAcceptAllSkipNote": "カタロガーの判断が分かれた {M} 件のカードは、あなたが決められるようキューに残ります。",
+      "confirmRejectAll": "キュー内のすべての提案を、何も書き込まずに消去しますか？後でスキャンを再実行すれば作り直せます。",
+      "bulkRunning": "承認しています…",
+      "bulkCancelling": "中止しています…",
+      "bulkCancel": "キャンセル"
     },
     "evidence": {
       "perception": "直接的な感覚的観察",
@@ -3178,6 +3198,37 @@
       "innate-disposition": "経験以前の直観 (fitrah / nous)",
       "inspiration": "神秘的または創造的な把握 (al-ilham)",
       "revelation": "聖典または預言的伝承 (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "典拠とコンテンツ種別を提案"
+    },
+    "label": {
+      "perception": "知覚",
+      "inference": "推論",
+      "testimony": "証言",
+      "mass-transmission": "多数伝承",
+      "comparison": "類比",
+      "postulation": "要請推理",
+      "non-apprehension": "非知覚",
+      "memory": "記憶",
+      "innate-disposition": "生得的性向",
+      "inspiration": "霊感",
+      "revelation": "啓示",
+      "unclassifiable": "分類不能"
+    },
+    "description": {
+      "perception": "一次的な感覚による観察。いまこの瞬間に自分自身で見た・聞いた・触れた・測ったもの。",
+      "inference": "前提から結論へ至る推論。論理的導出、計算、演繹。",
+      "testimony": "他者の報告から得られる知識——引用、出典、単一の名指しされた情報源への参照。",
+      "mass-transmission": "共謀があり得ないほど多数の独立した証言者による一致した報告。スンナ派のタワートゥル——確実な知識をもたらす。",
+      "comparison": "既知のものとの類比による知識。法学上のキヤース、科学における類推、構造的な対応。",
+      "postulation": "最良の説明への推論。観察された事実を説明するために必要となる、未観察の事実を措定すること（アルターパッティ）。",
+      "non-apprehension": "不在についての知識。それを知覚できないがゆえに、そこに「ない」と知ること（アヌパラブディ）。",
+      "memory": "過去の経験の想起。以前の観察・会話・学びから覚えていること。",
+      "innate-disposition": "経験に先立つ知——健全な精神ならば誰もが認める基本的な道徳的・論理的真理（フィトラ／ヌース）。",
+      "inspiration": "神秘的あるいは創造的な把握——突然のひらめき、幻視、夢の内容、求めずして訪れる了解（アル＝イルハーム）。",
+      "revelation": "聖典あるいは預言による伝達——クルアーン、聖典、神の命令（アル＝ワフイ）。",
+      "unclassifiable": "ユーザーによる分類の見送り：このノートは 11 の典拠のいずれにも当てはまらない、または分類しないことを選んだ。以後、分類器からの提案は行われません。"
     }
   },
   "cataloger": {
@@ -4068,5 +4119,23 @@
     "move": "移動する",
     "moveDesc": "フォルダーごとユニバースに移動します。元の場所は空になります。",
     "title": "このフォルダーをユニバースに取り込む"
+  },
+  "classifierScan": {
+    "label": "ノートを分類しています…",
+    "done": "分類が完了しました",
+    "cancelled": "分類を中止しました",
+    "cancelling": "中止しています…",
+    "error": "分類エラー",
+    "cancel": "キャンセル",
+    "cancelTitle": "実行中のスキャンを停止します。途中までの結果は保持されます"
+  },
+  "taxonomyTreePicker": {
+    "search": "検索…",
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ",
+    "noResults": "該当なし",
+    "tier1Legend": "ティア 1 — 普遍的に認められている",
+    "tier2Legend": "ティア 2 — 広く受け入れられている",
+    "tier3Legend": "ティア 3 — 特定学派に固有、または議論がある"
   }
 }

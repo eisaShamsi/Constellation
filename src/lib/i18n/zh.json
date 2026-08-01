@@ -1500,9 +1500,6 @@
     },
     "noteStage": "— 阶段 —"
   },
-  "focusPane": {
-    "promote": "提升为永久"
-  },
   "commandPalette": {
     "placeholder": "输入命令...",
     "noResults": "无结果"
@@ -3000,7 +2997,8 @@
     "content": "内",
     "property": "属",
     "wikilink": "链",
-    "semantic": "义"
+    "semantic": "义",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "没有可显示的笔记",
@@ -3164,7 +3162,29 @@
       "cancel": "取消",
       "acceptAllNoneTitle": "没有可批准的项目——队列中的每张卡片编目器都存在分歧，只能由你决定。",
       "confirmRejectAllCounted": "清除队列中全部 {N} 条建议且不写入任何笔记？你可以稍后重新运行扫描。",
-      "confirmRejectAllSplitNote": "这包括编目器存在分歧的 {M} 张卡片——“全部批准”会保留它们，“全部拒绝”不会。"
+      "confirmRejectAllSplitNote": "这包括编目器存在分歧的 {M} 张卡片——“全部批准”会保留它们，“全部拒绝”不会。",
+      "title": "来源审阅",
+      "refresh": "刷新队列",
+      "loading": "正在加载建议…",
+      "errorTitle": "无法加载建议",
+      "emptyTitle": "没有待审阅的内容",
+      "emptySub": "右键点击任意笔记 →「为此笔记建议来源」即可填充此队列。也可在「设置 → AI」中运行后台扫描。",
+      "pending": "待处理",
+      "pendingPlural": "待处理",
+      "tierLabel": "分类器层级（T1 = 内置，T2 = 更大的模型）",
+      "classifyActive": "分类当前打开的笔记",
+      "classifying": "正在分类…",
+      "acceptAll": "全部批准",
+      "acceptAllTitle": "将队列中的每条建议应用到对应笔记（把建议的来源与内容类型写入各笔记的 frontmatter）",
+      "rejectAll": "全部拒绝",
+      "rejectAllTitle": "清空队列中的所有建议且不写入任何内容——稍后可重新运行扫描来重新生成",
+      "confirmAcceptAll": "将队列中的每条建议应用到对应笔记吗？此操作会把两个维度的最佳建议写入 {N} 条笔记的 frontmatter。操作在后台运行，可以取消。",
+      "confirmAcceptAllSplitAware": "将建议应用于编目器达成一致的 {N} 条笔记。",
+      "confirmAcceptAllSkipNote": "编目器意见分歧的 {M} 张卡片将留在队列中，由你来决定。",
+      "confirmRejectAll": "清空队列中的所有建议且不写入任何内容吗？稍后可重新运行扫描来重新生成。",
+      "bulkRunning": "正在批准…",
+      "bulkCancelling": "正在取消…",
+      "bulkCancel": "取消"
     },
     "evidence": {
       "perception": "直接的感官观察",
@@ -3178,6 +3198,37 @@
       "innate-disposition": "经验前直观 (fitrah / nous)",
       "inspiration": "神秘或创造性领悟 (al-ilham)",
       "revelation": "圣典或先知传承 (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "建议来源与内容类型"
+    },
+    "label": {
+      "perception": "感知",
+      "inference": "推理",
+      "testimony": "传述",
+      "mass-transmission": "众传",
+      "comparison": "类比",
+      "postulation": "假设推定",
+      "non-apprehension": "非知觉",
+      "memory": "记忆",
+      "innate-disposition": "天赋禀性",
+      "inspiration": "灵感",
+      "revelation": "启示",
+      "unclassifiable": "无法分类"
+    },
+    "description": {
+      "perception": "第一手的感官观察。你本人在当下亲眼所见、亲耳所闻、亲手触摸或亲自测量的内容。",
+      "inference": "由前提推向结论的推理。逻辑推导、计算、演绎。",
+      "testimony": "来自他人陈述的知识——引语、引证，以及对某一具名来源的援引。",
+      "mass-transmission": "众多彼此独立、多到不可能串通的见证者所作的一致陈述。逊尼派的「众传」（tawātur）——可产生确定的知识。",
+      "comparison": "借助已知事物的类比而得的知识。教法上的「格雅斯」（qiyās）、科学中的类比推理、结构上的对应。",
+      "postulation": "推向最佳解释的推论。为解释某一已观察到的事实，而设定一个未被观察到的事实（arthāpatti，义准量）。",
+      "non-apprehension": "关于「无」的知识。某物之所以不在，是因为对它的知觉落空（anupalabdhi，无体量）。",
+      "memory": "对既往经验的回忆。你从早先的观察、交谈或学习中记住的内容。",
+      "innate-disposition": "先于经验的认知——每一个健全心智都会认可的基本道德或逻辑真理（天性 fiṭrah / 努斯 noûs）。",
+      "inspiration": "神秘或创造性的领悟——突如其来的洞见、异象、梦境内容、不召自来的了悟（灵感 al-ilhām）。",
+      "revelation": "圣典或先知的传述——《古兰经》、经卷、神圣诫命（启示 al-waḥy）。",
+      "unclassifiable": "用户选择不分类：这条笔记不属于 11 种来源中的任何一种，或用户不愿为其分类。此后将不再给出分类建议。"
     }
   },
   "cataloger": {
@@ -4068,5 +4119,23 @@
     "move": "移动进来",
     "moveDesc": "文件夹本身移入宇宙。之后其旧位置将为空。",
     "title": "将此文件夹带入你的宇宙"
+  },
+  "classifierScan": {
+    "label": "正在分类笔记…",
+    "done": "分类完成",
+    "cancelled": "分类已取消",
+    "cancelling": "正在取消…",
+    "error": "分类错误",
+    "cancel": "取消",
+    "cancelTitle": "停止正在进行的扫描；已完成的部分结果会保留"
+  },
+  "taxonomyTreePicker": {
+    "search": "搜索…",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "noResults": "无匹配项",
+    "tier1Legend": "第 1 级 —— 普遍公认",
+    "tier2Legend": "第 2 级 —— 广泛接受",
+    "tier3Legend": "第 3 级 —— 特定学派专有或存在争议"
   }
 }

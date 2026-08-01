@@ -1500,9 +1500,6 @@
     },
     "noteStage": "— Estágio —"
   },
-  "focusPane": {
-    "promote": "Promover a permanente"
-  },
   "commandPalette": {
     "placeholder": "Digite um comando...",
     "noResults": "Sem resultados"
@@ -3000,7 +2997,8 @@
     "content": "C",
     "property": "P",
     "wikilink": "L",
-    "semantic": "S"
+    "semantic": "S",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "Nenhuma nota para exibir",
@@ -3164,7 +3162,29 @@
       "cancel": "Cancelar",
       "acceptAllNoneTitle": "Nada a aprovar — em todos os cartões da fila os catalogadores divergem, e só você pode decidir.",
       "confirmRejectAllCounted": "Limpar todas as {N} sugestões da fila sem escrever em nenhuma nota? Você pode repetir a varredura depois.",
-      "confirmRejectAllSplitNote": "Isso inclui os {M} cartões em que os catalogadores divergem — «Aprovar tudo» os mantém, «Rejeitar tudo» não."
+      "confirmRejectAllSplitNote": "Isso inclui os {M} cartões em que os catalogadores divergem — «Aprovar tudo» os mantém, «Rejeitar tudo» não.",
+      "title": "Revisão de fontes",
+      "refresh": "Atualizar a fila",
+      "loading": "A carregar sugestões…",
+      "errorTitle": "Não foi possível carregar as sugestões",
+      "emptyTitle": "Nada para rever",
+      "emptySub": "Clique com o botão direito em qualquer nota → «Sugerir fontes para esta nota» para preencher esta fila. Ou execute uma verificação em segundo plano em Definições → IA.",
+      "pending": "pendente",
+      "pendingPlural": "pendentes",
+      "tierLabel": "Nível do classificador (T1 = incluído, T2 = modelo maior)",
+      "classifyActive": "Classificar a nota aberta",
+      "classifying": "A classificar…",
+      "acceptAll": "Aprovar tudo",
+      "acceptAllTitle": "Aplica todas as sugestões da fila às respetivas notas (escreve as fontes e o tipo de conteúdo sugeridos no frontmatter de cada nota)",
+      "rejectAll": "Rejeitar tudo",
+      "rejectAllTitle": "Limpa todas as sugestões da fila sem escrever nada — pode voltar a executar a verificação mais tarde para as regenerar",
+      "confirmAcceptAll": "Aplicar todas as sugestões da fila às respetivas notas? Isto escreve as principais sugestões de ambos os eixos no frontmatter de {N} notas. A operação corre em segundo plano e pode ser cancelada.",
+      "confirmAcceptAllSplitAware": "Aplicar as sugestões a {N} notas em que os catalogadores chegaram a acordo.",
+      "confirmAcceptAllSkipNote": "{M} cartões em que os catalogadores divergiram permanecerão na fila para você decidir.",
+      "confirmRejectAll": "Limpar todas as sugestões da fila sem escrever nada? Pode voltar a executar a verificação mais tarde para as regenerar.",
+      "bulkRunning": "A aprovar…",
+      "bulkCancelling": "A cancelar…",
+      "bulkCancel": "Cancelar"
     },
     "evidence": {
       "perception": "Observação sensorial direta",
@@ -3178,6 +3198,37 @@
       "innate-disposition": "Intuição pré-experiencial (fitrah / nous)",
       "inspiration": "Apreensão mística ou criativa (al-ilham)",
       "revelation": "Transmissão de texto sagrado ou profética (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "Sugerir fontes e tipo de conteúdo"
+    },
+    "label": {
+      "perception": "Percepção",
+      "inference": "Inferência",
+      "testimony": "Testemunho",
+      "mass-transmission": "Transmissão massiva",
+      "comparison": "Comparação",
+      "postulation": "Postulação",
+      "non-apprehension": "Não apreensão",
+      "memory": "Memória",
+      "innate-disposition": "Disposição inata",
+      "inspiration": "Inspiração",
+      "revelation": "Revelação",
+      "unclassifiable": "Não classificável"
+    },
+    "description": {
+      "perception": "Observação sensorial em primeira mão. O que você mesmo viu, ouviu, tocou ou mediu no momento presente.",
+      "inference": "Raciocínio das premissas às conclusões. Derivação lógica, cálculo, dedução.",
+      "testimony": "Conhecimento a partir do relato de outrem — citações, referências e remissões a uma única fonte nomeada.",
+      "mass-transmission": "Relatos convergentes de testemunhas independentes numerosas demais para haver conluio. O tawātur sunita — produz conhecimento certo.",
+      "comparison": "Conhecimento por analogia com algo conhecido. O qiyās jurídico, o raciocínio científico por analogia, os paralelos estruturais.",
+      "postulation": "Inferência para a melhor explicação. Postular um facto não observado que é necessário para explicar um facto observado (arthāpatti).",
+      "non-apprehension": "Conhecimento da ausência. Algo NÃO está ali porque a sua percepção falha (anupalabdhi).",
+      "memory": "Evocação de experiência passada. O que você recorda de observações, conversas ou aprendizagens anteriores.",
+      "innate-disposition": "Saber pré-experiencial — verdades morais ou lógicas básicas que toda mente sã reconhece (fiṭrah / noûs).",
+      "inspiration": "Apreensão mística ou criativa — intuição súbita, visão, conteúdo onírico, compreensão não procurada (al-ilhām).",
+      "revelation": "Transmissão de texto sagrado ou profética — Alcorão, escritura, mandamento divino (al-waḥy).",
+      "unclassifiable": "Exclusão pelo utilizador: esta nota não se enquadra em nenhuma das 11 fontes, ou o utilizador prefere não a classificar. Suprime futuras sugestões do classificador."
     }
   },
   "cataloger": {
@@ -3789,110 +3840,137 @@
   "plurals": {
     "notes": {
       "one": "{count} nota",
+      "many": "{count} notas",
       "other": "{count} notas"
     },
     "libraries": {
       "one": "{count} cofre",
+      "many": "{count} cofres",
       "other": "{count} cofres"
     },
     "properties": {
       "one": "{count} propriedade",
+      "many": "{count} propriedades",
       "other": "{count} propriedades"
     },
     "words": {
       "one": "{count} palavra",
+      "many": "{count} palavras",
       "other": "{count} palavras"
     },
     "characters": {
       "one": "{count} caractere",
+      "many": "{count} caracteres",
       "other": "{count} caracteres"
     },
     "links": {
       "one": "{count} link",
+      "many": "{count} links",
       "other": "{count} links"
     },
     "nodes": {
       "one": "{count} nó",
+      "many": "{count} nós",
       "other": "{count} nós"
     },
     "edges": {
       "one": "{count} aresta",
+      "many": "{count} arestas",
       "other": "{count} arestas"
     },
     "results": {
       "one": "{count} resultado",
+      "many": "{count} resultados",
       "other": "{count} resultados"
     },
     "terms": {
       "one": "{count} termo",
+      "many": "{count} termos",
       "other": "{count} termos"
     },
     "tabs": {
       "one": "{count} aba",
+      "many": "{count} abas",
       "other": "{count} abas"
     },
     "files": {
       "one": "{count} arquivo",
+      "many": "{count} arquivos",
       "other": "{count} arquivos"
     },
     "items": {
       "one": "{count} item",
+      "many": "{count} itens",
       "other": "{count} itens"
     },
     "tags": {
       "one": "{count} tag",
+      "many": "{count} tags",
       "other": "{count} tags"
     },
     "tasksDue": {
       "one": "{count} tarefa a vencer",
+      "many": "{count} tarefas a vencer",
       "other": "{count} tarefas a vencer"
     },
     "gaps": {
       "one": "{count} lacuna",
+      "many": "{count} lacunas",
       "other": "{count} lacunas"
     },
     "tensions": {
       "one": "{count} tensão",
+      "many": "{count} tensões",
       "other": "{count} tensões"
     },
     "blindSpots": {
       "one": "{count} ponto cego",
+      "many": "{count} pontos cegos",
       "other": "{count} pontos cegos"
     },
     "outbound": {
       "one": "{count} saída",
+      "many": "{count} saídas",
       "other": "{count} saídas"
     },
     "inbound": {
       "one": "{count} entrada",
+      "many": "{count} entradas",
       "other": "{count} entradas"
     },
     "selected": {
       "one": "{count} selecionado",
+      "many": "{count} selecionados",
       "other": "{count} selecionados"
     },
     "hidden": {
       "one": "{count} oculto",
+      "many": "{count} ocultos",
       "other": "{count} ocultos"
     },
     "more": {
       "one": "{count} mais",
+      "many": "{count} mais",
       "other": "{count} mais"
     },
     "incomingLinks": {
       "one": "{count} ligação recebida",
+      "many": "{count} ligações recebidas",
       "other": "{count} ligações recebidas"
     },
     "walks": {
       "one": "{count} travessia",
+      "many": "{count} travessias",
       "other": "{count} travessias"
     },
     "days": {
       "one": "{count} dia",
+      "many": "{count} dias",
       "other": "{count} dias"
     },
     "mentions": {
       "one": "{count} menção",
+      "many": "{count} menções",
       "other": "{count} menções"
     }
   },
@@ -4095,5 +4173,23 @@
     "move": "Mover",
     "moveDesc": "A própria pasta muda-se para o universo. A localização antiga ficará vazia.",
     "title": "Trazer esta pasta para o seu universo"
+  },
+  "classifierScan": {
+    "label": "Classificando notas…",
+    "done": "Classificação concluída",
+    "cancelled": "Classificação cancelada",
+    "cancelling": "Cancelando…",
+    "error": "Erro de classificação",
+    "cancel": "Cancelar",
+    "cancelTitle": "Interrompe a verificação em curso; os resultados parciais são mantidos"
+  },
+  "taxonomyTreePicker": {
+    "search": "Pesquisar…",
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo",
+    "noResults": "Sem correspondências",
+    "tier1Legend": "Nível 1 — universalmente aceite",
+    "tier2Legend": "Nível 2 — amplamente aceite",
+    "tier3Legend": "Nível 3 — específico de uma escola ou contestado"
   }
 }
