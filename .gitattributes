@@ -1,2 +1,10 @@
 src-tauri/models/*.onnx filter=lfs diff=lfs merge=lfs -text
 src-tauri/models/*.json filter=lfs diff=lfs merge=lfs -text
+
+# Scripts with a `#!` shebang must stay LF. Git rewriting the shebang line to CRLF on a
+# Windows checkout leaves a stray  that Vite/esbuild will not strip, so importing the
+# module fails with "Invalid or unexpected token" — which is how tests/i18n/locale-parity
+# broke on merge while passing on the branch that wrote it. Also correct for macOS/Linux,
+# where a CRLF shebang makes the file unexecutable outright (Cross-Platform by Design).
+*.mjs text eol=lf
+*.sh text eol=lf

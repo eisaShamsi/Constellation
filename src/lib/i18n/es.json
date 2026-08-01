@@ -1065,9 +1065,6 @@
     },
     "noteStage": "— Etapa —"
   },
-  "focusPane": {
-    "promote": "Promover a permanente"
-  },
   "commandPalette": {
     "placeholder": "Escribe un comando...",
     "noResults": "Sin resultados"
@@ -2566,7 +2563,8 @@
     "content": "C",
     "property": "P",
     "wikilink": "E",
-    "semantic": "S"
+    "semantic": "S",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "No hay notas para mostrar",
@@ -3170,7 +3168,29 @@
       "cancel": "Cancelar",
       "acceptAllNoneTitle": "Nada que aprobar: en todas las tarjetas de la cola los catalogadores discrepan y solo tú puedes decidir.",
       "confirmRejectAllCounted": "¿Descartar las {N} sugerencias de la cola sin escribir en ninguna nota? Puedes volver a ejecutar el escaneo más tarde.",
-      "confirmRejectAllSplitNote": "Esto incluye las {M} tarjetas con discrepancia — «Aprobar todo» las deja para ti, «Rechazar todo» no."
+      "confirmRejectAllSplitNote": "Esto incluye las {M} tarjetas con discrepancia — «Aprobar todo» las deja para ti, «Rechazar todo» no.",
+      "title": "Revisión de fuentes",
+      "refresh": "Actualizar la cola",
+      "loading": "Cargando sugerencias…",
+      "errorTitle": "No se pudieron cargar las sugerencias",
+      "emptyTitle": "No hay nada que revisar",
+      "emptySub": "Haga clic derecho en cualquier nota → «Sugerir fuentes para esta nota» para llenar esta cola. O ejecute un escaneo en segundo plano desde Ajustes → IA.",
+      "pending": "pendiente",
+      "pendingPlural": "pendientes",
+      "tierLabel": "Nivel del clasificador (T1 = incluido, T2 = modelo más grande)",
+      "classifyActive": "Clasificar la nota abierta",
+      "classifying": "Clasificando…",
+      "acceptAll": "Aprobar todo",
+      "acceptAllTitle": "Aplica cada sugerencia de la cola a su nota (escribe las fuentes y el tipo de contenido sugeridos en el frontmatter de cada nota)",
+      "rejectAll": "Rechazar todo",
+      "rejectAllTitle": "Borra todas las sugerencias de la cola sin escribir nada: puede volver a ejecutar el escaneo más tarde para regenerarlas",
+      "confirmAcceptAll": "¿Aplicar todas las sugerencias de la cola a sus notas? Esto escribirá las sugerencias principales de ambos ejes en el frontmatter de {N} notas. La operación se ejecuta en segundo plano y puede cancelarse.",
+      "confirmAcceptAllSplitAware": "Aplicar las sugerencias a {N} notas en las que los catalogadores llegaron a un acuerdo.",
+      "confirmAcceptAllSkipNote": "{M} tarjetas en las que los catalogadores discreparon permanecerán en la cola para que usted decida.",
+      "confirmRejectAll": "¿Borrar todas las sugerencias de la cola sin escribir nada? Puede volver a ejecutar el escaneo más tarde para regenerarlas.",
+      "bulkRunning": "Aprobando…",
+      "bulkCancelling": "Cancelando…",
+      "bulkCancel": "Cancelar"
     },
     "evidence": {
       "perception": "Observación sensorial directa",
@@ -3184,6 +3204,37 @@
       "innate-disposition": "Intuición pre-experiencial (fitrah / nous)",
       "inspiration": "Aprehensión mística o creativa (al-ilham)",
       "revelation": "Transmisión de texto sagrado o profética (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "Sugerir fuentes y tipo de contenido"
+    },
+    "label": {
+      "perception": "Percepción",
+      "inference": "Inferencia",
+      "testimony": "Testimonio",
+      "mass-transmission": "Transmisión masiva",
+      "comparison": "Comparación",
+      "postulation": "Postulación",
+      "non-apprehension": "No aprehensión",
+      "memory": "Memoria",
+      "innate-disposition": "Disposición innata",
+      "inspiration": "Inspiración",
+      "revelation": "Revelación",
+      "unclassifiable": "No clasificable"
+    },
+    "description": {
+      "perception": "Observación sensorial de primera mano. Lo que usted mismo vio, oyó, tocó o midió en el momento presente.",
+      "inference": "Razonamiento de las premisas a las conclusiones. Derivación lógica, cálculo, deducción.",
+      "testimony": "Conocimiento a partir del informe de otra persona: citas textuales, referencias y remisiones a una única fuente nombrada.",
+      "mass-transmission": "Informes convergentes de tantos testigos independientes que la connivencia resulta imposible. El tawātur suní: produce conocimiento cierto.",
+      "comparison": "Conocimiento por analogía con algo ya conocido. El qiyās jurídico, el razonamiento científico por analogía, los paralelismos estructurales.",
+      "postulation": "Inferencia hacia la mejor explicación. Postular un hecho no observado que resulta necesario para explicar uno observado (arthāpatti).",
+      "non-apprehension": "Conocimiento de la ausencia. Algo NO está ahí porque su percepción fracasa (anupalabdhi).",
+      "memory": "Evocación de una experiencia pasada. Lo que usted recuerda de observaciones, conversaciones o aprendizajes anteriores.",
+      "innate-disposition": "Saber preexperiencial: verdades morales o lógicas básicas que toda mente sana reconoce (fiṭrah / noûs).",
+      "inspiration": "Aprehensión mística o creativa: intuición súbita, visión, contenido onírico, comprensión no buscada (al-ilhām).",
+      "revelation": "Transmisión de texto sagrado o profética: Corán, escritura, mandato divino (al-waḥy).",
+      "unclassifiable": "Exclusión voluntaria: esta nota no encaja en ninguna de las 11 fuentes, o el usuario prefiere no clasificarla. Suprime futuras sugerencias del clasificador."
     }
   },
   "cataloger": {
@@ -3795,110 +3846,137 @@
   "plurals": {
     "notes": {
       "one": "{count} nota",
+      "many": "{count} notas",
       "other": "{count} notas"
     },
     "libraries": {
       "one": "{count} biblioteca",
+      "many": "{count} bibliotecas",
       "other": "{count} bibliotecas"
     },
     "properties": {
       "one": "{count} propiedad",
+      "many": "{count} propiedades",
       "other": "{count} propiedades"
     },
     "words": {
       "one": "{count} palabra",
+      "many": "{count} palabras",
       "other": "{count} palabras"
     },
     "characters": {
       "one": "{count} carácter",
+      "many": "{count} caracteres",
       "other": "{count} caracteres"
     },
     "links": {
       "one": "{count} enlace",
+      "many": "{count} enlaces",
       "other": "{count} enlaces"
     },
     "nodes": {
       "one": "{count} nodo",
+      "many": "{count} nodos",
       "other": "{count} nodos"
     },
     "edges": {
       "one": "{count} arista",
+      "many": "{count} aristas",
       "other": "{count} aristas"
     },
     "results": {
       "one": "{count} resultado",
+      "many": "{count} resultados",
       "other": "{count} resultados"
     },
     "terms": {
       "one": "{count} término",
+      "many": "{count} términos",
       "other": "{count} términos"
     },
     "tabs": {
       "one": "{count} pestaña",
+      "many": "{count} pestañas",
       "other": "{count} pestañas"
     },
     "files": {
       "one": "{count} archivo",
+      "many": "{count} archivos",
       "other": "{count} archivos"
     },
     "items": {
       "one": "{count} elemento",
+      "many": "{count} elementos",
       "other": "{count} elementos"
     },
     "tags": {
       "one": "{count} etiqueta",
+      "many": "{count} etiquetas",
       "other": "{count} etiquetas"
     },
     "tasksDue": {
       "one": "{count} tarea pendiente",
+      "many": "{count} tareas pendientes",
       "other": "{count} tareas pendientes"
     },
     "gaps": {
       "one": "{count} brecha",
+      "many": "{count} brechas",
       "other": "{count} brechas"
     },
     "tensions": {
       "one": "{count} tensión",
+      "many": "{count} tensiones",
       "other": "{count} tensiones"
     },
     "blindSpots": {
       "one": "{count} punto ciego",
+      "many": "{count} puntos ciegos",
       "other": "{count} puntos ciegos"
     },
     "outbound": {
       "one": "{count} enlace saliente",
+      "many": "{count} enlaces salientes",
       "other": "{count} enlaces salientes"
     },
     "inbound": {
       "one": "{count} enlace entrante",
+      "many": "{count} enlaces entrantes",
       "other": "{count} enlaces entrantes"
     },
     "selected": {
       "one": "{count} seleccionado",
+      "many": "{count} seleccionados",
       "other": "{count} seleccionados"
     },
     "hidden": {
       "one": "{count} oculto",
+      "many": "{count} ocultos",
       "other": "{count} ocultos"
     },
     "more": {
       "one": "{count} más",
+      "many": "{count} más",
       "other": "{count} más"
     },
     "incomingLinks": {
       "one": "{count} enlace entrante",
+      "many": "{count} enlaces entrantes",
       "other": "{count} enlaces entrantes"
     },
     "walks": {
       "one": "{count} recorrido",
+      "many": "{count} recorridos",
       "other": "{count} recorridos"
     },
     "days": {
       "one": "{count} día",
+      "many": "{count} días",
       "other": "{count} días"
     },
     "mentions": {
       "one": "{count} mención",
+      "many": "{count} menciones",
       "other": "{count} menciones"
     }
   },
@@ -4105,6 +4183,24 @@
     "move": "Mover dentro",
     "moveDesc": "La carpeta se traslada al universo. Su ubicación anterior quedará vacía.",
     "title": "Trae esta carpeta a tu universo"
+  },
+  "classifierScan": {
+    "label": "Clasificando notas…",
+    "done": "Clasificación completada",
+    "cancelled": "Clasificación cancelada",
+    "cancelling": "Cancelando…",
+    "error": "Error de clasificación",
+    "cancel": "Cancelar",
+    "cancelTitle": "Detiene el escaneo en curso; se conservan los resultados parciales"
+  },
+  "taxonomyTreePicker": {
+    "search": "Buscar…",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "noResults": "Sin coincidencias",
+    "tier1Legend": "Nivel 1 — aceptado universalmente",
+    "tier2Legend": "Nivel 2 — ampliamente aceptado",
+    "tier3Legend": "Nivel 3 — propio de una escuela o discutido"
   },
   "storeHealth": {
     "collections": "No se pudieron leer tus colecciones, así que Constellation no guardará cambios en ellas durante esta sesión, para no sobrescribir el archivo con una lista vacía. Reinicia para volver a intentarlo.",

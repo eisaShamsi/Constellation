@@ -1065,9 +1065,6 @@
     },
     "noteStage": "— Stufe —"
   },
-  "focusPane": {
-    "promote": "Zu Permanent hochstufen"
-  },
   "commandPalette": {
     "placeholder": "Befehl eingeben...",
     "noResults": "Keine Ergebnisse"
@@ -2566,7 +2563,8 @@
     "content": "I",
     "property": "E",
     "wikilink": "V",
-    "semantic": "S"
+    "semantic": "S",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "Keine Notizen zum Anzeigen",
@@ -3170,7 +3168,29 @@
       "cancel": "Abbrechen",
       "acceptAllNoneTitle": "Nichts zu übernehmen — bei jeder Karte in der Warteschlange sind sich die Katalogisierer uneinig; das entscheiden nur Sie.",
       "confirmRejectAllCounted": "Alle {N} Vorschläge in der Warteschlange verwerfen, ohne in eine Notiz zu schreiben? Sie können den Scan später erneut ausführen.",
-      "confirmRejectAllSplitNote": "Das schließt die {M} Karten mit uneinigen Katalogisierern ein — „Alle übernehmen“ lässt diese stehen, „Alle verwerfen“ nicht."
+      "confirmRejectAllSplitNote": "Das schließt die {M} Karten mit uneinigen Katalogisierern ein — „Alle übernehmen“ lässt diese stehen, „Alle verwerfen“ nicht.",
+      "title": "Quellenprüfung",
+      "refresh": "Warteschlange aktualisieren",
+      "loading": "Vorschläge werden geladen…",
+      "errorTitle": "Vorschläge konnten nicht geladen werden",
+      "emptyTitle": "Nichts zu prüfen",
+      "emptySub": "Rechtsklick auf eine beliebige Notiz → „Quellen für diese Notiz vorschlagen“, um diese Warteschlange zu füllen. Oder starten Sie einen Hintergrund-Scan unter Einstellungen → KI.",
+      "pending": "ausstehend",
+      "pendingPlural": "ausstehend",
+      "tierLabel": "Klassifikator-Stufe (T1 = mitgeliefert, T2 = größeres Modell)",
+      "classifyActive": "Geöffnete Notiz klassifizieren",
+      "classifying": "Wird klassifiziert…",
+      "acceptAll": "Alle übernehmen",
+      "acceptAllTitle": "Wendet jeden Vorschlag der Warteschlange auf seine Notiz an (schreibt die vorgeschlagenen Quellen und den Inhaltstyp in das Frontmatter jeder Notiz)",
+      "rejectAll": "Alle verwerfen",
+      "rejectAllTitle": "Löscht alle Vorschläge der Warteschlange, ohne etwas zu schreiben — Sie können den Scan später erneut ausführen, um sie neu zu erzeugen",
+      "confirmAcceptAll": "Jeden Vorschlag der Warteschlange auf seine Notiz anwenden? Dabei werden die Top-Vorschläge beider Achsen in das Frontmatter von {N} Notizen geschrieben. Der Vorgang läuft im Hintergrund und kann abgebrochen werden.",
+      "confirmAcceptAllSplitAware": "Vorschläge auf {N} Notizen anwenden, bei denen die Katalogisierer übereinstimmen.",
+      "confirmAcceptAllSkipNote": "{M} Karten, bei denen die Katalogisierer uneins sind, bleiben zur Entscheidung in der Warteschlange.",
+      "confirmRejectAll": "Alle Vorschläge der Warteschlange löschen, ohne etwas zu schreiben? Sie können den Scan später erneut ausführen, um sie neu zu erzeugen.",
+      "bulkRunning": "Wird übernommen…",
+      "bulkCancelling": "Wird abgebrochen…",
+      "bulkCancel": "Abbrechen"
     },
     "evidence": {
       "perception": "Direkte sinnliche Wahrnehmung",
@@ -3184,6 +3204,37 @@
       "innate-disposition": "Vorerfahrungs-Intuition (fitrah / nous)",
       "inspiration": "Mystische oder kreative Erkenntnis (al-ilham)",
       "revelation": "Heilige-Text- oder prophetische Überlieferung (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "Quellen & Inhaltstyp vorschlagen"
+    },
+    "label": {
+      "perception": "Wahrnehmung",
+      "inference": "Schlussfolgerung",
+      "testimony": "Zeugnis",
+      "mass-transmission": "Massenüberlieferung",
+      "comparison": "Vergleich",
+      "postulation": "Postulierung",
+      "non-apprehension": "Nicht-Wahrnehmung",
+      "memory": "Gedächtnis",
+      "innate-disposition": "Angeborene Veranlagung",
+      "inspiration": "Inspiration",
+      "revelation": "Offenbarung",
+      "unclassifiable": "Nicht klassifizierbar"
+    },
+    "description": {
+      "perception": "Unmittelbare Sinneswahrnehmung. Was Sie im gegenwärtigen Moment selbst gesehen, gehört, berührt oder gemessen haben.",
+      "inference": "Schließen von Prämissen auf Konklusionen. Logische Ableitung, Berechnung, Deduktion.",
+      "testimony": "Wissen aus dem Bericht eines anderen — Zitate, Belege, Verweise auf eine einzelne benannte Quelle.",
+      "mass-transmission": "Übereinstimmende Berichte so vieler unabhängiger Zeugen, dass Absprache ausgeschlossen ist. Das sunnitische tawātur — es begründet gewisses Wissen.",
+      "comparison": "Wissen durch Analogie zu einem Bekannten. Der juristische qiyās, wissenschaftliches Analogieschließen, strukturelle Parallelen.",
+      "postulation": "Schluss auf die beste Erklärung. Die Annahme einer unbeobachteten Tatsache, die zur Erklärung einer beobachteten erforderlich ist (arthāpatti).",
+      "non-apprehension": "Wissen um Abwesenheit. Etwas ist NICHT da, weil seine Wahrnehmung ausbleibt (anupalabdhi).",
+      "memory": "Erinnerung an frühere Erfahrung. Was Sie aus früheren Beobachtungen, Gesprächen oder Gelerntem behalten haben.",
+      "innate-disposition": "Vorerfahrungliches Wissen — grundlegende moralische oder logische Wahrheiten, die jeder gesunde Verstand anerkennt (fiṭra / noûs).",
+      "inspiration": "Mystisches oder schöpferisches Erfassen — plötzliche Einsicht, Vision, Trauminhalt, ungerufene Erkenntnis (al-ilhām).",
+      "revelation": "Überlieferung heiliger Schrift oder prophetische Mitteilung — Koran, Schrift, göttliches Gebot (al-waḥy).",
+      "unclassifiable": "Bewusster Verzicht: Diese Notiz passt zu keiner der 11 Quellen, oder die Nutzerin bzw. der Nutzer möchte sie nicht klassifizieren. Unterdrückt künftige Vorschläge des Klassifikators."
     }
   },
   "cataloger": {
@@ -4105,6 +4156,24 @@
     "move": "Verschieben",
     "moveDesc": "Der Ordner selbst zieht in das Universum um. Sein alter Ort ist danach leer.",
     "title": "Diesen Ordner in dein Universum holen"
+  },
+  "classifierScan": {
+    "label": "Notizen werden klassifiziert…",
+    "done": "Klassifizierung abgeschlossen",
+    "cancelled": "Klassifizierung abgebrochen",
+    "cancelling": "Wird abgebrochen…",
+    "error": "Klassifizierungsfehler",
+    "cancel": "Abbrechen",
+    "cancelTitle": "Laufenden Scan stoppen; Teilergebnisse bleiben erhalten"
+  },
+  "taxonomyTreePicker": {
+    "search": "Suchen…",
+    "expandAll": "Alle ausklappen",
+    "collapseAll": "Alle einklappen",
+    "noResults": "Keine Treffer",
+    "tier1Legend": "Stufe 1 — allgemein anerkannt",
+    "tier2Legend": "Stufe 2 — weithin anerkannt",
+    "tier3Legend": "Stufe 3 — schulspezifisch oder umstritten"
   },
   "storeHealth": {
     "collections": "Deine Sammlungen konnten nicht gelesen werden. Constellation speichert in dieser Sitzung keine Änderungen daran — um die Datei nicht mit einer leeren Liste zu überschreiben. Starte neu, um es erneut zu versuchen.",

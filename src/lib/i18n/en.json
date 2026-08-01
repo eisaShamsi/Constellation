@@ -479,7 +479,8 @@
       "addFolderTemplate": "Add folder template",
       "folderPath": "Folder path",
       "templateName": "Template name",
-      "noFolderTemplates": "No folder templates configured"
+      "noFolderTemplates": "No folder templates configured",
+      "intro": "Manage note templates. Templates insert predefined content into new notes."
     },
     "classifier": {
       "heading": "Sources & content type classifier",
@@ -516,7 +517,8 @@
       "connectionFailed": "Connection failed",
       "verifyConnection": "Verify your connection settings",
       "testing": "Testing...",
-      "test": "Test"
+      "test": "Test",
+      "connection": "Connection"
     },
     "index": {
       "intro": "Configure how the Index panel surfaces your library's vocabulary.",
@@ -3934,7 +3936,16 @@
       "card_radius": "Card radius",
       "link_tooltip": "Link tooltip",
       "max_width": "Max width",
-      "room_for_marks_above_the_line": "Room for marks above the line"
+      "room_for_marks_above_the_line": "Room for marks above the line",
+      "contradicts": "contradicts",
+      "causes": "causes",
+      "exemplifies": "exemplifies",
+      "generalizes": "generalizes",
+      "derives_from": "derives from",
+      "part_of": "part of",
+      "supersedes": "supersedes",
+      "note_graph": "Note graph",
+      "relationship_colours": "Relationship colours"
     }
   },
   "reviewer": {

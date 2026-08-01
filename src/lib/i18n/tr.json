@@ -1505,9 +1505,6 @@
     },
     "noteStage": "— Aşama —"
   },
-  "focusPane": {
-    "promote": "Kalıcıya yükselt"
-  },
   "commandPalette": {
     "placeholder": "Bir komut yazın...",
     "noResults": "Sonuç yok"
@@ -3006,7 +3003,8 @@
     "content": "İ",
     "property": "Ö",
     "wikilink": "B",
-    "semantic": "A"
+    "semantic": "A",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "Gösterilecek not yok",
@@ -3170,7 +3168,29 @@
       "cancel": "İptal",
       "acceptAllNoneTitle": "Onaylanacak bir şey yok — kuyruktaki her kartta kataloglayıcılar ayrıştı; kararı yalnızca siz verebilirsiniz.",
       "confirmRejectAllCounted": "Kuyruktaki {N} önerinin tamamı, hiçbir nota yazılmadan temizlensin mi? Taramayı daha sonra yeniden çalıştırabilirsiniz.",
-      "confirmRejectAllSplitNote": "Buna kataloglayıcıların ayrıştığı {M} kart da dâhildir — «Tümünü onayla» onları bırakır, «Tümünü reddet» bırakmaz."
+      "confirmRejectAllSplitNote": "Buna kataloglayıcıların ayrıştığı {M} kart da dâhildir — «Tümünü onayla» onları bırakır, «Tümünü reddet» bırakmaz.",
+      "title": "Kaynak incelemesi",
+      "refresh": "Kuyruğu yenile",
+      "loading": "Öneriler yükleniyor…",
+      "errorTitle": "Öneriler yüklenemedi",
+      "emptyTitle": "İncelenecek bir şey yok",
+      "emptySub": "Herhangi bir nota sağ tıklayın → \"Bu not için kaynak öner\" diyerek bu kuyruğu doldurun. Ya da Ayarlar → Yapay zekâ bölümünden arka planda tarama başlatın.",
+      "pending": "beklemede",
+      "pendingPlural": "beklemede",
+      "tierLabel": "Sınıflandırıcı katmanı (T1 = yerleşik, T2 = daha büyük model)",
+      "classifyActive": "Açık notu sınıflandır",
+      "classifying": "Sınıflandırılıyor…",
+      "acceptAll": "Tümünü onayla",
+      "acceptAllTitle": "Kuyruktaki her öneriyi kendi notuna uygular (önerilen kaynakları ve içerik türünü her notun frontmatter'ına yazar)",
+      "rejectAll": "Tümünü reddet",
+      "rejectAllTitle": "Kuyruktaki tüm önerileri hiçbir şey yazmadan temizler — daha sonra taramayı yeniden çalıştırıp bunları yeniden oluşturabilirsiniz",
+      "confirmAcceptAll": "Kuyruktaki her öneri kendi notuna uygulansın mı? Bu işlem her iki eksenin en iyi önerilerini {N} notun frontmatter'ına yazar. İşlem arka planda çalışır ve iptal edilebilir.",
+      "confirmAcceptAllSplitAware": "Kataloglayıcıların uzlaştığı {N} nota önerileri uygula.",
+      "confirmAcceptAllSkipNote": "Kataloglayıcıların görüş ayrılığına düştüğü {M} kart, siz karar veresiniz diye kuyrukta kalacak.",
+      "confirmRejectAll": "Kuyruktaki tüm öneriler hiçbir şey yazılmadan temizlensin mi? Daha sonra taramayı yeniden çalıştırıp bunları yeniden oluşturabilirsiniz.",
+      "bulkRunning": "Onaylanıyor…",
+      "bulkCancelling": "İptal ediliyor…",
+      "bulkCancel": "İptal"
     },
     "evidence": {
       "perception": "Doğrudan duyusal gözlem",
@@ -3184,6 +3204,37 @@
       "innate-disposition": "Deneyim öncesi sezgi (fıtrat / nous)",
       "inspiration": "Mistik veya yaratıcı kavrayış (ilham)",
       "revelation": "Kutsal metin veya peygamberî aktarım (vahiy)"
+    },
+    "contextMenu": {
+      "suggest": "Kaynak ve içerik türü öner"
+    },
+    "label": {
+      "perception": "Algı",
+      "inference": "Çıkarım",
+      "testimony": "Haber",
+      "mass-transmission": "Tevatür",
+      "comparison": "Kıyas",
+      "postulation": "Varsayımsal çıkarım",
+      "non-apprehension": "Algılamama",
+      "memory": "Bellek",
+      "innate-disposition": "Fıtrat",
+      "inspiration": "İlham",
+      "revelation": "Vahiy",
+      "unclassifiable": "Sınıflandırılamaz"
+    },
+    "description": {
+      "perception": "Birinci elden duyusal gözlem. Şu anda bizzat gördüğünüz, duyduğunuz, dokunduğunuz ya da ölçtüğünüz şey.",
+      "inference": "Öncüllerden sonuçlara akıl yürütme. Mantıksal türetim, hesaplama, tümdengelim.",
+      "testimony": "Bir başkasının aktarımından gelen bilgi — alıntılar, atıflar, adı belirtilen tek bir kaynağa gönderme.",
+      "mass-transmission": "Aralarında anlaşmaları imkânsız olacak kadar çok sayıda bağımsız tanığın birbirini doğrulayan aktarımları. Sünnî tevâtür — kesin bilgi verir.",
+      "comparison": "Bilinen bir şeye kıyasla elde edilen bilgi. Fıkhî kıyas, benzetmeye dayalı bilimsel akıl yürütme, yapısal koşutluklar.",
+      "postulation": "En iyi açıklamaya varan çıkarım. Gözlemlenen bir olguyu açıklamak için gerekli olan, gözlemlenmemiş bir olguyu varsaymak (arthāpatti).",
+      "non-apprehension": "Yokluğun bilgisi. Bir şey orada DEĞİLDİR, çünkü onun algısı gerçekleşmez (anupalabdhi).",
+      "memory": "Geçmiş deneyimin hatırlanması. Önceki gözlem, konuşma ya da öğrenmelerden hatırladıklarınız.",
+      "innate-disposition": "Deneyim öncesi biliş — her sağlıklı zihnin tanıdığı temel ahlâkî ya da mantıksal hakikatler (fıtrat / nous).",
+      "inspiration": "Mistik ya da yaratıcı kavrayış — ani sezgi, görü, rüya içeriği, istenmeden gelen fark ediş (el-ilhâm).",
+      "revelation": "Kutsal metin ya da nebevî aktarım — Kur'an, kutsal kitap, ilâhî buyruk (el-vahiy).",
+      "unclassifiable": "Kullanıcının sınıflandırmama tercihi: bu not 11 kaynaktan hiçbirine uymuyor ya da kullanıcı sınıflandırmak istemiyor. Sonraki sınıflandırıcı önerilerini bastırır."
     }
   },
   "cataloger": {
@@ -4105,6 +4156,24 @@
     "move": "Taşı",
     "moveDesc": "Klasörün kendisi evrene taşınır. Eski konumu sonrasında boş kalır.",
     "title": "Bu klasörü evrenine getir"
+  },
+  "classifierScan": {
+    "label": "Notlar sınıflandırılıyor…",
+    "done": "Sınıflandırma tamamlandı",
+    "cancelled": "Sınıflandırma iptal edildi",
+    "cancelling": "İptal ediliyor…",
+    "error": "Sınıflandırma hatası",
+    "cancel": "İptal",
+    "cancelTitle": "Süren taramayı durdurur; kısmi sonuçlar korunur"
+  },
+  "taxonomyTreePicker": {
+    "search": "Ara…",
+    "expandAll": "Tümünü genişlet",
+    "collapseAll": "Tümünü daralt",
+    "noResults": "Eşleşme yok",
+    "tier1Legend": "Katman 1 — evrensel kabul görmüş",
+    "tier2Legend": "Katman 2 — geniş ölçüde kabul görmüş",
+    "tier3Legend": "Katman 3 — belirli bir ekole özgü ya da tartışmalı"
   },
   "storeHealth": {
     "collections": "Koleksiyonlarınız okunamadı; bu oturumda üzerlerindeki değişiklikler kaydedilmeyecek — dosyanın boş bir listeyle üzerine yazılmaması için. Yeniden denemek için uygulamayı yeniden başlatın.",

@@ -1065,9 +1065,6 @@
     },
     "noteStage": "— Étape —"
   },
-  "focusPane": {
-    "promote": "Promouvoir en permanent"
-  },
   "commandPalette": {
     "placeholder": "Tapez une commande...",
     "noResults": "Aucun résultat"
@@ -2566,7 +2563,8 @@
     "content": "C",
     "property": "P",
     "wikilink": "L",
-    "semantic": "S"
+    "semantic": "S",
+    "concept": "≈"
   },
   "skyView": {
     "noNotes": "Aucune note à afficher",
@@ -3170,7 +3168,29 @@
       "cancel": "Annuler",
       "acceptAllNoneTitle": "Rien à approuver : pour chaque carte en file, les catalogueurs divergent et vous seul pouvez trancher.",
       "confirmRejectAllCounted": "Effacer les {N} suggestions de la file sans écrire dans aucune note ? Vous pourrez relancer l’analyse plus tard.",
-      "confirmRejectAllSplitNote": "Cela inclut les {M} cartes en désaccord — « Tout approuver » les laisse, « Tout rejeter » non."
+      "confirmRejectAllSplitNote": "Cela inclut les {M} cartes en désaccord — « Tout approuver » les laisse, « Tout rejeter » non.",
+      "title": "Revue des sources",
+      "refresh": "Actualiser la file",
+      "loading": "Chargement des suggestions…",
+      "errorTitle": "Impossible de charger les suggestions",
+      "emptyTitle": "Rien à examiner",
+      "emptySub": "Faites un clic droit sur une note → « Suggérer des sources pour cette note » pour alimenter cette file. Ou lancez une analyse en arrière-plan depuis Réglages → IA.",
+      "pending": "en attente",
+      "pendingPlural": "en attente",
+      "tierLabel": "Niveau du classifieur (T1 = intégré, T2 = modèle plus grand)",
+      "classifyActive": "Classer la note ouverte",
+      "classifying": "Classification…",
+      "acceptAll": "Tout approuver",
+      "acceptAllTitle": "Applique chaque suggestion de la file à sa note (écrit les sources et le type de contenu suggérés dans le frontmatter de chaque note)",
+      "rejectAll": "Tout rejeter",
+      "rejectAllTitle": "Efface toutes les suggestions de la file sans rien écrire — vous pourrez relancer l'analyse plus tard pour les régénérer",
+      "confirmAcceptAll": "Appliquer chaque suggestion de la file à sa note ? Cela écrira les principales suggestions des deux axes dans le frontmatter de {N} notes. L'opération s'exécute en arrière-plan et peut être annulée.",
+      "confirmAcceptAllSplitAware": "Appliquer les suggestions aux {N} notes pour lesquelles les catalogueurs se sont accordés.",
+      "confirmAcceptAllSkipNote": "{M} fiches sur lesquelles les catalogueurs sont en désaccord resteront dans la file pour que vous tranchiez.",
+      "confirmRejectAll": "Effacer toutes les suggestions de la file sans rien écrire ? Vous pourrez relancer l'analyse plus tard pour les régénérer.",
+      "bulkRunning": "Approbation…",
+      "bulkCancelling": "Annulation…",
+      "bulkCancel": "Annuler"
     },
     "evidence": {
       "perception": "Observation sensorielle directe",
@@ -3184,6 +3204,37 @@
       "innate-disposition": "Intuition pré-expérientielle (fitrah / nous)",
       "inspiration": "Appréhension mystique ou créative (al-ilham)",
       "revelation": "Transmission scripturaire ou prophétique (al-wahy)"
+    },
+    "contextMenu": {
+      "suggest": "Suggérer des sources et un type de contenu"
+    },
+    "label": {
+      "perception": "Perception",
+      "inference": "Inférence",
+      "testimony": "Témoignage",
+      "mass-transmission": "Transmission massive",
+      "comparison": "Comparaison",
+      "postulation": "Postulation",
+      "non-apprehension": "Non-appréhension",
+      "memory": "Mémoire",
+      "innate-disposition": "Disposition innée",
+      "inspiration": "Inspiration",
+      "revelation": "Révélation",
+      "unclassifiable": "Non classifiable"
+    },
+    "description": {
+      "perception": "Observation sensorielle de première main. Ce que vous avez vu, entendu, touché ou mesuré vous-même sur le moment.",
+      "inference": "Raisonnement des prémisses aux conclusions. Dérivation logique, calcul, déduction.",
+      "testimony": "Connaissance issue du rapport d'autrui — citations, références et renvois à une source unique et nommée.",
+      "mass-transmission": "Rapports convergents de témoins indépendants trop nombreux pour s'être concertés. Le tawātur sunnite — il produit une connaissance certaine.",
+      "comparison": "Connaissance par analogie avec une chose connue. Le qiyās juridique, le raisonnement scientifique par analogie, les parallèles structurels.",
+      "postulation": "Inférence vers la meilleure explication. Poser un fait non observé, requis pour expliquer un fait observé (arthāpatti).",
+      "non-apprehension": "Connaissance de l'absence. Une chose n'est PAS là parce que sa perception échoue (anupalabdhi).",
+      "memory": "Rappel d'une expérience passée. Ce dont vous vous souvenez d'observations, de conversations ou d'apprentissages antérieurs.",
+      "innate-disposition": "Savoir pré-expérientiel — vérités morales ou logiques élémentaires que tout esprit sain reconnaît (fiṭra / noûs).",
+      "inspiration": "Appréhension mystique ou créatrice — intuition soudaine, vision, contenu de rêve, réalisation non sollicitée (al-ilhām).",
+      "revelation": "Transmission scripturaire ou prophétique — Coran, Écriture, commandement divin (al-waḥy).",
+      "unclassifiable": "Retrait volontaire : cette note ne correspond à aucune des 11 sources, ou l'utilisateur préfère ne pas la classer. Supprime les futures suggestions du classifieur."
     }
   },
   "cataloger": {
@@ -3795,110 +3846,137 @@
   "plurals": {
     "notes": {
       "one": "{count} note",
+      "many": "{count} notes",
       "other": "{count} notes"
     },
     "libraries": {
       "one": "{count} coffre",
+      "many": "{count} coffres",
       "other": "{count} coffres"
     },
     "properties": {
       "one": "{count} propriété",
+      "many": "{count} propriétés",
       "other": "{count} propriétés"
     },
     "words": {
       "one": "{count} mot",
+      "many": "{count} mots",
       "other": "{count} mots"
     },
     "characters": {
       "one": "{count} caractère",
+      "many": "{count} caractères",
       "other": "{count} caractères"
     },
     "links": {
       "one": "{count} lien",
+      "many": "{count} liens",
       "other": "{count} liens"
     },
     "nodes": {
       "one": "{count} nœud",
+      "many": "{count} nœuds",
       "other": "{count} nœuds"
     },
     "edges": {
       "one": "{count} arête",
+      "many": "{count} arêtes",
       "other": "{count} arêtes"
     },
     "results": {
       "one": "{count} résultat",
+      "many": "{count} résultats",
       "other": "{count} résultats"
     },
     "terms": {
       "one": "{count} terme",
+      "many": "{count} termes",
       "other": "{count} termes"
     },
     "tabs": {
       "one": "{count} onglet",
+      "many": "{count} onglets",
       "other": "{count} onglets"
     },
     "files": {
       "one": "{count} fichier",
+      "many": "{count} fichiers",
       "other": "{count} fichiers"
     },
     "items": {
       "one": "{count} élément",
+      "many": "{count} éléments",
       "other": "{count} éléments"
     },
     "tags": {
       "one": "{count} étiquette",
+      "many": "{count} étiquettes",
       "other": "{count} étiquettes"
     },
     "tasksDue": {
       "one": "{count} tâche à échéance",
+      "many": "{count} tâches à échéance",
       "other": "{count} tâches à échéance"
     },
     "gaps": {
       "one": "{count} lacune",
+      "many": "{count} lacunes",
       "other": "{count} lacunes"
     },
     "tensions": {
       "one": "{count} tension",
+      "many": "{count} tensions",
       "other": "{count} tensions"
     },
     "blindSpots": {
       "one": "{count} angle mort",
+      "many": "{count} angles morts",
       "other": "{count} angles morts"
     },
     "outbound": {
       "one": "{count} sortant",
+      "many": "{count} sortants",
       "other": "{count} sortants"
     },
     "inbound": {
       "one": "{count} entrant",
+      "many": "{count} entrants",
       "other": "{count} entrants"
     },
     "selected": {
       "one": "{count} sélectionné",
+      "many": "{count} sélectionnés",
       "other": "{count} sélectionnés"
     },
     "hidden": {
       "one": "{count} masqué",
+      "many": "{count} masqués",
       "other": "{count} masqués"
     },
     "more": {
       "one": "{count} de plus",
+      "many": "{count} de plus",
       "other": "{count} de plus"
     },
     "incomingLinks": {
       "one": "{count} lien entrant",
+      "many": "{count} liens entrants",
       "other": "{count} liens entrants"
     },
     "walks": {
       "one": "{count} parcours",
+      "many": "{count} parcours",
       "other": "{count} parcours"
     },
     "days": {
       "one": "{count} jour",
+      "many": "{count} jours",
       "other": "{count} jours"
     },
     "mentions": {
       "one": "{count} mention",
+      "many": "{count} mentions",
       "other": "{count} mentions"
     }
   },
@@ -4105,6 +4183,24 @@
     "move": "Déplacer",
     "moveDesc": "Le dossier lui-même déménage dans l’univers. Son ancien emplacement sera vide ensuite.",
     "title": "Faire entrer ce dossier dans votre univers"
+  },
+  "classifierScan": {
+    "label": "Classification des notes…",
+    "done": "Classification terminée",
+    "cancelled": "Classification annulée",
+    "cancelling": "Annulation…",
+    "error": "Erreur de classification",
+    "cancel": "Annuler",
+    "cancelTitle": "Arrête l'analyse en cours ; les résultats partiels sont conservés"
+  },
+  "taxonomyTreePicker": {
+    "search": "Rechercher…",
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier",
+    "noResults": "Aucune correspondance",
+    "tier1Legend": "Niveau 1 — universellement admis",
+    "tier2Legend": "Niveau 2 — largement admis",
+    "tier3Legend": "Niveau 3 — propre à une école ou contesté"
   },
   "storeHealth": {
     "collections": "Vos collections n’ont pas pu être lues : Constellation n’enregistrera aucune modification les concernant durant cette session, pour ne pas écraser le fichier par une liste vide. Redémarrez pour réessayer.",
