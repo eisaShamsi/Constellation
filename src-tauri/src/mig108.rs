@@ -349,6 +349,13 @@ pub struct Journal {
     pub entries: Vec<JournalEntry>,
     /// Pre-move aggregates the verify phase must reproduce EXACTLY (I2).
     pub baseline: Option<Baseline>,
+    /// Stage-B 2026-08-01 — WHY the last attempt stopped. The live failure journaled
+    /// `VerifyFailed` and nothing else, so the reason had to be reconstructed afterwards from
+    /// the user's data; a 45-minute rollback deserves to explain itself. Written on every
+    /// verify refusal, cleared when a later attempt gets past it, and surfaced in the resume
+    /// card so the user is told rather than left guessing.
+    #[serde(default)]
+    pub last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -385,6 +392,7 @@ impl Journal {
                 })
                 .collect(),
             baseline: None,
+            last_error: None,
         }
     }
 
@@ -958,12 +966,40 @@ pub(crate) fn count_files(root: &Path) -> u64 {
 /// under an old prefix with no note_meta parent (legacy orphans), or rows the cascade's
 /// gates skipped (an unstamped review_schedule). Path-PK tables get a destination
 /// pre-delete so the UPDATE can never abort on a phantom.
+/// Stage-B failure 2026-08-01 — **this list is the single source of truth for BOTH the
+/// repair and the check.** It was not, and that cost a live run.
+///
+/// The Phase-4 audit (I2) observed that the verify inspected only these five tables while
+/// seven more aux tables also carry paths. I widened the VERIFY to all twelve and left the
+/// SWEEP at five — so the check could see a stale row the repair could never reach. On the
+/// Boss's universe that was 14 orphaned `note_embeddings` rows and 6 `note_body` rows (rows
+/// whose parent `note_meta` row is gone, which is precisely what this sweep exists for and
+/// precisely what the per-note cascade cannot see). The verify counted 20 stale rows,
+/// refused the commit, and rolled back a 45-minute run — correctly, but for a defect I had
+/// introduced that morning. A detector without its repair is not a safety feature.
+///
+/// The verify now iterates THIS list and nothing else, so the two cannot diverge again.
+///
+/// Third field = the destination pre-delete, needed when the path column is PK/UNIQUE so the
+/// UPDATE can never abort on a phantom row already sitting at the new path. (The
+/// destination-prefix purge earlier in the transaction normally clears those, so this is the
+/// belt to that braces.) `sight_v3_layout`, `note_state_history` and `shape_history` key
+/// MANY rows per path — deleting by destination path there would destroy siblings, so they
+/// are false by construction, not by omission.
 const SWEEP: &[(&str, &str, bool)] = &[
     ("note_links", "source_path", false),
     ("note_aliases", "path", false),
     ("sky_nodes", "path", true),
     ("sky_links", "source_path", false),
     ("review_schedule", "path", true),
+    // The seven the audit named — now repaired, not merely detected.
+    ("note_embeddings", "path", true),      // path TEXT PRIMARY KEY
+    ("note_body", "path", true),            // path TEXT PRIMARY KEY
+    ("note_summaries", "path", true),       // path TEXT PRIMARY KEY
+    ("sources_suggestions", "note_path", true), // note_path TEXT PRIMARY KEY
+    ("sight_v3_layout", "note_path", false),    // composite key — many rows per path
+    ("note_state_history", "note_path", false), // history — many rows per path
+    ("shape_history", "path", false),           // history — many rows per path
 ];
 
 /// One transaction: per-note proven cascade + straggler sweep + cache/cursor hygiene +
@@ -1173,28 +1209,12 @@ pub fn run_db_rewrite(
                 baseline, after
             ));
         }
+        // Stage-B failure 2026-08-01 — the verify iterates SWEEP and ONLY SWEEP. A separate
+        // VERIFY_EXTRA list used to name seven tables the sweep never patrolled, which made
+        // a permanently-unsatisfiable check: it could count stale rows that nothing in the
+        // transaction was able to rewrite. Those seven now live in SWEEP itself, so every
+        // table this loop checks is a table the sweep just repaired, by construction.
         let mut stale_left = 0i64;
-        const VERIFY_EXTRA: &[(&str, &str)] = &[
-            ("note_embeddings", "path"),
-            ("note_body", "path"),
-            ("note_summaries", "path"),
-            ("sources_suggestions", "note_path"),
-            ("sight_v3_layout", "note_path"),
-            ("note_state_history", "note_path"),
-            ("shape_history", "path"),
-        ];
-        for (table, col) in VERIFY_EXTRA {
-            let sql = format!("SELECT {c} FROM {t}", c = col, t = table);
-            if let Ok(mut stmt) = conn.prepare(&sql) {
-                let rows = stmt
-                    .query_map([], |r| r.get::<_, String>(0))
-                    .map_err(|e| e.to_string())?;
-                stale_left += rows
-                    .filter_map(|r| r.ok())
-                    .filter(|p| old_prefixes.matches(p))
-                    .count() as i64;
-            }
-        }
         for (table, col, _) in SWEEP {
             let sql = format!("SELECT {c} FROM {t}", c = col, t = table);
             if let Ok(mut stmt) = conn.prepare(&sql) {
@@ -1235,12 +1255,18 @@ pub fn run_db_rewrite(
                 format!("mig108 COMMIT failed (deferred FK?): {}", e)
             })?;
             eprintln!("[mig108 timing] COMMIT: {:.1}s", t_c.elapsed().as_secs_f64());
+            journal.last_error = None; // got past the verify — the old reason is history
             journal.phase = Phase::DbRewritten;
             journal.save(constellation_dir)
         }
         Err(e) => {
             let _ = conn.execute_batch("ROLLBACK");
             journal.phase = Phase::VerifyFailed;
+            // Stage-B 2026-08-01 — journal WHY, not just THAT. The live failure recorded only
+            // the phase, so the cause had to be reconstructed from the user's data after the
+            // fact. eprintln is not a record on a release GUI build: stderr goes nowhere.
+            journal.last_error = Some(e.clone());
+            eprintln!("[mig108] verify refused the commit — rolled back: {e}");
             journal.save(constellation_dir)?;
             Err(e)
         }
@@ -1842,6 +1868,78 @@ mod slice2_tests {
         // A destination that was NEVER started stays a hard error (genuine collision).
     }
 
+    /// **Stage-B failure 2026-08-01 — the live run that rolled back after 45 minutes.**
+    ///
+    /// The per-note cascade rewrites aux rows by walking `note_meta`, so a row whose parent
+    /// note row is GONE is invisible to it — that is exactly what the straggler sweep is for.
+    /// The Phase-4 audit had me widen the VERIFY to seven more aux tables without widening
+    /// the SWEEP, producing a check that could count stale rows nothing could repair. On the
+    /// Boss's universe: 14 orphaned `note_embeddings` rows + 6 `note_body` rows → 20 stale →
+    /// COMMIT refused → full rollback, deterministically, on every retry.
+    ///
+    /// RED-proof: revert `SWEEP` to its five original entries and this test fails with
+    /// "stale rows under an old prefix remain" — the exact live failure, in 20 milliseconds
+    /// instead of 45 minutes.
+    #[test]
+    fn orphaned_aux_rows_are_rewritten_by_the_sweep_not_merely_detected() {
+        let f = build_fixture();
+
+        // Orphans: rows under a moving library whose note_meta parent does not exist. Real
+        // universes accumulate these (a note deleted while its embedding row outlived it).
+        let ghost_a = Path::new(&f.ext_a).join("ghost.md").to_string_lossy().to_string();
+        let ghost_b = Path::new(&f.ext_a).join("ghost2.md").to_string_lossy().to_string();
+        f.conn
+            .execute("INSERT INTO note_embeddings (path) VALUES (?1)", [&ghost_a])
+            .unwrap();
+        f.conn
+            .execute("INSERT INTO note_body (path, body) VALUES (?1, 'orphan')", [&ghost_b])
+            .unwrap();
+        assert_eq!(
+            f.conn
+                .query_row("SELECT COUNT(*) FROM note_meta WHERE path IN (?1, ?2)", [&ghost_a, &ghost_b], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            0,
+            "the fixture's orphans must genuinely have no parent note row"
+        );
+
+        let mut j = plan(&f);
+        j.save(&f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) =
+            take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        j.save(&f.cdir).unwrap();
+        run_move_phase(&mut j, &f.cdir).unwrap();
+
+        // The whole point: this must SUCCEED. Before the fix it returned
+        // "stale rows under an old prefix remain" and rolled back.
+        run_db_rewrite(&f.conn, &mut j, &f.cdir).expect("orphans must be repairable, not just detectable");
+        assert_eq!(j.phase, Phase::DbRewritten);
+
+        // …and the orphans followed their library to the new root.
+        let new_a = Path::new(&f.root).join("LibA").join("ghost.md").to_string_lossy().to_string();
+        let new_b = Path::new(&f.root).join("LibA").join("ghost2.md").to_string_lossy().to_string();
+        assert_eq!(
+            f.conn
+                .query_row("SELECT COUNT(*) FROM note_embeddings WHERE path = ?1", [&new_a], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            1,
+            "orphaned embedding row rewritten to the new path"
+        );
+        assert_eq!(
+            f.conn
+                .query_row("SELECT COUNT(*) FROM note_body WHERE path = ?1", [&new_b], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            1,
+            "orphaned body row rewritten to the new path"
+        );
+    }
+
     /// Phase-4 audit (HIGH) — the promised restore, proven: run to Moved, put everything
     /// back, and the world is byte-identical (fs at old paths, journal gone, DB untouched).
     #[test]
@@ -1965,6 +2063,8 @@ pub struct JournalState {
     pub universe_root: String,
     /// True when restore (put everything back) is a valid direction for this phase.
     pub restorable: bool,
+    /// Why the last attempt stopped, if it did — shown in the resume card.
+    pub last_error: Option<String>,
 }
 
 fn active_cdir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -2019,6 +2119,7 @@ pub fn mig108_journal_state(app: tauri::AppHandle) -> Result<Option<JournalState
                 j.phase,
                 Phase::Planned | Phase::Snapshotted | Phase::Moving | Phase::Moved | Phase::VerifyFailed
             ),
+            last_error: j.last_error.clone(),
             phase: j.phase,
         }))
 }

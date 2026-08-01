@@ -42,6 +42,8 @@
 		entries_moved: number;
 		universe_root: string;
 		restorable: boolean;
+		/** Why the last attempt stopped — journaled by the engine, shown verbatim below. */
+		last_error: string | null;
 	}
 
 	let { onDone, onDismiss }: { onDone?: () => void; onDismiss?: () => void } = $props();
@@ -275,6 +277,13 @@
 					</p>
 					{#if resumeState.phase === 'verify_failed'}
 						<p class="m108-error">{$t('mig108.verifyFailedNote') || 'The last attempt stopped at the safety check and every database change was rolled back. Resuming will try the check again.'}</p>
+						{#if resumeState.last_error}
+							<!-- Stage-B 2026-08-01 — the reason, verbatim. The live failure showed the
+							     sentence above and nothing else, so the cause had to be reconstructed
+							     from the user's data afterwards. A rollback that took 45 minutes owes
+							     the user an explanation it already has in hand. -->
+							<p class="m108-reason">{resumeState.last_error}</p>
+						{/if}
 					{/if}
 				{:else}
 					<!-- Phase-4 audit — the journal could not be read: the one state where neither
@@ -348,6 +357,17 @@
 	.m108-skip { opacity: 0.75; }
 	.m108-skipwhy { font-size: 0.78rem; color: var(--text-faint); }
 	.m108-backup { font-size: 0.8rem; color: var(--text-muted); border-inline-start: 3px solid var(--interactive-accent); padding-inline-start: 10px; }
+	/* The journaled failure reason — monospace so a path or a count reads exactly. */
+	.m108-reason {
+		font-family: var(--font-monospace, ui-monospace, monospace);
+		font-size: 0.78rem;
+		color: var(--text-muted);
+		background: var(--background-secondary, rgba(0,0,0,0.04));
+		border-radius: 4px;
+		padding: 6px 8px;
+		margin-block-start: 4px;
+		overflow-wrap: anywhere;
+	}
 	.m108-error { font-size: 0.82rem; color: var(--text-error); }
 	.m108-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 	.m108-primary {
