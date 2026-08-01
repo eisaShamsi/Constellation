@@ -7157,7 +7157,11 @@ pub(crate) fn move_to_trash(app: tauri::AppHandle, path: String, library_path: S
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        if let Err(e) = crate::search::reindex_delete_note(&search_state, &path) {
+        if let Err(e) = crate::search::reindex_delete_note(
+            &search_state,
+            &path,
+            crate::search::DeleteCtx::new(crate::search::DeleteReason::Trash),
+        ) {
             if let Ok(p) = crate::search::db_path(&app) {
                 crate::search::diag_log(&p, &format!("[move_to_trash] reindex_delete FAILED for {}: {}", path, e));
             }
@@ -7180,6 +7184,16 @@ pub(crate) fn move_to_trash(app: tauri::AppHandle, path: String, library_path: S
 // Note-open-freeze Batch-2 §B2-4 (2026-07-03): `(async)` — off the IPC dispatch thread.
 // The destructive/rename steps run under path locks (gate_rename/gate_delete); the DB
 // cascade + reindex run after the locks release. See SESSION-LOG-2026-07-03.
+/// MIG-104 Slice 8 — the user's delete MODE is the archive's `reason`. Kept beside
+/// `delete_path` so the two can never drift: a new mode string must be answered here.
+fn delete_reason_for_mode(mode: &str) -> crate::search::DeleteReason {
+    match mode {
+        "permanent" => crate::search::DeleteReason::Permanent,
+        "system" => crate::search::DeleteReason::SystemTrash,
+        _ => crate::search::DeleteReason::Trash,
+    }
+}
+
 #[tauri::command(async)]
 pub fn delete_path(
     app: tauri::AppHandle,
@@ -7232,7 +7246,7 @@ pub fn delete_path(
             })?;
         }
         "trash" => {
-            let root = trash_root.ok_or("No trash root provided for a .trash-folder delete.")?;
+            let root = trash_root.clone().ok_or("No trash root provided for a .trash-folder delete.")?;
             move_into_trash_folder(target, Path::new(&root))?;
         }
         other => return Err(format!("Unknown delete mode: {}", other)),
@@ -7262,12 +7276,22 @@ pub fn delete_path(
             }
         };
         if folder_descendants.is_empty() {
-            if let Err(e) = crate::search::reindex_delete_note(&search_state, &path) {
+            if let Err(e) = crate::search::reindex_delete_note(
+                &search_state,
+                &path,
+                crate::search::DeleteCtx::new(delete_reason_for_mode(&mode))
+                    .with_root(trash_root.clone()),
+            ) {
                 surface(&path, e);
             }
         } else {
             for p in &folder_descendants {
-                if let Err(e) = crate::search::reindex_delete_note(&search_state, p) {
+                if let Err(e) = crate::search::reindex_delete_note(
+                    &search_state,
+                    p,
+                    crate::search::DeleteCtx::new(delete_reason_for_mode(&mode))
+                        .with_root(trash_root.clone()),
+                ) {
                     surface(p, e);
                 }
             }

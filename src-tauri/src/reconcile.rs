@@ -257,7 +257,11 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
             if Path::new(p).exists() {
                 continue; // transient stat earlier — the file is there; keep the row.
             }
-            match reindex_delete_note(&state, p) {
+            match reindex_delete_note(
+                &state,
+                p,
+                crate::search::DeleteCtx::new(crate::search::DeleteReason::ReconcileGone),
+            ) {
                 Ok(_) => removed += 1,
                 Err(e) => diag(app, &format!("[reconcile] failed to remove {}: {}", p, e)),
             }

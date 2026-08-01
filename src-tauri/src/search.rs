@@ -10363,9 +10363,99 @@ pub fn constellation_search_reindex(
 }
 
 /// Delete a note from the search index + link table.
-pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db.as_ref() {
+/// Why a note is being de-indexed. Carried, never defaulted: a future seventh caller must be
+/// forced to say which of these it is, because the archive's usefulness depends on it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeleteReason {
+    /// Moved to the universe trash — recoverable from `.trash` today.
+    Trash,
+    /// Handed to the OS recycle bin.
+    SystemTrash,
+    /// Deleted outright, no bin.
+    Permanent,
+    /// The file vanished from disk (watcher saw it go).
+    Vanished,
+    /// Boot reconcile found it already gone.
+    ReconcileGone,
+}
+
+impl DeleteReason {
+    fn as_str(self) -> &'static str {
+        match self {
+            DeleteReason::Trash => "trash",
+            DeleteReason::SystemTrash => "system_trash",
+            DeleteReason::Permanent => "permanent",
+            DeleteReason::Vanished => "vanished",
+            DeleteReason::ReconcileGone => "reconcile_gone",
+        }
+    }
+}
+
+/// The context a delete must carry so the archive can describe what happened.
+#[derive(Debug, Clone)]
+pub struct DeleteCtx {
+    pub reason: DeleteReason,
+    /// The owning library root, where the caller knows it.
+    pub library_root: Option<String>,
+    /// Where the file went (the de-collided trash destination), where that is knowable.
+    pub dest: Option<String>,
+}
+
+impl DeleteCtx {
+    pub fn new(reason: DeleteReason) -> Self {
+        Self { reason, library_root: None, dest: None }
+    }
+    pub fn with_root(mut self, root: Option<String>) -> Self {
+        self.library_root = root;
+        self
+    }
+    pub fn with_dest(mut self, dest: Option<String>) -> Self {
+        self.dest = dest;
+        self
+    }
+}
+
+/// MIG-104 Slice 8 + 8b — **the delete removes the note, not its history.**
+///
+/// This is the single funnel every delete reaches. Before it, a delete destroyed the only copy
+/// of the note's change history that existed anywhere: `note_state_history` holds the trigger-
+/// captured old→new of every past frontmatter value, and the `.md` file holds only the CURRENT
+/// values, so a past value lived in exactly one place and a delete ended it.
+///
+/// **Ordering is load-bearing and non-obvious.** `PRAGMA foreign_keys` is ON for every
+/// production connection (rusqlite enables it by default — LL-035), and the child tables are
+/// `ON DELETE CASCADE`, so `note_state_history`, `note_summaries` and `sources_suggestions` are
+/// destroyed *at* the `DELETE FROM note_meta` below. An archive hook placed with the later
+/// explicit purges would archive **nothing** — pinned by `tests_stage0_delete_order_defect`.
+/// Everything the archive needs is therefore read in PHASE 1, above that line.
+///
+/// **Three phases, because the lock may not be held across file I/O:**
+/// 1. capture + serialize under the db guard;
+/// 2. **drop the guard**, then append + fsync (the ledger's own docs mark fsync mandatory
+///    "where the only other copy is about to be destroyed" — 3.4 ms vs 168 µs, paid once per
+///    delete, batched to one fsync per folder-delete by the caller loops);
+/// 3. re-acquire and purge inside ONE transaction.
+///
+/// **Archive-first means refuse.** If the archive cannot be written, this returns `Err` and
+/// purges NOTHING. The file has already left its old location, so the rows staying is a
+/// one-note index↔disk divergence that reconcile retries next boot — strictly better than
+/// destroying a history we promised to keep.
+pub fn reindex_delete_note(
+    state: &SearchState,
+    note_path: &str,
+    ctx: DeleteCtx,
+) -> Result<(), String> {
+    // ── PHASE 1 — read everything, serialize it, then RELEASE the guard ───────────────────
+    let (archive, store, old_body, old_tags_json, del_targets, inc_on, review_on) = {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let Some(conn) = db.as_ref() else {
+            // Safety-inspection 2026-08-01 — Ok-on-None was a false success: the caller
+            // believed the note was de-indexed while NOTHING was purged.
+            return Err(format!(
+                "search DB not initialized — de-index skipped for {}",
+                note_path
+            ));
+        };
         // MIG-013 §1C — capture body BEFORE deletion so the CTSE hook
         // can subtract this note's term contributions from term_vocab.
         // `note_meta.body_text` is the source of truth for tokenization
@@ -10394,17 +10484,68 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         // MIG-079 §C.2a — capture this note's outgoing targets BEFORE deleting its
         // links, so afterward we recompute those targets (they lose this note as a
         // backlink source). None until the incoming aggregate is stamped.
-        let inc_targets = if crate::incoming_links_backfill::is_built(conn) {
-            incoming_signature(conn, note_path).ok().map(|(t, _, _)| t)
-        } else {
-            None
-        };
+        // Safety inspection 2026-08-01 — capture the former targets UNCONDITIONALLY. Sky has
+        // its own back-fill and its own completion stamp (PJ-187), so nesting its recompute
+        // inside the INCOMING gate meant that on a universe whose incoming aggregate is not
+        // built, deleting a note silently left every note it linked TO with a stale sky
+        // stratum/maturity. This is the exact defect fixed on the SAVE path earlier today and
+        // left standing here — the delete-side twin.
+        let del_targets = incoming_signature(conn, note_path).ok().map(|(t, _, _)| t);
+        let inc_on = crate::incoming_links_backfill::is_built(conn);
         // Safety-inspection 2026-08-01 — the four CORE de-index writes must not be
         // swallowed: a busy/locked failure (writer connections can hold the lock far
         // past the 5 s busy_timeout) left the rows live while the caller was told Ok
         // — a silent index↔disk divergence. Propagate, naming the table; the
         // best-effort purges below (tag_counts, review, note_body, PJ-149 surfaces)
         // keep their existing forgiveness.
+        let review_on = crate::review::is_stamped(conn);
+        let store = crate::link_life::store_dir(conn);
+        let archive = build_delete_archive(conn, note_path, &ctx, old_body.as_deref());
+        (archive, store, old_body, old_tags_json, del_targets, inc_on, review_on)
+    }; // ← guard dropped: no db lock is held across the file I/O below
+
+    // ── PHASE 2 — archive BEFORE anything is destroyed. Refuse to purge if this fails. ────
+    if !archive.is_empty() {
+        match store {
+            // A real universe: the archive is MANDATORY. If it cannot be written we purge
+            // NOTHING and say so — the rows staying is a one-note divergence reconcile retries,
+            // which is strictly better than destroying history we promised to keep.
+            Some(dir) => {
+                crate::link_life::append(&dir, crate::link_life::Stream::NoteHistory, &archive)
+                    .map_err(|e| {
+                        format!("de-index {}: archive append failed, nothing purged: {}", note_path, e)
+                    })?;
+                crate::link_life::fsync(&dir, crate::link_life::Stream::NoteHistory).map_err(|e| {
+                    format!("de-index {}: archive fsync failed, nothing purged: {}", note_path, e)
+                })?;
+            }
+            // No ledger directory EXISTS — `store_dir` derives it from `conn.path()`, so this is
+            // an in-memory connection, i.e. a test harness, never a real universe. Refusing here
+            // would wedge every delete in every such context for a store that cannot exist.
+            // Distinguished deliberately from "the archive failed", which refuses above; the
+            // difference is logged rather than silent, because a silent skip is the false-success
+            // shape this slice exists to remove.
+            None => eprintln!(
+                "[mig104] no ledger directory (in-memory db) — {} purged WITHOUT archiving {} record(s)",
+                note_path,
+                archive.len()
+            ),
+        }
+    }
+
+    // ── PHASE 3 — purge, in ONE transaction ──────────────────────────────────────────────
+    // Was 7+ auto-commit statements: a crash mid-purge left a half-deleted note, and now that
+    // an archive exists it would also leave archive/DB disagreement.
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let Some(conn) = db.as_ref() else {
+        return Err(format!(
+            "search DB not initialized — de-index skipped for {} (archive already written)",
+            note_path
+        ));
+    };
+    conn.execute_batch("BEGIN IMMEDIATE")
+        .map_err(|e| format!("de-index {}: BEGIN failed: {}", note_path, e))?;
+    let purged = (|| -> Result<(), String> {
         conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
             .map_err(|e| format!("de-index {}: DELETE note_links failed: {}", note_path, e))?;
         conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
@@ -10467,19 +10608,23 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         }
         // MIG-079 §C.2a — the deleted note's former targets each lose it as a
         // backlink source → recompute them. Best-effort; reconcile is the self-heal.
-        if let Some(targets) = inc_targets {
+        if let Some(targets) = del_targets {
             let mut affected = std::collections::HashSet::new();
             for t in &targets {
                 // Composite name+type elements since the safety-inspection widening —
                 // resolve by the NAME half only.
                 let _ = resolve_incoming_target_paths(conn, sig_target_name(t), &mut affected);
             }
-            let sql = format!(
-                "UPDATE note_meta SET {} WHERE path = ?1",
-                incoming_aggregate_assignments("note_meta")
-            );
-            for p in &affected {
-                let _ = conn.execute(&sql, params![p]);
+            // The INCOMING aggregate columns are inert until the back-fill stamps, so their
+            // recompute stays gated; the SKY recompute below does not.
+            if inc_on {
+                let sql = format!(
+                    "UPDATE note_meta SET {} WHERE path = ?1",
+                    incoming_aggregate_assignments("note_meta")
+                );
+                for p in &affected {
+                    let _ = conn.execute(&sql, params![p]);
+                }
             }
             // PJ-066 §B3 — those former targets also lose this note as an inbound source →
             // recompute their sky stratum/maturity (the deleted note's own sky_nodes row is
@@ -10494,17 +10639,112 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
                 let _ = conn.execute(&sky_sql, params![p]);
             }
         }
-    } else {
-        // Safety-inspection 2026-08-01 — Ok-on-None was a false success: the caller
-        // believed the note was de-indexed while NOTHING was purged (index↔disk
-        // divergence with no surfaced error, e.g. a delete racing a universe
-        // switch). Report the skip so callers can distinguish purged from skipped.
-        return Err(format!(
-            "search DB not initialized — de-index skipped for {}",
-            note_path
-        ));
+        Ok(())
+    })();
+    match purged {
+        Ok(()) => conn
+            .execute_batch("COMMIT")
+            .map_err(|e| format!("de-index {}: COMMIT failed: {}", note_path, e)),
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            Err(e)
+        }
     }
-    Ok(())
+}
+
+/// Serialize everything a deleted note needs to be understood later. One envelope line plus one
+/// line per history row, in the ledger's existing `note-history.jsonl` shape so
+/// `read_history_for` keeps working unchanged (`t:"nh"`).
+///
+/// Slice 8b (Boss ruling #6) — the envelope carries the note BODY, so the time machine survives
+/// an emptied recycle bin. ~35 KB per deleted note, paid once, only on delete.
+fn build_delete_archive(
+    conn: &Connection,
+    note_path: &str,
+    ctx: &DeleteCtx,
+    body: Option<&str>,
+) -> Vec<String> {
+    // The cid MUST be resolved HERE: note_state_history is keyed on an absolute path, and after
+    // the note_meta delete the path→cid mapping is gone.
+    let (cid, name, library_name): (String, String, String) = conn
+        .query_row(
+            "SELECT COALESCE(cid_cn,''), COALESCE(name,''), COALESCE(library_name,'')
+             FROM note_meta WHERE path = ?1",
+            params![note_path],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .unwrap_or_default();
+    if cid.is_empty() {
+        // No identity ⇒ nothing can be keyed or restored. Archiving under an empty cid would
+        // write records no reader could ever find. Say so rather than write noise.
+        eprintln!("[mig104] delete archive skipped for {} — note has no cid_cn", note_path);
+        return Vec::new();
+    }
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    let mut out = Vec::new();
+
+    // The envelope — what was deleted, why, from where, and (8b) its text.
+    out.push(
+        serde_json::json!({
+            "v": 1, "t": "del", "cid": cid, "at": now,
+            "path": note_path,
+            "name": name,
+            "library": library_name,
+            "reason": ctx.reason.as_str(),
+            "library_root": ctx.library_root,
+            "dest": ctx.dest,
+            "body": body,
+        })
+        .to_string(),
+    );
+
+    // The change history — the rows the FK CASCADE is about to destroy.
+    if let Ok(mut st) = conn.prepare(
+        "SELECT history_id, captured_at, changes_json FROM note_state_history
+         WHERE note_path = ?1 ORDER BY captured_at, history_id",
+    ) {
+        if let Ok(rows) = st.query_map(params![note_path], |r| {
+            Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?, r.get::<_, String>(2)?))
+        }) {
+            for (hid, at, changes) in rows.flatten() {
+                let ev: serde_json::Value =
+                    serde_json::from_str(&changes).unwrap_or(serde_json::Value::String(changes));
+                out.push(
+                    serde_json::json!({"v":1,"t":"nh","cid":cid,"hid":hid,"at":at,"ev":ev})
+                        .to_string(),
+                );
+            }
+        }
+    }
+
+    // The shape trail. Lazily created — "no such table" is a correct no-op, not a failure.
+    if let Ok(mut st) = conn.prepare(
+        "SELECT id, changed_at, from_shape, to_shape, changed_by FROM shape_history
+         WHERE path = ?1 ORDER BY changed_at, id",
+    ) {
+        if let Ok(rows) = st.query_map(params![note_path], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, Option<String>>(2)?,
+                r.get::<_, Option<String>>(3)?,
+                r.get::<_, Option<String>>(4)?,
+            ))
+        }) {
+            for (hid, at, from, to, by) in rows.flatten() {
+                out.push(
+                    serde_json::json!({"v":1,"t":"sh","cid":cid,"hid":hid,"at":at,
+                                       "from":from,"to":to,"by":by})
+                    .to_string(),
+                );
+            }
+        }
+    }
+    out
 }
 
 /// Reindex a single note — callable from other modules without Tauri command overhead.
@@ -10764,7 +11004,7 @@ fn delete_rows_under_prefix(state: &SearchState, dir_path: &str) -> usize {
         if std::path::Path::new(p).exists() {
             continue;
         }
-        if reindex_delete_note(state, p).is_ok() {
+        if reindex_delete_note(state, p, DeleteCtx::new(DeleteReason::Vanished)).is_ok() {
             n += 1;
         }
     }
@@ -10845,7 +11085,7 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
             .unwrap_or(false)
         {
             // Vanished `.md`: purge its rows. Idempotent — Ok even if never indexed.
-            if reindex_delete_note(&state, p).is_ok() {
+            if reindex_delete_note(&state, p, DeleteCtx::new(DeleteReason::Vanished)).is_ok() {
                 done += 1;
             }
         } else {
@@ -13621,7 +13861,7 @@ mod tests_watcher_freshness {
         assert_eq!(row_count(&state, &p), 1, "seeded");
 
         std::fs::remove_file(&note).unwrap();
-        reindex_delete_note(&state, &p).unwrap();
+        reindex_delete_note(&state, &p, DeleteCtx::new(DeleteReason::Permanent)).unwrap();
         assert_eq!(row_count(&state, &p), 0, "note_meta row purged on external delete");
         let link_rows: i64 = {
             let db = state.db.lock().unwrap();
@@ -13645,7 +13885,7 @@ mod tests_watcher_freshness {
         let (state, _dir) = state_with_schema();
         let ghost = "/no/such/Ghost.md";
         assert!(
-            reindex_delete_note(&state, ghost).is_ok(),
+            reindex_delete_note(&state, ghost, DeleteCtx::new(DeleteReason::Vanished)).is_ok(),
             "deleting a never-indexed path is a clean no-op"
         );
         assert_eq!(row_count(&state, ghost), 0);
@@ -14455,5 +14695,175 @@ mod tests_mig104_slice2_determinism {
         // A restored note — moved OUT of .trash — must be indexable again.
         assert!(!crate::libraries::has_dot_segment_pub(r"E:\Lib\Restored\Foo.md"));
         assert!(!crate::libraries::has_dot_segment_pub(r"E:\Lib\Foo.md"));
+    }
+}
+
+#[cfg(test)]
+mod tests_mig104_slice8 {
+    //! **The delete removes the note, not its history.**
+    //!
+    //! The trap this slice exists for: `PRAGMA foreign_keys` is ON for every production
+    //! connection, and `note_state_history` is `ON DELETE CASCADE`, so its rows are destroyed
+    //! *at* `DELETE FROM note_meta`. An archive hook placed with the later explicit purges
+    //! archives nothing. These tests pin the ordering, not just the outcome.
+    use super::*;
+    use tempfile::TempDir;
+
+    fn state_with_schema() -> (SearchState, TempDir) {
+        let dir = TempDir::new().unwrap();
+        let conn = init_db(&dir.path().join("search.db")).expect("real schema");
+        let state = SearchState::new();
+        *state.db.lock().unwrap() = Some(conn);
+        (state, dir)
+    }
+
+    /// Seed a note WITH identity and change history — the shape the archive must save.
+    fn seed(state: &SearchState, path: &str, cid: &str, hist: &[(i64, i64, &str)]) {
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, cid_cn, body_text, modified)
+             VALUES (?1, 'Doomed', 'L', ?2, 'the body that must survive', 0)",
+            params![path, cid],
+        )
+        .unwrap();
+        for (hid, at, changes) in hist {
+            conn.execute(
+                "INSERT INTO note_state_history (history_id, note_path, captured_at, changes_json)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![hid, path, at, changes],
+            )
+            .unwrap();
+        }
+    }
+
+    /// THE SLICE. History is on disk, the DB rows are gone, and the two agree.
+    #[test]
+    fn delete_archives_history_before_the_cascade_destroys_it() {
+        let (state, dir) = state_with_schema();
+        let path = "E:\\U\\L\\Doomed.md";
+        seed(
+            &state,
+            path,
+            "CID-DOOMED",
+            &[
+                (8251, 1785131711000, r#"{"to":"ma"}"#),
+                (8252, 1785131711000, r#"{"to":"mas"}"#),
+                (8253, 1785131711000, r#"{"to":"masadir"}"#),
+            ],
+        );
+
+        reindex_delete_note(&state, path, DeleteCtx::new(DeleteReason::Permanent))
+            .expect("delete succeeds");
+
+        // The rows are gone from the DB…
+        {
+            let db = state.db.lock().unwrap();
+            let conn = db.as_ref().unwrap();
+            let n: i64 = conn
+                .query_row("SELECT COUNT(*) FROM note_meta WHERE path = ?1", params![path], |r| r.get(0))
+                .unwrap();
+            assert_eq!(n, 0, "the note is purged");
+            let h: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM note_state_history WHERE note_path = ?1",
+                    params![path],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(h, 0, "the FK cascade took the history with it");
+        }
+
+        // …and every one of them is on disk, keyed by cid, in file order by hid.
+        let (recs, report) = crate::link_life::read_history_for(dir.path(), "CID-DOOMED");
+        assert_eq!(report.skipped_lines, 0, "archive is well-formed");
+        assert_eq!(recs.len(), 3, "all three history rows archived — this is the whole slice");
+        assert_eq!(
+            recs.iter().map(|r| r.hid).collect::<Vec<_>>(),
+            vec![8251, 8252, 8253],
+            "ordered by the row ordinal — `at` is identical on all three"
+        );
+    }
+
+    /// Slice 8b (Boss ruling #6) — the time machine must survive an emptied recycle bin, so the
+    /// envelope carries the note's TEXT and the reason it went.
+    #[test]
+    fn the_envelope_carries_the_body_and_the_reason() {
+        let (state, dir) = state_with_schema();
+        let path = "E:\\U\\L\\Gone.md";
+        seed(&state, path, "CID-GONE", &[]);
+
+        reindex_delete_note(
+            &state,
+            path,
+            DeleteCtx::new(DeleteReason::SystemTrash).with_root(Some("E:\\U\\L".into())),
+        )
+        .unwrap();
+
+        let raw = std::fs::read_to_string(dir.path().join("note-history.jsonl")).unwrap();
+        let env = raw
+            .lines()
+            .map(|l| serde_json::from_str::<serde_json::Value>(l).unwrap())
+            .find(|v| v["t"] == "del")
+            .expect("an envelope line was written");
+        assert_eq!(env["cid"], "CID-GONE");
+        assert_eq!(env["reason"], "system_trash", "the caller had to say WHY");
+        assert_eq!(env["body"], "the body that must survive", "8b — the text is archived");
+        assert_eq!(env["library_root"], "E:\\U\\L");
+    }
+
+    /// ARCHIVE-FIRST MEANS REFUSE. If the history cannot be written, nothing is destroyed.
+    /// RED-proof: with the archive step removed, the note purges and the history is gone
+    /// forever — which is precisely the behaviour before this slice.
+    #[test]
+    fn a_failed_archive_purges_nothing() {
+        let (state, dir) = state_with_schema();
+        let path = "E:\\U\\L\\Protected.md";
+        seed(&state, path, "CID-PROT", &[(1, 1, r#"{"to":"x"}"#)]);
+
+        // Make the append impossible: a DIRECTORY where the ledger file must be.
+        std::fs::create_dir(dir.path().join("note-history.jsonl")).unwrap();
+
+        let err = reindex_delete_note(&state, path, DeleteCtx::new(DeleteReason::Permanent))
+            .expect_err("must refuse");
+        assert!(err.contains("nothing purged"), "the refusal says so: {}", err);
+
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE path = ?1", params![path], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 1, "the note SURVIVES an unwritable archive — reconcile retries next boot");
+        let h: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM note_state_history WHERE note_path = ?1",
+                params![path],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(h, 1, "and so does its history");
+    }
+
+    /// A note with no identity cannot be keyed or restored, so it is not archived — but the
+    /// purge still proceeds. Pinned so the empty-cid path is a decision, not an accident.
+    #[test]
+    fn a_note_without_a_cid_is_purged_but_not_archived() {
+        let (state, dir) = state_with_schema();
+        let path = "E:\\U\\L\\NoCid.md";
+        {
+            let db = state.db.lock().unwrap();
+            db.as_ref()
+                .unwrap()
+                .execute(
+                    "INSERT INTO note_meta (path, name, library_name, cid_cn, modified) VALUES (?1,'N','L','',0)",
+                    params![path],
+                )
+                .unwrap();
+        }
+        reindex_delete_note(&state, path, DeleteCtx::new(DeleteReason::Vanished)).unwrap();
+        assert!(
+            !dir.path().join("note-history.jsonl").exists(),
+            "nothing written under an empty cid — a record no reader could find is noise"
+        );
     }
 }
