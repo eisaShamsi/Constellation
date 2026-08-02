@@ -2061,8 +2061,13 @@ pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
     /// file to be hurting locality. 25k pages ≈ 100 MB.
     const MIN_FREE_PAGES: i64 = 25_000;
     const MIN_FREE_RATIO: f64 = 0.10;
-    /// Don't retry a failing VACUUM more than once a day.
-    const RETRY_COOLDOWN_SECS: i64 = 86_400;
+    /// A genuinely FAILED vacuum (SQLITE_FULL — it needs ~2x the file in temp space) waits a
+    /// day. An INTERRUPTED one (the app closed mid-run — which is what happened on the first
+    /// Boss test, because the strip was not wired and it looked frozen) is not a failure and
+    /// must not cost a day; it retries in ten minutes. The two are told apart by WHICH stamp
+    /// is present: `defrag_failed_at` is written only on a real error.
+    const FAILED_COOLDOWN_SECS: i64 = 86_400;
+    const INTERRUPTED_COOLDOWN_SECS: i64 = 600;
 
     let state = app.state::<SearchState>();
     let decision = {
@@ -2077,18 +2082,35 @@ pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
                 |r| r.get(0),
             )
             .unwrap_or(0);
+        let failed: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'defrag_failed_at'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
         let now: i64 = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0);
-        (defrag_wanted(free, total, MIN_FREE_PAGES, MIN_FREE_RATIO), free, total, now, last)
+        (
+            defrag_wanted(free, total, MIN_FREE_PAGES, MIN_FREE_RATIO),
+            free,
+            total,
+            now,
+            last,
+            failed,
+        )
     };
-    let (wanted, free, total, now, last) = decision;
+    let (wanted, free, total, now, last, failed) = decision;
     if !wanted {
         return;
     }
-    if now.saturating_sub(last) < RETRY_COOLDOWN_SECS {
-        return; // a recent attempt failed; don't grind on every launch
+    if now.saturating_sub(failed) < FAILED_COOLDOWN_SECS {
+        return; // a real error recently — don't grind
+    }
+    if now.saturating_sub(last) < INTERRUPTED_COOLDOWN_SECS {
+        return; // one may be running right now (or was just interrupted)
     }
 
     let app_bg = app.clone();
@@ -2121,6 +2143,17 @@ pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
             total,
             100.0 * free as f64 / total.max(1) as f64
         ));
+        // TELL THE USER. The DB lock below makes the app unresponsive for minutes; without a
+        // signal that reads as a freeze, and the first Boss test was closed mid-run because of
+        // exactly that. `MigrationProgressStrip` already listens for these and renders
+        // "Compacting search index…" — reuse it rather than inventing a second surface.
+        {
+            use tauri::Emitter;
+            let _ = app_bg.emit(
+                "migration:term_vocab_v2",
+                serde_json::json!({ "phase": "vacuum_start" }),
+            );
+        }
         // Pause the WAL checkpoint daemon for the duration (MIG-041's daemon-vs-worker fix).
         MIGRATION_ACTIVE.store(true, Ordering::Relaxed);
         let started = std::time::Instant::now();
@@ -2132,17 +2165,52 @@ pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
             conn.execute_batch("VACUUM;").map_err(|e| format!("VACUUM failed: {}", e))
         })();
         MIGRATION_ACTIVE.store(false, Ordering::Relaxed);
+        {
+            use tauri::Emitter;
+            let _ = app_bg.emit(
+                "migration:term_vocab_v2",
+                serde_json::json!({ "phase": "vacuum_done" }),
+            );
+        }
         match res {
-            Ok(()) => log(&format!(
-                "[defrag] done in {:.1}s — {} pages returned to the OS",
-                started.elapsed().as_secs_f64(),
-                free
-            )),
+            Ok(()) => {
+                log(&format!(
+                    "[defrag] done in {:.1}s — {} pages returned to the OS",
+                    started.elapsed().as_secs_f64(),
+                    free
+                ));
+                // Clear both stamps: the freelist is now ~0 so the gate stops firing anyway,
+                // and a FUTURE mass rewrite must not be delayed by this run's bookkeeping.
+                if let Ok(guard) = state.db.lock() {
+                    if let Some(conn) = guard.as_ref() {
+                        let _ = conn.execute(
+                            "DELETE FROM schema_versions WHERE module IN \
+                             ('defrag_last_attempt','defrag_failed_at')",
+                            [],
+                        );
+                    }
+                }
+            }
             // Left un-cleared deliberately: the cooldown stamp above is what prevents a
             // failing VACUUM (e.g. SQLITE_FULL — it needs ~2x the file in temp space) from
             // retrying on every launch. It will try again tomorrow.
-            Err(e) => log(&format!("[defrag] FAILED after {:.1}s: {} (retry in 24h)",
-                started.elapsed().as_secs_f64(), e)),
+            Err(e) => {
+                log(&format!(
+                    "[defrag] FAILED after {:.1}s: {} (retry in 24h)",
+                    started.elapsed().as_secs_f64(),
+                    e
+                ));
+                // A REAL error (not an interruption): stamp it so the retry waits a day.
+                if let Ok(guard) = state.db.lock() {
+                    if let Some(conn) = guard.as_ref() {
+                        let _ = conn.execute(
+                            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) \
+                             VALUES ('defrag_failed_at', ?1, strftime('%s','now'))",
+                            rusqlite::params![now],
+                        );
+                    }
+                }
+            }
         }
     });
 }
