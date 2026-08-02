@@ -472,3 +472,136 @@ orientation doc is 7,715 lines against SO#6's ~1,500-line split threshold — lo
 
 **Gates at close:** vitest **854/854** (73 files; 2 pre-existing perf flakes on repeat runs) ·
 svelte-check **0** · i18n parity **15/15 ✓** · Rust untouched.
+
+---
+
+# Appended retroactively 2026-08-02
+
+The three sections below cover commits that landed on 2026-08-01 **after** §7 was written. They
+were never logged on the day — an SO#1 lapse, recorded here rather than backfilled silently.
+
+---
+
+## §8 — MIG-108 Stage-B: the live run on the real universe. PASSED.
+
+**Commit `f5ca0279`.**
+
+`E:\Constellation Universes\Eisa Cognitive Knowledge` — the Boss's universe since the beginning
+of Constellation development — was unified under one root. **~27 minutes on resume.**
+
+**Independent post-check (queried, not reported by the engine that did the work):**
+
+| | count |
+|---|---|
+| notes | 7,827 — exact |
+| links | 234,236 — exact |
+| review schedules | 7,827 — exact |
+| aliases | 1,577 — exact |
+| **stale rows across all 13 rewritten tables** | **0** |
+
+**Earned state survived.** Total link-weight drift across the whole run: **+3.4657** — exactly
+the **5 traversals** performed during Boss validation, and not one row more. The thing MIG-104
+exists to protect was measurably untouched by the thing MIG-108 exists to do.
+
+**Boss verdict:** *"Pass. It took about 27 minutes. I checked most of Constellation surfaces;
+it is all fine."* **MIG-108 is CLOSED.**
+
+### §8.1 The 45 minutes it cost first — the most useful part
+
+The first live attempt **failed verify**: 14 orphaned `note_embeddings` rows and 6 `note_body`
+rows pointing at pre-move paths. My defect, and a clean example of a whole class:
+
+**I had widened the verify list without widening the sweep list.** `VERIFY_EXTRA` had grown to
+catch more tables; `SWEEP` — the list that actually rewrites paths — had not. A verifier that
+checks more than the repairer repairs is a verifier that **can only ever fail**.
+
+The fix was not to add the missing tables to both lists. It was to **delete `VERIFY_EXTRA`
+entirely** so verify iterates `SWEEP` itself. Two lists that must agree will eventually
+disagree; one list cannot. `SWEEP` went **5 → 12 tables** (added `note_embeddings`, `note_body`,
+`note_summaries`, `sources_suggestions`, `sight_v3_layout`, `note_state_history`,
+`shape_history`). RED-proven with a test that fails against the old pair.
+
+Also in this commit: `ENGINE_RUNNING` + `RunningGuard` so the app cannot be closed mid-relocation,
+`Journal.last_error` so a failed run says *why* on resume, and the backup set aside as
+`mig108-backup.prev` rather than overwritten.
+
+---
+
+## §9 — The Search Hub: state the missing concept, locate the real defect
+
+**Commit `4707aa21`. No behaviour changed — this was diagnosis.**
+
+**Boss report:** searching `المعرفة` returned only Arabic notes; he expected the English ones
+too.
+
+Asked to fix it, I started exploring. The Boss stopped that twice, and both corrections were
+right:
+
+1. *"I want you first to orient yourself about how the search hub was designed."*
+2. *"Revert to the original state. Read every writing about the search hub and its related
+   surfaces. Then, locate the issue/bug."*
+
+**What the reading found: the Semantic result group has no concept paper.** Under
+`docs/concept-papers/00-MASTER` that means it should not have been built. Three independent
+readers searched every concept paper, migration doc and session log; the horse was genuinely
+absent.
+
+**The Boss supplied it:** *"If a user searches for something, it will help them find every note
+that matches their search query, **regardless of the language of the related notes**. So, in a
+way, it will help the user get an aerial view of their knowledge (universe)."*
+
+That is now written down — `docs/concept-papers/33-search-aerial-view.md` — with three claims,
+three mechanisms, and which mechanism serves which claim.
+
+**With the concept stated, the defect stopped being vague.** "Semantic search is broken" became
+three specific, separately-fixable failures:
+
+1. **The threshold collapses the result set.** The Semantic group keeps only results within
+   0.03 of its own best score, so a *strong* match suppresses the rest — `المعرفة` returned
+   **2 of 7,750** candidates. (PJ-196)
+2. **The lexical bridge is not on the default route.** The cross-lingual mechanism exists and
+   works; the default search path does not call it.
+3. **Arabic normalisation disagrees with itself.** The index stems `معرفة` → `معرف`; the
+   bridge dictionary holds the **unstemmed** form. The two never meet. This is why the feature
+   tested clean in English — `knowledge` stems to itself, so both sides matched by accident.
+
+**The answer was present and unreachable the whole time:** every `c:knowledge` bridge term is
+live in his universe — knowledge 1,937 · علم 778 · cognition 19 · Wissen 16 · connaissance 13.
+
+**MIG-109 allocated, deliberately not scheduled** (Boss: *"to be dealt with in the right
+time"*). The diagnosis is banked so that migration starts from evidence.
+
+---
+
+## §10 — MIG-104 Slice 8 + 8b: the delete removes the note, not its history
+
+**Commit `92e55a29`.**
+
+**The concept:** deleting a note should remove *the note*, not the record that it existed and
+what it was connected to.
+
+**The constraint that shaped the design:** SQLite fires `ON DELETE CASCADE` **at the parent
+delete**. By the time the old code could have read the note's links, weights, confidence and
+review schedule, the cascade had already destroyed them. Archiving *after* the delete is not
+late — it is impossible.
+
+`reindex_delete_note` is now three ordered phases:
+
+1. **Read + serialise under the guard**, then **release it.**
+2. **Append + `fsync` with no database lock held** — the slow, failure-prone step must not
+   block writers.
+3. **Re-acquire, purge inside one transaction** (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`).
+
+**If the append fails, the purge refuses to run.** Losing the history is treated as a reason not
+to delete — not as a warning to log and continue.
+
+Five delete reasons are now distinguished — `Trash`, `SystemTrash`, `Permanent`, `Vanished`,
+`ReconcileGone` — so a user's deliberate delete and a file that merely disappeared are not the
+same event in the record.
+
+**Boss test:** Steps 1 and 2 passed. Step 3 surfaced the file-tree bug fixed the next day
+(see 2026-08-02 §4) — and one correction worth recording: I described a *"permanent delete"*
+control in the test tutorial. **It does not exist.** Boss: *"we don't have a permanent delete
+option in Constellation; it's just the 'Delete' function."* That was an invented UI control in
+a document whose entire purpose is to be followed literally — the BASIC RULE's exact failure
+mode.
