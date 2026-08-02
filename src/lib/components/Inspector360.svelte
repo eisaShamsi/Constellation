@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t, tn } from '$lib/i18n';
-	import { lookupStageEmoji, libraryStats } from '$lib/libraries/store';
+	import { lookupStageEmoji, libraryStats, owningLibrary } from '$lib/libraries/store';
 	import { cognitiveLinkTypes, linkTypesStore } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
@@ -46,7 +46,7 @@
 	const relLibraryPath = $derived.by(() => {
 		const p = data?.note_path;
 		if (!p) return null;
-		return $libraryStats.find((l) => p.startsWith(l.path))?.path ?? null;
+		return owningLibrary($libraryStats, p)?.path ?? null;
 	});
 
 	// §112: Stratification Matrix replaces the spherical/angular line.

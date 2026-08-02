@@ -23,7 +23,7 @@
 	// MIG-072 — Sky View palette: resolve every graph colour from the user's --skyview-* overrides
 	// + the Link Types registry, then hand it to the engine (the engine never reads CSS).
 	import { resolveSkyPalette, hexColorToInt } from '$lib/graph/skyPalette';
-	import { appSettings, liveStyleDraft, libraryStats } from '$lib/libraries/store';
+	import { appSettings, liveStyleDraft, libraryStats, owningLibrary } from '$lib/libraries/store';
 	import RelatedCandidates from './RelatedCandidates.svelte'; // MIG-086 §D — suggest + one-click typed link
 	import { linkTypesStore, getLinkTypes, cognitiveLinkTypes, linkTypeColor } from '$lib/libraries/linkTypeRegistry';
 	// MIG-044 Phase 2 (correction #3) — NSC summary headline in the
@@ -501,7 +501,7 @@
 	function ctxSuggest() {
 		if (!contextMenu) return;
 		const { node, x, y } = contextMenu;
-		const lib = $libraryStats.find((l) => node.path.startsWith(l.path));
+		const lib = owningLibrary($libraryStats, node.path);
 		contextMenu = null;
 		// Don't open a popover that can't work: if the node's library can't be resolved,
 		// <RelatedCandidates> would render an empty state with no way to fetch (honest-UX /

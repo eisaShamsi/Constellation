@@ -18,6 +18,7 @@
 		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
+		owningLibrary,
 		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
@@ -3177,7 +3178,7 @@
 			if (!detail?.path) return;
 			const libs = get(libraries);
 			let lib = detail.libraryName ? libs.find(l => l.name === detail.libraryName) : undefined;
-			if (!lib) lib = libs.find(l => detail.path!.startsWith(l.path));
+			if (!lib) lib = owningLibrary(libs, detail.path!) ?? undefined;
 			if (lib) openNoteTab(detail.path!, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 		});
 		// MIG-060 §C — Threading-gesture listener.
@@ -3201,7 +3202,7 @@
 			// Step 1 — open the host note.
 			const libs = get(libraries);
 			let lib = detail.libraryName ? libs.find(l => l.name === detail.libraryName) : undefined;
-			if (!lib) lib = libs.find(l => detail.path!.startsWith(l.path));
+			if (!lib) lib = owningLibrary(libs, detail.path!) ?? undefined;
 			if (lib) await openNoteTab(detail.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 			// Step 2 — settle the reactive cascade so `sidebarTab` / active
 			// tab state is consistent before flipping surface flags.
@@ -6419,7 +6420,7 @@
 		const displayName = r.name.replace(/\.(md|base)$/, '');
 		const isMd = r.name.toLowerCase().endsWith('.md');
 		const target: ContextTarget = { kind: 'note', path: r.path, name: displayName, isMarkdown: isMd, bookmarked: isInStarred(r.path) };
-		const lib = $libraryStats.find((l) => r.path.startsWith(l.path));
+		const lib = owningLibrary($libraryStats, r.path);
 		const actions: ContextActions = {
 			open: () => handleNoteClick(r.path, displayName, undefined),
 			openInNewTab: () => { if (lib) openNoteTab(r.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true); },
@@ -6446,13 +6447,9 @@
 	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
 	// nested libraries; the bare startsWith elsewhere returns the first match).
 	function libIdForPath(path: string): string | null {
-		let best: { path: string; library_id: string } | null = null;
-		for (const lib of $libraryStats) {
-			if (path === lib.path || path.startsWith(lib.path)) {
-				if (!best || lib.path.length > best.path.length) best = lib;
-			}
-		}
-		return best?.library_id ?? null;
+		// 2026-08-02 — was longest-wins but NOT separator-bounded, so the library `…/Research`
+		// matched a note under `…/Research Notes`. Delegates to the one resolver now.
+		return owningLibrary($libraryStats, path)?.library_id ?? null;
 	}
 
 	// MIG-077 A3-R — the host-side dispatcher for the contextual node menu
@@ -6912,9 +6909,16 @@
 		}
 		try {
 			const deletedPath = confirmDelete.path;
-			const lib = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
+			// Boss-found 2026-08-02 — this resolved the library by FIRST match and then
+			// refreshed only `if (lib)`. When the lookup missed (or picked the root library,
+			// which since MIG-108 is a prefix of every nested library) the note was correctly
+			// deleted from disk AND the index, and the tree was never told: a stale row that
+			// does nothing when clicked, with no error because nothing failed. The batch
+			// branch above already had the safe shape — refresh unconditionally.
+			const lib = owningLibrary($libraryStats, confirmDelete.path);
 			await deleteWithSetting(confirmDelete.path);
 			if (lib) await refreshLibraryTree(lib.library_id);
+			else await refreshAllLoadedTrees(); // never leave the tree showing a deleted note
 			await loadAllStats();
 			markOrgChartDirty();
 			emitNoteDeleted({ path: deletedPath }); // MIG-096 §1 — refresh-after-mutate

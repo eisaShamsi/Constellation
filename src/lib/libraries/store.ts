@@ -39,6 +39,36 @@ export interface StarInfo {
 	preview: string;
 }
 
+/**
+ * **Which library owns this path.** Longest-root-wins, separator-bounded, case- and
+ * separator-insensitive. The ONE answer to this question — import it, never re-derive it.
+ *
+ * Two failure modes it exists to prevent, both live in this codebase before 2026-08-02:
+ *
+ * 1. **First match.** `libs.find(l => path.startsWith(l.path))` returns whichever library
+ *    happens to be first. Since MIG-108 every library sits INSIDE the universe root, and the
+ *    root library's path is a prefix of all of them — so first-match can hand back the root
+ *    for a note that belongs to a nested library. That is what left a deleted note stranded
+ *    in the file tree: the caller refreshed the wrong tree, or none.
+ * 2. **No separator boundary.** `startsWith(lib.path)` alone matches `…/Research Notes`
+ *    against the library `…/Research`. The boundary is required, not decorative.
+ *
+ * Generic over the shape so `LibraryStats` and `LibraryInfo` callers share one implementation.
+ */
+export function owningLibrary<T extends { path: string }>(libs: readonly T[], path: string): T | null {
+	const n = (x: string) => x.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+	const np = n(path);
+	let best: T | null = null;
+	for (const l of libs) {
+		const lp = n(l.path);
+		if (!lp) continue;
+		if (np === lp || np.startsWith(lp + '/')) {
+			if (!best || n(best.path).length < lp.length) best = l;
+		}
+	}
+	return best;
+}
+
 export interface LibraryStats {
 	library_id: string;
 	name: string;
