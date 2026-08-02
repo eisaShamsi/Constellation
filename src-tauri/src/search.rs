@@ -2748,7 +2748,76 @@ fn ensure_note_meta_mig003_unique_index(conn: &Connection) -> rusqlite::Result<(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_note_meta_cid_cn \
          ON note_meta(cid_cn) WHERE cid_cn != '';",
     )?;
+    // 2026-08-02 boot regression — the index above is partial on `cid_cn != ''`, which is the
+    // exact COMPLEMENT of what `mig003_step3_soft_rebackfill`'s probe asks for (`cid_cn = ''`).
+    // The planner therefore had no index at all for that probe and fell back to `SCAN
+    // note_meta`, reading every row — including `body_text`, which on this corpus runs to
+    // ~240,000 characters per note — to find the handful of cid-less rows. **Measured on the
+    // Boss's universe: 109.7 s to return 15 rows, on EVERY boot**, inside `init_db` and ahead
+    // of the `PRAGMA optimize` that might have refreshed the statistics. It surfaced as a
+    // ~4-minute launch after MIG-108 rewrote all 7,827 `note_meta` rows.
+    //
+    // This is the mirror partial index: it covers ONLY the cid-less rows, so it stays tiny
+    // (15 entries here) and self-maintaining, and it makes the probe a SEEK rather than a scan; the
+    // handful of matching rows are then read from the table. `properties_json` is still
+    // fetched, but for 15 rows rather than 7,827.
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_note_meta_cid_empty \
+         ON note_meta(cid_cn) WHERE cid_cn = '';",
+    )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests_boot_probe_index {
+    //! 2026-08-02 — the ~4-minute launch, diagnosed and pinned.
+    //!
+    //! `mig003_step3_soft_rebackfill`'s probe asks for `cid_cn = ''`. The only cid index was
+    //! `idx_note_meta_cid_cn`, partial on `cid_cn != ''` — the exact COMPLEMENT of the
+    //! predicate — so the planner had nothing to use and fell back to `SCAN note_meta`,
+    //! reading every row including `body_text` (~240,000 chars per note on this corpus) to
+    //! find a handful of cid-less rows. **Measured on the Boss's universe: 109.7 s to return
+    //! 15 rows, on EVERY boot**, inside `init_db` and ahead of the `PRAGMA optimize` that
+    //! might have refreshed the statistics. It surfaced as a ~4-minute launch once MIG-108
+    //! rewrote all 7,827 `note_meta` rows.
+    //!
+    //! This test pins the PLAN, not the result, because the cost is invisible to a
+    //! correctness test — the query returns the same 15 rows whether it scans or seeks.
+    use super::*;
+
+    #[test]
+    fn the_cid_less_probe_uses_an_index_and_never_scans() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT, library_name TEXT,
+                 cid_cn TEXT NOT NULL DEFAULT '', properties_json TEXT, body_text TEXT);",
+        )
+        .unwrap();
+        ensure_note_meta_mig003_unique_index(&conn).unwrap();
+
+        let plan: Vec<String> = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN SELECT path, library_name,
+                   COALESCE(json_extract(properties_json, '$.kind'), '')
+                 FROM note_meta WHERE cid_cn = ''",
+            )
+            .unwrap()
+            .query_map([], |r| r.get::<_, String>(3))
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect();
+        let joined = plan.join(" | ");
+        assert!(
+            joined.contains("idx_note_meta_cid_empty"),
+            "the boot probe must be answered from the mirror partial index, not a table scan: {}",
+            joined
+        );
+        assert!(
+            !joined.contains("SCAN note_meta"),
+            "a full scan here costs ~110 s on a real universe: {}",
+            joined
+        );
+    }
 }
 
 #[cfg(test)]
