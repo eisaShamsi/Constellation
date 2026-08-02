@@ -2029,6 +2029,133 @@ fn is_transient_lock(e: &rusqlite::Error) -> bool {
 /// `term_vocab_vacuum` (=1), `term_vocab_dropcol` (=1, MIG-042) — so each is
 /// one-time + independently re-entrant. Failure leaves the relevant stamp at
 /// its prior value so the next boot retries that step.
+/// **The standing defrag rule (Boss ruling 2026-08-02): after any mass rewrite, the database
+/// defragments itself.**
+///
+/// SQLite returns the pages a bulk rewrite abandons to an internal *freelist*, not to the OS.
+/// The file keeps its size and gains holes, and every later read hops across them. MIG-108
+/// rewrote 7,672 rows across 13 tables in one transaction and left **106,155 free pages —
+/// 0.40 GB, 21.5% of a 1.9 GB database**. Measured effect on the Boss's universe: the cold
+/// boot's `ensure_db` went from ~27 s to **100–120 s**, because everything `init_db` touches
+/// now reads through a file that is a fifth holes. (Warm boots stayed ~0.3 s throughout —
+/// which is why this hid: the second launch of a session always looked fine.)
+///
+/// **Why a rule and not a MIG-108 one-off.** MIG-041 §C already shipped a one-time VACUUM for
+/// exactly this condition after the bigram purge, stamped so it ran once. MIG-108 recreated
+/// the condition and nothing scheduled a vacuum, because the remedy was tied to the migration
+/// that first needed it rather than to the state that requires it. The Boss's ruling makes it
+/// standing: this reads the freelist itself, so a migration cannot forget — including the
+/// relative-paths portability migration already on the ledger, which will do the same thing.
+///
+/// **Never on the boot path.** Detection is two `PRAGMA`s (no scan); the VACUUM runs on a
+/// background thread, pauses the WAL daemon via `MIGRATION_ACTIVE`, and holds the DB lock for
+/// its duration — minutes on a multi-GB file, and unchunkable by nature.
+///
+/// **Self-limiting, with a cooldown.** After a successful VACUUM the freelist is ~0, so the
+/// gate stops firing on its own — no stamp needed to prevent repeats. A FAILING vacuum
+/// (SQLITE_FULL: it needs ~2× the file in temp space) would otherwise retry every launch, so
+/// the attempt time is recorded and retried at most once a day.
+pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
+    use tauri::Manager;
+    /// Both must hold: enough absolute waste to be worth minutes of lock, and enough of the
+    /// file to be hurting locality. 25k pages ≈ 100 MB.
+    const MIN_FREE_PAGES: i64 = 25_000;
+    const MIN_FREE_RATIO: f64 = 0.10;
+    /// Don't retry a failing VACUUM more than once a day.
+    const RETRY_COOLDOWN_SECS: i64 = 86_400;
+
+    let state = app.state::<SearchState>();
+    let decision = {
+        let Ok(guard) = state.db.lock() else { return };
+        let Some(conn) = guard.as_ref() else { return };
+        let free: i64 = conn.query_row("PRAGMA freelist_count", [], |r| r.get(0)).unwrap_or(0);
+        let total: i64 = conn.query_row("PRAGMA page_count", [], |r| r.get(0)).unwrap_or(0);
+        let last: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'defrag_last_attempt'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        let now: i64 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        (defrag_wanted(free, total, MIN_FREE_PAGES, MIN_FREE_RATIO), free, total, now, last)
+    };
+    let (wanted, free, total, now, last) = decision;
+    if !wanted {
+        return;
+    }
+    if now.saturating_sub(last) < RETRY_COOLDOWN_SECS {
+        return; // a recent attempt failed; don't grind on every launch
+    }
+
+    let app_bg = app.clone();
+    std::thread::spawn(move || {
+        use std::sync::atomic::Ordering;
+        use tauri::Manager as _;
+        let state = app_bg.state::<SearchState>();
+        let log_path = db_path(&app_bg).ok();
+        let log = |m: &str| {
+            if let Some(p) = log_path.as_deref() {
+                diag_log(p, m);
+            }
+        };
+        // Record the ATTEMPT before starting: if the VACUUM dies or the app is killed
+        // mid-run, the cooldown still applies and we do not retry on every launch.
+        {
+            if let Ok(guard) = state.db.lock() {
+                if let Some(conn) = guard.as_ref() {
+                    let _ = conn.execute(
+                        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) \
+                         VALUES ('defrag_last_attempt', ?1, strftime('%s','now'))",
+                        rusqlite::params![now],
+                    );
+                }
+            }
+        }
+        log(&format!(
+            "[defrag] standing rule: freelist {} of {} pages ({:.1}%) — compacting",
+            free,
+            total,
+            100.0 * free as f64 / total.max(1) as f64
+        ));
+        // Pause the WAL checkpoint daemon for the duration (MIG-041's daemon-vs-worker fix).
+        MIGRATION_ACTIVE.store(true, Ordering::Relaxed);
+        let started = std::time::Instant::now();
+        let res = (|| -> Result<(), String> {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            // Checkpoint first: VACUUM cannot reclaim pages still pinned by the WAL.
+            let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+            conn.execute_batch("VACUUM;").map_err(|e| format!("VACUUM failed: {}", e))
+        })();
+        MIGRATION_ACTIVE.store(false, Ordering::Relaxed);
+        match res {
+            Ok(()) => log(&format!(
+                "[defrag] done in {:.1}s — {} pages returned to the OS",
+                started.elapsed().as_secs_f64(),
+                free
+            )),
+            // Left un-cleared deliberately: the cooldown stamp above is what prevents a
+            // failing VACUUM (e.g. SQLITE_FULL — it needs ~2x the file in temp space) from
+            // retrying on every launch. It will try again tomorrow.
+            Err(e) => log(&format!("[defrag] FAILED after {:.1}s: {} (retry in 24h)",
+                started.elapsed().as_secs_f64(), e)),
+        }
+    });
+}
+
+/// The gate, pure so it is testable without a database. Both conditions must hold: enough
+/// absolute waste to be worth the lock, and enough of the file to be hurting read locality.
+pub(crate) fn defrag_wanted(free: i64, total: i64, min_pages: i64, min_ratio: f64) -> bool {
+    if total <= 0 || free < min_pages {
+        return false;
+    }
+    (free as f64 / total as f64) >= min_ratio
+}
+
 pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
     use tauri::Manager;
 
@@ -2766,6 +2893,47 @@ fn ensure_note_meta_mig003_unique_index(conn: &Connection) -> rusqlite::Result<(
          ON note_meta(cid_cn) WHERE cid_cn = '';",
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests_standing_defrag {
+    //! The standing rule (Boss 2026-08-02): after ANY mass rewrite the database defragments
+    //! itself. Detected from the freelist, so no migration has to remember — MIG-108 forgot,
+    //! and the cold boot went from ~27 s to 100-120 s.
+    use super::defrag_wanted;
+
+    const P: i64 = 25_000;
+    const R: f64 = 0.10;
+
+    #[test]
+    fn the_mig108_condition_fires() {
+        // The measured shape on the Boss universe: 106,155 free of 494,728 pages (21.5%).
+        assert!(defrag_wanted(106_155, 494_728, P, R));
+    }
+
+    #[test]
+    fn a_healthy_database_is_left_alone() {
+        assert!(!defrag_wanted(0, 494_728, P, R), "nothing to reclaim");
+        assert!(!defrag_wanted(1_200, 494_728, P, R), "a normal working freelist");
+    }
+
+    #[test]
+    fn a_small_database_is_not_vacuumed_over_a_high_ratio() {
+        // 30% free of a tiny file is a few MB — not worth minutes of exclusive lock.
+        assert!(!defrag_wanted(300, 1_000, P, R), "ratio alone must not trigger it");
+    }
+
+    #[test]
+    fn absolute_waste_alone_is_not_enough_either() {
+        // 25k free pages in a huge file is proportionally nothing.
+        assert!(!defrag_wanted(25_000, 5_000_000, P, R), "both conditions must hold");
+    }
+
+    #[test]
+    fn degenerate_inputs_never_trigger() {
+        assert!(!defrag_wanted(10, 0, P, R));
+        assert!(!defrag_wanted(0, 0, P, R));
+    }
 }
 
 #[cfg(test)]
@@ -10016,6 +10184,9 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // user gets a fully-painted UI immediately. Supersedes the MIG-015 v2
     // sentinel (same chunk + mutex-yield pattern, DELETE instead of UPDATE).
     maybe_schedule_bigram_purge(app.clone());
+    // Standing defrag rule (Boss 2026-08-02) — reads two PRAGMAs; VACUUMs only if
+    // a mass rewrite has left the file badly fragmented. Off the boot path.
+    maybe_schedule_defrag(app.clone());
 
     // WAL hygiene: shrink the on-disk write-ahead log shortly after boot and
     // keep it small. Runs once (this fn early-returns once the DB is set) on a
