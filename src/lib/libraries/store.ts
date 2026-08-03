@@ -3334,12 +3334,27 @@ async function drainCidEnsure(tab: OpenTab): Promise<void> {
 		// clean activation.
 		const diskContent = await readNote(tab.path).catch(() => null);
 		if (diskContent === null) return;
+		// 2026-08-02 — HARDENING, not a defect fix. Stated precisely because the triage
+		// register listed a net-recovery clobber here and that claim is REFUTED, for the
+		// reason the PJ-102 Recipe S header already gives: a path enters `pendingCidEnsure`
+		// only when its resolved content has NO cid_cn (line ~3424), while net-recovered
+		// content is `identityProven` BY CONSTRUCTION and therefore always carries one. A tab
+		// cannot be in this queue AND hold recovered work. Do not "re-fix" that; check the
+		// two conditions first.
+		//
+		// What IS real: this site hand-rolled its adoption with `openNoteModel`, walking past
+		// every guard the model has. There are four awaits above between reading the tab and
+		// adopting, so a re-path or an in-place navigation landing in that gap could have
+		// seeded one note's disk content into another note's model — exactly the stale
+		// (path, id) pairing `adoptDisk`'s identity guard exists for. Going THROUGH
+		// `externalChange` inherits that guard, the echo guard and the baseline guard, so this
+		// route cannot drift behind them again.
 		let adopted = false;
 		openTabs.update((ts) =>
 			ts.map((t) => {
-				if (t.id !== tab.id || t.content === diskContent || isNoteDirty(t.id)) return t;
+				if (t.id !== tab.id || t.content === diskContent) return t;
+				if (!externalChangeNoteModel(t.id, diskContent, t.path)) return t; // refused: dirty, echo, or recovered-work baseline
 				adopted = true;
-				openNoteModel(t.id, t.path, diskContent);
 				return { ...t, content: diskContent, reloadVersion: (t.reloadVersion ?? 0) + 1 };
 			})
 		);
@@ -3518,7 +3533,18 @@ export async function closeTab(tabId: string) {
 	if (newActiveId !== currentActive) {
 		activeTabId.set(newActiveId);
 	}
+	// 2026-08-02 audit — `focusedTabId` (split view's pane pointer) was never repaired here,
+	// only `activeTabId`. Closing the focused pane's tab left it pointing at a tab that no
+	// longer exists; toggling split off then re-arms that dead id as the active tab and the
+	// editor collapses to the welcome screen with a good tab still in the bar. Recoverable in
+	// one click, but it is the same defect the Boss hit on the Overwrite path — and this is
+	// the function the shared vacate helper cites as its model, so it must not be the one
+	// lagging behind.
+	if (get(focusedTabId) === tabId) {
+		focusedTabId.set(newActiveId);
+	}
 	openTabs.set(newTabs);
+	collapseSplitIfBelowTwo(newTabs.length);
 }
 
 /** Reorder tabs by moving a tab from one index to another */
@@ -3613,7 +3639,10 @@ export async function removeLibraryWithCleanup(libraryId: string) {
 	const tabs = get(openTabs);
 	const library = get(libraries).find(v => v.id === libraryId);
 	if (library) {
-		const libraryTabs = tabs.filter(t => t.path.startsWith(library.path));
+		// 2026-08-02 — separator-bounded, like `owningLibrary`. A bare `startsWith` closes
+		// tabs from a SIBLING library whose name merely begins the same way: removing
+		// `…/Research` would also close every open note from `…/Research Notes`.
+		const libraryTabs = tabs.filter((t) => owningLibrary([library], t.path) !== null);
 		for (const tab of libraryTabs) closeTab(tab.id);
 	}
 	// Stop file watcher
@@ -4622,20 +4651,176 @@ export function resolveTrashDestination(path: string): { mode: 'trash' | 'system
 
 export async function deleteWithSetting(path: string): Promise<void> {
 	const { mode, trashRoot } = resolveTrashDestination(path);
+	// 2026-08-02 audit — flush BEFORE the file moves, so what lands in `.trash` is what the
+	// user last saw. A delete is advertised as recoverable; recovering a version missing the
+	// last paragraph does not honour that.
+	const preserved = await preserveWorkBeforeVacating(path);
 	await deletePath(path, mode, trashRoot);
 	// §140 — drop the path's aux state + close any tabs at/under it (as deleteItem did).
-	clearPathKeyedAuxStateOnDelete(path);
+	// Only when the work is provably durable: if the flush failed, the write-ahead net is the
+	// ONLY copy and must survive the file it belonged to.
+	if (preserved) {
+		clearPathKeyedAuxStateOnDelete(path);
+		clearSaveFailure(path); // the banner named a note that no longer exists, with dead buttons
+	}
 	// PJ-187 — dropping a tab from the list is NOT disposing its model. Every other departure
 	// (closeTab, the universe-switch sweep) calls closeNoteModel; this one filtered the tabs and
 	// left each deleted note's full body, base and props resident for the rest of the session.
 	// Collect what the filter drops, then dispose it.
-	const removed: OpenTab[] = [];
-	openTabs.update(tabs => tabs.filter(t => {
-		const gone = t.path === path || t.path.startsWith(path + '/') || t.path.startsWith(path + '\\');
-		if (gone) removed.push(t);
-		return !gone;
-	}));
-	for (const t of removed) closeNoteModel(t.id);
+	releaseTabsForVacatedPath(path);
+}
+
+/**
+ * **Split view needs two notes to mean anything.** Boss-ruled 2026-08-02: closing down to a
+ * single remaining note returns to the normal view, *where that note's tab is showing*.
+ *
+ * The first version of this only fired at ZERO tabs, which fixed the blank-window case and
+ * left the one that actually happens: closing one of two split notes left a lone pane in a
+ * split layout with no tab bar (the bar is hidden while split is on), so the surviving note
+ * had no tab, no close affordance, and no way to switch. One note is not a split.
+ *
+ * Shared, because BOTH tab-removal paths must obey it — `closeTab` and the vacate helper used
+ * by Delete and Overwrite. A rule enforced at one of two removal sites is how this class of
+ * defect keeps recurring here.
+ */
+function collapseSplitIfBelowTwo(remaining: number): void {
+	if (remaining < 2 && get(splitActive)) {
+		splitActive.set(false);
+		if (remaining === 1) focusedTabId.set(get(openTabs)[0]?.id ?? null);
+	}
+}
+
+/**
+ * **A note has left this path — no tab may still believe it owns it.**
+ *
+ * Extracted 2026-08-02 (triage concern #2, ranked APP-KILLER) because `deleteWithSetting` did
+ * this and `moveToTrash` did not, and `moveToTrash` is what the collision dialog's **Overwrite**
+ * calls. The sequence that destroyed the survivor:
+ *
+ *   1. Overwrite trashes the existing note's file — but its tab stays open, model live,
+ *      still pointing at that path.
+ *   2. The rename then moves the OTHER note onto that same path.
+ *   3. The stale tab's model now owns a path holding a different note. Its next flush — a
+ *      debounced save, a tab switch, app close — writes its content over the note the user
+ *      explicitly chose to keep.
+ *
+ * PJ-187 unified *where a displaced file goes* across all four displacement paths and left
+ * *what happens to its open tab* in only one of them: half a sweep, in the fix meant to make
+ * these paths agree. Sharing the teardown is the cure — `moveToTrash` cannot fall behind
+ * `deleteWithSetting` again, because there is nothing left to fall behind.
+ *
+ * Dropping a tab from the list is NOT disposing its model (PJ-187): every other departure
+ * calls `closeNoteModel`, so this does too, or each vacated note's body, base and props stay
+ * resident — and resident is exactly what lets it write later.
+ */
+/**
+ * **Preserve the user's work BEFORE its file is displaced.** Returns whether it is safe to
+ * destroy the path-keyed recovery state afterwards.
+ *
+ * 2026-08-02 audit, found in THIS session's own fix. Giving `moveToTrash` the delete teardown
+ * closed an app-killer and opened a smaller one: the teardown erases the write-ahead recovery
+ * buffer and disposes the in-memory note WITHOUT saving it. So a note whose last save FAILED —
+ * the file locked by OneDrive, antivirus, a full disk — held its only surviving copy in that
+ * buffer, and an Overwrite destroyed it. Worse, the "your edit is safe and will retry" banner
+ * stayed on screen with its Retry and Save-a-copy buttons now silently dead, and restoring from
+ * the trash returned the PRE-EDIT version.
+ *
+ * Overwrite and Delete both promise a RECOVERABLE outcome ("it moves to .trash"). A recoverable
+ * copy that is missing the user's last paragraph does not honour that. So:
+ *
+ * 1. **Flush first.** If the model is dirty, write it through the durability gate, so whatever
+ *    lands in `.trash` is what the user last saw.
+ * 2. **If the flush cannot be proven, keep the net.** A failed flush means the buffer is still
+ *    the only copy; destroying it is the one thing we must never do. The file leaves, the
+ *    recovery state stays, and the banner keeps telling the truth.
+ */
+async function preserveWorkBeforeVacating(path: string): Promise<boolean> {
+	// 2026-08-03 per-build inspection — an APP-KILLER in THIS session's own fix, found by four
+	// independent hunters. This matched only the EXACT path while `releaseTabsForVacatedPath`
+	// matches at-or-under it. So deleting a FOLDER preserved nothing, then disposed every open
+	// note inside it and wiped their write-ahead nets: the unsaved work of every open note in
+	// that folder, gone, with no error. The single-note case was fixed and its generalisation was
+	// not — half a sweep, inside the fix for half a sweep.
+	//
+	// Both halves now take the SAME predicate from `vacatedBy`, so they cannot disagree again
+	// about which tabs an operation affects.
+	const isGone = vacatedBy(path);
+	const affected = get(openTabs).filter((t) => isGone(t.path) && isNoteDirty(t.id));
+	if (affected.length === 0) return true; // nothing open here, or all already durable
+	// Every one must be proven durable before the caller destroys recovery state. One failure
+	// keeps the net for ALL of them: partial preservation is not preservation.
+	const results = await Promise.all(affected.map((t) => flushOutgoing(t.id, 'vacate_flush')));
+	const allOk = results.every((f) => f.ok);
+	if (!allOk) {
+		console.warn(
+			'[vacate] could not flush', results.filter((f) => !f.ok).length, 'of', affected.length,
+			'dirty note(s) under', path,
+			'— KEEPING the write-ahead net, it is the only copy of that work',
+		);
+	}
+	return allOk;
+}
+
+/**
+ * At-or-under the vacated path. Extracted 2026-08-03 because the preserve half and the
+ * release half had DIFFERENT answers to "which tabs does this affect" — see
+ * `preserveWorkBeforeVacating`, where that disagreement was an APP-KILLER.
+ */
+function vacatedBy(path: string) {
+	// 2026-08-03 inspection residual — this compared RAW strings while the sibling step
+	// `clearPathKeyedAuxStateOnDelete` matches through `normalizePathKey` (slashes folded,
+	// lower-cased). On Windows that made the CLEAR side strictly broader than the FLUSH side:
+	// a tab whose path differs only in casing or separator style had its recovery net wiped
+	// without ever being flushed — the same asymmetry as the folder bug, one level down.
+	// Same normaliser, so the two sides cover exactly the same set.
+	const t = normalizePathKey(path);
+	return (p: string) => { const n = normalizePathKey(p); return n === t || n.startsWith(t + '/'); };
+}
+
+function releaseTabsForVacatedPath(path: string): void {
+	const before = get(openTabs);
+	const isGone = vacatedBy(path);
+	const firstIdx = before.findIndex((t) => isGone(t.path));
+	if (firstIdx === -1) return;
+	const removed = before.filter((t) => isGone(t.path));
+	const survivors = before.filter((t) => !isGone(t.path));
+	const removedIds = new Set(removed.map((t) => t.id));
+
+	// Boss-found 2026-08-02, in the FIRST test of the Overwrite fix above. Removing tabs from
+	// the list is not the whole job: `activeTabId` / `focusedTabId` are separate stores, and
+	// leaving either pointing at a tab that no longer exists makes the derived active-tab
+	// undefined — the editor collapses to the "Select a note from the sidebar" placeholder
+	// while a perfectly good tab sits in the bar. `closeTab` has always chosen a replacement
+	// (the neighbour at the closed tab's index, clamped); this path never did.
+	//
+	// It is a PRE-EXISTING gap in `deleteWithSetting`, which this helper was extracted from —
+	// deleting the note you are looking at could always empty the pane with other tabs open.
+	// Sharing the teardown is what made it visible, and one fix now closes it for Delete,
+	// Overwrite-on-create, Overwrite-on-rename and the conflict sidecar together.
+	const replacement = survivors.length
+		? survivors[Math.min(firstIdx, survivors.length - 1)].id
+		: null;
+
+	// Tab-keyed state, mirroring closeTab. `clearPathKeyedAuxStateOnDelete` handles the
+	// PATH-keyed containers; these are keyed by tab id and were being leaked for the session.
+	for (const t of removed) {
+		saveLocks.delete(t.id);
+		dropPendingCidEnsure(t.path);
+		closeNoteModel(t.id);
+	}
+	const editSet = get(editingTabIds);
+	if (removed.some((t) => editSet.has(t.id))) {
+		const next = new Set(editSet);
+		for (const t of removed) next.delete(t.id);
+		editingTabIds.set(next);
+	}
+
+	// closeTab's ordering: the scalar activation first, so `$activeTab` derives correctly when
+	// the openTabs subscription fires.
+	if (removedIds.has(get(activeTabId) ?? '')) activeTabId.set(replacement);
+	if (removedIds.has(get(focusedTabId) ?? '')) focusedTabId.set(replacement);
+	openTabs.set(survivors);
+	collapseSplitIfBelowTwo(survivors.length);
 }
 
 /**
@@ -4651,7 +4836,17 @@ export async function deleteWithSetting(path: string): Promise<void> {
  */
 export async function moveToTrash(path: string): Promise<void> {
 	const { mode, trashRoot } = resolveTrashDestination(path);
+	const preserved = await preserveWorkBeforeVacating(path);
 	await deletePath(path, mode, trashRoot);
+	// 2026-08-02 triage APP-KILLER — the file leaves, so the tab must too. Without this an
+	// Overwrite left a live model owning a path the survivor was about to occupy, and the
+	// stale model wrote over it at the next flush. Same teardown Delete has always done;
+	// see `releaseTabsForVacatedPath`.
+	if (preserved) {
+		clearPathKeyedAuxStateOnDelete(path);
+		clearSaveFailure(path);
+	}
+	releaseTabsForVacatedPath(path);
 }
 
 /** MIG-076 §E-2 — write-journal diagnostics snapshot for Settings → Security &

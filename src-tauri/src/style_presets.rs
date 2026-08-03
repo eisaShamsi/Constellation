@@ -31,16 +31,13 @@ pub fn load_style_presets(app: tauri::AppHandle) -> Result<serde_json::Value, St
     if !path.exists() {
         return Ok(serde_json::json!([]));
     }
-    let data = fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read style presets ({}): {}", path.display(), e))?;
-    Ok(serde_json::from_str(&data).unwrap_or_else(|e| {
-        eprintln!(
-            "[style_presets] Corrupt style-presets.json ({}): {}",
-            path.display(),
-            e
-        );
-        serde_json::json!([])
-    }))
+    // 2026-08-02 triage concern #1 — corrupt USED to return `[]`, and the frontend owns the
+    // whole array: it would then render "no saved styles" and the next Save would write that
+    // single new style over every style the user had. The read error was already propagated;
+    // the PARSE error was not. Both must be, because both mean "your data is on disk and we
+    // could not see it" — the one case where writing back is destruction.
+    Ok(crate::universe::read_persisted_json::<serde_json::Value>(&path)?
+        .unwrap_or_else(|| serde_json::json!([])))
 }
 
 /// Persist the full presets array (pretty-printed). The frontend owns the shape.
@@ -48,7 +45,15 @@ pub fn load_style_presets(app: tauri::AppHandle) -> Result<serde_json::Value, St
 pub fn save_style_presets(app: tauri::AppHandle, presets: serde_json::Value) -> Result<(), String> {
     let path = presets_path(&app)?;
     let data = serde_json::to_string_pretty(&presets).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| format!("Failed to save style presets: {}", e))
+    // 2026-08-03 inspection — this was a plain truncate-then-write, the last persisted-state
+    // save that never got `atomic_write`. An interruption mid-write leaves the file partial,
+    // and the loader above (now strict) reads that as corrupt — so the user is told their saved
+    // styles are unreadable, by the very save that was meant to add one.
+    //
+    // Making the READ strict without making the WRITE atomic just relocates the failure. Same
+    // half-a-sweep shape as the rest of this session; both halves belong together.
+    crate::universe::atomic_write(&path, data.as_bytes())
+        .map_err(|e| format!("Failed to save style presets: {}", e))
 }
 
 // ─── Export / import to a shareable .json file (MIG-069 §D) ───

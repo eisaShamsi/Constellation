@@ -55,6 +55,10 @@ export interface ContextTarget {
 export interface ContextActions {
 	open?: (target: ContextTarget) => void;
 	openInNewTab?: (target: ContextTarget) => void;
+	/** Boss-ruled 2026-08-02 — a note must be closable from the file tree too. Wire it ONLY when
+	 *  the note is actually open; the builder's contract is that an unwired callback emits no
+	 *  item, so "Close" never appears on a note that isn't open. */
+	closeNote?: (target: ContextTarget) => void;
 	rename?: (target: ContextTarget) => void;
 	move?: (target: ContextTarget) => void;
 	addTag?: (target: ContextTarget) => void;
@@ -137,6 +141,11 @@ export function buildContextMenu(target: ContextTarget, a: ContextActions): Menu
 		const openGroup: MenuItem[] = [];
 		if (a.open) openGroup.push({ label: $t('contextMenu.open'), icon: '📂', action: () => a.open!(target) });
 		if (a.openInNewTab) openGroup.push({ label: $t('contextMenu.openInNewTab'), icon: '📑', action: () => a.openInNewTab!(target) });
+		// Reuses `notePane.closeNote` rather than minting a `contextMenu.closeNote`: it is the
+		// same act and the same word in every locale, and two keys for one meaning is how
+		// translations drift apart. Added here in the SHARED builder, so the tree, OrgChart and
+		// the second screen all get it from one place instead of three.
+		if (a.closeNote) openGroup.push({ label: $t('notePane.closeNote'), icon: '✕', action: () => a.closeNote!(target) });
 
 		const orgGroup: MenuItem[] = [];
 		if (a.move) orgGroup.push({ label: $t('contextMenu.move'), icon: '📦', action: () => a.move!(target) });

@@ -124,11 +124,20 @@ export function subscribe(cb: () => void): () => void {
 /** Seed the cache from the boot-bundle response (`bundle.link_types`) — the
  *  fast path that avoids a separate `list_link_types` IPC at startup. */
 export function seedFromBundle(data: unknown): void {
-	if (Array.isArray(data)) {
+	// 2026-08-03 per-build inspection — the read-succeeded latch, the last persisted store
+	// without one. `boot_bundle.rs` maps a FAILED `list_link_types` to `[]` via
+	// `unwrap_or_default()`, so an empty array arrives here indistinguishable from a real
+	// answer — and latching on it let a later save write an empty vocabulary over every custom
+	// link type the user has.
+	//
+	// A SUCCESSFUL read always carries at least the 8 built-in seeds, so `[]` PROVES failure.
+	// Same rule and same reasoning as `markSettingsLoadedFromBundle`: a non-empty value may
+	// latch, an empty one proves nothing.
+	if (Array.isArray(data) && data.length > 0) {
 		cache = data as LinkTypeDef[];
 		rebuildIndex();
+		loaded = true;
 	}
-	loaded = true;
 	notify();
 }
 
@@ -142,9 +151,11 @@ export async function loadLinkTypes(): Promise<void> {
 			rebuildIndex();
 		}
 		loaded = true;
-	} catch {
-		// Leave whatever we had (seed/last-good); never blank the vocabulary.
-		loaded = true;
+	} catch (e) {
+		// Leave whatever we had (seed/last-good); never blank the vocabulary. But do NOT latch:
+		// the cache holding the 8 seeds is a DEGRADED VIEW, not a loaded registry, and saving
+		// from it would write those seeds over the user's custom types. (2026-08-03 inspection.)
+		console.warn('[linkTypes] read failed — saves are disabled until a successful load:', e);
 	}
 	notify();
 }
@@ -153,6 +164,14 @@ export async function loadLinkTypes(): Promise<void> {
  *  resolved result so every surface reflects the change immediately. The
  *  backend re-materializes the Base aggregates under the new vocabulary. §G. */
 export async function saveLinkTypes(deltas: LinkTypeDef[]): Promise<void> {
+	// The latch. Writing the vocabulary we are holding, when we never successfully read the
+	// one on disk, is how every custom link type gets replaced by the 8 built-in seeds.
+	if (!loaded) {
+		throw new Error(
+			'Refusing to save link types: the link-type file was never read successfully. ' +
+				'Saving now would replace your custom types with the built-in set.',
+		);
+	}
 	await invoke('save_universe_link_types', { deltas });
 	// The backend now holds the new registry; pull the resolved list back.
 	await loadLinkTypes();

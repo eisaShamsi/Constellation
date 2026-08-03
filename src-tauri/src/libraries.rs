@@ -114,6 +114,13 @@ pub(crate) fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
         let data = match fs::read_to_string(&path) {
             Ok(d) => d,
             Err(e) => {
+                // This is the READ-ONLY loader, and returning `vec![]` here is deliberate:
+                // a panel that shows nothing for one boot is a display problem. It is only
+                // safe because every write-back path uses the strict twin
+                // `try_load_libraries`, which refuses on an unreadable OR corrupt registry.
+                // (Checked again in the 2026-08-02 triage: all four mutating sites — 357,
+                // 556, 592, 605 — take the strict path, and every caller of THIS function is
+                // read-only. Keep it that way; a `load_libraries` result must never be saved.)
                 eprintln!("[libraries] Failed to read {}: {}", path.display(), e);
                 return vec![];
             }

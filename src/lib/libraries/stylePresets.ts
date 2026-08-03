@@ -12,7 +12,7 @@
  * link-type registry (the portable link palette). Capture/apply live in Phase B.
  */
 import { invoke } from '@tauri-apps/api/core';
-import { get } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { appSettings, updateSettings, type ConstellationTheme } from './store';
 import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, type LinkTypeDef } from './linkTypeRegistry';
 
@@ -119,19 +119,46 @@ export function sectionDef(key: SectionKey): SectionDef | undefined {
 	return SECTION_CATALOGUE.find((s) => s.key === key);
 }
 
-/** Load all presets (app-global). Returns [] on any failure — never throws to the UI. */
+/**
+ * 2026-08-02 audit — **the read-succeeded latch**, the same one settings, collections and
+ * property-types already carry. Without it, making the Rust side strict achieved nothing: this
+ * function caught every error and returned `[]`, so a file the backend had just REFUSED to
+ * treat as empty arrived at the UI as… empty. The user then saw "no saved styles", saved a new
+ * one, and `saveStylePresets` wrote that single style over every style they had.
+ *
+ * A failed read is not an empty list. Until one succeeds, writing is refused.
+ */
+let presetsLoaded = false;
+
+/** Surfaced to the UI — a release build has no devtools, so a console warning is invisible. */
+export const stylePresetsError = writable<string | null>(null);
+
+/** Load all presets (app-global). Returns [] on failure, but LATCHES so saves refuse. */
 export async function loadStylePresets(): Promise<StylePreset[]> {
 	try {
 		const data = await invoke<unknown>('load_style_presets');
+		presetsLoaded = true;
+		stylePresetsError.set(null);
 		return Array.isArray(data) ? (data as StylePreset[]) : [];
-	} catch {
+	} catch (e) {
+		presetsLoaded = false;
+		stylePresetsError.set(String(e));
+		console.warn('[stylePresets] read failed — saves are disabled until a successful load:', e);
 		return [];
 	}
 }
 
-/** Persist the full presets array (app-global). */
+/** Persist the full presets array (app-global). Refuses on a file we could not read. */
 export async function saveStylePresets(presets: StylePreset[]): Promise<void> {
+	if (!presetsLoaded) {
+		stylePresetsError.set('not-loaded');
+		throw new Error(
+			'Refusing to save style presets: the presets file was never read successfully. ' +
+				'Saving now would replace every saved style with this one.',
+		);
+	}
 	await invoke('save_style_presets', { presets });
+	stylePresetsError.set(null);
 }
 
 // ─── Engine: capture / apply (MIG-069 §B) ───

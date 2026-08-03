@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, tn, dir, getSearchOps } from '$lib/i18n';
-	import { libraries, appSettings, moveItem, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
+	import { libraries, appSettings, moveItem, openTabs, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { detectDir } from '$lib/utils';
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
@@ -787,6 +787,12 @@
 			actions.copyPath = fire('copyPath');
 			actions.copyName = fire('copyName');
 			actions.revealInTree = fire('revealInTree');
+			// Contextual, exactly like every other surface: offered only for a note that is
+			// actually open, so the item can never be a no-op. The host resolves the tab; this
+			// view forwards the intent, which is all a display should do.
+			if ($openTabs.some((t) => normPath(t.path) === normPath(target.path))) {
+				actions.closeNote = fire('closeNote');
+			}
 			actions.suggestSources = fire('suggestSources');
 			actions.delete = fire('delete');
 		} else {

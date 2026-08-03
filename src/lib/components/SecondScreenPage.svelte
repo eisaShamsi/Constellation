@@ -118,6 +118,12 @@
 			move: fwd('move'),
 			delete: fwd('delete'),
 		};
+		// 2026-08-02 — `closeNote` is DELIBERATELY absent here, not overlooked. Every action above
+		// forwards to the MAIN window, and "close" forwarded from a display would close the note on
+		// the user's other screen — acting on a window they are not looking at. The second screen
+		// is a display, not a domain. It already carries a close affordance where it belongs: the
+		// × and the ⋯ → Close on the note itself, which work here because `NoteEditor` handles
+		// them in its always-group rather than delegating to a host.
 		if (isMd) actions.suggestSources = fwd('suggestSources');
 		ssCtxMenu = { x: e.clientX, y: e.clientY, items: buildContextMenu(target, actions) };
 	}

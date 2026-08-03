@@ -133,6 +133,16 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
     );
     // MIG-067 §C — resolved link-type vocabulary (self-loads the active universe's
     // deltas, so it's correct regardless of whether ensure_search_db_ready has run).
+    // 2026-08-03 per-build inspection — `list_link_types` is deliberately STRICT (it refuses to
+    // present an unreadable link-type file as "no custom types", because the editor writes back
+    // from what it reads). This `unwrap_or_default()` collapses that refusal into an empty Vec,
+    // which the frontend cannot distinguish from a real answer.
+    //
+    // The bundle keeps degrading rather than failing the whole boot — one unreadable settings
+    // file must not stop the app from starting. What makes that safe is the FRONTEND latch:
+    // `linkTypeRegistry.seedFromBundle` treats an empty list as proof of failure and refuses to
+    // latch (a successful read always carries at least the 8 built-in seeds). Keep those two
+    // facts together — if this ever returns a legitimately empty list, that latch breaks.
     let link_types = time_step!(
         "list_link_types",
         crate::link_types::list_link_types(app.clone()).unwrap_or_default()

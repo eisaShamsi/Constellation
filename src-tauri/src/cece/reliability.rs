@@ -223,13 +223,53 @@ fn sweep_tmp_orphans(library_path: &str) {
 
 /// Convenience: increment + save in one call. The atomic-rename pattern
 /// inside `save` makes this safe to call from a hot path.
+/// **The write-back twin of `load_or_default`** — 2026-08-02 audit, the fifth file with this
+/// shape and the one the first sweep missed.
+///
+/// `load_or_default` returns a DEFAULT profile when the file exists but cannot be read or
+/// parsed, and both mutating callers then `save()` the whole struct back. So a corrupt or
+/// truncated `reliability.json` meant every correction the user has ever made to the
+/// catalogers — data that exists nowhere else and cannot be recomputed — was replaced by a
+/// single new datapoint, and the command still reported success.
+///
+/// `None` means "the file is there and we could not use it". These callers return `()`, so
+/// there is nothing to propagate into: the right answer is to DROP THIS ONE UPDATE rather than
+/// overwrite the history. Losing one correction is recoverable by making it again; losing the
+/// profile is not.
+fn load_for_update(library_path: &str) -> Option<ReliabilityProfile> {
+    let path = reliability_path(library_path);
+    if !path.exists() {
+        return Some(ReliabilityProfile::default()); // genuinely absent — safe to create
+    }
+    match fs::read_to_string(&path) {
+        Ok(s) if s.trim().is_empty() => {
+            eprintln!("[reliability] {:?} is empty (truncated) — refusing to overwrite it", path);
+            None
+        }
+        Ok(s) => match serde_json::from_str(&s) {
+            Ok(p) => Some(p),
+            Err(e) => {
+                eprintln!("[reliability] {:?} unparseable ({}) — refusing to overwrite it", path, e);
+                None
+            }
+        },
+        Err(e) => {
+            eprintln!("[reliability] {:?} unreadable ({}) — refusing to overwrite it", path, e);
+            None
+        }
+    }
+}
+
 pub fn record_correction(
     library_path: &str,
     cataloger: &str,
     axis: Axis,
     was_correct: bool,
 ) {
-    let mut p = load_or_default(library_path);
+    let Some(mut p) = load_for_update(library_path) else {
+        eprintln!("[reliability] correction NOT recorded — the profile could not be read, and writing would erase every past correction for this library");
+        return;
+    };
     p.record(cataloger, axis, was_correct);
     save(library_path, &p);
 }
@@ -350,7 +390,10 @@ pub fn update_reliability_from_correction(
         Some(a) => a,
         None => return,
     };
-    let mut profile = load_or_default(library_path);
+    let Some(mut profile) = load_for_update(library_path) else {
+        eprintln!("[reliability] trail update SKIPPED — the profile could not be read, and writing would erase every past correction for this library");
+        return;
+    };
     let mut any_update = false;
     for trail in trails {
         let cataloger_name = match trail.get("cataloger").and_then(|v| v.as_str()) {

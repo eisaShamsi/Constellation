@@ -102,6 +102,39 @@ fn registry_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app_dir.join("universes.json"))
 }
 
+/// **Use this on every path that will WRITE the registry back.** It surfaces an unreadable or
+/// corrupt `universes.json` as an error instead of an empty registry, so `load → mutate → save`
+/// cannot replace every Universe the user has with the one they just made.
+///
+/// `load_registry` below is the lenient read-only twin: it still falls back to empty (a
+/// read-only consumer showing nothing is a display problem, not data loss) and is now
+/// documented as forbidden on any write-back path.
+fn load_registry_for_update(app: &tauri::AppHandle) -> Result<UniverseRegistry, String> {
+    let path = registry_path(app)?;
+    let empty = || UniverseRegistry { entries: vec![], active_id: None };
+    match read_persisted_json::<UniverseRegistry>(&path) {
+        Ok(Some(r)) => Ok(r),
+        Ok(None) => Ok(empty()),
+        // Transient — the registry is fine and simply unread. Refuse; a retry will succeed.
+        Err(e @ PersistedError::Unreadable(_)) => Err(e.into()),
+        // 2026-08-02 audit — the FIRST version of this fix returned Err here too, and that
+        // blocked EVERY route into the app: create a universe, add an existing one, the
+        // first-run setup, the migration escape hatch. Boot is lenient, so the user reached a
+        // working-looking window where nothing could be done and no message explained why.
+        // Refusing to overwrite must never become refusing to continue. Set the unusable file
+        // aside — the bytes are preserved for recovery — and proceed from empty, which is now
+        // TRUE rather than assumed.
+        Err(PersistedError::Corrupt(msg)) => {
+            eprintln!("[universe] {msg}");
+            set_aside_corrupt(&path);
+            Ok(empty())
+        }
+    }
+}
+
+/// READ-ONLY. Falls back to an empty registry when the file cannot be read or parsed — which
+/// is safe to *display* and catastrophic to *save*. Never call this on a path that writes the
+/// registry back; use `load_registry_for_update`.
 fn load_registry(app: &tauri::AppHandle) -> UniverseRegistry {
     let path = match registry_path(app) {
         Ok(p) => p,
@@ -174,6 +207,108 @@ pub(crate) fn atomic_write(path: &std::path::Path, contents: &[u8]) -> std::io::
         Err(e) => {
             let _ = std::fs::remove_file(&tmp);
             Err(e)
+        }
+    }
+}
+
+/// **The read-side twin of `atomic_write`** — and the cure for the defect the comment above
+/// has described, accurately and in writing, since the G6 audit: *"every loader here swallows
+/// the parse error and falls back to empty … and the next save writes that emptiness back."*
+/// That audit hardened the WRITE and left the READ exactly as described. Worse, an atomic
+/// write GUARANTEES the destructive overwrite completes cleanly.
+///
+/// The distinction the old loaders could not make, and the whole point of this function:
+///
+/// * **Absent** — `Ok(None)`. Genuinely "none yet". Safe to treat as empty AND to write over.
+/// * **Present and readable** — `Ok(Some(value))`.
+/// * **Present but unreadable or unparseable** — `Err`. **The user's data is still on disk;
+///   we merely failed to see it.** A caller that writes back here destroys it. One second of
+///   a sync tool, antivirus or a backup job holding the file is an everyday event.
+///
+/// Any load → mutate → save path MUST use this and propagate the `Err`. Read-only consumers
+/// may fall back to a default, but must never then persist that default.
+/// (2026-08-02 consolidated triage, ranked concern #1 — 13 register entries, 4 files.)
+/// Why a persisted read failed — the two cases need OPPOSITE handling, and collapsing them is
+/// how the first version of this fix locked the user out of their own app.
+#[derive(Debug)]
+pub(crate) enum PersistedError {
+    /// The file exists and we could not read it: a lock, a sharing violation, an I/O error.
+    /// **Transient.** The data is intact; refusing is correct and it will work in a moment.
+    /// Never set this file aside — there is nothing wrong with it.
+    Unreadable(String),
+    /// The file exists and its contents are not usable: unparseable, truncated, empty.
+    /// **Permanent until something intervenes.** Refusing alone would strand the user forever,
+    /// so a caller that would otherwise be blocked may set it aside and continue — preserving
+    /// the bytes for recovery while unblocking the app.
+    Corrupt(String),
+}
+
+impl PersistedError {
+    pub(crate) fn message(&self) -> &str {
+        match self {
+            PersistedError::Unreadable(m) | PersistedError::Corrupt(m) => m,
+        }
+    }
+}
+
+impl From<PersistedError> for String {
+    fn from(e: PersistedError) -> String {
+        e.message().to_string()
+    }
+}
+
+pub(crate) fn read_persisted_json<T: serde::de::DeserializeOwned>(
+    path: &Path,
+) -> Result<Option<T>, PersistedError> {
+    let data = match std::fs::read_to_string(path) {
+        Ok(d) => d,
+        // Only "not found" is trustworthy emptiness. Permission-denied, sharing violations
+        // (the Windows AV/sync case) and I/O errors all mean the data is there and unread.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => {
+            return Err(PersistedError::Unreadable(format!(
+                "Could not read {} ({}). Refusing to treat it as empty.",
+                path.display(),
+                e
+            )))
+        }
+    };
+    // A zero-length file is the classic half-written / truncated state. It is NOT "no data".
+    if data.trim().is_empty() {
+        return Err(PersistedError::Corrupt(format!(
+            "{} is empty — refusing to treat a truncated file as no data.",
+            path.display()
+        )));
+    }
+    serde_json::from_str(&data).map(Some).map_err(|e| {
+        PersistedError::Corrupt(format!(
+            "Could not parse {} ({}). Refusing to overwrite it.",
+            path.display(),
+            e
+        ))
+    })
+}
+
+/// Preserve a file we cannot use, so refusing to overwrite it never becomes refusing to let the
+/// user continue. Mirrors `libraries::back_up_corrupt_config` and the review-pulse rename-aside.
+pub(crate) fn set_aside_corrupt(path: &Path) -> Option<PathBuf> {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let aside = path.with_file_name(format!(
+        "{}.corrupt-{}",
+        path.file_name().and_then(|n| n.to_str()).unwrap_or("state.json"),
+        secs
+    ));
+    match std::fs::rename(path, &aside) {
+        Ok(()) => {
+            eprintln!("[persist] set aside unusable {} → {}", path.display(), aside.display());
+            Some(aside)
+        }
+        Err(e) => {
+            eprintln!("[persist] could NOT set aside {}: {}", path.display(), e);
+            None
         }
     }
 }
@@ -698,7 +833,7 @@ pub fn create_universe(
         created: now,
     };
 
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
     registry.entries.push(entry.clone());
     if registry.active_id.is_none() {
         registry.active_id = Some(entry.id.clone());
@@ -755,7 +890,7 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
             }
         }
     }
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
 
     let entry = registry
         .entries
@@ -973,7 +1108,7 @@ pub fn get_active_universe_path(app: tauri::AppHandle) -> Option<String> {
 /// Remove a universe from the registry (does NOT delete files).
 #[tauri::command]
 pub fn remove_universe_from_registry(app: tauri::AppHandle, id: String) -> Result<(), String> {
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
     registry.entries.retain(|e| e.id != id);
     if registry.active_id.as_deref() == Some(&id) {
         registry.active_id = registry.entries.first().map(|e| e.id.clone());
@@ -1052,7 +1187,7 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
     // 4. Update global registry
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
     for entry in &mut registry.entries {
         if entry.path == universe_dir.to_string_lossy().to_string() {
             entry.name = new_name.clone();
@@ -1091,7 +1226,7 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     let meta: UniverseMeta = serde_json::from_str(&data)
         .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
 
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
 
     // Check for duplicates by path
     let canon = fs::canonicalize(universe_dir)
@@ -1247,7 +1382,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         created: now,
     };
 
-    let mut registry = load_registry(&app);
+    let mut registry = load_registry_for_update(&app)?;
     registry.entries.push(entry.clone());
     registry.active_id = Some(entry.id.clone());
     save_registry(&app, &registry)?;
@@ -2940,3 +3075,111 @@ mod tests_mig103_template {
     }
 }
 
+
+#[cfg(test)]
+mod tests_persisted_read_refuses_emptiness {
+    //! Triage concern #1 (2026-08-02), ranked APP-KILLER: a loader that maps "I could not
+    //! read this" onto "you have none", after which an ordinary save writes that emptiness
+    //! over the user's real file.
+    //!
+    //! Verified live in `universe.rs` before the fix: `load_registry` returned an EMPTY
+    //! registry on read failure AND on parse failure — both indistinguishable from the
+    //! genuinely-absent case — and `create_universe` does load -> push -> save. One second of
+    //! a sync tool holding `universes.json`, then one new Universe, and the registry contained
+    //! only that new one. Every previously registered Universe: forgotten.
+    //!
+    //! The sting recorded for posterity: the G6 audit's own comment above `atomic_write`
+    //! DESCRIBES this defect in writing, and that audit hardened the write while leaving the
+    //! read exactly as described — which made the destructive overwrite atomic.
+    use super::{read_persisted_json, PersistedError};
+    use serde::Deserialize;
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    struct Reg {
+        entries: Vec<String>,
+    }
+
+    fn tmp(name: &str) -> std::path::PathBuf {
+        let p = std::env::temp_dir().join(format!("cns-persist-{}-{}", std::process::id(), name));
+        let _ = std::fs::remove_file(&p);
+        p
+    }
+
+    #[test]
+    fn absent_is_the_only_trustworthy_emptiness() {
+        let p = tmp("absent.json");
+        let got: Option<Reg> = read_persisted_json(&p).expect("absent must not be an error");
+        assert_eq!(got, None, "a file that was never created genuinely means 'none yet'");
+    }
+
+    #[test]
+    fn a_readable_file_round_trips() {
+        let p = tmp("ok.json");
+        std::fs::write(&p, br#"{"entries":["a","b"]}"#).unwrap();
+        let got: Option<Reg> = read_persisted_json(&p).unwrap();
+        assert_eq!(got.unwrap().entries, vec!["a".to_string(), "b".to_string()]);
+        let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn corrupt_json_is_an_error_not_an_empty_registry() {
+        // The everyday cause: a half-written file from a sync tool, or a manual edit.
+        let p = tmp("corrupt.json");
+        std::fs::write(&p, br#"{"entries":["a","#).unwrap();
+        let got = read_persisted_json::<Reg>(&p);
+        assert!(got.is_err(), "corrupt MUST NOT present as empty — that is the app-killer");
+        assert!(
+            matches!(got.as_ref().unwrap_err(), PersistedError::Corrupt(_)),
+            "a corrupt file is recoverable-by-setting-aside, not a transient lock"
+        );
+        assert!(
+            got.unwrap_err().message().contains("Refusing to overwrite"),
+            "the error must say why, so the caller cannot mistake it for 'no data'"
+        );
+        let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn a_zero_length_file_is_truncation_not_absence() {
+        // The classic torn-write state. `serde_json` would reject it anyway, but the message
+        // must not read like a parse problem — an empty file means the data was there.
+        let p = tmp("empty.json");
+        std::fs::write(&p, b"").unwrap();
+        let got = read_persisted_json::<Reg>(&p);
+        assert!(got.is_err(), "an empty file is a truncated file, never 'no data'");
+        assert!(matches!(got.as_ref().unwrap_err(), PersistedError::Corrupt(_)));
+        assert!(got.unwrap_err().message().contains("truncated"));
+        let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn whitespace_only_is_also_truncation() {
+        let p = tmp("ws.json");
+        std::fs::write(&p, b"   \n\t\n").unwrap();
+        assert!(read_persisted_json::<Reg>(&p).is_err());
+        let _ = std::fs::remove_file(&p);
+    }
+
+    /// RED-proof, kept in the suite: the shape this replaced. If someone "simplifies"
+    /// `read_persisted_json` back to a lenient fallback, this documents what breaks.
+    #[test]
+    fn the_old_lenient_shape_cannot_tell_the_two_apart() {
+        let absent = tmp("legacy-absent.json");
+        let corrupt = tmp("legacy-corrupt.json");
+        std::fs::write(&corrupt, br#"{"entries":["a","#).unwrap();
+
+        // Exactly what `load_registry` used to do for both cases.
+        let legacy = |p: &std::path::Path| -> Vec<String> {
+            let Ok(d) = std::fs::read_to_string(p) else { return vec![] };
+            serde_json::from_str::<Reg>(&d).map(|r| r.entries).unwrap_or_default()
+        };
+
+        assert_eq!(legacy(&absent), Vec::<String>::new());
+        assert_eq!(legacy(&corrupt), Vec::<String>::new());
+        // Identical answers for "you have none" and "I could not read your data".
+        // The save path that follows cannot possibly do the right thing.
+        assert!(read_persisted_json::<Reg>(&absent).unwrap().is_none());
+        assert!(read_persisted_json::<Reg>(&corrupt).is_err());
+        let _ = std::fs::remove_file(&corrupt);
+    }
+}

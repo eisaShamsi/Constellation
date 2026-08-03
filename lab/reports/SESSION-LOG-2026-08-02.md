@@ -208,3 +208,165 @@ Two entries added to Orientation §12, both found by checking rather than assumi
    archived before a delete. But Slices 9–15 are open, so the gap is **narrowed, not closed**:
    the sentence is no longer literally true and not yet safely rewritable. Flagged for a Boss
    ruling rather than edited unilaterally — CLAUDE.md is the project's instruction file.
+
+---
+
+# 2026-08-03 — the register campaign, and four half-sweeps of my own
+
+Boss ruling: **"All 31."** The consolidated triage's whole register, not a batch. This log covers
+the first tranche — the four app-killers — and the audit that found my fixes wanting.
+
+---
+
+## §8 — Concern #1: "couldn't read it" ≠ "you have none"
+
+**Ranked APP-KILLER, 13 register entries across four files.**
+
+A loader that maps *I could not read this* onto *you have none*, after which an ordinary save
+writes that emptiness over the user's real file. One second of a sync tool or antivirus holding
+a file is an everyday event on Windows.
+
+**The shared primitive** — `universe::read_persisted_json`, deliberately placed beside
+`atomic_write`, whose own comment has described this defect *in writing* since the G6 audit:
+*"every loader here swallows the parse error and falls back to empty … and the next save writes
+that emptiness back."* That audit hardened the WRITE and left the READ exactly as described —
+which made the destructive overwrite atomic.
+
+The distinction it draws, and the whole point:
+
+| State | Verdict | Why |
+|---|---|---|
+| Absent | `Ok(None)` | genuinely "none yet" — safe to write over |
+| Present, readable | `Ok(Some(v))` | — |
+| Unreadable / corrupt / truncated | `Err` | **the data is on disk and we failed to see it** |
+
+**Applied to:** `universe.rs` (6 registry write-back sites via `load_registry_for_update`),
+`review.rs` (3 sites via `load_pulse_data_for_update`), `link_types.rs`, `style_presets.rs`.
+`libraries.rs` was found **already correct** — all four mutating sites use the strict
+`try_load_libraries`, every lenient caller is read-only. I had drafted a comment calling it a
+live defect and corrected it to say what is actually true.
+
+**The lenient twin is kept everywhere,** documented as read-only. A panel showing nothing for
+one boot is a display problem; a save writing nothing is data loss. The two callers genuinely
+differ, so the split is the fix — not blanket strictness.
+
+## §9 — Concern #4: the fallback editor that never saved
+
+**Ranked APP-KILLER.** If `new EditorView(...)` threw, NotePane built a simpler fallback from
+its own extension list — which omitted `EditorView.updateListener`. That listener appeared
+**exactly once in the file**, inside the primary state. A note opened through that path looked
+and behaved completely normally and **nothing typed into it ever reached the save path**: no
+dirty flag, no debounced save, no idle save, no push to the note model.
+
+Fixed by extracting `changeListener()` and using it in both states. Sharing it — rather than
+copying it into the fallback — is the point: a copy is what drifts.
+
+## §10 — Concern #2: "Overwrite" destroying the note you KEPT
+
+**Ranked APP-KILLER. Boss-validated live.**
+
+`deleteWithSetting` has always closed tabs and disposed models. `moveToTrash` never did — and
+`moveToTrash` is what all three displacement paths call: Overwrite-on-create,
+Overwrite-on-rename, and the PJ-088 conflict sidecar. So Overwrite trashed the existing note's
+file and left its tab open, model live, still owning that path. The kept note was then renamed
+onto it, and the stale model wrote over the survivor at its next flush.
+
+PJ-187 had already unified those paths on *where the displaced file goes* and left *what happens
+to its open tab* in one of them. Half a sweep inside the fix meant to make them agree.
+
+Cured by the shared `releaseTabsForVacatedPath`. **Boss test passed**: after a full relaunch the
+survivor held the correct body with the old title preserved as an alias.
+
+## §11 — Concern #3: REFUTED, and the refutation is the useful part
+
+The register claimed a restart discards the app's own rescue copy. I began fixing it, then found
+the PJ-102 Recipe S test header stating that exact path had been **checked and refuted**. I
+verified the reasoning against source and it holds: a path enters `pendingCidEnsure` only when
+its content has **no** `cid_cn`, while net-recovered content is `identityProven` by construction
+and therefore always carries one. A tab cannot be in that queue AND hold recovered work.
+
+I kept a genuine hardening from the attempt — `drainCidEnsure` now adopts through
+`externalChange` rather than hand-rolling `openNoteModel`, inheriting the identity, echo and
+baseline guards across its four awaits — and **rewrote my comment**, which had asserted a
+mechanism that cannot occur. A confident wrong comment is how the next reader is misled.
+
+---
+
+## §12 — The audit on my own work, and what it found
+
+37 agents, every finding refuted twice before acceptance. **Three of my four fixes were wrong or
+incomplete.**
+
+1. **The link-types fix landed on a dead command.** `read_universe_link_types` is registered in
+   `lib.rs` with **zero callers**; the editor reads through `list_link_types` → `load_active` →
+   the lenient `read_deltas`. My fix protected nothing. Moved to the command actually in use.
+2. **The style-presets fix was cancelled at the UI layer.** `loadStylePresets` did
+   `catch { return [] }`, so a file the backend had just refused to treat as empty arrived at
+   the screen as empty anyway. Added the read-succeeded latch + a surfaced error.
+3. **My registry fix locked the user out of the app.** With a corrupt `universes.json`, all four
+   routes in — Create, Open Existing, Link Library, Import — returned the same error naming a
+   hidden file. Refusing to overwrite had become refusing to continue. Now `PersistedError`
+   distinguishes **Unreadable** (transient — refuse, a retry works) from **Corrupt** (set the
+   file aside, preserving it, and proceed from a *true* empty).
+4. **My tab teardown destroyed unsaved work.** It erased the write-ahead recovery buffer and
+   disposed the model **without saving it**, so a note whose last save had failed lost its only
+   copy — while the "your edit is safe" banner stayed on screen with dead buttons. Now
+   `preserveWorkBeforeVacating` flushes first; if the flush cannot be proven, the net is KEPT.
+
+Plus four siblings I had missed: `closeTab` never repaired `focusedTabId`; nothing turned split
+view off; the save-health banner named deleted notes forever; and **`cece/reliability.rs`** — a
+fifth file with the identical load→mutate→save shape, where a corrupt profile replaced every
+cataloger correction the user has ever made with a single datapoint.
+
+---
+
+## §13 — The Close arc: four rounds, three of them my own misses
+
+Boss Test C could not be performed: **there was no way to close a note in split view at all.**
+The tab bar — the only close affordance — is hidden entirely while split is on
+(`{#if !$splitActive}`), and neither the ⋯ menu nor the file-tree right-click offered Close.
+
+| Round | What the Boss found | Fix |
+|---|---|---|
+| 1 | No Close anywhere in split view | **Close** in the ⋯ menu, handled in `NoteEditor`'s *always* group (per the 2026-07-18 precedent, so it works on the second screen too) |
+| 2 | Pane went empty after Overwrite | `releaseTabsForVacatedPath` now repairs `activeTabId`/`focusedTabId` — a **pre-existing gap in Delete**, surfaced by sharing the teardown |
+| 3 | **No Close in the file tree** — I wired 1 of 6 note-action builders, and not the tree | One `wireCloseNote` helper called from every builder (the `wireCollectionPickup` precedent) |
+| 4 | **⋯ → Close dead in the Index preview** — I hid the × there and left the item live | Derived `isClosableTab` from `openTabs` membership; gates BOTH controls |
+
+**Boss rulings absorbed:** the × is present in every view; split view collapses to normal when
+**fewer than two** notes remain (not zero — a lone pane in a split layout has no tab bar, so the
+survivor was stranded); and after an SME discussion, **the page × shows only when the note has no
+visible tab** — closing is an act on the *open set*, so it belongs to the tab strip, and the
+header × is a bridge over views that lack one.
+
+**The lesson, stated plainly:** rounds 3 and 4 were the Whole-Ecosystem Fix Law failing *inside*
+the work meant to honour it. Both were cured the same way — replace the promise a caller must
+remember with a structure that cannot forget: a shared helper, then a derived value.
+
+---
+
+## §14 — Verification
+
+| Gate | Result |
+|---|---|
+| vitest (main lane) | **812 / 812** (71 files) ✅ |
+| vitest (Sight lane, serial per PJ-172) | **84 / 84** ✅ |
+| svelte-check | **0 errors** ✅ |
+| Rust | **1339 / 0** ✅ |
+| i18n parity | **15 / 15** ✅ |
+
+**Boss-validated live:** Overwrite (data correct across a relaunch) · Delete-active-note ·
+Close from ⋯, file tree, split view · the collapse rule · the conditional × · the Index preview.
+
+New tests: 6 (`read_persisted_json` classification, Rust) + 21 (`tests/pj-200`), including
+in-suite RED proofs for the vacate teardown, the activation repair, and the collapse threshold.
+
+## §15 — Standing Orders
+
+- **SO#1** — this log.
+- **SO#6** — Orientation **v3.82**.
+- **SO#7** — MoCh for the day.
+- **SO#9** — PJ ledger **v1.66**; **MIG-110** allocated with concept paper
+  `docs/concept-papers/34-tabs-in-every-view.md`; PJ-208/209/210 filed.
+- **SO#2** — help/User Manual: **owed**. Close is a new user-facing command in four surfaces;
+  filed as PJ-211 rather than claimed done.

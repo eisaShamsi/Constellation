@@ -6203,6 +6203,23 @@
 		const starredLabel = s === 'collections.starred' ? 'Starred' : s;
 		return get(collectionSets).map(c => ({ id: c.id, name: c.id === STARRED_ID ? starredLabel : c.name }));
 	}
+	/**
+	 * **Close, on every surface that offers a note menu.** Boss-found 2026-08-02 (twice).
+	 *
+	 * The first attempt wired this at ONE of the six places note actions are built, and the one
+	 * chosen was not the sidebar file tree — so the menu the Boss actually right-clicks still had
+	 * no Close. That is the Whole-Ecosystem Fix Law failing on the very fix meant to satisfy it.
+	 * A helper, called from every builder, is the shape that cannot repeat it (the
+	 * `wireCollectionPickup` precedent directly below).
+	 *
+	 * Wired ONLY when the note is genuinely open: the builder emits no item for an unwired
+	 * callback, so "Close" never appears on a note that isn't open and can never be a no-op.
+	 */
+	function wireCloseNote(actions: ContextActions, path: string) {
+		const open = $openTabs.find((t) => normPathLC(t.path) === normPathLC(path));
+		if (open) actions.closeNote = () => { void closeTab(open.id); };
+	}
+
 	function wireCollectionPickup(actions: ContextActions, path: string, name: string) {
 		const libraryName = libraryForPath(path)?.name ?? '';
 		const item = { type: 'note' as const, path, name, libraryName };
@@ -6231,6 +6248,7 @@
 				if (lib) openNoteTab(it.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true);
 			};
 			actions.revealInTree = () => { revealInTree(it.path); };
+			wireCloseNote(actions, it.path);
 			actions.bookmark = () => toggleBookmarkPath('note', it.path, displayName);
 			actions.copyPath = () => navigator.clipboard.writeText(it.path).catch(() => {});
 			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
@@ -6319,6 +6337,7 @@
 			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
 			actions.openInDefaultApp = () => { invoke('open_path', { path: entry.path }).catch(() => {}); };
 			actions.showInExplorer = showInExplorer;
+			wireCloseNote(actions, entry.path); // ← the sidebar tree: the menu D3 tested
 			if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(entry.path);
 			actions.delete = () => { confirmDelete = { path: entry.path, name: entry.name }; };
 		}
@@ -6368,6 +6387,7 @@
 			showInExplorer: () => { invoke('constellation_show_in_folder', { path }).catch(() => {}); },
 		};
 		if (doReveal) actions.revealInTree = () => revealInTree(path);
+		wireCloseNote(actions, path); // every list surface inherits Close from here
 		if (isMd) {
 			actions.addTag = () => { tagDialog = { path, name }; };
 			actions.suggestSources = () => handleSuggestSourcesForNote(path);
@@ -6434,6 +6454,7 @@
 			style: () => openStyleSetterToCategory('cognitive'),
 		};
 		wireCollectionPickup(actions, r.path, displayName);
+		wireCloseNote(actions, r.path);
 		listCtxMenu = { x, y, items: buildContextMenu(target, actions) };
 	}
 
@@ -6459,6 +6480,11 @@
 	function handleOrgNodeMenuAction(action: string, target: ContextTarget) {
 		const path = target.path;
 		switch (action) {
+			case 'closeNote': {
+				const t = $openTabs.find((x) => normPathLC(x.path) === normPathLC(path));
+				if (t) void closeTab(t.id);
+				break;
+			}
 			case 'open':
 			case 'openInNewTab': {
 				const lib = libraryForPath(path);
@@ -8817,6 +8843,7 @@
 									noteNames={allNotes}
 									allTags={allTagsList}
 									{linkTraversalMap}
+									tabHasCloseControl={!$splitActive}
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={handleStageChanged}
@@ -9001,6 +9028,7 @@
 								noteNames={allNotes}
 								allTags={allTagsList}
 								{linkTraversalMap}
+								tabHasCloseControl={!$splitActive}
 								trail={activeTrail ? activeTrail.title : ''}
 								{trailIndex}
 								trailTotal={activeTrail ? activeTrail.notes.length : 0}

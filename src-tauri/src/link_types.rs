@@ -523,9 +523,16 @@ pub fn load_active(app: &tauri::AppHandle) {
     set_active(read_deltas(app));
 }
 
+/// 2026-08-02 triage concern #1 — **the command must be STRICT even though `read_deltas` is
+/// lenient.** `read_deltas` falls back to the 8 seeds so a broken file can never break the
+/// grammar in-process; that is right for boot. It is wrong for the editor: the frontend
+/// received `[]`, showed only the built-ins, and the user's next save wrote that list back
+/// over their entire custom vocabulary. Surfacing the error instead means the editor can say
+/// "we could not read your link types" rather than quietly presenting an empty one.
 #[tauri::command]
 pub fn read_universe_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef>, String> {
-    Ok(read_deltas(&app))
+    let path = link_types_path(&app)?;
+    Ok(crate::universe::read_persisted_json::<Vec<LinkTypeDef>>(&path)?.unwrap_or_default())
 }
 
 // MIG-088 (Boss 2026-07-02, ~10s freeze on colour reset): `(async)` so the command
@@ -537,7 +544,12 @@ pub fn read_universe_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef
 pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>) -> Result<(), String> {
     let path = link_types_path(&app)?;
     let json = serde_json::to_string_pretty(&deltas).map_err(|e| e.to_string())?;
-    std::fs::write(&path, json).map_err(|e| format!("Failed to save link types: {}", e))?;
+    // 2026-08-02 triage — this was a plain `fs::write`: truncate-then-write, so an
+    // interruption mid-write leaves the user's link vocabulary partial, which the loader
+    // then reads as "no custom types". Every other persisted-state file in the app already
+    // goes through `atomic_write` (temp + fsync + rename); this one was missed.
+    crate::universe::atomic_write(&path, json.as_bytes())
+        .map_err(|e| format!("Failed to save link types: {}", e))?;
     let before_fp = snapshot().fingerprint();
     set_active(deltas); // reflect immediately (parser + SQL generators see it now)
     // MIG-067 §B — re-materialize the outgoing-link aggregates ONLY when the VOCABULARY
@@ -554,9 +566,26 @@ pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>)
 }
 
 /// The resolved registry (8 seeds + custom, ordered + nested) for the frontend.
+///
+/// **STRICT, and this is the one that matters.** The 2026-08-02 audit caught the first version
+/// of this fix landing on `read_universe_link_types` — a command registered in `lib.rs` with
+/// ZERO frontend callers. The editor reads through *here*, and this went through `load_active`
+/// → `read_deltas`, which falls back to an empty delta list on an unreadable or corrupt file.
+///
+/// The loss, end to end: `link-types.json` is held for a second by a sync tool or antivirus →
+/// this returns the 8 built-in seeds → the Links editor renders as though the user has no
+/// custom types → the user recolours anything → `save_universe_link_types` writes the list the
+/// frontend is holding → every custom link type is gone, now written atomically.
+///
+/// `load_active` stays lenient on purpose: at boot, falling back to the seeds means a broken
+/// file can never break the link grammar. That reasoning holds for a read; it does not survive
+/// a read the user will write back from. Same split as `load_registry` /
+/// `load_registry_for_update` in `universe.rs`.
 #[tauri::command]
 pub fn list_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef>, String> {
-    load_active(&app);
+    let path = link_types_path(&app)?;
+    let deltas = crate::universe::read_persisted_json::<Vec<LinkTypeDef>>(&path)?.unwrap_or_default();
+    set_active(deltas);
     Ok(snapshot().ordered().to_vec())
 }
 

@@ -12,7 +12,7 @@
 	import {
 		parseFrontmatter, buildFullContent,
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead, standardSaveEnv,
-		renameItem, openTabs, openNoteTab,
+		renameItem, openTabs, openNoteTab, closeTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
 		isCascading, isReseeding, reindexNote,
@@ -72,6 +72,8 @@
 		onnavigateback,
 		onnavigateforward,
 		onmoreaction,
+		/** Forwarded to NotePane — see its `tabHasCloseControl` doc. */
+		tabHasCloseControl = false,
 		onStageChanged,
 		onTitleRename,
 		onLiveStats,
@@ -91,6 +93,7 @@
 		onnavigateback?: () => void;
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
+		tabHasCloseControl?: boolean;
 		onStageChanged?: (path: string, stage: string) => void;
 		/** MIG-076 §D2 — when the host provides this AND single ownership is on, a
 		 *  title rename delegates to the host's full quiesced-rename orchestration
@@ -573,6 +576,22 @@
 		}).catch((e) => console.error('[NoteEditor] record_shape_change failed:', e));
 	}
 
+	/**
+	 * **Is this pane showing a tab that can actually be closed?**
+	 *
+	 * Boss-found 2026-08-02: the Index panel's preview offered ⋯ → Close and nothing happened.
+	 * Preview surfaces mount a NoteEditor over a SYNTHETIC tab — the Index panel builds one, and
+	 * the second screen's peek uses `peek-<path>` — whose id was never in `openTabs`. `closeTab`
+	 * finds no match and returns, so the menu item was a control that did nothing. A dead control
+	 * is worse than an absent one: it teaches the user the command is unreliable.
+	 *
+	 * DERIVED rather than passed as a prop, deliberately. A prop is a promise every future mount
+	 * has to remember to keep, and the first version of this fix proved that promises get
+	 * forgotten — I hid the × on the Index preview and left its menu item live. Membership of
+	 * `openTabs` is the actual truth, it is already in scope, and it cannot drift.
+	 */
+	const isClosableTab = $derived($openTabs.some((t) => t.id === tab.id));
+
 	function handleMoreAction(action: string) {
 		// The four pure FILE ops are handled here, ALWAYS — they depend only on the tab and
 		// must behave identically in every host, including hosts that pass no handler at all
@@ -582,6 +601,19 @@
 		// into its switch, matched nothing, and silently died (Boss-reported 2026-07-18).
 		// Host-owned actions (rename, delete, focus…) still delegate below.
 		switch (action) {
+			// Boss-found 2026-08-02, testing split view: there was NO way to close a note there.
+			// The tab bar — the only close affordance, with its × and its right-click
+			// Close/Close-others menu — is hidden entirely while split view is on
+			// (`+layout.svelte`: `{#if !$splitActive}`), and neither this menu nor the file-tree
+			// right-click offered Close. A pane you cannot close is a dead end.
+			//
+			// Handled HERE, in the always-group, for exactly the reason the comment above gives:
+			// closing depends only on the tab, so it must behave identically in every host —
+			// including the second screen, which passes no handler at all. Delegating it to the
+			// host would have re-created the 2026-07-18 bug on the surface that has no host.
+			case 'closeNote':
+				closeTab(tab.id);
+				return;
 			case 'showInExplorer':
 				invoke('constellation_show_in_folder', { path: tab.path })
 					.catch((e) => console.error('[NoteEditor] showInExplorer failed:', e));
@@ -716,6 +748,8 @@
 	initialScrollTop={tab.scrollTop ?? 0}
 	libraryName={tab.libraryName}
 	tabId={tab.id}
+	{tabHasCloseControl}
+	closable={isClosableTab}
 	filePath={tab.path}
 	libraryPath={tab.libraryPath || ''}
 	{noteNames}

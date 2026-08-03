@@ -106,6 +106,25 @@
 		/* Phase 3: breadcrumb + properties */
 		libraryName = '',
 		tabId = '',
+		/**
+		 * Does this note already have a VISIBLE tab carrying a close control?
+		 *
+		 * Boss-ruled 2026-08-02, on seeing two × marks ~40px apart in normal view. Closing is an
+		 * act on the *set of open notes*, so it belongs to the tab strip; this header × exists only
+		 * to cover views that have no strip (split view today — MIG-110 may retire it entirely).
+		 * A control that means one thing on a tab and reads as another on the note's identity row
+		 * should not be shown twice at once.
+		 *
+		 * Each host states its own truth rather than this component guessing: the main window
+		 * passes `!$splitActive`; the second screen's strip is switch-only with no close, so it
+		 * passes false. Defaults to false — show the ×, because a missing close is a dead end and
+		 * a redundant one is only untidy.
+		 */
+		tabHasCloseControl = false,
+		/** Whether closing is a real action here — false on preview surfaces whose tab is
+		 *  synthetic (Index panel, second-screen peek). Gates BOTH the × and the menu item, so
+		 *  neither can become a control that does nothing. */
+		closable = true,
 		filePath = '',
 		libraryPath = '',
 		properties = [] as FrontmatterProperty[],
@@ -152,6 +171,9 @@
 		initialScrollTop?: number;
 		libraryName?: string;
 		tabId?: string;
+		/** See the destructured default above for why this exists. */
+		tabHasCloseControl?: boolean;
+		closable?: boolean;
 		filePath?: string;
 		libraryPath?: string;
 		properties?: FrontmatterProperty[];
@@ -544,6 +566,54 @@
 		);
 	}
 
+	/**
+	 * **The change listener, extracted so BOTH editors get it.**
+	 *
+	 * 2026-08-02 triage, ranked APP-KILLER. If `new EditorView(...)` threw, the fallback editor
+	 * below was built from its own extension list — which did not include this. `updateListener`
+	 * appeared exactly ONCE in this file, inside the primary state. The result was an editor that
+	 * looked and felt completely normal while nothing typed into it ever reached the save path:
+	 * no `dirty` flag, no debounced save, no idle save, no push to the note model.
+	 *
+	 * Sharing one listener is the fix rather than copying it into the fallback, because a copy
+	 * is what drifts. Anything added here is now automatically in both.
+	 */
+	const changeListener = () => EditorView.updateListener.of((update) => {
+					if (update.docChanged) {
+						// ⚡ PERF: do NOT call doc.toString() here — it's O(N) on every keystroke
+						// and causes progressive lag as the document grows.
+						// latestText is refreshed in doSave/doFlush at the moment of writing.
+						dirty = true;
+						onchange?.('');
+						// MIG-076 §C — O(1) live push of the doc rope to the note model
+						// (no toString()). Keeps single-ownership current per change so a
+						// view that mounts mid-edit always seeds from fresh content.
+						onDocChange?.(update.state.doc);
+						// Debounced save: 1500ms after last keystroke.
+						// Ensures content is saved even if the idle timer (30s) hasn't fired.
+						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);
+						debouncedSaveTimer = setTimeout(() => { debouncedSaveTimer = null; doSave(); }, 1500);
+					}
+					// Table toolbar: only on cursor move, NOT on every keystroke (parseTable is expensive)
+					if (update.selectionSet && !update.docChanged) {
+						updateTableToolbar(update.view);
+					}
+					// Toolbar direction: lightweight check on selection or doc change
+					if (update.selectionSet || update.docChanged) {
+						const curLine = update.state.doc.lineAt(update.state.selection.main.head);
+						let detectedDir: 'ltr' | 'rtl' | null = null;
+						if (curLine.text.trim()) {
+							detectedDir = RTL_DETECT.test(curLine.text) ? 'rtl' : 'ltr';
+						} else {
+							for (let n = curLine.number - 1; n >= 1; n--) {
+								const prev = update.state.doc.line(n).text;
+								if (prev.trim()) { detectedDir = RTL_DETECT.test(prev) ? 'rtl' : 'ltr'; break; }
+							}
+						}
+						if (detectedDir) toolbarDir = detectedDir;
+					}
+		});
+
 	/* ─── Mount ─── */
 	onMount(() => {
 		const state = EditorState.create({
@@ -630,41 +700,7 @@
 					class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),
 				})),
 				EditorView.lineWrapping,
-				EditorView.updateListener.of((update) => {
-					if (update.docChanged) {
-						// ⚡ PERF: do NOT call doc.toString() here — it's O(N) on every keystroke
-						// and causes progressive lag as the document grows.
-						// latestText is refreshed in doSave/doFlush at the moment of writing.
-						dirty = true;
-						onchange?.('');
-						// MIG-076 §C — O(1) live push of the doc rope to the note model
-						// (no toString()). Keeps single-ownership current per change so a
-						// view that mounts mid-edit always seeds from fresh content.
-						onDocChange?.(update.state.doc);
-						// Debounced save: 1500ms after last keystroke.
-						// Ensures content is saved even if the idle timer (30s) hasn't fired.
-						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);
-						debouncedSaveTimer = setTimeout(() => { debouncedSaveTimer = null; doSave(); }, 1500);
-					}
-					// Table toolbar: only on cursor move, NOT on every keystroke (parseTable is expensive)
-					if (update.selectionSet && !update.docChanged) {
-						updateTableToolbar(update.view);
-					}
-					// Toolbar direction: lightweight check on selection or doc change
-					if (update.selectionSet || update.docChanged) {
-						const curLine = update.state.doc.lineAt(update.state.selection.main.head);
-						let detectedDir: 'ltr' | 'rtl' | null = null;
-						if (curLine.text.trim()) {
-							detectedDir = RTL_DETECT.test(curLine.text) ? 'rtl' : 'ltr';
-						} else {
-							for (let n = curLine.number - 1; n >= 1; n--) {
-								const prev = update.state.doc.line(n).text;
-								if (prev.trim()) { detectedDir = RTL_DETECT.test(prev) ? 'rtl' : 'ltr'; break; }
-							}
-						}
-						if (detectedDir) toolbarDir = detectedDir;
-					}
-				}),
+				changeListener(),
 				EditorView.theme({
 					'&': { background: 'transparent', border: 'none', outline: 'none' },
 					'&.cm-focused': { outline: 'none' },
@@ -723,8 +759,24 @@
 		try {
 			view = new EditorView({ state: initialState, parent: editorEl! });
 		} catch (e) {
+			// 2026-08-03 inspection — CM6 appends the view's DOM and registers its listeners
+			// BEFORE the throw can happen, so the half-built editor was never disposed: its
+			// listeners stayed registered for the life of the window and it held the whole
+			// document in memory, one more set per re-open of an affected note (Rule 4).
+			// Dispose it before building the fallback, guarded because the throw may have
+			// landed before `view` was assigned.
+			try { (view as EditorView | undefined)?.destroy(); } catch { /* already torn down */ }
+			view = undefined as unknown as EditorView;
+			if (editorEl) editorEl.innerHTML = ''; // drop any DOM CM6 had already appended
 			// Fallback: create editor without livePreview if decorations fail
 			// (e.g., RangeError on content with line-spanning replace decorations)
+			//
+			// 2026-08-02 triage APP-KILLER — this list omitted `EditorView.updateListener`,
+			// which existed exactly once in this file, inside the primary state above. A note
+			// opened through this path looked and behaved normally and NOTHING typed into it
+			// ever reached the save path. Degrading the *rendering* is the entire purpose of
+			// this fallback; degrading *saving* never was. `changeListener()` is now shared,
+			// so this list cannot drift out of sync with the primary one again.
 			console.warn('[NotePane] Editor init failed, retrying without livePreview:', e);
 			const fallbackState = EditorState.create({
 				doc: value,
@@ -737,6 +789,7 @@
 					EditorView.lineWrapping,
 					search(),
 					colorHighlightField,
+					changeListener(), // ← the save path. Never remove this from either list.
 				],
 			});
 			view = new EditorView({ state: fallbackState, parent: editorEl! });
@@ -1502,6 +1555,11 @@
 		{/if}
 		<div class="e-bc-actions">
 			{#if saving}<span class="e-bc-saving">{$t('notePane.saving')}</span>{/if}
+			{#if closable && !tabHasCloseControl}
+				<button class="e-bc-close" onclick={() => handleMoreAction('closeNote')} title={$t('notePane.closeNote')} aria-label={$t('notePane.closeNote')}>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+				</button>
+			{/if}
 			<div class="e-bc-more-wrap" bind:this={moreMenuEl}>
 				<button class="e-bc-dots" onclick={toggleMoreMenu} title={$t('notePane.moreOptions')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -1594,6 +1652,13 @@
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
 							{$t('contextMenu.copyName')}
 						</button>
+						{#if closable}
+							<div class="e-bc-menu-sep"></div>
+							<button class="e-bc-menu-item" onclick={() => handleMoreAction('closeNote')}>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+								{$t('notePane.closeNote')}
+							</button>
+						{/if}
 						<div class="e-bc-menu-sep"></div>
 						<button class="e-bc-menu-item e-bc-menu-danger" onclick={() => handleMoreAction('delete')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1838,6 +1903,15 @@
 		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer;
 	}
 	.e-bc-dots:hover { background: var(--background-modifier-border); color: var(--text-normal); }
+	/* Boss-ruled 2026-08-02: a note carries its own close affordance in EVERY situation. The tab's
+	   × is the usual route, but the tab bar is hidden while split view is on, so a split pane had
+	   no × at all. Matches .e-bc-dots exactly so the header reads as one control group; ordered
+	   after the ⋮ in markup, so `dir` places it correctly in both LTR and RTL. */
+	.e-bc-close {
+		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer;
+	}
+	.e-bc-close:hover { background: var(--background-modifier-border); color: var(--text-normal); }
 	.e-bc-more-wrap { position: relative; }
 	.e-bc-menu {
 		/* RTL truncation fix (2026-07-18) — FIXED (not absolute) so the dropdown escapes

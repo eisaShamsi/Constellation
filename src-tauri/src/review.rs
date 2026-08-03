@@ -717,7 +717,7 @@ pub fn mark_reviewed(
 ) -> Result<(), String> {
     let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
-    let mut pulse = load_pulse_data(&cdir);
+    let mut pulse = load_pulse_data_for_update(&cdir)?;
     let today = today_str();
 
     pulse.last_reviewed.insert(note_path.clone(), today.clone());
@@ -752,7 +752,7 @@ pub fn snooze_note(
 ) -> Result<(), String> {
     let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
-    let mut pulse = load_pulse_data(&cdir);
+    let mut pulse = load_pulse_data_for_update(&cdir)?;
 
     let snooze_until = add_days(&today_str(), days as i64);
     pulse.snoozed.insert(note_path.clone(), snooze_until.clone());
@@ -779,7 +779,7 @@ pub fn dismiss_note(
 ) -> Result<(), String> {
     let cdir = crate::universe::resolve_constellation_dir(&app, universe_root)?;
     let _pulse_guard = PULSE_LOCK.lock().map_err(|e| e.to_string())?;
-    let mut pulse = load_pulse_data(&cdir);
+    let mut pulse = load_pulse_data_for_update(&cdir)?;
 
     if !pulse.dismissed.contains(&note_path) {
         pulse.dismissed.push(note_path.clone());
@@ -798,12 +798,25 @@ pub fn dismiss_note(
 
 // ─── Internal helpers ───
 
-pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
+/// 2026-08-02 triage concern #1. The read-error branch below reasons correctly for a
+/// READ-ONLY boot — "use defaults this session and retry next time" — and that reasoning does
+/// not survive a write. Three commands do `load_pulse_data → mutate → save_pulse_data`
+/// (mark-reviewed, snooze, set-interval), so one locked moment followed by one click wrote
+/// defaults over the user's entire review history: `last_reviewed`, intervals and snoozes,
+/// which are EARNED and live nowhere else on disk.
+///
+/// Split, rather than made strict everywhere, because the two callers genuinely differ:
+/// * **read-only** (boot, display) — defaults are a degraded view, and that is acceptable.
+/// * **write-back** — defaults are a demolition order, and that never is.
+///
+/// Note the corrupt branch is already safe *because* it renames the bad file aside: after that
+/// the file is genuinely absent, so starting fresh is the truthful answer, not a guess.
+fn load_pulse_inner(cdir: &Path) -> Result<ReviewPulseData, String> {
     let path = cdir.join("review-pulse.json");
     if path.exists() {
         match fs::read_to_string(&path) {
             Ok(data) => match serde_json::from_str(&data) {
-                Ok(pulse) => return pulse,
+                Ok(pulse) => return Ok(pulse),
                 Err(e) => {
                     // 2026-07-25 inspection (PJ-140): a parse failure used to fall
                     // through to default() SILENTLY — a corrupt review-pulse.json
@@ -824,13 +837,29 @@ pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
                 }
             },
             Err(e) => {
-                // A read error (lock, transient IO) is NOT corruption — do not
-                // touch the file; just use defaults for this boot and retry next time.
-                eprintln!("[review] review-pulse.json unreadable ({e}); using defaults this session");
+                // A read error (lock, transient IO) is NOT corruption — do not touch the
+                // file. The data is still there; we simply could not see it. Read-only
+                // callers degrade to defaults; write-back callers MUST refuse.
+                return Err(format!(
+                    "review-pulse.json is unreadable ({e}). Refusing to overwrite your review history with defaults."
+                ));
             }
         }
     }
-    ReviewPulseData::default()
+    Ok(ReviewPulseData::default())
+}
+
+/// READ-ONLY. Degrades to defaults so a transient lock cannot block boot or a panel.
+pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
+    load_pulse_inner(cdir).unwrap_or_else(|e| {
+        eprintln!("[review] {e} (read-only caller — using defaults this session)");
+        ReviewPulseData::default()
+    })
+}
+
+/// **Use this on every path that will WRITE the pulse file back.**
+pub(crate) fn load_pulse_data_for_update(cdir: &Path) -> Result<ReviewPulseData, String> {
+    load_pulse_inner(cdir)
 }
 
 fn save_pulse_data(cdir: &Path, pulse: &ReviewPulseData) -> Result<(), String> {
