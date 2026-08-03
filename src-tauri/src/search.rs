@@ -321,6 +321,53 @@ pub(crate) fn maturity_sql_expr() -> String {
 ".replace("/*SX*/", &sx)
 }
 
+/// The DEFAULT confidence a link is born with — the sentinel meaning "the user has
+/// made no judgement about this link yet". Anything else in `note_links.confidence`
+/// is a judgement the user made (evidence / established / contested) or the
+/// structural sentinel, and is therefore earned data.
+pub(crate) const CONFIDENCE_UNJUDGED: &str = "hypothesis";
+
+/// **The preserve rule for a link row on re-index — one source of truth.**
+///
+/// `index_note` rebuilds a note's edges whenever any of them changed. An edge that
+/// qualifies here is re-INSERTed carrying its stored weight / last_traversed /
+/// traversal_count / confidence / created / status; one that does not is written
+/// fresh at `'hypothesis'`, weight 1.0, traversal 0, `created = now`.
+///
+/// The qualifying facts, and why each is here:
+/// - `traversal_count > 0` or `weight != 1.0` — **earned through use.**
+/// - `status != "active"` — *2026-07-24, APP-KILLER.* Archival is "archival, not
+///   deletion", so the `[[wikilink]]` deliberately STAYS in the note. Without this
+///   clause one ordinary save silently un-retired every link the user had archived.
+///   It is stated explicitly rather than relying on archive's `weight = 0.0` side
+///   effect, so the guard holds however weight is set.
+/// - `confidence != CONFIDENCE_UNJUDGED` — **PJ-207.** A link the user PROMOTED
+///   (evidence / established / contested) but never traversed has default weight and
+///   zero traversals, so it failed every clause above: an ordinary annotation edit
+///   re-inserted it as `'hypothesis'` with its `created` reset to now. **A judgement
+///   is earned data exactly as much as a traversal is.** `search.db` is the system of
+///   record for both (CLAUDE.md, Living Link Storage), and while the earned ledger
+///   restores confidence at the *next boot*, `created` is not in the ledger at all.
+///
+/// PJ-065 — a structural (parent/TOC) edge carries no living-link apparatus and is
+/// never preserved, archived or not.
+///
+/// **This function is the only copy.** It was previously mirrored by hand in the test
+/// module below, so widening production alone left all five tests green (PJ-207).
+pub(crate) fn link_row_is_preserved(
+    traversal_count: i64,
+    weight: f64,
+    status: &str,
+    confidence: &str,
+    structural: bool,
+) -> bool {
+    (traversal_count > 0
+        || weight != 1.0
+        || status != "active"
+        || confidence != CONFIDENCE_UNJUDGED)
+        && !structural
+}
+
 #[cfg(test)]
 mod tests_archive_survives_save {
     //! 2026-07-24 — APP-KILLER, found independently by the safety inspection and the
@@ -333,10 +380,17 @@ mod tests_archive_survives_save {
     //! These tests pin the RULE the fix encodes: a re-index restores the row's stored
     //! status rather than assuming 'active'. They exercise the preserve/restore
     //! decision directly (the full `index_note` needs an AppHandle).
+    //!
+    //! PJ-207 — these used to call a hand-written MIRROR of the production predicate,
+    //! so widening production alone would have left all five green. They now call the
+    //! production function itself; the mirror is deleted.
 
-    /// Mirrors the preserve condition in `index_note`.
+    use super::{link_row_is_preserved, CONFIDENCE_UNJUDGED};
+
+    /// The pre-PJ-207 arity, for the cases that never involved confidence. Uses the
+    /// sentinel constant rather than a literal so it cannot drift from production.
     fn is_preserved(traversal_count: i64, weight: f64, status: &str, structural: bool) -> bool {
-        (traversal_count > 0 || weight != 1.0 || status != "active") && !structural
+        link_row_is_preserved(traversal_count, weight, status, CONFIDENCE_UNJUDGED, structural)
     }
 
     /// THE BUG. An archived link the user never traversed: archive sets weight 0.0,
@@ -379,6 +433,160 @@ mod tests_archive_survives_save {
             assert_eq!(restored, stored,
                 "a re-index must not rewrite a link's status to 'active'");
         }
+    }
+
+    // ─── PJ-207 — a JUDGEMENT is earned data too ────────────────────────────────
+    //
+    // RED-proof: restore the pre-PJ-207 predicate
+    //     (tc > 0 || w != 1.0 || status != "active") && !structural
+    // and `a_promoted_but_never_traversed_link_is_preserved` fails on all three
+    // tiers, because such a row is (0, 1.0, "active") on every other axis.
+
+    /// **THE PJ-207 BUG.** The user promotes a link to evidence / established /
+    /// contested and never clicks it. Weight is still the 1.0 it was born with and
+    /// traversal_count is still 0, so every pre-PJ-207 clause said "not earned" —
+    /// and one ordinary annotation edit re-inserted it as 'hypothesis' with `created`
+    /// reset to now.
+    #[test]
+    fn a_promoted_but_never_traversed_link_is_preserved() {
+        for judged in ["evidence", "established", "contested"] {
+            assert!(
+                link_row_is_preserved(0, 1.0, "active", judged, false),
+                "a link promoted to '{judged}' but never traversed must survive a re-index",
+            );
+        }
+    }
+
+    /// The complement, so the clause cannot be read as "preserve everything": the
+    /// default confidence on an otherwise untouched active link still does NOT
+    /// qualify. If this ever flips, every edge in the Universe takes the preserve
+    /// path and the diff-edges fast path stops meaning anything.
+    #[test]
+    fn the_default_confidence_alone_still_does_not_preserve() {
+        assert!(!link_row_is_preserved(0, 1.0, "active", CONFIDENCE_UNJUDGED, false));
+    }
+
+    /// PJ-065 again, now via the confidence axis: a structural edge carries the
+    /// 'structural' confidence sentinel, which is != 'hypothesis'. The structural
+    /// exclusion must still win, or every parent/TOC edge would start being preserved.
+    #[test]
+    fn the_structural_sentinel_does_not_leak_through_the_confidence_clause() {
+        assert!(!link_row_is_preserved(0, 1.0, "active", "structural", true));
+    }
+}
+
+#[cfg(test)]
+mod tests_pj207_reindex_round_trip {
+    //! PJ-207 — the predicate tests above pin the RULE; these pin the BEHAVIOUR, by
+    //! driving the real `index_note` against a real file and a real database.
+    //!
+    //! This is the first test of the walk primitive in either suite: before PJ-207,
+    //! `grep -rn "reconcile_filesystem\|constellation_search_init\|cache_reconcile"`
+    //! matched no test anywhere, and `index_note` was only ever exercised through
+    //! hand-mirrored predicates. It is testable directly because it takes a bare
+    //! `Connection` — no `AppHandle` — which is exactly why the mirror was never needed.
+
+    use super::{index_note, init_db};
+    use rusqlite::{params, Connection};
+    use std::path::{Path, PathBuf};
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "constellation_pj207_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&d).expect("mkdir tempdir");
+        d
+    }
+
+    /// `[[B|why it matters]]` parses to an `associative` edge whose annotation is the
+    /// display segment (`parse_link_body`'s display-only branch). Changing the
+    /// annotation is what makes the edge fail the per-edge `identical` fast path and
+    /// take the re-INSERT branch — the branch that used to destroy the judgement.
+    fn write_note(path: &Path, annotation: &str) {
+        std::fs::write(path, format!("# A\n\nSee [[B|{}]].\n", annotation)).expect("write note");
+    }
+
+    fn one_edge(conn: &Connection, src: &str) -> (String, String, f64, i64) {
+        conn.query_row(
+            "SELECT confidence, created, weight, traversal_count FROM note_links WHERE source_path = ?1",
+            params![src],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .expect("exactly one edge")
+    }
+
+    /// **THE PJ-207 REGRESSION, end to end.** Promote a link, never traverse it, then
+    /// make an ordinary edit to the note. Before the fix the row came back
+    /// `confidence='hypothesis'` with `created` reset to now — silently, on a save.
+    #[test]
+    fn a_promoted_link_survives_an_ordinary_edit_with_its_birth_date() {
+        let dir = tmp_dir("promoted");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let note = dir.join("A.md");
+        let np = note.to_string_lossy().to_string();
+
+        write_note(&note, "first reason");
+        index_note(&conn, &np, "testlib", true).expect("first index");
+
+        // The user promotes the link and never clicks it: weight and traversal stay
+        // at their birth values, which is precisely why the old predicate missed it.
+        conn.execute(
+            "UPDATE note_links SET confidence = 'established' WHERE source_path = ?1",
+            params![np],
+        )
+        .expect("promote");
+        let (conf0, created0, w0, tc0) = one_edge(&conn, &np);
+        assert_eq!((conf0.as_str(), w0, tc0), ("established", 1.0, 0));
+
+        // An ordinary edit to the note — the annotation changes, so this edge is
+        // rebuilt rather than skipped by the diff-edges fast path.
+        write_note(&note, "a better reason");
+        index_note(&conn, &np, "testlib", true).expect("re-index");
+
+        let (conf1, created1, _, _) = one_edge(&conn, &np);
+        assert_eq!(
+            conf1, "established",
+            "the user's judgement must survive a re-index (PJ-207)"
+        );
+        assert_eq!(
+            created1, created0,
+            "the link's birth date must survive a re-index — `created` is not in the earned ledger, so a reset is unrecoverable"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The complement, on the real path: an ordinary UNJUDGED link is still rebuilt
+    /// fresh. If this ever fails, the preserve path has swallowed every edge and the
+    /// diff-edges optimisation has stopped meaning anything.
+    #[test]
+    fn an_unjudged_link_is_still_rebuilt_but_keeps_its_birth_date() {
+        let dir = tmp_dir("unjudged");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let note = dir.join("A.md");
+        let np = note.to_string_lossy().to_string();
+
+        write_note(&note, "first reason");
+        index_note(&conn, &np, "testlib", true).expect("first index");
+        let (conf0, created0, _, _) = one_edge(&conn, &np);
+        assert_eq!(conf0, "hypothesis", "born unjudged");
+
+        write_note(&note, "a better reason");
+        index_note(&conn, &np, "testlib", true).expect("re-index");
+
+        let (conf1, created1, w1, tc1) = one_edge(&conn, &np);
+        assert_eq!((conf1.as_str(), w1, tc1), ("hypothesis", 1.0, 0));
+        assert_eq!(
+            created1, created0,
+            "even an unjudged edge keeps the date it was first made — only a genuinely NEW edge is born now",
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 
@@ -7073,7 +7281,10 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         // PJ-065 — old_edges value gains `seq` (last element) so a reorder of a
         // 'contains' list (identical keys, different order) is detected as a change and
         // forces a re-INSERT; without this the no-op fast-path would keep stale order.
-        let mut old_edges: std::collections::HashMap<(String, String), (String, Option<String>, String, Option<String>, String, String, Option<i64>)> =
+        // PJ-207 — the trailing String is the row's `created` (its birth date), so an
+        // edge that is re-INSERTed without qualifying for preservation still keeps the
+        // date it was first made rather than being reborn as new.
+        let mut old_edges: std::collections::HashMap<(String, String), (String, Option<String>, String, Option<String>, String, String, Option<i64>, String)> =
             std::collections::HashMap::new();
         {
             let mut stmt = conn.prepare(
@@ -7100,27 +7311,30 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             }).map_err(|e| e.to_string())?;
             for row in rows.flatten() {
                 let (target, ltype, ann, tcc, sname, scc, lib, status, w, lt, tc, conf, created, seq) = row;
-                // PJ-065 — never "preserve" a structural edge: it has no earned
-                // weight/traversal (those belong to cognitive links under inquiry).
-                //
-                // 2026-07-24 (found twice: safety inspection + the MIG-104 architect
-                // pass): `status` is now preserved too, and an ARCHIVED row qualifies
-                // on its own. Archiving is deliberately "archival, not deletion", so
-                // the wikilink STAYS in the note — which meant every archived edge
-                // failed the `identical` fast path below (it requires status=='active')
-                // and was re-inserted as active. One ordinary edit to the note
-                // un-retired the link, with no error. `status != "active"` is in the
-                // condition explicitly rather than relying on archive's weight=0.0
-                // side effect, so the guard holds however weight is set.
-                if (tc > 0 || w != 1.0 || status != "active")
-                    && !crate::link_types::is_structural_type(&ltype)
-                {
+                // The preserve rule lives in ONE place — `link_row_is_preserved`. Its
+                // doc-comment carries the reasoning for each clause (earned use,
+                // archival-not-deletion, and PJ-207's user judgement). Do not inline a
+                // copy of the condition here or in a test: that is exactly the mirror
+                // PJ-207 had to delete.
+                if link_row_is_preserved(
+                    tc,
+                    w,
+                    &status,
+                    &conf,
+                    crate::link_types::is_structural_type(&ltype),
+                ) {
                     preserved.insert(
                         format!("{}::{}", ltype, target),
-                        (w, lt, tc, conf, created, status.clone()),
+                        (w, lt, tc, conf, created.clone(), status.clone()),
                     );
                 }
-                old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status, seq));
+                // PJ-207 — `created` rides along so the re-INSERT below can carry an
+                // EXISTING edge's birth date forward even when the edge does not
+                // qualify for preservation. Without it, an edge that merely changed
+                // annotation was reborn with `created = now`: the link's age (one of
+                // the eight Living-Link properties, and the basis of decay) silently
+                // reset on an ordinary edit.
+                old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status, seq, created));
             }
         }
 
@@ -7129,7 +7343,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         let src_cid = cid_cn.as_str();
         let unchanged = new_edges.len() == old_edges.len()
             && new_edges.iter().all(|(k, (ann, tcc, seq))| {
-                old_edges.get(k).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq)| {
+                old_edges.get(k).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq, _o_created)| {
                     o_status == "active"
                         && o_ann == ann
                         && o_tcc == tcc
@@ -7166,7 +7380,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             //     for the edges that changed/were added.
             for (key, (annotation, target_cid_cn, seq)) in &new_edges {
                 let (target, link_type) = key;
-                let identical = old_edges.get(key).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq)| {
+                let identical = old_edges.get(key).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status, o_seq, _o_created)| {
                     o_status == "active"
                         && o_ann == annotation
                         && o_tcc == target_cid_cn
@@ -7207,10 +7421,21 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
                         params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn, status],
                     ).map_err(|e| format!("Failed to index link: {}", e))?;
                 } else {
+                    // PJ-207 — an edge that does not qualify for preservation is still
+                    // not necessarily NEW: it may be an existing untouched link whose
+                    // annotation just changed. Carry its stored birth date forward;
+                    // only a genuinely new edge is born `now`. (`last_traversed` stays
+                    // `now` — the pre-existing convention for an unearned row, where it
+                    // is a placeholder, not a claim that a traversal happened:
+                    // traversal_count is 0 and every reader gates on that.)
+                    let created = old_edges
+                        .get(key)
+                        .map(|(_, _, _, _, _, _, _, o_created)| o_created.as_str())
+                        .unwrap_or(now.as_str());
                     conn.execute(
                         "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                         VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9)",
-                        params![note_path, name, target, link_type, annotation, now, library_name, cid_cn, target_cid_cn],
+                         VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?7, 0, ?8, 'active', ?9, ?10)",
+                        params![note_path, name, target, link_type, annotation, created, now, library_name, cid_cn, target_cid_cn],
                     ).map_err(|e| format!("Failed to index link: {}", e))?;
                 }
             }
