@@ -503,7 +503,9 @@ pub fn run() {
             structural::get_structural_descendants,
             cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
-            cache::cache_reconcile,
+            // PJ-207 §2 — `cache::cache_reconcile` removed: a registered command with
+            // zero frontend callers, wrapping the very walk PJ-207 makes reachable.
+            // Its emit + Knowledge-Health refresh move into the §7 runner.
             cache::cache_mark_search_ready,
             cache::write_boot_perf_report,
             cache::read_boot_perf_report,

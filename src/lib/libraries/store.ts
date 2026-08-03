@@ -6149,11 +6149,21 @@ export interface AppSettings {
 		 *  "via {lemma}" badge per cross-language row. Off by default to
 		 *  preserve pre-MIG-010 exact-match behaviour. */
 		expandCrossLanguage: boolean;
-		/** MIG-012 — when true, the Index filter ALSO does semantic search
-		 *  over `term_embeddings`, surfacing conceptually-related terms
-		 *  with a `≈ similar` badge. First-time on triggers an embed-all
-		 *  job (~10–20 min on a 7,600-note Universe). Off by default. */
-		semanticSearchEnabled: boolean;
+		/* PJ-207 §2 — `semanticSearchEnabled` REMOVED (2026-08-03). MIG-013 §1C/§1D
+		   retired the per-library term-embedding pipeline it gated and deleted its
+		   Settings toggle; the field was left "for backward compat" and had ZERO
+		   readers for three months. Settings are stored as opaque JSON on the Rust
+		   side (`read_universe_settings` returns `serde_json::Value`, no typed
+		   struct, no deny_unknown_fields), so an existing settings.json carrying the
+		   old key is never READ — nothing to migrate.
+
+		   Verified on the live universe after the §2 Boss test: the key is still on
+		   disk AND is re-written on every save, because the update path spreads the
+		   existing object. So it is inert, not gone. That is the correct trade —
+		   silently stripping keys the current build does not recognise is how a
+		   forward-compat setting gets destroyed by an older build, which is the
+		   very class this migration exists to close. It costs one dead line in a
+		   JSON file and buys back nothing worth the risk. */
 		/** MIG-012 — when true, the Index filter box shows a dropdown of
 		 *  recently-used queries on focus + saves each committed query.
 		 *  Per-Universe storage in SQLite. Off by default. */
@@ -6535,7 +6545,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 	index: {
 		expandCrossLanguage: false,
-		semanticSearchEnabled: false,
 		searchHistoryEnabled: false,
 	},
 	review: {

@@ -1495,60 +1495,45 @@ pub fn cache_is_populated(app: tauri::AppHandle) -> Result<bool, String> {
     Ok(count > 0)
 }
 
-/// Reconcile the cache against the filesystem in the background: walk every
-/// library, call the search indexer for each .md file (mtime-gated — unchanged
-/// files are skipped without reading). Emits `cache-reconciled` when done so
-/// the frontend can refresh any stats that came from the cache.
-///
-/// This is effectively a thin wrapper around `constellation_search_init` that
-/// makes the reconcile step an explicit, named step in the boot pipeline.
-// App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
-// ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
-// WebView2 dispatch thread for the whole 20-40s cold init after a universe
-// switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
-// still runs exactly once (init_lock) but the app stays responsive.
-#[tauri::command(async)]
-pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
-    use tauri::Emitter;
-    // Ensure the schema exists + state's query connection is ready BEFORE
-    // we spawn the walk thread. This makes cache_boot_snapshot calls that
-    // arrive during the walk succeed (they see the populated DB) instead of
-    // racing the walker.
-    crate::search::ensure_search_db_ready(&app)?;
+// PJ-207 §2 — `cache_reconcile` DELETED here (2026-08-03).
+//
+// It was a registered `#[tauri::command(async)]` wrapping `reconcile_filesystem`
+// with **zero frontend callers** — `invoke('cache_reconcile')` appears nowhere in
+// `src/`; the only four matches were comments describing a call that no longer
+// happened. Introduced by `9b5a491d` (2026-05-30, "auto self-heal: deferred
+// background reconcile on boot") and orphaned the next day by `35100f1d`
+// (MIG-067), which removed the boot walk for audible disk thrash and wrote that
+// closed-app bulk changes are "handled by Settings → Rebuild Index" — a control
+// that did not exist. That is the origin of PJ-207's false promise, in 15 languages.
+//
+// It also carried the D1 false-success: `Err(_) => (0, true)` emitted a FAILED
+// walk as a successful cold walk with 0 notes, indistinguishable from a genuinely
+// empty universe, with the error String discarded. Deleting the command moots it;
+// the surviving path (§7) carries a typed outcome that cannot collapse a failure
+// into a zero.
+//
+// Its two behaviours that `constellation_search_init` lacks — the `cache-reconciled`
+// emit and the Knowledge-Health refresh — are NOT lost: they move into the one
+// guarded runner in §7. Predecessor → Replacement entry: SESSION-LOG-2026-08-03 §5.
+//
+// `cache-reconciled` still has an emitter: `cache_mark_search_ready` below, which
+// is the one boot actually calls (`+layout.svelte:2905`), so the three listeners
+// (`+layout.svelte:3641`, `:3684`, `CollectionsPanel.svelte:79`) keep working.
 
-    let app_clone = app.clone();
-    std::thread::spawn(move || {
-        let started = std::time::Instant::now();
-        // reconcile_filesystem uses a DEDICATED connection — the state
-        // connection stays free for concurrent frontend queries thanks to
-        // SQLite WAL mode.
-        let result = crate::search::reconcile_filesystem(&app_clone);
-        let (note_count, was_cold) = match result {
-            Ok(stats) => (stats.note_count, stats.note_count == 0),
-            Err(_) => (0, true),
-        };
-        let _ = app_clone.emit("cache-reconciled", serde_json::json!({
-            "was_cold": was_cold,
-            "note_count": note_count,
-            "elapsed_ms": started.elapsed().as_millis() as u64,
-        }));
-        // MIG-073 §P3 — a completed reconcile walk is the bulk-link-change
-        // settle point: note_links may have changed arbitrarily, so refresh
-        // the Knowledge Health snapshot unconditionally. Already on the
-        // walker thread; uses its own dedicated connection.
-        crate::search::kh_cache_recompute_blocking(&app_clone, false);
-    });
-    Ok(())
-}
-
-/// MIG-067 — the boot-time, WALK-FREE counterpart to `cache_reconcile`. Ensures
+/// MIG-067 — the boot-time, WALK-FREE counterpart to the reconcile walk. Ensures
 /// the search DB connection is ready and fires the same `cache-reconciled` event
 /// the frontend listens for (which loads incoming link counts and marks search
 /// ready) — but WITHOUT `reconcile_filesystem`'s stat-every-
 /// file walk. That walk is what the ZERO BOOT-TIME WALKS rule forbids on boot;
-/// it belongs only to the live watcher or an explicit Settings → Rebuild Index.
+/// it belongs to the live watcher and to a repair the user explicitly asks for.
 /// (A §B-era boot `cache_reconcile` re-introduced the walk and was the audible
 /// background thrash; this replaces it.)
+///
+/// **PJ-207 §2 — the comment here used to name "an explicit Settings → Rebuild
+/// Index".** No such control has ever existed; that sentence, written by MIG-067
+/// when it removed the boot walk, is the origin of a promise the app then made to
+/// users in 15 languages. The user-requested repair is built in §11 of this
+/// migration; until it lands, the ONLY live trigger is the watcher.
 // App-freeze audit Batch-S (2026-07-03): `(async)` — this command reaches
 // ensure_search_db_ready (or a multi-second walk/read) and used to PARK the
 // WebView2 dispatch thread for the whole 20-40s cold init after a universe

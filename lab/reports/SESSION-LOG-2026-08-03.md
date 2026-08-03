@@ -178,4 +178,59 @@ universe B and the first Save/Delete writes them over B's file. Collections, set
 property-types all got the universe-switch reset; workspaces is the sibling that never did.
 
 Release binary rebuilt **17:44** (source last touched 17:00) — freshness verified per Stage 0.
-**Awaiting the Boss test on §1. Nothing committed.**
+
+**BOSS-TESTED AND PASSED** → committed `3c0dc84b` *"§1 — a judgement is earned data too"*.
+
+## §9 — §2 BUILT — the dead doors, the orphan UI, and the off-switches
+
+Pure deletion plus two constants. Nothing gained a new capability.
+
+**Deleted:**
+- **`cache_reconcile`** (`cache.rs`, registered `lib.rs:506`) — a `#[tauri::command(async)]`
+  wrapping the very walk PJ-207 makes reachable, with **zero frontend callers**; the only four
+  matches in `src/` were comments describing a call that no longer happened. Added by `9b5a491d`
+  (2026-05-30), orphaned the next day by `35100f1d` (MIG-067). **D1 dies with it**: its
+  `Err(_) => (0, true)` emitted a FAILED walk as a successful cold walk with 0 notes,
+  indistinguishable from an empty universe, error String discarded.
+- **15 orphan `.semantic-*` CSS rules** (`SettingsModal.svelte`) — markup removed by MIG-013
+  §1D-B (`0ac12eb2`), stylesheet left behind. `.semantic-status-rebuild` was the last physical
+  trace of the "Rebuild Index" button the app has been telling users to press ever since.
+- **`appSettings.index.semanticSearchEnabled`** — declaration + default, zero readers for three
+  months. Verified safe: Rust reads settings as opaque `serde_json::Value`
+  (`universe.rs:1618`), no typed struct and no `deny_unknown_fields`, so an existing
+  `settings.json` carrying the old key is simply ignored. Nothing to migrate.
+  The comment that said the key was "left for backward compat" now records that this commit *is*
+  that garbage collection.
+
+**Added:** `src/lib/index/repairFlag.ts` — `REPAIR_DOOR_ENABLED` (gates §9/§11/§13's user-reachable
+routes) and `FULL_REREAD_ENABLED` (**ships false** per Boss ruling, until §M1 measures it).
+Deliberate asymmetry, documented in the file: flag-off removes the **doors** and keeps every
+**guard**, because the guards fix defects that exist today — a repair already runs on library-add.
+
+**Fixed in passing** (same file, same concern, rather than left standing): `cache.rs`'s own doc
+comment still told the reader the walk "belongs to… an explicit Settings → Rebuild Index." That
+sentence — written by MIG-067 when it removed the boot walk — is the origin of the promise the app
+makes in 15 languages. Corrected, with the history recorded in place.
+
+**Verification clause discharged.** The registration removal is compiler-verified (a dangling
+`generate_handler!` entry is a compile error) — `cargo check` clean. The event survives the
+deletion: `grep -rn '"cache-reconciled"' src-tauri/src` still returns an emitter
+(`cache.rs:1546`, in `cache_mark_search_ready`, which is the one boot actually calls at
+`+layout.svelte:2905`), and all three listeners are intact (`+layout.svelte:3641`, `:3684`,
+`CollectionsPanel.svelte:79`). **Without that check this deletion is indistinguishable from one
+that orphans three listeners.**
+
+**Gates:** svelte-check **0 errors** · vitest **900/900** (76 files) · cargo check clean.
+
+## §10 — Boss ruling 2026-08-03: surface a link's age
+
+Asked at the §1 pass: *"I want the link's age to be surfaced."* Filed as **PJ-213** rather than
+built inline — it is a new user-facing feature, not part of the approved 15-step plan, and doing it
+properly is its own small job: the Outgoing Links **and** Backlinks panels (Whole-Ecosystem — they
+are the two hosts of `ConfidencePicker`), a date-format decision, i18n ×15, and RTL. It also lands
+in a file with a confirmed open inspection finding (`ConfidencePicker.svelte:61`).
+
+Context that makes it worth doing: `created` is one of the eight Living-Link properties and the
+basis of weight decay, it is **not** in the earned ledger, and until §1 shipped today it was being
+silently reset by ordinary edits. Surfacing it makes that class of loss visible to the user instead
+of only to a test.

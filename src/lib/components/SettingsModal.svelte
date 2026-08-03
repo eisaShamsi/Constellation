@@ -112,9 +112,12 @@
 	// have been removed. Cross-language semantic search is now driven
 	// silently by the CTSE Bridge Adapter — first-fill and slow-path
 	// backfill auto-fire on app boot with their own status-bar strip
-	// living in `+layout.svelte`. The `index.semanticSearchEnabled`
-	// flag is left in the settings shape for backward compat but is
-	// no longer read anywhere.)
+	// living in `+layout.svelte`.
+	//
+	// PJ-207 §2 (2026-08-03) — this comment used to end "the flag is left
+	// in the settings shape for backward compat but is no longer read
+	// anywhere." This commit IS that garbage collection: the field, its
+	// default, and the 15 orphan `.semantic-*` CSS rules are all gone.)
 
 	// MIG-071 — theme editor removed (2026-06-07): the Appearance theme layer is retired; all styling
 	// now lives in the Style Setter. (selectTheme / start/save/delete/export/importTheme + allThemes gone.)
@@ -2792,83 +2795,14 @@
 		border-radius: 3px; font-size: 0.75rem; color: var(--text-normal);
 	}
 
-	/* MIG-012 §Build.7-fix-1 — semantic embedding progress indicator. */
-	.semantic-progress {
-		margin-top: -4px;
-		margin-bottom: 12px;
-		padding: 8px 12px;
-		background: var(--background-secondary);
-		border-radius: 6px;
-		border: 1px solid var(--background-modifier-border);
-	}
-	.semantic-progress-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		margin-bottom: 6px;
-	}
-	.semantic-progress-label {
-		font-size: 0.78rem;
-		color: var(--text-muted);
-	}
-	.semantic-progress-cancel {
-		font-size: 0.72rem;
-		padding: 3px 10px;
-	}
-	.semantic-progress-bar {
-		height: 4px;
-		background: var(--background-modifier-border);
-		border-radius: 2px;
-		overflow: hidden;
-	}
-	.semantic-progress-fill {
-		height: 100%;
-		background: var(--interactive-accent);
-		transition: width 0.2s ease;
-	}
-	.semantic-progress-fill.done { background: var(--color-green, #16a34a); }
-	.semantic-progress-fill.cancelled { background: var(--text-faint); }
-	/* MIG-012 §Build.7-fix-3 — "Starting…" indeterminate-style fill that
-	   animates left-to-right while the gap between click-confirm and the
-	   first Rust progress event closes. Closes the visible-feedback gap. */
-	.semantic-progress-fill.starting {
-		background: linear-gradient(90deg, transparent 0%, var(--interactive-accent) 50%, transparent 100%);
-		background-size: 200% 100%;
-		animation: semantic-starting-shimmer 1.4s linear infinite;
-	}
-	@keyframes semantic-starting-shimmer {
-		0%   { background-position: 200% 0; }
-		100% { background-position: -200% 0; }
-	}
-	.semantic-progress.semantic-error {
-		border-color: var(--text-error, #dc2626);
-		background: color-mix(in srgb, var(--text-error, #dc2626) 8%, transparent);
-	}
-
-	/* MIG-012 §Build.7-fix-2 — index status + manual rebuild row.
-	   Shown when the toggle is on AND no embed job is in progress.
-	   Distinguishes "✓ N terms indexed" (ready) from "Index not built". */
-	.semantic-status {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		margin-top: -4px;
-		margin-bottom: 12px;
-		padding: 8px 12px;
-		background: var(--background-secondary);
-		border-radius: 6px;
-		border: 1px solid var(--background-modifier-border);
-	}
-	.semantic-status-label {
-		font-size: 0.78rem;
-		color: var(--text-muted);
-	}
-	.semantic-status-rebuild {
-		font-size: 0.72rem;
-		padding: 3px 10px;
-	}
+	/* PJ-207 §2 — the 15 orphan `.semantic-*` rules were DELETED here (2026-08-03).
+	   MIG-012 §Build.7 built a semantic-embedding progress strip and a "manual
+	   rebuild" row; MIG-013 §1D-B (`0ac12eb2`) removed the markup and left the
+	   stylesheet behind. `.semantic-status-rebuild` in particular was the last
+	   physical trace of the "Rebuild Index" button the app has been telling users
+	   to press ever since — a style rule for a control with no element. The real
+	   repair control arrives in §11 and uses the house `.setting-item` / `.setting-btn`
+	   shapes, not these. */
 
 	/* Toggle Switch.
 	   Off-state uses a clearly muted gray (background-modifier-border) so
