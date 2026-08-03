@@ -381,6 +381,22 @@ Until now, closing Constellation forgot which notes you had open — every launc
 - Named **Workspaces** are unaffected: they stay your deliberate, hand-saved snapshots. This feature is just the rolling "last state".
 - Known limit: with a split view, the split itself returns but which tabs sat in which half is not remembered yet.
 
+### Closing a note
+
+Closing a note takes it off your desk. It does **not** delete anything — the file stays exactly where it is, and you can reopen it from the file tree whenever you like.
+
+There are four ways, so you are never stuck in a view that offers none:
+
+- **The tab's ×** (or a middle-click on the tab). Right-clicking a tab also gives you **Close others**, **Close to the right**, and **Close all**.
+- **The × on the note itself**, top-right beside the **⋮**. It appears only when the note has no visible tab — in split view, for example. In the ordinary single-note view the tab already has a ×, and showing two identical buttons a centimetre apart would just be clutter.
+- **The ⋮ menu → Close**, available on any note in any view.
+- **Right-click the note in the file tree → Close** — shown only when that note is actually open.
+
+Two behaviours worth knowing:
+
+- **Split view folds back on its own.** Close one of the two notes and Constellation returns to the normal view with the remaining note's tab visible. A lone note in a split layout would have no tab strip and therefore no way to switch away from it, so one note is not treated as a split.
+- **Your unsaved words are written first.** If the note has edits that have not reached disk, they are saved before it closes. If that save cannot be completed — the file is locked by a sync tool, the disk is full — the recovery copy is **kept**, not thrown away, and the "couldn't save" banner stays on screen so you can retry.
+
 ### Editor
 
 Constellation uses a high-performance CodeMirror 6 editor with two modes, switchable via the toggle in the breadcrumb bar:

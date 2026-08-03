@@ -109,6 +109,34 @@ When you delete a note or folder — right-click → **Delete** in the file tree
 
 Either way the note disappears from the tree and search immediately but is **not** erased. There is deliberately **no "permanently delete"** choice — routine deletes are always reversible. (A displaced note from an Overwrite, or a same-named note already in `.trash`, is kept with a numeric suffix so nothing in the trash is ever clobbered.)
 
+### Closing a note — four ways, and none of them touches the file
+
+**Closing is not deleting.** It removes the note from your open set — the strip of things you
+currently have on the desk — and leaves the file exactly where it is. Nothing is written, nothing
+moves, and you can reopen it from the tree a second later.
+
+You can close a note from:
+
+- **The tab's ×**, or a middle-click on the tab. The tab's right-click menu also offers
+  **Close others**, **Close to the right** and **Close all**.
+- **The × on the note itself**, at the top-right of the note beside the **⋮**. This one appears
+  *only when the note has no tab visible* — in split view, for instance. In ordinary single-note
+  view the tab already carries a ×, and two identical controls a centimetre apart is just noise.
+- **The ⋮ menu → Close**, on any note, in any view.
+- **Right-click the note in the file tree → Close.** This appears **only for a note that is
+  actually open** — offering to close something you haven't opened would be a menu item that
+  does nothing.
+
+**Split view collapses when one note is left.** Close one of two notes in split view and
+Constellation returns to the normal single-note view, where the surviving note's tab is showing
+again. A single pane in a split layout has no tab strip, which would leave that note with no tab
+and no way to switch — so one note is simply not a split.
+
+**Unsaved work is protected first.** If the note you are closing has edits that have not reached
+disk yet, Constellation writes them before the note leaves. If that write cannot be completed —
+a locked file, a full disk — the note's recovery copy is **kept** rather than discarded, and the
+save-health banner stays up so you can retry.
+
 ### Templates apply uniformly
 
 When you create a new note, Constellation looks up any folder template configured for the parent folder and applies it. **This now happens regardless of how you invoked the create** — the toolbar button, the right-click menu, and the command palette all run the same path. Earlier versions skipped templates on the right-click path; that inconsistency is fixed.
