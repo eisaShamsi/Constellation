@@ -153,6 +153,15 @@ reconstructed.
 | `review::recompute_all_in` — materialize every body into a `Vec` | `review.rs:1366-1375` | **17,886 ms** (7,824 rows, **260 MB** of body text resident at once) |
 | **→ writer-lock hold, one transaction** (`search.rs:10599`) | | **20.6 s**, before the Rust FNV hash + `backfill_one` loop |
 
+> **CORRECTION (2026-08-03, during §4).** The figures above are **cold-cache** — taken on a
+> freshly-copied 2 GB file. Re-measured warm on the same copy, the `tag_counts` INSERT is
+> **1,852 ms** on the second run and **60 ms** on the third. Cold is the honest worst case, and it
+> is exactly the state of the first repair after launching the app, but "13.2 s" stated flat
+> overstates the steady-state cost. The cache-independent fact underneath it is the one that
+> matters and does not move: the query needs `tags_json` alone, while a table scan drags
+> **270.3 MB** of row payload (259.5 MB of it `body_text`) against a **1.6 MB** covering index —
+> **167× fewer bytes**. That is why §4 fixes it with an index rather than by re-shaping the query.
+
 **≈34 seconds of writer-lock hold in two transactions** — and these two are the only tail passes
 that are *not* batched. Their three siblings (`recompute_all_outgoing` / `_incoming` / `_sky`) walk
 in 500-row windows with busy-retry precisely because a single whole-table UPDATE "silently failed

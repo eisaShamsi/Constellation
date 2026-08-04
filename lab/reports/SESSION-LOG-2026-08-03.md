@@ -396,6 +396,62 @@ sentinel that is *valid as an index* is the string-handling twin of `Err(_) => (
 failure silently becomes a plausible-looking success. I deleted a command for that shape this
 afternoon and then wrote it myself an hour later.
 
+**BOSS-TESTED: steps 1, 2, 4 PASS; step 3 proven not a regression** → committed `eaafe240`
+*"§3 — the indexer stops reporting success it did not earn"*.
+
+## §13 — §4 BUILT — the tag-count rebuild stops dragging 270 MB off disk
+
+**A correction I owe on my own measurement, first.** I reported the tag-count rebuild's writer-lock
+hold as **13.2 s** — in the reproduction record, the Architect doc, the Plan, and to the Boss. That
+figure is real but it is a **cold-cache** measurement, taken on a freshly-copied 2 GB file, and I
+presented it without that qualifier. Re-measured on the same copy once warm: **1,852 ms** on the
+second run and **60 ms** on the third. Cold is the honest worst case — and it is exactly the state of
+the first repair after launching the app — but it is not the steady-state cost, and saying "13.2 s"
+flat overstated it. Corrected here and in the reproduction record.
+
+**The plan's gate, discharged before any code was written.** §4 required the query planner to
+*actually choose* a covering index, with a windowed scratch-and-swap as the fallback if it did not.
+Measured on a byte copy of the live universe:
+
+```
+EXPLAIN QUERY PLAN  ->  SCAN note_meta USING COVERING INDEX idx_note_meta_tags
+```
+
+So the primary mechanism ships and **the fallback is not needed** — which matters, because the
+fallback was the risky one: `tag_counts` is maintained write-time by a ± delta applied *inside*
+`index_note`'s own transaction, so today's DELETE + single INSERT is atomic under the writer lock and
+no delta can interleave. A scratch-build + swap would open exactly that window, and a delta landing
+after its rows were scratched would be discarded at the swap.
+
+**The cache-independent number is the real argument.** The query needs `tags_json` and nothing else,
+but a table scan drags every row's inline `body_text` with it:
+
+| | |
+|---|---|
+| covering-index payload (`path` + `tags_json`) | **1.6 MB** |
+| what the table scan must fault in | **270.3 MB** (259.5 MB of it `body_text`) |
+| ratio | **167× fewer bytes** |
+
+Index build **94 ms**, and **zero** additional file size on that database — absorbed by the existing
+freelist. `recompute_all_in` on the real corpus with the index: **386 ms**.
+
+This is the same shape, for the same reason, as `idx_note_meta_map` (MIG-077) sitting three lines
+above it — which was added when a cold Map open took ~26 s for exactly this cause. `IF NOT EXISTS`,
+no schema-version bump, so it is picked up on the next launch with no rebuild.
+
+**Tests — and one I had to split rather than fake.** The unit test proves the index is a pure cost
+change (not one count moves, against a corpus with duplicates-within-a-note, a shared tag, an empty
+list, malformed JSON and an Arabic tag). It does **not** assert plan selection: `note_meta` in the
+fixture has three columns, so `(path, tags_json)` is nearly the whole table and SQLite correctly
+declines the index — asserting it there would pin the fixture, not the fix. I first wrote that
+assertion anyway and it failed honestly, twice, including after padding the fixture to 2,000 rows
+with fat bodies. Plan selection is a property of the real 30-column table, so it now lives in an
+`#[ignore]`d rehearsal test against a real-corpus copy, mirroring the existing
+`rehearse_against_live_copy`. Run and passing:
+`[rehearsal] plan: SCAN note_meta USING COVERING INDEX idx_note_meta_tags`.
+
+**Gates:** Rust **1348 passed / 0 failed** (1347 + 1). Binary 05:40 vs newest source 05:36.
+
 ## §12 — Boss ruling 2026-08-03: surface a link's age
 
 Asked at the §1 pass: *"I want the link's age to be surfaced."* Filed as **PJ-213** rather than

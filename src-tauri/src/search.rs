@@ -4770,6 +4770,38 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             ON note_meta(incoming_count, word_count, path);
     ").map_err(|e| format!("Failed to create idx_note_meta_incoming_wc: {}", e))?;
 
+    // PJ-207 §4 — covering index for `tag_counts::recompute_all_in`, the authoritative
+    // tag-count rebuild the repair pass runs (search.rs's reconcile tail). Exactly the
+    // shape of `idx_note_meta_map` above, for the same reason and with the same
+    // no-rebuild upgrade path.
+    //
+    // MEASURED on a byte copy of the Boss's 1.89 GB universe (7,824 notes), before any
+    // code was written — the plan required the planner to actually choose it, and it does:
+    //   EXPLAIN QUERY PLAN  ->  SCAN note_meta USING COVERING INDEX idx_note_meta_tags
+    //
+    // The query needs `tags_json` and nothing else, but a table scan drags every row's
+    // inline `body_text` off disk with it:
+    //   covering-index payload (path + tags_json) ...... 1.6 MB
+    //   what the table scan must fault in .............. 270.3 MB   (259.5 MB of it body_text)
+    // — 167x fewer bytes. That ratio is cache-independent and is the real reason the
+    // rebuild took 13.0 s on a cold database and 60 ms once warm; it is also why the
+    // fix belongs here rather than in a windowed scratch-and-swap.
+    //
+    // ATOMICITY IS THE POINT, and is why the plan's fallback was NOT taken. `tag_counts`
+    // is maintained write-time by a +/- delta applied INSIDE `index_note`'s own
+    // transaction, so today's DELETE + single INSERT is atomic under the writer lock and
+    // no delta can interleave. A windowed scratch-build + swap would open exactly that
+    // window: a delta landing on the live table after its rows were scratched is
+    // discarded at the swap. This keeps one transaction and unchanged semantics, and
+    // attacks only the cost.
+    //
+    // Build cost 94 ms, and ZERO additional file size on that database — it was absorbed
+    // by the existing freelist.
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_note_meta_tags
+            ON note_meta(path, tags_json);
+    ").map_err(|e| format!("Failed to create idx_note_meta_tags: {}", e))?;
+
     // ─── Living Link System (Knowledge Formulation) ─────────────────────
     // note_links: stores typed, directed, annotated links with lifecycle data.
     // Source of truth: LINK files on disk. This table is the fast index.

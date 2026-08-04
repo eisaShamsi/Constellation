@@ -203,7 +203,7 @@ mod tests {
     fn db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT NOT NULL DEFAULT '[]');
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT NOT NULL DEFAULT '[]', body_text TEXT NOT NULL DEFAULT '');
              CREATE TABLE tag_counts (tag TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0);
              CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);",
         )
@@ -229,6 +229,127 @@ mod tests {
             }
         }
         m
+    }
+
+    /// PJ-207 §4 — the covering index `idx_note_meta_tags(path, tags_json)` is a PURE
+    /// COST change: it must not move a single count.
+    ///
+    /// Why an index needs a semantics test at all: `recompute_all_in` is a
+    /// `json_each` join with a `GROUP BY`, and the index changes which rows the
+    /// planner walks and in what order. The counts must be byte-identical, which is
+    /// the plan's verification clause stated as an assertion.
+    ///
+    /// Measured on a byte copy of the real 1.89 GB universe before this shipped:
+    /// `EXPLAIN QUERY PLAN` becomes `SCAN note_meta USING COVERING INDEX
+    /// idx_note_meta_tags`, because the query wants `tags_json` alone while a table
+    /// scan drags 270.3 MB of row payload (259.5 MB of it `body_text`) against the
+    /// index's 1.6 MB — 167x fewer bytes, which is what made the rebuild 13.0 s cold.
+    #[test]
+    fn the_covering_index_changes_the_plan_and_not_one_count() {
+        let conn = db();
+        // A corpus with every shape the aggregate has to handle: duplicates within a
+        // note, a tag shared across notes, an empty list, a malformed value, and a
+        // non-ASCII tag (the Boss's universe is bilingual).
+        for (p, t) in [
+            ("/a.md", r#"["alpha","beta","alpha"]"#),
+            ("/b.md", r#"["beta","معرفة"]"#),
+            ("/c.md", "[]"),
+            ("/d.md", "not json"),
+            ("/e.md", r#"["معرفة","gamma"]"#),
+        ] {
+            conn.execute("INSERT INTO note_meta(path, tags_json) VALUES (?1, ?2)", params![p, t])
+                .unwrap();
+        }
+
+        // Bulk filler so the planner has a corpus worth indexing. On a 5-row table a
+        // scan is genuinely cheaper and SQLite will rightly refuse the index — asserting
+        // plan selection at that scale would pin the environment, not the fix. Each
+        // filler row also carries a fat `body_text`, which is the whole reason the table
+        // scan is expensive in production.
+        {
+            let mut st = conn
+                .prepare("INSERT INTO note_meta(path, tags_json, body_text) VALUES (?1, ?2, ?3)")
+                .unwrap();
+            let filler = "x".repeat(2_000);
+            for i in 0..2_000 {
+                st.execute(params![
+                    format!("/bulk/{i}.md"),
+                    format!(r#"["t{}","shared"]"#, i % 50),
+                    filler,
+                ])
+                .unwrap();
+            }
+        }
+
+        recompute_all_in(&conn).unwrap();
+        let without_index = counts(&conn);
+        assert_eq!(without_index, live_aggregate(&conn), "baseline must match ground truth");
+
+        conn.execute_batch(
+            "CREATE INDEX idx_note_meta_tags ON note_meta(path, tags_json); ANALYZE;",
+        )
+        .unwrap();
+
+        recompute_all_in(&conn).unwrap();
+        assert_eq!(
+            counts(&conn),
+            without_index,
+            "the covering index is a cost change only — not one count may move",
+        );
+
+        // NOTE, stated rather than faked: this test does NOT assert plan selection.
+        // `note_meta` here has three columns, so `(path, tags_json)` is very nearly the
+        // whole table and SQLite correctly declines the index — it buys nothing at this
+        // shape. Plan selection is a property of the REAL 30-column table, and is
+        // asserted where it can actually be observed:
+        // `the_covering_index_is_chosen_on_a_real_corpus` below. Asserting it here
+        // would pin the fixture, not the fix.
+    }
+
+    /// PJ-207 §4 — the gate the plan actually set: **the planner must choose the
+    /// covering index.** An index nobody uses buys nothing.
+    ///
+    /// Ignored by default, like `rehearse_against_live_copy` above and for the same
+    /// reason: it needs a real corpus. The unit test above cannot show this, because a
+    /// three-column fixture makes the index nearly the whole table.
+    ///
+    /// Run it against a **byte copy** of a real universe (never the live file):
+    /// ```text
+    /// TAG_COUNTS_REHEARSAL_DB=E:/_pj207-scratch/search.db \
+    ///   cargo test --lib the_covering_index_is_chosen_on_a_real_corpus -- --ignored --nocapture
+    /// ```
+    /// Verified 2026-08-03 on a copy of the 1.89 GB / 7,824-note universe:
+    /// `SCAN note_meta USING COVERING INDEX idx_note_meta_tags`.
+    #[test]
+    #[ignore = "rehearsal — needs a real-corpus DB copy via TAG_COUNTS_REHEARSAL_DB"]
+    fn the_covering_index_is_chosen_on_a_real_corpus() {
+        let db = std::env::var("TAG_COUNTS_REHEARSAL_DB").expect("set TAG_COUNTS_REHEARSAL_DB");
+        let conn = Connection::open(&db).unwrap();
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_note_meta_tags ON note_meta(path, tags_json);",
+        )
+        .unwrap();
+
+        let plan: String = {
+            let mut st = conn
+                .prepare(
+                    "EXPLAIN QUERY PLAN SELECT je.value, COUNT(*) FROM note_meta, \
+                     json_each(CASE WHEN json_valid(tags_json) THEN tags_json ELSE '[]' END) je \
+                     WHERE je.type = 'text' AND je.value <> '' GROUP BY je.value",
+                )
+                .unwrap();
+            let rows = st.query_map([], |r| r.get::<_, String>(3)).unwrap();
+            rows.map(|r| r.unwrap()).collect::<Vec<_>>().join(" | ")
+        };
+        eprintln!("[rehearsal] plan: {plan}");
+        assert!(
+            plan.contains("idx_note_meta_tags"),
+            "the planner must use the covering index — without it §4 buys nothing; plan was: {plan}",
+        );
+
+        let t = std::time::Instant::now();
+        recompute_all_in(&conn).unwrap();
+        eprintln!("[rehearsal] recompute_all_in with the index: {:?}", t.elapsed());
     }
 
     #[test]
