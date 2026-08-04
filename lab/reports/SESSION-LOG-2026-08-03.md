@@ -222,7 +222,181 @@ that orphans three listeners.**
 
 **Gates:** svelte-check **0 errors** · vitest **900/900** (76 files) · cargo check clean.
 
-## §10 — Boss ruling 2026-08-03: surface a link's age
+**BOSS-TESTED AND PASSED** → committed `aae51aff` *"§2 — the dead doors, the ghost of the button,
+and the off-switches"*. His finding (both Index toggles already ON at first look) investigated
+against the real file: genuinely `true` in his stored settings from an earlier session — defaults
+apply only to ABSENT keys — and the save round-trip preserved all 97 setting blocks. Not a
+regression. It did correct my own comment: the retired key is **re-written on every save**, so it is
+inert rather than gone. Stripping unrecognised keys is declined deliberately — that is how an older
+build destroys a newer one's setting.
+
+## §11 — §3 BUILT — the per-note indexer stops reporting success it did not earn
+
+Rust-only, all in `search.rs`. Three defects, each of which let the repair loop §11 will build
+report "N repaired, 0 problems" over silent failures.
+
+**D5 — the walk now accounts for itself.** `index_note` returned `Result<(), String>`, flattening
+four distinguishable outcomes into "no error", and `index_library_recursive` returned `()`, so the
+command could only report `SELECT COUNT(*) FROM note_meta` — **a number identical whether the walk
+indexed 7,800 notes, skipped them all as unchanged, or failed on every one.** Now
+`IndexOutcome { Indexed | Unchanged | Raced | Skipped }` and `WalkTally { seen, indexed, unchanged,
+raced, failed, dirs_unreadable, unreadable_sample }`, surfaced as `SearchIndexStats.walk`.
+Two silent losses closed with it: a `read_dir` failure returned from an entire subtree with no
+trace (a permission-denied folder, an un-materialised OneDrive placeholder, a path past the Windows
+limit — the library simply indexed short and reported success), and the depth>20 cut-off, which is a
+real truncation and is now counted as one. The sample is capped at 20 across recursive accumulation,
+mirroring `reconcile.rs`'s bounded diagnostics.
+
+**D4 — the save-during-walk window, narrowed and its residual named.** A re-stat is now the FIRST
+statement inside `index_note`'s `BEGIN IMMEDIATE`; if the file moved since the pre-read stat, the
+note is abandoned with its row untouched and counted as `raced`. The file read, frontmatter parse,
+wikilink/heading extraction and markdown strip stay **outside** the transaction on purpose — moving
+298 MB of reads and every parse inside per-note write transactions would manufacture the freeze this
+migration exists to remove. **Stated limitation, not papered over:** `modified` has second
+resolution (PJ-060 documents it a few lines above), so a save landing in the SAME SECOND still
+compares equal and is still overwritten. This narrows the window from the whole read+parse span to
+sub-second; it does not close it. Closing it needs content hashing on the walk path — filed.
+Scoped to `!force` deliberately: every `force: true` caller is a "this file just changed" context
+where a moved mtime means another write is already in flight and will itself reindex; refusing there
+would convert a benign race into a silently-skipped index with no retry — the very class being closed.
+
+**D3 — three best-effort steps that reported nothing.** `ctse::hooks::on_note_indexed`,
+`maintain_incoming_after_save` and `maintain_sky_after_save` were `eprintln`-only while
+`reindex_single_note` returned `Ok(())` — and stderr goes nowhere in a Windows release build. They
+stay best-effort (a term-index delta must never fail a save) but now report via
+`MaintenanceOutcome`. **The IPC contract is deliberately unchanged**: `constellation_search_reindex`
+keeps `Result<(), String>` via `.map(|_| ())` — it is the per-save hook with 21 fire-and-forget
+frontend callers, and a derived-view delta failure must not surface as a failed save. The outcome is
+consumed Rust-side by the runner, the caller that can act on it. `docs/IPC-CONTRACT.md` needs no edit.
+
+**The compiler found the blast radius**: exactly two call sites broke, both fixed. Every other one
+of the ~15 `reindex_single_note` callers uses `.is_ok()` / `let _ =` / `Ok(_) =>` / `.unwrap()` and
+is source-compatible.
+
+**Tests + RED proofs.** Two new tests, both RED-proven by reverting their own mechanism:
+- `the_walk_distinguishes_indexed_from_unchanged_from_failed` — three files including one with
+  invalid UTF-8 bytes (a genuine per-note failure). First walk: 2 indexed, 1 failed. Second walk:
+  **0 indexed, 2 unchanged, 1 failed** — while `COUNT(*)` reads 2 after both, which is the whole
+  point. Reverting `Err(_) => tally.failed += 1` fails it (`left: 0, right: 1`).
+- `an_unwalkable_subtree_is_counted_and_does_not_abort_the_walk` — driven through the depth cut-off,
+  deterministic on every platform, unlike a permission-denied directory which needs `icacls`. Both
+  take the same `note_unreadable` branch. Reverting it fails.
+
+**Honestly not tested, and said so in the test module rather than implied:** the D4 race guard's
+TIMING. Both stats happen inside one synchronous call, so there is no in-process seam to drive it
+deterministically — a thread racing the writer would be a flaky test, which is worse than an honest
+gap. Its correctness rests on something structural instead: the re-stat is the first statement
+inside the write transaction, so nothing can slip between check and write.
+
+### §3's per-build gate — a focused adversarial review of the diff
+
+The standing order's per-build inspection was substituted here by a **focused adversarial review of
+the §3 diff alone**, stated rather than quietly skipped. Reason: the whole-app sweep ran two hours
+earlier on effectively this tree (PJ-166's tenth strike — it ignores `args.files`), cost ~30 min and
+9.1 M tokens, and confirmed 40 findings **none of which were in `search.rs`**. Re-running it for a
+Rust-only instrumentation change would have re-surfaced the same 40. The value of a per-build gate is
+**in-diff** findings, and that is what was hunted, with the same refute-first discipline.
+
+**Verdict: no APP-KILLER, no HIGH.** Six hypotheses (A–F) chased to the code and refuted:
+- the `Raced` branch is **not** a new staleness generator — the only production `force: false`
+  caller is the walk itself, and the old behaviour wrote stale bytes stamped with the *pre-read*
+  mtime, leaving the identical row≠disk exposure healed by the identical three paths (app save,
+  watcher, boot re-adopt). `Raced` is strictly better for the app-save case.
+- ROLLBACK is clean — the guard is provably the first statement, nothing above `BEGIN IMMEDIATE`
+  writes, and the closure has exactly two `Ok` exits so the COMMIT arm cannot mislabel.
+- `SearchIndexStats` is `Serialize`-only with a skip-if-none field, and all four frontend callers
+  discard the resolved value — backward compatible.
+- All 15 `reindex_single_note` call sites bind `Ok(_)`, never `Ok(())`.
+- The depth cut-off cannot false-alarm: dot-dirs and nested libraries are filtered *before* recursion.
+- The 20-entry sample cap holds across recursive **and** cross-library accumulation.
+
+**Three LOW findings — all FIXED before the build, none deferred (WA#6):**
+- **G1 (LOW-MED), the real one.** `Skipped` was counted nowhere. A sync client deleting 50 notes
+  mid-walk would leave `seen: 7824`, the other buckets summing to 7774, and `is_clean() == true` —
+  the gap inferable only by subtraction. In a step whose whole concept is *the walk's honest account
+  of itself*, an unaccounted bucket **is** the defect. Added `skipped` through tally → absorb →
+  walker → report.
+- **A1.** `.unwrap_or(0)` on the re-stat turned a transient sharing violation (a sync client or AV
+  holding the handle) into `0 != modified` → `Raced` — a *normal* outcome that keeps `is_clean()`
+  true, so the note would be missing from the index with nothing reporting it. A stat that fails is
+  a failure and now says so.
+- **G2.** Two comments described the §7/§11 consumers as though they already existed, and
+  `MaintenanceOutcome::is_clean` added the build's only new warning. Comments made forward-looking;
+  the method annotated with why it is kept rather than deleted (deleting it would force the
+  predicate to be re-derived at the call site later — the hand-mirrored shape §1 unpicked).
+  Release warnings back to **57**, the pre-§3 count.
+
+**My own balance test was weak and was rewritten.** As first written it asserted the buckets sum on
+a walk containing no skipped file — trivially true, a test that passes for the wrong reason. It now
+pins the branch (`index_note` on a missing path → `Skipped`) *and* the plumbing G1 actually broke
+(`absorb` carrying `skipped`), RED-proven by dropping the bucket from accumulation (`left: 0,
+right: 2`).
+
+**Gates:** Rust **1347 passed / 0 failed** (1344 + 3). Release binary 19:23:50 vs source 19:19:58.
+
+### §3 Boss test — Steps 1, 2, 4 PASS. Step 3 investigated, NOT a §3 regression.
+
+Boss: *"I created '3mooR' folder, added 3 notes… Add to it the word 'run7'. Add the folder as a
+library. Search for 'run7', I got nothing."* Investigated against the real data, not explained away:
+
+| Check | Result |
+|---|---|
+| Library registered? | **Yes** — `libraries.json`, `3mooR`, at the universe root |
+| All 3 notes indexed? | **Yes** — 3 `note_meta` rows, `library_name = '3mooR'` |
+| Is `run7` in the index's body text? | **Yes** |
+| Is the row stale? | **No** — indexed mtime == disk mtime, to the second |
+
+So **indexing worked perfectly**; the loss is in *search*. Reproduced in a throwaway temp database
+with the real indexer and the real FTS tokenizer:
+
+```
+BODY = "Run\nrun7\nzarquon\nblorptide9"
+MATCH run7       -> 0
+MATCH run        -> 0
+MATCH zarquon    -> 1
+MATCH blorptide9 -> 1
+MATCH blorptide  -> 1
+```
+
+**The digit is not the problem** — `blorptide9` is found by both spellings. The cause is two rules
+composing: `is_word_boundary` is `!c.is_alphabetic()` (`fts5_tokenizer.rs:417`), so a digit ends a
+word and `run7` tokenizes to **`run`** — and **`run` is in the English stopword list**
+(`libraries.rs:4421`, between `"set"` and `"put"`). Stopwords are dropped from both the index and
+the query, so the term is unsearchable by construction.
+
+Confirmed on the live universe's own FTS vocabulary: `zarquon` → 1 doc and `blorptide` → 1 doc (the
+Boss's own Step-1 and Step-2 test words, proving the save path and the watcher path end-to-end on
+his machine), `notepane` → 3 docs, and `run` → **absent**.
+
+**Not caused by this migration.** `git diff HEAD~3` over `fts5_tokenizer.rs` and the stopword list in
+`libraries.rs` is empty — §1–§3 never touched either. Step 3 was a passing indexing test with an
+unlucky test word.
+
+**Filed as PJ-214** — *a search term that is filtered to nothing returns zero results with no
+explanation.* Same class as the whole migration: the app knows why it found nothing and does not say
+so. A user searching `run`, `set`, `done`, `via` or any of ~200 stopwords gets a blank result with no
+indication the term was dropped rather than genuinely absent. Not urgent, not a data-loss defect,
+but exactly the kind of silence PJ-207 exists to end.
+
+### A self-inflicted scare, recorded rather than hidden
+
+Removing the throwaway probe with a Python slice, I used `s.find(...)` without checking for `-1`; it
+returned `-1`, the slice became `s[:i] + s[2:]`, and **the file was written back at 2× its length** —
+every item duplicated. `cargo check` caught it immediately (unknown token, duplicate definitions);
+nothing was committed and nothing reached the Boss.
+
+Recovered deterministically rather than by re-typing the work: the corruption was exactly
+`new = old[:i] + old[2:]`, so `old` was reconstructed as `HEAD[:2] + new[second_boundary:]`, locating
+the boundary by the file's own opening bytes. Verified by size (778,326 → HEAD's 754,086 + my
+additions), by marker counts returning from doubled to single, by `cargo check` clean, and by the
+suite returning to **1347 passed / 0 failed** — the exact figure from before the accident.
+
+**The lesson, which is the same one this migration keeps teaching:** an unchecked `find` returning a
+sentinel that is *valid as an index* is the string-handling twin of `Err(_) => (0, true)` — the
+failure silently becomes a plausible-looking success. I deleted a command for that shape this
+afternoon and then wrote it myself an hour later.
+
+## §12 — Boss ruling 2026-08-03: surface a link's age
 
 Asked at the §1 pass: *"I want the link's age to be surfaced."* Filed as **PJ-213** rather than
 built inline — it is a new user-facing feature, not part of the approved 15-step plan, and doing it

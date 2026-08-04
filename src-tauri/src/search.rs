@@ -321,6 +321,122 @@ pub(crate) fn maturity_sql_expr() -> String {
 ".replace("/*SX*/", &sx)
 }
 
+/// PJ-207 §3 (D5) — what one `index_note` call actually DID.
+///
+/// It used to return `Result<(), String>`, so four distinguishable outcomes were
+/// flattened into "no error": a row written, a file skipped because nothing changed,
+/// a file that moved under us mid-walk, and a file that is not a note at all. A walk
+/// built on that can only report `SELECT COUNT(*) FROM note_meta` — a number that
+/// reads **identically whether the walk indexed 7,800 notes or zero**.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum IndexOutcome {
+    /// The row was written (inserted or updated).
+    Indexed,
+    /// The mtime gate matched — the file has not changed since it was last indexed.
+    /// The overwhelmingly common case on a healthy universe (7,764 of 7,824).
+    Unchanged,
+    /// The file changed between the pre-read stat and the write transaction, so the
+    /// bytes already in hand are stale. The row is left as it was. **Not an error** —
+    /// the newer write has its own reindex, and the next drift check catches it if not.
+    Raced,
+    /// Not an indexable file (missing, or not `.md`).
+    Skipped,
+}
+
+/// PJ-207 §3 (D3) — which of `reindex_single_note`'s three best-effort maintenance
+/// steps failed.
+///
+/// All three stay **best-effort by design**: a term-index delta failure must never
+/// fail a note's save, because `note_meta` + `notes_fts` are the user-facing sources
+/// of truth and these are derived views. But all three were `eprintln`-only while the
+/// function returned `Ok(())` — and stderr goes nowhere in a Windows release build.
+/// So a repair loop built on this primitive could report "60 notes repaired, 0
+/// problems" over 60 silently-failed term-index deltas. Counted now; still never fatal.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct MaintenanceOutcome {
+    /// `ctse::hooks::on_note_indexed` — the `term_vocab` signed delta.
+    pub term_index_failed: bool,
+    /// `maintain_incoming_after_save` — the affected notes' backlink aggregates.
+    pub incoming_failed: bool,
+    /// `maintain_sky_after_save` — the affected nodes' Sky stratum / maturity.
+    pub sky_failed: bool,
+}
+
+impl MaintenanceOutcome {
+    /// No consumer YET — the repair runner (§7) is the caller that can act on this,
+    /// and it does not exist at this commit. Annotated rather than deleted because
+    /// deleting it would mean re-deriving the predicate at the call site later, which
+    /// is precisely the hand-mirrored-predicate shape §1 had to unpick.
+    #[allow(dead_code)]
+    pub fn is_clean(&self) -> bool {
+        !(self.term_index_failed || self.incoming_failed || self.sky_failed)
+    }
+}
+
+/// PJ-207 §3 (D5) — what a WALK actually did, in place of a bare row count.
+///
+/// `dirs_unreadable` is the one that was costing the user silently: a `read_dir`
+/// failure — a permission-denied folder, a OneDrive placeholder that will not
+/// materialise, a path over the Windows limit — returned from the walker with no
+/// trace at all, so the library indexed short and reported success.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct WalkTally {
+    /// `.md` files the walk visited.
+    pub seen: usize,
+    /// Rows actually written.
+    pub indexed: usize,
+    /// Files whose mtime matched the stored one (the cheap path).
+    pub unchanged: usize,
+    /// Files that moved under the walk and were left for a later pass.
+    pub raced: usize,
+    /// Files that vanished between the directory listing and the index attempt —
+    /// a sync client or the user deleting notes while the walk runs. Normal, but it
+    /// must be VISIBLE: review finding G1 caught this as the last hole in the
+    /// accounting, where 50 notes could disappear mid-walk and the only trace was
+    /// that `indexed + unchanged + raced + failed` no longer summed to `seen`.
+    pub skipped: usize,
+    /// Files whose index attempt returned an error.
+    pub failed: usize,
+    /// Directories that could not be listed. **Bounded** sample of their paths, so a
+    /// systematically-unreadable tree cannot turn a report into a wall of text — the
+    /// `reconcile.rs` re-adopt-failure precedent (first 20, then count only).
+    pub dirs_unreadable: usize,
+    pub unreadable_sample: Vec<String>,
+}
+
+impl WalkTally {
+    /// Cap on `unreadable_sample`, mirroring `reconcile.rs`'s bounded diagnostics.
+    const SAMPLE_CAP: usize = 20;
+
+    fn note_unreadable(&mut self, dir: &Path) {
+        self.dirs_unreadable += 1;
+        if self.unreadable_sample.len() < Self::SAMPLE_CAP {
+            self.unreadable_sample.push(dir.to_string_lossy().to_string());
+        }
+    }
+
+    fn absorb(&mut self, other: WalkTally) {
+        self.seen += other.seen;
+        self.indexed += other.indexed;
+        self.unchanged += other.unchanged;
+        self.raced += other.raced;
+        self.skipped += other.skipped;
+        self.failed += other.failed;
+        self.dirs_unreadable += other.dirs_unreadable;
+        for p in other.unreadable_sample {
+            if self.unreadable_sample.len() < Self::SAMPLE_CAP {
+                self.unreadable_sample.push(p);
+            }
+        }
+    }
+
+    /// Did the walk complete without anything going unexplained? `raced` and
+    /// `unchanged` are normal; `failed` and `dirs_unreadable` are not.
+    pub fn is_clean(&self) -> bool {
+        self.failed == 0 && self.dirs_unreadable == 0
+    }
+}
+
 /// The DEFAULT confidence a link is born with — the sentinel meaning "the user has
 /// made no judgement about this link yet". Anything else in `note_links.confidence`
 /// is a judgement the user made (evidence / established / contested) or the
@@ -557,6 +673,177 @@ mod tests_pj207_reindex_round_trip {
             created1, created0,
             "the link's birth date must survive a re-index — `created` is not in the earned ledger, so a reset is unrecoverable"
         );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// PJ-207 §3 (D5) — the walk's own account of itself.
+    ///
+    /// Before this, `index_library_recursive` returned `()` and the command reported
+    /// `SELECT COUNT(*) FROM note_meta` — a number identical whether the walk indexed
+    /// every note, skipped every note, or failed on every note. These pin the
+    /// distinction.
+    ///
+    /// **What is NOT tested here, stated rather than implied:** the D4 race guard's
+    /// TIMING. It fires when the file's mtime moves between the pre-read stat and the
+    /// re-stat inside `BEGIN IMMEDIATE`, and both happen inside one synchronous call,
+    /// so there is no in-process seam to drive it deterministically — a thread racing
+    /// the writer would be a flaky test, which is worse than an honest gap. Its
+    /// correctness rests on something structural instead: the re-stat is the first
+    /// statement inside the write transaction, so nothing can slip between the check
+    /// and the write. The residual second-resolution window is documented at the guard.
+    #[test]
+    fn the_walk_distinguishes_indexed_from_unchanged_from_failed() {
+        use crate::libraries::LibraryInfo;
+
+        let dir = tmp_dir("walk");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let lib_root = dir.join("lib");
+        std::fs::create_dir_all(&lib_root).unwrap();
+        std::fs::write(lib_root.join("A.md"), "# A\n\nbody\n").unwrap();
+        std::fs::write(lib_root.join("B.md"), "# B\n\nbody\n").unwrap();
+        // A .md whose bytes are not valid UTF-8: `read_to_string` fails, so this is a
+        // genuine per-note failure — the class `let _ = index_note(...)` used to drop.
+        std::fs::write(lib_root.join("bad.md"), [0xF0, 0x9F, 0x92, 0xA9, 0xFF, 0xFE]).unwrap();
+
+        let libs = vec![LibraryInfo {
+            id: "l1".into(),
+            name: "L".into(),
+            path: lib_root.to_string_lossy().to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".into(),
+        }];
+        let exclude = std::collections::HashSet::new();
+
+        let first = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0);
+        assert_eq!(first.seen, 3, "three .md files visited");
+        assert_eq!(first.indexed, 2, "A and B written");
+        assert_eq!(first.failed, 1, "bad.md counted, not silently dropped");
+        assert_eq!(first.unchanged, 0);
+        assert!(!first.is_clean(), "a failed note means the walk is not clean");
+
+        // Walking again touches nothing: the mtime gate short-circuits both good
+        // notes. THIS is the distinction a bare COUNT(*) could never report — the row
+        // count is 2 after both walks, but the work done is completely different.
+        let second = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0);
+        assert_eq!(second.indexed, 0, "nothing changed on disk, so nothing was rewritten");
+        assert_eq!(second.unchanged, 2, "both good notes hit the cache");
+        assert_eq!(second.failed, 1, "the unreadable one fails every time — still counted");
+
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(rows, 2, "the row COUNT is identical after both walks — which is the point");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Review finding G1 — the tally must BALANCE. A note that vanishes between the
+    /// directory listing and the index attempt (a sync client or the user deleting
+    /// while a walk runs) used to fall into `Ok(Skipped) => {}` and be counted
+    /// nowhere, so `indexed + unchanged + raced + skipped + failed` did not sum to
+    /// `seen` and the gap was inferable only by subtraction. In a step whose entire
+    /// concept is "the walk's honest account of itself", an unaccounted bucket is the
+    /// defect, not a rounding error.
+    ///
+    /// Driven here through the same branch a mid-walk deletion takes — `index_note`'s
+    /// `!path.exists()` guard — by pointing the walker at a path that is listed but
+    /// gone. A real deletion race is not deterministically reproducible in-process;
+    /// the branch is.
+    #[test]
+    fn the_tally_balances_when_a_note_vanishes_mid_walk() {
+        use crate::libraries::LibraryInfo;
+
+        let dir = tmp_dir("vanish");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let lib_root = dir.join("lib");
+        std::fs::create_dir_all(&lib_root).unwrap();
+        std::fs::write(lib_root.join("stays.md"), "# Stays\n\nbody\n").unwrap();
+
+        let libs = vec![LibraryInfo {
+            id: "l1".into(),
+            name: "L".into(),
+            path: lib_root.to_string_lossy().to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".into(),
+        }];
+
+        // (1) The BRANCH a mid-walk deletion takes, driven directly: the walker
+        //     increments `seen` and then calls this, and this is what it returns.
+        let gone = lib_root.join("gone.md").to_string_lossy().to_string();
+        assert_eq!(
+            super::index_note(&conn, &gone, "L", false).unwrap(),
+            super::IndexOutcome::Skipped,
+            "a file that is not there is Skipped — not Indexed, and not an error",
+        );
+
+        // (2) The PLUMBING that G1 was missing. A tally with a skipped file must
+        //     carry it through recursive accumulation; the bug was a bucket that
+        //     went nowhere, so this is the assertion that actually pins the fix.
+        //     Asserted on `absorb` because that is the path every subdirectory and
+        //     every library takes on the way to the final report.
+        let mut parent = super::WalkTally::default();
+        let child = super::WalkTally { seen: 3, indexed: 1, skipped: 2, ..Default::default() };
+        parent.absorb(child);
+        assert_eq!(parent.skipped, 2, "skipped must survive accumulation, not be dropped");
+        assert_eq!(
+            parent.indexed + parent.unchanged + parent.raced + parent.skipped + parent.failed,
+            parent.seen,
+            "every file the walk saw must land in exactly one bucket",
+        );
+
+        // (3) And the invariant holds on a real walk too.
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0);
+        assert_eq!(
+            t.indexed + t.unchanged + t.raced + t.skipped + t.failed,
+            t.seen,
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A subtree the walk cannot enter must be COUNTED and must not abort the walk.
+    /// Driven here through the depth cut-off, which is deterministic on every
+    /// platform — unlike a permission-denied directory, which needs `icacls` on
+    /// Windows and would make this test environment-dependent. Both take the same
+    /// `note_unreadable` path, which is the branch under test.
+    #[test]
+    fn an_unwalkable_subtree_is_counted_and_does_not_abort_the_walk() {
+        use crate::libraries::LibraryInfo;
+
+        let dir = tmp_dir("deep");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let lib_root = dir.join("lib");
+        std::fs::create_dir_all(&lib_root).unwrap();
+
+        // A sibling note at the top level, so we can prove the walk kept going.
+        std::fs::write(lib_root.join("top.md"), "# Top\n\nbody\n").unwrap();
+
+        // …and a tree deeper than the cut-off, with a note stranded past it.
+        let mut deep = lib_root.join("deep");
+        for _ in 0..22 {
+            deep = deep.join("d");
+        }
+        std::fs::create_dir_all(&deep).unwrap();
+        std::fs::write(deep.join("buried.md"), "# Buried\n\nbody\n").unwrap();
+
+        let libs = vec![LibraryInfo {
+            id: "l1".into(),
+            name: "L".into(),
+            path: lib_root.to_string_lossy().to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".into(),
+        }];
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0);
+
+        assert!(t.dirs_unreadable >= 1, "the truncated subtree is reported");
+        assert!(!t.unreadable_sample.is_empty(), "and the user can be told WHICH folder");
+        assert!(
+            t.unreadable_sample.len() <= 20,
+            "the sample stays bounded so a broken tree cannot become a wall of text",
+        );
+        assert_eq!(t.indexed, 1, "the sibling at the top still indexed — the walk did not abort");
+        assert!(!t.is_clean(), "a truncated walk must never pass as complete");
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -902,6 +1189,47 @@ pub struct SearchResult {
 pub struct SearchIndexStats {
     pub note_count: u32,
     pub index_size_bytes: u64,
+    /// PJ-207 §3 (D5) — what the walk actually DID, alongside how many rows exist.
+    ///
+    /// `note_count` is `SELECT COUNT(*) FROM note_meta`: a property of the database,
+    /// not of the run. It reads identically whether the walk indexed 7,800 notes,
+    /// skipped all of them as unchanged, or failed on every single one. These fields
+    /// are the run's own account of itself.
+    ///
+    /// `None` on the paths that do not walk (e.g. a readiness check), so "no walk
+    /// happened" stays distinguishable from "a walk happened and did nothing".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub walk: Option<WalkReport>,
+}
+
+/// PJ-207 §3 (D5) — the serialisable face of `WalkTally`.
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct WalkReport {
+    pub seen: usize,
+    pub indexed: usize,
+    pub unchanged: usize,
+    pub raced: usize,
+    pub skipped: usize,
+    pub failed: usize,
+    pub dirs_unreadable: usize,
+    /// Bounded sample (≤20) of directories that could not be listed, so the user can
+    /// be told WHICH folder was skipped rather than merely that one was.
+    pub unreadable_sample: Vec<String>,
+}
+
+impl From<WalkTally> for WalkReport {
+    fn from(t: WalkTally) -> Self {
+        WalkReport {
+            seen: t.seen,
+            indexed: t.indexed,
+            unchanged: t.unchanged,
+            raced: t.raced,
+            skipped: t.skipped,
+            failed: t.failed,
+            dirs_unreadable: t.dirs_unreadable,
+            unreadable_sample: t.unreadable_sample,
+        }
+    }
 }
 
 // ─── State ─────────────────────────────────────────────────────
@@ -3647,7 +3975,11 @@ pub(crate) fn mig003_step3_soft_rebackfill(
             })
             .and_then(|_| index_note(conn, path, lib, true));
         match heal {
-            Ok(()) => {
+            // PJ-207 §3 — `index_note` now reports WHICH outcome; this healer passes
+            // `force: true`, so `Raced` is unreachable here and every Ok means the
+            // row was written or the file is not a note. The cid check below is the
+            // real verdict either way.
+            Ok(_) => {
                 let healed_cid: String = conn
                     .query_row(
                         "SELECT cid_cn FROM note_meta WHERE path = ?1",
@@ -6774,10 +7106,10 @@ fn strip_markdown(text: &str) -> String {
 }
 
 /// Index a single note into the database.
-pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<(), String> {
+pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
     let path = Path::new(note_path);
     if !path.exists() || path.extension().map(|e| e != "md").unwrap_or(true) {
-        return Ok(());
+        return Ok(IndexOutcome::Skipped);
     }
 
     let file_stem = path.file_stem()
@@ -6810,7 +7142,7 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         ).ok();
 
         if existing_mod == Some(modified) {
-            return Ok(()); // Cache hit — no disk read needed.
+            return Ok(IndexOutcome::Unchanged); // Cache hit — no disk read needed.
         }
     }
 
@@ -6955,7 +7287,50 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
     // correctly because note_meta_au (search.rs:1665-1672) deletes+inserts
     // the FTS5 row on update.
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
-    let result = (|| -> Result<(), String> {
+    let result = (|| -> Result<IndexOutcome, String> {
+        // ── PJ-207 §3 (D4) — the save-during-walk guard ──────────────────────────
+        // Everything above — the stat, the file read, the frontmatter parse, the
+        // wikilink/heading extraction, the markdown strip — ran OUTSIDE this
+        // transaction, and deliberately stays outside: moving 298 MB of reads and
+        // every parse inside per-note write transactions would manufacture exactly
+        // the freeze this migration exists to remove. The cost of that choice is a
+        // window in which the user saves the note we are part-way through indexing,
+        // and the stale bytes we already read then win — permanently, because the
+        // app's own writes are watcher-suppressed and boot does not re-walk.
+        //
+        // So: re-stat under the writer lock. If the file moved since the pre-read
+        // stat, abandon this note with its row untouched and let the caller count it.
+        //
+        // LIMITATION, stated rather than papered over: `modified` has SECOND
+        // resolution — PJ-060 documents this a few lines above ("a write landing in
+        // the same second as the cached one is invisible to it"). A save landing in
+        // the SAME SECOND as the walk's stat still compares equal and is still
+        // overwritten. This narrows the window from the whole read+parse span to
+        // sub-second; it does not close it. Closing it needs content hashing on the
+        // walk path — a write-path change, filed as its own job.
+        //
+        // Scoped to the BULK WALK (`!force`) on purpose. Every `force: true` caller
+        // reaches here from a "this file just changed" context — a save, a rename
+        // cascade, a Base cell edit — where a moved mtime means ANOTHER write is
+        // already in flight and will itself reindex. Refusing there would convert a
+        // benign race into a silently-skipped index with no retry, which is the very
+        // staleness class this step is closing.
+        if !force {
+            // Review finding A1 — a re-stat that FAILS is not a race. The obvious
+            // `.unwrap_or(0)` would turn a transient sharing violation (a sync client
+            // or AV holding the handle for a moment) into `0 != modified` → Raced,
+            // which is a NORMAL outcome that leaves `is_clean()` true. The note would
+            // then be missing from the index with nothing reporting it. A stat we
+            // could not take is a failure and says so.
+            let now_mod = std::fs::metadata(path)
+                .and_then(|m| m.modified())
+                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+                .map_err(|e| format!("re-stat failed for {}: {}", note_path, e))?;
+            if now_mod != modified {
+                return Ok(IndexOutcome::Raced);
+            }
+        }
+
         // MIG-079 §C.1 — capture the note's PRIOR tags BEFORE the UPSERT overwrites
         // `tags_json`, so the write-time `tag_counts` ±delta can move only what
         // changed. Gated on the stamp: until the backfill has built the table, the
@@ -7441,14 +7816,23 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             }
         }
 
-        Ok(())
+        Ok(IndexOutcome::Indexed)
     })();
     match result {
-        Ok(()) => { conn.execute_batch("COMMIT").map_err(|e| e.to_string())?; }
+        // PJ-207 §3 (D4) — a RACED note is not an error and not a success. Roll the
+        // (still-empty) transaction back so the row keeps whatever it had, and let the
+        // caller count it. Committing here would be harmless today — the guard is the
+        // first statement in the closure, so nothing has been written — but rolling
+        // back states the intent, and survives anyone adding a write above it.
+        Ok(IndexOutcome::Raced) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Ok(IndexOutcome::Raced);
+        }
+        Ok(_) => { conn.execute_batch("COMMIT").map_err(|e| e.to_string())?; }
         Err(e) => { let _ = conn.execute_batch("ROLLBACK"); return Err(e); }
     }
 
-    Ok(())
+    Ok(IndexOutcome::Indexed)
 }
 
 /// Index all notes in a library directory.
@@ -7463,15 +7847,35 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
 /// owning library PER FILE via `library_name_for_path` (order-independent, immune to
 /// the mtime skip) AND skip subdirectories that are themselves registered libraries so
 /// each note is walked once, under its own identity.
+///
+/// PJ-207 §3 (D5) — it now RETURNS a `WalkTally` instead of `()`. Two failures were
+/// invisible before: a `read_dir` error returned from the whole subtree with no trace
+/// (a permission-denied folder, an un-materialised OneDrive placeholder, a path past
+/// the Windows limit — the library simply indexed short and reported success), and
+/// every per-note error was dropped by `let _ = index_note(...)`. The caller could
+/// only ever report `SELECT COUNT(*) FROM note_meta`, which is the same number
+/// whether the walk did everything or nothing.
 fn index_library_recursive(
     conn: &Connection,
     dir: &Path,
     libs: &[crate::libraries::LibraryInfo],
     exclude: &std::collections::HashSet<String>,
     depth: u32,
-) {
-    if depth > 20 { return; }
-    let read_dir = match std::fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
+) -> WalkTally {
+    let mut tally = WalkTally::default();
+    // A depth cut-off is a real truncation of the walk, not a no-op: count it the
+    // same way an unreadable directory is counted, so it can never pass as complete.
+    if depth > 20 {
+        tally.note_unreadable(dir);
+        return tally;
+    }
+    let read_dir = match std::fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => {
+            tally.note_unreadable(dir);
+            return tally;
+        }
+    };
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
@@ -7479,14 +7883,22 @@ fn index_library_recursive(
         if path.is_dir() {
             let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
             if exclude.contains(&norm) { continue; }
-            index_library_recursive(conn, &path, libs, exclude, depth + 1);
+            tally.absorb(index_library_recursive(conn, &path, libs, exclude, depth + 1));
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let ps = path.to_string_lossy().to_string();
             let lib_name = crate::libraries::library_name_for_path(libs, &ps)
                 .unwrap_or_else(|| "universe_notes".to_string());
-            let _ = index_note(conn, &ps, &lib_name, false);
+            tally.seen += 1;
+            match index_note(conn, &ps, &lib_name, false) {
+                Ok(IndexOutcome::Indexed) => tally.indexed += 1,
+                Ok(IndexOutcome::Unchanged) => tally.unchanged += 1,
+                Ok(IndexOutcome::Raced) => tally.raced += 1,
+                Ok(IndexOutcome::Skipped) => tally.skipped += 1,
+                Err(_) => tally.failed += 1,
+            }
         }
     }
+    tally
 }
 
 // ─── Search Execution ──────────────────────────────────────────
@@ -10738,9 +11150,26 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     let _ = drop_sky_aggregate_triggers(&walk_conn);
 
     let libraries = crate::libraries::load_all_libraries(app);
+    // PJ-207 §3 (D5) — accumulate what the walk actually did. Previously this loop
+    // discarded its own result and the command reported a bare row count.
+    let mut tally = WalkTally::default();
     for lib in &libraries {
         let exclude = crate::libraries::nested_library_paths(&libraries, &lib.path);
-        index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0);
+        tally.absorb(index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0));
+    }
+    if !tally.is_clean() {
+        // stderr goes nowhere in a Windows release build (search.rs documents this),
+        // so this is a breadcrumb for dev runs only. The REPORT is the tally itself,
+        // returned on `SearchIndexStats.walk` — which at THIS commit no frontend
+        // caller reads (all four discard the resolved value). §11 is what renders it.
+        // Said plainly rather than written as though the surface already existed.
+        eprintln!(
+            "[reconcile] walk incomplete: {} note(s) failed, {} directory/ies unreadable{}",
+            tally.failed,
+            tally.dirs_unreadable,
+            if tally.unreadable_sample.is_empty() { String::new() }
+            else { format!(" (e.g. {})", tally.unreadable_sample.join(", ")) }
+        );
     }
 
     // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
@@ -10832,6 +11261,10 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         }
     }
 
+    // PJ-207 §3 (D5) — `note_count` is retained, but it is a fact about the DATABASE
+    // (how many rows exist), not about this RUN. It is the same number whether the
+    // walk indexed everything, skipped everything as unchanged, or failed on every
+    // file. The `walk` tally beside it is the run's own account of itself.
     let note_count: u32 = walk_conn.query_row(
         "SELECT COUNT(*) FROM note_meta", [], |row| row.get(0)
     ).unwrap_or(0);
@@ -10847,7 +11280,11 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         ));
     }
 
-    Ok(SearchIndexStats { note_count, index_size_bytes: index_size })
+    Ok(SearchIndexStats {
+        note_count,
+        index_size_bytes: index_size,
+        walk: Some(tally.into()),
+    })
 }
 
 /// Initialize the search index — builds/rebuilds the SQLite database.
@@ -10892,7 +11329,16 @@ pub fn constellation_search_reindex(
     // note IS on disk and DOES belong in the index.
     ensure_search_db_ready(&app)?;
     let state = app.state::<SearchState>();
-    reindex_single_note(&state, &note_path, &library_name)
+    // PJ-207 §3 — `reindex_single_note` now returns which of its three best-effort
+    // maintenance steps failed. The IPC contract is deliberately UNCHANGED
+    // (`Result<(), String>`): this command is the per-save hook on the keystroke-
+    // adjacent path, its 21 frontend callers treat it as fire-and-forget, and a
+    // derived-view delta failure must not surface as a failed save. The outcome is
+    // consumed Rust-side by the repair runner (§7) — which does NOT exist at this
+    // commit, so today the outcome is recorded and dropped here. Stated plainly
+    // rather than written as though the consumer already existed.
+    // `docs/IPC-CONTRACT.md` needs no edit for this change.
+    reindex_single_note(&state, &note_path, &library_name).map(|_| ())
 }
 
 /// Delete a note from the search index + link table.
@@ -11291,7 +11737,8 @@ pub fn reindex_single_note(
     state: &SearchState,
     note_path: &str,
     library_name: &str,
-) -> Result<(), String> {
+) -> Result<MaintenanceOutcome, String> {
+    let mut maint = MaintenanceOutcome::default();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db.as_ref() {
         // MIG-013 §1C — capture old body BEFORE index_note overwrites
@@ -11349,6 +11796,7 @@ pub fn reindex_single_note(
                 &new_body,
             ) {
                 eprintln!("[ctse] on_note_indexed failed for {}: {}", note_path, e);
+                maint.term_index_failed = true; // PJ-207 §3 (D3) — counted, still best-effort
             }
         }
 
@@ -11359,6 +11807,7 @@ pub fn reindex_single_note(
         if let Some((old_t, old_n, old_a)) = inc_old {
             if let Err(e) = maintain_incoming_after_save(conn, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
+                maint.incoming_failed = true; // PJ-207 §3 (D3)
             }
         }
         // PJ-066 §B3 — maintain sky stratum/maturity write-time from the pre-save signature
@@ -11369,6 +11818,7 @@ pub fn reindex_single_note(
         if let Some((old_t, old_n, old_a)) = sig_old {
             if let Err(e) = maintain_sky_after_save(conn, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[sky] maintain after save failed for {}: {}", note_path, e);
+                maint.sky_failed = true; // PJ-207 §3 (D3)
             }
         }
     } else {
@@ -11384,7 +11834,7 @@ pub fn reindex_single_note(
             note_path
         ));
     }
-    Ok(())
+    Ok(maint)
 }
 
 /// Watcher index-freshness (2026-07-08) — reindex a batch of EXTERNALLY-changed
