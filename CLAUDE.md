@@ -479,6 +479,28 @@ This overrides delivery pressure and the urge to sound like I already understand
 
 Canonical violation (the law's origin, 2026-07-25): asked why "Eisa Test" was missing from the Move picker, I wrote a paragraph of "if it's a registered library… or maybe it's a folder… unless the dedup set…" — theorizing about the mechanism instead of reading `libraries.json` and the builder code. The Boss stopped it: investigate, don't theorize.
 
+## Never Describe the App Without Looking At It (top of all rules — Boss-dictated 2026-08-03, LAW)
+
+> "I warned you several times to avoid inventing or assuming anything that doesn't exist. Your behavior is consuming precious tokens and wasting my time. Write it as a CLEAR RULE. It is NOT ACCEPTABLE." — Eisa, 2026-08-03
+
+**Every statement I make to the Boss about what Constellation looks like or does — every panel, dock button, tab, menu item, label, setting, path, count, or behavior — must be VERIFIED IN THE SOURCE OR THE RUNNING APP BEFORE I WRITE IT.** Not recalled. Not inferred from a filename. Not assumed because a similar app works that way. Not carried over from an earlier session's memory. **Looked at, in this session, before the sentence is written.**
+
+This is the third statement of one principle. *Don't Make Things Up* forbids fabricating claims in output; *No Guessing* forbids fabricating them in reasoning. **This law forbids fabricating the app itself** — the specific, repeated, most expensive failure, because it lands in test instructions and the Boss is the person who designed the thing I am describing wrongly.
+
+**The verification, before naming any surface:**
+
+1. **The component** — grep it, open it, confirm it renders what I claim.
+2. **The label the user actually sees** — the `title={$t('…')}` / button text, and the resolved English value in `src/lib/i18n/en.json`. Never invent a label, and never paraphrase one.
+3. **How it opens** — the exact affordance. Search for the **toggle** form (`= !showX`) as well as `= true`; a grep for only the latter once nearly made me tell the Boss a dock button did not exist.
+4. **Disambiguate collisions** — Constellation has multiple surfaces sharing one name (**Reviewer** left-dock vs **Review Pulse** right-sidebar; **Sky View** left-dock full-page vs **Sky View** right-sidebar `LocalSkyView`). Name a dock button by **position + icon + tooltip**; name a sidebar tab by its **tooltip**; and say which one the test needs and why.
+5. **If I cannot verify it, I do not write it.** "I don't know — I'll look" is always available and always cheaper.
+
+**Vocabulary is part of the app.** I may only use words the app actually shows the user. Inventing a term for a thing the UI does not name — describing a 3D force-directed cloud as having "bands/levels" — is the same offence as inventing the control itself, because the Boss cannot act on a word that appears nowhere on his screen.
+
+**The cost, stated plainly:** the Boss designed this application. An invented surface is obvious to him instantly. It burns a full test round-trip, spends his time on instructions that cannot be followed, and — worst — makes every other claim in the same message suspect. A test the Boss cannot follow is worse than no test, because it also destroys the credibility of the work it was meant to verify.
+
+**Canonical violation (the law's origin, 2026-08-03).** In a single §6 test tutorial I told the Boss to look for "bands/levels" in Sky View — which is a 3D force-directed cloud with no bands — and to "add a link type in **Settings → Links**", a page whose own text says link types live in the **Style Setter** and which carries a button linking there. I had opened neither screen. Two earlier turns in the same session had already required him to ask "which Review panel?" and "which Sky View?". His verdict: *"This test is unrealistic at all! You are referring to something I am not familiar with. I have designed the application, and don't know what this test is about!!!"*
+
 ## Working Agreement (ground rules, non-negotiable)
 
 1. **Do the work yourself. Don't offload it to the user.** If you can run a command, query a DB, read a log, diagnose a bug, or write a test — do it. The user is the Boss, not the lab assistant. The only thing you ask of them is what genuinely requires a human: interacting with the running Constellation GUI (create a note, click a button), making design decisions, approving a plan, confirming a release is ready. Everything else — SQL queries, file inspection, log greps, schema checks, build verification — is your job. If you catch yourself writing "please run this query and tell me the result," stop and run it yourself via Bash + sqlite3 (or equivalent).
