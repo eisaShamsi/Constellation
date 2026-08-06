@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t, tn } from '$lib/i18n';
-	import { libraryStats, addLibrary, removeLibraryWithCleanup } from '$lib/libraries/store';
+	import { libraryStats, removeLibraryWithCleanup } from '$lib/libraries/store';
 	import type { LibraryStats } from '$lib/libraries/store';
 	import { invoke } from '@tauri-apps/api/core';
 
@@ -8,10 +8,29 @@
 		colorMap,
 		onClose,
 		onRefresh,
+		onAddLibrary,
 	}: {
 		colorMap: Record<string, string>;
 		onClose: () => void;
 		onRefresh: () => void;
+		/**
+		 * Boss-found 2026-08-03 — "+ Add library" used to call the store's `addLibrary()`
+		 * directly, which invokes `add_library` with no under-the-root check. Under
+		 * MIG-108 ("One Universe, One Location") the Rust side REFUSES an external folder
+		 * with a ready-made message — *"This folder lives outside the universe. Use Bring
+		 * in a library to copy or move it under the universe folder."* — and this
+		 * component's bare catch-and-ignore threw it away. The picker closed, nothing was
+		 * added, and nothing was said.
+		 *
+		 * The sidebar's own add-library flow already did this correctly: it compares the
+		 * folder against the root and, when it is outside, opens the Bring-In dialog
+		 * (Copy / Move). One concern, two implementations, only one of them right — the
+		 * half-sweep this codebase keeps producing.
+		 *
+		 * So this surface no longer has an implementation to drift: it delegates to the
+		 * SAME handler the sidebar uses, which owns the Bring-In dialog state.
+		 */
+		onAddLibrary: () => Promise<void>;
 	} = $props();
 
 	let confirmingRemove = $state<LibraryStats | null>(null);
@@ -29,10 +48,15 @@
 	async function handleAddLibrary() {
 		adding = true;
 		try {
-			await addLibrary();
+			// Delegates to the sidebar's flow (see the `onAddLibrary` prop doc): it does
+			// the under-the-root check and opens the Bring-In dialog for an external
+			// folder. Errors are surfaced THERE, on the shared error line, instead of
+			// being swallowed here.
+			await onAddLibrary();
 			onRefresh();
-		} catch { /* ignore */ }
-		adding = false;
+		} finally {
+			adding = false;
+		}
 	}
 
 	async function handleRemove(lib: LibraryStats) {

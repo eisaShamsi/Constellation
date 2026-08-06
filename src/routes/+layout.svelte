@@ -10,7 +10,7 @@
 		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadLibraries, loadAllStats, addLibrary, bringInLibrary, createNewLibraryAt,
+		loadLibraries, loadAllStats, bringInLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
@@ -9743,6 +9743,15 @@
 			colorMap={libraryColorMap}
 			onClose={() => showLibraryManager = false}
 			onRefresh={refreshLibraryCaches}
+			onAddLibrary={async () => {
+				// Boss-found 2026-08-03 — one implementation for "pick a folder, make it a
+				// library", shared with the sidebar. The Bring-In dialog it can raise is
+				// mounted here, so the flow stays here and the dialog delegates to it.
+				// Close the manager first: the Bring-In choice is a modal of its own and
+				// would otherwise open behind this one.
+				showLibraryManager = false;
+				await handleAddLibrary();
+			}}
 		/>
 	{/if}
 

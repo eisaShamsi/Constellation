@@ -3586,22 +3586,24 @@ export async function loadAllStats() {
 }
 
 /** Open folder picker and add the selected library. */
-export async function addLibrary(): Promise<LibraryInfo | null> {
-	const folderPath: string | null = await invoke('pick_folder');
-	if (!folderPath) return null;
-
-	const library: LibraryInfo = await invoke('add_library', { path: folderPath });
-	await loadLibraries();
-	await loadAllStats();
-	// PJ-065 §8 (cold-start) — add_library only REGISTERS the folder; its pre-existing
-	// .md files are not in the index yet (no boot walk; the watcher only catches live
-	// edits). Index them in the background so search, backlinks AND the structural
-	// spine work immediately. Fire-and-forget; refresh stats when it finishes.
-	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name, onlyIfUnindexed: false })
-		.then(() => loadAllStats())
-		.catch((e) => console.error('[addLibrary] background reindex failed:', e));
-	return library;
-}
+// `addLibrary()` DELETED — Boss-found 2026-08-03.
+//
+// It picked a folder and invoked `add_library` with NO check that the folder lies
+// under the active universe root. Under MIG-108 ("One Universe, One Location") the
+// Rust side refuses an external folder with a ready-made message, and this function's
+// only caller (`LibraryManager`'s "+ Add library") discarded it in a bare
+// `catch { /* ignore */ }` — so picking a folder outside the universe closed the
+// picker, added nothing, and said nothing.
+//
+// The sidebar's `handleAddLibrary` (+layout.svelte) already had the correct flow:
+// compare the folder to the root, and for an external one open the Bring-In dialog
+// (Copy / Move) rather than a refusal. One concern, two implementations, one of them
+// wrong — so the wrong one is gone rather than repaired. `LibraryManager` now
+// delegates to the same handler via its `onAddLibrary` prop.
+//
+// Deleted rather than left callerless on purpose: an un-checked add path sitting in
+// the store is a loaded gun for the next caller, and §2 of this migration removed two
+// dead doors for exactly that reason. Predecessor → Replacement: SESSION-LOG-2026-08-03.
 
 /** Create a new empty library folder and register it. */
 // `createNewLibrary` (legacy pick-AFTER-Create) retired by MIG-108 Slice 5; creation goes

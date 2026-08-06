@@ -452,6 +452,96 @@ with fat bodies. Plan selection is a property of the real 30-column table, so it
 
 **Gates:** Rust **1348 passed / 0 failed** (1347 + 1). Binary 05:40 vs newest source 05:36.
 
+**BOSS-TESTED AND PASSED** → committed `98bca820` *"§4 — the tag-count rebuild stops dragging
+270 MB off disk"*.
+
+## §14 — §5 BUILT — the review rebuild stops holding 260 MB and one long lock
+
+**Three changes, and one trap the plan glossed over.**
+
+**1 + 2 — windowed, and `recompute_all_in` now owns its transactions.** It used to materialise
+`(path, tags_json, modified, body_text)` for **every** row into one `Vec` inside a single
+caller-held transaction. Now: 500-row `path >` windows, each its own short transaction with the
+`links_backfill.rs:264-404` busy-retry (8 × 400 ms), which exists because a whole-table UPDATE
+*"silently failed under boot DB contention — the 2026-05-30 overnight blank."* `backfill_one` is
+idempotent per path, so windowing is semantically safe. **The caller must no longer wrap it** —
+SQLite has no nested transactions; `search.rs`'s `walk_conn.transaction()` is gone and the
+connection is passed directly. One production caller, so the contract change is contained.
+
+**Measured on the real-corpus copy, both regimes stated — having just been burned by conflating them:**
+
+| | old single transaction | new 500-row windows |
+|---|---|---|
+| warm, one hold | orphan sweep 348 ms + materialise 2,111 ms = **2.5 s** | worst window **109 ms** |
+| cold (first repair after launch) | 2,747 ms + 17,886 ms = **20.6 s** | proportionally smaller |
+| resident bodies | **260 MB** | **30.2 MB** |
+
+The plan's clause was *"longest writer-lock hold < 1 s"* — **109 ms**.
+
+**THE TRAP — the orphan sweep cannot be windowed over `note_meta`.** The plan said to window it "by
+the same path range", and that is **wrong**. An orphan is by definition a `review_schedule` row
+whose path is *absent* from `note_meta`, so it can sort anywhere — including past the last note
+path, where a note_meta-derived window never reaches. It would have silently stranded exactly the
+rows the sweep exists to remove: a subtler defect than the 2.7 s hold it was meant to fix. The sweep
+therefore windows over **`review_schedule`'s own key space**, with the
+`NOT IN (SELECT path FROM note_meta)` predicate unchanged so semantics are identical.
+
+Pinned by `the_orphan_sweep_reaches_orphans_outside_the_note_path_range`, with orphans placed on
+both sides of the note range (`zzz-` and `!!!-`). **RED-proven** by switching the sweep to the naive
+note_meta windowing: `left: ["/lib/Mid.md", "/lib/zzz-after.md"], right: ["/lib/Mid.md"]` — the
+after-range orphan survives, precisely as predicted.
+
+**3 — a named heal for the interrupt.** The existing crash marker heals **three** link families at
+boot; `tag_counts` and `review_schedule` had **none**. An app close mid-tail (the 5 s cap, a crash, a
+power cut) left them partly recomputed and **undetectable** — the drift check compares `.md` files
+to the index and is structurally blind to a derived table stale against itself. Added
+`derived_tail_pending`, one `schema_versions` row on the same mechanism as its sibling: **set before
+the tail** (refusing to enter an unprotected tail if it cannot be persisted — the trigger marker's
+discipline) and **cleared last, after every family**, so a failure anywhere leaves the heal armed.
+That direction costs one redundant recompute rather than a silently-wrong derived view.
+**§6 adds the reader** — stated in the code rather than written as though the consumer existed, which
+is the mistake the §3 review caught.
+
+**Gates:** Rust **1349 passed / 0 failed** (1348 + 1).
+
+### §5 Boss test — steps 1–3 PASS. Step 4 blocked by a defect it exposed.
+
+Boss: adding a library via **Manage libraries → + Add library**, choosing
+`E:\موسوعة عيسى\التصوير` — *"The process went well, but the folder I selected has never been
+added."* Not a §5 regression (§5 is `review.rs` windowing + a marker). A genuine, separate,
+silent failure — and the same class this whole migration is about.
+
+**The mechanism, traced end to end.** The folder is **outside** the universe root, so under MIG-108
+("One Universe, One Location") `add_library` refuses it — with a message already written for the
+user: *"This folder lives outside the universe. Use Bring in a library to copy or move it under the
+universe folder."* (`libraries.rs:533-536`). `LibraryManager.svelte`'s handler discarded it in a
+bare catch-and-ignore. The picker closed, nothing was added, nothing was said.
+
+**And it is a half-sweep, again.** The **sidebar's** add-library flow (`+layout.svelte:5919`) is
+already correct: it compares the folder to the root and, when it is outside, opens the **Bring-In**
+dialog offering Copy or Move — the intended MIG-108 experience — and surfaces failures on the
+sidebar error line. One concern, two implementations, only one right.
+
+**Fixed by removing the wrong implementation rather than repairing it.**
+`store.addLibrary()` is **deleted** (Predecessor → Replacement below); `LibraryManager` gains an
+`onAddLibrary` prop wired to the sidebar's handler, which owns the Bring-In dialog state. The
+manager closes first so the choice dialog does not open behind it. After this there is exactly ONE
+implementation of "pick a folder, make it a library", so there is nothing left to drift.
+
+Deleted rather than left callerless deliberately: an add path with no under-root check sitting in
+the store is a loaded gun for the next caller — the same reasoning that removed two dead doors in §2.
+
+| Predecessor | Where it lived | Replacement | Cut / kept |
+|---|---|---|---|
+| `addLibrary()` | `src/lib/libraries/store.ts` — picked a folder and invoked `add_library` with no root check. Sole caller: `LibraryManager.svelte`. | **Same concern, the sidebar's `handleAddLibrary`** (`+layout.svelte:5919`), reached through the new `onAddLibrary` prop. | Store function **deleted**; its stale import removed from `+layout.svelte`. No IPC retired — `add_library` and `bring_in_library` both keep their callers. |
+
+**A self-inflicted detour worth recording:** the doc comment I wrote to explain the fix quoted the
+old code as `catch { /* ignore */ }` **inside a `/** … */` block**, so the nested `*/` terminated the
+comment early — 230 svelte-check errors from one punctuation mark. Caught by the gate, fixed in
+seconds, but it is the second time today a quoting/sentinel slip cost me a green tree.
+
+**Gates:** svelte-check **0 errors** · vitest **900/900** · Rust **1349/0**.
+
 ## §12 — Boss ruling 2026-08-03: surface a link's age
 
 Asked at the §1 pass: *"I want the link's age to be surfaced."* Filed as **PJ-213** rather than
