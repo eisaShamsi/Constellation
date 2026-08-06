@@ -501,25 +501,32 @@ This is the third statement of one principle. *Don't Make Things Up* forbids fab
 
 **Canonical violation (the law's origin, 2026-08-03).** In a single §6 test tutorial I told the Boss to look for "bands/levels" in Sky View — which is a 3D force-directed cloud with no bands — and to "add a link type in **Settings → Links**", a page whose own text says link types live in the **Style Setter** and which carries a button linking there. I had opened neither screen. Two earlier turns in the same session had already required him to ask "which Review panel?" and "which Sky View?". His verdict: *"This test is unrealistic at all! You are referring to something I am not familiar with. I have designed the application, and don't know what this test is about!!!"*
 
-## The UI Inspector Gate (top of all rules — Boss-mandated 2026-08-03, LAW)
+## The Test Pipeline: Auditor → Inspector → Boss (top of all rules — Boss-mandated 2026-08-03, LAW)
 
 > "Create a UI inspector. Their main role is to check and approve the intended tutorials/tests you want me to examine and approve. You shall not send me any test materials unless they are approved by the 'UI inspector'." — Eisa, 2026-08-03
+>
+> "Also, I want you to create a 'Tutorial/Test auditor'. Its role is to build a sound clear tutorials/tests." — Eisa, 2026-08-03
 
-**No test material reaches the Boss until the `ui-inspector` agent has returned `APPROVED`.** Not a review I perform on myself — a separate agent with its own eyes, whose default verdict is REJECTED.
+**I do not write the Boss's tests, and I do not approve them.** Two separate agents do, in order, and the separation is the point: the author cannot pass its own work, and the gate does not rewrite what it is judging.
 
-Definition: `.claude/agents/ui-inspector.md`. Invoke it with the Agent tool, passing the **verbatim draft**, before the message is sent:
+| | Agent | Role |
+|---|---|---|
+| 1 | **`tutorial-auditor`** (`.claude/agents/tutorial-auditor.md`) | **Builds** the tutorial. Feature defined first, pre-state → action → post-state per step, failure modes named, staged, honest about what it does not cover. Returns a `CLAIMS TO VERIFY` list. |
+| 2 | **`ui-inspector`** (`.claude/agents/ui-inspector.md`) | **Gates** it. Verifies every UI claim against the source. **Default verdict REJECTED**; unverifiable is a finding, not a pass. Reports; never rewrites. |
+| 3 | Boss | Receives it only on `APPROVED`. |
 
 ```
-Agent({ subagent_type: 'ui-inspector', prompt: '<the complete draft tutorial, unedited>' })
+Agent({ subagent_type: 'tutorial-auditor', prompt: '<what changed + what is observable>' })
+Agent({ subagent_type: 'ui-inspector',     prompt: '<the complete draft, verbatim>' })
 ```
 
-**What it gates.** Anything that asks the Boss to look at, click, open, or verify something in the running app: `/migration` step tests, bug-fix verification tutorials, staged test rounds, help-file and User Manual passages describing an interface, and any message that names a panel, dock button, tab, label, setting, route, or on-screen number.
+**What this gates.** Anything asking the Boss to look at, click, open or verify something in the running app: `/migration` step tests, bug-fix verification tutorials, staged rounds, and help-file or User Manual passages describing an interface — any message naming a panel, dock button, tab, label, setting, route, or on-screen number.
 
-**The loop.** Draft → inspect → if `REJECTED`, fix every finding and re-inspect → only on `APPROVED` does it go to the Boss. A finding is never argued away or shipped with a caveat; if the inspector cannot verify a claim, the claim comes out.
+**The loop.** Build → inspect → if `REJECTED`, fix every finding and **re-inspect** → only on `APPROVED` does it reach the Boss. A finding is never argued away or shipped with a caveat; if the inspector cannot verify a claim, the claim comes out. I may edit the auditor's draft, but any edit re-enters at the inspector.
 
-**Why an agent and not more discipline.** The rule *Never Describe the App Without Looking At It* is the third statement of one principle, and it was still violated within the same session it was written. A principle I apply to my own draft is checked by the same attention that produced the error. The inspector is a structure instead of a promise — the same cure this codebase keeps arriving at: **replace the promise a caller must remember with a structure that cannot forget.**
+**Why agents and not more discipline.** *Never Describe the App Without Looking At It* is the third statement of one principle, and it was violated inside the same session that wrote it. A principle I apply to my own draft is checked by the same attention that produced the error. This is the cure this codebase keeps arriving at, turned on myself: **replace the promise a caller must remember with a structure that cannot forget.**
 
-**This gate is not optional and not skippable for a "small" test.** The §6 tutorial that caused it was three lines long and contained two inventions.
+**Not skippable for a "small" test.** The §6 tutorial that caused this was three lines long and contained two inventions.
 
 ## Working Agreement (ground rules, non-negotiable)
 
