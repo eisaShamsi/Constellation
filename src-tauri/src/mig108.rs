@@ -1197,7 +1197,13 @@ pub fn run_db_rewrite(
         // Restore the aggregate machinery, then recompute once (the reconcile precedent).
         let t_rc = std::time::Instant::now();
         crate::search::create_outgoing_link_triggers(conn)?;
-        crate::links_backfill::recompute_all_outgoing(conn).map_err(|e| e.to_string())?;
+        // PJ-207 §6 — through the one assembly. This site ran ONE family by hand while
+        // the reconcile tail ran five; the difference was correct (a path rewrite moves
+        // rows without changing links or content) but invisible. Now it is named.
+        let rep = crate::converge::after_mig108(conn);
+        if let Some((_, msg)) = rep.failures().into_iter().next() {
+            return Err(msg);
+        }
         eprintln!("[mig108 timing] recompute_all_outgoing: {:.1}s", t_rc.elapsed().as_secs_f64());
 
         // ── Verification (I2) — inside the transaction, before COMMIT ──

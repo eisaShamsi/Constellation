@@ -261,7 +261,7 @@ pub(crate) fn recompute_range(conn: &Connection, after_path: &str, last_path: &s
 /// the 2026-05-30 overnight blank). It now walks `note_meta` in 500-row windows,
 /// each its own short UPDATE (so it never holds a long write lock), and retries a
 /// batch on SQLITE_BUSY/locked instead of aborting the whole pass.
-pub(crate) fn recompute_all_outgoing(conn: &Connection) -> rusqlite::Result<usize> {
+pub(crate) fn recompute_all_outgoing(conn: &Connection, _key: &crate::converge::ConvergeKey) -> rusqlite::Result<usize> {
     let mut after = String::new();
     let mut total = 0usize;
     loop {
@@ -314,7 +314,7 @@ pub(crate) fn recompute_incoming_range(conn: &Connection, after: &str, last: &st
 /// backfill calls it once on first upgrade. Batched (500-row windows, each its own
 /// short UPDATE) + busy-retry — mirrors `recompute_all_outgoing` so it never holds
 /// a long write lock on a large universe. Idempotent (reads current note_links).
-pub(crate) fn recompute_all_incoming(conn: &Connection) -> rusqlite::Result<usize> {
+pub(crate) fn recompute_all_incoming(conn: &Connection, _key: &crate::converge::ConvergeKey) -> rusqlite::Result<usize> {
     let mut after = String::new();
     let mut total = 0usize;
     loop {
@@ -368,7 +368,7 @@ pub(crate) fn recompute_sky_range(conn: &Connection, after: &str, last: &str) ->
 /// triggers — this is the replacement). Batched (500-row windows) + busy-retry, mirroring
 /// `recompute_all_incoming` so it never holds a long write lock on a large universe.
 /// Idempotent (reads current note_links); unconditional (self-heals stale values).
-pub(crate) fn recompute_all_sky(conn: &Connection) -> rusqlite::Result<usize> {
+pub(crate) fn recompute_all_sky(conn: &Connection, _key: &crate::converge::ConvergeKey) -> rusqlite::Result<usize> {
     let mut after = String::new();
     let mut total = 0usize;
     loop {
@@ -753,7 +753,7 @@ mod tests {
         // pass. Measure that pass so we can report the fixed total vs the unfixed.
         let t_recompute = {
             let t = Instant::now();
-            recompute_all_outgoing(&conn).unwrap();
+            recompute_all_outgoing(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
             t.elapsed()
         };
         let fixed_total = t_without + t_recompute;

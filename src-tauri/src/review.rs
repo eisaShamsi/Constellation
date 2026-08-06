@@ -1375,6 +1375,7 @@ pub fn recompute_all_in(
     conn: &rusqlite::Connection,
     pulse: &ReviewPulseData,
     today: &str,
+    _key: &crate::converge::ConvergeKey,
 ) -> Result<(), String> {
     // ── Pass 1: orphan sweep, windowed over `review_schedule`'s OWN key space ────
     //
@@ -1987,7 +1988,7 @@ mod tests {
             .unwrap();
         }
 
-        recompute_all_in(&c, &ReviewPulseData::default(), today).unwrap();
+        recompute_all_in(&c, &ReviewPulseData::default(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
 
         let survivors: Vec<String> = {
             let mut st = c
@@ -2014,7 +2015,7 @@ mod tests {
         // a stale orphan + a real-but-missing-row (back-fill-window gap)
         c.execute("INSERT INTO review_schedule (path,reason,due_days) VALUES ('/lib/Ghost.md','interval_due',0)", []).unwrap();
 
-        recompute_all_in(&c, &ReviewPulseData::default(), today).unwrap();
+        recompute_all_in(&c, &ReviewPulseData::default(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
 
         assert_eq!(c.query_row("SELECT COUNT(*) FROM review_schedule WHERE path='/lib/Ghost.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 0,
             "orphan row (no note_meta) swept");

@@ -984,7 +984,7 @@ mod tests_mig085b_surfaces_agree {
         }
 
         // (1) The Reviewer / Backlinks badge source — DISTINCT, and NON-ZERO despite the accent.
-        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         let inc: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/ile.md'", [], |r| r.get(0))
             .unwrap();
@@ -1106,7 +1106,7 @@ mod tests_pj065_structural_exclusion {
             )
             .unwrap();
         }
-        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
 
         let inc: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/book.md'", [], |r| r.get(0))
@@ -1909,7 +1909,7 @@ mod tests_c2a_target_name_lower_idempotent {
         )
         .unwrap();
         // Seed Alpha's aggregate to the current (supports) state.
-        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         let before: String = conn
             .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
             .unwrap();
@@ -5465,7 +5465,12 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // so nothing else would ever recompute them. Heal once (batched + busy-retry);
     // on failure KEEP the marker so the next boot retries — never fail boot over
     // it. Normal boots pay one indexed schema_versions SELECT.
-    if outgoing_triggers_dropped_marker(&conn) {
+    //
+    // PJ-207 §6 — EITHER marker arms the heal. `outgoing_triggers_dropped` means the walk
+    // died with the triggers down; §5's `derived_tail_pending` means it died anywhere in
+    // the recompute tail, INCLUDING after the triggers were restored — the window that
+    // previously had no marker and therefore no heal at all.
+    if outgoing_triggers_dropped_marker(&conn) || derived_tail_pending_marker(&conn) {
         // Safety inspection 2026-08-01 — heal ALL THREE derived families, not just outgoing.
         // The marker records "a reconcile died mid-walk"; during that walk the INCOMING
         // aggregates and the sky stratum/maturity were equally unmaintained (the incoming
@@ -5475,42 +5480,34 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         //
         // The marker is cleared only if EVERY recompute succeeded; any failure keeps it so
         // the next boot retries. Never fails boot.
-        let mut all_ok = true;
-        match crate::links_backfill::recompute_all_outgoing(&conn) {
-            Ok(n) => eprintln!(
-                "[links_backfill] boot self-heal after interrupted reconcile: {} notes' outgoing aggregates recomputed",
-                n
-            ),
-            Err(e) => {
-                all_ok = false;
-                eprintln!(
-                    "[links_backfill] boot self-heal recompute_all_outgoing failed (marker kept; retried next boot): {}",
-                    e
-                );
-            }
-        }
-        // Incoming: only when the aggregate has been BUILT — before the first backfill the
-        // columns are inert and the backfill itself owns populating them.
-        if crate::incoming_links_backfill::is_built(&conn) {
-            let _ = conn.execute_batch(
-                "CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);",
+        // PJ-207 §6 — one assembly. This healer used to run THREE families by hand
+        // while the reconcile tail ran FIVE, and nothing in either place said so. It now
+        // asks for the same convergence the repair does, so the two cannot drift.
+        //
+        // §5/§6 — and it now heals all five. The interrupted walk left `tag_counts` and
+        // `review_schedule` equally unmaintained, and neither had a boot heal anywhere;
+        // the drift check compares `.md` files to the index and is structurally blind to
+        // a derived table stale against itself.
+        let cdir = path.parent().map(|p| p.to_path_buf());
+        let report = crate::converge::after_interrupted_walk_at_boot(&conn, cdir.as_deref());
+        for (family, msg) in report.failures() {
+            eprintln!(
+                "[converge] boot self-heal after interrupted reconcile: {} failed (marker kept; retried next boot): {}",
+                family, msg
             );
-            if let Err(e) = crate::links_backfill::recompute_all_incoming(&conn) {
-                all_ok = false;
-                eprintln!(
-                    "[links_backfill] boot self-heal recompute_all_incoming failed (marker kept): {}",
-                    e
-                );
-            }
         }
-        // Sky: idempotent, and a no-op on an empty sky_nodes (pre-backfill).
-        if let Err(e) = crate::links_backfill::recompute_all_sky(&conn) {
-            all_ok = false;
-            eprintln!("[links_backfill] boot self-heal recompute_all_sky failed (marker kept): {}", e);
-        }
-        if all_ok {
+        // The marker is cleared only when every family the run asked for succeeded; any
+        // failure keeps it so the next boot retries. Never fails boot.
+        if report.all_ok() {
             if let Err(e) = clear_outgoing_triggers_dropped_marker(&conn) {
                 eprintln!("[links_backfill] boot self-heal: clear marker failed: {}", e);
+            }
+            // PJ-207 §5's marker is cleared by the SAME success condition — this is the
+            // reader the §5 commit said would land here.
+            if derived_tail_pending_marker(&conn) {
+                if let Err(e) = clear_derived_tail_pending_marker(&conn) {
+                    eprintln!("[converge] boot self-heal: clear derived-tail marker failed: {}", e);
+                }
             }
         }
     }
@@ -6330,7 +6327,7 @@ mod tests_mig066_outgoing {
 
         // Recreate + recompute_all → columns restored from note_links (both edges).
         create_outgoing_link_triggers(&conn).unwrap();
-        crate::links_backfill::recompute_all_outgoing(&conn).unwrap();
+        crate::links_backfill::recompute_all_outgoing(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         assert_eq!(
             read(&conn),
             (2, "supports (1), contradicts (1)".to_string(), 1),
@@ -11284,77 +11281,39 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         eprintln!("[links_backfill] recreate outgoing triggers after reconcile failed: {}", e);
         outgoing_restore_err = Some(e);
     }
-    match crate::links_backfill::recompute_all_outgoing(&walk_conn) {
-        Ok(_) => {
+
+    // PJ-207 §6 — the five hand-assembled recomputes that stood here are ONE call.
+    //
+    // They were: outgoing · incoming (stamp-gated) · sky · tag_counts (stamp-gated, in
+    // its own transaction) · review (stamp-gated, needs the .constellation dir). Four
+    // other places in the codebase assembled a DIFFERENT subset of the same five, and
+    // nothing said so — the boot healer ran three, MIG-108 ran one, the vocabulary hook
+    // scheduled two. `converge` is now the only assembly, and the recomputes each
+    // require a `ConvergeKey` whose field is private to that module, so a sixth cannot
+    // be written.
+    //
+    // The stamp gates are no longer silent `if`s: they come back as
+    // `Skipped("back-fill not stamped")`, so a run that converged two of five families
+    // can no longer be reported as a whole repair.
+    let cdir = path.parent().map(|p| p.to_path_buf());
+    let converge_report = crate::converge::after_repair_run(&walk_conn, cdir.as_deref());
+    for (family, msg) in converge_report.failures() {
+        eprintln!("[converge] after reconcile: {} failed: {}", family, msg);
+    }
+    // The outgoing family keeps its distinct treatment: its triggers were DROPPED for
+    // the walk, so a failure there means live saves serve stale aggregates until the
+    // next boot heals them — that is the one failure this command reports as an Err.
+    match &converge_report.outgoing {
+        crate::converge::ConvergeOutcome::Failed(e) => {
+            outgoing_restore_err = Some(format!("recompute_all_outgoing: {}", e));
+        }
+        _ => {
             if outgoing_restore_err.is_none() {
                 if let Err(e) = clear_outgoing_triggers_dropped_marker(&walk_conn) {
                     eprintln!("[links_backfill] clear outgoing_triggers_dropped marker failed: {}", e);
                     outgoing_restore_err = Some(e);
                 }
             }
-        }
-        Err(e) => {
-            eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
-            outgoing_restore_err = Some(format!("recompute_all_outgoing: {}", e));
-        }
-    }
-
-    // MIG-079 §C.2a — recompute every note's incoming aggregate authoritatively
-    // (only when the §C.2a backfill has stamped; before that the columns are inert
-    // and reads fall back to getBacklinks). No triggers to recreate — maintenance
-    // is a save-path Rust diff; this full pass is the periodic self-heal.
-    if crate::incoming_links_backfill::is_built(&walk_conn) {
-        // Defensive: the §C.2a backfill builds this; ensure it exists so the
-        // recompute seeks (it persists, so normally a no-op here).
-        let _ = walk_conn.execute_batch(
-            "CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);",
-        );
-        if let Err(e) = crate::links_backfill::recompute_all_incoming(&walk_conn) {
-            eprintln!("[links_backfill] recompute_all_incoming after reconcile failed: {}", e);
-        }
-    }
-
-    // PJ-066 §B1 — recompute every note's sky stratum + maturity authoritatively from
-    // note_links (the periodic self-heal). Once §B4 drops the per-edge sky stratum/maturity
-    // triggers, the bulk walk no longer maintains sky via triggers, so THIS pass is the
-    // replacement. Idempotent; a no-op on values while the triggers still exist (§B1 lands
-    // it BEFORE §B4 removes them). Empty sky_nodes (pre-backfill) → zero iterations.
-    if let Err(e) = crate::links_backfill::recompute_all_sky(&walk_conn) {
-        eprintln!("[links_backfill] recompute_all_sky after reconcile failed: {}", e);
-    }
-
-    // MIG-079 §C.1 — rebuild tag_counts authoritatively from the just-reconciled
-    // note_meta (the periodic self-heal). Only when stamped — before the backfill
-    // has run, the table isn't in use and the live scan is the source of truth.
-    // One short transaction; the live ±delta keeps it current between reconciles.
-    if crate::tag_counts::is_stamped(&walk_conn) {
-        match walk_conn.transaction() {
-            Ok(tx) => {
-                let r = crate::tag_counts::recompute_all_in(&tx);
-                if let Err(e) = r.and_then(|_| tx.commit()) {
-                    eprintln!("[tag_counts] reconcile recompute failed: {}", e);
-                }
-            }
-            Err(e) => eprintln!("[tag_counts] reconcile txn begin failed: {}", e),
-        }
-    }
-
-    // MIG-083 §E — rebuild review_schedule authoritatively from the just-reconciled
-    // note_meta + the per-universe review-pulse.json (the periodic self-heal +
-    // orphan sweep + stratum refresh; Plan §C / Architect I1). Only when stamped —
-    // before the back-fill has run, the table isn't in use.
-    //
-    // PJ-207 §5 — the caller-held `walk_conn.transaction()` is GONE. `recompute_all_in`
-    // now owns its own 500-row windowed transactions (SQLite has no nested
-    // transactions, so wrapping it would fail), which is what takes the writer-lock
-    // hold from ~20 s down to one window at a time. Passing the connection directly is
-    // now the contract.
-    if crate::review::is_stamped(&walk_conn) {
-        let cdir = path.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-        let pulse = crate::review::load_pulse_data(&cdir);
-        let today = crate::review::today_str();
-        if let Err(e) = crate::review::recompute_all_in(&walk_conn, &pulse, &today) {
-            eprintln!("[review] reconcile recompute failed: {}", e);
         }
     }
 

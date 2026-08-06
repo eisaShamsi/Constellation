@@ -54,7 +54,20 @@ pub(crate) const SCHEMA_VERSION: i64 = 1;
 /// contributes nothing — matching `read_tags`' `unwrap_or_default()`. `type='text'`
 /// counts only string elements (Constellation always writes clean string arrays;
 /// the guard is defensive). `value <> ''` mirrors `read_tags`' empty-skip.
-pub(crate) fn recompute_all_in(conn: &Connection) -> rusqlite::Result<usize> {
+pub(crate) fn recompute_all_in(conn: &Connection, _key: &crate::converge::ConvergeKey) -> rusqlite::Result<usize> {
+    recompute_all_in_inner(conn)
+}
+
+/// PJ-207 §6 — the body, private to this module.
+///
+/// The sealed wrapper above is the only CROSS-MODULE door: everything outside
+/// `tag_counts` must come through `converge`, so a sixth divergent assembly cannot be
+/// written. But this module's own one-shot back-fill (`run`) is not a convergence — it
+/// BUILDS the table and stamps it in ONE `IMMEDIATE` transaction, and that atomicity is
+/// deliberate (a counter is an additive aggregate; a build racing live ±deltas would
+/// double-count — see the module doc). Wrapping it in `converge`'s own transaction would
+/// break exactly that guarantee, so the builder calls the body directly.
+fn recompute_all_in_inner(conn: &Connection) -> rusqlite::Result<usize> {
     conn.execute("DELETE FROM tag_counts", [])?;
     let n = conn.execute(
         "INSERT INTO tag_counts(tag, n)
@@ -175,7 +188,7 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(|e| format!("begin immediate: {}", e))?;
-    let n = recompute_all_in(&tx).map_err(|e| format!("recompute: {}", e))?;
+    let n = recompute_all_in_inner(&tx).map_err(|e| format!("recompute: {}", e))?;
     tx.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
          VALUES ('tag_counts', ?1, strftime('%s','now'))",
@@ -281,7 +294,7 @@ mod tests {
             }
         }
 
-        recompute_all_in(&conn).unwrap();
+        recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         let without_index = counts(&conn);
         assert_eq!(without_index, live_aggregate(&conn), "baseline must match ground truth");
 
@@ -290,7 +303,7 @@ mod tests {
         )
         .unwrap();
 
-        recompute_all_in(&conn).unwrap();
+        recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         assert_eq!(
             counts(&conn),
             without_index,
@@ -348,7 +361,7 @@ mod tests {
         );
 
         let t = std::time::Instant::now();
-        recompute_all_in(&conn).unwrap();
+        recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         eprintln!("[rehearsal] recompute_all_in with the index: {:?}", t.elapsed());
     }
 
@@ -405,7 +418,7 @@ mod tests {
         }
 
         // Path 1: bulk aggregate.
-        recompute_all_in(&conn).unwrap();
+        recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         let by_aggregate = counts(&conn);
 
         // It must equal the legacy live scan EXACTLY.
@@ -425,7 +438,7 @@ mod tests {
         assert_eq!(counts(&conn), by_aggregate, "delta-from-empty == bulk aggregate");
 
         // Idempotent: a second aggregate over the same corpus yields the same table.
-        recompute_all_in(&conn).unwrap();
+        recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         assert_eq!(counts(&conn), by_aggregate);
     }
 
@@ -454,7 +467,7 @@ mod tests {
         .unwrap();
 
         let t = std::time::Instant::now();
-        let distinct = recompute_all_in(&conn).unwrap();
+        let distinct = recompute_all_in(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         eprintln!("[rehearsal] recompute_all_in: {} distinct tags in {:?}", distinct, t.elapsed());
 
         let built = counts(&conn);

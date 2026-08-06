@@ -11,6 +11,10 @@ mod canvas;
 mod boot_bundle;
 mod cache;
 mod canonical;
+// PJ-207 §6 — the ONE assembly of the five derived-view recomputes. Its `ConvergeKey`
+// has a private field, and every bulk recompute now requires one, so a sixth divergent
+// assembly cannot be written: it could not obtain the argument.
+mod converge;
 // MIG-013 §1B: CTSE Bridge Adapter (term → M11 concept resolver).
 // Public so future write-time hooks (in §1C) can call it from any
 // crate-internal module without going through a re-export chain.

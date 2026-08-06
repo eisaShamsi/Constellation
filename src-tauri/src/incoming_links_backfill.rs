@@ -148,8 +148,17 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     // is_stamped stays false, and the next schedule re-runs — eventual consistency.
     let run_fp = crate::link_types::snapshot().fingerprint();
 
-    let n = crate::links_backfill::recompute_all_incoming(&conn)
-        .map_err(|e| format!("recompute: {}", e))?;
+    // PJ-207 §6 — through the one assembly, via the entry point named for this caller:
+    // it is the BUILD of the incoming aggregates, not a heal, so it is deliberately
+    // ungated on the stamp it is itself about to write.
+    let rep = crate::converge::after_incoming_backfill(&conn);
+    let n = match &rep.incoming {
+        crate::converge::ConvergeOutcome::Converged(n) => *n,
+        crate::converge::ConvergeOutcome::Failed(e) => return Err(format!("recompute: {}", e)),
+        crate::converge::ConvergeOutcome::Skipped(r) => {
+            return Err(format!("recompute skipped unexpectedly ({}) — the back-fill is the builder and must never be gated", r))
+        }
+    };
 
     // Stamp version + vocabulary fingerprint atomically (mirrors
     // links_backfill::finalize) so a crash between the two can't leave a stamped
@@ -221,7 +230,7 @@ mod tests {
                ('/S4.md','Alpha','supports','archived');",
         )
         .unwrap();
-        crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         let a: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
             .unwrap();
@@ -354,7 +363,7 @@ mod tests {
         eprintln!("[incoming-rehearsal] assign SQL: {}", crate::search::incoming_aggregate_assignments("note_meta"));
 
         let t = std::time::Instant::now();
-        let n = crate::links_backfill::recompute_all_incoming(&conn).unwrap();
+        let n = crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
         eprintln!("[incoming-rehearsal] recompute_all_incoming: {} notes in {:?}", n, t.elapsed());
 
         let mut got: HashMap<String, i64> = HashMap::new();

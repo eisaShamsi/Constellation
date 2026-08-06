@@ -542,6 +542,57 @@ seconds, but it is the second time today a quoting/sentinel slip cost me a green
 
 **Gates:** svelte-check **0 errors** · vitest **900/900** · Rust **1349/0**.
 
+## §15 — §6 BUILT — one place where derived views are rebuilt
+
+New `src-tauri/src/converge.rs`. Five derived families (outgoing, incoming, sky,
+`tag_counts`, `review_schedule`) had their bulk recomputes assembled **five different
+ways** — the reconcile tail ran 5, the boot healer 3, MIG-108 ran 1, the incoming back-fill 1 —
+and nothing anywhere said so. A sixth was one commit away, and the differences were invisible.
+
+**The seal is real, and PROVEN, not asserted.** `ConvergeKey`'s field is a private unit, and all
+five recomputes now require one. The plan asked for a compile-fail proof rather than the sentence
+"cannot compile"; done by inserting a forged construction in `mig108.rs` and compiling:
+
+```
+error[E0603]: tuple struct constructor `ConvergeKey` is private
+    --> src\mig108.rs:1204:39
+```
+
+Then removed. The alternative the plan proposed — narrowing to `pub(in crate::converge)` — is **not
+expressible in Rust**: `pub(in path)` requires an *ancestor* module and `converge` is a sibling of
+`links_backfill` / `tag_counts` / `review`. Short of moving five bodies into one file (a far bigger
+diff that would strand each family's tests away from its module), the sealed token is the mechanism.
+`ConvergeKey::for_test()` exists only under `cfg(test)`, so in-crate unit tests keep exercising their
+own family directly while production has exactly one door.
+
+**The compiler enumerated the blast radius — 11 sites, including one the plan missed**
+(`tag_counts.rs`'s own back-fill).
+
+**TWO PLAN ERRORS CAUGHT, both the same shape as §5's orphan trap — a builder is not a healer:**
+
+1. The plan said to route `incoming_links_backfill.rs:151` through `converge::after_incoming_backfill`
+   on the gated path. That would have made the back-fill a **permanent no-op**: it recomputes and
+   *then* stamps, so the `is_built` gate it would be checked against is the stamp it is about to
+   write. The gate belongs to *convergence* (don't recompute a family nobody reads yet), not to the
+   initial build — so `Families::IncomingOnly` is deliberately ungated, documented in place.
+2. `tag_counts`'s own back-fill builds **and stamps in ONE `IMMEDIATE` transaction**, and that
+   atomicity is deliberate (a counter is additive; a build racing live ± deltas would double-count).
+   Routing it through `converge`'s own transaction would have broken it. Split into a sealed
+   cross-module wrapper and a body private to the module, which the builder calls directly.
+
+**And one plan item that was mis-classified.** `on_link_vocabulary_changed` is listed as the fifth
+assembly, but reading it, it *schedules two background back-fills* — cursor-based and resumable —
+rather than calling any recompute. Forcing it through `converge` would have been wrong. Left alone,
+recorded rather than silently skipped.
+
+**§5's marker now has its reader.** The boot healer is armed by **either** marker —
+`outgoing_triggers_dropped` (the walk died with triggers down) **or** `derived_tail_pending` (it died
+anywhere in the tail, *including after* the triggers were restored — the window that previously had
+no marker and therefore no heal). And it now converges **all five** families instead of three, so
+`tag_counts` and `review_schedule` finally have a boot heal.
+
+**Gates:** Rust **1351 passed / 0 failed** (1349 + 2). Binary 14:32 vs newest source 14:18.
+
 ## §12 — Boss ruling 2026-08-03: surface a link's age
 
 Asked at the §1 pass: *"I want the link's age to be surfaced."* Filed as **PJ-213** rather than
