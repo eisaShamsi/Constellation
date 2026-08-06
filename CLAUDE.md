@@ -501,6 +501,26 @@ This is the third statement of one principle. *Don't Make Things Up* forbids fab
 
 **Canonical violation (the law's origin, 2026-08-03).** In a single §6 test tutorial I told the Boss to look for "bands/levels" in Sky View — which is a 3D force-directed cloud with no bands — and to "add a link type in **Settings → Links**", a page whose own text says link types live in the **Style Setter** and which carries a button linking there. I had opened neither screen. Two earlier turns in the same session had already required him to ask "which Review panel?" and "which Sky View?". His verdict: *"This test is unrealistic at all! You are referring to something I am not familiar with. I have designed the application, and don't know what this test is about!!!"*
 
+## The UI Inspector Gate (top of all rules — Boss-mandated 2026-08-03, LAW)
+
+> "Create a UI inspector. Their main role is to check and approve the intended tutorials/tests you want me to examine and approve. You shall not send me any test materials unless they are approved by the 'UI inspector'." — Eisa, 2026-08-03
+
+**No test material reaches the Boss until the `ui-inspector` agent has returned `APPROVED`.** Not a review I perform on myself — a separate agent with its own eyes, whose default verdict is REJECTED.
+
+Definition: `.claude/agents/ui-inspector.md`. Invoke it with the Agent tool, passing the **verbatim draft**, before the message is sent:
+
+```
+Agent({ subagent_type: 'ui-inspector', prompt: '<the complete draft tutorial, unedited>' })
+```
+
+**What it gates.** Anything that asks the Boss to look at, click, open, or verify something in the running app: `/migration` step tests, bug-fix verification tutorials, staged test rounds, help-file and User Manual passages describing an interface, and any message that names a panel, dock button, tab, label, setting, route, or on-screen number.
+
+**The loop.** Draft → inspect → if `REJECTED`, fix every finding and re-inspect → only on `APPROVED` does it go to the Boss. A finding is never argued away or shipped with a caveat; if the inspector cannot verify a claim, the claim comes out.
+
+**Why an agent and not more discipline.** The rule *Never Describe the App Without Looking At It* is the third statement of one principle, and it was still violated within the same session it was written. A principle I apply to my own draft is checked by the same attention that produced the error. The inspector is a structure instead of a promise — the same cure this codebase keeps arriving at: **replace the promise a caller must remember with a structure that cannot forget.**
+
+**This gate is not optional and not skippable for a "small" test.** The §6 tutorial that caused it was three lines long and contained two inventions.
+
 ## Working Agreement (ground rules, non-negotiable)
 
 1. **Do the work yourself. Don't offload it to the user.** If you can run a command, query a DB, read a log, diagnose a bug, or write a test — do it. The user is the Boss, not the lab assistant. The only thing you ask of them is what genuinely requires a human: interacting with the running Constellation GUI (create a note, click a button), making design decisions, approving a plan, confirming a release is ready. Everything else — SQL queries, file inspection, log greps, schema checks, build verification — is your job. If you catch yourself writing "please run this query and tell me the result," stop and run it yourself via Bash + sqlite3 (or equivalent).
