@@ -1352,30 +1352,127 @@ pub(crate) fn backfill_one(
 /// re-anchor the action-owned fields (last_reviewed/interval/snooze/dismiss). So any
 /// drift — an orphan, a stratum gone stale via a neighbour's link edit, a row missed
 /// in a back-fill inter-batch window — self-heals on the periodic reconcile. Mirrors
-/// `tag_counts::recompute_all_in`; the caller wraps it in one transaction.
+/// `tag_counts::recompute_all_in`.
+///
+/// **PJ-207 §5 — this function now OWNS its transactions and streams.**
+///
+/// It used to materialise `(path, tags_json, modified, body_text)` for EVERY row into
+/// one `Vec` before touching anything, inside a single caller-held transaction.
+/// Measured on the Boss's 7,824-note universe: **17,886 ms and 260 MB resident** for
+/// the materialisation, plus **2,747 ms** for the orphan sweep — ~20 s of writer-lock
+/// hold, during which a user save waits on `state.db`'s 5 s `busy_timeout` and fails
+/// while holding the one mutex 71 call sites need.
+///
+/// Now: 500-row `path >` windows, each its own short transaction with busy-retry —
+/// the `links_backfill.rs:264-404` pattern, which exists because a whole-table UPDATE
+/// *"silently failed under boot DB contention — the 2026-05-30 overnight blank"*.
+/// Resident bodies drop from ~7,800 to ~500. `backfill_one` is idempotent per path, so
+/// windowing is semantically safe: a row rebuilt in window N is not revisited.
+///
+/// **The caller must NOT wrap this in a transaction** — it opens its own, and SQLite
+/// has no nested transactions. That is a contract change from the MIG-083 shape.
 pub fn recompute_all_in(
     conn: &rusqlite::Connection,
     pulse: &ReviewPulseData,
     today: &str,
 ) -> Result<(), String> {
-    conn.execute(
-        "DELETE FROM review_schedule WHERE path NOT IN (SELECT path FROM note_meta)",
-        [],
-    )
-    .map_err(|e| format!("review_schedule orphan sweep: {}", e))?;
-    let rows: Vec<(String, String, i64, String)> = {
-        let mut stmt = conn
-            .prepare("SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0), COALESCE(body_text,'') FROM note_meta")
-            .map_err(|e| e.to_string())?;
-        let it = stmt
-            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?)))
-            .map_err(|e| e.to_string())?;
-        it.filter_map(|x| x.ok()).collect()
-    };
-    for (path, tags_json, modified, body_text) in &rows {
-        backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
+    // ── Pass 1: orphan sweep, windowed over `review_schedule`'s OWN key space ────
+    //
+    // NOT over note_meta's. An orphan is by definition a `review_schedule` row whose
+    // path is absent from `note_meta`, so it can sort anywhere — including past the
+    // last note_meta path, where a window derived from note_meta would never reach it.
+    // Windowing the sweep by the rebuild's ranges would silently leave those orphans
+    // behind, which is a subtler bug than the 2.7 s hold it was meant to fix. The
+    // `NOT IN (SELECT path FROM note_meta)` predicate is unchanged, so semantics are
+    // identical to the single statement it replaces.
+    let mut after = String::new();
+    loop {
+        let paths: Vec<String> = {
+            let mut stmt = conn
+                .prepare("SELECT path FROM review_schedule WHERE path > ?1 ORDER BY path LIMIT 500")
+                .map_err(|e| e.to_string())?;
+            let it = stmt
+                .query_map(rusqlite::params![after], |r| r.get::<_, String>(0))
+                .map_err(|e| e.to_string())?;
+            it.filter_map(|x| x.ok()).collect()
+        };
+        let Some(last) = paths.last().cloned() else { break };
+        with_busy_retry(|| {
+            conn.execute(
+                "DELETE FROM review_schedule
+                 WHERE path > ?1 AND path <= ?2
+                   AND path NOT IN (SELECT path FROM note_meta)",
+                rusqlite::params![after, last],
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+        })
+        .map_err(|e| format!("review_schedule orphan sweep: {}", e))?;
+        after = last;
+    }
+
+    // ── Pass 2: rebuild, windowed over note_meta ────────────────────────────────
+    let mut after = String::new();
+    loop {
+        let rows: Vec<(String, String, i64, String)> = {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT path, COALESCE(tags_json,'[]'), COALESCE(modified,0), COALESCE(body_text,'')
+                     FROM note_meta WHERE path > ?1 ORDER BY path LIMIT 500",
+                )
+                .map_err(|e| e.to_string())?;
+            let it = stmt
+                .query_map(rusqlite::params![after], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
+                })
+                .map_err(|e| e.to_string())?;
+            it.filter_map(|x| x.ok()).collect()
+        };
+        let Some(last) = rows.last().map(|r| r.0.clone()) else { break };
+        with_busy_retry(|| {
+            conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
+            for (path, tags_json, modified, body_text) in &rows {
+                if let Err(e) = backfill_one(conn, path, tags_json, *modified, body_text, pulse, today) {
+                    // Roll this WINDOW back, not the whole pass. Earlier windows are
+                    // already committed and correct; `backfill_one` is idempotent, so a
+                    // later run re-derives this one.
+                    let _ = conn.execute_batch("ROLLBACK");
+                    return Err(e);
+                }
+            }
+            conn.execute_batch("COMMIT").map_err(|e| e.to_string())
+        })
+        .map_err(|e| format!("review_schedule rebuild window: {}", e))?;
+        after = last;
     }
     Ok(())
+}
+
+/// PJ-207 §5 — the `links_backfill.rs:287-296` retry, same shape and same bounds: a
+/// window that loses the writer lock is retried rather than aborting the whole pass.
+/// 8 attempts × 400 ms, matching its sibling so the two cannot drift.
+fn with_busy_retry<F>(mut f: F) -> Result<(), String>
+where
+    F: FnMut() -> Result<(), String>,
+{
+    let mut attempt = 0;
+    loop {
+        match f() {
+            Ok(()) => return Ok(()),
+            Err(e) if is_busy_message(&e) && attempt < 8 => {
+                attempt += 1;
+                std::thread::sleep(std::time::Duration::from_millis(400));
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
+/// Mirrors `links_backfill::is_busy_error`, on the stringified error — the retry here
+/// wraps `backfill_one`, which already speaks `String`.
+fn is_busy_message(e: &str) -> bool {
+    let s = e.to_lowercase();
+    s.contains("locked") || s.contains("busy")
 }
 
 #[cfg(test)]
@@ -1858,6 +1955,52 @@ mod tests {
         let due = query_due_notes_indexed(&c, "/U/Lib", today, today_days, 1).unwrap();
         let paths: Vec<&str> = due.iter().map(|d| d.note_path.as_str()).collect();
         assert_eq!(paths, vec!["/U/Lib/a.md"], "only the real child; siblings /U/Lib2 + /U/Library excluded");
+    }
+
+    /// PJ-207 §5 — the trap in windowing the orphan sweep.
+    ///
+    /// The rebuild pass windows over `note_meta.path`. The obvious move is to reuse
+    /// those same ranges for the orphan sweep — and it is **wrong**, because an orphan
+    /// is by definition a `review_schedule` row whose path is NOT in `note_meta`, so it
+    /// can sort anywhere, including past the last note path, where a note_meta-derived
+    /// window never reaches. Windowing the sweep that way would silently strand exactly
+    /// the rows it exists to remove — a subtler defect than the 2.7 s lock hold it was
+    /// meant to fix.
+    ///
+    /// So the sweep windows over `review_schedule`'s own key space. This test pins it
+    /// with orphans placed on BOTH sides of the note range, using `zzz` and `!!!` so
+    /// they sort strictly after and strictly before every real path.
+    #[test]
+    fn the_orphan_sweep_reaches_orphans_outside_the_note_path_range() {
+        let c = read_db();
+        let today = "2026-06-22";
+        c.execute(
+            "INSERT INTO note_meta (path,name,cid_cn,modified,tags_json) VALUES ('/lib/Mid.md','Mid','CIDM',?1,'[]')",
+            rusqlite::params![secs("2026-01-01")],
+        )
+        .unwrap();
+        for ghost in ["/lib/zzz-after.md", "/lib/!!!-before.md", "/lib/Mid-adjacent.md"] {
+            c.execute(
+                "INSERT INTO review_schedule (path,reason,due_days) VALUES (?1,'interval_due',0)",
+                rusqlite::params![ghost],
+            )
+            .unwrap();
+        }
+
+        recompute_all_in(&c, &ReviewPulseData::default(), today).unwrap();
+
+        let survivors: Vec<String> = {
+            let mut st = c
+                .prepare("SELECT path FROM review_schedule ORDER BY path")
+                .unwrap();
+            let rows = st.query_map([], |r| r.get::<_, String>(0)).unwrap();
+            rows.map(|r| r.unwrap()).collect()
+        };
+        assert_eq!(
+            survivors,
+            vec!["/lib/Mid.md".to_string()],
+            "every orphan must be swept regardless of where it sorts relative to the notes",
+        );
     }
 
     #[test]

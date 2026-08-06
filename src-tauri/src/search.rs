@@ -2111,6 +2111,54 @@ pub(crate) fn set_outgoing_triggers_dropped_marker(conn: &Connection) -> Result<
     .map_err(|e| format!("set outgoing_triggers_dropped marker: {}", e))
 }
 
+/// PJ-207 §5 — the **derived-tail marker**: "a repair's recompute tail was started and
+/// has not been seen to finish."
+///
+/// Why it exists. The crash marker above (`outgoing_triggers_dropped`) heals **three**
+/// link families at the next boot. `tag_counts` and `review_schedule` have **no boot
+/// heal at all** — so if the app closes mid-tail (the 5 s close cap expiring, a crash,
+/// a power cut), `review_schedule` is left partly recomputed and **nothing detects it**:
+/// the drift check stats `.md` files on disk and is structurally blind to a derived
+/// table that disagrees with itself.
+///
+/// Deliberately the same mechanism as its sibling — one `schema_versions` row, set
+/// before the tail and cleared after — rather than a new one. §6 reads it and extends
+/// the boot heal from three families to five.
+///
+/// **§6 adds the reader.** Until it lands this marker is written and cleared and
+/// nothing consults it, which is stated here rather than described as though the
+/// consumer already existed.
+pub(crate) fn set_derived_tail_pending_marker(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('derived_tail_pending', 1, strftime('%s','now'))",
+        [],
+    )
+    .map(|_| ())
+    .map_err(|e| format!("set derived_tail_pending marker: {}", e))
+}
+
+pub(crate) fn clear_derived_tail_pending_marker(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "DELETE FROM schema_versions WHERE module = 'derived_tail_pending'",
+        [],
+    )
+    .map(|_| ())
+    .map_err(|e| format!("clear derived_tail_pending marker: {}", e))
+}
+
+/// True when a repair's recompute tail was started and never seen to finish.
+#[allow(dead_code)] // §6 is the reader; see `set_derived_tail_pending_marker`.
+pub(crate) fn derived_tail_pending_marker(conn: &Connection) -> bool {
+    conn.query_row(
+        "SELECT version FROM schema_versions WHERE module = 'derived_tail_pending'",
+        [],
+        |r| r.get::<_, i64>(0),
+    )
+    .unwrap_or(0)
+        >= 1
+}
+
 pub(crate) fn clear_outgoing_triggers_dropped_marker(conn: &Connection) -> Result<(), String> {
     conn.execute(
         "DELETE FROM schema_versions WHERE module = 'outgoing_triggers_dropped'",
@@ -11204,6 +11252,24 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         );
     }
 
+    // PJ-207 §5 — mark the derived tail PENDING before any of it runs. If the app dies
+    // between here and the clear below, the next boot knows the five derived families
+    // may disagree with `note_meta` and can re-run them. Without this, `tag_counts` and
+    // `review_schedule` had NO boot heal: an interrupted tail left them partly
+    // recomputed and undetectable, because the drift check compares `.md` files to the
+    // index and cannot see a derived table that is stale against itself.
+    //
+    // Set BEFORE the window opens, exactly like the trigger crash marker above: a
+    // marker written after the risky work has already started is not a marker.
+    if let Err(e) = set_derived_tail_pending_marker(&walk_conn) {
+        // Do not enter an unprotected tail — same discipline as the trigger marker,
+        // which refuses to drop triggers it cannot record having dropped.
+        return Err(format!(
+            "refusing to run the derived-view tail: its pending marker could not be persisted ({})",
+            e
+        ));
+    }
+
     // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
     // then repopulate every note's aggregate in one pass.
     // Safety-inspection 2026-08-01 — failures here are no longer eprintln-only: the
@@ -11276,21 +11342,29 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // MIG-083 §E — rebuild review_schedule authoritatively from the just-reconciled
     // note_meta + the per-universe review-pulse.json (the periodic self-heal +
     // orphan sweep + stratum refresh; Plan §C / Architect I1). Only when stamped —
-    // before the back-fill has run, the table isn't in use. One short transaction;
-    // the write-time index_note/action hooks keep it current between reconciles.
+    // before the back-fill has run, the table isn't in use.
+    //
+    // PJ-207 §5 — the caller-held `walk_conn.transaction()` is GONE. `recompute_all_in`
+    // now owns its own 500-row windowed transactions (SQLite has no nested
+    // transactions, so wrapping it would fail), which is what takes the writer-lock
+    // hold from ~20 s down to one window at a time. Passing the connection directly is
+    // now the contract.
     if crate::review::is_stamped(&walk_conn) {
         let cdir = path.parent().map(|p| p.to_path_buf()).unwrap_or_default();
         let pulse = crate::review::load_pulse_data(&cdir);
         let today = crate::review::today_str();
-        match walk_conn.transaction() {
-            Ok(tx) => {
-                let r = crate::review::recompute_all_in(&tx, &pulse, &today);
-                if let Err(e) = r.and_then(|_| tx.commit().map_err(|e| e.to_string())) {
-                    eprintln!("[review] reconcile recompute failed: {}", e);
-                }
-            }
-            Err(e) => eprintln!("[review] reconcile txn begin failed: {}", e),
+        if let Err(e) = crate::review::recompute_all_in(&walk_conn, &pulse, &today) {
+            eprintln!("[review] reconcile recompute failed: {}", e);
         }
+    }
+
+    // PJ-207 §5 — the tail completed. Clear the pending marker so the next boot does
+    // not re-run five families for nothing. Cleared LAST, after every family, so a
+    // failure anywhere above leaves the marker set and the heal armed — the direction
+    // that costs one redundant recompute rather than leaving a derived view silently
+    // wrong. A clear that fails is surfaced for the same reason.
+    if let Err(e) = clear_derived_tail_pending_marker(&walk_conn) {
+        eprintln!("[reconcile] derived-tail marker clear failed (next boot will re-run the tail): {}", e);
     }
 
     // PJ-207 §3 (D5) — `note_count` is retained, but it is a fact about the DATABASE
