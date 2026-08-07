@@ -297,6 +297,84 @@ pub fn nested_library_paths(
         .collect()
 }
 
+/// PJ-207 §8 — the normalized roots of every library that belongs to a **linked
+/// universe** rather than this one, in the same shape `nested_library_paths` returns
+/// so a walker can merge the two exclude sets and skip both kinds of boundary.
+///
+/// ## Why narrowing the root LIST is not enough on its own
+///
+/// Every walker here descends through each subdirectory that does not start with `.`
+/// — `index_library_recursive` and `reconcile::collect_md` both do. `universe_notes`
+/// has `path == the Universe root`, so if a cUniverse's directory sits *inside* the
+/// active Universe root, dropping it from the list of roots to START at does not stop
+/// the walk from REACHING it: the parent walk descends straight into it. Worse, the
+/// boot reconcile then sees those `.md` files as orphans under an own root and
+/// re-adopts them on the next launch — the removal/re-adopt oscillation. A walker
+/// needs these paths as a set to SKIP, which is what this returns.
+///
+/// `own` is passed in rather than re-read so the exclusion is always computed against
+/// the very same own-set the caller is walking; a second read could disagree with it.
+pub(crate) fn foreign_library_roots(
+    app: &tauri::AppHandle,
+    own: &[LibraryInfo],
+) -> std::collections::HashSet<String> {
+    // The recursive resolver is the only thing that knows the federation, and it is cached
+    // per active universe, so this costs no extra disk read. Best-effort by construction:
+    // a federation that cannot be resolved yields an empty skip-set, and the caller's
+    // own-scope narrowing still holds on its own.
+    foreign_roots_of(&load_all_libraries(app), own)
+}
+
+/// The decision itself, free of `AppHandle` so the regression test exercises the REAL
+/// function rather than a copy of it that would keep passing after this one changed
+/// (the `try_load_libraries_at` pattern, and the `search.rs:338` mirror trap §1 deleted).
+pub(crate) fn foreign_roots_of(
+    all: &[LibraryInfo],
+    own: &[LibraryInfo],
+) -> std::collections::HashSet<String> {
+    let norm = |p: &str| p.replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let own_set: std::collections::HashSet<String> = own.iter().map(|l| norm(&l.path)).collect();
+    all.iter()
+        .map(|l| norm(&l.path))
+        .filter(|p| !own_set.contains(p))
+        .collect()
+}
+
+/// PJ-207 §8 — every directory a walk rooted at `self_path` must skip, in one set.
+///
+/// Two boundaries, and a walker needs both or it is half-scoped:
+///   * a nested **own** library — skipped because its own iteration walks it under its own
+///     identity (the 2026-07-25 Whole-Ecosystem fix), and
+///   * a **linked universe's** root — skipped because its notes are not this universe's
+///     index to write (Charter W2-9).
+///
+/// It exists as one function so the walk and its regression test cannot compute the
+/// exclusion differently — the `search.rs:338` mirror trap §1 closed, kept closed here.
+pub(crate) fn walk_exclusions(
+    libs: &[LibraryInfo],
+    self_path: &str,
+    foreign: &std::collections::HashSet<String>,
+) -> std::collections::HashSet<String> {
+    let mut set = nested_library_paths(libs, self_path);
+    set.extend(foreign.iter().cloned());
+    set
+}
+
+/// True when `path` sits at or **under** any root in an already-normalized set such as
+/// `foreign_library_roots`' — separator-bounded, so `…/Research` never matches
+/// `…/Research Notes`.
+///
+/// `is_nested_library` answers "is this directory itself a boundary"; this answers "is
+/// this file on the far side of one". PJ-207 §8 needs the second because `collect_md_paths`
+/// has no boundary notion at all — it descends through every non-dot directory — so the
+/// only place to drop a linked universe's notes is after they have been collected.
+pub(crate) fn path_is_under_any(path: &str, roots: &std::collections::HashSet<String>) -> bool {
+    let p = path.replace('\\', "/").trim_end_matches('/').to_lowercase();
+    roots
+        .iter()
+        .any(|r| p == *r || p.starts_with(&format!("{}/", r)))
+}
+
 /// True when `dir` is itself a registered library (present in an exclude set built by
 /// `nested_library_paths`) — the one check every tree/folder/aggregate walker uses to
 /// stop at a nested library boundary. Kept trivial so it inlines.

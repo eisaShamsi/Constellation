@@ -11292,9 +11292,23 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchInd
     // then-current registry and clears the marker on EVERY exit path — including the `?`
     // early-returns below and a panic. Previously the recreate was straight-line code
     // after the walk, so any `?` between them left the triggers down.
+    // PJ-207 §8 — the walk's roots are the active universe's OWN libraries, never the
+    // federation-recursive set. A note that belongs to a LINKED universe belongs in THAT
+    // universe's index; it reaches this one through the federated ATTACH search path, not
+    // by being copied in. This is the same write-scope rule `owning_own_library_name`
+    // already states for `.md` files ("a write must never target a read-only cUniverse
+    // note") applied to the index.
+    //
+    // `try_load_libraries`, NOT `load_libraries` / `load_all_libraries`: this is a WRITE
+    // path, and the read-only loaders collapse an unreadable libraries.json into an empty
+    // Vec. For a sidebar that is one blank boot; for a walk it is "index nothing, report
+    // success" — the silent class this migration exists to end. Loaded BEFORE the trigger
+    // window opens, so an unreadable registry never costs a drop/recreate cycle either.
+    let libraries = crate::libraries::try_load_libraries(app)?;
+    let foreign_roots = crate::libraries::foreign_library_roots(app, &libraries);
+
     let trigger_window = crate::index_repair::TriggerWindow::open(&walk_conn, run_id)?;
 
-    let libraries = crate::libraries::load_all_libraries(app);
     // PJ-207 §3 (D5) — accumulate what the walk actually did. Previously this loop
     // discarded its own result and the command reported a bare row count.
     let mut tally = WalkTally::default();
@@ -11305,7 +11319,11 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchInd
         seen_total: 0,
     };
     for lib in &libraries {
-        let exclude = crate::libraries::nested_library_paths(&libraries, &lib.path);
+        // Two boundaries, one set — see `walk_exclusions`. The foreign half matters even
+        // though `libraries` no longer LISTS foreign roots: `universe_notes` has `path ==
+        // the Universe root`, so a cUniverse directory sitting inside that root is reached
+        // by descent regardless of what we chose to start at.
+        let exclude = crate::libraries::walk_exclusions(&libraries, &lib.path, &foreign_roots);
         tally.absorb(index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0, &mut ctx));
         if ctx.stopped {
             // Abandoned, not finished. The tail below still runs — the trigger window must
@@ -12195,7 +12213,19 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
     let state = app.state::<SearchState>();
     // Load libraries ONCE for the whole batch (a git-pull can touch hundreds of
     // paths; per-path load would re-walk the federation tree each time).
-    let libs = crate::libraries::load_all_libraries(&app);
+    //
+    // PJ-207 §8 — the OWN set, via the strict loader. This is the surface that re-adopted
+    // a linked universe's notes *immediately*, with no boot required: the app watches
+    // every library in the recursive set, so any path a federated library owned was
+    // indexed straight into the active universe's index. Scoping `libs` closes it at the
+    // one place BOTH add-paths consult — `library_name_for_path` below, and the same call
+    // inside `reindex_md_descendants` — so a foreign path now resolves to no owning
+    // library and is skipped.
+    //
+    // Pass 2 (deletes) deliberately keeps its own shape and consults no library set:
+    // purging the row of a file that no longer exists is correct in every scope, and it
+    // can only ever remove rows, never create them.
+    let libs = crate::libraries::try_load_libraries(&app)?;
     let mut done = 0usize;
     // Pass 1 — ADDS (existing dirs + `.md` files). Run BEFORE deletes so a folder
     // rename's new rows already exist when the old-side prefix-purge runs its
@@ -16034,5 +16064,277 @@ mod tests_mig104_slice8 {
             !dir.path().join("note-history.jsonl").exists(),
             "nothing written under an empty cid — a record no reader could find is noise"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_pj207_s8_index_write_scope {
+    //! PJ-207 §8 — **the index stops adopting notes that belong to a linked universe.**
+    //!
+    //! ## The defect, reproduced here rather than described
+    //!
+    //! Constellation resolves libraries two ways. `load_all_libraries` follows
+    //! `universe.json`'s `children` and returns the **linked cUniverses'** libraries as
+    //! well; `try_load_libraries` returns only the active universe's own. Every bulk index
+    //! path took the first, so a walk of the active universe wrote `note_meta` rows for
+    //! notes living inside *another* universe's directory — Charter W2-9.
+    //!
+    //! The first test below is the reproduction: it drives the **production** walk
+    //! (`index_library_recursive`, via the `WalkCtx { app: None }` its own doc reserves for
+    //! exactly this) over roots from the **real** recursive resolver and asserts the foreign
+    //! row appears — then over the own set, and asserts it does not.
+    //!
+    //! ## What this file mirrors, stated plainly
+    //!
+    //! `reconcile_filesystem` takes an `AppHandle`, so `walk_from` below repeats its
+    //! per-root loop. The part most likely to drift — how the exclusion set is built — is
+    //! **not** repeated: both call `libraries::walk_exclusions`. What remains mirrored is
+    //! two lines of `for lib in libs { index_library_recursive(...) }`.
+    use super::*;
+    use tempfile::TempDir;
+
+    fn put(path: &std::path::Path, body: &str) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, body).unwrap();
+    }
+
+    fn put_json(path: &std::path::Path, v: serde_json::Value) {
+        put(path, &serde_json::to_string_pretty(&v).unwrap());
+    }
+
+    /// A parent universe with one own library (the `universe_notes` shape, where the
+    /// library path IS the universe root) and a child universe federated into it.
+    ///
+    /// `child_inside` selects the case. `false` puts the child beside the parent — what
+    /// both federated universes on this machine actually look like, checked 2026-08-07.
+    /// `true` puts the child's directory INSIDE the parent root, which is the case where
+    /// narrowing the root LIST is not enough, because the parent walk descends into it.
+    fn federated_pair(tmp: &std::path::Path, child_inside: bool) -> (PathBuf, PathBuf) {
+        let parent = tmp.join("Parent Universe");
+        let child = if child_inside {
+            parent.join("Linked Child")
+        } else {
+            tmp.join("Child Universe")
+        };
+        std::fs::create_dir_all(&parent).unwrap();
+        std::fs::create_dir_all(&child).unwrap();
+
+        put_json(
+            &parent.join(".constellation").join("libraries.json"),
+            serde_json::json!([{
+                "id": "p1", "name": "Parent Notes",
+                "path": parent.to_string_lossy(), "is_universe_notes": true
+            }]),
+        );
+        put_json(
+            &parent.join(".constellation").join("universe.json"),
+            serde_json::json!({
+                "name": "Parent Universe", "created": "2026-08-07T00:00:00Z", "version": 2,
+                "children": [child.to_string_lossy()]
+            }),
+        );
+        put_json(
+            &child.join(".constellation").join("libraries.json"),
+            serde_json::json!([{
+                "id": "c1", "name": "Child Notes",
+                "path": child.to_string_lossy(), "is_universe_notes": true
+            }]),
+        );
+        put_json(
+            &child.join(".constellation").join("universe.json"),
+            serde_json::json!({
+                "name": "Child Universe", "created": "2026-08-07T00:00:00Z", "version": 2,
+                "children": []
+            }),
+        );
+
+        put(&parent.join("Parent Note.md"), "---\ntitle: Parent Note\n---\nzarquon\n");
+        put(&child.join("Child Note.md"), "---\ntitle: Child Note\n---\nblorptide\n");
+        (parent, child)
+    }
+
+    fn recursive_set(root: &std::path::Path) -> Vec<crate::libraries::LibraryInfo> {
+        let mut visited = Vec::new();
+        crate::universe::resolve_libraries_recursive(root, &mut visited)
+    }
+
+    fn own_set(root: &std::path::Path) -> Vec<crate::libraries::LibraryInfo> {
+        crate::libraries::try_load_libraries_at(&root.join(".constellation").join("libraries.json"))
+            .expect("a readable libraries.json")
+    }
+
+    /// The PRODUCTION skip-set decision — `foreign_library_roots`' `AppHandle`-free half,
+    /// called directly so this test cannot keep passing after production changes it.
+    fn foreign_of(
+        recursive: &[crate::libraries::LibraryInfo],
+        own: &[crate::libraries::LibraryInfo],
+    ) -> std::collections::HashSet<String> {
+        crate::libraries::foreign_roots_of(recursive, own)
+    }
+
+    fn walk_from(
+        conn: &Connection,
+        libs: &[crate::libraries::LibraryInfo],
+        foreign: &std::collections::HashSet<String>,
+    ) -> WalkTally {
+        let mut ctx = WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 };
+        let mut tally = WalkTally::default();
+        for lib in libs {
+            let exclude = crate::libraries::walk_exclusions(libs, &lib.path, foreign);
+            tally.absorb(index_library_recursive(
+                conn,
+                Path::new(&lib.path),
+                libs,
+                &exclude,
+                0,
+                &mut ctx,
+            ));
+        }
+        tally
+    }
+
+    fn rows_under(conn: &Connection, dir: &std::path::Path) -> i64 {
+        let prefix = format!("{}%", dir.to_string_lossy());
+        // `LIKE` is fine here: the temp paths carry no `_` or `%`, and this is a COUNT in a
+        // test — not a delete in production, which is exactly why `delete_rows_under_prefix`
+        // does its prefix match in Rust instead.
+        conn.query_row(
+            "SELECT COUNT(*) FROM note_meta WHERE path LIKE ?1",
+            params![prefix],
+            |r| r.get(0),
+        )
+        .unwrap()
+    }
+
+    /// **THE REPRODUCTION.** One fixture, one production walk, two root sets.
+    #[test]
+    fn the_walk_adopts_a_linked_universes_note_from_the_recursive_set_but_not_from_the_own_set() {
+        let tmp = TempDir::new().unwrap();
+        let (parent, child) = federated_pair(tmp.path(), false);
+
+        // The precondition the whole step rests on, asserted rather than assumed: on a
+        // federated universe the two resolvers genuinely disagree.
+        let recursive = recursive_set(&parent);
+        let own = own_set(&parent);
+        assert_eq!(recursive.len(), 2, "the recursive resolver pulls in the child's library");
+        assert_eq!(own.len(), 1, "the own resolver does not");
+
+        // RED — the walk as it stood before §8: roots from the recursive set.
+        let before = init_db(&tmp.path().join("before.db")).expect("init_db");
+        walk_from(&before, &recursive, &Default::default());
+        assert_eq!(
+            rows_under(&before, &child),
+            1,
+            "REPRODUCTION: a note belonging to a LINKED universe is written into this \
+             universe's index"
+        );
+
+        // GREEN — roots from the own set, foreign roots excluded.
+        let after = init_db(&tmp.path().join("after.db")).expect("init_db");
+        walk_from(&after, &own, &foreign_of(&recursive, &own));
+        assert_eq!(
+            rows_under(&after, &child),
+            0,
+            "the linked universe's note is no longer adopted"
+        );
+        assert_eq!(
+            rows_under(&after, &parent.join("Parent Note.md")),
+            1,
+            "and this universe's own note is still indexed — the scope narrowed, not the walk"
+        );
+    }
+
+    /// The nesting case: the child universe's directory sits INSIDE the active root, so
+    /// dropping it from the list of roots to START at does not stop the walk REACHING it.
+    #[test]
+    fn a_linked_universe_nested_inside_the_active_root_is_skipped_not_merely_unlisted() {
+        let tmp = TempDir::new().unwrap();
+        let (parent, child) = federated_pair(tmp.path(), true);
+        assert!(child.starts_with(&parent), "fixture: the child sits inside the parent root");
+
+        let recursive = recursive_set(&parent);
+        let own = own_set(&parent);
+
+        // Narrowing the ROOTS alone — the half-fix the plan warned would only look complete.
+        let half = init_db(&tmp.path().join("half.db")).expect("init_db");
+        walk_from(&half, &own, &Default::default());
+        assert_eq!(
+            rows_under(&half, &child),
+            1,
+            "narrowing the root list alone does NOT stop the walk descending into a nested \
+             linked universe — this is why the exclusion set exists"
+        );
+
+        // Roots narrowed AND the foreign root excluded.
+        let whole = init_db(&tmp.path().join("whole.db")).expect("init_db");
+        walk_from(&whole, &own, &foreign_of(&recursive, &own));
+        assert_eq!(rows_under(&whole, &child), 0, "with the exclusion it is skipped");
+        assert_eq!(
+            rows_under(&whole, &parent.join("Parent Note.md")),
+            1,
+            "the parent's own note, which sits beside it, is untouched"
+        );
+    }
+
+    /// The case that must not regress — and it is the live one. Every universe on this
+    /// machine but two has no cUniverse children, and for those the two sets are equal, so
+    /// §8 changes nothing at all for them.
+    #[test]
+    fn with_no_child_universes_the_own_set_equals_the_recursive_set() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().join("Solo Universe");
+        std::fs::create_dir_all(&root).unwrap();
+        put_json(
+            &root.join(".constellation").join("libraries.json"),
+            serde_json::json!([
+                {"id": "a", "name": "Notes", "path": root.to_string_lossy(), "is_universe_notes": true},
+                {"id": "b", "name": "Physics", "path": root.join("Physics").to_string_lossy(), "is_universe_notes": false}
+            ]),
+        );
+        put_json(
+            &root.join(".constellation").join("universe.json"),
+            serde_json::json!({"name": "Solo", "created": "2026-08-07T00:00:00Z", "version": 2, "children": []}),
+        );
+
+        let recursive = recursive_set(&root);
+        let own = own_set(&root);
+        let rp: Vec<&str> = recursive.iter().map(|l| l.path.as_str()).collect();
+        let op: Vec<&str> = own.iter().map(|l| l.path.as_str()).collect();
+        assert_eq!(rp, op, "no children — same libraries, same order");
+        assert!(
+            foreign_of(&recursive, &own).is_empty(),
+            "and nothing to exclude, so the walk is byte-for-byte what it was"
+        );
+    }
+
+    /// "Could not read it" must never become "you own nothing" — which, for a walk, reads
+    /// as nothing-to-do and reports success. The strict loader is the one the walk now takes.
+    #[test]
+    fn an_unreadable_library_registry_is_an_error_not_an_empty_walk() {
+        let tmp = TempDir::new().unwrap();
+        let corrupt = tmp.path().join("libraries.json");
+        std::fs::write(&corrupt, b"{ this is not json").unwrap();
+        assert!(
+            crate::libraries::try_load_libraries_at(&corrupt).is_err(),
+            "a corrupt registry refuses, so a walk can never start on a silently empty scope"
+        );
+        // …whereas a genuinely absent one is a FACT, and walking nothing is then correct.
+        let absent = tmp.path().join("nope").join("libraries.json");
+        assert!(
+            crate::libraries::try_load_libraries_at(&absent).unwrap().is_empty(),
+            "absent is a fact — a universe with no registered library walks nothing, correctly"
+        );
+    }
+
+    /// The skip-set predicate is separator-bounded: a linked universe at `…/Research` must
+    /// not swallow an own library at `…/Research Notes`.
+    #[test]
+    fn the_foreign_skip_set_is_separator_bounded() {
+        let mut foreign = std::collections::HashSet::new();
+        foreign.insert("e:/universes/research".to_string());
+        assert!(crate::libraries::path_is_under_any("E:/Universes/Research/a.md", &foreign));
+        assert!(crate::libraries::path_is_under_any(r"E:\Universes\Research\a.md", &foreign));
+        assert!(!crate::libraries::path_is_under_any("E:/Universes/Research Notes/a.md", &foreign));
+        assert!(!crate::libraries::path_is_under_any("E:/Universes/Other/a.md", &foreign));
     }
 }

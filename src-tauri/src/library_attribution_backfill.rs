@@ -66,7 +66,16 @@ fn diag(app: &tauri::AppHandle, msg: &str) {
 }
 
 fn run(app: &tauri::AppHandle) -> Result<u64, String> {
-    let libs = crate::libraries::load_all_libraries(app);
+    // PJ-207 §8 — the active universe's OWN libraries. This is an automatic boot pass that
+    // UPDATEs `note_meta.library_name`, so its authority must not come from the federation:
+    // a linked universe's library is not a name this universe may stamp onto a row.
+    //
+    // Safe against the own set precisely because `process_batch` already decided what to do
+    // when no library owns a path — "leave it untouched rather than blank it". A row that
+    // belongs to a linked universe therefore keeps whatever name it has instead of being
+    // re-stamped, and `stamp`'s completeness check skips it on the same `if let Some`, so a
+    // pre-existing foreign row cannot block the stamp either.
+    let libs = crate::libraries::try_load_libraries(app)?;
     if libs.is_empty() {
         return Ok(0);
     }

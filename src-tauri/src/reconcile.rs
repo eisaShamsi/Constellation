@@ -88,7 +88,42 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     // 1. Accessible library roots (name, path). If NONE are accessible (e.g. the
     //    universe drive is offline), do nothing — never touch rows on a bad mount.
-    let libs = crate::libraries::load_all_libraries(app);
+    //
+    //    PJ-207 §8 — the active universe's OWN libraries, never the federation-recursive
+    //    set, and via the strict loader because this pass WRITES. Scoping the walk alone
+    //    could not close Charter W2-9: this function draws its roots from the same list
+    //    and RE-ADOPTS orphans at step 9, so removing a linked universe's rows without
+    //    scoping here too would delete them and re-adopt them on every single launch —
+    //    an oscillation that costs a ledger append and an fsync each time.
+    //
+    //    `?` rather than a silent empty list: an unreadable registry here previously
+    //    produced zero roots, which reads as "nothing to reconcile" and returns success.
+    let libs = crate::libraries::try_load_libraries(app)?;
+    //    PJ-207 §8 (safety inspection, HIGH) — capture the universe generation up front.
+    //    This pass runs on a spawned thread and holds NO guard of any kind: it computes
+    //    its roots, its stale set and its orphan list from the universe that was active
+    //    when it started, then writes through `state.db`, which a universe SWITCH
+    //    replaces underneath it. The result is the very defect §8 exists to end, by a
+    //    different door — the DEPARTED universe's `.md` files indexed into the NEWLY
+    //    active universe's index. §7 built `federation_generation_now` and
+    //    `walk_may_proceed` for exactly this and wired only the bulk walk to them; the
+    //    boot reconcile was left behind. Same invariant (Architect Invariant 10: no write
+    //    lands in a universe other than the one active when the run started), so it takes
+    //    the same shared decision rather than a second copy of it.
+    let generation = crate::search::federation_generation_now(app);
+    let still_ours = || {
+        crate::index_repair::walk_may_proceed(
+            false, // this pass has no cancel channel; only the switch can stop it
+            crate::search::federation_generation_now(app),
+            generation,
+        )
+    };
+    //    Roots belonging to a linked universe, for the orphan walk to SKIP. Narrowing the
+    //    list above is not sufficient on its own — `collect_md` descends through every
+    //    non-dot directory, so a cUniverse directory nested inside an own root (and
+    //    `universe_notes`' root IS the Universe root) would still be reached, its files
+    //    would still look like orphans, and step 9 would still re-adopt them.
+    let foreign_roots = crate::libraries::foreign_library_roots(app, &libs);
     let roots: Vec<(String, String)> = libs
         .iter()
         .filter(|l| Path::new(&l.path).is_dir())
@@ -151,7 +186,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
         if roots.iter().any(|(_, other)| { let on = norm(other); on != rn && under(&rn, &on) }) {
             continue;
         }
-        collect_md(Path::new(root), &known, &mut orphans, &mut seen, &mut walk_complete, 0);
+        collect_md(Path::new(root), &known, &foreign_roots, &mut orphans, &mut seen, &mut walk_complete, 0);
     }
 
     if stale.is_empty() && orphans.is_empty() {
@@ -183,6 +218,12 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     let mut relocated = 0usize;
     let mut relocate_failed = 0usize;
     let mut remove: Vec<String> = Vec::new();
+    // Every write phase below is gated: the scan above was lock-free and can have taken
+    // seconds on a large universe, which is ample room for a switch.
+    if !still_ours() {
+        diag(app, "[reconcile] universe switched mid-pass — writing nothing (the stale/orphan sets belong to the departed universe).");
+        return Ok((0, 0, 0));
+    }
     for (dead, cid) in &stale {
         // Empty-cid rows have no identity to relocate by, so they land in
         // `remove`. PJ-153 (MIG-105 C6): the init_db boot healer now INJECTS
@@ -254,6 +295,12 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     let mut removed = 0usize;
     if walk_complete {
         for p in &remove {
+            // Per-iteration, not just per-phase: a capped sweep can be 200 deletes, and a
+            // delete landing in the wrong universe destroys a row that was never ours.
+            if !still_ours() {
+                diag(app, "[reconcile] universe switched mid-removal — stopping; the remaining phantoms are left for a clean pass.");
+                return Ok((relocated, 0, removed));
+            }
             if Path::new(p).exists() {
                 continue; // transient stat earlier — the file is there; keep the row.
             }
@@ -279,6 +326,13 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     let mut readopt_failed = 0usize;
     if orphans.len() <= cap {
         for (p, _cid) in &orphans {
+            // The re-adopt tail is the one the inspection named: it INDEXES files, so a
+            // switch here writes the departed universe's notes straight into the new
+            // universe's `note_meta`/`notes_fts`.
+            if !still_ours() {
+                diag(app, "[reconcile] universe switched mid-re-adopt — stopping before writing another universe's notes into this index.");
+                return Ok((relocated, readopted, removed));
+            }
             let np = norm(p);
             if consumed.contains(&np) {
                 continue;
@@ -375,9 +429,16 @@ fn lib_for<'a>(roots: &'a [(String, String)], np: &str) -> Option<&'a str> {
 /// read_dir error or depth cutoff — the caller must NOT remove dead rows from an
 /// incomplete walk (a hidden subtree could hold a renamed note's moved file, and
 /// removing its row would destroy aux the walk simply failed to surface). [audit]
+///
+/// PJ-207 §8 — `foreign` holds the roots of libraries owned by a LINKED universe. A
+/// directory in that set is skipped WITHOUT clearing `complete`: `complete` means "the
+/// walk saw everything it was meant to see", and a linked universe's notes were never
+/// among them. Clearing it would permanently disable dead-row removal for any universe
+/// with a federated child — turning a scope fix into a durability regression.
 fn collect_md(
     dir: &Path,
     known: &HashSet<String>,
+    foreign: &HashSet<String>,
     orphans: &mut Vec<(String, String)>,
     seen: &mut HashSet<String>,
     complete: &mut bool,
@@ -401,7 +462,11 @@ fn collect_md(
             continue;
         }
         if path.is_dir() {
-            collect_md(&path, known, orphans, seen, complete, depth + 1);
+            // A linked universe's root nested under ours — not our notes, not our orphans.
+            if crate::libraries::is_nested_library(&path, foreign) {
+                continue;
+            }
+            collect_md(&path, known, foreign, orphans, seen, complete, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let ps = path.to_string_lossy().to_string();
             let pn = norm(&ps);
@@ -505,12 +570,51 @@ mod tests {
         let mut orphans: Vec<(String, String)> = Vec::new();
         let mut seen = HashSet::new();
         let mut complete = true;
-        collect_md(&dir, &known, &mut orphans, &mut seen, &mut complete, 0);
+        collect_md(&dir, &known, &HashSet::new(), &mut orphans, &mut seen, &mut complete, 0);
 
         assert!(complete, "a clean walk reports complete");
         assert_eq!(orphans.len(), 1, "only the unindexed file is an orphan");
         assert_eq!(orphans[0].1, "CIDNEW", "orphan carries its cid_cn for relocate/re-adopt");
         assert_eq!(norm(&orphans[0].0), norm(&orphan.to_string_lossy()));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// PJ-207 §8 — the oscillation this step exists to prevent, at its source.
+    ///
+    /// Step 9 RE-ADOPTS every orphan the walk finds. So if a linked universe's directory
+    /// sits under one of our roots, its notes are orphans here, and removing their rows
+    /// would only mean re-adopting them on the next launch — forever. The foreign root is
+    /// skipped, and `complete` deliberately stays true: a subtree we were never meant to
+    /// see is not a subtree we failed to read, and clearing the flag would disable
+    /// dead-row removal for every federated universe.
+    #[test]
+    fn collect_md_skips_a_linked_universes_root_without_marking_the_walk_incomplete() {
+        let dir = std::env::temp_dir().join(format!("pj207s8_md_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let foreign_dir = dir.join("Linked Child");
+        std::fs::create_dir_all(&foreign_dir).unwrap();
+        std::fs::write(dir.join("mine.md"), "---\ntitle: Mine\ncid_cn: CIDMINE\n---\nzarquon").unwrap();
+        std::fs::write(foreign_dir.join("theirs.md"), "---\ntitle: Theirs\ncid_cn: CIDTHEIRS\n---\nblorptide").unwrap();
+
+        let mut foreign = HashSet::new();
+        foreign.insert(norm(&foreign_dir.to_string_lossy()));
+
+        let mut orphans: Vec<(String, String)> = Vec::new();
+        let mut seen = HashSet::new();
+        let mut complete = true;
+        collect_md(&dir, &HashSet::new(), &foreign, &mut orphans, &mut seen, &mut complete, 0);
+
+        assert!(complete, "an excluded subtree is not an unreadable one — removal stays enabled");
+        assert_eq!(orphans.len(), 1, "only our own note is an orphan to re-adopt");
+        assert_eq!(orphans[0].1, "CIDMINE", "and it is ours, not the linked universe's");
+
+        // Without the exclusion the same walk reaches it — the state before this step.
+        let mut orphans2: Vec<(String, String)> = Vec::new();
+        let mut seen2 = HashSet::new();
+        let mut complete2 = true;
+        collect_md(&dir, &HashSet::new(), &HashSet::new(), &mut orphans2, &mut seen2, &mut complete2, 0);
+        assert_eq!(orphans2.len(), 2, "REPRODUCTION: unscoped, the linked note is an orphan to re-adopt");
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 

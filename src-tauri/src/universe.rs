@@ -595,7 +595,11 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
 
 /// Recursively resolve all libraries accessible from a universe directory.
 /// Collects own libraries + child universe libraries, deduplicated by path.
-fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) -> Vec<crate::libraries::LibraryInfo> {
+/// PJ-207 §8 — `pub(crate)` so the regression test can prove the two library sets
+/// genuinely DIFFER on a federated universe using the real resolver, rather than
+/// hand-building a "recursive set" that would keep passing after production stopped
+/// producing one. (The `search.rs:338` mirror trap §1 deleted; not re-introduced in a test.)
+pub(crate) fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) -> Vec<crate::libraries::LibraryInfo> {
     // Prevent circular references
     if let Ok(canon) = fs::canonicalize(universe_path) {
         if visited.contains(&canon) {

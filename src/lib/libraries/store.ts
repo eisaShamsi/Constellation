@@ -3721,7 +3721,13 @@ export type RepairSubmitOutcome =
 	| { kind: 'started'; runId: number }
 	| { kind: 'queued'; runId: number }
 	| { kind: 'alreadyRunning'; runId: number }
+	| { kind: 'foreign'; libraryName: string }
 	| { kind: 'blocked'; reason: string };
+// PJ-207 §8 — `foreign` means the submitted library belongs to a LINKED universe, so its
+// notes are not this universe's index to write. It is neither work nor failure: the boot
+// cold-start loop below submits one entry per library in the FEDERATION-RECURSIVE list, so
+// on a universe with cUniverse children this is the ordinary answer for several of them.
+// Distinct from `blocked`, which means "not now" and is re-offered by the runner's drain.
 // The Rust side carries `#[serde(rename_all = "camelCase")]` on each struct variant so
 // `runId` above is accurate. An enum-level rename_all renames VARIANTS, not their
 // fields; without the per-variant attribute this type would have been quietly wrong.

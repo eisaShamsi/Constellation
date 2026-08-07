@@ -104,7 +104,16 @@ pub enum SubmitOutcome {
     /// A run was already going and already covers this scope. Nothing to do.
     #[serde(rename_all = "camelCase")]
     AlreadyRunning { run_id: u64 },
-    /// Refused, with the reason, because something incompatible holds the database.
+    /// PJ-207 §8 — the submitted library belongs to a **linked universe**, so this
+    /// universe's index is not where its notes go. Neither work nor failure: the notes
+    /// stay reachable through the federated search path, and writing them here is the
+    /// Charter W2-9 defect this refusal exists to prevent. Distinct from `Blocked` on
+    /// purpose — `Blocked` means "not now" and is re-offered by the drain, whereas this
+    /// is "not ever, by this universe", and re-offering it would loop.
+    #[serde(rename_all = "camelCase")]
+    Foreign { library_name: String },
+    /// Refused, with the reason. Something incompatible holds the database, or the
+    /// library registry that decides what is in scope could not be read.
     Blocked { reason: String },
 }
 
@@ -348,6 +357,27 @@ impl Drop for RunGuard {
 pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
     let state = app.state::<RepairState>();
 
+    // PJ-207 §8 — SCOPE before timing. The boot fan-out submits one `ColdStart` per entry
+    // of the frontend's library list, and that list is the federation-recursive set, so a
+    // linked universe's libraries arrive here every boot. Answer them at the door.
+    //
+    // Checked first, and before the single-flight flag is touched, for two reasons: a
+    // refusal expressed as `Blocked` would be pushed onto the pending list and re-offered
+    // by the drain forever, and a refusal discovered later — inside the worker, where the
+    // old registration check lived — would land in `last_error` and emit `ok: false`,
+    // making an ordinary federated boot look like a failed repair.
+    if let Scope::ColdStart { ref library_path, ref library_name, .. } = scope {
+        match crate::libraries::try_load_libraries(app) {
+            Ok(own) => {
+                if !own.iter().any(|l| l.path == *library_path) {
+                    return SubmitOutcome::Foreign { library_name: library_name.clone() };
+                }
+            }
+            // "I could not read the registry" is not "it is not yours". Say which.
+            Err(e) => return SubmitOutcome::Blocked { reason: e },
+        }
+    }
+
     // Mutual exclusion, checked before the guard so a blocked submit does not consume it.
     if crate::mig108::engine_is_running() {
         return SubmitOutcome::Blocked { reason: StopReason::Mig108Running.as_str().into() };
@@ -518,9 +548,15 @@ fn run_cold_start(
     only_if_unindexed: bool,
     run_id: u64,
 ) -> Result<RunCompletion, String> {
-    let libraries = crate::libraries::load_all_libraries(app);
+    // PJ-207 §8 — the OWN set, through the strict loader. `submit` already refused a
+    // linked universe's library at the door; re-deriving the authorization here from the
+    // same source means the door's decision and the walk's can never disagree (a registry
+    // that changed in between is caught, not walked). It is also the list
+    // `library_name_for_path` sees below — feeding it the recursive set is what stamped a
+    // foreign note with an own library's name.
+    let libraries = crate::libraries::try_load_libraries(app)?;
     if !libraries.iter().any(|v| v.path == library_path) {
-        return Err("Access denied: not a registered library.".to_string());
+        return Err("Access denied: not a library of this universe.".to_string());
     }
     let state = app.state::<crate::search::SearchState>();
 
@@ -542,6 +578,20 @@ fn run_cold_start(
 
     let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
     crate::libraries::collect_md_paths(std::path::Path::new(library_path), &mut md_paths);
+    // PJ-207 §8 — `collect_md_paths` descends through every non-dot directory and has no
+    // notion of a library boundary at all. `universe_notes` has `path == the Universe
+    // root`, so cold-starting it collects everything nested underneath — including a
+    // LINKED universe's directory if one sits there. Drop those before the loop: left in,
+    // `library_name_for_path` would find no OWN library for them and the
+    // `unwrap_or_else` fallback below would stamp them with THIS library's name — a
+    // foreign note filed under an own library, which is worse than an unscoped walk
+    // because every name-scoped count and search then inherits it.
+    let foreign_roots = crate::libraries::foreign_library_roots(app, &libraries);
+    if !foreign_roots.is_empty() {
+        md_paths.retain(|p| {
+            !crate::libraries::path_is_under_any(&p.to_string_lossy(), &foreign_roots)
+        });
+    }
 
     let rs = app.state::<RepairState>();
     rs.total.store(md_paths.len(), Ordering::Relaxed);
@@ -733,6 +783,130 @@ mod tests {
             for (j, b) in libs.iter().enumerate() {
                 assert_eq!(a.covers(b), i == j, "only a library covers itself");
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_pj207_s8_write_scope_guard {
+    //! PJ-207 §8 — the WIRING guard the behaviour tests cannot be.
+    //!
+    //! `search.rs`'s `tests_pj207_s8_index_write_scope` pins the **mechanism**: given the
+    //! own library set and the foreign skip-set, the walk does not adopt a linked
+    //! universe's note. It cannot pin the **wiring** — that production actually hands it
+    //! the own set — because every one of these entry points takes an `AppHandle`, and
+    //! this crate has no Tauri test harness (`Cargo.toml` carries no `tauri`/`test`
+    //! feature, checked 2026-08-07). Reverting `try_load_libraries` back to
+    //! `load_all_libraries` at any of the four call sites would leave the whole suite green.
+    //!
+    //! §7's own safety review is the reason this is here rather than left to a comment:
+    //! *"a guard you have just written is exactly the guard you are least likely to
+    //! check."* The precedent for making a rule structural instead of remembered is §6's
+    //! `ConvergeKey`; a compiler token does not fit here (the parameter is a plain
+    //! `&[LibraryInfo]` shared with a dozen legitimate READ paths), so the invariant is
+    //! asserted against the source instead.
+    //!
+    //! The module-level checks are deliberately whole-file rather than per-function: after
+    //! §8 the count is **zero**, and zero is a bound that cannot rot the way a line number
+    //! does. A legitimate future read-only use inside one of these modules should not just
+    //! silence this test — it should be weighed, because these modules exist to write.
+
+    fn src_full(file: &str) -> String {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join(file);
+        std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("could not read {}: {e}", p.display()))
+    }
+
+    /// A module's PRODUCTION source — everything before its first `#[cfg(test)]`. Test code
+    /// may name the recursive loader freely (this very module does, in the message below);
+    /// production may not. Only valid for modules whose tests sit at the END, which is why
+    /// `search.rs` — whose inline test modules are scattered throughout — is checked by
+    /// extracting the two function bodies instead.
+    fn src_production(file: &str) -> String {
+        let all = src_full(file);
+        match all.find("\n#[cfg(test)]") {
+            Some(i) => all[..i].to_string(),
+            None => all,
+        }
+    }
+
+    /// A top-level `fn`'s text: from its signature to the first lone `}` at column 0.
+    /// (Nested braces are indented, so this lands on the function's own closing brace.)
+    fn fn_body<'a>(source: &'a str, signature: &str) -> &'a str {
+        let start = source
+            .find(signature)
+            .unwrap_or_else(|| panic!("`{signature}` is no longer in the source — renamed? Then this guard needs updating, not deleting."));
+        let rest = &source[start..];
+        let end = rest.find("\n}\n").map(|i| i + 3).unwrap_or(rest.len());
+        &rest[..end]
+    }
+
+    fn offending_lines(body: &str) -> Vec<&str> {
+        body.lines()
+            .filter(|l| l.contains("load_all_libraries") && !l.trim_start().starts_with("//"))
+            .collect()
+    }
+
+    /// These three modules are index-WRITE paths end to end. None of them may resolve
+    /// libraries through the federation-recursive loader.
+    #[test]
+    fn no_index_write_module_resolves_libraries_through_the_federation() {
+        for file in ["reconcile.rs", "index_repair.rs", "library_attribution_backfill.rs"] {
+            let body = src_production(file);
+            let hits = offending_lines(&body);
+            assert!(
+                hits.is_empty(),
+                "{file} resolves libraries through `load_all_libraries`, which INCLUDES the \
+                 libraries of LINKED universes. Every path in this module writes or deletes \
+                 rows in the ACTIVE universe's index, so its scope must come from \
+                 `try_load_libraries` — the active universe's own libraries, and an ERROR \
+                 rather than an empty list when the registry cannot be read. \
+                 Offending line(s): {hits:?}"
+            );
+        }
+    }
+
+    /// The boot reconcile runs on a spawned thread with no cancel channel, computes its
+    /// stale/orphan sets from the universe active at start, and writes through `state.db`
+    /// — which a universe switch replaces underneath it. §7 built the generation check and
+    /// wired only the bulk walk to it; the §8 safety inspection found the boot reconcile
+    /// still unguarded (HIGH). Same invariant, so the same shared decision function.
+    #[test]
+    fn the_boot_reconcile_checks_the_universe_generation_before_it_writes() {
+        let body = src_production("reconcile.rs");
+        assert!(
+            body.contains("federation_generation_now"),
+            "reconcile.rs no longer consults the universe generation. Without it, a switch \
+             mid-pass makes its re-adopt tail index the DEPARTED universe's notes into the \
+             newly-active universe's index — Charter W2-9 through a second door."
+        );
+        assert!(
+            body.contains("walk_may_proceed"),
+            "reconcile.rs stopped using the SHARED stop decision. A second copy of it is how \
+             the two passes drift apart; §7 and §8 deliberately share one."
+        );
+    }
+
+    /// `search.rs` legitimately uses the recursive set in many READ paths, so the check is
+    /// scoped to the two functions §8 narrowed: the bulk walk and the watcher's batch.
+    #[test]
+    fn the_bulk_walk_and_the_watcher_batch_take_the_own_library_set() {
+        let s = src_full("search.rs");
+        for sig in ["\nfn reconcile_filesystem(", "\npub fn reindex_changed_paths("] {
+            let body = fn_body(&s, sig);
+            let hits = offending_lines(body);
+            assert!(
+                hits.is_empty(),
+                "`{}` resolves libraries through `load_all_libraries` — it writes index rows, \
+                 so it must take the active universe's OWN set. Offending line(s): {hits:?}",
+                sig.trim()
+            );
+            assert!(
+                body.contains("try_load_libraries("),
+                "`{}` no longer calls `try_load_libraries` — if the scope now comes from \
+                 somewhere else, prove that somewhere else excludes linked universes before \
+                 changing this assertion.",
+                sig.trim()
+            );
         }
     }
 }
