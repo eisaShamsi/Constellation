@@ -206,7 +206,30 @@ The Boss corrected the target mid-session: **`Eisa Universe`, not `كون عيس
 
 **Two findings surfaced on his live data during the test, neither caused by this build** — see §7 (PJ-223, PJ-224). PJ-224 is the one with teeth: it invalidates a premise **§13** is built on.
 
-## 9 · Not done in this job, deliberately
+## 9 · Worktree prune — and the unsaved work it nearly took with it
+
+Boss-authorised a prune of the stale worktrees under `.claude/worktrees/`. `git log main..<branch>`
+reported **zero unique commits for all seven**, which is exactly the reading that would have made a
+blind `--force` removal look safe. It was not: **two of them hold real work that exists nowhere else.**
+
+- `eager-turing-493c70` — **23 modified Sight v6 tradition files** (`+139 / −111`) **plus two
+  untracked concept papers**: `Constellation-Sight-Concept-Paper-v4.1.md` and
+  `Constellation-Sight-Subsystem-Concept-Paper-v1.0.md`.
+- `sweet-jackson-2fbff3` — two untracked mockups, `Sight-vNext-MockA-Dashboard.svg` and
+  `Sight-vNext-MockB-Metaphor.svg`.
+
+Both **kept**, and flagged in the handover for a Boss ruling (land or discard deliberately). Removed
+only the four whose entire diff was an untracked `dev/null` artifact: `angry-knuth-ed8072`,
+`crazy-pascal-8ce11c`, `frosty-stonebraker-75c9bf`, `suspicious-wright-ebc3fa`. The session's own
+worktree was left in place (the running shell resolves to it), as was the clean detached
+`Constellation-wtSC`.
+
+**The lesson, and it is the same one as three times earlier today:** the commit graph is one
+artefact, and it said "empty". The working tree said otherwise. *Look at the target before deleting
+it* is not a formality — here it was the difference between a tidy-up and losing a subsystem concept
+paper.
+
+## 10 · Not done in this job, deliberately
 
 - The Boss tested and passed before commit (standing order).
 - The test tutorial went `tutorial-auditor` → `ui-inspector` and came back **REJECTED**, correctly:
