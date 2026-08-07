@@ -605,3 +605,47 @@ Context that makes it worth doing: `created` is one of the eight Living-Link pro
 basis of weight decay, it is **not** in the earned ledger, and until §1 shipped today it was being
 silently reset by ordinary edits. Surfacing it makes that class of loss visible to the user instead
 of only to a test.
+
+---
+
+## §16 — §7 SHIPPED and Boss-validated · the day closed
+
+**§7 `ee2191ed`** — one runner. Two independent walkers with seven entry points became one
+submit-point with a typed outcome; `reconcile_filesystem` lost `pub`; `reindex_library` was
+absorbed; the boot fan-out collapsed; the bring-in double-fire went; mutual exclusion landed
+both ways with defrag and MIG-108; the walk gained a per-note cancel / universe-switch /
+checkpoint gate it never had.
+
+**The safety review found ten, two of them HIGH, and both HIGH were mine** — safety nets
+disarmed while being built. The marker that cleared itself on the exact failure it existed
+for; the single-flight flag with no RAII, against this codebase's own precedent whose
+comment explains why one is needed. All ten fixed before the commit. **My own panic test had
+to be corrected rather than satisfied** — it asserted the marker gets cleared, which was
+pinning the bug; the unwind path must KEEP it, because the tail provably did not run.
+
+**Boss test:** passed, on the pipeline's second pass. The inspector rejected pass 1 for,
+among others, an instruction to watch for an error that cannot occur (the guard is invisible
+in that flow) and an expected result that would have produced a false failure (the note
+appears under BOTH Titles and Contents, because its name is its filename).
+
+### The close (PCS)
+- **Commits:** 11 this session — §1–§7, the Boss-found library fix, two LAWS, two agents.
+- **Pending Jobs `v1.67`** — written, closing §1–§7 and filing PJ-213…218.
+- **Orientation `v3.83`** — written as a NEW file (SO#6; v3.82 untouched).
+- **MoCh** `docs/MoCh/MoCh-2026-08-03-1200.md`.
+- **Handover** `docs/HANDOVER-2026-08-03-pj207.md`.
+- **Memory** — `project_pj207_index_repair.md` and
+  `feedback_verify_ui_surface_before_naming_it.md` added and indexed.
+- **Help / User Manual: deliberately NOT updated.** Nothing user-facing shipped yet — the
+  repair still has no door. The docs that say "there is no Rebuild button" are still TRUE
+  and become false only when §11 lands the control; correcting them now would be the
+  fabrication this session wrote two laws about. §12 owns that pass. Recorded here so the
+  omission is a decision, not a miss (SO#2).
+
+### Gates at close
+Rust **1355 / 0** · vitest **900/900** (76 files) · svelte-check **0 errors** · i18n **15/15 ✓**.
+
+### What the next session should know in one line
+§8 is next, and the Architect doc's §8 correction is load-bearing: scoping only the walk does
+**not** close Charter W2-9, because the boot reconcile re-adopts from the recursive set —
+both passes must go through `own_libraries_for_root` or foreign-copy removal oscillates forever.
