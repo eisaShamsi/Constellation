@@ -7898,9 +7898,15 @@ The document **must remain readable in one pass.** If it grows past ~1500 lines,
 This list is mandated by the BASIC RULE. If you need certainty on a claim that touches an "unread" file, **read it before acting**.
 
 **Source code I have NOT read in full**:
-- Some sections of `search.rs` (4790 lines), `libraries.rs` (3978) — read at section level, not line-by-line. Function signatures, schema, triggers, command surface confirmed.
-- `+layout.svelte` (6872 lines) — structural map only (region table + $effect inventory + IPC list + component mount list). Not line-by-line.
+- Some sections of `search.rs` (**16,347 lines** as of v3.84 — the earlier "4790" was years stale and is corrected here), `libraries.rs` (**~4,760**) — read at section level, not line-by-line. Function signatures, schema, triggers, command surface confirmed.
+- `+layout.svelte` (**~11,500 lines**) — structural map only (region table + $effect inventory + IPC list + component mount list). Not line-by-line.
 - `libraries/+page.svelte` (704), `skills/+page.svelte` (219) — listed and counted, not read.
+
+**Read IN FULL and verified during §8 (2026-08-07)** — removed from the unread set:
+- `reconcile.rs` (the boot self-heal, end to end, including `collect_md`, `lib_for`, `relocate_row` and the cap logic), `index_repair.rs` (the whole §7 runner), `library_attribution_backfill.rs`.
+- `libraries.rs`' four library loaders and their contracts: `load_libraries` (read-only, empty-on-failure **by design**), `try_load_libraries` / `try_load_libraries_at` (the strict twin), `load_all_libraries` (federation-recursive, cached), plus `library_name_for_path`, `nested_library_paths`, `collect_md_paths`, `validate_path_in_any_library`.
+- `universe.rs`' `resolve_libraries_recursive` and `own_libraries_for_root`.
+- `search.rs`' `reconcile_filesystem`, `index_library_recursive`, `reindex_changed_paths`, `reindex_md_descendants`, `delete_rows_under_prefix`, and the `execute_universal_search` vs `federated_lexical_search_or_fallback` split.
 
 **Docs I have NOT read in full**:
 - 14 translated User Manuals (parity confirmed: ar = 1328 lines, others = 1120; same chapter structure).
@@ -7914,6 +7920,11 @@ This list is mandated by the BASIC RULE. If you need certainty on a claim that t
 - 2026-04-18 (1.46 MB): structural digest + sampled headlines (Arabic Engine M3-M14 milestone day).
 - 2026-04-19 (99 KB): structural digest.
 - All 20 logs digested chronologically (see §11 / §15 / §16 references throughout this doc).
+
+**Specifics I do NOT know (added 2026-08-07, §8)**:
+- **How the active universe reached `Eisa Universe` without the registry recording it.** The registry at `%APPDATA%\world.uconstellation.app\universes.json` lists only `كون عيسى` and has not been written since 09:56, yet the 18:33 session demonstrably booted into `Eisa Universe` (its own `boot-perf.latest.json` carries `note_count 1890` at 18:33:53, and `diagnostics.log` shows `[federation-prewarm]` attaching both children). Two `universes.json` files exist on the machine; neither was written at 18:33. **Consequence for anyone testing: the registry file is NOT a reliable indicator of what the app is running — verify from the universe's own `boot-perf.latest.json` / `diagnostics.log`.**
+- **Why `موسوعة عيسى` (979 notes) left `Eisa Universe`'s `libraries.json`** during the Boss's 16:53 unification run — 6 entries before, 5 after, the folder still at the root. Asked; unanswered. Not investigated further.
+- **Whether `Constellation PKM`'s 798 unindexed notes were ever indexed under its pre-MIG-108 external path.** Confirmed only that the pre-unification snapshot shows the same single row, so the gap predates the move. → PJ-223.
 
 **Specifics I do NOT know**:
 - **Whether the cold boot is durably fixed.** The post-vacuum cold sample is **n=1** (1.2 s, against a 26.7 s median across 304 cold boots before). The direction is unambiguous; the confirmation is not in hand. Re-run `lab/boot-perf/cold_vs_warm.py` after a few days of ordinary use before treating §9.5 as settled.
