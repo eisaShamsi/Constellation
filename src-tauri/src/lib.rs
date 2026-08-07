@@ -15,6 +15,9 @@ mod canonical;
 // has a private field, and every bulk recompute now requires one, so a sixth divergent
 // assembly cannot be written: it could not obtain the argument.
 mod converge;
+// PJ-207 §7 — the single-flight index-repair runner: the ONE thing that walks the
+// library. Absorbs reindex_library; reconcile_filesystem is private behind it.
+mod index_repair;
 // MIG-013 §1B: CTSE Bridge Adapter (term → M11 concept resolver).
 // Public so future write-time hooks (in §1C) can call it from any
 // crate-internal module without going through a re-export chain.
@@ -354,6 +357,9 @@ pub fn run() {
         .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None), term_embed_cancel: std::sync::atomic::AtomicBool::new(false) })
         // MIG-021v2 §1F' — background scan state.
         .manage(classifier::scan_job::ScanState::new())
+        // PJ-207 §7 — the index-repair runner's single-flight state, beside its chassis
+        // sibling. One per app, which is what "one index job process-wide" means.
+        .manage(index_repair::RepairState::new())
         // MIG-040 — NSC summary backfill state (Rule 8 first-time population).
         .manage(nsc::backfill::NscBackfillState::new())
         // MIG-021v2 §1F'.b — bulk Approve All state.
@@ -431,6 +437,8 @@ pub fn run() {
             classifier::classifier_suggest_for_note,
             // MIG-021v2 §1F' — background scan IPCs
             classifier::scan_job::classifier_scan_start,
+            index_repair::index_repair_status,
+            index_repair::index_repair_cancel,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,
             // MIG-021v3 V3-§8.r1.f — Sibling Disambiguation pick resolver
@@ -733,6 +741,15 @@ pub fn run() {
                         let _ = window.emit("mig108:close-blocked", ());
                         return;
                     }
+                    // PJ-207 §7 — an index repair is NOT refused the way the unification
+                    // engine is: it writes no `.md` file, and every window it holds is
+                    // short (§4/§5 made them so), so cancelling at a boundary is cheap.
+                    // Ask it to stop and let the existing handshake below cover the wait —
+                    // it SHARES that single 5 s budget rather than adding a second one
+                    // (Boss ruling: up to 5s, instant when clean). If the cap expires
+                    // mid-stream, §5's derived-tail marker is what makes the next boot
+                    // finish the job.
+                    crate::index_repair::request_cancel(&window.app_handle().clone());
                     // MIG-100 §4b + PJ-103 — graceful-close final flush. A DOM
                     // beforeunload + fire-and-forget invoke is NOT proven to
                     // survive webview teardown (PJ-103 proved it live: the

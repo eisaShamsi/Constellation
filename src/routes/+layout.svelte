@@ -2856,11 +2856,38 @@
 		// indexed notes (linked but never walked into the index — the LL-027/BUG-022 gap:
 		// linked on an older build, or files synced while the app was closed). Server-gated
 		// by a cheap COUNT (no walk for already-indexed libraries → ZERO-BOOT-WALKS). After paint.
-		Promise.all($libraries.map(lib =>
-			invoke<number>('reindex_library', { libraryPath: lib.path, libraryName: lib.name, onlyIfUnindexed: true }).catch(() => 0)
-		)).then((counts) => {
-			if (counts.some((n) => (n ?? 0) > 0)) { loadAllStats().catch(() => {}); refreshLibraryCaches().catch(() => {}); }
-		}).catch(() => {});
+		//
+		// PJ-207 §7 — SEQUENTIAL submits, not `Promise.all`. This was N parallel invokes with
+		// `.catch(() => 0)`. Under the new single-flight guard the first starts and the rest
+		// come back `Queued` — correct, but the old shape read every one of them as "0 notes",
+		// so the follow-up refresh would have been skipped. Worse, a naive guard that REFUSED
+		// instead of queuing would silently re-open the very LL-027 / BUG-022 cold-start gap
+		// this block exists to close, for every library but the first. One submit at a time,
+		// inspecting the typed outcome, makes both impossible. Still after paint, still
+		// fire-and-forget, and still zero walking for an already-indexed library — the COUNT
+		// gate lives server-side, untouched.
+		void (async () => {
+			let anyWork = false;
+			for (const lib of $libraries) {
+				try {
+					const outcome = await invoke<{ kind: string }>('reindex_library', {
+						libraryPath: lib.path, libraryName: lib.name, onlyIfUnindexed: true,
+					});
+					if (outcome?.kind === 'started' || outcome?.kind === 'queued') anyWork = true;
+					else if (outcome?.kind === 'blocked') {
+						// Safety review, finding 5 — a boot overlapping a compaction or a bigram
+						// purge would otherwise leave every unindexed library unindexed for the
+						// whole session, silently: exactly the LL-027 / BUG-022 gap this block
+						// exists to close. The runner re-queues what it refuses; say so rather
+						// than count it as "nothing to do".
+						console.warn('[boot] cold-start refused for', lib.name, '—', (outcome as { reason?: string })?.reason);
+					}
+				} catch (e) {
+					console.warn('[boot] cold-start submit failed for', lib.name, e);
+				}
+			}
+			if (anyWork) { loadAllStats().catch(() => {}); refreshLibraryCaches().catch(() => {}); }
+		})();
 		{
 			const t0 = performance.now();
 			Promise.all($libraries.map(lib =>
@@ -3646,6 +3673,19 @@
 			}
 		});
 		cleanupFns.push(() => { try { unlistenCacheReconciled(); } catch {} });
+
+		// PJ-207 §7 (safety review, finding 6) — the index repair runs on its own thread,
+		// so the stats refresh next to the SUBMIT fires while the work has barely started.
+		// Before this listener existed a cold-started library showed 0 notes until the next
+		// launch. Refresh when the run actually finishes.
+		const unlistenRepairDone = await listen<{ ok?: boolean; stoppedEarly?: boolean }>('index-repair:done', (ev) => {
+			loadAllStats().catch(() => {});
+			refreshLibraryCaches().catch(() => {});
+			if (ev?.payload?.stoppedEarly) {
+				console.warn('[index-repair] the run stopped before finishing — it will be completed on the next start');
+			}
+		});
+		cleanupFns.push(() => { try { unlistenRepairDone(); } catch {} });
 
 		// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
 		// tensions may have changed (added/removed a `contradicts` link, grew past an

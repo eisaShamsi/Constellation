@@ -3611,7 +3611,11 @@ export async function loadAllStats() {
 // `bringInLibrary` (Copy/Move — the user's choice).
 export async function bringInLibrary(sourcePath: string, mode: 'copy' | 'move'): Promise<LibraryInfo> {
 	const library: LibraryInfo = await invoke('bring_in_library', { sourcePath, mode });
-	invoke('reindex_library', { libraryPath: library.path, libraryName: library.name, onlyIfUnindexed: false }).catch(() => {});
+	// PJ-207 §7 — the DOUBLE-FIRE is gone. This used to call `reindex_library` here AND
+	// the caller then called `initSearchIndex()`, so one user gesture started BOTH of the
+	// app's two independent walkers. Under single-flight the second would have been
+	// refused into the `.catch(() => {})` that used to sit on this line. The caller owns
+	// the single submit now.
 	return library;
 }
 
@@ -3701,8 +3705,28 @@ export interface ConstellationSearchResult {
 	match_via?: string;
 }
 
-/** Initialize the search index (builds SQLite FTS5 database). */
-export async function initSearchIndex(): Promise<{ note_count: number; index_size_bytes: number }> {
+/**
+ * PJ-207 §7 — SUBMIT a whole-universe index repair. Returns a typed outcome, not stats.
+ *
+ * `Started`  — this call began the run.
+ * `Queued`   — a run was already going and did not cover this; it will be processed.
+ * `AlreadyRunning` — a run already covers it; nothing to do.
+ * `Blocked`  — refused, with a reason (a unification or a compaction holds the database).
+ *
+ * The shape change is the point. Every caller of this used to swallow its error, so a
+ * refusal was invisible; `Queued` in particular is what stops a second library added
+ * during a run being silently dropped.
+ */
+export type RepairSubmitOutcome =
+	| { kind: 'started'; runId: number }
+	| { kind: 'queued'; runId: number }
+	| { kind: 'alreadyRunning'; runId: number }
+	| { kind: 'blocked'; reason: string };
+// The Rust side carries `#[serde(rename_all = "camelCase")]` on each struct variant so
+// `runId` above is accurate. An enum-level rename_all renames VARIANTS, not their
+// fields; without the per-variant attribute this type would have been quietly wrong.
+
+export async function initSearchIndex(): Promise<RepairSubmitOutcome> {
 	return invoke('constellation_search_init');
 }
 

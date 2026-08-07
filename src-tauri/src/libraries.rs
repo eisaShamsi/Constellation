@@ -2367,7 +2367,9 @@ fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) 
 
 /// Recursively collect every `.md` file path under `dir` (MIG-077 A3-R3 — used to
 /// reindex all descendants after a folder move).
-fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
+/// PJ-207 §7 — `pub(crate)` so the index-repair runner can reuse the exact collector
+/// `reindex_library` used, rather than growing a second one that could drift from it.
+pub(crate) fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
     if let Ok(rd) = fs::read_dir(dir) {
         for entry in rd.flatten() {
             // Skip symlinks/junctions to prevent circular recursion (mirrors
@@ -3431,54 +3433,26 @@ pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_n
 /// a cheap no-op (re-linking a large indexed library stays fast). Async (off the UI
 /// thread); the frontend fires it after `add_library`. Returns the count of files seen.
 #[tauri::command(async)]
-pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name: String, only_if_unindexed: bool) -> Result<usize, String> {
-    use tauri::Manager;
-    let libraries = load_all_libraries(&app);
-    if !libraries.iter().any(|v| v.path == library_path) {
-        return Err("Access denied: not a registered library.".to_string());
-    }
-    let state = app.state::<crate::search::SearchState>();
-    // Cheap gate (boot path): if this library already has indexed notes, skip the
-    // filesystem walk entirely — ONE indexed COUNT, no walk, honoring ZERO-BOOT-WALKS
-    // (LL-022). Only an unindexed library (linked but never walked into the index) gets
-    // the cold-start walk. Fresh adds pass `false` (always index).
-    if only_if_unindexed {
-        let indexed: i64 = crate::search::with_read_conn(state.inner(), |conn| {
-            conn.query_row(
-                "SELECT COUNT(*) FROM note_meta WHERE library_name = ?1",
-                rusqlite::params![library_name],
-                |r| r.get(0),
-            )
-            .map_err(|e| e.to_string())
-        })
-        .unwrap_or(0);
-        if indexed > 0 {
-            return Ok(0);
-        }
-    }
-    // Reuse the existing recursive .md collector (same one the folder-move reindex uses).
-    let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
-    collect_md_paths(Path::new(&library_path), &mut md_paths);
-    let mut seen = 0usize;
-    for p in &md_paths {
-        let ps = p.to_string_lossy().to_string();
-        // 2026-07-25 (Whole-Ecosystem Fix Law): attribute PER FILE via longest-root-wins
-        // instead of stamping the walked library's name. collect_md_paths walks into
-        // nested registered libraries, and the boot fan-out races the root library's walk
-        // against each nested library's — a fixed name meant last-writer-wins,
-        // nondeterministically mis-attributing nested notes to universe_notes. Resolving
-        // per file makes the outcome order-independent and correct. (Each note may be
-        // reached twice on cold-start — root's walk + its own library's walk — but both
-        // now stamp the SAME correct name.)
-        let lib_name = library_name_for_path(&libraries, &ps).unwrap_or_else(|| library_name.clone());
-        // reindex_single_note wraps index_note AND runs the MIG-079 §C.2a incoming-aggregate
-        // diff post-commit — so a cold-started library's TARGET notes get correct backlink
-        // (incoming_count) values, not just outgoing. Locks per note internally.
-        if crate::search::reindex_single_note(state.inner(), &ps, &lib_name).is_ok() {
-            seen += 1;
-        }
-    }
-    Ok(seen)
+pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name: String, only_if_unindexed: bool) -> Result<crate::index_repair::SubmitOutcome, String> {
+    // PJ-207 §7 — ABSORBED. This was Constellation's SECOND independent library walker:
+    // not a wrapper over `reconcile_filesystem` but its own `collect_md_paths` +
+    // per-file `reindex_single_note`, with no mutual exclusion against it. One user
+    // gesture ("bring in a library") fired BOTH.
+    //
+    // Its semantics move into `Scope::ColdStart` unchanged — the cheap COUNT(*) gate that
+    // honours ZERO-BOOT-WALKS (LL-022), the per-file `library_name_for_path` attribution
+    // (the 2026-07-25 Whole-Ecosystem fix that made the outcome order-independent), and
+    // `reindex_single_note` as the per-note primitive rather than the bulk walker's bare
+    // `index_note`, because it also runs the incoming-aggregate diff post-commit so a
+    // cold-started library's TARGET notes get correct backlink counts.
+    //
+    // The return changes from a file count to a typed outcome: all three callers
+    // swallowed errors, so a refusal was invisible. `Queued` is what stops the boot
+    // fan-out silently dropping every library but the first.
+    Ok(crate::index_repair::submit(
+        &app,
+        crate::index_repair::Scope::ColdStart { library_path, library_name, only_if_unindexed },
+    ))
 }
 
 fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str, exclude: &std::collections::HashSet<String>) {

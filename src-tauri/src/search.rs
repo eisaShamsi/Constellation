@@ -402,6 +402,10 @@ pub(crate) struct WalkTally {
     /// `reconcile.rs` re-adopt-failure precedent (first 20, then count only).
     pub dirs_unreadable: usize,
     pub unreadable_sample: Vec<String>,
+    /// PJ-207 §7 — the walk stopped before it finished: the app is closing, or the active
+    /// universe changed. **Not an error**, but emphatically not a complete repair either,
+    /// and the distinction has to survive to the caller or a short walk reads as a whole one.
+    pub stopped_early: bool,
 }
 
 impl WalkTally {
@@ -423,6 +427,7 @@ impl WalkTally {
         self.skipped += other.skipped;
         self.failed += other.failed;
         self.dirs_unreadable += other.dirs_unreadable;
+        self.stopped_early |= other.stopped_early;
         for p in other.unreadable_sample {
             if self.unreadable_sample.len() < Self::SAMPLE_CAP {
                 self.unreadable_sample.push(p);
@@ -431,9 +436,9 @@ impl WalkTally {
     }
 
     /// Did the walk complete without anything going unexplained? `raced` and
-    /// `unchanged` are normal; `failed` and `dirs_unreadable` are not.
+    /// `unchanged` are normal; `failed`, `dirs_unreadable` and an early stop are not.
     pub fn is_clean(&self) -> bool {
-        self.failed == 0 && self.dirs_unreadable == 0
+        self.failed == 0 && self.dirs_unreadable == 0 && !self.stopped_early
     }
 }
 
@@ -715,7 +720,7 @@ mod tests_pj207_reindex_round_trip {
         }];
         let exclude = std::collections::HashSet::new();
 
-        let first = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0);
+        let first = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
         assert_eq!(first.seen, 3, "three .md files visited");
         assert_eq!(first.indexed, 2, "A and B written");
         assert_eq!(first.failed, 1, "bad.md counted, not silently dropped");
@@ -725,7 +730,7 @@ mod tests_pj207_reindex_round_trip {
         // Walking again touches nothing: the mtime gate short-circuits both good
         // notes. THIS is the distinction a bare COUNT(*) could never report — the row
         // count is 2 after both walks, but the work done is completely different.
-        let second = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0);
+        let second = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
         assert_eq!(second.indexed, 0, "nothing changed on disk, so nothing was rewritten");
         assert_eq!(second.unchanged, 2, "both good notes hit the cache");
         assert_eq!(second.failed, 1, "the unreadable one fails every time — still counted");
@@ -793,7 +798,7 @@ mod tests_pj207_reindex_round_trip {
         );
 
         // (3) And the invariant holds on a real walk too.
-        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0);
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
         assert_eq!(
             t.indexed + t.unchanged + t.raced + t.skipped + t.failed,
             t.seen,
@@ -834,7 +839,7 @@ mod tests_pj207_reindex_round_trip {
             is_universe_notes: false,
             canonical_mode: "native".into(),
         }];
-        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0);
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
 
         assert!(t.dirs_unreadable >= 1, "the truncated subtree is reported");
         assert!(!t.unreadable_sample.is_empty(), "and the user can be told WHICH folder");
@@ -1215,6 +1220,8 @@ pub struct WalkReport {
     /// Bounded sample (≤20) of directories that could not be listed, so the user can
     /// be told WHICH folder was skipped rather than merely that one was.
     pub unreadable_sample: Vec<String>,
+    /// The walk stopped before finishing (app closing, or the universe changed).
+    pub stopped_early: bool,
 }
 
 impl From<WalkTally> for WalkReport {
@@ -1228,6 +1235,7 @@ impl From<WalkTally> for WalkReport {
             failed: t.failed,
             dirs_unreadable: t.dirs_unreadable,
             unreadable_sample: t.unreadable_sample,
+            stopped_early: t.stopped_early,
         }
     }
 }
@@ -2128,6 +2136,33 @@ pub(crate) fn set_outgoing_triggers_dropped_marker(conn: &Connection) -> Result<
 /// **§6 adds the reader.** Until it lands this marker is written and cleared and
 /// nothing consults it, which is stated here rather than described as though the
 /// consumer already existed.
+/// PJ-207 §7 — true while a heavy, exclusive, unchunkable database job holds `state.db`:
+/// the defrag VACUUM (`:2742`) or the bigram purge (`:2906`). Both set `MIGRATION_ACTIVE`,
+/// and both hold the connection for minutes.
+///
+/// The index-repair runner refuses to START while this is set, and `maybe_schedule_defrag`
+/// refuses to spawn while a repair is running — mutual exclusion in **both** directions.
+/// The defrag's existing `defrag_last_attempt` cooldown is a retry policy, not a mutex,
+/// and was never one.
+pub(crate) fn heavy_db_job_running() -> bool {
+    MIGRATION_ACTIVE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// PJ-207 §7 — the active universe's federation generation, bumped by
+/// `invalidate_search_state` on every universe switch.
+///
+/// The walk captures this at start and re-reads it before each batch. Nothing in the old
+/// `reconcile_filesystem` read it at all: it captured `db_path` once and then wrote for
+/// minutes, so a universe switch mid-walk wrote the departing universe's notes into the
+/// arriving universe's database. The federation thread in this very file already guards
+/// itself this way; the walk simply never did.
+pub(crate) fn federation_generation_now(app: &tauri::AppHandle) -> u64 {
+    use tauri::Manager;
+    app.state::<SearchState>()
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst)
+}
+
 pub(crate) fn set_derived_tail_pending_marker(conn: &Connection) -> Result<(), String> {
     conn.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
@@ -2641,6 +2676,14 @@ fn is_transient_lock(e: &rusqlite::Error) -> bool {
 /// the attempt time is recorded and retried at most once a day.
 pub fn maybe_schedule_defrag(app: tauri::AppHandle) {
     use tauri::Manager;
+    // PJ-207 §7 — the other half of the mutual exclusion. A VACUUM holds `state.db` for
+    // minutes and is unchunkable; starting one while a repair walk is writing would park
+    // the walk (and every user save behind it) for the duration. The runner refuses to
+    // start while a heavy job holds the DB; this refuses to spawn while the runner is
+    // walking. The existing `defrag_last_attempt` cooldown is a retry policy, not a mutex.
+    if crate::index_repair::is_running(&app) {
+        return;
+    }
     /// Both must hold: enough absolute waste to be worth minutes of lock, and enough of the
     /// file to be hurting locality. 25k pages ≈ 100 MB.
     const MIN_FREE_PAGES: i64 = 25_000;
@@ -7932,12 +7975,34 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
 /// every per-note error was dropped by `let _ = index_note(...)`. The caller could
 /// only ever report `SELECT COUNT(*) FROM note_meta`, which is the same number
 /// whether the walk did everything or nothing.
+/// PJ-207 §7 — `ctx` carries what the walk owes per note: the cancel check, the
+/// universe-generation check, the WAL self-checkpoint and the progress counter. Before
+/// this the bulk walk did NONE of them — it ran to completion regardless of the app
+/// closing or the user switching universe mid-flight.
+pub(crate) struct WalkCtx<'a> {
+    /// `None` in unit tests of the walker itself — there is no run to cancel and no
+    /// universe to switch. The decision it feeds is pinned separately as a pure function.
+    pub app: Option<&'a tauri::AppHandle>,
+    /// The federation generation when the run started. A change means the active
+    /// universe moved and this walk must stop writing.
+    pub generation: u64,
+    /// True once a per-note check said stop, so the caller can distinguish "finished" from
+    /// "abandoned" rather than reading a short tally as a complete walk.
+    pub stopped: bool,
+    /// PJ-207 §7 (safety review) — a RUNNING total across the whole walk. The gate was
+    /// first fed `tally.seen`, which is per-directory: progress restarted at 1 in every
+    /// subtree, and the every-500 checkpoint could never fire on a library of many small
+    /// folders (20 x 400 notes never reaches a multiple of 500 at any level).
+    pub seen_total: usize,
+}
+
 fn index_library_recursive(
     conn: &Connection,
     dir: &Path,
     libs: &[crate::libraries::LibraryInfo],
     exclude: &std::collections::HashSet<String>,
     depth: u32,
+    ctx: &mut WalkCtx<'_>,
 ) -> WalkTally {
     let mut tally = WalkTally::default();
     // A depth cut-off is a real truncation of the walk, not a no-op: count it the
@@ -7960,12 +8025,20 @@ fn index_library_recursive(
         if path.is_dir() {
             let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
             if exclude.contains(&norm) { continue; }
-            tally.absorb(index_library_recursive(conn, &path, libs, exclude, depth + 1));
+            tally.absorb(index_library_recursive(conn, &path, libs, exclude, depth + 1, ctx));
+            if ctx.stopped { return tally; }
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let ps = path.to_string_lossy().to_string();
             let lib_name = crate::libraries::library_name_for_path(libs, &ps)
                 .unwrap_or_else(|| "universe_notes".to_string());
             tally.seen += 1;
+            // PJ-207 §7 — the per-note gate. Stops on the app closing or a universe
+            // switch, and keeps the run's own WAL checkpointed.
+            ctx.seen_total += 1;
+            if !crate::index_repair::walk_should_continue(ctx.app, conn, ctx.generation, ctx.seen_total) {
+                ctx.stopped = true;
+                return tally;
+            }
             match index_note(conn, &ps, &lib_name, false) {
                 Ok(IndexOutcome::Indexed) => tally.indexed += 1,
                 Ok(IndexOutcome::Unchanged) => tally.unchanged += 1,
@@ -11179,7 +11252,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
 ///
 /// Runs in the caller's thread. `cache_reconcile` wraps this in
 /// `std::thread::spawn` so it never blocks IPC.
-pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, String> {
+/// PJ-207 §7 — **module-private.** The only caller is
+/// `reconcile_filesystem_guarded`, which is itself only reached from the
+/// `index_repair` runner. Removing `pub` is what makes "one thing walks the library" a
+/// fact rather than a comment: there is no second door to call.
+fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchIndexStats, String> {
     // Make sure schema exists and state has the query connection.
     ensure_search_db_ready(app)?;
 
@@ -11209,30 +11286,34 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     walk_conn
         .busy_timeout(std::time::Duration::from_secs(30))
         .map_err(|e| format!("walk_conn busy_timeout: {}", e))?;
-    // Safety-inspection 2026-08-01 — persist the crash marker BEFORE the drop. If
-    // the app dies during the multi-minute trigger-free walk, live saves in later
-    // sessions would silently stop being covered for the walk window's stale rows
-    // (init_db recreates the triggers, but nothing recomputed the aggregates —
-    // boot is walk-free). init_db reads this marker at boot and runs
-    // recompute_all_outgoing once. If the marker cannot be persisted, do NOT
-    // enter the unprotected window.
-    set_outgoing_triggers_dropped_marker(&walk_conn)?;
-    let _ = drop_outgoing_link_triggers(&walk_conn);
-    // MIG-079 §C.2a — incoming maintenance is a save-path Rust diff, not triggers;
-    // drop any incoming triggers a prior build left (harmless cleanup).
-    let _ = drop_incoming_link_triggers(&walk_conn);
-    // PJ-066 §B4 — sky stratum/maturity maintenance is also a save-path Rust diff now;
-    // drop the per-edge sky triggers for the trigger-free bulk walk (recompute_all_sky
-    // below restores every node's value in one pass). Idempotent cleanup.
-    let _ = drop_sky_aggregate_triggers(&walk_conn);
+    // PJ-207 §7 — the marker/drop/recreate sequence is now RAII. `open` persists the
+    // crash marker BEFORE dropping anything (if it cannot be persisted we do not enter
+    // the unprotected window), and `Drop` recreates the outgoing triggers from the
+    // then-current registry and clears the marker on EVERY exit path — including the `?`
+    // early-returns below and a panic. Previously the recreate was straight-line code
+    // after the walk, so any `?` between them left the triggers down.
+    let trigger_window = crate::index_repair::TriggerWindow::open(&walk_conn, run_id)?;
 
     let libraries = crate::libraries::load_all_libraries(app);
     // PJ-207 §3 (D5) — accumulate what the walk actually did. Previously this loop
     // discarded its own result and the command reported a bare row count.
     let mut tally = WalkTally::default();
+    let mut ctx = WalkCtx {
+        app: Some(app),
+        generation: federation_generation_now(app),
+        stopped: false,
+        seen_total: 0,
+    };
     for lib in &libraries {
         let exclude = crate::libraries::nested_library_paths(&libraries, &lib.path);
-        tally.absorb(index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0));
+        tally.absorb(index_library_recursive(&walk_conn, Path::new(&lib.path), &libraries, &exclude, 0, &mut ctx));
+        if ctx.stopped {
+            // Abandoned, not finished. The tail below still runs — the trigger window must
+            // close and the derived views must converge over whatever WAS written — but the
+            // caller is told, so a short walk is never reported as a complete repair.
+            tally.stopped_early = true;
+            break;
+        }
     }
     if !tally.is_clean() {
         // stderr goes nowhere in a Windows release build (search.rs documents this),
@@ -11267,19 +11348,20 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         ));
     }
 
-    // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
-    // then repopulate every note's aggregate in one pass.
-    // Safety-inspection 2026-08-01 — failures here are no longer eprintln-only: the
-    // walk dropped the triggers, so a failed restore means live saves keep serving
-    // stale outgoing aggregates while the command reports Ok. The error surfaces in
-    // this command's Err (below, after the remaining self-heal passes still run),
-    // and the `outgoing_triggers_dropped` marker stays set so the next boot's
-    // init_db recompute self-heals regardless. Cleared only when the recreate AND
-    // the recompute both succeed.
-    let mut outgoing_restore_err: Option<String> = None;
-    if let Err(e) = create_outgoing_link_triggers(&walk_conn) {
-        eprintln!("[links_backfill] recreate outgoing triggers after reconcile failed: {}", e);
-        outgoing_restore_err = Some(e);
+    // PJ-207 §7 — close the trigger window HERE, explicitly, before the convergence tail:
+    // the triggers must be back before the recompute so any concurrent live save is
+    // covered. `close()` recreates them and hands back the outcome; it does NOT clear the
+    // crash marker, because recreating the triggers is only half of what that marker
+    // means. It says "the outgoing aggregates may be stale", and they still are until the
+    // tail below has recomputed them.
+    //
+    // The first cut of §7 got this wrong and the safety review caught it: `Drop` cleared
+    // the marker, and the stale check further down cleared it AGAIN on the failure path —
+    // so a failed recreate disarmed the boot heal that exists for exactly that failure,
+    // and the run still returned Ok. Both halves are now decided in one place, here.
+    let mut outgoing_restore_err: Option<String> = trigger_window.close().err();
+    if let Some(ref e) = outgoing_restore_err {
+        eprintln!("[index_repair] recreating outgoing triggers after the walk failed: {e}");
     }
 
     // PJ-207 §6 — the five hand-assembled recomputes that stood here are ONE call.
@@ -11322,8 +11404,18 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // failure anywhere above leaves the marker set and the heal armed — the direction
     // that costs one redundant recompute rather than leaving a derived view silently
     // wrong. A clear that fails is surfaced for the same reason.
-    if let Err(e) = clear_derived_tail_pending_marker(&walk_conn) {
-        eprintln!("[reconcile] derived-tail marker clear failed (next boot will re-run the tail): {}", e);
+    // PJ-207 §7 (safety review) — only clear this when the tail actually converged.
+    // It used to clear unconditionally, several lines before the `return Err` below, so a
+    // failed outgoing recompute wiped BOTH heal markers and the next boot healed nothing.
+    // Keeping it on failure costs one redundant recompute; clearing it wrongly costs a
+    // silently stale derived view until the next full repair.
+    let tail_ok = outgoing_restore_err.is_none() && converge_report.all_ok() && !tally.stopped_early;
+    if tail_ok {
+        if let Err(e) = clear_derived_tail_pending_marker(&walk_conn) {
+            eprintln!("[reconcile] derived-tail marker clear failed (next boot will re-run the tail): {}", e);
+        }
+    } else {
+        eprintln!("[reconcile] derived-tail marker KEPT — the tail did not fully converge; the next boot will finish it");
     }
 
     // PJ-207 §3 (D5) — `note_count` is retained, but it is a fact about the DATABASE
@@ -11362,10 +11454,39 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
 // WebView2 dispatch thread for the whole 20-40s cold init after a universe
 // switch / boot (the Boss-reproduced switch freeze). Off-thread, the init
 // still runs exactly once (init_lock) but the app stays responsive.
+/// PJ-207 §7 — the ONLY way into the walk. Called by the `index_repair` runner, which
+/// owns the single-flight guard, the mutual exclusions and the cancel handshake.
+///
+/// Captures the federation generation up front so the run can abandon cleanly if the
+/// active universe changes underneath it — the hazard the old code had no notion of.
+pub(crate) fn reconcile_filesystem_guarded(
+    app: &tauri::AppHandle,
+    run_id: u64,
+) -> Result<SearchIndexStats, String> {
+    let generation = federation_generation_now(app);
+    let stats = reconcile_filesystem(app, run_id)?;
+    if federation_generation_now(app) != generation {
+        // The walk's writes went to the database that was active when it started (its
+        // `db_path` was captured then), so nothing is corrupt — but its convergence tail
+        // may have run against a universe the user has already left. Say so rather than
+        // report a clean repair of the wrong universe.
+        return Err("the active universe changed during the repair — it stopped early and will need running again".into());
+    }
+    Ok(stats)
+}
+
 #[tauri::command(async)]
-pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexStats, String> {
-    ensure_search_db_ready(&app)?;
-    reconcile_filesystem(&app)
+pub fn constellation_search_init(app: tauri::AppHandle) -> Result<crate::index_repair::SubmitOutcome, String> {
+    // PJ-207 §7 — a thin SUBMIT. It used to call `ensure_search_db_ready` on the dispatch
+    // thread and then walk inline; now both happen inside the runner's worker, and the
+    // return is a typed outcome rather than stats-or-error.
+    //
+    // The shape change is the point: every one of this command's callers swallowed its
+    // error (`.catch(() => {})`), so a refusal was invisible. `Started | Queued |
+    // AlreadyRunning | Blocked` cannot be swallowed into looking like success — and
+    // `Queued` is why a second library added during a run is processed rather than
+    // silently dropped.
+    Ok(crate::index_repair::submit(&app, crate::index_repair::Scope::Full))
 }
 
 /// Reindex a single note (called on file change).
