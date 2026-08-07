@@ -2,11 +2,11 @@
 
 **Version 1.67 | 2026-08-03**
 
-> **What changed in v1.67** (**PJ-207 is HALF SHIPPED — §1–§6 of a 15-step migration, all six Boss-tested and passed. And the Boss installed a two-agent gate between me and his test instructions, after I invented a screen. Ultracode**):
+> **What changed in v1.67** (**PJ-207 is HALF SHIPPED — §1–§7 of a 15-step migration, all seven Boss-tested and passed. And the Boss installed a two-agent gate between me and his test instructions, after I invented a screen. Ultracode**):
 >
-> **► NEXT ACTION — PJ-207 §7's Boss test, then §8.** §7 is BUILT, green, and **uncommitted**, awaiting the Boss test. Everything after it is unstarted. The plan is `docs/PJ-207-Index-Repair-Plan.md`; the Architect doc is `docs/PJ-207-Index-Repair-Architect.md`.
+> **► NEXT ACTION — PJ-207 §8**, *the index stops adopting notes that belong to a linked universe* (Charter **W2-9**, OPEN, HIGH). **Read the Architect doc's §8 correction first — scoping only the walk does NOT close it.** Everything after §8 is unstarted; **§11 is the door** — the step that finally makes the repair reachable. Plan: `docs/PJ-207-Index-Repair-Plan.md`; Architect: `docs/PJ-207-Index-Repair-Architect.md`. Ready-to-paste prompt: `docs/NEXT-SESSION-PROMPT-2026-08-04.md`.
 >
-> ### ✅ PJ-207 §1–§6 — SHIPPED and Boss-validated
+> ### ✅ PJ-207 §1–§7 — SHIPPED and Boss-validated
 > The defect: the app's authoritative index self-heal had **no user-reachable route**, and its error message named a "Settings → Rebuild Index" control that has never existed, in **all 15 languages**.
 >
 > **Reproduced on the live universe before a line was written** (`lab/reports/PJ-207-REPRODUCTION-2026-08-03.md`): **60 of 7,824 notes** had disk content newer than the index; **57** held body words absent from `note_meta.body_text`; `notes_fts` is `content=note_meta`, so those words were unfindable and nothing in the app could fix it. Largest drift **55 days**.
@@ -18,6 +18,7 @@
 > - **§5 `23f6cb99`** — the review rebuild: **2.5 s → 109 ms** worst hold, **260 MB → 30 MB** resident. **The plan told me to window the orphan sweep wrongly** — an orphan can sort past every note path, where a note-derived window never reaches; RED-proven (`left: [..., "/lib/zzz-after.md"]`).
 > - **`1948090b`** — Boss-found mid-test: **Manage libraries → + Add library silently did nothing** for a folder outside the universe. Rust returned a ready-made message; the frontend discarded it in a bare catch. The sidebar's flow was already correct — one concern, two implementations, one right. The wrong one is deleted, not repaired.
 > - **§6 `250d9892`** — one place where derived views are rebuilt. Five hand-assembled recomputes → one, **sealed by a token whose private field the compiler enforces** (proven by a deliberate `E0603`, not asserted). §5's marker got its reader: the boot heal now runs **five** families, not three.
+> - **§7 `ee2191ed`** — only one thing may walk the library. Two independent walkers with seven entry points → one submit-point with a typed outcome; `reconcile_filesystem` lost its `pub`, `reindex_library` was absorbed, the boot fan-out collapsed, the bring-in double-fire went, mutual exclusion landed both ways with defrag and MIG-108, and the walk gained the per-note cancel / universe-switch / checkpoint gate it never had. Its safety review found **ten**, two HIGH — see below.
 >
 > ### ⚖️ THE PLAN WAS WRONG THREE TIMES, AND EACH TIME IT WAS THE SAME SHAPE
 > §5's orphan sweep · §6's incoming back-fill (routing it through the gated path would have made it a **permanent no-op** — it recomputes then stamps, so the gate it would check is the stamp it is about to write) · §6's tag-count back-fill (builds **and stamps** in one transaction, deliberately). **A builder is not a healer.** A plan verified against the code still needs verifying against the code.
