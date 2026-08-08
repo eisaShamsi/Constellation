@@ -6,6 +6,11 @@
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, tn, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, flushAllForAppClose, type WriteJournalStats } from '$lib/libraries/store';
+	// PJ-207 §11 — the Index-repair door: the rollback flags, the last run's report, and
+	// the runner's done event (the modal's first Tauri event listener; see the $effect).
+	import { listen } from '@tauri-apps/api/event';
+	import { REPAIR_DOOR_ENABLED, FULL_REREAD_ENABLED } from '$lib/index/repairFlag';
+	import { CONVERGE_FAMILIES, loadLastRepairReport, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { persistSessionNow } from '$lib/libraries/session';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
@@ -148,6 +153,60 @@
 		// updates so we don't need a poll loop here.
 		refreshClassifierScanStatus();
 	});
+
+	// ═══ PJ-207 §11 — the Index-repair control's state ═══
+	// Recover-on-mount (the classifier_scan_status discipline above), then live-update on
+	// the runner's done event. This is the file's FIRST Tauri event listener — the modal
+	// can be open when a minutes-long repair finishes, and without it the report and the
+	// button would stay stale until reopened. The $effect teardown returns the unlisten,
+	// so the listener never outlives the modal (Rule 4).
+	let repairBusy = $state(false);
+	let repairReport = $state<RepairReport | null>(null);
+	/** A refusal's reason, rendered under the button — its OWN surface. (The first cut
+	 *  wrote this into `testStatus`, the AI section's connection sentinel, which renders
+	 *  only exact 'success'/'failed' tokens: the reason displayed NOWHERE. Caught by the
+	 *  §11 review — a silently dropped refusal is the class this migration exists to end.) */
+	let repairBlockedMsg = $state('');
+	async function refreshRepairState() {
+		try {
+			const status = await invoke<{ running: boolean }>('index_repair_status');
+			repairBusy = status.running;
+		} catch (e) {
+			console.error('[Settings] index_repair_status failed:', e);
+		}
+		repairReport = await loadLastRepairReport();
+	}
+	async function startRepairFromSettings() {
+		repairBusy = true;
+		repairBlockedMsg = '';
+		const running = await submitRepair((reason) => {
+			repairBlockedMsg = $t('indexDrift.repairBlocked', { reason });
+		});
+		if (!running) repairBusy = false;
+	}
+	$effect(() => {
+		if (!REPAIR_DOOR_ENABLED) return;
+		refreshRepairState();
+		let unlisten: (() => void) | null = null;
+		let gone = false;
+		listen<{ report?: RepairReport }>('index-repair:done', (ev) => {
+			repairBusy = false;
+			// `report` rides only for Full runs; a ColdStart's done falls back to the
+			// stored Full report rather than blanking the card.
+			if (ev?.payload?.report) repairReport = ev.payload.report;
+			else refreshRepairState();
+		}).then((un) => {
+			// §10's teardown-race lesson, same shape: destroyed before listen resolved →
+			// unhook immediately rather than leaking a listener for the session.
+			if (gone) un();
+			else unlisten = un;
+		});
+		return () => {
+			gone = true;
+			unlisten?.();
+		};
+	});
+
 	let appVersion = $state('');
 	getVersion().then(v => appVersion = v).catch(() => {});
 	let updateChecking = $state(false);
@@ -2091,6 +2150,87 @@
 						}}>{$t('settings.index.clearHistory.button') || 'Clear'}</button>
 					</div>
 
+					<!-- ═══ PJ-207 §11 — THE DOOR: Index repair ═══
+					     The control the storeHealth.index notice has promised in 15 languages
+					     since 2026-08-01 while nothing existed behind the words. It submits to
+					     the ONE runner (`constellation_search_init` → the single-flight
+					     index_repair runner) and renders the run's own report verbatim — a
+					     stamp-gated skip is shown as skipped-with-reason, never folded into
+					     "repaired". No confirmation dialog by design: the repair writes nothing
+					     a note did not already say (it re-reads changed files and recomputes
+					     derived views; Invariant 1 — no .md is ever written). -->
+					{#if REPAIR_DOOR_ENABLED}
+						<div class="setting-section-heading">
+							{$t('settings.index.repair.heading') || 'Index repair'}
+						</div>
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{$t('settings.index.repair.name') || 'Repair index'}</div>
+								<div class="setting-desc">
+									{$t('settings.index.repair.description') || 'Catches the search index up with your files: re-reads every note that changed while Constellation was closed, indexes notes it has never seen, and rebuilds the derived views. Runs in the background — progress shows in the status bar, and you can cancel any time. Your note files are never written to.'}
+								</div>
+							</div>
+							<button class="setting-btn" disabled={repairBusy} onclick={startRepairFromSettings}>
+								{repairBusy ? ($t('settings.index.repair.running') || 'Repairing…') : ($t('settings.index.repair.button') || 'Repair')}
+							</button>
+						</div>
+						{#if repairBlockedMsg}
+							<div class="repair-blocked" role="status" dir="auto">{repairBlockedMsg}</div>
+						{/if}
+						{#if repairReport}
+							<!-- The last run's account of itself, verbatim. `walk` is what the
+							     re-read did; the five families are the derived views. -->
+							<div class="repair-report" dir="auto">
+								<div class="repair-report-title">
+									{$t('settings.index.repair.lastRun') || 'Last repair'}
+									{#if repairReport.stoppedEarly}
+										— {$t('settings.index.repair.stoppedEarly') || 'stopped early; run it again'}
+									{:else if repairReport.error}
+										— {$t('settings.index.repair.failed') || 'failed'}: {repairReport.error}
+									{/if}
+								</div>
+								{#if repairReport.walk}
+									<div class="repair-report-row">
+										{$t('settings.index.repair.walkSummary', {
+											indexed: repairReport.walk.indexed.toLocaleString(),
+											unchanged: repairReport.walk.unchanged.toLocaleString(),
+											failed: repairReport.walk.failed.toLocaleString(),
+										})}
+									</div>
+								{/if}
+								{#if repairReport.converge}
+									{#each CONVERGE_FAMILIES as fam (fam)}
+										{@const o = repairReport.converge[fam]}
+										<div class="repair-report-row repair-family" class:repair-failed={o.kind === 'failed'}>
+											<span class="repair-family-name">{$t(`settings.index.repair.families.${fam}`) || fam}</span>
+											<span class="repair-family-outcome">
+												{#if o.kind === 'converged'}
+													{$t('settings.index.repair.converged', { count: o.value.toLocaleString() })}
+												{:else if o.kind === 'skipped'}
+													{$t('settings.index.repair.skipped', { reason: o.value })}
+												{:else}
+													{$t('settings.index.repair.familyFailed', { error: o.value })}
+												{/if}
+											</span>
+										</div>
+									{/each}
+								{/if}
+							</div>
+						{/if}
+						{#if FULL_REREAD_ENABLED}
+							<!-- §14 — flag-off until the duration is MEASURED (Boss ruling: the
+							     confirmation must state a real number, so the dialog copy and its
+							     ×15 strings land with §14's measurement, not here). -->
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.index.fullReread.name') || 'Full re-read'}</div>
+									<div class="setting-desc">{$t('settings.index.fullReread.description') || 'Re-reads every note from disk regardless of whether it changed.'}</div>
+								</div>
+								<button class="setting-btn" disabled>{$t('settings.index.fullReread.button') || 'Full re-read'}</button>
+							</div>
+						{/if}
+					{/if}
+
 				<!-- ═══ REVIEW ═══ -->
 				{:else if activeSection === 'review'}
 					<p class="section-intro">{$t('settings.review.intro') || 'Configure the Review Pulse — how notes are resurfaced for re-confrontation.'}</p>
@@ -3332,6 +3472,25 @@
 	}
 	.setting-btn:hover { opacity: 0.9; }
 	.setting-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	/* PJ-207 §11 — the last repair's verbatim report. Quiet chrome: this is a receipt,
+	   not an alert; only a FAILED family gets the error tone. Logical properties, so the
+	   family name / outcome columns mirror correctly in RTL. */
+	.repair-report {
+		margin-block: 6px 14px;
+		padding: 10px 12px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		font-size: 0.8rem;
+		color: var(--text-muted);
+	}
+	.repair-report-title { font-weight: 600; color: var(--text-normal); margin-block-end: 6px; }
+	.repair-report-row { padding-block: 2px; }
+	.repair-family { display: flex; justify-content: space-between; gap: 12px; }
+	.repair-family-name { flex: 0 0 auto; }
+	.repair-family-outcome { text-align: end; overflow-wrap: anywhere; }
+	.repair-failed { color: var(--text-error, #a12b1e); }
+	.repair-blocked { margin-block: 4px 10px; font-size: 0.8rem; color: var(--text-error, #a12b1e); }
 
 	.update-progress {
 		position: relative; width: 120px; height: 28px;

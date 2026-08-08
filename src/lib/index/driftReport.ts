@@ -7,13 +7,18 @@
  * notes absent from the search index — detected four separate times on 2026-08-07, told to
  * nobody. This module is the wire between that pass and a surface a person can read.
  *
- * Shared rather than inlined in `+layout.svelte` because §11 gives the second screen the
- * same listener, and a second copy of a payload shape is how the two drift apart.
+ * Shared rather than inlined in `+layout.svelte` so any future second consumer (the
+ * second screen refreshes on `index-repair:done` instead — it renders no drift band)
+ * starts from one payload shape rather than a copy.
  */
 
 import { invoke } from '@tauri-apps/api/core';
 
-/** The event the boot pass pushes when — and only when — it has something to report. */
+/**
+ * The event the boot pass pushes after every scan — clean or not (§11: a post-repair
+ * rescan must be able to REPLACE stale counts with a clean report so the band clears
+ * from facts). Whether anything RENDERS is `hasFindings`' decision, below.
+ */
 export const DRIFT_REPORT_EVENT = 'index-drift:report';
 
 /**
@@ -43,8 +48,9 @@ export interface DriftReport {
 
 /**
  * Is there anything worth telling the user? Mirrors `DriftReport::has_findings`
- * (`src-tauri/src/reconcile.rs`) — Rust decides whether to EMIT, this decides whether to
- * RENDER, and they must agree. If either gains a condition, so must the other.
+ * (`src-tauri/src/reconcile.rs`, the canonical definition of a finding). Since §11's
+ * always-emit, THIS is the only live render gate — if either side gains a condition,
+ * so must the other.
  *
  * A type predicate so a caller that has narrowed with it does not then need a second
  * null check the compiler already knows is dead.

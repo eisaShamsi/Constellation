@@ -165,6 +165,33 @@ pub struct RepairState {
     /// emphatically not "nothing is wrong": the pass may still be walking, or it may have
     /// stopped before it had an answer. The frontend must render nothing for `None`.
     drift: Mutex<Option<crate::reconcile::DriftReport>>,
+    /// PJ-207 §11 — the last FULL run's account of itself: the walk tally and the
+    /// five-family convergence report, exactly as the walk produced them. Stored so the
+    /// Settings report can recover on mount (the `classifier_scan_status` discipline)
+    /// rather than existing only in a `done` event a closed modal never heard.
+    last_report: Mutex<Option<RepairReport>>,
+    /// PJ-207 §11 — true while the in-flight run is `Scope::Full`. An atomic twin of
+    /// `current` so the per-note progress path (`note_progress`) never takes a lock.
+    /// Progress events fire for Full runs only — the boot cold-start fan-out must not
+    /// flash a strip on every launch.
+    full_run: AtomicBool,
+}
+
+/// PJ-207 §11 — what the door renders after a repair: the walk's own tally plus the
+/// per-family convergence outcomes, verbatim. A stamp-gated `Skipped` renders as
+/// skipped-with-reason — never as part of a whole repair.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepairReport {
+    pub run_id: u64,
+    pub ok: bool,
+    pub stopped_early: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub walk: Option<crate::search::WalkReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub converge: Option<crate::converge::ConvergeReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 impl RepairState {
@@ -209,21 +236,61 @@ pub(crate) fn cancel_requested(app: &AppHandle) -> bool {
 /// for whatever the user does next. This is the `classifier_scan_status` discipline the
 /// progress strips already follow — recover on mount, update on event.
 ///
-/// Nothing is emitted when the report is empty. A launch that finds nothing wrong says
-/// nothing at all; a green "all clear" on every boot is noise, and noise is how a real
-/// warning stops being read.
+/// PJ-207 §11 — the event is now ALWAYS emitted, findings or none. §9 suppressed the
+/// clean case to avoid noise, but the no-noise property actually lives in the frontend
+/// (`hasFindings` gates the RENDER; a clean report renders nothing) — and suppressing
+/// the event made the post-repair rescan unable to CLEAR a stale notice: the repair
+/// fixes the drift, the rescan finds nothing, and the band would have kept asserting
+/// yesterday's numbers forever. A clean report replacing a stale one is not noise; it is
+/// the fact the user was waiting for.
 pub(crate) fn record_drift_report(app: &AppHandle, report: crate::reconcile::DriftReport) {
     if let Ok(mut g) = app.state::<RepairState>().drift.lock() {
         *g = Some(report);
     }
-    if report.has_findings() {
-        let _ = app.emit("index-drift:report", report);
-    }
+    let _ = app.emit("index-drift:report", report);
+}
+
+/// PJ-207 §11 — one progress event for the repair strip, in the exact shape §10's
+/// `JobProgressStrip` consumes (`JobProgressEvent { phase, total, completed, error }`).
+///
+/// Emitted for **Full runs only** — the boot cold-start fan-out submits one `ColdStart`
+/// per library on every launch, and a strip that flashed for each would teach the user
+/// to ignore it. A cold start remains observable through `index_repair_status`
+/// (recover-on-mount), which is how the strips already handle late mounting.
+pub(crate) fn emit_progress(app: &AppHandle, phase: &str) {
+    let state = app.state::<RepairState>();
+    let _ = app.emit(
+        "index-repair:progress",
+        serde_json::json!({
+            "phase": phase,
+            "total": state.total.load(Ordering::Relaxed),
+            "completed": state.completed.load(Ordering::Relaxed),
+            "error": Option::<String>::None,
+        }),
+    );
+}
+
+/// Progress events are throttled to one per this many notes — the same batching
+/// discipline the classifier (every 5) and the NSC backfill (every 25) already follow
+/// (Performance Rule 3: never one IPC event per item).
+const PROGRESS_EVENT_EVERY: usize = 25;
+
+/// Should `note_progress` emit for this tick? Pure, so the throttle is testable.
+pub(crate) fn should_emit_progress(is_full_run: bool, completed: usize) -> bool {
+    is_full_run && completed > 0 && completed % PROGRESS_EVENT_EVERY == 0
 }
 
 /// Record progress for the status command / a progress strip.
+///
+/// PJ-207 §11 — for a Full run this also pushes the throttled progress event the strip
+/// listens for. `full_run` is an atomic rather than a peek at the `current` mutex so the
+/// per-note hot path takes no lock.
 pub(crate) fn note_progress(app: &AppHandle, completed: usize) {
-    app.state::<RepairState>().completed.store(completed, Ordering::Relaxed);
+    let state = app.state::<RepairState>();
+    state.completed.store(completed, Ordering::Relaxed);
+    if should_emit_progress(state.full_run.load(Ordering::Relaxed), completed) {
+        emit_progress(app, "progress");
+    }
 }
 
 /// PJ-207 §7 — the per-note checks the bulk walk owes, in one place so the walk cannot
@@ -439,6 +506,7 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
     if let Ok(mut c) = state.current.lock() {
         *c = Some(scope.clone());
     }
+    state.full_run.store(matches!(scope, Scope::Full), Ordering::Relaxed);
 
     let app_bg = app.clone();
     // `Builder::spawn` rather than `thread::spawn` so a spawn FAILURE is observable.
@@ -476,6 +544,24 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
             }
         }
 
+        // PJ-207 §11 — the run's account of itself, kept and rendered rather than
+        // discarded. Stored for the Settings report's recover-on-mount; the `done`
+        // event below carries the same object for a listener that is already mounted.
+        let report = RepairReport {
+            run_id,
+            ok,
+            stopped_early,
+            walk: outcome.as_ref().ok().and_then(|c| c.walk.clone()),
+            converge: outcome.as_ref().ok().and_then(|c| c.converge.clone()),
+            error: outcome.as_ref().err().cloned(),
+        };
+        let was_full = matches!(scope, Scope::Full);
+        if was_full {
+            if let Ok(mut g) = state.last_report.lock() {
+                *g = Some(report.clone());
+            }
+        }
+
         if let Ok(mut c) = state.current.lock() {
             *c = None;
         }
@@ -484,19 +570,56 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
         // silently a no-op every single time.
         drop(_guard);
 
+        // The progress strip's terminal phase — see `emit_progress`. Emitted for EVERY
+        // scope, deliberately: `start`/`progress` stay Full-only (a strip flashing for
+        // each boot cold start would teach the user to ignore it), and a terminal phase
+        // on a strip that never showed is a no-op BY PINNED TEST (the core's
+        // no-start-no-flash rule — a terminal event never grants visibility). What the
+        // unconditional terminal buys is the closing of the one eventless window the
+        // inspection traced: a strip that adopted a RUNNING cold start via its
+        // status-command recover would otherwise never hear an end and show frozen
+        // counts until relaunch.
+        let phase = if outcome.is_err() {
+            "error"
+        } else if stopped_early {
+            "cancelled"
+        } else {
+            "done"
+        };
+        emit_progress(&app_bg, phase);
+        state.full_run.store(false, Ordering::Relaxed);
+
         let _ = app_bg.emit(
             "index-repair:done",
             serde_json::json!({
                 "runId": run_id,
                 "ok": ok,
                 "stoppedEarly": stopped_early,
+                // PJ-207 §11 — additive: the pre-§11 listeners read only the three fields
+                // above and are unaffected. `report` rides ONLY for a Full run, matching
+                // the `last_report` store gate — an unconditional report let a boot
+                // ColdStart's empty (walk: None) receipt clobber the modal's rendered
+                // Full report AND pass the frontend's zero-failure check with no walk
+                // behind it (the /simplify + efficiency reviews, same finding twice).
+                "report": if was_full { serde_json::to_value(&report).ok() } else { None },
             }),
         );
 
-        // The standing defrag rule: after a mass rewrite the database compacts itself,
-        // gated by its own state-based predicate. AFTER the run and after the flag is
-        // released, or it can never fire.
-        if ok && matches!(scope, Scope::Full) {
+        if ok && was_full {
+            // PJ-207 §11 — after a completed repair, RE-DERIVE the drift report instead
+            // of clearing the notice on a claim. The boot reconcile is the pass that
+            // produced the numbers on the notice; running it again produces the numbers
+            // that are true NOW (warm, the walk is ~20 ms). `record_drift_report`
+            // publishes the result and always emits, so a clean rescan replaces the
+            // stale counts and the band clears itself — from facts, not from
+            // `ok == true`. Scheduled before the defrag, though both only spawn
+            // threads: if the defrag's VACUUM wins the db mutex the rescan parks on it
+            // and the band corrects when the VACUUM ends — delayed, never wrong.
+            crate::reconcile::maybe_schedule(app_bg.clone());
+
+            // The standing defrag rule: after a mass rewrite the database compacts
+            // itself, gated by its own state-based predicate. AFTER the run and after
+            // the flag is released, or it can never fire.
             crate::search::maybe_schedule_defrag(app_bg.clone());
         }
 
@@ -568,6 +691,10 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
 pub(crate) struct RunCompletion {
     /// The run stopped before finishing — the app is closing, or the universe changed.
     pub stopped_early: bool,
+    /// PJ-207 §11 — the walk tally and the convergence report, for `Full` runs. `None`
+    /// for a cold start (its per-note path has no convergence tail of its own).
+    pub walk: Option<crate::search::WalkReport>,
+    pub converge: Option<crate::converge::ConvergeReport>,
 }
 
 fn run(app: &AppHandle, scope: Scope, run_id: u64) -> Result<RunCompletion, String> {
@@ -617,7 +744,7 @@ fn run_cold_start(
         .unwrap_or(0);
         if indexed > 0 {
             // Already indexed — no walk. The ZERO-BOOT-WALKS gate, and a genuine completion.
-            return Ok(RunCompletion { stopped_early: false });
+            return Ok(RunCompletion { stopped_early: false, walk: None, converge: None });
         }
     }
 
@@ -649,7 +776,7 @@ fn run_cold_start(
             generation,
         ) {
             eprintln!("[index_repair] run {run_id} stopped early");
-            return Ok(RunCompletion { stopped_early: true });
+            return Ok(RunCompletion { stopped_early: true, walk: None, converge: None });
         }
         let ps = p.to_string_lossy().to_string();
         let lib_name = crate::libraries::library_name_for_path(&libraries, &ps)
@@ -658,17 +785,52 @@ fn run_cold_start(
         rs.completed.store(i + 1, Ordering::Relaxed);
         std::thread::sleep(Duration::from_millis(INTER_NOTE_SLEEP_MS));
     }
-    Ok(RunCompletion { stopped_early: false })
+    Ok(RunCompletion { stopped_early: false, walk: None, converge: None })
 }
 
 /// The full walk plus the five-family convergence.
 fn run_full(app: &AppHandle, run_id: u64) -> Result<RunCompletion, String> {
+    // PJ-207 §11 — a TOTAL for the progress strip, so the user watches "n / total"
+    // instead of a bare climbing number. Counted the way the walk itself will count:
+    // top-level own roots only (a nested own library's files are collected under its
+    // parent), minus anything under a linked universe's root. One extra traversal per
+    // user-triggered repair — acceptable; the walk it precedes re-reads file CONTENT.
+    let total = {
+        let libraries = crate::libraries::try_load_libraries(app)?;
+        let norm = |p: &str| p.replace('\\', "/").trim_end_matches('/').to_lowercase();
+        let foreign = crate::libraries::foreign_library_roots(app, &libraries);
+        let mut paths: Vec<std::path::PathBuf> = Vec::new();
+        for lib in &libraries {
+            // Top-level roots only — a root under another own root is covered by its
+            // parent's walk. The boundary test is the SHARED `path_is_under_any`, so this
+            // cannot drift from the walkers' own scoping (the review counted the inline
+            // version as the third hand-rolled copy; PJ-222/PJ-226 own the rest).
+            let mine = norm(&lib.path);
+            let others: std::collections::HashSet<String> =
+                libraries.iter().map(|o| norm(&o.path)).filter(|p| *p != mine).collect();
+            if crate::libraries::path_is_under_any(&lib.path, &others)
+                || !std::path::Path::new(&lib.path).is_dir()
+            {
+                continue;
+            }
+            crate::libraries::collect_md_paths(std::path::Path::new(&lib.path), &mut paths);
+        }
+        if !foreign.is_empty() {
+            paths.retain(|p| !crate::libraries::path_is_under_any(&p.to_string_lossy(), &foreign));
+        }
+        paths.len()
+    };
+    let rs = app.state::<RepairState>();
+    rs.total.store(total, Ordering::Relaxed);
+    rs.completed.store(0, Ordering::Relaxed);
+    emit_progress(app, "start");
+
     let stats = crate::search::reconcile_filesystem_guarded(app, run_id)?;
     // The walk's own account of itself. Discarding it — which the first version of this
     // did with `let _ = report` — is what let an abandoned walk be emitted as `ok: true`
     // one layer up, with a doc comment two layers down claiming the opposite.
     let stopped_early = stats.walk.as_ref().map(|w| w.stopped_early).unwrap_or(false);
-    Ok(RunCompletion { stopped_early })
+    Ok(RunCompletion { stopped_early, walk: stats.walk, converge: stats.converge })
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -706,9 +868,70 @@ pub fn index_drift_report(app: AppHandle) -> Option<crate::reconcile::DriftRepor
     app.state::<RepairState>().drift.lock().ok().and_then(|g| *g)
 }
 
+/// PJ-207 §11 — the last Full run's account of itself: walk tally + per-family
+/// convergence outcomes, verbatim. Recover-on-mount for the Settings report (the
+/// `classifier_scan_status` discipline); the live path is the `index-repair:done`
+/// event, which carries the same object.
+#[tauri::command]
+pub fn index_repair_last_report(app: AppHandle) -> Option<RepairReport> {
+    app.state::<RepairState>().last_report.lock().ok().and_then(|g| g.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-207 §11 — the strip's progress events are throttled (one per 25 notes, the
+    /// sibling jobs' discipline) and fire for FULL runs only: the boot cold-start
+    /// fan-out submits one ColdStart per library on every launch, and a strip that
+    /// flashed for each would teach the user to ignore it.
+    #[test]
+    fn progress_events_are_throttled_and_full_run_only() {
+        assert!(!should_emit_progress(false, 25), "a cold start never emits");
+        assert!(!should_emit_progress(true, 0), "nothing to say before the first note");
+        assert!(!should_emit_progress(true, 24));
+        assert!(should_emit_progress(true, 25));
+        assert!(!should_emit_progress(true, 26));
+        assert!(should_emit_progress(true, 50));
+    }
+
+    /// PJ-207 §11 — the report the door renders crosses the IPC boundary with exactly
+    /// this shape. A silent serde rename here is a frontend reading `undefined` — the
+    /// SubmitOutcome wire note above records that failure mode; this pins the JSON.
+    #[test]
+    fn the_repair_report_serialises_with_the_shape_the_frontend_reads() {
+        let report = RepairReport {
+            run_id: 7,
+            ok: true,
+            stopped_early: false,
+            walk: None,
+            converge: Some(crate::converge::ConvergeReport {
+                outgoing: crate::converge::ConvergeOutcome::Converged(42),
+                incoming: crate::converge::ConvergeOutcome::Skipped("back-fill not stamped"),
+                sky: crate::converge::ConvergeOutcome::Failed("boom".into()),
+                tag_counts: crate::converge::ConvergeOutcome::Converged(0),
+                review: crate::converge::ConvergeOutcome::Converged(0),
+            }),
+            error: None,
+        };
+        let j = serde_json::to_value(&report).unwrap();
+        assert_eq!(j["runId"], 7, "camelCase on the envelope");
+        assert_eq!(j["ok"], true);
+        assert_eq!(j["stoppedEarly"], false);
+        assert!(j.get("walk").is_none(), "None fields are omitted, not null");
+        assert!(j.get("error").is_none());
+        let c = &j["converge"];
+        assert_eq!(c["outgoing"]["kind"], "converged");
+        assert_eq!(c["outgoing"]["value"], 42);
+        assert_eq!(c["incoming"]["kind"], "skipped");
+        assert_eq!(c["incoming"]["value"], "back-fill not stamped");
+        assert_eq!(c["sky"]["kind"], "failed");
+        assert_eq!(c["sky"]["value"], "boom");
+        // The family names themselves are the field keys the frontend switches on.
+        for fam in ["outgoing", "incoming", "sky", "tag_counts", "review"] {
+            assert!(c.get(fam).is_some(), "family `{fam}` missing from the wire shape");
+        }
+    }
 
     #[test]
     fn a_full_run_covers_every_later_submit_but_a_cold_start_covers_only_its_own_library() {

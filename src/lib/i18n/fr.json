@@ -3,7 +3,10 @@
 		"changed": "{noun} ont changé sur le disque pendant que Constellation était fermé, la recherche peut donc ne pas afficher leur texte le plus récent.",
 		"missingFromIndex": "{noun} de vos bibliothèques ne sont pas dans l'index de recherche, la recherche ne les trouvera donc pas.",
 		"missingOnDisk": "{noun} de l'index de recherche n'ont plus de fichier sur le disque.",
-		"incomplete": "Certains dossiers ou fichiers n'ont pas pu être lus, il pourrait donc y en avoir davantage."
+		"incomplete": "Certains dossiers ou fichiers n'ont pas pu être lus, il pourrait donc y en avoir davantage.",
+		"repairNow": "Réparer maintenant",
+		"repairing": "Réparation…",
+		"repairBlocked": "La réparation n'a pas pu démarrer : {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "copie récupérée",
@@ -633,6 +636,27 @@
 				"description": "Supprimer définitivement toutes les requêtes du filtre Index enregistrées dans cet Univers. Action irréversible.",
 				"button": "Effacer",
 				"confirm": "Supprimer définitivement tout l'historique de recherche de l'Index pour cet Univers ?"
+			},
+			"repair": {
+				"heading": "Réparation de l'index",
+				"name": "Réparer l'index",
+				"description": "Met l'index de recherche à jour avec vos fichiers : relit chaque note modifiée pendant que Constellation était fermé, indexe les notes jamais vues et reconstruit les vues dérivées. S'exécute en arrière-plan — la progression s'affiche dans la barre d'état et vous pouvez annuler à tout moment. Vos fichiers de notes ne sont jamais écrits.",
+				"button": "Réparer",
+				"running": "Réparation…",
+				"lastRun": "Dernière réparation",
+				"stoppedEarly": "arrêtée trop tôt ; relancez-la",
+				"failed": "échouée",
+				"walkSummary": "{indexed} relues · {unchanged} inchangées · {failed} en échec",
+				"converged": "{count} mises à jour",
+				"skipped": "ignorée — {reason}",
+				"familyFailed": "ÉCHEC — {error}",
+				"families": {
+					"outgoing": "Liens sortants",
+					"incoming": "Rétroliens",
+					"sky": "Données Sky View",
+					"tag_counts": "Compteurs d'étiquettes",
+					"review": "Calendrier de révision"
+				}
 			}
 		},
 		"review": {
@@ -4213,6 +4237,15 @@
 		"collections": "Vos collections n’ont pas pu être lues : Constellation n’enregistrera aucune modification les concernant durant cette session, pour ne pas écraser le fichier par une liste vide. Redémarrez pour réessayer.",
 		"workspaces": "Vos dispositions enregistrées n’ont pas pu être lues : Constellation n’enregistrera aucune modification les concernant durant cette session, pour ne pas les écraser. Redémarrez pour réessayer.",
 		"settings": "Vos réglages n’ont pas pu être enregistrés. Les modifications faites maintenant ne survivront pas à un redémarrage — vérifiez que le dossier de l’univers est accessible en écriture et non verrouillé par un outil de synchronisation.",
-		"index": "Une note a été enregistrée sur le disque mais n’a pas pu être ajoutée à l’index de recherche : la recherche et les rétroliens peuvent ne pas afficher son texte le plus récent. Réglages, puis Reconstruire l’index le rétablit."
+		"index": "Une note a été enregistrée sur le disque mais n'a pas pu être ajoutée à l'index de recherche ; la recherche et les rétroliens peuvent donc ne pas afficher son texte le plus récent. Paramètres → Index → Réparer l'index le restaurera."
+	},
+	"indexRepair": {
+		"label": "Réparation de l'index…",
+		"done": "Réparation de l'index terminée",
+		"cancelled": "Réparation de l'index annulée",
+		"cancelling": "Annulation…",
+		"error": "Erreur de réparation de l'index",
+		"cancel": "Annuler",
+		"cancelTitle": "Arrêter la réparation ; ce qui est déjà réparé est conservé"
 	}
 }

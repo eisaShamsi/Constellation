@@ -3,7 +3,10 @@
 		"changed": "Constellation kapalıyken diskte {noun} değişti; arama en güncel metni göstermeyebilir.",
 		"missingFromIndex": "Kitaplıklarınızdaki {noun} arama dizininde yok; arama onları bulamaz.",
 		"missingOnDisk": "Arama dizinindeki {noun} için diskte artık dosya yok.",
-		"incomplete": "Bazı klasörler veya dosyalar okunamadı; daha fazlası olabilir."
+		"incomplete": "Bazı klasörler veya dosyalar okunamadı; daha fazlası olabilir.",
+		"repairNow": "Şimdi onar",
+		"repairing": "Onarılıyor…",
+		"repairBlocked": "Onarım başlatılamadı: {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "kurtarılan kopya",
@@ -633,6 +636,27 @@
 				"description": "Bu Evrendeki tüm kayıtlı Dizin filtre sorgularını kalıcı olarak kaldır. Geri alınamaz.",
 				"button": "Temizle",
 				"confirm": "Bu Evrene ait tüm Dizin arama geçmişi kalıcı olarak silinsin mi?"
+			},
+			"repair": {
+				"heading": "Dizin onarımı",
+				"name": "Dizini onar",
+				"description": "Arama dizinini dosyalarınızla eşitler: Constellation kapalıyken değişen her notu yeniden okur, hiç görülmemiş notları dizine ekler ve türetilmiş görünümleri yeniden kurar. Arka planda çalışır — ilerleme durum çubuğunda görünür ve istediğiniz an iptal edebilirsiniz. Not dosyalarınıza asla yazılmaz.",
+				"button": "Onar",
+				"running": "Onarılıyor…",
+				"lastRun": "Son onarım",
+				"stoppedEarly": "erken durdu; yeniden çalıştırın",
+				"failed": "başarısız",
+				"walkSummary": "{indexed} yeniden okundu · {unchanged} değişmedi · {failed} başarısız",
+				"converged": "{count} güncellendi",
+				"skipped": "atlandı — {reason}",
+				"familyFailed": "BAŞARISIZ — {error}",
+				"families": {
+					"outgoing": "Giden bağlantılar",
+					"incoming": "Geri bağlantılar",
+					"sky": "Sky View verileri",
+					"tag_counts": "Etiket sayıları",
+					"review": "Tekrar programı"
+				}
 			}
 		},
 		"review": {
@@ -4186,6 +4210,15 @@
 		"collections": "Koleksiyonlarınız okunamadı; bu oturumda üzerlerindeki değişiklikler kaydedilmeyecek — dosyanın boş bir listeyle üzerine yazılmaması için. Yeniden denemek için uygulamayı yeniden başlatın.",
 		"workspaces": "Kayıtlı düzenleriniz okunamadı; bu oturumda üzerlerindeki değişiklikler kaydedilmeyecek — üzerlerine yazılmaması için. Yeniden denemek için uygulamayı yeniden başlatın.",
 		"settings": "Ayarlarınız kaydedilemedi. Şimdi yaptığınız değişiklikler yeniden başlatmadan sonra kalmayacak — evren klasörünün yazılabilir olduğunu ve bir eşitleme aracınca kilitlenmediğini denetleyin.",
-		"index": "Bir not diske kaydedildi ancak arama dizinine eklenemedi; arama ve geri bağlantılar en güncel metni göstermeyebilir. Ayarlar, ardından Dizini Yeniden Oluştur, bunu geri getirir."
+		"index": "Bir not diske kaydedildi ancak arama dizinine eklenemedi; arama ve geri bağlantılar en güncel metni göstermeyebilir. Ayarlar → Dizin → Dizini onar bunu geri getirir."
+	},
+	"indexRepair": {
+		"label": "Dizin onarılıyor…",
+		"done": "Dizin onarımı tamamlandı",
+		"cancelled": "Dizin onarımı iptal edildi",
+		"cancelling": "İptal ediliyor…",
+		"error": "Dizin onarımı hatası",
+		"cancel": "İptal",
+		"cancelTitle": "Onarımı durdur; onarılanlar korunur"
 	}
 }

@@ -754,6 +754,16 @@
 		});
 		unlisteners.push(u5b);
 
+		// PJ-207 §11 — an index repair can (re)index hundreds of notes this screen's flat
+		// list and dashboard are built from. A DISPLAY, not a domain: it re-reads what the
+		// main window's core repaired, through the same debounced reload as u5/u5b — no
+		// save/load logic, no competing state.
+		const u5c = await listen('index-repair:done', async () => {
+			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
+			libraryChangeTimer = setTimeout(async () => { await loadAllData(); }, 3000);
+		});
+		unlisteners.push(u5c);
+
 		// Listen for state request from main (workspace save)
 		const u6 = await onStateRequest(() => {
 			const tabs = get(openTabs).map(t => ({

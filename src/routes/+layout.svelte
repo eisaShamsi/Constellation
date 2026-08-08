@@ -4,6 +4,7 @@
 	import { dir, t, tn } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
 	import { DRIFT_REPORT_EVENT, hasFindings, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
+	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -556,7 +557,10 @@
 				: $settingsError
 					? tOr('storeHealth.settings', 'Your settings could not be saved. Changes you make now will not survive a restart — check that the universe folder is writable and not locked by a sync tool.')
 					: $indexHealthError
-						? tOr('storeHealth.index', 'A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Rebuild Index will restore it.')
+						// PJ-207 §11 — this string promised "Settings → Rebuild Index" in 15
+						// languages while no such control existed (the defect that opened
+						// PJ-207). It now names the door that IS there.
+						? tOr('storeHealth.index', 'A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Index → Repair index will restore it.')
 						: '',
 	);
 	/**
@@ -577,6 +581,21 @@
 	 */
 	let indexDrift = $state<DriftReport | null>(null);
 	let indexDriftDismissed = $state(false);
+	/**
+	 * PJ-207 §11 — the "Repair now" button's busy state. Set on press, cleared by the
+	 * `index-repair:done` listener. The GUARANTEE that two quick presses produce one run
+	 * is the runner's single-flight flag (a second submit returns `alreadyRunning`), not
+	 * this flag — this only keeps the button honest about work in flight, including a
+	 * repair some other door started.
+	 */
+	let repairRunning = $state(false);
+	async function startRepairFromNotice() {
+		repairRunning = true;
+		const running = await submitRepair((reason) => {
+			templateActionError = tOr('indexDrift.repairBlocked', 'The repair could not start: {reason}', { reason });
+		});
+		if (!running) repairRunning = false;
+	}
 	/**
 	 * Up to three independent facts in one line, each only when its count is non-zero.
 	 * Three sentences and not one number — `reconcile::DriftReport` documents why, and the
@@ -3738,9 +3757,39 @@
 		// so the stats refresh next to the SUBMIT fires while the work has barely started.
 		// Before this listener existed a cold-started library showed 0 notes until the next
 		// launch. Refresh when the run actually finishes.
-		const unlistenRepairDone = await listen<{ ok?: boolean; stoppedEarly?: boolean }>('index-repair:done', (ev) => {
+		//
+		// PJ-207 §11 — this is now the ONE place every derived surface learns a repair
+		// finished, so none needs a restart to show repaired data:
+		//   · stats + core caches (pre-existing);
+		//   · the Index panel — its load gate is keyed on `${universe}|${libraryCount}`,
+		//     neither of which a repair changes, so the key is cleared explicitly;
+		//   · Sky View — force-refresh, but only if a sky surface was ever opened
+		//     (ensureSky is memoised; forcing it for a user who never opened Sky is waste);
+		//   · the file tree's stage emoji / maturity dots — re-scanned for every library
+		//     whose tree is loaded (their scans otherwise fire only on FIRST expand);
+		//   · D2: `indexHealthError`'s red bar clears on a ZERO-FAILURE repair and stays
+		//     on any failure — judged from the run's REPORT, not from `ok` (a best-effort
+		//     family can fail inside an ok run; only the walk's own error flips `ok`).
+		const unlistenRepairDone = await listen<{ ok?: boolean; stoppedEarly?: boolean; report?: RepairReport }>('index-repair:done', (ev) => {
+			repairRunning = false;
 			loadAllStats().catch(() => {});
 			refreshLibraryCaches().catch(() => {});
+			// The §11 additions fire only when the run actually CHANGED something —
+			// `ensureSky(true)` is the heaviest read in the boot profile (233k+ sky
+			// links), and a reassurance press on a healthy index changes nothing.
+			const w = ev?.payload?.report?.walk;
+			const changedAnything = !!w && (w.indexed > 0 || w.failed > 0);
+			if (changedAnything) {
+				indexLoadedKey = null;
+				if (skyEverOpened) { ensureSky(true).catch(() => {}); }
+				refreshStageMaturityForLoadedTrees();
+			}
+			// D2 — the red bar clears only on a FULL run's zero-failure report (`report`
+			// rides the event only for Full runs; a boot ColdStart's done must not clear
+			// a bar it did nothing to earn).
+			if (ev?.payload?.ok && ev?.payload?.report && !repairHasFailures(ev.payload.report)) {
+				indexHealthError.set(null);
+			}
 			if (ev?.payload?.stoppedEarly) {
 				console.warn('[index-repair] the run stopped before finishing — it will be completed on the next start');
 			}
@@ -5998,27 +6047,49 @@
 				// file tree re-renders the moment a key changes. The per-key
 				// `if (… !== stage)` guard skips no-op writes so unchanged
 				// entries don't fire spurious reactivity.
-				invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path })
-					.then((stages) => {
-						for (const [path, stage] of stages) {
-							const key = normalizePathKey(path);
-							if (stageMap.get(key) !== stage) stageMap.set(key, stage);
-						}
-					})
-					.catch(() => {});
-				invoke<{ note_path: string; state: string }[]>(
-					'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
-				)
-					.then((maturities) => {
-						for (const m of maturities) {
-							const key = normalizePathKey(m.note_path);
-							if (maturityMap.get(key) !== m.state) maturityMap.set(key, m.state);
-						}
-					})
-					.catch(() => {});
+				scanStageMaturityForLibrary(lib);
 			}
 			expandedLibraries.add(id);
 			expandedLibraries = new Set(expandedLibraries);
+		}
+	}
+
+	/**
+	 * The ONE stage/maturity scan for a library — fire-and-forget, per-key no-op guards
+	 * so unchanged entries don't fire spurious reactivity. Called on a library's first
+	 * expand (above) and by the post-repair refresh (below); extracted in §11 so the two
+	 * cannot drift (the never-copy-paste-and-adapt rule).
+	 */
+	function scanStageMaturityForLibrary(lib: { path: string; name: string }) {
+		invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path })
+			.then((stages) => {
+				for (const [path, stage] of stages) {
+					const key = normalizePathKey(path);
+					if (stageMap.get(key) !== stage) stageMap.set(key, stage);
+				}
+			})
+			.catch(() => {});
+		invoke<{ note_path: string; state: string }[]>(
+			'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
+		)
+			.then((maturities) => {
+				for (const m of maturities) {
+					const key = normalizePathKey(m.note_path);
+					if (maturityMap.get(key) !== m.state) maturityMap.set(key, m.state);
+				}
+			})
+			.catch(() => {});
+	}
+
+	/**
+	 * PJ-207 §11 — re-scan stage + maturity for every library whose tree is already
+	 * loaded. The scans otherwise fire only on FIRST expand (the `!libraryTrees[id]`
+	 * guard above), so without this a repair that changed hundreds of notes would leave
+	 * yesterday's stage emoji and maturity dots on the file tree until the next restart.
+	 */
+	function refreshStageMaturityForLoadedTrees() {
+		for (const lib of get(libraries)) {
+			if (libraryTrees[lib.id]) scanStageMaturityForLibrary(lib);
 		}
 	}
 
@@ -7574,6 +7645,15 @@
 		{#if indexDriftMessage}
 			<div class="drift-note" role="status" dir="auto">
 				<span>{indexDriftMessage}</span>
+				<!-- PJ-207 §11 — THE DOOR, placed where the numbers are. The plan drafted this
+				     button onto the storeHealthError bar; §9 deliberately kept drift OFF that
+				     bar (an exclusive four-way ternary, non-dismissible by design), so the
+				     action lives with the condition it repairs. Progress renders in the
+				     status-bar strip; completion re-derives this very notice from a fresh
+				     scan — the counts update or the band clears from FACTS, never from ok:true. -->
+				<button class="drift-repair-btn" onclick={startRepairFromNotice} disabled={repairRunning}>
+					{repairRunning ? tOr('indexDrift.repairing', 'Repairing…') : tOr('indexDrift.repairNow', 'Repair now')}
+				</button>
 				<button class="tpl-err-x" onclick={() => (indexDriftDismissed = true)} aria-label={$t('common.close')}>✕</button>
 			</div>
 		{/if}
@@ -10220,6 +10300,10 @@
 			     strip becomes the third consumer of the SAME component, not a fourth copy. -->
 			<JobProgressStrip eventName="classifier:scan" statusCommand="classifier_scan_status" cancelCommand="classifier_scan_cancel" labelPrefix="classifierScan" />
 			<JobProgressStrip eventName="nsc:backfill" statusCommand="nsc_backfill_status" cancelCommand="nsc_backfill_cancel" labelPrefix="nscBackfill" />
+			<!-- PJ-207 §11 — the third consumer §10 was built for. The Rust side emits
+			     index-repair:progress for FULL (user-triggered) runs only, so the boot
+			     cold-start fan-out never flashes this. -->
+			<JobProgressStrip eventName="index-repair:progress" statusCommand="index_repair_status" cancelCommand="index_repair_cancel" labelPrefix="indexRepair" />
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
@@ -11069,6 +11153,21 @@
 		color: var(--text-warning, #7a5200);
 		background: color-mix(in srgb, var(--text-warning, #d0a215) 16%, transparent);
 	}
+	/* PJ-207 §11 — the door itself. The strip-cancel button family's shape (bordered,
+	   small, inherits the band's tone) so the notice reads as one visual sentence. */
+	.drift-repair-btn {
+		border: 1px solid color-mix(in srgb, var(--text-warning, #7a5200) 45%, transparent);
+		background: transparent;
+		color: inherit;
+		border-radius: 4px;
+		padding: 2px 10px;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.drift-repair-btn:hover { background: color-mix(in srgb, var(--text-warning, #7a5200) 12%, transparent); }
+	.drift-repair-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.tpl-err-x { border: none; background: none; color: inherit; cursor: pointer; font-size: 0.9rem; }
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--center-zone-bg, #e8e8ec); }
 	.content-area.content-hidden { display: none; }

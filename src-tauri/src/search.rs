@@ -1205,6 +1205,12 @@ pub struct SearchIndexStats {
     /// happened" stays distinguishable from "a walk happened and did nothing".
     #[serde(skip_serializing_if = "Option::is_none")]
     pub walk: Option<WalkReport>,
+    /// PJ-207 §11 — the five-family convergence tail's own account of itself. Until now
+    /// this was produced, consumed for failure handling, and DISCARDED — the frontend
+    /// could never see it, which made "render the report verbatim so a stamp-gated skip
+    /// never reads as a whole repair" impossible. `None` on paths that do not converge.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub converge: Option<crate::converge::ConvergeReport>,
 }
 
 /// PJ-207 §3 (D5) — the serialisable face of `WalkTally`.
@@ -11481,6 +11487,7 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchInd
         note_count,
         index_size_bytes: index_size,
         walk: Some(tally.into()),
+        converge: Some(converge_report),
     })
 }
 

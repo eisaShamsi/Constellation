@@ -3757,7 +3757,17 @@ export async function reindexNote(notePath: string, libraryName: string): Promis
 	for (let attempt = 0; attempt < 2; attempt++) {
 		try {
 			await invoke('constellation_search_reindex', { notePath, libraryName });
-			if (attempt > 0) indexHealthError.set(null); // the retry healed it
+			// PJ-207 §11 (D2) — clear on success, but ONLY for the note the bar is about.
+			// Two wrong versions preceded this line: the original `if (attempt > 0)` made
+			// the bar permanent for the session (the failed note healed on its very next
+			// ordinary save, and the bar stayed up describing a divergence that no longer
+			// existed); the first §11 cut cleared UNCONDITIONALLY, which the safety
+			// inspection confirmed as a HIGH — note A's surfaced divergence was masked the
+			// moment the user typed a character in note B. The error string embeds the
+			// failing path (set below), so the clear is gated on it: only the note the bar
+			// names can take the bar down. A zero-failure FULL repair clears it too (the
+			// done-listener in +layout); a repair reporting ≥1 failure leaves it (Inv. 8).
+			indexHealthError.update((cur) => (cur && cur.startsWith(`${notePath}:`) ? null : cur));
 			return;
 		} catch (e) {
 			if (attempt === 0) {

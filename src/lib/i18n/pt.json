@@ -3,7 +3,10 @@
 		"changed": "{noun} mudaram no disco enquanto o Constellation estava fechado, por isso a pesquisa pode não mostrar o texto mais recente.",
 		"missingFromIndex": "{noun} das suas bibliotecas não estão no índice de pesquisa, por isso a pesquisa não as encontrará.",
 		"missingOnDisk": "{noun} do índice de pesquisa já não têm ficheiro no disco.",
-		"incomplete": "Algumas pastas ou ficheiros não puderam ser lidos, por isso pode haver mais."
+		"incomplete": "Algumas pastas ou ficheiros não puderam ser lidos, por isso pode haver mais.",
+		"repairNow": "Reparar agora",
+		"repairing": "A reparar…",
+		"repairBlocked": "Não foi possível iniciar a reparação: {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "cópia recuperada",
@@ -633,6 +636,27 @@
 				"description": "Remover permanentemente todas as consultas do filtro do Índice armazenadas neste Universo. Não pode ser anulado.",
 				"button": "Limpar",
 				"confirm": "Eliminar permanentemente todo o histórico de pesquisa do Índice deste Universo?"
+			},
+			"repair": {
+				"heading": "Reparação do índice",
+				"name": "Reparar índice",
+				"description": "Atualiza o índice de pesquisa com os seus ficheiros: relê cada nota alterada enquanto o Constellation esteve fechado, indexa notas nunca vistas e reconstrói as vistas derivadas. Corre em segundo plano — o progresso aparece na barra de estado e pode cancelar a qualquer momento. Os seus ficheiros de notas nunca são escritos.",
+				"button": "Reparar",
+				"running": "A reparar…",
+				"lastRun": "Última reparação",
+				"stoppedEarly": "parou cedo; execute de novo",
+				"failed": "falhou",
+				"walkSummary": "{indexed} relidas · {unchanged} inalteradas · {failed} falhadas",
+				"converged": "{count} atualizadas",
+				"skipped": "ignorada — {reason}",
+				"familyFailed": "FALHOU — {error}",
+				"families": {
+					"outgoing": "Ligações de saída",
+					"incoming": "Retroligações",
+					"sky": "Dados do Sky View",
+					"tag_counts": "Contagens de etiquetas",
+					"review": "Plano de revisão"
+				}
 			}
 		},
 		"review": {
@@ -4213,6 +4237,15 @@
 		"collections": "Não foi possível ler as suas coleções, por isso o Constellation não guardará alterações nelas nesta sessão — para não substituir o ficheiro por uma lista vazia. Reinicie para tentar de novo.",
 		"workspaces": "Não foi possível ler os seus esquemas guardados, por isso o Constellation não guardará alterações neles nesta sessão — para não os substituir. Reinicie para tentar de novo.",
 		"settings": "Não foi possível guardar as suas definições. As alterações que fizer agora não sobreviverão a um reinício — verifique se a pasta do universo permite escrita e não está bloqueada por uma ferramenta de sincronização.",
-		"index": "Uma nota foi guardada no disco mas não pôde ser adicionada ao índice de pesquisa, por isso a pesquisa e as ligações de retorno podem não mostrar o texto mais recente. Definições, depois Reconstruir índice, repõe isso."
+		"index": "Uma nota foi guardada no disco mas não pôde ser adicionada ao índice de pesquisa, pelo que a pesquisa e as retroligações podem não mostrar o seu texto mais recente. Definições → Índice → Reparar índice irá restaurá-lo."
+	},
+	"indexRepair": {
+		"label": "A reparar o índice…",
+		"done": "Reparação do índice concluída",
+		"cancelled": "Reparação do índice cancelada",
+		"cancelling": "A cancelar…",
+		"error": "Erro na reparação do índice",
+		"cancel": "Cancelar",
+		"cancelTitle": "Parar a reparação; o que já foi reparado mantém-se"
 	}
 }

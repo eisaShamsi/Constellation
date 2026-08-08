@@ -440,6 +440,7 @@ pub fn run() {
             index_repair::index_repair_status,
             index_repair::index_repair_cancel,
             index_repair::index_drift_report,
+            index_repair::index_repair_last_report,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,
             // MIG-021v3 V3-§8.r1.f — Sibling Disambiguation pick resolver

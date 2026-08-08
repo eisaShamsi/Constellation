@@ -3,7 +3,10 @@
 		"changed": "Constellation 关闭期间磁盘上有 {noun} 发生变更，搜索可能不会显示其最新内容。",
 		"missingFromIndex": "库中有 {noun} 不在搜索索引中，搜索将找不到它们。",
 		"missingOnDisk": "搜索索引中的 {noun} 在磁盘上已没有对应文件。",
-		"incomplete": "有些文件夹或文件无法读取，因此可能还有更多。"
+		"incomplete": "有些文件夹或文件无法读取，因此可能还有更多。",
+		"repairNow": "立即修复",
+		"repairing": "修复中…",
+		"repairBlocked": "修复无法启动：{reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "恢复副本",
@@ -633,6 +636,27 @@
 				"description": "永久删除本宇宙中所有已存储的索引筛选查询。此操作无法撤销。",
 				"button": "清除",
 				"confirm": "确定要永久删除本宇宙的所有索引搜索历史吗？"
+			},
+			"repair": {
+				"heading": "索引修复",
+				"name": "修复索引",
+				"description": "让搜索索引赶上你的文件：重新读取 Constellation 关闭期间更改的每条笔记，为从未见过的笔记建立索引，并重建派生视图。在后台运行——进度显示在状态栏，可随时取消。你的笔记文件永远不会被写入。",
+				"button": "修复",
+				"running": "修复中…",
+				"lastRun": "上次修复",
+				"stoppedEarly": "提前停止；请再次运行",
+				"failed": "失败",
+				"walkSummary": "重读 {indexed} · 未变 {unchanged} · 失败 {failed}",
+				"converged": "已更新 {count}",
+				"skipped": "已跳过 — {reason}",
+				"familyFailed": "失败 — {error}",
+				"families": {
+					"outgoing": "外链",
+					"incoming": "反向链接",
+					"sky": "星空视图数据",
+					"tag_counts": "标签计数",
+					"review": "复习计划"
+				}
 			}
 		},
 		"review": {
@@ -4159,6 +4183,15 @@
 		"collections": "无法读取您的收藏集，因此本次会话不会保存对它们的更改——以免用空列表覆盖该文件。重启后可再试。",
 		"workspaces": "无法读取您保存的布局，因此本次会话不会保存对它们的更改——以免将其覆盖。重启后可再试。",
 		"settings": "无法保存您的设置。现在所做的更改在重启后不会保留——请检查宇宙文件夹是否可写、是否被同步工具锁定。",
-		"index": "一条笔记已保存到磁盘，但未能加入搜索索引，因此搜索和反向链接可能不会显示其最新内容。设置中的“重建索引”可以恢复。"
+		"index": "一条笔记已保存到磁盘，但未能加入搜索索引，因此搜索和反向链接可能不会显示其最新内容。设置 → 索引 → 修复索引 可以恢复。"
+	},
+	"indexRepair": {
+		"label": "正在修复索引…",
+		"done": "索引修复完成",
+		"cancelled": "索引修复已取消",
+		"cancelling": "正在取消…",
+		"error": "索引修复出错",
+		"cancel": "取消",
+		"cancelTitle": "停止修复；已修复的内容会保留"
 	}
 }

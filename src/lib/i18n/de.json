@@ -3,7 +3,10 @@
 		"changed": "{noun} wurden auf der Festplatte geändert, während Constellation geschlossen war — die Suche zeigt möglicherweise nicht den neuesten Text.",
 		"missingFromIndex": "{noun} in Ihren Bibliotheken sind nicht im Suchindex, daher findet die Suche sie nicht.",
 		"missingOnDisk": "Zu {noun} im Suchindex gibt es keine Datei mehr auf der Festplatte.",
-		"incomplete": "Einige Ordner oder Dateien konnten nicht gelesen werden, daher könnte es mehr geben."
+		"incomplete": "Einige Ordner oder Dateien konnten nicht gelesen werden, daher könnte es mehr geben.",
+		"repairNow": "Jetzt reparieren",
+		"repairing": "Wird repariert…",
+		"repairBlocked": "Die Reparatur konnte nicht starten: {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "wiederhergestellte Kopie",
@@ -633,6 +636,27 @@
 				"description": "Entfernt dauerhaft alle gespeicherten Index-Filterabfragen aus diesem Universum. Kann nicht rückgängig gemacht werden.",
 				"button": "Löschen",
 				"confirm": "Gesamten Index-Suchverlauf für dieses Universum dauerhaft löschen?"
+			},
+			"repair": {
+				"heading": "Indexreparatur",
+				"name": "Index reparieren",
+				"description": "Bringt den Suchindex auf den Stand Ihrer Dateien: liest jede Notiz neu, die sich bei geschlossenem Constellation geändert hat, indiziert nie gesehene Notizen und baut die abgeleiteten Ansichten neu auf. Läuft im Hintergrund — der Fortschritt erscheint in der Statusleiste, Abbrechen ist jederzeit möglich. Ihre Notizdateien werden niemals beschrieben.",
+				"button": "Reparieren",
+				"running": "Wird repariert…",
+				"lastRun": "Letzte Reparatur",
+				"stoppedEarly": "vorzeitig gestoppt; erneut ausführen",
+				"failed": "fehlgeschlagen",
+				"walkSummary": "{indexed} neu gelesen · {unchanged} unverändert · {failed} fehlgeschlagen",
+				"converged": "{count} aktualisiert",
+				"skipped": "übersprungen — {reason}",
+				"familyFailed": "FEHLGESCHLAGEN — {error}",
+				"families": {
+					"outgoing": "Ausgehende Links",
+					"incoming": "Backlinks",
+					"sky": "Sky-View-Daten",
+					"tag_counts": "Tag-Zähler",
+					"review": "Wiederholungsplan"
+				}
 			}
 		},
 		"review": {
@@ -4186,6 +4210,15 @@
 		"collections": "Deine Sammlungen konnten nicht gelesen werden. Constellation speichert in dieser Sitzung keine Änderungen daran — um die Datei nicht mit einer leeren Liste zu überschreiben. Starte neu, um es erneut zu versuchen.",
 		"workspaces": "Deine gespeicherten Layouts konnten nicht gelesen werden. Constellation speichert in dieser Sitzung keine Änderungen daran — um sie nicht zu überschreiben. Starte neu, um es erneut zu versuchen.",
 		"settings": "Deine Einstellungen konnten nicht gespeichert werden. Jetzt vorgenommene Änderungen überstehen keinen Neustart — prüfe, ob der Universum-Ordner beschreibbar und nicht von einem Sync-Tool gesperrt ist.",
-		"index": "Eine Notiz wurde gespeichert, konnte aber nicht in den Suchindex aufgenommen werden. Suche und Rückverweise zeigen womöglich nicht den neuesten Text. Einstellungen, dann Index neu aufbauen stellt das wieder her."
+		"index": "Eine Notiz wurde gespeichert, konnte aber nicht in den Suchindex aufgenommen werden — Suche und Backlinks zeigen daher möglicherweise nicht ihren neuesten Text. Einstellungen → Index → Index reparieren stellt ihn wieder her."
+	},
+	"indexRepair": {
+		"label": "Index wird repariert…",
+		"done": "Indexreparatur abgeschlossen",
+		"cancelled": "Indexreparatur abgebrochen",
+		"cancelling": "Wird abgebrochen…",
+		"error": "Fehler bei der Indexreparatur",
+		"cancel": "Abbrechen",
+		"cancelTitle": "Reparatur stoppen; bereits Repariertes bleibt erhalten"
 	}
 }

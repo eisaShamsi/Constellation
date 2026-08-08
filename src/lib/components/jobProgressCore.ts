@@ -17,12 +17,10 @@
  *   event  { phase: start|progress|done|cancelled|error, total, completed, error }
  *   status { running, cancelling, completed, total, last_error }
  *
- * §11's repair strip is the intended third consumer. Its status command
- * (`index_repair_status`) already returns a superset of `JobStatus` and plugs in as-is;
- * its EVENT side does not exist yet — the repair currently emits only `index-repair:done`
- * in a different shape, so §11 must add a progress event carrying `JobProgressEvent`
- * (the natural emit site is `index_repair::note_progress`). That is §11's obligation,
- * not a licence to widen this contract.
+ * §11 delivered the third consumer: the index repair emits `index-repair:progress` in
+ * exactly this shape (`index_repair::emit_progress`, throttled in `note_progress`, FULL
+ * runs only so the boot cold-start fan-out never flashes a strip), and
+ * `index_repair_status` returns a superset of `JobStatus`.
  */
 
 /** The five phases every job strip understands. */

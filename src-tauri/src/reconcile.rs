@@ -131,6 +131,11 @@ impl DriftReport {
     /// Is there anything worth telling the user about? An all-zero report renders
     /// nothing — never a green "all clear", which would be noise on every launch.
     ///
+    /// §11 note: the EMIT no longer gates on this (`record_drift_report` always emits so
+    /// a post-repair rescan can replace stale counts with a clean report). This remains
+    /// the CANONICAL definition of a finding — the frontend's `hasFindings`
+    /// (`driftReport.ts`) mirrors it as the live render gate; the two must agree.
+    ///
     /// **"I could not look" counts as a finding.** The first version of this asked only
     /// about the three drift counts, and the 2026-08-07 safety inspection caught what that
     /// means: a library with one unlistable folder — an ACL-denied directory, a OneDrive

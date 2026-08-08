@@ -164,3 +164,85 @@ vitest **909/909** (9 new) · svelte-check **0 errors** · i18n **15/15 ✓** (n
 
 Help files / User Manual: deliberately untouched — §10 changes no user-visible surface or label
 (that is the point), and the plan lands all doc corrections at §12.
+
+---
+
+# PJ-207 §11 — THE DOOR (build log; Boss test pending)
+
+**The step that makes the repair reachable.** Three doors, one runner: "Repair now" on the §9
+drift band, Settings → Index → "Index repair" (+ the verbatim per-family report), and the old
+automatic doors unchanged. Progress through §10's shared strip (`index-repair:progress`, Full runs
+only for start/progress; terminal phase for every scope — a no-op on a hidden strip by pinned
+test, and it closes the eventless-adopt window the inspection traced). Completion refreshes every
+derived surface without a restart, and the drift notice RE-DERIVES from a fresh scan — the band
+updates or clears from facts, never from `ok:true`.
+
+## Ground truth that shaped the build
+- `ConvergeReport` existed with exactly the plan's shape (Converged/Skipped/Failed per family) and
+  was DISCARDED inside `reconcile_filesystem` — produced, consumed for failure handling, never
+  reaching the frontend. §11 serializes it and threads it walk → RunCompletion → RepairState +
+  the done event (`RepairReport`, shape pinned by test).
+- `initSearchIndex()` already returned the typed SubmitOutcome — my first cut added an
+  `index_repair_start` command and DELETED it the same hour: a duplicate door, caught by the map.
+- The plan's §11 anchors were stale in five places (Settings :2030-2090 → :2033-2092; the
+  storeHealthError render :7442 → :7563; the Index-panel gate :5838 → :5951; ensureSky :1082 →
+  :1126; the "Repair now" HOST — the plan drafted it onto the storeHealthError bar, §9's record
+  already ruled the drift band is the home).
+
+## The reviews + inspection (9 findings fixed pre-commit, 1 HIGH)
+- **HIGH (inspection):** my D2 fix over-corrected — clearing `indexHealthError` on ANY note's
+  successful reindex masked a DIFFERENT note's surfaced divergence the moment the user typed a
+  character elsewhere. Now path-gated: only the note the bar names can take the bar down.
+- The Full-only gate on the done event's `report` (a boot ColdStart's empty receipt could clear
+  the red bar it did nothing to earn AND blank the modal's rendered report — three findings, one
+  gate).
+- The Settings "blocked" reason was written into `testStatus` — the AI section's sentinel that
+  renders only 'success'/'failed': the refusal displayed NOWHERE. Own `$state` + rendered row now.
+- `tParams` deleted ($t(key, params) already interpolates — the third hand-rolled interpolator);
+  `settings.index.repair.blocked` key deleted ×15 (indexDrift.repairBlocked is the one string);
+  `submitRepair()` extracted (three doors, one submit decision); `scanStageMaturityForLibrary`
+  extracted (toggleLibrary + post-repair refresh, no copy-paste); the precount's boundary test now
+  goes through the shared `path_is_under_any`; done-listener heavy refreshes gated on
+  "changed anything" (ensureSky is the boot profile's heaviest read); doc drift fixed in 3 files.
+
+## Also in this step
+- `record_drift_report` always-emits (the render gate lives frontend-side; a clean rescan must be
+  able to REPLACE stale counts — that is how the band clears).
+- Post-repair: `reconcile::maybe_schedule` re-runs (warm ~20 ms) then `maybe_schedule_defrag`.
+- D2 + storeHealth.index rewritten ×15 — the string that promised "Settings → Rebuild Index" in
+  15 languages for a control that never existed now names the door that IS there.
+- Concept paper 29-settings.md amended §3/§7/§9/§10 with the Architect §7 wording verbatim.
+- Second screen: display-only debounced reload on done.
+- i18n: indexRepair.* (7) + indexDrift.repairNow/repairing/repairBlocked + settings.index.repair.*
+  (13) + storeHealth.index rewrite — ×15, parity 15/15 ✓.
+
+**Gates:** Rust 1372/0 · vitest 909/909 · svelte-check 0 · parity 15/15. Boss test staged through
+the pipeline; commit only after the Boss passes.
+
+## §11 Boss test — Stage 1 PASS (all six steps, digit-exact)
+
+Binary 16:23:27. Four screenshots. The Boss's report against the send-time live measurement
+(21 drifted / 830 missing / 2,100 files / 1,249 unchanged, plus his fresh `brimsloe` edit):
+
+| Step | Expected | Boss result |
+|---|---|---|
+| 1 band | ~22 changed / 830 not in index | **22 / 830** — exact |
+| 2 repair | strip to ~2,100, minutes | total 2,100 shown, **"It took 90 seconds"** |
+| 3 search | `brimsloe` FOUND | FOUND — Welcome / المساعد الذكي, highlighted |
+| 4 band | gone or smaller (fresh look) | **"The band is gone entirely"** |
+| 5 receipt | ~851 re-read · 1,249 unchanged · 0 failed | **852 · 1,248 · 0** (= 851+1 / 1,249−1 — his edit moved one note between piles) |
+| 6 Sky View | populated, no restart | Pass |
+
+Receipt families: outgoing **2,721** · backlinks **2,721** · sky **1,732** · tags **3,689** ·
+review **0**. PJ-223's class is repaired on the live universe: 830 missing-from-index → band gone.
+
+**Discovered at the pass (WA#6 — fix in flight, not deferred):** "Review schedule — updated 0" is
+a hard-coded placeholder — `review::recompute_all_in` returns `Result<(), _>` (no count) and
+`converge.rs:257` maps success to `Converged(0)`, unlike `tag_counts` / incoming which return real
+counts. The receipt said "nothing needed doing" about a family that rebuilt every row. Fix:
+return the pass-2 rebuilt-row count (sibling shape). Per the tested-build-before-commit rule the
+exact passed build commits FIRST; the fix rides §11 Stage 2's Boss verification (Arabic RTL +
+mid-run Cancel), where the receipt must show a real non-zero review count.
+
+PCS: orientation **v3.87** (new file, preamble + Criterion-4 row) · Pending Jobs **v1.71** (new
+file; PJ-223 noted repaired-live, formal close at §15) · MoCh-2026-08-08-1330 · this record.

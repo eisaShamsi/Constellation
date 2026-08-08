@@ -3,7 +3,10 @@
 		"changed": "{noun} changed on disk while Constellation was closed, so search may not show their latest text.",
 		"missingFromIndex": "{noun} in your libraries are not in the search index, so searching will not find them.",
 		"missingOnDisk": "{noun} in the search index no longer have a file on disk.",
-		"incomplete": "Some folders or files could not be read, so there may be more."
+		"incomplete": "Some folders or files could not be read, so there may be more.",
+		"repairNow": "Repair now",
+		"repairing": "Repairing…",
+		"repairBlocked": "The repair could not start: {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "recovered copy",
@@ -541,6 +544,27 @@
 				"description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
 				"button": "Clear",
 				"confirm": "Permanently delete all Index search history for this Universe?"
+			},
+			"repair": {
+				"heading": "Index repair",
+				"name": "Repair index",
+				"description": "Catches the search index up with your files: re-reads every note that changed while Constellation was closed, indexes notes it has never seen, and rebuilds the derived views. Runs in the background — progress shows in the status bar, and you can cancel any time. Your note files are never written to.",
+				"button": "Repair",
+				"running": "Repairing…",
+				"lastRun": "Last repair",
+				"stoppedEarly": "stopped early; run it again",
+				"failed": "failed",
+				"walkSummary": "{indexed} re-read · {unchanged} unchanged · {failed} failed",
+				"converged": "updated {count}",
+				"skipped": "skipped — {reason}",
+				"familyFailed": "FAILED — {error}",
+				"families": {
+					"outgoing": "Outgoing links",
+					"incoming": "Backlinks",
+					"sky": "Sky View data",
+					"tag_counts": "Tag counts",
+					"review": "Review schedule"
+				}
 			}
 		},
 		"review": {
@@ -4249,6 +4273,15 @@
 		"collections": "Your collections could not be read, so Constellation is not saving changes to them this session — to avoid overwriting the file with an empty list. Restart to try again.",
 		"workspaces": "Your saved layouts could not be read, so Constellation is not saving changes to them this session — to avoid overwriting them. Restart to try again.",
 		"settings": "Your settings could not be saved. Changes you make now will not survive a restart — check that the universe folder is writable and not locked by a sync tool.",
-		"index": "A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Rebuild Index will restore it."
+		"index": "A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Index → Repair index will restore it."
+	},
+	"indexRepair": {
+		"label": "Repairing the index…",
+		"done": "Index repair complete",
+		"cancelled": "Index repair cancelled",
+		"cancelling": "Cancelling…",
+		"error": "Index repair error",
+		"cancel": "Cancel",
+		"cancelTitle": "Stop the repair; everything already repaired is kept"
 	}
 }

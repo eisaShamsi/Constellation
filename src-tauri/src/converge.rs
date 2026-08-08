@@ -90,7 +90,13 @@ pub enum Families {
 }
 
 /// What one family's recompute did.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// PJ-207 §11 — `Serialize`, because this is what the repair door renders: the Settings
+/// report shows each family's outcome verbatim, so a stamp-gated `Skipped` can never be
+/// presented as a whole repair. Tagged (`kind` + `value`) so the frontend switches on
+/// `kind` without parsing strings.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub enum ConvergeOutcome {
     /// Ran, and touched `n` rows.
     Converged(usize),
@@ -108,7 +114,7 @@ impl ConvergeOutcome {
 }
 
 /// Per-family account of one convergence run.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ConvergeReport {
     pub outgoing: ConvergeOutcome,
     pub incoming: ConvergeOutcome,

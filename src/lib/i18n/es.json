@@ -3,7 +3,10 @@
 		"changed": "{noun} cambiaron en el disco mientras Constellation estaba cerrado, por lo que la búsqueda puede no mostrar su texto más reciente.",
 		"missingFromIndex": "{noun} de tus bibliotecas no están en el índice de búsqueda, así que la búsqueda no las encontrará.",
 		"missingOnDisk": "{noun} del índice de búsqueda ya no tienen archivo en el disco.",
-		"incomplete": "No se pudieron leer algunas carpetas o archivos, así que podría haber más."
+		"incomplete": "No se pudieron leer algunas carpetas o archivos, así que podría haber más.",
+		"repairNow": "Reparar ahora",
+		"repairing": "Reparando…",
+		"repairBlocked": "No se pudo iniciar la reparación: {reason}"
 	},
 	"saveHealth": {
 		"copySuffix": "copia recuperada",
@@ -633,6 +636,27 @@
 				"description": "Elimina de forma permanente todas las consultas del filtro del Índice almacenadas en este Universo. No se puede deshacer.",
 				"button": "Borrar",
 				"confirm": "¿Eliminar de forma permanente todo el historial de búsqueda del Índice de este Universo?"
+			},
+			"repair": {
+				"heading": "Reparación del índice",
+				"name": "Reparar índice",
+				"description": "Pone el índice de búsqueda al día con tus archivos: relee cada nota que cambió mientras Constellation estaba cerrado, indexa notas nunca vistas y reconstruye las vistas derivadas. Se ejecuta en segundo plano — el progreso se muestra en la barra de estado y puedes cancelar en cualquier momento. Tus archivos de notas nunca se escriben.",
+				"button": "Reparar",
+				"running": "Reparando…",
+				"lastRun": "Última reparación",
+				"stoppedEarly": "se detuvo antes de tiempo; ejecútala de nuevo",
+				"failed": "falló",
+				"walkSummary": "{indexed} releídas · {unchanged} sin cambios · {failed} fallidas",
+				"converged": "actualizadas {count}",
+				"skipped": "omitida — {reason}",
+				"familyFailed": "FALLÓ — {error}",
+				"families": {
+					"outgoing": "Enlaces salientes",
+					"incoming": "Retroenlaces",
+					"sky": "Datos de Sky View",
+					"tag_counts": "Recuento de etiquetas",
+					"review": "Calendario de repaso"
+				}
 			}
 		},
 		"review": {
@@ -4213,6 +4237,15 @@
 		"collections": "No se pudieron leer tus colecciones, así que Constellation no guardará cambios en ellas durante esta sesión, para no sobrescribir el archivo con una lista vacía. Reinicia para volver a intentarlo.",
 		"workspaces": "No se pudieron leer tus diseños guardados, así que Constellation no guardará cambios en ellos durante esta sesión, para no sobrescribirlos. Reinicia para volver a intentarlo.",
 		"settings": "No se pudieron guardar tus ajustes. Los cambios que hagas ahora no sobrevivirán a un reinicio: comprueba que la carpeta del universo tenga permisos de escritura y no esté bloqueada por una herramienta de sincronización.",
-		"index": "Una nota se guardó en el disco pero no se pudo añadir al índice de búsqueda, así que la búsqueda y los retroenlaces pueden no mostrar su texto más reciente. Ajustes, luego Reconstruir índice lo restaura."
+		"index": "Una nota se guardó en disco pero no pudo añadirse al índice de búsqueda, por lo que la búsqueda y los retroenlaces pueden no mostrar su texto más reciente. Ajustes → Índice → Reparar índice lo restaurará."
+	},
+	"indexRepair": {
+		"label": "Reparando el índice…",
+		"done": "Reparación del índice completada",
+		"cancelled": "Reparación del índice cancelada",
+		"cancelling": "Cancelando…",
+		"error": "Error al reparar el índice",
+		"cancel": "Cancelar",
+		"cancelTitle": "Detener la reparación; lo ya reparado se conserva"
 	}
 }

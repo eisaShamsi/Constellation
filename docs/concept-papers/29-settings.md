@@ -10,6 +10,7 @@ The ONE job: **let the user shape how Constellation behaves** — editor options
 
 ## 3. What it is NOT
 - **Not** a knowledge surface — it edits no `.md` note, creates no link, computes no derived view.
+- **Not a maintenance engine.** Settings HOSTS the controls for maintenance actions the user explicitly asks for (Index → Repair), but it neither owns nor performs the work: the button submits a request to the one repair runner and renders its report. Settings still edits no note and derives no view of its own. *(PJ-207 §11 amendment, wording per the Architect §7.)*
 - **Not** the styling engine — MIG-070/071 moved all theme/CSS work to the **Style Setter** (the `stylesetter` nav item opens that full-page overlay; there is no inline theme editor here anymore).
 - **Not** a per-note or per-tab control — it is **per-Universe** global state (`appSettings`), persisted once per Universe.
 - **Not** the second-screen's own settings — it is the single authority; the second screen is *notified*, it does not re-edit.
@@ -34,7 +35,7 @@ The ONE job: **let the user shape how Constellation behaves** — editor options
 
 ## 7. Boot behavior
 - **Runs at boot?** The **modal does not** — it mounts lazily under `{#if showSettings}` only when the user opens it. What runs at boot is the **store's `loadSettings()`** (one `read_universe_settings` IPC) that hydrates `appSettings` from the persisted per-Universe JSON.
-- **Rule 8 status: ✅ reads-persisted.** Settings are **stored**, not recomputed. `loadSettings` reads `read_universe_settings`; `saveSettings` writes `save_universe_settings` (debounced). The modal renders directly from the `appSettings` store value — it derives nothing universe-wide and re-walks nothing. No `scan_*`/`rebuild_*` anywhere. Compliant.
+- **Rule 8 status: ✅ reads-persisted.** Settings derives nothing and re-walks nothing of its own. It hosts one explicitly-pressed maintenance action that submits to the index repair runner; PJ-207 added **no new walker** — it added a door to one that has shipped since 2026-04-08 — and reduced the user-reachable walker count from two to one. *(PJ-207 §11 amendment, wording per the Architect §7.)*
 - **Cost:** boot cost is the single `read_universe_settings` read (small JSON; **estimated ~1–5 ms**, not measured). Opening the modal mounts a ~3,200-line component once; **estimated** a few ms, off the hot path. Per-change cost: one debounced `save_universe_settings` + one event emit.
 
 ## 8. Flag / gate & bring-up position
@@ -44,12 +45,12 @@ The ONE job: **let the user shape how Constellation behaves** — editor options
 ## 9. Budget
 - **Boot budget:** the `read_universe_settings` hydrate must stay within the shell's pre-paint envelope (sub-10 ms target); the modal contributes **zero** until opened.
 - **Interaction budget:** opening the modal and switching sections must be instant (no perceptible lag); every toggle/select writes via the **debounced** `saveSettings` (300 ms) — never one IPC per keystroke (Rule 3). The Style-Setter live preview path is in-memory (zero IPC on slider drag).
-- **Regression guard:** open Settings, switch through every section (no stutter); toggle a plug-in and confirm exactly one debounced `save_universe_settings`; switch locale and confirm the modal + second screen update; confirm no settings change ever fires a note write or reindex.
+- **Regression guard:** open Settings, switch through every section (no stutter); toggle a plug-in and confirm exactly one debounced `save_universe_settings`; switch locale and confirm the modal + second screen update. Confirm that CHANGING A SETTING never fires a note write or a reindex. The only reindex Settings may cause is one the user EXPLICITLY REQUESTED by pressing a maintenance button, which is an action, not a setting change. A control that starts work on toggle — rather than on an explicit, separately-labelled action press — is forbidden. *(PJ-207 §11 amendment, wording per the Architect §7.)*
 
 ## 10. Acceptance checklist (the gate to re-enabled)
 - [ ] **Serves its purpose:** every section's controls read and write the right `appSettings` field; changes persist across restart.
 - [ ] **Serves Constellation's core purpose:** the `enabledFeatures` toggles correctly enable/disable each satellite (the switchboard works); *Constraint as Design* honored.
-- [ ] **Wires correctly to the Editor (the gate):** changing an editor/font/script setting updates the live Editor with no note write, no reindex, no model touch.
+- [ ] **Wires correctly to the Editor (the gate):** changing an editor/font/script setting updates the live Editor with no note write, no reindex, no model touch; explicitly-pressed maintenance actions are exempt from the 'no reindex' clause **and from no other clause** — they still never touch note content, the save path, or the Editor's in-memory model. *(PJ-207 §11 amendment, wording per the Architect §7.)*
 - [ ] **Right-click present + correct:** N/A by design (explicit-control surface); confirmed no action is right-click-only. Any future per-item list uses shared `<ContextMenu>`, never hand-rolled.
 - [ ] **Multilingual ×15 + RTL + no hardcoded English:** every `settings.*` key exists in all 15 locales (no `|| 'English'` fallback ever fires); the modal mirrors cleanly in RTL; native terms verified.
 - [ ] **Within budget:** boot hydrate within envelope; section-switch instant; writes debounced; Style-Setter preview does zero disk IPC.
