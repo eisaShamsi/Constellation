@@ -5,7 +5,8 @@
   universe-wide home. Composes three existing pieces:
     - a "Scan library" control (classifier_scan_start — the manual,
       universe-wide scan; mirrors SettingsModal.startClassifierScan)
-    - ClassifierScanProgressStrip (live progress while a scan runs)
+    - JobProgressStrip in classifier dress (live progress while a scan runs;
+      the shared strip — PJ-207 §10)
     - SourceReviewPanel in library-level mode (no activeNotePath) — the
       suggestion queue the user approves/rejects.
 
@@ -27,7 +28,7 @@
   import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import { t, dir } from '$lib/i18n';
   import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
-  import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
+  import JobProgressStrip from '$lib/components/JobProgressStrip.svelte';
 
   interface Props {
     /** Open a note when one is clicked in the suggestion queue. */
@@ -301,7 +302,7 @@
     </header>
 
     <div class="cataloger-progress">
-      <ClassifierScanProgressStrip />
+      <JobProgressStrip eventName="classifier:scan" statusCommand="classifier_scan_status" cancelCommand="classifier_scan_cancel" labelPrefix="classifierScan" />
     </div>
 
     <div class="cataloger-queue">

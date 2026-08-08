@@ -92,3 +92,75 @@ doc correction at §12, landing the same day as §11. Recorded so the skip is a 
 
 Committed with: orientation v3.85, PJ ledger v1.69, MoCh, BOOT-BUDGET Criterion-4 status — one
 commit, per SO#6/SO#9.
+
+---
+
+# PJ-207 §10 — one progress strip instead of three copies
+
+**Boss-passed 2026-08-08 (~13:30), committed with this entry.**
+
+## 1 · What was built
+
+The plan's claim verified first: `ClassifierScanProgressStrip.svelte` and
+`NscBackfillProgressStrip.svelte` were both exactly 159 lines and byte-equivalent modulo six
+identifiers (event, two commands, i18n prefix, CSS prefix, console tag). Both Rust contracts are
+field-identical (`ScanStatus` / `NscBackfillStatus`; the event payloads likewise).
+
+- **`jobProgressCore.ts`** — the ONE state machine (recover-on-mount, 4 s linger, cancel), plain TS
+  because the repo has NO component-mount harness (vitest only; no jsdom/testing-library — adding a
+  test stack is its own decision, not §10's). **9 vitest pins**, including the preserved
+  progress-clears-cancelling quirk (pinned-not-endorsed) and the no-start-no-flash rule.
+- **`JobProgressStrip.svelte`** — the thin shell; `$state.raw` (replace-only snapshot contract);
+  props `{eventName, statusCommand, cancelCommand, labelPrefix}`. The dead `$t(k) || 'fallback'`
+  idiom (fallback unreachable — $t returns the key) removed; keys verified ×15.
+- Consumers re-pointed (+layout `.sb-center`, CatalogerView); both clones DELETED. Net 3 → 2 strip
+  components, three consumers planned, one implementation. `MigrationProgressStrip` stays (different
+  contract).
+- **WA#6 fix while here:** both ORIGINAL strips carried a mount/destroy race — async onMount means a
+  component destroyed before `listen()` resolves registers a listener nothing removes, for the
+  session. Closed with a `destroyed` guard in the new shell.
+- **§11 seam documented in the core's header:** `index_repair_status` plugs in as-is (superset);
+  the EVENT side is §11's Rust obligation (a progress event in `JobProgressEvent` shape from
+  `note_progress`) — not a licence to widen §10.
+
+## 2 · Reviews + inspection
+
+/simplify (2 agents, reuse+simplification / efficiency+altitude): CLEAN, three fixes applied
+($state.raw; the listen-race; the core doc's over-present-tense §11 sentence). Measured emit cadence
+justifies the design (classifier ≤~7 events/s, NSC ≤~1.3/s — Rust already batches). Diff-scoped
+safety inspection (LF scriptPath, hardcoded files — PJ-220 workaround): **0 confirmed findings.**
+
+## 3 · The Boss test — two stages, five pipeline rounds
+
+- **Stage 1 pipeline:** one wasted round from MY mishap (pointed the inspector at the agent's task
+  .output file, which the harness leaves EMPTY — the draft travels in the notification; lesson:
+  write drafts to scratchpad myself). Then REJECTED with 3 real findings: an IMPOSSIBLE failure mode
+  (a 0/0 flash the code cannot render — visible starts false), an OVERSTATED cross-strip claim (the
+  un-clicked strip never shows "Cancelling…" — cancelling is controller-local; it jumps straight to
+  "Classification cancelled" on the broadcast event), and a missing near-empty-queue not-a-bug line
+  — answered with DATA: 721 notes pending classification, measured with enumerate_pending's exact
+  SQL on a fresh copy. Round 3: one ambiguous pronoun ("its label" → the strip's leading text, not
+  the button caption). APPROVED round 4.
+- **Stage 1 result:** strip appeared bottom-centre, exact wording, total **721 — the digit-exact
+  measured prediction** — counted to completion (screenshot at 710/721 98%). The scan finished
+  before a natural cancel, so cancel/linger moved to Stage 2; the Cataloger recover-on-mount step
+  was correctly VOIDED (a finished job is never resurrected — designed + pinned) and gets its live
+  demonstration on §11's minutes-long repair.
+- **Stage 2 pipeline:** REJECTED once, 2 findings — both MY prose overstating: "never touches your
+  .md files" (the summariser READS the file for an author callout when frontmatter has none;
+  writes-never is what's true) and "every background job" (migrations keep their own strip).
+  APPROVED round 2. Measured basis: **1,619 notes pending summaries** (v2 predicate, fresh copy);
+  the inspector re-derived it independently.
+- **Stage 2 result: PASS.** Boss screenshot mid-run: status bar "Building note summaries… —
+  75 / 1,568 (4%)" + Cancel, Cataloger button flipped to "Building note summaries…" (live 1,568 vs
+  1,619 morning measure — within the stated allowance). Step 4 cancel sequence PASS; Step 5 4-s
+  linger + vanish PASS. (Linger on 'done' wasn't separately confirmed on Stage 1; same single timer
+  path, pinned by test — noted for honesty.)
+
+## 4 · Gates at close
+
+vitest **909/909** (9 new) · svelte-check **0 errors** · i18n **15/15 ✓** (no key changes) · Rust
+**untouched by §10** (suite green from §9's close). Binary 12:17:10 embeds the final frontend.
+
+Help files / User Manual: deliberately untouched — §10 changes no user-visible surface or label
+(that is the point), and the plan lands all doc corrections at §12.

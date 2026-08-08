@@ -138,8 +138,7 @@
 	import { openStyleSetterInspect, openStyleSetterToCategory } from '$lib/stores/styleSetter'; // MIG-070 §C item D — dock inspect shortcut; MIG-077 §F — RC "Style…" deep-link
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
-	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
-	import NscBackfillProgressStrip from '$lib/components/NscBackfillProgressStrip.svelte';
+	import JobProgressStrip from '$lib/components/JobProgressStrip.svelte';
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	// MIG-103 §4 — the Kind Studio: the note-kinds this Universe already contains.
@@ -10217,8 +10216,10 @@
 		     when no migration is in flight (the component returns nothing).  -->
 		<div class="sb-center">
 			<MigrationProgressStrip />
-			<ClassifierScanProgressStrip />
-				<NscBackfillProgressStrip />
+			<!-- PJ-207 §10 — one strip implementation, parameterised per job. §11's repair
+			     strip becomes the third consumer of the SAME component, not a fourth copy. -->
+			<JobProgressStrip eventName="classifier:scan" statusCommand="classifier_scan_status" cancelCommand="classifier_scan_cancel" labelPrefix="classifierScan" />
+			<JobProgressStrip eventName="nsc:backfill" statusCommand="nsc_backfill_status" cancelCommand="nsc_backfill_cancel" labelPrefix="nscBackfill" />
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
