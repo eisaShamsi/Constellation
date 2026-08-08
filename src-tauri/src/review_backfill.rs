@@ -10,7 +10,7 @@
 //!
 //! Sources, all already in the DB (no `.md` reads): `note_meta` (path/tags/
 //! modified), `sky_nodes.stratum`, and the per-universe `review-pulse.json`
-//! action state (loaded once).
+//! action state — re-read per batch, refusing rather than degrading (2026-08-08).
 
 use crate::search::SearchState;
 use rusqlite::{params, Connection};
@@ -64,17 +64,20 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
         ensure_cursor_table(conn)?;
     }
 
-    // Load the per-universe action state ONCE (small JSON; the source of truth).
+    // The per-universe action state (the source of truth for the rows this back-fill
+    // writes). Re-read per BATCH, not once — 2026-08-08 §11 inspection, the same two
+    // findings documented on `review::recompute_all_in`, and this surface is the more
+    // dangerous of the two because it STAMPS on completion: a pulse that degraded to
+    // defaults here would be baked in as "built" and never revisited until a repair.
     let cdir = crate::universe::active_constellation_dir(app)?;
-    let pulse = crate::review::load_pulse_data(&cdir);
     let today = crate::review::today_str();
 
     let mut last_path = read_cursor(&state.db)?;
     let mut total: u64 = 0;
     loop {
-        let (n, new_last) = process_batch(&state.db, &last_path, &pulse, &today)?;
+        let (n, new_last) = process_batch(&state.db, &cdir, &last_path, &today)?;
         if n == 0 {
-            finalize(&state.db)?;
+            finalize(&state.db, &cdir, &today)?;
             let _ = app.emit("review-backfill-progress", serde_json::json!({ "done": true, "total": total }));
             return Ok(total);
         }
@@ -88,8 +91,8 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
 
 fn process_batch(
     db: &Mutex<Option<Connection>>,
+    cdir: &std::path::Path,
     last_path: &str,
-    pulse: &crate::review::ReviewPulseData,
     today: &str,
 ) -> Result<(usize, String), String> {
     let guard = db.lock().map_err(|e| e.to_string())?;
@@ -127,13 +130,15 @@ fn process_batch(
     // collapses that to one commit.
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
+        // Fresh inside the lock, and refusing on a read error — see the note in `run`.
+        let pulse = crate::review::load_pulse_data_for_update(cdir)?;
         for (path, tags_json, modified, body_text) in &rows {
-            crate::review::backfill_one(conn, path, tags_json, *modified, body_text, pulse, today)?;
+            crate::review::backfill_one(conn, path, tags_json, *modified, body_text, &pulse, today)?;
         }
         Ok(())
     })();
     match result {
-        Ok(()) => conn.execute_batch("COMMIT").map_err(|e| e.to_string())?,
+        Ok(()) => crate::converge::commit_or_rollback(conn)?,
         Err(e) => {
             let _ = conn.execute_batch("ROLLBACK");
             return Err(e);
@@ -179,11 +184,58 @@ fn write_cursor(db: &Mutex<Option<Connection>>, last_path: &str) -> Result<(), S
 
 /// Drained → stamp `schema_versions.review` (flips the machinery live) + wipe the
 /// cursor. Both in one txn so a crash can't half-stamp.
-fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
+/// PJ-207 §11 inspection (MED, index-divergence) — the back-fill's OWN window race,
+/// which the per-batch pulse re-read narrows but cannot close.
+///
+/// While `review` is unstamped, `sync_action_to_row` is a deliberate no-op, so a
+/// ✓ Reviewed / Snooze / Dismiss taken during the build writes `review-pulse.json` and
+/// NOT the row — and the note's own Review tab is not stamp-gated, so the buttons are
+/// live throughout. Re-reading the pulse each batch rescues a note only if the cursor
+/// has not yet passed it; a note in an already-committed batch keeps `last_reviewed =
+/// NULL`. `finalize` then stamps, and from that moment every row is re-derived from the
+/// ROW rather than the pulse — so the note reads never-reviewed forever, resurfacing in
+/// the Reviewer while the on-disk source of truth says it was reviewed, and nothing
+/// self-heals short of a manual Repair. That is PJ-187's symptom, arrived at from a new
+/// direction.
+///
+/// So the last thing before the stamp is a re-apply of the pulse's OWN action set —
+/// bounded by how many decisions the user made, not by corpus size.
+fn reapply_pulse_actions(
+    conn: &Connection,
+    cdir: &std::path::Path,
+    today: &str,
+) -> Result<usize, String> {
+    let pulse = crate::review::load_pulse_data_for_update(cdir)?;
+    let acted = pulse.acted_paths();
+    if acted.is_empty() {
+        return Ok(0);
+    }
+    let mut applied = 0usize;
+    for path in acted {
+        // Only notes that actually exist in the index — an action recorded against a
+        // since-deleted note has no row to rebuild, and must not create one.
+        let row: Option<(String, i64, String)> = conn
+            .query_row(
+                "SELECT COALESCE(tags_json,'[]'), COALESCE(modified,0), COALESCE(body_text,'') FROM note_meta WHERE path = ?1",
+                params![&path],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .ok();
+        let Some((tags_json, modified, body_text)) = row else { continue };
+        crate::review::backfill_one(conn, &path, &tags_json, modified, &body_text, &pulse, today)?;
+        applied += 1;
+    }
+    Ok(applied)
+}
+
+fn finalize(db: &Mutex<Option<Connection>>, cdir: &std::path::Path, today: &str) -> Result<(), String> {
     let guard = db.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("DB not initialized")?;
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let r = (|| -> Result<(), String> {
+        // BEFORE the stamp, inside the same transaction: either both land or neither
+        // does. Stamping a divergence as authoritative is the failure this prevents.
+        reapply_pulse_actions(conn, cdir, today)?;
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('review', ?1, strftime('%s','now'))",
             params![crate::review::REVIEW_SCHEMA_VERSION],
@@ -194,9 +246,96 @@ fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
         Ok(())
     })();
     if r.is_ok() {
-        conn.execute_batch("COMMIT").map_err(|e| e.to_string())?;
+        crate::converge::commit_or_rollback(conn)?;
     } else {
         let _ = conn.execute_batch("ROLLBACK");
     }
     r
+}
+
+#[cfg(test)]
+mod tests {
+    //! PJ-207 §11 inspection (MED, index-divergence) — the pre-stamp re-apply.
+    use super::reapply_pulse_actions;
+    use rusqlite::Connection;
+
+    fn db() -> Connection {
+        let c = Connection::open_in_memory().unwrap();
+        c.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT DEFAULT '[]',
+               modified INTEGER, body_text TEXT DEFAULT '', content_hash TEXT);
+             CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT NOT NULL,
+               due_days INTEGER NOT NULL, is_checkpoint INTEGER NOT NULL DEFAULT 0,
+               last_reviewed TEXT, stratum INTEGER NOT NULL DEFAULT 0,
+               interval INTEGER NOT NULL DEFAULT 0, snoozed_until TEXT);",
+        )
+        .unwrap();
+        c
+    }
+
+    fn pulse_dir(tag: &str, json: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("constellation-backfill-{}", tag));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::write(d.join("review-pulse.json"), json).unwrap();
+        d
+    }
+
+    /// The defect: while the back-fill is running, `review` is unstamped, so a
+    /// ✓ Reviewed writes only `review-pulse.json`. If the cursor had already passed
+    /// that note, its row kept `last_reviewed = NULL` — and the stamp then made the row
+    /// authoritative forever. The re-apply runs immediately before the stamp so the
+    /// user's decision is in the row when it becomes the source of truth.
+    #[test]
+    fn an_action_taken_during_the_backfill_is_applied_before_the_stamp() {
+        let c = db();
+        c.execute(
+            "INSERT INTO note_meta (path, tags_json, modified, body_text) VALUES ('/lib/Passed.md','[]',0,'')",
+            [],
+        )
+        .unwrap();
+        // The row as the already-committed batch left it: never reviewed.
+        c.execute(
+            "INSERT INTO review_schedule (path, reason, due_days) VALUES ('/lib/Passed.md','never_reviewed',0)",
+            [],
+        )
+        .unwrap();
+
+        let d = pulse_dir(
+            "acted-mid-run",
+            r#"{"last_reviewed":{"/lib/Passed.md":"2026-06-21"},"intervals":{"/lib/Passed.md":7},"snoozed":{},"dismissed":[]}"#,
+        );
+        let applied = reapply_pulse_actions(&c, &d, "2026-06-22").unwrap();
+        assert_eq!(applied, 1, "the one acted-on note is re-applied");
+
+        let (reason, last): (String, Option<String>) = c
+            .query_row(
+                "SELECT reason, last_reviewed FROM review_schedule WHERE path='/lib/Passed.md'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(last.as_deref(), Some("2026-06-21"), "the review survives the stamp");
+        assert_eq!(reason, "interval_due", "and the row is re-derived from it");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    /// An action recorded against a note that no longer exists must not conjure a row —
+    /// that would be an orphan the sweep has to clean up later.
+    #[test]
+    fn an_action_on_a_note_that_no_longer_exists_creates_no_row() {
+        let c = db();
+        let d = pulse_dir(
+            "acted-on-ghost",
+            r#"{"last_reviewed":{"/lib/Ghost.md":"2026-06-21"},"intervals":{},"snoozed":{},"dismissed":[]}"#,
+        );
+        let applied = reapply_pulse_actions(&c, &d, "2026-06-22").unwrap();
+        assert_eq!(applied, 0, "no note_meta row → nothing to re-apply");
+        let n: i64 = c
+            .query_row("SELECT COUNT(*) FROM review_schedule", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 0, "and no phantom row was created");
+        let _ = std::fs::remove_dir_all(&d);
+    }
 }

@@ -246,3 +246,88 @@ mid-run Cancel), where the receipt must show a real non-zero review count.
 
 PCS: orientation **v3.87** (new file, preamble + Criterion-4 row) · Pending Jobs **v1.71** (new
 file; PJ-223 noted repaired-live, formal close at §15) · MoCh-2026-08-08-1330 · this record.
+
+## §11 review-family fixes — the diff inspection that kept going
+
+Inspecting the two-line review-count fix surfaced **2 confirmed findings**; fixing those and
+re-inspecting surfaced **4 more**. All six are PRE-EXISTING; none was introduced by the count fix.
+Five fixed, one escalated with a measurement.
+
+**Round 1 (review.rs + converge.rs) — both fixed**
+1. **HIGH, false-success.** `converge`'s review family loaded `review-pulse.json` with the
+   READ-ONLY degrading loader and then rebuilt every `review_schedule` row FROM it. An unreadable
+   pulse (Windows AV/sync sharing violation) became an EMPTY pulse → `last_reviewed=NULL`,
+   `interval=0`, snoozes cleared, dismissals resurrected across all 2,721 rows → reported
+   `Converged(n)` → `all_ok()` cleared both heal markers, so nothing retried. `load_pulse_inner`'s
+   own comment already stated the contract broken: *"write-back callers MUST refuse."*
+2. **MED, silent revert.** §5 windowed the pass but the pulse snapshot was still loaded ONCE
+   before it — a ✓ Reviewed committed mid-run on a not-yet-reached note was overwritten from the
+   stale snapshot. Pre-§5 that write failed LOUDLY; §5 turned a surfaced error into a silent
+   revert (PJ-187's symptom, reached from a new direction).
+
+One fix for both: `recompute_all_in` takes the `.constellation` DIR, not a snapshot, and re-reads
+the pulse **inside each window's transaction** with the refusing loader. That CLOSES (2) rather
+than narrowing it — the action path writes the pulse file BEFORE the row, so an action either
+lands before our in-transaction read (seen) or cannot commit its row until our COMMIT (writes it
+itself). Whole-ecosystem: `review_backfill` got the same treatment (per BATCH); `load_pulse_data`
+is now `#[cfg(test)]` — **the compiler, not a reviewer's memory, is what keeps a write-back caller
+off the degrading loader.**
+
+**Round 2 (the fixed diff) — 3 fixed, 1 escalated**
+3. **HIGH, swallowed-write-error.** Four sites returned a COMMIT error WITHOUT a ROLLBACK, each
+   beside a correctly-rolled-back sibling arm. SQLite leaves the transaction OPEN on a failed
+   COMMIT. Worst instance sat under `with_busy_retry`: the retry's `BEGIN IMMEDIATE` then failed
+   with *"cannot start a transaction within a transaction"* — which `is_busy_message` does not
+   match — returning Err with the transaction open. On the boot heal that connection is the one
+   `init_db` publishes as `state.db`, so the app would run its whole session inside an
+   uncommitted transaction and discard every `search.db` write at exit (traversal counts, weights,
+   confidence, archived links — per CLAUDE.md their only home). Fixed with ONE shared
+   `converge::commit_or_rollback` at all four sites.
+4. **MED, index-divergence.** An action taken during the FIRST-TIME back-fill on an
+   already-passed note never reached its row, and `finalize` then stamped the divergence
+   authoritative — permanent, since post-stamp every row derives from the ROW. Fixed:
+   `reapply_pulse_actions` runs in the same transaction as the stamp, O(user's decisions).
+5. **MED, false-success.** `set_review_priority` discarded the UPDATE's row count and returned
+   `Ok(())`; the same missing `note_meta` row that made it match zero rows had already emptied
+   `cid`, skipping the durable ledger append. A user decision accepted and stored nowhere. Now
+   refuses out loud.
+6. **ESCALATED — PJ-228.** The boot healer runs all five families synchronously inside `init_db`,
+   before `state.db` is published, with no `AppHandle` and so no progress surface. §11's Cancel
+   made the marker-armed state reachable by a normal gesture. **MEASURED rather than argued**
+   (`converge_boot_heal_cost`, `#[ignore]`d, against a copy of the live universe): **3,143 ms**
+   for all five on 2,721 notes — NOT the ~90 s the hunt claimed (it misread a comment of mine).
+   A ~3 s silent pause, not a freeze. Fix = off the init path, background with progress (Rule 8);
+   deliberately NOT bolted onto a build under test. Boss ruling requested.
+
+The measurement also validated the count fix end-to-end BEFORE the Boss test: `review
+Converged(2721)`, with sky 1,732 / tags 3,689 identical to his Stage 1 receipt.
+
+## §11 Stage 2 Boss test — the review count PASSES, one new bug found
+
+Binary 17:55. Test gated in THREE inspector rounds (58 + 13 + 9 claims, 0 findings outstanding);
+one invention was caught in MY OWN draft pre-gate — Arabic-Indic digits, when `.toLocaleString()`
+takes no locale argument and renders Western digits regardless of interface language.
+
+| Step | Result |
+|---|---|
+| A Arabic Settings | Pass — الفهرس / إصلاح الفهرس / إصلاح all render RTL |
+| **D language survives restart** | **FAIL — relaunched in English after being closed in Arabic** |
+| E mid-run Cancel | Outcome 2: the repair finished first (1 note to re-read). **Cancel NOT exercised** |
+| **H receipt** | **PASS, digit-exact: جدول المراجعة حُدّث 2,721** |
+
+Receipt in full: `1 أعيدت قراءتها · 2,099 بلا تغيير · 0 فشلت` (= 2,100, Stage 1's total) · outgoing
+2,721 · backlinks 2,721 · sky 1,732 · tags 3,689 · **review 2,721 (was a hard-coded 0)**.
+
+**New bug → PJ-229.** The interface language persists ONLY to `localStorage['constellation-locale']`
+(`src/lib/i18n/index.ts`) — read back by `getInitialLocale()` at boot. There is no durable on-disk
+setting for it, and localStorage is the store PJ-110 already proved non-durable (the leveldb
+orphan-wipe, 2026-07-17). Pre-existing; unrelated to this build. Fix = persist where the rest of
+the settings live, treat localStorage as a cache.
+
+**Still unexercised:** the index-repair's mid-run Cancel. The shared strip's Cancel is already
+Boss-validated (§10 Stage 2, on the summary build) and the repair's stopped-early handling is
+source-verified + unit-pinned, but the specific gesture has now failed to be catchable twice
+because the job outran the click.
+
+**Gates:** Rust **1377/0** (15 ignored — the new cost harness is one) · frontend rebuilt · no new
+warnings in the changed files.

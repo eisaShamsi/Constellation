@@ -250,11 +250,14 @@ pub fn converge_derived_views(
         if crate::review::is_stamped(conn) {
             report.review = match ctx.constellation_dir {
                 Some(dir) => {
-                    let pulse = crate::review::load_pulse_data(dir);
                     let today = crate::review::today_str();
                     // PJ-207 §5 — owns its own windowed transactions; never wrap it.
-                    match crate::review::recompute_all_in(conn, &pulse, &today, _key) {
-                        Ok(()) => ConvergeOutcome::Converged(0),
+                    // It also re-reads review-pulse.json per window (2026-08-08: this
+                    // is a WRITE-BACK consumer of the pulse, so it must never be handed
+                    // a snapshot that could be a degraded default, nor one that goes
+                    // stale under a live ✓ Reviewed — see `recompute_all_in`'s doc).
+                    match crate::review::recompute_all_in(conn, dir, &today, _key) {
+                        Ok(n) => ConvergeOutcome::Converged(n),
                         Err(e) => ConvergeOutcome::Failed(e),
                     }
                 }
@@ -272,13 +275,42 @@ pub fn converge_derived_views(
     report
 }
 
+/// COMMIT — and ROLL BACK if the COMMIT itself fails.
+///
+/// 2026-08-08 §11 inspection (HIGH). **SQLite leaves the transaction OPEN when a COMMIT
+/// fails**; the application owes the explicit ROLLBACK. Four sites across this module
+/// and the two `review*` modules returned the COMMIT error without one, and each had a
+/// correct ROLLBACK on the arm right beside it — the error path everyone thinks about,
+/// versus the one nobody does.
+///
+/// The worst instance sat under `review::with_busy_retry`: a busy COMMIT left the
+/// transaction open, the retry re-ran `BEGIN IMMEDIATE`, and that failed with *"cannot
+/// start a transaction within a transaction"* — a message the busy-matcher does not
+/// recognise — so the pass returned Err with the transaction still open. On the boot
+/// heal that connection is the one `init_db` is about to publish as `state.db`, which
+/// would leave the app running its ENTIRE session inside an uncommitted transaction and
+/// discarding every `search.db` write at exit. Per CLAUDE.md that file is today the only
+/// home for the earned half of the Living Link Architecture, so "discarded at exit"
+/// means traversal counts, weights, confidence promotions and archived links, gone,
+/// with nothing surfaced.
+///
+/// One helper rather than four call-site fixes, so the next transaction added here
+/// cannot quietly reintroduce the shape (the Whole-Ecosystem Fix Law).
+pub(crate) fn commit_or_rollback(conn: &Connection) -> Result<(), String> {
+    if let Err(e) = conn.execute_batch("COMMIT") {
+        let _ = conn.execute_batch("ROLLBACK");
+        return Err(e.to_string());
+    }
+    Ok(())
+}
+
 /// `tag_counts::recompute_all_in` needs its own transaction (it is a DELETE + INSERT
 /// pair that must be atomic against the write-time ± delta — see §4).
 fn run_tag_counts(conn: &Connection, key: &ConvergeKey) -> Result<usize, String> {
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     match crate::tag_counts::recompute_all_in(conn, key) {
         Ok(n) => {
-            conn.execute_batch("COMMIT").map_err(|e| e.to_string())?;
+            commit_or_rollback(conn)?;
             Ok(n)
         }
         Err(e) => {
@@ -363,6 +395,98 @@ pub fn after_incoming_backfill(conn: &Connection) -> ConvergeReport {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 2026-08-08 §11 inspection (HIGH). SQLite leaves the transaction OPEN when a
+    /// COMMIT fails — the caller owes the ROLLBACK, and four sites here and in the two
+    /// `review*` modules did not pay it. The consequence was not a lost window: the
+    /// retry above one of them re-ran `BEGIN IMMEDIATE`, which failed with a message
+    /// the busy-matcher does not recognise, and the connection — on the boot heal, the
+    /// one about to be published as `state.db` — stayed transacted for the session.
+    ///
+    /// A COMMIT is made to fail portably with a DEFERRED foreign key: the violation is
+    /// legal until COMMIT, which is exactly when SQLite refuses.
+    #[test]
+    fn a_failed_commit_leaves_no_transaction_open() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "PRAGMA foreign_keys = ON;
+             CREATE TABLE parent (id INTEGER PRIMARY KEY);
+             CREATE TABLE child (id INTEGER PRIMARY KEY, pid INTEGER
+               REFERENCES parent(id) DEFERRABLE INITIALLY DEFERRED);",
+        )
+        .unwrap();
+
+        conn.execute_batch("BEGIN IMMEDIATE").unwrap();
+        conn.execute("INSERT INTO child (id, pid) VALUES (1, 999)", []).unwrap();
+        assert!(!conn.is_autocommit(), "precondition: a transaction is open");
+
+        let err = commit_or_rollback(&conn).expect_err("the deferred FK must refuse at COMMIT");
+        assert!(
+            err.to_lowercase().contains("foreign key"),
+            "the COMMIT's own error is surfaced, not swallowed: {err}"
+        );
+        assert!(
+            conn.is_autocommit(),
+            "THE POINT: the failed COMMIT must leave the connection with no open transaction"
+        );
+        // And the connection is immediately usable again — the shape that broke was the
+        // NEXT `BEGIN IMMEDIATE` failing with 'cannot start a transaction within a
+        // transaction' and being mistaken for something other than a busy retry.
+        conn.execute_batch("BEGIN IMMEDIATE").expect("a fresh transaction can start");
+        conn.execute_batch("ROLLBACK").unwrap();
+    }
+
+    /// PJ-207 §11 inspection (HIGH, freeze-hang) — **how long is the boot heal, really?**
+    ///
+    /// `after_interrupted_walk_at_boot` runs all five families SYNCHRONOUSLY inside
+    /// `init_db`, before `state.db` is published, with no `AppHandle` and therefore no
+    /// progress surface. The inspection called it a freeze; the severity depends on a
+    /// number nobody had measured, and a severity argued from a guess is not evidence.
+    /// This measures it against a copy of a real universe.
+    ///
+    /// ```text
+    ///   CONVERGE_TIME_DB="…/scratch-copy-of-search.db"     ///     cargo test --lib converge_boot_heal_cost -- --ignored --nocapture
+    /// ```
+    /// Unset → no-op, so a normal `cargo test` never touches a 180 MB file. It WRITES to
+    /// the DB it is given (that is what converging is), so give it a COPY, never a live
+    /// universe.
+    #[test]
+    #[ignore]
+    fn converge_boot_heal_cost() {
+        let Ok(db) = std::env::var("CONVERGE_TIME_DB") else {
+            eprintln!("[converge-cost] CONVERGE_TIME_DB unset — skipping");
+            return;
+        };
+        // Through the app's OWN initialiser, not a bare `Connection::open` — `init_db`
+        // registers the custom `constellation` FTS tokenizer, without which three of the
+        // five families abort on their first statement and the timing is meaningless.
+        // This is also the faithful shape: `init_db` is exactly where the boot heal runs.
+        let conn = crate::search::init_db(std::path::Path::new(&db)).expect("init the copy");
+        let notes: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap_or(-1);
+        let cdir = std::env::var("CONVERGE_TIME_CDIR").ok().map(std::path::PathBuf::from);
+
+        let t = std::time::Instant::now();
+        let report = converge_derived_views(
+            &conn,
+            &ConvergeKey::for_test(),
+            Families::All,
+            &Ctx { constellation_dir: cdir.as_deref() },
+        );
+        let ms = t.elapsed().as_secs_f64() * 1000.0;
+
+        eprintln!("[converge-cost] {} notes — ALL FIVE FAMILIES in {:.0} ms", notes, ms);
+        for (family, outcome) in [
+            ("outgoing", &report.outgoing),
+            ("incoming", &report.incoming),
+            ("sky", &report.sky),
+            ("tag_counts", &report.tag_counts),
+            ("review", &report.review),
+        ] {
+            eprintln!("[converge-cost]   {:<11} {:?}", family, outcome);
+        }
+    }
 
     /// The gates that used to be invisible `if` statements now produce a REASON.
     /// Before this, a run that skipped three of five families was indistinguishable

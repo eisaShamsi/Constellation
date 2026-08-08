@@ -29,6 +29,20 @@ pub struct ReviewPulseData {
     pub dismissed: Vec<String>,                  // paths permanently dismissed
 }
 
+impl ReviewPulseData {
+    /// Every path the user has actually acted on — reviewed, snoozed, given an interval,
+    /// or dismissed. Small by nature (it is the user's decisions, not the corpus), which
+    /// is what makes `review_backfill`'s pre-stamp re-apply O(actions), not O(notes).
+    pub(crate) fn acted_paths(&self) -> std::collections::BTreeSet<String> {
+        let mut s: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        s.extend(self.last_reviewed.keys().cloned());
+        s.extend(self.snoozed.keys().cloned());
+        s.extend(self.intervals.keys().cloned());
+        s.extend(self.dismissed.iter().cloned());
+        s
+    }
+}
+
 /// A note that's due for review.
 #[derive(Debug, Clone, Serialize)]
 pub struct DueNote {
@@ -680,11 +694,25 @@ pub fn set_review_priority(
     if let Some(state) = app.try_state::<crate::search::SearchState>() {
         if let Ok(guard) = state.db.lock() {
             if let Some(conn) = guard.as_ref() {
-                conn.execute(
-                    "UPDATE note_meta SET review_priority = ?2 WHERE path = ?1",
-                    rusqlite::params![note_path, value],
-                )
-                .map_err(|e| format!("set_review_priority: {}", e))?;
+                let changed = conn
+                    .execute(
+                        "UPDATE note_meta SET review_priority = ?2 WHERE path = ?1",
+                        rusqlite::params![note_path, value],
+                    )
+                    .map_err(|e| format!("set_review_priority: {}", e))?;
+                if changed == 0 {
+                    // 2026-08-08 §11 inspection (MED, false-success). Zero rows matched
+                    // means there is no `note_meta` row at this path — a linked-universe
+                    // note (permanently unindexed since §8) or an own-library note added
+                    // externally and not yet reindexed. That SAME missing row emptied
+                    // `cid` above, which skipped the durable earned-ledger append too.
+                    // So the user's decision was stored in neither place, and returning
+                    // Ok(()) let the panel show it as saved. Refuse out loud instead.
+                    return Err(format!(
+                        "Review priority not saved — this note is not in the search index: {}",
+                        note_path
+                    ));
+                }
                 return Ok(());
             }
         }
@@ -849,7 +877,18 @@ fn load_pulse_inner(cdir: &Path) -> Result<ReviewPulseData, String> {
     Ok(ReviewPulseData::default())
 }
 
-/// READ-ONLY. Degrades to defaults so a transient lock cannot block boot or a panel.
+/// READ-ONLY, and **test-only since 2026-08-08**. Degrades to defaults so a transient
+/// lock cannot block a read.
+///
+/// The `#[cfg(test)]` is the guard, not a comment: the 2026-08-08 §11 inspection found
+/// that every remaining production caller of this loader was in fact a **write-back**
+/// consumer — `converge`'s review family and `review_backfill`, both of which rebuild
+/// `review_schedule` authoritatively FROM the pulse. For them "degrade to defaults" is
+/// a demolition order wearing a read's clothes (see `recompute_all_in`). They now use
+/// [`load_pulse_data_for_update`]; nothing in the shipping app degrades the pulse, and
+/// the compiler — not a reviewer's memory — is what keeps it that way. A future
+/// genuinely read-only consumer removes this attribute deliberately, having read this.
+#[cfg(test)]
 pub(crate) fn load_pulse_data(cdir: &Path) -> ReviewPulseData {
     load_pulse_inner(cdir).unwrap_or_else(|e| {
         eprintln!("[review] {e} (read-only caller — using defaults this session)");
@@ -1371,12 +1410,45 @@ pub(crate) fn backfill_one(
 ///
 /// **The caller must NOT wrap this in a transaction** — it opens its own, and SQLite
 /// has no nested transactions. That is a contract change from the MIG-083 shape.
+///
+/// Returns the number of rows rebuilt in pass 2 (every committed window's row count) —
+/// the same "how much did this family actually do" contract as its siblings
+/// `tag_counts::recompute_all_in` and `links_backfill::recompute_all_incoming`. §11's
+/// repair receipt renders it as "updated N"; before this, `converge.rs` had to
+/// hard-code `Converged(0)` for a family that had just rebuilt every row.
+///
+/// **It takes the universe's `.constellation` DIRECTORY, not a pulse snapshot** — two
+/// confirmed 2026-08-08 §11-inspection findings, one shape:
+///
+/// 1. *False success.* The caller loaded the pulse with the degrading loader, so an
+///    unreadable `review-pulse.json` (a Windows AV/sync sharing violation is enough)
+///    became an EMPTY pulse — and this function then authoritatively wrote
+///    `last_reviewed=NULL, interval=0, snoozed_until=NULL, dismissed=false` over every
+///    row, reporting `Converged(n)`. Every dismissed note resurfaces, every reviewed
+///    note reads as never-reviewed, and `all_ok()` clears the heal markers so nothing
+///    retries. `load_pulse_inner`'s own contract already said it: *"write-back callers
+///    MUST refuse."* This is a write-back caller. It refuses now.
+/// 2. *Silent revert of a live action.* §5 made this pass windowed — the writer lock is
+///    released between 500-row windows — but the pulse snapshot was still loaded ONCE,
+///    before the pass. A ✓ Reviewed / Snooze / Dismiss committed during the (90 s, on
+///    the Boss's universe) run on a note the cursor had not yet reached was overwritten
+///    from the stale snapshot: PJ-187's exact symptom, *"the note came straight back in
+///    the queue, and nothing anywhere said why."* Before §5 the single long transaction
+///    made that write fail LOUDLY; §5 turned a surfaced error into a silent revert.
+///
+/// So the pulse is re-read **inside each window's transaction**, which closes (2)
+/// rather than merely narrowing it. The argument is the action path's own write order —
+/// `save_pulse_data` (file) happens BEFORE `sync_action_to_row` (row): an action whose
+/// file-write lands before our in-transaction read is SEEN by this window; an action
+/// whose file-write lands after it cannot commit its row until our `COMMIT` releases
+/// the writer lock, and then writes the correct row itself. There is no interleaving
+/// left in which the user's action loses. Cost: one small JSON read per 500 rows.
 pub fn recompute_all_in(
     conn: &rusqlite::Connection,
-    pulse: &ReviewPulseData,
+    cdir: &Path,
     today: &str,
     _key: &crate::converge::ConvergeKey,
-) -> Result<(), String> {
+) -> Result<usize, String> {
     // ── Pass 1: orphan sweep, windowed over `review_schedule`'s OWN key space ────
     //
     // NOT over note_meta's. An orphan is by definition a `review_schedule` row whose
@@ -1413,6 +1485,7 @@ pub fn recompute_all_in(
     }
 
     // ── Pass 2: rebuild, windowed over note_meta ────────────────────────────────
+    let mut rebuilt: usize = 0;
     let mut after = String::new();
     loop {
         let rows: Vec<(String, String, i64, String)> = {
@@ -1432,8 +1505,18 @@ pub fn recompute_all_in(
         let Some(last) = rows.last().map(|r| r.0.clone()) else { break };
         with_busy_retry(|| {
             conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
+            // Fresh, INSIDE the lock — see the two findings in this function's doc.
+            // A read failure refuses the window (and the pass) instead of rebuilding
+            // the user's earned review state as empty.
+            let pulse = match load_pulse_data_for_update(cdir) {
+                Ok(p) => p,
+                Err(e) => {
+                    let _ = conn.execute_batch("ROLLBACK");
+                    return Err(e);
+                }
+            };
             for (path, tags_json, modified, body_text) in &rows {
-                if let Err(e) = backfill_one(conn, path, tags_json, *modified, body_text, pulse, today) {
+                if let Err(e) = backfill_one(conn, path, tags_json, *modified, body_text, &pulse, today) {
                     // Roll this WINDOW back, not the whole pass. Earlier windows are
                     // already committed and correct; `backfill_one` is idempotent, so a
                     // later run re-derives this one.
@@ -1441,12 +1524,14 @@ pub fn recompute_all_in(
                     return Err(e);
                 }
             }
-            conn.execute_batch("COMMIT").map_err(|e| e.to_string())
+            crate::converge::commit_or_rollback(conn)
         })
         .map_err(|e| format!("review_schedule rebuild window: {}", e))?;
+        // Count only after the window COMMITS — a rolled-back window was not rebuilt.
+        rebuilt += rows.len();
         after = last;
     }
-    Ok(())
+    Ok(rebuilt)
 }
 
 /// PJ-207 §5 — the `links_backfill.rs:287-296` retry, same shape and same bounds: a
@@ -1699,6 +1784,85 @@ mod tests {
     }
     /// Unix seconds at UTC-midnight of a YYYY-MM-DD date (matches strftime('%s', d)).
     fn secs(date: &str) -> i64 { date_to_days(date) * 86_400 + 1_577_836_800 }
+
+    /// A `.constellation` dir with no `review-pulse.json` in it. `load_pulse_inner`
+    /// answers a MISSING file with `Ok(default())` — genuinely "no actions recorded",
+    /// which is what these tests mean — while an UNREADABLE one is an error (see
+    /// `an_unreadable_pulse_refuses_instead_of_rebuilding_every_row_as_never_reviewed`).
+    fn no_pulse_dir() -> std::path::PathBuf {
+        std::env::temp_dir().join("constellation-tests-absent-pulse-dir")
+    }
+
+    /// A real `.constellation` dir holding a pulse file with the given contents.
+    fn pulse_dir(tag: &str, json: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("constellation-pulse-{}", tag));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::write(d.join("review-pulse.json"), json).unwrap();
+        d
+    }
+
+    /// PJ-207 §11 inspection, finding 1 (HIGH, false-success). `recompute_all_in` is a
+    /// WRITE-BACK consumer of review-pulse.json: it rebuilds every `review_schedule`
+    /// row FROM it. It used to load it with the degrading loader, so an unreadable file
+    /// (Windows AV/sync sharing violation) silently became an EMPTY pulse and the
+    /// rebuild wrote `last_reviewed=NULL, interval=0, snoozed=NULL, dismissed=false`
+    /// over the user's entire earned review state — and reported success, which cleared
+    /// the heal markers so nothing retried.
+    ///
+    /// The unreadable file is simulated portably by making `review-pulse.json` a
+    /// DIRECTORY: `exists()` is true (so the loader does not take the "absent → fresh
+    /// start" path) and `read_to_string` fails, which is exactly the shape of the
+    /// transient-lock case.
+    #[test]
+    fn an_unreadable_pulse_refuses_instead_of_rebuilding_every_row_as_never_reviewed() {
+        let c = read_db();
+        let today = "2026-06-22";
+        c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,tags_json) VALUES ('/lib/Held.md','Held','CIDH',?1,'[]')",
+            rusqlite::params![secs("2026-01-01")]).unwrap();
+        // The user reviewed this note and set a 7-day interval — earned state.
+        c.execute("INSERT INTO review_schedule (path,reason,due_days,last_reviewed,interval) VALUES ('/lib/Held.md','interval_due',?1,'2026-06-20',7)",
+            rusqlite::params![date_to_days("2026-06-27")]).unwrap();
+
+        let d = std::env::temp_dir().join("constellation-pulse-unreadable");
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(d.join("review-pulse.json")).unwrap();
+
+        let err = recompute_all_in(&c, &d, today, &crate::converge::ConvergeKey::for_test())
+            .expect_err("an unreadable pulse must REFUSE, never rebuild from defaults");
+        assert!(err.contains("unreadable"), "the refusal must say why: {err}");
+
+        let (last, interval): (Option<String>, i64) = c
+            .query_row("SELECT last_reviewed, interval FROM review_schedule WHERE path='/lib/Held.md'", [], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap();
+        assert_eq!(last.as_deref(), Some("2026-06-20"), "earned last_reviewed survives the refusal");
+        assert_eq!(interval, 7, "earned interval survives the refusal");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    /// PJ-207 §11 inspection, finding 2 (MED, silent revert). The pass must read the
+    /// pulse FROM DISK per window rather than replay a caller-supplied snapshot, so a
+    /// review action committed during a long repair is seen rather than overwritten.
+    /// This pins the disk-read half (the signature now takes the directory, so a stale
+    /// snapshot is not representable); the per-window timing argument is in the doc.
+    #[test]
+    fn the_rebuild_reads_the_pulse_from_disk_not_from_a_caller_snapshot() {
+        let c = read_db();
+        let today = "2026-06-22";
+        c.execute("INSERT INTO note_meta (path,name,cid_cn,modified,tags_json) VALUES ('/lib/Acted.md','Acted','CIDA',?1,'[]')",
+            rusqlite::params![secs("2026-01-01")]).unwrap();
+
+        let d = pulse_dir("live-action", r#"{"last_reviewed":{"/lib/Acted.md":"2026-06-21"},"intervals":{"/lib/Acted.md":7},"snoozed":{},"dismissed":[]}"#);
+        let n = recompute_all_in(&c, &d, today, &crate::converge::ConvergeKey::for_test()).unwrap();
+        assert_eq!(n, 1);
+
+        let (reason, last): (String, Option<String>) = c
+            .query_row("SELECT reason, last_reviewed FROM review_schedule WHERE path='/lib/Acted.md'", [], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap();
+        assert_eq!(last.as_deref(), Some("2026-06-21"), "the row takes the action state that is on disk NOW");
+        assert_eq!(reason, "interval_due", "and derives from it — not 'never_reviewed'");
+        let _ = std::fs::remove_dir_all(&d);
+    }
 
     #[test]
     fn due_notes_carry_connection_counts_and_maturity() {
@@ -1988,7 +2152,7 @@ mod tests {
             .unwrap();
         }
 
-        recompute_all_in(&c, &ReviewPulseData::default(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
+        recompute_all_in(&c, &no_pulse_dir(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
 
         let survivors: Vec<String> = {
             let mut st = c
@@ -2015,7 +2179,8 @@ mod tests {
         // a stale orphan + a real-but-missing-row (back-fill-window gap)
         c.execute("INSERT INTO review_schedule (path,reason,due_days) VALUES ('/lib/Ghost.md','interval_due',0)", []).unwrap();
 
-        recompute_all_in(&c, &ReviewPulseData::default(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
+        let rebuilt = recompute_all_in(&c, &no_pulse_dir(), today, &crate::converge::ConvergeKey::for_test()).unwrap();
+        assert_eq!(rebuilt, 1, "returns the pass-2 rebuilt count (1 real note) — §11's receipt renders it; the swept orphan is not 'rebuilt'");
 
         assert_eq!(c.query_row("SELECT COUNT(*) FROM review_schedule WHERE path='/lib/Ghost.md'", [], |r| r.get::<_,i64>(0)).unwrap(), 0,
             "orphan row (no note_meta) swept");
