@@ -7225,6 +7225,25 @@ fn strip_markdown(text: &str) -> String {
     result
 }
 
+/// A file's modification time **exactly as `note_meta.modified` stores it** — UNIX
+/// seconds, `u64`, with a pre-epoch timestamp folded to 0 rather than erroring.
+///
+/// PJ-207 §9 — this is one function and not two on purpose. The drift check compares a
+/// file's mtime against the value the indexer wrote, so if the two computed it
+/// differently every note in the universe would read as permanently drifted. That is the
+/// `search.rs:338` mirror trap §1 deleted, in a new place: a hand-copied three-line
+/// expression that stays correct only until one copy is edited.
+///
+/// `None` means the mtime could not be read at all. The indexer folds that to 0 (its
+/// historical behaviour — a note it cannot stat still gets indexed, and 0 never equals a
+/// real stored mtime, so it re-reads it); the drift check must NOT, because "I could not
+/// look" is not "it changed".
+pub(crate) fn mtime_secs(md: &std::fs::Metadata) -> Option<u64> {
+    md.modified()
+        .ok()
+        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+}
+
 /// Index a single note into the database.
 pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
     let path = Path::new(note_path);
@@ -7250,8 +7269,8 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
     // every call site is a "this file just changed" context, so they pass
     // `force: true` and skip the gate entirely.
     let modified = std::fs::metadata(path)
-        .and_then(|m| m.modified())
-        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+        .ok()
+        .and_then(|m| mtime_secs(&m))
         .unwrap_or(0);
 
     if !force {
@@ -7443,9 +7462,12 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
             // then be missing from the index with nothing reporting it. A stat we
             // could not take is a failure and says so.
             let now_mod = std::fs::metadata(path)
-                .and_then(|m| m.modified())
-                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
-                .map_err(|e| format!("re-stat failed for {}: {}", note_path, e))?;
+                .map_err(|e| format!("re-stat failed for {}: {}", note_path, e))
+                .and_then(|m| {
+                    mtime_secs(&m).ok_or_else(|| {
+                        format!("re-stat failed for {}: the file has no modification time", note_path)
+                    })
+                })?;
             if now_mod != modified {
                 return Ok(IndexOutcome::Raced);
             }

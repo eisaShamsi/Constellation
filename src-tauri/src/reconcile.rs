@@ -58,6 +58,152 @@ const MAX_STALE_FRACTION: f64 = 0.10;
 /// …or more than this many absolute rows (whichever bound is larger).
 const MAX_STALE_ABSOLUTE: usize = 200;
 
+/// PJ-207 §9 — **what this pass found, in numbers, for the user instead of the log.**
+///
+/// Every count here is the RESIDUAL: what is still true after this pass has healed
+/// whatever it could. A file this run re-adopted is not reported as missing, because by
+/// the time anyone reads the notice it is not. What survives is exactly what needs the
+/// repair door (§11) — which is the only thing worth interrupting the user for.
+///
+/// **The pass was already computing two of these and telling nobody.** `stale` and
+/// `orphans` have been derived on every launch since MIG-078; the only trace was a line
+/// in `diagnostics.log`. On the Boss's live universe that line reads *"825 orphan files
+/// (> cap 200) — skipping re-adopt"* — 825 notes absent from search, detected four times
+/// on 2026-08-07 alone, surfaced never. PJ-223 is not an undetected defect; it is an
+/// unreported one.
+///
+/// The two directions are deliberately separate fields and not one "out of sync" number.
+/// They have different causes and different cures — a file the index has never seen means
+/// a library was never walked; a row whose file is gone means a note was deleted or moved
+/// outside the app — and §3 spent a whole step un-flattening exactly this kind of
+/// collapsed outcome (`IndexOutcome`, `WalkTally`). Re-flattening it one step later would
+/// be the same mistake with a shorter memory.
+#[derive(Debug, Clone, Copy, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriftReport {
+    /// The file and its row both exist, and the mtimes disagree — the note was edited
+    /// while Constellation was closed (or by something that suppressed the watcher).
+    /// Compared with `==`, exactly as `index_note`'s own gate does, so this counts
+    /// precisely the notes a repair would re-read: an mtime that moved BACKWARDS (a
+    /// restore from backup, a `git checkout`) is drift too, and the repair fixes it.
+    pub drifted: usize,
+    /// A `.md` under one of our own libraries with no row in the index at all. Named for
+    /// what was observed, not for a history a stat cannot see: this pass cannot know
+    /// whether the file was never indexed or whether a prior pass removed its row.
+    pub missing_from_index: usize,
+    /// A row under an ACCESSIBLE own root whose file is gone. Rows under an inaccessible
+    /// root are not counted — an unmounted drive is not a deleted note, which is the same
+    /// distinction the healing loop refuses to touch them for.
+    pub missing_on_disk: usize,
+    /// Rows whose path belongs to a **linked universe's** library — the Charter W2-9
+    /// copies §8 stopped creating and §13 may one day offer to remove.
+    ///
+    /// Counted by PATH against the federated root set, never by `library_name NOT IN
+    /// (own)`. On the Boss's live universe those two differ by 69×: 9 rows genuinely
+    /// belong to a linked universe, while 621 merely sit outside the own roots — 603 of
+    /// them pointing at `E:\Cognitive Knowledge\…`, the pre-MIG-108 location, where no
+    /// file exists any more. Reporting 621 as "duplicated from linked universes" would be
+    /// a fabrication, and it would be a fabrication in fifteen languages.
+    pub foreign_rows: usize,
+    /// Files whose row agreed with the disk. Carried so the closing sum is checkable from
+    /// the REPORT rather than only from inside the walk — the identity is
+    /// `files_seen == unchanged + drifted + missing_from_index + files_unreadable`.
+    /// (`WalkReport` ships its `unchanged` for the same reason.)
+    pub unchanged: usize,
+    /// `.md` files the walk visited, and rows the snapshot read — the two denominators.
+    /// Without them a wrong count is indistinguishable from a right one; with them the
+    /// identity above is checkable, which is the discipline `WalkTally`'s closing sum
+    /// exists for.
+    pub files_seen: usize,
+    pub rows_seen: usize,
+    /// False when any directory failed to list or the depth cap truncated the walk. **A
+    /// sweep that could not look must never report "nothing changed"** — the whole point
+    /// of this migration is that silence stops meaning success.
+    pub walk_complete: bool,
+    /// Directories that could not be listed, and files that could not be stat'ed. The
+    /// second is tracked separately from `walk_complete` on purpose: `walk_complete`
+    /// gates dead-row REMOVAL, and one unreadable file must not disarm that.
+    pub dirs_unreadable: usize,
+    pub files_unreadable: usize,
+}
+
+impl DriftReport {
+    /// Is there anything worth telling the user about? An all-zero report renders
+    /// nothing — never a green "all clear", which would be noise on every launch.
+    ///
+    /// **"I could not look" counts as a finding.** The first version of this asked only
+    /// about the three drift counts, and the 2026-08-07 safety inspection caught what that
+    /// means: a library with one unlistable folder — an ACL-denied directory, a OneDrive
+    /// placeholder, a subtree past the depth cap — yields all three at zero, because the
+    /// notes under it were never *seen*. The report would then have been suppressed, and
+    /// silence is this feature's encoding of "all clear". An entire subtree missing from
+    /// search would have been reported as a clean launch, by the very check written to end
+    /// that. It contradicted the sentence on `walk_complete` two fields up.
+    ///
+    /// Keyed on the COUNTS rather than on `!walk_complete`, deliberately: `walk_complete`
+    /// is `false` in `DriftReport::default()`, so a `!` test would make every default-
+    /// constructed value look like a finding.
+    pub fn has_findings(&self) -> bool {
+        self.drifted > 0
+            || self.missing_from_index > 0
+            || self.missing_on_disk > 0
+            || self.dirs_unreadable > 0
+            || self.files_unreadable > 0
+    }
+}
+
+/// What one reconcile pass did, and what it found. The healed counts and the report are
+/// returned together because the report is only truthful net of the healing: reporting
+/// "5 notes are missing from the index" about five files this very pass re-adopted would
+/// be an alarm about work already done.
+#[derive(Default)]
+pub(crate) struct ReconcileOutcome {
+    pub relocated: usize,
+    pub readopted: usize,
+    pub removed: usize,
+    /// `None` when the pass stopped before it had an answer — no accessible roots, an
+    /// empty index, or a universe switch mid-pass. An absent report is not a clean one,
+    /// and the caller must not render it as one.
+    pub report: Option<DriftReport>,
+}
+
+/// The walk's accumulator. Five out-parameters threaded through a recursive function is
+/// how the sixth gets forgotten; one struct is also what lets the drift comparison happen
+/// at the single point where the file is already stat'ed.
+struct Walk {
+    /// `.md` files with no row — the relocate/re-adopt candidates, with their `cid_cn`.
+    orphans: Vec<(String, String)>,
+    /// Dedupes across overlapping roots (universe_notes at the root + a nested library).
+    seen: HashSet<String>,
+    complete: bool,
+    files_seen: usize,
+    drifted: usize,
+    unchanged: usize,
+    dirs_unreadable: usize,
+    files_unreadable: usize,
+}
+
+/// `complete` starts **true** and is cleared by evidence, so `Default` is hand-written
+/// rather than derived: `#[derive(Default)]` would start it `false`, and every one of the
+/// ten construction sites would have to remember `complete: true`. That is the same
+/// "somebody forgets the sixth one" failure the struct was introduced to end, moved to a
+/// new address — and a forgotten `true` is silent and expensive: it disables dead-row
+/// removal AND tells the user the sweep could not look everywhere.
+impl Default for Walk {
+    fn default() -> Self {
+        Self {
+            orphans: Vec::new(),
+            seen: HashSet::new(),
+            complete: true,
+            files_seen: 0,
+            drifted: 0,
+            unchanged: 0,
+            dirs_unreadable: 0,
+            files_unreadable: 0,
+        }
+    }
+}
+
 fn norm(p: &str) -> String {
     p.replace('\\', "/").to_lowercase()
 }
@@ -72,20 +218,37 @@ fn under(path_norm: &str, root_norm: &str) -> bool {
 /// Called from `ensure_search_db_ready` after the connection is live.
 pub fn maybe_schedule(app: tauri::AppHandle) {
     thread::spawn(move || match run(&app) {
-        Ok((0, 0, 0)) => {}
-        Ok((relocated, readopted, removed)) => diag(
-            &app,
-            &format!(
-                "[reconcile] healed index drift: {} relocated + {} re-adopted (by cid_cn), {} removed (note truly gone)",
-                relocated, readopted, removed
-            ),
-        ),
+        Ok(outcome) => {
+            if outcome.relocated > 0 || outcome.readopted > 0 || outcome.removed > 0 {
+                diag(
+                    &app,
+                    &format!(
+                        "[reconcile] healed index drift: {} relocated + {} re-adopted (by cid_cn), {} removed (note truly gone)",
+                        outcome.relocated, outcome.readopted, outcome.removed
+                    ),
+                );
+            }
+            // PJ-207 §9 — hand the residual to the surface that can act on it. This is the
+            // whole step: the numbers below have been computed on every launch for months
+            // and gone nowhere but `diagnostics.log`.
+            if let Some(report) = outcome.report {
+                diag(&app, &format!(
+                    "[reconcile] drift check: {} changed on disk, {} not in the index, {} rows without a file, {} from a linked universe ({} files / {} rows seen, walk {}{}{})",
+                    report.drifted, report.missing_from_index, report.missing_on_disk, report.foreign_rows,
+                    report.files_seen, report.rows_seen,
+                    if report.walk_complete { "complete" } else { "INCOMPLETE" },
+                    if report.dirs_unreadable > 0 { format!(", {} folder(s) unreadable", report.dirs_unreadable) } else { String::new() },
+                    if report.files_unreadable > 0 { format!(", {} file(s) unreadable", report.files_unreadable) } else { String::new() },
+                ));
+                crate::index_repair::record_drift_report(&app, report);
+            }
+        }
         Err(e) => diag(&app, &format!("[reconcile] FAILED (non-fatal): {}", e)),
     });
 }
 
-/// Returns `(relocated, readopted, removed)`.
-fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
+/// Heal what can be healed, and report what cannot.
+fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
     // 1. Accessible library roots (name, path). If NONE are accessible (e.g. the
     //    universe drive is offline), do nothing — never touch rows on a bad mount.
     //
@@ -130,40 +293,61 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
         .map(|l| (l.name.clone(), l.path.clone()))
         .collect();
     if roots.is_empty() {
-        return Ok((0, 0, 0));
+        // No accessible root: nothing to reconcile, and nothing we could honestly report
+        // either — every note is unreachable, which is a mount problem, not index drift.
+        return Ok(ReconcileOutcome::default());
     }
     let roots_norm: Vec<String> = roots.iter().map(|(_, p)| norm(p)).collect();
 
-    // 2. Snapshot (path, cid_cn) under a brief lock, then release it.
+    // 2. Snapshot (path, cid_cn, modified) under a brief lock, then release it.
+    //    PJ-207 §9 — `modified` is the drift check's whole index-side input, and it is
+    //    free here: this SELECT is already a full table scan (the `cid_cn` indexes are
+    //    partial, so nothing covers it), and measured on the live database adding the
+    //    column costs 25.0 ms against 26.0 ms without it. The row is faulted in either way.
     let state = app.state::<SearchState>();
-    let rows: Vec<(String, String)> = {
+    let rows: Vec<(String, String, u64)> = {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
         let mut stmt = conn
-            .prepare("SELECT path, COALESCE(cid_cn, '') FROM note_meta")
+            .prepare("SELECT path, COALESCE(cid_cn, ''), modified FROM note_meta")
             .map_err(|e| e.to_string())?;
         let r = stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, i64>(2)? as u64))
+            })
             .map_err(|e| e.to_string())?;
         r.flatten().collect()
     };
     let total = rows.len();
     if total == 0 {
-        return Ok((0, 0, 0)); // empty index — the initial reindex owns population.
+        // Empty index — the initial reindex owns population. Reporting "every file on
+        // disk is missing from the index" during a first run would be true and useless.
+        return Ok(ReconcileOutcome::default());
     }
-    let known: HashSet<String> = rows.iter().map(|(p, _)| norm(p)).collect();
+    let known: HashMap<String, u64> = rows.iter().map(|(p, _, m)| (norm(p), *m)).collect();
 
     // 3. Dead rows — LOCK-FREE per-path stat. Stat each note_meta path INDIVIDUALLY
     //    (never infer "dead" from a walk's completeness — a read_dir error on one
     //    subdir would then make its files look dead and get removed). Only rows
     //    under an accessible root are candidates (never touch a bad mount).
     let mut stale: Vec<(String, String)> = Vec::new();
-    for (p, cid) in &rows {
+    let mut foreign_rows = 0usize;
+    for (p, cid, _) in &rows {
         if p.is_empty() {
             continue;
         }
         let pn = norm(p);
         if !roots_norm.iter().any(|r| under(&pn, r)) {
+            // PJ-207 §9 — outside every own root. Only the ones under a LINKED universe's
+            // library are the Charter W2-9 class worth reporting; a row pointing at some
+            // third place (an unmounted drive, a folder the user moved) is neither ours
+            // nor theirs, and counting it as "duplicated from a linked universe" would
+            // put a false number in front of the user. Still skipped for healing either
+            // way — the `continue` below is unchanged and load-bearing (WA#4: never
+            // mass-touch rows on a root we cannot see).
+            if crate::libraries::path_is_under_any(p, &foreign_roots) {
+                foreign_rows += 1;
+            }
             continue;
         }
         if !Path::new(p).exists() {
@@ -175,9 +359,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     //    note_meta: the surviving half of a lost-tail rename whose dead row a prior
     //    reconcile already removed. Directory listing is cheap; frontmatter (the
     //    cid) is read only for orphans.
-    let mut orphans: Vec<(String, String)> = Vec::new(); // (actual path, cid_cn)
-    let mut seen: HashSet<String> = HashSet::new();
-    let mut walk_complete = true; // false if any subtree failed to list (→ don't remove)
+    let mut walk = Walk::default();
     for (_, root) in &roots {
         // Walk only TOP-LEVEL roots — skip a root nested under another (universe_notes
         // at the root + a sub-folder library): the parent walk already covers it, so
@@ -186,11 +368,36 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
         if roots.iter().any(|(_, other)| { let on = norm(other); on != rn && under(&rn, &on) }) {
             continue;
         }
-        collect_md(Path::new(root), &known, &foreign_roots, &mut orphans, &mut seen, &mut walk_complete, 0);
+        collect_md(Path::new(root), &known, &foreign_roots, &mut walk, 0);
     }
+    let orphans = std::mem::take(&mut walk.orphans);
+    let walk_complete = walk.complete;
+
+    // PJ-207 §9 — the report as the walk found it. Healing below subtracts from it, so
+    // what finally reaches the user is the residual.
+    let report = DriftReport {
+        drifted: walk.drifted,
+        missing_from_index: orphans.len(),
+        missing_on_disk: stale.len(),
+        foreign_rows,
+        unchanged: walk.unchanged,
+        files_seen: walk.files_seen,
+        rows_seen: total,
+        walk_complete,
+        dirs_unreadable: walk.dirs_unreadable,
+        files_unreadable: walk.files_unreadable,
+    };
+    // The row snapshot is finished with — `known` holds the only part still needed, and
+    // `rows` is ~1.5 MB of paths that would otherwise live through the walk (seconds, on a
+    // cold disk) and the whole write phase below.
+    drop(rows);
 
     if stale.is_empty() && orphans.is_empty() {
-        return Ok((0, 0, 0)); // index matches disk — nothing to do.
+        // Existence drift is clean — but MTIME drift may not be, and it is invisible to
+        // this pass's healing (nothing at boot re-reads a changed file; that is the whole
+        // premise of PJ-207). Returning early here without the report is how the check
+        // would have stayed silent on the ONLY universe state it was written to catch.
+        return Ok(ReconcileOutcome { report: Some(report), ..Default::default() });
     }
 
     // 5. Safety caps (WA#4) — a suspiciously large set in EITHER direction means a
@@ -198,7 +405,11 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     let cap = MAX_STALE_ABSOLUTE.max((total as f64 * MAX_STALE_FRACTION) as usize);
     if stale.len() > cap {
         diag(app, &format!("[reconcile] ABORTED: {} of {} rows look stale (> cap {}). Refusing to touch — offline drive or sync in progress.", stale.len(), total, cap));
-        return Ok((0, 0, 0));
+        // PJ-207 §9 — the report SURVIVES the abort, and this is the case that most needs
+        // it. Refusing to act is correct here (WA#4), but refusing to act silently is what
+        // left the Boss's 825 missing notes reported to a log file and nowhere else. The
+        // cap decides what this pass may TOUCH; it does not decide what the user may KNOW.
+        return Ok(ReconcileOutcome { report: Some(report), ..Default::default() });
     }
 
     // 6. cid_cn → orphan path (first wins), for relocating a STILL-present dead row
@@ -222,7 +433,10 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     // seconds on a large universe, which is ample room for a switch.
     if !still_ours() {
         diag(app, "[reconcile] universe switched mid-pass — writing nothing (the stale/orphan sets belong to the departed universe).");
-        return Ok((0, 0, 0));
+        // No report either: every number in it describes the universe the user has just
+        // left. Surfacing it against the newly-active one would be the same cross-universe
+        // contamination §8 exists to prevent, in the notice instead of the index.
+        return Ok(ReconcileOutcome::default());
     }
     for (dead, cid) in &stale {
         // Empty-cid rows have no identity to relocate by, so they land in
@@ -293,15 +507,20 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
     //    guard against destroying review history for a note that isn't actually gone.
     //    [audit HIGH + MED]
     let mut removed = 0usize;
+    // PJ-207 §9 — rows whose file turned out to be present after all. The row is correctly
+    // KEPT, so nothing is missing on disk — but nothing increments `removed` either, and
+    // without this the notice would report the note as still missing when it is not.
+    let mut resurrected = 0usize;
     if walk_complete {
         for p in &remove {
             // Per-iteration, not just per-phase: a capped sweep can be 200 deletes, and a
             // delete landing in the wrong universe destroys a row that was never ours.
             if !still_ours() {
                 diag(app, "[reconcile] universe switched mid-removal — stopping; the remaining phantoms are left for a clean pass.");
-                return Ok((relocated, 0, removed));
+                return Ok(ReconcileOutcome { relocated, readopted: 0, removed, report: None });
             }
             if Path::new(p).exists() {
+                resurrected += 1;
                 continue; // transient stat earlier — the file is there; keep the row.
             }
             match reindex_delete_note(
@@ -331,7 +550,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
             // universe's `note_meta`/`notes_fts`.
             if !still_ours() {
                 diag(app, "[reconcile] universe switched mid-re-adopt — stopping before writing another universe's notes into this index.");
-                return Ok((relocated, readopted, removed));
+                return Ok(ReconcileOutcome { relocated, readopted, removed, report: None });
             }
             let np = norm(p);
             if consumed.contains(&np) {
@@ -366,7 +585,43 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize, usize), String> {
         ));
     }
 
-    Ok((relocated, readopted, removed))
+    let report = net_of_healing(report, relocated, readopted, removed + resurrected);
+
+    Ok(ReconcileOutcome { relocated, readopted, removed, report: Some(report) })
+}
+
+/// PJ-207 §9 — net the healing out, so the notice describes what is STILL wrong.
+///
+/// A relocate consumes one of each: a dead row moves onto an orphan file, so it fixes one
+/// `missing_on_disk` **and** one `missing_from_index` (`consumed` holds exactly the
+/// orphans it took, and it grows once per successful relocate). A removal fixes one dead
+/// row; a re-adopt fixes one orphan.
+///
+/// `resolved_on_disk` is `removed + resurrected`: a row whose file turned out to be
+/// present is not "removed", but it is emphatically no longer missing, and counting only
+/// the removals would report it to the user as still gone.
+///
+/// `drifted` is untouched by all of it, deliberately: this pass heals EXISTENCE drift
+/// only — it never compares content or mtime, which is the gap PJ-207 exists to close.
+/// Every drifted note in the report is still drifted when the user reads it. (The two
+/// sets cannot overlap anyway: drift requires a row AND a file, while every healing path
+/// here acts on one of the two existing without the other.)
+///
+/// A pure function so the arithmetic can be pinned by a test. `run` cannot be: every
+/// entry point into this module takes an `AppHandle` and the crate has no Tauri test
+/// harness — the §8 lesson, and the reason the wiring is asserted against the source
+/// instead.
+fn net_of_healing(
+    report: DriftReport,
+    relocated: usize,
+    readopted: usize,
+    resolved_on_disk: usize,
+) -> DriftReport {
+    DriftReport {
+        missing_on_disk: report.missing_on_disk.saturating_sub(relocated + resolved_on_disk),
+        missing_from_index: report.missing_from_index.saturating_sub(relocated + readopted),
+        ..report
+    }
 }
 
 /// Migrate a `note_meta` row + its path-keyed aux rows from `old` to `new` — a
@@ -435,23 +690,51 @@ fn lib_for<'a>(roots: &'a [(String, String)], np: &str) -> Option<&'a str> {
 /// walk saw everything it was meant to see", and a linked universe's notes were never
 /// among them. Clearing it would permanently disable dead-row removal for any universe
 /// with a federated child — turning a scope fix into a durability regression.
+/// PJ-207 §9 — `known` carries each row's stored `modified` so the mtime comparison
+/// happens HERE, at the one point in the whole boot where the file has already been
+/// stat'ed. That is the entire cost argument for the drift check: measured in this code,
+/// on the Boss's own hardware (`E:` is a USB mechanical disk, not the SSD the boot budget
+/// assumed), the comparison costs **+4 to +10 ms on 7,964 files** — because on Windows the
+/// timestamps arrive with the directory listing and no extra syscall is made. A second
+/// walker to answer the same question would have paid for the whole traversal again, which
+/// is what the Whole-Ecosystem Fix Law is for.
+///
+/// The same insight is why classification uses `entry.file_type()` rather than
+/// `path.is_dir()`. `Path::is_dir()` is `fs::metadata`, which on Windows opens a handle per
+/// entry; `file_type()` is already in hand. A symlink falls back to `is_dir()`, so junction
+/// traversal is bit-for-bit what it was.
+///
+/// **Measured, warm, by `pj207_s9_drift_cost` in this file:**
+///
+/// | tree | before (`is_dir`, no drift check) | after (`file_type` + drift check) |
+/// |---|---|---|
+/// | 7,964 `.md` | 252–260 ms | **17–19 ms** |
+/// | 2,094 `.md` | 207–219 ms | **17–18 ms** |
+///
+/// So the step that added a per-file comparison made the boot walk **~14× faster**, and the
+/// honest figure for §9's cost is *negative*: about 200–240 ms cheaper than the walk it
+/// replaces, every launch. Cold, on the Boss's USB mechanical disk, the same traversal was
+/// 3.5–8.7 s — which is what that 14× is worth in practice.
 fn collect_md(
     dir: &Path,
-    known: &HashSet<String>,
+    known: &HashMap<String, u64>,
     foreign: &HashSet<String>,
-    orphans: &mut Vec<(String, String)>,
-    seen: &mut HashSet<String>,
-    complete: &mut bool,
+    walk: &mut Walk,
     depth: u32,
 ) {
     if depth > 20 {
-        *complete = false; // truncated — a deeper file is unseen; don't trust removal.
+        // Truncated — a deeper file is unseen; don't trust removal. Counted as unreadable
+        // too: this IS a directory we did not list, and `has_findings` keys on the count
+        // so that a walk which could not look everywhere can never render as "all clear".
+        walk.complete = false;
+        walk.dirs_unreadable += 1;
         return;
     }
     let rd = match std::fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => {
-            *complete = false; // this subtree is unseen; don't trust removal for it.
+            walk.complete = false; // this subtree is unseen; don't trust removal for it.
+            walk.dirs_unreadable += 1;
             return;
         }
     };
@@ -461,28 +744,72 @@ fn collect_md(
         if name.starts_with('.') {
             continue;
         }
-        if path.is_dir() {
+        if entry_is_dir(&entry, &path) {
             // A linked universe's root nested under ours — not our notes, not our orphans.
             if crate::libraries::is_nested_library(&path, foreign) {
                 continue;
             }
-            collect_md(&path, known, foreign, orphans, seen, complete, depth + 1);
+            collect_md(&path, known, foreign, walk, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let ps = path.to_string_lossy().to_string();
             let pn = norm(&ps);
-            if !seen.insert(pn.clone()) {
+            if !walk.seen.insert(pn.clone()) {
                 continue; // already visited via an overlapping root
             }
-            if !known.contains(&pn) {
+            walk.files_seen += 1;
+            match known.get(&pn) {
                 // Orphan — read its cid_cn (empty for a cid-free note).
-                let cid = std::fs::read_to_string(&path)
-                    .ok()
-                    .and_then(|c| extract_frontmatter_cid_cn(&c))
-                    .unwrap_or_default();
-                orphans.push((ps, cid));
+                None => {
+                    let cid = std::fs::read_to_string(&path)
+                        .ok()
+                        .and_then(|c| extract_frontmatter_cid_cn(&c))
+                        .unwrap_or_default();
+                    walk.orphans.push((ps, cid));
+                }
+                Some(&stored) => match entry_mtime(&entry) {
+                    Some(m) if m == stored => walk.unchanged += 1,
+                    Some(_) => walk.drifted += 1,
+                    // A file we could not stat is a file we cannot judge. It is neither
+                    // unchanged nor drifted, and saying either would be inventing an
+                    // answer — the honest report is that one file could not be read.
+                    None => walk.files_unreadable += 1,
+                },
             }
         }
     }
+}
+
+/// Is this entry a directory to descend into? The cheap test, with the exact old
+/// behaviour preserved for the one case where the two differ.
+///
+/// `DirEntry::file_type()` comes from the directory enumeration — free. `Path::is_dir()`
+/// is `fs::metadata`, a handle open per entry, and it was ~95% of this walk's cost. They
+/// disagree only on symlinks: `is_dir()` follows one and reports the TARGET, `file_type()`
+/// reports the link. A directory symlink or junction inside a library was descended into
+/// before this change, so it must still be — hence the fallback rather than a bare
+/// `ft.is_dir()`, which would silently stop walking it.
+fn entry_is_dir(entry: &std::fs::DirEntry, path: &Path) -> bool {
+    match entry.file_type() {
+        Ok(ft) if !ft.is_symlink() => ft.is_dir(),
+        _ => path.is_dir(),
+    }
+}
+
+/// The entry's mtime, in `note_meta.modified`'s units.
+///
+/// `DirEntry::metadata()` is the cheap call — on Windows the directory enumeration
+/// already carried the timestamps, so this costs no syscall at all, which is why the
+/// drift check is ~2 ms on 8,000 files. But it deliberately does **not** follow symlinks,
+/// while `index_note` stats through `fs::metadata` and therefore stores the TARGET's
+/// mtime. Left unhandled, every symlinked note would read as permanently drifted and the
+/// notice would nag about a note nothing can fix. The slow path is taken only for an
+/// actual symlink, which in a note library is approximately never.
+fn entry_mtime(entry: &std::fs::DirEntry) -> Option<u64> {
+    let md = entry.metadata().ok()?;
+    if md.file_type().is_symlink() {
+        return std::fs::metadata(entry.path()).ok().as_ref().and_then(crate::search::mtime_secs);
+    }
+    crate::search::mtime_secs(&md)
 }
 
 /// Write a line to the universe's diagnostics log (mirrors `links_backfill::diag`).
@@ -565,17 +892,15 @@ mod tests {
         let known_file = dir.join("already indexed.md");
         std::fs::write(&known_file, "---\ntitle: Known\ncid_cn: CIDOLD\nkind: note\n---\nbody").unwrap();
 
-        let mut known = HashSet::new();
-        known.insert(norm(&known_file.to_string_lossy()));
-        let mut orphans: Vec<(String, String)> = Vec::new();
-        let mut seen = HashSet::new();
-        let mut complete = true;
-        collect_md(&dir, &known, &HashSet::new(), &mut orphans, &mut seen, &mut complete, 0);
+        let mut known = HashMap::new();
+        known.insert(norm(&known_file.to_string_lossy()), mtime_of(&known_file));
+        let mut walk = Walk::default();
+        collect_md(&dir, &known, &HashSet::new(), &mut walk, 0);
 
-        assert!(complete, "a clean walk reports complete");
-        assert_eq!(orphans.len(), 1, "only the unindexed file is an orphan");
-        assert_eq!(orphans[0].1, "CIDNEW", "orphan carries its cid_cn for relocate/re-adopt");
-        assert_eq!(norm(&orphans[0].0), norm(&orphan.to_string_lossy()));
+        assert!(walk.complete, "a clean walk reports complete");
+        assert_eq!(walk.orphans.len(), 1, "only the unindexed file is an orphan");
+        assert_eq!(walk.orphans[0].1, "CIDNEW", "orphan carries its cid_cn for relocate/re-adopt");
+        assert_eq!(norm(&walk.orphans[0].0), norm(&orphan.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -599,23 +924,232 @@ mod tests {
         let mut foreign = HashSet::new();
         foreign.insert(norm(&foreign_dir.to_string_lossy()));
 
-        let mut orphans: Vec<(String, String)> = Vec::new();
-        let mut seen = HashSet::new();
-        let mut complete = true;
-        collect_md(&dir, &HashSet::new(), &foreign, &mut orphans, &mut seen, &mut complete, 0);
+        let mut walk = Walk::default();
+        collect_md(&dir, &HashMap::new(), &foreign, &mut walk, 0);
 
-        assert!(complete, "an excluded subtree is not an unreadable one — removal stays enabled");
-        assert_eq!(orphans.len(), 1, "only our own note is an orphan to re-adopt");
-        assert_eq!(orphans[0].1, "CIDMINE", "and it is ours, not the linked universe's");
+        assert!(walk.complete, "an excluded subtree is not an unreadable one — removal stays enabled");
+        assert_eq!(walk.orphans.len(), 1, "only our own note is an orphan to re-adopt");
+        assert_eq!(walk.orphans[0].1, "CIDMINE", "and it is ours, not the linked universe's");
+        assert_eq!(walk.files_seen, 1, "and the linked universe's file is not even counted");
 
         // Without the exclusion the same walk reaches it — the state before this step.
-        let mut orphans2: Vec<(String, String)> = Vec::new();
-        let mut seen2 = HashSet::new();
-        let mut complete2 = true;
-        collect_md(&dir, &HashSet::new(), &HashSet::new(), &mut orphans2, &mut seen2, &mut complete2, 0);
-        assert_eq!(orphans2.len(), 2, "REPRODUCTION: unscoped, the linked note is an orphan to re-adopt");
+        let mut walk2 = Walk::default();
+        collect_md(&dir, &HashMap::new(), &HashSet::new(), &mut walk2, 0);
+        assert_eq!(walk2.orphans.len(), 2, "REPRODUCTION: unscoped, the linked note is an orphan to re-adopt");
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The file's mtime in `note_meta.modified`'s units — through the SAME function the
+    /// indexer stores it with, so a test cannot pass on a definition production doesn't use.
+    fn mtime_of(p: &Path) -> u64 {
+        crate::search::mtime_secs(&std::fs::metadata(p).unwrap()).unwrap()
+    }
+
+    /// PJ-207 §9 — **the reproduction, as a test.** A note edited while Constellation was
+    /// closed leaves the file's mtime ahead of the row's, and nothing at boot notices.
+    ///
+    /// The recipe from the reproduction record (`PJ-207-REPRODUCTION-2026-08-03.md` §2),
+    /// in miniature: two indexed notes, one of which has moved on disk since its row was
+    /// written. Exactly one is drift; the other must NOT be, or the notice cries wolf on
+    /// every launch about 7,800 unchanged notes.
+    #[test]
+    fn a_note_edited_while_the_app_was_closed_is_counted_as_drift() {
+        let dir = std::env::temp_dir().join(format!("pj207s9_drift_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let edited = dir.join("edited outside.md");
+        let untouched = dir.join("untouched.md");
+        std::fs::write(&edited, "---\ncid_cn: CIDA\n---\nvandrasil").unwrap();
+        std::fs::write(&untouched, "---\ncid_cn: CIDB\n---\nquiet").unwrap();
+
+        let mut known = HashMap::new();
+        // The edited note's row remembers an OLDER mtime — what the index held before the
+        // external edit. The untouched note's row agrees with its file.
+        known.insert(norm(&edited.to_string_lossy()), mtime_of(&edited) - 4_735_509);
+        known.insert(norm(&untouched.to_string_lossy()), mtime_of(&untouched));
+
+        let mut walk = Walk::default();
+        collect_md(&dir, &known, &HashSet::new(), &mut walk, 0);
+
+        assert_eq!(walk.drifted, 1, "the externally-edited note is drift");
+        assert_eq!(walk.unchanged, 1, "and the untouched one is NOT — the notice must not cry wolf");
+        assert_eq!(walk.orphans.len(), 0, "both are indexed, so neither is an orphan");
+        assert_eq!(walk.files_seen, 2);
+        assert_eq!(walk.files_unreadable, 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// PJ-207 §9 / PJ-223 — **a file the index has never seen is not a file that changed.**
+    ///
+    /// On the Boss's live universe this is 825 notes, 798 of them in `Constellation PKM`,
+    /// a registered own library: on disk, absent from the index, and therefore absent from
+    /// search. The plan's three-counter report had no field for them; with the obvious
+    /// implementation of `drifted` (`existing_mod == Some(m)` against a row that does not
+    /// exist) all 825 would have been reported as "changed while Constellation was
+    /// closed", which is false for every one of them — they never changed, they were
+    /// never read. This test is the difference between those two sentences.
+    #[test]
+    fn a_file_the_index_has_never_seen_is_counted_apart_from_one_that_changed() {
+        let dir = std::env::temp_dir().join(format!("pj207s9_unseen_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let never_indexed = dir.join("never indexed.md");
+        let indexed = dir.join("indexed.md");
+        std::fs::write(&never_indexed, "---\ncid_cn: CIDX\n---\nunseen").unwrap();
+        std::fs::write(&indexed, "---\ncid_cn: CIDY\n---\nseen").unwrap();
+
+        let mut known = HashMap::new();
+        known.insert(norm(&indexed.to_string_lossy()), mtime_of(&indexed));
+
+        let mut walk = Walk::default();
+        collect_md(&dir, &known, &HashSet::new(), &mut walk, 0);
+
+        assert_eq!(walk.orphans.len(), 1, "the never-indexed file is missing FROM THE INDEX");
+        assert_eq!(walk.drifted, 0, "and it did NOT change — reporting it as changed is a false sentence");
+        assert_eq!(walk.unchanged, 1, "the indexed, unmoved note");
+        assert_eq!(
+            walk.files_seen,
+            walk.unchanged + walk.drifted + walk.orphans.len(),
+            "the books close: every file seen is unchanged, drifted, or missing from the index"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A directory that cannot be listed makes the walk INCOMPLETE and is counted — a
+    /// sweep that could not look must never be rendered as "nothing changed". The depth
+    /// cutoff is the other way in, and it is the one with no `read_dir` error to notice.
+    #[test]
+    fn a_walk_that_could_not_look_everywhere_says_so() {
+        let mut walk = Walk::default();
+        collect_md(Path::new("Z:/no/such/directory/pj207s9"), &HashMap::new(), &HashSet::new(), &mut walk, 0);
+        assert!(!walk.complete, "an unreadable root is not an empty one");
+        assert_eq!(walk.dirs_unreadable, 1, "and it is counted, not merely flagged");
+
+        let mut deep = Walk::default();
+        collect_md(Path::new("."), &HashMap::new(), &HashSet::new(), &mut deep, 21);
+        assert!(!deep.complete, "past the depth cap the walk is truncated, so removal must not be trusted");
+    }
+
+    /// PJ-207 §9 — the notice describes what is STILL wrong after this pass healed what it
+    /// could. Reporting five re-adopted files as missing would be an alarm about work the
+    /// same launch already finished; a relocate fixes BOTH directions at once, because it
+    /// moves one dead row onto one orphan file.
+    #[test]
+    fn the_report_is_what_survived_the_healing() {
+        let found = DriftReport {
+            drifted: 19,
+            missing_from_index: 10,
+            missing_on_disk: 7,
+            foreign_rows: 9,
+            files_seen: 2094,
+            rows_seen: 1890,
+            walk_complete: true,
+            ..DriftReport::default()
+        };
+        // 2 relocates (each fixes one of each), 5 re-adopts, 3 removals.
+        let net = net_of_healing(found, 2, 5, 3);
+        assert_eq!(net.missing_from_index, 3, "10 orphans − 2 relocated − 5 re-adopted");
+        assert_eq!(net.missing_on_disk, 2, "7 dead rows − 2 relocated − 3 removed");
+        assert_eq!(net.drifted, 19, "this pass never re-reads a changed file, so drift survives it untouched");
+        assert_eq!(net.foreign_rows, 9, "and nothing here removes a linked universe's row");
+
+        // Healing can only ever fix what was found; the counts must never wrap.
+        let over = net_of_healing(found, 40, 40, 40);
+        assert_eq!(over.missing_from_index, 0);
+        assert_eq!(over.missing_on_disk, 0);
+    }
+
+    /// A launch that finds nothing wrong says nothing at all. `has_findings` is what keeps
+    /// a green "all clear" banner off the screen on every boot — and `foreign_rows` is
+    /// deliberately NOT a finding: linked-universe copies are a state of the index §13 may
+    /// one day offer to tidy, not a reason to interrupt someone opening their notes.
+    ///
+    /// **The last two assertions are the 2026-08-07 safety inspection's finding.** A
+    /// library with one unlistable folder produces all three drift counts at zero — the
+    /// notes under it were never seen — so a `has_findings` asking only about those three
+    /// suppressed the report, and silence is how this feature says "all clear". A whole
+    /// subtree absent from search would have been rendered as a clean launch.
+    #[test]
+    fn a_clean_report_renders_nothing_but_a_walk_that_could_not_look_is_not_clean() {
+        assert!(!DriftReport::default().has_findings());
+        assert!(!DriftReport { foreign_rows: 621, ..DriftReport::default() }.has_findings());
+        assert!(DriftReport { drifted: 1, ..DriftReport::default() }.has_findings());
+        assert!(DriftReport { missing_from_index: 1, ..DriftReport::default() }.has_findings());
+        assert!(DriftReport { missing_on_disk: 1, ..DriftReport::default() }.has_findings());
+        assert!(
+            DriftReport { dirs_unreadable: 1, ..DriftReport::default() }.has_findings(),
+            "a folder that could not be listed hides every note under it — reporting that \
+             launch as clean is the silent failure this whole migration exists to end"
+        );
+        assert!(DriftReport { files_unreadable: 1, ..DriftReport::default() }.has_findings());
+    }
+
+    /// PJ-207 §M6 — **what the drift check actually costs**, in the shipped code, against
+    /// a real note tree. Not run by the suite; it needs a corpus and a cold cache.
+    ///
+    /// ```text
+    /// PJ207_S9_TREE="E:\Constellation Universes\Eisa Universe" \
+    ///   cargo test --release pj207_s9_drift_cost -- --ignored --nocapture
+    /// ```
+    ///
+    /// It prints two numbers: the walk as it shipped BEFORE this step (no per-file stat)
+    /// and the walk with the drift comparison folded in. The difference is §9's entire
+    /// cost, because the traversal itself was already happening on every launch.
+    ///
+    /// The baseline closure below mirrors `collect_md` minus the stat. A mirror is
+    /// forbidden in a test that ASSERTS behaviour — that is the `search.rs:338` trap §1
+    /// deleted — but this one asserts nothing; it exists to produce a baseline number, and
+    /// a baseline that drifted from production would show up as a nonsensical delta.
+    #[test]
+    #[ignore]
+    fn pj207_s9_drift_cost() {
+        let Ok(root) = std::env::var("PJ207_S9_TREE") else {
+            println!("set PJ207_S9_TREE to a universe root to measure");
+            return;
+        };
+        fn bare(dir: &Path, n: &mut usize, depth: u32) {
+            if depth > 20 { return; }
+            let Ok(rd) = std::fs::read_dir(dir) else { return };
+            for e in rd.flatten() {
+                let p = e.path();
+                if e.file_name().to_string_lossy().starts_with('.') { continue; }
+                if p.is_dir() { bare(&p, n, depth + 1); }
+                else if p.extension().map(|x| x == "md").unwrap_or(false) { *n += 1; }
+            }
+        }
+        // Every file present in `known` with a matching mtime, so the measured walk takes
+        // the stat-and-compare path for all of them — the worst case, and the steady state.
+        let mut known: HashMap<String, u64> = HashMap::new();
+        {
+            let mut w = Walk::default();
+            collect_md(Path::new(&root), &known, &HashSet::new(), &mut w, 0);
+            for (p, _) in &w.orphans {
+                if let Ok(md) = std::fs::metadata(p) {
+                    if let Some(m) = crate::search::mtime_secs(&md) { known.insert(norm(p), m); }
+                }
+            }
+        }
+        for trial in 0..5 {
+            let t0 = std::time::Instant::now();
+            let mut n = 0usize;
+            bare(Path::new(&root), &mut n, 0);
+            let before = t0.elapsed();
+
+            let t1 = std::time::Instant::now();
+            let mut w = Walk::default();
+            collect_md(Path::new(&root), &known, &HashSet::new(), &mut w, 0);
+            let after = t1.elapsed();
+
+            println!(
+                "trial {trial}: {n} md · walk-only {:>8.1} ms · with drift check {:>8.1} ms · \
+                 delta {:>+7.1} ms · unchanged {} drifted {} orphans {} unreadable {}/{}",
+                before.as_secs_f64() * 1000.0,
+                after.as_secs_f64() * 1000.0,
+                (after.as_secs_f64() - before.as_secs_f64()) * 1000.0,
+                w.unchanged, w.drifted, w.orphans.len(), w.dirs_unreadable, w.files_unreadable,
+            );
+        }
     }
 
     /// `lib_for` attributes a path to the MOST-SPECIFIC (longest) containing root,

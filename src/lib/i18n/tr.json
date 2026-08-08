@@ -1,4 +1,10 @@
 {
+	"indexDrift": {
+		"changed": "Constellation kapalıyken diskte {noun} değişti; arama en güncel metni göstermeyebilir.",
+		"missingFromIndex": "Kitaplıklarınızdaki {noun} arama dizininde yok; arama onları bulamaz.",
+		"missingOnDisk": "Arama dizinindeki {noun} için diskte artık dosya yok.",
+		"incomplete": "Bazı klasörler veya dosyalar okunamadı; daha fazlası olabilir."
+	},
 	"saveHealth": {
 		"copySuffix": "kurtarılan kopya",
 		"saveCopy": "Bir kopya kaydet",

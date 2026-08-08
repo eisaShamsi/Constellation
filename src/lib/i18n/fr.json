@@ -1,4 +1,10 @@
 {
+	"indexDrift": {
+		"changed": "{noun} ont changé sur le disque pendant que Constellation était fermé, la recherche peut donc ne pas afficher leur texte le plus récent.",
+		"missingFromIndex": "{noun} de vos bibliothèques ne sont pas dans l'index de recherche, la recherche ne les trouvera donc pas.",
+		"missingOnDisk": "{noun} de l'index de recherche n'ont plus de fichier sur le disque.",
+		"incomplete": "Certains dossiers ou fichiers n'ont pas pu être lus, il pourrait donc y en avoir davantage."
+	},
 	"saveHealth": {
 		"copySuffix": "copie récupérée",
 		"saveCopy": "Enregistrer une copie",

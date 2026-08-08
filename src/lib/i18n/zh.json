@@ -1,4 +1,10 @@
 {
+	"indexDrift": {
+		"changed": "Constellation 关闭期间磁盘上有 {noun} 发生变更，搜索可能不会显示其最新内容。",
+		"missingFromIndex": "库中有 {noun} 不在搜索索引中，搜索将找不到它们。",
+		"missingOnDisk": "搜索索引中的 {noun} 在磁盘上已没有对应文件。",
+		"incomplete": "有些文件夹或文件无法读取，因此可能还有更多。"
+	},
 	"saveHealth": {
 		"copySuffix": "恢复副本",
 		"saveCopy": "保存副本",

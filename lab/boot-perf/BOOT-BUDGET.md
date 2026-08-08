@@ -97,17 +97,33 @@ time by 25× and fully-responsive time by 45×.
 
 ## Open work (Criteria 4 and 5)
 
-Still not implemented; tracked in the boot-perf todo for a future session:
-- **Criterion 4** — cheap stat-only post-UI sweep that detects external
-  changes (OneDrive, Syncthing, git pull) without blocking the UI.
+- **Criterion 4 — detection half SHIPPED (PJ-207 §9, 2026-08-08).** The boot
+  reconcile (already walking every own library each launch) now compares each
+  `.md`'s mtime against `note_meta.modified` and surfaces the result as a
+  user-facing notice ("N notes changed on disk while Constellation was
+  closed…"). Measured in the shipped code: the whole walk is **17–19 ms warm on
+  7,964 notes** (the §9 commit also replaced `path.is_dir()` with
+  `entry.file_type()`, taking the walk from ~255 ms — so Criterion 4's ≤ 3 s
+  budget is met by ~150×). Boss-validated live: an external Notepad edit
+  raised the reported count 19 → 20 on the next launch. **Still open from the
+  original spec:** the formal `touch-50.ps1` / `boot:reconciled {changed: 50}`
+  harness and the `reconcile_ms` / `reconcile_blocked_ui` fields in
+  `boot-perf.latest.json` are not wired; the Settings scorecard row still
+  reads "Not measured".
 - **Criterion 5** — kill-mid-index recovery: schema-version check on
-  search.db with auto-rebuild modal if WAL is corrupt.
+  search.db with auto-rebuild modal if WAL is corrupt. Not implemented.
 
 These do not gate the current "boot-perf-fix-2026-04-15" milestone but
 must land before we can claim full ship-readiness on this dimension.
 
 ## Changelog
 
+- **2026-08-08 (Criterion 4 detection)** — PJ-207 §9 ships the stat-only
+  drift check inside the existing boot reconcile, with a user-facing notice.
+  Formal measurement harness still open (see above). Also recorded for
+  honesty: the corpus drive `E:` is a **USB mechanical HDD** (LaCie d2), not
+  an SSD — cold-cache walks measured 3.5–8.7 s vs 17–19 ms warm, so every
+  boot-perf figure needs a cold/warm label (§9.5 of the orientation).
 - **2026-04-15 (initial)** — Budget created after 3-agent expert panel
   review. Pre-fix baseline recorded.
 - **2026-04-15 (production verified)** — Fix series complete. Production

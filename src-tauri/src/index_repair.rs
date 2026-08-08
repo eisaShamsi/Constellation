@@ -160,6 +160,11 @@ pub struct RepairState {
     /// Perf only, but a duplicate walk of 7,800 notes is not a rounding error.
     current: Mutex<Option<Scope>>,
     last_error: Mutex<Option<String>>,
+    /// PJ-207 §9 — the last drift report the boot reconcile produced, so a surface that
+    /// mounted after the event fired can still ask. `None` means "no answer yet", which is
+    /// emphatically not "nothing is wrong": the pass may still be walking, or it may have
+    /// stopped before it had an answer. The frontend must render nothing for `None`.
+    drift: Mutex<Option<crate::reconcile::DriftReport>>,
 }
 
 impl RepairState {
@@ -194,6 +199,26 @@ pub fn request_cancel(app: &AppHandle) {
 /// handshake lands on a boundary rather than guillotining a half-written note.
 pub(crate) fn cancel_requested(app: &AppHandle) -> bool {
     app.state::<RepairState>().cancel.load(Ordering::SeqCst)
+}
+
+/// PJ-207 §9 — publish the boot pass's drift report: store it for a late-mounting
+/// surface, then push it.
+///
+/// **Both, not either.** An event alone is lost by anything that mounts after it fires
+/// (the second screen, a panel opened later); a stored value alone means the notice waits
+/// for whatever the user does next. This is the `classifier_scan_status` discipline the
+/// progress strips already follow — recover on mount, update on event.
+///
+/// Nothing is emitted when the report is empty. A launch that finds nothing wrong says
+/// nothing at all; a green "all clear" on every boot is noise, and noise is how a real
+/// warning stops being read.
+pub(crate) fn record_drift_report(app: &AppHandle, report: crate::reconcile::DriftReport) {
+    if let Ok(mut g) = app.state::<RepairState>().drift.lock() {
+        *g = Some(report);
+    }
+    if report.has_findings() {
+        let _ = app.emit("index-drift:report", report);
+    }
 }
 
 /// Record progress for the status command / a progress strip.
@@ -489,9 +514,18 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
                 break;
             }
             let mut deferred = Vec::new();
+            // PJ-207 §9 (safety inspection 2026-08-07) — did this batch hand the queue to a
+            // new run? Without knowing, the loop below spins.
+            let mut handed_off = false;
             for s in queued {
-                if let SubmitOutcome::Blocked { .. } = submit(&app_bg, s.clone()) {
-                    deferred.push(s);
+                match submit(&app_bg, s.clone()) {
+                    SubmitOutcome::Blocked { .. } => deferred.push(s),
+                    // A run now owns the walk — either this submit started it, or it joined
+                    // that run's queue. Either way ITS drain will finish the work.
+                    SubmitOutcome::Started { .. }
+                    | SubmitOutcome::Queued { .. }
+                    | SubmitOutcome::AlreadyRunning { .. } => handed_off = true,
+                    SubmitOutcome::Foreign { .. } => {}
                 }
             }
             if !deferred.is_empty() {
@@ -503,6 +537,17 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
                     }
                 }
                 break; // still blocked — leave them for the next run's drain.
+            }
+            // **The spin this closes.** With three libraries pending, the first re-submit
+            // starts run 2 and the second returns `Queued` — and `Queued` means `submit`
+            // has already pushed that scope BACK onto `pending`. `deferred` collects only
+            // `Blocked`, so it stayed empty, nothing broke the loop, and the next iteration
+            // drained the very scope just pushed back: an unbounded busy-spin re-reading
+            // and re-parsing `libraries.json` for the entire duration of run 2 — minutes,
+            // on a genuinely unindexed library. Silent, because it burns a background
+            // worker rather than the UI thread, so it reads as ordinary slow boot indexing.
+            if handed_off {
+                break;
             }
         }
         })
@@ -645,6 +690,20 @@ pub fn index_repair_status(app: AppHandle) -> RepairStatus {
 pub fn index_repair_cancel(app: AppHandle) -> Result<(), String> {
     request_cancel(&app);
     Ok(())
+}
+
+/// PJ-207 §9 — **what changed on disk while Constellation was closed.**
+///
+/// A pure read of the report the boot reconcile already produced. It starts nothing,
+/// walks nothing and locks nothing, so it is safe to call from the boot path — the answer
+/// was computed by the pass that was going to walk the tree anyway.
+///
+/// `None` while that pass is still running (it is scheduled on a background thread at the
+/// same moment as everything else post-paint), which is why the frontend also listens for
+/// `index-drift:report` rather than polling.
+#[tauri::command]
+pub fn index_drift_report(app: AppHandle) -> Option<crate::reconcile::DriftReport> {
+    app.state::<RepairState>().drift.lock().ok().and_then(|g| *g)
 }
 
 #[cfg(test)]
@@ -884,6 +943,42 @@ mod tests_pj207_s8_write_scope_guard {
             "reconcile.rs stopped using the SHARED stop decision. A second copy of it is how \
              the two passes drift apart; §7 and §8 deliberately share one."
         );
+    }
+
+    /// PJ-207 §9 — the drift check has no walk of its own **on purpose**, and that is the
+    /// one thing about it a behaviour test cannot see.
+    ///
+    /// Every count it reports is produced by the boot reconcile, which was already walking
+    /// exactly these roots on every launch. Give §9 its own walker and every test in this
+    /// crate still passes — while the app pays the tree walk twice at the same instant, on
+    /// a machine whose universes live on a USB mechanical disk. The measurements are on
+    /// `reconcile::collect_md`, which owns them.
+    ///
+    /// So the invariant is asserted against the source: the reconcile must still hand its
+    /// report over, and the drift command must remain a pure read.
+    #[test]
+    fn the_drift_check_reads_the_boot_reconcile_rather_than_walking_again() {
+        let reconcile = src_production("reconcile.rs");
+        assert!(
+            reconcile.contains("record_drift_report"),
+            "reconcile.rs no longer publishes its drift report. Its stale/orphan sets are \
+             computed on EVERY launch and were surfaced nowhere but diagnostics.log for \
+             months — on the Boss's live universe that silence was 825 notes absent from \
+             search. If the report now travels some other way, prove that way reaches the \
+             user before changing this assertion."
+        );
+
+        let repair = src_production("index_repair.rs");
+        let cmd = fn_body(&repair, "\npub fn index_drift_report(");
+        for walker in ["collect_md", "read_dir", "collect_md_paths", "reconcile_filesystem"] {
+            assert!(
+                !cmd.contains(walker),
+                "`index_drift_report` now reaches `{walker}` — it must stay a pure read of \
+                 the report the boot pass already produced. A walk behind this command runs \
+                 a second full traversal of the library at boot, which is the ZERO-BOOT-WALKS \
+                 rule's actual target and, on a USB disk, several seconds of it."
+            );
+        }
     }
 
     /// `search.rs` legitimately uses the recursive set in many READ paths, so the check is

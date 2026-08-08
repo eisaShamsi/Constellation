@@ -243,3 +243,165 @@ paper.
 - Library *watching* still covers federated directories (`+layout.svelte:2851` iterates the
   recursive `$libraries`). Left alone on purpose: watching is not writing, the write it feeds is
   now scoped, and narrowing it risks federated display. Named here rather than silently left.
+
+---
+
+# PJ-207 §9 — Constellation notices, after it opens, that notes changed while it was closed
+
+**Status at write time:** built, all gates green, release binary building, Boss test in the
+`tutorial-auditor` → `ui-inspector` pipeline. **Not committed** — the Boss tests and passes first.
+
+## 1 · The step, and the one place the plan was wrong
+
+§9's concept: after the app opens, it should notice that notes changed on disk while it was shut,
+and say so. "Criterion 4", specified 2026-04-15 in `lab/boot-perf/BOOT-BUDGET.md:101`, never built.
+
+The plan (`docs/PJ-207-Index-Repair-Plan.md:234-248`) specified a **new command in
+`index_repair.rs` that stats every `.md` under the own roots**. Verified against the code before
+writing anything, and that is a second walker: **`reconcile::run` (`reconcile.rs`) already walks
+exactly those roots on every launch**, scheduled from `ensure_search_db_ready`
+(`search.rs:11033`) — which is the first statement of the very `cache_mark_search_ready` call the
+plan wanted to attach to. It already computes **two of §9's four counters** (`stale` = rows with no
+file, `orphans` = files with no row) and reports them to `diagnostics.log` and nowhere else.
+
+So §9 was built as: **the pass that already walks learns to compare timestamps**, and
+`index_repair.rs` keeps the command the plan asked for — as a pure read of the published report.
+
+## 2 · Reproduce-First — measured on the Boss's live `Eisa Universe`
+
+Read-only, against a byte copy of `search.db` plus a disk sweep mirroring `collect_md` exactly:
+
+| | |
+|---|---|
+| `drifted` | **19** (largest 4,407,256 s ≈ 51 days) |
+| `missing_from_index` | **825** — 798 of them in `Constellation PKM`, a registered own library |
+| `missing_on_disk` | 0 |
+| `foreign_rows` | **9** |
+| books close | 2,094 files = 1,250 unchanged + 19 drifted + 825 missing ✓ |
+
+825 matches his own `diagnostics.log` verbatim — *"825 orphan files (> cap 200) — skipping
+re-adopt"*, logged **four times on 2026-08-07**. **PJ-223 is not an undetected defect; it is an
+unreported one.** The recovery correctly refuses on its safety cap and tells only a log file.
+
+**`foreign_rows` had to be counted by PATH, not by `library_name NOT IN (own)`.** Those two differ
+by 69x here: 621 rows sit outside the own roots, but only **9** belong to a linked universe — **603
+point at `E:\Cognitive Knowledge\...`, the pre-MIG-108 location, where no file exists**, and 9 more
+point into the repo. Reporting 621 as "duplicated from linked universes" would have been a
+fabrication in fifteen languages.
+
+## 3 · The plan's return shape could not report PJ-223
+
+`{ drifted, missing_on_disk, foreign_rows }` has **no field for a file on disk the index has never
+seen** — which is exactly what the 798 are. `missing_on_disk` is the opposite direction (the
+codebase's own vocabulary: `reconcile.rs` "phantom" rows vs "orphan files", two concepts, two
+remedies). Construct the state PJ-223 actually is with nothing else wrong and all three read **0**:
+the app says nothing while 40% of the universe is invisible to search. Added
+**`missing_from_index`**, plus `unchanged` / `files_seen` / `rows_seen` so the closing sum is
+checkable — the discipline §3 built `WalkTally` for, one step earlier in this same migration.
+
+## 4 · §M6 — the measurement that gates this step, taken in the shipped code
+
+`pj207_s9_drift_cost` (`#[ignore]`d, `PJ207_S9_TREE=<root> cargo test --release ... -- --ignored`).
+Warm, on `E:` — which is a **LaCie d2, a USB mechanical HDD**, not the SSD `BOOT-BUDGET.md`
+assumed. Nobody had written that down.
+
+| tree | before (`is_dir`, no drift check) | after (`file_type` + drift check) |
+|---|---|---|
+| 7,964 `.md` | 252–260 ms | **17–19 ms** |
+| 2,094 `.md` | 207–219 ms | **17–18 ms** |
+
+**The step that added a per-file comparison made the boot walk ~14x faster.** Two findings drove it:
+adding the timestamp comparison costs **+4 to +10 ms on 7,964 files** (proved empirically, not
+assumed: one syscall costs ~31 us here, so 7,964 extra stats would have shown as ~250 ms — the
+timestamps genuinely arrive with the directory listing); and `Path::is_dir()`, which was ~95% of the
+walk, is `fs::metadata` — a handle open per entry. `entry.file_type()` with a symlink fallback
+preserves junction traversal bit-for-bit.
+
+The plan's *"160–590 ms"* figure has one un-methodised source and is a **warm-only** number. Cold
+first-touch of the same trees measured **3.5–8.7 s**. §M6's threshold was ~600 ms; the honest figure
+for §9's cost is **negative — about 200–240 ms cheaper per launch than the walk it replaces.**
+
+## 5 · RED-proofs, all three observed (committed tree green)
+
+1. Revert the comparison → `the externally-edited note is drift` — *left: 0, right: 1*.
+2. Count a no-row file as drift (**the plan's own shape** — `existing_mod == Some(m)` is false for a
+   missing row) → `and it did NOT change — reporting it as changed is a false sentence`
+   — *left: 1, right: 0*. That branch would have told the Boss **825 notes changed** when none had.
+3. Remove the publish call → the source guard fires by name.
+
+The wiring guard is source-level for §8's reason: every entry point takes an `AppHandle` and the
+crate has no Tauri harness, so a second walker would leave the whole suite green.
+
+## 6 · The `/simplify` pass and the diff-scoped inspection — 9 findings, all fixed before commit
+
+**PJ-220 diagnosed on the way in.** `Workflow({scriptPath})` was rejected with *"script contains
+control characters"* — the file had **130 CR bytes** (Python's `write_text` translates newlines on
+Windows); the repo's own copy has zero. Written LF-only it launched immediately and ran a genuine
+**diff sweep over 6 files** (2 hunt groups), not the whole app. The blocker is CRLF.
+
+From the four `/simplify` agents:
+
+- **`--background-modifier-notice` / `--text-notice` are defined nowhere** — my own bug: the notice
+  would have rendered a hardcoded light-mode band in dark theme forever. Worse, the same read found
+  `--background-modifier-error` and `--text-error` are **both** `var(--color-red)`: the two shipped
+  bars have been **red text on a red background**. All three fixed together with the codebase's own
+  tinted-surface idiom (Whole-Ecosystem: one concern, three surfaces).
+- `Walk` hand-writes `Default` (its safe `complete` is `true`, so the derive was wrong and ten sites
+  had to remember it); `ReconcileOutcome` derives it; `let mut report` → `let`; `drop(rows)`.
+- A row whose file turned out to be present is no longer missing — counted (`resurrected`), so the
+  notice cannot over-report it.
+
+From the safety inspection (5 confirmed, 4 fixed here):
+
+- **`has_findings` ignored the incomplete-walk case** — a library with one unlistable folder yields
+  all three drift counts at zero (its notes were never *seen*), so the report was suppressed and
+  **silence is this feature's encoding of "all clear"**. It contradicted the sentence written on
+  `walk_complete` two fields above it, and my own test pinned the defect. Fixed on both sides of the
+  wire; the test now asserts the opposite.
+- **The drift notice was never cleared on a universe switch** — universe A's 825 asserted about
+  universe B, permanently in the three cases where B's pass returns no report.
+- **A pre-existing unbounded busy-spin in `submit`'s drain** (§7): a re-submit returning `Queued`
+  has already been pushed back onto `pending`, but only `Blocked` was collected as deferred — so the
+  loop re-drained the same scope and re-parsed `libraries.json` for the whole duration of the next
+  run. Silent, because it burns a background worker rather than the UI thread.
+- **LOW, filed not fixed:** §8's narrowing means a `note_meta` row pointing at a *deleted* linked-
+  universe file is now permanently exempt from dead-row removal (9 such rows here). That is a §13 /
+  PJ-219 concern, not §9's.
+
+## 7 · Gates
+
+Rust **1370 / 0** (14 ignored — one is the new §M6 harness) · vitest **900/900** ·
+svelte-check **0 errors** · i18n parity **15/15 OK** (four new `indexDrift.*` keys x 15 in the same
+commit; placeholder parity is covered by the existing test).
+
+## 8 · Honest open item carried into the Boss test
+
+**I could not verify where the notice physically appears.** `<div class="app">` is a CSS grid whose
+four columns are exactly saturated by dock + sidebar + content + right sidebar, and all three notice
+rows declare no grid placement. No browser was available to render it (the Chrome extension is not
+connected; access to a desktop browser was declined), and I will not guess. The two existing bars
+have the identical property, so whatever they do, this does. The test asks the Boss to **report**
+where it appears rather than asserting a position.
+
+## 9 - The test pipeline: THREE rounds, four findings, all mine
+
+`tutorial-auditor` -> `ui-inspector` rejected the §9 test **twice** before it reached the Boss.
+
+1. **The marker word was contaminated.** The draft used `zarquon` — which the 2026-08-03 log records
+   as already indexed in `Eisa Cognitive Knowledge`, a **federated child of the universe under test**.
+   A hit could have come from a pre-existing note rather than from anything this build did, and the
+   draft's "you should expect not to find it" would have been false. `vandrasil` is contaminated too
+   (indexed under Eisa Universe's own `الكون المعرفي`). Fixed by *proving* a clean marker: a script
+   queried the `search.db` of all three universes and read every `.md` on all three disks; six
+   candidates came back clean and `plarnwick` was chosen. That turned Step 4 from an unreliable
+   assurance into a real assertion — a hit can now only mean Constellation indexed the Boss's edit.
+2. **A number from the wrong universe.** The motivating "60 of 7,824" was measured on
+   `Eisa Cognitive Knowledge` but presented as "your own data" immediately before Eisa Universe's
+   19/825 — inviting him to read 60 as a prediction for the universe he was about to open.
+3. **A trailing period inside a quoted button label.**
+4. **The wrong icon shape.** The draft said "⋯" — a horizontal ellipsis. The button's SVG is three
+   circles at `cx=12, cy=5/12/19` with no transform: a **vertical** kebab. Verified in the markup
+   before accepting. He would have been hunting his own screen for a shape that does not render.
+
+**APPROVED on round three**, 18 claims verified. Every finding was a place where he would have been
+sent looking for something that was not there — which is the whole reason the gate exists.

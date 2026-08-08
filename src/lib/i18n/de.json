@@ -1,4 +1,10 @@
 {
+	"indexDrift": {
+		"changed": "{noun} wurden auf der Festplatte geändert, während Constellation geschlossen war — die Suche zeigt möglicherweise nicht den neuesten Text.",
+		"missingFromIndex": "{noun} in Ihren Bibliotheken sind nicht im Suchindex, daher findet die Suche sie nicht.",
+		"missingOnDisk": "Zu {noun} im Suchindex gibt es keine Datei mehr auf der Festplatte.",
+		"incomplete": "Einige Ordner oder Dateien konnten nicht gelesen werden, daher könnte es mehr geben."
+	},
 	"saveHealth": {
 		"copySuffix": "wiederhergestellte Kopie",
 		"saveCopy": "Kopie speichern",

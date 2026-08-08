@@ -1,4 +1,10 @@
 {
+	"indexDrift": {
+		"changed": "Constellation を閉じている間にディスク上で {noun} が変更されました。検索に最新の本文が反映されない場合があります。",
+		"missingFromIndex": "ライブラリ内の {noun} が検索インデックスにありません。検索では見つかりません。",
+		"missingOnDisk": "検索インデックスの {noun} に対応するファイルがディスク上にありません。",
+		"incomplete": "読み取れなかったフォルダーやファイルがあるため、さらに存在する可能性があります。"
+	},
 	"saveHealth": {
 		"copySuffix": "復元コピー",
 		"saveCopy": "コピーを保存",

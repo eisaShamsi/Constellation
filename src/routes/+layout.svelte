@@ -2,6 +2,8 @@
 	import '$lib/theme.css';
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t, tn } from '$lib/i18n';
+	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
+	import { DRIFT_REPORT_EVENT, hasFindings, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -558,6 +560,49 @@
 						? tOr('storeHealth.index', 'A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Rebuild Index will restore it.')
 						: '',
 	);
+	/**
+	 * PJ-207 §9 — what changed on disk while Constellation was closed.
+	 *
+	 * Its own `$state`, deliberately NOT a fifth branch of `storeHealthError` above. That
+	 * chain is an exclusive ternary: exactly one of its messages ever renders, so folding
+	 * drift into it would mean a single failed save-path reindex hides the drift notice for
+	 * the whole session (`indexHealthError` clears only when attempt 0 threw *and* the retry
+	 * succeeded), or the reverse — an informational file count hiding a live "your settings
+	 * are not being saved" warning. They are independent conditions and both can be true.
+	 *
+	 * `.store-err` is also non-dismissible by written design, and correctly so: its
+	 * condition is still true after you look away. Drift is not like that — once you have
+	 * read it and decided, the message has done its job.
+	 *
+	 * What the counts mean, and why they are separate: `reconcile::DriftReport`.
+	 */
+	let indexDrift = $state<DriftReport | null>(null);
+	let indexDriftDismissed = $state(false);
+	/**
+	 * Up to three independent facts in one line, each only when its count is non-zero.
+	 * Three sentences and not one number — `reconcile::DriftReport` documents why, and the
+	 * argument is not repeated here.
+	 */
+	const indexDriftMessage = $derived.by(() => {
+		const r = indexDrift;
+		// The flag is checked here as well as at the listener (below) — belt and braces on a
+		// rollback lever, so removing one gate does not silently un-gate the feature.
+		if (!REPAIR_DOOR_ENABLED || indexDriftDismissed || !hasFindings(r)) return '';
+		const parts: string[] = [];
+		if (r.drifted > 0)
+			parts.push(tOr('indexDrift.changed', '{noun} changed on disk while Constellation was closed, so search may not show their latest text.', { noun: $tn('plurals.notes', r.drifted) }));
+		if (r.missingFromIndex > 0)
+			parts.push(tOr('indexDrift.missingFromIndex', '{noun} in your libraries are not in the search index, so searching will not find them.', { noun: $tn('plurals.notes', r.missingFromIndex) }));
+		if (r.missingOnDisk > 0)
+			parts.push(tOr('indexDrift.missingOnDisk', '{noun} in the search index no longer have a file on disk.', { noun: $tn('plurals.notes', r.missingOnDisk) }));
+		// A sweep that could not look everywhere must never be read as a complete answer.
+		// The `filesUnreadable` half matters for more than accuracy: `hasFindings` counts it,
+		// so without it here a report whose ONLY finding was an unstattable file would pass
+		// the gate above and then render an EMPTY bar.
+		if (!r.walkComplete || r.filesUnreadable > 0)
+			parts.push(tOr('indexDrift.incomplete', 'Some folders or files could not be read, so there may be more.'));
+		return parts.join(' ');
+	});
 	// Safety inspection 2026-08-01 — `$t` returns the KEY ITSELF when a key is missing
 	// (i18n/index.ts — documented there), so the usual `$t(k) || 'fallback'` chain never
 	// fires on a miss. These notices are the ONLY report the user gets for a dropped
@@ -2927,8 +2972,15 @@
 		// fired here re-walked every file on EVERY boot (the audible thrash, violating
 		// the ZERO BOOT-TIME WALKS rule above). cache_mark_search_ready just ensures the
 		// DB + emits 'cache-reconciled', so the listeners below load incoming link counts
-		// + mark search ready — no walk. Bulk closed-time changes: Settings → Rebuild
-		// Index; live changes: the file watcher.
+		// + mark search ready — no INDEXING walk. Live changes: the file watcher.
+		//
+		// PJ-207 §9 — this comment used to end "Bulk closed-time changes: Settings →
+		// Rebuild Index", naming a control that has never existed in any version of this
+		// app (the whole reason PJ-207 exists). What actually happens now: the reconcile
+		// this call schedules already traverses every own library, and as of §9 it also
+		// compares each file's timestamp against the index and reports the difference.
+		// Bulk closed-time changes are NOTICED here; §11 adds the control that fixes them.
+		// (Cost of the comparison: `reconcile::collect_md`, which owns the measurement.)
 		setTimeout(() => { invoke('cache_mark_search_ready').catch(() => {}); }, 800);
 	}
 
@@ -3018,6 +3070,15 @@
 		// the new universe's cUniverse attach result.
 		federationWarnings = [];
 		showFederationWarningsPopup = false;
+		// PJ-207 §9 (safety inspection 2026-08-07) — the drift counts belong to the universe
+		// just left. Without this reset the amber row goes on asserting "825 notes in your
+		// libraries are not in the search index" about the NEW universe for the whole of its
+		// walk, and PERMANENTLY in the three cases where the new universe's pass returns no
+		// report at all (no accessible root, an empty index, a switch mid-pass). Cleared here
+		// exactly like the federation warnings above; the new universe's own reconcile
+		// re-populates it.
+		indexDrift = null;
+		indexDriftDismissed = false;
 		// A cascade in flight in the previous Universe could leave entries
 		// in cascadingPaths that gate edits in the new one if any path
 		// happens to collide — start the new Universe with a clean slate.
@@ -3686,6 +3747,19 @@
 			}
 		});
 		cleanupFns.push(() => { try { unlistenRepairDone(); } catch {} });
+
+		// PJ-207 §9 — the boot pass's drift report. BOTH an event and a read-on-mount,
+		// because the pass runs on a background thread scheduled at the same moment as
+		// everything else post-paint: it can finish before this listener is registered
+		// (event missed) or long after (a single read would see nothing). This is the
+		// `classifier_scan_status` discipline the progress strips already follow.
+		if (REPAIR_DOOR_ENABLED) {
+			const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
+				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; }
+			});
+			cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
+			loadDriftReport().then((r) => { if (r && !indexDrift) indexDrift = r; });
+		}
 
 		// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
 		// tensions may have changed (added/removed a `contradicts` link, grew past an
@@ -7468,22 +7542,43 @@
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
 	<!-- Save-Durability — the save-failure surface (fixed top banner; auto-dismisses on success) -->
 	<SaveHealthBanner />
-	{#if templateActionError}
-		<div class="tpl-err" role="alert" dir="auto">
-			<span>{templateActionError}</span>
-			<button class="tpl-err-x" onclick={() => (templateActionError = '')} aria-label={$t('common.close')}>✕</button>
-		</div>
-	{/if}
-	<!-- Safety inspection 2026-08-01 — the PERSISTENT "your data is not being saved" surface.
-	     Four stores recorded exactly this condition and NOTHING rendered any of them, so the
-	     failure stayed as invisible as the bare console.error each replaced (release builds
-	     have no devtools). Not dismissible: unlike an action failure, the condition is still
-	     true after you look away, and every further change in that store is also being lost. -->
-	{#if storeHealthError}
-		<div class="store-err" role="alert" dir="auto">
-			<span>{storeHealthError}</span>
-		</div>
-	{/if}
+	<!-- PJ-207 §9 — the app-shell notice band: ONE grid item holding every full-width notice.
+	     Before this, each bar was its own direct child of `.app` with no grid placement, and
+	     the four columns are exactly saturated by dock + sidebar + main-area + right-sidebar
+	     — so any bar that rendered was auto-placed into an implicit row, taking the workspace
+	     with it. Boss-reported 2026-08-08: the drift notice appeared BELOW the status bar and
+	     outside the window, with the sidebar and content area swapped. The band is placed
+	     explicitly (see `.notice-band`) and collapses to 0px when empty. -->
+	<div class="notice-band">
+		{#if templateActionError}
+			<div class="tpl-err" role="alert" dir="auto">
+				<span>{templateActionError}</span>
+				<button class="tpl-err-x" onclick={() => (templateActionError = '')} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+		<!-- Safety inspection 2026-08-01 — the PERSISTENT "your data is not being saved" surface.
+		     Four stores recorded exactly this condition and NOTHING rendered any of them, so the
+		     failure stayed as invisible as the bare console.error each replaced (release builds
+		     have no devtools). Not dismissible: unlike an action failure, the condition is still
+		     true after you look away, and every further change in that store is also being lost. -->
+		{#if storeHealthError}
+			<div class="store-err" role="alert" dir="auto">
+				<span>{storeHealthError}</span>
+			</div>
+		{/if}
+		<!-- PJ-207 §9 — what changed on disk while Constellation was closed. `role="status"`,
+		     not `role="alert"`: notes changing outside the app is ordinary (a git pull, a sync
+		     client, Notepad), so it is announced politely rather than interrupting. Dismissible,
+		     because unlike the bar above it the user can read it, decide, and be done. It renders
+		     ONLY when something was found — there is deliberately no green "all clear", which
+		     would appear on every launch and teach the user to stop reading this row. -->
+		{#if indexDriftMessage}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{indexDriftMessage}</span>
+				<button class="tpl-err-x" onclick={() => (indexDriftDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+	</div>
 	<!-- PJ-088 — the conflict-resolution side-by-side MERGE overlay (mounts when a merge target is set) -->
 	<ConflictMergeView {focusReseed} />
 	<!-- ═══ DOCK ═══ -->
@@ -10305,8 +10400,36 @@
 		height: 100vh;
 		display: grid;
 		grid-template-columns: auto auto 1fr auto;
-		grid-template-rows: 1fr var(--statusbar-height, 24px);
+		/* PJ-207 §9 — THREE rows, not two: a notice band, the workspace, the status bar.
+		   The band is `auto`, so with nothing to say it is exactly 0px and the layout is
+		   byte-identical to before.
+
+		   Why this row had to exist. The four columns are exactly saturated by the four
+		   in-flow children (dock, sidebar, main-area, right-sidebar), so ANY additional
+		   in-flow child had no cell to go in: CSS Grid auto-placement pushed it — and then
+		   the items after it — into implicit rows, past `height: 100vh` and under
+		   `overflow: hidden`. Boss-reported 2026-08-08 with a screenshot: the drift notice
+		   rendered BELOW the status bar and outside the window, and the sidebar and content
+		   area had swapped places.
+
+		   This was NOT new. `.tpl-err` (a dropped user action) and `.store-err` (a store
+		   that is not saving) have shipped with the same defect and no placement of their
+		   own — they simply fire rarely enough that nobody had caught it. All three now
+		   live in one explicitly-placed band, so none of them can disturb the workspace
+		   again. */
+		grid-template-rows: auto 1fr var(--statusbar-height, 24px);
 		overflow: hidden;
+	}
+	/* The one grid item the notice bars live in. Spanning every column and pinned to row 1
+	   means the bars themselves need no placement, so a fourth one can be added without
+	   touching this file's grid again. Column, so two conditions stack rather than collide
+	   in a single cell. */
+	.notice-band {
+		grid-column: 1 / -1;
+		grid-row: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
 	}
 	.app.no-sidebar {
 		grid-template-columns: auto 1fr auto;
@@ -10314,7 +10437,7 @@
 
 	/* ═══ DOCK ═══ */
 	.dock {
-		grid-row: 1;
+		grid-row: 2;
 		width: var(--dock-width, 40px);
 		background: var(--dock-bg, var(--bg-tertiary));
 		border-inline-end: var(--border-width, 1px) solid var(--border);
@@ -10343,7 +10466,7 @@
 	.sidebar {
 		/* §C Phase 9 wiring-audit — sidebar bg is an override layered over the global panel bg
 		   (no duplication: "Panel background" is the default, "Sidebar background" the specific override). */
-		grid-row: 1; background: var(--sidebar-bg, var(--bg-secondary));
+		grid-row: 2; background: var(--sidebar-bg, var(--bg-secondary));
 		border-inline-end: var(--border-width, 1px) solid var(--border);
 		display: flex; flex-direction: column; overflow: hidden;
 		position: relative;
@@ -10694,7 +10817,7 @@
 
 	/* ═══ MAIN AREA ═══ */
 	.main-area {
-		grid-row: 1; display: flex; flex-direction: column;
+		grid-row: 2; display: flex; flex-direction: column;
 		overflow: hidden; background: var(--center-zone-bg, #e8e8ec);
 	}
 
@@ -10908,25 +11031,43 @@
 	}
 
 	/* Content */
-	.tpl-err {
+	/* ── The app-shell notice bars ───────────────────────────────────────────────
+	   Three conditions, one row shape: `.tpl-err` (a user action was dropped),
+	   `.store-err` (a store is not being saved this session) and `.drift-note`
+	   (PJ-207 §9 — notes changed on disk while Constellation was closed). One base
+	   rule and a tone each; three byte-identical copies is what let the colour bug
+	   below live in two places at once.
+
+	   THE COLOUR BUG, fixed here for all three (PJ-207 §9, found by the /simplify
+	   pass): `theme.css:92` defines `--background-modifier-error: var(--color-red)`
+	   and `:99` defines `--text-error: var(--color-red)` — the SAME colour. So both
+	   shipped bars were rendering red text on a red background, in both themes.
+	   Neither has been seen often: `.tpl-err` is transient and `.store-err`'s four
+	   conditions are rare. The fix is the codebase's own tinted-surface idiom
+	   (`NoteGaugeDeck.svelte:104-105`): the semantic colour for the TEXT, and a
+	   low-percentage `color-mix` of it for the background, so both stay legible and
+	   both follow the light/dark theme instead of a hardcoded pastel. */
+	.tpl-err, .store-err, .drift-note {
 		display: flex; align-items: center; gap: 10px;
 		padding: 8px 16px;
-		background: var(--background-modifier-error, #fdecea);
-		color: var(--text-error, #a12b1e);
 		font-size: 0.85rem;
 		border-bottom: 1px solid var(--background-modifier-border);
 	}
-	.tpl-err span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-	/* Persistent store-health condition — same visual family as .tpl-err, no dismiss. */
-	.store-err {
-		display: flex; align-items: center; gap: 10px;
-		padding: 8px 16px;
-		background: var(--background-modifier-error, #fdecea);
+	.tpl-err span, .store-err span, .drift-note span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+	.tpl-err, .store-err {
 		color: var(--text-error, #a12b1e);
-		font-size: 0.85rem;
-		border-bottom: 1px solid var(--background-modifier-border);
+		background: color-mix(in srgb, var(--text-error, #a12b1e) 14%, transparent);
 	}
-	.store-err span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+	/* Deliberately NOT the error tone: notes changing on disk while the app was closed
+	   is a normal thing that happened (a git pull, a sync client, Notepad), not a
+	   failure. `--text-warning` is the existing "notable, not an error" token and it is
+	   theme-aware — unlike `--background-modifier-notice` / `--text-notice`, which this
+	   rule first reached for and which are defined nowhere in the codebase, so the
+	   hardcoded fallbacks would have rendered a light-mode band in dark theme forever. */
+	.drift-note {
+		color: var(--text-warning, #7a5200);
+		background: color-mix(in srgb, var(--text-warning, #d0a215) 16%, transparent);
+	}
 	.tpl-err-x { border: none; background: none; color: inherit; cursor: pointer; font-size: 0.9rem; }
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--center-zone-bg, #e8e8ec); }
 	.content-area.content-hidden { display: none; }
@@ -11385,7 +11526,7 @@
 
 	/* ═══ RIGHT SIDEBAR ═══ */
 	.right-sidebar {
-		grid-row: 1; background: var(--right-sidebar-bg, var(--bg-secondary));
+		grid-row: 2; background: var(--right-sidebar-bg, var(--bg-secondary));
 		border-inline-start: var(--border-width, 1px) solid var(--border);
 		overflow: hidden;
 		transition: width 0.2s ease;
@@ -11494,7 +11635,7 @@
 
 	/* ═══ STATUS BAR ═══ */
 	.status-bar {
-		grid-column: 1 / -1; grid-row: 2;
+		grid-column: 1 / -1; grid-row: 3;
 		height: var(--statusbar-height, 24px);
 		background: var(--statusbar-bg, var(--bg-tertiary));
 		border-top: var(--border-width, 1px) solid var(--border);
