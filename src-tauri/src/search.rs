@@ -2084,11 +2084,16 @@ pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), Str
 /// `reconcile_filesystem` to suppress the per-edge recompute during a full
 /// re-index; `create_outgoing_link_triggers` + `recompute_all_outgoing` restore
 /// correctness afterward. Idempotent (IF EXISTS). On a crash mid-reconcile the
-/// next boot's `init_db` recreates the triggers AND — via the
-/// `outgoing_triggers_dropped` marker reconcile persists before dropping — runs
-/// `recompute_all_outgoing` once, so a dropped state self-heals at boot. (Boot is
-/// walk-free: no reconcile is scheduled that would otherwise repopulate — the
+/// next boot's `init_db` recreates the triggers, and the `outgoing_triggers_dropped`
+/// marker reconcile persists before dropping is what gets the aggregates recomputed.
+/// (Boot is walk-free: no reconcile is scheduled that would otherwise repopulate — the
 /// earlier claim that "the next reconcile repopulates" presumed one.)
+///
+/// **PJ-228 — the recompute is no longer part of `init_db`.** It moved to
+/// `derived_heal::maybe_schedule`, a background pass after first paint, because doing
+/// it inside `init_db` made every launch of an armed universe wait 3,143 ms (measured)
+/// with nothing on screen. The self-heal is now *shortly after* boot rather than
+/// *during* it, and `init_db` deliberately leaves the marker alone.
 pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "DROP TRIGGER IF EXISTS note_links_outgoing_ai;
@@ -2102,9 +2107,17 @@ pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), Strin
 /// trigger-drop window. `reconcile_filesystem` sets it BEFORE dropping the
 /// outgoing-link triggers for its multi-minute bulk walk and clears it only after
 /// the triggers are recreated AND `recompute_all_outgoing` succeeds. If the app
-/// dies mid-walk, the marker survives; `init_db` reads it on the next boot and
-/// runs the recompute once. Stored as a `schema_versions` row (the `links_vocab`
-/// fingerprint-stamp pattern — no new table).
+/// dies mid-walk, the marker survives. Stored as a `schema_versions` row (the
+/// `links_vocab` fingerprint-stamp pattern — no new table).
+///
+/// **PJ-228 — the reader is `derived_heal`, not `init_db`.** `init_db` neither heals
+/// nor clears this marker any more, and that is load-bearing beyond boot latency:
+/// `init_db` also runs against a LINKED universe's database (`federation::migrate`),
+/// and the old in-`init_db` heal rebuilt that foreign database's aggregates using the
+/// ACTIVE universe's process-global link vocabulary (`link_types::snapshot`) and then
+/// cleared the foreign marker — which is what made the wrong values permanent, since
+/// the child's own next boot then saw nothing left to heal. Leaving the marker alone
+/// is the whole recovery net for a universe this process is not the authority on.
 pub(crate) fn outgoing_triggers_dropped_marker(conn: &Connection) -> bool {
     conn.query_row(
         "SELECT version FROM schema_versions WHERE module = 'outgoing_triggers_dropped'",
@@ -2189,7 +2202,10 @@ pub(crate) fn clear_derived_tail_pending_marker(conn: &Connection) -> Result<(),
 }
 
 /// True when a repair's recompute tail was started and never seen to finish.
-#[allow(dead_code)] // §6 is the reader; see `set_derived_tail_pending_marker`.
+///
+/// PJ-228 — the reader is `derived_heal::markers_armed`. The `#[allow(dead_code)]` that
+/// sat here pointing at §6 is gone: the function has a real caller now, so the compiler
+/// should be what notices if it ever stops having one.
 pub(crate) fn derived_tail_pending_marker(conn: &Connection) -> bool {
     conn.query_row(
         "SELECT version FROM schema_versions WHERE module = 'derived_tail_pending'",
@@ -4250,7 +4266,53 @@ fn ensure_dependent_tables_mig003_indexes(conn: &Connection) -> rusqlite::Result
 /// `ensure_search_db_ready` for the active universe AND by MIG-056
 /// `federation::migrate::run_migrations_on` for schema-drifted
 /// cUniverses (Architect §5.3 auto-migrate path).
+/// PJ-232 — **whose database is this?**
+///
+/// `init_db` was written for the ACTIVE universe and does three separable things: it
+/// migrates the schema, it bakes the link vocabulary into persisted trigger DDL, and it
+/// runs data repairs that re-index rows and even rewrite `.md` frontmatter. That is all
+/// correct for a universe this process is the authority on.
+///
+/// `federation::migrate::run_migrations_on` hands it a **linked universe's** database,
+/// to fix a schema too old to attach. There, the last two are wrong: the vocabulary is a
+/// process-global belonging to the ACTIVE universe (`link_types::snapshot`), so the DDL
+/// would carry the parent's link types into the child; and the repairs would then fire
+/// those triggers on the child's own rows and write identity keys into the child's note
+/// files — from a process that is not that universe's owner. The 2026-08-09 inspection
+/// confirmed it, after refuting a comment of mine that claimed PJ-228 had ended it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum InitScope {
+    /// The active universe: everything, exactly as before.
+    Active,
+    /// A foreign universe's database — schema only.
+    ///
+    /// **The precise line, because a vaguer one already produced a false comment once.**
+    /// Skipped here: every DDL whose body is generated from the link-type registry (that
+    /// registry is the ACTIVE universe's), and every one-shot MIG-003 pass — Step 1
+    /// (writes `cid_cn:` frontmatter into `.md` files, deletes rows whose path no longer
+    /// stats), Step 2, Step 3 (re-indexes rows, writes frontmatter) and Step 4 (RENAMES
+    /// `.md` files). All four are stamped one-shots the owner runs for itself.
+    ///
+    /// NOT skipped: plain schema DDL, and the derived-table population that makes that
+    /// schema usable (the FTS rebuild, the initial-history back-fill). Those read only
+    /// the child's OWN rows, involve no process-global state and touch no file — and the
+    /// parent reads a cUniverse's derived tables through the read-only attach, so
+    /// withholding them would degrade federated reads without protecting anything.
+    ForeignSchemaOnly,
+}
+
+/// The active universe's init. Unchanged behaviour; every existing caller keeps it.
 pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
+    init_db_scoped(path, InitScope::Active)
+}
+
+/// Bring a FOREIGN universe's schema up to current, and touch nothing else.
+pub(crate) fn init_db_schema_only(path: &Path) -> Result<Connection, String> {
+    init_db_scoped(path, InitScope::ForeignSchemaOnly)
+}
+
+pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection, String> {
+    let owns = scope == InitScope::Active;
     let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
 
     // Enable WAL mode for concurrent reads
@@ -4474,7 +4536,19 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             |row| row.get(0),
         )
         .unwrap_or(0);
-    if stored_note_meta_version < NOTE_META_SCHEMA_VERSION {
+    // PJ-232 (2026-08-09 inspection — the pass I MISSED). This is MIG-003 **Step 1**, and
+    // it is the first data pass a foreign database reaches — before the Step 2/3/4 guards
+    // below. It was missed because it is not named `mig003_step1_*`; grepping the step
+    // names found its three siblings and not it. It is also the most dangerous of the
+    // four: it writes `cid_cn:` frontmatter into the universe's `.md` files, rewrites
+    // files in its dedup branch, and DELETEs `note_meta` rows whose path no longer
+    // stats — cascading to `note_state_history`, which is NOT recomputable from the
+    // files. Then it stamps `schema_versions.note_meta`, so the owner's own next launch
+    // reports "already done" and never repairs what this process did to it.
+    //
+    // `run_migrations_on`'s backup covers `search.db` only, so a restore would not undo
+    // the file writes.
+    if owns && stored_note_meta_version < NOTE_META_SCHEMA_VERSION {
         diag_log(path, &format!(
             "[search] init_db: schema_versions.note_meta={} (target {}) — MIG-003 backfill needed",
             stored_note_meta_version,
@@ -4496,9 +4570,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     } else {
         diag_log(path, &format!(
-            "[search] init_db: schema_versions.note_meta={} (target {}) — MIG-003 backfill skipped (already done)",
+            "[search] init_db: schema_versions.note_meta={} (target {}) — MIG-003 Step 1 {}",
             stored_note_meta_version,
             NOTE_META_SCHEMA_VERSION,
+            if owns { "already done" } else { "SKIPPED — this process does not own this database (PJ-232)" },
         ));
     }
     // 2026-07-05 cid_cn-collision fix — run UNCONDITIONALLY (idempotent, one
@@ -5254,134 +5329,140 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TRIGGER IF EXISTS note_meta_sky_ai;
     ").map_err(|e| format!("Failed to drop pre-§6/§99 sky triggers: {}", e))?;
 
-    conn.execute_batch(&format!("
-        -- BUG-011 workaround: inline stratum + maturity computation in
-        -- the INSERT trigger body. On this SQLite build, keeping them
-        -- as separate AFTER INSERT triggers resulted in silent skipping
-        -- — only the first AI trigger (which does INSERT OR REPLACE on
-        -- sky_nodes) executed. Merging the sky_nodes INSERT and the
-        -- stratum + maturity UPDATE into one trigger body sidesteps
-        -- the multi-trigger dispatch issue entirely.
-        DROP TRIGGER IF EXISTS note_meta_sky_ai;
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
-        AFTER INSERT ON note_meta
-        BEGIN
-            -- MIG-085 §B.0 — sky_nodes.id is the Unicode-folded name (matches note_links.target_name,
-            -- which is fold_match_key'd). COALESCE → ASCII LOWER pre-backfill (no regression).
-            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
-            VALUES (NEW.path, COALESCE(NEW.name_lower, LOWER(NEW.name)), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
-            UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
-            UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
-        END;
+    // PJ-232 — the sky_node trigger bodies interpolate `stratum_sql_expr()` /
+    // `maturity_sql_expr()`, both of which read `link_types::snapshot()` — the ACTIVE
+    // universe's registry. Not into a database we do not own; its owner writes these
+    // correctly on its own next launch.
+    if owns {
+        conn.execute_batch(&format!("
+            -- BUG-011 workaround: inline stratum + maturity computation in
+            -- the INSERT trigger body. On this SQLite build, keeping them
+            -- as separate AFTER INSERT triggers resulted in silent skipping
+            -- — only the first AI trigger (which does INSERT OR REPLACE on
+            -- sky_nodes) executed. Merging the sky_nodes INSERT and the
+            -- stratum + maturity UPDATE into one trigger body sidesteps
+            -- the multi-trigger dispatch issue entirely.
+            DROP TRIGGER IF EXISTS note_meta_sky_ai;
+            CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
+            AFTER INSERT ON note_meta
+            BEGIN
+                -- MIG-085 §B.0 — sky_nodes.id is the Unicode-folded name (matches note_links.target_name,
+                -- which is fold_match_key'd). COALESCE → ASCII LOWER pre-backfill (no regression).
+                INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
+                VALUES (NEW.path, COALESCE(NEW.name_lower, LOWER(NEW.name)), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
+                UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
+                UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
+            END;
 
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_ad
-        AFTER DELETE ON note_meta
-        BEGIN
-            DELETE FROM sky_nodes WHERE path = OLD.path;
-            -- Cascade: outgoing edges sourced from the deleted note
-            -- must go too. Incoming edges (where this note was the
-            -- target) are left alone — the source notes still exist
-            -- and their note_links rows remain valid; the absent
-            -- target will resolve as an orphan/red wikilink.
-            DELETE FROM sky_links WHERE source_path = OLD.path;
-        END;
+            CREATE TRIGGER IF NOT EXISTS note_meta_sky_ad
+            AFTER DELETE ON note_meta
+            BEGIN
+                DELETE FROM sky_nodes WHERE path = OLD.path;
+                -- Cascade: outgoing edges sourced from the deleted note
+                -- must go too. Incoming edges (where this note was the
+                -- target) are left alone — the source notes still exist
+                -- and their note_links rows remain valid; the absent
+                -- target will resolve as an orphan/red wikilink.
+                DELETE FROM sky_links WHERE source_path = OLD.path;
+            END;
 
-        -- MIG-002 §6: UPDATE-preserving rename trigger.
-        --
-        -- The fields that change on a rename (path / name / library_name)
-        -- do NOT change the structural inputs to stratum or maturity —
-        -- word count, link counts, link types, timestamps all stay put.
-        -- So their VALUES are provably unchanged and we preserve them
-        -- instead of recomputing (faster + no transient NULL window).
-        --
-        -- origin_type is preserved too for the renamed note itself,
-        -- but any DESCENDANT note (linked to this one via derives-from)
-        -- has its origin_type invalidated: when an ancestor renames, the
-        -- chain walk that produced the descendant's origin_type now
-        -- operates on a changed identity. We stamp enrichment_dirty=1
-        -- on those descendants so the §7 background worker recomputes
-        -- them on next drain. The EXISTS subquery checks whether this
-        -- rename affects any derives-from edge; if not, no stamping is
-        -- needed and the maximum-work branch is skipped entirely.
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_au
-        AFTER UPDATE ON note_meta
-        WHEN OLD.path IS NOT NEW.path
-          OR OLD.name IS NOT NEW.name
-          OR OLD.library_name IS NOT NEW.library_name
-        BEGIN
-            -- Rewrite sky_nodes in place. UPDATE preserves stratum,
-            -- maturity, origin_type, enrichment_dirty. path is the PK
-            -- so a path change updates the row's PK; SQLite allows this
-            -- as long as the new path doesn't collide (it won't — notes
-            -- have unique paths by filesystem invariant).
-            UPDATE sky_nodes
-               SET path = NEW.path,
-                   id = COALESCE(NEW.name_lower, LOWER(NEW.name)), -- MIG-085 §B.0 Unicode-folded id
-                   name = NEW.name,
-                   library_name = NEW.library_name,
-                   updated_at = strftime('%s','now')
-             WHERE path = OLD.path;
-
-            -- Migrate edges referencing the old identity. target_name
-            -- match uses the folded OLD/NEW name (note_links stores
-            -- target_name fold_match_key'd; all 232k rows on the target
-            -- universe confirm pre-lowercasing — see BUG-010 / MIG-085 §B.0).
-            UPDATE sky_links
-               SET source_path = NEW.path
-             WHERE source_path = OLD.path
-               AND OLD.path IS NOT NEW.path;
-            UPDATE sky_links
-               SET target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
-             WHERE target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
-               AND COALESCE(OLD.name_lower, LOWER(OLD.name)) IS NOT COALESCE(NEW.name_lower, LOWER(NEW.name));
-
-            -- MIG-004 §4: cascade alias rows on path change. Only
-            -- triggered when path actually moves — a name-only or
-            -- library-only rename leaves the path PK untouched, so
-            -- alias rows for the original path are still correct.
-            -- Note: this AU path is rare in practice (index_note uses
-            -- DELETE+INSERT, which fires AD+AI not AU); the cascade is
-            -- defensive coverage for direct-UPDATE writers (test code,
-            -- future migrations).
+            -- MIG-002 §6: UPDATE-preserving rename trigger.
             --
-            -- Deliberately NOT extending note_meta_sky_ad to also
-            -- DELETE alias rows — that AD fires on every save's
-            -- DELETE+INSERT cycle and would clobber 'rename' / 'import'
-            -- rows that §3 worked to make durable. Orphaned alias rows
-            -- (path no longer in note_meta) are harmless: nothing
-            -- JOINs to them, queries that filter by path stay correct.
-            UPDATE note_aliases
-               SET path = NEW.path
-             WHERE path = OLD.path
-               AND OLD.path IS NOT NEW.path;
+            -- The fields that change on a rename (path / name / library_name)
+            -- do NOT change the structural inputs to stratum or maturity —
+            -- word count, link counts, link types, timestamps all stay put.
+            -- So their VALUES are provably unchanged and we preserve them
+            -- instead of recomputing (faster + no transient NULL window).
+            --
+            -- origin_type is preserved too for the renamed note itself,
+            -- but any DESCENDANT note (linked to this one via derives-from)
+            -- has its origin_type invalidated: when an ancestor renames, the
+            -- chain walk that produced the descendant's origin_type now
+            -- operates on a changed identity. We stamp enrichment_dirty=1
+            -- on those descendants so the §7 background worker recomputes
+            -- them on next drain. The EXISTS subquery checks whether this
+            -- rename affects any derives-from edge; if not, no stamping is
+            -- needed and the maximum-work branch is skipped entirely.
+            CREATE TRIGGER IF NOT EXISTS note_meta_sky_au
+            AFTER UPDATE ON note_meta
+            WHEN OLD.path IS NOT NEW.path
+              OR OLD.name IS NOT NEW.name
+              OR OLD.library_name IS NOT NEW.library_name
+            BEGIN
+                -- Rewrite sky_nodes in place. UPDATE preserves stratum,
+                -- maturity, origin_type, enrichment_dirty. path is the PK
+                -- so a path change updates the row's PK; SQLite allows this
+                -- as long as the new path doesn't collide (it won't — notes
+                -- have unique paths by filesystem invariant).
+                UPDATE sky_nodes
+                   SET path = NEW.path,
+                       id = COALESCE(NEW.name_lower, LOWER(NEW.name)), -- MIG-085 §B.0 Unicode-folded id
+                       name = NEW.name,
+                       library_name = NEW.library_name,
+                       updated_at = strftime('%s','now')
+                 WHERE path = OLD.path;
 
-            -- Conditional origin_type dirty cascade. Scoped to the set
-            -- of notes affected by a derives-from edge touching the
-            -- renamed note:
-            --   (a) this note itself, if it has a derives-from edge in
-            --       or out (self's ancestry may resolve differently now)
-            --   (b) descendants: notes that link to this one with
-            --       link_type='derives-from' (they walk their chain
-            --       through this node, which just changed identity)
-            -- The OR-split on the WHERE keeps the subqueries narrow.
-            -- enrichment_dirty=1 is idempotent; if already 1, no-op.
-            UPDATE sky_nodes SET enrichment_dirty = 1
-             WHERE path = NEW.path
-               AND EXISTS(
-                   SELECT 1 FROM note_links
-                    WHERE (source_path = NEW.path OR source_path = OLD.path)
-                      AND link_type = 'derives-from'
-                      AND status = 'active');
-            UPDATE sky_nodes SET enrichment_dirty = 1
-             WHERE path IN (
-                   SELECT source_path FROM note_links
-                    WHERE (target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
-                           OR target_name = COALESCE(NEW.name_lower, LOWER(NEW.name)))
-                      AND link_type = 'derives-from'
-                      AND status = 'active');
-        END;
-    ", stratum_expr = stratum_sql_expr(), maturity_expr = maturity_sql_expr()))
-    .map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
+                -- Migrate edges referencing the old identity. target_name
+                -- match uses the folded OLD/NEW name (note_links stores
+                -- target_name fold_match_key'd; all 232k rows on the target
+                -- universe confirm pre-lowercasing — see BUG-010 / MIG-085 §B.0).
+                UPDATE sky_links
+                   SET source_path = NEW.path
+                 WHERE source_path = OLD.path
+                   AND OLD.path IS NOT NEW.path;
+                UPDATE sky_links
+                   SET target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
+                 WHERE target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
+                   AND COALESCE(OLD.name_lower, LOWER(OLD.name)) IS NOT COALESCE(NEW.name_lower, LOWER(NEW.name));
+
+                -- MIG-004 §4: cascade alias rows on path change. Only
+                -- triggered when path actually moves — a name-only or
+                -- library-only rename leaves the path PK untouched, so
+                -- alias rows for the original path are still correct.
+                -- Note: this AU path is rare in practice (index_note uses
+                -- DELETE+INSERT, which fires AD+AI not AU); the cascade is
+                -- defensive coverage for direct-UPDATE writers (test code,
+                -- future migrations).
+                --
+                -- Deliberately NOT extending note_meta_sky_ad to also
+                -- DELETE alias rows — that AD fires on every save's
+                -- DELETE+INSERT cycle and would clobber 'rename' / 'import'
+                -- rows that §3 worked to make durable. Orphaned alias rows
+                -- (path no longer in note_meta) are harmless: nothing
+                -- JOINs to them, queries that filter by path stay correct.
+                UPDATE note_aliases
+                   SET path = NEW.path
+                 WHERE path = OLD.path
+                   AND OLD.path IS NOT NEW.path;
+
+                -- Conditional origin_type dirty cascade. Scoped to the set
+                -- of notes affected by a derives-from edge touching the
+                -- renamed note:
+                --   (a) this note itself, if it has a derives-from edge in
+                --       or out (self's ancestry may resolve differently now)
+                --   (b) descendants: notes that link to this one with
+                --       link_type='derives-from' (they walk their chain
+                --       through this node, which just changed identity)
+                -- The OR-split on the WHERE keeps the subqueries narrow.
+                -- enrichment_dirty=1 is idempotent; if already 1, no-op.
+                UPDATE sky_nodes SET enrichment_dirty = 1
+                 WHERE path = NEW.path
+                   AND EXISTS(
+                       SELECT 1 FROM note_links
+                        WHERE (source_path = NEW.path OR source_path = OLD.path)
+                          AND link_type = 'derives-from'
+                          AND status = 'active');
+                UPDATE sky_nodes SET enrichment_dirty = 1
+                 WHERE path IN (
+                       SELECT source_path FROM note_links
+                        WHERE (target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
+                               OR target_name = COALESCE(NEW.name_lower, LOWER(NEW.name)))
+                          AND link_type = 'derives-from'
+                          AND status = 'active');
+            END;
+        ", stratum_expr = stratum_sql_expr(), maturity_expr = maturity_sql_expr()))
+        .map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
+    }
 
     // ─── MIG-002 §4: SQL-native stratum triggers ────────────────────────
     //
@@ -5429,26 +5510,29 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
     ").map_err(|e| format!("drop AI/AU legacy stratum: {}", e))?;
 
-    conn.execute_batch(&format!("
-        -- note_meta update: recompute only when word_count actually
-        -- changes. AU triggers don't seem to have the same skip issue
-        -- as AI chains (§6's note_meta_sky_au is the sole AU writer
-        -- to sky_nodes). Keeping this AU as a separate trigger.
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_au
-        AFTER UPDATE ON note_meta
-        WHEN NEW.word_count IS NOT OLD.word_count
-        BEGIN
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
-        END;
+    // PJ-232 — `stratum_sql_expr()` reads the ACTIVE universe's registry. See above.
+    if owns {
+        conn.execute_batch(&format!("
+            -- note_meta update: recompute only when word_count actually
+            -- changes. AU triggers don't seem to have the same skip issue
+            -- as AI chains (§6's note_meta_sky_au is the sole AU writer
+            -- to sky_nodes). Keeping this AU as a separate trigger.
+            CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_au
+            AFTER UPDATE ON note_meta
+            WHEN NEW.word_count IS NOT OLD.word_count
+            BEGIN
+                UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
+            END;
 
-        -- PJ-066 §B4 — the per-edge note_links_sky_stratum_ai/ad/au triggers are REMOVED.
-        -- They recomputed stratum via a 4×N fan-out on every save of a link-dense note (the
-        -- measured ~1–2 min freeze). Sky stratum is now maintained write-time by
-        -- maintain_sky_after_save (the save/delete changed-targets+source diff) and
-        -- recompute_all_sky (reconcile / sky_backfill self-heal). The unconditional DROP
-        -- statements above shed these triggers from existing DBs on next boot.
-    ", expr = stratum_sql_expr()))
-    .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
+            -- PJ-066 §B4 — the per-edge note_links_sky_stratum_ai/ad/au triggers are REMOVED.
+            -- They recomputed stratum via a 4×N fan-out on every save of a link-dense note (the
+            -- measured ~1–2 min freeze). Sky stratum is now maintained write-time by
+            -- maintain_sky_after_save (the save/delete changed-targets+source diff) and
+            -- recompute_all_sky (reconcile / sky_backfill self-heal). The unconditional DROP
+            -- statements above shed these triggers from existing DBs on next boot.
+        ", expr = stratum_sql_expr()))
+        .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
+    }
 
     // ─── MIG-002 §5: SQL-native maturity triggers ───────────────────────
     //
@@ -5468,36 +5552,46 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TRIGGER IF EXISTS note_links_sky_maturity_au;
     ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
 
-    conn.execute_batch(&format!("
-        -- note_meta insert: maturity AI is INLINED into note_meta_sky_ai
-        -- above (BUG-011 workaround — multiple AFTER INSERT triggers on
-        -- note_meta don't all fire on this SQLite build). The separate
-        -- trigger is intentionally NOT recreated here.
+    // PJ-232 — `maturity_sql_expr()` reads the ACTIVE universe's registry. See above.
+    if owns {
+        conn.execute_batch(&format!("
+            -- note_meta insert: maturity AI is INLINED into note_meta_sky_ai
+            -- above (BUG-011 workaround — multiple AFTER INSERT triggers on
+            -- note_meta don't all fire on this SQLite build). The separate
+            -- trigger is intentionally NOT recreated here.
 
-        -- note_meta update: recompute when `modified` or `created_at`
-        -- changes. `modified` changes on every save by definition, so
-        -- this trigger fires with every note edit — cheap (one UPDATE
-        -- of one row using the maturity CASE chain).
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_maturity_au
-        AFTER UPDATE ON note_meta
-        WHEN NEW.modified IS NOT OLD.modified
-          OR NEW.created_at IS NOT OLD.created_at
-        BEGIN
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
-        END;
+            -- note_meta update: recompute when `modified` or `created_at`
+            -- changes. `modified` changes on every save by definition, so
+            -- this trigger fires with every note edit — cheap (one UPDATE
+            -- of one row using the maturity CASE chain).
+            CREATE TRIGGER IF NOT EXISTS note_meta_sky_maturity_au
+            AFTER UPDATE ON note_meta
+            WHEN NEW.modified IS NOT OLD.modified
+              OR NEW.created_at IS NOT OLD.created_at
+            BEGIN
+                UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
+            END;
 
-        -- PJ-066 §B4 — the per-edge note_links_sky_maturity_ai/ad/au triggers are REMOVED
-        -- (see the stratum block). Maturity is maintained write-time by maintain_sky_after_save
-        -- + recompute_all_sky. note_meta_sky_ai still seeds maturity inline on note INSERT,
-        -- and note_meta_sky_maturity_au (above) refreshes it on a modified/created_at change.
-    ", expr = maturity_sql_expr()))
-    .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
+            -- PJ-066 §B4 — the per-edge note_links_sky_maturity_ai/ad/au triggers are REMOVED
+            -- (see the stratum block). Maturity is maintained write-time by maintain_sky_after_save
+            -- + recompute_all_sky. note_meta_sky_ai still seeds maturity inline on note INSERT,
+            -- and note_meta_sky_maturity_au (above) refreshes it on a modified/created_at change.
+        ", expr = maturity_sql_expr()))
+        .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
+    }
 
     // MIG-066 §A — outgoing-link aggregate triggers. Extracted into
     // create_outgoing_link_triggers so §A.2's reconcile path can drop+recreate
     // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
     // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
-    create_outgoing_link_triggers(&conn)?;
+    // PJ-232 — the trigger BODIES are generated from `link_types::snapshot()`, the
+    // ACTIVE universe's registry. Creating them in a foreign database would persist our
+    // link vocabulary into someone else's `sqlite_master`. The owner creates them
+    // correctly on its own next launch; until then nobody writes through them, because
+    // the parent attaches a cUniverse read-only.
+    if owns {
+        create_outgoing_link_triggers(&conn)?;
+    }
     // MIG-079 §C.2a — incoming maintenance moved OFF per-edge triggers (they
     // recomputed every target on every save → a 5–7 s freeze on link-heavy notes).
     // Drop any incoming triggers a prior §C.2a build left in this DB; maintenance
@@ -5745,7 +5839,7 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             |row| row.get(0),
         )
         .unwrap_or(0);
-    if stored_dep_version < DEPENDENT_TABLES_MIG003_VERSION {
+    if owns && stored_dep_version < DEPENDENT_TABLES_MIG003_VERSION {
         diag_log(path, &format!(
             "[search] init_db: schema_versions.dependent_tables_mig003={} (target {}) — Step 2 backfill needed",
             stored_dep_version,
@@ -5765,9 +5859,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     } else {
         diag_log(path, &format!(
-            "[search] init_db: schema_versions.dependent_tables_mig003={} (target {}) — Step 2 backfill skipped (already done)",
+            "[search] init_db: schema_versions.dependent_tables_mig003={} (target {}) — Step 2 {}",
             stored_dep_version,
             DEPENDENT_TABLES_MIG003_VERSION,
+            if owns { "already done" } else { "SKIPPED — this process does not own this database (PJ-232)" },
         ));
     }
 
@@ -5775,7 +5870,28 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // hole left by a writer that didn't include cid_cn (e.g. external
     // sync drop, mid-flight indexer interruption). Cheap when nothing
     // to fix; logs only when it actually repairs rows.
-    let _ = mig003_step3_soft_rebackfill(&mut conn, path);
+    //
+    // PJ-231 — the `let _ =` here discarded the ONE outcome the function does not
+    // report itself. It diag_logs its own tally (reindexed / injected / errors) on
+    // every path that reaches the end, but an `Err` returned by the opening probe —
+    // a locked database, a schema that is not what the query expects — returns
+    // before any of that, so the repair silently did not happen and NOTHING said so.
+    // That matters more here than for its siblings: this pass is ungated, runs on
+    // EVERY boot, and repairs rows by re-indexing from the file and, when the file
+    // itself lacks an identity key, WRITING one into the user's `.md` frontmatter.
+    // A repair that touches note files must not be able to fail invisibly.
+    // PJ-232 — skipped for a foreign database. On a schema-drifted child its candidate
+    // set (`cid_cn = ''`) is non-empty BY CONSTRUCTION, so this is the pass that would
+    // actually fire the parent-flavoured triggers on the child's rows — and, for a file
+    // carrying no identity key at all, write frontmatter into the child universe's `.md`.
+    if owns {
+    if let Err(e) = mig003_step3_soft_rebackfill(&mut conn, path) {
+        diag_log(
+            path,
+            &format!("[search] mig003_step3_soft_rebackfill FAILED (cid_cn holes left unrepaired this boot): {}", e),
+        );
+    }
+    }
 
     // MIG-003 Step 4 — canonical → human filename migration. One-shot,
     // gated by schema_versions.mig003_step4. Walks every library,
@@ -5790,7 +5906,8 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             |row| row.get(0),
         )
         .unwrap_or(0);
-    if stored_step4_version < crate::mig003_step4::MIG003_STEP4_VERSION {
+    // PJ-232 — Step 4 RENAMES `.md` files. Never on a database we do not own.
+    if owns && stored_step4_version < crate::mig003_step4::MIG003_STEP4_VERSION {
         diag_log(path, &format!(
             "[search] init_db: schema_versions.mig003_step4={} (target {}) — Step 4 rename pass starting",
             stored_step4_version,
@@ -5816,9 +5933,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         }
     } else {
         diag_log(path, &format!(
-            "[search] init_db: schema_versions.mig003_step4={} (target {}) — Step 4 already done",
+            "[search] init_db: schema_versions.mig003_step4={} (target {}) — Step 4 {}",
             stored_step4_version,
             crate::mig003_step4::MIG003_STEP4_VERSION,
+            if owns { "already done" } else { "SKIPPED — this process does not own this database (PJ-232)" },
         ));
     }
 

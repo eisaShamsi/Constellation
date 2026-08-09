@@ -82,8 +82,55 @@ pub fn run_migrations_on(
         .map_err(|e| MigrationError::BackupFailed(format!("copy to {:?} failed: {}", backup_path, e)))?;
 
     // ─── Run migration via init_db ───
+    //
+    // **PJ-230 — `init_db` on a FOREIGN database must not heal it, and no longer does.**
+    //
+    // This is the one place Constellation runs `init_db` against a database it is not
+    // the authority on: a linked universe's, from the parent's process. Until PJ-228,
+    // `init_db` carried a synchronous five-family derived-view heal gated on two crash
+    // markers — so this call could rebuild the CHILD's outgoing/incoming aggregates and
+    // Sky strata using the PARENT's process-global link vocabulary (`link_types` is one
+    // global, loaded only from the active universe), and then CLEAR the child's markers.
+    // The clearing is what made it permanent: the child's own next boot saw nothing left
+    // to heal and kept the parent-flavoured values as final.
+    //
+    // PJ-228 moved the heal out of `init_db` for boot latency, and incidentally ended
+    // that particular write. Do not put it back here, and do not "fix" it by loading the
+    // child's vocabulary into the global first — that means swapping a process-global on
+    // a background thread while every other subsystem reads it.
+    //
+    // A child also heals itself when it is opened as its own active universe
+    // (`set_active_universe` → `invalidate_search_state` → the next
+    // `ensure_search_db_ready` → `derived_heal::maybe_schedule` against ITS db_path).
+    //
+    // **PJ-232 — the heal was NOT the only foreign write. The rest is now closed too.**
+    // The 2026-08-09 inspection refuted an earlier version of this very comment, which
+    // claimed PJ-228 had made `init_db` safe on a foreign database. It had not:
+    //
+    //   * `init_db` unconditionally DROPs and re-CREATEs the outgoing-aggregate triggers
+    //     (`search.rs` `create_outgoing_link_triggers`) and the Sky stratum/maturity
+    //     triggers, and every one of those bodies is generated from
+    //     `link_types::snapshot()` — the ACTIVE (parent) universe's registry, loaded at
+    //     `search.rs`'s `load_active` immediately before `init_db` for the ACTIVE
+    //     universe only. So this call persists parent-flavoured DDL into the child's
+    //     `sqlite_master`.
+    //   * Worse, `init_db` then runs `mig003_step3_soft_rebackfill` ungated, which
+    //     re-indexes every row with an empty `cid_cn` — a set that is non-empty by
+    //     construction on a schema-drifted child — firing those parent-flavoured
+    //     triggers on the child's own rows, and, for a file with no identity key at all,
+    //     writing frontmatter into the child universe's `.md` files from this process.
+    //
+    // It diverged only when the two universes' link vocabularies actually differed (a
+    // user-defined type on either side); with seeds only the generated SQL is identical,
+    // which is why nobody had seen it.
+    //
+    // **The fix is `init_db_schema_only`, used below.** It migrates the schema and
+    // NOTHING else: no vocabulary-dependent trigger DDL, no dependent-table back-fill, no
+    // soft re-backfill, no Step-4 rename pass. The owner does all of that on its own next
+    // launch, when the registry actually holds ITS vocabulary — and until then nothing
+    // writes through those triggers, because a cUniverse is attached read-only.
     let migration_outcome: Result<(), String> = (|| {
-        let conn = crate::search::init_db(cu_db_path)
+        let conn = crate::search::init_db_schema_only(cu_db_path)
             .map_err(|e| format!("init_db failed: {}", e))?;
         // Explicitly drop the connection to release the file lock
         // before we return — otherwise the file stays held when
@@ -390,5 +437,208 @@ mod tests {
             )
             .unwrap();
         assert_eq!(exists, 1);
+    }
+
+    /// PJ-230 — **`init_db` must never heal or disarm a database it does not own.**
+    ///
+    /// This module is the only caller that hands `init_db` a FOREIGN universe's
+    /// database. Before PJ-228, `init_db` healed the five derived families and then
+    /// cleared the crash markers — here, that meant rebuilding a child's link
+    /// aggregates with the PARENT's process-global link vocabulary and then removing
+    /// the child's own record that a heal was owed, so its next boot kept the wrong
+    /// values forever.
+    ///
+    /// PJ-228 removed that as a side effect of moving the heal off the boot path. This
+    /// pins the property so it cannot come back with the next person who thinks a
+    /// self-heal belongs in `init_db`.
+    #[test]
+    fn init_db_leaves_a_foreign_universes_crash_markers_armed() {
+        let dir = TempDir::new().unwrap();
+        let cdir = dir.path().join(".constellation");
+        fs::create_dir_all(&cdir).unwrap();
+        let db_path = cdir.join("search.db");
+
+        {
+            let conn = Connection::open(&db_path).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);
+                 INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+                   VALUES ('outgoing_triggers_dropped', 1, 0), ('derived_tail_pending', 1, 0);",
+            )
+            .unwrap();
+        }
+
+        // Exactly what `run_migrations_on` does to a child DB.
+        let conn = crate::search::init_db_schema_only(&db_path).expect("init_db on a foreign DB");
+
+        let armed = |module: &str| -> bool {
+            conn.query_row(
+                "SELECT version FROM schema_versions WHERE module = ?1",
+                rusqlite::params![module],
+                |r| r.get::<_, i64>(0),
+            )
+            .map(|v| v > 0)
+            .unwrap_or(false)
+        };
+        assert!(
+            armed("outgoing_triggers_dropped"),
+            "init_db must not clear a foreign universe's trigger marker — clearing it is what made the parent's values permanent"
+        );
+        assert!(
+            armed("derived_tail_pending"),
+            "init_db must not clear a foreign universe's derived-tail marker"
+        );
+    }
+
+    /// PJ-232 — **the schema-only door must not bake OUR link vocabulary into THEIR
+    /// database, and must not touch their data or their files.**
+    ///
+    /// The trigger bodies for the outgoing aggregates and for Sky stratum/maturity are
+    /// generated from `link_types::snapshot()`, a process-global holding the ACTIVE
+    /// universe's registry. Creating them here would persist the parent's link types
+    /// into the child's `sqlite_master`; the data passes that follow would then fire
+    /// them on the child's own rows, and write identity keys into the child's `.md`
+    /// files. The owner creates all of it correctly on its own next launch.
+    #[test]
+    fn schema_only_init_writes_no_vocabulary_triggers_into_a_foreign_db() {
+        let dir = TempDir::new().unwrap();
+        let cdir = dir.path().join(".constellation");
+        fs::create_dir_all(&cdir).unwrap();
+        let db_path = cdir.join("search.db");
+
+        let conn = crate::search::init_db_schema_only(&db_path).expect("schema-only init");
+
+        let trigger_count = |name: &str| -> i64 {
+            conn.query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = ?1",
+                rusqlite::params![name],
+                |r| r.get(0),
+            )
+            .unwrap_or(-1)
+        };
+        for t in [
+            "note_links_outgoing_ai",
+            "note_links_outgoing_ad",
+            "note_links_outgoing_au",
+            "note_meta_sky_stratum_au",
+            "note_meta_sky_maturity_au",
+        ] {
+            assert_eq!(trigger_count(t), 0, "{t} carries the ACTIVE universe's vocabulary — it must not be written into a foreign database");
+        }
+
+        // The schema itself IS migrated — that is the entire point of this door.
+        let cols: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('note_meta') WHERE name IN ('path','name','library_name','created_at','modified')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(cols, 5, "schema-only still brings the schema up to current");
+    }
+
+    /// PJ-232 — **the foreign door must not touch the other universe's NOTE FILES, and
+    /// must not delete its rows.**
+    ///
+    /// The first version of the test above ran against an EMPTY database, so the passes
+    /// that write files never had a row to act on — and it therefore PASSED while MIG-003
+    /// Step 1 was still unguarded, which the 2026-08-09 inspection caught. A test whose
+    /// subject cannot fire is not a test. This one seeds exactly the state that arms
+    /// those passes: a note row with no `cid_cn`, and a real `.md` file on disk.
+    ///
+    /// Unguarded, Step 1 would inject `cid_cn:` frontmatter into that file (bumping its
+    /// mtime across the user's sync), or DELETE its row if the path no longer stats —
+    /// cascading into `note_state_history`, which cannot be rebuilt from the files.
+    #[test]
+    fn schema_only_init_does_not_write_a_foreign_universes_note_files_or_rows() {
+        let dir = TempDir::new().unwrap();
+        let cdir = dir.path().join(".constellation");
+        fs::create_dir_all(&cdir).unwrap();
+        let db_path = cdir.join("search.db");
+
+        // TWO rows, because Step 1 does two destructive things and only one of them is
+        // reachable from a unit test:
+        //
+        //   * it injects `cid_cn:` frontmatter into files — but that goes through the
+        //     write gate, which cannot fire here with no universe registered, so an
+        //     assertion on file bytes can never go red in a test. It is asserted anyway,
+        //     to state the intent, but it is NOT what guards this.
+        //   * it DELETEs rows whose path no longer stats — no gate involved. That is the
+        //     assertion with teeth, and it is the worse failure: the delete cascades into
+        //     `note_state_history`, which cannot be rebuilt from the `.md` files.
+        //
+        // Verified red: removing the `owns &&` from MIG-003 Step 1 fails this test on the
+        // vanished-path row.
+        let note = dir.path().join("Foreign Note.md");
+        let original = "---
+title: Foreign Note
+---
+
+body
+";
+        fs::write(&note, original).unwrap();
+        let vanished = dir.path().join("Moved Away.md"); // deliberately never created
+
+        {
+            // Build rows through the REAL schema rather than a hand-rolled subset — a
+            // partial table makes a later pass fail on a missing column, which would
+            // "pass" this test for the wrong reason. Because the foreign door does not
+            // stamp MIG-003, the second call below still sees Step 1 as outstanding.
+            let conn = crate::search::init_db_schema_only(&db_path).expect("schema setup");
+            for p in [&note, &vanished] {
+                conn.execute(
+                    "INSERT INTO note_meta (path, name, cid_cn, library_name, created_at, modified)
+                     VALUES (?1, 'Foreign Note', '', 'lib', 0, 0)",
+                    rusqlite::params![p.to_string_lossy()],
+                )
+                .unwrap();
+            }
+            // The setup call above builds the schema; clear MIG-003's stamp so the real
+            // call below still sees Step 1 as outstanding — which is the state a foreign
+            // database that has never had MIG-003 run is actually in. Without this the
+            // setup call silently satisfies the stamp and the assertions below cannot
+            // fail, which is exactly how the FIRST version of this test passed while the
+            // bug was live.
+            conn.execute("DELETE FROM schema_versions WHERE module = 'note_meta'", [])
+                .unwrap();
+        }
+
+        let conn = crate::search::init_db_schema_only(&db_path).expect("schema-only init");
+
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(
+            rows, 2,
+            "no row of a foreign universe may be deleted by a schema migration — including one whose file has moved, which is exactly what a re-linked universe looks like"
+        );
+        let empty_cid: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta WHERE cid_cn = ''", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(empty_cid, 2, "the rows Step 1 would have repaired must still be untouched");
+        assert_eq!(
+            fs::read_to_string(&note).unwrap(),
+            original,
+            "the foreign universe's note file must be byte-identical — this process is not its owner"
+        );
+    }
+
+    /// The ACTIVE door is unchanged — it still creates everything. Without this, the
+    /// guard above could be satisfied by simply breaking trigger creation for everyone.
+    #[test]
+    fn the_active_door_still_creates_the_vocabulary_triggers() {
+        let dir = TempDir::new().unwrap();
+        let db_path = dir.path().join("search.db");
+        let conn = crate::search::init_db(&db_path).expect("active init");
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name IN
+                   ('note_links_outgoing_ai','note_links_outgoing_ad','note_links_outgoing_au',
+                    'note_meta_sky_stratum_au','note_meta_sky_maturity_au')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(n, 5, "the active universe's init must still create all five");
     }
 }
