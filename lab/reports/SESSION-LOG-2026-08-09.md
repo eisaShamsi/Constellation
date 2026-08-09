@@ -203,3 +203,65 @@ verified. Trimming accurate text for symmetry is not worth a pass.
 **Gates:** i18n parity **15/15 ✓** (ko.json changed) · docs-only otherwise. Per the plan, §12 is
 exempt from the per-build inspection (no write/index/lifecycle path) and **NOT Boss-testable** —
 except the Korean string fix, which is user-visible but only in Korean.
+
+## PJ-207 §14 — Full re-read: built, MEASURED, still switched off
+
+Boss: *"Start §14"*. Built exactly as the plan specifies, and the flag stays **off** — the flip
+is its own commit, and by Boss ruling (2026-08-03) it must carry a confirmation dialog quoting a
+real number. This step produces that number.
+
+### Built
+`WalkCtx.force` threaded end to end (`reconcile_filesystem` → `_guarded` → `run_full`), so the walk
+calls `index_note(force)` instead of a hard-coded `false`. `Scope::FullReread` added.
+
+**`covers()` needed a rule, not a default.** A `FullReread` subsumes an ordinary `Full` (strictly
+more work, same scope) — but **`Full` does NOT cover `FullReread`**: it skips exactly the notes the
+re-read exists to reach, so answering "already running" would refuse a request it will never
+satisfy. Pinned both directions.
+
+**Refused in RUST, not only in the UI.** `repairFlag.ts`'s own scope note demanded this — *"a
+UI-only gate hides a feature, it does not make it unreachable, and PJ-207 exists precisely because
+a reachability claim went unverified for months."* `submit` returns
+`Blocked{ FullRereadDisabled }` while the new `index_repair::FULL_REREAD_ENABLED` is false, so a
+devtools `invoke` or a future caller cannot reach it either. **Two constants must flip together.**
+
+Verification clause met: `cargo build --release` mentions `FullReread` in **zero** warnings (the
+variant is referenced by the dispatch arm and the refusal comparison). Rust **1387/0**.
+
+### §M1 — the measurement, and the first run of it was WRONG
+An `#[ignore]`d, env-gated harness re-indexes from a COPY of `search.db` while reading the REAL
+`.md` files. Safe against live data because `index_note` never writes a note file — verified by
+grep, and it is the invariant §11's Boss test asserts.
+
+**First run produced plausible, invalid numbers** (204 s for 799 notes) and the tells were in the
+output: `note_meta` moved **2,721 → 3,541**, and `unchanged` was **0 even with force=false**. Cause:
+the app stores platform-native paths (`E:\…` backslashed, walked from `libraries.json`'s root) and
+the harness passed forward slashes, so every note MISSED its row and was INSERTED. It was measuring
+fresh indexing and calling it a re-read. Fixed by normalising to `MAIN_SEPARATOR_STR`, **and the
+harness now asserts the row count did not move** — a mismatched run fails instead of reporting a
+number.
+
+**Valid measurement, Eisa Universe's four own libraries, on the Boss's USB drive:**
+
+| Library | notes | ordinary (mtime-gated) | full re-read |
+|---|---|---|---|
+| تخطيط الدولة | 276 | 0.0 s | 3.3 s (83/s) |
+| المساعد الذكي | 21 | 0.0 s | 0.1 s (216/s) |
+| Constellation PKM | 799 | 0.1 s | 20.1 s (40/s) |
+| الكون المعرفي | 162 | 0.0 s | 1.2 s (139/s) |
+| **total** | **1,258** | **0.1 s** | **24.7 s** |
+
+**≈ 51 notes/second overall**, varying 40–216/s with note size (PKM's are the largest). Run-to-run
+variance is real: PKM measured 14.9 s and 20.1 s on two runs (40–54 notes/s), so any quoted figure
+is a rough guide, not a promise. The mtime-gated pass is effectively free — **0.1 s for 1,258
+notes**, ~10,000 notes/s, because it stats and does not open.
+
+The harness also caught the Boss's `brimsloe` edit as the one genuinely-changed note in
+المساعد الذكي (`indexed 1 · unchanged 20`) — an independent confirmation that the mtime gate works.
+
+**Extrapolation, stated as such:** at ~51 notes/s the Boss's 7,824-note universe would be ≈ 2.5
+minutes. NOT measured — the plan's 49 s I/O floor was for that universe; this run was 1,258 notes.
+
+**BOSS-TESTABLE — no.** The flag is off; nothing user-visible ships. **The mid-run Cancel check
+therefore cannot ride §14** — it belongs to the flip commit, where a minutes-long run finally makes
+the gesture catchable. I told the Boss otherwise at §12's close; correcting it here.

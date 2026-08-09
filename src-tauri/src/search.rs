@@ -720,7 +720,7 @@ mod tests_pj207_reindex_round_trip {
         }];
         let exclude = std::collections::HashSet::new();
 
-        let first = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
+        let first = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0, force: false });
         assert_eq!(first.seen, 3, "three .md files visited");
         assert_eq!(first.indexed, 2, "A and B written");
         assert_eq!(first.failed, 1, "bad.md counted, not silently dropped");
@@ -730,7 +730,7 @@ mod tests_pj207_reindex_round_trip {
         // Walking again touches nothing: the mtime gate short-circuits both good
         // notes. THIS is the distinction a bare COUNT(*) could never report — the row
         // count is 2 after both walks, but the work done is completely different.
-        let second = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
+        let second = super::index_library_recursive(&conn, &lib_root, &libs, &exclude, 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0, force: false });
         assert_eq!(second.indexed, 0, "nothing changed on disk, so nothing was rewritten");
         assert_eq!(second.unchanged, 2, "both good notes hit the cache");
         assert_eq!(second.failed, 1, "the unreadable one fails every time — still counted");
@@ -798,7 +798,7 @@ mod tests_pj207_reindex_round_trip {
         );
 
         // (3) And the invariant holds on a real walk too.
-        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0, force: false });
         assert_eq!(
             t.indexed + t.unchanged + t.raced + t.skipped + t.failed,
             t.seen,
@@ -839,7 +839,7 @@ mod tests_pj207_reindex_round_trip {
             is_universe_notes: false,
             canonical_mode: "native".into(),
         }];
-        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 });
+        let t = super::index_library_recursive(&conn, &lib_root, &libs, &std::collections::HashSet::new(), 0, &mut super::WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0, force: false });
 
         assert!(t.dirs_unreadable >= 1, "the truncated subtree is reported");
         assert!(!t.unreadable_sample.is_empty(), "and the user can be told WHICH folder");
@@ -8111,6 +8111,18 @@ pub(crate) struct WalkCtx<'a> {
     /// subtree, and the every-500 checkpoint could never fire on a library of many small
     /// folders (20 x 400 notes never reaches a multiple of 500 at any level).
     pub seen_total: usize,
+    /// PJ-207 §14 — re-read EVERY note, not only those whose file timestamp moved.
+    ///
+    /// The ordinary repair is mtime-gated: `index_note(force = false)` returns
+    /// `Unchanged` on a cheap stat comparison and never opens the file. A full re-read
+    /// forces the read, which is the only way to repair a note whose CONTENT changed
+    /// without its timestamp moving — a same-second save, a restore that preserved
+    /// mtimes, a sync tool that writes timestamps back.
+    ///
+    /// It is off by default here for the same reason it is off in the UI: its cost has a
+    /// measured floor of 49 s of pure file I/O on the Boss's 7,824-note universe and no
+    /// measured ceiling. `false` reproduces today's behaviour exactly.
+    pub force: bool,
 }
 
 fn index_library_recursive(
@@ -8156,7 +8168,7 @@ fn index_library_recursive(
                 ctx.stopped = true;
                 return tally;
             }
-            match index_note(conn, &ps, &lib_name, false) {
+            match index_note(conn, &ps, &lib_name, ctx.force) {
                 Ok(IndexOutcome::Indexed) => tally.indexed += 1,
                 Ok(IndexOutcome::Unchanged) => tally.unchanged += 1,
                 Ok(IndexOutcome::Raced) => tally.raced += 1,
@@ -11379,7 +11391,7 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
 /// `reconcile_filesystem_guarded`, which is itself only reached from the
 /// `index_repair` runner. Removing `pub` is what makes "one thing walks the library" a
 /// fact rather than a comment: there is no second door to call.
-fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchIndexStats, String> {
+fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64, force: bool) -> Result<SearchIndexStats, String> {
     // Make sure schema exists and state has the query connection.
     ensure_search_db_ready(app)?;
 
@@ -11440,6 +11452,9 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchInd
         generation: federation_generation_now(app),
         stopped: false,
         seen_total: 0,
+        // PJ-207 §14 — `false` is the ordinary mtime-gated repair; `true` is the Full
+        // re-read, which opens every file regardless of its timestamp.
+        force,
     };
     for lib in &libraries {
         // Two boundaries, one set — see `walk_exclusions`. The foreign half matters even
@@ -11604,9 +11619,10 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64) -> Result<SearchInd
 pub(crate) fn reconcile_filesystem_guarded(
     app: &tauri::AppHandle,
     run_id: u64,
+    force: bool,
 ) -> Result<SearchIndexStats, String> {
     let generation = federation_generation_now(app);
-    let stats = reconcile_filesystem(app, run_id)?;
+    let stats = reconcile_filesystem(app, run_id, force)?;
     if federation_generation_now(app) != generation {
         // The walk's writes went to the database that was active when it started (its
         // `db_path` was captured then), so nothing is corrupt — but its convergence tail
@@ -16303,7 +16319,7 @@ mod tests_pj207_s8_index_write_scope {
         libs: &[crate::libraries::LibraryInfo],
         foreign: &std::collections::HashSet<String>,
     ) -> WalkTally {
-        let mut ctx = WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0 };
+        let mut ctx = WalkCtx { app: None, generation: 0, stopped: false, seen_total: 0, force: false };
         let mut tally = WalkTally::default();
         for lib in libs {
             let exclude = crate::libraries::walk_exclusions(libs, &lib.path, foreign);

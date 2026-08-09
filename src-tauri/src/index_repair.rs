@@ -49,6 +49,13 @@ use tauri::{AppHandle, Emitter, Manager};
 /// pressure with no gap for anything else.
 const INTER_NOTE_SLEEP_MS: u64 = 30;
 
+/// PJ-207 §14 — the Rust half of `repairFlag.ts`'s `FULL_REREAD_ENABLED`.
+///
+/// Ships `false`. The flip is its own commit, and it must carry BOTH this and the
+/// frontend constant plus a confirmation dialog quoting the §M1 duration — by Boss
+/// ruling (2026-08-03), the dialog must state a real number, not a vague warning.
+pub(crate) const FULL_REREAD_ENABLED: bool = false;
+
 /// Self-checkpoint cadence — see the module note on `MIGRATION_ACTIVE`.
 const CHECKPOINT_EVERY: usize = 500;
 
@@ -58,6 +65,22 @@ pub enum Scope {
     /// The whole active universe: the mtime-gated walk over every own library, then the
     /// five-family convergence. What the four `constellation_search_init` callers mean.
     Full,
+    /// PJ-207 §14 — the whole active universe, re-reading EVERY note whether or not its
+    /// file timestamp moved.
+    ///
+    /// The ordinary `Full` repair is mtime-gated, which is what makes it cheap and what
+    /// makes it correct for the case it exists for: a file that changed while the app was
+    /// closed changed its timestamp too. This mode exists for the case that gate cannot
+    /// see — content that changed WITHOUT the timestamp moving (a save landing in the
+    /// same second as the walk's stat, a restore or sync tool that writes timestamps
+    /// back, an index copied between machines).
+    ///
+    /// **It ships refused.** `FULL_REREAD_ENABLED` is false, and `submit` refuses this
+    /// variant server-side rather than trusting the UI gate — see the refusal below. Its
+    /// duration has a measured floor (49 s of pure file I/O on the Boss's 7,824-note
+    /// universe) and no measured ceiling, and by Boss ruling the confirmation dialog must
+    /// quote a real number before a user can reach it.
+    FullReread,
     /// One library that may never have been indexed. Preserves `reindex_library`'s
     /// semantics exactly, including its cheap `COUNT(*)` gate (which is what honours
     /// ZERO-BOOT-WALKS / LL-022) and its per-file library attribution.
@@ -73,6 +96,13 @@ impl Scope {
     /// A Full run subsumes everything; a ColdStart covers only its own library.
     fn covers(&self, other: &Scope) -> bool {
         match (self, other) {
+            // A full re-read subsumes everything, including an ordinary Full: it does
+            // strictly more work on the same scope.
+            (Scope::FullReread, _) => true,
+            // …but an ordinary Full does NOT cover a full re-read. It skips exactly the
+            // notes the re-read exists to reach, so treating it as covering would answer
+            // "already running" to a request it will not satisfy.
+            (Scope::Full, Scope::FullReread) => false,
             (Scope::Full, _) => true,
             (
                 Scope::ColdStart { library_path: a, .. },
@@ -129,11 +159,15 @@ pub enum StopReason {
     UniverseSwitched,
     /// The user (or app close) asked it to stop.
     Cancelled,
+    /// PJ-207 §14 — a Full re-read was requested while the feature is switched off.
+    /// Not a failure and not a conflict: the request was understood and declined.
+    FullRereadDisabled,
 }
 
 impl StopReason {
     fn as_str(self) -> &'static str {
         match self {
+            StopReason::FullRereadDisabled => "the full re-read is not enabled in this build",
             StopReason::Mig108Running => "a universe unification is running",
             StopReason::DefragRunning => "the database is being compacted",
             StopReason::UniverseSwitched => "the active universe changed",
@@ -449,6 +483,21 @@ impl Drop for RunGuard {
 pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
     let state = app.state::<RepairState>();
 
+    // PJ-207 §14 — the Full re-read is refused HERE, in Rust, not only in the UI.
+    //
+    // `repairFlag.ts`'s own scope note is explicit about why: "a UI-only gate hides a
+    // feature, it does not make it unreachable, and PJ-207 exists precisely because a
+    // reachability claim went unverified for months." The frontend gate can be bypassed
+    // by anything that reaches the command — a devtools `invoke`, a future caller, a
+    // second window. This is the gate that is actually load-bearing.
+    //
+    // Flipping `FULL_REREAD_ENABLED` alone therefore does NOT ship the feature; this
+    // constant must be flipped in the same commit, together with a confirmation dialog
+    // that quotes the §M1 measurement. Two switches, one deliberate act.
+    if scope == Scope::FullReread && !FULL_REREAD_ENABLED {
+        return SubmitOutcome::Blocked { reason: StopReason::FullRereadDisabled.as_str().into() };
+    }
+
     // PJ-207 §8 — SCOPE before timing. The boot fan-out submits one `ColdStart` per entry
     // of the frontend's library list, and that list is the federation-recursive set, so a
     // linked universe's libraries arrive here every boot. Answer them at the door.
@@ -702,7 +751,8 @@ fn run(app: &AppHandle, scope: Scope, run_id: u64) -> Result<RunCompletion, Stri
         Scope::ColdStart { library_path, library_name, only_if_unindexed } => {
             run_cold_start(app, &library_path, &library_name, only_if_unindexed, run_id)
         }
-        Scope::Full => run_full(app, run_id),
+        Scope::Full => run_full(app, run_id, false),
+        Scope::FullReread => run_full(app, run_id, true),
     }
 }
 
@@ -789,7 +839,7 @@ fn run_cold_start(
 }
 
 /// The full walk plus the five-family convergence.
-fn run_full(app: &AppHandle, run_id: u64) -> Result<RunCompletion, String> {
+fn run_full(app: &AppHandle, run_id: u64, force: bool) -> Result<RunCompletion, String> {
     // PJ-207 §11 — a TOTAL for the progress strip, so the user watches "n / total"
     // instead of a bare climbing number. Counted the way the walk itself will count:
     // top-level own roots only (a nested own library's files are collected under its
@@ -825,7 +875,7 @@ fn run_full(app: &AppHandle, run_id: u64) -> Result<RunCompletion, String> {
     rs.completed.store(0, Ordering::Relaxed);
     emit_progress(app, "start");
 
-    let stats = crate::search::reconcile_filesystem_guarded(app, run_id)?;
+    let stats = crate::search::reconcile_filesystem_guarded(app, run_id, force)?;
     // The walk's own account of itself. Discarding it — which the first version of this
     // did with `let _ = report` — is what let an abandoned walk be emitted as `ok: true`
     // one layer up, with a doc comment two layers down claiming the opposite.
@@ -893,6 +943,112 @@ mod tests {
         assert!(should_emit_progress(true, 25));
         assert!(!should_emit_progress(true, 26));
         assert!(should_emit_progress(true, 50));
+    }
+
+    /// PJ-207 §M1 — **how long IS a full re-read?** The number the flag flip waits on.
+    ///
+    /// The Boss ruled (2026-08-03) that the confirmation dialog must state a real
+    /// duration rather than a vague warning, and the flag ships off until one exists.
+    /// The only figure so far is a floor — 49.0 s of pure file I/O for 298 MB across
+    /// 7,824 notes — with parsing, link diffing and FTS re-tokenisation all on top, and
+    /// no measured ceiling.
+    ///
+    /// **Safety, and why this can run against real data.** It re-indexes from a COPY of
+    /// `search.db` while reading the REAL `.md` files. `index_note` never writes a note
+    /// file (verified: no `fs::write` / `gate_write` on that path — it is the invariant
+    /// §11's Boss test asserts), so the notes are only ever read. Every write lands in
+    /// the copy. Give it a copy; never a live universe's database.
+    ///
+    /// ```text
+    ///   M1_DB="…/scratch-copy-of-search.db" M1_LIB="…/Universe/Some Library"     ///     cargo test --lib m1_full_reread_cost -- --ignored --nocapture
+    /// ```
+    /// Unset → no-op. `M1_LIB` may be given more than once, separated by `;`.
+    #[test]
+    #[ignore]
+    fn m1_full_reread_cost() {
+        let (Ok(db), Ok(libs)) = (std::env::var("M1_DB"), std::env::var("M1_LIB")) else {
+            eprintln!("[m1] M1_DB / M1_LIB unset — skipping");
+            return;
+        };
+        let mut conn = crate::search::init_db(std::path::Path::new(&db)).expect("init the copy");
+        let before: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap_or(-1);
+
+        for root in libs.split(';').filter(|s| !s.is_empty()) {
+            let lib_root = std::path::Path::new(root);
+            let lib_name = lib_root
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "universe_notes".to_string());
+            let mut paths: Vec<std::path::PathBuf> = Vec::new();
+            crate::libraries::collect_md_paths(lib_root, &mut paths);
+
+            for force in [false, true] {
+                let t = std::time::Instant::now();
+                let (mut indexed, mut unchanged, mut failed) = (0usize, 0usize, 0usize);
+                for p in &paths {
+                    // The app stores platform-native separators (it walks from the root
+                    // in `libraries.json`, which on Windows is backslashed). A path in the
+                    // other form does not MATCH an existing row — `index_note` inserts a
+                    // duplicate instead of re-reading, and the run measures fresh indexing
+                    // while reporting itself as a re-read. First run of this harness did
+                    // exactly that: note_meta 2,721 -> 3,541, and `unchanged` was 0 even
+                    // with force=false, which is the tell.
+                    let ps = p.to_string_lossy().replace('/', std::path::MAIN_SEPARATOR_STR);
+                    match crate::search::index_note(&conn, &ps, &lib_name, force) {
+                        Ok(crate::search::IndexOutcome::Indexed) => indexed += 1,
+                        Ok(crate::search::IndexOutcome::Unchanged) => unchanged += 1,
+                        Ok(_) => {}
+                        Err(_) => failed += 1,
+                    }
+                }
+                let secs = t.elapsed().as_secs_f64();
+                let wal = std::fs::metadata(format!("{db}-wal")).map(|m| m.len()).unwrap_or(0);
+                eprintln!(
+                    "[m1] {:<14} force={:<5} {} notes in {:.1}s ({:.1} notes/s) — indexed {} · unchanged {} · failed {} · WAL {:.1} MB",
+                    lib_name, force, paths.len(), secs,
+                    paths.len() as f64 / secs.max(0.001),
+                    indexed, unchanged, failed, wal as f64 / 1_048_576.0,
+                );
+            }
+        }
+        let after: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap_or(-1);
+        eprintln!("[m1] note_meta {before} -> {after}");
+        assert_eq!(
+            before, after,
+            "[m1] the row count MOVED, so these notes were inserted, not re-read — the              measurement is of fresh indexing and must be discarded. Almost certainly a              path-format mismatch against the stored rows."
+        );
+        let _ = &mut conn;
+    }
+
+    /// PJ-207 §14 — **the Full re-read is refused in RUST, not only in the UI.**
+    ///
+    /// `repairFlag.ts` says why in its own words: "a UI-only gate hides a feature, it
+    /// does not make it unreachable, and PJ-207 exists precisely because a reachability
+    /// claim went unverified for months." Anything that can reach the command — a
+    /// devtools `invoke`, a future caller, a second window — bypasses the frontend
+    /// constant. This pins the gate that is actually load-bearing.
+    #[test]
+    fn the_full_reread_is_refused_while_the_flag_is_off() {
+        assert!(
+            !FULL_REREAD_ENABLED,
+            "PJ-207 §14 ships the Full re-read OFF. Flipping this constant is its own              commit, and it must land together with the frontend flag AND a confirmation              dialog quoting the measured duration (Boss ruling 2026-08-03). If you are              here to flip it: the §M1 number belongs in the dialog, not in a comment."
+        );
+    }
+
+    /// An ordinary Full run must NOT be treated as covering a Full re-read: it skips
+    /// exactly the notes the re-read exists to reach (content changed without the
+    /// timestamp moving), so answering "already running" would refuse a request it will
+    /// never satisfy. The reverse direction does cover.
+    #[test]
+    fn a_full_run_does_not_cover_a_full_reread() {
+        assert!(!Scope::Full.covers(&Scope::FullReread), "Full skips what FullReread is for");
+        assert!(Scope::FullReread.covers(&Scope::Full), "a re-read does strictly more work");
+        assert!(Scope::FullReread.covers(&Scope::FullReread));
+        assert!(Scope::Full.covers(&Scope::Full));
     }
 
     /// PJ-207 §11 — the report the door renders crosses the IPC boundary with exactly

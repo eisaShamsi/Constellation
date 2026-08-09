@@ -49,7 +49,7 @@
 //! It never touches `state.db` — its own connection, so a 3 s job can never become a 3 s
 //! app-wide freeze.
 
-use crate::converge::{ConvergeKey, ConvergeReport, Ctx, Families};
+use crate::converge::ConvergeReport;
 use crate::search::SearchState;
 use rusqlite::Connection;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
