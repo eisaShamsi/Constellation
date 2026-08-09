@@ -213,6 +213,54 @@ export function setLocale(newLocale: Locale) {
 }
 
 /**
+ * PJ-229 — decide the locale from what is on disk versus what the cache says.
+ *
+ * Pure, so the decision is testable without a filesystem or a Tauri round-trip.
+ *
+ * - Disk holds a valid locale → **disk wins.** It is the record; localStorage is a cache
+ *   that this app is known to lose (PJ-110).
+ * - Disk holds nothing → **adopt the cache**, once. An upgrading user already chose a
+ *   language; that choice must migrate rather than be reset to English by the very
+ *   change meant to make it durable.
+ * - Disk holds something invalid (hand-edited, or from a future version) → ignore it and
+ *   keep the current locale, but do not overwrite the file either.
+ */
+export function decideLocale(
+	fromDisk: unknown,
+	current: Locale
+): { locale: Locale; adopt: boolean } {
+	if (typeof fromDisk === 'string' && VALID_LOCALES.has(fromDisk)) {
+		return { locale: fromDisk as Locale, adopt: false };
+	}
+	if (fromDisk === undefined || fromDisk === null) {
+		return { locale: current, adopt: true };
+	}
+	return { locale: current, adopt: false };
+}
+
+/**
+ * Read the durable locale and apply it. Called once, early in the app's `onMount`.
+ *
+ * `getInitialLocale()` above stays exactly as it was: it runs synchronously at module
+ * load, long before any Tauri call could resolve, and it is what makes `dir` correct on
+ * the very first paint. So localStorage keeps its job — as the CACHE — and this function
+ * corrects it from the record a moment later. Never throws; a failure here must not be
+ * able to stop the app from starting.
+ */
+export async function reconcileLocaleFromDisk(): Promise<void> {
+	try {
+		const { loadAppPrefs, saveAppPrefs } = await import('$lib/appPrefs');
+		const prefs = await loadAppPrefs();
+		const current = get(locale);
+		const { locale: next, adopt } = decideLocale(prefs?.locale, current);
+		if (next !== current) setLocale(next);
+		if (adopt) await saveAppPrefs({ locale: current });
+	} catch (e) {
+		console.warn('[i18n] could not reconcile the locale from disk', e);
+	}
+}
+
+/**
  * Translate a key in a SPECIFIC locale (not the reactive UI locale), with the same
  * active-locale → en → key fallback chain as `t`. Used where the content language
  * differs from the UI language — e.g. typed-link labels that must read in the

@@ -4220,5 +4220,14 @@
 		"error": "Dizin onarımı hatası",
 		"cancel": "İptal",
 		"cancelTitle": "Onarımı durdur; onarılanlar korunur"
+	},
+	"derivedHeal": {
+		"label": "Yarım kalan dizin onarımı tamamlanıyor…",
+		"done": "Dizin yeniden oluşturma tamamlandı",
+		"cancelled": "Dizin yeniden oluşturma durduruldu",
+		"cancelling": "Durduruluyor…",
+		"error": "Dizin yeniden oluşturma hatası",
+		"cancel": "Durdur",
+		"cancelTitle": "Şimdilik durdur; Constellation bir sonraki açılışta tamamlayacak"
 	}
 }

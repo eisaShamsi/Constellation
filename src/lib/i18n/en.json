@@ -4283,5 +4283,14 @@
 		"error": "Index repair error",
 		"cancel": "Cancel",
 		"cancelTitle": "Stop the repair; everything already repaired is kept"
+	},
+	"derivedHeal": {
+		"label": "Finishing an interrupted index repair…",
+		"done": "Index rebuild finished",
+		"cancelled": "Index rebuild stopped",
+		"cancelling": "Stopping…",
+		"error": "Index rebuild error",
+		"cancel": "Stop",
+		"cancelTitle": "Stop for now; Constellation will finish it on the next launch"
 	}
 }

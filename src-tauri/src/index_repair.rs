@@ -911,6 +911,7 @@ mod tests {
                 sky: crate::converge::ConvergeOutcome::Failed("boom".into()),
                 tag_counts: crate::converge::ConvergeOutcome::Converged(0),
                 review: crate::converge::ConvergeOutcome::Converged(0),
+                stopped: false,
             }),
             error: None,
         };

@@ -4247,5 +4247,14 @@
 		"error": "Erreur de réparation de l'index",
 		"cancel": "Annuler",
 		"cancelTitle": "Arrêter la réparation ; ce qui est déjà réparé est conservé"
+	},
+	"derivedHeal": {
+		"label": "Finalisation d'une réparation d'index interrompue…",
+		"done": "Reconstruction de l'index terminée",
+		"cancelled": "Reconstruction de l'index arrêtée",
+		"cancelling": "Arrêt…",
+		"error": "Erreur de reconstruction de l'index",
+		"cancel": "Arrêter",
+		"cancelTitle": "Arrêter pour l'instant ; Constellation la terminera au prochain démarrage"
 	}
 }

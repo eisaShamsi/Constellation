@@ -331,3 +331,96 @@ because the job outran the click.
 
 **Gates:** Rust **1377/0** (15 ignored — the new cost harness is one) · frontend rebuilt · no new
 warnings in the changed files.
+
+## PJ-228 + PJ-229 — Boss-ruled "Proceed with PJ-228 then 229", both BUILT and Boss-passed
+
+### PJ-228 — the interrupted-repair heal moves off the boot path
+**Concept:** when Constellation finds a rebuild left unfinished, it should finish it while you
+work — visibly — not make you wait in the dark before the window opens.
+
+Territory mapped first by a 6-agent workflow (5 parallel readers + synthesis). **The naive
+design — "spawn the existing call on a thread" — is unsafe in three ways it found:**
+1. **Clearing a marker it did not earn.** A repair arms `derived_tail_pending` BEFORE its own
+   tail; a heal that finished afterwards and cleared on "no failures" would wipe an in-flight
+   repair's crash net, and nothing would heal again, undetectably.
+2. **A connection without the FTS tokenizer** — a bare `Connection::open` fails at prepare time
+   on any `UPDATE note_meta`. **Proven, not assumed:** my own cost harness's first run aborted
+   three of five families with *"no such tokenizer: constellation"*.
+3. **No admission control** — a defrag VACUUM holds the file for minutes and the recomputes'
+   busy-retry budget is finite.
+
+**What shipped.** `converge::Ctx` gains `stop: Option<&dyn Fn() -> bool>`, asked BETWEEN families
+only (6 checkpoints incl. before the first — a test caught that I had omitted that one and the
+outgoing family still ran). `ConvergeReport::stopped` + **`converged_fully()`** — the distinction
+the whole design rests on: `all_ok()` is TRUE for a run that gave way, because unreached families
+are `Skipped` and `Skipped` is deliberately not failure. New `derived_heal.rs`: own connection +
+tokenizer + 30 s busy timeout, scheduled from `ensure_search_db_ready` beside the other
+back-fills (verified: `db_ready.store(true)` at search.rs:10961, schedule at :11038 — after
+publish), yields to a repair, and clears markers only on `converged_fully() && gen_stable &&
+!overlapped`. The stop closure doubles as the progress tick (5 families = the strip's 5 steps).
+Fourth `JobProgressStrip` consumer; `derivedHeal.*` ×15 locales.
+`after_interrupted_walk_at_boot` → `heal_interrupted_walk` (name changed with the behaviour);
+the sealed `ConvergeKey` stays sealed — `derived_heal` cannot construct one, so it comes through
+converge. The compiler found all 7 `Ctx` construction sites when the field was added.
+
+**Investigated, not assumed:** the "yield to a repair" guard could have made the heal never run
+if a repair were always live at boot. It is not — the only two submit sites are user/frontend
+driven, and the boot cold-start fires ONLY when the index is empty (`+layout.svelte:2981`).
+
+### PJ-229 — the interface language survives a restart
+New `app_prefs.rs` → `{app_data_dir}/app-prefs.json`, sibling of the universe registry, following
+`style_presets`' two hard-won disciplines (**strict read** — a corrupt file errors rather than
+returning `{}` the next save would flatten; **atomic write**). NOT `.constellation/settings.json`:
+per-universe would change the language on a universe switch, does not exist on the first-run
+screen, and its save is latched behind a successful read — reproducing PJ-229 through another
+door. `appPrefs.ts` with the read-succeeded latch and no debounce. `decideLocale` extracted PURE
+and pinned (4 vitest): disk wins · disk-absent adopts the cache once (the fix must not be what
+discards the setting) · an unrecognised value is ignored AND not overwritten.
+`getInitialLocale()` is UNCHANGED — localStorage stays the synchronous read-at-module-load
+**cache** that keeps `dir` correct at first paint. The write lives in `handleLangChange`, NOT in
+`setLocale`: the second screen calls `setLocale` on the settings event, and a write there would
+make a display window persist settings (Display-not-Domain) and echo the boot reconcile to disk.
+
+**Data-loss path fixed in passing (WA#6):** `UniverseSetup.svelte` swept EVERY `constellation-*`
+localStorage key, which included `constellation-wab` — the write-ahead backup of note content not
+yet on disk — and would now have taken `constellation-locale` too. Narrowed to the three keys it
+actually migrates + the prop-types prefix.
+
+### The pipeline: FOUR rounds, 7 findings — THREE of them mine
+Round 1 REJECTED (4): an ASCII-ellipsis label quote; a claim the OLD boot path also ran a
+"check what changed" phase (it never did — the whole ~3 s was the recompute); the status bar
+described as showing "the Universe and note name" when it shows the **Library**; and the
+arming-window finding. Round 2 REJECTED (2) — **both mine**: I rewrote a sentence and left
+"on this library (2,721 notes)" in it (the very Library/Universe collision round 1 existed to
+fix), and left a bullet inviting "close as fast as possible". Round 3 REJECTED (1) — **also mine**:
+having verified the ordering myself I still drew the wrong line. `emit_progress("start")` fires
+at index_repair.rs:826 and the marker is armed a few statements later at :376 via search.rs:11315,
+BEFORE the walk loop — and progress is throttled every 25 notes, so the readout sits at **0**
+while the repair is genuinely running. "Wait until it climbs" was safe but its stated reason was
+false, and the fallback would have told the Boss an empty result meant he closed too early when
+it didn't. Corrected to the true and easier line: **close once the readout appears at all.**
+Round 4 APPROVED, 13 claims, 0 findings — including an explicit judgement that the
+sub-millisecond window between the event and the marker does not need to reach Boss-facing copy.
+
+### Boss result — "All stages passes"
+Stage 1: window usable immediately, heal strip counting to 5, finishing on its own. Stage 2:
+closed in Arabic, reopened in Arabic and RTL. **Verified by me afterwards (WA#1, not his job):**
+`C:\Users\ealsh\AppData\Roaming\world.uconstellation.app\app-prefs.json` exists, mtime 09:04,
+contents `{"locale":"en"}` — "en" because he used the optional switch-back at the end, which is
+itself proof the write path works in both directions.
+
+**Gates:** Rust **1381/0** (15 ignored) · vitest **913/913** (4 new) · svelte-check **0** ·
+i18n parity **15/15** · diff-scoped safety inspection **0 confirmed**. Two Sight timing
+benchmarks failed once under the inspection's CPU load and pass identically with and without the
+diff in isolation — the known PJ-172 flake, verified by stashing, not assumed.
+
+### Filed, NOT shipped in this build (the Boss tested this exact binary)
+- **PJ-230** — a linked universe's own database no longer gets the heal: `federation::migrate`
+  calls `init_db` on a cUniverse DB (`federation/migrate.rs:86`) and the heal left with the cut.
+  Deliberately not re-added there — the parent would recompute a foreign universe's aggregates
+  using the PARENT's process-global link vocabulary. Residual: a cUniverse never opened directly
+  never heals. Needs a Boss ruling.
+- **PJ-231** — `search.rs:5778` `let _ = mig003_step3_soft_rebackfill(...)`, the one ungated
+  per-boot member of the same class, discards its result — and it writes frontmatter into the
+  user's `.md` files. One-line fix (log the outcome), held back only because the Boss had already
+  passed this binary.

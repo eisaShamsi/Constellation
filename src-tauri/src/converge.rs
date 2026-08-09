@@ -121,6 +121,12 @@ pub struct ConvergeReport {
     pub sky: ConvergeOutcome,
     pub tag_counts: ConvergeOutcome,
     pub review: ConvergeOutcome,
+    /// PJ-228 — the run gave way before it had asked for every family it wanted.
+    /// Distinct from a family being `Skipped`: skipping is an ANSWER (the table is not
+    /// in use), stopping is an ABSENCE of one. Only the second must keep a heal marker
+    /// armed, which is why `all_ok()` cannot be the clear condition on its own.
+    #[serde(default)]
+    pub stopped: bool,
 }
 
 /// The reason string for a family the caller did not ask for.
@@ -137,7 +143,21 @@ impl ConvergeReport {
             sky: ConvergeOutcome::Skipped(NOT_REQUESTED),
             tag_counts: ConvergeOutcome::Skipped(NOT_REQUESTED),
             review: ConvergeOutcome::Skipped(NOT_REQUESTED),
+            stopped: false,
         }
+    }
+
+    /// The clear condition for a crash marker: every family the caller asked for
+    /// answered, AND the run was not cut short.
+    ///
+    /// PJ-228 — `all_ok()` alone is not that condition. It is true for a run that gave
+    /// way after one family, because the four it never reached are `Skipped`, and
+    /// `Skipped` deliberately does not count as failure (an unstamped table is not in
+    /// use; demanding `Converged` there would arm the marker forever). A background heal
+    /// that yielded to a repair must therefore NOT clear the marker it was healing —
+    /// otherwise the yield silently disarms the recovery it exists to perform.
+    pub fn converged_fully(&self) -> bool {
+        self.all_ok() && !self.stopped
     }
 
     /// True when nothing the caller asked for failed. A `Skipped` family is not a
@@ -172,6 +192,31 @@ impl ConvergeReport {
 /// holding `review-pulse.json`, and today's date. Only some callers have them.
 pub struct Ctx<'a> {
     pub constellation_dir: Option<&'a std::path::Path>,
+    /// PJ-228 — asked BETWEEN families, never inside one.
+    ///
+    /// The families are absolute recomputes: `tag_counts` is one `DELETE` + one
+    /// `INSERT … SELECT` in a single transaction, and the link families are single
+    /// `UPDATE … SET col = (SELECT …)` statements. That is what makes stopping at a
+    /// family boundary safe — every family is all-or-nothing, so a stopped run leaves
+    /// each table either fully recomputed or completely untouched, never half-built.
+    /// It is also what makes running this in the background survivable at all: a
+    /// concurrent write-time ±delta either precedes the recompute's SELECT (and is
+    /// counted) or follows its COMMIT (and applies to a correct base). **Do not make a
+    /// family incremental without revisiting both properties.**
+    ///
+    /// `None` means "never stop", which is every pre-PJ-228 caller.
+    pub stop: Option<&'a dyn Fn() -> bool>,
+}
+
+impl<'a> Ctx<'a> {
+    /// The pre-PJ-228 context: a `.constellation` dir, and no way to be interrupted.
+    pub fn new(constellation_dir: Option<&'a std::path::Path>) -> Self {
+        Ctx { constellation_dir, stop: None }
+    }
+
+    fn should_stop(&self) -> bool {
+        self.stop.map(|f| f()).unwrap_or(false)
+    }
 }
 
 /// **The one body.** Bring the requested derived families current from `note_links` /
@@ -194,6 +239,22 @@ pub fn converge_derived_views(
     let want_incoming = want_links || matches!(families, Families::IncomingOnly);
     let want_note_state = matches!(families, Families::All);
 
+    // PJ-228 — the stop checkpoints. Between families ONLY: each family is an
+    // all-or-nothing recompute, so a boundary is the one place a run can give way
+    // without leaving a table half-built. `stopped` is what keeps the caller's crash
+    // marker armed; the unreached families stay `Skipped(NOT_REQUESTED)`.
+    macro_rules! checkpoint {
+        () => {
+            if ctx.should_stop() {
+                report.stopped = true;
+                return report;
+            }
+        };
+    }
+
+    // Before the FIRST family too: a stop already requested when the run begins (the app
+    // is closing, a repair claimed the DB) must do no work at all, not one family's worth.
+    checkpoint!();
     if want_outgoing {
         report.outgoing = match crate::links_backfill::recompute_all_outgoing(conn, _key) {
             Ok(n) => ConvergeOutcome::Converged(n),
@@ -201,6 +262,7 @@ pub fn converge_derived_views(
         };
     }
 
+    checkpoint!();
     if want_incoming {
         // The stamp gate belongs to CONVERGENCE, not to the recompute.
         //
@@ -229,6 +291,7 @@ pub fn converge_derived_views(
         }
     }
 
+    checkpoint!();
     if want_links {
         // Ungated and idempotent; a no-op on an empty sky_nodes (pre-backfill).
         report.sky = match crate::links_backfill::recompute_all_sky(conn, _key) {
@@ -237,6 +300,7 @@ pub fn converge_derived_views(
         };
     }
 
+    checkpoint!();
     if want_note_state {
         if crate::tag_counts::is_stamped(conn) {
             report.tag_counts = match run_tag_counts(conn, _key) {
@@ -247,6 +311,7 @@ pub fn converge_derived_views(
             report.tag_counts = ConvergeOutcome::Skipped(NOT_STAMPED);
         }
 
+        checkpoint!();
         if crate::review::is_stamped(conn) {
             report.review = match ctx.constellation_dir {
                 Some(dir) => {
@@ -332,7 +397,7 @@ pub fn after_repair_run(conn: &Connection, constellation_dir: Option<&std::path:
         conn,
         &ConvergeKey(()),
         Families::All,
-        &Ctx { constellation_dir },
+        &Ctx::new(constellation_dir),
     )
 }
 
@@ -344,15 +409,27 @@ pub fn after_repair_run(conn: &Connection, constellation_dir: Option<&std::path:
 /// `review_schedule` unrecomputed, and those had no boot heal anywhere — so they stayed
 /// stale until the next full repair, undetectably (the drift check compares `.md` files
 /// to the index and cannot see a derived table stale against itself).
-pub fn after_interrupted_walk_at_boot(
+/// **PJ-228 — it no longer runs at boot; it runs AFTER paint, and it can be stopped.**
+///
+/// The name changed with the behaviour. It used to be called from inside `init_db`,
+/// before `state.db` was published, so every launch of a universe with an armed marker
+/// waited on it (3,143 ms measured) with nothing on screen. It now runs on
+/// `derived_heal`'s background thread with the status-bar strip, and `stop` is what lets
+/// it give way to a repair — see [`ConvergeReport::converged_fully`] for why giving way
+/// must NOT clear the caller's crash marker.
+///
+/// The key stays sealed in this module: `derived_heal` cannot construct a `ConvergeKey`,
+/// so it comes through here, and there is still exactly one assembly.
+pub fn heal_interrupted_walk(
     conn: &Connection,
     constellation_dir: Option<&std::path::Path>,
+    stop: &dyn Fn() -> bool,
 ) -> ConvergeReport {
     converge_derived_views(
         conn,
         &ConvergeKey(()),
         Families::All,
-        &Ctx { constellation_dir },
+        &Ctx { constellation_dir, stop: Some(stop) },
     )
 }
 
@@ -362,7 +439,7 @@ pub fn after_mig108(conn: &Connection) -> ConvergeReport {
         conn,
         &ConvergeKey(()),
         Families::OutgoingOnly,
-        &Ctx { constellation_dir: None },
+        &Ctx::new(None),
     )
 }
 
@@ -373,7 +450,7 @@ pub fn after_vocabulary_change(conn: &Connection) -> ConvergeReport {
         conn,
         &ConvergeKey(()),
         Families::LinksOnly,
-        &Ctx { constellation_dir: None },
+        &Ctx::new(None),
     )
 }
 
@@ -388,7 +465,7 @@ pub fn after_incoming_backfill(conn: &Connection) -> ConvergeReport {
         conn,
         &ConvergeKey(()),
         Families::IncomingOnly,
-        &Ctx { constellation_dir: None },
+        &Ctx::new(None),
     )
 }
 
@@ -472,7 +549,7 @@ mod tests {
             &conn,
             &ConvergeKey::for_test(),
             Families::All,
-            &Ctx { constellation_dir: cdir.as_deref() },
+            &Ctx::new(cdir.as_deref()),
         );
         let ms = t.elapsed().as_secs_f64() * 1000.0;
 
@@ -486,6 +563,72 @@ mod tests {
         ] {
             eprintln!("[converge-cost]   {:<11} {:?}", family, outcome);
         }
+    }
+
+    /// PJ-228 — the distinction the background heal rests on. A run that gave way is
+    /// NOT a run that succeeded, even though every family it never reached is `Skipped`
+    /// and `Skipped` is deliberately not a failure. If the heal cleared its crash marker
+    /// on `all_ok()`, yielding to a repair would silently disarm the very recovery the
+    /// marker exists to trigger — and nothing would ever heal again, undetectably.
+    #[test]
+    fn a_stopped_run_is_not_a_converged_one_even_though_all_ok_is_true() {
+        let mut r = ConvergeReport::new();
+        r.outgoing = ConvergeOutcome::Converged(10);
+        assert!(r.all_ok(), "unreached families are Skipped, which is not failure");
+        assert!(r.converged_fully(), "a run that reached the end may clear the marker");
+
+        r.stopped = true;
+        assert!(r.all_ok(), "still 'no failures' — this is the trap");
+        assert!(!r.converged_fully(), "but it must NOT clear the marker");
+
+        // A failure keeps the marker armed whether or not the run was stopped.
+        let mut f = ConvergeReport::new();
+        f.tag_counts = ConvergeOutcome::Failed("boom".into());
+        assert!(!f.all_ok());
+        assert!(!f.converged_fully());
+    }
+
+    /// The stop closure is asked BETWEEN families, so a run that gives way leaves each
+    /// table either fully recomputed or untouched — never half-built — and the families
+    /// it never reached stay `Skipped`, not silently `Converged(0)`.
+    #[test]
+    fn stopping_happens_at_a_family_boundary_and_leaves_the_rest_unclaimed() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);
+             CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT NOT NULL DEFAULT '[]',
+               outgoing_count INTEGER NOT NULL DEFAULT 0, outgoing_link_types_json TEXT NOT NULL DEFAULT '{}',
+               incoming_count INTEGER NOT NULL DEFAULT 0, incoming_link_types_json TEXT NOT NULL DEFAULT '{}');
+             CREATE TABLE tag_counts (tag TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT, target_name_lower TEXT);
+             CREATE TABLE sky_nodes (path TEXT PRIMARY KEY, stratum TEXT);
+             CREATE TABLE review_schedule (path TEXT PRIMARY KEY, reason TEXT, due_days INTEGER);",
+        )
+        .unwrap();
+
+        // Stop immediately: not one family should run.
+        let always = || true;
+        let r = converge_derived_views(
+            &conn,
+            &ConvergeKey::for_test(),
+            Families::All,
+            &Ctx { constellation_dir: None, stop: Some(&always) },
+        );
+        assert!(r.stopped, "the run recorded that it gave way");
+        assert!(!r.converged_fully());
+        assert_eq!(r.outgoing, ConvergeOutcome::Skipped(NOT_REQUESTED), "never reached, never claimed");
+        assert_eq!(r.review, ConvergeOutcome::Skipped(NOT_REQUESTED));
+
+        // Never stop: the run completes and is allowed to clear a marker.
+        let never = || false;
+        let r2 = converge_derived_views(
+            &conn,
+            &ConvergeKey::for_test(),
+            Families::All,
+            &Ctx { constellation_dir: None, stop: Some(&never) },
+        );
+        assert!(!r2.stopped);
+        assert!(r2.converged_fully(), "no failures and not stopped → may clear");
     }
 
     /// The gates that used to be invisible `if` statements now produce a REASON.
@@ -508,7 +651,7 @@ mod tests {
             &conn,
             &ConvergeKey::for_test(),
             Families::All,
-            &Ctx { constellation_dir: None },
+            &Ctx::new(None),
         );
 
         assert_eq!(
@@ -535,7 +678,7 @@ mod tests {
             &conn,
             &ConvergeKey::for_test(),
             Families::OutgoingOnly,
-            &Ctx { constellation_dir: None },
+            &Ctx::new(None),
         );
         assert_eq!(report.tag_counts, ConvergeOutcome::Skipped(NOT_REQUESTED));
         assert_eq!(report.sky, ConvergeOutcome::Skipped(NOT_REQUESTED));

@@ -1,4 +1,5 @@
 mod ai;
+mod app_prefs;
 // MIG-013 §1A: visibility widened so `build_concept_vectors` [[bin]]
 // can name `arabic::Lang` (the language enum used by lexicon::ConceptRecord).
 pub mod arabic;
@@ -10,6 +11,7 @@ pub mod bridge_vectors;
 mod canvas;
 mod boot_bundle;
 mod cache;
+mod derived_heal;
 mod canonical;
 // PJ-207 §6 — the ONE assembly of the five derived-view recomputes. Its `ConvergeKey`
 // has a private field, and every bulk recompute now requires one, so a sixth divergent
@@ -360,6 +362,7 @@ pub fn run() {
         // PJ-207 §7 — the index-repair runner's single-flight state, beside its chassis
         // sibling. One per app, which is what "one index job process-wide" means.
         .manage(index_repair::RepairState::new())
+        .manage(derived_heal::HealState::new())
         // MIG-040 — NSC summary backfill state (Rule 8 first-time population).
         .manage(nsc::backfill::NscBackfillState::new())
         // MIG-021v2 §1F'.b — bulk Approve All state.
@@ -439,6 +442,10 @@ pub fn run() {
             classifier::scan_job::classifier_scan_start,
             index_repair::index_repair_status,
             index_repair::index_repair_cancel,
+            derived_heal::derived_heal_status,
+            derived_heal::derived_heal_cancel,
+            app_prefs::load_app_prefs,
+            app_prefs::save_app_prefs,
             index_repair::index_drift_report,
             index_repair::index_repair_last_report,
             classifier::scan_job::classifier_scan_cancel,

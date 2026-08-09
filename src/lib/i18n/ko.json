@@ -4193,5 +4193,14 @@
 		"error": "색인 복구 오류",
 		"cancel": "취소",
 		"cancelTitle": "복구를 중지합니다. 이미 복구된 내용은 유지됩니다"
+	},
+	"derivedHeal": {
+		"label": "중단된 색인 복구를 마무리하는 중…",
+		"done": "색인 재구성 완료",
+		"cancelled": "색인 재구성 중지됨",
+		"cancelling": "중지하는 중…",
+		"error": "색인 재구성 오류",
+		"cancel": "중지",
+		"cancelTitle": "지금은 중지합니다. 다음 실행 때 Constellation이 마무리합니다"
 	}
 }

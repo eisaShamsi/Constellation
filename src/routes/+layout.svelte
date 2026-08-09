@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '$lib/theme.css';
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
-	import { dir, t, tn } from '$lib/i18n';
+	import { dir, t, tn, reconcileLocaleFromDisk } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
 	import { DRIFT_REPORT_EVENT, hasFindings, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
@@ -3189,6 +3189,13 @@
 		// Global error handlers to prevent WebView crashes
 		window.addEventListener('unhandledrejection', handleUnhandledRejection);
 		window.addEventListener('error', handleUncaughtError);
+
+		// PJ-229 — correct the interface language from the durable record before the
+		// app does anything else. The synchronous localStorage read at module load has
+		// already set the direction for first paint (which is why it stays); this is
+		// what makes the choice survive a restart, since localStorage is the store
+		// PJ-110 proved we can lose. Awaited but never throwing — one small JSON read.
+		await reconcileLocaleFromDisk();
 
 		// MIG-100 §4b + PJ-103 — graceful-close handshake, registered FIRST
 		// (before the awaited initializeApp): a close during boot must find
@@ -10304,6 +10311,12 @@
 			     index-repair:progress for FULL (user-triggered) runs only, so the boot
 			     cold-start fan-out never flashes this. -->
 			<JobProgressStrip eventName="index-repair:progress" statusCommand="index_repair_status" cancelCommand="index_repair_cancel" labelPrefix="indexRepair" />
+			<!-- PJ-228 — the fourth consumer. Finishing an interrupted repair used to
+			     happen inside startup, before the window was usable and with nothing on
+			     screen; it now runs after paint and says so here. Five steps, one per
+			     derived family — not a note count. Shows only on a launch that follows
+			     an interrupted repair, so an ordinary boot renders nothing. -->
+			<JobProgressStrip eventName="derived-heal:progress" statusCommand="derived_heal_status" cancelCommand="derived_heal_cancel" labelPrefix="derivedHeal" />
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}

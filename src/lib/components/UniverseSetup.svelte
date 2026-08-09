@@ -263,10 +263,24 @@
 			}
 		} catch { /* ignore */ }
 
+		// Clear ONLY what this migration just moved into the universe.
+		//
+		// 2026-08-08 (PJ-229 work, WA#6): this swept every key starting with
+		// `constellation-`, which is far more than it migrated. It took
+		// `constellation-wab` with it — the write-ahead backup of note content that has
+		// not reached disk yet (`libraries/store.ts`), i.e. the recovery net for exactly
+		// the work a user would most hate to lose — and it would now also take
+		// `constellation-locale`, resetting the interface language on this one path.
+		// A cleanup that deletes things it did not create is not a cleanup.
+		const MIGRATED_KEYS = [
+			'constellation-settings',
+			'constellation-bookmarks',
+			'constellation-workspaces',
+		];
 		const keysToRemove = [];
 		for (let i = 0; i < localStorage.length; i++) {
 			const key = localStorage.key(i);
-			if (key && (key.startsWith('constellation-') || key.startsWith('constellation-prop-types-'))) {
+			if (key && (MIGRATED_KEYS.includes(key) || key.startsWith('constellation-prop-types-'))) {
 				keysToRemove.push(key);
 			}
 		}

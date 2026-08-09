@@ -5,6 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, tn, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
+	import { saveAppPrefs } from '$lib/appPrefs';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, flushAllForAppClose, type WriteJournalStats } from '$lib/libraries/store';
 	// PJ-207 §11 — the Index-repair door: the rollback flags, the last run's report, and
 	// the runner's done event (the modal's first Tauri event listener; see the $effect).
@@ -351,6 +352,14 @@
 	function handleLangChange(e: Event) {
 		const newLocale = (e.target as HTMLSelectElement).value as Locale;
 		setLocale(newLocale);
+		// PJ-229 — the durable record. `setLocale` only updates the store (and, through
+		// its subscriber, the localStorage cache), and localStorage is the store PJ-110
+		// proved this app can lose: the Boss closed Constellation in Arabic on
+		// 2026-08-08 and it reopened in English. Written HERE rather than inside
+		// `setLocale` because the second screen also calls `setLocale` when it receives
+		// the settings event — a write there would make a display window persist
+		// settings (Display-not-Domain) and echo the boot reconcile back to disk.
+		void saveAppPrefs({ locale: newLocale });
 		notifySettingsChanged({ locale: newLocale });
 		// Auto-sync primary script to match the interface language
 		const script = localeToScript[newLocale] || 'latin';

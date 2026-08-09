@@ -4220,5 +4220,14 @@
 		"error": "Fehler bei der Indexreparatur",
 		"cancel": "Abbrechen",
 		"cancelTitle": "Reparatur stoppen; bereits Repariertes bleibt erhalten"
+	},
+	"derivedHeal": {
+		"label": "Unterbrochene Indexreparatur wird abgeschlossen…",
+		"done": "Indexneuaufbau abgeschlossen",
+		"cancelled": "Indexneuaufbau gestoppt",
+		"cancelling": "Wird gestoppt…",
+		"error": "Fehler beim Indexneuaufbau",
+		"cancel": "Stoppen",
+		"cancelTitle": "Vorerst stoppen; Constellation schließt es beim nächsten Start ab"
 	}
 }

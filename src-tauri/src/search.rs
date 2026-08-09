@@ -5519,47 +5519,18 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // died with the triggers down; §5's `derived_tail_pending` means it died anywhere in
     // the recompute tail, INCLUDING after the triggers were restored — the window that
     // previously had no marker and therefore no heal at all.
-    if outgoing_triggers_dropped_marker(&conn) || derived_tail_pending_marker(&conn) {
-        // Safety inspection 2026-08-01 — heal ALL THREE derived families, not just outgoing.
-        // The marker records "a reconcile died mid-walk"; during that walk the INCOMING
-        // aggregates and the sky stratum/maturity were equally unmaintained (the incoming
-        // triggers are dropped just above, and the per-edge sky triggers were retired by
-        // PJ-066 §B4 — both now depend on the reconcile tail that never ran). Healing only
-        // outgoing left the other two permanently stale, since boot is walk-free.
-        //
-        // The marker is cleared only if EVERY recompute succeeded; any failure keeps it so
-        // the next boot retries. Never fails boot.
-        // PJ-207 §6 — one assembly. This healer used to run THREE families by hand
-        // while the reconcile tail ran FIVE, and nothing in either place said so. It now
-        // asks for the same convergence the repair does, so the two cannot drift.
-        //
-        // §5/§6 — and it now heals all five. The interrupted walk left `tag_counts` and
-        // `review_schedule` equally unmaintained, and neither had a boot heal anywhere;
-        // the drift check compares `.md` files to the index and is structurally blind to
-        // a derived table stale against itself.
-        let cdir = path.parent().map(|p| p.to_path_buf());
-        let report = crate::converge::after_interrupted_walk_at_boot(&conn, cdir.as_deref());
-        for (family, msg) in report.failures() {
-            eprintln!(
-                "[converge] boot self-heal after interrupted reconcile: {} failed (marker kept; retried next boot): {}",
-                family, msg
-            );
-        }
-        // The marker is cleared only when every family the run asked for succeeded; any
-        // failure keeps it so the next boot retries. Never fails boot.
-        if report.all_ok() {
-            if let Err(e) = clear_outgoing_triggers_dropped_marker(&conn) {
-                eprintln!("[links_backfill] boot self-heal: clear marker failed: {}", e);
-            }
-            // PJ-207 §5's marker is cleared by the SAME success condition — this is the
-            // reader the §5 commit said would land here.
-            if derived_tail_pending_marker(&conn) {
-                if let Err(e) = clear_derived_tail_pending_marker(&conn) {
-                    eprintln!("[converge] boot self-heal: clear derived-tail marker failed: {}", e);
-                }
-            }
-        }
-    }
+    // PJ-228 — the heal that used to run RIGHT HERE now runs after paint.
+    //
+    // It converged all five derived families synchronously, inside `init_db`, before
+    // `state.db` was published — so a launch of a universe with an armed marker waited
+    // on it with an empty window and no explanation (3,143 ms measured on a 2,721-note
+    // universe), and every failure went to `eprintln!`, which a Windows release build
+    // sends nowhere. §11's Cancel made that state reachable by an ordinary gesture.
+    //
+    // `derived_heal::maybe_schedule` (called from `ensure_search_db_ready`, beside the
+    // other back-fills) now does it on a background thread with the status-bar strip,
+    // yielding to any repair. The markers are untouched here: they are what makes the
+    // heal resumable, so a launch that never gets to schedule it simply heals next time.
 
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
@@ -11059,6 +11030,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free
     // existence checks, guarded by a safety cap; no-op when nothing is stale.
     crate::reconcile::maybe_schedule(app.clone());
+
+    // PJ-228: finish an interrupted repair's derived-view rebuild. No-op unless a crash
+    // marker is armed (two indexed point reads), and it refuses while a repair or a
+    // heavy job holds the database. Ordered after `reconcile` for the same reason
+    // everything here is: the window is already painted.
+    crate::derived_heal::maybe_schedule(app.clone());
 
     // MIG-041: schedule the one-time term_vocab bigram purge on a
     // background thread. No-op if the schema stamp is already at v3 OR if
