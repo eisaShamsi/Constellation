@@ -656,6 +656,12 @@
 					"sky": "Sky View verileri",
 					"tag_counts": "Etiket sayıları",
 					"review": "Tekrar programı"
+				},
+				"fullReread": {
+					"name": "Tam yeniden okuma",
+					"description": "Dosyaları değişmemiş olanlar dâhil her notu yeniden okur. Yukarıdaki Onarım bunları atlar, hızlı olmasının nedeni budur — ve neredeyse her zaman doğru seçim odur. Bunu yalnızca bir notun içeriğinin, dosyası değişmiş olarak işaretlenmeden değiştiğinden şüpheleniyorsanız kullanın.",
+					"button": "Tam yeniden okuma",
+					"confirm": "Tüm notlar yeniden okunsun mu?\n\nBu işlem yalnızca değişenleri değil, tüm notlarınızı açıp yeniden okur. Yaklaşık 1.250 notluk bir Evrende ölçüldüğünde yaklaşık 25 saniye sürdü; olağan Onarım bir saniyenin altındaydı. Büyük bir Evren birkaç dakika sürebilir.\n\nArka planda çalışır ve istediğiniz zaman durdurabilirsiniz. Not dosyalarınıza asla yazılmaz."
 				}
 			}
 		},

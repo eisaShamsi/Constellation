@@ -54,7 +54,7 @@ const INTER_NOTE_SLEEP_MS: u64 = 30;
 /// Ships `false`. The flip is its own commit, and it must carry BOTH this and the
 /// frontend constant plus a confirmation dialog quoting the §M1 duration — by Boss
 /// ruling (2026-08-03), the dialog must state a real number, not a vague warning.
-pub(crate) const FULL_REREAD_ENABLED: bool = false;
+pub(crate) const FULL_REREAD_ENABLED: bool = true;
 
 /// Self-checkpoint cadence — see the module note on `MIGRATION_ACTIVE`.
 const CHECKPOINT_EVERY: usize = 500;
@@ -92,6 +92,25 @@ pub enum Scope {
 }
 
 impl Scope {
+    /// Is this a run over the WHOLE active universe?
+    ///
+    /// PJ-207 §14 (2026-08-09 inspection). This existed three times as
+    /// `matches!(scope, Scope::Full)` — the receipt gate, the post-run follow-ups, and
+    /// the progress-event gate — and adding `FullReread` slipped past **all three** at
+    /// once, because an equality against one variant is not a question about the run's
+    /// KIND. The consequences were a full re-read that rendered the PREVIOUS repair's
+    /// receipt as its own, never re-derived the drift band, and showed a progress strip
+    /// that never moved.
+    ///
+    /// `match` rather than `matches!` so the compiler makes the next variant answer this
+    /// question instead of silently defaulting to "no".
+    pub(crate) fn is_whole_universe(&self) -> bool {
+        match self {
+            Scope::Full | Scope::FullReread => true,
+            Scope::ColdStart { .. } => false,
+        }
+    }
+
     /// Does a running job of `self` already cover a newly submitted `other`?
     /// A Full run subsumes everything; a ColdStart covers only its own library.
     fn covers(&self, other: &Scope) -> bool {
@@ -555,7 +574,7 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
     if let Ok(mut c) = state.current.lock() {
         *c = Some(scope.clone());
     }
-    state.full_run.store(matches!(scope, Scope::Full), Ordering::Relaxed);
+    state.full_run.store(scope.is_whole_universe(), Ordering::Relaxed);
 
     let app_bg = app.clone();
     // `Builder::spawn` rather than `thread::spawn` so a spawn FAILURE is observable.
@@ -604,7 +623,7 @@ pub fn submit(app: &AppHandle, scope: Scope) -> SubmitOutcome {
             converge: outcome.as_ref().ok().and_then(|c| c.converge.clone()),
             error: outcome.as_ref().err().cloned(),
         };
-        let was_full = matches!(scope, Scope::Full);
+        let was_full = scope.is_whole_universe();
         if was_full {
             if let Ok(mut g) = state.last_report.lock() {
                 *g = Some(report.clone());
@@ -996,7 +1015,7 @@ mod tests {
                     // exactly that: note_meta 2,721 -> 3,541, and `unchanged` was 0 even
                     // with force=false, which is the tell.
                     let ps = p.to_string_lossy().replace('/', std::path::MAIN_SEPARATOR_STR);
-                    match crate::search::index_note(&conn, &ps, &lib_name, force) {
+                    match crate::search::index_note_bulk(&conn, &ps, &lib_name, force) {
                         Ok(crate::search::IndexOutcome::Indexed) => indexed += 1,
                         Ok(crate::search::IndexOutcome::Unchanged) => unchanged += 1,
                         Ok(_) => {}
@@ -1031,11 +1050,55 @@ mod tests {
     /// claim went unverified for months." Anything that can reach the command — a
     /// devtools `invoke`, a future caller, a second window — bypasses the frontend
     /// constant. This pins the gate that is actually load-bearing.
+    /// PJ-207 §14 (2026-08-09 inspection) — **"is this a whole-universe run?" is a
+    /// question, not an equality.**
+    ///
+    /// Three separate gates asked it as `matches!(scope, Scope::Full)`: whether to store
+    /// and emit the run's receipt, whether to re-derive the drift band and schedule the
+    /// defrag afterwards, and whether to emit progress ticks at all. Adding
+    /// `FullReread` slipped past all three simultaneously — so a full re-read would have
+    /// rendered the PREVIOUS repair's receipt as its own, left the amber band stale, and
+    /// shown a progress strip frozen at zero for its entire run.
+    ///
+    /// The method is `match`-based so the next variant must answer rather than silently
+    /// defaulting to "no"; this pins the answers that exist today.
     #[test]
-    fn the_full_reread_is_refused_while_the_flag_is_off() {
+    fn both_whole_universe_scopes_are_treated_as_whole_universe_runs() {
+        assert!(Scope::Full.is_whole_universe());
+        assert!(Scope::FullReread.is_whole_universe(), "a full re-read IS a whole-universe run — it is the one that reads MORE");
+        assert!(!Scope::ColdStart {
+            library_path: "/l".into(),
+            library_name: "l".into(),
+            only_if_unindexed: true,
+        }
+        .is_whole_universe());
+    }
+
+    #[test]
+    fn the_two_full_reread_gates_agree() {
+        // PJ-207 §14 FLIP (Boss ruling 2026-08-09, after §M1 measured it): ON.
+        //
+        // This test replaced one that asserted the flag was OFF. It is not deleted,
+        // because the property worth pinning did not go away — it INVERTED. There are two
+        // gates, deliberately: `repairFlag.ts` hides the control, and this one refuses the
+        // request. Only the second is load-bearing (a devtools `invoke` bypasses the UI).
+        //
+        // If a future change turns the feature off, BOTH must go — leaving the Rust gate
+        // open while hiding the button reproduces exactly the "unreachable, we assumed"
+        // shape that PJ-207 exists because of.
         assert!(
-            !FULL_REREAD_ENABLED,
-            "PJ-207 §14 ships the Full re-read OFF. Flipping this constant is its own              commit, and it must land together with the frontend flag AND a confirmation              dialog quoting the measured duration (Boss ruling 2026-08-03). If you are              here to flip it: the §M1 number belongs in the dialog, not in a comment."
+            FULL_REREAD_ENABLED,
+            "the Rust gate is the load-bearing one; turning the feature off means turning              BOTH this and repairFlag.ts's FULL_REREAD_ENABLED off, not just the UI"
+        );
+    }
+
+    /// The refusal path still exists and still names itself, so turning the feature back
+    /// off is one constant rather than a rewrite.
+    #[test]
+    fn the_refusal_reason_survives_the_flip() {
+        assert_eq!(
+            StopReason::FullRereadDisabled.as_str(),
+            "the full re-read is not enabled in this build"
         );
     }
 

@@ -564,6 +564,12 @@
 					"sky": "Sky View data",
 					"tag_counts": "Tag counts",
 					"review": "Review schedule"
+				},
+				"fullReread": {
+					"name": "Full re-read",
+					"description": "Re-reads every note, including the ones whose files have not changed. The ordinary Repair above skips those, which is why it is fast — and it is the right choice almost always. Use this only if you suspect a note's contents changed without its file being marked as changed.",
+					"button": "Full re-read",
+					"confirm": "Re-read every note?\n\nThis opens and re-reads all of your notes, not just the changed ones. Measured on a Universe of about 1,250 notes it took roughly 25 seconds, against under a second for the ordinary Repair; a large Universe can take a few minutes.\n\nIt runs in the background and you can stop it at any time. Your note files are never written to."
 				}
 			}
 		},

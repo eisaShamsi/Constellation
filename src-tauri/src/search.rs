@@ -7340,7 +7340,27 @@ pub(crate) fn mtime_secs(md: &std::fs::Metadata) -> Option<u64> {
 }
 
 /// Index a single note into the database.
+/// Index ONE note that we know just changed — a save, a rename cascade, a Base cell
+/// edit. Event-driven, single-file.
+///
+/// PJ-207 §14 — use [`index_note_bulk`] from a walk instead. The difference is not
+/// cosmetic: the save-during-read guard below is DISABLED for `force` callers, on the
+/// premise (stated at that guard) that a force caller is always a "this file just
+/// changed" context where a moved mtime means another write is already in flight and
+/// will reindex. §14 made the bulk walk a `force` caller and falsified that premise —
+/// nothing is coming for a walked note — so the two intents now have two doors.
 pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
+    index_note_impl(conn, note_path, library_name, force, false)
+}
+
+/// Index one note as part of a BULK WALK. Nothing else will reindex this note, so a file
+/// that moves under the read is refused (`Raced`) rather than written stale — even when
+/// `force` is on, which is exactly the case the Full re-read introduced.
+pub(crate) fn index_note_bulk(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
+    index_note_impl(conn, note_path, library_name, force, true)
+}
+
+fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force: bool, bulk: bool) -> Result<IndexOutcome, String> {
     let path = Path::new(note_path);
     if !path.exists() || path.extension().map(|e| e != "md").unwrap_or(true) {
         return Ok(IndexOutcome::Skipped);
@@ -7543,13 +7563,21 @@ pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str,
         // sub-second; it does not close it. Closing it needs content hashing on the
         // walk path — a write-path change, filed as its own job.
         //
-        // Scoped to the BULK WALK (`!force`) on purpose. Every `force: true` caller
+        // Scoped to the BULK WALK on purpose. An EVENT-DRIVEN `force: true` caller
         // reaches here from a "this file just changed" context — a save, a rename
         // cascade, a Base cell edit — where a moved mtime means ANOTHER write is
         // already in flight and will itself reindex. Refusing there would convert a
         // benign race into a silently-skipped index with no retry, which is the very
         // staleness class this step is closing.
-        if !force {
+        //
+        // PJ-207 §14 (2026-08-09 inspection) — the condition WAS `!force`, and that read
+        // as "bulk walk" only while the walk was the mtime-gated one. The Full re-read
+        // made the walk a `force` caller, which silently disabled this guard for a run
+        // lasting tens of seconds: a note saved mid-run could be overwritten with the
+        // pre-save bytes the walk had already read, and the run would count it Indexed.
+        // The premise above is about the CALLER'S INTENT, not about `force` — so the
+        // condition asks that directly now.
+        if !force || bulk {
             // Review finding A1 — a re-stat that FAILS is not a race. The obvious
             // `.unwrap_or(0)` would turn a transient sharing violation (a sync client
             // or AV holding the handle for a moment) into `0 != modified` → Raced,
@@ -8168,7 +8196,7 @@ fn index_library_recursive(
                 ctx.stopped = true;
                 return tally;
             }
-            match index_note(conn, &ps, &lib_name, ctx.force) {
+            match index_note_bulk(conn, &ps, &lib_name, ctx.force) {
                 Ok(IndexOutcome::Indexed) => tally.indexed += 1,
                 Ok(IndexOutcome::Unchanged) => tally.unchanged += 1,
                 Ok(IndexOutcome::Raced) => tally.raced += 1,
@@ -11634,7 +11662,10 @@ pub(crate) fn reconcile_filesystem_guarded(
 }
 
 #[tauri::command(async)]
-pub fn constellation_search_init(app: tauri::AppHandle) -> Result<crate::index_repair::SubmitOutcome, String> {
+pub fn constellation_search_init(
+    app: tauri::AppHandle,
+    full_reread: Option<bool>,
+) -> Result<crate::index_repair::SubmitOutcome, String> {
     // PJ-207 §7 — a thin SUBMIT. It used to call `ensure_search_db_ready` on the dispatch
     // thread and then walk inline; now both happen inside the runner's worker, and the
     // return is a typed outcome rather than stats-or-error.
@@ -11644,7 +11675,18 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<crate::index_r
     // AlreadyRunning | Blocked` cannot be swallowed into looking like success — and
     // `Queued` is why a second library added during a run is processed rather than
     // silently dropped.
-    Ok(crate::index_repair::submit(&app, crate::index_repair::Scope::Full))
+    //
+    // PJ-207 §14 — ONE door, two scopes. `full_reread` is optional so every existing
+    // caller (the boot cold-start fan-out, add-library, the drift band's Repair now, the
+    // Settings Repair button) keeps its exact call shape and its exact meaning. Only the
+    // Settings "Full re-read" control passes `true`, and `submit` refuses that variant
+    // outright unless BOTH the Rust and the frontend flag are on.
+    let scope = if full_reread.unwrap_or(false) {
+        crate::index_repair::Scope::FullReread
+    } else {
+        crate::index_repair::Scope::Full
+    };
+    Ok(crate::index_repair::submit(&app, scope))
 }
 
 /// Reindex a single note (called on file change).

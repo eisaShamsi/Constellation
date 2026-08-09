@@ -177,13 +177,26 @@
 		}
 		repairReport = await loadLastRepairReport();
 	}
-	async function startRepairFromSettings() {
+	async function startRepairFromSettings(fullReread = false) {
 		repairBusy = true;
 		repairBlockedMsg = '';
 		const running = await submitRepair((reason) => {
 			repairBlockedMsg = $t('indexDrift.repairBlocked', { reason });
-		});
+		}, { fullReread });
 		if (!running) repairBusy = false;
+	}
+
+	// PJ-207 §14 — the Full re-read asks first, and the question quotes the §M1
+	// measurement rather than a vague warning (Boss ruling 2026-08-03: the dialog must
+	// state a real number). It is not `danger` — nothing is destroyed; it is slow, and
+	// slowness is what the user is consenting to.
+	function confirmFullReread() {
+		confirmDialog = {
+			message: $t('settings.index.repair.fullReread.confirm'),
+			confirmLabel: $t('settings.index.repair.fullReread.button'),
+			cancelLabel: $t('common.cancel'),
+			onConfirm: () => { void startRepairFromSettings(true); },
+		};
 	}
 	$effect(() => {
 		if (!REPAIR_DOOR_ENABLED) return;
@@ -2179,10 +2192,24 @@
 									{$t('settings.index.repair.description') || 'Catches the search index up with your files: re-reads every note that changed while Constellation was closed, indexes notes it has never seen, and rebuilds the derived views. Runs in the background — progress shows in the status bar, and you can cancel any time. Your note files are never written to.'}
 								</div>
 							</div>
-							<button class="setting-btn" disabled={repairBusy} onclick={startRepairFromSettings}>
+							<button class="setting-btn" disabled={repairBusy} onclick={() => startRepairFromSettings(false)}>
 								{repairBusy ? ($t('settings.index.repair.running') || 'Repairing…') : ($t('settings.index.repair.button') || 'Repair')}
 							</button>
 						</div>
+						{#if FULL_REREAD_ENABLED}
+							<!-- PJ-207 §14 — the slower, exhaustive mode. Separate item and its own
+							     confirmation, because the choice it offers the user is a cost, and
+							     the ordinary Repair above is the right answer almost every time. -->
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.index.repair.fullReread.name')}</div>
+									<div class="setting-desc">{$t('settings.index.repair.fullReread.description')}</div>
+								</div>
+								<button class="setting-btn" disabled={repairBusy} onclick={confirmFullReread}>
+									{$t('settings.index.repair.fullReread.button')}
+								</button>
+							</div>
+						{/if}
 						{#if repairBlockedMsg}
 							<div class="repair-blocked" role="status" dir="auto">{repairBlockedMsg}</div>
 						{/if}
@@ -2224,18 +2251,6 @@
 										</div>
 									{/each}
 								{/if}
-							</div>
-						{/if}
-						{#if FULL_REREAD_ENABLED}
-							<!-- §14 — flag-off until the duration is MEASURED (Boss ruling: the
-							     confirmation must state a real number, so the dialog copy and its
-							     ×15 strings land with §14's measurement, not here). -->
-							<div class="setting-item">
-								<div class="setting-info">
-									<div class="setting-name">{$t('settings.index.fullReread.name') || 'Full re-read'}</div>
-									<div class="setting-desc">{$t('settings.index.fullReread.description') || 'Re-reads every note from disk regardless of whether it changed.'}</div>
-								</div>
-								<button class="setting-btn" disabled>{$t('settings.index.fullReread.button') || 'Full re-read'}</button>
 							</div>
 						{/if}
 					{/if}

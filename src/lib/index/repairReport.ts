@@ -100,9 +100,18 @@ export async function loadLastRepairReport(): Promise<RepairReport | null> {
  * when nothing is running (blocked, or the invoke itself failed) — the caller re-enables
  * its button and surfaces `onBlocked`'s reason on its own error surface.
  */
-export async function submitRepair(onBlocked: (reason: string) => void): Promise<boolean> {
+export async function submitRepair(
+	onBlocked: (reason: string) => void,
+	opts?: { fullReread?: boolean }
+): Promise<boolean> {
 	try {
-		const outcome = await invoke<{ kind: string; reason?: string }>('constellation_search_init');
+		// PJ-207 §14 — one door, two scopes. The parameter is optional so every existing
+		// caller keeps its exact call shape AND its exact meaning; only the Settings
+		// "Full re-read" control passes it. Rust refuses that scope outright unless its
+		// own gate is open, so this argument cannot smuggle the feature in.
+		const outcome = await invoke<{ kind: string; reason?: string }>('constellation_search_init', {
+			fullReread: opts?.fullReread ?? false,
+		});
 		if (outcome?.kind === 'blocked') {
 			onBlocked(outcome.reason ?? '');
 			return false;

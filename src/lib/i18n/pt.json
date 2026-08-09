@@ -656,6 +656,12 @@
 					"sky": "Dados do Sky View",
 					"tag_counts": "Contagens de etiquetas",
 					"review": "Plano de revisão"
+				},
+				"fullReread": {
+					"name": "Releitura completa",
+					"description": "Relê todas as notas, incluindo aquelas cujos ficheiros não mudaram. A Reparação acima ignora-as, e é por isso que é rápida — e é a escolha certa quase sempre. Use isto apenas se suspeitar que o conteúdo de uma nota mudou sem que o ficheiro ficasse marcado como alterado.",
+					"button": "Releitura completa",
+					"confirm": "Reler todas as notas?\n\nIsto abre e relê todas as suas notas, não apenas as alteradas. Medido num Universo de cerca de 1250 notas demorou aproximadamente 25 segundos, contra menos de um segundo para a Reparação normal; um Universo grande pode demorar alguns minutos.\n\nCorre em segundo plano e pode pará-lo a qualquer momento. Os seus ficheiros de notas nunca são escritos."
 				}
 			}
 		},

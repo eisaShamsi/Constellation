@@ -656,6 +656,12 @@
 					"sky": "Sky-View-Daten",
 					"tag_counts": "Tag-Zähler",
 					"review": "Wiederholungsplan"
+				},
+				"fullReread": {
+					"name": "Vollständiges erneutes Einlesen",
+					"description": "Liest jede Notiz erneut ein, auch die, deren Dateien sich nicht geändert haben. Die obige Reparatur überspringt diese — deshalb ist sie schnell, und sie ist fast immer die richtige Wahl. Nutzen Sie dies nur, wenn Sie vermuten, dass sich der Inhalt einer Notiz geändert hat, ohne dass ihre Datei als geändert markiert wurde.",
+					"button": "Vollständig einlesen",
+					"confirm": "Jede Notiz erneut einlesen?\n\nDies öffnet und liest alle Ihre Notizen erneut, nicht nur die geänderten. Gemessen an einem Universum mit etwa 1.250 Notizen dauerte das rund 25 Sekunden, gegenüber unter einer Sekunde für die normale Reparatur; ein großes Universum kann einige Minuten brauchen.\n\nEs läuft im Hintergrund und Sie können es jederzeit anhalten. In Ihre Notizdateien wird nie geschrieben."
 				}
 			}
 		},

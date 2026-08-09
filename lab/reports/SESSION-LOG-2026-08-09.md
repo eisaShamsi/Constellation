@@ -265,3 +265,76 @@ minutes. NOT measured — the plan's 49 s I/O floor was for that universe; this 
 **BOSS-TESTABLE — no.** The flag is off; nothing user-visible ships. **The mid-run Cancel check
 therefore cannot ride §14** — it belongs to the flip commit, where a minutes-long run finally makes
 the gesture catchable. I told the Boss otherwise at §12's close; correcting it here.
+
+## PJ-207 §14 FLIP — the Full re-read is ON, Boss-passed
+
+Boss: *"Flip it on"*, then **"All pass"**.
+
+### Built
+`constellation_search_init` gains an optional `full_reread` — **one door, two scopes** — so every
+pre-existing caller (boot cold-start, add-library, the band's Repair now, the ordinary Repair)
+keeps its exact call shape AND meaning; only the new control passes `true`. Settings → Index gains
+a second row with its own confirmation, and the confirm copy **quotes the §M1 numbers** rather than
+warning vaguely, which is what the 2026-08-03 ruling demanded. `settings.index.repair.fullReread.*`
+×15 locales. Both gates flipped — the frontend one hides the control, `index_repair::
+FULL_REREAD_ENABLED` refuses the request; the Rust one is the load-bearing half.
+
+**The OFF-pin was inverted, not deleted.** The test asserting the flag was off existed to fail
+loudly on a careless flip. The property did not disappear, it reversed: it now asserts both gates
+agree, with the reason stated — turning the feature off again means turning BOTH off, because
+leaving the Rust gate open while hiding the button reproduces the exact "unreachable, we assumed"
+shape PJ-207 exists because of.
+
+### ☠️ The inspection found FIVE, four of them mine, one a live regression
+1. **HIGH — a save during the re-read could be overwritten with stale bytes.** `index_note`'s
+   save-during-read guard was scoped `if !force`, on the stated premise that *"every force:true
+   caller reaches here from a 'this file just changed' context"* where another write is already in
+   flight. **§14 falsified that premise**: the bulk walk became a force caller, nothing is coming
+   for a walked note, and the guard silently switched off for a run lasting tens of seconds. A note
+   saved mid-run could be written back with the pre-save bytes the walk had already read — counted
+   `Indexed`, no error. Fixed by splitting the intent: `index_note` (event-driven) and
+   `index_note_bulk` (walk, guard ON regardless of `force`). **Two call sites, not 34.**
+2–4. **One root cause.** `matches!(scope, Scope::Full)` appeared THREE times meaning "is this a
+   whole-universe run?" — the receipt gate, the post-run follow-ups, the progress gate — and the new
+   variant slipped past **all three at once**: a full re-read would have rendered the PREVIOUS
+   repair's receipt as its own, never re-derived the drift band, and shown a strip frozen at zero.
+   Replaced by `Scope::is_whole_universe()`, written as a `match` so the next variant must answer.
+5. **A dead §11 placeholder** gated on the same flag rendered a SECOND, broken "Full re-read" row —
+   disabled button, i18n keys that never existed. The flip made it visible. Removed.
+
+**Re-inspection after the fixes: 0 confirmed.**
+
+### 🛡️ The test gate: three rounds, and a finding that would have wasted the round
+REJECTED twice. The critical finding: **the test never said which Universe to be in.** Step 5 needs
+the run to last; on `كون عيسى` (6 notes) a full re-read ends in well under a second and Cancel would
+have outrun the Boss a THIRD time, for reasons unrelated to the fix. A Step 0 now checks the title
+bar.
+
+**The inspector reached the right action from the WRONG evidence** — it read `universes.json`, whose
+`active_id` names `كون عيسى`. That registry is known-unreliable here. Challenged to verify
+independently, it did better than the mtime argument I offered: it read the **app-generated**
+`"timestamp":"2026-08-09T05:04:04.965Z"` inside Eisa Universe's boot record and its logged boot
+sequence, then **counted the files** — 1,260 in the four libraries (draft: "about 1,250") and 2,102
+in the whole own tree (draft: "roughly 2,100"), and 6 in `كون عيسى`. Then rejected again for ONE
+stray "Library" left in the second clause of the very sentence whose first clause I had just fixed —
+**the same partial-fix pattern as the MIG-003 Step 1 miss earlier today.**
+
+Also corrected: the draft narrated the dialog as saying "Library" where it says **Universe**; and a
+caveat was added for the progress-clears-cancelling quirk §10 preserved deliberately (a tick in
+flight when Cancel is pressed briefly restores "Repairing the index…"), so a working Cancel is not
+reported as broken.
+
+### Boss result — "All pass"
+Step 0 → Step 6, including the mid-run **Cancel finally exercised** after outrunning him twice, and
+the next-launch "Finishing an interrupted index repair…" safety net behaving as described.
+
+**Gates:** Rust **1389/0** · vitest 913/913 · svelte-check 0 · i18n 15/15 ✓ · inspection 5 → **0**.
+Binary 14:02, newer than every fix.
+
+### 🆕 PJ-233 — filed, not chased: the app is running a Universe absent from its own registry
+The inspector could not reconstruct, from the source, HOW `set_active_universe` — which requires the
+target id to exist in `registry.entries` — activated Eisa Universe when `universes.json` lists only
+`كون عيسى` (registry mtime 2026-08-07). It said so plainly rather than inventing a mechanism. The
+conclusion about which universe is active rests on independent evidence (app-generated timestamp,
+file counts, the federation manifest), so it does not affect this test — but a registry that
+disagrees with reality is exactly the class of "unverified reachability claim" PJ-207 exists for.

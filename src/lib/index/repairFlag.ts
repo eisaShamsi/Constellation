@@ -40,5 +40,18 @@
 /** Every user-reachable route to the index repair. See the module doc. */
 export const REPAIR_DOOR_ENABLED = true;
 
-/** The "Full re-read" mode only. Ships OFF until its duration is measured (Boss ruling). */
-export const FULL_REREAD_ENABLED = false;
+/**
+ * The "Full re-read" mode only.
+ *
+ * **ON since 2026-08-09** (Boss ruling), after §M1 measured it: on Eisa Universe's four
+ * own libraries — 1,258 notes — the ordinary repair takes **0.1 s** and a full re-read
+ * takes **24.7 s** (~51 notes/s, 40-216/s by note size). The ordinary repair only stats;
+ * the re-read opens every file. The confirmation dialog quotes those numbers, which is
+ * what the ruling required.
+ *
+ * **This flag hides the CONTROL. It does not make the mode unreachable.** The gate that
+ * refuses the request is `index_repair::FULL_REREAD_ENABLED` on the Rust side; a devtools
+ * `invoke` bypasses this constant entirely. Both must move together — turning the feature
+ * off by hiding the button alone reproduces the exact shape PJ-207 exists because of.
+ */
+export const FULL_REREAD_ENABLED = true;

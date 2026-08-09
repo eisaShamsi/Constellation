@@ -656,6 +656,12 @@
 					"sky": "Datos de Sky View",
 					"tag_counts": "Recuento de etiquetas",
 					"review": "Calendario de repaso"
+				},
+				"fullReread": {
+					"name": "Relectura completa",
+					"description": "Vuelve a leer todas las notas, incluidas aquellas cuyos archivos no han cambiado. La Reparación anterior las omite, y por eso es rápida — y es la opción correcta casi siempre. Use esto solo si sospecha que el contenido de una nota cambió sin que su archivo quedara marcado como modificado.",
+					"button": "Relectura completa",
+					"confirm": "¿Volver a leer todas las notas?\n\nEsto abre y vuelve a leer todas sus notas, no solo las modificadas. Medido en un Universo de unas 1250 notas tardó unos 25 segundos, frente a menos de un segundo para la Reparación normal; un Universo grande puede tardar unos minutos.\n\nSe ejecuta en segundo plano y puede detenerlo cuando quiera. Nunca se escribe en sus archivos de notas."
 				}
 			}
 		},
