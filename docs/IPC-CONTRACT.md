@@ -80,6 +80,21 @@
 | `get_note_headings` | `store.ts` | Outline panel | On demand |
 | `update_links_on_rename` | `store.ts` | File rename | One-shot |
 | `execute_dataview_query` | `dataview/store.ts` | Dataview block render | On demand — never on every keystroke |
+| `constellation_search_init` | `repairReport.ts` (`submitRepair`) | **The repair door** — Settings → Index → Repair index, and Repair now on the drift band | One-shot. Single-flight: returns a typed outcome (`started` / `queued` / `alreadyRunning` / `blocked`) — never fire-and-forget. Runs on its OWN connection and its own thread; never blocks the caller |
+| `index_repair_status` | `JobProgressStrip.svelte` | Strip mount (recover-on-mount) | One-shot per mount. NOT polled — live updates arrive on the `index-repair:progress` event |
+| `index_repair_cancel` | `JobProgressStrip.svelte` | User presses Cancel | One-shot; idempotent (an atomic store). The walk stops at the next note boundary; the derived-view tail still completes |
+| `index_repair_last_report` | `SettingsModal.svelte` | Settings → Index opened | One-shot. In-memory for the current run of the app — absent after a restart |
+| `index_drift_report` | `+layout.svelte` | Drift band mount | One-shot READ. The value is also pushed on the `index-drift:report` event; the command exists for a surface that mounts after it fired |
+| `derived_heal_status` / `derived_heal_cancel` | `JobProgressStrip.svelte` | PJ-228 catch-up strip | Same contract as their `index_repair` counterparts |
+
+**Events (Rust → frontend, preferred over polling):** `index-repair:progress` and
+`derived-heal:progress` both carry `{ phase, total, completed, error }`; `index-repair:done`
+carries the run's report; `index-drift:report` carries the re-derived drift counts. Progress is
+throttled to one event per 25 notes — never one per item (Performance Rule 3).
+
+**`cache_reconcile` is NOT in this table by design.** It was removed from the boot path
+(2026-07-08) and is not a command the frontend should call: the boot reconcile schedules itself
+after paint, and the user-reachable route is the repair door above.
 
 ### Notes & Daily Notes
 | Command | Caller | Trigger | Notes |

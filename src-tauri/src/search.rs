@@ -12440,7 +12440,9 @@ pub fn constellation_search(
             // constellation_search_init which WALKED every library on every
             // first-search — blocking the UI for seconds on a large Universe.
             // Now we only open the connection (cheap); the index is kept fresh
-            // by the file watcher and by explicit Rebuild Index actions. If
+            // by the file watcher and by an explicit repair (Settings → Index →
+            // Repair index; PJ-207 §12 — this said "Rebuild Index actions", naming a
+            // control that did not exist until §11 built one). If
             // the index is cold (empty), the search just returns no results.
             drop(db_guard);
             ensure_search_db_ready(&app)?;

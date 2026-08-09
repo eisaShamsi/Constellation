@@ -126,3 +126,80 @@ through the read-only attach, so withholding them would degrade federated reads 
 nothing).
 
 **Gates:** Rust **1385/0** (15 ignored; +4 tests over the session).
+
+## PJ-207 §12 — the documentation
+
+Boss: *"Start §12"*, then *"Continue"*.
+
+**The plan's §12 was written to REMOVE a promise; §11 built the thing, so it also had to
+DESCRIBE it.** Both halves done.
+
+**Corrections** (all four plan targets verified still present): `Index.md` "there's nothing to
+'rebuild'" scoped to *while Constellation is running*; the User Manual's semantic-search sentence
+rescoped to the M11 layer it was always about, with a pointer to the real repair; "caches rebuild
+in the background" reworded in `Universe.md` and `README.md`. The two the plan said NOT to sweep
+(the Arabic-override reindex sentences) left alone — verified still accurate.
+
+**New:** a User Manual subsection, *"If your notes changed while Constellation was closed"*, inside
+§2's external-changes section — which until now covered only changes arriving while the app is
+OPEN. Covers the band, Repair now, the Settings route, what the repair does and does not touch,
+background progress + Cancel, the fresh re-derivation, the Last-repair report and its in-memory
+lifetime, and PJ-228's catch-up strip.
+
+**Two plan assumptions corrected by looking:** the semantic sentence exists in **Arabic only**, not
+"the 13 other locales" — the rest are shorter partial translations that never carried it. And every
+locale HAS the external-changes section, but the heading after it differs and several lack "Universe
+Notes Folder" entirely, so each translator located its own insertion point.
+
+**Code + contract:** four stale comments now name the control that exists (`+layout.svelte` ×2,
+`library_attribution_backfill.rs`, `search.rs`); two others already record the false promise as
+history and were left as the durable trail. `IPC-CONTRACT.md` gains the repair commands with their
+real contracts, both progress events, and why `cache_reconcile` is deliberately absent. The plan's
+verification grep returns only intentional history. ✓
+
+### The gate caught me contradicting my own measurement
+REJECTED on one claim of 29: I wrote that earlier versions did this *"before showing the window,
+which made that one launch look frozen."* The window is created visible (`tauri.conf.json`) and was
+already on screen; and **"frozen" is the word I had explicitly rejected for this defect the day
+before**, after measuring it — `SESSION-LOG-2026-08-08` says *"a ~3 s silent pause, not a freeze."*
+I did the measurement so severity would not be an adjective, then reached for the adjective anyway.
+Corrected and re-gated: APPROVED. The inspector also flagged (not rejected) that "about three
+seconds" is one universe on one machine; I shipped the approved wording rather than editing after
+approval — post-gate "improvements" produced three of tonight's findings.
+
+### Translation: 14 agents, then a verification pass — 4 real findings
+Each agent pasted UI labels **verbatim from its own locale's `i18n` JSON** rather than translating
+them (a manual naming a button the app does not show is worse than one left in English). The
+verifier re-checked all 14 against those same values. Structure: 16 insertions, 0 deletions, one
+subsection each, correctly placed — all 14.
+
+- **es** — wrote the Settings window as *"Configuración"*; the app says **"Ajustes"**
+  (`es.json:104`, rendered `SettingsModal.svelte:772`). Two occurrences. Also misquoted the band
+  (*podría* for the app's *puede*). Both fixed. The agent had reported these labels as "verbatim
+  from es.json" — a false self-report, which is exactly why the verifier exists.
+- **ja** — dropped the spaces the template puts around `{noun}`; the quote now matches. Fixed.
+- **ko** — the manual was FAITHFUL, and in being faithful it exposed an **app bug**: `indexDrift.
+  changed` / `missingFromIndex` used the generic `이(가)` particle placeholder after a noun that is
+  ALWAYS `노트 {count}개` — always vowel-final — so Korean users read `개이(가)`, which is not
+  Korean. Fixed in `ko.json` (→ `개가`); the manual re-quoted to match. **Found by writing the docs.**
+- **ur** — glossed Sky View as *"(سٹار ویو)"* = **Star View**, a name the Boss corrected long ago
+  and which appears nowhere in `ur.json`.
+
+### And that gloss uncovered a real documentation defect
+`fa` and `ur` call the panel **Star View** throughout — 22 and 20 occurrences in their manuals, plus
+25 more across four `fa` topic pages — while their own app strings say **Sky View**
+(`fa: نمای آسمان`, `ur: آسمانی منظر`). A reader would hunt for a panel that does not exist. My new
+paragraphs had inherited the error, because I told the agents to match each file's conventions and
+the convention was wrong. **All 67 corrected**, headings and TOC anchors together (anchor links
+re-verified against their headings). Persian's remaining "star" references are legitimate — notes
+ARE stars in Constellation's metaphor ("fly through the star field", "right-click any star").
+Also fixed in passing: `ur` named `Ctrl+O` *"سٹار جمپ"* (Star Jump), a feature that does not
+exist — the app calls it the Quick Switcher (`ur.json: فوری سوئچر`).
+
+**Left as-is, deliberately:** `de` restates the five family names parenthetically and `fr` names the
+Repair-index item as well as the button — both additions to the English, both accurate, all labels
+verified. Trimming accurate text for symmetry is not worth a pass.
+
+**Gates:** i18n parity **15/15 ✓** (ko.json changed) · docs-only otherwise. Per the plan, §12 is
+exempt from the per-build inspection (no write/index/lifecycle path) and **NOT Boss-testable** —
+except the Korean string fix, which is user-visible but only in Korean.

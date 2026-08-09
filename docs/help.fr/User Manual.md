@@ -119,6 +119,22 @@ Vous n'avez rien à faire : Constellation maintient son index de recherche synch
 >
 > Un détail à connaître : les copies faites par la version précédente ne portent pas cette marque, donc l'ancien comportement subsiste pour une note jusqu'à la première fois où vous la rouvrez et la refermez.
 
+### Si vos notes ont changé pendant que Constellation était fermé
+
+Tout ce qui précède concerne les modifications qui arrivent **pendant que Constellation fonctionne**. Une note qui change pendant que l'application est *fermée* est un cas différent : rien ne la surveillait, la recherche n'en sait donc encore rien.
+
+Constellation le vérifie de lui-même, juste après son ouverture. S'il trouve quelque chose, un **bandeau ambre** apparaît en haut de la fenêtre et vous indique ce qu'il a trouvé — par exemple *« 22 notes ont changé sur le disque pendant que Constellation était fermé, la recherche peut donc ne pas afficher leur texte le plus récent »* — et, séparément, combien de notes de vos bibliothèques n'ont jamais été ajoutées à l'index de recherche. Il n'énonce jamais que ce qui est réellement vrai : un décompte à zéro ne donne aucune phrase. Vous pouvez fermer le bandeau avec le **✕**, et rien n'est modifié dans votre dos — il vous informe, il ne répare encore rien.
+
+**Pour y remédier, appuyez sur Réparer maintenant** dans le bandeau. La même opération est disponible à tout moment depuis **Paramètres → Index → Réparation de l'index**, entrée **Réparer l'index**, bouton **Réparer**.
+
+Ce que fait la réparation : elle relit chaque note modifiée depuis le dernier examen de Constellation, indexe les notes qu'il n'a jamais vues et reconstruit les vues dérivées de vos notes (**Liens sortants**, **Rétroliens**, **Données Sky View**, **Compteurs d'étiquettes** et **Calendrier de révision**). **Elle n'écrit jamais dans vos fichiers de notes** — elle se contente de les lire et de mettre à jour l'index propre à Constellation. Elle s'exécute en arrière-plan, vous pouvez donc continuer à travailler ; la progression s'affiche en bas de la fenêtre avec un bouton **Annuler**, et l'annulation conserve tout ce qui a déjà été réparé.
+
+Quand elle se termine, l'application se met à jour **sans redémarrage** — la recherche trouve les notes qu'elle ne trouvait pas auparavant, et la Vue Etoiles se complète. Le bandeau ambre procède alors à un *nouvel examen* plutôt que de présumer la réussite : il disparaît s'il n'y a plus rien à signaler, ou affiche des chiffres plus faibles s'il en reste.
+
+**Paramètres → Index** conserve également le compte rendu que la dernière réparation fait d'elle-même, sous **Dernière réparation** — combien de notes ont été relues, combien étaient inchangées, combien ont échoué, et une ligne pour chacune des cinq vues dérivées avec ce qu'elle a fait. Ce rapport ne vit que le temps de la session en cours de l'application ; après un redémarrage, il est simplement absent jusqu'à ce que vous lanciez une nouvelle réparation.
+
+**Un autre message que vous pouvez voir.** Si une réparation est interrompue — le plus souvent parce que vous fermez Constellation pendant qu'elle s'exécute — la reconstruction restante est achevée au lancement suivant. Cela se produit *après* que la fenêtre est ouverte et utilisable, avec en bas le message *« Finalisation d'une réparation d'index interrompue… »*. Vous n'avez rien à faire ; cela prend quelques secondes puis disparaît. Les versions antérieures effectuaient ce travail pendant que l'application démarrait encore, avant qu'elle ne soit utilisable — environ trois secondes sans rien à l'écran pour expliquer l'attente.
+
 ### Univers enfants
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.

@@ -101,7 +101,7 @@ Switching universes is designed to be fast:
 
 - Essential data (settings, bookmarks, workspaces) loads **in parallel**.
 - The app UI becomes usable **immediately** after libraries load.
-- File watchers and index caches rebuild **in the background** while you browse.
+- File watchers start and cached views are brought up to date **in the background** while you browse.
 - All previous state (tabs, trees, caches) is fully cleared before loading the new universe.
 
 ---

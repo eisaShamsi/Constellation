@@ -88,7 +88,7 @@ Constellation uses a universe-and-stars metaphor to make multi-library navigatio
 - **Universe Manager** — Switch between, create, or remove universes from the sidebar footer
 - **Child Universes** — Reference other universes as children to inherit their libraries automatically
 - **Window title** — Shows "Constellation - UniverseName" so you always know which universe is active
-- **Fast switching** — Parallel loading with instant UI display; caches rebuild in the background
+- **Fast switching** — Parallel loading with instant UI display; cached views catch up in the background
 - **Portable** — Each universe is a self-contained directory you can move, copy, or share
 
 ### Tab Navigation

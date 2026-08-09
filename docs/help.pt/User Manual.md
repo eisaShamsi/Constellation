@@ -105,6 +105,22 @@ Você não precisa fazer nada: o Constellation mantém o seu índice de busca em
 >
 > Um detalhe: as cópias feitas pela versão anterior não têm essa marca, por isso o comportamento antigo mantém-se numa nota até à primeira vez que a reabrir e fechar.
 
+### Se as suas notas mudaram enquanto o Constellation estava fechado
+
+Tudo o que ficou dito acima diz respeito a alterações que chegam **enquanto o Constellation está a correr**. Uma nota que muda enquanto o aplicativo está *fechado* é um caso diferente: nada estava a observar, por isso a pesquisa ainda não sabe dela.
+
+O Constellation verifica isto por si próprio, logo depois de abrir. Se encontrar alguma coisa, aparece uma **faixa âmbar** no topo da janela a dizer o que encontrou — por exemplo *«22 notas mudaram no disco enquanto o Constellation estava fechado, por isso a pesquisa pode não mostrar o texto mais recente.»* — e, separadamente, quantas notas das suas bibliotecas nunca chegaram sequer a entrar no índice de pesquisa. Nunca afirma senão o que é verdade: uma contagem de zero não gera frase nenhuma. Pode dispensar a faixa com o **✕**, e nada é alterado nas suas costas — está a informá-lo, ainda não está a corrigir nada.
+
+**Para corrigir, clique em Reparar agora** na faixa. A mesma tarefa está disponível a qualquer momento em **Configurações → Índice → Reparação do índice → Reparar**.
+
+O que a reparação faz: relê cada nota que mudou desde a última vez que o Constellation olhou, indexa as notas que nunca viu e reconstrói as vistas derivadas das suas notas (Ligações de saída, Retroligações, Dados do Sky View, Contagens de etiquetas e Plano de revisão). **Nunca escreve nos seus ficheiros de notas** — apenas os lê e atualiza o índice do próprio Constellation. Corre em segundo plano, por isso pode continuar a trabalhar; o progresso aparece na parte inferior da janela com um botão **Cancelar**, e cancelar mantém tudo o que já foi reparado.
+
+Quando termina, o aplicativo põe-se em dia **sem reiniciar** — a pesquisa encontra as notas que antes não encontrava, e a Vista Estelar preenche-se. A faixa âmbar faz então uma *nova verificação*, em vez de assumir que correu bem: desaparece se não restar nada a comunicar, ou mostra números mais pequenos se restar.
+
+**Configurações → Índice** guarda também o relato que a última reparação faz de si própria, em **Última reparação** — quantas notas foram relidas, quantas estavam inalteradas, quantas falharam, e uma linha para cada uma das cinco vistas derivadas com o que fez. Esse relatório existe apenas durante a execução atual do aplicativo; depois de reiniciar, fica simplesmente ausente até voltar a executar uma reparação.
+
+**Mais uma mensagem que poderá ver.** Se uma reparação for interrompida — na maioria das vezes por se fechar o Constellation enquanto uma está a decorrer — a reconstrução que ficou por fazer é concluída no arranque seguinte. Isso acontece *depois* de a janela estar aberta e utilizável, com uma mensagem na parte inferior a dizer que está a concluir uma reparação interrompida: *«A concluir uma reparação do índice interrompida…»*. Não é nada em que precise de agir; demora alguns segundos e depois desaparece. As versões anteriores faziam isto enquanto o aplicativo ainda estava a arrancar, antes de estar utilizável — cerca de três segundos sem nada na tela para explicar a espera.
+
 ### Universos Secundarios
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.

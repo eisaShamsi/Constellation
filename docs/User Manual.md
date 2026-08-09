@@ -300,6 +300,22 @@ You don't need to do anything: Constellation keeps its search index in step with
 
 **Merging the two versions.** The conflict banner also has a **Merge…** button. It opens a full-screen, two-column view — **Your version** on the left (editable) beside the **Outside copy** on the right (read-only) — with the differences highlighted and the identical parts folded away. Next to each difference is a **Copy to mine** button that pulls that outside change into your version; you can also edit the left column freely to combine the two by hand. When you're done, **Save merged** writes your reconciled note and moves the side-copy to your trash (recoverable, never deleted — to the same place a deleted note goes, per your **Deleted files** setting); **Cancel** changes nothing — both versions stay exactly as they were. Constellation never merges automatically — the reconciliation is always your choice.
 
+### If your notes changed while Constellation was closed
+
+Everything above is about changes that arrive **while Constellation is running**. A note that changes while the app is *closed* is a different case: nothing was watching, so search does not know about it yet.
+
+Constellation checks for this itself, just after it opens. If it finds anything, an **amber band** appears across the top of the window telling you what it found — for example *"22 notes changed on disk while Constellation was closed, so search may not show their latest text"*, and, separately, how many notes in your libraries have never been added to the search index at all. It only ever states what is actually true: a count of zero gets no sentence. You can dismiss the band with the **✕**, and nothing is changed behind your back — it is telling you, not fixing anything yet.
+
+**To fix it, press Repair now** on the band. The same job is available any time from **Settings → Index → Index repair → Repair**.
+
+What the repair does: it re-reads every note that changed since Constellation last looked, indexes notes it has never seen, and rebuilds the views that are derived from your notes (outgoing links, backlinks, Sky View data, tag counts, and the review schedule). **It never writes to your note files** — it only reads them and updates Constellation's own index. It runs in the background, so you can keep working; progress appears at the bottom of the window with a **Cancel** button, and cancelling keeps everything already repaired.
+
+When it finishes, the app catches up **without a restart** — search finds the notes it could not find before, and Sky View fills in. The amber band then takes a *fresh look* rather than assuming success: it disappears if there is nothing left to report, or shows smaller numbers if there is.
+
+**Settings → Index** also keeps the last repair's own account of itself under **Last repair** — how many notes were re-read, how many were unchanged, how many failed, and a line for each of the five derived views with what it did. That report lives only for the current run of the app; after a restart it is simply absent until you run a repair again.
+
+**One more message you may see.** If a repair is interrupted — most often by closing Constellation while one is running — the leftover rebuilding is finished on the next launch. That happens *after* the window is open and usable, with a message at the bottom saying it is finishing an interrupted repair. It is not something you need to act on; it takes a few seconds and then disappears. Earlier versions did this while the app was still starting up, before it was usable — about three seconds with nothing on screen to explain the wait.
+
 ### Universe Notes Folder
 
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.
@@ -949,7 +965,7 @@ The first time you type any query in a fresh session, expect a 2–5 second wait
 
 Misses are normal. The M11 dictionary covers 20,000 common-vocabulary concepts. Specialized jargon, proper nouns, and rare regional variants will often miss `≈ similar` — they still appear if they match the literal substring (layer 1) or the bridge (layer 2). Misses are not bugs.
 
-There is **no setup**: no embedding-build phase, no per-library training, no "Rebuild" button anywhere. The 20K concept matrix ships with the app as a 30 MB asset; the per-query lookup is fully local.
+There is **no setup for this layer**: no embedding-build phase, no per-library training, nothing to build before semantic matches start working. The 20K concept matrix ships with the app as a 30 MB asset; the per-query lookup is fully local. *(This is about the semantic layer only. The ordinary search index does have a repair you can run — see "If your notes changed while Constellation was closed" in §2.)*
 
 ---
 

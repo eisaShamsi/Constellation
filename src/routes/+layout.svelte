@@ -2860,7 +2860,9 @@
 		//
 		// Removed from the boot path in this rewrite:
 		//   - cache_reconcile() — full-filesystem mtime walk. Runs on boot /
-		//     universe-switch / Settings → Rebuild Index only. (Per-file external
+		//     universe-switch / Settings → Index → Repair index only. (PJ-207 §12:
+		//     this said "Settings → Rebuild Index", a control that never existed;
+		//     §11 built the real one, and this is its name.) (Per-file external
 		//     changes are indexed incrementally by reindex_changed_paths on the
 		//     watcher flush below — NOT by a reconcile walk. 2026-07-08.)
 		//   - enrichNodesBackground() — 4 per-library walks for strata /
@@ -4369,7 +4371,8 @@
 		//
 		// They are now triggered ONLY by:
 		//   - The runtime file watcher (per-file, incremental).
-		//   - The user clicking Settings → Rebuild Index.
+		//   - The user clicking Settings → Index → Repair index (PJ-207 §11 —
+		//     before that, this line named a control that had never existed).
 		//   - First-ever launch when the cache is empty (one-time modal).
 		//
 		// External edits made while the app was closed (git pull, sync

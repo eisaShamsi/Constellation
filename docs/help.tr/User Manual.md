@@ -119,6 +119,22 @@ Herhangi bir şey yapmanıza gerek yoktur: Constellation, dosyalarınız diskte 
 >
 > Bilinmesi gereken bir ayrıntı: önceki sürümün oluşturduğu kopyalarda bu işaret bulunmaz; dolayısıyla bir not için eski davranış, onu ilk kez yeniden açıp kapatana dek sürer.
 
+### Constellation kapalıyken notlarınız değiştiyse
+
+Yukarıdakilerin tamamı, **Constellation çalışırken** gelen değişikliklerle ilgilidir. Uygulama *kapalıyken* değişen bir not ise farklı bir durumdur: hiçbir şey izlemediği için arama henüz bundan haberdar değildir.
+
+Constellation bunu, açıldıktan hemen sonra kendisi denetler. Bir şey bulursa, pencerenin üst kısmında **amber renkli bir şerit** belirerek bulduğunu size bildirir — örneğin *"Constellation kapalıyken diskte 22 not değişti; arama en güncel metni göstermeyebilir."*; ayrıca, kütüphanelerinizdeki kaç notun arama dizinine hiç eklenmemiş olduğunu da ayrıca belirtir. Şerit yalnızca gerçekten doğru olanı söyler: sıfır olan bir sayı için hiçbir cümle kurulmaz. Şeridi **✕** ile kapatabilirsiniz ve arkanızdan hiçbir şey değiştirilmez — size bildirir, henüz hiçbir şeyi onarmaz.
+
+**Bunu gidermek için şeritteki Şimdi onar düğmesine basın.** Aynı iş, istediğiniz zaman **Ayarlar → Dizin → Dizin onarımı → Onar** üzerinden de çalıştırılabilir.
+
+Onarımın yaptığı iş: Constellation'ın en son baktığı andan bu yana değişen her notu yeniden okur, hiç görmediği notları dizinler ve notlarınızdan türetilen görünümleri yeniden oluşturur (**Giden bağlantılar**, **Geri bağlantılar**, **Sky View verileri**, **Etiket sayıları** ve **Tekrar programı**). **Not dosyalarınıza asla yazmaz** — onları yalnızca okur ve Constellation'ın kendi dizinini günceller. Arka planda çalışır, böylece çalışmaya devam edebilirsiniz; ilerleme, bir **İptal** düğmesiyle birlikte pencerenin altında görünür ve iptal etmek, o ana dek onarılmış olan her şeyi korur.
+
+İş bittiğinde uygulama **yeniden başlatmaya gerek kalmadan** kendini günceller — arama, daha önce bulamadığı notları bulur ve Sky View eksiklerini tamamlar. Amber renkli şerit ise başarıyı varsaymak yerine *yeniden bakar*: bildirilecek bir şey kalmamışsa kaybolur, kalmışsa daha küçük sayılar gösterir.
+
+**Ayarlar → Dizin** ayrıca son onarımın kendi hesabını **Son onarım** başlığı altında tutar — kaç notun yeniden okunduğunu, kaçının değişmemiş olduğunu, kaçının başarısız olduğunu ve beş türetilmiş görünümün her biri için ne yapıldığını belirten birer satır. Bu rapor yalnızca uygulamanın o anki çalışması boyunca yaşar; yeniden başlattıktan sonra, siz yeni bir onarım çalıştırana dek yalnızca yoktur.
+
+**Görebileceğiniz bir mesaj daha.** Bir onarım yarıda kesilirse — çoğunlukla, biri çalışırken Constellation'ı kapatmakla — kalan yeniden oluşturma işi bir sonraki açılışta tamamlanır. Bu, pencere açıldıktan ve kullanılabilir hâle geldikten *sonra*, altta *"Yarım kalan dizin onarımı tamamlanıyor…"* diyen bir mesajla gerçekleşir. Yapmanız gereken bir şey değildir; birkaç saniye sürer ve sonra kaybolur. Önceki sürümler bunu uygulama hâlâ başlatılırken, yani kullanılabilir hâle gelmeden önce yapıyordu — ekranda beklemeyi açıklayan hiçbir şey yokken yaklaşık üç saniye.
+
 ### Alt Evrenler
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.

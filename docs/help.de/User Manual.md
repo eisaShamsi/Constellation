@@ -106,6 +106,22 @@ Sie müssen nichts tun: Constellation hält seinen Suchindex im Gleichschritt mi
 >
 > Ein Detail: Kopien der vorherigen Version tragen diese Kennzeichnung nicht, daher bleibt für eine Notiz das alte Verhalten bestehen, bis Sie sie das erste Mal wieder öffnen und schließen.
 
+### Wenn sich Ihre Notizen geändert haben, während Constellation geschlossen war
+
+Alles Bisherige betrifft Änderungen, die eintreffen, **während Constellation läuft**. Eine Notiz, die sich ändert, während die App *geschlossen* ist, ist ein anderer Fall: Es hat nichts zugesehen, daher weiß die Suche noch nichts davon.
+
+Constellation prüft dies selbst, kurz nachdem es geöffnet wurde. Wird etwas gefunden, erscheint ein **bernsteinfarbenes Band** am oberen Rand des Fensters und teilt Ihnen mit, was gefunden wurde — zum Beispiel *"22 Notizen wurden auf der Festplatte geändert, während Constellation geschlossen war — die Suche zeigt möglicherweise nicht den neuesten Text."* — und, getrennt davon, wie viele Notizen in Ihren Bibliotheken überhaupt noch nie in den Suchindex aufgenommen wurden. Es nennt immer nur das, was tatsächlich zutrifft: Zu einer Anzahl von null erscheint kein Satz. Sie können das Band mit dem **✕** schließen, und nichts wird hinter Ihrem Rücken geändert — es informiert Sie, es repariert noch nichts.
+
+**Um dies zu beheben, klicken Sie im Band auf Jetzt reparieren.** Dieselbe Aufgabe ist jederzeit über **Einstellungen → Index → Indexreparatur → Reparieren** erreichbar.
+
+Was die Reparatur tut: Sie liest jede Notiz neu, die sich geändert hat, seit Constellation zuletzt nachgesehen hat, indiziert Notizen, die es nie gesehen hat, und baut die Ansichten neu auf, die aus Ihren Notizen abgeleitet sind (Ausgehende Links, Backlinks, Sky-View-Daten, Tag-Zähler und den Wiederholungsplan). **Sie schreibt niemals in Ihre Notizdateien** — sie liest sie nur und aktualisiert Constellations eigenen Index. Sie läuft im Hintergrund, sodass Sie weiterarbeiten können; der Fortschritt erscheint am unteren Rand des Fensters mit einer Schaltfläche **Abbrechen**, und ein Abbruch behält alles bereits Reparierte.
+
+Wenn sie fertig ist, zieht die App **ohne Neustart** nach — die Suche findet die Notizen, die sie zuvor nicht finden konnte, und die Sternenansicht füllt sich auf. Das bernsteinfarbene Band schaut dann *neu nach*, statt Erfolg anzunehmen: Es verschwindet, wenn nichts mehr zu melden ist, oder zeigt kleinere Zahlen, wenn doch.
+
+**Einstellungen → Index** bewahrt außerdem den Rechenschaftsbericht der letzten Reparatur unter **Letzte Reparatur** auf — wie viele Notizen neu gelesen wurden, wie viele unverändert waren, wie viele fehlgeschlagen sind, und je eine Zeile für jede der fünf abgeleiteten Ansichten (Ausgehende Links, Backlinks, Sky-View-Daten, Tag-Zähler, Wiederholungsplan) mit dem, was sie getan hat. Dieser Bericht lebt nur für die aktuelle Laufzeit der App; nach einem Neustart fehlt er schlicht, bis Sie erneut eine Reparatur ausführen.
+
+**Eine weitere Meldung, die Ihnen begegnen kann.** Wird eine Reparatur unterbrochen — meist dadurch, dass Constellation während eines laufenden Vorgangs geschlossen wird —, wird der verbliebene Neuaufbau beim nächsten Start abgeschlossen. Das geschieht, *nachdem* das Fenster geöffnet und benutzbar ist, mit einer Meldung am unteren Rand: *"Unterbrochene Indexreparatur wird abgeschlossen…"*. Sie müssen dabei nichts unternehmen; es dauert einige Sekunden und verschwindet dann. Frühere Versionen erledigten dies noch während des Startens, bevor die App benutzbar war — etwa drei Sekunden, ohne dass irgendetwas auf dem Bildschirm die Wartezeit erklärt hätte.
+
 ### Kind-Universen
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.

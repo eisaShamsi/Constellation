@@ -82,7 +82,9 @@ When the Second Screen window is open:
 
 ## How it stays current
 
-The Index reads directly from Constellation's full-text search index, which is maintained in real time as you edit notes. There's nothing to "rebuild" — the moment you save a note, its terms are reflected in the Index. Boot is free; the Index opens to a live view.
+The Index reads directly from Constellation's full-text search index, which is maintained in real time **while Constellation is running** — the moment you save a note, its terms are reflected in the Index. Boot is free; the Index opens to a live view.
+
+The one interval nothing can watch is the time the app is **closed**. A note edited by another device, a sync tool, or `git pull` while Constellation was shut down is not in the index until it is read again. Constellation checks for exactly that just after it opens, and if it finds anything it says so in a band across the top of the window, with a **Repair now** button. The same repair is always available from **Settings → Index → Index repair**. It re-reads what changed, indexes anything never seen before, and rebuilds the derived views — without ever writing to your note files. See the User Manual, "If your notes changed while Constellation was closed".
 
 ## Multilingual NLP
 

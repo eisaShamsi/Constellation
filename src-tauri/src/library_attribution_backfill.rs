@@ -11,7 +11,9 @@
 //!
 //! The walker is fixed (it now resolves per file via `library_name_for_path`), so no NEW
 //! rows are mis-attributed. This pass corrects rows a PRIOR reconcile already corrupted —
-//! otherwise they persist until a manual Rebuild Index. Pure column re-write from the
+//! otherwise they persist until a manual repair (PJ-207 §12: this said "a manual Rebuild
+//! Index", which named nothing; the real door is Settings → Index → Repair index, built
+//! by §11). Pure column re-write from the
 //! authoritative library registry: no note is re-read or re-tokenised, `body_text`/FTS
 //! are untouched.
 //!
