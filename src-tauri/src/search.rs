@@ -882,6 +882,109 @@ mod tests_pj207_reindex_round_trip {
 }
 
 #[cfg(test)]
+mod tests_pj249_writer_stamps_target_base {
+    //! PJ-249 §3 — the real `index_note` against a real file and database (the
+    //! tests_pj207_reindex_round_trip shape): every stored edge carries the bare
+    //! folded title in `target_base`, whatever the wikilink's spelling. And the
+    //! invariant-(i) pin: a `target_base`-only UPDATE fires NEITHER mirror trigger —
+    //! both AU triggers guard on a column list that excludes it, so the sky mirror
+    //! and the outgoing aggregates stay byte-stable.
+    use super::{index_note, init_db};
+    use rusqlite::{params, Connection};
+    use std::path::PathBuf;
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "constellation_pj249_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&d).expect("mkdir tempdir");
+        d
+    }
+
+    fn base_of(conn: &Connection, src: &str, target_name: &str) -> Option<String> {
+        conn.query_row(
+            "SELECT target_base FROM note_links WHERE source_path = ?1 AND target_name = ?2",
+            params![src, target_name],
+            |r| r.get(0),
+        )
+        .expect("row exists")
+    }
+
+    #[test]
+    fn every_link_form_stores_the_bare_folded_title() {
+        let dir = tmp_dir("forms");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let note = dir.join("A.md");
+        let np = note.to_string_lossy().to_string();
+        std::fs::write(
+            &note,
+            "# A\n\n[[Plain Note]] and [[folder/Nested Note]] and [[Anchored#Heading]] \
+             and [[supports::Typed Target|why]] and [[foo::Odd Title]].\n",
+        )
+        .expect("write note");
+        index_note(&conn, &np, "testlib", true).expect("index");
+
+        assert_eq!(base_of(&conn, &np, "plain note").as_deref(), Some("plain note"));
+        assert_eq!(base_of(&conn, &np, "folder/nested note").as_deref(), Some("nested note"));
+        assert_eq!(base_of(&conn, &np, "anchored#heading").as_deref(), Some("anchored"));
+        // A KNOWN type head is stripped by the parser itself — target_name is already bare.
+        assert_eq!(base_of(&conn, &np, "typed target").as_deref(), Some("typed target"));
+        // An UNKNOWN head is part of the title, in target_base too (the §2 symmetry rule).
+        assert_eq!(base_of(&conn, &np, "foo::odd title").as_deref(), Some("foo::odd title"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Invariant (i): the §4 backfill will UPDATE `target_base` on thousands of rows;
+    /// none of those writes may ripple into the sky mirror or the outgoing aggregates.
+    /// Both AU triggers carry column-listed WHEN guards that exclude `target_base` —
+    /// this pins that they actually do.
+    #[test]
+    fn a_target_base_only_update_fires_neither_mirror_trigger() {
+        let dir = tmp_dir("inert");
+        let conn = init_db(&dir.join("search.db")).expect("init_db");
+        let note = dir.join("A.md");
+        let np = note.to_string_lossy().to_string();
+        std::fs::write(&note, "# A\n\n[[B]] and [[C]].\n").expect("write note");
+        index_note(&conn, &np, "testlib", true).expect("index");
+
+        let snap = |conn: &Connection| -> (Vec<(String, String, f64)>, Vec<(String, i64)>) {
+            let mut s1 = conn
+                .prepare("SELECT source_path, target_name, weight FROM sky_links ORDER BY 1,2")
+                .unwrap();
+            let sky = s1
+                .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+                .unwrap()
+                .map(|r| r.unwrap())
+                .collect();
+            let mut s2 = conn
+                .prepare("SELECT path, outgoing_count FROM note_meta ORDER BY 1")
+                .unwrap();
+            let meta = s2
+                .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+                .unwrap()
+                .map(|r| r.unwrap())
+                .collect();
+            (sky, meta)
+        };
+
+        let before = snap(&conn);
+        let changed = conn
+            .execute("UPDATE note_links SET target_base = 'rewritten-by-backfill'", [])
+            .unwrap();
+        assert!(changed >= 2, "the UPDATE really touched the rows");
+        assert_eq!(before, snap(&conn), "a target_base-only write must be invisible to both mirrors");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
 mod tests_schema_gate {
     use super::{schema_gate, SchemaGate};
 
@@ -8417,9 +8520,9 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
                     // excluded from every cognitive surface (§3/§4). The 'contains' face
                     // carries seq; the 'parent' face stores NULL. Skips the preserved path.
                     conn.execute(
-                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn, seq)
-                         VALUES (?1, ?2, ?3, ?4, ?5, 'structural', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9, ?10)",
-                        params![note_path, name, target, link_type, annotation, now, library_name, cid_cn, target_cid_cn, seq],
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn, seq, target_base)
+                         VALUES (?1, ?2, ?3, ?4, ?5, 'structural', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9, ?10, ?11)",
+                        params![note_path, name, target, link_type, annotation, now, library_name, cid_cn, target_cid_cn, seq, target_base_of(target)],
                     ).map_err(|e| format!("Failed to index structural link: {}", e))?;
                     continue;
                 }
@@ -8429,9 +8532,9 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
                     // resurrected every link the user had retired, because the
                     // wikilink legitimately remains in the note after archival.
                     conn.execute(
-                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?14, ?12, ?13)",
-                        params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn, status],
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn, target_base)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?14, ?12, ?13, ?15)",
+                        params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn, status, target_base_of(target)],
                     ).map_err(|e| format!("Failed to index link: {}", e))?;
                 } else {
                     // PJ-207 — an edge that does not qualify for preservation is still
@@ -8445,10 +8548,15 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
                         .get(key)
                         .map(|(_, _, _, _, _, _, _, o_created)| o_created.as_str())
                         .unwrap_or(now.as_str());
+                    // PJ-249 §3 — every note_links INSERT (this one and its two siblings above)
+                    // now stamps `target_base` from `target_base_of`. ALL writers must, or the
+                    // seek column drifts from the rows (the LL-023 class); the §4 backfill's
+                    // drift guard would catch a missed writer, but catching is not a licence
+                    // to miss.
                     conn.execute(
-                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                         VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?7, 0, ?8, 'active', ?9, ?10)",
-                        params![note_path, name, target, link_type, annotation, created, now, library_name, cid_cn, target_cid_cn],
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn, target_base)
+                         VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?7, 0, ?8, 'active', ?9, ?10, ?11)",
+                        params![note_path, name, target, link_type, annotation, created, now, library_name, cid_cn, target_cid_cn, target_base_of(target)],
                     ).map_err(|e| format!("Failed to index link: {}", e))?;
                 }
             }
