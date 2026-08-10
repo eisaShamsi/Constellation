@@ -891,20 +891,10 @@ mod tests_pj249_writer_stamps_target_base {
     //! and the outgoing aggregates stay byte-stable.
     use super::{index_note, init_db};
     use rusqlite::{params, Connection};
-    use std::path::PathBuf;
 
-    fn tmp_dir(tag: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!(
-            "constellation_pj249_{}_{}",
-            tag,
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&d).expect("mkdir tempdir");
-        d
-    }
+    // /simplify (reuse) — `tempfile::TempDir`, not a hand-rolled env::temp_dir helper: the
+    // hand-rolled copies only cleaned up on the SUCCESS path, so every failing assert
+    // leaked its directory. TempDir cleans on drop, panic included.
 
     fn base_of(conn: &Connection, src: &str, target_name: &str) -> Option<String> {
         conn.query_row(
@@ -917,7 +907,8 @@ mod tests_pj249_writer_stamps_target_base {
 
     #[test]
     fn every_link_form_stores_the_bare_folded_title() {
-        let dir = tmp_dir("forms");
+        let td = tempfile::tempdir().expect("tempdir");
+        let dir = td.path().to_path_buf();
         let conn = init_db(&dir.join("search.db")).expect("init_db");
         let note = dir.join("A.md");
         let np = note.to_string_lossy().to_string();
@@ -936,8 +927,6 @@ mod tests_pj249_writer_stamps_target_base {
         assert_eq!(base_of(&conn, &np, "typed target").as_deref(), Some("typed target"));
         // An UNKNOWN head is part of the title, in target_base too (the §2 symmetry rule).
         assert_eq!(base_of(&conn, &np, "foo::odd title").as_deref(), Some("foo::odd title"));
-
-        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Invariant (i): the §4 backfill will UPDATE `target_base` on thousands of rows;
@@ -946,7 +935,8 @@ mod tests_pj249_writer_stamps_target_base {
     /// this pins that they actually do.
     #[test]
     fn a_target_base_only_update_fires_neither_mirror_trigger() {
-        let dir = tmp_dir("inert");
+        let td = tempfile::tempdir().expect("tempdir");
+        let dir = td.path().to_path_buf();
         let conn = init_db(&dir.join("search.db")).expect("init_db");
         let note = dir.join("A.md");
         let np = note.to_string_lossy().to_string();
@@ -979,8 +969,6 @@ mod tests_pj249_writer_stamps_target_base {
             .unwrap();
         assert!(changed >= 2, "the UPDATE really touched the rows");
         assert_eq!(before, snap(&conn), "a target_base-only write must be invisible to both mirrors");
-
-        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 
@@ -1910,20 +1898,13 @@ fn ensure_note_links_target_name_lower(conn: &Connection) -> rusqlite::Result<()
 /// not VIRTUAL like its neighbour above, because its fold (`target_base_of`) is Rust
 /// (`fold_match_key` is full-Unicode NFC), not expressible in a SQLite expression.
 fn ensure_note_links_target_base(conn: &Connection) -> rusqlite::Result<()> {
-    // table_xinfo, not table_info — same idempotency reasoning as the sibling above.
-    let exists = {
-        let mut stmt = conn.prepare("PRAGMA table_xinfo(note_links)")?;
-        let mut rows = stmt.query([])?;
-        let mut found = false;
-        while let Some(row) = rows.next()? {
-            if row.get::<_, String>(1)? == "target_base" {
-                found = true;
-                break;
-            }
-        }
-        found
-    };
-    if !exists {
+    // /simplify (reuse) — `column_exists`, the same helper every PLAIN-column ensure uses.
+    // The first version hand-rolled a table_xinfo probe with a comment claiming "same
+    // idempotency reasoning as the sibling above" — false: the sibling's xinfo reasoning
+    // is specifically that table_info HIDES VIRTUAL generated columns, and target_base is
+    // a plain column, fully visible to table_info. A cargo-culted justification is the
+    // LL-037 comment class, caught in the same migration that wrote it.
+    if !column_exists(conn, "note_links", "target_base")? {
         conn.execute_batch("ALTER TABLE note_links ADD COLUMN target_base TEXT;")?;
     }
     conn.execute_batch(

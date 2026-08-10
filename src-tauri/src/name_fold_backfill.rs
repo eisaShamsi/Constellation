@@ -95,13 +95,18 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     let mut filled = 0usize;
     for chunk in all.chunks(BATCH) {
         let tx = conn.transaction().map_err(|e| format!("tx: {}", e))?;
-        for (p, name) in chunk {
-            tx.execute(
-                "UPDATE note_meta SET name_lower = ?2 WHERE path = ?1",
-                params![p, crate::search::fold_match_key(name)],
-            )
-            .map_err(|e| format!("update name_lower: {}", e))?;
-            filled += 1;
+        {
+            // PJ-249 /simplify (efficiency) — prepare once per chunk, not per row; fixed
+            // here AND in target_base_backfill in the same pass so the template and its
+            // copy do not diverge (the two-files-one-shape rule).
+            let mut stmt = tx
+                .prepare_cached("UPDATE note_meta SET name_lower = ?2 WHERE path = ?1")
+                .map_err(|e| format!("prepare: {}", e))?;
+            for (p, name) in chunk {
+                stmt.execute(params![p, crate::search::fold_match_key(name)])
+                    .map_err(|e| format!("update name_lower: {}", e))?;
+                filled += 1;
+            }
         }
         tx.commit().map_err(|e| format!("commit: {}", e))?;
     }

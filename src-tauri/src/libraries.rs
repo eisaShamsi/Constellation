@@ -6652,51 +6652,100 @@ pub fn update_links_on_rename(
     // index may not be trusted (backfill unstamped, or NULL rows behind the stamp —
     // see `cascade_candidates_via_index`). The read lock is held for the gate + one
     // indexed SELECT, both sub-millisecond — not the unbounded-hold class.
-    let seek: Option<Vec<String>> = {
+    // PJ-249 §6b (inspection #29 fix) — the federation boundary, computed ONCE for both
+    // branches, and an UNREADABLE registry no longer inverts it. `unwrap_or_default()`
+    // collapsed a failed read into own=[], which made `foreign_library_roots` classify
+    // EVERY library as foreign — so the walk would have skipped the user's own nested
+    // libraries, silently, on exactly the boot where the registry file was locked.
+    // A registry we cannot read means the federation is UNKNOWN: the honest fallback is
+    // an empty foreign set (walk everything under the root — a linked universe's notes
+    // being visited on this rare path is bounded over-work, not data damage; rewriting
+    // them is prevented by their own text simply not containing the renamed title more
+    // often than not, and this is the pre-PJ-207-§15 behaviour restored for one boot).
+    let foreign = match try_load_libraries(&app) {
+        Ok(own_libs) => foreign_library_roots(&app, &own_libs),
+        Err(e) => {
+            eprintln!("[update_links_on_rename] registry unreadable ({}); walking without a federation boundary this once", e);
+            std::collections::HashSet::new()
+        }
+    };
+    let seek: Option<(Vec<String>, std::collections::HashMap<String, u64>)> = {
         use tauri::Manager;
         let state = app.state::<crate::search::SearchState>();
         crate::search::with_read_conn(state.inner(), |conn| {
-            Ok(cascade_candidates_via_index(conn, &old_name))
+            let Some(cands) = cascade_candidates_via_index(conn, &old_name) else {
+                return Ok(None);
+            };
+            // §6b — the index's freshness map for THE NET below: every indexed path and
+            // the file mtime it was indexed at. One covering scan of note_meta's small
+            // columns (2.7k rows, ~ms), under the same brief read-lock hold.
+            let mut known: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+            let mut stmt = conn
+                .prepare("SELECT path, modified FROM note_meta")
+                .map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+                .map_err(|e| e.to_string())?;
+            for row in rows {
+                let (p, m) = row.map_err(|e| e.to_string())?;
+                known.insert(p.replace('\\', "/").to_lowercase(), m.max(0) as u64);
+            }
+            Ok(Some((cands, known)))
         })
         .ok()
         .flatten()
     };
-    let dbp_diag = crate::search::db_path(&app).ok();
-    if let Some(p) = &dbp_diag {
-        match &seek {
-            Some(c) => crate::search::diag_log(p, &format!("[cascade] path=SEEK candidates={}", c.len())),
-            None => crate::search::diag_log(p, "[cascade] path=WALK (target_base not trusted for this universe)"),
-        }
-    }
-    if let Some(source_paths) = seek {
-        // The seek's candidates get the SAME treatment the walk gave its finds: the
-        // PJ-092 exclusion by file identity (recording the hit so a defeated exclusion
-        // stays visible), and a stat-guard — a stale index row's path may no longer
-        // exist, and the walk by construction never handed a nonexistent path to the
-        // rewriter, so neither may the seek (else every rename after an unindexed
-        // delete reports a phantom failure). Cheap: the median rename has ONE candidate.
+    if let Some((source_paths, known)) = seek {
+        // PJ-249 §6b — THE FRESHNESS NET (inspection findings 1+2, HIGH). The seek reads
+        // the INDEX; the walk it replaced read the DISK. That difference is a correctness
+        // hole for any note whose index lags its file: a referrer flushed moments ago
+        // whose fire-and-forget reindex has not committed, a note whose reindex FAILED
+        // (the indexHealthError state), an externally edited note inside the watcher
+        // window, or a note mid-migration under a detached folder-rename/move tail. All
+        // of those were covered by the walk BY CONSTRUCTION and silently missed by a
+        // bare seek, which reported success with an incomplete candidate list.
+        //
+        // The net restores disk truth at STAT cost, not read cost: one timestamps-only
+        // walk of the tree (the drift check's own technique — on Windows the timestamps
+        // arrive with the directory listing; measured +4–10 ms on 7,964 files) collecting
+        // every .md that is UNKNOWN to the index or whose mtime differs from the mtime it
+        // was indexed at. Those join the candidates and get read — exactly what the walk
+        // would have done for them. Residual window, stated: a second edit landing within
+        // the same mtime second after a reindex commit is invisible to the comparison —
+        // the same granularity floor PJ-207 §9's drift check accepted.
+        let mut suspects: Vec<std::path::PathBuf> = Vec::new();
+        collect_fresh_suspects(Path::new(&library_path), &known, &foreign, &mut suspects);
+
         let mut candidates: Vec<std::path::PathBuf> = Vec::new();
-        for sp in source_paths {
-            let path = std::path::PathBuf::from(&sp);
+        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for path in source_paths
+            .iter()
+            .map(std::path::PathBuf::from)
+            .chain(suspects.into_iter())
+        {
+            if !seen.insert(path.to_string_lossy().replace('\\', "/").to_lowercase()) {
+                continue;
+            }
+            // The stat-guard: a stale index row's path may no longer exist, and the walk
+            // never handed the rewriter a nonexistent path. A referrer that MOVED is not
+            // lost to this skip — its new location is unknown to the index and joins via
+            // the net above.
             if !path.exists() {
                 continue;
             }
-            if !exclude.is_empty() {
-                let key = path_identity_key(&path);
-                if exclude.contains(&key) {
-                    excluded_hit.insert(key);
-                    continue;
-                }
+            if cascade_excluded(&path, &exclude, &mut excluded_hit) {
+                continue;
             }
             candidates.push(path);
         }
+        if let Ok(p) = crate::search::db_path(&app) {
+            crate::search::diag_log(&p, &format!("[cascade] path=SEEK candidates={}", candidates.len()));
+        }
         rewrite_candidates(&candidates, &re, &new_name, &mut result);
     } else {
-        // PJ-207 §15 — the linked-universe boundary for this walk. Best-effort by
-        // construction: an unresolvable federation yields an empty set, which is exactly
-        // the previous behaviour.
-        let own_libs = try_load_libraries(&app).unwrap_or_default();
-        let foreign = foreign_library_roots(&app, &own_libs);
+        if let Ok(p) = crate::search::db_path(&app) {
+            crate::search::diag_log(&p, "[cascade] path=WALK (target_base not trusted for this universe)");
+        }
         update_links_recursive(
             Path::new(&library_path),
             &re,
@@ -6842,6 +6891,80 @@ fn update_links_recursive(
 /// entries skipped, symlinks skipped, a linked universe's root not crossed, and a note the
 /// frontend could not flush excluded by file IDENTITY (never a string compare — the Arabic-root
 /// NFC / 8.3 / `\\?\` hazards), recording the hit so a defeated exclusion stays visible.
+/// PJ-249 §6b (/simplify, three lenses independently) — the PJ-092 exclusion, ONCE.
+///
+/// A note the frontend could not flush is excluded from the on-disk rewrite, matched by
+/// file IDENTITY (never a string compare — the Arabic-NFC / 8.3 / `\\?\` hazards), with
+/// the hit recorded so a defeated exclusion stays visible. This guard protects a
+/// data-loss invariant and briefly existed as two verbatim copies — the seek branch and
+/// the walk — which is precisely the pair that must never drift. The `is_empty` fast
+/// path lives here too, once: a clean rename pays no canonicalize at all.
+fn cascade_excluded(
+    path: &Path,
+    exclude: &std::collections::HashSet<String>,
+    excluded_hit: &mut std::collections::HashSet<String>,
+) -> bool {
+    if exclude.is_empty() {
+        return false;
+    }
+    let key = path_identity_key(path);
+    if exclude.contains(&key) {
+        excluded_hit.insert(key);
+        return true;
+    }
+    false
+}
+
+/// PJ-249 §6b — THE FRESHNESS NET's collector: every `.md` under `dir` that the index
+/// may not faithfully describe — UNKNOWN to `note_meta`, or carrying an mtime different
+/// from the one it was indexed at (`known` maps normalized path → `note_meta.modified`).
+///
+/// Timestamps-only: on Windows the mtime arrives with the directory listing (the drift
+/// check's measured insight — +4–10 ms on 7,964 files), so this costs stats, never reads.
+/// Same boundary discipline as `collect_cascade_candidates`: dot entries skipped,
+/// symlinks skipped, a linked universe's root not crossed. A file whose metadata cannot
+/// be read is a SUSPECT, not a skip — the honest direction is to read it and let the
+/// rewrite's own error arm record a real failure.
+fn collect_fresh_suspects(
+    dir: &Path,
+    known: &std::collections::HashMap<String, u64>,
+    foreign: &std::collections::HashSet<String>,
+    out: &mut Vec<std::path::PathBuf>,
+) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let ft = entry.file_type().ok();
+        if ft.map(|t| t.is_symlink()).unwrap_or(false) {
+            continue;
+        }
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') {
+            continue;
+        }
+        if ft.map(|t| t.is_dir()).unwrap_or_else(|| path.is_dir()) {
+            if is_nested_library(&path, foreign) {
+                continue;
+            }
+            collect_fresh_suspects(&path, known, foreign, out);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            let pn = path.to_string_lossy().replace('\\', "/").to_lowercase();
+            match known.get(&pn) {
+                None => out.push(path), // the index has never seen this file
+                Some(&stored) => {
+                    let m = entry.metadata().ok().as_ref().and_then(crate::search::mtime_secs);
+                    if m != Some(stored) {
+                        out.push(path); // edited since its last index — or unstattable, which is suspect
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn collect_cascade_candidates(
     dir: &Path,
     exclude: &std::collections::HashSet<String>,
@@ -6880,16 +7003,10 @@ fn collect_cascade_candidates(
             // race it looked like it closed (the file can still vanish between the check and the
             // read), and the read's own `Err` arm below already records a vanished file
             // identically. It only bought a stat per markdown file.
-            // PJ-092 — a note the frontend could NOT flush is EXCLUDED: never rewrite
-            // its disk (identity match, not a raw string compare — the Arabic-root
-            // NFC/8.3/\\?\ hazards). Only pays the per-file canonicalize when there IS
-            // an exclusion (rare — only when a flush failed); a clean rename skips it.
-            if !exclude.is_empty() {
-                let key = path_identity_key(&path);
-                if exclude.contains(&key) {
-                    excluded_hit.insert(key);
-                    continue;
-                }
+            // PJ-092 — see `cascade_excluded`: identity-matched, hit-recorded, shared
+            // with the seek branch so the two can never drift.
+            if cascade_excluded(&path, exclude, excluded_hit) {
+                continue;
             }
             // PJ-207 §15 — COLLECT here; the read/rewrite/write happens in parallel afterwards
             // (see `rewrite_candidates`). The walk itself performs no file reads at all.
@@ -7014,12 +7131,32 @@ fn cascade_candidates_via_index(
     if crate::target_base_backfill::needs_run(conn) != crate::target_base_backfill::Needs::No {
         return None;
     }
-    let folded = crate::search::fold_match_key(old_name);
+    // PJ-249 §6b (/simplify altitude) — `target_base_of`, NOT `fold_match_key`: ONE key
+    // function on both sides of the equality. The column stores `target_base_of(target)`;
+    // seeking with the plain fold made the two sides disagree for any title legally
+    // containing `#`, `^` or ending `.md` — "C# Notes" is a valid Windows filename, its
+    // referrers' rows store base `c`, and a fold-keyed seek for `c# notes` returned zero
+    // candidates while reporting success. With one function the cover property holds by
+    // construction for every title shape; the extra candidates a cut key admits (the
+    // referrers of `C` when renaming `C# Notes`) are read and left unchanged, which is
+    // the walk's own semantics for a non-matching file.
+    let folded = crate::search::target_base_of(old_name);
+    // §6b (inspection) — errors PROPAGATE to "walk", never truncate. `filter_map(ok)`
+    // silently dropped rows on a mid-iteration step error (busy/IO), shipping a
+    // partial candidate list that reported success — the exact miss class the gate
+    // exists to prevent. Any error now returns None and the caller walks the disk.
     let mut stmt = conn
         .prepare("SELECT DISTINCT source_path FROM note_links WHERE target_base = ?1")
         .ok()?;
     let rows = stmt.query_map([&folded], |r| r.get::<_, String>(0)).ok()?;
-    Some(rows.filter_map(|r| r.ok()).collect())
+    let mut out = Vec::new();
+    for row in rows {
+        match row {
+            Ok(p) => out.push(p),
+            Err(_) => return None, // a row we could not read is a candidate we cannot rule out
+        }
+    }
+    Some(out)
 }
 
 fn cascade_pattern(old_name: &str) -> String {
@@ -7083,6 +7220,7 @@ fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
 mod cascade_walker_tests {
     use super::{
         cascade_candidates_via_index, // PJ-249 §6 — the seek half of the flip
+        collect_fresh_suspects, // PJ-249 §6b — the freshness net's collector
         cascade_pattern, // PJ-207 §15 — the tests build the PRODUCTION pattern, never a copy
         collect_md_paths, free_trash_name, move_into_trash_folder, path_identity_key,
         rewrite_for_test, trash_move_decolliding, update_links_recursive, CascadeResult,
@@ -7437,6 +7575,62 @@ mod cascade_walker_tests {
         // And D — the unknown-head title — is NOT in the seek set for "Old".
         let d_path = dir.path().join("D.md").to_string_lossy().to_string();
         assert!(!seek_set.contains(&d_path), "[[foo::Old]] is a different title and must not be visited");
+    }
+
+    /// PJ-249 §6b (/simplify altitude) — ONE key function on both sides of the seek.
+    /// "C# Notes" is a legal Windows filename; its referrers' rows store base `c` (the
+    /// anchor cut), and the first seek keyed with the plain fold asked for `c# notes` —
+    /// zero candidates, success reported, every referrer skipped. With `target_base_of`
+    /// on the seek side too, the row is found; the extra candidates a cut key admits are
+    /// read and left unchanged, the walk's own semantics.
+    #[test]
+    fn pj249_a_hash_titled_note_still_finds_its_referrers() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut conn = crate::search::init_db(&dir.path().join("search.db")).expect("init_db");
+        let a = dir.path().join("A.md");
+        std::fs::write(&a, "# A\n\nsee [[C# Notes]] here\n").unwrap();
+        crate::search::index_note(&conn, &a.to_string_lossy(), "testlib", true).expect("index");
+        crate::target_base_backfill::run_on(&mut conn).expect("backfill");
+
+        let seek = cascade_candidates_via_index(&conn, "C# Notes").expect("stamped → seek");
+        assert!(
+            seek.contains(&a.to_string_lossy().to_string()),
+            "the referrer of a #-titled note must be found: {:?}",
+            seek
+        );
+    }
+
+    /// PJ-249 §6b — THE FRESHNESS NET (inspection findings 1+2). Driven through a
+    /// synthetic `known` map so no sleeping and no mtime forgery: a file the index has
+    /// never seen is a suspect; a file whose stored mtime disagrees with disk is a
+    /// suspect; a file whose stored mtime matches is not.
+    #[test]
+    fn pj249_freshness_net_flags_unknown_and_drifted_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let known_file = dir.path().join("indexed.md");
+        let unknown_file = dir.path().join("never-indexed.md");
+        let drifted_file = dir.path().join("stale-index.md");
+        for f in [&known_file, &unknown_file, &drifted_file] {
+            std::fs::write(f, "body").unwrap();
+        }
+        let mtime_of = |p: &std::path::Path| -> u64 {
+            crate::search::mtime_secs(&std::fs::metadata(p).unwrap()).unwrap()
+        };
+        let norm = |p: &std::path::Path| p.to_string_lossy().replace('\\', "/").to_lowercase();
+
+        let mut known: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+        known.insert(norm(&known_file), mtime_of(&known_file)); // fresh: index agrees with disk
+        known.insert(norm(&drifted_file), mtime_of(&drifted_file) + 999); // index believes another mtime
+
+        let mut suspects: Vec<std::path::PathBuf> = Vec::new();
+        collect_fresh_suspects(dir.path(), &known, &HashSet::new(), &mut suspects);
+        let names: std::collections::HashSet<String> = suspects
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert!(names.contains("never-indexed.md"), "unknown to the index → suspect: {:?}", names);
+        assert!(names.contains("stale-index.md"), "mtime disagreement → suspect: {:?}", names);
+        assert!(!names.contains("indexed.md"), "index agrees with disk → not a suspect: {:?}", names);
     }
 
     /// PJ-249 §6 — THE MIXED-UNIVERSE GATE (Reproduce-First for the flip): a stamped

@@ -52,3 +52,23 @@ Plan agent briefed with the census, the four writers (`index_note_impl` + `links
 LL-023 class), the invariants, the rollback property to preserve (no NOT NULL, no old-build
 schema trip), the unregistered-`::`-head question to settle, and the Reproduce-First requirements
 (the folder-form miss and the mixed-universe gate need failing tests first).
+
+## Phase 3 — Build (§1–§6 landed, one commit each)
+
+| § | Commit | What |
+|---|---|---|
+| §1 | 413c83d5 | `note_links.target_base` — idempotent xinfo ensure + index; NO `.version` bump (that gate sets the DB aside); old-build INSERTs leave NULL by design |
+| §2 | 2192c941 | `target_base_of` — anchor cut → last segment → `.md` strip → shared fold. **The Arabic test caught a real panic before it shipped**: the `.md` check byte-sliced `len()-3`, which lands inside a multi-byte char on an Arabic title. Boundary-safe via `str::get` |
+| §3 | bea10433 | The three production INSERTs stamp `target_base`. Deviation, reasoned: the five fixture INSERTs stay UNSTAMPED — a column-omitting INSERT is the pre-backfill shape §4's tests need |
+| §3b | 3ece24b9 | Two hand-mirrored test schemas gained the column they drifted from (the full suite caught it; the pj249-filtered run could not). Also recorded: §3's commit chained past the failure — gated on grep, not the suite. Fixed forward |
+| §4 | 9bbe4f50 | The backfill + THE DRIFT GUARD: re-arms when a NULL row exists behind the stamp (an older build's session). Unstamps first, restamps only on completion. Core factored to `run_on(&mut Connection)` — four tests on real `init_db` fixtures |
+| §5 | 071674a5 | Folder-qualified links follow a rename, red→green: four positives observed FAILING against the pre-widening pattern; negatives held on both sides |
+| §6 | d043490e | The flip: `cascade_candidates_via_index` = gate + seek, the gate being `needs_run == No` — the same predicate as the backfill's re-arm, so they cannot disagree. Seek candidates get the walk's PJ-092 exclusion + a stat-guard; the 'unhit exclude' warning scoped to the walk path. Equivalence pin (seek ⊇ walk) + mixed-universe refusal test |
+
+Suite at §6: **1,432 passed / 0 failed**.
+
+## Phase 3 close-out (in flight)
+
+`/simplify` (4 lenses) + the per-build diff-scoped safety inspection running over
+`2edc97d7..d043490e`. Then Phase 4 (three-agent audit), the fresh binary, and the Boss test via
+tutorial-auditor → ui-inspector.

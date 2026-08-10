@@ -141,17 +141,31 @@ pub(crate) fn run_on(conn: &mut Connection) -> Result<usize, String> {
         rows.filter_map(|r| r.ok()).collect()
     };
 
-    let mut updated = 0usize;
-    for chunk in all.chunks(BATCH) {
-        let tx = conn.transaction().map_err(|e| format!("tx: {}", e))?;
-        for (id, target_name, stored) in chunk {
-            let base = crate::search::target_base_of(target_name);
+    // /simplify (efficiency) — compute the fold during the scan and retain only the
+    // MISMATCHED pairs: on the recurring re-arm path (an old build left a handful of NULL
+    // rows) the retained set is that handful, not 31k rows. And `prepare_cached` inside
+    // the loop — `execute` re-prepares per call, ~0.15–0.3 s of avoidable one-shot work.
+    let dirty: Vec<(i64, String)> = all
+        .into_iter()
+        .filter_map(|(id, target_name, stored)| {
+            let base = crate::search::target_base_of(&target_name);
             if stored.as_deref() != Some(base.as_str()) {
-                tx.execute(
-                    "UPDATE note_links SET target_base = ?2 WHERE id = ?1",
-                    params![id, base],
-                )
-                .map_err(|e| format!("update target_base: {}", e))?;
+                Some((id, base))
+            } else {
+                None
+            }
+        })
+        .collect();
+    let mut updated = 0usize;
+    for chunk in dirty.chunks(BATCH) {
+        let tx = conn.transaction().map_err(|e| format!("tx: {}", e))?;
+        {
+            let mut stmt = tx
+                .prepare_cached("UPDATE note_links SET target_base = ?2 WHERE id = ?1")
+                .map_err(|e| format!("prepare: {}", e))?;
+            for (id, base) in chunk {
+                stmt.execute(params![id, base])
+                    .map_err(|e| format!("update target_base: {}", e))?;
                 updated += 1;
             }
         }
@@ -181,19 +195,13 @@ mod tests_pj249_backfill {
     use super::{is_stamped, needs_run, run_on, Needs};
     use crate::search::init_db;
     use rusqlite::params;
-    use std::path::PathBuf;
 
-    fn tmp_db(tag: &str) -> (rusqlite::Connection, PathBuf) {
-        let d = std::env::temp_dir().join(format!(
-            "constellation_pj249_bf_{}_{}",
-            tag,
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&d).expect("mkdir");
-        (init_db(&d.join("search.db")).expect("init_db"), d)
+    // /simplify (reuse) — tempfile::TempDir cleans on drop, panic included; the hand-rolled
+    // helper this replaces leaked its directory on every failing assert.
+    fn tmp_db(_tag: &str) -> (rusqlite::Connection, tempfile::TempDir) {
+        let td = tempfile::tempdir().expect("tempdir");
+        let conn = init_db(&td.path().join("search.db")).expect("init_db");
+        (conn, td)
     }
 
     /// A pre-§3 row: column-listed INSERT that omits target_base — the old-build shape.
@@ -229,7 +237,6 @@ mod tests_pj249_backfill {
             )
             .unwrap();
         assert_eq!(base, "nested note");
-        let _ = std::fs::remove_dir_all(&d);
     }
 
     #[test]
@@ -240,7 +247,6 @@ mod tests_pj249_backfill {
         assert_eq!(needs_run(&conn), Needs::No);
         assert_eq!(run_on(&mut conn).unwrap(), 0); // recompute finds nothing to change
         assert!(is_stamped(&conn));
-        let _ = std::fs::remove_dir_all(&d);
     }
 
     /// The crash shape: some rows filled, NO stamp (run_on stamps only at the end).
@@ -257,7 +263,6 @@ mod tests_pj249_backfill {
         let n = run_on(&mut conn).unwrap();
         assert_eq!(n, 1, "only the unfinished row needs an update");
         assert!(is_stamped(&conn));
-        let _ = std::fs::remove_dir_all(&d);
     }
 
     /// THE DRIFT GUARD — the reason rollback is safe. An older build inserts a row behind
@@ -285,6 +290,5 @@ mod tests_pj249_backfill {
             )
             .unwrap();
         assert_eq!(base, "added on old build");
-        let _ = std::fs::remove_dir_all(&d);
     }
 }
