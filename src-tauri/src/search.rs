@@ -1791,6 +1791,104 @@ fn ensure_note_links_target_name_lower(conn: &Connection) -> rusqlite::Result<()
     Ok(())
 }
 
+/// PJ-249 §1 — `note_links.target_base`: the bare folded title of the link's target,
+/// regardless of how the wikilink spelled it. `[[folder/A#H]]`, `[[A^b]]`, `[[A.md]]`
+/// all store `a` here, while `target_name` keeps whatever the parser has always stored.
+///
+/// This column exists so the RENAME CASCADE can ask "who links to this title?" as an
+/// index seek instead of reading every markdown file in the universe (measured on the
+/// live data: 8.5 s of file reads vs 1.8 ms; the median rename has ONE referrer). It is
+/// populated by every writer from `target_base_of` (§3) and back-filled once per
+/// universe by `target_base_backfill` (§4); the cascade only trusts it after that
+/// backfill's stamp (§6) — a mixed universe keeps the walk.
+///
+/// Nullable, no default, NO UNIQUE constraint (PJ-249 invariant iii: the existing
+/// `UNIQUE(source_path, target_name, link_type)` stays the sole identity), and plain —
+/// not VIRTUAL like its neighbour above, because its fold (`target_base_of`) is Rust
+/// (`fold_match_key` is full-Unicode NFC), not expressible in a SQLite expression.
+fn ensure_note_links_target_base(conn: &Connection) -> rusqlite::Result<()> {
+    // table_xinfo, not table_info — same idempotency reasoning as the sibling above.
+    let exists = {
+        let mut stmt = conn.prepare("PRAGMA table_xinfo(note_links)")?;
+        let mut rows = stmt.query([])?;
+        let mut found = false;
+        while let Some(row) = rows.next()? {
+            if row.get::<_, String>(1)? == "target_base" {
+                found = true;
+                break;
+            }
+        }
+        found
+    };
+    if !exists {
+        conn.execute_batch("ALTER TABLE note_links ADD COLUMN target_base TEXT;")?;
+    }
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_link_target_base ON note_links(target_base);",
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests_pj249_target_base_column {
+    //! PJ-249 §1 — the ensure MUST be idempotent across boots (the §C.2a regression
+    //! class: a re-run ALTER aborts init_db → repeated-init → the app shows 0 notes),
+    //! and the column must be invisible to an old build's column-listed INSERTs.
+    use super::*;
+
+    fn fresh_conn() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_path TEXT NOT NULL,
+                source_name TEXT NOT NULL,
+                target_path TEXT,
+                target_name TEXT NOT NULL,
+                link_type TEXT NOT NULL DEFAULT 'relates',
+                UNIQUE(source_path, target_name, link_type)
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn ensure_target_base_is_idempotent() {
+        let conn = fresh_conn();
+        ensure_note_links_target_base(&conn).unwrap(); // 1st boot: adds it
+        ensure_note_links_target_base(&conn).unwrap(); // 2nd boot: MUST be a no-op
+        // And the index exists.
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_link_target_base'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(n, 1);
+    }
+
+    /// The rollback property §1 exists to preserve: an OLD build's column-listed
+    /// INSERT (it does not know `target_base`) must still succeed, leaving NULL —
+    /// which is exactly what the backfill's drift guard re-heals on return.
+    #[test]
+    fn an_old_builds_insert_still_works_and_leaves_null() {
+        let conn = fresh_conn();
+        ensure_note_links_target_base(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO note_links (source_path, source_name, target_name, link_type)
+             VALUES ('/a.md', 'A', 'old form', 'relates')",
+            [],
+        )
+        .unwrap();
+        let base: Option<String> = conn
+            .query_row("SELECT target_base FROM note_links WHERE source_path='/a.md'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(base, None);
+    }
+}
+
 #[cfg(test)]
 mod tests_c2a_target_name_lower_idempotent {
     //! MIG-079 §C.2a regression — the virtual-column ensure MUST be idempotent
@@ -5064,6 +5162,14 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // AFTER the note_links CREATE so a fresh-DB init doesn't abort (BUG-021 shape).
     ensure_note_links_target_name_lower(&conn)
         .map_err(|e| format!("Failed to ensure note_links.target_name_lower: {}", e))?;
+
+    // PJ-249 §1 — the rename cascade's seek column (bare folded title). Same BUG-021
+    // ordering constraint; same idempotent-ALTER pattern; deliberately NOT a `.version`
+    // bump — that gate sets the whole database aside, and this is an additive column an
+    // older build can safely ignore (it inserts NULLs, which the backfill's drift guard
+    // re-heals — see target_base_backfill).
+    ensure_note_links_target_base(&conn)
+        .map_err(|e| format!("Failed to ensure note_links.target_base: {}", e))?;
 
     // Drop any leftover tables from the aborted custom-index experiment
     // (2026-04-16). The Index panel now reads directly from the FTS5 vocab
