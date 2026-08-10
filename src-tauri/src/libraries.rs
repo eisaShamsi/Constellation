@@ -6648,27 +6648,77 @@ pub fn update_links_on_rename(
         .map(|p| path_identity_key(Path::new(p)))
         .collect();
     let mut excluded_hit: std::collections::HashSet<String> = std::collections::HashSet::new();
-    // PJ-207 §15 — the linked-universe boundary for this walk. Best-effort by construction: an
-    // unresolvable federation yields an empty set, which is exactly the previous behaviour.
-    let own_libs = try_load_libraries(&app).unwrap_or_default();
-    let foreign = foreign_library_roots(&app, &own_libs);
-    update_links_recursive(
-        Path::new(&library_path),
-        &re,
-        &mut result,
-        &exclude,
-        &mut excluded_hit,
-        &foreign,
-        &new_name,
-    );
-    // Hardening — a normalization miss is otherwise invisible-until-loss: an exclude
-    // entry that matched NO walked file may be a defeated exclusion. Make it visible.
-    for key in &exclude {
-        if !excluded_hit.contains(key) {
-            eprintln!(
-                "[update_links_on_rename] PJ-092: exclude entry matched no walked file (possible path-normalization miss): {}",
-                key
-            );
+    // PJ-249 §6 — THE FLIP. Ask the index for the referrer list; walk only when the
+    // index may not be trusted (backfill unstamped, or NULL rows behind the stamp —
+    // see `cascade_candidates_via_index`). The read lock is held for the gate + one
+    // indexed SELECT, both sub-millisecond — not the unbounded-hold class.
+    let seek: Option<Vec<String>> = {
+        use tauri::Manager;
+        let state = app.state::<crate::search::SearchState>();
+        crate::search::with_read_conn(state.inner(), |conn| {
+            Ok(cascade_candidates_via_index(conn, &old_name))
+        })
+        .ok()
+        .flatten()
+    };
+    let dbp_diag = crate::search::db_path(&app).ok();
+    if let Some(p) = &dbp_diag {
+        match &seek {
+            Some(c) => crate::search::diag_log(p, &format!("[cascade] path=SEEK candidates={}", c.len())),
+            None => crate::search::diag_log(p, "[cascade] path=WALK (target_base not trusted for this universe)"),
+        }
+    }
+    if let Some(source_paths) = seek {
+        // The seek's candidates get the SAME treatment the walk gave its finds: the
+        // PJ-092 exclusion by file identity (recording the hit so a defeated exclusion
+        // stays visible), and a stat-guard — a stale index row's path may no longer
+        // exist, and the walk by construction never handed a nonexistent path to the
+        // rewriter, so neither may the seek (else every rename after an unindexed
+        // delete reports a phantom failure). Cheap: the median rename has ONE candidate.
+        let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+        for sp in source_paths {
+            let path = std::path::PathBuf::from(&sp);
+            if !path.exists() {
+                continue;
+            }
+            if !exclude.is_empty() {
+                let key = path_identity_key(&path);
+                if exclude.contains(&key) {
+                    excluded_hit.insert(key);
+                    continue;
+                }
+            }
+            candidates.push(path);
+        }
+        rewrite_candidates(&candidates, &re, &new_name, &mut result);
+    } else {
+        // PJ-207 §15 — the linked-universe boundary for this walk. Best-effort by
+        // construction: an unresolvable federation yields an empty set, which is exactly
+        // the previous behaviour.
+        let own_libs = try_load_libraries(&app).unwrap_or_default();
+        let foreign = foreign_library_roots(&app, &own_libs);
+        update_links_recursive(
+            Path::new(&library_path),
+            &re,
+            &mut result,
+            &exclude,
+            &mut excluded_hit,
+            &foreign,
+            &new_name,
+        );
+        // Hardening — a normalization miss is otherwise invisible-until-loss: an exclude
+        // entry that matched NO walked file may be a defeated exclusion. Make it visible.
+        //
+        // PJ-249 §6 — WALK PATH ONLY. The walk visits every file, so an unhit exclude
+        // entry there is suspicious; the seek visits only referrers, so an excluded
+        // non-referrer is legitimately unhit and this warning would cry wolf on it.
+        for key in &exclude {
+            if !excluded_hit.contains(key) {
+                eprintln!(
+                    "[update_links_on_rename] PJ-092: exclude entry matched no walked file (possible path-normalization miss): {}",
+                    key
+                );
+            }
         }
     }
 
@@ -6938,6 +6988,40 @@ fn rewrite_candidates(
 /// kept resolving only through the alias the rename stamps — until any other note
 /// took the freed title, at which point exact-title resolution beat the alias and
 /// they silently pointed at a DIFFERENT note.
+/// PJ-249 §6 — the index side of the cascade flip: the referrer candidate list for a
+/// rename, IF the index may be trusted for it. `None` means "walk the filesystem",
+/// and `None` is the only safe answer whenever the `target_base` backfill is not both
+/// stamped AND clean — a stamped universe with NULL rows behind the stamp (an older
+/// build's session, not yet re-healed) must not seek: the seek would silently skip
+/// exactly those rows' referrers, which is the invisible-miss class this migration
+/// exists to close. The gate is `needs_run == No`, the same predicate the backfill's
+/// own re-arm uses, so the two cannot disagree.
+///
+/// The seek itself: `target_base` holds the bare folded title whatever the wikilink
+/// spelled (`[[Old]]`, `[[folder/Old]]`, `[[Old#H]]`, `[[supports::Old|why]]` — §2/§3),
+/// so one indexed lookup on `fold_match_key(old_name)` returns every source note whose
+/// text can mention the renamed title. No status filter, deliberately: an ARCHIVED
+/// link's wikilink is still in the note's text and must still be rewritten. A candidate
+/// whose text turns out not to match (an unknown-head `[[foo::old]]` row whose
+/// target_base folds to `old`) is read and left unchanged — exactly what the walk did.
+///
+/// Measured against the walk it replaces: 0.05–1.8 ms vs 8.3–8.5 s, and the median
+/// rename has ONE candidate (p50=1, p90=7, p99=31 across 8,328 live targets).
+fn cascade_candidates_via_index(
+    conn: &rusqlite::Connection,
+    old_name: &str,
+) -> Option<Vec<String>> {
+    if crate::target_base_backfill::needs_run(conn) != crate::target_base_backfill::Needs::No {
+        return None;
+    }
+    let folded = crate::search::fold_match_key(old_name);
+    let mut stmt = conn
+        .prepare("SELECT DISTINCT source_path FROM note_links WHERE target_base = ?1")
+        .ok()?;
+    let rows = stmt.query_map([&folded], |r| r.get::<_, String>(0)).ok()?;
+    Some(rows.filter_map(|r| r.ok()).collect())
+}
+
 fn cascade_pattern(old_name: &str) -> String {
     // PJ-249 §5 — group 3 is the optional FOLDER QUALIFIER (`folder/`, `f/s/`): one or
     // more segments, each ending in `/`, none containing wikilink syntax or `:` (a
@@ -6998,6 +7082,7 @@ fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
 #[cfg(test)]
 mod cascade_walker_tests {
     use super::{
+        cascade_candidates_via_index, // PJ-249 §6 — the seek half of the flip
         cascade_pattern, // PJ-207 §15 — the tests build the PRODUCTION pattern, never a copy
         collect_md_paths, free_trash_name, move_into_trash_folder, path_identity_key,
         rewrite_for_test, trash_move_decolliding, update_links_recursive, CascadeResult,
@@ -7295,6 +7380,93 @@ mod cascade_walker_tests {
     fn pj249_typed_link_with_folder_keeps_type_and_folder() {
         let out = rewrite_for_test("see [[supports::f/Old|why]]", "Old", "New");
         assert_eq!(out, "see [[supports::f/New|why]]");
+    }
+
+    /// PJ-249 §6 — THE EQUIVALENCE PIN: on a stamped universe, the seek's candidate set
+    /// COVERS everything the walk would have rewritten (⊇ — a harmless extra candidate is
+    /// read and left unchanged, a MISSING one is the silent-miss class this migration
+    /// exists to close). Real `init_db`, real files, the real `index_note`, the real
+    /// backfill, the real seek helper and the real walk — no mirrors of anything.
+    ///
+    /// Out of scope, stated rather than hidden: a target carrying BOTH an unknown `::`
+    /// head AND a `/` (`[[foo::bar/Old]]`) folds asymmetrically — but neither reading of
+    /// that string is a representable name on Windows (titles cannot carry `/`, folders
+    /// cannot carry `:`), so no resolvable referrer can take that shape.
+    #[test]
+    fn pj249_seek_candidates_cover_the_walks_rewrite_set() {
+        let dir = tempfile::tempdir().unwrap();
+        let db_dir = dir.path().join(".constellation");
+        std::fs::create_dir_all(&db_dir).unwrap();
+        let mut conn = crate::search::init_db(&db_dir.join("search.db")).expect("init_db");
+
+        let files = [
+            ("A.md", "sees [[Old]] plainly"),
+            ("B.md", "sees [[folder/Old|display]] qualified"),
+            ("C.md", "sees [[supports::Old]] typed"),
+            ("D.md", "sees [[foo::Old]] with an unknown head — a DIFFERENT note's title"),
+            ("E.md", "sees nothing relevant"),
+        ];
+        for (name, body) in &files {
+            let p = dir.path().join(name);
+            std::fs::write(&p, format!("# {}\n\n{}\n", name, body)).unwrap();
+            crate::search::index_note(&conn, &p.to_string_lossy(), "testlib", true).expect("index");
+        }
+        crate::target_base_backfill::run_on(&mut conn).expect("backfill");
+
+        // The walk's rewrite set (ground truth).
+        let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
+        let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        let mut hit = HashSet::new();
+        update_links_recursive(dir.path(), &re, &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
+        let walked: std::collections::HashSet<String> = result.rewritten.iter().cloned().collect();
+        assert_eq!(
+            walked.len(),
+            3,
+            "A (plain), B (folder-qualified) and C (known-type head) all rewrite; D is a \
+             different title; E has nothing: {:?}",
+            walked
+        );
+
+        // The seek's candidate set must cover it: C's parser stored the bare `old`
+        // (known head stripped), A and B fold to `old` via §2 — all three seek rows.
+        let seek = cascade_candidates_via_index(&conn, "Old").expect("stamped + clean → seek");
+        let seek_set: std::collections::HashSet<String> = seek.into_iter().collect();
+        for w in &walked {
+            assert!(seek_set.contains(w), "the seek must cover every walked rewrite; missing {}", w);
+        }
+        // And D — the unknown-head title — is NOT in the seek set for "Old".
+        let d_path = dir.path().join("D.md").to_string_lossy().to_string();
+        assert!(!seek_set.contains(&d_path), "[[foo::Old]] is a different title and must not be visited");
+    }
+
+    /// PJ-249 §6 — THE MIXED-UNIVERSE GATE (Reproduce-First for the flip): a stamped
+    /// database with a NULL `target_base` row behind the stamp — an older build's session
+    /// — must refuse the seek and keep the walk. The gate shares `needs_run` with the
+    /// backfill's re-arm, so this also pins that the two cannot disagree.
+    #[test]
+    fn pj249_a_stamped_but_dirty_universe_refuses_the_seek() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut conn = crate::search::init_db(&dir.path().join("search.db")).expect("init_db");
+        conn.execute(
+            "INSERT INTO note_links (source_path, source_name, target_name, link_type, status, target_base)
+             VALUES ('/a.md', 'A', 'old', 'associative', 'active', 'old')",
+            [],
+        )
+        .unwrap();
+        crate::target_base_backfill::run_on(&mut conn).expect("stamp");
+        assert!(cascade_candidates_via_index(&conn, "Old").is_some(), "clean + stamped → seek");
+
+        // The older build's session: a column-omitting INSERT leaves NULL behind the stamp.
+        conn.execute(
+            "INSERT INTO note_links (source_path, source_name, target_name, link_type, status)
+             VALUES ('/b.md', 'B', 'old', 'associative', 'active')",
+            [],
+        )
+        .unwrap();
+        assert!(
+            cascade_candidates_via_index(&conn, "Old").is_none(),
+            "NULL behind the stamp → the seek would MISS /b.md; the gate must hand back the walk"
+        );
     }
 
     /// The negatives — prefix-collision safety and the unknown-head rule must survive
