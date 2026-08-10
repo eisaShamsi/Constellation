@@ -7537,6 +7537,102 @@ pub(crate) fn fold_match_key(s: &str) -> String {
     lowered.nfc().collect()
 }
 
+/// PJ-249 §2 — the BARE folded title of a stored link target, whatever the wikilink's
+/// spelling carried along: `folder/A#H`, `A^b`, `A.md`, `f/s/A` all reduce to `a`.
+///
+/// This is the one fold the seek column (`note_links.target_base`) is built from, in
+/// exactly four steps, in this order:
+///   1. cut at the FIRST `#` or `^` — the heading/block anchor is not part of the title;
+///   2. keep what follows the LAST `/` — a folder qualifier addresses the same note;
+///   3. strip a trailing `.md` case-insensitively — a file-extension spelling of the same;
+///   4. `fold_match_key` of the trimmed remainder — the same NFC-lowercase every matching
+///      column in this file already uses.
+///
+/// Deliberately NOT handled: an unregistered predicate head (`foo::A` where `foo` is not
+/// a known link type). `parse_link_body` stores that whole string as the target because
+/// Constellation treats it as a note TITLED `foo::A` — and the cascade's rewrite makes
+/// the same call (`is_known_type`). Seek symmetry follows: renaming `A` must NOT visit
+/// that link (`fold("a") != fold("foo::a")`), renaming a note literally titled `foo::A`
+/// MUST find it. Stripping the head here would break both directions at once.
+///
+/// Anchor-before-folder order matters for `[[folder/A#H]]`: cutting the anchor first
+/// leaves `folder/A`, whose last segment is `a`. Folder-first would keep `a#h`.
+pub(crate) fn target_base_of(target: &str) -> String {
+    let cut = match target.find(['#', '^']) {
+        Some(i) => &target[..i],
+        None => target,
+    };
+    let seg = match cut.rfind('/') {
+        Some(i) => &cut[i + 1..],
+        None => cut,
+    };
+    let trimmed = seg.trim();
+    // `.get(..)` not a byte slice: `len()-3` lands INSIDE a multi-byte character on an
+    // Arabic/CJK title and a direct slice PANICS — caught by this function's own Arabic
+    // test before it reached the writer. `get` returns None off a char boundary, which
+    // is also the correct answer ("this cannot end in .md").
+    let stem = match trimmed.len().checked_sub(3).and_then(|i| trimmed.get(i..)) {
+        Some(tail) if tail.eq_ignore_ascii_case(".md") => trimmed[..trimmed.len() - 3].trim_end(),
+        _ => trimmed,
+    };
+    fold_match_key(stem)
+}
+
+#[cfg(test)]
+mod tests_pj249_target_base_of {
+    //! PJ-249 §2 — one case per dirty-row class the live census found (637 folder,
+    //! 215 unregistered `::`, 75 `#`, 218 `^`, 11 `.md`), plus the folds and negatives.
+    use super::target_base_of;
+
+    #[test]
+    fn plain_and_already_clean() {
+        assert_eq!(target_base_of("note name"), "note name");
+        assert_eq!(target_base_of("Note Name"), "note name");
+    }
+
+    #[test]
+    fn folder_qualifiers_reduce_to_the_bare_title() {
+        assert_eq!(target_base_of("folder/a"), "a");
+        assert_eq!(target_base_of("f/s/deep note"), "deep note");
+    }
+
+    #[test]
+    fn anchors_are_cut_and_anchor_beats_folder_order() {
+        assert_eq!(target_base_of("a#heading"), "a");
+        assert_eq!(target_base_of("a^blockid"), "a");
+        assert_eq!(target_base_of("folder/a#h"), "a"); // anchor cut FIRST, then last segment
+    }
+
+    #[test]
+    fn md_extension_is_stripped_case_insensitively() {
+        assert_eq!(target_base_of("a.md"), "a");
+        assert_eq!(target_base_of("A.MD"), "a");
+        assert_eq!(target_base_of("folder/a.md"), "a");
+    }
+
+    /// An unregistered predicate head is PART OF THE TITLE — see the doc comment's
+    /// symmetry argument. `[[foo::Old]]` must not be visited when renaming `Old`.
+    #[test]
+    fn unregistered_predicate_heads_are_kept() {
+        assert_eq!(target_base_of("foo::old"), "foo::old");
+        assert_eq!(target_base_of("foo::old#h"), "foo::old");
+    }
+
+    #[test]
+    fn arabic_and_accents_fold_like_every_other_match_key() {
+        // NFD input folds to NFC-lowercase — the same guarantee fold_match_key pins.
+        assert_eq!(target_base_of("Caf\u{0065}\u{0301}"), "caf\u{e9}");
+        assert_eq!(target_base_of("مجلد/ملاحظة"), "ملاحظة");
+    }
+
+    #[test]
+    fn negatives_that_must_not_over_strip() {
+        assert_eq!(target_base_of("not.md.really"), "not.md.really"); // .md only as a SUFFIX
+        assert_eq!(target_base_of("a "), "a"); // trailing space trimmed
+        assert_eq!(target_base_of(""), "");
+    }
+}
+
 #[cfg(test)]
 mod tests_fold_match_key {
     use super::fold_match_key;
