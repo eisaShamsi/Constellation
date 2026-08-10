@@ -6733,6 +6733,17 @@ pub fn update_links_on_rename(
             if !path.exists() {
                 continue;
             }
+            // Phase-4 audit (4A) — THE FEDERATION BOUNDARY, on the seek too. The index can
+            // hold residual linked-universe rows (PJ-207 §8 stopped adopting them but
+            // removed nothing — 13 exist on the live DB; the purge is §13, blocked on a
+            // PJ-224 ruling). Both walkers refuse to cross a foreign root; a seek that
+            // followed such a row would rewrite a note INSIDE a linked universe — another
+            // knowledge base's file, with the staleness landing in THAT universe's index.
+            // The equivalence pin cannot catch this direction (it proves seek ⊇ walk, not
+            // seek ⊆ boundary), so it is enforced here with the set both branches share.
+            if path_is_under_any(&path.to_string_lossy().replace('\\', "/").to_lowercase(), &foreign) {
+                continue;
+            }
             if cascade_excluded(&path, &exclude, &mut excluded_hit) {
                 continue;
             }

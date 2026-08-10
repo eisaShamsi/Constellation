@@ -47,9 +47,11 @@ Facts that shaped the options:
 
 ## Phase 2 — Plan (in flight)
 
-Plan agent briefed with the census, the four writers (`index_note_impl` + `links_backfill` +
-`link_life_restore` + `link_life_backfill` — ALL must populate the new column or it drifts,
-LL-023 class), the invariants, the rollback property to preserve (no NOT NULL, no old-build
+Plan agent briefed with the census, the writers — **CORRECTED by the 4B audit:** the plan and
+this log said four writer FILES must stamp the column; 4B enumerated every production statement
+and proved `index_note_impl` is the SOLE production row-creator (the other three files' INSERTs
+are test fixtures; their production lanes UPDATE columns that cannot affect `target_base`), so
+§3's three stamps plus the §4 backfill are complete coverage — the invariants, the rollback property to preserve (no NOT NULL, no old-build
 schema trip), the unregistered-`::`-head question to settle, and the Reproduce-First requirements
 (the folder-form miss and the mixed-universe gate need failing tests first).
 
@@ -72,3 +74,31 @@ Suite at §6: **1,432 passed / 0 failed**.
 `/simplify` (4 lenses) + the per-build diff-scoped safety inspection running over
 `2edc97d7..d043490e`. Then Phase 4 (three-agent audit), the fresh binary, and the Boss test via
 tutorial-auditor → ui-inspector.
+
+## Phase 4 — Audit (three agents, aggregated)
+
+**4A Invariants: 8/8 STILL HOLD**, each with file:line evidence. Two gaps beyond the list, both
+fixed in §6c: (1) **the seek had no federation boundary** — the index can hold residual
+linked-universe rows (13 live; the §13 purge is blocked on PJ-224), and a matching row would have
+had the cascade rewrite a note inside a LINKED universe, a direction the equivalence pin cannot
+see (it proves seek ⊇ walk, not seek ⊆ boundary); the shared `foreign` set now filters seek
+candidates. (2) `needs_run`'s errored NULL-probe read as "clean" (`unwrap_or(false)`) — flipped
+to dirty: the one state we cannot verify walks and heals.
+
+**4B Drift: ZERO.** Every production `note_links` writer enumerated and classified CONFORMS. The
+stale-non-NULL hole does not exist for a structural reason: `target_name` is part of the edge's
+diff key, so a changed target is DELETE+reINSERTed with a fresh stamp — no path mutates one
+without the other. The freshness net's `modified` premise fail-safes both ways (stat failure
+stores 0 → permanently suspect → read). Correction absorbed above: `index_note_impl` is the sole
+production row-creator.
+
+**4C Migration path: all six scenarios SAFE** — first boot (mid-backfill renames walk; concurrent
+saves convergent), schema mismatch (adopt-and-stamp, never aside), mid-backfill kill (stamp is
+last; pre-stamp always walks), rollback + return (self-heals via Rearm; the previous build's
+init_db verified non-destructive against `git show`), linked universes (backfill and seek both
+open the ACTIVE universe's db only; the federated conn is read-only and unused by the cascade).
+**Real-data numbers (perf.db):** all 31,367 rows filled; **933 change semantically** (636 folder +
+75 `#` + 218 `^` + 11 `.md`, 7 overlapping; the 215 unknown-`::` kept whole by design); **246
+folder-qualified targets gain rename coverage for the first time**.
+
+Suite after §6c: **1,434 passed / 0 failed**.

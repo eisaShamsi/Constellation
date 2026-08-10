@@ -61,13 +61,17 @@ pub(crate) fn needs_run(conn: &Connection) -> Needs {
     if !is_stamped(conn) {
         return Needs::Fresh;
     }
+    // Phase-4 audit (4A + 4C independently) — an ERRORED probe reads as DIRTY, not clean.
+    // `unwrap_or(false)` admitted the seek on the one state we could not verify; the
+    // fail-safe direction is the walk plus a heal attempt. A genuinely broken DB also
+    // fails the heal and the seek's own prepare, so the cost of leaning dirty is nil.
     let null_exists: bool = conn
         .query_row(
             "SELECT EXISTS(SELECT 1 FROM note_links WHERE target_base IS NULL)",
             [],
             |r| r.get(0),
         )
-        .unwrap_or(false);
+        .unwrap_or(true);
     if null_exists {
         Needs::Rearm
     } else {
