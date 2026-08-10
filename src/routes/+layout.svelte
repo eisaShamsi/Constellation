@@ -1614,6 +1614,13 @@
 	}
 
 	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path) && !lib.is_universe_notes));
+	/**
+	 * Boss finding 2026-08-10 — the same own-universe filter as `ownLibraries`, but KEEPING the
+	 * universe root, for surfaces that ask "where should I write this?". `$libraries` is the
+	 * federated list; offering a linked universe's library as a create destination writes into
+	 * a knowledge base this universe does not own.
+	 */
+	const ownUniverseLibraries = $derived($libraries.filter(lib => !isChildUniverseLib(lib.path)));
 	const universeNotesStats = $derived($libraryStats.find(lib => lib.is_universe_notes) ?? null);
 
 	// Library color palette (shared utility)
@@ -10252,6 +10259,7 @@
 
 	{#if showLibraryPicker}
 		<LibraryPicker
+			items={ownUniverseLibraries}
 			colorMap={libraryColorMap}
 			onSelect={(lib) => libraryPickerAction === 'folder' ? createFolderInLibrary(lib) : createNoteInLibrary(lib)}
 			onClose={() => showLibraryPicker = false}

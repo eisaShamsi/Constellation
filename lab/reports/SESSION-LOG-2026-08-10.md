@@ -102,3 +102,46 @@ open the ACTIVE universe's db only; the federated conn is read-only and unused b
 folder-qualified targets gain rename coverage for the first time**.
 
 Suite after §6c: **1,434 passed / 0 failed**.
+
+## §6d — the Boss's timing, and what the instrumentation refuted
+
+**Boss's Stage-1 result:** Step 0 exact (`31367 rows updated`); Steps 3 and 4 CORRECT — the log
+shows `[cascade] path=SEEK candidates=1` on both renames, i.e. ONE file opened instead of 2,105 —
+but **7 s and 8 s**, worse than the ~1 s of the previous build.
+
+The journal attributes it to the millisecond: `rename_chain_resume → cascade_dispatch` = **54 ms**
+(so yesterday's tree-walk fix DID close the frontend gap, and my correction to the inspector on
+that point was right), then **~6.4 s inside `update_links_on_rename`**, before its own SEEK line.
+
+**The instrumentation refuted my suspicion.** I believed the freshness net's tree walk was the
+cost — it is **34 ms** (0 suspects). The 3.2 s sat in the block beside it:
+`SELECT path, modified FROM note_meta`. That query IS covered — by `idx_note_meta_map`, which also
+carries `outgoing_links_json` at ~300 bytes/row: **798 KB of index pages to read two columns worth
+310 KB**. Warm it costs 35 ms and hides; cold on the Boss's USB mechanical disk it costs seconds.
+Added `idx_note_meta_path_modified (path, modified)` — SQLite prefers it — and split the timing so
+the next measurement separates the candidate seek from the freshness map instead of leaving me to
+choose between them by reasoning.
+
+**The lesson, which is LL-037's sibling:** *covered is not the same as cheap.* An EXPLAIN that says
+`USING COVERING INDEX` closes the "is it a full scan?" question and says nothing about how WIDE the
+cover is. This is the PJ-066 note_meta family wearing a different hat — and I walked into it while
+holding the rule.
+
+Had I fixed the freshness net on suspicion, the rename would still be slow and the net — which
+genuinely closes two audit-confirmed HIGH findings — would have been damaged for nothing.
+
+## Boss finding (unrelated) — the New Note picker offered another universe's libraries
+
+Ctrl+N listed **25 libraries**, including `Architecture`, `Film`, `Literature`, `Philosophy` and
+the Arabic set that belong to the LINKED universe *Eisa Cognitive Knowledge*. Choosing one would
+have created a note inside that universe.
+
+Cause: `LibraryPicker` read the federated `$libraries` store directly, while the sidebar has always
+filtered linked-universe libraries out (`ownLibraries` → `isChildUniverseLib`). Only the picker had
+drifted. Fixed by making the list a REQUIRED prop — the caller decides — with `ownUniverseLibraries`
+(own-universe, root kept) passed from `+layout`. Reading a universe-wide list is right for
+RESOLVING a name and wrong for CHOOSING where to write; the component no longer gets to guess.
+
+Third member of one family now: PJ-235 (`move_item` authorises its destination through the
+federated resolver), the §6c seek boundary, and this. Worth a ledger entry as a class, not three
+unrelated bugs — filed at the next bump.

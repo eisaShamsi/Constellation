@@ -5163,6 +5163,15 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     conn.execute_batch("
         CREATE INDEX IF NOT EXISTS idx_note_meta_map
             ON note_meta(path, name, word_count, modified, created_at, outgoing_links_json);
+        -- PJ-249 §6d — the NARROW (path, modified) cover, for the rename cascade's freshness
+        -- map. That query was already covered — by `idx_note_meta_map` above, which also
+        -- carries `outgoing_links_json` at ~300 bytes/row: 798 KB of index pages to read two
+        -- columns totalling 310 KB. Warm that costs 35 ms and hides; cold on a mechanical USB
+        -- disk it was MEASURED at seconds inside a rename. Covered is not the same as cheap —
+        -- the width of the cover is part of the cost, and this is the PJ-066 note_meta
+        -- full-scan family wearing a different hat.
+        CREATE INDEX IF NOT EXISTS idx_note_meta_path_modified
+            ON note_meta(path, modified);
     ").map_err(|e| format!("Failed to create idx_note_meta_map: {}", e))?;
 
     // MIG-084 §F.2 — the Reviewer's connection-health lenses scan note_meta by

@@ -6652,6 +6652,18 @@ pub fn update_links_on_rename(
     // index may not be trusted (backfill unstamped, or NULL rows behind the stamp —
     // see `cascade_candidates_via_index`). The read lock is held for the gate + one
     // indexed SELECT, both sub-millisecond — not the unbounded-hold class.
+    // PJ-249 §6d — PHASE TIMINGS. The Boss measured 7-8 s per rename on the build where the
+    // seek itself reported `candidates=1`: the journal shows 54 ms of frontend and ~6.4 s
+    // INSIDE this function, before the seek's own log line. Four candidate phases sit in that
+    // window and guessing between them is how the last three regressions happened — so each
+    // one reports its own milliseconds. Cheap (four Instant::now) and it stays: a cascade that
+    // gets slow again should say where, not need another instrumentation round.
+    let t_enter = std::time::Instant::now();
+    let mut t_phase = |label: &str| {
+        if let Ok(p) = crate::search::db_path(&app) {
+            crate::search::diag_log(&p, &format!("[cascade-timing] {} at {} ms", label, t_enter.elapsed().as_millis()));
+        }
+    };
     // PJ-249 §6b (inspection #29 fix) — the federation boundary, computed ONCE for both
     // branches, and an UNREADABLE registry no longer inverts it. `unwrap_or_default()`
     // collapsed a failed read into own=[], which made `foreign_library_roots` classify
@@ -6669,13 +6681,19 @@ pub fn update_links_on_rename(
             std::collections::HashSet::new()
         }
     };
+    t_phase("federation-boundary-resolved");
     let seek: Option<(Vec<String>, std::collections::HashMap<String, u64>)> = {
         use tauri::Manager;
         let state = app.state::<crate::search::SearchState>();
         crate::search::with_read_conn(state.inner(), |conn| {
+            let t_conn = std::time::Instant::now();
             let Some(cands) = cascade_candidates_via_index(conn, &old_name) else {
                 return Ok(None);
             };
+            // §6d — the two halves of this block are timed separately: the first measurement
+            // could not tell the candidate SEEK from the freshness MAP, and picking between
+            // them by reasoning is what this instrumentation exists to replace.
+            let ms_seek = t_conn.elapsed().as_millis();
             // §6b — the index's freshness map for THE NET below: every indexed path and
             // the file mtime it was indexed at. One covering scan of note_meta's small
             // columns (2.7k rows, ~ms), under the same brief read-lock hold.
@@ -6690,11 +6708,23 @@ pub fn update_links_on_rename(
                 let (p, m) = row.map_err(|e| e.to_string())?;
                 known.insert(p.replace('\\', "/").to_lowercase(), m.max(0) as u64);
             }
+            if let Ok(dp) = crate::search::db_path(&app) {
+                crate::search::diag_log(
+                    &dp,
+                    &format!(
+                        "[cascade-timing] seek-query {} ms | freshness-map {} rows {} ms",
+                        ms_seek,
+                        known.len(),
+                        t_conn.elapsed().as_millis() - ms_seek
+                    ),
+                );
+            }
             Ok(Some((cands, known)))
         })
         .ok()
         .flatten()
     };
+    t_phase("index-seek-and-freshness-map-done");
     if let Some((source_paths, known)) = seek {
         // PJ-249 §6b — THE FRESHNESS NET (inspection findings 1+2, HIGH). The seek reads
         // the INDEX; the walk it replaced read the DISK. That difference is a correctness
@@ -6715,6 +6745,7 @@ pub fn update_links_on_rename(
         // the same granularity floor PJ-207 §9's drift check accepted.
         let mut suspects: Vec<std::path::PathBuf> = Vec::new();
         collect_fresh_suspects(Path::new(&library_path), &known, &foreign, &mut suspects);
+        t_phase(&format!("freshness-net-done ({} suspects)", suspects.len()));
 
         let mut candidates: Vec<std::path::PathBuf> = Vec::new();
         let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -6753,6 +6784,7 @@ pub fn update_links_on_rename(
             crate::search::diag_log(&p, &format!("[cascade] path=SEEK candidates={}", candidates.len()));
         }
         rewrite_candidates(&candidates, &re, &new_name, &mut result);
+        t_phase("rewrite-done");
     } else {
         if let Ok(p) = crate::search::db_path(&app) {
             crate::search::diag_log(&p, "[cascade] path=WALK (target_base not trusted for this universe)");
