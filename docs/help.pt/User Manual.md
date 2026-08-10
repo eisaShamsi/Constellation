@@ -331,6 +331,18 @@ Digite `[[` para abrir o autocompletar de notas. Comece a digitar o nome de uma 
 
 Voce tambem pode vincular a titulos especificos: `[[Nome da Nota#Titulo]]`.
 
+### Renomear uma nota atualiza todos os links que apontam para ela
+
+Quando você renomeia uma nota — pela árvore de ficheiros (clique com o botão direito → Renomear) ou editando o seu título no topo da página — o Constellation reescreve todos os links que apontam para ela, para que nenhum link se parta em silêncio. É a definição **Atualizar links internos automaticamente**, em **Configurações → Ligações**; está ativa, a menos que a desligue. Enquanto corre, aparece brevemente a sobreposição «Atualizando links…» nas notas afetadas.
+
+**Todas as formas de link são atualizadas**, e não apenas as simples: um link simples (`[[Nome da Nota]]`), um link com o seu próprio texto visível (`[[Nome da Nota|as palavras que queria ler]]`), um link **tipado** que carrega uma relação (`[[supports::Nome da Nota]]`, e com a sua anotação `[[supports::Nome da Nota|porque sustenta]]`), e um link que aponta *para dentro* de uma nota — para um título (`[[Nome da Nota#Um Titulo]]`) ou para um bloco (`[[Nome da Nota^bloco]]`). Só o nome muda: a relação, o seu texto visível, a sua anotação e o título ou bloco visado ficam exatamente como os escreveu. Antes, os links tipados e os links que apontavam para um título ou bloco ficavam para trás, ainda com o nome antigo, e nada era dito sobre isso.
+
+**Todas as bibliotecas do seu universo são abrangidas.** A atualização chega às notas de **todas** as bibliotecas do universo aberto, e não apenas à biblioteca onde a nota renomeada vive — por isso um link que atravessa de uma biblioteca para outra sobrevive à mudança de nome. As notas de um **universo filho ligado** são deliberadamente deixadas intactas: é uma base de conhecimento separada, e o Constellation não reescreve as suas notas.
+
+**Se algumas notas não puderam ser atualizadas, você é informado.** De vez em quando um ficheiro está bloqueado, é só de leitura ou está aberto noutro programa. Em vez de anunciar um sucesso limpo, o Constellation nomeia essas notas e diz que os seus links continuam a apontar para o título antigo, para que saiba exatamente o que verificar.
+
+**Renomear uma pasta não altera nenhum link** — é intencional. O nome de uma pasta nunca aparece dentro de um link, portanto não há nada a reescrever.
+
 ### Salvamento e Recuperação
 
 O Constellation **salva automaticamente** enquanto você digita — não há botão Salvar. Suas edições são gravadas no arquivo `.md` um instante depois de você fazer uma pausa (e sempre que você troca de nota ou fecha uma aba). Uma nota só é marcada como "salva" depois de ser genuinamente gravada no disco.

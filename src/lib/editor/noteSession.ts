@@ -87,9 +87,15 @@ export function editBody(id: string, text: string | Text, expectPath?: string): 
  * a whole array assembled from a stale projection is what silently deletes another writer's
  * frontmatter (§3.5.1).
  */
-export function editProps(id: string, props: FrontmatterProperty[], expectPath?: string): void {
-	M.setProps(id, props, expectPath);
+export function editProps(id: string, props: FrontmatterProperty[], expectPath?: string): boolean {
+	// PJ-207 §15 (third pass) — RETURNS whether the model took it. `setProps` refuses when the
+	// note's YAML does not parse (compose would re-emit the original bytes and drop the change),
+	// and that refusal used to end here as `void`: PropertyEditor has its own path that raises the
+	// PJ-187 banner, but `addTagToNote` and `addLinkToNote` on an OPEN note went through
+	// `saveTabContent` and reported a clean success for a write that changed nothing.
+	const took = M.setProps(id, props, expectPath);
 	bumpProps();
+	return took;
 }
 
 // ─── MIG-107 Slice 2 — the property INTENTS ─────────────────────────────────────────────────────
@@ -255,8 +261,13 @@ async function saveUnchained(
 		e.onError?.({ path: r.path, content: r.content, version: r.version, error });
 		return { ok: false, reason: 'write_failed', path: r.path, version: r.version, error };
 	}
-	M.markSaved(id, r.version, r.path); // clean trails durability — path-guarded so a save that resolves after an id-swap can't poison the new model (APP-KILLER #2)
-	M.noteDiskSynced(id, r.content, r.path); // PJ-070 — re-baseline: the model now knows the exact on-disk bytes (path-guarded, same reason as markSaved)
+	// PJ-207 §15 — hand back the LINEAGE captured at compose time, not just the path. `openModel`
+	// re-seeds an id in place for the SAME path (PJ-102c discard, the one caller that force-adopts
+	// over a dirty model) and resets `version` to 0; the path guard alone let this stamp
+	// savedVersion = 12 onto that fresh model, and `isDirty` then reported clean for twelve real
+	// edits which the departure flush and the app-close flush both skipped.
+	M.markSaved(id, r.version, r.path, r.gen); // clean trails durability — path + lineage guarded (APP-KILLER #2)
+	M.noteDiskSynced(id, r.content, r.path, r.gen); // PJ-070 — re-baseline, same two guards: a stale baseline mis-arbitrates the next external change
 	e.clearNetIf?.(r.path, r.content); // compare-and-clear: never wipe a newer edit's net
 	e.onSuccess?.({ path: r.path, content: r.content, version: r.version });
 	return r;
@@ -307,9 +318,12 @@ export function recoveredFromNet(id: string, trueDiskContent: string | null): vo
 	M.markRecoveredFromNet(id, trueDiskContent);
 }
 
-/** PJ-102b (restore half) — truth-set a clean model's disk baseline (see noteModel). */
-export function setDiskBaseline(id: string, trueDiskContent: string): void {
-	M.setDiskBaseline(id, trueDiskContent);
+/** PJ-102b (restore half) — truth-set a clean model's disk baseline (see noteModel).
+ *  PJ-207 §15 — `contentIsUnsavedRecovery` forwards the caller's own comparison of the seeded
+ *  content against the true disk bytes; without it the model looked clean AND current, and a
+ *  genuine external write adopted over the recovered work and its net was cleared behind it. */
+export function setDiskBaseline(id: string, trueDiskContent: string, contentIsUnsavedRecovery = false): void {
+	M.setDiskBaseline(id, trueDiskContent, contentIsUnsavedRecovery);
 }
 
 /** External change (file watcher / second screen) — freshness-gated; returns whether adopted. */

@@ -324,7 +324,11 @@ fn execute_federated_query(
 /// Enumerate the distinct frontmatter keys present across the active universe
 /// (+ federated cUniverses). Feeds the unified Base's "+ Add column" picker
 /// "Your fields" tier. Cheap: one `json_each` pass over `note_meta`.
-#[tauri::command]
+///
+/// PJ-207 §15 — `(async)`, matching `execute_lens` in this same file, which was converted
+/// explicitly for this hazard. It opens its own connection and scans `note_meta`; on the main
+/// thread that is a freeze whenever the DB is busy, however cheap the query is in isolation.
+#[tauri::command(async)]
 pub fn discover_base_properties(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     // Federated path: union keys across main + each attached cUniverse schema.
     // Falls back to single-schema on any federation hiccup (mirrors execute_lens).

@@ -303,6 +303,18 @@ Tapez `[[` pour ouvrir l'autocompletion des notes. Commencez a saisir un nom de 
 
 Vous pouvez egalement lier vers des titres specifiques : `[[Nom de la note#Titre]]`.
 
+### Renommer une note met à jour les liens qui pointent vers elle
+
+Quand vous renommez une note — depuis l'arborescence (clic droit → Renommer) ou en modifiant son titre en haut de la page — Constellation réécrit chaque lien qui pointe vers elle, pour qu'aucun lien ne se casse en silence. C'est le réglage **Mettre à jour les liens internes automatiquement**, dans **Paramètres → Liens** ; il est actif tant que vous ne le désactivez pas. Pendant l'opération, une brève incrustation « Mise à jour des liens… » apparaît sur les notes concernées.
+
+**Toutes les formes de lien sont mises à jour**, pas seulement les plus simples : un lien simple (`[[Nom de la note]]`), un lien avec votre propre texte affiché (`[[Nom de la note|les mots que vous vouliez lire]]`), un lien **typé** qui porte une relation (`[[supports::Nom de la note]]`, et avec votre annotation `[[supports::Nom de la note|pourquoi cela appuie]]`), et un lien qui pointe *à l'intérieur* d'une note, vers un titre (`[[Nom de la note#Titre]]`) ou vers un bloc (`[[Nom de la note^bloc]]`). Seul le nom change : la relation, votre texte affiché, votre annotation et le titre ou le bloc visé sont conservés exactement tels que vous les avez écrits. Auparavant, les liens typés et les liens pointant vers un titre ou un bloc étaient laissés en arrière, portant encore l'ancien nom, sans le moindre avertissement.
+
+**Toutes les bibliothèques de votre univers sont couvertes.** La mise à jour atteint les notes de **toutes** les bibliothèques de l'univers ouvert, et pas seulement celle où se trouve la note renommée : un lien qui va d'une bibliothèque à une autre survit donc au renommage. Les notes d'un **univers enfant lié** sont volontairement laissées intactes — c'est une base de connaissances distincte, et Constellation ne réécrit pas ses notes.
+
+**Si certaines notes n'ont pas pu être mises à jour, on vous le dit.** Il arrive qu'un fichier soit verrouillé, en lecture seule ou utilisé par un autre programme. Plutôt que d'annoncer une réussite complète, Constellation nomme ces notes et vous indique que leurs liens portent encore l'ancien nom, pour que vous sachiez exactement quoi vérifier.
+
+**Renommer un dossier ne modifie aucun lien** — c'est voulu. Un nom de dossier n'apparaît jamais à l'intérieur d'un lien : il n'y a rien à réécrire.
+
 ### Enregistrement et récupération
 
 Constellation **enregistre automatiquement** au fil de votre saisie — il n'y a pas de bouton d'enregistrement. Vos modifications sont écrites dans le fichier `.md` un instant après une pause (et chaque fois que vous changez de note ou fermez un onglet). Une note n'est marquée « enregistrée » qu'une fois qu'elle est réellement écrite sur le disque.

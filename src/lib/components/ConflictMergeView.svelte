@@ -154,7 +154,7 @@
 		if (!target || !mergeView || saving) return;
 		saving = true; error = '';
 		const merged = mergeView.a.state.doc.toString(); // YOUR pane = the reconciled result
-		const r = await resolveConflictMerge(target.notePath, target.sidecarPath, merged, { focusReseed });
+		const r = await resolveConflictMerge(target.notePath, target.sidecarPath, merged);
 		saving = false;
 		if (r.ok) closeMergeView();
 		else error = $t('conflict.mergeSaveError'); // durable-save failed — everything kept, retryable

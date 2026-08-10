@@ -303,6 +303,18 @@ Not otomatik tamamlamayı açmak için `[[` yazın. Bir not adı yazmaya başlay
 
 Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
+### Bir notu yeniden adlandırmak ona giden tüm bağlantıları günceller
+
+Bir notu yeniden adlandırdığınızda — dosya ağacından (sağ tıklayın → Yeniden adlandır) ya da sayfanın üstündeki başlığını düzenleyerek — Constellation ona işaret eden her bağlantıyı yeniden yazar; böylece hiçbir bağlantı sessizce kopmaz. Bunu **Ayarlar → Bağlantılar** altındaki **Dahili bağlantıları otomatik güncelle** ayarı yönetir; siz kapatmadıkça açıktır. İşlem sürerken etkilenen notların üzerinde kısa bir «Bağlantılar güncelleniyor…» katmanı belirir.
+
+**Bağlantının her biçimi güncellenir**, yalnızca yalın olanlar değil: yalın bağlantı (`[[Note Name]]`), kendi görünen metninizi taşıyan bağlantı (`[[Note Name|okunmasını istediğiniz sözcükler]]`), bir ilişki taşıyan **türlü** bağlantı (`[[supports::Note Name]]` ve açıklamanızla birlikte `[[supports::Note Name|neden desteklediği]]`) ve bir notun *içine* işaret eden bağlantı — bir başlığa (`[[Note Name#Heading]]`) ya da bir bloğa (`[[Note Name^blockid]]`). Yalnızca ad değişir: ilişki, görünen metniniz, açıklamanız ve işaret ettiğiniz başlık ya da blok tam olarak yazdığınız gibi korunur. Daha önce türlü bağlantılar ile başlığa veya bloğa işaret eden bağlantılar geride kalıyor, hâlâ eski adı taşıyor ve bu konuda hiçbir uyarı verilmiyordu.
+
+**Evreninizdeki her kitaplık kapsanır.** Güncelleme, yalnızca yeniden adlandırılan notun bulunduğu kitaplığa değil, açık evrendeki **bütün** kitaplıkların notlarına ulaşır; böylece bir kitaplıktan diğerine giden bir bağlantı yeniden adlandırmadan sağ çıkar. **Bağlı (alt) evrendeki** notlara bilerek dokunulmaz: orası ayrı bir bilgi tabanıdır ve Constellation onun notlarını yeniden yazmaz.
+
+**Bazı notlar güncellenemediyse bu size bildirilir.** Ara sıra bir dosya kilitli, salt okunur ya da başka bir programda açık olabilir. Constellation temiz bir başarı bildirmek yerine bu notların adını verir ve bağlantılarının hâlâ eski adı gösterdiğini söyler; böylece neyi denetleyeceğinizi tam olarak bilirsiniz.
+
+**Bir klasörü yeniden adlandırmak hiçbir bağlantıyı değiştirmez** — bu tasarım gereğidir. Klasör adları bir bağlantının içinde hiç geçmez, dolayısıyla yeniden yazılacak bir şey yoktur.
+
 ### Kaydetme ve Kurtarma
 
 Constellation, siz yazarken **otomatik olarak kaydeder** — bir Kaydet düğmesi yoktur. Düzenlemeleriniz, yazmayı bıraktıktan bir an sonra (ve bir nota geçtiğinizde ya da bir sekmeyi kapattığınızda) `.md` dosyasına yazılır. Bir not, ancak gerçekten diske yazıldığında "kaydedildi" olarak işaretlenir.

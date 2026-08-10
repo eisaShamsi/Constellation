@@ -51,29 +51,47 @@
 		};
 	});
 
+	/**
+	 * PJ-207 §15 — the popover closed FIRST and then swallowed the failure, so a link whose
+	 * confidence (or archive) never reached the database looked exactly like one that had: the
+	 * menu vanished, the badge kept its old value, and nothing said why. Both actions now close
+	 * only on success; on failure the menu stays open with the reason, which is the one moment
+	 * the user is still looking at the thing they just tried to change.
+	 */
+	let writeError = $state('');
+
 	async function applyConf(level: LinkConfidence) {
 		if (!menu) return;
 		const { sourcePath, targetName } = menu;
-		onClose();
 		try {
 			await setLinkConfidence(sourcePath, targetName, level);
+			onClose();
 			onConfidenceChange?.(sourcePath, targetName, level);
-		} catch { /* ignore */ }
+		} catch (e) {
+			writeError = String((e as { message?: string })?.message ?? e);
+			console.error('[ConfidencePicker] setLinkConfidence failed:', e);
+		}
 	}
 	async function applyArchive() {
 		if (!menu) return;
 		const { sourcePath, targetName } = menu;
-		onClose();
 		try {
 			await archiveLink(sourcePath, targetName);
+			onClose();
 			onArchive?.(sourcePath, targetName);
-		} catch { /* ignore */ }
+		} catch (e) {
+			writeError = String((e as { message?: string })?.message ?? e);
+			console.error('[ConfidencePicker] archiveLink failed:', e);
+		}
 	}
 </script>
 
 {#if menu}
 	<div class="conf-menu" bind:this={menuEl} dir={$dir} style="{$isRTL ? `right:${confRight}px` : `left:${menu.x}px`};top:{menu.y}px">
 		<div class="conf-menu-header">{$t('linkConfidence.setConfidence') || 'Set confidence'}</div>
+		{#if writeError}
+			<div class="conf-menu-error" role="alert">{$t('linkConfidence.notSaved')}</div>
+		{/if}
 		{#each CONFIDENCE_LEVELS as level}
 			<button class="conf-menu-item" class:active={level === menu.current} onclick={() => applyConf(level)}>
 				<span class="conf-dot conf-dot-{level}"></span>
@@ -102,6 +120,13 @@
 	.conf-menu-header {
 		padding: 6px 8px 4px; color: var(--text-muted); font-size: calc(0.68rem * var(--rs-scale, 1));
 		text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+	}
+	.conf-menu-error {
+		padding: 4px 8px 6px;
+		color: var(--danger, #ff6b6b);
+		font-size: calc(0.7rem * var(--rs-scale, 1));
+		line-height: 1.35;
+		max-width: 22ch;
 	}
 	.conf-menu-item {
 		display: flex; align-items: center; gap: 8px;

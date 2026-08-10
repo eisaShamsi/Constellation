@@ -34,7 +34,19 @@ pub struct FileEntry {
     pub created: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<u64>,
-    pub status: Option<String>,
+    // PJ-207 §15 — the `status` field is GONE, and with it the file read that produced it.
+    //
+    // Populating it opened and read EVERY .md file in the walked tree. Measured on the Boss's own
+    // library (803 notes, 130.6 MB): 3.62 s with it, 0.017 s without — a 200x difference paid on
+    // every tree walk, and the walk runs TWICE per note create and again inside the rename chain.
+    // That was the 7-second create.
+    //
+    // Nothing rendered it: `FileEntry.status` reached exactly one consumer, `OrgChart.svelte`,
+    // which copied it into a node object whose `status` appears in no markup. It cost seconds of
+    // the user's time per action to produce a value no pixel depended on.
+    //
+    // If a stage/status is ever wanted in the tree, it is already in `note_meta.properties_json`
+    // — read it from the index (Rule 8), never from 803 file handles.
     /// For canonical files: the human-readable title from frontmatter.
     /// Null for non-canonical files or folders.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -411,6 +423,102 @@ fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(
     Ok(())
 }
 
+/// PJ-207 §15 — the libraries under `root` that this Universe's registry does NOT own.
+/// Pure so it can be tested without an AppHandle (same shape as `try_load_libraries_at`).
+fn stranded_library_names(own: &[LibraryInfo], resolved: &[LibraryInfo], root: &str) -> Vec<String> {
+    let own_paths: std::collections::HashSet<String> =
+        own.iter().map(|l| crate::mig108::norm(&l.path)).collect();
+    resolved
+        .iter()
+        .filter(|l| crate::mig108::norm_under(&l.path, root))
+        .filter(|l| !own_paths.contains(&crate::mig108::norm(&l.path)))
+        .map(|l| l.name.clone())
+        .collect()
+}
+
+/// PJ-207 §15 — REFUSE a folder rename/move/delete that would strand a library
+/// belonging to a LINKED universe.
+///
+/// `retarget_registered_libraries` below can only rewrite the ACTIVE universe's own
+/// libraries.json — that is the only registry `save_libraries` writes. But the three
+/// folder commands authorize their path through `validate_path_in_any_library`, which
+/// resolves the FEDERATED set, so a folder that is (or contains) a library registered
+/// in a cUniverse's registry was fully actionable: the folder moved on disk, the
+/// retarget scanned the wrong registry, matched nothing and wrote nothing — and the
+/// child universe kept pointing at a path that no longer exists, so that library and
+/// every note in it silently vanished from the sidebar, from search attribution and
+/// from every resolver, with the command returning Ok. Refusing is the honest answer:
+/// writing into another universe's registry would make one universe the author of
+/// another's source of truth, and doing nothing while reporting success IS the bug.
+///
+/// Fail-CLOSED on an unreadable own registry — "absent is a fact, unreadable is an
+/// unknown": if we cannot tell which libraries are ours, we cannot promise to carry
+/// them, so we do not proceed.
+fn guard_no_foreign_library_under(app: &tauri::AppHandle, root: &str) -> Result<(), String> {
+    let own = try_load_libraries(app).map_err(|e| {
+        format!(
+            "This folder cannot be renamed, moved or deleted right now: the library registry \
+             could not be read ({e}), so Constellation cannot tell whether a library inside \
+             it belongs to a linked universe. Nothing was changed."
+        )
+    })?;
+    let stranded = stranded_library_names(&own, &load_all_libraries(app), root);
+    if stranded.is_empty() {
+        return Ok(());
+    }
+    Err(format!(
+        "This folder holds a library that belongs to a LINKED universe ({}). Constellation \
+         can only update the active universe's library registry, so this would leave that \
+         universe pointing at a folder that no longer exists and the library would \
+         disappear from its own sidebar. Open that universe and do it there. Nothing was \
+         changed.",
+        stranded.join(", ")
+    ))
+}
+
+#[cfg(test)]
+mod pj207_foreign_library_tests {
+    use super::{stranded_library_names, LibraryInfo};
+
+    fn lib(name: &str, path: &str) -> LibraryInfo {
+        LibraryInfo {
+            id: name.to_string(),
+            name: name.to_string(),
+            path: path.to_string(),
+            is_universe_notes: false,
+            canonical_mode: "native".to_string(),
+        }
+    }
+
+    #[test]
+    fn pj207_flags_a_linked_universes_library() {
+        let own = vec![lib("Mine", "E:/Universe A/Libraries/Mine")];
+        let resolved = vec![
+            lib("Mine", "E:/Universe A/Libraries/Mine"),
+            lib("Field Notes", "E:/Universe B/Libraries/Field Notes"),
+        ];
+        assert_eq!(
+            stranded_library_names(&own, &resolved, "E:/Universe B/Libraries"),
+            vec!["Field Notes".to_string()]
+        );
+    }
+
+    #[test]
+    fn pj207_own_library_never_flagged() {
+        // A false refusal would block a legitimate rename, so separator/case spelling
+        // differences between the two loaders must fold.
+        let own = vec![lib("Mine", "E:\\Universe A\\Libraries\\Mine")];
+        let resolved = vec![lib("Mine", "E:/universe a/Libraries/Mine")];
+        assert!(stranded_library_names(&own, &resolved, "E:/Universe A/Libraries").is_empty());
+    }
+
+    #[test]
+    fn pj207_folder_with_no_library_is_not_flagged() {
+        let own = vec![lib("Mine", "E:/Universe A/Libraries/Mine")];
+        assert!(stranded_library_names(&own, &own, "E:/Universe A/Notes").is_empty());
+    }
+}
+
 /// 2026-08-01 safety inspection — carry the LIBRARY REGISTRY through a folder
 /// rename/move/delete. A registered library nested under (or being) the affected
 /// folder otherwise keeps its dead pre-op path in libraries.json: it silently
@@ -474,10 +582,20 @@ fn retarget_registered_libraries(app: &tauri::AppHandle, old_root: &str, new_roo
     if changed {
         // save_libraries invalidates the libraries cache + embed indexes itself.
         if let Err(e) = save_libraries(app, &libs) {
-            eprintln!(
-                "[libraries] FAILED to update libraries.json after folder op on {}: {}",
+            // PJ-207 §15 — `eprintln!` alone meant this vanished in a release build: there is no
+            // console, so the ONLY record of it was gone. And what it reports is not minor — the
+            // folder has already moved on disk, so a failed rewrite leaves `libraries.json`
+            // pointing a registered library at a path that no longer exists, and that library
+            // silently disappears from the sidebar. Written to the universe's diagnostics log,
+            // which survives the process and is where every other rename/move tail reports.
+            let msg = format!(
+                "[libraries] FAILED to update libraries.json after folder op on {}: {} — a registered library may now point at a dead path",
                 old_root, e
             );
+            eprintln!("{}", msg);
+            if let Ok(p) = crate::search::db_path(app) {
+                crate::search::diag_log(&p, &msg);
+            }
         }
     }
 }
@@ -1467,6 +1585,11 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         if new_p.exists() {
             return Err("An item with this name already exists.".to_string());
         }
+        // PJ-207 §15 — refuse BEFORE the fs op if this folder holds a library from a
+        // LINKED universe: the retarget below can only write the active universe's own
+        // registry, so the rename stranded that library at a dead path and it silently
+        // disappeared from its own universe's sidebar, with no error anywhere.
+        guard_no_foreign_library_under(&app, &old_path)?;
         // 2026-08-01 inspection — ensure-or-refuse BEFORE the fs op (same treatment
         // as move_item/delete_path): the descendant DB cascade below is guarded by
         // `if let Some(conn)` and silently skips while state.db is still None (the
@@ -1487,32 +1610,22 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         // DB cascade for every descendant note, on the same proven path a .md rename
         // uses. A folder rename never changes a note's title, so no frontmatter rewrite
         // and no 'rename' alias — only the path migration + a content-neutral reindex.
-        {
-            use tauri::Manager;
-            let search_state = app.state::<crate::search::SearchState>();
-            let libs = load_all_libraries(&app);
-            let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
-            collect_md_paths(new_p, &mut md_paths);
-            if let Ok(guard) = search_state.db.lock() {
-                if let Some(conn) = guard.as_ref() {
-                    for new_desc in &md_paths {
-                        if let Ok(rel) = new_desc.strip_prefix(new_p) {
-                            let old_desc = old.join(rel);
-                            migrate_note_db_paths(conn, &old_desc.to_string_lossy(), &new_desc.to_string_lossy());
-                        }
-                    }
-                }
-            }
-            // Refresh each note's content/links/library at the new path (outside the
-            // lock; reindex_single_note takes it itself). upsert_schedule_row then
-            // preserves the migrated schedule.
-            for new_desc in &md_paths {
-                let nd = new_desc.to_string_lossy().to_string();
-                if let Some(name) = library_name_for_path(&libs, &nd) {
-                    let _ = crate::search::reindex_single_note(&search_state, &nd, &name);
-                }
-            }
-        }
+        //
+        // PJ-207 §15 — DETACHED, like the .md branch's tail below and `move_item`'s. This
+        // ran inline on the awaited IPC surface: it took the global SearchState writer lock
+        // and held it across `migrate_note_db_paths` for EVERY descendant, then reindexed
+        // each one — so renaming a folder of a couple of thousand notes left the whole app
+        // waiting on a single await, with every other DB caller queued behind the lock. The
+        // fs state is final at this point and every statement in the tail is best-effort, so
+        // the command returns as soon as the folder is renamed. This is the PJ-066 rule (an
+        // awaited IPC surface must never include an unbounded writer-lock wait) applied to
+        // the one rename branch that still violated it.
+        let tail_app = app.clone();
+        let tail_old = old_path.clone();
+        let tail_new = new_path.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            rename_folder_db_tail(&tail_app, &tail_old, &tail_new);
+        });
         return Ok(new_path);
     }
 
@@ -1670,6 +1783,88 @@ fn rename_item_db_tail(
         }
     }
     log("[rename-tail] END");
+}
+
+/// A folder rename's DB bookkeeping for every descendant note, detached from the awaited IPC
+/// surface (PJ-207 §15 — see `rename_item`'s folder branch). A folder rename never changes a
+/// note's title, so there is no frontmatter rewrite and no 'rename' alias: only the path
+/// migration plus a content-neutral reindex.
+///
+/// Every operation is best-effort — the filesystem state is already final and is the source of
+/// truth — but a failure is LOGGED rather than dropped: a descendant whose reindex fails is a
+/// note that keeps stale content/links in the index at its new path, and the diagnostics log is
+/// the only way to tell that from a clean run afterwards.
+fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str) {
+    use tauri::Manager;
+    let dbp = crate::search::db_path(app).ok();
+    let log = |m: &str| { if let Some(p) = &dbp { crate::search::diag_log(p, m); } };
+
+    let old = Path::new(old_path);
+    let new_p = Path::new(new_path);
+    let search_state = app.state::<crate::search::SearchState>();
+    let libs = load_all_libraries(app);
+    let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
+    collect_md_paths(new_p, &mut md_paths);
+    log(&format!(
+        "[rename-folder-tail] START old={} new={} descendants={}",
+        old_path,
+        new_path,
+        md_paths.len()
+    ));
+
+    // PJ-207 §15 — migrate in BOUNDED BATCHES, releasing the global writer lock between them.
+    //
+    // Detaching this tail to a worker (above) took it off the awaited IPC, but it still took
+    // `state.db` ONCE and held it across every descendant: measured at 19.79 ms per note, an
+    // 803-note folder held the app's only writer for ~15.9 seconds, during which search,
+    // backlinks, the index panel and every save's reindex were blocked. Moving a freeze off the
+    // caller's await does not help if it freezes everyone else instead.
+    //
+    // Nothing needs the whole set under one lock: `migrate_note_db_paths` opens its own
+    // BEGIN IMMEDIATE/COMMIT per note, so there is no cross-note transaction to preserve. This is
+    // the PJ-066 rule this file already applies elsewhere — a multi-second derived-data pass must
+    // not hold the writer lock — applied to the one loop that still broke it.
+    const MIGRATE_BATCH: usize = 50;
+    for chunk in md_paths.chunks(MIGRATE_BATCH) {
+        if let Ok(guard) = search_state.db.lock() {
+            if let Some(conn) = guard.as_ref() {
+                for new_desc in chunk {
+                    if let Ok(rel) = new_desc.strip_prefix(new_p) {
+                        let old_desc = old.join(rel);
+                        migrate_note_db_paths(conn, &old_desc.to_string_lossy(), &new_desc.to_string_lossy());
+                    }
+                }
+            }
+        }
+        // Guard dropped here — another caller gets the writer between batches.
+        std::thread::yield_now();
+    }
+
+    // Refresh each note's content/links/library at the new path (outside the lock;
+    // reindex_single_note takes it itself). upsert_schedule_row preserves the migrated schedule.
+    let mut failed = 0usize;
+    let mut skipped = 0usize;
+    for new_desc in &md_paths {
+        let nd = new_desc.to_string_lossy().to_string();
+        match library_name_for_path(&libs, &nd) {
+            Some(name) => {
+                if let Err(e) = crate::search::reindex_single_note(&search_state, &nd, &name) {
+                    failed += 1;
+                    log(&format!("[rename-folder-tail] reindex ERROR {}: {}", nd, e));
+                }
+            }
+            None => {
+                skipped += 1;
+                log(&format!("[rename-folder-tail] NO LIBRARY matched {} — reindex SKIPPED", nd));
+            }
+        }
+    }
+    log(&format!(
+        "[rename-folder-tail] END descendants={} failed={} skipped={}",
+        md_paths.len(),
+        failed,
+        skipped
+    ));
 }
 
 /// MIG-003 Step 0 — Convert a note title into a safe filename
@@ -1992,7 +2187,17 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
     let Some(end) = after_first.find("\n---") else {
         return content.to_string();
     };
-    let fm = &after_first[..end];
+    // PJ-207 §15 — strip the newline that follows the opening `---`, exactly as the sibling
+    // `set_frontmatter_parent` (below) already does. Without it `fm` began with that newline, so
+    // `fm.lines()` yielded an EMPTY first line, which fell through to the catch-all push and was
+    // re-emitted. Since the result is rebuilt as `---\n{joined}\n---`, the note gained one blank
+    // line inside its frontmatter on EVERY rename — a note renamed a dozen times carries a dozen
+    // blank lines above its title.
+    let fm_raw = &after_first[..end];
+    let fm = fm_raw
+        .strip_prefix("\r\n")
+        .or_else(|| fm_raw.strip_prefix('\n'))
+        .unwrap_or(fm_raw);
     let body = &after_first[end + 4..];
 
     let mut new_lines: Vec<String> = Vec::new();
@@ -2060,11 +2265,9 @@ fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> 
             if value.starts_with('[') && value.ends_with(']') {
                 // Inline array: aliases: [a, b, c]
                 let inner = &value[1..value.len() - 1];
-                let existing: Vec<String> = inner
-                    .split(',')
-                    .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
+                // PJ-207 §15 — quote-aware; a raw split tore `"Ibn Khaldūn, ʿAbd al-Raḥmān"`
+                // into two bogus aliases and destroyed the real one on every rename.
+                let existing: Vec<String> = crate::yaml_lines::split_flow_seq_items(inner);
                 old_title_in_aliases = existing.iter().any(|a| a == old_title);
                 // Convert to list format for consistency
                 new_lines.push("aliases:".to_string());
@@ -2230,8 +2433,8 @@ fn remove_frontmatter_contains_item(content: &str, child: &str) -> String {
             if value.starts_with('[') && value.ends_with(']') {
                 // Inline array.
                 let inner = &value[1..value.len() - 1];
-                let kept: Vec<String> = inner
-                    .split(',')
+                let kept: Vec<String> = crate::yaml_lines::split_flow_seq_items(inner)
+                    .into_iter()
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty() && !matches_target(s))
                     .collect();
@@ -2363,6 +2566,10 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     if dest.exists() {
         return Err("An item with this name already exists in the target folder.".to_string());
     }
+    // PJ-207 §15 — same refusal as rename_item's folder branch: the retarget below can
+    // only write the ACTIVE universe's registry, so moving a folder that holds a linked
+    // universe's library stranded it at a dead path with no error anywhere.
+    guard_no_foreign_library_under(&app, &source_path)?;
     let source_is_dir = source.is_dir();
     // MIG-076 §A2 — gated rename (both paths locked, AV retry, journaled).
     crate::write_gate::gate_rename(source, &dest, "move_item")?;
@@ -2436,9 +2643,26 @@ fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) 
     }
     // Refresh content/links/library at the new path (reindex takes the lock itself;
     // upsert_schedule_row preserves the migrated schedule). Longest-root-wins resolver.
+    //
+    // PJ-207 §15 — the failure is LOGGED, not dropped. `let _ =` here meant a moved note whose
+    // reindex failed kept stale content and links in the index at its new path, with nothing
+    // anywhere to say so; every sibling on this path already logs. Still best-effort: the move
+    // itself is final on disk and must not be reported as failed because bookkeeping missed.
+    let dbp = crate::search::db_path(app).ok();
+    let mut failed = 0usize;
     for (_old_p, new_p) in &pairs {
         if let Some(name) = library_name_for_path(&libs, new_p) {
-            let _ = crate::search::reindex_single_note(&search_state, new_p, &name);
+            if let Err(e) = crate::search::reindex_single_note(&search_state, new_p, &name) {
+                failed += 1;
+                if let Some(p) = &dbp {
+                    crate::search::diag_log(p, &format!("[move-tail] reindex ERROR {}: {}", new_p, e));
+                }
+            }
+        }
+    }
+    if failed > 0 {
+        if let Some(p) = &dbp {
+            crate::search::diag_log(p, &format!("[move-tail] {} of {} descendants failed to reindex", failed, pairs.len()));
         }
     }
 }
@@ -2630,17 +2854,34 @@ fn run_cross_library_resolution(
         .map(|l| norm_lib_path(&l.path))
         .collect();
 
+    // PJ-207 §15 — ask the FEDERATED index once, BEFORE the reader lock is taken (see
+    // `federated_title_candidates` for why here, and for the measurement that made it necessary).
+    let folded_name = crate::search::fold_match_key(target);
+    let folded_alias = crate::search::normalize_alias_for_match(target);
+    let fed = federated_title_candidates(app, &folded_name, &folded_alias);
+    let fed_slice = fed.as_deref();
+
     let state = app.state::<crate::search::SearchState>();
     // Reader connection available → OWN libraries resolve via indexed seek. If the
     // DB isn't ready (pre-init / mid universe-switch) with_read_conn errors →
     // pure filesystem walk for everything (correct, just not accelerated).
     match crate::search::with_read_conn(state.inner(), |conn| {
-        let ctx = ResolveCtx { own_paths: &own_paths, conn: Some(conn), skip_stem };
+        let ctx = ResolveCtx {
+            own_paths: &own_paths,
+            conn: Some(conn),
+            skip_stem,
+            federated_hits: fed_slice,
+        };
         Ok(resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx))
     }) {
         Ok(v) => v,
         Err(_) => {
-            let ctx = ResolveCtx { own_paths: &own_paths, conn: None, skip_stem };
+            let ctx = ResolveCtx {
+                own_paths: &own_paths,
+                conn: None,
+                skip_stem,
+                federated_hits: fed_slice,
+            };
             resolve_wikilink_cross_library_impl(libraries, current_library_path, target, &ctx)
         }
     }
@@ -2687,6 +2928,24 @@ struct ResolveCtx<'a> {
     // pure index seek on own libs — no directory walk (324 ms → sub-10 ms). The
     // wikilink-RESOLUTION callers keep skip_stem=false (stem stage intact).
     skip_stem: bool,
+    /// PJ-207 §15 — the FEDERATED half of MIG-099's acceleration, pre-computed.
+    ///
+    /// MIG-099 made the title/alias lookup an index seek for own libraries and left federated ones
+    /// on the filesystem walk, reasoning that "federated trees are small". Measured on the Boss's
+    /// setup that is false by roughly 4x in the wrong direction: his active universe holds 2,104
+    /// notes and the universe he links to holds 7,964. The collision check runs on every note
+    /// CREATE and every RENAME with `skip_stem = true`, which skips the cheap filename stage — so
+    /// both actions read all 7,964 files to inspect their frontmatter. That is the 54-second
+    /// create and the 50-second rename he reported.
+    ///
+    /// `None` means "no federated index available" (federation not ready, nothing attached, or the
+    /// query failed) and the walk still runs — the old behaviour, correct but slow. `Some` is
+    /// AUTHORITATIVE, exactly as the own-library index result is: an empty list means "not there",
+    /// not "look harder".
+    ///
+    /// Computed ONCE by the caller before any other lock is taken, so the federation locks never
+    /// nest inside the reader lock.
+    federated_hits: Option<&'a [String]>,
 }
 
 /// Resolve `raw_target` within a single library, preserving the two-stage
@@ -2761,8 +3020,35 @@ fn resolve_in_library(
         // is_own but reader not ready → fall through to the walk (safe, slow).
     }
 
-    // Federated library, or own-but-index-unavailable → bounded walk of THIS
-    // library only (never the 2 GB own universe — federated trees are small).
+    // PJ-207 §15 — a FEDERATED library resolves from the pre-computed index hits when we have
+    // them, for the same reason an own library does: the alternative is reading every file in a
+    // linked universe that may be far larger than this one. Same authority rule as the own branch
+    // — a hit list we HAVE is trusted even when empty; only its absence falls through to the walk.
+    if !is_own {
+        // PJ-207 §15 — and if there is NO federated index to ask, the title-COLLISION check does
+        // not walk a linked universe at all.
+        //
+        // That check (`skip_stem`) exists to warn "a note with this title already exists" before a
+        // create or a rename. Answering it by reading every file of a universe that is not this
+        // one — 7,964 of them, measured — is disproportionate to a warning dialog, and it is what
+        // froze the app for ~50 s per note while the federation was still attaching in the
+        // background. Wikilink RESOLUTION (`skip_stem == false`) is a different question — it must
+        // find the note the user is trying to reach — so it keeps the walk.
+        if ctx.skip_stem && ctx.federated_hits.is_none() {
+            return;
+        }
+        if let Some(hits) = ctx.federated_hits {
+            for p in hits {
+                if path_under_library(p, &norm) && !has_dot_segment(p) && Path::new(p).exists() {
+                    matches.push(PathBuf::from(p));
+                }
+            }
+            return;
+        }
+    }
+
+    // Own-but-index-unavailable, or federated with no federated index → bounded walk of THIS
+    // library only.
     find_note_by_title_or_alias(library_dir, &target_lower, matches, 0);
 }
 
@@ -2961,7 +3247,7 @@ fn has_alias(content: &str, target: &str) -> bool {
             let value = trimmed["aliases:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
                 let inner = &value[1..value.len()-1];
-                for alias in inner.split(',') { if matches(alias) { return true; } }
+                for alias in crate::yaml_lines::split_flow_seq_items(inner) { if matches(&alias) { return true; } }
                 in_aliases = false;
             } else if !value.is_empty() {
                 if matches(value) { return true; }
@@ -3053,6 +3339,72 @@ pub(crate) fn has_dot_segment_pub(path: &str) -> bool {
 /// with fold_match_key / normalize_alias_for_match respectively (the write-side
 /// folds). Errs only on a genuine SQL failure — the caller then degrades that
 /// library to the bounded walk (correctness over speed).
+/// PJ-207 §15 — every path in the ATTACHed cUniverses whose title or alias matches, in ONE pass.
+///
+/// Mirrors `query_index_candidates` per attached schema. Returns `None` when there is no federated
+/// index to ask (federation not ready, nothing attached, connection absent or poisoned), which is
+/// the caller's signal to keep the old filesystem walk rather than wrongly concluding "not found".
+///
+/// A single schema failing (a cUniverse mid-detach, a schema-drifted child) drops THAT schema and
+/// keeps the rest: partial acceleration beats failing the whole lookup, and the paths it does
+/// return are still stat-guarded by the caller.
+///
+/// Lock order note: this takes `federation` then `federated_conn` — the same order
+/// `federated_lexical_search` uses — and it is called BEFORE `with_read_conn`, so the reader lock
+/// is never held while these are acquired.
+fn federated_title_candidates(
+    app: &tauri::AppHandle,
+    folded_name: &str,
+    folded_alias: &str,
+) -> Option<Vec<String>> {
+    use tauri::Manager;
+    let state = app.state::<crate::search::SearchState>();
+
+    let aliases: Vec<String> = {
+        let ctx = state.federation.lock().ok()?;
+        if !ctx.is_ready() {
+            return None;
+        }
+        ctx.attached().iter().map(|(alias, _)| alias.clone()).collect()
+    };
+    if aliases.is_empty() {
+        return None;
+    }
+
+    let guard = state.federated_conn.lock().ok()?;
+    let conn = guard.as_ref()?;
+
+    let mut out: Vec<String> = Vec::new();
+    for alias in &aliases {
+        // `alias` is generated by attach.rs and guaranteed alphanumeric, so interpolating it as a
+        // schema identifier is safe; the VALUES stay bound parameters.
+        let sql = format!(
+            "SELECT path FROM {a}.note_meta WHERE name_lower = ?1 \
+             UNION \
+             SELECT path FROM {a}.note_meta WHERE name_lower IS NULL AND LOWER(name) = ?1",
+            a = alias
+        );
+        if let Ok(mut stmt) = conn.prepare(&sql) {
+            if let Ok(rows) = stmt.query_map([folded_name], |r| r.get::<_, String>(0)) {
+                for r in rows.flatten() {
+                    out.push(r);
+                }
+            }
+        }
+        if !folded_alias.is_empty() {
+            let sql = format!("SELECT path FROM {a}.note_aliases WHERE alias_lower = ?1", a = alias);
+            if let Ok(mut stmt) = conn.prepare(&sql) {
+                if let Ok(rows) = stmt.query_map([folded_alias], |r| r.get::<_, String>(0)) {
+                    for r in rows.flatten() {
+                        out.push(r);
+                    }
+                }
+            }
+        }
+    }
+    Some(out)
+}
+
 fn query_index_candidates(
     conn: &rusqlite::Connection,
     folded_name: &str,
@@ -3280,33 +3632,6 @@ pub fn create_new_library_at(
     add_library(app, path_str)
 }
 
-/// Extract the `status` value from a markdown file's YAML frontmatter.
-/// Reads only the first 512 bytes for performance.
-fn extract_frontmatter_status(path: &Path) -> Option<String> {
-    use std::io::Read;
-    let mut file = fs::File::open(path).ok()?;
-    let mut buf = [0u8; 512];
-    let n = file.read(&mut buf).ok()?;
-    let text = std::str::from_utf8(&buf[..n]).ok()?;
-    let mut lines = text.lines();
-    // Must start with ---
-    if lines.next()?.trim() != "---" {
-        return None;
-    }
-    for line in lines {
-        let trimmed = line.trim();
-        if trimmed == "---" || trimmed == "..." {
-            break;
-        }
-        if let Some(rest) = trimmed.strip_prefix("status:") {
-            let val = rest.trim().trim_matches('"').trim_matches('\'').to_lowercase();
-            if matches!(val.as_str(), "seedling" | "growing" | "evergreen") {
-                return Some(val);
-            }
-        }
-    }
-    None
-}
 
 /// `exclude` holds the normalized paths (`\`→`/`, no trailing slash, lowercased) of
 /// every registered library OTHER than the one whose tree is being read. Any child
@@ -3377,12 +3702,6 @@ fn read_dir_recursive(
             None
         };
 
-        let status = if !is_dir && extension.as_deref() == Some("md") {
-            extract_frontmatter_status(&path)
-        } else {
-            None
-        };
-
         // For canonical files, extract the frontmatter title as display name
         let display_title = if !is_dir
             && extension.as_deref() == Some("md")
@@ -3405,7 +3724,6 @@ fn read_dir_recursive(
             modified,
             created,
             size,
-            status,
             display_title,
         });
     }
@@ -6312,8 +6630,9 @@ pub fn update_links_on_rename(
     crate::write_gate::journal_marker(Path::new(&library_path), "cascade_enter");
     // §2: compile the regex once per cascade, reuse it across every file
     // visited. `regex::escape` keeps titles with metacharacters safe
-    // (`§2 Round3`, `Foo (bar)`, `a.b`, etc.).
-    let pattern = format!(r"\[\[({})(\]\]|\|)", regex::escape(&old_name));
+    // (`§2 Round3`, `Foo (bar)`, `a.b`, etc.). One shared builder — see
+    // `cascade_pattern`, which the test helper uses too so the two cannot drift.
+    let pattern = cascade_pattern(&old_name);
     let re = match regex::Regex::new(&pattern) {
         Ok(r) => r,
         Err(e) => return Err(format!("Failed to build cascade regex: {}", e)),
@@ -6329,13 +6648,18 @@ pub fn update_links_on_rename(
         .map(|p| path_identity_key(Path::new(p)))
         .collect();
     let mut excluded_hit: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // PJ-207 §15 — the linked-universe boundary for this walk. Best-effort by construction: an
+    // unresolvable federation yields an empty set, which is exactly the previous behaviour.
+    let own_libs = try_load_libraries(&app).unwrap_or_default();
+    let foreign = foreign_library_roots(&app, &own_libs);
     update_links_recursive(
         Path::new(&library_path),
         &re,
-        &new_name,
         &mut result,
         &exclude,
         &mut excluded_hit,
+        &foreign,
+        &new_name,
     );
     // Hardening — a normalization miss is otherwise invisible-until-loss: an exclude
     // entry that matched NO walked file may be a defeated exclusion. Make it visible.
@@ -6434,13 +6758,46 @@ pub fn update_links_on_rename(
     Ok(result)
 }
 
+/// PJ-207 §15 — `foreign` is the set of roots this walk must NOT cross: a LINKED universe's
+/// libraries.
+///
+/// The cascade now starts at the Universe ROOT so a referrer in a sibling library is reached — a
+/// wikilink resolves universe-wide, and walking one library left every such referrer pointing at a
+/// name that no longer exists. Every own library lives under that root by MIG-108, so ONE walk
+/// covers them all. A cUniverse's notes are a different universe's files, and rewriting them on
+/// OUR rename would be editing a knowledge base this universe does not own.
+///
+/// This was the one tree walker in the file with no boundary notion at all; the set is built by the
+/// same `foreign_library_roots` its siblings use, so the two cannot drift apart.
 fn update_links_recursive(
     dir: &Path,
     re: &regex::Regex,
-    new_name: &str,
     result: &mut CascadeResult,
     exclude: &std::collections::HashSet<String>,
     excluded_hit: &mut std::collections::HashSet<String>,
+    foreign: &std::collections::HashSet<String>,
+    new_name: &str,
+) {
+    // PJ-207 §15 — walk to COLLECT (no file reads), then rewrite in parallel. Split so the
+    // expensive half can be parallel while the exclusion bookkeeping stays single-threaded and
+    // deterministic.
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    collect_cascade_candidates(dir, exclude, excluded_hit, foreign, &mut candidates);
+    rewrite_candidates(&candidates, re, new_name, result);
+}
+
+/// The walk half of the cascade: every `.md` under `dir` that is a rewrite candidate.
+///
+/// No file is opened here — that is the point (PJ-207 §15). Boundaries preserved exactly: dot
+/// entries skipped, symlinks skipped, a linked universe's root not crossed, and a note the
+/// frontend could not flush excluded by file IDENTITY (never a string compare — the Arabic-root
+/// NFC / 8.3 / `\\?\` hazards), recording the hit so a defeated exclusion stays visible.
+fn collect_cascade_candidates(
+    dir: &Path,
+    exclude: &std::collections::HashSet<String>,
+    excluded_hit: &mut std::collections::HashSet<String>,
+    foreign: &std::collections::HashSet<String>,
+    candidates: &mut Vec<std::path::PathBuf>,
 ) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -6452,18 +6809,27 @@ fn update_links_recursive(
         // copy_dir_recursive). This was the ONE tree walker without it, so a
         // directory-junction cycle inside a library recursed unboundedly
         // (stack overflow / hang) on every rename cascade.
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
+        // PJ-207 §15 — ONE `file_type()` for both questions. `path.is_dir()` re-stats an entry
+        // the directory read already classified: measured 752.7 ms -> 2.3 ms of stat time on the
+        // Boss's tree, per rename.
+        let ft = entry.file_type().ok();
+        if ft.map(|t| t.is_symlink()).unwrap_or(false) {
             continue;
         }
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
-        if path.is_dir() {
-            update_links_recursive(&path, re, new_name, result, exclude, excluded_hit);
+        if ft.map(|t| t.is_dir()).unwrap_or_else(|| path.is_dir()) {
+            // Stop at a linked universe's root — see this function's doc comment.
+            if is_nested_library(&path, foreign) {
+                continue;
+            }
+            collect_cascade_candidates(&path, exclude, excluded_hit, foreign, candidates);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            // A file that vanished mid-walk (concurrent move/delete) is
-            // silently skipped — same semantics as the old `if let Ok(read)`.
-            if !path.exists() { continue; }
+            // PJ-207 §15 — the `exists()` check that stood here is gone. It could not close the
+            // race it looked like it closed (the file can still vanish between the check and the
+            // read), and the read's own `Err` arm below already records a vanished file
+            // identically. It only bought a stat per markdown file.
             // PJ-092 — a note the frontend could NOT flush is EXCLUDED: never rewrite
             // its disk (identity match, not a raw string compare — the Arabic-root
             // NFC/8.3/\\?\ hazards). Only pays the per-file canonicalize when there IS
@@ -6475,15 +6841,54 @@ fn update_links_recursive(
                     continue;
                 }
             }
-            // Note-open-freeze Batch-2 §B2-4 (2026-07-03): the per-file
-            // read→rewrite→write now runs as ONE gated critical section
-            // (gate_rmw — the per-path lock held across the WHOLE cycle), so
-            // an editor save of THIS file can land before or after its
-            // rewrite but never inside it (the lost-update window the SYNC
-            // dispatch used to mask). The lock is held per FILE (bounded ms),
-            // released before the walker moves on — never across the walk.
+            // PJ-207 §15 — COLLECT here; the read/rewrite/write happens in parallel afterwards
+            // (see `rewrite_candidates`). The walk itself performs no file reads at all.
+            candidates.push(path);
+        }
+    }
+}
+
+/// PJ-207 §15 — rewrite the collected candidates IN PARALLEL.
+///
+/// The cascade's cost is not the regex, it is 140.8 MB of markdown read one file at a time:
+/// measured 8.3-8.5 s per rename on the Boss's universe, live, and the whole of his remaining
+/// 7-9 s once the tree walk was fixed.
+///
+/// Parallelising is safe by construction here, and that is worth stating precisely rather than
+/// assuming: `gate_rmw` takes a lock keyed on the PATH, so two different files share nothing —
+/// there is no global writer to serialise on, and the invariant it exists to hold (an editor save
+/// of a file lands before or after its rewrite, never inside it) is per-file and unaffected by how
+/// many other files are in flight.
+///
+/// Order is preserved. `par_iter().map(...).collect()` keeps input order, and the merge below is
+/// sequential, so `rewritten`, `failed` and the truncation count come out byte-identical to the
+/// old one-at-a-time walk. That matters: `rewritten` is what the frontend re-reads into open tabs.
+///
+/// The RIGHT fix is not this — it is to ask `note_links.target_name` which notes actually refer to
+/// the renamed title (1.8 ms instead of 8.5 s, and the median rename touches ONE file, not 2,105).
+/// That is blocked on normalising `target_name`: 290 rows currently store the anchor or the
+/// predicate head inside it, so an index seek would silently skip those referrers — precisely the
+/// invisible miss this migration's regex fix was written to close. It is a stored-derived-view and
+/// write-path change, i.e. its own `/migration`, and it must not be smuggled in behind a speedup.
+fn rewrite_candidates(
+    candidates: &[std::path::PathBuf],
+    re: &regex::Regex,
+    new_name: &str,
+    result: &mut CascadeResult,
+) {
+    use rayon::prelude::*;
+
+    enum Outcome {
+        Rewritten(String),
+        Unchanged,
+        Failed(String, String),
+    }
+
+    let outcomes: Vec<Outcome> = candidates
+        .par_iter()
+        .map(|path| {
             let mut changed = false;
-            match crate::write_gate::gate_rmw(&path, "cascade", |content| {
+            match crate::write_gate::gate_rmw(path, "cascade", |content| {
                 let updated = rewrite_wikilinks_in_text(content, re, new_name);
                 if updated != content {
                     changed = true;
@@ -6492,17 +6897,22 @@ fn update_links_recursive(
                     Ok(None)
                 }
             }) {
-                Ok(_) if changed => result.rewritten.push(path.to_string_lossy().to_string()),
-                Ok(_) => {} // unchanged — nothing to record
-                Err(e) => {
-                    if result.failed.len() < MAX_FAILED_REPORTED {
-                        result.failed.push((
-                            path.to_string_lossy().to_string(),
-                            e.to_string(),
-                        ));
-                    } else {
-                        result.failed_truncated += 1;
-                    }
+                Ok(_) if changed => Outcome::Rewritten(path.to_string_lossy().to_string()),
+                Ok(_) => Outcome::Unchanged,
+                Err(e) => Outcome::Failed(path.to_string_lossy().to_string(), e.to_string()),
+            }
+        })
+        .collect();
+
+    for o in outcomes {
+        match o {
+            Outcome::Rewritten(p) => result.rewritten.push(p),
+            Outcome::Unchanged => {}
+            Outcome::Failed(p, e) => {
+                if result.failed.len() < MAX_FAILED_REPORTED {
+                    result.failed.push((p, e));
+                } else {
+                    result.failed_truncated += 1;
                 }
             }
         }
@@ -6511,34 +6921,71 @@ fn update_links_recursive(
 
 /// MIG-006 §2 — regex-based wikilink rewrite.
 ///
-/// Matches `[[old]]` and `[[old|...]]` (display, link-type, alias-pipe-type
-/// combos). Leading `!` for embeds is untouched because the regex anchors
-/// on `[[` — `![[X]]` rewrites cleanly. The trailing delimiter (`]]` or `|`)
-/// is captured and re-emitted so we never alter `|display`, `|link-type`,
-/// or `|alias|link-type` tails.
+/// Matches every wikilink form Constellation authors or parses with the title in
+/// the target position: `[[Old]]`, `[[Old|display]]`, `[[Old|display|type]]`,
+/// `[[type::Old]]`, `[[type::Old|display]]`, `[[Old#Heading]]`, `[[Old^block]]`.
+/// Leading `!` for embeds is untouched because the pattern anchors on `[[`.
+/// Groups: 1 = predicate head (optional), 2 = spacing after `::`, 3 = title,
+/// 4 = delimiter (`]]`, `|`, `#`, `^`) — re-emitted, so no display text, type
+/// tail, heading or block id is ever altered.
 ///
-/// Prefix-collision safety: `[[Foo]]` rename to `Bar` does NOT touch
-/// `[[Foo Bar]]` or `[[Foo_v2]]` — the delimiter alternation `(\]\]|\|)`
-/// requires the next char after the title to be either `]]` or `|`,
-/// nothing else.
+/// PJ-207 §15 — this used to be `\[\[({old})(\]\]|\|)`, which matched NEITHER the
+/// app's own canonical typed link `[[type::Target]]` (the form the editor's
+/// autocomplete inserts and `parse_link_body` reads as canonical) NOR any anchored
+/// link. A rename left every one of those on disk still naming the OLD title, and
+/// the miss was invisible: a file the walker does not change is recorded as
+/// unchanged, never as failed, so the rename reported plain success. Those links
+/// kept resolving only through the alias the rename stamps — until any other note
+/// took the freed title, at which point exact-title resolution beat the alias and
+/// they silently pointed at a DIFFERENT note.
+fn cascade_pattern(old_name: &str) -> String {
+    format!(
+        r"\[\[(?:([^\[\]\|#\^:\r\n]{{1,64}})::([ \t]*))?({})(\]\]|\||#|\^)",
+        regex::escape(old_name)
+    )
+}
+
+/// MIG-006 §2 — the rewrite itself.
+///
+/// Prefix-collision safety is unchanged: `[[Foo]]` → `Bar` still does NOT touch
+/// `[[Foo Bar]]` or `[[Foo_v2]]` — the delimiter alternation requires the next char
+/// after the title to be one of `]]`, `|`, `#`, `^`, nothing else.
 fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -> String {
     re.replace_all(content, |caps: &regex::Captures| {
-        let delim = caps.get(2).map(|m| m.as_str()).unwrap_or("]]");
-        format!("[[{}{}", new_name, delim)
+        let delim = caps.get(4).map(|m| m.as_str()).unwrap_or("]]");
+        match caps.get(1) {
+            Some(head) => {
+                // Only a REGISTERED type makes this a typed link. `[[Foo::Old]]` where
+                // `Foo` is not a type has the whole string `Foo::Old` as its target — a
+                // different note from `Old`, and rewriting its tail would re-point a link
+                // the rename never touched. Same check parse_link_body uses.
+                if crate::link_types::is_known_type(&head.as_str().trim().to_lowercase()) {
+                    let gap = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+                    format!("[[{}::{}{}{}", head.as_str(), gap, new_name, delim)
+                } else {
+                    caps.get(0).map(|m| m.as_str().to_string()).unwrap_or_default()
+                }
+            }
+            None => format!("[[{}{}", new_name, delim),
+        }
     })
     .into_owned()
 }
 
 #[cfg(test)]
 fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
-    let pattern = format!(r"\[\[({})(\]\]|\|)", regex::escape(old_name));
-    let re = regex::Regex::new(&pattern).unwrap();
+    // PJ-207 §15 — build through the SAME `cascade_pattern` the command uses. This held
+    // its own inline copy of the regex, so every test below could keep passing against a
+    // pattern production had stopped using: exactly the drift that let the typed-link and
+    // anchor misses sit unnoticed under a green suite.
+    let re = regex::Regex::new(&cascade_pattern(old_name)).unwrap();
     rewrite_wikilinks_in_text(content, &re, new_name)
 }
 
 #[cfg(test)]
 mod cascade_walker_tests {
     use super::{
+        cascade_pattern, // PJ-207 §15 — the tests build the PRODUCTION pattern, never a copy
         collect_md_paths, free_trash_name, move_into_trash_folder, path_identity_key,
         rewrite_for_test, trash_move_decolliding, update_links_recursive, CascadeResult,
         TrashMoveOutcome,
@@ -6581,7 +7028,13 @@ mod cascade_walker_tests {
         std::fs::write(&excluded, "links [[Old]] here").unwrap();
         std::fs::write(&rewritten, "links [[Old]] here").unwrap();
 
-        let re = regex::Regex::new(&format!(r"\[\[({})(\]\]|\|)", regex::escape("Old"))).unwrap();
+        // PJ-207 §15 — built through `cascade_pattern`, the pattern PRODUCTION uses. These two
+        // tests each held their own inline copy, and the copy went stale the moment the real
+        // pattern grew its typed-link and anchor groups: the tests kept passing against a regex
+        // the app had stopped using, and then failed loudly (0 rewrites) when the replacement
+        // function was taught to read the new groups. A test that builds its own copy of the
+        // thing under test is not testing it.
+        let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
         let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
         // Exclude the note using a DELIBERATELY different separator form than the
         // walker will produce — the identity key must still match (the sharp edge).
@@ -6590,7 +7043,7 @@ mod cascade_walker_tests {
             [excluded_alt_sep].iter().map(|p| path_identity_key(Path::new(p))).collect();
         let mut hit: HashSet<String> = HashSet::new();
 
-        update_links_recursive(dir.path(), &re, "New", &mut result, &exclude, &mut hit);
+        update_links_recursive(dir.path(), &re, &mut result, &exclude, &mut hit, &HashSet::new(), "New");
 
         assert_eq!(result.rewritten.len(), 1, "exactly the non-excluded file is rewritten");
         assert!(result.rewritten[0].contains("Rewritten"));
@@ -6782,10 +7235,16 @@ mod cascade_walker_tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("A.md"), "[[Old]]").unwrap();
         std::fs::write(dir.path().join("B.md"), "[[Old]]").unwrap();
-        let re = regex::Regex::new(&format!(r"\[\[({})(\]\]|\|)", regex::escape("Old"))).unwrap();
+        // PJ-207 §15 — built through `cascade_pattern`, the pattern PRODUCTION uses. These two
+        // tests each held their own inline copy, and the copy went stale the moment the real
+        // pattern grew its typed-link and anchor groups: the tests kept passing against a regex
+        // the app had stopped using, and then failed loudly (0 rewrites) when the replacement
+        // function was taught to read the new groups. A test that builds its own copy of the
+        // thing under test is not testing it.
+        let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
         let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
         let mut hit: HashSet<String> = HashSet::new();
-        update_links_recursive(dir.path(), &re, "New", &mut result, &HashSet::new(), &mut hit);
+        update_links_recursive(dir.path(), &re, &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
         assert_eq!(result.rewritten.len(), 2, "empty exclude rewrites everything (rollback-equivalent)");
     }
 
@@ -6896,6 +7355,52 @@ mod cascade_walker_tests {
             "§2 Round3_v4",
         );
         assert_eq!(out, "Link me to [[§2 Round3_v4]]");
+    }
+
+    // ── PJ-207 §15: the forms the cascade used to skip in silence ──
+
+    #[test]
+    fn pj207_predicate_first_typed_link_rewrites() {
+        // The form the editor's own autocomplete inserts. Before §15 the regex could not
+        // match it, and an unmatched file is recorded as unchanged, not failed — so the
+        // rename reported success while the link on disk still named the old title.
+        assert_eq!(rewrite_for_test("see [[supports::Old]]", "Old", "New"), "see [[supports::New]]");
+        assert_eq!(
+            rewrite_for_test("[[derives-from::Old|display]]", "Old", "New"),
+            "[[derives-from::New|display]]"
+        );
+        // parse_link_body trims around `::`, so this is a real typed link on disk.
+        assert_eq!(rewrite_for_test("[[supports:: Old]]", "Old", "New"), "[[supports:: New]]");
+    }
+
+    #[test]
+    fn pj207_anchors_rewrite() {
+        let out = rewrite_for_test(
+            "[[Old#Intro]] [[Old^abc]] ![[Old#Intro]] [[supports::Old#Intro]]",
+            "Old",
+            "New",
+        );
+        assert_eq!(out, "[[New#Intro]] [[New^abc]] ![[New#Intro]] [[supports::New#Intro]]");
+        // The widened delimiter set must not widen the TITLE match.
+        let keep = "no [[Old Title#H]] no [[Old_v2^b]]";
+        assert_eq!(rewrite_for_test(keep, "Old", "New"), keep);
+    }
+
+    #[test]
+    fn pj207_non_type_double_colon_untouched() {
+        // `Foo` is not a registered type, so the real target is the whole string
+        // `Foo::Old` — a different note. Rewriting its tail would re-point a link the
+        // rename never touched.
+        let input = "[[Foo::Old]] stays";
+        assert_eq!(rewrite_for_test(input, "Old", "New"), input);
+    }
+
+    #[test]
+    fn pj207_type_equal_to_renamed_title_untouched() {
+        // Renaming a note TITLED `supports` must not rewrite the predicate of a typed
+        // link — that text is a link type, not a target.
+        let input = "[[supports::Alpha]]";
+        assert_eq!(rewrite_for_test(input, "supports", "supports v2"), input);
     }
 }
 
@@ -7271,6 +7776,11 @@ pub fn delete_path(
         return Err("Item does not exist.".to_string());
     }
     let target_was_dir = target.is_dir();
+    // PJ-207 §15 — same refusal as rename_item/move_item, and it matters most here:
+    // `retarget_registered_libraries(.., None)` REMOVES the registration, and it can only
+    // remove it from the active universe's registry — a linked universe's entry would
+    // survive pointing at files that are gone.
+    guard_no_foreign_library_under(&app, &path)?;
 
     // 2026-07-25 PJ-140 #3: snapshot every descendant note WHILE the tree still exists.
     // reindex_delete_note does an exact-path DELETE, which matches ZERO rows for a
@@ -7608,6 +8118,7 @@ mod tests_pj065_resolve {
 
 #[cfg(test)]
 mod tests {
+
     //! M6 end-to-end contract tests. The 502-case regression corpus in
     //! `arabic::regression` exercises `analyze_best` in isolation; this
     //! module checks that the FTS pipeline's `process_arabic_word` wrapper
@@ -7619,6 +8130,26 @@ mod tests {
     //! MIG-056 §F also lives here — see `build_aggregate_counts_sql_*`
     //! tests at bottom of the module.
     use super::*;
+
+    /// PJ-207 §15 (LOW) — a rename must not add a blank line to the note's frontmatter.
+    ///
+    /// `update_frontmatter_title` split the frontmatter as `&after_first[..end]`, keeping the
+    /// newline that follows the opening `---`. `lines()` then produced an empty first line, which
+    /// was re-emitted verbatim, so every rename inserted one more blank line above `title:`. The
+    /// sibling `set_frontmatter_parent` had always stripped it; this one had drifted.
+    #[test]
+    fn pj207_s15_rename_does_not_accumulate_blank_lines_in_frontmatter() {
+        let content = "---\ntitle: \"One\"\naliases:\n  - \"Zero\"\n---\n\nBody.\n";
+        let once = update_frontmatter_title(content, "Two", "One");
+        assert!(!once.starts_with("---\n\n"), "a blank line appeared after the opening ---:\n{once}");
+
+        // And it must not GROW: rename again, and again, on each result.
+        let twice = update_frontmatter_title(&once, "Three", "Two");
+        let thrice = update_frontmatter_title(&twice, "Four", "Three");
+        assert!(!thrice.contains("---\n\ntitle"), "blank lines accumulated over renames:\n{thrice}");
+        assert!(thrice.contains("title: \"Four\""), "the new title must still land:\n{thrice}");
+        assert!(thrice.contains("Body."), "the body is never touched");
+    }
 
     // ─── MIG-056 §F — build_aggregate_counts_sql shape tests ───
 

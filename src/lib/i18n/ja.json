@@ -760,7 +760,8 @@
 			"ahSuffix": "ヒジュラ暦",
 			"day": "日",
 			"days": "日"
-		}
+		},
+		"languageNotSaved": "言語はここでは変わりましたが保存できませんでした。次回の起動時に元に戻る場合があります。"
 	},
 	"commands": {
 		"newNote": "新規ノート",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "「{note}」にタグを追加できませんでした — このノートにはまだ安定した識別子がありません（開いている途中か、このタブ内で変わりました）。開いてからもう一度お試しください。",
 		"tagBusy": "「{note}」にタグを追加できませんでした — ノートは処理中です（名前の変更または再読み込みが更新しています）。少し後にもう一度お試しください。",
 		"tagWriteFailed": "「{note}」にタグを追加できませんでした: {error}",
-		"moveBatchFailed": "{count} 件の項目を移動できませんでした: {items}"
+		"moveBatchFailed": "{count} 件の項目を移動できませんでした: {items}",
+		"deleteFailed": "「{item}」を削除できませんでした: {error}",
+		"renameFailed": "「{item}」の名前を変更できませんでした: {error}"
 	},
 	"createDialog": {
 		"titleFolder": "新規フォルダ",
@@ -3088,7 +3091,8 @@
 		"evidence": "証拠",
 		"established": "確立",
 		"contested": "異議あり",
-		"archive": "リンクをアーカイブ"
+		"archive": "リンクをアーカイブ",
+		"notSaved": "保存できませんでした。もう一度お試しください。"
 	},
 	"picker": {
 		"title": "絵文字とアイコン",

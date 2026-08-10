@@ -760,7 +760,8 @@
 			"ahSuffix": "AH",
 			"day": "jour",
 			"days": "jours"
-		}
+		},
+		"languageNotSaved": "La langue a changé ici, mais n’a pas pu être enregistrée — elle pourrait revenir au prochain démarrage."
 	},
 	"commands": {
 		"newNote": "Nouvelle note",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "Impossible d’ajouter l’étiquette à « {note} » — cette note n’a pas encore d’identité stable (elle est encore en cours d’ouverture, ou elle a changé dans cet onglet). Ouvrez-la, puis réessayez.",
 		"tagBusy": "Impossible d’ajouter l’étiquette à « {note} » — la note est occupée (un renommage ou un rechargement la met à jour). Réessayez dans un instant.",
 		"tagWriteFailed": "Impossible d’ajouter l’étiquette à « {note} » : {error}",
-		"moveBatchFailed": "{count} élément(s) n’ont pas pu être déplacés : {items}"
+		"moveBatchFailed": "{count} élément(s) n’ont pas pu être déplacés : {items}",
+		"deleteFailed": "« {item} » n’a pas pu être supprimé : {error}",
+		"renameFailed": "« {item} » n’a pas pu être renommé : {error}"
 	},
 	"createDialog": {
 		"titleFolder": "Nouveau dossier",
@@ -2648,7 +2651,8 @@
 		"evidence": "Preuve",
 		"established": "Établi",
 		"contested": "Contesté",
-		"archive": "Archiver le lien"
+		"archive": "Archiver le lien",
+		"notSaved": "Enregistrement impossible — réessayez."
 	},
 	"picker": {
 		"title": "Emojis et icônes",

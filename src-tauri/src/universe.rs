@@ -1325,7 +1325,21 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
 
     let cdir = constellation_dir(library_dir);
 
-    // If .constellation/ already exists, treat as "open existing"
+    // PJ-207 §15 — this gate asked the wrong question, and the create-path below ran on top
+    // of a real Universe because of it.
+    //
+    // A universe still in the pre-`.constellation/` flat layout keeps `universe.json`,
+    // `vaults.json`, `settings.json` and `collections.json` at its ROOT. The gate only asks
+    // whether `.constellation/universe.json` exists, so for that universe it read false and
+    // fell through to "create" — over the user's libraries, collections and settings.
+    // `open_existing_universe` has always called `migrate_to_constellation` first for exactly
+    // this reason; this door never did. The ordering also mattered: `migrate_to_constellation`
+    // bails the moment `.constellation/` exists, so once this command created that directory
+    // the legacy files were stranded at the root permanently and no later boot could adopt them.
+    migrate_to_constellation(library_dir)?;
+
+    // If .constellation/universe.json already exists (or the migration just put it there),
+    // treat as "open existing"
     if cdir.join("universe.json").exists() {
         return open_existing_universe(app, path);
     }
@@ -1367,16 +1381,36 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         is_universe_notes: false,
         canonical_mode: "compatible".to_string(), // linked external folder
     };
-    let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
-    fs::write(cdir.join("libraries.json"), &libs_json)
-        .map_err(|e| format!("Failed to write libraries.json: {}", e))?;
+    // PJ-207 §15 — these writes were unconditional, and each of the five defaults was
+    // additionally `.ok()`-ed. Whenever `.constellation/` was populated but its `universe.json`
+    // was not where the gate above looks, this wrote a ONE-ENTRY `libraries.json` over a
+    // registry that listed every library, and `"[]"`/`"{}"` over collections (every Starred
+    // item), settings, workspaces and property types — then returned Ok, because even the I/O
+    // error was discarded. The sibling `migrate_legacy_data` has guarded the identical writes
+    // with `if !exists()` all along; this path never adopted it. A default belongs only where
+    // there is genuinely nothing: never overwrite a file that is already on disk, and never
+    // discard the error from a write we do perform.
+    let libs_path = cdir.join("libraries.json");
+    if !libs_path.exists() {
+        let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
+        atomic_write(&libs_path, libs_json.as_bytes())
+            .map_err(|e| format!("Failed to write libraries.json: {}", e))?;
+    }
 
-    // Write empty data files
-    fs::write(cdir.join("bookmarks.json"), "[]").ok();
-    fs::write(cdir.join("settings.json"), "{}").ok();
-    fs::write(cdir.join("workspaces.json"), "[]").ok();
-    fs::write(cdir.join("property-types.json"), "{}").ok();
-    fs::write(cdir.join("collections.json"), "[]").ok();
+    // Write empty data files — only where none exists yet.
+    for (file, default) in [
+        ("bookmarks.json", "[]"),
+        ("settings.json", "{}"),
+        ("workspaces.json", "[]"),
+        ("property-types.json", "{}"),
+        ("collections.json", "[]"),
+    ] {
+        let p = cdir.join(file);
+        if !p.exists() {
+            atomic_write(&p, default.as_bytes())
+                .map_err(|e| format!("Failed to write {}: {}", file, e))?;
+        }
+    }
 
     // Register in global registry
     let entry = UniverseEntry {
@@ -1663,6 +1697,39 @@ pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Valu
     } else {
         Ok(serde_json::Value::Array(vec![]))
     }
+}
+
+/// The ONE writer bookmarks.json is allowed to have: the first-run localStorage migration.
+///
+/// PJ-207 §15 — `UniverseSetup.migrateLocalStorage` has been invoking `save_universe_bookmarks`,
+/// a command MIG-092 retired and which is registered nowhere. That leg therefore failed 100% of
+/// the time into a `catch` that only reaches a console a release build does not have. The user's
+/// legacy bookmarks stayed in localStorage — the store PJ-110 proved a leveldb orphan can wipe
+/// wholesale — and the ONE-TIME Bookmarks→Starred adoption in `loadCollections` then spent its
+/// only slot against an empty file (`CL.migrateBookmarks` seeds a Starred collection even from an
+/// empty array, and `saveCollections` persists it, so it never re-runs).
+///
+/// MIG-092's ruling still stands: this is NOT a general writer. It refuses a bookmarks.json that
+/// already holds anything, so it can never overwrite the retained backup, and it reads through
+/// `read_persisted_json` so an unreadable file refuses instead of being taken for empty.
+#[tauri::command(async)]
+pub fn migrate_universe_bookmarks(app: tauri::AppHandle, bookmarks: serde_json::Value) -> Result<(), String> {
+    let dir = active_constellation_dir(&app)?;
+    let path = dir.join("bookmarks.json");
+    match read_persisted_json::<serde_json::Value>(&path) {
+        Ok(None) => {}
+        Ok(Some(serde_json::Value::Array(a))) if a.is_empty() => {}
+        Ok(Some(_)) => {
+            return Err(format!(
+                "{} already holds bookmarks — refusing to overwrite them.",
+                path.display()
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let json = serde_json::to_string_pretty(&bookmarks).map_err(|e| e.to_string())?;
+    atomic_write(&path, json.as_bytes())
+        .map_err(|e| format!("Failed to save bookmarks: {}", e))
 }
 
 /// Read workspaces.json from the active universe (or an explicit root — the

@@ -14,7 +14,7 @@
 	import { getModel, cloneProps } from '$lib/editor/noteModel';
 	import { isDirty as isNoteDirty } from '$lib/editor/noteSession';
 	import { propsVersion } from '$lib/editor/propsSignal';
-	import { plan as planPropOps, apply as applyPropOps, touchedSince, seededKeysOf, rowsBelongToTarget } from '$lib/editor/propsCommit';
+	import { plan as planPropOps, apply as applyPropOps, touchedSince, seededKeysOf, rowsBelongToTarget, listItemsOf } from '$lib/editor/propsCommit';
 	import { editPropValue, addPropTo, removePropFrom, reorderPropsIn } from '$lib/editor/noteSession';
 	import { withAutoUpdatedDate } from '$lib/libraries/store';
 
@@ -420,7 +420,14 @@
 
 	function removeTaxonomyValue(idx: number, id: string) {
 		const prop = editableProps[idx];
-		const next = (prop.listItems ?? []).filter(v => v !== id);
+		// PJ-207 §15 — the pills above are drawn from `listItems ?? value.split(',')`, but this
+		// read `listItems ?? []`. A `sources:`/`content_type:` value held as a comma scalar — typed
+		// by hand, imported from Obsidian, or written on one line by the app's own Bases cell editor
+		// — has no `listItems`, so clicking ONE pill's × submitted an EMPTY selection: every value on
+		// the key was erased, including the pills the user never touched, and the index followed the
+		// file down so nothing anywhere reported a discrepancy. Renderer and mutator now read the
+		// same items.
+		const next = listItemsOf(prop).filter(v => v !== id);
 		applyTaxonomySelection(idx, new Set(next));
 	}
 
@@ -449,24 +456,41 @@
 			const localEditPending = saveTimeout !== undefined;
 			if ((!saving && !localEditPending) || tabChanged) {
 				seededForPath = filePath; // PJ-187 — the rows about to be seeded belong to THIS note
-				seededRows = cloneProps(sourceProps);
-				editableProps = sourceProps.map(p => {
+				// PJ-207 §15 — the baseline is cloned from the ROWS WE DISPLAY, not from the raw
+				// model props. `touchedSince` compares with `samePropRow`, which includes `type`
+				// and `listItems` — and the map below deliberately overrides both (a structural
+				// key forced to 'list', a registered type, listItems derived from a scalar). With
+				// the baseline taken from the untransformed props, every overridden row counted as
+				// "the user edited this" the moment the panel seeded, so the 800 ms commit wrote it
+				// back: a scalar `parent: "[[X]]"` rewritten on disk as a list, unasked, by opening
+				// the note. The baseline has to describe what is on screen.
+				const seeded = sourceProps.map(p => {
 					// Apply registered type override if available
 					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
 					// PJ-065 — structural link keys ALWAYS render as 'list' chips, overriding any
 					// stale registered/inferred type (e.g. a parent once saved as a scalar 'link').
-					// Seed listItems from a scalar value so an existing single-link parent still shows.
 					const forced = structuralKeyType(p.key);
-					let listItems = p.listItems ? [...p.listItems] : undefined;
-					if (forced === 'list' && !listItems) {
-						listItems = p.value ? p.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-					}
+					const shownType = forced ?? registeredType ?? p.type;
+					// PJ-207 §15 — the scalar→items derivation was gated on `forced`, i.e. on the two
+					// structural keys ALONE, while the row's displayed type was already being taken from
+					// the library registry as well. So a key registered as List once, on some other note,
+					// arrived here as a plain scalar (`author: Ibn Khaldun`) typed 'list' with no items:
+					// the chip row draws nothing when there are no items, so the note's own value was
+					// invisible on every surface (NotePane splits frontmatter out of the editor), and the
+					// first tag typed into that row became the WHOLE list and wrote the original value out
+					// of the .md. The derivation belongs to the type we are about to SHOW, not to how that
+					// type happened to be decided.
+					const listItems = shownType === 'list'
+						? listItemsOf(p)
+						: (p.listItems ? [...p.listItems] : undefined);
 					return {
 						...p,
-						type: forced ?? registeredType ?? p.type,
+						type: shownType,
 						listItems
 					};
 				});
+				seededRows = cloneProps(seeded);
+				editableProps = seeded;
 				// ★ PJ-174 #1e — advance the snapshot ONLY when we actually re-seeded. It used to advance
 				// even on the skip path, marking a model change "seen" that never reached the rows —
 				// so it never re-seeded later either (propsChanged was false forever after), and the
@@ -775,7 +799,10 @@
 			if (STRUCTURAL_LIST_LINK_KEYS.has(p.key) && item) {
 				item = `[[${item.replace(/^\[+|\]+$/g, '')}]]`;
 			}
-			const items = [...(p.listItems ?? []), item];
+			// PJ-207 §15 — `p.listItems ?? []` meant that on a row whose items were still in the
+			// scalar `value`, the tag the user typed became the entire list and everything already
+			// on the key was written out of the file. Same items the chips are drawn from.
+			const items = [...listItemsOf(p), item];
 			return { ...p, listItems: items, value: items.join(', ') };
 		});
 		tagInputs = { ...tagInputs, [idx]: '' };
@@ -785,7 +812,9 @@
 	function removeTag(propIdx: number, tagIdx: number) {
 		editableProps = editableProps.map((p, i) => {
 			if (i !== propIdx) return p;
-			const items = (p.listItems ?? []).filter((_, ti) => ti !== tagIdx);
+			// PJ-207 §15 — `tagIdx` indexes the array the chips were RENDERED from; reading a
+			// different one here could remove the wrong item, or all of them.
+			const items = listItemsOf(p).filter((_, ti) => ti !== tagIdx);
 			return { ...p, listItems: items, value: items.join(', ') };
 		});
 		debouncedSave();
@@ -966,14 +995,28 @@
 			);
 			return;
 		}
+		/* Update tab content in store via direct mutation (no store.update = no cascade).
+		   This ensures onflush reads fresh properties when the tab is closed. Below the
+		   identity guard above, never before it (PJ-207 §15). */
+		const openTab = get(openTabs).find(t => t.id === id);
+		if (openTab) openTab.content = buildFullContent(editableProps, body);
 		if (!PROPS_SINGLE_OWNERSHIP) {
 			await saveTabContent(id, path, editableProps, body);
 			return;
 		}
 		const model = getModel(id);
 		if (!model) { await saveTabContent(id, path, editableProps, body); return; } // no model → legacy
-		const touched = touchedSince(seededRows, editableProps);
-		const ops = planPropOps(withAutoUpdatedDate(editableProps), model.props, seededKeysOf(seededRows), touched);
+		// PJ-207 §15 — `touched` was derived from the PRE-transform rows while `plan` was handed the
+		// auto-dated ones, so the refreshed `updated:`/`modified:` row was never in the touched set and
+		// plan's touched-gate dropped it before the diff ever ran. The rule landed only when the key did
+		// not yet exist (plan emits an ungated `add` there) — meaning a note edited through this panel
+		// kept advertising a stale date in its own frontmatter forever, and every surface that sorts or
+		// schedules on `updated` inherited it with nothing to indicate anything was wrong. The contract
+		// this transform was extracted under says this path applies "exactly the same rule as the legacy
+		// whole-array path"; it applied none. One array, seen by both.
+		const localRows = withAutoUpdatedDate(editableProps);
+		const touched = touchedSince(seededRows, localRows);
+		const ops = planPropOps(localRows, model.props, seededKeysOf(seededRows), touched);
 		const { changed, refused } = applyPropOps(ops, {
 			setValue: (k, v, o) => editPropValue(id, k, v, o, path),
 			add: (pr) => addPropTo(id, pr, path),
@@ -1028,10 +1071,11 @@
 			saveTimeout = undefined;
 			saving = true;
 			try {
-				/* Update tab content in store via direct mutation (no store.update = no cascade).
-				   This ensures onflush reads fresh properties when the tab is closed. */
-				const tab = get(openTabs).find(t => t.id === tabId);
-				if (tab) tab.content = buildFullContent(editableProps, body);
+				// PJ-207 §15 — the tab-content mutation moved INSIDE `commitAndSave`, after its
+				// PJ-187 identity guard. It ran here, before the guard, so on an in-place
+				// navigation the refusal protected the FILE while this line had already written
+				// note A's properties into note B's tab content — the very substitution the guard
+				// exists to prevent, one line above it.
 				await commitAndSave(tabId, filePath);
 			} catch (err) {
 				console.error('Failed to save:', err);
@@ -1146,7 +1190,7 @@
 				     chevron toggles inline TaxonomyTreePicker (height-capped).
 				     Saves through the standard YAML write path — no special IPC. -->
 				{@const axis = isTaxonomyKey(prop.key)!}
-				{@const items = prop.listItems ?? (prop.value ? prop.value.split(',').map(s => s.trim()).filter(Boolean) : [])}
+				{@const items = listItemsOf(prop)}
 				{@const selectedSet = new Set(items)}
 				{@const orderedItems = orderTaxonomyItems(items, axis)}
 				<div class="pe-taxo-wrap">
@@ -1261,9 +1305,10 @@
 					placeholder={$t('propertyEditor.empty')}
 					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
 			{:else if prop.type === 'list'}
+				{@const tagItems = listItemsOf(prop)}
 				<div class="pe-tags">
-					{#if prop.listItems && prop.listItems.length > 0}
-						{#each prop.listItems as tag, tagIdx}
+					{#if tagItems.length > 0}
+						{#each tagItems as tag, tagIdx}
 							<span class="pe-tag" dir="auto">
 								{STRUCTURAL_LIST_LINK_KEYS.has(prop.key) ? tag.replace(/^\[+|\]+$/g, '') : tag}
 								<button class="pe-tag-x" onclick={() => removeTag(idx, tagIdx)}>&times;</button>

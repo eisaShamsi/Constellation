@@ -224,44 +224,68 @@
 	}
 
 	async function migrateLocalStorage() {
+		// PJ-207 §15 — DELETE ONLY WHAT ACTUALLY ARRIVED.
+		//
+		// Each leg below wrote to the universe inside `catch { /* ignore */ }`, and the cleanup
+		// at the end then removed the localStorage source keys UNCONDITIONALLY. So a single
+		// failed write — the universe folder not yet writable, an AV lock on first run — deleted
+		// the only remaining copy of the user's settings, bookmarks or saved workspaces. A
+		// migration that discards the source before confirming the destination is not a
+		// migration. A key is now removed only if its own write succeeded, and a failure is
+		// logged instead of vanishing.
+		const migrated = new Set<string>();
+
 		try {
 			const settingsData = localStorage.getItem('constellation-settings');
 			if (settingsData) {
 				const settings = JSON.parse(settingsData);
 				await invoke('save_universe_settings', { settings });
+				migrated.add('constellation-settings');
 			}
-		} catch { /* ignore */ }
+		} catch (e) { console.error('[migrate] settings did NOT move to the universe — keeping the local copy:', e); }
 
 		try {
+			// PJ-207 §15 — this called `save_universe_bookmarks`, which does not exist: MIG-092
+			// retired the writer and lib.rs registers only the reader. So the leg threw "command
+			// not found" every single time and the bookmarks never left localStorage — while the
+			// one-time Bookmarks→Starred adoption downstream spent its only run against the empty
+			// bookmarks.json and persisted that emptiness, so it can never re-run.
 			const bookmarksData = localStorage.getItem('constellation-bookmarks');
 			if (bookmarksData) {
 				const bookmarks = JSON.parse(bookmarksData);
-				await invoke('save_universe_bookmarks', { bookmarks });
+				await invoke('migrate_universe_bookmarks', { bookmarks });
+				migrated.add('constellation-bookmarks');
 			}
-		} catch { /* ignore */ }
+		} catch (e) { console.error('[migrate] bookmarks did NOT move to the universe — keeping the local copy:', e); }
 
 		try {
 			const workspacesData = localStorage.getItem('constellation-workspaces');
 			if (workspacesData) {
 				const workspaces = JSON.parse(workspacesData);
 				await invoke('save_universe_workspaces', { workspaces });
+				migrated.add('constellation-workspaces');
 			}
-		} catch { /* ignore */ }
+		} catch (e) { console.error('[migrate] workspaces did NOT move to the universe — keeping the local copy:', e); }
 
 		try {
 			const types: Record<string, Record<string, string>> = {};
+			const typeKeys: string[] = [];
 			for (let i = 0; i < localStorage.length; i++) {
 				const key = localStorage.key(i);
 				if (key && key.startsWith('constellation-prop-types-')) {
 					const libraryName = key.replace('constellation-prop-types-', '');
 					const data = localStorage.getItem(key);
-					if (data) types[libraryName] = JSON.parse(data);
+					if (data) {
+						types[libraryName] = JSON.parse(data);
+						typeKeys.push(key);
+					}
 				}
 			}
 			if (Object.keys(types).length > 0) {
 				await invoke('save_universe_property_types', { types });
+				for (const k of typeKeys) migrated.add(k); // one write for the batch — all or none
 			}
-		} catch { /* ignore */ }
+		} catch (e) { console.error('[migrate] property types did NOT move to the universe — keeping the local copies:', e); }
 
 		// Clear ONLY what this migration just moved into the universe.
 		//
@@ -280,7 +304,11 @@
 		const keysToRemove = [];
 		for (let i = 0; i < localStorage.length; i++) {
 			const key = localStorage.key(i);
-			if (key && (MIGRATED_KEYS.includes(key) || key.startsWith('constellation-prop-types-'))) {
+			// …and ONLY if this run actually wrote it into the universe (see the top of this
+			// function). `MIGRATED_KEYS` says which keys this migration is allowed to touch;
+			// `migrated` says which of them made it.
+			const isOurs = key && (MIGRATED_KEYS.includes(key) || key.startsWith('constellation-prop-types-'));
+			if (isOurs && migrated.has(key)) {
 				keysToRemove.push(key);
 			}
 		}

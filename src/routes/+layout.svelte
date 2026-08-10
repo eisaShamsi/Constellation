@@ -9,11 +9,18 @@
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { getVersion } from '@tauri-apps/api/app';
+	// Statically imported (not `await import(...)` like the boot seeding below): a universe
+	// switch MUST clear the outgoing vocabulary, and an import wrapped in a catch-all would
+	// let that silently not happen — which is the failure being fixed. Small local module.
+	import { resetForUniverse as resetLinkTypesForUniverse } from '$lib/libraries/linkTypeRegistry';
 	import {
 		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
 		loadLibraries, loadAllStats, bringInLibrary, createNewLibraryAt,
+		resetWorkspacesForUniverse,
+		registerFocusSurface,
+		activeUniverseRootSync,
 		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
@@ -37,7 +44,7 @@
 		isInStarred, toggleStarred,
 		loadCollections, migrateCollectionPath, addToCollection, createCollection, collectionSets, STARRED_ID,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings, flushPendingSettingsSave, markSettingsLoadedFromBundle,
-		collectionsError, workspacesError, settingsError, indexHealthError,
+		collectionsError, workspacesError, settingsError, indexHealthError, embedHealthError,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		resolveTitleCollision,
@@ -126,7 +133,7 @@
 	import ReviewerView from '$lib/components/ReviewerView.svelte';
 	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
-	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
+	import SenseMakingCanvas, { flushPendingCanvasSave } from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import Inspector360 from '$lib/components/Inspector360.svelte';
 	import { scanNoteTasks, scanLibraryNoteDates } from '$lib/tasks/store';
@@ -561,7 +568,15 @@
 						// languages while no such control existed (the defect that opened
 						// PJ-207). It now names the door that IS there.
 						? tOr('storeHealth.index', 'A note was saved to disk but could not be added to the search index, so search and backlinks may not show its latest text. Settings → Index → Repair index will restore it.')
-						: '',
+						: $embedHealthError
+							// PJ-207 §15 — the embed twin of the line above, ranked LAST because it is
+							// the mildest of the five: the note is on disk and lexical search finds it;
+							// only meaning-based results answer from the older text. It is deliberately
+							// NOT folded into the index message: index_repair.rs never touches
+							// `note_embeddings`, so pointing at Repair index would be naming a door that
+							// cannot fix what the message describes.
+							? tOr('storeHealth.embed', 'A note was saved but its semantic index could not be updated, so "similar notes" and meaning-based search may still match its older text. It will correct itself the next time the note is saved successfully.')
+							: '',
 	);
 	/**
 	 * PJ-207 §9 — what changed on disk while Constellation was closed.
@@ -1712,6 +1727,13 @@
 		// (that teardown flush is a no-op while suppressed). One tick spans the remount microtask.
 		tick().then(() => { focusReseedSuppress = false; });
 	}
+	// PJ-207 §15 — register the Focus surface with the store ONCE, so `reloadTabsFromDisk` remounts
+	// FocusPane on every adopt rather than only at the two call sites that remembered to. The getter
+	// is read at adopt time, so it always reports the CURRENT focus session (or null when Focus is
+	// closed). Cleared on teardown so a destroyed layout can never be called back into.
+	registerFocusSurface({ path: () => (focusMode ? focusSessionPath : null), reseed: focusReseed });
+	onDestroy(() => registerFocusSurface(null));
+
 	// PJ-070 — the ONE place the external-adopt hooks are wired, so the watcher flush and the
 	// second-screen onNoteSaved adopt can never drift (the exact sibling-gap this migration closed).
 	function adoptExternalHooks() {
@@ -3104,6 +3126,17 @@
 		// happens to collide — start the new Universe with a clean slate.
 		clearAllCascading();
 
+		// PJ-207 §15 (APP-KILLER) — the outgoing universe's named workspaces must not survive
+		// into the incoming one. They did: nothing on this list cleared them, and the write
+		// latch stayed open, so the first "Save workspace" in the new universe wrote the OLD
+		// universe's layouts into its `workspaces.json` — a file with no `.prev` rotation and
+		// no second copy. Cleared here, before anything reads the new universe.
+		resetWorkspacesForUniverse();
+		// Same shape, same sweep: the outgoing universe's link-type vocabulary stayed cached AND
+		// latched, so a save in the new universe could write the old universe's custom types over
+		// its `link-types.json`. The load below re-fills it for THIS universe.
+		resetLinkTypesForUniverse();
+
 		// Clear library stores so sidebar resets
 		libraries.set([]);
 		libraryStats.set([]);
@@ -3174,7 +3207,18 @@
 		} catch { /* ignore */ }
 
 		// Re-initialize
-		await initializeApp();
+		try {
+			await initializeApp();
+		} finally {
+			// PJ-207 §15 — nothing ever told the second screen. `notifyUniverseSwitch` was imported
+			// and called from nowhere, so the SS kept the OUTGOING universe's tabs, note models,
+			// flat note list, link-type vocabulary and window title for the life of the window while
+			// this window re-initialised on a different universe — and every stale row on it went on
+			// asking main to open a path from a universe that is no longer active. Emitted AFTER
+			// initializeApp so the SS's own reload reads a fully-initialised universe, and in a
+			// `finally` so a failed init cannot leave it displaying the universe we just left.
+			try { await notifyUniverseSwitch(); } catch (e) { console.error('[universe switch] the second screen was not notified — it may still be showing the previous universe:', e); }
+		}
 	}
 
 	// ─── Lifecycle ───
@@ -3234,6 +3278,14 @@
 			try {
 				await flushPendingPropertyTypesSave();
 			} catch { /* console-surfaced; the close proceeds */ }
+			// PJ-207 §15 — the Sense-Making Canvas's 1000 ms debounced save was the third writer
+			// with no close flush, and the worst-placed one: every keystroke resets its timer, so
+			// closing within a second of the last keystroke dropped the whole typing run, and the
+			// `.canvas` file is that data's only store — no note model, no session net, nothing
+			// that could notice the loss. A no-op when the canvas is closed or already saved.
+			try {
+				await flushPendingCanvasSave();
+			} catch { /* the canvas raises its own saveError banner; the close proceeds */ }
 			invoke('session_flush_ack').catch(() => {});
 		});
 		cleanupFns.push(unlistenFinalFlush);
@@ -6226,18 +6278,34 @@
 		try {
 			// Load note contents for embedding — batch in chunks to avoid memory spike
 			const CHUNK = 50;
+			// PJ-207 §15 — a note whose read FAILED used to stay in the batch with `content: ''`.
+			// The embedder has no freshness column and skips any note that already has a row, so
+			// that stored a TITLE-ONLY vector permanently: the note came back for the wrong
+			// neighbours, was missing from the right ones, and no later run would ever replace it —
+			// the boot gate counts rows and the bogus row satisfies it. Only an explicit edit (which
+			// embeds with force) could heal it, so a note the user never touches again stayed
+			// silently wrong forever. Dropped from the batch instead: it stays uncounted, so the
+			// next start's gate re-reads it. Refusing to store beats storing something wrong.
+			const readFailures: string[] = [];
 			for (let i = 0; i < allNotes.length; i += CHUNK) {
 				const chunk = allNotes.slice(i, i + CHUNK);
-				const notesWithContent = await Promise.all(
+				const notesWithContent = (await Promise.all(
 					chunk.map(async (n) => {
 						try {
 							const content: string = await invoke('read_note', { filePath: n.path });
 							return { path: n.path, name: n.name, content };
-						} catch { return { path: n.path, name: n.name, content: '' }; }
+						} catch (e) {
+							readFailures.push(n.path);
+							console.error('[Semantic] read failed — note SKIPPED, not embedded (the next start re-reads it):', n.path, e);
+							return null;
+						}
 					})
-				);
-				const done = await embedNotes(notesWithContent);
+				)).filter((n): n is { path: string; name: string; content: string } => n !== null);
+				if (notesWithContent.length > 0) await embedNotes(notesWithContent);
 				semanticIndexProgress = `Embedding ${Math.min(i + CHUNK, allNotes.length)}/${allNotes.length} notes`;
+			}
+			if (readFailures.length > 0) {
+				console.error(`[Semantic] ${readFailures.length} note(s) could not be read and were NOT embedded; they stay uncounted so the next start retries them.`);
 			}
 		} catch (err) { console.error('[Semantic] Indexing failed:', err); }
 		semanticIndexing = false;
@@ -6962,9 +7030,12 @@
 	// failing to write are different facts, and "try again in a moment" is only true
 	// for the transient one. Previously the first two returned in total silence and
 	// the third logged to a console the release build does not have.
-	async function addTagToNote(path: string, tag: string) {
+	// PJ-207 §15 — returns whether the tag actually LANDED. It returned void, so the batch
+	// caller could not tell a success from a refusal, and each per-item notice below overwrote
+	// the previous one: a batch with three failures reported one name and lost the other two.
+	async function addTagToNote(path: string, tag: string): Promise<boolean> {
 		const t = tag.trim().replace(/^#+/, '').trim();
-		if (!t) return;
+		if (!t) return false;
 		const tab = get(openTabs).find(tb => tb.path === path);
 		const note = noteLabel(path);
 		try {
@@ -6975,7 +7046,7 @@
 					// slot now holds a DIFFERENT note. Writing anyway would put this tag on
 					// the wrong note, so the refusal is correct — it just has to be visible.
 					templateActionError = tOr('actions.tagNoIdentity', `Could not add the tag to “${note}” — this note has no stable identity yet (it is still opening, or it changed under this tab). Open it, then try again.`, { note });
-					return;
+					return false;
 				}
 				const { properties, body } = parseFrontmatter(r.content);
 				await saveTabContent(tab.id, path, addTagToProps(properties, t), body);
@@ -6991,7 +7062,7 @@
 				// change and the app treats the note as edited by another program.
 				if (isCascading(path)) {
 					templateActionError = tOr('actions.tagBusy', `Could not add the tag to “${note}” — the note is busy (a rename or reload is updating it). Try again in a moment.`, { note });
-					return;
+					return false;
 				}
 				const content = await readNote(path);
 				const { properties, body } = parseFrontmatter(content);
@@ -7003,12 +7074,14 @@
 				if (lib) await reindexNote(path, lib.name);
 			}
 			markOrgChartDirty();
+			return true;
 		} catch (e) {
 			// The write (model save, or the closed-note frontmatter RMW) did not land —
 			// the tag is NOT on the note. Show the real error text: in a release build,
 			// with devtools disabled, this bar is the only diagnostic that exists.
 			templateActionError = tOr('actions.tagWriteFailed', `Could not add the tag to “${note}”: ${String(e)}`, { note, error: String(e) });
 			console.error('Failed to add tag:', e);
+			return false;
 		}
 	}
 
@@ -7118,8 +7191,20 @@
 			const items = writableSelection;
 			confirmDelete = null;
 			const deleted: string[] = [];
+			// PJ-207 §15 — collect WHICH items failed. The sibling batch MOVE got exactly this fix on
+			// 2026-08-01 and delete was left with the pre-fix shape: the per-item catch keeps the batch
+			// going (correct — one locked file must not strand the rest), but console.error alone is
+			// invisible in a release build, and the dialog closed and the selection was cleared either
+			// way, so a partial delete completed byte-identically to a full one. The user believed all
+			// N were in the trash, and clearTreeSelection had just removed the one cue that would have
+			// identified the survivors among rows they never selected.
+			const failedDeletes: string[] = [];
 			for (const p of items) {
-				try { await deleteWithSetting(p); deleted.push(p); } catch (e) { console.error('[batch delete] failed for', p, e); }
+				try { await deleteWithSetting(p); deleted.push(p); } catch (e) { failedDeletes.push(p); console.error('[batch delete] failed for', p, e); }
+			}
+			if (failedDeletes.length > 0) {
+				const names = failedList(failedDeletes);
+				templateActionError = tOr('actions.deleteBatchFailed', `${failedDeletes.length} item(s) could not be deleted: ${names}`, { count: String(failedDeletes.length), items: names });
 			}
 			await refreshAllLoadedTrees();
 			clearTreeSelection();
@@ -7144,6 +7229,10 @@
 			emitNoteDeleted({ path: deletedPath }); // MIG-096 §1 — refresh-after-mutate
 		} catch (e) {
 			console.error('Failed to delete:', e);
+			// PJ-207 §15 — IN src/routes/+layout.svelte. Same swallow as the rename catch: a
+			// delete Constellation REFUSED left the row on screen with no explanation,
+			// indistinguishable from a refresh glitch.
+			templateActionError = tOr('actions.deleteFailed', `“${noteLabel(confirmDelete?.path ?? '')}” could not be deleted: ${String(e)}`, { item: noteLabel(confirmDelete?.path ?? ''), error: String(e) });
 		}
 		confirmDelete = null;
 	}
@@ -7273,7 +7362,16 @@
 				// PJ-187 — REFCOUNTED. Two overlapping renames in the same library shared one
 				// boolean, so the first to finish lifted the overlay while the second cascade was
 				// still rewriting files. markFreeze/clearFreeze keep a depth per library root.
-				if (willCascade) markFreeze(lib.path);
+				// PJ-207 §15 — the cascade now walks EVERY library root in the universe, because a
+				// wikilink resolves universe-wide. Every protection that was scoped to the renamed
+				// note's own library has to widen with it, or the fix opens a worse hole than it
+				// closes: a tab in another library would be neither flushed, frozen nor gated, so the
+				// walker would read its stale disk, rewrite that, and the next save from the still-dirty
+				// model would quietly drop the rewrite again.
+				const cascadeRoots = willCascade
+					? Array.from(new Set([lib.path, ...$libraryStats.map((l) => l.path)]))
+					: [];
+				if (willCascade) for (const r of cascadeRoots) markFreeze(r);
 				try {
 				await refreshLibraryTree(lib.library_id);
 				// Auto-update links — wikilink rename cascade.
@@ -7296,7 +7394,9 @@
 					//     signal — no magic timeout, no listener race.
 					// (e) Clear cascading marks in `finally` so an error
 					//     anywhere above doesn't leave editors silenced.
-					const tabs = tabsInLibrary(lib.path);
+					// PJ-207 §15 — every OPEN tab, not just the renamed note's library: the walk is
+					// universe-wide now, so a save from any tab could land on a file it is rewriting.
+					const tabs = $openTabs.filter((t) => !!t.path);
 					for (const t of tabs) markCascading(t.path);
 					// PJ-174 #1 — the LIVE mark. Everything above this line is a SNAPSHOT taken
 					// before a multi-second walk, and the sidebar tree is not blocked during it
@@ -7305,17 +7405,41 @@
 					// and `reloadTabsFromDisk` below still force-adopted over it, erasing whatever
 					// had just been typed. Marking the LIBRARY makes `isCascading` true for tabs
 					// that do not exist yet at this moment, which a path snapshot can never be.
-					markCascadingLibrary(lib.path);
+					for (const r of cascadeRoots) markCascadingLibrary(r);
 					try {
 						// PJ-092 — the open notes whose unsaved edits could NOT be flushed (a locked .md).
-						const excludedPaths = await flushAllTabsInLibrary(lib.path);
+						// PJ-207 §15 — flush across every root the walker will visit. A dirty tab that was
+						// never flushed is also absent from `excludedPaths`, so the walker would rewrite its
+						// stale disk and the model would later overwrite the rewrite. SEQUENTIAL on purpose:
+						// the root library's path prefixes every nested one, so a Promise.all here would run
+						// two concurrent flushes of the same tab.
+						const excludedPaths: string[] = [];
+						for (const r of cascadeRoots) {
+							for (const p of await flushAllTabsInLibrary(r)) {
+								if (!excludedPaths.includes(p)) excludedPaths.push(p);
+							}
+						}
 						// Share the excluded set with the cascade:rewrote listener (defence-in-depth, :3300)
 						// so it applies the SAME fail-closed exclusion this belt does (LL-023 drift fix).
 						renameCascadeExcludedKeys = new Set(excludedPaths.map((pp) => normPathLC(pp).normalize('NFC')));
 						// §B2-4 forensics marker — about to DISPATCH the cascade IPC.
 						invoke('journal_frontend_marker', { surface: 'cascade_dispatch', detail: `${oldName} -> ${newName}` }).catch(() => {});
 						// The walker NEVER rewrites an excluded note's disk (matched by file identity).
-						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName, excludedPaths);
+						// PJ-207 §15 — walk the UNIVERSE ROOT, not the renamed note's own library.
+						//
+						// This line was the half of the fix that never moved: the freeze, the flush and the
+						// save-gate above were widened to every library root while the rewrite itself still
+						// visited ONE library — so a referrer in a sibling library kept a link to a name
+						// that no longer exists, silently and permanently, while the comment above said
+						// otherwise. Caught by the tutorial auditor while it was checking whether the
+						// behaviour was real enough to ask the Boss to look at. It was not.
+						//
+						// One walk, not a loop: MIG-108 puts every own library UNDER the root, so rooting
+						// there reaches them all with no duplicate passes. A LINKED universe is excluded on
+						// the Rust side (foreign_library_roots). `lib.name` remains the caller fallback for
+						// re-index attribution — the walker resolves each rewritten file own library itself.
+						const cascadeWalkRoot = activeUniverseRootSync() ?? lib.path;
+						const result = await updateLinksOnRename(cascadeWalkRoot, lib.name, oldName, newName, excludedPaths);
 						// Safety inspection 2026-08-01 — SURFACE the cascade's per-file failures.
 						// `result.failed` is `[path, error]` for every referrer the walker tried to
 						// rewrite and could NOT (libraries.rs — the gate_rmw error arm: the file is
@@ -7370,14 +7494,11 @@
 							console.warn('[handleRenameComplete] PJ-174 — dirty tabs refused the cascade reload (edits preserved, conflict raised):', refusedDirty);
 							invoke('journal_frontend_marker', { surface: 'cascade_reload_refused_dirty', detail: refusedDirty.join('|') }).catch(() => {});
 						}
-						// PJ-092 H3 (③) — FocusPane is NOT under the reloadVersion {#key}; if the note open
-						// in Focus mode was rewritten, remount FocusPane on the freshly-reseeded model (mirror
-						// adoptExternalChangeIntoTabs), or the next Focus keystroke composes from stale text
-						// and silently reverts the rewrite on disk.
-						if (focusMode && focusSessionPath) {
-							const fp = normPathLC(focusSessionPath);
-							if (reloadPaths.some((p) => normPathLC(p) === fp)) focusReseed(focusSessionPath);
-						}
+						// PJ-092 H3 (③) — FocusPane is NOT under the reloadVersion {#key} and must be
+						// remounted on the freshly-reseeded model, or the next Focus keystroke composes
+						// from stale text and silently reverts the rewrite on disk. Done by
+						// `reloadTabsFromDisk` itself now (PJ-207 §15, `registerFocusSurface`), because
+						// seven of its nine callers never had this block.
 						// §144 (supersedes §143's targeted update — the targeted
 						// approach only worked when the in-memory link's target
 						// matched the rename's oldName exactly. After several
@@ -7430,11 +7551,11 @@
 						// anywhere in the cascade must never leave a library permanently marked,
 						// which would silently gate every save inside it — a save-loss worse than
 						// the bug the mark fixes.
-						clearCascadingLibrary(lib.path);
+						for (const r of cascadeRoots) clearCascadingLibrary(r);
 					}
 				}
 				} finally {
-					if (willCascade) clearFreeze(lib.path); // §D1 — lift THIS cascade's freeze
+					if (willCascade) for (const r of cascadeRoots) clearFreeze(r); // §D1 — lift THIS cascade's freeze
 				}
 			}
 			// MIG-096 §1 — refresh-after-mutate. Emitted HERE, on the success path,
@@ -7446,6 +7567,11 @@
 			emitNoteRenamed({ oldPath, newPath: effectivePath, newName });
 		} catch (e) {
 			console.error('Failed to rename:', e);
+			// PJ-207 §15 — IN src/routes/+layout.svelte. This catch was console-only, and there
+			// is no console in a release build: a rename Constellation REFUSED (a folder holding
+			// a linked universe's library, a collision, a locked file) looked exactly like one
+			// that quietly did nothing. A refusal the user cannot see is not a refusal.
+			templateActionError = tOr('actions.renameFailed', `“${noteLabel(oldPath)}” could not be renamed: ${String(e)}`, { item: noteLabel(oldPath), error: String(e) });
 			// §B2-4 forensics marker — the swallowed exception's TEXT, journal-visible
 			// in the release build (where the console is not).
 			invoke('journal_frontend_marker', { surface: 'rename_catch', detail: String(e) }).catch(() => {});
@@ -8109,7 +8235,7 @@
 												contextMenu = {
 													x: e.clientX,
 													y: e.clientY,
-													entry: { name: base.name + '.base', path: base.path, is_dir: false, children: null, extension: 'base', modified: base.modified, status: null },
+													entry: { name: base.name + '.base', path: base.path, is_dir: false, children: null, extension: 'base', modified: base.modified },
 													libraryId: '__workspace__',
 												};
 											}}
@@ -9721,7 +9847,21 @@
 										if (showCalendarPage) await refreshCalendarData();
 										// Notify SS so it can refresh its panels
 										if (secondScreenOpen) broadcastNoteSaved(filePath);
-									} catch (e) { console.error('Toggle task failed:', e); }
+									} catch (e) {
+										// PJ-207 §15 (second pass) — PUT THE CHECKBOX BACK. The toggle now throws when
+										// the note could not be flushed first, and `GlobalTasksView` un-ticks its box on
+										// exactly this path — this third caller only logged, so the box stayed ticked
+										// while the note's `.md` was unchanged: the app showing a task done that is not.
+										// Re-scanning is the restore here, because this panel renders from the scan
+										// rather than from the input element.
+										console.error('Toggle task failed:', e);
+										if (sidebarTab?.path) {
+											try {
+												const back = await scanNoteTasks(sidebarTab.path, sidebarTab.libraryName, sidebarTab.libraryPath);
+												sidebarTasks = back.tasks;
+											} catch { /* the re-scan is the restore; if it also fails the panel is already stale */ }
+										}
+									}
 								}}
 								{libraryColorMap}
 							/>
@@ -10219,8 +10359,17 @@
 				if (d.batch) {
 					const notes = writableNoteSelection;
 					(async () => {
+						// PJ-207 §15 — same concern as the batch delete. `addTagToNote` never throws (it
+						// catches internally), so this catch was dead; and its per-item notice OVERWRITES the
+						// previous one, so a 40-note batch with three failures showed one name and the other
+						// two vanished. One aggregate notice at the end names them all.
+						const failedTags: string[] = [];
 						for (const p of notes) {
-							try { await addTagToNote(p, tag); } catch (e) { console.error('[batch tag] failed for', p, e); }
+							try { if (!(await addTagToNote(p, tag))) failedTags.push(p); } catch (e) { failedTags.push(p); console.error('[batch tag] failed for', p, e); }
+						}
+						if (failedTags.length > 0) {
+							const names = failedList(failedTags);
+							templateActionError = tOr('actions.tagBatchFailed', `${failedTags.length} note(s) could not be tagged: ${names}`, { count: String(failedTags.length), items: names });
 						}
 						clearTreeSelection();
 					})();

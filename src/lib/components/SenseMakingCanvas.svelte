@@ -1,3 +1,32 @@
+<script module lang="ts">
+	// PJ-207 §15 — the canvas's 1000 ms debounced save had NO app-close flush. It was missing
+	// from the `session:final-flush` handshake and registered no `beforeunload`, and the
+	// `onDestroy` fallback below does NOT run on a full window unload — FocusPane.svelte:81
+	// says so in this codebase's own words, and lib.rs calls `win.destroy()`, which tears the
+	// webview down with nothing unmounting the component. Because every keystroke RESETS the
+	// timer, closing within a second of the last keystroke dropped the whole typing run since
+	// the last pause; and the `.canvas` file is that data's only store, so nothing anywhere
+	// could say it had been dropped.
+	//
+	// A `beforeunload` listener would not have fixed it: +layout.svelte:3235 records that
+	// PJ-103 proved live that the beforeunload disk write gets cut off. The live instance
+	// registers its flush here so the close handshake can AWAIT it, exactly as it already
+	// awaits flushPendingSettingsSave / flushPendingPropertyTypesSave.
+	const pendingCanvasFlushes = new Set<() => Promise<void>>();
+
+	export async function flushPendingCanvasSave(): Promise<void> {
+		for (const flush of pendingCanvasFlushes) {
+			try {
+				await flush();
+			} catch (e) {
+				// Never swallowed, and never allowed to stall the close: the canvas's own
+				// saveError banner is already raised by writeCanvasNow.
+				console.error('[SenseMakingCanvas] close flush failed — latest change is not on disk:', e);
+			}
+		}
+	}
+</script>
+
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { t, tn, isRTL as isRTLStore } from '$lib/i18n';
@@ -178,7 +207,13 @@
 		if (saveDirty) await writeCanvasNow();
 	}
 
+	// PJ-207 §15 — register this instance so the app-close handshake can flush it. Without
+	// this the ONLY persistence path was a timer that died with the process: the close ack
+	// does not wait a second, and onDestroy below never fires on a window unload.
+	pendingCanvasFlushes.add(flushPendingSave);
+
 	onDestroy(() => {
+		pendingCanvasFlushes.delete(flushPendingSave);
 		if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
 		if (saveDirty) {
 			// Fire-and-forget is acceptable at destroy; writeCanvasNow still routes any

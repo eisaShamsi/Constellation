@@ -383,8 +383,8 @@ impl OverrideStore {
     /// its own `arabic-overrides.json`, edited when that child is the
     /// active Universe.
     ///
-    /// Stage to `.tmp`, rename on success. No partial-file poisoning on
-    /// crash mid-write. Creates parent directories as needed.
+    /// Writes through `universe::atomic_write` — unique temp, fsync, then rename.
+    /// Creates parent directories as needed.
     pub fn save_to_path(&self, path: &Path) -> std::io::Result<()> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -397,9 +397,20 @@ impl OverrideStore {
         let file = OverrideFile { version: 1, overrides };
         let json = serde_json::to_vec_pretty(&file)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, &json)?;
-        std::fs::rename(&tmp, path)?;
+        // PJ-207 §15 — this was the last persisted-STATE writer still doing a bare
+        // write+rename. Two defects, both already named in `universe::atomic_write`'s own
+        // comment two files away: no fsync before the rename, so power loss can commit the
+        // rename while the data blocks are still unflushed and publish zeros under the FINAL
+        // name; and a FIXED `.json.tmp`, which two writers of the same file share, letting one
+        // publish the other's half-written bytes.
+        //
+        // Why it mattered here in particular: `arabic-overrides.json` is the ONLY on-disk
+        // record of these overrides — nothing rebuilds them. And the loader's failure path
+        // (`activate_layered_for_universe`, universe.rs) catches the parse error, prints an
+        // `eprintln!` a release build has no console for, and installs an EMPTY store. So the
+        // loss never surfaces as an error; it surfaces as Arabic search quietly tokenizing
+        // differently than the user taught it to.
+        crate::universe::atomic_write(path, &json)?;
         Ok(())
     }
 

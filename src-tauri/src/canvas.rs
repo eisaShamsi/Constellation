@@ -40,7 +40,11 @@ pub struct CanvasInfo {
 }
 
 /// List all .canvas files in a library.
-#[tauri::command]
+///
+/// PJ-207 §15 — `(async)`: an unbounded recursive `read_dir` with a per-entry `is_dir()` stat
+/// over the whole library — which for the default `universe_notes` library is the entire
+/// Universe root. On the main thread that is a visible freeze on a large universe.
+#[tauri::command(async)]
 pub fn list_canvases(
     app: tauri::AppHandle,
     library_path: String,
@@ -68,12 +72,29 @@ pub fn read_canvas(
 /// Write a canvas file.
 #[tauri::command]
 pub fn write_canvas(
-    _app: tauri::AppHandle,
+    app: tauri::AppHandle,
     canvas_path: String,
     data: CanvasData,
 ) -> Result<(), String> {
+    // PJ-207 §15 — this was a bare `fs::write`: truncate-then-write, no temp file, no fsync.
+    // A `.canvas` is the SOLE copy of that board — no SQLite mirror, no `.trash` copy, no
+    // backup — so an interruption mid-write (power loss, a kill, an AV or sync client) left
+    // the user's only copy zero-length or half-JSON; and with no fsync even an Ok-returning
+    // write could land as zeros after a crash. `read_canvas` then failed to parse, and the
+    // board was gone with nothing on screen able to say why. `atomic_write` (temp + fsync +
+    // rename, universe.rs) is what every other persisted-JSON writer already uses;
+    // style_presets.rs called itself "the last save that never got atomic_write" on
+    // 2026-08-03, and canvas.rs was simply missed by that sweep.
+    //
+    // The unused `_app` was the same omission wearing a different hat: alone among the
+    // commands in this file, the WRITE validated nothing and would write wherever it was
+    // told. A refusal here surfaces in the canvas's save-error banner; it is never silent.
+    crate::libraries::validate_path_in_any_library(&app, &canvas_path)
+        .map_err(|e| format!("Access denied: {}", e))?;
+
     let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
-    fs::write(&canvas_path, json).map_err(|e| format!("Failed to write canvas: {}", e))
+    crate::universe::atomic_write(Path::new(&canvas_path), json.as_bytes())
+        .map_err(|e| format!("Failed to write canvas: {}", e))
 }
 
 /// Create a new canvas file.
@@ -98,7 +119,12 @@ pub fn create_canvas(
         title: name,
     };
     let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Failed to create canvas: {}", e))?;
+    // PJ-207 §15 — Whole-Ecosystem: the same truncate-then-write shape as `write_canvas`
+    // above, on the same file kind. A create interrupted mid-write leaves a half-JSON
+    // `.canvas` that `list_canvases` will happily keep listing (it matches on extension
+    // only, line 118) and that `read_canvas` can never open — a canvas born unreadable.
+    crate::universe::atomic_write(&path, json.as_bytes())
+        .map_err(|e| format!("Failed to create canvas: {}", e))?;
 
     Ok(path.to_string_lossy().to_string())
 }

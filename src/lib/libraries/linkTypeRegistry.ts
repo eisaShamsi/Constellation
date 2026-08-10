@@ -115,6 +115,30 @@ function notify(): void {
 	}
 }
 
+/**
+ * PJ-207 §15 whole-app sweep — **clear the vocabulary and the write latch on a universe switch.**
+ *
+ * `cache`, `byId` and `loaded` are module globals that nothing cleared when the active universe
+ * changed. The read-succeeded latch below is careful about "did a read succeed?" but blind to
+ * "for WHICH universe?" — so if the incoming universe's read failed, the outgoing universe's
+ * vocabulary stayed in the cache, still latched, and `saveLinkTypes` was free to write universe
+ * A's custom link types over universe B's `link-types.json`. It also rendered A's colours and
+ * labels on B's links in the meantime.
+ *
+ * The sibling `propertyTypeRegistry` took this same finding on 2026-08-01 and fixed it by
+ * resetting at the top of every load. That is not right here: a failed reload INSIDE one universe
+ * must keep the last-good vocabulary (see `loadLinkTypes`'s catch), and resetting on every load
+ * would blank every link colour on a transient read failure. So the reset is called at the two
+ * places a universe actually changes — the main window's `handleUniverseSwitch` and the second
+ * screen's `universe-switched` listener — and the ordinary failure policy is left alone.
+ */
+export function resetForUniverse(): void {
+	cache = [];
+	byId = new Map();
+	loaded = false;
+	notify();
+}
+
 /** Subscribe to vocabulary changes. Returns an unsubscribe fn (call in onDestroy). */
 export function subscribe(cb: () => void): () => void {
 	listeners.add(cb);

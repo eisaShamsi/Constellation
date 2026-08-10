@@ -1051,16 +1051,65 @@ pub fn de_canonicalize_library(
                 }
             }
         } else {
-            // Non-markdown: check sidecar for original name
+            // Non-markdown: the `.meta.json` sidecar is the ONLY record of the original name.
+            //
+            // PJ-207 §15 — `fs::read_to_string(&sc_path).ok()` collapsed "the sidecar is
+            // unreadable RIGHT NOW" — the everyday Windows sharing violation from OneDrive or
+            // Defender, the exact distinction `universe::read_persisted_json` exists to make —
+            // into "there is no original name". The CANONICAL filename was then substituted as
+            // the "original"; `unique_path` found that name occupied by the file itself and
+            // appended " (1)", so the attachment was renamed to a mangled THIRD name that broke
+            // every `![[...]]` embed pointing at it; and then the sidecar — the last copy of
+            // the user's real filename — was deleted unconditionally while the file counted as
+            // `restored` with nothing pushed to `errors`. The same substitution ran for files
+            // with no sidecar at all. This path also runs unattended at boot
+            // (`repair_external_libraries_on_startup`), so nothing could ever reach the user.
+            //
+            // Refuse and report beats rewrite: an unreadable, unparseable or absent sidecar now
+            // leaves BOTH the file and the sidecar exactly as they are.
             let sc_path = sidecar_path(file_path);
-            let orig = if sc_path.exists() {
-                fs::read_to_string(&sc_path).ok()
-                    .and_then(|json| serde_json::from_str::<SidecarMetadata>(&json).ok())
-                    .map(|m| m.original_filename)
-                    .unwrap_or_else(|| file_path.file_name().unwrap_or_default().to_string_lossy().to_string())
+            let current_name = file_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let orig: Option<String> = if sc_path.exists() {
+                match fs::read_to_string(&sc_path) {
+                    Ok(json) => match serde_json::from_str::<SidecarMetadata>(&json) {
+                        Ok(m) => Some(m.original_filename),
+                        Err(e) => {
+                            result.errors.push(format!(
+                                "{}: sidecar unparseable ({}) — file left as-is; the sidecar is kept for recovery",
+                                sc_path.display(), e
+                            ));
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        result.errors.push(format!(
+                            "{}: sidecar unreadable ({}) — file left as-is; nothing renamed, nothing deleted",
+                            sc_path.display(), e
+                        ));
+                        None
+                    }
+                }
             } else {
-                file_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+                result.errors.push(format!(
+                    "{}: no .meta.json sidecar — the original filename is unknown, file left as-is",
+                    file_path.display()
+                ));
+                None
             };
+            let orig = match orig {
+                Some(o) => o,
+                None => continue,
+            };
+
+            // The sidecar names the file it is already called: nothing to restore, and
+            // `unique_path` would rename it onto itself and mangle it to " (1)".
+            if orig == current_name {
+                if let Err(e) = fs::remove_file(&sc_path) {
+                    result.errors.push(format!("{}: sidecar not removed: {}", sc_path.display(), e));
+                }
+                result.restored += 1;
+                continue;
+            }
 
             let parent = file_path.parent().unwrap_or(lib_path);
             let target = unique_path(parent, &orig);
@@ -1069,8 +1118,10 @@ pub fn de_canonicalize_library(
                 result.errors.push(format!("{}: rename: {}", file_path.display(), e));
                 continue;
             }
-            // Remove sidecar
-            let _ = fs::remove_file(&sc_path);
+            // Remove sidecar — and say so if it survives, rather than orphaning it silently.
+            if let Err(e) = fs::remove_file(&sc_path) {
+                result.errors.push(format!("{}: sidecar not removed: {}", sc_path.display(), e));
+            }
             result.restored += 1;
             continue;
         };

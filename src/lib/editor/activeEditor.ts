@@ -12,6 +12,25 @@ let lastView: EditorView | null = null;
 let lastPath: string | null = null; // §A.2 — the note path the registered view belongs to
 
 export function registerActiveEditor(view: EditorView, path?: string) {
+	// PJ-207 §15 — a READ-ONLY view is not a valid insert target, and registering one was a
+	// false-success. NotePane registered every pane it mounted (NotePane.svelte:1021 onMount,
+	// :1025 focusin) with no readOnly check, including the Index panel's read-only preview
+	// (+layout.svelte:8540), which is always mounted and merely hidden with CSS — so it took
+	// `lastView` from the real editor. CM6's readOnly facet only blocks input handlers and
+	// commands, never a programmatic transaction, so the emoji/icon insert
+	// (+layout.svelte:10133) APPLIED and rendered in the preview while NoteEditor's readOnly
+	// guards (NoteEditor.svelte:770, 283, 337) dropped it: the user watched the character
+	// land and it was discarded with no error, no toast, nothing. The refusal lives HERE, at
+	// the one registry every caller goes through, so no future mount site can reintroduce it;
+	// and a view that IS the current registration and has since been reconfigured read-only
+	// is dropped rather than left aliasing the editor the user is actually typing in.
+	// Written to PROVE read-only rather than assume the shape: only a view that positively
+	// reports `state.readOnly === true` is refused. Anything else registers as before, so this
+	// guard can never itself become the reason an editor stops receiving inserts.
+	if (view?.state?.readOnly === true) {
+		if (lastView === view) { lastView = null; lastPath = null; }
+		return;
+	}
 	if (path === undefined && view !== lastView) {
 		// A DIFFERENT view registering with an unknown path must not inherit the previous
 		// note's path — the path-guarded getter would then hand this view out for a note it

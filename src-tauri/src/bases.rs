@@ -180,8 +180,9 @@ pub fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
             // Handle inline list [a, b, c]
             if value.starts_with('[') && value.ends_with(']') {
                 let inner = &value[1..value.len() - 1];
-                let items: Vec<&str> = inner.split(',').map(|s| {
-                    s.trim().trim_matches('"').trim_matches('\'')
+                let split = crate::yaml_lines::split_flow_seq_items(inner);
+                let items: Vec<&str> = split.iter().map(|s| {
+                    s.as_str()
                 }).collect();
                 value = items.join(", ");
             }
@@ -792,19 +793,83 @@ pub fn delete_workspace_base(
 }
 
 /// Format a value for YAML output.
-/// Quotes strings that contain special characters.
-fn format_yaml_value(value: &str) -> String {
+/// Quote a scalar that YAML would otherwise misread.
+///
+/// **PJ-207 §15 — kept at PARITY with its TypeScript twin `quoteIfNeeded` (`store.ts`), which is
+/// the reference implementation.** The two had drifted: this one missed a leading `- ` and the
+/// indicators `*`, `&`, `!`, `@`, backtick, `|`, `>`, `%`, `?`, `,`, `}`, `]`, plus the bare
+/// scalars `true`/`false`/`null`/`yes`/`no`. A Bases cell typed as `- pending`, `@home` or
+/// `|draft` was therefore written UNQUOTED, emitting frontmatter that no longer parses.
+///
+/// That is not cosmetic. An unparseable note is precisely the state in which every later
+/// property edit is silently discarded (the app-killer this same sweep confirmed), so an
+/// under-quoting writer permanently arms it. **Any change here belongs in BOTH implementations.**
+pub(crate) fn format_yaml_value(value: &str) -> String {
     if value.is_empty() {
         return "\"\"".to_string();
     }
-    // Check if value needs quoting
-    if value.contains(':') || value.contains('#') || value.contains('\'')
-        || value.contains('"') || value.contains('\n') || value.starts_with(' ')
-        || value.ends_with(' ') || value.starts_with('[') || value.starts_with('{')
-    {
+    // A leading sequence indicator: `- ` (or a lone `-`) opens a block sequence, so
+    // `status: - pending` is not a string at all. `--dashes--` stays an ordinary scalar.
+    let leading_seq = value == "-" || value.starts_with("- ") || value.starts_with("-\t");
+    let needs_quoting = value.chars().any(|c| {
+        matches!(
+            c,
+            ':' | '{' | '}' | '[' | ']' | ',' | '&' | '*' | '?' | '|' | '>' | '!' | '%' | '@'
+                | '`' | '#' | '\'' | '"' | '\n'
+        )
+    }) || leading_seq
+        // Leading/trailing whitespace does not survive a plain scalar — it is stripped on read,
+        // so a value that depends on it must be quoted to round-trip.
+        || value != value.trim()
+        // Bare scalars YAML would read as a bool/null rather than as this text.
+        || matches!(value, "true" | "false" | "null" | "yes" | "no");
+    if needs_quoting {
         format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         value.to_string()
+    }
+}
+
+#[cfg(test)]
+mod pj207_s15_quoter_parity {
+    use super::format_yaml_value;
+
+    /// PJ-207 §15 — every shape the TS twin `quoteIfNeeded` quotes must be quoted here too.
+    /// Under-quoting emits frontmatter that no longer parses, which permanently arms the
+    /// silent-property-discard app-killer found by the same sweep.
+    #[test]
+    fn every_indicator_the_ts_twin_quotes_is_quoted_here() {
+        for v in [
+            "- pending",   // leading sequence indicator — `status: - pending` is not a string
+            "-",           // a lone dash is also an indicator
+            "@home",       // reserved
+            "|draft",      // block-scalar indicator
+            ">folded",
+            "*anchor",
+            "&anchor",
+            "!tag",
+            "%directive",
+            "?question",
+            "`backtick`",
+            "a, b",        // a comma makes it look like flow content
+            "}brace",
+            "]bracket",
+            " leading",    // whitespace does not survive a plain scalar
+            "trailing ",
+            "true", "false", "null", "yes", "no", // bare scalars YAML reads as bool/null
+        ] {
+            let out = format_yaml_value(v);
+            assert!(out.starts_with('"') && out.ends_with('"'), "{v:?} must be quoted, got {out}");
+        }
+    }
+
+    /// …and it must not over-quote: ordinary text stays plain, or every rename rewrites the
+    /// whole file with noisy quotes.
+    #[test]
+    fn ordinary_text_is_left_unquoted() {
+        for v in ["hello", "Ibn Khaldun", "--dashes--", "draft2", "a-b-c", "3.14"] {
+            assert_eq!(format_yaml_value(v), v, "{v:?} should stay plain");
+        }
     }
 }
 

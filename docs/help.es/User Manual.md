@@ -303,6 +303,18 @@ Escribe `[[` para abrir el autocompletado de notas. Comienza a escribir el nombr
 
 Tambien puedes enlazar a encabezados especificos: `[[Nombre de la Nota#Encabezado]]`.
 
+### Renombrar una nota actualiza todos los enlaces que apuntan a ella
+
+Cuando renombras una nota — desde el árbol de archivos (clic derecho → Renombrar) o editando su título en la parte superior de la página — Constellation reescribe cada enlace que apunta a ella, para que ningún enlace se rompa en silencio. Es el ajuste **Actualizar enlaces internos automáticamente**, en **Ajustes → Enlaces**; está activado salvo que lo desactives. Mientras se ejecuta, aparece brevemente el aviso «Actualizando enlaces…» sobre las notas afectadas.
+
+**Se actualizan todas las formas de enlace**, no solo las sencillas: un enlace simple (`[[Nombre de la Nota]]`), un enlace con tu propio texto visible (`[[Nombre de la Nota|las palabras que querías leer]]`), un enlace **tipado** que lleva una relación (`[[supports::Nombre de la Nota]]`, y con tu anotación `[[supports::Nombre de la Nota|por qué la respalda]]`), y un enlace que apunta *dentro* de una nota — a un encabezado (`[[Nombre de la Nota#Un Encabezado]]`) o a un bloque (`[[Nombre de la Nota^bloque]]`). Solo cambia el nombre: la relación, tu texto visible, tu anotación y el encabezado o bloque al que apuntabas se conservan exactamente como los escribiste. Antes, los enlaces tipados y los que apuntaban a un encabezado o a un bloque quedaban atrás, nombrando todavía el título antiguo, y sin avisar de nada.
+
+**Se cubren todas las bibliotecas de tu universo.** La actualización llega a las notas de **todas** las bibliotecas del universo abierto, no solo a la biblioteca donde vive la nota renombrada: así, un enlace que cruza de una biblioteca a otra sobrevive al cambio de nombre. Las notas de un **universo hijo enlazado** se dejan intactas a propósito: es una base de conocimiento aparte, y Constellation no reescribe sus notas.
+
+**Si alguna nota no se pudo actualizar, se te dice cuál.** De vez en cuando un archivo está bloqueado, es de solo lectura o lo tiene abierto otro programa. En lugar de informar de un éxito limpio, Constellation nombra esas notas y te indica que sus enlaces siguen apuntando al título antiguo, para que sepas exactamente qué revisar.
+
+**Renombrar una carpeta no cambia ningún enlace** — es intencionado. El nombre de una carpeta nunca aparece dentro de un enlace, así que no hay nada que reescribir.
+
 ### Guardado y Recuperación
 
 Constellation **guarda automáticamente** mientras escribes — no hay botón de Guardar. Tus ediciones se escriben en el archivo `.md` un instante después de que haces una pausa (y cada vez que cambias de nota o cierras una pestaña). Una nota se marca como «guardada» solo una vez que se ha escrito realmente en el disco.

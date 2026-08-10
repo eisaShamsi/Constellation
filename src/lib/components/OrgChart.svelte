@@ -64,8 +64,7 @@
 		libraryName?: string;
 		libraryPath?: string;
 		color?: string;
-		status?: string;
-		children?: TreeNode[];
+			children?: TreeNode[];
 		expanded?: boolean;
 		noteCount?: number;
 	};
@@ -195,7 +194,6 @@
 				libraryName,
 				libraryPath,
 				color: libraryColorMap[libraryName] || '#7c3aed',
-				status: e.status ?? undefined,
 				children: e.is_dir && e.children ? buildTree(e.children, libraryName, libraryPath) : undefined,
 				expanded: false,
 			};

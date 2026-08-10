@@ -760,7 +760,8 @@
 			"ahSuffix": "H",
 			"day": "dia",
 			"days": "dias"
-		}
+		},
+		"languageNotSaved": "O idioma mudou aqui, mas não foi possível guardar — pode voltar ao anterior no próximo arranque."
 	},
 	"commands": {
 		"newNote": "Nova nota",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "Não foi possível adicionar a etiqueta a «{note}» — esta nota ainda não tem uma identidade estável (ainda está a abrir, ou mudou neste separador). Abra-a e tente de novo.",
 		"tagBusy": "Não foi possível adicionar a etiqueta a «{note}» — a nota está ocupada (uma mudança de nome ou recarregamento está a atualizá-la). Tente daqui a pouco.",
 		"tagWriteFailed": "Não foi possível adicionar a etiqueta a «{note}»: {error}",
-		"moveBatchFailed": "Não foi possível mover {count} item(ns): {items}"
+		"moveBatchFailed": "Não foi possível mover {count} item(ns): {items}",
+		"deleteFailed": "Não foi possível eliminar «{item}»: {error}",
+		"renameFailed": "Não foi possível mudar o nome de «{item}»: {error}"
 	},
 	"createDialog": {
 		"titleFolder": "Nova pasta",
@@ -3088,7 +3091,8 @@
 		"evidence": "Evidência",
 		"established": "Estabelecido",
 		"contested": "Contestado",
-		"archive": "Arquivar link"
+		"archive": "Arquivar link",
+		"notSaved": "Não foi possível guardar — tente novamente."
 	},
 	"picker": {
 		"title": "Emojis e ícones",

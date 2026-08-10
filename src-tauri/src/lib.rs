@@ -659,6 +659,9 @@ pub fn run() {
             universe::read_universe_settings,
             universe::save_universe_settings,
             universe::read_universe_bookmarks,
+            // PJ-207 §15 — the first-run migration's only writer for bookmarks.json; the
+            // frontend had been calling a command that was never registered.
+            universe::migrate_universe_bookmarks,
             // MIG-092 §1 — Collections' membership persistence (was Workbench).
             universe::read_universe_collections,
             universe::save_universe_collections,

@@ -713,8 +713,10 @@ pub fn gate_rmw_rename(
 
     let disk = fs::read_to_string(old)
         .map_err(|e| format!("write_gate: rmw-rename read failed for {}: {}", old.display(), e))?;
+    let mut rewrote = false;
     if let Some(updated) = mutate(&disk)? {
         atomic_write(old, &updated)?;
+        rewrote = true;
         let cid = crate::search::extract_frontmatter_cid_cn(&updated);
         journal_ext(
             old,
@@ -741,6 +743,32 @@ pub fn gate_rmw_rename(
             Err(e) => {
                 attempt += 1;
                 if attempt >= 5 {
+                    // PJ-207 §15 — ROLL THE REWRITE BACK before reporting failure.
+                    //
+                    // The frontmatter was rewritten onto `old` above and the rename has now
+                    // failed terminally. Returning straight out left the note carrying its NEW
+                    // title inside its OLD filename while the caller — and the user — were told
+                    // the rename failed and nothing had happened. Half a rename reported as no
+                    // rename is worse than either outcome reported honestly: the file, the tab
+                    // and the index all disagree, and nothing knows to reconcile them.
+                    //
+                    // Restoring the bytes read at the top of this function puts the file back
+                    // into the state the caller believes it is in. If even that fails the disk
+                    // is genuinely unavailable, so the error states both facts rather than
+                    // implying the file is untouched.
+                    if rewrote {
+                        return match atomic_write(old, &disk) {
+                            Ok(_) => {
+                                journal(old, surface, WriteOutcome::Ok, disk.len(), fnv1a(disk.as_bytes()));
+                                Err(format!("Failed to rename file: {} (the note was left unchanged)", e))
+                            }
+                            Err(re) => Err(format!(
+                                "Failed to rename file: {} — AND the frontmatter rewrite could not be undone: {}. \
+                                 The note still holds its new title under its old filename.",
+                                e, re
+                            )),
+                        };
+                    }
                     return Err(format!("Failed to rename file: {}", e));
                 }
                 std::thread::sleep(Duration::from_millis(50 * attempt));

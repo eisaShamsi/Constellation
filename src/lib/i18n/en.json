@@ -731,7 +731,8 @@
 			"ahSuffix": "AH",
 			"day": "day",
 			"days": "days"
-		}
+		},
+		"languageNotSaved": "The language changed here, but could not be saved — it may go back at the next launch."
 	},
 	"commands": {
 		"newNote": "New note",
@@ -793,7 +794,9 @@
 		"tagNoIdentity": "Could not add the tag to “{note}” — this note has no stable identity yet (it is still opening, or it changed under this tab). Open it, then try again.",
 		"tagBusy": "Could not add the tag to “{note}” — the note is busy (a rename or reload is updating it). Try again in a moment.",
 		"tagWriteFailed": "Could not add the tag to “{note}”: {error}",
-		"moveBatchFailed": "{count} item(s) could not be moved: {items}"
+		"moveBatchFailed": "{count} item(s) could not be moved: {items}",
+		"renameFailed": "“{item}” could not be renamed: {error}",
+		"deleteFailed": "“{item}” could not be deleted: {error}"
 	},
 	"createDialog": {
 		"titleFolder": "New Folder",
@@ -3442,7 +3445,8 @@
 		"evidence": "Evidence",
 		"established": "Established",
 		"contested": "Contested",
-		"archive": "Archive link"
+		"archive": "Archive link",
+		"notSaved": "Could not be saved — try again."
 	},
 	"migrationProgress": {
 		"termVocabV2": {

@@ -15,9 +15,10 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
 import { editProps as editNoteProps, editBody as editNoteBody, bodyForView as modelBodyForView, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
-import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline } from '$lib/editor/noteModel';
-import { splitFrontmatter, composeFrontmatter, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
+import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline, hasUnsavedRecovery } from '$lib/editor/noteModel';
+import { splitFrontmatter, composeFrontmatter, decodeQuotedScalar, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+import { listItemsOf } from '$lib/editor/propRow'; // PJ-207 §15 — ONE reading of "this row's items"
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
 import { toggleTask } from '$lib/tasks/store'; // §A.3 — reconciled task toggle (tasks/store has no store dep → no cycle)
 
@@ -89,7 +90,6 @@ export interface FileEntry {
 	/** MIG-091 §A — created + size for the File Explorer's richer sort. */
 	created?: number | null;
 	size?: number | null;
-	status: string | null;
 	isCUniverse?: boolean;
 	/** For canonical files: human-readable title from frontmatter. */
 	display_title?: string | null;
@@ -207,10 +207,15 @@ function detectPropertyType(key: string, value: string): PropertyType {
 
 	// List detection (highest priority for known keys)
 	if (LIST_KEYS.has(k)) return 'list';
-	if (value.startsWith('[') && value.endsWith(']')) return 'list';
 
-	// Link detection
+	// Link detection — BEFORE the generic `[…]` rule.
+	//
+	// PJ-207 §15 — a wikilink starts with `[` and ends with `]`, so the generic flow-sequence
+	// rule below claimed `[[Architecture]]` as a list and the link branch under it was
+	// unreachable for the one shape it exists to catch. The specific test has to come first.
 	if (/^\[\[.*\]\]$/.test(value)) return 'link';
+
+	if (value.startsWith('[') && value.endsWith(']')) return 'list';
 
 	// Checkbox / boolean detection
 	const lv = value.toLowerCase();
@@ -278,6 +283,14 @@ const WATCHER_ADOPT_ENABLED = true;
 
 // ─── Centralized save with lock ───
 const saveLocks = new Map<string, boolean>();
+/**
+ * PJ-207 §15 — tab ids whose property save the write-lock turned away, with that call's own
+ * `bodyUnchanged` flag. The lock serializes the WRITE; it was also silently cancelling the write,
+ * because nothing else re-drives a frontmatter-only edit (NotePane's debounce and idle timer both
+ * hang off the CM6 `docChanged` listener, which a property edit never fires). Consumed exactly
+ * once, in the in-flight save's `finally`, so N turned-away calls collapse to ONE trailing write.
+ */
+const pendingPropSaves = new Map<string, boolean>();
 const recentWrites = new Map<string, number>();
 
 /** Mark a file as recently written so the file watcher ignores it. */
@@ -638,12 +651,13 @@ function navFlushEnv(tab: { id: string; name: string; libraryName: string }, ori
 		onSaved: (savedPath) => {
 			emit('screen:note-saved', { path: savedPath }).catch(() => {});
 			void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
+			// PJ-207 §15 — the same swallowed embed as the editor's, on the nav-flush path: a
+			// rejected call left this note's vector frozen at its pre-edit text with nothing to
+			// retry it and no message. The outer gate stays only to avoid the O(N) rope
+			// toString() when semantic search is off; reembedNote re-checks it so the sites
+			// cannot drift apart on the condition.
 			if (get(appSettings).enabledFeatures?.semanticSearch) {
-				const body = getNoteModel(tab.id)?.body.toString() ?? '';
-				invoke('constellation_embed_notes', {
-					notes: [{ path: savedPath, name: tab.name, content: body }],
-					force: true,
-				}).catch(() => {});
+				void reembedNote(savedPath, tab.name, getNoteModel(tab.id)?.body.toString() ?? '');
 			}
 		},
 	});
@@ -1025,6 +1039,46 @@ export function tabsInLibrary(libraryPath: string): OpenTab[] {
  *  note callers abort on a non-durable flush. A future edit MUST NOT leak a dirty path
  *  into this function.
  */
+/**
+ * The Focus surface, registered ONCE by the layout that owns it.
+ *
+ * PJ-207 §15 whole-app sweep — `reloadTabsFromDisk` force-adopts disk into the model and bumps
+ * `tab.reloadVersion`, which is the `{#key}` that remounts NotePane. **FocusPane is not under
+ * that key** and ignores `value` after mount, so in Focus mode the pane kept its PRE-adopt body
+ * and the next flush wrote that stale body back over the change that was just adopted — the
+ * 2026-06-12 corruption class, reached by something as ordinary as ticking a checkbox in the
+ * Tasks sidebar while Focus is open on that note.
+ *
+ * The sibling primitive `adoptExternalChangeIntoTabs` takes a `focusReseed` hook per call and
+ * refuses to adopt a focus tab without one. That works, and it is why only its callers are safe:
+ * of this primitive's nine call sites, two hand-wired the reseed and seven did not. An invariant
+ * every caller must remember is one a future call site will forget — the same lesson this file
+ * already records for the dirty-path guard three functions down. So it is registered once, here,
+ * and applied by the primitive itself.
+ */
+let focusSurface: { path: () => string | null; reseed: (p: string) => void } | null = null;
+
+/** Called once by the window that owns the Focus session (`+layout`), and cleared on teardown. */
+export function registerFocusSurface(s: { path: () => string | null; reseed: (p: string) => void } | null): void {
+	focusSurface = s;
+}
+
+/**
+ * The focus session's path, if Focus is open on one of `paths`.
+ *
+ * Compared case-insensitively with the trailing slash trimmed — the same comparison the
+ * hand-wired site in `+layout` used (`normPathLC`), because the focus session path and the tab
+ * path can reach us from different sources and Windows will happily hand back either casing.
+ */
+function focusPathAmong(paths: Iterable<string>): string | null {
+	const cur = focusSurface?.path() ?? null;
+	if (!cur) return null;
+	const norm = (x: string) => normPath(x).replace(/\/+$/, '').toLowerCase();
+	const curN = norm(cur);
+	for (const p of paths) if (norm(p) === curN) return cur;
+	return null;
+}
+
 export async function reloadTabsFromDisk(
 	filePaths: string[],
 	opts?: {
@@ -1084,7 +1138,11 @@ export async function reloadTabsFromDisk(
 		for (const t of get(openTabs)) {
 			const disk = byPath.get(t.path);
 			if (disk === undefined || disk === t.content) continue;
-			if (!isNoteDirty(t.id)) continue;
+			// PJ-207 §15 — a write-ahead-recovered model is CLEAN by construction (the MIG-100 restore
+			// performs zero writes) yet holds content disk does not have. Skipping it here handed it to
+			// the force-adopt below, which destroys that work exactly as it destroyed a dirty model's
+			// before PJ-174 #1. One question — "is there work here disk does not have?" — two flags.
+			if (!isNoteDirty(t.id) && !hasUnsavedRecovery(t.id)) continue;
 			byPath.delete(t.path); // never force-adopted below
 			refused.push(t.path);
 			// Dirty AND disk genuinely moved → a real conflict. Route it to the SAME handler the
@@ -1115,8 +1173,66 @@ export async function reloadTabsFromDisk(
 	// `adoptExternalChangeIntoTabs`, invariant #10).
 	for (const fp of byPath.keys()) clearWriteAhead(fp);
 
+	// FocusPane is not under the `reloadVersion` {#key} — remount it on the freshly-adopted model,
+	// or its next flush composes from the pre-adopt body and silently reverts what we just adopted.
+	// Applied here rather than per-caller: see `registerFocusSurface`.
+	const fpath = focusPathAmong(byPath.keys());
+	if (fpath) focusSurface!.reseed(fpath);
+
 	for (const c of conflicted) await opts?.conflict?.(c.path, c.name, c.disk);
 	return refused;
+}
+
+/**
+ * Follow a rename / move / delete that happened in ANOTHER window.
+ *
+ * PJ-207 §15 — the second screen subscribed to the note-mutation broadcast only through
+ * `onAnyChange`, which re-scans its companion panels and nothing else. Its OPEN TABS were never
+ * repathed, so after a rename in the main window the display sat on a path that no longer
+ * existed: the title stayed wrong, the model's identity stayed wrong, and every affordance on
+ * that tab was a dead click. "A display, not a domain" means it must not WRITE — it does not
+ * mean it may show a note that is no longer there.
+ *
+ * Display-safe by construction: no disk I/O, no IPC, no writes. It moves the tab's path and
+ * title and re-points the model's identity to match, which is exactly what the main window does
+ * for its own tabs after a rename. Content refresh has its own channel (`screen:note-saved`).
+ *
+ * Returns true when a tab actually matched, so a caller can skip follow-up work.
+ */
+export function followExternalRename(oldPath: string, newPath: string, newName?: string): boolean {
+	const norm = (x: string) => normPath(x).replace(/\/+$/, '').toLowerCase();
+	const target = norm(oldPath);
+	let matched = false;
+	openTabs.update((ts) =>
+		ts.map((t) => {
+			if (norm(t.path) !== target) return t;
+			matched = true;
+			repathNoteModel(t.id, newPath); // the model's identity follows the file
+			return { ...t, path: newPath, name: newName ?? t.name };
+		}),
+	);
+	return matched;
+}
+
+/**
+ * Follow a DELETE from another window: drop the tab and close its model.
+ *
+ * PJ-207 §15 — see `followExternalRename`. A deleted note left open on the display is a phantom:
+ * it renders content for a file that is gone, and nothing on it can work.
+ */
+export function followExternalDelete(deletedPath: string): boolean {
+	const norm = (x: string) => normPath(x).replace(/\/+$/, '').toLowerCase();
+	const target = norm(deletedPath);
+	let matched = false;
+	openTabs.update((ts) =>
+		ts.filter((t) => {
+			if (norm(t.path) !== target) return true;
+			matched = true;
+			closeNoteModel(t.id);
+			return false;
+		}),
+	);
+	return matched;
 }
 
 /** PJ-070 — paths whose NotePane is mid-REMOUNT from a watcher/external adopt (a reloadVersion
@@ -1231,8 +1347,12 @@ export async function adoptExternalChangeIntoTabs(
 			// store tab (content + reloadVersion) uniformly; the FocusPane one ALSO gets focusReseed below.
 			adopted.add(t.path);
 			if (isFocusTab) focusReseedPath = t.path; // hazard #7 — remount FocusPane too (not under the reloadVersion {#key})
-		} else if (isNoteDirty(t.id) && diskDiffersFromBaseline(t.id, disk)) {
+		} else if ((isNoteDirty(t.id) || hasUnsavedRecovery(t.id)) && diskDiffersFromBaseline(t.id, disk)) {
 			// DIRTY + a genuine external change → preserve the incoming edit; never clobber local work.
+			// PJ-207 §15 — a write-ahead-recovered model is the same fact wearing a different flag:
+			// content disk does not have, on a model that is CLEAN because the restore performs no
+			// writes. It used to fall through this branch entirely, so the one case that most needed
+			// a `.conflict` sidecar got none — and the adopt above cleared its net.
 			conflicts.push({ path: t.path, name: t.name, disk });
 		}
 		// else: our own write echoing back / a spurious touch (disk === baseline) → nothing to do (invariant #1).
@@ -1251,7 +1371,12 @@ export async function adoptExternalChangeIntoTabs(
 					? { ...t, content: byPath.get(normPath(t.path))!, reloadVersion: (t.reloadVersion ?? 0) + 1 } // invariant #4/#5 — only adopters
 					: t,
 			));
-			for (const p of adopted) clearWriteAhead(p); // invariant #10 — only adopters (a dirty refuser keeps its net)
+			// PJ-207 §15 — COMPARE-and-clear, never a blind clear. This is a NON-SAVE event, and a net
+			// whose content is not what we just adopted is not our own echo: it is a failed save's
+			// recovery copy that exists nowhere else. Same rule the save path has always used (INV-3,
+			// `clearWriteAheadIf` in `standardSaveEnv`) — the net goes only when it holds exactly what
+			// disk now holds. Second line of defence behind `adoptDisk`'s refusal, not a substitute.
+			for (const p of adopted) clearWriteAheadIf(p, byPath.get(normPath(p))!); // invariant #10 — only adopters (a dirty refuser keeps its net)
 			if (focusReseedPath) hooks!.focusReseed!(focusReseedPath); // remount FocusPane on the freshly-adopted model
 			await tick();
 		} finally {
@@ -1291,7 +1416,16 @@ export async function toggleTaskReconciled(filePath: string, lineNumber: number)
 	if (openTab) markCascading(openTab.path);
 	try {
 		// PJ-092 H4 — bounded flush; if not durable, DON'T toggle+reload (clobber/hang guard); save-health retries.
-		if (openTab && !(await flushOpenTabOrAbort(openTab, 'task_toggle_flush'))) return;
+		//
+		// PJ-207 §15 — THROWS rather than returning. Returning resolved this promise normally, so
+		// every caller took its success path after nothing had been written: the Tasks view left
+		// the checkbox ticked (its `catch` un-ticks, but only on a throw), and the calendar and
+		// sidebar refreshed as though the task were done. All three callers already have a
+		// failure path — this is what makes them run. The flush failure itself is separately
+		// visible in the save-health banner, which is where the retry lives.
+		if (openTab && !(await flushOpenTabOrAbort(openTab, 'task_toggle_flush'))) {
+			throw new Error('The note could not be saved first, so the checkbox was not changed.');
+		}
 		await toggleTask(filePath, lineNumber);
 		// ★ 2026-08-01 inspection — the RMW recipe's missing third guard. The flush above proves the
 		// model is clean at that instant; `toggle_task` then reads and rewrites disk across an await
@@ -1327,8 +1461,11 @@ export function addTypedLinkToProps(
 	const idx = props.findIndex((p) => p.key.toLowerCase() === key);
 	if (idx >= 0) {
 		const p = props[idx];
-		const existing =
-			p.listItems ?? (p.value ? String(p.value).split(',').map((s) => s.trim()).filter(Boolean) : []);
+		// PJ-207 §15 — this was the third hand-spelling of "the items of a list row, falling back to
+		// the scalar". It happened to be the correct one; the copies inside PropertyEditor's mutators
+		// were not, and adding a tag there deleted the value the note already had. Folded onto the
+		// shared rule so a surface cannot carry a stale copy of it again.
+		const existing = listItemsOf(p);
 		if (existing.some((x) => x.trim().toLowerCase() === wikilink.toLowerCase())) return null; // already linked
 		const items = [...existing, wikilink];
 		return props.map((q, i) => (i === idx ? { ...q, type: 'list', listItems: items, value: items.join(', ') } : q));
@@ -1669,7 +1806,23 @@ export async function saveTabContent(
 	// a slow write is in flight is NEVER dropped: it lands in the model (dirty) and the
 	// next save/flush persists it. The guard serializes the WRITE, never the model update.
 	// (Fixes the saveLocks-drop silent-loss — same class as this migration; wf_5f9b257d.)
-	if (SINGLE_OWNERSHIP && !propsAlreadyInModel) editNoteProps(tabId, updatedProps, filePath);
+	// PJ-207 §15 (third pass) — a REFUSAL here means the note's YAML does not parse, so composing
+	// would re-emit the original frontmatter and silently drop this change. Abort and surface it
+	// through the save-health banner rather than running a write that cannot carry the edit:
+	// PropertyEditor raises its own PJ-187 banner, but `addTagToNote` / `addLinkToNote` on an open
+	// note arrive here and used to be told the save succeeded.
+	if (SINGLE_OWNERSHIP && !propsAlreadyInModel) {
+		const took = editNoteProps(tabId, updatedProps, filePath);
+		if (!took) {
+			const t = get(openTabs).find((x) => x.id === tabId);
+			reportSaveFailure(
+				filePath,
+				t?.name ?? filePath,
+				new Error("This note's properties could not be updated because its frontmatter could not be read. Fix the YAML at the top of the note and try again."),
+			);
+			return;
+		}
+	}
 	// PropertyEditor's frontmatter edits land here directly, so the same F2 post-cascade-stomp gate
 	// NoteEditor uses must apply here too (see `isCascading`) — it gates the DISK WRITE.
 	//
@@ -1690,7 +1843,16 @@ export async function saveTabContent(
 	// conflict instead. So the property survives and the user is told, rather than the edit
 	// vanishing with the app reporting success.
 	if (isCascading(filePath)) return;
-	if (saveLocks.get(tabId)) return; // a write is already in flight; the model has this edit
+	if (saveLocks.get(tabId)) {
+		// PJ-207 §15 — the model has this edit, but a bare `return` left NOTHING driving the write.
+		// The property then existed only in memory: not on disk, not in note_meta/FTS (runPostSave
+		// is past this gate), and not in the write-ahead net either — the in-flight save's
+		// compare-and-clear matched the older composition it had netted and wiped it. Nothing was
+		// surfaced, and the edit survived only if the user happened to edit the body, switch tabs or
+		// close the app cleanly afterwards. Record the turn-away; the in-flight save re-drives it.
+		pendingPropSaves.set(tabId, bodyUnchanged);
+		return;
+	}
 	saveLocks.set(tabId, true);
 	try {
 
@@ -1708,12 +1870,9 @@ export async function saveTabContent(
 			if (tab) {
 				void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
 			}
-			if (get(appSettings).enabledFeatures?.semanticSearch && tab) {
-				invoke('constellation_embed_notes', {
-					notes: [{ path: savedPath, name: tab.name, content: embedBody }],
-					force: !bodyUnchanged,
-				}).catch(() => {});
-			}
+			// PJ-207 §15 — was a bare `.catch(() => {})` here too; see reembedNote. `tab` is
+			// still required because without it there is no name to embed the note under.
+			if (tab) void reembedNote(savedPath, tab.name, embedBody, !bodyUnchanged);
 			// Track as recently edited for the second-screen dashboard.
 			try {
 				const key = 'constellation-recent-edited';
@@ -1748,6 +1907,21 @@ export async function saveTabContent(
 		}
 	} finally {
 		saveLocks.set(tabId, false);
+		// PJ-207 §15 — re-drive whatever the lock turned away while this write was in flight (see the
+		// gate above for why no existing timer covers a frontmatter-only edit). Reads the model's OWN
+		// path: a rename may have moved it during the write, and composing for the stale path would
+		// be REFUSED — dropping the edit a second time, silently, for the same reason.
+		const pendingBodyUnchanged = pendingPropSaves.get(tabId);
+		pendingPropSaves.delete(tabId);
+		if (pendingBodyUnchanged !== undefined) {
+			const m = getNoteModel(tabId);
+			if (m && isNoteDirty(tabId)) {
+				// `propsAlreadyInModel` — the edit is already IN the model; re-assembling props from a
+				// caller's array is what deletes another writer's frontmatter (MIG-107 §3.5.1).
+				void saveTabContent(tabId, m.path, m.props, m.body.toString(), pendingBodyUnchanged, true)
+					.catch((e) => console.error('[saveTabContent] re-drive after the write-lock failed for', m.path, e));
+			}
+		}
 	}
 }
 
@@ -1899,6 +2073,22 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
 			};
 		}));
+		// PJ-207 §15 (second pass) — the tab may be GONE. Two awaits have passed since `tab` was
+		// read, and the user can close a tab mid-navigation (Alt+← then Ctrl+W). The store update
+		// above no-ops harmlessly, but `openNoteModel` would then CREATE a model for a dead tab id:
+		// an orphan holding this note's content that no flush, teardown or departure iterates —
+		// they all walk `openTabs` — while `resolveNoteContent` has already consumed and cleared
+		// the write-ahead net that content came from. The identical guard was added to
+		// `openNoteTab` in the first pass and this sibling was missed: one concern, two call sites,
+		// exactly the shape the Whole-Ecosystem Fix Law names.
+		if (!get(openTabs).some((t) => t.id === tabId)) {
+			if (resolved.recoveredFromNet) {
+				// Put the net back — it is the only copy of that work.
+				setWriteAhead(filePath, resolved.content, resolved.cursorPos ?? 0, resolved.scrollTop ?? 0);
+			}
+			_traceNav('loadTabHistoryEntry:tabClosed', tabId, filePath);
+			return;
+		}
 		openNoteModel(tabId, filePath, content); // MIG-076 §C — Alt-nav reuse drives the model synchronously
 		// #10 — net-recovered content is UNSAVED work: born DIRTY with the true disk baseline, so
 		// the autosave/retry persists it and switching away can't silently lose it (mirrors openNoteTab).
@@ -2199,9 +2389,29 @@ const isBlankLine = (l: string) => /^\s*$/.test(l);
  *  indicators (`|-`, `>2`, `|2-`, `|+`). The BODY is on the indented lines that follow. */
 const isBlockScalarHeader = (v: string) => /^[|>][0-9+-]{0,2}$/.test(v.trim());
 
-/** Strip one layer of matching quotes, if present. */
-const unquote = (v: string) =>
-	(v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")) ? v.slice(1, -1) : v;
+/**
+ * Strip one layer of matching quotes — AND decode what the quoting was hiding.
+ *
+ * PJ-207 §15 — stripping alone left the escape SYNTAX in the projection as if it were data:
+ * `'O''Brien'` projected as `O''Brien`, `"The \\"Real\\" Thing"` as `The \\"Real\\" Thing`. Untouched
+ * keys were safe only because both sides of the compose diff share this projection; the moment the
+ * user EDITS that key, `serializeLine` re-encodes the syntax as literal text and the note's real
+ * value is permanently replaced by its source form — an alias that stops resolving, a title with
+ * literal backslashes, and both compound (yamlStringify re-quotes its own output, so the
+ * backslashes double on every further edit). Every caller here — the flow-seq splitter, the block
+ * list, the nested-object fields, the scalar path — was carrying that syntax.
+ *
+ * The escape table is the parser's, not ours: `decodeQuotedScalar` runs the same `yaml` library the
+ * composer writes with. Values with no escape syntax take the old allocation-free path unchanged,
+ * so only the values that were being corrupted pay for a parse.
+ */
+const unquote = (v: string) => {
+	const q = v[0];
+	if ((q !== '"' && q !== "'") || !v.endsWith(q)) return v;
+	const inner = v.slice(1, -1);
+	if (q === "'" ? !inner.includes("''") : !inner.includes('\\')) return inner; // nothing escaped — the strip IS the value
+	return decodeQuotedScalar(v) ?? inner; // undecodable → exactly today's behaviour, never a throw, never a loss
+};
 
 /**
  * ★ 2026-08-01 inspection — split a YAML FLOW sequence's interior (`alpha, "beta, gamma"`)
@@ -2450,14 +2660,24 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 				}
 			}
 
-			// Strip quotes
+			// Strip quotes.
+			//
+			// PJ-207 §15 — remember WHETHER they were stripped. In YAML a quoted value is a
+			// string by definition, so `parent: "[[Architecture]]"` is a scalar — but this
+			// unquoted FIRST and then asked "does it start with [ and end with ]?", which is
+			// true of every quoted wikilink. It was routed into the flow-sequence splitter,
+			// came back as the list `['[Architecture]']` with one bracket pair gone, and any
+			// later edit of that key wrote the broken form to disk — silently destroying the
+			// link. Constellation writes this exact shape itself (`set_frontmatter_parent`),
+			// so it was corrupting its own output.
+			const wasQuoted = value !== unquote(value);
 			value = unquote(value);
 
 			// Inline list: [a, b, c] — and the block-position flow list (`tags:` / `  [a, b]`)
 			// handed here by the `flowOnly` branch above, which sets `value` to the same text.
 			// ONE split for both shapes; see `splitFlowSeqItems` for why it cannot be `.split(',')`.
 			let parsedListItems: string[] | undefined;
-			if (value.startsWith('[') && value.endsWith(']')) {
+			if (!wasQuoted && value.startsWith('[') && value.endsWith(']')) {
 				parsedListItems = splitFlowSeqItems(value.slice(1, -1));
 				value = parsedListItems.join(', ');
 			}
@@ -2472,7 +2692,16 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 					key,
 					value,
 					type,
-					listItems: parsedListItems ?? (type === 'list' ? value.split(',').map(s => s.trim()).filter(Boolean) : undefined)
+					// PJ-207 §15 — a QUOTED value is one scalar, whatever its commas: splitting
+					// `aliases: "Rosenthal, F."` produced two bogus aliases and lost the real
+					// one. Unquoted, use the quote-aware splitter, not a naive `.split(',')`.
+					listItems:
+						parsedListItems ??
+						(type === 'list'
+							? wasQuoted
+								? [value]
+								: splitFlowSeqItems(value)
+							: undefined)
 				});
 			}
 		}
@@ -2979,6 +3208,26 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	const cursorPos = resolved.cursorPos;
 	const scrollTop = resolved.scrollTop;
 
+	// The library this path belongs to, derived locally (sync). Hoisted above the cid-injection
+	// block below so its reindex can use `resolvedLibraryName` — see the reasoning at the
+	// original site further down: the CALLER's `libraryName` silently drops to "" on Windows
+	// slash / trailing-slash drift, and handing that to a reindex files the note under no
+	// library at all.
+	const { library, libraryPath } = deriveLibraryForPath(filePath);
+	const resolvedLibraryName = library?.name ?? libraryName;
+
+	/**
+	 * Put back the INCOMING note's write-ahead entry. `resolveNoteContent` above already
+	 * consumed it, so every early return between here and the point the content is actually
+	 * installed has to restash it or the recovery is lost. Hoisted out of the dirty-flush
+	 * branch (PJ-207 §15) because that branch is no longer the only early return.
+	 */
+	const restashConsumedNet = () => {
+		if (resolved.recoveredFromNet) {
+			setWriteAhead(filePath, resolved.content, resolved.cursorPos ?? 0, resolved.scrollTop ?? 0);
+		}
+	};
+
 	// Living Link identifier (cid_cn): injected lazily the first time a note is
 	// opened. Adds a `cid_cn:` property to the note's YAML frontmatter with a
 	// timestamp derived from the file's creation time. Migrates any legacy
@@ -2986,7 +3235,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// vault's original filenames are never touched.
 	// MIG-TPL §1 — templates are EXEMPT: a mold must never be stamped with an identity (see
 	// `isTemplatePath`). Opening one to edit it would otherwise inject `cid_cn:` into the file.
-	if ((filePath.endsWith('.md') || filePath.endsWith('.markdown')) && !isTemplatePath(filePath)) {
+	// PJ-207 §15 — NOT in a display-only window. `ensure_cid_cn_cmd` WRITES the user's `.md`
+	// (it injects `cid_cn:` into the frontmatter through the write gate), and the second screen
+	// is a read-only display: "additional screens are displays, not domains". Merely OPENING a
+	// note there modified the file on disk. The main window injects the identity the first time
+	// it opens the note, which is where that decision belongs.
+	if ((filePath.endsWith('.md') || filePath.endsWith('.markdown')) && !isTemplatePath(filePath) && !displayOnlyWindow) {
 		try {
 			const updated = await invoke<string>('ensure_cid_cn_cmd', { filePath });
 			// PJ-102 (APP-KILLER) — adopt the cmd's result ONLY when the content we
@@ -3008,7 +3262,11 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				// no cid_cn for it and every identity-keyed lookup — collection membership,
 				// link resolution by identity — silently missed it. Fire-and-forget: the note is
 				// already open and correct on screen; this only catches the index up.
-				void reindexNote(filePath, libraryName); // bounded retry + surfaced failure inside
+				// `resolvedLibraryName`, not the caller's `libraryName` — see the derivation above.
+				// The caller's value comes from `resolve_wikilink_cross_library`, which drops to ""
+				// on path drift; reindexing under "" files the note's row under no library, so the
+				// identity this injection just wrote is exactly what the index then cannot find.
+				void reindexNote(filePath, resolvedLibraryName); // bounded retry + surfaced failure inside
 			}
 		} catch { /* non-fatal: CID stays absent, note still opens */ }
 	}
@@ -3053,7 +3311,6 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}
 	}
 
-	const { library, libraryPath } = deriveLibraryForPath(filePath);
 	// Derive libraryName locally from the same normalized match used for
 	// libraryPath. The caller's `libraryName` arg comes from
 	// `resolve_wikilink_cross_library` whose current-library branch uses
@@ -3065,7 +3322,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// store order, loading the wrong same-named note from another
 	// library). Trust the local derivation; only fall back to the
 	// caller's value when we genuinely couldn't match.
-	const resolvedLibraryName = library?.name ?? libraryName;
+	//
+	// PJ-207 §15 — derived ABOVE the cid-injection block now, not here, because the reindex
+	// inside it needs the same trustworthy value (see there).
 
 	// Default: replace active tab content
 	if (!newTab && currentTab) {
@@ -3081,13 +3340,20 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			const f = await flushOutgoing(currentTab.id, 'nav_flush');
 			// ★ Inspection 2026-07-29 — resolveNoteContent (above) already consumed the INCOMING
 			// note's write-ahead entry; an abort here must put it back or the recovery is lost.
-			const restashConsumedNet = () => {
-				if (resolved.recoveredFromNet) {
-					setWriteAhead(filePath, resolved.content, resolved.cursorPos ?? 0, resolved.scrollTop ?? 0);
-				}
-			};
 			if (!f.ok) { restashConsumedNet(); _traceNav('openNoteTab:flushAbort', currentTab.id, filePath); return; }
 			if (_navTokens.get(currentTab.id) !== navToken) { restashConsumedNet(); _traceNav('openNoteTab:superseded', currentTab.id, filePath); return; }
+		}
+		// PJ-207 §15 — the tab may be GONE. Two IPCs have been awaited since `currentTab` was
+		// read (`resolveNoteContent`, `ensure_cid_cn_cmd`), and the user can close a tab during
+		// them. The supersession check above only runs when the outgoing model was dirty, and
+		// `_navTokens` is never cleared on close, so neither covered this. The store update below
+		// would no-op harmlessly, but `openNoteModel(currentTab.id, …)` would then create a model
+		// for a tab that does not exist — an orphan holding this note's content, invisible to
+		// every tab-driven flush and teardown.
+		if (!get(openTabs).some((t) => t.id === currentTab.id)) {
+			restashConsumedNet();
+			_traceNav('openNoteTab:tabClosed', currentTab.id, filePath);
+			return;
 		}
 		// Push to tab's history (trim forward history)
 		const trimmedHistory = currentTab.history.slice(0, currentTab.historyIndex + 1);
@@ -3464,7 +3730,11 @@ export async function restoreSessionTabs(
 		// "adopting" stale disk and destroying the preserved net (the Q4 hole: store.ts
 		// clearWriteAhead-on-adopt). A genuinely-changed disk still adopts (clean model).
 		const trueDisk = restoredTrueDisk.get(t.path);
-		if (trueDisk !== undefined) setModelDiskBaseline(t.id, trueDisk);
+		// PJ-207 §15 — …and TELL the model that what it was seeded with is not on disk. The true
+		// baseline alone only refuses a PHANTOM event; the sync agent whose lock caused the failed
+		// save finishing its pull is a GENUINE change, which passed every remaining gate, adopted
+		// over the recovered paragraph and took the net with it (clearWriteAhead on adopt).
+		if (trueDisk !== undefined) setModelDiskBaseline(t.id, trueDisk, trueDisk !== t.content);
 	}
 	editingTabIds.update((set) => {
 		const next = new Set(set);
@@ -3507,6 +3777,7 @@ export async function closeTab(tabId: string) {
 
 	// Clean up non-reactive state first (no cascade)
 	saveLocks.delete(tabId);
+	pendingPropSaves.delete(tabId); // PJ-207 §15 — tab-keyed like saveLocks; a closed tab must not leave an entry behind
 	// Close-audit fix: a restored tab closed before its deferred cid-ensure
 	// drained would wedge `pendingCidEnsure` (never empties → the activation
 	// watchers leak for the session). Drop its path here.
@@ -3776,6 +4047,47 @@ export async function reindexNote(notePath: string, libraryName: string): Promis
 			}
 			indexHealthError.set(`${notePath}: ${String(e)}`);
 			console.error('[reindex] failed after retry — search index diverged for', notePath, e);
+		}
+	}
+}
+
+/** Surfaced when a save-path re-embed has failed even after the retry — the note reads
+ *  correctly on screen and lexical search finds its new text, but SEMANTIC search,
+ *  "similar notes" and CECE keep answering from the note's PRE-edit vector. */
+export const embedHealthError = writable<string | null>(null);
+
+/** Re-embed a single note after a durable save.
+ *
+ *  PJ-207 §15 — the swallowed-embed twin of `reindexNote`, at the same kind of ONE choke
+ *  point. All four save paths (NoteEditor handleSave and handleFlush, navFlushEnv, the
+ *  prop-save runPostSave) fired `invoke('constellation_embed_notes', …).catch(() => {})`
+ *  one to three lines under a reindexNote that had deliberately been given a bounded retry
+ *  and a surfaced failure, because a silent index failure was ruled unacceptable. The embed
+ *  got neither — and nothing self-corrects it: the boot backfill only fires for notes with
+ *  NO embedding row at all, index_repair.rs never touches `note_embeddings`, and
+ *  `constellation_search_reindex` does not re-embed. So one rejected call — a writer-lock
+ *  contention past the 5s busy_timeout, an engine not loaded yet — froze that note's vector
+ *  at its pre-edit text for good, with no message anywhere in the app.
+ *  Owns the semanticSearch gate too, so the four call sites cannot drift apart on it.
+ *  Does NOT cover a failed model inference: embeddings.rs still logs that and returns Ok.
+ *  NEVER rejects — call sites need no catch. */
+export async function reembedNote(path: string, name: string, content: string, force = true): Promise<void> {
+	if (!get(appSettings).enabledFeatures?.semanticSearch) return;
+	for (let attempt = 0; attempt < 2; attempt++) {
+		try {
+			await invoke('constellation_embed_notes', { notes: [{ path, name, content }], force });
+			// Clear ONLY for the note the bar names — the same gate reindexNote needed after
+			// the safety inspection caught an unconditional clear: note A's surfaced staleness
+			// must not vanish the moment the user types a character in note B.
+			embedHealthError.update((cur) => (cur && cur.startsWith(`${path}:`) ? null : cur));
+			return;
+		} catch (e) {
+			if (attempt === 0) {
+				await new Promise((r) => setTimeout(r, 1500));
+				continue;
+			}
+			embedHealthError.set(`${path}: ${String(e)}`);
+			console.error('[embed] failed after retry — semantic index stale for', path, e);
 		}
 	}
 }
@@ -4489,7 +4801,11 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 			// The correct behaviour was already in this function as the flush-failed branch: keep
 			// the user's model and just move its identity. Its sibling `drainCidEnsure` (:2841)
 			// carries the identical guard with the identical reasoning; this site never got it.
-			const keepUserModel = fresh === null || isNoteDirty(t.id);
+			// PJ-207 §15 — …or the model holds write-ahead-recovered content disk does not have. It is
+			// CLEAN (the restore writes nothing), so it took the re-seed branch below and the rename
+			// then cleared its net — the same silent loss PJ-174 #1b closed for typing, through the
+			// one door that flag could not see.
+			const keepUserModel = fresh === null || isNoteDirty(t.id) || hasUnsavedRecovery(t.id);
 			if (!keepUserModel) {
 				openNoteModel(t.id, effectivePath, fresh!);
 				adoptedFreshDisk = true;
@@ -4847,6 +5163,7 @@ function releaseTabsForVacatedPath(path: string): void {
 	// PATH-keyed containers; these are keyed by tab id and were being leaked for the session.
 	for (const t of removed) {
 		saveLocks.delete(t.id);
+		pendingPropSaves.delete(t.id); // PJ-207 §15 — mirrors closeTab; tab-keyed state dies with the tab
 		dropPendingCidEnsure(t.path);
 		closeNoteModel(t.id);
 	}
@@ -5757,7 +6074,6 @@ export async function resolveConflictMerge(
 	notePath: string,
 	sidecarPath: string,
 	mergedText: string,
-	hooks?: { focusReseed?: (path: string) => void },
 ): Promise<{ ok: boolean; reason?: string }> {
 	const tab = get(openTabs).find((t) => t.path === notePath);
 	if (!tab) return { ok: false, reason: 'note_not_open' }; // the entry point opens the note first — a model must exist
@@ -5789,8 +6105,9 @@ export async function resolveConflictMerge(
 		if (!outcome.ok) return { ok: false, reason: (outcome as { reason?: string }).reason ?? 'write_failed' };
 
 		// Durable success → remount the editor surfaces on the merged disk, then resolve the sidecar.
-		await reloadTabsFromDisk([notePath]); // NotePane: force-reseed clean model + reloadVersion {#key} remount
-		hooks?.focusReseed?.(notePath); // FocusPane is NOT under the {#key} — reseed it too (Editor-Surface Gate #2/#4)
+		// Remounts BOTH surfaces: NotePane via the reloadVersion {#key}, FocusPane via the registered
+		// focus surface (PJ-207 §15 — it used to need a hand-wired hook here; the primitive does it).
+		await reloadTabsFromDisk([notePath]);
 		await tick(); // let the remounts + the gated outgoing teardown flush settle before we release the gate
 
 		// Sidecar → trash (reversible, never hard-delete), banner row → dismiss. ONLY after durable success.
@@ -6760,7 +7077,20 @@ export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
  * 4 sight keys persisted.
  */
 export function applyParsedSettings(parsed: Record<string, unknown>): void {
-	if (!parsed || Object.keys(parsed).length === 0) return;
+	// PJ-207 §15 — an EMPTY object is an answer, not a non-answer.
+	//
+	// This used to return early on `{}`, leaving `appSettings` exactly as it was. On a universe
+	// switch that is the OUTGOING universe's settings — and `loadSettings` latches
+	// `settingsLoaded = true` immediately after, so the next `saveSettings()` wrote universe A's
+	// settings into universe B's `settings.json`. A universe whose settings file is `{}` is an
+	// ordinary state (a freshly created one), not an error.
+	//
+	// Applying it means "every setting is at its default", which is what an empty settings file
+	// says. The bundle caller passes `{}` for BOTH "genuinely empty" and "the read failed", and
+	// that ambiguity is handled where it belongs — at its latch, which refuses to latch on `{}`
+	// and defers to `loadSettings()`. Showing defaults for a moment there is strictly safer than
+	// showing another universe's settings.
+	if (!parsed) parsed = {};
 
 	// Migrate: old default nodeSize was 4, new default is 1.5
 	const savedSkyView = (parsed.skyView as Record<string, unknown>) || {};
@@ -7234,7 +7564,14 @@ export async function loadWorkspaces() {
 		if (data && Array.isArray(data)) {
 			// An empty array from a SUCCESSFUL read is a real answer — adopt it, and note
 			// that a successful read is the ONLY thing that unlocks writing.
-			if (data.length > 0) workspaces.set(data as Workspace[]);
+			//
+			// PJ-207 §15 (APP-KILLER) — this used to read `if (data.length > 0)`, which did the
+			// exact opposite of the sentence above: a universe with NO workspaces kept the
+			// PREVIOUS universe's list in the store, while still latching writes open. The next
+			// "Save workspace" then wrote universe A's layouts into universe B's
+			// `workspaces.json` — a file with no `.prev` rotation and no second copy, so the
+			// overwrite is unrecoverable. Adopt the answer we were actually given.
+			workspaces.set(data as Workspace[]);
 			workspacesLoaded = true;
 			workspacesError.set(null);
 		}
@@ -7242,6 +7579,23 @@ export async function loadWorkspaces() {
 		workspacesError.set(String(e));
 		console.error('[workspaces] read failed — saving is disabled this session to protect the file:', e);
 	}
+}
+
+/**
+ * PJ-207 §15 — drop everything this universe's workspaces held, and re-lock writing.
+ *
+ * Called on a universe switch, BEFORE the incoming universe is read. The adopt-the-empty-answer
+ * fix above closes the common path; this closes the rest of it: if the incoming read FAILS (an
+ * AV or sync client holding the file for a moment), the latch stays closed and there is nothing
+ * of the outgoing universe left in the store to be written anywhere.
+ *
+ * `handleUniverseSwitch` already clears libraries, stats, sky, tags, appearances and the drift
+ * notice. These two were simply never on that list.
+ */
+export function resetWorkspacesForUniverse(): void {
+	workspaces.set([]);
+	workspacesLoaded = false;
+	workspacesError.set(null);
 }
 
 /** The boot bundle can only report `[]` for BOTH "empty" and "read failed", so it may not

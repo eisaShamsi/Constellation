@@ -38,7 +38,12 @@ pub struct TrailNote {
 }
 
 /// List all trails in a library.
-#[tauri::command]
+///
+/// PJ-207 §15 — `(async)`: this recursively walks the library and reads every candidate file
+/// (`read_to_string` + `replace` + `to_lowercase` per note). As a plain `#[tauri::command]` that
+/// whole walk ran on the main thread, so opening the trails list on a large universe froze the
+/// window. Same treatment its file-sibling `execute_lens` already carries for the same hazard.
+#[tauri::command(async)]
 pub fn list_trails(
     app: tauri::AppHandle,
     library_path: String,
@@ -52,7 +57,11 @@ pub fn list_trails(
 }
 
 /// Read a specific trail and resolve its note paths.
-#[tauri::command]
+///
+/// PJ-207 §15 — `(async)`: this does one FULL recursive Universe walk PER note listed in the
+/// trail (`resolve_note_path` → `find_note_recursive`), so a twenty-note trail is twenty walks,
+/// and every one of them ran on the main thread.
+#[tauri::command(async)]
 pub fn read_trail(
     app: tauri::AppHandle,
     trail_path: String,

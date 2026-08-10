@@ -43,6 +43,60 @@
 ///
 /// **Indentation is deliberately not part of this test.** See the module docs: a block
 /// sequence is allowed to sit at its parent key's indentation, and the dash is what makes
+/// Split an inline YAML flow sequence's INNER text (`a, b, c` from `[a, b, c]`) into items,
+/// **respecting quotes**.
+///
+/// PJ-207 §15 — the Rust half of the codebase had eight hand-rolled `inner.split(',')` sites, so
+/// a quoted item containing a comma was torn in two and its real value destroyed. The shape is
+/// ordinary, not exotic: `aliases: ["Ibn Khaldūn, ʿAbd al-Raḥmān"]`, `parent: "[[Foo, Bar]]"` —
+/// a comma is exactly why such a value was quoted in the first place. The TypeScript side had
+/// already been fixed (`splitFlowSeqItems`, store.ts, 2026-08-01); the Rust side was never swept.
+///
+/// Deliberately a scanner rather than a YAML parser: one pass, no per-character allocation. It
+/// strips ONE matching quote pair per item and does not decode escapes — a `\"` inside a
+/// double-quoted item stops the item being split in the wrong place and rides through verbatim,
+/// which is what every other quoted value here already does.
+pub(crate) fn split_flow_seq_items(inner: &str) -> Vec<String> {
+    let mut items: Vec<String> = Vec::new();
+    let mut start = 0usize;
+    let mut quote: Option<char> = None;
+    let bytes: Vec<(usize, char)> = inner.char_indices().collect();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        let (idx, ch) = bytes[i];
+        if let Some(q) = quote {
+            if ch == '\\' && q == '"' {
+                i += 2; // YAML escapes only exist inside double quotes
+                continue;
+            }
+            if ch == q {
+                quote = None;
+            }
+        } else if ch == '"' || ch == '\'' {
+            quote = Some(ch);
+        } else if ch == ',' {
+            items.push(inner[start..idx].to_string());
+            start = idx + ch.len_utf8();
+        }
+        i += 1;
+    }
+    items.push(inner[start..].to_string());
+    items
+        .into_iter()
+        .map(|s| unquote_one_pair(s.trim()))
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Strip ONE matching pair of surrounding quotes. Mirrors the TS `unquote`.
+fn unquote_one_pair(s: &str) -> String {
+    let b = s.as_bytes();
+    if b.len() >= 2 && ((b[0] == b'"' && b[b.len() - 1] == b'"') || (b[0] == b'\'' && b[b.len() - 1] == b'\'')) {
+        return s[1..s.len() - 1].to_string();
+    }
+    s.to_string()
+}
+
 /// it a sequence item.
 pub(crate) fn is_seq_item(line: &str) -> bool {
     seq_item_value(line).is_some()
@@ -108,6 +162,30 @@ pub(crate) fn is_comment(line: &str) -> bool {
 ///
 /// The second half is the part that was missing everywhere: `- name: X` at column 0 is
 /// unindented AND contains a colon, so every site that tested only indentation accepted it
+/// PJ-207 §15 — **does this line END a block value we are dropping?**
+///
+/// Only a new TOP-LEVEL KEY does. Everything else still belongs to the block: its sequence
+/// items, an item's indented continuation, a comment sitting between items, and blank lines.
+///
+/// The rule this replaces was "is it a sequence item? if not, the block is over", which ended
+/// the block at the first comment or continuation and PUSHED THE REMAINING ITEMS BACK into the
+/// frontmatter — under a key that had already been removed. The result is a sequence with no
+/// key: invalid YAML, and an unparseable note is exactly the state in which every later
+/// property edit silently vanishes. Two strip loops had it (`sources:` and `content_type:`);
+/// they now share this one so they cannot drift apart again.
+pub(crate) fn ends_dropped_block(line: &str) -> bool {
+    // PJ-207 §15 (second pass) — a COMMENT never ends the block.
+    //
+    // `is_top_level_key_line("# note")` is true: a column-0 comment is unindented and is not a
+    // sequence item. So a comment written flush-left INSIDE a block ended it here, and every
+    // remaining `- ` item was pushed back out under a key that had already been removed —
+    // a sequence with no key, which is unparseable frontmatter, which is the state where every
+    // later property edit silently vanishes. The first pass fixed only the INDENTED-comment half
+    // of this exact shape and shipped a regression test that used `  # a note to self`; the
+    // flush-left half, which is how most people write a frontmatter comment, was still broken.
+    !line.trim_start().is_empty() && !is_comment(line) && is_top_level_key_line(line)
+}
+
 /// as a key literally named `- name`.
 pub(crate) fn is_top_level_key_line(line: &str) -> bool {
     !is_indented(line) && !is_seq_item(line)
@@ -125,6 +203,36 @@ pub(crate) fn is_block_value_line(line: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    /// PJ-207 §15 — a quoted item containing a comma is ONE item. The shape is ordinary:
+    /// `aliases: ["Ibn Khaldūn, ʿAbd al-Raḥmān"]` — a comma is exactly why it was quoted.
+    /// Eight Rust sites split on raw commas and tore such values in half.
+    #[test]
+    fn a_quoted_comma_does_not_split_the_item() {
+        assert_eq!(
+            super::split_flow_seq_items(r#""Ibn Khaldūn, ʿAbd al-Raḥmān""#),
+            vec!["Ibn Khaldūn, ʿAbd al-Raḥmān".to_string()]
+        );
+        assert_eq!(
+            super::split_flow_seq_items(r#"alpha, "Rosenthal, F.", beta"#),
+            vec!["alpha".to_string(), "Rosenthal, F.".to_string(), "beta".to_string()]
+        );
+        // single quotes too
+        assert_eq!(super::split_flow_seq_items("'a, b', c"), vec!["a, b".to_string(), "c".to_string()]);
+        // and the ordinary case is unchanged
+        assert_eq!(super::split_flow_seq_items("a, b, c"), vec!["a".to_string(), "b".to_string(), "c".to_string()]);
+        // empties dropped, whitespace trimmed
+        assert_eq!(super::split_flow_seq_items(" a ,, b "), vec!["a".to_string(), "b".to_string()]);
+    }
+
+    /// A wikilink whose TITLE contains a comma survives — the case that destroys a link.
+    #[test]
+    fn a_wikilink_with_a_comma_survives() {
+        assert_eq!(
+            super::split_flow_seq_items(r#""[[Foo, Bar]]""#),
+            vec!["[[Foo, Bar]]".to_string()]
+        );
+    }
+
     use super::*;
 
     #[test]

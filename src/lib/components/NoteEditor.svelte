@@ -15,7 +15,7 @@
 		renameItem, openTabs, openNoteTab, closeTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
-		isCascading, isReseeding, reindexNote,
+		isCascading, isReseeding, reindexNote, reembedNote,
 		type FrontmatterProperty, type PropertyType
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
@@ -24,7 +24,7 @@
 	// model is not yet READ for seed/save — that swap lands flag-gated next,
 	// so the app behaves identically to the §C-1 safe state right now.
 	import { ensure as ensureModel, editBody, editProps, seedBody, save as saveNoteSession, editPropValue, addPropTo, removePropFrom } from '$lib/editor/noteSession';
-	import { compose, getModel, isDirty as isModelDirty } from '$lib/editor/noteModel';
+	import { compose, getModel, isDirty as isModelDirty, hasUnsavedRecovery } from '$lib/editor/noteModel';
 	import { propsVersion } from '$lib/editor/propsSignal';
 	import { getActiveEditorForPath } from '$lib/editor/activeEditor';
 	import { SINGLE_OWNERSHIP, PROPS_SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
@@ -189,7 +189,9 @@
 		ensureModel(tab.id, tab.path, tab.content ?? '');
 	});
 
-	// Save guard — prevents double saves
+	// Save guard for the LEGACY (SINGLE_OWNERSHIP=false) write path ONLY.
+	// PJ-207 §15 — it used to guard the model-backed path too, where "prevents double
+	// saves" actually meant "silently loses the second one": see handleSave below.
 	let saving = false;
 
 	/** Re-read the latest tab content from the openTabs store (properties may have changed) */
@@ -281,11 +283,27 @@
 	// tab. Bail in that case.
 	function handleSave(text: string, filePath: string) {
 		if (readOnly) return; // G3 — read-only display never writes
-		if (saving) return;
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath) || isReseeding(filePath)) return; // F2 post-cascade-stomp gate + PJ-070 watcher-reseed teardown gate
-		saving = true;
 		if (SINGLE_OWNERSHIP) {
+			// PJ-207 §15 — this used to open with `if (saving) return;`, DROPPING any
+			// debounced save that arrived while a previous write was still in flight. That
+			// drop was silent LOSS, not a harmless no-op: NotePane clears its view-level
+			// `dirty` at save-REQUEST time (NotePane.svelte:362) BEFORE calling in here, so
+			// nothing re-armed the dropped save — its debounce timer had already nulled
+			// itself (NotePane.svelte:595), and both the 30s idle timer (NotePane.svelte:1015)
+			// and the visibilitychange handler (NotePane.svelte:374) route back through
+			// `if (!dirty) return`. Worse, the in-flight save then ran clearNetIf against the
+			// exact content it had just written and found it unchanged — because the drop is
+			// what prevented a newer setNet — so it CLEARED the write-ahead net. The newest
+			// keystrokes were then nowhere but the in-memory model: not on disk, no crash
+			// copy, no pending write, no save-health banner, no unsaved cue anywhere. A write
+			// slower than the 1500ms debounce is ordinary, not exotic (gate_write fsyncs and
+			// retries a sharing violation; an AV-scanned or synced folder exceeds it).
+			// Serializing concurrent saves was never this component's job: noteSession.save
+			// chains them per model id (PJ-103 `saveChains`) so the newest composition writes
+			// LAST, and its eager compose + setNet refreshes the crash net immediately —
+			// which is also what makes the predecessor's compare-and-clear leave it alone.
 			// Save-Durability (2026-07-08) — push this view's body to the model, then
 			// go through the ONE durability gate (noteSession.save + standardSaveEnv):
 			// compose (identity-checked; a path mismatch is REFUSED) → net BEFORE the
@@ -303,12 +321,12 @@
 					// Reindex for search (non-blocking) — FTS5, tags, links, word_count.
 					void reindexNote(savedPath, tab.libraryName);
 					// MIG-071 — re-embed for semantic search (vector went stale after edits).
-					if (get(appSettings).enabledFeatures?.semanticSearch) {
-						invoke('constellation_embed_notes', {
-							notes: [{ path: savedPath, name: tab.name, content: text }],
-							force: true,
-						}).catch(() => {});
-					}
+					// PJ-207 §15 — this was a bare `.catch(() => {})` sitting one line under a
+					// reindexNote that had been given a bounded retry and a surfaced failure
+					// precisely because a silent index failure was ruled unacceptable. A rejected
+					// embed froze this note's vector at its pre-edit text with nothing to retry it
+					// and no message. reembedNote owns the gate, the retry and the surface.
+					void reembedNote(savedPath, tab.name, text);
 					// MIG-021v3 — CECE on-save background scan (rides the 1500ms debounce,
 					// never per-keystroke). Dispatches the same event the manual
 					// "Suggest sources & content type" menu uses (Source Review listener).
@@ -318,9 +336,15 @@
 						}));
 					}
 				},
-			}), 'editor_save').finally(() => { saving = false; });
+			}), 'editor_save');
 		} else {
 			// Legacy (dead under SINGLE_OWNERSHIP=true) — kept for the flag-off path.
+			// PJ-207 §15 — `saving` still guards THIS branch and only this branch: writeNote
+			// goes straight to disk with no per-id chain, so two overlapping legacy writes
+			// could land out of order. With no model to re-compose from, the flag-off path has
+			// nothing better to offer; the chained path above must never drop a save.
+			if (saving) return;
+			saving = true;
 			const content = buildFullContent(freshProps(), text);
 			markRecentWrite(filePath);
 			writeNote(filePath, content, 'editor_save')
@@ -388,7 +412,19 @@
 			// ⟺ every byte here is already on disk. Under `SINGLE_OWNERSHIP = false` there
 			// is no model, so the flag stays false = "real work" = pre-PJ-181 behaviour,
 			// which is the direction that never discards.
-			setWriteAhead(filePath, content, cursorPos, scrollTop, SINGLE_OWNERSHIP && !isModelDirty(tab.id));
+			// PJ-207 §15 (third pass, APP-KILLER) — `!isModelDirty` is NOT the same question as
+			// "disk already has these bytes". A model restored from the write-ahead net is CLEAN by
+			// construction (MIG-100 Gate #8: a restore performs zero write-class IPCs) while holding
+			// content disk has never seen. Merely LOOKING at such a note and then switching tab or
+			// closing the app ran this line with `dirty === false`, re-stamping the note's only
+			// recovery copy as an already-durable snapshot — and the downgrade guard in
+			// `setWriteAhead` cannot catch it, because the bytes are identical. The next open then
+			// saw `snapshot === true && disk !== content`, called it stale, and deleted it: the
+			// failed-save work gone from the model, gone from the net, never on disk.
+			//
+			// `hasUnsavedRecovery` is the honest form of the question, and it is what every other
+			// arbiter in the store already asks alongside `isNoteDirty`.
+			setWriteAhead(filePath, content, cursorPos, scrollTop, SINGLE_OWNERSHIP && !isModelDirty(tab.id) && !hasUnsavedRecovery(tab.id));
 			return;
 		}
 		markRecentWrite(filePath);
@@ -404,12 +440,9 @@
 				onSaved: (savedPath) => {
 					broadcastNoteSaved(savedPath);
 					void reindexNote(savedPath, tab.libraryName);
-					if (get(appSettings).enabledFeatures?.semanticSearch) {
-						invoke('constellation_embed_notes', {
-							notes: [{ path: savedPath, name: tab.name, content: text }],
-							force: true,
-						}).catch(() => {});
-					}
+					// PJ-207 §15 — same swallowed embed on the flush path (tab close, visibility
+					// change, {#key} teardown); see reembedNote.
+					void reembedNote(savedPath, tab.name, text);
 				},
 			}), 'editor_flush');
 		} else {

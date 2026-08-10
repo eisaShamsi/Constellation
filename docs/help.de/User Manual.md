@@ -336,6 +336,18 @@ Tippen Sie `[[`, um die Notizvervollstaendigung zu oeffnen. Beginnen Sie mit der
 
 Sie koennen auch auf bestimmte Ueberschriften verlinken: `[[Notizname#Ueberschrift]]`.
 
+### Das Umbenennen einer Notiz aktualisiert alle Links auf sie
+
+Wenn Sie eine Notiz umbenennen — im Dateibaum (Rechtsklick → Umbenennen) oder indem Sie ihren Titel oben auf der Seite bearbeiten — schreibt Constellation jeden Link um, der auf sie zeigt, damit kein Link stillschweigend zerbricht. Das ist die Einstellung **Interne Links automatisch aktualisieren** unter **Einstellungen → Verknüpfungen**; sie ist aktiv, solange Sie sie nicht ausschalten. Währenddessen erscheint auf den betroffenen Notizen kurz die Einblendung „Links werden aktualisiert…".
+
+**Jede Form von Link wird aktualisiert**, nicht nur die einfachen: ein einfacher Link (`[[Notizname]]`), ein Link mit Ihrem eigenen Anzeigetext (`[[Notizname|die Worte, die dort stehen sollen]]`), ein **typisierter** Link, der eine Beziehung trägt (`[[supports::Notizname]]`, und mit Ihrer Anmerkung `[[supports::Notizname|warum es stützt]]`), sowie ein Link, der *in* eine Notiz zeigt — auf eine Überschrift (`[[Notizname#Eine Ueberschrift]]`) oder auf einen Block (`[[Notizname^blockid]]`). Nur der Name ändert sich: die Beziehung, Ihr Anzeigetext, Ihre Anmerkung und die angesteuerte Überschrift bzw. der Block bleiben genau so, wie Sie sie geschrieben haben. Früher blieben typisierte Links und Links auf eine Überschrift oder einen Block zurück — sie nannten weiterhin den alten Titel, ohne jeden Hinweis darauf.
+
+**Jede Bibliothek Ihres Universums ist erfasst.** Die Aktualisierung erreicht Notizen in **allen** Bibliotheken des geöffneten Universums, nicht nur in jener, in der die umbenannte Notiz liegt — ein Link von einer Bibliothek in eine andere übersteht das Umbenennen also. Notizen in einem **verknüpften (Kind-)Universum** bleiben bewusst unangetastet: Das ist eine eigenständige Wissensbasis, deren Notizen Constellation nicht umschreibt.
+
+**Wenn einzelne Notizen nicht aktualisiert werden konnten, erfahren Sie es.** Gelegentlich ist eine Datei gesperrt, schreibgeschützt oder von einem anderen Programm geöffnet. Statt einen glatten Erfolg zu melden, nennt Constellation diese Notizen und sagt Ihnen, dass deren Links weiterhin auf den alten Titel zeigen — so wissen Sie genau, was zu prüfen ist.
+
+**Das Umbenennen eines Ordners ändert keine Links** — so gewollt. Ordnernamen stehen nie innerhalb eines Links, es gibt also nichts umzuschreiben.
+
 ### Speichern und Wiederherstellung
 
 Constellation **speichert automatisch** waehrend der Eingabe — es gibt keine Speichern-Schaltflaeche. Ihre Aenderungen werden einen Moment nach dem Innehalten in die `.md`-Datei geschrieben (und immer dann, wenn Sie die Notiz wechseln oder einen Tab schliessen). Eine Notiz gilt erst dann als "gespeichert", wenn sie tatsaechlich auf die Festplatte geschrieben wurde.

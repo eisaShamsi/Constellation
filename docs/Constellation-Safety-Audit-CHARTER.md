@@ -92,9 +92,19 @@ Search-index-maintenance + boot/init-ordering came back **CLEAN** (no confirmed 
 **Theme H — index / derived-data divergence (beyond Wave-1's folder cascade).** *HIGH/MED.*
 - **W2-9** HIGH index-divergence — `search.rs:8814` — `reconcile_filesystem` walks the RECURSIVE (federated) library set and indexes foreign cUniverse notes INTO the active universe's `search.db`, a SECOND copy alongside the MIG-056 read-only ATTACH → the two drift (the foreign note is only updated in its own universe's DB). ***HALF-CLOSED 2026-08-07 by PJ-207 §8.***
   **Closed — the automatic class.** Six passes now scope to the active universe's OWN libraries via the strict `try_load_libraries`: the bulk walk (`reconcile_filesystem`), the boot reconcile's roots **and** its orphan re-adopt (`reconcile.rs::run`), the cold-start runner (refused at the door with a typed `Foreign` outcome), the watcher batch (`reindex_changed_paths`), the boot cold-start fan-out, and `library_attribution_backfill`. The plan named four of these; the Whole-Ecosystem sweep found the last two. Measured before the fix on real data: `Eisa Universe` held **13 foreign rows**. Regression-guarded by `search.rs::tests_pj207_s8_index_write_scope` + the source-level wiring guard `index_repair.rs::tests_pj207_s8_write_scope_guard` (the behaviour tests cannot pin the wiring — every entry point takes an `AppHandle` and the crate has no Tauri test harness).
+  **2026-08-09 (PJ-207 §15) — NOT closed at the migration's close, deliberately.** The plan
+  expected §15 to close W2-9 on the evidence of §8 **and** §13. §13 (offer to remove the duplicated
+  linked-universe copies) is **blocked on a Boss ruling for PJ-224** and was not built, so the
+  half-closed status stands. Marking it closed on §8 alone would be exactly the false-completion
+  this Charter exists to catch.
+
   **STILL OPEN — the user-action class (→ PJ-219).** `validate_path_in_any_library`'s first branch is the recursive set *by design* (*"including child universe libraries"*), so editing a linked universe's note from the parent still writes a row here, through ~18 surfaces including the save path. Boss-ruled 2026-08-07 to file rather than fix: closing it requires deciding where that write goes instead, and routing it nowhere would leave the edit findable in no index at all. **§13's removal can be undone one note at a time through this door — that constraint belongs in §13's preconditions.**
   **Adjacent HIGH found and fixed in the same commit:** `reconcile::run` had no universe-generation guard at all, so a switch mid-pass indexed the DEPARTED universe's notes into the newly-active index — the same divergence by a second door. It now takes §7's shared `walk_may_proceed` decision at start, before each write phase, and per-iteration in the removal and re-adopt loops.
 - **W2-14** MED index-divergence — `search.rs:1365` — the save-path incoming diff keys on target NAMES only → retyping a link (same target, different link_type; or cognitive↔structural) never recomputes B's `incoming_link_types(_json)` / `incoming_top_rank` (/ `incoming_count`) → stale until the next boot reconcile. *OPEN.*
+  **2026-08-09 (PJ-207 §15).** Still open as a WRITE-PATH defect, but no longer unreachable: the
+  repair now heals it, and the user can now run that repair (**Settings → Index → Repair index**,
+  or **Repair now** on the drift notice) instead of waiting for a boot. Filed as its own job — the
+  fix belongs in the save path's incoming diff, not in the repair.
 
 **Theme I — the write-gate's lost-update protection is inert.** *MED.*
 - **W2-13** MED — `write_gate.rs:420` — staleness (`WouldRefuseStale`) is only computed inside `check_expectation`, which the live editor save path never supplies → `gate_write` takes the self-attestation branch (identity-only) and returns `SelfAttestedOk` even when the disk copy is NEWER → the lost-update class the gate names is never actually guarded on the real save path, even after the enforce flip. *OPEN.*
@@ -451,3 +461,34 @@ by hand.
   never flushed, yet still force-adopted from disk) and **two APP-KILLERs in `PropertyEditor.svelte`
   (851/852)** (a stale whole-props replay erasing frontmatter another writer already persisted; two
   instances bound to one tabId).
+
+---
+
+## Cycle register — PJ-207 close (2026-08-09)
+
+A `/migration` close is a cycle boundary, so this records what the **per-build** inspections found
+across the migration, plus the whole-app sweep run at the close. **Every confirmed finding below was
+fixed before its commit** — none was logged and shipped (WA#6).
+
+**Per-build (diff-scoped), by step.** §9: 5 confirmed, 4 fixed in-pass (incl. `has_findings`
+treating an unreadable directory as "all clear" — silence is this feature's encoding of *no
+problem*), 1 filed (PJ-227). §11: 9 fixed pre-commit, 1 HIGH (an over-broad clear that let one
+note's successful reindex mask a different note's surfaced divergence). §11 review-count fix: 2
+rounds, 6 confirmed — a degrading loader on a **write-back** path that would have rewritten every
+note as never-reviewed and reported success; a mid-repair ✓ Reviewed silently reverted; **four
+COMMIT-without-ROLLBACK sites**, one of which could have left the app's own connection transacted
+for a whole session, discarding every `search.db` write at exit. PJ-232: the inspection **refuted a
+comment written minutes earlier** — `init_db` still baked the ACTIVE universe's link vocabulary into
+a FOREIGN universe's persisted trigger DDL, then re-indexed its rows through them and wrote
+frontmatter into its `.md` files. Fixed with a schema-only door; a second round caught that MIG-003
+**Step 1** had been missed (it is not named `mig003_step1_*`) and that the guard test **could not
+fail**. §14 flip: 5 confirmed — including a **live regression introduced by the change itself**
+(making the bulk walk a `force` caller silently disabled the save-during-read guard for a
+tens-of-seconds run), and three gates sharing one root cause (`matches!(scope, Scope::Full)`).
+Re-inspection after each fix round: **0**.
+
+**What the register says about the method.** Of the findings in the last four rounds, the majority
+were in code the same session had just written, and several were in **comments** — claims that had
+become false. The inspection's most valuable catches this cycle were not missing guards but
+**assertions that no longer matched the code**, including two of mine. That is the argument for
+running it on the diff every build rather than only at cycle boundaries.

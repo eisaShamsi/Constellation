@@ -81,6 +81,26 @@ export const samePropRow = (a: FrontmatterProperty, b: FrontmatterProperty): boo
 	sameNested(a.nestedObjects, b.nestedObjects);
 
 /**
+ * The items of a row that is SHOWN as a list, when they may still live only in the scalar `value`.
+ *
+ * PJ-207 §15 — this concept had the same fate `samePropRow` had: several spellings, and the ones
+ * that mattered most were the ones that did not have it. A row can be displayed as chips while its
+ * items are a comma scalar on disk — a type registered library-wide as `list` (the type dropdown
+ * persists the choice for every note in the library, so it arrives on notes that were never opened
+ * when it was made), or a `sources:`/`content_type:` value written on one line by the Bases cell
+ * editor or typed by hand. The RENDERERS fell back to splitting `value`; the MUTATORS did not —
+ * they read `listItems ?? []`, got an empty array, and rebuilt the property from nothing. Adding
+ * one tag deleted the author the note already had; removing one taxonomy pill deleted the pills
+ * next to it. No error, no refusal, nothing on screen to notice.
+ *
+ * Always returns a fresh array, so a caller can never alias the model's own.
+ */
+export const listItemsOf = (p: FrontmatterProperty): string[] =>
+	p.listItems
+		? [...p.listItems]
+		: (p.value ? String(p.value).split(',').map((s) => s.trim()).filter(Boolean) : []);
+
+/**
  * Copy a `nested-object-list`'s rows so a caller cannot alias the model's.
  *
  * One spelling, because `cloneProps` exists for exactly this reason: *"PropertyEditor was

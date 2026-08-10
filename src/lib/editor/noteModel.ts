@@ -42,7 +42,7 @@
  */
 import { Text } from '@codemirror/state';
 import { parseFrontmatter, buildFullContent, type FrontmatterProperty } from '$lib/libraries/store';
-import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc';
+import { splitFrontmatter, composeFrontmatter, frontmatterIsRewritable } from '$lib/editor/yamlDoc';
 import { sameList, sameNested, cloneRows, type SetPropOpts } from './propRow';
 
 /**
@@ -68,6 +68,15 @@ export interface NoteModel {
 	props: FrontmatterProperty[];
 	/** Body half as CM6's immutable rope — O(1) assignment, toString() at save only. */
 	body: Text;
+	/**
+	 * PJ-207 §15 — the model's LINEAGE stamp: a process-unique id minted by `openModel`, so a
+	 * re-seed under the SAME id AND the SAME path still produces a model that is provably not the
+	 * one an in-flight save composed from. Path alone could not tell those two apart, and
+	 * `openModel` resets `version` to 0 while `savedVersion` only ever RISES — so a save resolving
+	 * across a same-path re-seed stamped savedVersion far above version and `isDirty` reported
+	 * CLEAN for the next N real edits, which every departure flush is gated on.
+	 */
+	readonly gen: number;
 	/** Monotonic content counter — bumped on every real change; the freshness arbiter. */
 	version: number;
 	/** The version last composed for a successful disk save — drives isDirty. */
@@ -79,7 +88,18 @@ export interface NoteModel {
 	 * unedited key stays byte-perfect. Same projection as `props`/the PropertyEditor.
 	 * Null on the legacy path (USE_YAML_DOC off).
 	 */
-	base: { rawYaml: string; hadFence: boolean; props: FrontmatterProperty[] } | null;
+	base: {
+		rawYaml: string;
+		hadFence: boolean;
+		props: FrontmatterProperty[];
+		/**
+		 * PJ-207 §15 — FALSE when this note's YAML does not parse, so `composeFrontmatter`
+		 * will preserve it verbatim and drop any property intent. Every prop mutator refuses
+		 * while this is false; otherwise the edit is accepted, displayed, and never written —
+		 * the silent-loss app-killer the whole-app sweep confirmed.
+		 */
+		rewritable: boolean;
+	} | null;
 	/**
 	 * PJ-070 — the exact bytes last SYNCED with disk (set at open, at adoptDisk, and on a
 	 * durable save). The watcher's dirty-conflict discriminator compares an incoming external
@@ -89,9 +109,23 @@ export interface NoteModel {
 	 * file. Full-string compare, off the keystroke hot path (only the 300ms watcher flush).
 	 */
 	diskBaseline: string;
+	/**
+	 * PJ-207 §15 — TRUE while this model's content came from the write-ahead crash-recovery
+	 * net and is NOT on disk. `isDirty` is the flag every arbiter reads to mean "content the
+	 * disk does not have", and the MIG-100 restore seeds such a model CLEAN on purpose (Gate
+	 * #8: a restore performs zero write-class IPCs) — so the one guard that would have protected
+	 * the recovery copy was switched off exactly where it was needed. A GENUINE external write
+	 * then adopted over the recovered content and the adopt's `clearWriteAhead` deleted the net:
+	 * the user's failed-save work gone from the screen, gone from the net, never on disk, with no
+	 * `.conflict` sidecar and no banner. Cleared by a durable save (`noteDiskSynced`).
+	 */
+	netUnsaved: boolean;
 }
 
 const models = new Map<string, NoteModel>();
+
+/** Lineage source for `NoteModel.gen` — monotonic, never reused for the life of the process. */
+let nextGen = 1;
 
 export function toText(s: string): Text {
 	return Text.of(s.split('\n'));
@@ -126,7 +160,23 @@ function cidOf(props: FrontmatterProperty[]): string | null {
 function baseOf(content: string, props: FrontmatterProperty[]): NoteModel['base'] {
 	if (!USE_YAML_DOC) return null;
 	const { yaml, hadFence } = splitFrontmatter(content);
-	return { rawYaml: yaml, hadFence, props: cloneProps(props) };
+	return { rawYaml: yaml, hadFence, props: cloneProps(props), rewritable: frontmatterIsRewritable(yaml) };
+}
+
+/**
+ * PJ-207 §15 — may this model's frontmatter accept a property intent?
+ *
+ * `false` only when the note's YAML failed to parse. Refusing here is what turns a SILENT loss
+ * into a visible refusal: `propsCommit.apply` collects the `false` into its `refused` list and
+ * PropertyEditor raises the PJ-187 banner. Body edits are unaffected — compose re-attaches the
+ * live body and preserves the frontmatter bytes, so the note still saves.
+ *
+ * Legacy path (`base === null`, USE_YAML_DOC off) keeps its old behaviour: it rebuilds the whole
+ * frontmatter from props rather than diffing, so it has no verbatim-preserve branch to lose the
+ * edit in.
+ */
+function propsAreWritable(m: NoteModel): boolean {
+	return m.base === null || m.base.rewritable;
 }
 
 /** G4 — the ONE serialize (I4). Byte-perfect diff-apply via yamlDoc when the base is
@@ -161,10 +211,12 @@ export function openModel(id: string, path: string, content: string): NoteModel 
 		cid: cidOf(properties),
 		props: cloneProps(properties),
 		body: toText(body),
+		gen: nextGen++, // PJ-207 §15 — a NEW object under this id: stamps addressed to the old one must miss
 		version: 0,
 		savedVersion: 0,
 		base: baseOf(content, properties),
 		diskBaseline: content, // PJ-070 — what's on disk at open
+		netUnsaved: false, // PJ-207 §15 — opened FROM disk, so disk has this content
 	};
 	models.set(id, m);
 	return m;
@@ -217,16 +269,25 @@ export function setBody(id: string, body: string | Text, expectPath?: string): v
 }
 
 /** Props editor → model: replace props, re-extract identity (I1). */
-export function setProps(id: string, props: FrontmatterProperty[], expectPath?: string): void {
+export function setProps(id: string, props: FrontmatterProperty[], expectPath?: string): boolean {
 	const m = models.get(id);
-	if (!m) return;
+	if (!m) return false;
 	// Identity guard (see setBody): a stale PropertyEditor teardown save for the
 	// PREVIOUS note must not write its props into a model whose tab has already
 	// been repurposed to a new note — the exact poison behind the new-note leak.
-	if (expectPath !== undefined && m.path !== expectPath) return;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 (second pass) — the SIXTH mutator. The first pass guarded `setPropValue`,
+	// `addProp`, `removeProp`, `renamePropKey` and `reorderProps` and missed this one, which is
+	// the whole-ARRAY path (`saveTabContent` → `noteSession.editProps`). On a note whose YAML does
+	// not parse, compose re-emits the original frontmatter bytes and discards the change — so
+	// accepting it here is the same silent discard the guard exists to prevent, reached by the one
+	// route that skipped it. Refusing makes the panel's PJ-187 banner fire, as it does for the
+	// other five.
+	if (!propsAreWritable(m)) return false;
 	m.props = cloneProps(props);
 	m.cid = cidOf(m.props);
 	m.version++;
+	return true;
 }
 
 // ─── MIG-107 Slice 2: the PROPERTY INTENTS ──────────────────────────────────────────────────────
@@ -265,6 +326,9 @@ export function setPropValue(
 	const m = models.get(id);
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 — unparseable YAML: refuse the intent rather than accept it and drop it at
+	// compose. The refusal reaches the user through PropertyEditor's PJ-187 banner.
+	if (!propsAreWritable(m)) return false;
 	const i = m.props.findIndex((p) => p.key === key);
 	if (i === -1) return false;
 	const cur = m.props[i];
@@ -299,6 +363,9 @@ export function addProp(id: string, prop: FrontmatterProperty, expectPath?: stri
 	const m = models.get(id);
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 — unparseable YAML: refuse the intent rather than accept it and drop it at
+	// compose. The refusal reaches the user through PropertyEditor's PJ-187 banner.
+	if (!propsAreWritable(m)) return false;
 	if (!prop.key || !prop.key.trim()) return false;
 	if (m.props.some((p) => p.key === prop.key)) return false;
 	m.props = [...m.props, ...cloneProps([prop])]; // deep-clone only the INCOMING row (caller may alias it)
@@ -312,6 +379,8 @@ export function removeProp(id: string, key: string, expectPath?: string): boolea
 	const m = models.get(id);
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 — unparseable YAML: refuse rather than accept-and-drop (see propsAreWritable).
+	if (!propsAreWritable(m)) return false;
 	if (!m.props.some((p) => p.key === key)) return false;
 	m.props = m.props.filter((p) => p.key !== key);
 	m.cid = cidOf(m.props);
@@ -328,6 +397,8 @@ export function renamePropKey(id: string, oldKey: string, newKey: string, expect
 	const m = models.get(id);
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 — unparseable YAML: refuse rather than accept-and-drop (see propsAreWritable).
+	if (!propsAreWritable(m)) return false;
 	if (!newKey || !newKey.trim() || oldKey === newKey) return false;
 	const i = m.props.findIndex((p) => p.key === oldKey);
 	if (i === -1) return false;
@@ -352,6 +423,8 @@ export function reorderProps(id: string, key: string, beforeKey: string | null, 
 	const m = models.get(id);
 	if (!m) return false;
 	if (expectPath !== undefined && m.path !== expectPath) return false;
+	// PJ-207 §15 — unparseable YAML: refuse rather than accept-and-drop (see propsAreWritable).
+	if (!propsAreWritable(m)) return false;
 	const from = m.props.findIndex((p) => p.key === key);
 	if (from === -1) return false;
 	// Decide BEFORE allocating. `plan` used to emit an order op per adjacent pair, and each one
@@ -429,13 +502,21 @@ export function markRecoveredFromNet(id: string, trueDiskContent: string | null)
  * DESTROYED the preserved net. With the TRUE baseline, a phantom event (disk ===
  * baseline) is refused and the net survives; only a genuinely-changed disk adopts.
  */
-export function setDiskBaseline(id: string, trueDiskContent: string): void {
+export function setDiskBaseline(id: string, trueDiskContent: string, contentIsUnsavedRecovery = false): void {
 	const m = models.get(id);
-	if (m) m.diskBaseline = trueDiskContent;
+	if (!m) return;
+	m.diskBaseline = trueDiskContent;
+	// PJ-207 §15 — the true baseline alone only defeats a PHANTOM watcher event. A GENUINE
+	// external write (the same sync agent that locked the file finishing its pull from another
+	// device) passes the baseline gate BY DEFINITION, and with the model born clean there was
+	// nothing left to refuse the adopt — the recovered work was replaced on screen and the
+	// caller's clearWriteAhead deleted the only remaining copy. The caller passes the comparison
+	// because only it holds both strings (the seeded content and the true disk bytes).
+	if (contentIsUnsavedRecovery) m.netUnsaved = true;
 }
 
 export type ComposeResult =
-	| { ok: true; content: string; path: string; cid: string | null; version: number }
+	| { ok: true; content: string; path: string; cid: string | null; version: number; gen: number }
 	| { ok: false; reason: 'no_model' | 'path_mismatch'; modelPath?: string };
 
 /**
@@ -455,6 +536,7 @@ export function compose(id: string, expectPath: string): ComposeResult {
 		path: m.path,
 		cid: m.cid,
 		version: m.version,
+		gen: m.gen, // PJ-207 §15 — the lineage this content was composed from; the caller hands it back when it stamps
 	};
 }
 
@@ -466,11 +548,24 @@ export function compose(id: string, expectPath: string): ComposeResult {
  * new model — that would poison savedVersion and hide the new note's first edits from
  * autosave (a silent loss). A path mismatch is a no-op; omitting expectPath keeps the
  * legacy unguarded behavior for callers that never swap under an id.
+ *
+ * PJ-207 §15 — the path guard was NOT enough, and the paragraph above overstated what it covered.
+ * `openModel` also re-seeds an id IN PLACE for the SAME path (PJ-102c "Discard my changes" force-
+ * adopts disk over a note whose save is still in flight, via reloadTabsFromDisk's discardLocalEdits
+ * branch), minting a model with `version` back at 0 while `savedVersion` here only ever RISES. The
+ * late save passed the path guard and stamped savedVersion = 12 onto a version = 0 model, so
+ * `isDirty` reported CLEAN for the next twelve real edits — and openNoteTab's departure flush,
+ * flushAllForAppClose and the write-ahead net are ALL gated on that flag, so those keystrokes were
+ * dropped with no banner, no journal marker and nothing downstream able to tell work had been lost.
+ * `expectGen` closes it: the lineage is minted per model OBJECT, so a stamp addressed to the previous
+ * object misses even when id and path both match. Refusing is the safe direction — the model stays
+ * dirty, so the next debounce or the 10 s retry saves it for real.
  */
-export function markSaved(id: string, version: number, expectPath?: string): void {
+export function markSaved(id: string, version: number, expectPath?: string, expectGen?: number): void {
 	const m = models.get(id);
 	if (!m) return;
 	if (expectPath !== undefined && m.path !== expectPath) return;
+	if (expectGen !== undefined && m.gen !== expectGen) return;
 	if (version > m.savedVersion) m.savedVersion = version;
 }
 
@@ -503,6 +598,13 @@ export function adoptDisk(id: string, diskContent: string, expectPath?: string):
 	// now does too, so the protection does not depend on each caller being careful.
 	if (expectPath !== undefined && m.path !== expectPath) return false;
 	if (isDirty(id)) return false;
+	// PJ-207 §15 — the SAME refusal for a clean model holding write-ahead-recovered content that
+	// disk never had. `isDirty` is what routes a genuine external change to the `.conflict`
+	// sidecar instead of an adopt; a restore-seeded recovery model is clean by design and sailed
+	// past it, and the adopt's caller then cleared the net that was the only copy of the work.
+	// Refusing HERE means every adopt site inherits the protection — the watcher, the cid drain
+	// and the second screen — not just the one the inspection happened to catch.
+	if (m.netUnsaved) return false;
 	if (composeModel(m) === diskContent) return false; // our own echo
 	// PJ-102b — the PHANTOM-EVENT guard: a clean model whose baseline already equals
 	// the incoming disk means NOTHING actually changed on disk — the watcher event is
@@ -529,11 +631,19 @@ export function adoptDisk(id: string, diskContent: string, expectPath?: string):
  * current on-disk truth. Path-guarded exactly like markSaved (a save that resolves after an
  * id-swap must not stamp its old content onto the new model's baseline).
  */
-export function noteDiskSynced(id: string, content: string, expectPath?: string): void {
+export function noteDiskSynced(id: string, content: string, expectPath?: string, expectGen?: number): void {
 	const m = models.get(id);
 	if (!m) return;
 	if (expectPath !== undefined && m.path !== expectPath) return;
+	// PJ-207 §15 — same lineage hole as `markSaved`, reached from the same two lines of
+	// `saveUnchained`. A same-path re-seed leaves this stamp landing on a NEW model, writing the
+	// PRE-re-seed bytes over a baseline that was just set to the real disk. That baseline is the
+	// arbiter for `adoptDisk`'s phantom guard and for `diskDiffersFromBaseline`: with a wrong one,
+	// our own echo reads as a genuine external edit (a spurious `.conflict` sidecar) and a real
+	// external edit can read as a phantom and be refused.
+	if (expectGen !== undefined && m.gen !== expectGen) return;
 	m.diskBaseline = content;
+	m.netUnsaved = false; // PJ-207 §15 — a DURABLE write is the one event that makes recovered content real
 }
 
 /**
@@ -546,4 +656,17 @@ export function diskDiffersFromBaseline(id: string, disk: string): boolean {
 	const m = models.get(id);
 	if (!m) return false;
 	return disk !== m.diskBaseline;
+}
+
+/**
+ * PJ-207 §15 — does this model hold write-ahead-recovered content that is NOT on disk?
+ *
+ * The store's walkers all ask `isNoteDirty` when they mean "is there work here disk does not
+ * have", and for a restore-seeded recovery model the honest answer is yes while `isDirty` says
+ * no. Every site that force-re-seeds or arbitrates on that question must ask this too, or it
+ * destroys the recovery copy exactly as it would a dirty model's unsaved paragraph. False when
+ * no model exists (nothing to protect).
+ */
+export function hasUnsavedRecovery(id: string): boolean {
+	return models.get(id)?.netUnsaved === true;
 }

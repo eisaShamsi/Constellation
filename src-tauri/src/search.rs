@@ -363,11 +363,10 @@ pub(crate) struct MaintenanceOutcome {
 }
 
 impl MaintenanceOutcome {
-    /// No consumer YET — the repair runner (§7) is the caller that can act on this,
-    /// and it does not exist at this commit. Annotated rather than deleted because
-    /// deleting it would mean re-deriving the predicate at the call site later, which
-    /// is precisely the hand-mirrored-predicate shape §1 had to unpick.
-    #[allow(dead_code)]
+    /// PJ-207 §15 — this HAS a consumer now: the save-path reindex command logs an unclean
+    /// outcome to the universe's diagnostics log (it used to discard it silently). The
+    /// `#[allow(dead_code)]` and the "no consumer YET" note that stood here were true when
+    /// they were written and are not any more.
     pub fn is_clean(&self) -> bool {
         !(self.term_index_failed || self.incoming_failed || self.sky_failed)
     }
@@ -2069,6 +2068,20 @@ pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), Str
         -- and re-typing (link_type). Recompute both old and new source identities.
         CREATE TRIGGER IF NOT EXISTS note_links_outgoing_au
         AFTER UPDATE ON note_links
+        -- PJ-207 §15 — fire ONLY when an input to the aggregates actually changed.
+        --
+        -- Unguarded, every write to any note_links column re-ran four aggregate subqueries and
+        -- rewrote two note_meta rows. That went unnoticed until this migration added a statement
+        -- that updates `target_cid_cn` on many rows at once: a note whose title matched 471
+        -- waiting links cost 69.9 ms instead of 4.61 ms, measured, entirely inside this trigger
+        -- recomputing counts that a cid_cn write cannot affect.
+        --
+        -- The columns listed are exactly the ones `outgoing_aggregate_assignments` reads; a write
+        -- to anything else (target_cid_cn, weight, traversal_count, annotation, confidence)
+        -- leaves every aggregate identical by construction. Same shape as `note_links_sky_au`.
+        WHEN OLD.source_path IS NOT NEW.source_path
+          OR OLD.status      IS NOT NEW.status
+          OR OLD.link_type   IS NOT NEW.link_type
         BEGIN
             UPDATE note_meta SET {del} WHERE path = OLD.source_path;
             UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
@@ -4247,12 +4260,49 @@ pub(crate) fn mig003_step2_backfill(
 /// row-cardinality is one-to-one with note_meta (sky_nodes,
 /// note_embeddings). Plain index for note_links (one source has many
 /// outgoing edges) and note_aliases (one note has many aliases).
-/// SQLite UNIQUE indexes accept multiple NULLs by default, so partial
-/// rows (orphan path with no cid_cn) don't block creation.
+/// PJ-207 §15 — the two UNIQUE indexes here were created FULL, and the sentence that
+/// used to stand in this doc block — "SQLite UNIQUE indexes accept multiple NULLs by
+/// default, so partial rows don't block creation" — reasoned about NULL and missed the
+/// value that actually collides: `''`. `index_note` stores `''` for every note whose
+/// frontmatter carries no identity (externally-created notes get theirs LAZILY at first
+/// open; templates never do), and search.rs says so in terms: "Multiple '' rows are legal".
+/// The 2026-07-05 collision fix made `idx_note_meta_cid_cn` PARTIAL for exactly that
+/// reason and was never carried to the tables that DEPEND on note_meta.
+///
+/// What that cost, measured on the Boss's universe rather than argued: `note_meta_sky_ai`
+/// does `INSERT OR REPLACE INTO sky_nodes`, so every cid-less note REPLACE-DELETED the
+/// previous cid-less note's row — 25 blank-cid notes, 25 with no sky_nodes row at all,
+/// zero survivors, ordinary user notes among them and not just templates. Nothing recreates
+/// them: the AI trigger fires only for a path new to note_meta, `index_note` upserts, and
+/// `recompute_all_sky` iterates `SELECT path FROM sky_nodes` so it cannot create what is
+/// absent. Those notes are missing from Sky View, stratum, maturity and origin_type for
+/// good, and `index_note` reads their stratum as 0 into `review_schedule` — a wrong review
+/// cadence with no error. On `note_embeddings` the same index turns `mig003_step2_backfill`'s
+/// UPDATE into a UNIQUE violation the moment two rows resolve to `''`.
+///
+/// Self-migrating, the same way `ensure_note_meta_mig003_unique_index` does it: a legacy
+/// FULL variant is detected by its DDL and rebuilt partial. `CREATE ... IF NOT EXISTS`
+/// alone is a NO-OP against an existing index and would have left every shipped DB wrong.
+/// The plain (non-UNIQUE) indexes below are unaffected — one source has many outgoing
+/// edges, one note has many aliases, so uniqueness was never claimed for them.
 fn ensure_dependent_tables_mig003_indexes(conn: &Connection) -> rusqlite::Result<()> {
+    for name in ["idx_sky_nodes_cid_cn", "idx_note_embeddings_cid_cn"] {
+        let existing_sql: Option<String> = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='index' AND name = ?1",
+                [name],
+                |row| row.get(0),
+            )
+            .ok();
+        if let Some(sql) = &existing_sql {
+            if !sql.to_lowercase().contains("where") {
+                conn.execute_batch(&format!("DROP INDEX {};", name))?;
+            }
+        }
+    }
     conn.execute_batch(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_sky_nodes_cid_cn ON sky_nodes(cid_cn);
-         CREATE UNIQUE INDEX IF NOT EXISTS idx_note_embeddings_cid_cn ON note_embeddings(cid_cn);
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_sky_nodes_cid_cn ON sky_nodes(cid_cn) WHERE cid_cn != '';
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_note_embeddings_cid_cn ON note_embeddings(cid_cn) WHERE cid_cn != '';
          CREATE INDEX IF NOT EXISTS idx_note_links_source_cid_cn ON note_links(source_cid_cn);
          CREATE INDEX IF NOT EXISTS idx_note_links_target_cid_cn ON note_links(target_cid_cn);
          CREATE INDEX IF NOT EXISTS idx_note_aliases_cid_cn ON note_aliases(cid_cn);",
@@ -5352,6 +5402,33 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
                 VALUES (NEW.path, COALESCE(NEW.name_lower, LOWER(NEW.name)), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
                 UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
                 UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
+                -- PJ-207 §15 — RESOLVE THE LINKS THAT WERE WAITING FOR THIS NOTE.
+                --
+                -- `note_links.target_cid_cn` is stamped only while indexing the SOURCE note, from
+                -- whatever `note_meta` held at that moment. A link written before its target
+                -- existed — the ordinary way anyone works: type `[[Idea]]`, create Idea after —
+                -- was stored with a NULL identity and nothing ever went back for it. It stayed
+                -- NULL until that source note happened to be edited and re-indexed again, so
+                -- every identity-keyed reader (collection membership, identity link resolution)
+                -- silently missed the edge, for as long as the user never touched the source.
+                --
+                -- Maintained at write time instead, as Rule 8 requires: the moment the target
+                -- note enters `note_meta`, the edges naming it get their identity. `index_note`
+                -- re-indexes by DELETE+INSERT, so this AI trigger also covers a cid injected
+                -- later (the AU path is documented below as rare for exactly that reason).
+                -- Index seek on `idx_link_target ON note_links(target_name)`, not a scan.
+                --
+                -- The twin of this statement lives in `note_meta_sky_au`. `index_note` writes
+                -- note_meta with `INSERT … ON CONFLICT(path) DO UPDATE`, so a note that is ALREADY
+                -- indexed takes the UPDATE half and never fires this trigger — and the lazy
+                -- `cid_cn` injection on first open is exactly that case. Placed here only, this
+                -- resolved links for brand-new notes and silently did nothing for the commonest
+                -- path it was written for.
+                UPDATE note_links
+                   SET target_cid_cn = NEW.cid_cn
+                 WHERE target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
+                   AND NEW.cid_cn IS NOT NULL AND NEW.cid_cn <> ''
+                   AND (target_cid_cn IS NULL OR target_cid_cn = '');
             END;
 
             CREATE TRIGGER IF NOT EXISTS note_meta_sky_ad
@@ -5388,6 +5465,12 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             WHEN OLD.path IS NOT NEW.path
               OR OLD.name IS NOT NEW.name
               OR OLD.library_name IS NOT NEW.library_name
+              -- PJ-207 §15 (third pass) — …OR the note just acquired its identity. Without this
+              -- the trigger never fires for a re-index that changes ONLY cid_cn, which is exactly
+              -- the lazy first-open injection the link back-resolution statement inside this
+              -- trigger names as its primary case. The statement was added and was unreachable:
+              -- a guard written for a case the gate in front of it excluded.
+              OR OLD.cid_cn IS NOT NEW.cid_cn
             BEGIN
                 -- Rewrite sky_nodes in place. UPDATE preserves stratum,
                 -- maturity, origin_type, enrichment_dirty. path is the PK
@@ -5410,17 +5493,57 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
                    SET source_path = NEW.path
                  WHERE source_path = OLD.path
                    AND OLD.path IS NOT NEW.path;
-                UPDATE sky_links
-                   SET target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
-                 WHERE target_name = COALESCE(OLD.name_lower, LOWER(OLD.name))
-                   AND COALESCE(OLD.name_lower, LOWER(OLD.name)) IS NOT COALESCE(NEW.name_lower, LOWER(NEW.name));
+                -- PJ-207 §15 — THE MIRROR MUST NOT LEAD ITS SOURCE.
+                --
+                -- A second statement used to sit here: `UPDATE sky_links SET target_name =
+                -- <new folded name> WHERE target_name = <old folded name>`. Its WHERE keyed on
+                -- the NAME and nothing else — no source_path, no cid, no restriction to the
+                -- edges that actually resolved to the note being renamed. So renaming ONE note
+                -- re-pointed EVERY edge in the universe that happened to name a note with the
+                -- same title. Measured on the live universe: seven notes share the title Doi
+                -- (identifier); retitling one of them rewrote 4,359 sky_links rows, ~4,300 of
+                -- which belong to the other six and whose `[[...]]` on disk was never touched.
+                -- note_links — the thing sky_links mirrors — still said the old name.
+                --
+                -- Nothing healed it, and nothing would: `recompute_all_sky` only UPDATEs
+                -- sky_nodes columns (index_repair.rs states this in terms) and sky_backfill's
+                -- INSERT OR IGNORE is one-shot behind the 'sky' stamp. Sky View drew ~4,300
+                -- edges into a node one note carries and omitted ~4,300 real ones, permanently,
+                -- with no error surfaced anywhere.
+                --
+                -- Deleting the statement is the fix, not qualifying it. sky_links is a MIRROR of
+                -- note_links, maintained by note_links_sky_ai/_ad/_au; nothing rewrites
+                -- note_links.target_name on a rename — the cascade rewrites the wikilinks on
+                -- disk and re-indexes the source notes, and those note_links writes carry
+                -- sky_links with them through the proper channel. The source_path UPDATE above
+                -- stays: a path is unique so it cannot collide with a homonym, and
+                -- libraries.rs's `UPDATE note_links SET source_path` moves the same rows to the
+                -- same place. The 4,371 rows already diverged on disk need the reconciliation
+                -- pass; this edit only guarantees no new ones.
+
+                -- PJ-207 §15 (second pass) — the twin of the back-resolution in `note_meta_sky_ai`.
+                -- `index_note` upserts note_meta, so a re-index of an existing note lands HERE, not
+                -- there. The commonest way a note acquires its `cid_cn` is the lazy injection on
+                -- first open, which re-indexes an already-indexed note — so without this statement
+                -- the links waiting on that note stayed unresolved for good. Only fires when the
+                -- identity actually appeared or changed, so an ordinary re-index costs nothing.
+                UPDATE note_links
+                   SET target_cid_cn = NEW.cid_cn
+                 WHERE target_name = COALESCE(NEW.name_lower, LOWER(NEW.name))
+                   AND NEW.cid_cn IS NOT NULL AND NEW.cid_cn <> ''
+                   AND (target_cid_cn IS NULL OR target_cid_cn = '')
+                   AND NEW.cid_cn IS NOT OLD.cid_cn;
 
                 -- MIG-004 §4: cascade alias rows on path change. Only
                 -- triggered when path actually moves — a name-only or
                 -- library-only rename leaves the path PK untouched, so
                 -- alias rows for the original path are still correct.
-                -- Note: this AU path is rare in practice (index_note uses
-                -- DELETE+INSERT, which fires AD+AI not AU); the cascade is
+                -- Note: this AU path is NOT rare, and the claim that used to stand here — that
+                -- index_note uses DELETE+INSERT and so fires AD+AI rather than AU — is false.
+                -- `index_note` writes note_meta with INSERT ... ON CONFLICT(path) DO UPDATE, so
+                -- EVERY re-index of an already-indexed note lands here. Corrected 2026-08-09,
+                -- after the belief cost a trigger that only ever fired for brand-new notes.
+                -- The cascade is
                 -- defensive coverage for direct-UPDATE writers (test code,
                 -- future migrations).
                 --
@@ -5864,6 +5987,54 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             DEPENDENT_TABLES_MIG003_VERSION,
             if owns { "already done" } else { "SKIPPED — this process does not own this database (PJ-232)" },
         ));
+    }
+
+    // PJ-207 §15 — run the dependent-table index rule UNCONDITIONALLY, for the same reason
+    // `ensure_note_meta_mig003_unique_index` is run unconditionally 1,300 lines above: every
+    // database stamped before this fix carries the legacy FULL unique index on
+    // `sky_nodes.cid_cn` / `note_embeddings.cid_cn` and never re-enters the version-gated
+    // branch above, so the gated call could not have repaired a single shipped DB. This is
+    // the call that migrates them. Idempotent — two sqlite_master reads when already correct.
+    ensure_dependent_tables_mig003_indexes(&conn)
+        .map_err(|e| format!("Failed to ensure partial cid_cn indexes on dependent tables: {}", e))?;
+
+    // PJ-207 §15 — restore the sky_nodes rows the FULL index destroyed.
+    //
+    // Fixing the index stops the loss; it does not undo it. `note_meta_sky_ai`'s INSERT OR
+    // REPLACE deleted the previous cid-less note's row on every collision, and that row can
+    // never come back on its own — the AI trigger fires only for a path new to note_meta,
+    // `index_note` upserts, and `recompute_all_sky` iterates `SELECT path FROM sky_nodes` so
+    // it cannot create what is missing. Measured on the Boss's universe: 25 blank-cid notes,
+    // all 25 with no sky row. Order matters and is why this sits AFTER the ensure above: run
+    // against the old FULL index, this INSERT OR IGNORE would silently swallow the very
+    // collision it exists to repair.
+    //
+    // The candidate set is EXACTLY the blank-cid rows — the collision could not reach any
+    // other note — and `idx_note_meta_cid_empty` is the partial index over precisely those,
+    // so this is an index SEEK returning a handful of rows, never the unqualified `note_meta`
+    // read that dragged `body_text` and cost 109.7 s on this corpus (the 2026-08-02 boot
+    // regression recorded on `ensure_note_meta_mig003_unique_index`). `enrichment_dirty`
+    // defaults to 1, so the §7 worker picks up origin_type. Stratum and maturity are stamped
+    // with the same expressions the AI trigger uses, which is why that half is `owns`-gated:
+    // PJ-232 — those expressions read the ACTIVE universe's link-type registry, and must not
+    // be written into a database this process does not own. The restore INSERT itself is
+    // registry-free, so a foreign database still gets its missing rows back.
+    conn.execute(
+        "INSERT OR IGNORE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
+         SELECT m.path, COALESCE(m.name_lower, LOWER(m.name)), m.name, m.library_name, m.cid_cn, strftime('%s','now')
+           FROM note_meta m
+          WHERE m.cid_cn = ''
+            AND NOT EXISTS (SELECT 1 FROM sky_nodes s WHERE s.path = m.path)",
+        [],
+    ).map_err(|e| format!("Failed to restore sky_nodes rows lost to the cid_cn collision: {}", e))?;
+    if owns {
+        conn.execute_batch(&format!(
+            "UPDATE sky_nodes SET stratum = ({stratum_expr}), maturity = ({maturity_expr})
+              WHERE stratum IS NULL
+                AND path IN (SELECT path FROM note_meta WHERE cid_cn = '')",
+            stratum_expr = stratum_sql_expr(),
+            maturity_expr = maturity_sql_expr(),
+        )).map_err(|e| format!("Failed to stamp stratum/maturity on restored sky_nodes rows: {}", e))?;
     }
 
     // MIG-003 Step 3 — boot-time soft re-backfill. Repairs any cid_cn
@@ -6717,8 +6888,8 @@ pub(crate) fn extract_aliases(content: &str) -> Vec<String> {
             let value = trimmed["aliases:".len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
                 let inner = &value[1..value.len() - 1];
-                for raw in inner.split(',') {
-                    push_alias(&mut aliases, raw);
+                for raw in crate::yaml_lines::split_flow_seq_items(inner) {
+                    push_alias(&mut aliases, &raw);
                 }
                 in_aliases_block = false;
             } else if !value.is_empty() {
@@ -10720,6 +10891,20 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     let guard = state.db.lock();
     if let Ok(mut db) = guard {
         *db = None;
+        // PJ-207 §15 — clear readiness AGAIN, here, holding the lock.
+        //
+        // Clearing it before taking the lock (above) stops NEW callers from taking the lock-free
+        // fast path, but it cannot stop a publisher that is already inside the critical section:
+        // `ensure_search_db_ready` passes its generation check, installs the connection, and
+        // stores `db_ready = true` while holding this very lock. If that happened between the
+        // store above and the acquire here, the final state was `db = None` with `db_ready =
+        // true` — and from then on every caller returned Ok from the fast path against a
+        // universe with no database at all, for the rest of the session.
+        //
+        // Any publisher that passed its generation check AFTER the bump at the top of this
+        // function aborts on its own; the only one this ordering has to beat is the one holding
+        // the lock, and storing here is by definition after it.
+        state.db_ready.store(false, std::sync::atomic::Ordering::Release);
     }
     // PJ-066 §C3 — drop the read-only reader connection too; the next
     // ensure_search_db_ready re-opens it for the new active universe. (If left
@@ -11715,16 +11900,30 @@ pub fn constellation_search_reindex(
     // note IS on disk and DOES belong in the index.
     ensure_search_db_ready(&app)?;
     let state = app.state::<SearchState>();
-    // PJ-207 §3 — `reindex_single_note` now returns which of its three best-effort
-    // maintenance steps failed. The IPC contract is deliberately UNCHANGED
-    // (`Result<(), String>`): this command is the per-save hook on the keystroke-
-    // adjacent path, its 21 frontend callers treat it as fire-and-forget, and a
-    // derived-view delta failure must not surface as a failed save. The outcome is
-    // consumed Rust-side by the repair runner (§7) — which does NOT exist at this
-    // commit, so today the outcome is recorded and dropped here. Stated plainly
-    // rather than written as though the consumer already existed.
-    // `docs/IPC-CONTRACT.md` needs no edit for this change.
-    reindex_single_note(&state, &note_path, &library_name).map(|_| ())
+    // PJ-207 §3 — `reindex_single_note` returns which of its three best-effort maintenance
+    // steps failed. The IPC contract stays UNCHANGED (`Result<(), String>`): this command is
+    // the per-save hook on the keystroke-adjacent path, its 21 frontend callers treat it as
+    // fire-and-forget, and a derived-view delta failure must not surface as a failed save.
+    //
+    // PJ-207 §15 — but it must not VANISH either. The outcome used to be dropped on the floor
+    // here, so a failed backlink or Sky maintenance left those views stale for that note with
+    // nothing, anywhere, recording it: the save reported success, the panels showed old data,
+    // and no later pass knew to look. It is written to the universe's diagnostics log, which is
+    // release-safe and is where the repair door's own runs are traced — so a stale backlink has
+    // a findable cause, and "Repair index" is the remedy that already exists.
+    let outcome = reindex_single_note(&state, &note_path, &library_name)?;
+    if !outcome.is_clean() {
+        if let Ok(p) = db_path(&app) {
+            diag_log(
+                &p,
+                &format!(
+                    "[reindex] {} — derived-view maintenance INCOMPLETE (term_index_failed={} incoming_failed={} sky_failed={}); the save itself succeeded",
+                    note_path, outcome.term_index_failed, outcome.incoming_failed, outcome.sky_failed
+                ),
+            );
+        }
+    }
+    Ok(())
 }
 
 /// Delete a note from the search index + link table.

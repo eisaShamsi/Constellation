@@ -15,6 +15,7 @@
 		buildSkyData,
 		libraryStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
+		followExternalRename, followExternalDelete,
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
 	// PJ-187 — model disposal for the peek pane + workspace restore (see the call sites below).
@@ -40,7 +41,7 @@
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import { buildContextMenu, type ContextTarget, type ContextActions } from '$lib/components/contextMenuBuilder';
 	import { onNoteMutation } from '$lib/noteMutations';
-	import { loadLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { loadLinkTypes, resetForUniverse } from '$lib/libraries/linkTypeRegistry';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged, onLinkTypesChanged,
 		onStateRequest, onWorkspaceRestore,
@@ -136,6 +137,28 @@
 	let unlistenSSMutations: (() => void) | null = null;
 	let ssMutationsDestroyed = false;
 	onNoteMutation({
+		// PJ-207 §15 — FOLLOW the mutation, don't just re-scan the panels beside it. Only
+		// `onAnyChange` was wired, so a note renamed or moved in the main window left this
+		// window's tab pointing at a path that no longer existed — wrong title, wrong model
+		// identity, every affordance on it a dead click — and a deleted note stayed open as a
+		// phantom. Both helpers are display-safe: they move the tab and the model's identity and
+		// touch no file. (Content refresh arrives separately on `screen:note-saved`.)
+		// PJ-207 §15 (third pass) — the PEEK pane follows too. `followExternalRename` walks the
+		// `openTabs` store, and the Sky-View peek pane is not in it: it is a separate mount with its
+		// own `peek-<path>` model. Repathing the tabs and leaving the peek pane on the old path is
+		// the same phantom, one surface over — which is the whole point of the law this closed.
+		onRenamed: ({ oldPath, newPath, newName }) => {
+			followExternalRename(oldPath, newPath, newName);
+			followPeek(oldPath, newPath, newName);
+		},
+		onMoved: ({ oldPath, newPath }) => {
+			followExternalRename(oldPath, newPath);
+			followPeek(oldPath, newPath);
+		},
+		onDeleted: ({ path }) => {
+			followExternalDelete(path);
+			followPeek(path, null);
+		},
 		onAnyChange: () => {
 			if (splitCompanionData) loadSplitCompanionPanelData(splitCompanionData);
 		},
@@ -199,6 +222,21 @@
 	// Peek preview: full editable note in left panel
 	let peekNote = $state<{ name: string; path: string; libraryName: string; libraryColor: string } | null>(null);
 	let peekTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
+	/**
+	 * PJ-207 §15 (third pass) — move the peek pane with the file, or drop it when the file is gone.
+	 *
+	 * `newPath === null` means deleted. The peek model is keyed `peek-<path>`, so a rename cannot
+	 * repath it in place without minting a new id; closing it is the honest outcome — the pane is a
+	 * transient preview, and showing a preview of a path that no longer exists is the phantom this
+	 * is here to prevent. A delete closes it for the same reason.
+	 */
+	function followPeek(oldPath: string, newPath: string | null, _newName?: string) {
+		if (!peekTab) return;
+		const norm = (x: string) => x.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+		if (norm(peekTab.path) !== norm(oldPath)) return;
+		closeNoteModel(peekTab.id); // dispose the model, not just the reference (PJ-187)
+		peekTab = null;
+	}
 	let peekGeneration = 0;
 
 	// Skyview companion data
@@ -701,6 +739,20 @@
 				}
 			} catch {}
 			allNotes = []; // Clear stale notes before rebuild
+			// PJ-207 §15 — the tab list was cleared here but the DISPLAYED companion surfaces were
+			// not, and those are what the user is actually looking at: the cockpit went on rendering
+			// the outgoing universe's note (body and all) and the Sky View companion kept its pinned
+			// node. Main only re-pushes these when a note is next opened, so a switch with nothing
+			// opened afterwards left a note from a universe that is no longer active on screen.
+			editorPanelsActive = false;
+			editorPanelsData = null;
+			skyviewNode = null;
+			pinnedSkyviewNode = null;
+			skyviewHistory = [];
+			skyviewHistoryIdx = -1;
+			// PJ-207 §15 — drop the OUTGOING universe's vocabulary before reading the incoming
+			// one, so a failed read cannot leave the old universe's types cached and latched.
+			resetForUniverse();
 			await loadLinkTypes().catch(() => {});   // the new Universe has its own link-type vocabulary
 			await loadAllData();
 		});

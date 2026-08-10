@@ -106,9 +106,11 @@ export async function readUniverseBookmarks(): Promise<unknown[]> {
 	return await invoke('read_universe_bookmarks');
 }
 
-export async function saveUniverseBookmarks(bookmarks: unknown[]): Promise<void> {
-	return await invoke('save_universe_bookmarks', { bookmarks });
-}
+// PJ-207 §15 — `saveUniverseBookmarks` removed. It invoked `save_universe_bookmarks`, a command
+// MIG-092 retired and which is registered nowhere, so it could only ever throw "command not
+// found"; nothing in src/ or tests/ called it, which is why nobody noticed. bookmarks.json stays
+// read-only apart from the one-time first-run migration, which invokes `migrate_universe_bookmarks`
+// directly in UniverseSetup.svelte.
 
 export async function readUniverseWorkspaces(): Promise<unknown[]> {
 	return await invoke('read_universe_workspaces');

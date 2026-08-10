@@ -46,13 +46,19 @@ export async function loadAppPrefs(): Promise<Prefs> {
  * debounce the per-universe settings save uses is a loss window there is no reason to
  * inherit for a once-in-a-while write.
  */
-export async function saveAppPrefs(patch: Prefs): Promise<void> {
-	if (!loaded) return;
+export async function saveAppPrefs(patch: Prefs): Promise<boolean> {
+	if (!loaded) return false;
 	snapshot = { ...snapshot, ...patch };
 	try {
 		await invoke('save_app_prefs', { prefs: snapshot });
+		return true;
 	} catch (e) {
+		// PJ-207 §15 — the caller is TOLD. This used to end at a console.warn, which a release
+		// build has no console for: the interface language changed on screen, the write failed,
+		// and the next launch quietly came back in the old language — which is the exact
+		// complaint (PJ-110, 2026-08-08) this file was written to fix.
 		console.warn('[appPrefs] could not save app-prefs.json', e);
+		return false;
 	}
 }
 

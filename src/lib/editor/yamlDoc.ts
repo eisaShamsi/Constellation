@@ -132,6 +132,32 @@ function projectProps(yaml: string): FrontmatterProperty[] {
 	return out;
 }
 
+/**
+ * PJ-207 §15 — decode ONE quoted YAML scalar token (`'O''Brien'`, `"The \\"Real\\" Thing"`) to the
+ * string it actually denotes, or `null` when the token does not parse as one.
+ *
+ * The store's frontmatter projection stripped the quotes and KEPT the escapes, so the escape
+ * SYNTAX travelled through the app as if it were data. Untouched keys survived only because both
+ * sides of the compose diff share that projection — but the moment the user edits such a key,
+ * `serializeLine` re-encodes the syntax as literal text and the note's real value is replaced by
+ * its source form: an alias that no longer resolves, a title carrying literal backslashes. It also
+ * compounded, because `yamlStringify` re-quotes its own previous output on every subsequent edit.
+ *
+ * The escape table belongs to the parser, not to a regex in a line-scanner (WA#5), so this routes
+ * the decode to the SAME `yaml` library the composer serializes with — read and write then agree
+ * by construction instead of by two hand-rolled tables staying in step.
+ */
+export function decodeQuotedScalar(token: string): string | null {
+	try {
+		const doc = parseDocument(token);
+		if (doc.errors.length) return null;
+		const v = doc.contents;
+		return isScalar(v) && typeof v.value === 'string' ? v.value : null;
+	} catch {
+		return null; // a malformed token keeps the caller's fallback — a read path must never throw
+	}
+}
+
 /** Parse note content into the FmDoc authority. */
 export function parseFrontmatterDoc(content: string): FmDoc {
 	const { yaml, body, hadFence } = splitFrontmatter(content);
@@ -269,6 +295,23 @@ export function composeContent(
 	bodyOverride?: string,
 ): string {
 	return composeFrontmatter(fm.rawYaml, fm.hadFence, oldProps, newProps, bodyOverride ?? fm.body);
+}
+
+/**
+ * PJ-207 §15 — can this note's frontmatter be REWRITTEN at all?
+ *
+ * `composeFrontmatter`'s H1 branch below preserves malformed YAML byte-for-byte rather than risk
+ * rewriting it — which is right for the FILE and catastrophic for the USER, because it discards
+ * every pending property intent while the save path reports success. The model calls this at open
+ * time so it can REFUSE those intents instead, and the panel's existing "could not be saved"
+ * banner does the telling.
+ *
+ * Cheaper than `parseFrontmatterDoc` on purpose: no `projectProps` pass, since the caller only
+ * needs the yes/no.
+ */
+export function frontmatterIsRewritable(rawYaml: string): boolean {
+	if (!rawYaml.trim()) return true; // empty fence — nothing to misparse
+	return parseDocument(rawYaml).errors.length === 0;
 }
 
 /**

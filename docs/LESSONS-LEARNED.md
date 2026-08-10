@@ -750,6 +750,26 @@ It does not. `needsDiskSave` is NotePane's view-level `dirty`, and `doSave()` cl
 5. **Two protections for one window must be one concept.** Corollary of LL-023's drift rule, learned here on a freeze set and a save gate that modelled the same thing and diverged.
 6. **Never hand-maintain a list that must be COMPLETE to be correct — derive it.** *(Added 2026-07-28, MIG-107 Slice 4, Boss-found.)* Told by an inspection that a commit must only write keys the user had edited, I made the Properties panel *mark* each key from its edit handlers — and wired the marking into **3 of that component's 16 mutation sites**. The tag editor was one of the 13 missed, so a tag added in one panel reached neither the other panel nor the file: it existed only where it was typed. The fix was not a more careful list; it was **removing the list** — `touchedSince(seededRows, localRows)` computes the answer by comparing current rows against the seeded ones, so any edit from any code path is detected, including sites written next month by someone who never reads this. **This is rule 3's failure mode one level up:** rule 3 says a *sweep* must not exclude anything; rule 6 says that when correctness depends on a set being exhaustive, the set must be **computed from state, not assembled by callers** — because a completeness requirement that relies on every future contributor remembering is a defect with a delayed fuse. It was also the second time in two days I fixed only the sites I happened to look at (the first being the `grep -v` of rule 3), which is what makes it a rule rather than a note.
 
+## LL-038: A Repair Pass With No Door Is Indistinguishable From No Repair Pass At All — and a Localised String Naming a Nonexistent Control Is a Promise the App Breaks in 15 Languages
+
+**Symptom (PJ-207, opened 2026-08-03, closed 2026-08-09).** `reconcile_filesystem` — a complete, correct, well-tested index repair — shipped on 2026-04-08 and was reachable from **one** place: a cold-start gate that fires only when a library's index is empty. For four months it existed and could not be run. Meanwhile `storeHealth.index` told the user, in **all fifteen locales**, to fix index trouble at **"Settings → Rebuild Index"** — a control that has never existed in any version of Constellation. Its only physical trace was **13 orphan CSS rules and three code comments**.
+
+**What it cost, measured before a line was written.** 60 of 7,824 notes had disk content newer than the index; 57 held body words absent from `note_meta.body_text` — and `notes_fts` is `content=note_meta`, so those words were unfindable and nothing in the app could fix it. Largest drift **55 days**. Then the worse case (PJ-223): **798 notes in one library had never been indexed at all**, because the cold-start gate asked `COUNT(*) … WHERE library_name = ?`, got **1**, and concluded "already indexed" — *one stray row disarmed the recovery for a 799-note library.* The Boss's first run of the new door cleared **830** missing notes.
+
+**Root cause — three separate beliefs, none of them checked.**
+1. **"The index is maintained write-time, so it is always current by design."** True *while the app is running*. The interval when Constellation is **closed** has no write path at all, and no surface could see it. A property of the running system was read as a property of the data.
+2. **"The repair exists."** It did. Existence is not reachability. **A pass with no door is, from the user's seat, identical to no pass** — and the difference is invisible from inside the code, where the function is right there.
+3. **"The button was deferred."** A 2026-05-04 memo deliberately deferred a Rebuild Index button under Rule 8 and set its own reopen condition — *"reopen if desync becomes observable."* The condition fired and nobody was watching for it; worse, the deferral left fifteen localised strings promising the deferred thing.
+
+**The shape of the fix, since it generalises.** Detect → **report** → offer → act, each visible: a drift notice that *reports* what it found and clears only by **re-deriving**, never by assuming its own repair worked; one submit door with a typed outcome so a refusal cannot be swallowed; a receipt that renders each part's result verbatim so a partly-skipped run cannot present as a whole one.
+
+**Rules:**
+1. **A recovery mechanism is not shipped until a user can reach it.** When adding one, name the gesture — the button, the menu item, the message — in the same commit. "It runs automatically under condition X" is a reachability claim: **state X out loud and verify it**, because `COUNT(*) = 1` disarming a 799-note recovery is what that claim looks like when it is wrong.
+2. **Never name a control in a string that does not exist in the UI.** A localised string is a promise, multiplied by the locale count. Before writing one that names a surface, grep for the surface. This is the machine-readable half of *Never Describe the App Without Looking At It*.
+3. **A deferral must carry its own reopen condition AND a watcher for it.** This memo's condition was correct and fired; nothing was checking. A condition nobody evaluates is a decision that never expires.
+4. **"Maintained at write time" says nothing about intervals with no writer.** For any derived view, ask explicitly: *what happens to this while the app is closed, and what notices?* Rule 8 is about where derivation happens, not about whether anything is watching when it cannot.
+5. **Corollary to LL-035 (prove a feature is off by RUNNING it).** The same discipline applies to *on*: prove a feature is reachable by reaching it. §14 gates the Full re-read in **Rust as well as the UI**, because a UI-only gate hides a feature rather than making it unreachable — the exact error, inverted.
+
 ## LL-037: A SEQUENCING Argument Is Not an EXCLUSION Argument — and a Race Test Must SPAN the Window, Not Sample It
 
 **Symptom (MIG-104 Slice 7, 2026-07-27, found by the per-build safety inspection roughly one hour after the code was written — three independent verifiers, 52 tests green).** The new ledger compactor folded the append-only tail into a bounded snapshot and then renamed the tail aside. Between those two steps it wrote and fsync'd a multi-megabyte file — **tens of milliseconds** — and `append` took **no lock of any kind**. Every record appended inside that window was renamed into `earned.tail-<stamp>.jsonl`, a file that **nothing ever reads back** (not reading it is exactly what bounds the load). On Windows the rename even succeeds while an append handle is open (`FILE_SHARE_DELETE`), so the handle keeps writing into the orphaned file.
@@ -765,6 +785,44 @@ It does not. `needsDiskSave` is NotePane's view-level `dirty`, and `doSave()` cl
 2. **A "read state, then declare that state handled" pair is ONE critical section.** Any operation that decides what a resource contains and then acts on that decision — compact-then-rename, read-then-truncate, snapshot-then-delete — must hold exclusion across BOTH halves. The cheap probe that decides *whether* to start can stay outside; the decision itself cannot.
 3. **A race test must SPAN the window, not sample it: run the competing work until the operation under test RETURNS, and size the fixture so the raced window is actually wide.** A fixed-count competitor and a fast fixture produce a test that passes for timing reasons and will keep passing after the guard is deleted. **Verify RED by removing the fix** — repeatedly, since one green run of a flaky race proves nothing. Pair it with a **thread-free deterministic test** that performs the interleaving by hand, so the mechanism stays pinned independent of timing.
 4. **Corollary to LL-035/036:** this is the third consecutive defect in this family that a green suite could not see — an inactive guard, an over-privileged fixture, and now a test that samples instead of spans. The suite proves what it *exercises*; say out loud what a given test cannot fail on.
+
+## LL-037: A Comment Is a CLAIM With a Shelf Life — Read the Code It Sits Above, Especially When It States a SCALE Assumption
+
+**Symptom (PJ-207 §15, 2026-08-09/10). Four separate defects in one session, all with the same
+cause: I acted on what a comment said instead of on what the code under it did.**
+
+| The comment | What was actually true | What it cost |
+|---|---|---|
+| *"index_note uses DELETE+INSERT, which fires AD+AI not AU"* | It upserts (`ON CONFLICT(path) DO UPDATE`) | A link-resolution trigger placed only on INSERT — unreachable for the lazy-cid case it was written for |
+| *"this AU path is rare in practice"* | It is the path EVERY re-index takes | Same trigger, same blind spot, reinforced |
+| *"the cascade now walks EVERY library root in the universe"* | The freeze/flush had widened; the **rewrite call still passed one library** | A half-implemented fix I reported as shipped in the session log; caught by the tutorial-auditor refusing to write a test for it |
+| *"never the 2 GB own universe — **federated trees are small**"* | The Boss's linked universe holds **7,964** notes against his active **2,104** | **54 s per note create, 50 s per rename** — the app felt broken |
+
+**The rule.**
+
+1. **A comment states a premise that was true WHEN WRITTEN.** Every one of the four was accurate on
+   the day it was typed. None was a lie; all were stale. Treat a comment as evidence of intent and
+   history — never as evidence of current behaviour.
+2. **Read the call, not the paragraph above it.** Three of the four would have died instantly from
+   reading the next ten lines. The cascade one is the sharpest: the comment describing the widening
+   sat *directly above* the line that had not widened.
+3. **A comment asserting SCALE is the most dangerous kind**, because it encodes a fact about the
+   USER'S DATA, which changes without anyone touching the code. "Federated trees are small" was a
+   design-time observation that silently became false the day the Boss linked a bigger universe to
+   a smaller one. **When a comment justifies an O(n) choice by claiming n is small, that claim needs
+   a number, a date, and a source** — or it will outlive its truth and nobody will know when.
+4. **When you find one, correct it IN PLACE, marked as a correction.** Not a quiet edit: the next
+   reader needs to know the claim was believed and cost something. Same discipline as the session
+   log, which was corrected the same day rather than rewritten.
+
+**The counter-example that worked.** The one place this did NOT cost anything was where the code
+carried the *number*: MIG-099's own doc comment says "13.6 s → sub-10 ms", so the moment the create
+path was slow again, that comment pointed straight at the mechanism. A measured comment ages into
+useful history; an unmeasured one ages into a trap.
+
+**Corollary to LL-036.** That entry says the comment explaining *why a pattern is safe* is part of
+the code. This one is its converse: the comment explaining *why something is cheap* is part of the
+code too — and it decays faster, because it depends on data nobody in the repo controls.
 
 ## LL-036: When You Clone a Proven Pattern, Clone Its PRECONDITIONS — the Comment Explaining *Why It Is Safe* Is Part of the Code
 

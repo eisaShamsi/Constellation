@@ -330,6 +330,11 @@ Previously Escape was the one exit that threw the new title away without a word,
 just renamed kept its old name. If you want to abandon a rename, put the old title back before you
 leave the field.
 
+Renaming here does exactly what renaming from the file tree does: every link pointing at the note is
+rewritten to the new name — in every library of your universe, and in every form of link, including
+typed links that carry a relationship and links pointing at a heading or a block inside the note.
+See **Notes Management → "Renaming a note updates every link to it"** for the full picture.
+
 ## Editor settings
 
 You can customize the editor behavior in **Settings > Editor**. Settings are organized into three sections:

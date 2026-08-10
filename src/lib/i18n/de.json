@@ -760,7 +760,8 @@
 			"ahSuffix": "n. H.",
 			"day": "Tag",
 			"days": "Tage"
-		}
+		},
+		"languageNotSaved": "Die Sprache wurde hier geändert, konnte aber nicht gespeichert werden – beim nächsten Start gilt womöglich wieder die alte."
 	},
 	"commands": {
 		"newNote": "Neue Notiz",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden — diese Notiz hat noch keine feste Identität (sie wird noch geöffnet oder hat sich in diesem Tab geändert). Öffne sie und versuche es erneut.",
 		"tagBusy": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden — die Notiz ist beschäftigt (eine Umbenennung oder ein Neuladen aktualisiert sie). Versuche es gleich noch einmal.",
 		"tagWriteFailed": "Das Schlagwort konnte „{note}“ nicht hinzugefügt werden: {error}",
-		"moveBatchFailed": "{count} Element(e) konnten nicht verschoben werden: {items}"
+		"moveBatchFailed": "{count} Element(e) konnten nicht verschoben werden: {items}",
+		"deleteFailed": "„{item}“ konnte nicht gelöscht werden: {error}",
+		"renameFailed": "„{item}“ konnte nicht umbenannt werden: {error}"
 	},
 	"createDialog": {
 		"titleFolder": "Neuer Ordner",
@@ -2648,7 +2651,8 @@
 		"evidence": "Beleg",
 		"established": "Etabliert",
 		"contested": "Umstritten",
-		"archive": "Link archivieren"
+		"archive": "Link archivieren",
+		"notSaved": "Konnte nicht gespeichert werden – bitte erneut versuchen."
 	},
 	"picker": {
 		"title": "Emojis & Symbole",

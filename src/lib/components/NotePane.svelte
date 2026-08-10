@@ -1134,6 +1134,14 @@
 			view.dispatch({ effects: readOnlyCompartment.reconfigure(
 				readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []
 			) });
+			// PJ-207 §15 — a pane that becomes read-only AFTER mount must also stop being the
+			// global insert target. The registry refuses a read-only view at registration time,
+			// but it cannot see a compartment reconfigure that happens later, so an already
+			// registered pane would keep receiving inserts it is guaranteed to discard. Going
+			// the other way we deliberately do NOT re-register: a pane that becomes editable
+			// claims the registry on its next focusin, so a background pane can never take it
+			// from the one the user is typing in.
+			if (readOnly) unregisterActiveEditor(view);
 		}
 	});
 

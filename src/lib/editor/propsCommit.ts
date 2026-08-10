@@ -72,7 +72,7 @@ export function seededKeysOf(rows: FrontmatterProperty[]): Set<string> {
 // One definition of row equality, from the leaf that owns it — see `propRow.ts`. Element-wise, so
 // a commit no longer JSON.stringifies every list on the note ~40 times. Re-exported so a consumer
 // needs one import, and so `sameNested` is not reached through a different module than `sameList`.
-export { sameList, sameNested, samePropRow } from './propRow';
+export { sameList, sameNested, samePropRow, listItemsOf } from './propRow';
 
 /**
  * Work out what the model must be told, given what the panel is showing.

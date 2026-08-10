@@ -760,7 +760,8 @@
 			"ahSuffix": "伊历",
 			"day": "天",
 			"days": "天"
-		}
+		},
+		"languageNotSaved": "此处的语言已更改，但未能保存，下次启动时可能会恢复。"
 	},
 	"commands": {
 		"newNote": "新建笔记",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "无法为“{note}”添加标签——这条笔记尚无稳定标识（仍在打开中，或在此标签页中已发生变化）。请打开它后重试。",
 		"tagBusy": "无法为“{note}”添加标签——笔记正忙（重命名或重新加载正在更新它）。请稍后重试。",
 		"tagWriteFailed": "无法为“{note}”添加标签：{error}",
-		"moveBatchFailed": "有 {count} 个项目无法移动：{items}"
+		"moveBatchFailed": "有 {count} 个项目无法移动：{items}",
+		"deleteFailed": "无法删除“{item}”：{error}",
+		"renameFailed": "无法重命名“{item}”：{error}"
 	},
 	"createDialog": {
 		"titleFolder": "新建文件夹",
@@ -3088,7 +3091,8 @@
 		"evidence": "证据",
 		"established": "已确立",
 		"contested": "有争议",
-		"archive": "归档链接"
+		"archive": "归档链接",
+		"notSaved": "无法保存，请重试。"
 	},
 	"picker": {
 		"title": "表情符号和图标",

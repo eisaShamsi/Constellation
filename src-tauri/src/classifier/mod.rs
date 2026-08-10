@@ -440,6 +440,22 @@ pub fn cece_resolve_disambiguation(
         }
     }
 
+    // PJ-207 §15 — this tail returns Ok(None), which the Source Review panel reads as "the card is
+    // consumed" and filters out of the queue. That promise was being made without checking the row it
+    // was about to orphan: a vertical pick whose other axis had no settled primary ran neither a
+    // clearing twin nor the co-write, so the card vanished from the panel while its
+    // `sources_suggestions` row survived — re-serving the same card on the next load and excluding the
+    // note from `enumerate_pending` for as long as it lived. Enforced here, at the point that declares
+    // the card gone, instead of depending on which write path happened to run. The failure is
+    // propagated on purpose: if the row cannot be deleted the card must NOT be dropped, and the panel
+    // keeps it and surfaces the error.
+    {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| format!("DB lock: {}", e))?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        crate::sources::clear_suggestions(conn, &note_path)?;
+    }
+
     // V3-§9.C.2 — reliability for BOTH axes from the pre-write snapshot.
     if let Some(blob) = composite_snapshot {
         let (h_pick, v_pick) = match axis.as_str() {

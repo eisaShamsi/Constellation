@@ -353,6 +353,8 @@
 	}
 
 	// Map locale → primary script for font auto-sync
+	// PJ-207 §15 — set when the durable language write fails; shown under the picker.
+	let localeSaveFailed = $state(false);
 	const localeToScript: Record<string, string> = {
 		en: 'latin', de: 'latin', es: 'latin', fr: 'latin', pt: 'latin', tr: 'latin',
 		ar: 'arabic', fa: 'arabic', ur: 'arabic',
@@ -372,7 +374,11 @@
 		// `setLocale` because the second screen also calls `setLocale` when it receives
 		// the settings event — a write there would make a display window persist
 		// settings (Display-not-Domain) and echo the boot reconcile back to disk.
-		void saveAppPrefs({ locale: newLocale });
+		// PJ-207 §15 — if the durable write fails, SAY SO: the language is right on screen but
+		// will revert at the next launch, and a silent revert is precisely what this record
+		// exists to prevent. The message clears on the next successful change.
+		localeSaveFailed = false;
+		void saveAppPrefs({ locale: newLocale }).then((ok) => { localeSaveFailed = !ok; });
 		notifySettingsChanged({ locale: newLocale });
 		// Auto-sync primary script to match the interface language
 		const script = localeToScript[newLocale] || 'latin';
@@ -1261,6 +1267,9 @@
 									{/each}
 								</select>
 							</div>
+							{#if localeSaveFailed}
+								<div class="lang-save-failed" role="alert">{$t('settings.languageNotSaved')}</div>
+							{/if}
 							<div class="lang-card-preview" style="font-family: {psSet?.textFont || psSet?.name || 'inherit'}">
 								{SCRIPT_SAMPLES[ps] || ''}
 							</div>
@@ -3113,6 +3122,12 @@
 		flex: 1; min-width: 120px; padding: 6px 10px; border: 1px solid var(--background-modifier-border);
 		border-radius: 6px; background: var(--background-primary); color: var(--text-normal);
 		font-size: 13px; font-family: var(--font-interface-theme);
+	}
+	.lang-save-failed {
+		padding: 2px 2px 6px;
+		color: var(--danger, #ff6b6b);
+		font-size: calc(0.72rem * var(--rs-scale, 1));
+		line-height: 1.4;
 	}
 	.lang-card-preview {
 		font-size: 13px; color: var(--text-muted); margin-top: 6px; padding: 4px 0;

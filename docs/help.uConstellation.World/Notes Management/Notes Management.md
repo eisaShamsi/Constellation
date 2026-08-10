@@ -83,9 +83,28 @@ Right-clicking surfaces the same dialog from these surfaces:
 
 ### Renaming a note updates every link to it
 
-When you rename a note — either from the **file tree** (right-click → Rename) or by **editing its title** at the top of the page — Constellation rewrites every `[[wikilink]]` that points to it, across the whole library, to the new name. You don't fix links by hand, and links never silently break.
+When you rename a note — either from the **file tree** (right-click → Rename) or by **editing its title** at the top of the page — Constellation rewrites every link that points to it so it names the new title. You don't fix links by hand, and links never silently break. This is the **Auto-update links on rename** setting under **Settings → Links**; it is on unless you switch it off.
 
 While those links are being updated you'll see a brief read-only **"Updating links…"** overlay on the affected note(s); the editor accepts no typing for that moment, so nothing is lost while the note reloads. On a small library this is near-instant; on a very large library it may take a second or two. The note that previously linked to the old name still resolves afterward, because the old title is kept as an **alias** on the renamed note.
+
+**Every form of link is rewritten.** Not only the plain ones:
+
+| The link you wrote | After renaming *Note Name* to *New Name* |
+|---|---|
+| `[[Note Name]]` | `[[New Name]]` |
+| `[[Note Name\|the words you wanted to read]]` | `[[New Name\|the words you wanted to read]]` |
+| `[[supports::Note Name]]` | `[[supports::New Name]]` |
+| `[[supports::Note Name\|why it supports]]` | `[[supports::New Name\|why it supports]]` |
+| `[[Note Name#A Heading]]` | `[[New Name#A Heading]]` |
+| `[[Note Name^blockid]]` | `[[New Name^blockid]]` |
+
+Only the name changes. The relationship (*supports*, *contradicts*, *part-of* and the rest — including the structural *parent* and *contains*), your display text, your annotation, and the heading or block you pointed at are all kept exactly as you wrote them. Typed links and links pointing at a heading or block used to be left behind after a rename, still naming the old title, with nothing said about it — a broken link with no warning. They are covered now.
+
+**The update reaches every library in your universe.** Not only the library the renamed note happens to live in — so a note in one library that links to a note in another stays connected. Notes in a **linked (child) universe** are deliberately left untouched: that is a separate knowledge base, and Constellation does not rewrite its notes.
+
+**If some notes could not be updated, you are told which.** Now and then a note's file is locked, read-only, or held open by another program. Rather than reporting a clean success, Constellation names those notes and tells you their links still point at the old title, so you know exactly what to check.
+
+**Renaming a folder changes no links** — by design. Folder names never appear inside a link, so there is nothing to rewrite.
 
 ### When a name already exists — the collision dialog
 
@@ -287,7 +306,7 @@ Constellation is built so that **no ordinary action can silently lose the text y
   - **Save a copy** — writes your unsaved version to a new note right next to the original (named "… (recovered copy)" in your language) and opens it in a new tab. Your work is durably on disk; the stuck original keeps retrying and its banner stays until it frees up.
   - **Discard…** — deliberately drops your unsaved change and keeps the file exactly as it is on disk. The button first turns into **"Really discard?"** so a stray click can't lose anything; click it again to confirm. This is the only way unsaved work is ever dropped — always your explicit choice, never the app's.
 
-- **Renaming a note updates its links safely.** When you rename a note, Constellation automatically rewrites every `[[wikilink]]` that points to it. If one of the notes being updated happens to be open with unsaved edits *and* its file is momentarily locked, Constellation **skips updating that one note this time** to protect your unsaved work — its link still resolves via the old name and catches up on the next save. Every other note updates normally, and the app never freezes.
+- **Renaming a note updates its links safely.** When you rename a note, Constellation automatically rewrites every link that points to it, in every library of your universe. If one of the notes being updated happens to be open with unsaved edits *and* its file is momentarily locked, Constellation **skips updating that one note this time** to protect your unsaved work — its link still resolves via the old name and catches up on the next save. Every other note updates normally, and the app never freezes.
 
 - **When a note is edited outside Constellation while it's open.** If the same note is changed by another program or a sync tool while you have it open, Constellation adopts the outside change if you have no unsaved edits; if you *do* have unsaved edits, it keeps **both** — your version stays on screen and the outside version is saved as a separate `.conflict` side-copy. A banner offers **Merge…** (a side-by-side view where you reconcile the two, with a "Copy to mine" button per difference) and **Show copy** (reveals the side-copy in your file explorer). Nothing is ever overwritten without your choice.
 

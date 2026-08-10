@@ -760,7 +760,8 @@
 			"ahSuffix": "H",
 			"day": "gün",
 			"days": "gün"
-		}
+		},
+		"languageNotSaved": "Dil burada değişti ancak kaydedilemedi — bir sonraki açılışta eskiye dönebilir."
 	},
 	"commands": {
 		"newNote": "Yeni not",
@@ -822,7 +823,9 @@
 		"tagNoIdentity": "“{note}” notuna etiket eklenemedi — bu notun henüz kalıcı bir kimliği yok (hâlâ açılıyor ya da bu sekmede değişti). Notu açıp yeniden deneyin.",
 		"tagBusy": "“{note}” notuna etiket eklenemedi — not meşgul (bir yeniden adlandırma veya yeniden yükleme onu güncelliyor). Birazdan yeniden deneyin.",
 		"tagWriteFailed": "“{note}” notuna etiket eklenemedi: {error}",
-		"moveBatchFailed": "{count} öge taşınamadı: {items}"
+		"moveBatchFailed": "{count} öge taşınamadı: {items}",
+		"deleteFailed": "“{item}” silinemedi: {error}",
+		"renameFailed": "“{item}” yeniden adlandırılamadı: {error}"
 	},
 	"createDialog": {
 		"titleFolder": "Yeni Klasör",
@@ -3088,7 +3091,8 @@
 		"evidence": "Kanıt",
 		"established": "Yerleşik",
 		"contested": "İtirazlı",
-		"archive": "Bağlantıyı arşivle"
+		"archive": "Bağlantıyı arşivle",
+		"notSaved": "Kaydedilemedi — tekrar deneyin."
 	},
 	"picker": {
 		"title": "Emojiler ve Simgeler",

@@ -227,14 +227,23 @@ pub fn ensure_sources_suggestions_table(conn: &Connection) -> rusqlite::Result<(
 /// Block-aware: tracks "are we inside the `sources:` block" so a `-`
 /// line item that follows `tags:` or another list field is NOT
 /// mistakenly consumed.
-pub fn extract_sources(content: &str) -> Vec<String> {
-    if !content.starts_with("---") {
-        return Vec::new();
-    }
-    let Some(end) = content[3..].find("\n---") else {
+/// Every value under a top-level axis key (`sources:` / `content_type:`), **verbatim** — no
+/// validation, no lower-casing, no de-duplication. Pass the key WITH its colon.
+///
+/// PJ-207 §15 — this walker used to exist twice, once per axis, differing only in the key and
+/// the push function; and neither could answer the one question the WRITERS need: "what is in
+/// this note that I do not recognise?" Both readers now filter this, and both writers consult
+/// it to carry unknown values through instead of deleting them.
+pub(crate) fn extract_axis_values_raw(content: &str, key: &str) -> Vec<String> {
+    // PJ-207 §15 (third pass) — `fence_offset`, not a raw `starts_with`; see its doc comment.
+    let Some(lead) = fence_offset(content) else {
         return Vec::new();
     };
-    let frontmatter = &content[3..3 + end];
+    let rest = &content[lead..];
+    let Some(end) = rest[3..].find("\n---") else {
+        return Vec::new();
+    };
+    let frontmatter = &rest[3..3 + end];
 
     let mut out: Vec<String> = Vec::new();
     let mut in_block = false;
@@ -242,19 +251,17 @@ pub fn extract_sources(content: &str) -> Vec<String> {
     for line in frontmatter.lines() {
         let trimmed = line.trim_start();
 
-        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("sources:") {
+        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with(key) {
             in_block = true;
-            let value = trimmed["sources:".len()..].trim();
+            let value = trimmed[key.len()..].trim();
             if value.starts_with('[') && value.ends_with(']') {
                 // Inline array.
                 let inner = &value[1..value.len() - 1];
-                for raw in inner.split(',') {
-                    push_source(&mut out, raw);
-                }
+                out.extend(crate::yaml_lines::split_flow_seq_items(inner));
                 in_block = false;
             } else if !value.is_empty() {
                 // Scalar.
-                push_source(&mut out, value);
+                out.push(value.to_string());
                 in_block = false;
             }
             // else: block list — items consumed below.
@@ -262,15 +269,88 @@ pub fn extract_sources(content: &str) -> Vec<String> {
         }
 
         if in_block {
-            if let Some(rest) = trimmed.strip_prefix("- ") {
-                push_source(&mut out, rest);
-                continue;
-            }
-            // Any non-list-item line ends the block (next field, etc.).
-            if !trimmed.is_empty() {
+            // PJ-207 §15 — the block ends at the next TOP-LEVEL KEY, the same rule the writers
+            // strip by (`ends_dropped_block`). Reading it by "the first line that is not a
+            // sequence item" made the reader disagree with the writer: a comment or an indented
+            // continuation between two items ended the block here, so every item after it was
+            // invisible to the reader while the writer still (correctly) rewrote it.
+            // (A comment does not end the block either — see `ends_dropped_block`. Here it is
+            // simply not a value, so it is skipped rather than kept: this reader collects the
+            // block's VALUES, not its lines. The two WRITERS below keep the line itself.)
+            if crate::yaml_lines::ends_dropped_block(line) {
                 in_block = false;
+            } else {
+                if let Some(rest) = trimmed.strip_prefix("- ") {
+                    out.push(rest.to_string());
+                }
+                continue; // item, continuation, comment or blank — still inside the block
             }
         }
+    }
+    out
+}
+
+/// The values a rewrite must carry over UNTOUCHED: everything already under the note's own axis
+/// key that this build does not recognise.
+///
+/// PJ-207 §15 — the readers drop unknown values deliberately, so a typo never reaches the SQLite
+/// mirror (see `push_source`). That is right for the mirror and wrong for the FILE: the writers
+/// rebuild the whole block from that filtered set, so the first time anything touched a note's
+/// sources, any value the user had typed there by hand — or that an older taxonomy wrote, or that
+/// came in with an Obsidian import, `sources:` and `content_type:` being ordinary key names —
+/// was deleted from their file with no message. "Never modify file content silently" is not
+/// satisfiable by an app that only preserves what it happens to understand.
+fn unrecognised_existing(content: &str, key: &str, is_valid: fn(&str) -> bool) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for raw in extract_axis_values_raw(content, key) {
+        let v = raw.trim().trim_matches(|c| c == '"' || c == '\'').to_string();
+        if v.is_empty() || is_valid(&v.to_lowercase()) || out.contains(&v) {
+            continue;
+        }
+        out.push(v);
+    }
+    out
+}
+
+/// The recognised subset of `desired`, in the caller's order — exactly what the SQLite mirror
+/// should hold for this axis (unknown values stay on disk but are never mirrored).
+fn recognised(desired: &[String], is_valid: fn(&str) -> bool) -> Vec<String> {
+    desired
+        .iter()
+        .filter(|s| is_valid(s))
+        .cloned()
+        .collect()
+}
+
+/// Where this note's frontmatter fence starts, if it has one — how many bytes of leading
+/// whitespace precede the opening `---`.
+///
+/// PJ-207 §15 (third pass, APP-KILLER) — every reader and writer in this file detected the fence
+/// with a RAW `content.starts_with("---")`, while the indexer's canonical reader
+/// (`search::split_frontmatter`) has always used `trim_start()`. On a note whose bytes begin with
+/// a newline or a space before its `---` the two disagreed catastrophically: the writers concluded
+/// the note had NO frontmatter and PREPENDED a second one, pushing the note's real YAML down into
+/// its body, where it stops being frontmatter to anything and renders as literal text. The trigger
+/// is an ordinary Accept in the Source Review panel.
+///
+/// Not hypothetical: a scan of the live universes found 28 notes with exactly this shape.
+/// `search.rs` was swept for this class and carries a regression test for it; this module never
+/// was — the same half-a-sweep the Whole-Ecosystem Fix Law names.
+///
+/// The leading bytes are PRESERVED by the callers rather than trimmed away: they are the user's
+/// file, and a writer replacing one key has no business reformatting the top of the note.
+fn fence_offset(content: &str) -> Option<usize> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    Some(content.len() - trimmed.len())
+}
+
+pub fn extract_sources(content: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for raw in extract_axis_values_raw(content, "sources:") {
+        push_source(&mut out, &raw);
     }
     out
 }
@@ -439,17 +519,17 @@ pub fn clear_suggestions(conn: &Connection, note_path: &str) -> Result<(), Strin
 ///
 /// Returns the rewritten string. Caller writes to disk.
 pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String {
-    let validated: Vec<&str> = sources
-        .iter()
-        .filter_map(|s| {
-            horizontal_taxonomy::HORIZONTAL_NODES
-                .iter()
-                .find(|n| n.id == s.as_str())
-                .map(|n| n.id)
-        })
-        .collect();
+    let mut validated: Vec<String> = recognised(sources, is_valid_source_id);
+    // PJ-207 §15 — carry through what we do not recognise rather than deleting it.
+    for v in unrecognised_existing(content, "sources:", is_valid_source_id) {
+        if !validated.contains(&v) {
+            validated.push(v);
+        }
+    }
 
-    if !content.starts_with("---") {
+    // PJ-207 §15 (third pass, APP-KILLER) — `fence_offset`, not a raw `starts_with("---")`; see
+    // its doc comment. A single leading newline made this branch prepend a SECOND fence.
+    let Some(lead) = fence_offset(content) else {
         if validated.is_empty() {
             return content.to_string();
         }
@@ -457,21 +537,23 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
         let mut out = String::from("---\nsources:\n");
         for s in &validated {
             out.push_str("  - ");
-            out.push_str(s);
+            out.push_str(&crate::bases::format_yaml_value(s));
             out.push('\n');
         }
         out.push_str("---\n\n");
         out.push_str(content);
         return out;
-    }
+    };
+    let head = &content[..lead]; // the user's leading bytes — preserved verbatim
+    let rest = &content[lead..];
 
-    let Some(end) = content[3..].find("\n---") else {
+    let Some(end) = rest[3..].find("\n---") else {
         // Malformed frontmatter — leave alone.
         return content.to_string();
     };
-    let fm = &content[3..3 + end];
+    let fm = &rest[3..3 + end];
     let body_start = 3 + end + 4; // skip past "\n---" closing delimiter
-    let body = &content[body_start..];
+    let body = &rest[body_start..];
 
     // Strip any existing `sources:` block (scalar / inline / block list).
     let mut new_fm_lines: Vec<String> = Vec::new();
@@ -495,16 +577,33 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
             continue; // drop this line either way
         }
         if skip_block {
-            // PJ-182 — the shared rule. `starts_with("- ")` alone missed a bare `-` and a
-            // tab-separated item, either of which would have been left orphaned under the
-            // removed key.
-            if crate::yaml_lines::is_seq_item(line) {
-                continue; // still inside the dropped block
-            } else if !trimmed.is_empty() {
+            // PJ-207 §15 (APP-KILLER) — **a block ends at the next TOP-LEVEL KEY, not at the
+            // first line that merely is not a sequence item.**
+            //
+            // The rule here was `is_seq_item` → continue, else end the block. So a YAML
+            // COMMENT between two items, or an INDENTED CONTINUATION of an item, ended the
+            // block early — and every remaining `- …` line was then pushed back while its
+            // `sources:` key had already been removed. That is not just lost data: it leaves a
+            // sequence with no key, which is invalid YAML, and an unparseable note is exactly
+            // the state in which every later property edit silently vanishes (the sibling
+            // app-killer this same sweep found).
+            //
+            // Anything that is not a top-level key still belongs to the block we are dropping:
+            // its items, their continuations, comments between them, and blank lines.
+            // The user's comment is KEPT, not swallowed with the block. `bases.rs` and
+            // `libraries.rs` — the two sibling writers solving this identical problem — both
+            // test `is_comment` first and preserve it; these three never called `is_comment` at
+            // all. Deleting a line the user typed, to replace a key they did not type, is not
+            // this writer's business (PJ-207 §15, second pass).
+            if crate::yaml_lines::is_comment(line) {
+                new_fm_lines.push(line.to_string());
+                continue;
+            }
+            if crate::yaml_lines::ends_dropped_block(line) {
                 skip_block = false;
-                // fall through to push this line
+                // fall through to push this line — a new key, not part of the block
             } else {
-                continue; // blank inside block — drop
+                continue; // item, continuation, comment or blank — still inside the dropped block
             }
         }
         new_fm_lines.push(line.to_string());
@@ -519,14 +618,15 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
         new_fm.push_str("\nsources:\n");
         for s in &validated {
             new_fm.push_str("  - ");
-            new_fm.push_str(s);
+            new_fm.push_str(&crate::bases::format_yaml_value(s));
             new_fm.push('\n');
         }
     } else {
         new_fm.push('\n');
     }
 
-    let mut out = String::from("---");
+    let mut out = String::from(head); // PJ-207 §15 — keep whatever preceded the fence
+    out.push_str("---");
     out.push_str(&new_fm);
     out.push_str("---");
     out.push_str(body);
@@ -622,7 +722,10 @@ fn rewrite_note_sources_on_disk(
             sources.to_vec()
         };
         let rewritten = rewrite_frontmatter_sources(content, &ids);
-        effective = ids;
+        // PJ-207 §15 — the mirror holds the RECOGNISED set. Unknown values stay on disk (the
+        // writer preserves them) but are deliberately never mirrored, exactly as the readers
+        // have always done; returning `ids` verbatim claimed unvalidated input had landed.
+        effective = recognised(&ids, is_valid_source_id);
         Ok(Some(rewritten))
     })?;
     Ok(effective)
@@ -952,45 +1055,9 @@ pub fn ensure_note_meta_content_type_column(conn: &Connection) -> rusqlite::Resu
 /// `extract_sources` exactly (scalar / inline array / block list);
 /// validates against vertical_taxonomy.
 pub fn extract_content_type(content: &str) -> Vec<String> {
-    if !content.starts_with("---") {
-        return Vec::new();
-    }
-    let Some(end) = content[3..].find("\n---") else {
-        return Vec::new();
-    };
-    let frontmatter = &content[3..3 + end];
-
     let mut out: Vec<String> = Vec::new();
-    let mut in_block = false;
-
-    for line in frontmatter.lines() {
-        let trimmed = line.trim_start();
-
-        if crate::yaml_lines::is_top_level_key_line(line) && trimmed.starts_with("content_type:") {
-            in_block = true;
-            let value = trimmed["content_type:".len()..].trim();
-            if value.starts_with('[') && value.ends_with(']') {
-                let inner = &value[1..value.len() - 1];
-                for raw in inner.split(',') {
-                    push_content_type(&mut out, raw);
-                }
-                in_block = false;
-            } else if !value.is_empty() {
-                push_content_type(&mut out, value);
-                in_block = false;
-            }
-            continue;
-        }
-
-        if in_block {
-            if let Some(rest) = trimmed.strip_prefix("- ") {
-                push_content_type(&mut out, rest);
-                continue;
-            }
-            if !trimmed.is_empty() {
-                in_block = false;
-            }
-        }
+    for raw in extract_axis_values_raw(content, "content_type:") {
+        push_content_type(&mut out, &raw);
     }
     out
 }
@@ -1064,37 +1131,38 @@ pub fn write_content_type_to_db(
 /// Rewrite a note's frontmatter to update the `content_type:` field.
 /// Mirrors `rewrite_frontmatter_sources` exactly.
 pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) -> String {
-    let validated: Vec<&str> = content_type
-        .iter()
-        .filter_map(|s| {
-            vertical_taxonomy::VERTICAL_NODES
-                .iter()
-                .find(|n| n.id == s.as_str())
-                .map(|n| n.id)
-        })
-        .collect();
+    let mut validated: Vec<String> = recognised(content_type, is_valid_content_type_id);
+    // PJ-207 §15 — see the sibling in `rewrite_frontmatter_sources`.
+    for v in unrecognised_existing(content, "content_type:", is_valid_content_type_id) {
+        if !validated.contains(&v) {
+            validated.push(v);
+        }
+    }
 
-    if !content.starts_with("---") {
+    // PJ-207 §15 (third pass, APP-KILLER) — the twin of the sources writer; see `fence_offset`.
+    let Some(lead) = fence_offset(content) else {
         if validated.is_empty() {
             return content.to_string();
         }
         let mut out = String::from("---\ncontent_type:\n");
         for s in &validated {
             out.push_str("  - ");
-            out.push_str(s);
+            out.push_str(&crate::bases::format_yaml_value(s));
             out.push('\n');
         }
         out.push_str("---\n\n");
         out.push_str(content);
         return out;
-    }
+    };
+    let head = &content[..lead];
+    let rest = &content[lead..];
 
-    let Some(end) = content[3..].find("\n---") else {
+    let Some(end) = rest[3..].find("\n---") else {
         return content.to_string();
     };
-    let fm = &content[3..3 + end];
+    let fm = &rest[3..3 + end];
     let body_start = 3 + end + 4;
-    let body = &content[body_start..];
+    let body = &rest[body_start..];
 
     let mut new_fm_lines: Vec<String> = Vec::new();
     let mut skip_block = false;
@@ -1109,10 +1177,19 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
             continue;
         }
         if skip_block {
-            // PJ-182 — the shared rule; see the sibling in `strip_sources_block`.
-            if crate::yaml_lines::is_seq_item(line) {
+            // PJ-207 §15 — the shared block-end rule; see `yaml_lines::ends_dropped_block` and
+            // the sibling in `rewrite_frontmatter_sources`. A comment or an indented
+            // continuation is part of the block, not the end of it.
+            // The user's comment is KEPT, not swallowed with the block. `bases.rs` and
+            // `libraries.rs` — the two sibling writers solving this identical problem — both
+            // test `is_comment` first and preserve it; these three never called `is_comment` at
+            // all. Deleting a line the user typed, to replace a key they did not type, is not
+            // this writer's business (PJ-207 §15, second pass).
+            if crate::yaml_lines::is_comment(line) {
+                new_fm_lines.push(line.to_string());
                 continue;
-            } else if !trimmed.is_empty() {
+            }
+            if crate::yaml_lines::ends_dropped_block(line) {
                 skip_block = false;
             } else {
                 continue;
@@ -1130,14 +1207,15 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
         new_fm.push_str("\ncontent_type:\n");
         for s in &validated {
             new_fm.push_str("  - ");
-            new_fm.push_str(s);
+            new_fm.push_str(&crate::bases::format_yaml_value(s));
             new_fm.push('\n');
         }
     } else {
         new_fm.push('\n');
     }
 
-    let mut out = String::from("---");
+    let mut out = String::from(head); // PJ-207 §15 — keep whatever preceded the fence
+    out.push_str("---");
     out.push_str(&new_fm);
     out.push_str("---");
     out.push_str(body);
@@ -1234,6 +1312,18 @@ pub fn content_type_set_manual(
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
     write_content_type_to_db(conn, &note_path, &effective)?;
+    // PJ-207 §15 — the horizontal twin `sources_set_manual` clears the suggestion row at this exact
+    // point and this one never did. When `cece_resolve_disambiguation` resolves a VERTICAL pick on a
+    // card whose horizontal axis has no settled primary, nothing else clears it: the co-write that
+    // would have (through the twin) is gated on `other_axis_settled`, which `extract_other_axis_settled`
+    // returns None for whenever horizontal's `primary` is absent, null or empty — the ordinary shape a
+    // cold-start Library produces. The command still returned Ok(None), the Source Review panel filtered
+    // the card away, and the orphaned row then re-served the same card on every reload AND excluded the
+    // note from `enumerate_pending` for as long as it lived (its `WHERE NOT EXISTS` skips any note that
+    // has a suggestion row), so the background scan could never revisit that note again. The DELETE is
+    // idempotent: the dual-axis Accept path has already cleared it, and the still-Split branch of the
+    // resolver re-inserts from a snapshot taken before this write.
+    clear_suggestions(conn, &note_path)?;
     drop(db_guard);
 
     // Log the correction (best-effort; non-blocking).
@@ -1339,6 +1429,194 @@ pub fn sources_get_vertical_taxonomy() -> Vec<VerticalNodePayload> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-207 §15 whole-app sweep (APP-KILLER) — **the block strip must end at the next
+    /// TOP-LEVEL KEY, not at the first line that merely is not a sequence item.**
+    ///
+    /// The old rule ended the block on any non-empty non-`- ` line. A YAML comment inside the
+    /// list — or an indented continuation of an item — therefore ended it early, and every
+    /// remaining `- …` line was PUSHED BACK into the frontmatter while its `sources:` key had
+    /// already been removed. The result is not merely lost data: it is a sequence with no key,
+    /// which is invalid YAML — and an unparseable note is exactly the state that makes every
+    /// later property edit silently vanish (the other app-killer this sweep found).
+    #[test]
+    fn a_comment_inside_the_sources_block_does_not_end_it_and_orphan_the_rest() {
+        let content = "---
+title: T
+sources:
+  - perception/external
+  # a note to self
+  - revelation/recited
+  - my-own-source
+status: draft
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_sources(content, &[]);
+        assert!(!out.contains("- perception/external"), "the first item is dropped");
+        assert!(
+            !out.contains("- revelation/recited"),
+            "and so is the item AFTER the comment — not orphaned:
+{out}"
+        );
+        assert!(
+            out.contains("my-own-source"),
+            "but a value this build does not recognise is NOT the app's to delete:
+{out}"
+        );
+        // PJ-207 §15 second pass — this assertion was WRONG when it was written. It pinned the
+        // comment being deleted along with the block, on the reasoning that it "belonged to" it.
+        // The two sibling writers (`bases.rs`, `libraries.rs`) both KEEP the user's comment, and
+        // keeping it is the right call: the user typed that line, and replacing a `sources:` key
+        // is no licence to delete it. The rule is now one rule across all three writers.
+        assert!(out.contains("# a note to self"), "the user's comment is kept, not swallowed:
+{out}");
+        assert!(out.contains("title: T"), "keys before the block are untouched");
+        assert!(out.contains("status: draft"), "the next TOP-LEVEL key ends the block and survives");
+        assert!(out.contains("Body."), "the body is never touched");
+    }
+
+    /// The same shape with an indented continuation line rather than a comment.
+    /// PJ-207 §15 THIRD PASS (APP-KILLER) — **a note whose bytes begin before its `---` fence.**
+    ///
+    /// The writers detected the fence with a raw `content.starts_with("---")` while the indexer's
+    /// canonical reader (`search::split_frontmatter`) trims first. On a note that opens with a
+    /// newline, the writer concluded there was no frontmatter and PREPENDED a second one — the
+    /// note's real YAML pushed down into its body, where it stops being frontmatter to anything.
+    /// A scan of the live universes found 28 notes with this exact shape, several of them Arabic
+    /// notes in the Boss's own libraries. `search.rs` was swept for this class and carries a
+    /// regression test; this module never was.
+    #[test]
+    fn pj207_s15_a_leading_newline_before_the_fence_is_still_frontmatter() {
+        let content = "
+---
+title: T
+sources:
+  - perception/external
+---
+
+Body.
+";
+
+        // The premise: the canonical reader sees frontmatter here, and so must we.
+        assert!(crate::search::split_frontmatter(content).is_some());
+        assert_eq!(extract_sources(content), vec!["perception/external"]);
+
+        let out = rewrite_frontmatter_sources(content, &["revelation/recited".to_string()]);
+
+        assert_eq!(out.matches("---").count(), 2, "exactly ONE fence pair, not two:
+{out}");
+        assert!(out.starts_with("
+---"), "the leading byte is the user's — kept:
+{out}");
+        assert!(out.contains("title: T"), "the note's real frontmatter stays frontmatter:
+{out}");
+        assert!(out.contains("- revelation/recited"), "the new value lands:
+{out}");
+        assert!(!out.contains("- perception/external"), "the old value is replaced:
+{out}");
+        assert!(out.trim_end().ends_with("Body."), "the body is untouched:
+{out}");
+    }
+
+    /// The same for the vertical axis — one shape, two writers.
+    #[test]
+    fn pj207_s15_leading_newline_content_type_writer() {
+        let content = "
+---
+title: T
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_content_type(content, &[]);
+        assert_eq!(out.matches("---").count(), 2, "no second fence:
+{out}");
+        assert!(out.contains("title: T"));
+    }
+
+    /// PJ-207 §15 SECOND PASS — the same app-killer shape with the comment at COLUMN 0.
+    ///
+    /// The first pass fixed only the indented half and shipped a test using `  # a note to self`.
+    /// `is_top_level_key_line("# note")` is true — a flush-left comment is unindented and is not a
+    /// sequence item — so `ends_dropped_block` ended the block there and every remaining `- ` item
+    /// was written back out under a key that had already been removed: a sequence with no key,
+    /// which does not parse, which is the state where every later property edit vanishes silently.
+    /// Writing a frontmatter comment flush-left is the common way to write one.
+    #[test]
+    fn a_column_zero_comment_inside_the_sources_block_does_not_end_it() {
+        let content = "---
+title: T
+sources:
+  - perception/external
+# a flush-left note
+  - revelation/recited
+status: draft
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_sources(content, &[]);
+        assert!(!out.contains("- perception/external"), "the first item is dropped:
+{out}");
+        assert!(
+            !out.contains("- revelation/recited"),
+            "the item AFTER the flush-left comment must be dropped too, not orphaned:
+{out}"
+        );
+        assert!(out.contains("# a flush-left note"), "the user's comment is kept:
+{out}");
+        assert!(out.contains("status: draft"), "the next real key still ends the block:
+{out}");
+        assert!(out.contains("title: T"), "keys before the block are untouched");
+        assert!(out.contains("Body."), "the body is never touched");
+    }
+
+    #[test]
+    fn an_indented_continuation_does_not_end_the_sources_block() {
+        let content = "---
+title: T
+sources:
+  - perception/external
+    continued text
+  - revelation/recited
+kind: note
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_sources(content, &[]);
+        assert!(!out.contains("- perception/external"));
+        assert!(
+            !out.contains("continued text"),
+            "a continuation is part of the item it continues:
+{out}"
+        );
+        assert!(!out.contains("- revelation/recited"));
+        assert!(out.contains("kind: note"));
+    }
+
+    /// The guard must not over-reach: a genuine next top-level key still ends the block, and a
+    /// note with no `sources:` at all is returned untouched.
+    #[test]
+    fn the_block_still_ends_at_the_next_top_level_key() {
+        let content = "---
+sources:
+  - perception/external
+title: Kept
+tags:
+  - one
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_sources(content, &[]);
+        assert!(out.contains("title: Kept"));
+        assert!(out.contains("- one"), "a DIFFERENT key's list must survive intact:
+{out}");
+        assert!(!out.contains("- perception/external"));
+    }
 
     /// PJ-182 — an INDENTED `sources:` belongs to a nested map (or is prose inside a block
     /// scalar); it is not the note's own key and must never be deleted.
@@ -1575,4 +1853,89 @@ mod tests {
         assert!(is_valid_source_id("non-apprehension/prior"));
         assert!(!is_valid_source_id("perception/nonexistent-leaf"));
     }
+
+    /// PJ-207 §15 whole-app sweep (HIGH) — **an axis rewrite must not delete a value the user
+    /// put in the note by hand.**
+    ///
+    /// The readers drop unknown values on purpose, so a typo never reaches the SQLite mirror.
+    /// The WRITERS then rebuilt the whole `sources:` block from that filtered set — so the value
+    /// was erased from the user's FILE the first time anything touched that note's sources, with
+    /// no message. `sources:` and `content_type:` are ordinary frontmatter key names; a note that
+    /// arrived from Obsidian, or that predates the taxonomy, carries values this build has never
+    /// heard of, and losing them is losing the user's own writing.
+    #[test]
+    fn pj207_s15_axis_rewrite_keeps_a_value_already_in_the_note() {
+        let content =
+            "---
+title: Note
+sources: [perception/external, my-own-source]
+---
+
+Body.
+";
+
+        // The reader filters — that is deliberate and stays true.
+        assert_eq!(extract_sources(content), vec!["perception/external"]);
+        // …so the set the app computes for a write never mentions the user's own value.
+        let desired = union_preserve_order(
+            &extract_sources(content),
+            &["revelation/recited".to_string()],
+        );
+
+        let out = rewrite_frontmatter_sources(content, &desired);
+
+        assert!(
+            out.contains("my-own-source"),
+            "the user's own value must survive the rewrite:
+{}",
+            out
+        );
+        assert!(out.contains("revelation/recited"), "the accepted id must land");
+        assert!(out.contains("perception/external"), "the known id must stay");
+    }
+
+    #[test]
+    fn pj207_s15_content_type_rewrite_keeps_a_value_already_in_the_note() {
+        let content = "---
+title: Note
+content_type: [my-own-type]
+---
+
+Body.
+";
+        assert!(extract_content_type(content).is_empty(), "the reader filters it out");
+        let out = rewrite_frontmatter_content_type(content, &[]);
+        assert!(
+            out.contains("my-own-type"),
+            "the user's own content_type must survive:
+{}",
+            out
+        );
+    }
+
+    /// A preserved value is arbitrary user text, so it goes out through the same quoter every
+    /// other frontmatter writer uses. Emitting it bare as `  - Rosenthal, F.` would be a flow
+    /// scalar with a comma in it — and a value with a `: ` would turn the item into a map,
+    /// making the note unparseable, which is the state where later edits silently vanish.
+    #[test]
+    fn pj207_s15_a_preserved_value_is_quoted_when_yaml_needs_it() {
+        let content = "---
+sources:
+  - \"Rosenthal, F.\"
+---
+
+Body.
+";
+        let out = rewrite_frontmatter_sources(content, &["perception/external".to_string()]);
+        assert!(
+            out.contains("\"Rosenthal, F.\""),
+            "the preserved value must keep its quotes:
+{}",
+            out
+        );
+        // The taxonomy id itself needs no quoting — it must not acquire any.
+        assert!(out.contains("- perception/external"), "known ids stay bare:
+{}", out);
+    }
+
 }
