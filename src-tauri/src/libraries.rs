@@ -6939,8 +6939,18 @@ fn rewrite_candidates(
 /// took the freed title, at which point exact-title resolution beat the alias and
 /// they silently pointed at a DIFFERENT note.
 fn cascade_pattern(old_name: &str) -> String {
+    // PJ-249 §5 — group 3 is the optional FOLDER QUALIFIER (`folder/`, `f/s/`): one or
+    // more segments, each ending in `/`, none containing wikilink syntax or `:` (a
+    // Windows folder name cannot carry `:` anyway). 637 live rows spell their target
+    // this way, and the pattern's old shape — title immediately after `[[` or a
+    // `type::` head — meant they had NEVER followed a rename. The qualifier is captured
+    // so the rewrite re-emits it verbatim: the note did not move, only its title changed.
+    //
+    // Group numbering after the widening: 1=type head, 2=gap, 3=folder, 4=title
+    // (the escaped literal), 5=delimiter. The delimiter alternation is unchanged, so
+    // prefix-collision safety ([[folder/Older]], [[Foo/Old Bar]]) holds as before.
     format!(
-        r"\[\[(?:([^\[\]\|#\^:\r\n]{{1,64}})::([ \t]*))?({})(\]\]|\||#|\^)",
+        r"\[\[(?:([^\[\]\|#\^:\r\n]{{1,64}})::([ \t]*))?((?:[^\[\]\|#\^:\r\n/]+/)+)?({})(\]\]|\||#|\^)",
         regex::escape(old_name)
     )
 }
@@ -6952,7 +6962,10 @@ fn cascade_pattern(old_name: &str) -> String {
 /// after the title to be one of `]]`, `|`, `#`, `^`, nothing else.
 fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -> String {
     re.replace_all(content, |caps: &regex::Captures| {
-        let delim = caps.get(4).map(|m| m.as_str()).unwrap_or("]]");
+        // PJ-249 §5 — the folder qualifier (group 3) rides through verbatim in every
+        // branch that rewrites: the note did not move, only its title changed.
+        let folder = caps.get(3).map(|m| m.as_str()).unwrap_or("");
+        let delim = caps.get(5).map(|m| m.as_str()).unwrap_or("]]");
         match caps.get(1) {
             Some(head) => {
                 // Only a REGISTERED type makes this a typed link. `[[Foo::Old]]` where
@@ -6961,12 +6974,12 @@ fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -
                 // the rename never touched. Same check parse_link_body uses.
                 if crate::link_types::is_known_type(&head.as_str().trim().to_lowercase()) {
                     let gap = caps.get(2).map(|m| m.as_str()).unwrap_or("");
-                    format!("[[{}::{}{}{}", head.as_str(), gap, new_name, delim)
+                    format!("[[{}::{}{}{}{}", head.as_str(), gap, folder, new_name, delim)
                 } else {
                     caps.get(0).map(|m| m.as_str().to_string()).unwrap_or_default()
                 }
             }
-            None => format!("[[{}{}", new_name, delim),
+            None => format!("[[{}{}{}", folder, new_name, delim),
         }
     })
     .into_owned()
@@ -7252,6 +7265,53 @@ mod cascade_walker_tests {
     fn bare_wikilink_rewrites() {
         let out = rewrite_for_test("see [[Old Title]] here", "Old Title", "New Title");
         assert_eq!(out, "see [[New Title]] here");
+    }
+
+    // ── PJ-249 §5 — folder-qualified links follow a rename (Reproduce-First: these were
+    //    written RED against the pre-§5 pattern; 637 such rows exist on the live corpus
+    //    and had NEVER followed a rename, because the pattern required the title to sit
+    //    immediately after `[[` or a `type::` head). The folder qualifier is re-emitted
+    //    verbatim — the note did not move, only its title changed. ──
+
+    #[test]
+    fn pj249_folder_qualified_link_follows_the_rename() {
+        let out = rewrite_for_test("see [[folder/Old]] here", "Old", "New");
+        assert_eq!(out, "see [[folder/New]] here");
+    }
+
+    #[test]
+    fn pj249_folder_qualified_with_display_keeps_the_display() {
+        let out = rewrite_for_test("see [[folder/Old|the display]]", "Old", "New");
+        assert_eq!(out, "see [[folder/New|the display]]");
+    }
+
+    #[test]
+    fn pj249_deep_folder_with_anchor_keeps_both() {
+        let out = rewrite_for_test("see [[f/s/Old#Heading]]", "Old", "New");
+        assert_eq!(out, "see [[f/s/New#Heading]]");
+    }
+
+    #[test]
+    fn pj249_typed_link_with_folder_keeps_type_and_folder() {
+        let out = rewrite_for_test("see [[supports::f/Old|why]]", "Old", "New");
+        assert_eq!(out, "see [[supports::f/New|why]]");
+    }
+
+    /// The negatives — prefix-collision safety and the unknown-head rule must survive
+    /// the widening byte-for-byte.
+    #[test]
+    fn pj249_widening_negatives_stay_untouched() {
+        // "Old Bar" is a different title; the delimiter rule still protects it.
+        let c1 = "see [[Foo/Old Bar]]";
+        assert_eq!(rewrite_for_test(c1, "Old", "New"), c1);
+        // "Older" is a different title.
+        let c2 = "see [[folder/Older]]";
+        assert_eq!(rewrite_for_test(c2, "Old", "New"), c2);
+        // An UNKNOWN head is part of the title `foo::Old` — renaming `Old` must not touch it.
+        let c3 = "see [[foo::Old]]";
+        assert_eq!(rewrite_for_test(c3, "Old", "New"), c3);
+        // Plain rename output is byte-identical to the pre-widening pattern.
+        assert_eq!(rewrite_for_test("see [[Old]] and [[Old|d]]", "Old", "New"), "see [[New]] and [[New|d]]");
     }
 
     #[test]
