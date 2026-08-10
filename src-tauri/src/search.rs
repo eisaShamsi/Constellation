@@ -13839,7 +13839,10 @@ mod tests_pj060_index_gate {
                 link_type TEXT, annotation TEXT, confidence TEXT,
                 weight REAL, created TEXT, last_traversed TEXT,
                 traversal_count INTEGER, library_name TEXT, status TEXT,
-                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER
+                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER,
+                target_base TEXT /* PJ-249 — this hand-mirrored schema went stale the
+                day the real table gained a column (the mirror trap this file keeps
+                documenting); prefer init_db() fixtures for new tests */
              );",
         )
         .unwrap();
@@ -15577,7 +15580,10 @@ mod tests_pj065_index_emission {
                 link_type TEXT, annotation TEXT, confidence TEXT,
                 weight REAL, created TEXT, last_traversed TEXT,
                 traversal_count INTEGER, library_name TEXT, status TEXT,
-                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER
+                source_cid_cn TEXT, target_cid_cn TEXT, seq INTEGER,
+                target_base TEXT /* PJ-249 — this hand-mirrored schema went stale the
+                day the real table gained a column (the mirror trap this file keeps
+                documenting); prefer init_db() fixtures for new tests */
              );",
         )
         .unwrap();
