@@ -98,6 +98,7 @@ mod library_attribution_backfill;
 mod tag_counts;
 mod incoming_links_backfill;
 mod name_fold_backfill;
+mod target_base_backfill; // PJ-249 §4 — the rename-cascade seek column backfill
 mod link_boot_index;
 mod reconcile;
 mod link_types;

@@ -11659,6 +11659,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // maturity fix). Thereafter index_note maintains name_lower write-time.
     crate::name_fold_backfill::maybe_schedule(app.clone());
 
+    // PJ-249 §4: schedule the one-shot target_base backfill (the rename-cascade seek
+    // column). No-op once stamped AND clean; RE-ARMS if an older build left NULL rows
+    // behind the stamp (the drift guard — see target_base_backfill). §6's cascade gate
+    // only trusts the index seek where this stamp is present.
+    crate::target_base_backfill::maybe_schedule(app.clone());
+
     // MIG-079 §C.3: schedule the one-shot build of the `idx_link_boot` COVERING
     // index on a background thread. No-op once stamped. Lets the deferred
     // `cache_full_links` edge scan read index leaf pages only (USING COVERING
