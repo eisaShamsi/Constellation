@@ -367,3 +367,35 @@ each directory's entries before recursing, so the directory handle now **closes 
 descending** instead of being held open down the whole depth of the tree.
 
 Suite 1,442 passing.
+
+## Session close — PCS
+
+**Commits:** `904bccbc` (§6f–§6h) + this docs commit.
+**Gates:** Rust **1,442/0** · vitest **927 passed + 3 expected-fail** (82 files) ·
+svelte-check **0 errors** · release binary **22:35**, Boss-validated at **216 ms**.
+
+**SO #9 — Pending Jobs reconciled** → `docs/Constellation Pending Jobs v1.79.md`.
+PJ-249 **closed** (and recorded as having closed in a *different shape* than v1.78 described —
+Boss-ruled `target_base` column, not the `target_name` normalisation). Filed **PJ-252** (the
+tag-destroying APP-KILLER, reproduced + pinned + exposure measured at 1/10,077), **PJ-253**
+(the case-fold miss, ruling required), **PJ-254** (federated resolver in every write-path tail),
+**PJ-255** (six ungenerationed detached tails), **PJ-256** (no back-fill re-collects its
+statistics), **PJ-257** (`props_reparse` fails every boot forever). Group 1 re-ranked;
+► Next action is now PJ-252.
+
+**SO #6 — Orientation** → `docs/Constellation Orientation & Onboarding v3.95.md` (v3.94 kept).
+
+**SO #2 — User Manual, all 15 languages.** The "every form of link is updated" paragraph
+gained the **folder-qualified** link (PJ-249 §5 — 637 live rows spell their target that way
+and had never followed a rename) **and an honest caveat**: a link whose capitalisation differs
+from the note's title still resolves but is NOT rewritten (PJ-253). The manual was
+*overclaiming*; a manual that promises what the app does not do is worse than one that admits
+the gap.
+
+**MoCh** → `docs/MoCh/MoCh-2026-08-10-1900.md`. **Handover** →
+`lab/reports/HANDOVER-2026-08-11-pj249-close.md`, with the ready-to-paste next-session prompt.
+
+**Durable registers** → `lab/reports/sweeps/SWEEP-2026-08-10-fourth-whole-app.json` (25
+confirmed) and `SWEEP-2026-08-11-fifth-whole-app.json` (29), plus
+`AUDIT-2026-08-10-stale-statistics-class.json`. Most of those 54 are **not yet individually
+numbered** — stated plainly in v1.79 rather than implied closed.
