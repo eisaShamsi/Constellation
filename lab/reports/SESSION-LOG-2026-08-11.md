@@ -224,3 +224,63 @@ the completeness net SO #9 exists to protect. Two ledger versions have now defer
 | **PJ-207 §13** | gated on **PJ-224** — whether the ordinary search box federates |
 | **PJ-260** | mixed line endings in Rust-written frontmatter |
 | **PJ-219** | the user-action write class awaits its design ruling |
+
+---
+
+## PJ-234 + PJ-240 — CLOSED, Boss-validated
+
+**Boss ruling that set the sequence:** *"I want us to tackle 1 + 2 as a priority."* — the two
+readiness categories (① actively corrupting/losing knowledge, ② notes misplaced or the index
+lying). The readiness plan is amended to **M2 → M3 → M1**; PJ-262 and PJ-263 re-sequenced, not
+cancelled. My recommendation had been M1 first; recorded once and dropped.
+
+### The defect
+
+`is_block_value_line` = *"a `- item` or an indented line"* is **false for a blank line**. Every
+writer that used it to drop a replaced list stopped at the first blank and emitted the remaining
+items under the new scalar — a sequence with no key. Unparseable YAML, which is the precondition
+for every later property edit on that note being silently discarded.
+
+### Reproduce-first
+
+RED at every site before any fix. First run: `topics: gamma` followed by an orphaned `- beta`.
+
+### FOUR surfaces, not three
+
+The Whole-Ecosystem sweep for the three known sites found a fourth:
+`merge_initial_frontmatter` dropped a template's filtered identity key but KEPT its list items,
+so a note created **from a template** was born with unparseable frontmatter. It had been flagged
+MED and unnumbered in the seventh sweep. Closed in the same pass.
+
+**And the wrong predicate is DELETED.** `is_block_value_line` had zero callers afterwards;
+removed from `yaml_lines.rs` with a comment in its place. Five drop loops in Rust, one rule.
+
+### What the gate caught
+
+Three rounds. Two rejections were real:
+1. My "what BROKEN looks like" illustration omitted a **blank line** the pre-fix code actually
+   emits — the inspector reverted the diff, ran it, and diffed the bytes.
+2. My own correction introduced a forward promise ("you'll see the three topics in Step 5") that
+   Steps 4–5 make impossible. Mine, not the auditor's.
+
+### PJ-269 — found by the gate, filed not fixed
+
+Verifying the test, the inspector ran the chain and got `{"topics": ""}` for a note holding three
+items. Confirmed by reading: `search.rs::parse_frontmatter` skips every sequence item, so
+`properties_json` records an empty string for **every** block list (`tags` is special-cased).
+Base tables, lens queries and filters all show blank. **A third frontmatter parser** —
+`bases.rs::parse_frontmatter` joins the items, `search.rs` does not. Filed as PJ-269; it is a
+read/indexer change needing a reindex, so it earns its own pass.
+
+### Gates
+
+Rust **1452/0** (7 new) · vitest **941/0** · binary **14:46** · Boss-validated Stage 1.
+
+### Process slips, recorded
+
+- **I edited the committed v1.80 ledger in place**, which SO#9 forbids. Corrected: v1.80 restored
+  to its committed state, v1.81 carries the delta.
+- **The binary was stale when I first checked it** — the `ui-inspector` had reverted `bases.rs`
+  and `yaml_lines.rs` to run the pre-fix comparison, leaving them newer than the `.exe`. Verified
+  the fix survived the restore (1452/0) and rebuilt before sending anything. The standing
+  "verify the binary before testing" rule is what caught it.

@@ -191,15 +191,19 @@ pub(crate) fn is_top_level_key_line(line: &str) -> bool {
     !is_indented(line) && !is_seq_item(line)
 }
 
-/// True when `line` is part of the block VALUE under the key above it — a sequence item at
-/// any indentation, or an indented continuation line (a seq-of-map's `role: Y`).
-///
-/// Comments are deliberately NOT included: a writer replacing the key must keep the user's
-/// comment while still dropping the items around it, so comments are handled separately by
-/// the caller rather than swallowed here.
-pub(crate) fn is_block_value_line(line: &str) -> bool {
-    is_seq_item(line) || is_indented(line)
-}
+// PJ-234 / PJ-240 — `is_block_value_line` was DELETED here, 2026-08-11.
+//
+// It answered "is this line part of the block value?" as `is_seq_item(line) || is_indented(line)`,
+// which is FALSE for a blank line. Every writer that used it to drop a replaced block therefore
+// stopped at the first blank and emitted the remaining items under the new scalar — a sequence
+// with no key, i.e. unparseable YAML, i.e. the state in which every later property edit on that
+// note silently vanishes.
+//
+// PJ-207 §15 wrote the correct rule (`ends_dropped_block`: only a new TOP-LEVEL KEY ends the
+// block) and swept it into `sources/mod.rs` — and left three writers on the old one, where it sat
+// for weeks. The predicate is gone rather than merely unused, because a wrong answer left in the
+// codebase is how this defect reached its fourth and fifth shapes: the next person to write a
+// block-drop loop cannot now reach for it by mistake. `ends_dropped_block` is the only answer.
 
 #[cfg(test)]
 mod tests {

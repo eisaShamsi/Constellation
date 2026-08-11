@@ -1220,10 +1220,29 @@ fn _collect_notes_recursive_unused(_dir: &Path, _library_id: &str, _library_name
 /// only to unindented lines, and every kept line keeps its own indentation.
 fn merge_initial_frontmatter(extra: &str) -> Vec<String> {
     let mut out = Vec::new();
+    // PJ-234 family (4th surface, 2026-08-11) — a filtered key's BLOCK VALUE goes with it.
+    // The loop dropped the `kind:` LINE and then pushed its `- template` items, because they
+    // are not top-level keys — emitting a bare sequence under nothing, i.e. unparseable
+    // frontmatter, in a BRAND-NEW note. Found by the Whole-Ecosystem sweep of the three
+    // block-drop loops PJ-234/PJ-240 fixed: same concern, same rule, so it is closed in the
+    // same pass rather than left as the one that got away again.
+    let mut dropping_block = false;
     for line in extra.lines() {
         let line = line.trim_end_matches('\r');
         if line.trim().is_empty() {
             continue;
+        }
+        if dropping_block {
+            // A comment the user wrote in the mold is theirs — keep it, and stay inside the
+            // block so the items after it are still dropped (the rule its three siblings use).
+            if crate::yaml_lines::is_comment(line) {
+                out.push(line.to_string());
+                continue;
+            }
+            if !crate::yaml_lines::ends_dropped_block(line) {
+                continue;
+            }
+            dropping_block = false;
         }
         // PJ-182 — a column-0 `- item` is unindented but is NOT a key. Without the
         // sequence-item exclusion, a template whose FILTERED key held a zero-indent block
@@ -1244,6 +1263,12 @@ fn merge_initial_frontmatter(extra: &str) -> Vec<String> {
                 || t.starts_with("template_kind:")
                 || t.starts_with("created:")
             {
+                // An EMPTY inline value means the real value is the block on the following
+                // lines — drop that too, or it is orphaned under nothing.
+                dropping_block = t
+                    .split_once(':')
+                    .map(|(_, v)| v.trim().is_empty())
+                    .unwrap_or(false);
                 continue;
             }
         }
@@ -2367,7 +2392,13 @@ fn set_frontmatter_parent(content: &str, new_parent: &str) -> String {
                 new_lines.push(line.to_string());
                 continue;
             }
-            if crate::yaml_lines::is_block_value_line(line) {
+            // PJ-240 — the same blank-line blindness as its two `bases.rs` twins (PJ-234), on
+            // the writer that sets a note's structural parent. `is_block_value_line` is false
+            // for a BLANK line, so a blank between two `- "[[X]]"` items ended the drop and
+            // left the rest orphaned under the new QUOTED scalar — unparseable, not merely
+            // wrong. Only a new top-level key ends the block; `ends_dropped_block` is the one
+            // predicate all four writers now share.
+            if !crate::yaml_lines::ends_dropped_block(line) {
                 continue;
             }
             in_old_list = false;
@@ -8534,6 +8565,42 @@ mod tests_mig103_frontmatter_merge {
         assert!(merged.contains(&"  year: 1377".to_string()));
     }
 
+    /// PJ-234 family, 4th surface — **a filtered key's BLOCK VALUE must go with it.**
+    ///
+    /// The loop dropped the `kind:` LINE and then pushed `- template` / `- mold`, because a
+    /// sequence item is not a top-level key. The new note was born with a bare sequence under
+    /// nothing: unparseable frontmatter, from a template, on every instantiation.
+    #[test]
+    fn pj234_a_filtered_key_takes_its_block_value_with_it() {
+        let extra = "kind:\n  - template\n  - mold\ntags:\n  - fiqh\nstage: seed";
+        let merged = merge_initial_frontmatter(extra);
+        assert!(!merged.iter().any(|l| l.trim_start().starts_with("kind:")), "kind: must be filtered: {merged:?}");
+        assert!(!merged.contains(&"  - template".to_string()), "orphaned block item: {merged:?}");
+        assert!(!merged.contains(&"  - mold".to_string()), "orphaned block item: {merged:?}");
+        // The following key and ITS block are untouched.
+        assert!(merged.contains(&"tags:".to_string()), "next key lost: {merged:?}");
+        assert!(merged.contains(&"  - fiqh".to_string()), "next key's block lost: {merged:?}");
+        assert!(merged.contains(&"stage: seed".to_string()));
+        assert!(
+            serde_yaml::from_str::<serde_yaml::Value>(&merged.join("\n")).is_ok(),
+            "emitted unparseable YAML: {merged:?}"
+        );
+    }
+
+    /// A ZERO-INDENT filtered block is the same shape (PJ-182's reachable case), and a
+    /// filtered key with an INLINE value must not start dropping the lines after it.
+    #[test]
+    fn pj234_zero_indent_filtered_block_and_inline_value_are_both_correct() {
+        let zero = merge_initial_frontmatter("kind:\n- template\nstage: seed");
+        assert!(!zero.iter().any(|l| l.contains("template")), "zero-indent block orphaned: {zero:?}");
+        assert!(zero.contains(&"stage: seed".to_string()), "next key lost: {zero:?}");
+
+        // `kind: note` has an inline value — nothing follows it to drop.
+        let inline = merge_initial_frontmatter("kind: note\ntags:\n  - fiqh\nstage: seed");
+        assert!(inline.contains(&"  - fiqh".to_string()), "inline-value filter ate the NEXT key's block: {inline:?}");
+        assert!(inline.contains(&"tags:".to_string()));
+    }
+
     /// Defect #2: the old filter matched trimmed lines, so a NESTED title:
     /// (inside a map) was dropped along with the top-level one. Identity keys
     /// are only ever top-level; nested keys must pass through untouched.
@@ -8573,6 +8640,36 @@ mod tests_pj065_resolve {
         assert!(out.contains("title: \"Contested Child\""), "title preserved");
         assert!(out.ends_with("\n\nBody stays."), "body preserved");
         assert!(!out.starts_with("---\n\n"), "no spurious leading blank line");
+    }
+
+    /// PJ-240 — **a BLANK line inside the replaced `parent:` block ended the drop**, leaving
+    /// every item after it orphaned under the new QUOTED scalar. That is unparseable YAML, not
+    /// merely wrong output — and an unparseable note is the state in which every later property
+    /// edit on it silently vanishes. Same root as its two `bases.rs` twins (PJ-234); all four
+    /// writers now share `yaml_lines::ends_dropped_block`.
+    #[test]
+    fn pj240_blank_line_inside_the_replaced_parent_block_orphans_nothing() {
+        let c = "---\ntitle: \"X\"\nparent:\n  - \"[[Owner A]]\"\n\n  - \"[[Owner C]]\"\nstage: seed\n---\n\nBody.";
+        let out = set_frontmatter_parent(c, "Owner B");
+        assert!(out.contains("parent: \"[[Owner B]]\""), "parent re-pointed:\n{out}");
+        assert!(!out.contains("Owner A"), "item before the blank orphaned:\n{out}");
+        assert!(!out.contains("Owner C"), "item AFTER the blank orphaned:\n{out}");
+        assert!(out.contains("stage: seed"), "neighbour damaged:\n{out}");
+        let fm = out.split("---").nth(1).unwrap_or("");
+        assert!(
+            serde_yaml::from_str::<serde_yaml::Value>(fm).is_ok(),
+            "emitted unparseable YAML:\n{out}"
+        );
+    }
+
+    /// The user's comment among the items is still KEPT — the blank-line fix must not start
+    /// swallowing lines the user typed.
+    #[test]
+    fn pj240_a_comment_among_parent_items_survives() {
+        let c = "---\nparent:\n  - \"[[Owner A]]\"\n\n  # why this one\n  - \"[[Owner C]]\"\nstage: seed\n---\n\nBody.";
+        let out = set_frontmatter_parent(c, "Owner B");
+        assert!(out.contains("# why this one"), "the user's comment was deleted:\n{out}");
+        assert!(!out.contains("Owner A") && !out.contains("Owner C"), "item orphaned:\n{out}");
     }
 
     #[test]

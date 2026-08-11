@@ -492,7 +492,14 @@ pub(crate) fn remove_frontmatter_property(content: &str, key: &str) -> String {
                 rebuilt.push_str(line);
                 continue;
             }
-            if crate::yaml_lines::is_block_value_line(text) {
+            // PJ-234 — **only a new TOP-LEVEL KEY ends the block.** This asked
+            // `is_block_value_line`, which is false for a BLANK line, so a blank between two
+            // items ended the drop and every item after it was emitted under the removed key
+            // — a sequence with no key, i.e. unparseable YAML, i.e. the state in which every
+            // later property edit on that note silently vanishes. `ends_dropped_block` is the
+            // predicate PJ-207 §15 wrote for exactly this and swept into `sources/mod.rs`
+            // alone; this is the same rule, from the same function, so they cannot drift.
+            if !crate::yaml_lines::ends_dropped_block(text) {
                 continue;
             }
             skipping_list_items = false;
@@ -570,10 +577,11 @@ pub(crate) fn update_frontmatter_property(content: &str, key: &str, value: &str)
 
         // Drop the continuation lines of a replaced multi-line list value.
         //
-        // `is_block_value_line` covers BOTH a sequence item at any indentation and an
-        // indented continuation (a seq-of-map's `role: Y`). The old test was seq-items
-        // only, so replacing `authors:` dropped each `- name: X` and left every `role: Y`
-        // orphaned under the new scalar.
+        // The block runs until a new TOP-LEVEL KEY (`ends_dropped_block`) — so it covers a
+        // sequence item at any indentation, an indented continuation (a seq-of-map's
+        // `role: Y`), a comment, and a blank line. An earlier rule tested seq-items only, so
+        // replacing `authors:` dropped each `- name: X` and left every `role: Y` orphaned
+        // under the new scalar (PJ-182); its successor was blind to blank lines (PJ-234).
         if skipping_list_items {
             // A comment among the items is the user's, not the value's — keep it, and stay
             // inside the block so the items after it are still dropped.
@@ -581,7 +589,10 @@ pub(crate) fn update_frontmatter_property(content: &str, key: &str, value: &str)
                 rebuilt.push_str(line);
                 continue;
             }
-            if crate::yaml_lines::is_block_value_line(text) {
+            // PJ-234 — see the twin in `remove_frontmatter_property` above: a BLANK line is
+            // not a block-value line, so it ended the drop and orphaned every item after it.
+            // Only a new top-level key ends the block.
+            if !crate::yaml_lines::ends_dropped_block(text) {
                 continue;
             }
             skipping_list_items = false;
@@ -903,6 +914,57 @@ mod pj182_zero_indent_tests {
         orphans
     }
 
+    /// PJ-234 — **a BLANK line inside the replaced block ends the drop.**
+    ///
+    /// `is_block_value_line("")` is false (an empty line is neither a seq item nor indented),
+    /// so the skip stopped at the blank and every item AFTER it was emitted under the new
+    /// scalar — a sequence with no key, which is unparseable YAML. An unparseable note is
+    /// exactly the state in which every later property edit silently vanishes.
+    ///
+    /// A blank line between list items is ordinary in a hand-authored note. Asserted against a
+    /// real `serde_yaml` parse, because "does it still parse" IS the harm.
+    const BLANK_PROBE: &str =
+        "---\ncid_cn: ABCD\ntags:\n- alpha\n\n- beta\naliases:\n- Old Name\nstage: spark-seed\n---\nbody text\n";
+
+    fn frontmatter_parses(out: &str) -> Result<serde_yaml::Value, serde_yaml::Error> {
+        serde_yaml::from_str(out.split("---").nth(1).unwrap_or(""))
+    }
+
+    #[test]
+    fn pj234_replacing_a_list_containing_a_blank_line_drops_every_item() {
+        let out = update_frontmatter_property(BLANK_PROBE, "tags", "gamma");
+        assert!(out.contains("tags: gamma"), "the edit must land:\n{out}");
+        assert!(!out.contains("- alpha"), "item before the blank orphaned:\n{out}");
+        assert!(!out.contains("- beta"), "item AFTER the blank orphaned:\n{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "orphaned items:\n{out}");
+        assert!(frontmatter_parses(&out).is_ok(), "emitted unparseable YAML:\n{out}");
+        // The neighbouring block is untouched.
+        assert!(out.contains("aliases:\n- Old Name"), "neighbour damaged:\n{out}");
+    }
+
+    #[test]
+    fn pj234_removing_a_list_containing_a_blank_line_takes_every_item() {
+        let out = remove_frontmatter_property(BLANK_PROBE, "tags");
+        assert!(!out.contains("tags:"), "key not removed:\n{out}");
+        assert!(!out.contains("- alpha"), "item before the blank orphaned:\n{out}");
+        assert!(!out.contains("- beta"), "item AFTER the blank orphaned:\n{out}");
+        assert!(orphan_seq_items(&out).is_empty(), "orphaned items:\n{out}");
+        assert!(frontmatter_parses(&out).is_ok(), "emitted unparseable YAML:\n{out}");
+        assert!(out.contains("aliases:\n- Old Name"), "neighbour damaged:\n{out}");
+    }
+
+    /// The other half of the contract: the user's own comment among the items is KEPT, and a
+    /// blank line must not make the writer start keeping the ITEMS too.
+    #[test]
+    fn pj234_a_comment_among_items_survives_alongside_a_blank_line() {
+        let probe =
+            "---\ntags:\n- alpha\n\n# my taxonomy\n- beta\nstage: seed\n---\nbody\n";
+        let out = update_frontmatter_property(probe, "tags", "gamma");
+        assert!(out.contains("# my taxonomy"), "the user's comment was deleted:\n{out}");
+        assert!(!out.contains("- alpha") && !out.contains("- beta"), "item orphaned:\n{out}");
+        assert!(frontmatter_parses(&out).is_ok(), "emitted unparseable YAML:\n{out}");
+    }
+
     /// PJ-182 — replacing a list-valued property from a Bases table cell used to leave the
     /// old items orphaned at root, because the continuation-line skip required
     /// `!is_top_level` and a column-0 `- alpha` IS top-level by the old test.
@@ -1104,3 +1166,4 @@ mod shape_writepath_tests {
         assert!(out.ends_with(src), "content lost on malformed frontmatter");
     }
 }
+

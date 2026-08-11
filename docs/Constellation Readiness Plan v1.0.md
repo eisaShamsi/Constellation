@@ -9,6 +9,31 @@ Boss-commissioned: *"Put a readiness plan, by prioritizing all the PJs, and your
 
 ---
 
+## ⚖️ BOSS RULING — 2026-08-11: M2 FIRST
+
+> *"I want us to tackle 1 + 2 as a priority."* — Eisa, on the two categories that became **M2**:
+> ① what is **actively corrupting or losing knowledge**, and ② what puts **notes in the wrong
+> universe or makes the index lie about them**.
+
+**The plan's sequence is amended: M2 runs FIRST.** M1 (**PJ-262**, the Living Link disk layer)
+and the M0 scope ruling (**PJ-263**) are not cancelled — they are re-sequenced behind M2.
+
+**My recommendation was M1 first; the Boss has ruled M2 first, and that is the decision.** The
+argument for it is strong and I record it rather than re-litigate it: M2 is where a defect
+reaches the user's `.md` files *today*, on ordinary input, in a product he is using daily. PJ-262
+is a promise not yet kept; M2 is damage actively being done. Fixing what is breaking before
+completing what is unbuilt is a defensible ordering, and it is his to make.
+
+**One consequence stated once, then dropped:** PJ-262 remains the only *concept* failure in the
+product, and every day of use adds more earned link data that lives nowhere durable. Nothing in
+M2 reduces that. It should follow immediately behind M2 rather than drifting.
+
+**Sequence as amended:** **M2 → M3 → M1 → M0/M4 → M5 → M6 → M7.**
+*(M3 moved up with M2 because PJ-264's triage can only reorder M2's own contents — doing it late
+means re-doing M2's ranking.)*
+
+---
+
 ## 0. What "READY" means — the exit criteria
 
 Constellation is publishable when all seven hold:
