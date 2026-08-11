@@ -16,7 +16,7 @@ import * as CL from './collectionsLogic'; // MIG-092 — pure Collections reduce
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
 import { editProps as editNoteProps, editBody as editNoteBody, bodyForView as modelBodyForView, replaceContent as replaceContentInModel, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty, flushIfDirty as flushOutgoingModel, externalChange as externalChangeNoteModel, recoveredFromNet as markModelRecoveredFromNet, setDiskBaseline as setModelDiskBaseline, type SaveEnv, type FlushResult } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, getModel as getNoteModel, diskDiffersFromBaseline, hasUnsavedRecovery } from '$lib/editor/noteModel';
-import { splitFrontmatter, composeFrontmatter, decodeQuotedScalar, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
+import { splitFrontmatter, composeFrontmatter, decodeQuotedScalar, classifyFrontmatterValues, STRUCTURED_LIST_KEYS } from '$lib/editor/yamlDoc'; // G4 Phase 3 — byte-perfect round-trip write
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { listItemsOf } from '$lib/editor/propRow'; // PJ-207 §15 — ONE reading of "this row's items"
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
@@ -2465,6 +2465,68 @@ function blockExtent(lines: string[], start: number, isChild: (l: string) => boo
 	return last + 1;
 }
 
+/**
+ * MIG-022 §A.1 — read a `STRUCTURED_LIST_KEYS` seq-of-maps into one structured property:
+ *   ikhtilāf:
+ *     - school: Hanafī
+ *       position: permissible
+ *     - school: Mālikī
+ *       position: discouraged
+ * Each row gathers its continuation lines — indented, no leading dash — into one record.
+ * The `value` is a compact display summary for legacy consumers + search; `serializeLine`'s
+ * `nested-object-list` branch is what writes the rows back.
+ *
+ * PJ-252 — one function, because the classifier's answer and the unparseable-YAML fallback
+ * both need it and a second copy is how the shapes above came to disagree in the first place.
+ */
+function parseIkhtilafBlock(key: string, blockLines: string[]): FrontmatterProperty {
+	const nestedObjects: Array<Record<string, string>> = [];
+	const readField = (text: string, obj: Record<string, string>) => {
+		const c = text.indexOf(':');
+		if (c <= 0) return;
+		const fkey = text.substring(0, c).trim();
+		if (fkey) obj[fkey] = unquote(text.substring(c + 1).trim());
+	};
+	let r = 0;
+	while (r < blockLines.length) {
+		const rowStart = yamlSeqItemValue(blockLines[r]);
+		if (rowStart === null) { r++; continue; }
+		const obj: Record<string, string> = {};
+		readField(rowStart, obj);
+		r++;
+		while (r < blockLines.length) {
+			const cont = blockLines[r];
+			if (isYamlSeqItem(cont)) break; // next row
+			if (!isIndentedLine(cont)) break; // back to top level
+			readField(noCr(cont), obj);
+			r++;
+		}
+		nestedObjects.push(obj);
+	}
+	// "Hanafī: permissible | Mālikī: discouraged"
+	const value = nestedObjects
+		.map((o) => Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(' / '))
+		.join(' | ');
+	return { key, value, type: 'nested-object-list', nestedObjects };
+}
+
+/** The child KEY NAMES of a block, for the read-only row's summary chips. One reading — it
+ *  was spelled out twice, and two spellings of one truth is how this file's defects start. */
+function blockChildKeys(blockLines: string[]): string[] {
+	return blockLines
+		.map((l) => {
+			const m = /^[ \t]*(?:-[ \t]*)?([^:]+):(?:[ \t]|$)/.exec(noCr(l));
+			return m ? m[1].trim() : '';
+		})
+		.filter(Boolean);
+}
+
+/** One chip, truncated, so a read-only row that holds prose is never drawn as "Empty". */
+function previewChip(text: string): string[] {
+	if (!text) return [];
+	return [text.length > 40 ? `${text.slice(0, 40)}…` : text];
+}
+
 export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string; rawYaml?: string } {
 	const lines = content.split('\n');
 	if (lines[0]?.trim() !== '---') {
@@ -2487,6 +2549,45 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 	const rawYaml = yamlLines.join('\n');
 	const properties: FrontmatterProperty[] = [];
 
+	// PJ-252 (APP-KILLER) — what each key's value IS comes from the ONE classifier, which is
+	// the same reading of the same bytes that `composeFrontmatter` refuses and writes by. This
+	// file used to decide it again, from the LINES, and the two answers disagreed: a `tags:`
+	// block carrying a comment line (or an item wrapped across two lines) was projected
+	// read-only-and-empty here while the writer considered it an ordinary editable list, so
+	// adding one tag deleted the tags already there. See `classifyDoc` for the full mechanism.
+	//
+	// An empty map means the YAML did not parse. The line scanner below is then the fallback —
+	// safe by construction, because `composeFrontmatter`'s H1 branch re-emits those bytes
+	// verbatim and makes no structural edit at all.
+	//
+	// COST, measured rather than waved at (2026-08-11, 20,000 calls on a 20-line frontmatter
+	// with a list, a nested map and a block scalar): 7.2 µs → 110 µs per call, essentially all
+	// of it the one `parseDocument`. All 26 call sites were read: none walks a library, none
+	// sits on the keystroke path (the two `$derived` sites depend on `$openTabs`, which a body
+	// keystroke never notifies — the buffer owns it), and the loops are bounded — the restored
+	// session's tabs, the split view's 2–4 companions, and the file-tree multi-select tag add
+	// (`+layout.svelte`, ~40 notes), each iteration of which already awaits a read and a write.
+	// It is also the price `parseFrontmatterDoc` and `composeFrontmatter` have always paid for
+	// the same bytes, and `composeFrontmatter` gave one parse back in this same change.
+	// If a bulk caller is ever added, memoize THIS call (it is pure) — do not reintroduce a
+	// cheaper second opinion about the shapes.
+	//
+	// It is handed `splitFrontmatter`'s text, NOT the `rawYaml` two lines above, and the
+	// difference is not cosmetic. `rawYaml` is `yamlLines.join('\n')`, and on a CRLF note every
+	// one of those lines still ends in `\r`; `join` puts a separator only BETWEEN elements, so
+	// the last line's `\r` is left unterminated and the `yaml` library reads it as DATA — the
+	// final property of a Windows-authored note came back as `snurfle\r` and was written to
+	// disk as the quoted tag `"snurfle\r"`. `splitFrontmatter` appends the terminator, which is
+	// why the write path never saw this. Caught by the ui-inspector gate, then reproduced
+	// against HEAD: it is a regression this change introduced, on the most ordinary note there
+	// is — a plain tags list saved by Notepad — not a pre-existing defect.
+	//
+	// Routing through `splitFrontmatter` rather than appending a newline here is the point: the
+	// classifier now reads the EXACT bytes `composeFrontmatter` will, from the same function, so
+	// the projection and the write cannot disagree about the region either. (The `rawYaml`
+	// returned below is unchanged — it feeds only NotePane's raw-source `<pre>`.)
+	const shapes = classifyFrontmatterValues(splitFrontmatter(content).yaml);
+
 	let i = 0;
 	while (i < yamlLines.length) {
 		const idx = i;
@@ -2505,35 +2606,37 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 		if (colonIdx > 0 && !isYamlSeqItem(line) && !line.startsWith(' ') && !line.startsWith('\t')) {
 			const key = line.substring(0, colonIdx).trim();
 			let value = line.substring(colonIdx + 1).trim();
+			const shape = shapes.get(key);
 
-			// ── BLOCK SCALAR (`key: |`, `key: >`, with optional chomp/indent indicators) ──
-			// PJ-182 — the block gate below requires an EMPTY inline value, but a block
-			// scalar's value is the indicator itself (`|`), so none of it ran: the key
-			// projected as editable TEXT whose value was the literal character `|`, and its
-			// body lines were skipped by the top-level-key guard. `buildFullContent` then
-			// wrote `desc: "|"` into the tab.content cache — the prose, gone.
+			// ── A BLOCK — nested map, seq-of-maps, block scalar, or a key written twice ──
+			// READ-ONLY, bytes carried verbatim in `nestedRaw`. The ruling (PJ-136 / the
+			// 2026-07-24 inspection / the Boss's 2026-07-22 ruling): a TRUNCATED or EMPTY
+			// projection of an EDITABLE type is not a display bug, it is an invitation — the
+			// panel draws a chip list missing half its content, and the moment the user
+			// touches it `composeFrontmatter` splices the whole block out and rewrites it from
+			// what we captured. Visible and honest beats hidden or editable.
 			//
-			// Same ruling as every other shape we cannot round-trip: READ-ONLY, bytes
-			// verbatim. `value` keeps the indicator so `reconstructFrontmatter` can re-emit
-			// `key: |` exactly; the body rides in `nestedRaw`.
-			if (isBlockScalarHeader(value) && idx + 1 < yamlLines.length && isIndentedLine(yamlLines[idx + 1])) {
+			// PJ-252 — WHICH keys those are is no longer decided here. It is the one
+			// classifier's answer, so this projection and the write path's refusal cannot
+			// come apart. `value` is kept exactly as the line had it — empty for an ordinary
+			// block, the indicator for `desc: |` (PJ-182), the flow text for `k: {a: 1}` — so
+			// the legacy `reconstructFrontmatter` re-emits the key line byte-identically.
+			if (key && shape?.kind === 'block') {
+				const blockScalar = isBlockScalarHeader(value);
 				const blockStart = idx + 1;
-				const end = blockExtent(yamlLines, blockStart, isIndentedLine);
-				if (key && end > blockStart) {
-					const raw = yamlLines.slice(blockStart, end);
-					i = end;
-					// One chip previewing the first line, so the row is not drawn as "Empty"
-					// for a property that holds prose.
-					const first = noCr(raw[0]).trim();
-					properties.push({
-						key,
-						value,
-						type: 'nested-map',
-						nestedKeys: first ? [first.length > 40 ? `${first.slice(0, 40)}…` : first] : [],
-						nestedRaw: raw,
-					});
-					continue;
-				}
+				const end = blockExtent(yamlLines, blockStart, blockScalar ? isIndentedLine : isYamlBlockChild);
+				const raw = yamlLines.slice(blockStart, end);
+				i = end;
+				// A block scalar holds prose, not child keys, so it previews its first line.
+				const children = blockScalar ? [] : blockChildKeys(raw);
+				properties.push({
+					key,
+					value,
+					type: 'nested-map',
+					nestedKeys: children.length ? children : previewChip(noCr(raw[0] ?? '').trim() || value),
+					nestedRaw: raw,
+				});
+				continue;
 			}
 
 			// ── The BLOCK under `key:` ────────────────────────────────────────────────
@@ -2552,112 +2655,88 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 				const blockStart = idx + 1;
 				const end = blockExtent(yamlLines, blockStart, isYamlBlockChild);
 				const blockLines = yamlLines.slice(blockStart, end);
-				const contentLines = blockLines.filter((l) => !isBlankLine(l));
 
-				// A run of comments alone is NOT a block — a `#` line between two
-				// top-level keys belongs to the file, not to the key above it. Comments
-				// that sit among real content DO belong to the block, and their presence
-				// is what makes it un-round-trippable, hence read-only. (An EMPTY block
-				// satisfies `every` vacuously, which is the same answer: not a block.)
-				const onlyComments = contentLines.every(isYamlComment);
-
-				// PJ-182 — a FLOW sequence written on the line after its key
-				// (`tags:` then `  [alpha, beta]`) is an ordinary list of scalars. It was
-				// reaching the read-only branch, which left the user unable to edit their
-				// own tags while the CST parser read them perfectly well. Hand it to the
-				// inline-list path below by treating it as the key's value.
-				const flowOnly = contentLines.length === 1 ? noCr(contentLines[0]).trim() : '';
-				if (key && flowOnly.startsWith('[') && flowOnly.endsWith(']')) {
-					value = flowOnly;
-					i = end; // consumed — the scalar path below reads the new `value`
-				} else if (key && !onlyComments) {
+				// PJ-252 — the one classifier's answer, for every block the YAML parses.
+				//
+				// A SEQUENCE OF SCALARS is an editable list whatever the block looks like on
+				// the page — a comment among the items, an item wrapped across two lines, a
+				// flow `[alpha, beta]` written on the line below the key — and its ITEMS are
+				// the library's values, not the lines'. That last part is not incidental: the
+				// line scanner read `- history   # why` as a tag literally named
+				// `history   # why`, and wrote it back as one.
+				if (key && shape?.kind === 'list') {
 					i = end;
-
-					// A flat list is every content line being a `- item` whose text is not
-					// itself a `key: value` map entry. `- https://x` and `- "a: b"` are
-					// scalars, not maps — the test requires a colon followed by space/EOL
-					// on an UNQUOTED item, which is YAML's own rule. A comment line is
-					// neither, and it is user data the flat projection cannot round-trip,
-					// so its presence alone demotes the block to read-only.
-					const allSeqItems = contentLines.every(isYamlSeqItem);
-					const anyMapItem = contentLines.some((l) =>
-						/^[ \t]*-[ \t]*[^"'\s][^:]*:([ \t]|$)/.test(noCr(l)),
-					);
-
-					// MIG-022 §A.1 — nested-object-list (e.g. ikhtilāf):
-					//   ikhtilāf:
-					//     - school: Hanafī
-					//       position: permissible
-					//     - school: Mālikī
-					//       position: discouraged
-					// A seq-of-maps under one of the keys the system round-trips LOSSLESSLY
-					// (STRUCTURED_LIST_KEYS — the serializer has a real branch for it and
-					// the panel edits it through a structured widget). Each row gathers its
-					// continuation lines — indented, no leading dash — into one record.
-					const isIkhtilaf = IKHTILAF_KEYS.has(key) || IKHTILAF_KEYS.has(key.toLowerCase());
-					if (isIkhtilaf && anyMapItem) {
-						const nestedObjects: Array<Record<string, string>> = [];
-						let r = 0;
-						const readField = (text: string, obj: Record<string, string>) => {
-							const c = text.indexOf(':');
-							if (c <= 0) return;
-							const fkey = text.substring(0, c).trim();
-							if (fkey) obj[fkey] = unquote(text.substring(c + 1).trim());
-						};
-						while (r < blockLines.length) {
-							const cur = blockLines[r];
-							const rowStart = yamlSeqItemValue(cur);
-							if (rowStart === null) { r++; continue; }
-							const obj: Record<string, string> = {};
-							readField(rowStart, obj);
-							r++;
-							// Continuation lines: indented, no leading dash, until the next row.
-							while (r < blockLines.length) {
-								const cont = blockLines[r];
-								if (isYamlSeqItem(cont)) break; // next row
-								if (!isIndentedLine(cont)) break; // back to top level
-								readField(noCr(cont), obj);
-								r++;
-							}
-							nestedObjects.push(obj);
-						}
-						// Compact display string for legacy consumers + search:
-						// "Hanafī: permissible | Mālikī: discouraged"
-						const summary = nestedObjects
-							.map((o) => Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(' / '))
-							.join(' | ');
-						properties.push({ key, value: summary, type: 'nested-object-list', nestedObjects });
-						continue;
-					}
-
-					if (allSeqItems && !anyMapItem) {
-						const listItems = contentLines.map((l) => unquote((yamlSeqItemValue(l) ?? '').trim()));
-						properties.push({ key, value: listItems.join(', '), type: 'list', listItems });
-						continue;
-					}
-
-					// Anything we cannot round-trip as a flat list — a nested MAP, a
-					// seq-of-maps, a block holding a comment — is projected READ-ONLY with
-					// its bytes carried verbatim in `nestedRaw`.
-					//
-					// PJ-136 / the 2026-07-24 inspection, and the Boss's 2026-07-22 ruling:
-					// a TRUNCATED or EMPTY projection of an EDITABLE type is not a display
-					// bug, it is an invitation — the panel draws a chip list missing half
-					// its content, and the moment the user touches it `composeFrontmatter`
-					// splices the whole block out and rewrites it from what we captured.
-					// Visible and honest beats hidden or editable. `value` stays EMPTY so
-					// the legacy `reconstructFrontmatter` (still live behind
-					// `buildFullContent`) serializes this key byte-identically; the summary
-					// rides in `nestedKeys`.
-					const children = blockLines
-						.map((l) => {
-							const m = /^[ \t]*(?:-[ \t]*)?([^:]+):(?:[ \t]|$)/.exec(noCr(l));
-							return m ? m[1].trim() : '';
-						})
-						.filter(Boolean);
-					properties.push({ key, value: '', type: 'nested-map', nestedKeys: children, nestedRaw: blockLines });
+					properties.push({ key, value: shape.items.join(', '), type: 'list', listItems: shape.items });
 					continue;
 				}
+				// A `STRUCTURED_LIST_KEYS` seq-of-maps — the one block shape with a real
+				// serializer branch and a structured widget (MIG-022 §A.1).
+				if (key && shape?.kind === 'structured-list') {
+					i = end;
+					properties.push(parseIkhtilafBlock(key, blockLines));
+					continue;
+				}
+				// `scalar` — `key:` with nothing under it, or followed only by comments (a `#`
+				// line between two top-level keys belongs to the file, not to the key above
+				// it). The scalar path below is right for both, so fall through.
+				//
+				// No answer at all means the YAML did not parse, and the rest of this branch
+				// is the fallback classification for that case ONLY. It is the pre-PJ-252
+				// line-based reading, kept because it is the only reading available then, and
+				// harmless because `composeFrontmatter` H1-refuses every structural edit to
+				// unparseable frontmatter.
+				if (!shape) {
+					const contentLines = blockLines.filter((l) => !isBlankLine(l));
+					// A run of comments alone is NOT a block. Comments that sit among real
+					// content DO belong to the block. (An EMPTY block satisfies `every`
+					// vacuously, which is the same answer: not a block.)
+					const onlyComments = contentLines.every(isYamlComment);
+
+					// PJ-182 — a FLOW sequence written on the line after its key
+					// (`tags:` then `  [alpha, beta]`) is an ordinary list of scalars.
+					const flowOnly = contentLines.length === 1 ? noCr(contentLines[0]).trim() : '';
+					if (key && flowOnly.startsWith('[') && flowOnly.endsWith(']')) {
+						value = flowOnly;
+						i = end; // consumed — the scalar path below reads the new `value`
+					} else if (key && !onlyComments) {
+						i = end;
+
+						// A flat list is every content line being a `- item` whose text is not
+						// itself a `key: value` map entry. `- https://x` and `- "a: b"` are
+						// scalars, not maps — the test requires a colon followed by space/EOL
+						// on an UNQUOTED item, which is YAML's own rule.
+						const allSeqItems = contentLines.every(isYamlSeqItem);
+						const anyMapItem = contentLines.some((l) =>
+							/^[ \t]*-[ \t]*[^"'\s][^:]*:([ \t]|$)/.test(noCr(l)),
+						);
+						if ((IKHTILAF_KEYS.has(key) || IKHTILAF_KEYS.has(key.toLowerCase())) && anyMapItem) {
+							properties.push(parseIkhtilafBlock(key, blockLines));
+							continue;
+						}
+						if (allSeqItems && !anyMapItem) {
+							const listItems = contentLines.map((l) => unquote((yamlSeqItemValue(l) ?? '').trim()));
+							properties.push({ key, value: listItems.join(', '), type: 'list', listItems });
+							continue;
+						}
+						properties.push({ key, value: '', type: 'nested-map', nestedKeys: blockChildKeys(blockLines), nestedRaw: blockLines });
+						continue;
+					}
+				}
+			}
+
+			// PJ-252 — an INLINE flow sequence (`tags: [alpha, beta]`) is a list, and the one
+			// classifier already knows both that and its items. Taking them here retires the
+			// last place this file guessed at a sequence: `detectPropertyType` types by KEY,
+			// so `whatever: [a, b]` under an unrecognised key came back as `text` valued
+			// `a, b`, and editing it wrote the sequence to disk as that string.
+			if (key && shape?.kind === 'list') {
+				properties.push({
+					key,
+					value: shape.items.join(', '),
+					type: 'list',
+					listItems: shape.items,
+				});
+				continue;
 			}
 
 			// Strip quotes.
@@ -2676,6 +2755,11 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 			// Inline list: [a, b, c] — and the block-position flow list (`tags:` / `  [a, b]`)
 			// handed here by the `flowOnly` branch above, which sets `value` to the same text.
 			// ONE split for both shapes; see `splitFlowSeqItems` for why it cannot be `.split(',')`.
+			//
+			// PJ-252 — this is the UNPARSEABLE-YAML fallback now. Both shapes are answered above
+			// from the one classifier when the document parses, and the `flowOnly` hand-off lives
+			// inside `if (!shape)`. It stays because that is the only reading available when the
+			// library cannot parse the frontmatter at all.
 			let parsedListItems: string[] | undefined;
 			if (!wasQuoted && value.startsWith('[') && value.endsWith(']')) {
 				parsedListItems = splitFlowSeqItems(value.slice(1, -1));

@@ -1412,6 +1412,15 @@ Each field renders with the type-appropriate editor:
   text editor and Constellation will preserve your changes exactly.
 - **`ikhtilāf` → custom widget** with two side-by-side inputs per row (school + position) plus a remove button per row, and an "Add school" button at the bottom. The widget reads from + writes to the structured YAML, so round-trips preserve every field.
 
+**Comments and wrapped entries in a list.** YAML lets you write your own `#` comment lines inside
+a list, and lets a long entry wrap onto an indented second line. Both are ordinary in
+hand-authored notes, and both stay editable: the list renders as normal chips, a wrapped entry
+reads as the one value it is, and a comment you wrote is carried through when Constellation
+rewrites the list. Comments are never shown in the Properties panel — there is no field for them —
+so their absence on screen says nothing; they live in the file. Note that a rewritten list is
+always written one entry per line, so a wrapped entry comes back on a single line with its value
+unchanged.
+
 ### Two panels, one note
 
 A note's properties appear in two places at once: the **Properties block inside the note** and the

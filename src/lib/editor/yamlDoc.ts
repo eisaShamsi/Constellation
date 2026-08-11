@@ -23,7 +23,8 @@
  *
  * This module is dark until the noteModel swap (G4 Phase 2, behind `useYamlDoc`).
  */
-import { Parser, CST, parseDocument, stringify as yamlStringify, isSeq, isMap, isScalar } from 'yaml';
+import { Parser, CST, parseDocument, stringify as yamlStringify, isSeq, isMap, isScalar, Scalar, YAMLSeq } from 'yaml';
+import type { Document } from 'yaml';
 import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 import { samePropRow } from './propRow';
 
@@ -44,6 +45,122 @@ import { samePropRow } from './propRow';
 export const STRUCTURED_LIST_KEYS: ReadonlySet<string> = new Set([
 	'ikhtilāf', 'ikhtilaf', 'الاختلاف',
 ]);
+
+/**
+ * PJ-252 — **what a top-level frontmatter key's value IS.** One answer, for every reader
+ * and every writer in the app.
+ *
+ *  - `list`   — a sequence of pure scalars. Editable, and `items` ARE its values.
+ *  - `structured-list` — a `STRUCTURED_LIST_KEYS` seq-of-maps the system round-trips.
+ *  - `block`  — a nested map, a seq holding any non-scalar, a block scalar, or a key
+ *               written twice. Never rewritable from a flat projection.
+ *  - `scalar` — everything else.
+ */
+export type FmValueShape =
+	| { kind: 'list'; items: string[] }
+	| { kind: 'structured-list' }
+	| { kind: 'block' }
+	| { kind: 'scalar' };
+
+/** What the classifier keeps for itself: the on-disk sequence node (so an edited list's
+ *  comments survive — `seqCarryingComments`) and a scalar's parsed JS value. */
+type FmShapeNode = FmValueShape & { seq?: YAMLSeq; scalarValue?: unknown };
+
+/** The ONE reading of "the text of this scalar node". `seqCarryingComments` matches items
+ *  against values produced here, so a second spelling would silently stop carrying comments. */
+const scalarText = (n: Scalar): string => (n.value == null ? '' : String(n.value));
+
+/**
+ * PJ-252 (APP-KILLER) — **the ONE classifier.** Adding a tag to a note whose `tags:` block
+ * carried a comment line, or an item wrapped across two lines, DELETED the tags already in
+ * that list, from the `.md`, with no error and a clean re-parse afterwards.
+ *
+ * Nothing was wrong with either half on its own. Two classifiers were answering the same
+ * question about the same bytes, and they disagreed:
+ *
+ *  - `store.parseFrontmatter` worked on LINES. Its block extent absorbed a `#` comment (and a
+ *    wrapped continuation), then required EVERY content line to be a bare `- item` before it
+ *    would project an editable list. A comment fails that, so the key came back READ-ONLY with
+ *    an EMPTY `value` and no `listItems`.
+ *  - `immutableBlockKeys` here asked the `yaml` library, which attaches the comment as a
+ *    comment and folds the wrapped item into ONE scalar — "all scalars", so NOT protected.
+ *
+ * Every list mutator then rebuilt from `p.listItems ?? (p.value ? split : [])` — `[]` on that
+ * read-only projection — and the block was spliced out and re-appended holding only the new tag.
+ *
+ * This was the FOURTH shape of that one defect (2026-07-24 closed seq-of-maps, PJ-182 closed
+ * block scalars), and it existed because each closure re-answered the question in a second
+ * place. So the question is answered ONCE, here, by the library the writer composes with —
+ * `store.parseFrontmatter` imports this and projects what it says. They cannot disagree,
+ * because there is no longer a second opinion to disagree with.
+ *
+ * Two shapes this same pass found by running rather than by reading, both now covered by the
+ * one answer: an inline `- history # why` was projected with the COMMENT INSIDE THE TAG VALUE
+ * (and written back as the literal tag `"history   # why"`), and an inline flow list under an
+ * unrecognised key (`whatever: [a, b]`) was typed `text`, so editing it wrote the sequence back
+ * as the string `a, b`.
+ *
+ * On a YAML PARSE ERROR this returns an empty map and `store.parseFrontmatter` falls back to
+ * its line scanner. That is safe by construction, not by luck: `composeFrontmatter`'s H1 branch
+ * re-emits the frontmatter bytes verbatim and performs no structural edit at all, so there is
+ * no write for a projection to be wrong for. `frontmatterIsRewritable` is what tells the user.
+ * A key written TWICE lands there — the library calls it "Map keys must be unique" — which is
+ * the right answer for it too: this map and the compose diff are both keyed by NAME, so a
+ * rewrite would splice the first block and append a merge of both. Checked by running, not
+ * assumed, and pinned by a test; the guard drafted for it here would never have fired.
+ */
+function classifyDoc(doc: Document.Parsed): Map<string, FmShapeNode> {
+	const out = new Map<string, FmShapeNode>();
+	if (doc.errors.length || !isMap(doc.contents)) return out;
+	for (const pair of doc.contents.items) {
+		const k = pair.key;
+		if (!isScalar(k) || k.value == null) continue;
+		const key = String(k.value);
+		const v = pair.value;
+		if (isSeq(v)) {
+			if (v.items.every((it) => isScalar(it))) {
+				// The ordinary tags/aliases list. The items are the LIBRARY's values, which is
+				// what makes the folded wrapped item and the commented item come out right.
+				out.set(key, { kind: 'list', items: v.items.map((it) => scalarText(it as Scalar)), seq: v });
+			} else if (STRUCTURED_LIST_KEYS.has(key) || STRUCTURED_LIST_KEYS.has(key.toLowerCase())) {
+				// MIG-101 — `ikhtilāf` is the one seq-of-maps the system round-trips losslessly:
+				// `serializeLine` has a real `nested-object-list` branch and the panel edits it
+				// through a structured widget. Exempt by KEY, and only in the shape that promise
+				// covers — an `ikhtilāf` holding a nested MAP is a block like any other.
+				out.set(key, { kind: 'structured-list' });
+			} else {
+				// 2026-07-24 inspection (APP-KILLER): a seq of maps —
+				//   authors:
+				//     - name: X
+				//       role: Y
+				// — projected as a TRUNCATED flat list (`- name: X` became a chip, `role: Y` was
+				// dropped), and editing that chip rewrote the block from the truncation.
+				out.set(key, { kind: 'block' });
+			}
+		} else if (isMap(v)) {
+			// PJ-136 — a nested map. Its display `value` is a SUMMARY of its child keys, so
+			// writing it would replace the whole block with that summary.
+			out.set(key, { kind: 'block' });
+		} else if (isScalar(v) && (v.type === 'BLOCK_LITERAL' || v.type === 'BLOCK_FOLDED')) {
+			// PJ-182 — `desc: |` is `isScalar`, so neither test above saw it. Proven by running:
+			// a props array that merely OMITTED the row deleted the block and both prose lines.
+			out.set(key, { kind: 'block' });
+		} else {
+			out.set(key, { kind: 'scalar', scalarValue: isScalar(v) ? v.value : v ?? null });
+		}
+	}
+	return out;
+}
+
+/**
+ * The one classifier's public face — `store.parseFrontmatter` projects what this says.
+ * The import direction (store → yamlDoc) is the one that already exists, so no cycle.
+ * The internal `seq` / `scalarValue` fields ride along; the ReadonlyMap return type is what
+ * keeps them out of the contract, so no copy is needed to hide them.
+ */
+export function classifyFrontmatterValues(rawYaml: string): ReadonlyMap<string, FmValueShape> {
+	return classifyDoc(parseDocument(rawYaml));
+}
 
 export interface FmDoc {
 	/** Everything after the closing `---` fence (the note body), verbatim. */
@@ -107,27 +224,17 @@ function inferType(node: unknown): PropertyType {
 function projectProps(yaml: string): FrontmatterProperty[] {
 	const doc = parseDocument(yaml);
 	if (doc.errors.length || !isMap(doc.contents)) return [];
+	// PJ-252 — this was a THIRD place answering "is this key a list, or a block?". It now
+	// reads the one classifier like everyone else.
 	const out: FrontmatterProperty[] = [];
-	for (const pair of doc.contents.items) {
-		const keyNode = pair.key;
-		const key = isScalar(keyNode) && keyNode.value != null ? String(keyNode.value) : '';
-		if (!key) continue;
-		const node = pair.value; // the value NODE (not a materialized JS value)
-		if (isSeq(node)) {
-			// A sequence of SCALARS → editable list; a seq of maps → preserved in CST (skip).
-			if (node.items.every((it) => isScalar(it))) {
-				const items = node.items.map((it) => String((it as { value?: unknown }).value ?? ''));
-				out.push({ key, value: items.join(', '), type: 'list', listItems: items });
-			}
-			// else: seq-of-maps → not projected (preserved by the CST diff).
-		} else if (isMap(node)) {
-			// Nested map → preserved in the CST, not editable here (Boss decision).
-			continue;
-		} else {
-			// Scalar (or null/empty).
-			const jsVal = isScalar(node) ? node.value : node == null ? null : node;
-			out.push({ key, value: jsVal == null ? '' : String(jsVal), type: inferType(jsVal) });
+	for (const [key, shape] of classifyDoc(doc)) {
+		if (shape.kind === 'list') {
+			out.push({ key, value: shape.items.join(', '), type: 'list', listItems: shape.items });
+		} else if (shape.kind === 'scalar') {
+			const v = shape.scalarValue;
+			out.push({ key, value: v == null ? '' : String(v), type: inferType(v) });
 		}
+		// `block` / `structured-list` → not projected; preserved verbatim by the CST diff.
 	}
 	return out;
 }
@@ -170,61 +277,27 @@ export function parseFrontmatterDoc(content: string): FmDoc {
 }
 
 /**
- * Top-level keys whose value is a BLOCK this compose must never rewrite — a nested
- * MAP, or a SEQUENCE any of whose items is itself a map/seq, read from the YAML itself.
+ * Top-level keys whose value is a BLOCK this compose must never rewrite.
  *
- * PJ-136 — the authority for "this key holds a block" is the file, not the props
- * array handed to `composeFrontmatter`. Those props can be derived from
- * PropertyEditor's `tab.content` cache, which `reconstructFrontmatter` writes
- * WITHOUT a nested block's children, so the key comes back typed as ordinary text.
- * Keying the refusal off the file makes it independent of every upstream projection.
+ * PJ-136 — the authority for "this key holds a block" is the FILE, not the props array
+ * handed to `composeFrontmatter`. Those props can be derived from PropertyEditor's
+ * `tab.content` cache, which `reconstructFrontmatter` writes WITHOUT a nested block's
+ * children, so the key comes back typed as ordinary text. Keying the refusal off the file
+ * makes it independent of every upstream projection.
  *
- * 2026-07-24 inspection (APP-KILLER). The refusal used to check `isMap` ONLY, so a
- * seq-of-maps —
- *   authors:
- *     - name: X
- *       role: Y
- * — was not immutable. `projectProps` here has always skipped that shape, but the
- * OTHER parser (store.ts `parseFrontmatter`, which feeds the note model and hence the
- * visible panel) projected it as a TRUNCATED flat list: `- name: X` became a chip and
- * the continuation line `role: Y` was dropped from the projection entirely. Editing
- * that chip splices the whole block-seq out of the CST below and rewrites it from the
- * truncated projection — `role: Y` gone from the .md, no error, and the rewritten YAML
- * re-parses cleanly so nothing ever notices. Same class as the MIG-101 nested-object-list
- * and PJ-136 nested-map cases; this was the third, still-unguarded shape. Guarding the
- * SEQ here means the bytes survive however any upstream projection behaves.
+ * PJ-252 — and it is now the SAME reading of the file that the panel's own parser projects
+ * from (`classifyDoc`), rather than a second, separately-worded answer to the same question.
+ * The shapes this refuses, and why each one had to be learned the hard way, are documented
+ * there.
+ *
+ * The test is stated the CLOSED way — refuse anything not on the writable list — so that a
+ * fifth `FmValueShape` added to the union arrives REFUSED rather than silently writable. A
+ * new kind is then a visible "why can I not edit this?", never another silent deletion.
  */
-function immutableBlockKeys(yaml: string): Set<string> {
+const WRITABLE_KINDS: ReadonlySet<FmValueShape['kind']> = new Set(['list', 'scalar', 'structured-list']);
+function immutableBlockKeys(shapes: Map<string, FmShapeNode>): Set<string> {
 	const out = new Set<string>();
-	const doc = parseDocument(yaml);
-	if (doc.errors.length || !isMap(doc.contents)) return out;
-	for (const pair of doc.contents.items) {
-		const k = pair.key;
-		if (!isScalar(k) || k.value == null) continue;
-		const key = String(k.value);
-		// MIG-101: `ikhtilāf` is a seq-of-maps the system DOES round-trip losslessly —
-		// `serializeLine` has a real `nested-object-list` branch and the panel edits it
-		// through a structured widget. Exempting it by KEY keeps PJ-136's principle
-		// intact: the decision still comes from the file plus a static set, never from
-		// a props array that a lossy cache could have misreported.
-		if (STRUCTURED_LIST_KEYS.has(key) || STRUCTURED_LIST_KEYS.has(key.toLowerCase())) continue;
-		const v = pair.value;
-		// A seq of pure scalars stays editable (the ordinary tags/aliases list); a seq
-		// holding ANY non-scalar item is a block whose bytes the flat projection cannot
-		// round-trip.
-		//
-		// PJ-182 — and a BLOCK SCALAR (`desc: |` / `desc: >`) is a third block shape. It
-		// is `isScalar`, so neither test above saw it, and `store.parseFrontmatter` used
-		// to project it as editable TEXT valued `"|"`. Slice 4 made the panel render it
-		// read-only, but that is only the widget half: proven by running, a props array
-		// that merely OMITS the row deleted `desc: |` and both prose lines from the file,
-		// and one that changed it wrote `desc: typed over` over the block. This module's
-		// own comment says why that is not good enough — *"refusing here means the block
-		// survives however the panel behaves"*. Now it does.
-		const blockScalar = isScalar(v) && (v.type === 'BLOCK_LITERAL' || v.type === 'BLOCK_FOLDED');
-		const isBlock = isMap(v) || blockScalar || (isSeq(v) && !v.items.every((it) => isScalar(it)));
-		if (isBlock) out.add(key);
-	}
+	for (const [key, v] of shapes) if (!WRITABLE_KINDS.has(v.kind)) out.add(key);
 	return out;
 }
 
@@ -245,8 +318,39 @@ function findItem(cst: CST.Document, key: string): CST.CollectionItem | undefine
 	return idx === -1 || !coll ? undefined : coll.items[idx];
 }
 
-/** Serialize a single `key: value` pair to a YAML line via the library (correct quoting). */
-function serializeLine(key: string, prop: FrontmatterProperty): string {
+/**
+ * PJ-252 — rebuild a scalar sequence's items from `items`, carrying each SURVIVING item's own
+ * comments, and the sequence's leading comment, across the rewrite.
+ *
+ * A list key takes the splice-and-append path below (there is no in-place scalar edit for a
+ * seq), so before this the whole block — including anything the user had written in it — was
+ * re-emitted from the bare values. That was invisible while a commented list was projected
+ * read-only; the moment the one classifier makes those lists editable, it would have traded a
+ * destroyed list for a destroyed comment. The library carries the comments itself once the
+ * original item nodes are reused, so this is a lookup, not a serializer.
+ *
+ * Matching is by VALUE, so a comment follows its item through an add, a removal or a reorder;
+ * a deleted item takes its comment with it, and a new item has none. A value that appears
+ * twice keeps the first occurrence's comment for both — the alternative is to guess.
+ */
+function seqCarryingComments(orig: YAMLSeq, items: string[]): YAMLSeq {
+	const byValue = new Map<string, Scalar>();
+	for (const it of orig.items) {
+		if (!isScalar(it)) continue;
+		const k = scalarText(it); // the same reading `classifyDoc` produced `items` with
+		if (!byValue.has(k)) byValue.set(k, it);
+	}
+	const next = new YAMLSeq();
+	next.commentBefore = orig.commentBefore;
+	next.comment = orig.comment;
+	next.items = items.map((v) => byValue.get(v) ?? new Scalar(v));
+	return next;
+}
+
+/** Serialize a single `key: value` pair to a YAML line via the library (correct quoting).
+ *  `origSeq` is the key's sequence node as it exists on disk, when it has one — see
+ *  `seqCarryingComments`. */
+function serializeLine(key: string, prop: FrontmatterProperty, origSeq?: YAMLSeq): string {
 	let value: unknown;
 	// MIG-101 safety-inspection fix (2026-07-20) — APP-KILLER. This branch was
 	// MISSING, so a `nested-object-list` fell through to `value = prop.value`,
@@ -263,7 +367,10 @@ function serializeLine(key: string, prop: FrontmatterProperty): string {
 	// Empty row-sets deliberately fall through to the scalar path, matching the
 	// legacy `&& prop.nestedObjects.length > 0` guard.
 	if (prop.type === 'nested-object-list' && prop.nestedObjects?.length) value = prop.nestedObjects;
-	else if (prop.type === 'list') value = prop.listItems ?? (prop.value ? prop.value.split(',').map((s) => s.trim()) : []);
+	else if (prop.type === 'list') {
+		const items = prop.listItems ?? (prop.value ? prop.value.split(',').map((s) => s.trim()) : []);
+		value = origSeq ? seqCarryingComments(origSeq, items) : items;
+	}
 	else if (prop.type === 'number' && prop.value.trim() !== '' && !Number.isNaN(Number(prop.value))) value = Number(prop.value);
 	else if (prop.type === 'checkbox') value = prop.value === 'true' || prop.value === 'yes';
 	else value = prop.value;
@@ -351,7 +458,11 @@ export function composeFrontmatter(
 			.join('');
 		return `---${eol}${yamlText}---${eol}${body}`;
 	}
-	if (parseDocument(rawYaml).errors.length) return `---${eol}${rawYaml}---${eol}${body}`; // H1
+	// PJ-252 — ONE parse feeds both the H1 error gate and the classification the refusal and the
+	// list serializer read, so nothing here can form a second opinion about these bytes.
+	const doc = parseDocument(rawYaml);
+	if (doc.errors.length) return `---${eol}${rawYaml}---${eol}${body}`; // H1
+	const shapes = classifyDoc(doc);
 
 	let cst: CST.Document | null = null;
 	for (const tok of new Parser().parse(rawYaml)) {
@@ -388,7 +499,7 @@ export function composeFrontmatter(
 	// caches `tab.content`, and re-parsing that cache re-projects the key as `text`.
 	// Trusting the props array there let the SET/ADD branch splice the block out and
 	// append `source: ""`. The file always knows; ask it.
-	const immutableKeys = immutableBlockKeys(rawYaml);
+	const immutableKeys = immutableBlockKeys(shapes);
 	const oldByKey = new Map(
 		oldProps.filter((p) => !immutableKeys.has(p.key)).map((p) => [p.key, p]),
 	);
@@ -439,12 +550,31 @@ export function composeFrontmatter(
 		} else {
 			const idx = findItemIndex(cst, key);
 			if (idx !== -1) (cst.value as CST.BlockMap).items.splice(idx, 1);
-			addLines.push(serializeLine(key, np));
+			// PJ-252 — hand the key's ON-DISK sequence to the serializer so the user's comments
+			// inside an edited list survive the splice-and-append.
+			addLines.push(serializeLine(key, np, shapes.get(key)?.seq));
 		}
 	}
 
+	// PJ-252 — a note whose edited key was its FIRST property gained a blank line under the
+	// opening `---` on every edit. Pre-existing (measured at HEAD: byte-identical output), and
+	// the exact twin of the blank line `ensure_cid_cn` was leaving in the Rust writer — one
+	// concern, two surfaces, so it is fixed here rather than left as the odd one out.
+	//
+	// Splicing that key empties the CST residue, and `+= eol` on an EMPTY string is what
+	// invented the line. Note what that means, because it is the whole subtlety: at this point
+	// a blank line the user typed and a blank line the splice left are indistinguishable —
+	// both are simply gone from the residue. HEAD preserved the user's blank only by the same
+	// accident that fabricated one when there was none. So the user's blank is restored from
+	// `rawYaml`, the file's own bytes, which is the only place it still exists.
 	let yamlText = CST.stringify(cst);
-	if (!yamlText.endsWith('\n')) yamlText += eol;
+	const leadingBlank = /^\r?\n/.test(rawYaml);
+	if (yamlText) {
+		if (!leadingBlank) yamlText = yamlText.replace(/^\r?\n/, '');
+		if (!yamlText.endsWith('\n')) yamlText += eol;
+	} else if (leadingBlank) {
+		yamlText = eol;
+	}
 	// Appended (added-key) lines use the note's EOL for consistency.
 	for (const line of addLines) {
 		const l = line.replace(/\r?\n/g, eol);

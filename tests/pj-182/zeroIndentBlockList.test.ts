@@ -46,7 +46,7 @@ import {
 	composeUpdatedContent,
 	type FrontmatterProperty,
 } from '$lib/libraries/store';
-import { splitFrontmatter, composeFrontmatter } from '$lib/editor/yamlDoc';
+import { splitFrontmatter, composeFrontmatter, composeContent, parseFrontmatterDoc } from '$lib/editor/yamlDoc';
 
 const ZERO_INDENT = [
 	'---',
@@ -222,21 +222,38 @@ describe('PJ-182 — a zero-indent block list must project, and survive, intact'
 	});
 
 	/**
-	 * A comment inside the block is user data the flat projection cannot round-trip, so
-	 * the block stays READ-ONLY with its bytes verbatim — the same answer the INDENTED
-	 * form already gives today. Before the fix the zero-indent form projected EMPTY,
-	 * which is the destructive answer.
+	 * A comment inside the block does not cost the user their list.
+	 *
+	 * PJ-182 answered this by projecting the block READ-ONLY with its bytes verbatim, which
+	 * kept the comment — and PJ-252 then found the price: `store.parseFrontmatter` called it
+	 * read-only while the WRITE path's own classifier called it an ordinary editable list, so
+	 * adding a tag deleted the tags already there. One classifier now answers both, and this
+	 * shape is an editable list whose comment is carried across the rewrite by the composer.
+	 *
+	 * The assertion moves with it: the invariant was always "the comment survives", never
+	 * "the row is read-only". It is asserted against `composeContent` — the path that reaches
+	 * disk (`SINGLE_OWNERSHIP`/`USE_YAML_DOC` are both on) — because the legacy
+	 * `buildFullContent` rebuild has never carried a comment. Verified by running, 2026-08-11:
+	 * a standalone `# comment` between two top-level keys is dropped by that path today, with
+	 * no PJ-252 change involved. That lossiness is why G4 replaced it.
 	 */
-	it('a comment inside a zero-indent block keeps the block read-only and verbatim', () => {
+	it('a comment inside a zero-indent block keeps its list AND its comment', () => {
 		const note = ['---', 'title: T', 'tags:', '# a comment', '- alpha', 'stage: seed', '---', '', 'body', ''].join('\n');
-		const { properties, body } = parseFrontmatter(note);
+		const { properties } = parseFrontmatter(note);
 
 		const tags = properties.find((p) => p.key === 'tags')!;
-		expect(tags.type).toBe('nested-map');
-		expect(tags.nestedRaw).toEqual(['# a comment', '- alpha']);
+		expect(tags.type).toBe('list');
+		expect(tags.listItems).toEqual(['alpha']);
 		expect(properties.map((p) => p.key)).toEqual(['title', 'tags', 'stage']);
 
-		expect(buildFullContent(properties, body)).toContain('# a comment');
+		// Edit that very key — the destructive moment — and both survive.
+		const edited = properties.map((p) =>
+			p.key === 'tags' ? { ...p, listItems: ['alpha', 'beta'], value: 'alpha, beta' } : p,
+		);
+		const out = composeContent(parseFrontmatterDoc(note), properties, edited);
+		expect(out).toContain('# a comment');
+		expect(out).toContain('- alpha');
+		expect(out).toContain('- beta');
 	});
 
 	// ── CONTROLS — the fix must not change any of these ────────────────────────

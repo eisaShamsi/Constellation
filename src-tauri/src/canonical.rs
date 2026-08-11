@@ -1386,6 +1386,35 @@ pub fn migrate_cid_to_cid_cn(content: &str) -> String {
 ///
 /// Returns the content (possibly mutated) and writes back to disk only
 /// when an injection or migration actually happened.
+/// Add `cid_cn: {stem}` to a note's frontmatter, creating the fence when there is none.
+///
+/// PJ-252 — the newline that follows the opening `---` is STRIPPED before the block is
+/// re-emitted, exactly as the siblings `update_frontmatter_title` and `set_frontmatter_parent`
+/// already do (PJ-207 §15). The slice after `---` BEGINS at that newline, so re-emitting it
+/// under a fresh `---\n` gave the note a blank line above its first property — on the one pass
+/// that injects its identity, i.e. the first time the note is ever opened. Confirmed by the
+/// 2026-08-11 whole-app safety sweep, then seen on screen in the Boss's own probe note: this was
+/// the third sibling of one defect and the only one PJ-207 §15 had not reached.
+///
+/// Split out of `ensure_cid_cn` so the shape can be tested without touching the disk — the
+/// defect lived in string assembly and the enclosing function writes through the gate.
+fn inject_cid_cn(content: &str, stem: &str) -> String {
+    let trimmed = content.trim_start();
+    if trimmed.starts_with("---") {
+        let after = &trimmed[3..];
+        if let Some(end) = after.find("\n---") {
+            let fm_raw = &after[..end];
+            let fm = fm_raw
+                .strip_prefix("\r\n")
+                .or_else(|| fm_raw.strip_prefix('\n'))
+                .unwrap_or(fm_raw);
+            let body = &after[end + 4..];
+            return format!("---\n{}\ncid_cn: {}\n---{}", fm, stem, body);
+        }
+    }
+    format!("---\ncid_cn: {}\n---\n\n{}", stem, content)
+}
+
 pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String> {
     // Already namespaced — nothing to do
     if content.contains("\ncid_cn:") || content.trim_start().starts_with("cid_cn:") {
@@ -1405,18 +1434,7 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
     // Neither present — synthesise a new CID from the file's creation time
     let created = file_creation_time(file_path);
     let canonical = generate_canonical("NOTE", &created, "md", None);
-    let updated = if content.trim_start().starts_with("---") {
-        let after = &content.trim_start()[3..];
-        if let Some(end) = after.find("\n---") {
-            let fm = &after[..end];
-            let body = &after[end + 4..];
-            format!("---\n{}\ncid_cn: {}\n---{}", fm, canonical.stem, body)
-        } else {
-            format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
-        }
-    } else {
-        format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
-    };
+    let updated = inject_cid_cn(content, &canonical.stem);
     // MIG-076 §A2 — gated.
     crate::write_gate::gate_write(file_path, &updated, None, "ensure_cid_cn")
         .map_err(std::io::Error::other)?;
@@ -1508,6 +1526,38 @@ pub fn repair_external_libraries_on_startup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PJ-252 — injecting the identity must not push a blank line above the note's first
+    /// property. `ensure_cid_cn` runs the FIRST time any note is opened, so before this the
+    /// blank line was the normal state of every hand-authored note Constellation had ever
+    /// opened. Seen on screen in the Boss's Stage-1 probe note, 2026-08-11.
+    #[test]
+    fn inject_cid_cn_adds_no_blank_line_above_the_first_property() {
+        let out = inject_cid_cn("---\ntitle: T\ntags:\n  - a\n---\nbody\n", "STEM");
+        assert_eq!(out, "---\ntitle: T\ntags:\n  - a\ncid_cn: STEM\n---\nbody\n");
+        assert!(!out.starts_with("---\n\n"), "blank line above the first property: {:?}", out);
+    }
+
+    /// The same note as Notepad writes it. The frontmatter's own CRLF endings ride through
+    /// untouched; only the fence and the injected line carry the `\n` this writer has always
+    /// emitted (shared with `update_frontmatter_title` — not a PJ-252 change, and recorded here
+    /// so the next reader knows it was measured rather than overlooked).
+    #[test]
+    fn inject_cid_cn_crlf_note_gains_no_blank_line() {
+        let out = inject_cid_cn("---\r\ntitle: T\r\ntags:\r\n  - a\r\n---\r\nbody\r\n", "STEM");
+        assert_eq!(out, "---\ntitle: T\r\ntags:\r\n  - a\r\ncid_cn: STEM\n---\r\nbody\r\n");
+        assert!(!out.contains("---\n\r\n"), "blank line above the first property: {:?}", out);
+    }
+
+    /// No fence at all, and a fence that never closes, both still synthesise a block.
+    #[test]
+    fn inject_cid_cn_without_a_usable_fence_synthesises_one() {
+        assert_eq!(inject_cid_cn("just body\n", "S"), "---\ncid_cn: S\n---\n\njust body\n");
+        assert_eq!(
+            inject_cid_cn("---\ntitle: unterminated\n", "S"),
+            "---\ncid_cn: S\n---\n\n---\ntitle: unterminated\n"
+        );
+    }
 
     /// PJ-182 — an alias appended into a ZERO-INDENT `aliases:` block must join that
     /// block's sequence, not start a deeper one.
