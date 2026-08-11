@@ -4,7 +4,7 @@
 
 > **What changed in v1.80** (**PJ-252 CLOSED and Boss-validated across five test rounds — the APP-KILLER is dead, and the fix caught a regression of its own before the Boss ever saw it. Two more blank-line siblings fixed. Two more whole-app sweeps (54 confirmed) banked**):
 >
-> **► NEXT ACTION — the PJ-234 + PJ-240 pair, then the PJ-235 + PJ-254 federation-boundary family.** PJ-252 is closed. **PJ-207 §13 remains GATED on PJ-224 (Boss ruling). PJ-253 remains BLOCKED on a Boss ruling** — it changes which links get rewritten on disk.
+> **► NEXT ACTION — superseded by the READINESS PLAN (`docs/Constellation Readiness Plan v1.0.md`), which is now the authority on sequence:** rule **PJ-263** (the v1.0 scope decision) and start **PJ-262** (the Living Link disk layer, rank 1). The former next action — the PJ-234 + PJ-240 pair, then PJ-235 + PJ-254 — is now **M2, ranks 2 and 5**, behind the one concept failure in the product. **PJ-207 §13 still GATED on PJ-224. PJ-253, PJ-219, PJ-260 still BLOCKED on Boss rulings.**
 >
 > ### ✅ PJ-252 — CLOSED, Boss-validated
 >
@@ -30,6 +30,39 @@
 > - **PJ-259** *(MED · altitude residue from PJ-252)* — the one classifier settles *kind-of-YAML-node*, not *kind-of-property*: `detectPropertyType` (`store.ts:199-236`) and `PropertyEditor.svelte:469-485` still independently answer "is this key a list". **Block EXTENT** is also still line-decided (`blockExtent`), so kind can no longer disagree but extent still can. Neither is reachable as data loss today (the write path refuses from the file), and changing them changes behaviour — hence filed, not folded in. **Group 2.**
 > - **PJ-260** *(LOW · hygiene · BOSS RULING PENDING)* — the Rust frontmatter writers hardcode `\n` for the fence and injected lines regardless of the note's own endings, so a CRLF note ends up with **mixed line endings**. Measured in the Boss's live probe note. Nothing renders differently in Notepad, Constellation or git. Surfaced to the Boss with an offer; **no ruling yet**. **Group 4.**
 > - **PJ-261** *(MED · doc-drift)* — `deriveTabName` (`store.ts:3230`) carries the comment *"For canonical files, extract title from frontmatter"* but applies the frontmatter `title:` to **every** file, canonical or not. Surfaced when the Boss asked why a note named `pj252-test-1` displayed as "Zarquon Test One" — the behaviour is correct and by design; only the comment is wrong. **Group 5.**
+>
+> ### 🎯 READINESS — PJ-262 … PJ-268, and a re-ranking of the whole backlog
+> The Boss commissioned a holistic readiness evaluation (`docs/Constellation Readiness Review
+> v1.0.md`) and a plan (`docs/Constellation Readiness Plan v1.0.md`). **The plan re-ranks every
+> open PJ by distance-to-publishable rather than by severity, and is the authority on sequence
+> from here.** Seven numbers were allocated for readiness work that had no owner:
+>
+> - **PJ-262** *(APP-KILLER-class · `/migration` · Boss-directed 2026-07-24)* — **the Living Link
+>   disk layer.** Verified again today: **no code writes a LINK file**; `weight`, `confidence`,
+>   `traversal_count`, `last_traversed` and `status='archived'` live ONLY in `note_links` inside
+>   `search.db`. So **File Over App is violated for the earned half of every link**, and *"every
+>   link operation must be reversible"* is **false** — rebuilding the index resurrects every
+>   archived link. `search.db` is a system of record, not a cache. **The only CONCEPT failure in
+>   the product, and rank 1 of the whole backlog.** **Group 1 · Charter.**
+> - **PJ-263** *(BOSS RULING REQUIRED, then execution)* — **surface-area certification or cut.**
+>   28 concept papers say *"Enabled in bring-up: no"* while `store.ts:7012` ships ~25 functions
+>   ON. The bring-up acceptance program was never completed. **The highest-leverage decision
+>   available** — it prices M4, M6 and much of M2. **Group 3.**
+> - **PJ-264** *(process)* — **triage the ~100 unnumbered sweep findings** across six registers
+>   (177 confirmed: 3 APP-KILLER — all closed — - 59 HIGH, 79 MED, 36 LOW). De-duplicate, drop
+>   what is fixed, number and group the rest. Until it is done, every rank below it is a ranking
+>   over the findings we NUMBERED, not the findings we HAVE. **Group 1.**
+> - **PJ-265** — **kill-mid-index recovery**, boot ship-gate criterion 5, *not implemented*.
+>   **Group 1.**
+> - **PJ-266** — **idle RSS ≤ 350 MB**, boot criterion 3, never measured. **Group 2.**
+> - **PJ-267** — **macOS: build → sign → notarize → smoke-test.** CI is `windows-latest` only;
+>   `bundle.macOS` is null; never built, never launched. App code is mostly platform-neutral
+>   (proper `#[cfg]` arms; only 3 bare `ctrlKey` sites vs 29 handling both) — infrastructure work,
+>   not a rewrite. **Group 3.**
+> - **PJ-268** — **backup & recovery system**, Boss-wanted 2026-06-21; concept paper already
+>   written. **Group 3.**
+>
+> **Readiness exit criteria: 2 of 7 met** (no known-live app-killer ✅; everything else open).
 >
 > ### 📋 Two more sweep registers, durable in the repo
 > `lab/reports/sweeps/SWEEP-2026-08-11-sixth-whole-app.json` (**30** confirmed) and `SWEEP-2026-08-11-seventh-whole-app.json` (**24** confirmed). **Neither run was diff-scoped** — `args.files` did not reach the script both times, so both went whole-app; the frontmatter write path was covered in full either way, and **not one confirmed finding lies in the PJ-252 diff**. Their headline items are PJ-258 and the already-filed PJ-254/PJ-235 family. As with the fourth and fifth registers, **the remainder are not yet individually numbered** — the honest state, and that triage is now a **four-register** backlog.
