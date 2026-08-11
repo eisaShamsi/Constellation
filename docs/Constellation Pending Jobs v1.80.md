@@ -147,16 +147,16 @@
 > 11. Carried: **PJ-222** (`collect_md_paths` boundary) · the 2026-07-30 inspection's **25 lost candidates** · the **38-finding register** (`wbxz23bdr`) · PJ-248's Group-1 members (items 3–5, 9, 11).
 >
 > **Group 2 — Architecture & performance debt**
-> **PJ-256** (no back-fill re-collects its table's statistics — the class behind PJ-249's headline defect) · **PJ-257** (`props_reparse` fails every boot and re-arms forever) · **PJ-250** (boot-shaped refresh used as an incremental update) · **PJ-226** (≈24 walkers still on `path.is_dir()`) · **PJ-225** (9 hand-rolled `mtime_secs` copies) · **PJ-110** (localStorage durability — `app-prefs.json` is the home for the next tenants; `constellation-wab` needs a **durability design**, not a JSON file — see PJ-236) · **PJ-233** (the registry `universes.json` lists only `كون عيسى` and points `active_id` at it while the app demonstrably runs **Eisa Universe** — proven by the app-generated timestamp in its own `boot-perf.latest.json`, its logged boot sequence, its federation manifest and direct file counts; the mechanism could **not** be reconstructed from source and was **not** invented) · PJ-248 item 1 (the sync `read_note` loop).
+> **PJ-259** (the PJ-252 altitude residue: `detectPropertyType` + `PropertyEditor` still answer "is this key a list" independently, and block EXTENT is still line-decided) · **PJ-256** (no back-fill re-collects its table's statistics — the class behind PJ-249's headline defect) · **PJ-257** (`props_reparse` fails every boot and re-arms forever) · **PJ-250** (boot-shaped refresh used as an incremental update) · **PJ-226** (≈24 walkers still on `path.is_dir()`) · **PJ-225** (9 hand-rolled `mtime_secs` copies) · **PJ-110** (localStorage durability — `app-prefs.json` is the home for the next tenants; `constellation-wab` needs a **durability design**, not a JSON file — see PJ-236) · **PJ-233** (the registry `universes.json` lists only `كون عيسى` and points `active_id` at it while the app demonstrably runs **Eisa Universe** — proven by the app-generated timestamp in its own `boot-perf.latest.json`, its logged boot sequence, its federation manifest and direct file counts; the mechanism could **not** be reconstructed from source and was **not** invented) · PJ-248 item 1 (the sync `read_note` loop).
 >
 > **Group 3 — Feature completion**
 > **PJ-207 §13** — GATED on **PJ-224** (Boss ruling: the ordinary search box does not federate; no removal offer may ship before that is ruled on). **PJ-219** — the user-action write class awaits its design ruling. **PJ-227** — a linked universe's phantom rows are permanently exempt from dead-row removal post-§8 (9 live rows). **PJ-220** — the `{name:}` workflow form + args delivery (CRLF proven for the `scriptPath` form).
 >
 > **Group 4 — Polish / i18n / small bugs**
-> PJ-248 items 13–14 (LOW) · **PJ-172** Sight timing flakes (reproduce under CPU load, pass in isolation).
+> PJ-248 items 13–14 (LOW) · **PJ-172** Sight timing flakes (reproduce under CPU load, pass in isolation) · **PJ-260** (mixed line endings in Rust-written frontmatter — **Boss ruling pending**).
 >
 > **Group 5 — Documentation & hygiene**
-> **Doc-drift watch** — the translated manuals are partial and drift in vocabulary; §12 found **67** wrong panel names in `fa`/`ur` and fixed them. A periodic term-consistency sweep of each manual against its own locale's `i18n` JSON is worth a PJ if it recurs. The `.md` help/manual coverage of the §15 fixes is otherwise not user-facing.
+> **PJ-261** (`deriveTabName`'s comment says "for canonical files" but the frontmatter `title:` is applied to every file) · **Doc-drift watch** — the translated manuals are partial and drift in vocabulary; §12 found **67** wrong panel names in `fa`/`ur` and fixed them. A periodic term-consistency sweep of each manual against its own locale's `i18n` JSON is worth a PJ if it recurs. The `.md` help/manual coverage of the §15 fixes is otherwise not user-facing.
 >
 > ---
 >

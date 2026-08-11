@@ -159,3 +159,68 @@ Two Boss-side observations worth recording, both of which were *my* wording, not
 - **Two whole-app safety sweeps, 54 confirmed findings**, none in this diff. Both runs ignored
   the `args.files` diff-scoping and went whole-app; the frontmatter write path was covered in
   full either way. Registers to be triaged into the ledger.
+
+---
+
+## STATE OF STANDING — 2026-08-11, at the Boss's request (SO #5)
+
+Written before answering, per Standing Order #5. Sources: `docs/Constellation Pending Jobs
+v1.80.md` (the live backlog), the six whole-app sweep registers in `lab/reports/sweeps/`, and
+`git log`. Nothing below is recalled — every count was read or computed from the repo today.
+
+### (a) Verified-shipped and protected
+
+- **PJ-252 CLOSED** (`de951dfd`, pushed) — Boss-validated over five rounds. Frontmatter now has
+  ONE classifier; the write path's refusal is stated closed; comments survive an edited list.
+- **PJ-249 CLOSED** (2026-08-11, prior session) — rename ~50 s → 216 ms.
+- Gates at this moment: vitest **941/0** · Rust **1445/0** · svelte-check **0 errors** · release
+  binary **10:11** Boss-validated.
+- Protection in place: 941 vitest + 1445 Rust cases, the `tutorial-auditor` → `ui-inspector`
+  gate (which caught an APP-KILLER-class regression this session that all 941 tests missed), and
+  the `safety-inspection` workflow.
+
+### (b) At-risk / in-flight / uncommitted
+
+**Nothing uncommitted.** Working tree clean at `de951dfd` apart from this record and the ledger
+group-placement fix for PJ-259/260/261 (they were named in the v1.80 preamble but omitted from
+the five-groups section — my own error, corrected in the same pass that found it).
+
+### (c) Known-broken — open, with a numbered owner
+
+**26 open PJ numbers** in Group 1–2 filed since the sweeps began, plus 11 carried older items.
+Full categorisation delivered to the Boss in chat; the ledger's five groups remain authoritative.
+
+### (d) THE HEADLINE RISK — pending, not started, and not individually numbered
+
+**Six whole-app sweep registers hold 177 confirmed findings. Only about two dozen have ever
+been given a PJ number.**
+
+| register | confirmed | triaged into PJs? |
+|---|---|---|
+| `SWEEP-2026-08-09-second` | 32 | largely → PJ-234…PJ-251 |
+| `SWEEP-2026-08-10-third` | 37 | largely → PJ-234…PJ-251 |
+| `SWEEP-2026-08-10-fourth` | 25 | **headline items only** (PJ-252/254/255) |
+| `SWEEP-2026-08-11-fifth` | 29 | **headline items only** |
+| `SWEEP-2026-08-11-sixth` | 30 | **headline item only** (PJ-258) |
+| `SWEEP-2026-08-11-seventh` | 24 | **headline item only** |
+
+Roughly **100 adversarially-confirmed findings exist only as JSON**, outside the backlog. They
+are NOT de-duplicated across runs — the same defect recurs in multiple sweeps, so the true
+distinct count is lower and unknown. **Establishing that number is itself the job**, and it is
+the completeness net SO #9 exists to protect. Two ledger versions have now deferred it.
+
+### (e) Documentation drift
+
+- The User Manual's PJ-252 paragraph is **English only**; the 14 translations were not swept.
+- **PJ-261** — `deriveTabName`'s comment says "for canonical files"; it applies to every file.
+- Translated manuals remain partial and drift in vocabulary (carried Group-5 watch).
+- Orientation **v3.96** and ledger **v1.80** are current as of this commit.
+
+### Blocked on a Boss ruling — cannot proceed without him
+
+| | needs |
+|---|---|
+| **PJ-253** | which links a rename rewrites on disk (case-fold) |
+| **PJ-207 §13** | gated on **PJ-224** — whether the ordinary search box federates |
+| **PJ-260** | mixed line endings in Rust-written frontmatter |
+| **PJ-219** | the user-action write class awaits its design ruling |
