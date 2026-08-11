@@ -6744,8 +6744,23 @@ pub fn update_links_on_rename(
         // the same mtime second after a reindex commit is invisible to the comparison —
         // the same granularity floor PJ-207 §9's drift check accepted.
         let mut suspects: Vec<std::path::PathBuf> = Vec::new();
-        collect_fresh_suspects(Path::new(&library_path), &known, &foreign, &mut suspects);
-        t_phase(&format!("freshness-net-done ({} suspects)", suspects.len()));
+        let mut net_stats = NetStats::default();
+        collect_fresh_suspects(
+            Path::new(&library_path),
+            &known,
+            &foreign,
+            &mut suspects,
+            &mut net_stats,
+        );
+        // §6h — the net measured 49 ms and then 1,442 ms across two sessions on the SAME
+        // library, and the log could not say why. These are the only two syscall families
+        // it spends time in, plus the counts that separate "walked more" from "walked
+        // slower". Whatever the next slow run is, this line names it.
+        t_phase(&format!(
+            "freshness-net-done ({} suspects) [{}]",
+            suspects.len(),
+            net_stats.summary()
+        ));
 
         let mut candidates: Vec<std::path::PathBuf> = Vec::new();
         let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -6968,17 +6983,57 @@ fn cascade_excluded(
 /// symlinks skipped, a linked universe's root not crossed. A file whose metadata cannot
 /// be read is a SUSPECT, not a skip — the honest direction is to read it and let the
 /// rewrite's own error arm record a real failure.
+/// PJ-249 §6h — what the net actually did, so a slow net can be attributed instead of
+/// suspected.
+///
+/// The net's cost is two syscall families and nothing else: enumerating directories
+/// (`read_dir`) and stat-ing the files it already knows (`entry.metadata`). Timing them
+/// apart is what separates a cold directory cache from a slow per-file stat, and the
+/// counts separate either from simply having walked more tree than last time. Without
+/// this split the log says only "the net took N ms", which is the position that made me
+/// blame it once on suspicion when it was 34 ms.
+#[derive(Default)]
+pub(crate) struct NetStats {
+    pub dirs: usize,
+    pub md_files: usize,
+    pub unknown: usize,
+    pub drifted: usize,
+    pub read_dir_us: u128,
+    pub metadata_us: u128,
+}
+
+impl NetStats {
+    fn summary(&self) -> String {
+        format!(
+            "{} dirs, {} .md ({} unknown, {} drifted) | read_dir {} ms | metadata {} ms",
+            self.dirs,
+            self.md_files,
+            self.unknown,
+            self.drifted,
+            self.read_dir_us / 1000,
+            self.metadata_us / 1000
+        )
+    }
+}
+
 fn collect_fresh_suspects(
     dir: &Path,
     known: &std::collections::HashMap<String, u64>,
     foreign: &std::collections::HashSet<String>,
     out: &mut Vec<std::path::PathBuf>,
+    stats: &mut NetStats,
 ) {
+    stats.dirs += 1;
+    let t_rd = std::time::Instant::now();
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
     };
-    for entry in read_dir.flatten() {
+    // `read_dir` opens the handle; the enumeration itself happens as the iterator is
+    // drained, so both halves are counted — the drain cost is folded in below.
+    let entries: Vec<_> = read_dir.flatten().collect();
+    stats.read_dir_us += t_rd.elapsed().as_micros();
+    for entry in entries {
         let ft = entry.file_type().ok();
         if ft.map(|t| t.is_symlink()).unwrap_or(false) {
             continue;
@@ -6992,14 +7047,21 @@ fn collect_fresh_suspects(
             if is_nested_library(&path, foreign) {
                 continue;
             }
-            collect_fresh_suspects(&path, known, foreign, out);
+            collect_fresh_suspects(&path, known, foreign, out, stats);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            stats.md_files += 1;
             let pn = path.to_string_lossy().replace('\\', "/").to_lowercase();
             match known.get(&pn) {
-                None => out.push(path), // the index has never seen this file
+                None => {
+                    stats.unknown += 1;
+                    out.push(path) // the index has never seen this file
+                }
                 Some(&stored) => {
+                    let t_md = std::time::Instant::now();
                     let m = entry.metadata().ok().as_ref().and_then(crate::search::mtime_secs);
+                    stats.metadata_us += t_md.elapsed().as_micros();
                     if m != Some(stored) {
+                        stats.drifted += 1;
                         out.push(path); // edited since its last index — or unstattable, which is suspect
                     }
                 }
@@ -7167,7 +7229,14 @@ fn rewrite_candidates(
 ///
 /// Measured against the walk it replaces: 0.05–1.8 ms vs 8.3–8.5 s, and the median
 /// rename has ONE candidate (p50=1, p90=7, p99=31 across 8,328 live targets).
-fn cascade_candidates_via_index(
+/// PJ-249 §6f — `pub(crate)` so the boot warm can call THIS function rather than its own
+/// hand-written copy of the query. §6e's warm issued `SELECT COUNT(*) … WHERE target_base=?`,
+/// believing it was warming the seek; it planned as a covering-index SEARCH while the real
+/// seek — `SELECT DISTINCT source_path …` — planned as a full table SCAN. The warm ran, took
+/// 674 ms, reported success, and warmed pages the cascade never reads. Same failure shape as
+/// §6b's two key functions: two spellings of one question drift apart in silence. One caller,
+/// one function, no drift possible.
+pub(crate) fn cascade_candidates_via_index(
     conn: &rusqlite::Connection,
     old_name: &str,
 ) -> Option<Vec<String>> {
@@ -7264,6 +7333,7 @@ mod cascade_walker_tests {
     use super::{
         cascade_candidates_via_index, // PJ-249 §6 — the seek half of the flip
         collect_fresh_suspects, // PJ-249 §6b — the freshness net's collector
+        NetStats,               // PJ-249 §6h — its instrumentation
         cascade_pattern, // PJ-207 §15 — the tests build the PRODUCTION pattern, never a copy
         collect_md_paths, free_trash_name, move_into_trash_folder, path_identity_key,
         rewrite_for_test, trash_move_decolliding, update_links_recursive, CascadeResult,
@@ -7666,7 +7736,14 @@ mod cascade_walker_tests {
         known.insert(norm(&drifted_file), mtime_of(&drifted_file) + 999); // index believes another mtime
 
         let mut suspects: Vec<std::path::PathBuf> = Vec::new();
-        collect_fresh_suspects(dir.path(), &known, &HashSet::new(), &mut suspects);
+        let mut net_stats = NetStats::default();
+        collect_fresh_suspects(
+            dir.path(),
+            &known,
+            &HashSet::new(),
+            &mut suspects,
+            &mut net_stats,
+        );
         let names: std::collections::HashSet<String> = suspects
             .iter()
             .map(|p| p.file_name().unwrap().to_string_lossy().to_string())

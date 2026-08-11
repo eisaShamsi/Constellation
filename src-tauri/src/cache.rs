@@ -1286,12 +1286,16 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
     // get_structural_* APIs, never the boot bundle (so boot-bundle size is
     // unchanged and frontend cognitive graph consumers never see it). Active since §5.
     let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    // PJ-249 §6g — the column list comes from `link_boot_index::BOOT_LINK_COLUMNS`, the
+    // same constant the covering index is built from. Spelled out here, it drifted from the
+    // index in `6c810836` (when `created` was added for the UI) and un-covered the boot
+    // scan for two months while the index's own test — which spelled the projection out a
+    // THIRD time — stayed green.
     let sql = format!(
-        "SELECT source_path, source_name, target_name, link_type, library_name, \
-                weight, traversal_count, annotation, last_traversed, confidence, \
-                created, status \
-         FROM {}.note_links WHERE status = 'active'{}",
-        schema, sx
+        "SELECT {}, status FROM {}.note_links WHERE status = 'active'{}",
+        crate::link_boot_index::BOOT_LINK_COLUMNS,
+        schema,
+        sx
     );
     let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare links ({}): {}", schema, e))?;
     let rows = stmt

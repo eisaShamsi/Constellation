@@ -122,7 +122,7 @@ Added `idx_note_meta_path_modified (path, modified)` — SQLite prefers it — a
 the next measurement separates the candidate seek from the freshness map instead of leaving me to
 choose between them by reasoning.
 
-**The lesson, which is LL-037's sibling:** *covered is not the same as cheap.* An EXPLAIN that says
+**The lesson, which is LL-043's sibling:** *covered is not the same as cheap.* An EXPLAIN that says
 `USING COVERING INDEX` closes the "is it a full scan?" question and says nothing about how WIDE the
 cover is. This is the PJ-066 note_meta family wearing a different hat — and I walked into it while
 holding the rule.
@@ -145,3 +145,225 @@ RESOLVING a name and wrong for CHOOSING where to write; the component no longer 
 Third member of one family now: PJ-235 (`move_item` authorises its destination through the
 federated resolver), the §6c seek boundary, and this. Worth a ledger entry as a class, not three
 unrelated bugs — filed at the next bump.
+
+---
+
+## §6f — the index the migration built was never used
+
+**Boss test of §6e: "It took 4 seconds to rename."** Worse than the 2,693 ms it was meant to fix.
+The §6e diagnosis (cold connection, warm it at boot) was **wrong**, and the warm proved it:
+
+```
+[target_base_backfill] seek path warmed in 674 ms (ok=true)
+[target_base_backfill] seek path warmed in 815 ms (ok=true)
+   ... 205 seconds later ...
+[cascade-timing] seek-query 2579 ms | freshness-map 2730 rows 2 ms
+```
+
+The warm ran, succeeded, finished three minutes early, and bought nothing.
+
+### The actual cause, read off the live DB (a copy — never the live file)
+
+```
+EXPLAIN QUERY PLAN  SELECT DISTINCT source_path FROM note_links WHERE target_base = ?
+  ->  SCAN note_links USING INDEX idx_link_source            <-- a FULL SCAN of 31,368 rows
+
+sqlite_stat1:  idx_link_target_base -> 31367 31367           <-- "one distinct value, all rows"
+real cardinality: 3.8 rows per value
+```
+
+**`idx_link_target_base` has never been used since the day it was created.** The statistic was
+collected while `target_base` was entirely NULL, and §4's back-fill — whose whole purpose is to
+turn that column from uniform into diverse — never re-collected it. The planner was reasoning
+correctly from a number the back-fill itself had made false. Verified as the ONLY stale stat on
+the table; the other eight were checked and are accurate.
+
+So PJ-249 did not replace an 8.5 s file walk with a 44 ms index seek. It replaced it with a
+**2.6 s full table scan**, and I read the improvement as success. The 44 ms second rename was the
+same full scan served from the OS page cache.
+
+### Measured, on a copy of the live 327 MB DB, same key, same data
+
+| | plan | time |
+|---|---|---|
+| as shipped | `SCAN note_links USING idx_link_source` | 16.946 ms |
+| + `ANALYZE` only | `SEARCH idx_link_target_base` + temp b-tree | 0.023 ms |
+| + index widened to `(target_base, source_path)` | `SEARCH … COVERING INDEX` | 0.006 ms |
+| + widened, **sqlite_stat1 deleted** | `SEARCH … COVERING INDEX` | 0.006 ms |
+
+(16.9 ms is a warm SSD copy; the same scan on the Boss's USB disk is his 2,579 ms.)
+
+The last row is why the fix is the **widened index**, not `ANALYZE` alone: a covering index that
+satisfies the whole query is chosen structurally, so a stale statistic cannot resurrect the scan.
+`ANALYZE` alone fixes today and leaves the trap armed for tomorrow.
+
+### The fix — three parts, all off the boot path
+
+1. **`idx_link_target_base` carries `source_path`.** Fresh universes get the shape from
+   `ensure_note_links_target_base`. Existing ones get it from `widen_seek_index` in the back-fill,
+   because **`CREATE INDEX IF NOT EXISTS` is a silent no-op against a name that already exists** —
+   every universe that booted the §1 build would have kept the narrow index forever. The shape is
+   detected via `pragma_index_info` and the index rebuilt (measured 56–118 ms).
+2. **`analyze_note_links`** — the back-fill re-collects the statistic it invalidated (78–89 ms),
+   scoped to the one table. Not needed by the cascade any more; needed because leaving a knowingly
+   false statistic in the DB is a trap set for the next query written against the column.
+3. **`SCHEMA_VERSION` 1 → 2**, using the mechanism its own doc comment already described. An
+   already-stamped universe re-arms once, finds zero dirty rows, repairs index + stats, re-stamps.
+   Re-arm pass measured end-to-end at **289 ms** on a copy. During that window the gate reports
+   not-stamped and the cascade walks the disk — slow and correct, the intended fail-safe direction.
+
+`warm_seek_path` now calls **`cascade_candidates_via_index` itself** (`pub(crate)`) instead of a
+hand-written lookalike. That was §6e's failure in miniature: `COUNT(*)` planned as a covering-index
+SEARCH while the real seek planned as a full SCAN — two spellings of one question, warming disjoint
+parts of the file. Same shape as §6b's two key functions. One caller, one function, no drift.
+
+### The test that was missing
+
+Five new tests in `tests_pj249_6f_seek_plan` pin **the plan**, not the data — including
+`narrow_index_loses_to_a_stale_statistic`, which poisons `sqlite_stat1` and asserts the OLD index
+is rejected, so the fix is provably a fix and not a coincidence.
+
+Every §1–§4 test asserted the right `target_base` values. Every one passed. All of them passed on
+a build that full-scanned 31,368 rows on every rename. **The data was never wrong; the plan was —
+and a correctness test cannot see a plan.**
+
+Suite 1,439 passing (+5). Binary 20:02.
+
+### The class, not the instance
+
+Any back-fill that fills a previously-uniform column leaves `sqlite_stat1` describing the old
+cardinality. `note_links.target_base` is the instance that happened to be measured. A whole-app
+audit of every back-fill for the same trap is running.
+
+## §6g — the same trap on a second index, found by auditing the class
+
+The §6f class audit (34 backfills, adversarially refuted, against a copy of the live DB)
+confirmed **one** stale-statistics instance — the one already fixed. But it surfaced the
+**mirror-image** of the shape trap, live and unticketed, and I verified every claim by hand
+before acting on it.
+
+### `idx_link_boot` stopped covering in June and its test could not see it
+
+MIG-079 §C.3 built `idx_link_boot` so the boot edge load reads index pages instead of the
+wide `note_links` row-store. Commit `6c810836` (*§3a — read-widening: a link's `created` now
+reaches the UI*) added `created` to the projection in `cache.rs` and not to the index.
+
+```
+production (12 cols, incl. `created`)   ->  SCAN note_links
+the test's own 10-col string            ->  SEARCH ... USING COVERING INDEX idx_link_boot
+```
+
+**The test spelled the projection out a THIRD time** — ten columns, missing `created` and
+`status` — so it asserted a covering plan for a query the app does not run, and stayed green
+from June to 2026-08-10 while production scanned. Same shape as §6f's warm: *two spellings of
+one question drift apart in silence, and the copy is the one that gets tested.*
+
+**And its documented repair path could not work.** `link_boot_index.rs:40` said "Bump to
+force a rebuild (e.g. if the covering column set changes)" above a `CREATE INDEX IF NOT
+EXISTS` with no `DROP`. `IF NOT EXISTS` keys on the NAME: bumping re-ran a no-op and
+re-stamped. No existing universe could ever have received a new column set.
+
+### Measured before widening, because "covered" is not "cheap"
+
+| | plan | time |
+|---|---|---|
+| as shipped | `SCAN note_links` | 71.8 ms |
+| `created` added | `SEARCH … USING COVERING INDEX idx_link_boot` | 70.2 ms |
+
+Rebuild 232 ms once; database file +0 KB. **No warm gain** — that benchmark is CPU-bound on
+materialising all 31,368 rows and cannot see the I/O difference that shows on a mechanical
+disk — but no regression, and it restores the invariant the module exists for. Shipped on
+"restores a documented invariant at no measured cost", not on a performance claim.
+
+### The fix
+
+- **`search::ensure_index_shape`** — reads the current shape via `pragma_index_info`, drops
+  when it differs, then creates. **Shared** by `widen_seek_index` (§6f) and `link_boot_index`,
+  because the same trap appeared on two indexes within an hour and a second hand-rolled copy
+  is how it becomes a third. Documented as background-only: rebuilding a 31k-row index is
+  118–232 ms and belongs nowhere near boot.
+- **`BOOT_LINK_COLUMNS`** — one constant. `cache.rs` projects from it, the index is built from
+  it, the tests derive from it. The three cannot be edited apart.
+- **`SCHEMA_VERSION` 1 → 2** in `link_boot_index`, and now the bump actually rebuilds.
+
+### The risk the fix introduced, closed in the same pass
+
+`cache::read_links_in_schema` reads its results **positionally** (`row.get(0)`…`row.get(11)`).
+Extracting one shared string removed the drift and put a new hazard in its place: re-ordering
+the constant compiles, passes every other test, and silently feeds each link's annotation into
+its confidence. `boot_projection_order_is_pinned_to_the_positional_reads_in_cache_rs` pins the
+exact order with the `row.get` index beside each column.
+
+### And a hole in §6f that the safety sweep caught, in code written the same evening
+
+`with_read_conn` holds `read_db` for the whole closure. Right for a covering-index seek;
+wrong for a full scan — which is what the seek degrades to if `widen_seek_index` failed (it is
+non-fatal and the pass stamps regardless). The boot warm would then block **every other read**
+for seconds. It now verifies the index is covering before seeking, and logs
+`seek warm SKIPPED` instead of stalling.
+
+Suite 1,442 passing (+8 over the session's start).
+
+### Not fixed — needs a Boss ruling
+
+The sweep confirmed a **HIGH** in the cascade itself: the seek folds case
+(`target_base_of` → `fold_match_key`) so `[[meeting notes]]` IS returned when renaming
+"Meeting Notes", but `cascade_pattern` matches literally via `regex::escape`, so the link is
+read and left pointing at a title nothing owns — and the rename reports success. **Not a
+PJ-249 regression**: the old walk used the same regex and missed it identically. Fixing it
+changes which links get rewritten on disk, so it is surfaced rather than slipped into a build
+under test. Same for the 25 pre-existing whole-app findings, including the rename/move/create
+tails resolving their library through the FEDERATED list (the Ctrl+N family).
+
+## §6h — instrument the freshness net (Boss-directed)
+
+### The §6f/§6g Boss test: the fix worked, and the bottleneck moved
+
+| | before | after |
+|---|---|---|
+| `seek-query` | 2,579 ms | **62 ms** |
+| boot warm | 674 / 815 ms | 17 / 102 ms |
+| **total rename** | 2,878 ms | **1,673 ms** |
+
+`[target_base_backfill] completed: 0 rows updated` — the re-arm found nothing dirty, exactly
+as designed: the DATA was always right, only the index shape and the statistic were wrong.
+The Boss waited 2¾ minutes (rename at 1786385872, boot repair at 1786385666), so none of
+this is the fallback window.
+
+**1,673 ms is not a pass by the criterion I gave him**, and it is recorded as a fail.
+Of it, **1,442 ms is the freshness net** — `index-seek-and-freshness-map-done at 159 ms` →
+`freshness-net-done (1 suspects) at 1601 ms`.
+
+### The measurement I cannot explain, which is why this section is instrumentation and not a fix
+
+The same stat-walk, over the same library (`Constellation PKM` — verified from the
+`[rename-tail] START` lines of every run, all six are in it):
+
+| session | suspects | net |
+|---|---|---|
+| 1786375983 (first rename of that session) | 0 | **49 ms** |
+| 1786385872 (first rename of this session) | 1 | **1,442 ms** |
+
+29× apart. `t_phase` fires immediately after `collect_fresh_suspects` returns, so nothing
+downstream is inside the mark; and a suspect costs a `PathBuf` push. **The only logged
+difference cannot be the cause, and I do not know what is.**
+
+I blamed this same net on suspicion earlier tonight and it was 34 ms. So: no fix, no
+theory — the split that will name it.
+
+### What was added
+
+`NetStats` counts what the walk did and times the only two syscall families it spends in:
+
+```
+freshness-net-done (N suspects) [D dirs, M .md (u unknown, d drifted) | read_dir X ms | metadata Y ms]
+```
+
+That separates *walked more* (counts) from *walked slower*, and a cold directory cache
+(`read_dir`) from slow per-file stats (`metadata`) — the three candidate explanations.
+
+Incidental, and an improvement rather than a cost: timing the enumeration required draining
+each directory's entries before recursing, so the directory handle now **closes before
+descending** instead of being held open down the whole depth of the tree.
+
+Suite 1,442 passing.

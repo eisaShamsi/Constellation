@@ -622,7 +622,7 @@ speedup.
 over IPC): a boot-shaped refresh used as an incremental update. Shared with the universe-switch and
 index-repair paths, so scoping it is a design decision, not a mechanical fix. Filed.
 
-### The lesson this arc paid for — LL-037
+### The lesson this arc paid for — LL-043
 
 Four defects in one session shared one cause: **I read a comment instead of the code beneath it.**
 `"index_note uses DELETE+INSERT"`, `"this AU path is rare"`, `"the cascade now walks every library"`,

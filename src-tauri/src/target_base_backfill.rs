@@ -30,7 +30,15 @@ use tauri::Manager;
 use crate::search::SearchState;
 
 /// Bump to force a one-time re-fold on existing DBs (e.g. if `target_base_of` changes).
-pub(crate) const SCHEMA_VERSION: i64 = 1;
+///
+/// **2 (§6f)** — not a fold change; a re-run to repair what version 1 LEFT BEHIND. Filling
+/// 31,367 rows turned `target_base` from uniform-NULL into a column with ~3.8 rows per
+/// value, and said nothing to the query planner: `sqlite_stat1` kept reporting the
+/// pre-fill cardinality, so every plan on the column was chosen from a number the
+/// back-fill itself had made false. Re-arming is how an already-stamped universe reaches
+/// `widen_seek_index` + `analyze_note_links` — on the background thread, once, finding
+/// zero dirty rows on the way through.
+pub(crate) const SCHEMA_VERSION: i64 = 2;
 
 const BATCH: usize = 500;
 
@@ -93,6 +101,9 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
         needs_run(conn)
     };
     if decision == Needs::No {
+        // PJ-249 §6e — nothing to back-fill, but the cascade's read path is still COLD.
+        // Warm it here, on a background thread, instead of on the user's first rename.
+        warm_seek_path(app.clone());
         return;
     }
     let app_bg = app.clone();
@@ -108,7 +119,123 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
             Ok(n) => diag(&app_bg, &format!("[target_base_backfill] completed: {} rows updated", n)),
             Err(e) => diag(&app_bg, &format!("[target_base_backfill] FAILED (non-fatal): {}", e)),
         }
+        // Same reason as the stamped path above — and here it matters more, because the
+        // back-fill just rewrote every row of the index the cascade is about to seek.
+        warm_seek_path(app_bg.clone());
     });
+}
+
+/// PJ-249 §6e — pay the cascade's cold-start cost at boot, on a background thread.
+///
+/// MEASURED on the Boss's universe, two renames 30 s apart on identical data:
+/// **2,606 ms then 17 ms** for the same candidate lookup. Nothing about the second rename
+/// is cheaper — the first one was paying for FIRST USE of the read-only connection this
+/// session: SQLite parses the schema on that connection's first statement (this schema
+/// carries a lot of trigger DDL), then faults in the `note_links` index pages, off a USB
+/// mechanical disk. A user's rename is the wrong place to pay for that.
+///
+/// It runs THROUGH `with_read_conn` deliberately — the same connection
+/// `cascade_candidates_via_index` uses — because warming any other one leaves that one's
+/// schema parse unpaid.
+///
+/// §6f: it calls **the cascade's own seek function**, rather than a hand-written query
+/// that resembles it. The first version did the latter and warmed the wrong pages
+/// entirely: its `COVERING INDEX` plan and the cascade's full-`SCAN` plan touched
+/// disjoint parts of the file, so the warm reported 674 ms of honest success and bought
+/// the Boss nothing. A warm-up that is not literally the thing being warmed is a guess
+/// about the query planner, and this one was wrong. The key cannot match any note (a
+/// title cannot contain NUL), so this reads index pages and returns empty.
+///
+/// Best-effort and silent on failure: it can only ever make the first rename faster.
+fn warm_seek_path(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let state = app.state::<SearchState>();
+        let t = std::time::Instant::now();
+        // §6g — `with_read_conn` holds `read_db` for the WHOLE closure (search.rs:1497).
+        // That is fine for a covering-index seek (microseconds) and unacceptable for a full
+        // table SCAN, which is what this degrades to if `widen_seek_index` failed — it is
+        // non-fatal and the pass stamps regardless. A warm-up meant to save the first rename
+        // would then block every other read at boot for seconds. So the shape is checked
+        // first, cheaply, on the same connection; a universe whose rebuild did not take skips
+        // the warm and pays the old cost on its first rename. Slow and correct beats fast and
+        // blocking. (Surfaced by the safety sweep, against code written the same evening.)
+        let warmed = crate::search::with_read_conn(state.inner(), |conn| {
+            let covering: bool = conn
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM pragma_index_info('idx_link_target_base') \
+                     WHERE seqno = 1)",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap_or(false);
+            if !covering {
+                return Ok(false);
+            }
+            crate::libraries::cascade_candidates_via_index(conn, "\u{0}pj249-warm-no-such-title");
+            Ok(true)
+        });
+        diag(
+            &app,
+            &match warmed {
+                Ok(true) => format!(
+                    "[target_base_backfill] seek path warmed in {} ms",
+                    t.elapsed().as_millis()
+                ),
+                Ok(false) => "[target_base_backfill] seek warm SKIPPED: idx_link_target_base is \
+                              not covering (the rebuild did not take) — the first rename will \
+                              pay the full-scan cost"
+                    .to_string(),
+                Err(e) => format!("[target_base_backfill] seek warm unavailable: {}", e),
+            },
+        );
+    });
+}
+
+/// PJ-249 §6f — give an EXISTING universe the covering index shape.
+///
+/// `CREATE INDEX IF NOT EXISTS` cannot do this: the name already exists, so it is a silent
+/// no-op and every universe that booted the §1 build would keep the narrow index forever.
+/// The shape has to be detected and the index rebuilt. `pragma_index_info` lists one row
+/// per indexed column; a second row (`seqno = 1`) means `source_path` is already aboard.
+///
+/// Non-fatal by design: this makes the seek fast, never correct. A universe where the
+/// rebuild fails keeps the narrow index and the old plan — slow, and right.
+/// MEASURED: 118 ms to rebuild across 31,368 rows.
+///
+/// §6g — the drop-and-rebuild lives in `search::ensure_index_shape`, shared with
+/// `link_boot_index`, because the same trap was found on two indexes within one hour and
+/// a second hand-rolled copy is how it becomes a third.
+fn widen_seek_index(conn: &Connection) {
+    let expected = ["target_base".to_string(), "source_path".to_string()];
+    if let Err(e) = crate::search::ensure_index_shape(
+        conn,
+        "idx_link_target_base",
+        &expected,
+        "CREATE INDEX IF NOT EXISTS idx_link_target_base ON note_links(target_base, source_path);",
+    ) {
+        eprintln!("[target_base_backfill] widen idx_link_target_base failed (non-fatal): {}", e);
+    }
+}
+
+/// PJ-249 §6f — tell the query planner what this back-fill just did to the data.
+///
+/// A back-fill's whole job is to change a column from uniform to diverse, and that is
+/// precisely the change `sqlite_stat1` cannot notice: it keeps reporting the cardinality
+/// measured before the fill, and every plan for every query on that column is chosen from
+/// the stale number. Here it bought a full table scan on each cold rename.
+///
+/// `widen_seek_index` already makes the CASCADE immune to that. This runs anyway, because
+/// the column is now indexed and readable by anything, and leaving a knowingly-false
+/// statistic in the database is a trap set for the next query written against it.
+///
+/// Scoped to `note_links` deliberately — a bare `ANALYZE` re-measures every table in a
+/// 327 MB database to fix one. Non-fatal: statistics are an optimisation, and a universe
+/// that cannot write them still answers every query correctly.
+/// MEASURED: 89 ms.
+fn analyze_note_links(conn: &Connection) {
+    if let Err(e) = conn.execute_batch("ANALYZE note_links;") {
+        eprintln!("[target_base_backfill] ANALYZE note_links failed (non-fatal): {}", e);
+    }
 }
 
 /// The whole pass on a dedicated connection. Kept separate from `run_on` only by the
@@ -176,6 +303,11 @@ pub(crate) fn run_on(conn: &mut Connection) -> Result<usize, String> {
         tx.commit().map_err(|e| format!("commit: {}", e))?;
     }
 
+    // §6f — the column is now correct; make it USABLE. Both are non-fatal and both run
+    // before the stamp, so a universe that fails them re-arms next boot and tries again.
+    widen_seek_index(conn);
+    analyze_note_links(conn);
+
     conn.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
          VALUES ('target_base', ?1, strftime('%s','now'))",
@@ -183,6 +315,173 @@ pub(crate) fn run_on(conn: &mut Connection) -> Result<usize, String> {
     )
     .map_err(|e| format!("stamp: {}", e))?;
     Ok(updated)
+}
+
+#[cfg(test)]
+mod tests_pj249_6f_seek_plan {
+    //! §6f — the cascade seek must be answered FROM THE INDEX, and must stay that way even
+    //! when `sqlite_stat1` lies about the column.
+    //!
+    //! This is the test the migration was missing. Every §1–§4 test asserted the right
+    //! `target_base` VALUES, and every one of them passed on a build whose seek full-scanned
+    //! 31,368 rows per rename: the data was never wrong, the PLAN was. A correctness test
+    //! cannot see a plan, so it has to be read directly.
+    use super::*;
+
+    /// The cascade's query, verbatim from `libraries::cascade_candidates_via_index`. If that
+    /// query is ever reworded, this constant must follow it — a plan pinned to a query the
+    /// app no longer runs is worse than no pin at all.
+    const SEEK: &str = "SELECT DISTINCT source_path FROM note_links WHERE target_base = ?1";
+
+    fn plan(conn: &Connection, sql: &str) -> String {
+        let mut stmt = conn.prepare(&format!("EXPLAIN QUERY PLAN {}", sql)).unwrap();
+        let rows = stmt
+            .query_map(["zzz-no-such-note"], |r| r.get::<_, String>(3))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect::<Vec<_>>();
+        rows.join(" / ")
+    }
+
+    /// `note_links` with enough of the real shape to plan against, plus the sibling index
+    /// the planner actually chose in the field (`idx_link_source`) — without it there is no
+    /// alternative to reject and the test proves nothing.
+    fn corpus(widened: bool) -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_path TEXT NOT NULL,
+                target_name TEXT NOT NULL,
+                link_type TEXT NOT NULL DEFAULT 'relates',
+                target_base TEXT
+             );
+             CREATE INDEX idx_link_source ON note_links(source_path);",
+        )
+        .unwrap();
+        conn.execute_batch(if widened {
+            "CREATE INDEX idx_link_target_base ON note_links(target_base, source_path);"
+        } else {
+            "CREATE INDEX idx_link_target_base ON note_links(target_base);"
+        })
+        .unwrap();
+        {
+            let tx = conn.unchecked_transaction().unwrap();
+            for i in 0..2000 {
+                tx.execute(
+                    "INSERT INTO note_links (source_path, target_name, target_base)
+                     VALUES (?1, ?2, ?2)",
+                    params![format!("/n/{}.md", i), format!("t{}", i % 500)],
+                )
+                .unwrap();
+            }
+            tx.commit().unwrap();
+        }
+        conn
+    }
+
+    /// THE REGRESSION. `sqlite_stat1` is written to say what it said on the Boss's live DB:
+    /// one distinct `target_base` across every row — the truth as of before the back-fill,
+    /// and a lie afterwards. The narrow index loses to it; the covering index must not.
+    fn poison_stats(conn: &Connection) {
+        conn.execute_batch(
+            "ANALYZE;
+             DELETE FROM sqlite_stat1 WHERE idx = 'idx_link_target_base';
+             INSERT INTO sqlite_stat1 (tbl, idx, stat)
+                VALUES ('note_links', 'idx_link_target_base', '2000 2000');
+             ANALYZE sqlite_master;",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn narrow_index_loses_to_a_stale_statistic() {
+        // Not an aspiration — a record of the shipped defect, so the fix is provably a fix
+        // and not a coincidence. If this ever stops full-scanning, the premise changed.
+        let conn = corpus(false);
+        poison_stats(&conn);
+        let p = plan(&conn, SEEK);
+        assert!(
+            !p.contains("idx_link_target_base"),
+            "premise check: the narrow index was expected to be REJECTED under the stale              stat (that is the bug §6f fixes); planner said: {}",
+            p
+        );
+    }
+
+    #[test]
+    fn covering_index_wins_despite_a_stale_statistic() {
+        let conn = corpus(true);
+        poison_stats(&conn);
+        let p = plan(&conn, SEEK);
+        assert!(
+            p.contains("COVERING INDEX idx_link_target_base"),
+            "the seek must be answered from the covering index even when sqlite_stat1              claims the column has one distinct value; planner said: {}",
+            p
+        );
+    }
+
+    #[test]
+    fn covering_index_wins_with_no_statistics_at_all() {
+        // A fresh universe has never run ANALYZE. The plan must not depend on that.
+        let conn = corpus(true);
+        let p = plan(&conn, SEEK);
+        assert!(
+            p.contains("COVERING INDEX idx_link_target_base"),
+            "planner said: {}",
+            p
+        );
+    }
+
+    #[test]
+    fn widen_seek_index_rebuilds_a_narrow_index_and_is_idempotent() {
+        let conn = corpus(false);
+        let cols = |c: &Connection| -> i64 {
+            c.query_row(
+                "SELECT COUNT(*) FROM pragma_index_info('idx_link_target_base')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        assert_eq!(cols(&conn), 1, "starts narrow");
+        widen_seek_index(&conn);
+        assert_eq!(cols(&conn), 2, "widened to (target_base, source_path)");
+        widen_seek_index(&conn); // second boot: must not churn
+        assert_eq!(cols(&conn), 2, "idempotent");
+        // and the rows survived the rebuild
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM note_links", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            2000
+        );
+    }
+
+    #[test]
+    fn a_run_leaves_the_planner_told_and_the_index_covering() {
+        // The end-to-end claim: after the pass, a stale-stat universe seeks the index.
+        let mut conn = corpus(false);
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);",
+        )
+        .unwrap();
+        poison_stats(&conn);
+        run_on(&mut conn).unwrap();
+        assert!(is_stamped(&conn), "stamped at the new version");
+        let p = plan(&conn, SEEK);
+        assert!(
+            p.contains("COVERING INDEX idx_link_target_base"),
+            "planner said: {}",
+            p
+        );
+        let stat: String = conn
+            .query_row(
+                "SELECT stat FROM sqlite_stat1 WHERE idx = 'idx_link_target_base'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_ne!(stat, "2000 2000", "ANALYZE must have replaced the poisoned stat");
+    }
 }
 
 fn diag(app: &tauri::AppHandle, msg: &str) {

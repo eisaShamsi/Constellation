@@ -1897,18 +1897,73 @@ fn ensure_note_links_target_name_lower(conn: &Connection) -> rusqlite::Result<()
 /// `UNIQUE(source_path, target_name, link_type)` stays the sole identity), and plain —
 /// not VIRTUAL like its neighbour above, because its fold (`target_base_of`) is Rust
 /// (`fold_match_key` is full-Unicode NFC), not expressible in a SQLite expression.
+/// PJ-249 §6g — create an index, REBUILDING it when its column list has drifted.
+///
+/// `CREATE INDEX IF NOT EXISTS` keys on the NAME alone. Change the column list in a later
+/// build and the statement is a silent no-op on every database that already has the name:
+/// the shape ships to new users and never reaches existing ones, and nothing anywhere
+/// notices. PJ-249 found this twice in one evening — `idx_link_target_base` (§6f) and
+/// `idx_link_boot` (§6g, whose module even documents a "bump to force a rebuild" that
+/// could not work, because there was no DROP behind the bump).
+///
+/// `pragma_index_info` yields one row per indexed column in `seqno` order, so the CURRENT
+/// shape is read rather than assumed. An index that does not exist yet reads as empty and
+/// is simply created. Callers pass the expected columns and the creating SQL; drift is
+/// repaired by dropping first.
+///
+/// **Call this from BACKGROUND work, not from `init_db`.** Rebuilding a 31k-row index was
+/// measured at 118–232 ms on an SSD and belongs nowhere near the boot path; the boot-path
+/// ensures deliberately use a plain `CREATE IF NOT EXISTS` and leave repair to the
+/// back-fill that owns the column.
+pub(crate) fn ensure_index_shape(
+    conn: &Connection,
+    name: &str,
+    expected: &[String],
+    create_sql: &str,
+) -> rusqlite::Result<()> {
+    let current: Vec<String> = {
+        let mut stmt = conn.prepare("SELECT name FROM pragma_index_info(?1) ORDER BY seqno")?;
+        let rows = stmt.query_map([name], |r| r.get::<_, String>(0))?;
+        rows.collect::<rusqlite::Result<Vec<String>>>()?
+    };
+    if !current.is_empty() && current != expected {
+        conn.execute_batch(&format!("DROP INDEX IF EXISTS {};", name))?;
+    }
+    conn.execute_batch(create_sql)?;
+    Ok(())
+}
+
 fn ensure_note_links_target_base(conn: &Connection) -> rusqlite::Result<()> {
     // /simplify (reuse) — `column_exists`, the same helper every PLAIN-column ensure uses.
     // The first version hand-rolled a table_xinfo probe with a comment claiming "same
     // idempotency reasoning as the sibling above" — false: the sibling's xinfo reasoning
     // is specifically that table_info HIDES VIRTUAL generated columns, and target_base is
     // a plain column, fully visible to table_info. A cargo-culted justification is the
-    // LL-037 comment class, caught in the same migration that wrote it.
+    // LL-043 comment class, caught in the same migration that wrote it.
     if !column_exists(conn, "note_links", "target_base")? {
         conn.execute_batch("ALTER TABLE note_links ADD COLUMN target_base TEXT;")?;
     }
+    // §6f — `source_path` rides in the index, because the cascade's actual query is
+    //     SELECT DISTINCT source_path FROM note_links WHERE target_base = ?
+    // and a COVERING index answers it without touching the table. That is not a micro-
+    // optimisation; it is what makes the seek INDEPENDENT OF THE PLANNER'S STATISTICS.
+    //
+    // With the narrow index shipped by §1, SQLite consulted sqlite_stat1, was told that
+    // target_base held ONE distinct value across all 31,367 rows — true when that stat was
+    // collected, because the column was entirely NULL until §4's back-fill filled it, and
+    // nothing re-collected it afterwards — concluded the index selected every row, and
+    // full-scanned. On the Boss's USB disk that scan was 2,579 ms per cold rename, on a
+    // path §1 built precisely to make instant. A covering index that satisfies the whole
+    // query is chosen structurally, so a stale statistic cannot resurrect the scan:
+    // VERIFIED on a copy of his live DB with sqlite_stat1 DELETED — still COVERING, 0.006 ms.
+    //
+    // Only fresh universes are served here (empty table, instant). An existing universe
+    // already owns this index NAME with the narrow shape, and `IF NOT EXISTS` is a silent
+    // no-op against a name that exists — the rebuild for those is `widen_seek_index`, in
+    // the back-fill, on a background thread, because rebuilding a 31k-row index belongs
+    // nowhere near the boot path.
     conn.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_link_target_base ON note_links(target_base);",
+        "CREATE INDEX IF NOT EXISTS idx_link_target_base ON note_links(target_base, source_path);",
     )?;
     Ok(())
 }
