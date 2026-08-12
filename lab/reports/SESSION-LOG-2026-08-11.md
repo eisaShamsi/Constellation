@@ -333,3 +333,55 @@ to do that."* Filed **PJ-276** — deliberate cross-universe move with full both
 bookkeeping — as the migration's headline requirement. The goal is no longer "seal the
 boundary"; it is "seal the SILENT crossings, and build a proper door." PJ-270's defect framing
 is subsumed into PJ-276's correctness case. Ledger v1.82 carries the ruling verbatim.
+
+---
+
+## BOSS RULING (2026-08-12) — FULL CROSS-UNIVERSE OPERATIONS. The federation contract is REFRAMED.
+
+> "I want to be able to conduct full functions/operations between universes. You have to ask
+> yourself, why did I design Constellation to have a cUniverse(s) if I wasn't planning to have
+> full access and/or operations among them? If it is kept as-is today, just to (read) and not
+> able to (write), then why bother to include other universes (as cUniverses) in the first
+> place? That's why Constellation are unique." — Eisa, 2026-08-12
+
+This SUPERSEDES the read-only federation assumption (MIG-065 §J "a write must never be
+authorized onto a read-only cUniverse"; the "reads but never writes" phrasing in the interim
+guards). It is CONSISTENT with the Boss's own 2026-07-05 ruling "It is ONE universe" (every
+name resolver spans federated libraries) — the read-only contract was the implementation's
+assumption, never his design.
+
+**What stands:** the interim walls (commit 7921e593) remain correct until each operation is
+made safe — the defect was never the crossing, it was the SILENT crossing with broken
+bookkeeping (earned link/review data stranded in the source universe's search.db, ghost rows,
+wrong-universe attribution). PJ-276 (the move door) is subsumed into the larger goal.
+
+**The migration's goal, final form:** full cross-universe functions/operations — move, and the
+rest of the operation surface — each with correct both-sides bookkeeping. The Architect phase
+maps the operation classes, the per-universe database model, the earned-data transfer payload,
+and the design options, and must also surface which PRIOR RULINGS this direction supersedes so
+the Boss can confirm the repeals explicitly (incl. its interaction with the pending PJ-224
+search-federation ruling).
+
+---
+
+## MIG-111 — Architect phase CLOSED (2026-08-12)
+
+Allocated MIG-111 (109/110 already taken by Search-Aerial and Tabs-in-Every-View concepts).
+12-agent mapping workflow: 6 subsystem maps, 3 independent design options, 3 adversarial
+attacks — 1.8M tokens, every claim file:line-verified. Deliverables:
+
+- `docs/migrations/PJ-235-federation-boundary/MIG-111-ARCHITECT.md` — the Phase-1 document:
+  concept (Boss ruling verbatim) → territory → options+verdicts → Option A's 7 blocking
+  conditions → invariants → the prior-rulings reconciliation table → 5 Phase-2 decision points.
+- `MIG-111-ARCHITECT-EVIDENCE.md` (196 KB) — the full maps/options/attacks, durable.
+
+Verdict: **Option A (route-to-owner) recommended, viable-with-conditions.** C proved
+structurally impossible on FTS5 grounds (BM25 statistics are index-global — one universe's
+registration would change another's ranking). B carries two app-killer cross-process holes.
+
+The attack passes also surfaced that three PRE-EXISTING hazards become critical under any
+write-capable federation: link_life's process-local ledger lock, the WAL false-negative
+`is_cuniverse_open_elsewhere` probe, and federation/migrate.rs's fs::copy backup/restore.
+All scheduled as Plan conditions.
+
+**Awaiting the Boss's five Phase-2 decisions (ARCHITECT.md §6). No build until Plan approval.**
