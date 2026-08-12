@@ -6882,7 +6882,7 @@
 		return lib;
 	}
 
-	// The whole-universe folder list (all libraries + federated child universes),
+	// The whole-universe folder list (the active universe's OWN libraries only — PJ-235; linked universes are never write destinations),
 	// grouped under each library root — shared by the Move picker and the
 	// new-note-from-template destination picker. Folder enumeration is a
 	// lightweight Rust walk (list_universe_folders) so the frontend never reads
@@ -6901,24 +6901,34 @@
 			if (!byLib.has(f.library_id)) byLib.set(f.library_id, []);
 			byLib.get(f.library_id)!.push(f);
 		}
-		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean; iconKind?: 'root' | 'library' | 'cuniverse'; color?: string }[] = [];
+		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean; iconKind?: 'root' | 'library'; color?: string }[] = [];
 		// Dedupe by path: a library nested INSIDE another (e.g. a library at the
 		// universe root, where universe_notes' own path IS the root) would otherwise
 		// appear twice — once from the parent's walk, once as its own root — and a
 		// duplicate key crashes the dialog's keyed {#each}. (BUG: froze+crashed on
 		// Eisa's "New Library Test" nested under the universe root.)
 		const seen = new Set<string>();
-		for (const lib of $libraryStats) {
+		// PJ-235 — **OWN libraries only.** Both callers of this builder pick a place to WRITE:
+		// the Move picker and the New-note-from-template destination picker. It used to walk
+		// every entry in `$libraryStats` — the FEDERATED list — and push a linked cUniverse's
+		// library as a first-class destination, complete with a planet icon. Choosing one moved
+		// the note physically OUT of this universe. `move_item` now refuses such a destination
+		// outright, but a destination the user can pick and then be refused is a worse
+		// experience than one that was never offered, so this is the other half of the fix.
+		// (The Rust `list_universe_folders` was narrowed the same way; this loop is what added
+		// the library ROOTS on top of that list.) Same ruling as the Ctrl+N picker,
+		// 2026-08-10 — `ownUniverseLibraries` above is the same predicate.
+		for (const lib of $libraryStats.filter((l) => !isChildUniverseLib(l.path))) {
 			const rk = norm(lib.path);
 			if (!seen.has(rk)) {
 				seen.add(rk);
-				// Icon per kind (2026-07-25): the Universe root has no icon, a cUniverse
-				// keeps the planet, every other library shows the building mark.
-				const iconKind: 'root' | 'library' | 'cuniverse' =
-					lib.is_universe_notes ? 'root' : isChildUniverseLib(lib.path) ? 'cuniverse' : 'library';
+				// Icon per kind (2026-07-25): the Universe root has no icon, every other own
+				// library shows the building mark. The cUniverse/planet case is gone from this
+				// builder by construction — a linked universe is never a write destination.
+				const iconKind: 'root' | 'library' = lib.is_universe_notes ? 'root' : 'library';
 				// The building icon in the library's own colour (Boss 2026-07-25) — same
-				// colour the sidebar uses; cUniverse keeps the planet's indigo.
-				const color = iconKind === 'cuniverse' ? '#6366f1' : (libraryColorMap[lib.name] || 'var(--interactive-accent)');
+				// colour the sidebar uses.
+				const color = libraryColorMap[lib.name] || 'var(--interactive-accent)';
 				entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true, iconKind, color });
 			}
 			for (const f of byLib.get(lib.library_id) ?? []) {

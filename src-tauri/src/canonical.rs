@@ -715,10 +715,22 @@ pub struct CanonicalProgress {
 pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult, String> {
     use tauri::Emitter;
 
-    let libraries = crate::libraries::load_all_libraries(&app);
+    // PJ-235 — OWN libraries only: this file's three commands RENAME the user's files or
+    // revert canonicalization, and the federated resolver would reach into a LINKED
+    // universe, which Constellation reads but never writes.
+    //
+    // Call-graph, VERIFIED 2026-08-11 (an earlier revision of this comment claimed
+    // `auto_canonicalize_all` runs at startup — it does not, and the panel review caught
+    // the false claim before it entered the record): the startup path is
+    // `repair_external_libraries_on_startup` (+layout.svelte:3466, localStorage-gated —
+    // and localStorage is proven non-durable, PJ-110/PJ-103, so the gate can reset).
+    // `auto_canonicalize_all` is registered (lib.rs) but its only wrapper,
+    // `autoCanonicalize()` in importers/store.ts, currently has NO caller in src/.
+    let libraries = crate::libraries::load_libraries(&app);
     let config_path = crate::universe::active_constellation_dir(&app)
         .map(|d| d.join("file_kinds.json"))
         .ok();
+    let foreign_roots = crate::libraries::foreign_library_roots(&app, &libraries);
     let mut registry = KindRegistry::new(config_path.as_deref());
 
     let mut total = CanonicalizeResult {
@@ -748,8 +760,16 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
         let lib_path = Path::new(&lib.path);
         if !lib_path.is_dir() { continue; }
 
-        let nested = crate::libraries::nested_library_paths(&libraries, &lib.path);
-        let files = collect_files_recursive(lib_path, &nested);
+        // PJ-235 (third pass) — **the exclusion set must still know the federation.** Narrowing
+        // `libraries` to own-only (right, because this RENAMES files) also narrowed the boundary
+        // this walk stops at — so a cUniverse nested UNDER the active root stopped being a
+        // boundary and `collect_files_recursive` descended into it and renamed a LINKED
+        // universe's files. That is the same mistake made one file over in
+        // `list_universe_folders`, repeated here in the same pass and caught by the adversarial
+        // review. `walk_exclusions` carries both boundaries; a walker needs both or it is
+        // half-scoped.
+        let exclude = crate::libraries::walk_exclusions(&libraries, &lib.path, &foreign_roots);
+        let files = collect_files_recursive(lib_path, &exclude);
         total.total_files += files.len();
         for file_path in files {
             if is_canonical_filename(&file_path) { continue; }
@@ -1128,7 +1148,18 @@ pub fn de_canonicalize_library(
     }
 
     // Update library mode to compatible
-    let libraries = crate::libraries::load_all_libraries(&app);
+    // PJ-235 — OWN libraries only: this file's three commands RENAME the user's files or
+    // revert canonicalization, and the federated resolver would reach into a LINKED
+    // universe, which Constellation reads but never writes.
+    //
+    // Call-graph, VERIFIED 2026-08-11 (an earlier revision of this comment claimed
+    // `auto_canonicalize_all` runs at startup — it does not, and the panel review caught
+    // the false claim before it entered the record): the startup path is
+    // `repair_external_libraries_on_startup` (+layout.svelte:3466, localStorage-gated —
+    // and localStorage is proven non-durable, PJ-110/PJ-103, so the gate can reset).
+    // `auto_canonicalize_all` is registered (lib.rs) but its only wrapper,
+    // `autoCanonicalize()` in importers/store.ts, currently has NO caller in src/.
+    let libraries = crate::libraries::load_libraries(&app);
     if let Some(lib) = libraries.iter().find(|l| l.path == library_path) {
         let _ = crate::libraries::set_library_canonical_mode(
             app.clone(), lib.id.clone(), "compatible".to_string()
@@ -1498,15 +1529,32 @@ pub fn repair_external_libraries_on_startup(
     app: tauri::AppHandle,
 ) -> Result<Vec<String>, String> {
     let mut repaired: Vec<String> = Vec::new();
-    let libraries = crate::libraries::load_all_libraries(&app);
+    // PJ-235 — OWN libraries only: this file's three commands RENAME the user's files or
+    // revert canonicalization, and the federated resolver would reach into a LINKED
+    // universe, which Constellation reads but never writes.
+    //
+    // Call-graph, VERIFIED 2026-08-11 (an earlier revision of this comment claimed
+    // `auto_canonicalize_all` runs at startup — it does not, and the panel review caught
+    // the false claim before it entered the record): the startup path is
+    // `repair_external_libraries_on_startup` (+layout.svelte:3466, localStorage-gated —
+    // and localStorage is proven non-durable, PJ-110/PJ-103, so the gate can reset).
+    // `auto_canonicalize_all` is registered (lib.rs) but its only wrapper,
+    // `autoCanonicalize()` in importers/store.ts, currently has NO caller in src/.
+    let libraries = crate::libraries::load_libraries(&app);
     eprintln!("[CANONICAL] Checking {} libraries for canonical-format files to repair", libraries.len());
+    let probe_foreign = crate::libraries::foreign_library_roots(&app, &libraries);
     for lib in &libraries {
         let lib_path = Path::new(&lib.path);
         if !lib_path.is_dir() {
             eprintln!("[CANONICAL]   - {}: path not accessible, skipped", lib.path);
             continue;
         }
-        if !library_has_canonical_md(lib_path, &crate::libraries::nested_library_paths(&libraries, &lib.path)) {
+        // PJ-235 — same federation-aware boundary as the walk above, so a linked universe's
+        // canonical files can never trigger a revert of one of OUR libraries.
+        if !library_has_canonical_md(
+            lib_path,
+            &crate::libraries::walk_exclusions(&libraries, &lib.path, &probe_foreign),
+        ) {
             eprintln!("[CANONICAL]   - {}: no canonical-format files, clean", lib.name);
             continue;
         }

@@ -284,3 +284,52 @@ Rust **1452/0** (7 new) · vitest **941/0** · binary **14:46** · Boss-validate
   and `yaml_lines.rs` to run the pre-fix comparison, leaving them newer than the `.exe`. Verified
   the fix survived the restore (1452/0) and rebuilt before sending anything. The standing
   "verify the binary before testing" rule is what caught it.
+
+---
+
+## PJ-235 + PJ-254 — INTERIM, disposition ruled by PANEL at the Boss's direction
+
+**The Boss accepted the `/migration` request and mandated: "the inspectors and auditor choose"
+what happens to the interim diff.** Three independent reviewers, same neutral brief, no
+preference disclosed. **Verdict 2–1: COMMIT AS INTERIM**, blocking conditions attached.
+
+| reviewer | verdict | decisive point |
+|---|---|---|
+| A | Option 1 + 4 conditions | the startup rename path is HEAD's largest live hazard; reverting reinstates it |
+| B | Option 1 + 4 conditions | no walk boundary was narrowed in the final diff (proved set-equality); carrying 260 uncommitted lines through a migration is the worst option |
+| C (sceptic) | Option 2 + carve-out | seven false/contradictory comments; the guard had zero tests; two tails mislabel foreign rows |
+
+**All blocking conditions executed before commit:**
+1. Pure `require_own_library_in` + a wiring test that turns RED if the foreign-root check is
+   deleted (C's sharpest finding: the earlier tests exercised only the primitives).
+2. The FALSE comment corrected at 3 sites — `auto_canonicalize_all` does NOT run at startup
+   (no caller anywhere; the startup path is `repair_external_libraries_on_startup`). The
+   correction is dated in the comment itself.
+3. `invalidate_libraries_cache()` added to `add_child_universe` + `remove_child_universe` —
+   without it the foreign set stays empty for the whole session in which a universe is linked.
+4. Honest scope: `move_item`'s comment states the SOURCE side is unguarded; the two silent
+   `None` reindex arms now `diag_log`.
+
+**Residue filed as PJ-270…PJ-275** (ledger v1.82); PJ-235/PJ-254 marked PARTIAL, the
+`/migration` is the closer. Architect input banked:
+`docs/migrations/PJ-235-federation-boundary/ARCHITECT-INPUT-federated-write-sites.md` —
+a verified enumeration of **22 federated write sites** (21 live, 1 latent), including
+`constellation_search_reindex` trusting a frontend-supplied library name at ~20 call sites.
+
+**Tutorial pipeline: REJECTED ×2, APPROVED round 3.** Round 1's rejection was materially
+important: the auditor had concluded no reachable linked universe exists — the inspector read
+`Eisa Universe/.constellation/universe.json` and found it links BOTH other universes, making
+the headline observable demonstrable after all. Round 2 caught the planet-icon placement
+(universe row, not library rows), a label case ("New Note"), and a false "no templates"
+claim (ECK has 11).
+
+**Gates:** Rust **1456/0** · vitest **941/0** · svelte-check **0 errors** · binary **06:46**
+(the 06:05 binary was proven stale by an incremental rebuild — the freshness check earned its
+keep again). Boss test SENT; commit gated on his pass.
+
+**Boss test result (2026-08-12): Part A PASS · Part B PASS.** And at the pass, a ruling that
+reframes the migration: *"Why can't I move files to/from cUniverses? I would like to be able
+to do that."* Filed **PJ-276** — deliberate cross-universe move with full both-sides
+bookkeeping — as the migration's headline requirement. The goal is no longer "seal the
+boundary"; it is "seal the SILENT crossings, and build a proper door." PJ-270's defect framing
+is subsumed into PJ-276's correctness case. Ledger v1.82 carries the ruling verbatim.

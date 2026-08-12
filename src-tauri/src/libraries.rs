@@ -271,9 +271,86 @@ pub(crate) fn owning_own_library_name(app: &tauri::AppHandle, file_path: &str) -
     owning_own_library_name_in(&load_libraries(app), file_path)
 }
 
+/// PJ-235 / PJ-254 — **the write-scope rule, in ONE place.**
+///
+/// A path Constellation is about to WRITE to, or to index as its own, must belong to the
+/// ACTIVE universe's OWN libraries — never a federated cUniverse's. Returns the owning
+/// library name (which every caller needs anyway, for the reindex) or a refusal.
+///
+/// The rule was already written down, one screen above this, on `owning_own_library_name`:
+/// *"MUST stay on `load_libraries` … NEVER `load_all_libraries` — because every caller feeds
+/// a write or a reindex."* It was stated and then not enforced: `move_item` authorised BOTH
+/// ends through `validate_path_in_any_library` (the federated resolver), so a note could be
+/// physically moved OUT of the user's universe and into a linked one, and four write tails
+/// resolved their reindex library through `load_all_libraries`, so touching a linked
+/// universe's note filed it into THIS universe's index. Neither is recoverable by the boot
+/// reconcile: it skips every row under no owned root and counts it as `foreign_rows`.
+///
+/// The distinction in one line, and it is the same one the Ctrl+N picker fix landed on
+/// 2026-08-10: **a universe-wide list is right for RESOLVING a name and wrong for CHOOSING
+/// where to write.**
+///
+/// Fail-CLOSED on an unreadable own registry, exactly like `guard_no_foreign_library_under`
+/// — if we cannot tell which libraries are ours, we cannot promise the write stays home.
+pub(crate) fn require_own_library(app: &tauri::AppHandle, path: &str) -> Result<String, String> {
+    let own = try_load_libraries(app).map_err(|e| {
+        format!(
+            "This cannot be done right now: the library registry could not be read ({e}), so \
+             Constellation cannot tell whether the destination belongs to this universe. \
+             Nothing was changed."
+        )
+    })?;
+    let foreign = foreign_library_roots(app, &own);
+    require_own_library_in(&own, &foreign, path)
+}
+
+/// The decision itself, free of `AppHandle` so the wiring test drives THIS function — not a
+/// re-implementation that would keep passing after this one changed (the `try_load_libraries_at`
+/// pattern; the panel review found the first version's tests exercised only the primitives, so
+/// deleting the foreign check left the whole suite green).
+///
+/// **The prefix match alone is not enough, and the safety inspection proved it against this
+/// very function.** `universe_notes` is registered with `path == the Universe root`, and a
+/// linked cUniverse may be nested UNDER that root. So `E:/U/Linked/Their Lib/note.md` starts
+/// with the own root `E:/U/` and the prefix resolver happily returns `universe_notes` — the
+/// guard admitting the exact case it was written to refuse. The foreign-root set is the second
+/// boundary; `walk_exclusions`' own doc says it plainly — *a walker needs both or it is
+/// half-scoped* — and so does a guard.
+///
+/// KNOWN LIMITS (panel-reviewed, filed as migration scope — not silently absorbed): `foreign`
+/// is best-effort (an unreadable CHILD registry yields an empty set, and this fn cannot tell),
+/// and it holds foreign LIBRARY roots, not cUniverse roots, so a linked universe with no
+/// library registered at its root is invisible to it.
+pub(crate) fn require_own_library_in(
+    own: &[LibraryInfo],
+    foreign: &std::collections::HashSet<String>,
+    path: &str,
+) -> Result<String, String> {
+    if path_is_under_any(path, foreign) {
+        return Err(String::from(
+            "That destination is inside a LINKED universe, which Constellation reads but never \
+             writes. Moving a note there would take it out of this universe altogether, and \
+             unlinking that universe later would take the note with it. Open that universe and \
+             do it there. Nothing was changed.",
+        ));
+    }
+    owning_own_library_name_in(own, path).ok_or_else(|| {
+        String::from(
+            "That destination is not inside this universe. It belongs to a LINKED universe, \
+             which Constellation reads but never writes — moving a note there would take it \
+             out of this universe altogether, and unlinking that universe later would take \
+             the note with it. Open that universe and do it there. Nothing was changed.",
+        )
+    })
+}
+
 /// The decision itself, free of `AppHandle` so it can be tested directly
 /// (the `try_load_libraries_at` pattern).
-fn owning_own_library_name_in(libs: &[LibraryInfo], file_path: &str) -> Option<String> {
+///
+/// PJ-235 — `pub(crate)` so the write tails can resolve MANY paths against ONE registry load
+/// (a folder move touches every descendant; calling the `AppHandle` form per note would
+/// re-read the registry per note).
+pub(crate) fn owning_own_library_name_in(libs: &[LibraryInfo], file_path: &str) -> Option<String> {
     // Reject `..` outright (universe.rs template-folder precedent): the resolver
     // is purely lexical — a ParentDir component would make the prefix check lie.
     if Path::new(file_path)
@@ -1356,7 +1433,9 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         // suppresses the watcher, and boot reconcile is mtime-gated). `library_name_for_path`
         // is the canonical longest-root-wins resolver, and its `under` bound sits at a
         // separator so `…/Research` never steals `…/Research Notes`.
-        match library_name_for_path(&load_all_libraries(&app), &ps) {
+        // PJ-254 — OWN libraries only. This feeds a reindex, and `load_all_libraries` (the
+        // federated resolver) would file a linked universe's note into THIS universe's index.
+        match owning_own_library_name(&app, &ps) {
             Some(lib_name) => {
                 if let Err(e) = crate::search::reindex_single_note(&search_state, &ps, &lib_name) {
                     if let Ok(p) = crate::search::db_path(&app) {
@@ -1796,15 +1875,16 @@ fn rename_item_db_tail(
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        let libs = load_all_libraries(app);
-        // Canonical longest-root-wins resolver — see the note at create_note's reindex.
-        if let Some(lib_name) = library_name_for_path(&libs, new_path) {
+        // PJ-254 — OWN libraries only (this feeds a reindex).
+        if let Some(lib_name) = owning_own_library_name(app, new_path) {
             match crate::search::reindex_single_note(&search_state, new_path, &lib_name) {
                 Ok(_) => log(&format!("[rename-tail] reindex OK for {} (lib {})", new_path, lib_name)),
                 Err(e) => log(&format!("[rename-tail] reindex ERROR: {}", e)),
             }
         } else {
-            log(&format!("[rename-tail] NO LIBRARY matched new_path={} — reindex SKIPPED", new_path));
+            // PJ-254 (panel) — the None arm is a fact worth a line: a path no own library
+            // claims was renamed, and its reindex was skipped. Matches create_note's convention.
+            log(&format!("[rename-tail] reindex SKIPPED — no own library for {}", new_path));
         }
     }
     log("[rename-tail] END");
@@ -1827,7 +1907,8 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
     let old = Path::new(old_path);
     let new_p = Path::new(new_path);
     let search_state = app.state::<crate::search::SearchState>();
-    let libs = load_all_libraries(app);
+    // PJ-254 — OWN libraries only (this feeds a reindex), loaded ONCE for every descendant.
+    let libs = load_libraries(app);
     let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
     collect_md_paths(new_p, &mut md_paths);
     log(&format!(
@@ -2553,12 +2634,14 @@ pub fn resolve_structural_conflict(
     {
         use tauri::Manager;
         let search_state = app.state::<crate::search::SearchState>();
-        let libs = load_all_libraries(&app);
-        // Canonical longest-root-wins resolver — see the note at create_note's reindex.
-        // This is the rename wikilink-cascade tail: first-match stamped the universe-root
-        // library onto EVERY cascade-rewritten referrer living in a nested sub-library.
-        if let Some(lib_name) = library_name_for_path(&libs, &note_path) {
+        // PJ-254 — OWN libraries only (this feeds a reindex). This is the rename
+        // wikilink-cascade tail: first-match stamped the universe-root library onto EVERY
+        // cascade-rewritten referrer living in a nested sub-library.
+        if let Some(lib_name) = owning_own_library_name(&app, &note_path) {
             let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib_name);
+        } else if let Ok(p) = crate::search::db_path(&app) {
+            // PJ-254 (panel) — same convention: a skipped reindex is logged, never silent.
+            crate::search::diag_log(&p, &format!("[cascade-tail] reindex SKIPPED — no own library for {}", note_path));
         }
     }
     {
@@ -2576,6 +2659,18 @@ pub fn resolve_structural_conflict(
 pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &source_path)?;
     validate_path_in_any_library(&app, &target_folder)?;
+    // PJ-235 — `validate_path_in_any_library` resolves the FEDERATED set, so it authorises a
+    // destination inside a LINKED universe. That is right for reading and wrong for writing:
+    // the note physically leaves this universe, this universe's index keeps a row for a file
+    // it does not own, and unlinking that universe later takes the note with it while the
+    // stale row keeps serving its text in search.
+    //
+    // HONEST SCOPE (panel-reviewed): this guards the DESTINATION only. The SOURCE is guarded
+    // by `guard_no_foreign_library_under` below, but that is a NARROWER predicate — it refuses
+    // only a source that IS or CONTAINS a registered foreign library. A plain note or folder
+    // moved OUT of a linked universe into this one still passes both guards; that residue is
+    // filed (PJ-270 family) and is migration scope, not this commit's claim.
+    require_own_library(&app, &target_folder)?;
     // 2026-08-01 inspection — the DB tail below is guarded by `if let Some(conn)`
     // and silently skips while state.db is still None (the cold-boot init window):
     // the fs move would succeed while every index row stays at the dead old path
@@ -2610,7 +2705,7 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     // 2026-08-01 inspection — carry any registered library nested under the moved
     // folder (or being it) to its new path in libraries.json (the same concern as
     // rename_item's folder branch; see retarget_registered_libraries). Runs before
-    // the detached tail so its load_all_libraries sees the NEW registry paths.
+    // the detached tail so its own-library load sees the NEW registry paths.
     if source_is_dir {
         retarget_registered_libraries(&app, &source_path, Some(&dest_str));
     }
@@ -2642,7 +2737,8 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
 fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) {
     use tauri::Manager;
     let search_state = app.state::<crate::search::SearchState>();
-    let libs = load_all_libraries(app);
+    // PJ-254 — OWN libraries only (this feeds a reindex), loaded ONCE for every descendant.
+    let libs = load_libraries(app);
     let source = Path::new(source_path);
     let dest = Path::new(dest_str);
     // Build the (old → new) path pairs for every note the move touched.
@@ -2749,7 +2845,18 @@ pub struct UniverseFolder {
 // dispatch thread for its whole duration: opening "Move to…" froze the entire window.
 #[tauri::command(async)]
 pub fn list_universe_folders(app: tauri::AppHandle) -> Result<Vec<UniverseFolder>, String> {
-    let libs = load_all_libraries(&app);
+    // PJ-235 — this list is the **Move picker's destinations**, i.e. a place to WRITE, so it
+    // is the active universe's OWN libraries only. Built from `load_all_libraries`, it offered
+    // a linked cUniverse's libraries as first-class destinations (the frontend even gave them
+    // a planet icon), and `move_item` then authorised the pick because `validate_path_in_any_library`
+    // resolves the same federated set — so the note left the universe. `move_item` now refuses
+    // such a destination outright (`require_own_library`); not OFFERING it is the other half,
+    // so the user never meets a destination that will be rejected. Exactly the ruling the
+    // Ctrl+N picker took on 2026-08-10: a universe-wide list is right for RESOLVING a name and
+    // wrong for CHOOSING where to write. Consumed by `buildUniverseFolderEntries`, which feeds
+    // BOTH the Move picker AND the new-note-from-template destination picker.
+    let libs = load_libraries(&app);
+    let foreign = foreign_library_roots(&app, &libs);
     let mut out: Vec<UniverseFolder> = Vec::new();
     for lib in &libs {
         // 2026-07-25 (Boss-found): the Move picker walked each library WITHOUT stopping
@@ -2760,8 +2867,20 @@ pub fn list_universe_folders(app: tauri::AppHandle) -> Result<Vec<UniverseFolder
         // INTO it. Exclude subdirectories that are themselves registered libraries, so
         // each library is walked once under its OWN identity — the SAME rule
         // read_library_tree uses for the sidebar, keeping the two views consistent.
-        let nested = nested_library_paths(&libs, &lib.path);
-        collect_folders(Path::new(&lib.path), &lib.id, &lib.name, 1, &nested, &mut out);
+        // PJ-235 (second pass) — **the exclusion set must still know the federation.** Narrowing
+        // the ROOTS to own libraries is right; deriving the walk boundary from that same narrowed
+        // list was not, and the safety inspection caught it: a linked universe nested under the
+        // active root stopped being a boundary, so `collect_folders` descended into it and
+        // emitted its folders as ordinary folders of the ACTIVE root library — the linked
+        // universe's contents made INDISTINGUISHABLE from the user's own, which is strictly worse
+        // than the planet-icon library root it used to appear as.
+        //
+        // `walk_exclusions` is the function for exactly this pair of boundaries (nested OWN
+        // library + linked-universe root); its own doc says a walker needs both or it is
+        // half-scoped. `read_library_tree` keeps the sidebar on the same rule, which is what the
+        // comment above promises.
+        let exclude = walk_exclusions(&libs, &lib.path, &foreign);
+        collect_folders(Path::new(&lib.path), &lib.id, &lib.name, 1, &exclude, &mut out);
     }
     Ok(out)
 }
@@ -6913,10 +7032,13 @@ pub fn update_links_on_rename(
             // NESTED registered library must reindex under ITS OWN library, not
             // the renamed note's. Longest-root-wins; the caller's library_name
             // stays as the fallback so a resolver miss never skips the reindex.
-            let libs = load_all_libraries(&reindex_app);
+            // PJ-254 — OWN libraries only (this feeds a reindex), loaded ONCE for every
+            // cascade-rewritten referrer.
+            let libs = load_libraries(&reindex_app);
             let (mut ok, mut failed) = (0usize, 0usize);
             for path in &reindex_paths {
-                let lib = library_name_for_path(&libs, path).unwrap_or_else(|| reindex_lib.clone());
+                let lib = owning_own_library_name_in(&libs, path)
+                    .unwrap_or_else(|| reindex_lib.clone());
                 match crate::search::reindex_single_note(&search_state, path, &lib) {
                     Ok(_) => ok += 1,
                     Err(e) => {
@@ -9395,6 +9517,134 @@ mod tests_owning_own_library_name {
             is_universe_notes: false,
             canonical_mode: "native".to_string(),
         }
+    }
+
+    /// PJ-235 / PJ-254 — **the write-scope rule.** A path inside a LINKED universe must not
+    /// resolve to an own library, so no write tail can index it and no destination guard can
+    /// admit it.
+    ///
+    /// The defect this pins: `move_item` authorised its destination with
+    /// `validate_path_in_any_library` (the FEDERATED resolver), and four write tails resolved
+    /// their reindex library through `load_all_libraries`. A note could be physically moved
+    /// OUT of the universe into a linked one, and this universe's index kept a row for a file
+    /// it did not own — a row the boot reconcile skips as `foreign_rows` and can never heal.
+    #[test]
+    fn pj235_a_linked_universes_path_is_never_an_own_library() {
+        // `libs` here is what `load_libraries` returns — the ACTIVE universe's own set. The
+        // linked universe's libraries are absent from it by construction, which is the whole
+        // point: resolving against this list cannot admit a foreign path.
+        let own = vec![lib("Root", "E:/U"), lib("Nested", "E:/U/Nested Lib")];
+        assert_eq!(
+            owning_own_library_name_in(&own, "E:/LinkedUniverse/Their Lib/note.md"),
+            None,
+            "a linked universe's note must not resolve to one of OUR libraries"
+        );
+        // The sibling-prefix trap: a foreign root that merely starts with our root's text.
+        assert_eq!(
+            owning_own_library_name_in(&own, "E:/U-Other/note.md"),
+            None,
+            "a separator-bounded prefix must not admit a different universe"
+        );
+        // And our own paths still resolve — the guard must not over-refuse.
+        assert_eq!(owning_own_library_name_in(&own, "E:/U/note.md").as_deref(), Some("Root"));
+        assert_eq!(
+            owning_own_library_name_in(&own, "E:/U/Nested Lib/note.md").as_deref(),
+            Some("Nested")
+        );
+    }
+
+    /// PJ-235, second pass — **THE SHAPE THAT MATTERS, and the one my first test missed.**
+    ///
+    /// My first version put the linked universe OUTSIDE the active root (`E:/LinkedUniverse`),
+    /// where the prefix match refuses it for free — so it passed while the guard was still
+    /// broken. The safety inspection found the real case: `universe_notes` is registered with
+    /// `path == the Universe root`, and a cUniverse may be linked at a directory NESTED UNDER
+    /// that root. Then `E:/U/Linked/Their Lib/note.md` starts with the own root `E:/U/`, the
+    /// prefix resolver returns `universe_notes`, and the guard admits the very case it exists
+    /// to refuse.
+    ///
+    /// This asserts the second boundary — the foreign-root set — which is what actually does
+    /// the refusing. A test that only proves the easy shape is worse than no test: it reports
+    /// safety that is not there.
+    #[test]
+    fn pj235_a_cuniverse_nested_under_the_active_root_is_still_foreign() {
+        use std::collections::HashSet;
+        let own = vec![lib("universe_notes", "E:/U")]; // the root IS a library
+        let all = vec![
+            lib("universe_notes", "E:/U"),
+            lib("Their Lib", "E:/U/Linked/Their Lib"), // the cUniverse, nested UNDER our root
+        ];
+        let nested_path = "E:/U/Linked/Their Lib/note.md";
+
+        // The prefix resolver alone says "ours" — this is the hole, asserted so it stays visible.
+        assert_eq!(
+            super::owning_own_library_name_in(&own, nested_path).as_deref(),
+            Some("universe_notes"),
+            "documents WHY the prefix match alone cannot be the guard"
+        );
+
+        // The foreign-root set is what refuses it.
+        let foreign: HashSet<String> = super::foreign_roots_of(&all, &own);
+        assert!(
+            super::path_is_under_any(nested_path, &foreign),
+            "a cUniverse nested under the active root must still read as foreign: {foreign:?}"
+        );
+        // And an ordinary own note is NOT caught by that same set (no over-refusal).
+        assert!(!super::path_is_under_any("E:/U/mine.md", &foreign));
+    }
+
+    /// **The wiring test the panel required** — it drives `require_own_library_in` ITSELF, so
+    /// deleting the foreign-root block from the guard turns this RED. The previous tests
+    /// exercised only the primitives, which is exactly the "reports safety that is not there"
+    /// failure their own comment warns about.
+    #[test]
+    fn pj235_the_guard_itself_refuses_a_nested_cuniverse_destination() {
+        use std::collections::HashSet;
+        let own = vec![lib("universe_notes", "E:/U")];
+        let all = vec![
+            lib("universe_notes", "E:/U"),
+            lib("Their Lib", "E:/U/Linked/Their Lib"),
+        ];
+        let foreign: HashSet<String> = super::foreign_roots_of(&all, &own);
+
+        // The nested foreign destination is REFUSED by the guard, not merely by a primitive.
+        let refused = super::require_own_library_in(&own, &foreign, "E:/U/Linked/Their Lib/Notes");
+        assert!(refused.is_err(), "the guard must refuse a nested cUniverse destination");
+        assert!(
+            refused.unwrap_err().contains("LINKED universe"),
+            "and say why in the user's language"
+        );
+
+        // An own destination still resolves through the same guard (no over-refusal).
+        assert_eq!(
+            super::require_own_library_in(&own, &foreign, "E:/U/My Folder").as_deref(),
+            Ok("universe_notes"),
+        );
+
+        // And with an EMPTY foreign set (the known best-effort limit), the nested path is
+        // admitted — asserted deliberately so the limit stays visible until the migration
+        // closes it, rather than becoming a surprise.
+        let empty = HashSet::new();
+        assert!(
+            super::require_own_library_in(&own, &empty, "E:/U/Linked/Their Lib/Notes").is_ok(),
+            "documents the filed limit: an empty foreign set fails open on the nested shape"
+        );
+    }
+
+    /// The reverse reading of the same list, and the reason the fix is "use the OWN loader"
+    /// rather than "add a check": against the FEDERATED set the very same foreign path DOES
+    /// resolve — which is exactly how the note left the universe.
+    #[test]
+    fn pj235_the_federated_set_is_what_admitted_the_foreign_path() {
+        let federated = vec![
+            lib("Root", "E:/U"),
+            lib("Their Lib", "E:/LinkedUniverse/Their Lib"), // what load_all_libraries adds
+        ];
+        assert_eq!(
+            owning_own_library_name_in(&federated, "E:/LinkedUniverse/Their Lib/note.md").as_deref(),
+            Some("Their Lib"),
+            "documents the pre-fix behaviour: the federated list authorises a foreign write"
+        );
     }
 
     /// The live shape: universe_notes at the Universe root (registry index 0)

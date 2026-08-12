@@ -1478,7 +1478,14 @@ pub fn add_child_universe(app: tauri::AppHandle, child_path: String) -> Result<(
     }
 
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))
+    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))?;
+    // PJ-235 (panel condition) — linking a universe CHANGES the federated set, and
+    // `LIBRARIES_CACHE` is warm from boot. Without this, `foreign_library_roots` — the set
+    // `require_own_library` and every federation-aware walk boundary refuse by — stays EMPTY
+    // for the rest of the session in which the user linked the universe, which is the
+    // highest-risk session there is: the guard is inert exactly when it is first needed.
+    crate::libraries::invalidate_libraries_cache();
+    Ok(())
 }
 
 /// Remove a child universe path from the active universe's children array.
@@ -1494,7 +1501,10 @@ pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Resul
     meta.children.retain(|c| c != &child_path);
 
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))
+    atomic_write(&meta_path, json.as_bytes()).map_err(|e| format!("Failed to save universe.json: {}", e))?;
+    // PJ-235 — same invalidation as add_child_universe: the federated set changed.
+    crate::libraries::invalidate_libraries_cache();
+    Ok(())
 }
 
 /// Return the full merged library list for the active universe
@@ -2419,7 +2429,9 @@ fn reindex_written_template(app: &tauri::AppHandle, path: &str, surface: &str) {
     // Canonical longest-root-wins resolver (2026-07-24 inspection) — a first-match
     // `starts_with` always returned the universe_notes root, filing every template
     // written into a nested sub-library under the wrong library_name.
-    match crate::libraries::library_name_for_path(&crate::libraries::load_all_libraries(app), path) {
+    // PJ-254 — OWN libraries only. This feeds a reindex, and the FEDERATED resolver would
+    // file a template written into a linked universe under THIS universe's index.
+    match crate::libraries::owning_own_library_name(app, path) {
         Some(lib_name) => {
             if let Err(e) = crate::search::reindex_single_note(&search_state, path, &lib_name) {
                 if let Ok(p) = crate::search::db_path(app) {
