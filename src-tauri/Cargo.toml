@@ -43,7 +43,7 @@ rfd = "0.15"
 notify = "7"
 regex = "1"
 petgraph = "0.6"
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.31", features = ["bundled", "backup"] } # MIG-111 R11 — the online-backup API; fs::copy of a live-WAL DB is banned
 ort = "2.0.0-rc.12"
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 # MIG-012-fix-9: parallel data work (vocab population, future bulk

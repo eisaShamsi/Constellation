@@ -490,6 +490,10 @@ pub fn take_snapshot(
 
     let baseline = read_baseline(conn)?;
 
+    // MIG-111 R11 note — this `fs::copy` is the AUDITED EXEMPTION to the live-WAL copy ban
+    // (see `federation::migrate::backup_database`): the checkpoint above ran through the held
+    // connection (emptying the WAL into the main file), and the block below VERIFIES the copy
+    // opens with a matching baseline. Do not imitate this shape without all three parts.
     let db_backup = backup_dir.join("search.db.pre-mig108");
     std::fs::copy(db_path, &db_backup).map_err(|e| format!("db backup copy failed: {}", e))?;
     for ext in ["-wal", "-shm"] {

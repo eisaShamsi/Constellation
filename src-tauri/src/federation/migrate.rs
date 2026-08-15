@@ -13,10 +13,11 @@
 //!    federation skips this cUniverse + surfaces a clear warning
 //!    ("close it in the other window first").
 //!
-//! 2. **Pre-migration backup** — `fs::copy(db, db.pre-mig-056.bak)`.
-//!    If the backup fails (disk full, permission denied), bail BEFORE
-//!    touching the source DB. The backup is the only recovery path
-//!    if migration corrupts the source.
+//! 2. **Pre-migration backup** — via the SQLite Online Backup API
+//!    (`backup_database`; MIG-111 R11 retired the original `fs::copy`,
+//!    which lost WAL-resident rows — the red→green pair in
+//!    `tests_r11_backup` keeps the reason executable). If the backup
+//!    fails, bail BEFORE touching the source DB.
 //!
 //! 3. **Atomic via backup** — `crate::search::init_db(path)` runs the
 //!    full schema setup against the cUniverse's DB. init_db is
@@ -55,6 +56,33 @@ use rusqlite::Connection;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// MIG-111 Phase 0.1 (R11) — copy a SQLite database THROUGH the engine, never around it.
+///
+/// The SQLite Online Backup API reads a transactionally-consistent snapshot under the
+/// database's own locks: WAL-resident committed rows are included, a concurrent writer is
+/// tolerated (the backup restarts its pass), and a lock that cannot be honoured fails loudly
+/// instead of producing a torn file. `fs::copy` guarantees none of those.
+///
+/// THE BAN, stated precisely (R11, whole-ecosystem sweep 2026-08-12): `fs::copy` of a SQLite
+/// database is forbidden UNLESS the copier (a) holds the database's only connection, (b) runs
+/// `wal_checkpoint(TRUNCATE)` through it first, and (c) VERIFIES the copy opens with matching
+/// baseline counts afterwards — the `mig108.rs` unification pattern, which is the one audited
+/// exemption. JSON/config files and .md files are outside the ban (no WAL to lose).
+pub(crate) fn backup_database(src: &Path, dst: &Path) -> Result<(), String> {
+    let src_conn = rusqlite::Connection::open_with_flags(
+        src,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .map_err(|e| format!("open source {:?}: {}", src, e))?;
+    let mut dst_conn =
+        rusqlite::Connection::open(dst).map_err(|e| format!("open dest {:?}: {}", dst, e))?;
+    let backup = rusqlite::backup::Backup::new(&src_conn, &mut dst_conn)
+        .map_err(|e| format!("backup init: {}", e))?;
+    backup
+        .run_to_completion(64, std::time::Duration::from_millis(50), None)
+        .map_err(|e| format!("backup run: {}", e))
+}
+
 /// Run schema migrations on a cUniverse's `search.db`, bringing it
 /// to the current schema. Per Architect §5.3.
 ///
@@ -77,9 +105,17 @@ pub fn run_migrations_on(
     }
 
     // ─── Safeguard 2: pre-migration backup ───
+    //
+    // MIG-111 Phase 0.1 (R11 — panel-mandated, "fixed FIRST: it runs on today's boot path").
+    // This was `fs::copy(cu_db_path, backup)`, which copies the MAIN file only. Under WAL,
+    // committed rows live in the `-wal` sibling until a checkpoint — so the "backup" could
+    // silently lack the newest committed writes, and Safeguard 3 restoring it would ROLL THEM
+    // BACK. Both adversarial passes (Option B attack A2; the plan attack) named it, and the
+    // red→green test below proves the shape: rows committed-but-uncheckpointed are exactly
+    // what fs::copy loses and what the SQLite Online Backup API carries.
     let backup_path = backup_path_for(cu_db_path);
-    fs::copy(cu_db_path, &backup_path)
-        .map_err(|e| MigrationError::BackupFailed(format!("copy to {:?} failed: {}", backup_path, e)))?;
+    backup_database(cu_db_path, &backup_path)
+        .map_err(|e| MigrationError::BackupFailed(format!("backup to {:?} failed: {}", backup_path, e)))?;
 
     // ─── Run migration via init_db ───
     //
@@ -152,7 +188,14 @@ pub fn run_migrations_on(
         }
         Err(migration_err) => {
             // ─── Safeguard 3 (failure path): restore from backup ───
-            let restore_result = fs::copy(&backup_path, cu_db_path);
+            //
+            // MIG-111 Phase 0.1 (R11) — restore likewise goes through the backup API, never a
+            // byte copy over a possibly-live file: the API takes SQLite's own locks, so a
+            // holder elsewhere makes this FAIL LOUDLY (audit: RESTORE_FAILED) instead of
+            // silently tearing the file under it. And restoring through the API rewrites the
+            // target's WAL state coherently, where fs::copy left a stale `-wal` sibling
+            // pairing with the restored main file.
+            let restore_result = backup_database(&backup_path, cu_db_path);
             let audit_action = if restore_result.is_ok() {
                 "AUTO_MIGRATE_FAILED_RESTORED"
             } else {
@@ -256,6 +299,57 @@ fn write_audit_log(
 }
 
 // ─── §C tests ───
+
+#[cfg(test)]
+mod tests_r11_backup {
+    //! MIG-111 Phase 0.1 (R11) — the red→green pair for the live-WAL backup ban.
+    use super::backup_database;
+    use rusqlite::Connection;
+
+    fn wal_db_with_uncheckpointed_row(dir: &std::path::Path) -> std::path::PathBuf {
+        let db = dir.join("src.db");
+        let conn = Connection::open(&db).unwrap();
+        conn.pragma_update(None, "journal_mode", "WAL").unwrap();
+        conn.execute("CREATE TABLE t (v TEXT)", []).unwrap();
+        // Checkpoint the schema into the main file, then commit a row that stays WAL-resident:
+        // `wal_checkpoint(TRUNCATE)` first, then the insert with checkpointing disabled.
+        conn.pragma_update(None, "wal_checkpoint", "TRUNCATE").ok();
+        conn.pragma_update(None, "wal_autocheckpoint", "0").unwrap();
+        conn.execute("INSERT INTO t (v) VALUES ('wal-resident')", []).unwrap();
+        // Keep the connection OPEN (leaked) so closing cannot checkpoint the WAL behind us —
+        // this is the live-DB shape: a holder elsewhere, committed rows in the `-wal` only.
+        std::mem::forget(conn);
+        db
+    }
+
+    /// The DEFECT, demonstrated: fs::copy of the main file loses the WAL-resident row.
+    /// This is the pre-0.1 backup verbatim, kept as the red half of the pair so the reason
+    /// for the ban stays executable, not narrated.
+    #[test]
+    fn r11_red_fs_copy_loses_wal_resident_rows() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = wal_db_with_uncheckpointed_row(dir.path());
+        let copy = dir.path().join("copy.db");
+        std::fs::copy(&src, &copy).unwrap();
+        let c = Connection::open(&copy).unwrap();
+        let n: i64 = c.query_row("SELECT COUNT(*) FROM t", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 0, "fs::copy must demonstrably lose the WAL-resident row (else this pair proves nothing)");
+    }
+
+    /// The FIX: the backup API carries the WAL-resident row.
+    #[test]
+    fn r11_green_backup_api_carries_wal_resident_rows() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = wal_db_with_uncheckpointed_row(dir.path());
+        let dst = dir.path().join("backup.db");
+        backup_database(&src, &dst).unwrap();
+        let c = Connection::open(&dst).unwrap();
+        let n: i64 = c.query_row("SELECT COUNT(*) FROM t", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 1, "the backup API must include committed WAL-resident rows");
+        let v: String = c.query_row("SELECT v FROM t", [], |r| r.get(0)).unwrap();
+        assert_eq!(v, "wal-resident");
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -378,8 +472,33 @@ mod tests {
         let parent = make_parent_universe(parent_tmp.path());
         let cu_db = make_drifted_cuniverse(cu_tmp.path());
 
-        // Capture pre-migration source bytes for restore verification.
-        let pre_bytes = fs::read(&cu_db).unwrap();
+        // Capture the pre-migration source CONTENT for restore verification.
+        //
+        // MIG-111 Phase 0.1 (R11) — this assertion was byte-identity when the backup was an
+        // `fs::copy`. The invariant it protects was never really bytes; it was "the user's
+        // DATA is exactly what it was". The backup-API restore reproduces every page of
+        // content but may legitimately differ in header change-counters and WAL state — so
+        // the assertion is restated as what it always meant: schema and rows identical.
+        let dump = |path: &Path| -> Vec<(String, i64)> {
+            let c = Connection::open(path).unwrap();
+            let tables: Vec<String> = c
+                .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                .unwrap()
+                .query_map([], |r| r.get(0))
+                .unwrap()
+                .collect::<Result<_, _>>()
+                .unwrap();
+            tables
+                .into_iter()
+                .map(|t| {
+                    let n: i64 = c
+                        .query_row(&format!("SELECT COUNT(*) FROM \"{}\"", t), [], |r| r.get(0))
+                        .unwrap_or(-1);
+                    (t, n)
+                })
+                .collect()
+        };
+        let pre_content = dump(&cu_db);
 
         let result = run_migrations_on(&cu_db, &parent);
         assert!(result.is_err(), "expected failure on pathological drift");
@@ -388,11 +507,11 @@ mod tests {
             other => panic!("expected MigrationFailed, got {:?}", other),
         }
 
-        // Source restored from backup — bytes match pre-migration state.
-        let post_bytes = fs::read(&cu_db).unwrap();
+        // Source restored from backup — same tables, same row counts as pre-migration.
+        let post_content = dump(&cu_db);
         assert_eq!(
-            pre_bytes, post_bytes,
-            "source must be byte-identical to pre-migration backup after restore"
+            pre_content, post_content,
+            "source content (tables + row counts) must match the pre-migration state after restore"
         );
 
         // Failure audit log entry written

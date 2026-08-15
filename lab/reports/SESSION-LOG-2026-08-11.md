@@ -466,3 +466,46 @@ the diagnostic umbrella + repeals executed. Every phase carries its R-numbers; m
 Boss-journey gates per wave (R33/R34).
 
 Ledger v1.84. Awaiting: Plan approval + C1/C2/C3/R31/R35/R36/PJ-224.
+
+---
+
+## MIG-111 §0.5 — SEVEN RULINGS TAKEN (2026-08-12). PLAN APPROVED. BUILD BEGINS.
+
+1 Plan approved · 2 C1 Undo-not-ceremony · 3 C2 persistent quiet line · 4 C3 delegated to the
+Art Director & team · 5 "Linked Universe" adopted (PJ-277 filed for the renaming sweep;
+user-visible scope; code identifiers excluded, recorded not silent) · 6 R35 YES — PJ-262
+ships before Phase 2, inside MIG-111's sequence · 7 R36 details requested → delivered in
+chat, ratification pending · 8 PJ-224 RULED YES — the search box federates; PJ-207 §13
+un-gated, folds into Phase 4.
+
+Phase 0.1 (live-WAL fs::copy ban) begins now.
+
+---
+
+## BOSS RULING (2026-08-12) — ITEM 7 RESOLVED AS "LINK MODE": THE USER CHOOSES
+
+> "Let the user choose between reading only or reading and writing. Either way, it should be
+> implementable." — Eisa, 2026-08-12
+
+The repeals table is RATIFIED-AS-AMENDED by this ruling. The amendment:
+
+- ① MIG-056's read-only contract is NOT repealed — it is **demoted from contract to MODE**.
+  Every linked universe carries a user-chosen mode: **Read only** (today's behaviour, kept
+  first-class) or **Read & write** (the Universe-of-Universes full-operations behaviour).
+- ④ The interim guards become PERMANENT for read-only-mode links (with honest wording:
+  "linked read-only — you can change this in the Universe Manager"), and dissolve per-door
+  only for read-write links.
+- ② concept paper describes both modes; ③ (automatic writes never cross on their own) is
+  unchanged and additionally enforces read-only mode; ⑤–⑧ unchanged; ⑨ PJ-224 unaffected
+  (search is READ — it federates in both modes).
+
+Design consequences (into MIG-111-PLAN.md):
+- `resolve_owner` returns the link MODE with ownership; the Router refuses writes to
+  read-only-mode links with the user's own choice quoted back.
+- The federation manifest's `children` entries gain a mode (schema evolution from bare path
+  strings). **Existing links default to Read only** — conservative, preserves today's
+  behaviour; the user upgrades deliberately. **New links ask at link time** — the consent
+  moment (Tana's "allow content from" precedent, from the prior-art sweep).
+- Universe Manager shows and toggles the mode per link.
+- Both modes are first-class forever ("either way, it should be implementable") — read-only
+  is never a stub or a deprecation path.

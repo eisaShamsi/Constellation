@@ -33,6 +33,14 @@ ships before any door (B4)).
 
 ## Phase 1 — THE ROUTER (seamless editing of linked notes; the ad-hoc class ends here)
 
+> **LINK MODE (Boss ruling 2026-08-12, resolving the R36 ratification):** every linked
+> universe carries a user-chosen mode — **Read only** (today's behaviour, first-class forever)
+> or **Read & write** (full operations). The manifest's `children` entries gain the mode
+> (existing links default Read only; new links ask at link time — the consent moment); the
+> Universe Manager shows and toggles it; `resolve_owner` carries it; the Router refuses
+> writes to read-only links quoting the user's own choice. Steps 1.1/1.2/1.5 absorb this;
+> the repeals table is ratified-as-amended (read-only demoted from contract to mode).
+
 | step | what | binds | verification |
 |---|---|---|---|
 | 1.1 | **`resolve_owner(path)`** — universe roots enumerated from the federation tree itself (`universe.json` children, recursive — never from library lists); longest-match with the nested-child check (attack H3); parent-walk fallback INTERSECTED with {active ∪ federation roots} — an unlinked universe on disk is Err, fail-closed (attack H2) | R2 | unit + routing assertions incl. nested-cUniverse-under-root; unlinked universe refused |
