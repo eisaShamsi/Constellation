@@ -117,6 +117,7 @@ mod tension;
 mod trails;
 mod tasks;
 mod universe;
+mod universe_lock; // MIG-111 Phase 0.2 (R5) — the per-universe owner lock
 mod watcher;
 mod watcher_suppress;
 /// PJ-182 — the single definition of "is this frontmatter line a sequence item / a

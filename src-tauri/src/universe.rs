@@ -1041,6 +1041,10 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
     *lock = Some(final_path.clone());
+    drop(lock); // release the pointer mutex before the (cheap, fail-fast) lock acquire
+    // MIG-111 Phase 0.2 (R5) — take the OS owner lock for the newly-active universe
+    // (releases the previous one). Record-only until Phase 1.4 flips enforcement.
+    crate::universe_lock::activate(&final_path);
 
     // Invalidate the libraries cache — switching universes means the
     // libraries list is completely different now.
@@ -1242,7 +1246,8 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
             // Already registered — just activate it
             let state = app.state::<UniverseState>();
             let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-            *lock = Some(canon);
+            *lock = Some(canon.clone());
+            crate::universe_lock::activate(&canon); // MIG-111 0.2 (R5)
             registry.active_id = Some(existing.id.clone());
             save_registry(&app, &registry)?;
             return Ok(existing.clone());
@@ -1309,6 +1314,7 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
     *lock = Some(universe_dir.to_path_buf());
+    crate::universe_lock::activate(universe_dir); // MIG-111 0.2 (R5)
 
     Ok(entry)
 }
@@ -1429,6 +1435,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
     *lock = Some(library_dir.to_path_buf());
+    crate::universe_lock::activate(library_dir); // MIG-111 0.2 (R5)
 
     Ok(entry)
 }
@@ -2045,7 +2052,8 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
     // Set as active
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(universe_dir);
+    *lock = Some(universe_dir.clone());
+    crate::universe_lock::activate(&universe_dir); // MIG-111 0.2 (R5)
 
     Ok(entry)
 }

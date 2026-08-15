@@ -509,3 +509,22 @@ Design consequences (into MIG-111-PLAN.md):
 - Universe Manager shows and toggles the mode per link.
 - Both modes are first-class forever ("either way, it should be implementable") — read-only
   is never a stub or a deprecation path.
+
+---
+
+## MIG-111 Phase 0.2 — COMMITTED: the per-universe OWNER LOCK (R5)
+
+New module `universe_lock.rs`: OS file lock (`LockFileEx`/`flock` via fs4) held for the whole
+active session — sees an IDLE holder (the retired probe's certified false negative) and dies
+with the process (stale locks impossible by construction). Two-file shape per attack H4: the
+zero-byte `owner.lock` is the truth; `owner.info.json` (never locked) supplies the WHO for
+refusal messages. Identity = canonicalized root. Wired at all five activation sites;
+`is_cuniverse_open_elsewhere` now consults the owner lock first, keeping the SQLite probe
+only for non-Constellation tools. Phase 0 policy: RECORD, don't enforce — Phase 1.4 flips it.
+
+Verification per the Plan's clause: the TWO-PROCESS test — a real spawned child holds the
+lock idle; the old probe reports not-held (pinned RED forever), the owner lock reports held
+with the child's pid; child exit releases. Rust **1462/0** (4 new). Inspection: ninth
+whole-app register banked (33 confirmed — ZERO in this diff; two pre-existing
+migrate_legacy_data findings join the triage pile). vitest/svelte-check unaffected (no
+frontend files in the diff).

@@ -232,6 +232,33 @@ pub fn run_migrations_on(
 /// this is sufficient. Future enhancements could inspect the `-shm`
 /// file for active connections.
 pub(crate) fn is_cuniverse_open_elsewhere(db_path: &Path) -> bool {
+    // MIG-111 Phase 0.2 (R5) — the OWNER LOCK is the primary answer. The old sole test,
+    // `BEGIN EXCLUSIVE; ROLLBACK`, acquires only SQLite's WRITE lock: in WAL mode an
+    // instance merely HOLDING the universe open (no write in flight) does not hold it, so
+    // the probe answered "not open" in exactly the routine case it existed to catch — a
+    // false NEGATIVE certified by the MIG-111 adversarial pass and pinned by the
+    // two-process test in `universe_lock`. The SQLite probe is RETAINED as a supplement
+    // only: it still catches a NON-Constellation tool (a DB browser) holding the file,
+    // which the owner lock cannot see.
+    //
+    // `<root>/.constellation/search.db` → the universe root is two levels up.
+    if let Some(root) = db_path.parent().and_then(|c| c.parent()) {
+        if !crate::universe_lock::held_by_us(root) {
+            if matches!(
+                crate::universe_lock::probe(root),
+                crate::universe_lock::Ownership::HeldElsewhere { .. }
+            ) {
+                return true; // a live Constellation instance owns this universe — idle or not
+            }
+        }
+    }
+    sqlite_write_lock_held(db_path)
+}
+
+/// The retired PRIMARY probe, kept as a supplement (see above) and as the RED half of the
+/// two-process proof in `universe_lock::tests` — it must keep failing to see an idle holder,
+/// or SQLite's locking model changed and the whole 0.2 design note needs revisiting.
+pub(crate) fn sqlite_write_lock_held(db_path: &Path) -> bool {
     let conn = match Connection::open(db_path) {
         Ok(c) => c,
         // If we can't even open the file, we can't migrate either
