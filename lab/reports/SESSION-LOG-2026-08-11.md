@@ -444,3 +444,25 @@ copy that breaks links and history; DEVONthink comes closest (UUID item links, m
 travels) but name-links cannot cross databases and clones silently become copies; Tana
 federates search/references but schemas do not travel and moves lose supertag context.
 "Universe of Universes with full seamless operations" is genuinely unprecedented in the field.
+
+---
+
+## MIG-111 — PLAN DELIVERED for Boss approval (2026-08-12)
+
+Prior-art (WA#5): uniqueness CONFIRMED — no shipping PKM product federates independent bases
+with full seamless cross-base operations. Engineering prior-art: the Router assembles proven
+parts (SQLite backup API, OS lock files, IMAP-MOVE two-phase semantics) in an unprecedented
+shape. Two adversarial attacks on the drafts: SOUND-WITH-AMENDMENTS ×2; all amendments folded
+into MIG-111-PLAN.md (H1 vocabulary-maintenance values, H2 fail-closed owner resolution,
+H3 longest-match fast path, H4 readable lock metadata, B2 refusal-before-input, B3 prep off
+the save tail, B4 routing-before-doors).
+
+Plan: Phase 0 foundations (R11 fs::copy ban FIRST · R5 real owner lock · ledger lock · R1
+five writers on-boundary · the §0.5 Boss gate of seven rulings) → Phase 1 the Router
+(seamless linked-note editing; the H1 harness; Class-D kill; the Place Line; whole-ecosystem
+identity) → Phase 2 the transfer engine (journaled two-phase move; cid re-key; genuine Undo)
+→ Phase 3 full ops + cross-universe link healing (the migration's acceptance test) → Phase 4
+the diagnostic umbrella + repeals executed. Every phase carries its R-numbers; measurement +
+Boss-journey gates per wave (R33/R34).
+
+Ledger v1.84. Awaiting: Plan approval + C1/C2/C3/R31/R35/R36/PJ-224.
