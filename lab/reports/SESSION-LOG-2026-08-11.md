@@ -385,3 +385,62 @@ write-capable federation: link_life's process-local ledger lock, the WAL false-n
 All scheduled as Plan conditions.
 
 **Awaiting the Boss's five Phase-2 decisions (ARCHITECT.md §6). No build until Plan approval.**
+
+---
+
+## BOSS RULING (2026-08-12, second) — THE CONCEPT IS NAMED: UNIVERSE OF UNIVERSES
+
+> "When I designed Constellation to include a child Universe (Linked Universe), it was the
+> concept and philosophy of a Universe of Universes, if the user would like to have all their
+> knowledge under one umbrella. Accordingly, there should be full interactions among those
+> linked universes, seemingly [seamlessly]. Meaning, we are NOT going to create an
+> old-fashioned ad hoc system. You should think, design, and build it out of the box. You have
+> to be creative and smart. What matters eventually is that you achieve what others think is
+> impossible to achieve, design-, programming-, or coding-wise. You should uphold
+> Constellation's philosophy: simple yet powerful." — Eisa, 2026-08-12
+
+Design consequences adopted:
+- **Seamless, not border-control.** The Phase-2 §6 decision 2 option set (marked section +
+  confirmation vs separate command) is WITHDRAWN as framed — both were doors. The umbrella is
+  one space; pickers list it whole, the planet mark is identity information, not a warning;
+  no confirmation ceremony on routine operations.
+- **Not ad-hoc = one choke point.** The design centrepiece is the UNIVERSE ROUTER: one layer
+  under every operation that resolves ownership and supplies the home universe's full context
+  (DB handle, link vocabulary, locks). The 22-site register is not 22 guards — it is 22
+  callers of one router. This also closes the panel's structural finding that
+  reindex_single_note trusts its callers.
+- §6 decisions resolved by this ruling: (1) repeals CONFIRMED by the ruling's own terms;
+  (2) seamless as above; (4) two-instance refusal stays (invisible safety machinery);
+  (5) PJ-224 read as YES — one umbrella means search spans it by default — flagged for veto
+  rather than assumed silently. (3) wave order goes to the Plan with a routing-first proposal.
+
+---
+
+## MIG-111 — CONCEPT PANEL (Boss-mandated) — VALIDATED 5/5
+
+The Boss: "Let the inspectors, auditors, UX & UI, plus the Art Director & team, to validate
+this concept." Five chairs, independent, blind to each other; synthesis merged.
+
+**VERDICT: THE CONCEPT STANDS — VALIDATED-WITH-REQUIREMENTS, 5/5 chairs, 0 rejections.**
+37 binding requirements (R1–R37), 3 chair conflicts requiring Boss rulings (C1 ceremonies,
+C2 locked-universe presentation, C3 tab identity). Banked in full at
+docs/migrations/PJ-235-federation-boundary/MIG-111-CONCEPT-PANEL.md.
+
+The finding that reframes everything, from the SAFETY chair of all places: **"the status quo
+is not the safe baseline — it is the most dangerous state."** The 22-site register shows
+today's "read-only" federation already crosses with broken bookkeeping; rejecting the concept
+would preserve a documented silent-failure surface. And the philosopher chair produced the
+uniqueness line the Plan will carry: **"sovereignty with seamlessness: each corpus keeps its
+own truth; the mind over them is one."**
+
+Hard pre-conditions before any door opens: R1 (five unguarded writers on-boundary),
+R3 (vocabulary threading proven red→green), R5 (a real OS lock — the WAL probe certified
+insufficient), R7 (every crash window red→green), R11 (live-WAL fs::copy banned, fixed FIRST),
+R35 (the PJ-262 sequencing question to the Boss), R36 (repeals ratified item by item).
+
+Prior-art (WA#5, completed in the parallel workflow): **no shipping PKM product does this.**
+Obsidian: cross-vault links "will remain impossible"; Notion: cross-workspace move is a lossy
+copy that breaks links and history; DEVONthink comes closest (UUID item links, metadata
+travels) but name-links cannot cross databases and clones silently become copies; Tana
+federates search/references but schemas do not travel and moves lose supertag context.
+"Universe of Universes with full seamless operations" is genuinely unprecedented in the field.
