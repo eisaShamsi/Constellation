@@ -528,3 +528,93 @@ with the child's pid; child exit releases. Rust **1462/0** (4 new). Inspection: 
 whole-app register banked (33 confirmed — ZERO in this diff; two pre-existing
 migrate_legacy_data findings join the triage pile). vitest/svelte-check unaffected (no
 frontend files in the diff).
+
+---
+
+## MIG-111 Phase 0.3 — the `link_life` ledger CROSS-PROCESS lock (R5 · Architect condition 5)
+
+**The gap.** The ledger's `FILE_LOCK` was a process-local `Mutex`: it ordered this process's
+threads and was invisible to a second Constellation instance. A compaction over there could
+rename the tail out from under an append over here — the Slice-7 bug shape across the process
+boundary, and the damage lands precisely on decisions (a lost retire/priority is not merely
+absent: the next boot's fold still carries the pre-decision value and **writes it back**).
+MIG-111 promotes this from latent to routine, because a parent appending earned decisions into
+a linked universe's ledger is exactly the crossing Phase 1 opens.
+
+**The fix.** `LedgerGuard` is now TWO locks: the cheap in-process mutex (so at most one thread
+per process ever waits on the OS) and a **blocking exclusive OS lock** on `<dir>/ledger.lock`
+(fs4: `LockFileEx` / `flock`). All four mutating call sites (`append`, `fsync`, `maybe_compact`,
+`quarantine`) take it. Availability posture preserved: if the lock file cannot be used we log
+loudly and proceed with in-process exclusion only — pre-0.3 behaviour, not a new failure mode.
+
+**Verification per the Plan's clause** — two REAL processes: a spawned child appends
+continuously while this process appends and repeatedly renames the tail aside. Every line from
+both processes survives **intact, exactly once**, findable in the tail or an aside file — no
+vanished lines, no torn fragments, no duplicates.
+
+### The four corrections the per-build inspection forced (all fixed before this commit)
+
+Recorded plainly, because **three of the four were defects the 0.3 diff itself introduced**. A gate
+that only ever confirms other people's bugs is not being read honestly. Three rounds ran; each
+found something; the fourth returned **zero confirmed findings** on the corrected diff.
+
+1. **The wait was unbounded** — and that was a defect the 0.3 diff itself introduced. `lock_exclusive`
+   is `LockFileEx` *without* `LOCKFILE_FAIL_IMMEDIATELY`; held inside the process-global mutex, one
+   foreign holder stuck mid-hold (crash dialog, debugger, AV-stalled rename) froze **every** ledger
+   write in this process forever, awaiting commands never returning, nothing surfaced. That trades a
+   rare lost record for a permanent silent hang — strictly worse than before 0.3, when the wait was
+   bounded by this process's own threads. Now `try_lock_exclusive` on a 5 s budget (two orders of
+   magnitude above a compaction's hold, so legitimate contention can never reach it), falling back to
+   the same loud in-process-only road. Test: a held lock times out near its budget and never parks.
+2. **`read_state` read its two files under NO lock** (pre-existing, MED, and reachable TODAY — the
+   0.2 owner lock is still record-only, so two instances can hold one universe). A compaction that
+   persists the new snapshot and renames the tail aside *between* the two reads leaves the reader
+   folding the old snapshot plus an absent tail — and an absent tail is a FACT here, an empty store,
+   not an error. The restore then writes those pre-decision values back over the user's decisions.
+   The guard now lives in `read_state` itself, not at its callers (a "every reader takes it" promise
+   is exactly what a new caller silently breaks); `maybe_compact` calls `read_state_locked`, so the
+   non-reentrancy is discharged by there being two names rather than by remembering. Test: a real
+   foreign process holds the guard and performs a faithful compaction — `read_state` must WAIT, and
+   the record that lived in the tail must be in the fold it returns.
+3. **The degradation was announced into a channel that does not exist.** Both fallback branches used
+   `eprintln!` — and `main.rs` is `windows_subsystem = "windows"` in release, so stderr goes nowhere.
+   This subsystem already carries the rule in-code (`link_life_restore`: *"NEVER `eprintln!` a failure
+   a user needs"*, written after the Boss's 2026-07-27 restore reported "0 of 34 written" with 33
+   records unaccounted for and no reason recorded anywhere) — and the 0.3 diff broke it twice. What
+   was being erased is not a lost write (the degraded state IS pre-0.3 behaviour, shipping on main
+   today) but the evidence that a documented loss path had been silently re-opened: a Universe on a
+   share whose filesystem cannot lock would run a whole session unprotected, every command returning
+   Ok. Now one `degraded()` helper writes to `diagnostics.log` via `diag_log`, naming what was lost
+   and why it matters. Test: the fallback must be readable on disk, not merely printed.
+4. **Compaction proceeded without cross-process exclusion.** When the OS lock is unavailable the
+   guard falls back and the caller proceeds — right for `append` (blocking would hang a user's
+   command, and the record is still findable in the aside copy the compaction keeps) but **circular
+   for the compaction**, which is the operation that CREATES that aside copy, and nothing ever reads
+   one back — that is exactly what bounds the load. So the one path where the fallback could
+   actually destroy a decision was the one taking it: a second instance appending a retire during
+   the fold-to-rename window would have it moved out of the load path, and the next boot's restore
+   writes the pre-decision value back over it. `maybe_compact` now returns `Refused` when exclusion
+   is unavailable — free, since compaction is optional, `Refused` is a first-class outcome its only
+   caller already handles distinctly, and it re-runs every boot. `quarantine` deliberately does NOT
+   refuse (refusing to quarantine a corrupt store on a lockless filesystem would leave the app
+   reading the corruption); the asymmetry is stated in code so it stays a decision, not an accident.
+
+Rust **1467/0** (+4). Diff-scoped inspection over `link_life.rs` + `link_life_restore.rs` re-run
+after the corrections. No frontend files in the diff (vitest/svelte-check unaffected).
+
+### Whole-app cycle sweep — INCOMPLETE, and recorded as such
+
+The tenth whole-app sweep ran during this step and **did not finish**: 3 of 14 hunt groups
+(notemodel-ownership, cross-window-integrity, freeze-and-leaks) and 18 verify agents died on a
+model quota, so those scopes are **unswept**, not clean. What it did confirm before dying: the two
+`link_life` findings above (fixed here) plus **9 pre-existing findings in other subsystems** — none
+in this diff, all filed for the remediation pass that follows this commit. They are not "logged and
+shipped": WA#6 applies, and the pass is the next unit of work, before Phase 0.4.
+
+**Ledger reconciled (SO#9) — v1.86.** The nine are filed as **PJ-278…PJ-283** (PJ-278 collects the
+three embed-parity sites as ONE class per the Whole-Ecosystem Fix Law). **PJ-284** files the
+unfinished sweep itself, so the cycle cannot be closed on a partial register. **PJ-285 corrects a
+miss in v1.85**: the ninth sweep's two `migrate_legacy_data` findings were recorded in this log as
+"joining the triage pile" and never filed in the ledger — the exact drift SO#9 exists to prevent,
+one step earlier. Registers banked: `SWEEP-2026-08-15-tenth-whole-app-INCOMPLETE.json` and
+`SWEEP-2026-08-15-mig111-phase03-diff.json` (all three diff rounds).

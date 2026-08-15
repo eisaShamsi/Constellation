@@ -1,0 +1,60 @@
+{
+ "_register_note": "MIG-111 Phase 0.3 per-build diff-scoped inspection rounds. Every confirmed finding was fixed BEFORE the commit (WA#6); each round re-run after the fix. Round 1: eprintln-only degradation notice. Round 2: compaction proceeding without cross-process exclusion.",
+ "rounds": [
+  {
+   "round": "round 1",
+   "mode": "diff",
+   "scanned": [
+    "src-tauri/src/link_life.rs",
+    "src-tauri/src/link_life_restore.rs"
+   ],
+   "by_scope": [
+    {
+     "scope": "src-tauri/src/link_life.rs,src-tauri/src/link_life_restore.rs",
+     "confirmed": 1
+    }
+   ],
+   "confirmed_findings": [
+    {
+     "klass": "swallowed-write-error",
+     "file": "src-tauri/src/link_life.rs",
+     "line": 286,
+     "summary": "Both fallback branches of file_guard announce the loss of cross-process exclusion with eprintln! only \u2014 the exact channel this subsystem documents as going nowhere in Windows GUI release builds \u2014 so the degradation, and every divergence that follows from it, leaves no durable evidence anywhere.",
+     "silent_failure_scenario": "link_life_restore.rs:404-407 states the rule in this very subsystem: 'NEVER eprintln! a failure a user needs: Windows GUI release builds send stderr nowhere (search.rs documents this in-code)' \u2014 and that site therefore calls crate::search::diag_log instead. The new guard breaks that rule at both :286 (lock could not be taken) and :294 (lock file could not be opened). In a release build on Windows the user, the Boss test, and diagnostics.log all see nothing: a Universe on a share with no flock support, or one instance that timed out against another, runs the whole session with the 0.3 protection off while every command returns Ok and every restore/compaction log line reads normal. The 'still held by another process after 5s' string is produced and discarded. This is what turns finding #1 from a detectable degradation into a silent one \u2014 and the fix is one line, since `dir` is in hand and crate::search::diag_log(&dir.join(\"search.db\"), msg) is the pattern already used by search.rs:9847 for the walk-append failure in the same module's caller.",
+     "severity": "MED",
+     "verdict": "CONFIRMED",
+     "reason": "Verified in source, not inferred. (1) Channel is provably dead: src-tauri/src/main.rs:2 sets `#![cfg_attr(not(debug_assertions), windows_subsystem = \\\"windows\\\")]`, and search.rs:1523-1537 documents in-code that eprintln!/println! \\\"go nowhere even when launched from a terminal\\\" in that configuration. Both new sites \u2014 link_life.rs:286 (lock not takeable) and :294 (lock file not openable) \u2014 emit via eprintln! only. (2) No alternate surface: file_guard returns `LedgerGuard { _mutex, os }` with no Result and no field; LoadReport (link_life.rs:88-97) has slots only for skipped_lines / corrupt_renamed_to / refuse_write and nothing for \\\"exclusion disabled\\\"; no Tauri event; every command still returns Ok. (3) Both branches reachable: lock_within_budget:270 returns Err IMMEDIATELY for any non-contention error, including a filesystem that does not implement locking (network/SMB share) \u2014 that degrades every guard call for the whole session, not a rare window; and the contention branch is live because universe_lock.rs:48-52 states the Phase 0.2 owner lock is non-enforcing (\\\"two instances could already do this before MIG-111\\\"), echoed at link_life.rs:435, while link_life_restore.rs:165 runs maybe_compact over the same directory on every boot. (4) The consequence is documented in this very file: link_life.rs:179-184 and :431-435 \u2014 a decision lost to the cross-process compact/append race is not merely absent; the fold carries the pre-decision value and WRITES IT BACK, un-retiring a link the user retired or re-imposing a cleared priority, \\\"while every step logs success.\\\" (5) The subsystem's own rule is broken: link_life_restore.rs:404-417 states \\\"NEVER eprintln! a failure a user needs\\\" \u2014 written because this exact swallow produced the Boss's 2026-07-27 \\\"0 of 34 written\\\" restore with 33 records unaccounted for \u2014 and calls crate::search::diag_log instead. The fix is one line and mechanically correct: `dir` at file_guard IS the .constellation dir (store_dir = conn.path().parent(), link_life.rs:79-85) and diag_log derives diagnostics.log from db_path.parent(), so diag_log(&dir.join(\\\"search.db\\\"), &msg) writes the canonical durable sink. I could not refute via guard, reconcile, version gate, unreachability, or self-correction \u2014 none exist on this path. Scope correction to the candidate: the class label \\\"swallowed-write-error\\\" is imprecise (append/fsync/read_state still surface their own I/O errors) and the degraded state equals pre-0.3 behaviour that main ships today, so this is not itself a new loss path \u2014 it is the erasure of the only evidence that a documented loss path has been silently re-opened. That is an observability defect with real data consequences, which holds it below APP-KILLER/HIGH at MED.",
+     "final_severity": "MED",
+     "scope": "src-tauri/src/link_life.rs,src-tauri/src/link_life_restore.rs"
+    }
+   ]
+  },
+  {
+   "round": "round 2",
+   "mode": "diff",
+   "scanned": [
+    "src-tauri/src/link_life.rs"
+   ],
+   "by_scope": [
+    {
+     "scope": "src-tauri/src/link_life.rs",
+     "confirmed": 1
+    }
+   ],
+   "confirmed_findings": [
+    {
+     "klass": "silent-data-loss",
+     "file": "src-tauri/src/link_life.rs",
+     "line": 746,
+     "summary": "When the OS lock is not obtained, `file_guard` returns a `LedgerGuard` with `os: None` and the caller proceeds regardless \u2014 including the two DESTRUCTIVE operations (`maybe_compact`'s tail rename at :806 and `quarantine`'s live-store rename at :825). Nothing outside `Drop` ever reads `_g.os` (only reference is link_life.rs:235), so the destructive path has no way to know cross-process exclusion is off.",
+     "silent_failure_scenario": "The Universe sits on an SMB/exFAT/network volume where `try_lock_exclusive` returns a NON-contention error (locking unimplemented). `lock_within_budget` (link_life.rs:270) returns Err immediately, `degraded()` logs one line, `os = None`, and `maybe_compact` (link_life.rs:746) continues into the fold \u2192 snapshot persist \u2192 `fs::rename(&tail, &dest)` at :806. A second Constellation instance \u2014 reachable today, since the module's own comment at :454 records that the Phase 0.2 owner lock is still record-only \u2014 is concurrently appending decisions via `record_decision` (search.rs:10824) or `set_review_priority` (review.rs:689). Those appends land in the renamed-aside tail, which is deliberately outside the load path, so they vanish from every future fold. The user's retire / trust / cleared-priority is not merely absent: `link_life_restore::restore` (link_life_restore.rs:239) writes the stale pre-decision value back into `note_links`/`note_meta` on the next boot. Every command returned Ok; the only trace is a diagnostics.log line saying exclusion was off \u2014 which never says a record was lost. The availability argument that justifies proceeding for `append` (a lost append is recoverable from the aside copy) does not hold for the rename that CREATES the aside copy: compaction is optional and already has first-class `Refused` / `BelowThreshold` outcomes and re-runs every boot, so refusing costs nothing.",
+     "severity": "MED",
+     "verdict": "CONFIRMED",
+     "reason": "Verified at source. (1) file_guard (link_life.rs:301-322) yields LedgerGuard{os:None} on both failure branches \u2014 lock-file unopenable, and lock_within_budget erroring, which at :270 returns IMMEDIATELY for any non-contention error (the 'filesystem does not implement locking' case the module itself names as a field condition at :284-288 and pins with a test at :1288). (2) The structural claim is exact: grep shows `os` referenced ONLY at :230 (decl) and :235 (Drop) \u2014 no caller can branch on it. (3) maybe_compact takes the guard at :746 and proceeds unconditionally through read_state_locked (:756) -> snapshot persist (:799) -> fs::rename(&tail,&dest) (:806), despite its own comment at :742-745 declaring that span 'ONE critical section, and it has to be'. (4) A second instance is reachable TODAY: universe_lock.rs:41-51 and :224-227 state Phase 0.2 is RECORD, do not yet ENFORCE \u2014 'if acquisition fails at activation today, behaviour is unchanged (two instances could already do this)'. (5) Live cross-process appenders confirmed on Tauri command threads: record_decision (search.rs:10824) and set_review_priority (review.rs:689), both append+fsync to Stream::Earned. (6) A record landing between :756 and :806 lands in earned.tail-<stamp>.jsonl, which the module states is deliberately OUTSIDE the load path (:29-30, :668-671); no code ever reads it back. (7) The consequence is an active revert, not mere absence: link_life_restore::restore writes status = e.status.unwrap_or(cur_status) (:318), recorded conf (:307-317) and note priority (:373-385) back into note_links/note_meta, and snapshot_lines emits an explicit status for every link, so the post-compaction snapshot supplies the pre-decision value that overwrites the user's retire/trust/priority. (8) Fully silent: maybe_compact returns Compacted (a success) and link_life_restore.rs:131-138 logs it as one; the only degraded() line says exclusion is off, never that a record was lost. The module's own availability justification at :225-227 ('the aside copy makes a lost append recoverable') is derived for append, where blocking would hang a user command; it is circular for the rename, which is what CREATES the aside copy that nothing reads. Compaction is optional, already has first-class Refused/BelowThreshold outcomes distinctly handled by its only caller (link_life_restore.rs:140-146), and re-runs every boot \u2014 so refusing when os.is_none() costs nothing. PARTIALLY REFUTED: the candidate's second destructive site, quarantine's rename at :825, is NOT reachable in production \u2014 all three call sites (:1139, :1438, :1843) are inside #[cfg(test)] modules; the finding stands on maybe_compact alone. Severity held at MED, not higher: deep conjunction (2 MB tail ~10,000 records vs the live 6,222 B at :677, two concurrent instances, a lock-unavailable filesystem or exhausted budget, and an append inside the tens-of-ms fold-to-rename window), the bytes physically survive in a kept aside file, and this is not a regression (degraded == pre-0.3 behaviour shipping today) \u2014 it is a documented hazard the new guard fails to close on the one path where closing it is free. Fix: return CompactOutcome::Refused when the guard's OS lock was not obtained.",
+     "final_severity": "MED",
+     "scope": "src-tauri/src/link_life.rs"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,200 @@
+{
+ "mode": "whole-app",
+ "scanned": [
+  "rename-move-delete-gate",
+  "note-save-index",
+  "notemodel-ownership",
+  "editor-lifecycle",
+  "rename-cascade-integrity",
+  "cross-window-integrity",
+  "derived-index-triggers",
+  "frontmatter-property-writes",
+  "persisted-json-state",
+  "cece-sources-derived",
+  "frontend-write-callers",
+  "boot-init-ordering",
+  "reactivity-concurrency",
+  "freeze-and-leaks"
+ ],
+ "by_scope": [
+  {
+   "scope": "rename-move-delete-gate",
+   "confirmed": 1
+  },
+  {
+   "scope": "note-save-index",
+   "confirmed": 4
+  },
+  {
+   "scope": "editor-lifecycle",
+   "confirmed": 0
+  },
+  {
+   "scope": "rename-cascade-integrity",
+   "confirmed": 0
+  },
+  {
+   "scope": "derived-index-triggers",
+   "confirmed": 0
+  },
+  {
+   "scope": "frontmatter-property-writes",
+   "confirmed": 0
+  },
+  {
+   "scope": "persisted-json-state",
+   "confirmed": 2
+  },
+  {
+   "scope": "cece-sources-derived",
+   "confirmed": 2
+  },
+  {
+   "scope": "frontend-write-callers",
+   "confirmed": 0
+  },
+  {
+   "scope": "boot-init-ordering",
+   "confirmed": 0
+  },
+  {
+   "scope": "reactivity-concurrency",
+   "confirmed": 2
+  }
+ ],
+ "confirmed_findings": [
+  {
+   "klass": "swallowed-write-error",
+   "file": "src-tauri/src/libraries.rs",
+   "line": 2641,
+   "summary": "resolve_structural_conflict swallows its reindex error (`let _ = reindex_single_note`) and never calls ensure_search_db_ready, so a structural-link frontmatter edit lands on disk while the index silently keeps the old parent/contains state \u2014 the one rename/move/delete-family sibling that missed both 2026-08-01 treatments.",
+   "silent_failure_scenario": "User resolves a structural conflict (Keep/Move-here) during the cold-boot DB window, or any time index_note errors (disk read glitch, SQL error). gate_rmw writes the new parent:/contains: to the .md and suppresses the watcher (atomic_write marks the path+parent); reindex_single_note returns Err(\"search DB not initialized\u2026\") or a real error, which line 2641 discards with no diag_log and no user error \u2014 unlike rename_item/move_item/delete_path, which all got ensure-or-refuse + logged failures. The command returns Ok and emits cascade:rewrote, so the frontend treats it as fully applied. note_meta/note_links keep the pre-edit structural link; the Structure panel and every index-fed surface silently disagree with the file until that note's next save or the next boot reconcile.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: libraries.rs:2641 discards reindex_single_note's Err with `let _ =` and no diag_log (the adjacent PJ-254 branch at 2643-2644 logs its skip \u2014 this one doesn't), and resolve_structural_conflict (2607-2652) never calls ensure_search_db_ready, unlike sibling move_item which got the 2026-08-01 ensure-or-refuse treatment at 2674-2680. During the cold-boot DB window reindex_single_note returns Err(\"search DB not initialized\u2026\") (search.rs:12770-12781, whose own comment states the watcher is suppressed and boot never re-walks, so nothing heals it); any real index_note SQL/IO error propagates and is equally swallowed. The command returns Ok and emits cascade:rewrote \u2014 store.ts/StructuralOutlinePanel treat it as fully applied \u2014 while note_meta/note_links keep the pre-edit parent/contains. Aggravator beyond the candidate: retrying the resolve is a dead end \u2014 gate_rmw finds the frontmatter already updated, returns OkUnchecked, and the early-return at 2630-2631 skips the reindex forever, so the user cannot self-heal by re-clicking even once the DB is ready. Refutations checked and closed: watcher suppressed; boot reconcile explicitly does NOT heal mtime drift (reconcile.rs:609-611 \u2014 \"every drifted note in the report is still drifted when the user reads it\"), it only counts it into the PJ-207 drift notice at next boot. Severity stays MED: the .md on disk is correct (no knowledge loss), and the divergence is eventually surfaced \u2014 unattributed \u2014 by the next boot's drift notice with a working Repair door; but within the session it is a silent index\u2194disk divergence with a false-success emit.",
+   "final_severity": "MED",
+   "scope": "rename-move-delete-gate"
+  },
+  {
+   "klass": "swallowed-write-error",
+   "file": "src-tauri/src/libraries.rs",
+   "line": 2641,
+   "summary": "resolve_structural_conflict swallows the post-write reindex failure with `let _ = reindex_single_note(...)` \u2014 the only gated-RMW write path left un-logged after the 2026-08-01 inspection converted every sibling (toggle_task tasks.rs:540, update_note_property bases.rs:412, apply_shape shape.rs:214, create_note libraries.rs:1440) to a diag_log-on-Err.",
+   "silent_failure_scenario": "User clicks the one-click 'resolve contested parent' action in the Structure panel while the search DB writer is contended past the 5s busy_timeout (a backfill holds the lock) or during the cold-boot window (reindex_single_note now returns Err on a None conn). gate_rmw durably rewrites the note's parent/contains frontmatter on disk \u2014 but the write is watcher-SUPPRESSED, boot never re-walks an indexed library, and the Err is discarded with no diag_log line and no frontend surface (the frontend wrapper resolveStructuralConflict in store.ts:6127 performs no reindex of its own; the cascade:rewrote event only reloads the open tab). note_meta/note_links keep the OLD structural edge: the Structure panel keeps showing the conflict as unresolved, the contested-parent computation and any structural queries serve stale data indefinitely, and nothing anywhere records why.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified at libraries.rs:2641: resolve_structural_conflict durably rewrites parent/contains frontmatter via gate_rmw (watcher-suppressed), then discards the reindex_single_note Err with `let _ =` and returns Ok \u2014 no diag_log, no frontend surface. reindex_single_note genuinely returns Err (None-conn cold-boot/switch window per its 2026-08-01 else-branch, poisoned lock, any index_note SQLite/IO failure), and every sibling gated-RMW site (tasks.rs:540, bases.rs:412, shape.rs:214, libraries.rs:1440/1957/2782, universe.rs:2444) was converted to if-let-Err\u2192diag_log by that same inspection with the comment \"never let _ = here\" \u2014 this site alone was left swallowed. Confirmed aggravator: a retry click hits the OkUnchecked no-op path (disk already resolved) and skips the reindex entirely, so the divergence is unrecoverable from the UI action; the Structure panel (DB-backed re-fetch) keeps showing the conflict as contested with zero record of why. Severity capped at MED, not HIGH: disk is correct (no knowledge loss), the PJ-207 boot reconcile counts the note in DriftReport.drifted and surfaces the drift-notice band with one-click Repair at next launch (reconcile.rs:609 \u2014 drifted is reported, not auto-healed), and any later successful save of the note reindexes it \u2014 the divergence is session-bounded, not permanent. One candidate claim refuted in passing: the busy_timeout-contention trigger is dubious (all write paths share the single state.db mutex-guarded connection, so cross-write SQLITE_BUSY between app writers is not the mechanism); the None-conn window and SQLite-error paths carry the confirmation.",
+   "final_severity": "MED",
+   "scope": "note-save-index"
+  },
+  {
+   "klass": "index-divergence",
+   "file": "src/routes/+layout.svelte",
+   "line": 1795,
+   "summary": "commitFocusSave (the FocusPane/Focus-mode save path, origin 'focus_pane') reindexes on a durable save but never calls reembedNote \u2014 the fifth body-editing save path missed by the PJ-207 \u00a715 embed-parity fix, which covered only NoteEditor handleSave/handleFlush, navFlushEnv, and prop-save runPostSave.",
+   "silent_failure_scenario": "With semanticSearch enabled, the user enters Focus mode and writes or rewrites a note's body there (Focus is the designated fast-capture editing surface), then exits. Every save runs through commitFocusSave, whose onSaved fires reindexNote only. Lexical search updates, but note_embeddings keeps the pre-edit vector: nothing self-corrects it \u2014 the boot embed backfill fires only for notes with NO embedding row, index repair never touches note_embeddings, and constellation_search_reindex does not embed. NotePane's own save (which would re-embed) never fires unless the user happens to edit the same note again outside Focus. Semantic search, 'similar notes', and CECE silently answer from the note's pre-Focus text for good, with no error, no embedHealthError, no log.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: commitFocusSave (+layout.svelte:1769-1798) is the durable disk-write path for every Focus-mode body edit (1500ms debounce at :9292, exit/teardown onflush at :9308), and its onSaved fires only broadcast + reindexNote (:1795) \u2014 reembedNote appears nowhere in +layout.svelte. Nothing downstream repairs it: saveNoteSession marks the model clean on the durable write, so flushOutgoing's dirty gate (store.ts:690) makes navFlushEnv's re-embed (store.ts:660) unreachable afterward; NoteEditor's re-embeds (:329/:445) fire only on NotePane edits; constellation_embed_notes without force skips any note that already has a note_embeddings row (embeddings.rs:446-456) and the batch backfill wrapper embedNotes (store.ts:4461) omits force, so backfill never refreshes a stale-but-present vector; constellation_search_reindex does not embed and index repair never touches note_embeddings (stated in the PJ-207 \u00a715 doc comment at store.ts:4145-4154, which enumerates exactly four covered save paths and omits Focus). No error surfaces: reindex succeeds (no indexHealthError) and embedHealthError can only be set inside the never-called reembedNote. Result: with semanticSearch on, a body rewritten in Focus mode leaves semantic search / similar-notes / CECE answering from the pre-Focus vector indefinitely, silently, until the user coincidentally edits that note in NotePane. Sibling gap noted for the whole-ecosystem fix: retrySaveFailure (store.ts:524-530) is also reindex-only.",
+   "final_severity": "MED",
+   "scope": "note-save-index"
+  },
+  {
+   "klass": "index-divergence",
+   "file": "src/lib/libraries/store.ts",
+   "line": 528,
+   "summary": "retrySaveFailure's onSaved runs reindexNote only \u2014 no reembedNote and no screen:note-saved / broadcastNoteSaved \u2014 so a save that only lands via the save-health Retry button or the ~10s auto-retry never refreshes the note's embedding vector or the second screen.",
+   "silent_failure_scenario": "With semanticSearch enabled, a debounced editor save fails transiently (AV/sync tool briefly locking the .md \u2014 the exact scenario the save-health banner exists for). The ~10s auto-retry (or the user's Retry click) calls retrySaveFailure; the write is now durable, the model marks clean, the banner clears, and reindexNote updates FTS. But the retry path's onSaved omits reembedNote, and because the model is now clean no later save will fire for this content: note_embeddings stays frozen at the pre-edit text with embedHealthError never set (the embed was never attempted, so it never 'failed'). The second screen is also never told (no screen:note-saved), so an open companion view keeps rendering the pre-edit content. Silent on every surface \u2014 the user saw the failure banner RESOLVE, which reads as full success.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: retrySaveFailure (store.ts:527-529) is the only durable-save site whose onSaved omits reembedNote and the second-screen notification \u2014 the four siblings (editor_save NoteEditor.svelte:319-329, editor_flush :440-445, navFlushEnv store.ts:651-661, prop-save runPostSave store.ts:1867-1875) all run broadcast+reindex+embed, and PJ-207 \u00a715's own comments document that a skipped embed never self-corrects (boot backfill only fires for notes with NO embedding row; index_repair and constellation_search_reindex never touch note_embeddings \u2014 store.ts:4150-4152, :1664). The path is reachable exactly as claimed: a failed debounced save leaves the model dirty (noteSession.ts:259-262), the ~10s auto-retry (+layout.svelte:1761-1767) or Retry click lands the write, markSaved marks clean (noteSession.ts:269), so no later save/flush ever fires for this content; the gated write is watcher-suppressed in Rust (watcher.rs:119) and the libraryId:'' announce fires only from Rust-side write paths, so no library-changed reaches the second screen either. Silent on every surface: the banner clears (reads as full success), FTS is current, embedHealthError is never set because the embed was never attempted. Result: note_embeddings frozen at pre-edit text with no message and no self-heal (the missed fifth site of the PJ-207 \u00a715 class), plus an indefinitely stale second-screen view of the note.",
+   "final_severity": "MED",
+   "scope": "note-save-index"
+  },
+  {
+   "klass": "cross-window-clobber",
+   "file": "src-tauri/src/review.rs",
+   "line": 763,
+   "summary": "mark_reviewed/snooze_note/dismiss_note pin the review-pulse.json RMW to the composed universe_root (the 2026-08-01 fix) but sync_action_to_row still writes the review_schedule row through the ACTIVE universe's SearchState \u2014 the fix covered only half the write pair.",
+   "silent_failure_scenario": "User clicks \u2713 Reviewed in universe A (ReviewerView captures universeRoot at click, review.rs:746 pins the pulse write to A); before the async command's row-sync runs, a universe switch flips the active pointer and universe B's DB comes ready+stamped. save_pulse_data lands in A's review-pulse.json (correct), then sync_action_to_row (review.rs:763; same shape at 791 snooze and 818 dismiss) resolves B's connection and review_row_mark INSERTs a ghost row for A's path into B's review_schedule (snooze's UPDATE silently matches 0 rows). The command returns Ok and the UI shows the action accepted. A's review_schedule row never learns last_reviewed/interval, and upsert_schedule_row re-derives those fields from the ROW (review.rs:1134-1152), not the pulse, on every subsequent reindex \u2014 so the note silently keeps resurfacing as due in A (PJ-187's exact 'came straight back in the queue' symptom) until a converge/repair rebuild re-reads the pulse; B carries a foreign-path ghost row until its next orphan sweep.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Code-verified: the three review actions pin the review-pulse.json RMW to the click-time universe_root (review.rs:746/781/808; ReviewerView.svelte:227 and ReviewStatusPanel.svelte:77 capture universeRoot at click), but the paired row write goes through sync_action_to_row (review.rs:1207), which resolves the GLOBAL SearchState with no universe pin and no generation check. invalidate_search_state (search.rs:11228) swaps that state to the new universe on switch, and the commands are async-offloaded (plus serialized behind PULSE_LOCK), so a click composed in A can run its row-sync after B's connection is installed and stamped \u2014 including via a second-window switch. In that branch review_row_mark's INSERT ON CONFLICT succeeds against B (ghost row for A's path) and review_row_snooze's UPDATE silently matches 0 rows (no changed-count check, review.rs:1261-1268); the command returns Ok and the UI shows the action accepted. A's review_schedule row never learns last_reviewed/interval, and upsert_schedule_row re-derives those fields from the ROW, not the pulse (review.rs:1134-1152, per the \u00a7B-2 design comment at 1191-1194), so the note silently keeps resurfacing as due in A \u2014 the PJ-187 symptom reintroduced through the unpinned half of the write pair. Severity stays MED because the earned source of truth (the pulse JSON) lands correctly in A; the divergence is in the derived row cache and is repairable by a pulse-to-row rebuild, not permanent data loss.",
+   "final_severity": "MED",
+   "scope": "persisted-json-state"
+  },
+  {
+   "klass": "silent-data-loss",
+   "file": "src-tauri/src/universe.rs",
+   "line": 1889,
+   "summary": "read_universe_collections' one-time legacy workbench.json adoption swallows a transient read failure (`if let Ok(data) = fs::read_to_string(&legacy)`) and returns Ok([]), letting the frontend's first save permanently close the !collections.json-exists adoption gate.",
+   "silent_failure_scenario": "First boot after upgrading a pre-MIG-092 universe: collections.json does not exist, workbench.json (the user's Workbench collections) does. An AV scanner / sync client / backup job holds workbench.json for that one read \u2014 fs::read_to_string fails, the `if let Ok` swallows it, and the command returns Ok(empty array) instead of an error. The frontend's loadCollections chain then seeds a Starred collection even from an empty array and persists it via save_universe_collections (behavior documented at universe.rs:1726-1727), creating collections.json \u2014 so the `!path.exists()` gate at universe.rs:1885 is closed forever and the legacy adoption never re-runs. The user's entire Workbench collection set silently never appears in the app again; workbench.json sits on disk unadopted with no error, no log, no retained-as-.migrated marker. The strict read_persisted_json pattern (universe.rs:260) was applied to migrate_universe_bookmarks but not here.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified end-to-end in code. universe.rs:1889 `if let Ok(data) = fs::read_to_string(&legacy)` swallows any transient read failure (AV/sync sharing violation \u2014 the exact Windows case read_persisted_json at universe.rs:263-274 documents and refuses) and falls through to `Ok([])` at line 1913 with no error and no log (the eprintln at 1906 covers only a failed write). The frontend's loadCollections (store.ts:2282-2297) treats the resolved Ok([]) as a successful read \u2014 the PJ-187 collectionsLoaded latch only guards a rejected promise \u2014 and CL.migrateBookmarks (collectionsLogic.ts:149-157) seeds a Starred collection even from an empty list, returning migrated:true, which triggers saveCollections \u2192 atomic_write of collections.json (universe.rs:1934; behavior explicitly documented at universe.rs:1725-1727). That closes the `!path.exists()` gate at universe.rs:1885 permanently: workbench.json is never renamed to .migrated (line 1903 runs only on successful adoption), so it sits on disk forever unadopted, and the user's entire Workbench collection set silently never appears again. Two prior inspection fixes (G6 W1-9, PJ-140) hardened the WRITE side of this exact block while leaving the read swallow; the strict read_persisted_json pattern was applied to migrate_universe_bookmarks (universe.rs:1736) but not here. Silent, permanent, reachable, no surfaced error \u2014 confirmed.",
+   "final_severity": "MED",
+   "scope": "persisted-json-state"
+  },
+  {
+   "klass": "freeze-hang",
+   "file": "src-tauri/src/cece/orchestrator.rs",
+   "line": 153,
+   "summary": "run_one_safe's per-cataloger timeout cannot unblock: the worker runs in std::thread::scope, which joins all spawned threads before returning, so after recv_timeout fires the function still blocks until classify() completes \u2014 the claimed V3-\u00a78.r4.4 hang fix (audit P1.4) is illusory as a bound.",
+   "silent_failure_scenario": "User clicks 'Classify open note' (or the background scan reaches a note) right after a universe switch: the Graph/Semantic cataloger calls ensure_search_db_ready inside classify (wiring.rs:149/222), which runs the 20-40s cold DB init. recv_timeout(2s) fires, the abstain trail is built and the log claims the cataloger was 'isolated' \u2014 but scope() still joins the worker, so classifier_suggest_for_note blocks the full 40s per cataloger; a genuinely hung ONNX embed blocks it FOREVER: the awaited invoke never resolves, the scan thread parks with running=true so no new scan can ever start ('Scan already running'), and the release build shows no error anywhere. The stated invariant 'ensemble timeouts are bounded' (Architect \u00a710 inv. 12) is silently false.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "The core claim is verified in the code: run_one_safe (orchestrator.rs:153) spawns the worker inside std::thread::scope, whose documented contract joins all scoped threads before returning \u2014 so recv_timeout(2s/5s) only selects the returned value and cannot unblock the function; run_one_safe always blocks for classify()'s full true duration. The V3-\u00a78.r4.4 'hang fix' comment and Architect \u00a710 invariant 12 ('ensemble timeouts are bounded') are therefore silently false, and on timeout the eprintln (invisible in release) plus the abstain trail falsely claim the cataloger was 'isolated by orchestrator'. Concrete reachable over-budget blocks exist per the codebase's own measurements: run_embedding is ~32s on a large note (embeddings.rs:414 PJ-066 comment) against a 2s Semantic/Linguistic budget, and constellation_embed_notes holds the engine mutex across its entire batch loop including every inference (embeddings.rs:429-476), so a concurrent classification's embed_text parks on that mutex for minutes inside classify() with the timeout impotent. Two of the candidate's sub-claims are corrected: (1) the 20-40s cold-DB-init-inside-classify branch is refuted \u2014 classifier_suggest_for_note pre-ensures the DB at mod.rs:96 and the scan worker at scan_job.rs:134, and ensure_search_db_ready has a lock-free db_ready fast path (search.rs:11483), so the wiring.rs:149/222 ensure calls are no-ops in every reachable flow; (2) the blocks-FOREVER / scan-parked-permanently branch is undemonstrated \u2014 no infinite hang path was found (all identified blocks are long but finite; mutexes have poison recovery), and running=true during a still-executing scan is accurate with a visibly stalled progress strip. Net: a real, silent, illusory-guard defect (the app's only defense against the P1.4 hang class does not bound wall-clock time and logs a false isolation claim), with proven 16x-over-budget blocking on real data, but no data loss, no corruption, and no UI-thread freeze (async command + background scan thread).",
+   "final_severity": "MED",
+   "scope": "cece-sources-derived"
+  },
+  {
+   "klass": "toctou",
+   "file": "src-tauri/src/link_life.rs",
+   "line": 383,
+   "summary": "read_state() reads snapshot then tail under NO lock \u2014 neither the in-process mutex nor the new Phase-0.3 ledger.lock OS lock \u2014 so another process's maybe_compact() can persist the new snapshot and rename the tail aside between the two read_lines calls, making the reader fold OLD snapshot + absent tail and silently miss every record that was in the tail.",
+   "silent_failure_scenario": "MIG-111 end state (the exact scenario the Phase 0.3 diff describes as routine): instance A (parent universe) appends earned decisions into linked universe U's ledger and its tail crosses COMPACT_THRESHOLD_BYTES, so A runs maybe_compact under the OS lock. Concurrently instance B (owner of U) boots and link_life_restore::restore (link_life_restore.rs:239) calls read_state(dir) \u2014 which takes no lock. Interleaving: B reads the OLD earned.snapshot.jsonl (line 383) \u2192 A persists the NEW snapshot and renames earned.jsonl aside (lines 701-708) \u2192 B reads the tail (line 384), now absent = 'empty store, not an error' (line 345). B's fold is the old snapshot only: every walk/retire/confidence/priority record that lived in the tail is missing. restore() iterates only the folded records, so the missing ones are simply not written back to note_links/review \u2014 no error, no report anomaly (they don't even count as no_matching_row). On a freshly rebuilt index this is the earned layer silently NOT restored for the whole session. Self-heals next boot, but silence is the defining trait. The in-process case is safe only by the single-thread sequencing comment at link_life_restore.rs:118-127 \u2014 which explicitly covers restore-vs-compact in ONE process and nothing cross-process. Fix shape: read_state (or at least the restore/compaction-adjacent callers) must take file_guard(dir), or re-probe the tail's existence/snapshot mtime and retry the two-file read if a rename landed between them.",
+   "severity": "MED",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: read_state (link_life.rs:372-384) reads snapshot then tail with NO lock (neither FILE_LOCK nor the Phase-0.3 ledger.lock), and an absent tail folds as an empty store (line 345, no error). maybe_compact persists the new snapshot (line 701) then renames the tail aside (line 708) \u2014 a reader whose two unlocked reads straddle that pair folds OLD snapshot + absent tail, silently losing every tail record. Cross-process reachability is TODAY, not just the MIG-111 end state: the Phase 0.2 owner lock is record-only (universe_lock.rs:243 'NOT ENFORCED YET (MIG-111 Phase 1.4) \u2026 proceeds as before, unlocked'), so two instances can boot the same universe, and each boot runs restore\u2192compact on the same dir; A's compaction races B's unlocked read_state at link_life_restore.rs:239 (the single-thread comment at lines 118-127 covers one process only, by its own admission). Damage exceeds the candidate's claim: restore treats the fold as authoritative for decisions (status at restore.rs:318, priority at :381), so a stale fold silently WRITES PRE-DECISION VALUES BACK \u2014 re-archiving an un-retired link, re-imposing a cleared priority \u2014 and on a rebuilt index the whole tail's earned layer goes unrestored for the session. Fully silent (counts look normal). Kept at MED, not HIGH: self-heals next boot (the new snapshot holds everything the tail held; the ledger file itself is never corrupted; walks max-fold), the window is \u00b5s\u2013ms wide, and compaction fires only ~every 10,000th record. Fix note: read_state cannot take file_guard internally (maybe_compact calls it at line 658 while holding the non-reentrant guard \u2014 deadlock); guard the unlocked callers (link_life_restore.rs:239) or re-probe tail existence and retry.",
+   "final_severity": "MED",
+   "scope": "reactivity-concurrency"
+  },
+  {
+   "klass": "index-divergence",
+   "file": "src/lib/libraries/store.ts",
+   "line": 6182,
+   "summary": "resolveConflictMerge's onSaved (origin 'merge_resolve') reindexes but never reembedNote \u2014 a conflict merge replaces the note's whole body, leaving note_embeddings at the pre-merge vector with nothing to correct it.",
+   "silent_failure_scenario": "With semanticSearch enabled, the user resolves a PJ-088 .conflict via the merge view \u2014 a path that by construction changes the body substantially (it reconciles two divergent versions). The durable save fires reindexNote (FTS current) and dismisses the conflict banner, but no re-embed runs and none of the self-heal paths cover it (boot backfill only embeds rows with no vector; repair never touches note_embeddings). Semantic search, 'similar notes', and CECE keep ranking this note by content that may be half-discarded by the merge, indefinitely and silently \u2014 the merge flow reports complete success.",
+   "severity": "LOW",
+   "final_severity": "LOW",
+   "reason": "CONFIRMED by code reading. resolveConflictMerge's onSaved (src/lib/libraries/store.ts:6180-6183) fires emit + reindexNote only \u2014 no reembedNote \u2014 while every sibling durable-save path re-embeds (NoteEditor.svelte:329 editor_save, :445 editor_flush, store.ts:660 nav_flush, :1875 prop_save). The merge replaces the whole model body (replaceContentInModel :6172), so the note_embeddings vector is left describing pre-merge content. No self-heal: constellation_embed_notes with force=false skips any note that already HAS an embedding row (embeddings.rs:446-456), the backfill wrapper embedNotes passes no force, constellation_search_reindex writes no embeddings (verified in search.rs), and index_repair never touches note_embeddings. The stale vector heals only if the user later edits the note (editor save re-embeds force=true). Fully silent: merge returns ok, banner dismissed, sidecar trashed, and embedHealthError cannot fire because the owning call never runs. Reachable with semanticSearch enabled via the shipped PJ-088 merge view. Severity LOW is right: single-note derived semantic-index staleness (semantic search / similar-notes ranking), no source-of-truth loss, self-corrects on next edit. Same-class sibling gap noted in passing: retrySaveFailure onSaved (store.ts:527-529) also reindexes without re-embedding.",
+   "verdict": "CONFIRMED",
+   "scope": "note-save-index"
+  },
+  {
+   "klass": "fire-and-forget",
+   "file": "src/lib/components/NoteEditor.svelte",
+   "line": 333,
+   "summary": "The cece.backgroundScan='on_save' setting dispatches the constellation:classify-and-show window event whose only listeners live in mounted SourceReviewPanel instances (SourceReviewPanel.svelte:1034 onMount / :1080 onDestroy); with no Source Review panel or Cataloger open \u2014 the normal typing state \u2014 the event has zero listeners and the user-enabled on-save classification silently never runs.",
+   "silent_failure_scenario": "Boss enables Settings \u2192 'Background classification' = on-save, closes the Cataloger, and writes notes for a week. Every debounced save fires the CustomEvent into a listener-less window: no classifier IPC runs, no suggestion rows are queued, no error or log appears \u2014 the setting is a silent no-op and the review queue never fills, contradicting the setting's own description. The sibling right-click path (+layout.svelte:7124 handleSuggestSourcesForNote) proves the listener-mount dependency is known there: it force-opens the Cataloger and defers the dispatch one frame; the on_save path has neither the mount nor a direct invoke fallback.",
+   "severity": "LOW",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: NoteEditor.svelte:333-337 dispatches the 'constellation:classify-and-show' CustomEvent as the sole on_save action, and the only addEventListener in the entire repo is SourceReviewPanel.svelte:1034 (onMount) / :1080 (onDestroy). SourceReviewPanel mounts only when the right sidebar is on the sourceReview tab (+layout.svelte:9947-9960, and that instance is note-scoped \u2014 :922 ignores foreign paths) or when the Cataloger is open (CatalogerView.svelte:309). In the normal typing state neither is mounted, so the event has zero listeners: classifier_suggest_for_note never runs, no suggestion row is created, and nothing is logged or surfaced \u2014 the user-enabled setting is a silent no-op. The dependency is provably known elsewhere: both +layout.svelte:3432 and handleSuggestSourcesForNote (:7124) force-open the Cataloger and defer the dispatch one frame before firing the same event, and the on_startup sibling (:3307) uses a direct invoke that needs no panel. Not higher than LOW because no source-of-truth data is lost or corrupted \u2014 saves, reindex, and re-embed all complete before the dispatch; the failure is an advisory classification feature silently never running, recoverable via a manual Cataloger scan or on_startup mode.",
+   "final_severity": "LOW",
+   "scope": "cece-sources-derived"
+  },
+  {
+   "klass": "freeze-hang",
+   "file": "src-tauri/src/link_life.rs",
+   "line": 234,
+   "summary": "file_guard() now blocks without any timeout on a cross-process exclusive OS lock (fs4 lock_exclusive on ledger.lock) while holding the process-global FILE_LOCK mutex, so one stuck foreign holder hangs every earned-ledger write in this process indefinitely with no surfaced error.",
+   "silent_failure_scenario": "A second Constellation instance (or the MIG-111 parent writing cross-universe) takes ledger.lock for a compaction and then stalls indefinitely \u2014 suspended under a Windows Error Reporting modal, parked in a debugger, or its rename blocked by an AV scan of a multi-MB tail. In this process, the next constellation_link_traverse / record_decision / set_review_priority calls append() \u2192 file_guard() \u2192 lock_exclusive(), which parks forever (no try_lock, no timeout, no user-visible state). Because the OS wait happens INSIDE the global FILE_LOCK mutex, every subsequent ledger write in the process queues behind it: link traversals stop being recorded, review-priority writes stop landing, and whatever command thread carries them never returns \u2014 silently. The diff's own comment justifies blocking on \u00b5s\u2013ms hold times but provides no bound for a pathological holder; before 0.3 the wait was bounded by this process's own threads. Deliberate design trade, flagged for the refuter: a lock_exclusive timeout/retry-with-log (or try-lock + short bounded retries falling back to the loud in-process-only mode already coded at line 239) preserves the availability posture without the unbounded park.",
+   "severity": "LOW",
+   "verdict": "CONFIRMED",
+   "reason": "Verified in code: file_guard() (link_life.rs:226-253) holds the process-global FILE_LOCK mutex while calling fs4 0.8.4 lock_exclusive(), which on Windows is LockFileEx(LOCKFILE_EXCLUSIVE_LOCK) WITHOUT LOCKFILE_FAIL_IMMEDIATELY \u2014 an unbounded blocking wait with no timeout facility in the OS API. The loud in-process-only fallback covers only open/lock ERRORS; a contended wait produces no log, no UI signal. No single-instance guard exists in src-tauri, so a second Constellation instance on the same universe can hold ledger.lock. If that foreign holder stalls alive-but-suspended mid-hold (WER crash dialog, debugger, AV-stalled rename during the tens-of-ms compaction window), every ledger write in this process \u2014 walk appends (errors swallowed by design), record_decision (retire/restore/trust \u2014 the awaiting command never returns, the user's click silently has no effect), set_review_priority, boot compaction \u2014 parks forever behind the mutex with zero surfacing, and parked appends are lost on app exit with no receipt. The hang is real and silent; severity stays LOW because the trigger needs the pathological conjunction of a second instance plus a suspended-alive holder caught inside a \u00b5s-to-tens-of-ms critical section (a killed holder releases the lock via handle closure, so ordinary crashes self-heal). The candidate's proposed remedy (try_lock_exclusive + short bounded retries falling back to the already-coded loud in-process-only mode) closes the exposure without changing the availability posture.",
+   "final_severity": "LOW",
+   "scope": "reactivity-concurrency"
+  }
+ ],
+ "_register_note": "TENTH whole-app sweep, 2026-08-15 \u2014 INCOMPLETE. 3 of 14 hunt groups (notemodel-ownership, cross-window-integrity, freeze-and-leaks) and 18 verify agents terminated on a model quota, so those scopes are UNSWEPT, not clean. The two link_life findings were fixed in the MIG-111 Phase 0.3 commit; the remaining 9 are filed in the Pending Jobs ledger for the remediation pass."
+}

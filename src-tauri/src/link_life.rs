@@ -190,8 +190,150 @@ pub struct HistRecord {
 /// A poisoned lock must never stop the ledger writing: `into_inner()` rather than `unwrap()`.
 static FILE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-fn file_guard() -> std::sync::MutexGuard<'static, ()> {
-    FILE_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+/// MIG-111 Phase 0.3 (R5 · Architect condition 5) — the guard is TWO locks now.
+///
+/// The static mutex above orders THREADS within this process — and is all the original guard
+/// was. It is invisible to a second Constellation instance, so a compaction over THERE could
+/// still rename the tail out from under an append over HERE: the Slice-7 bug shape, across
+/// the process boundary — the exact hazard the MIG-111 Option-B adversarial pass named A1,
+/// promoted from latent to routine the moment writes cross universes (a parent appending
+/// earned decisions into a linked universe's ledger while that universe is open elsewhere).
+///
+/// So the guard now ALSO takes a **blocking exclusive OS lock** on `<dir>/ledger.lock`
+/// (fs4: `LockFileEx` on Windows, `flock` on Unix), taken AFTER the in-process mutex — our
+/// own threads queue on the cheap mutex so at most one thread per process waits on the OS
+/// lock. Hold times are the guard's existing ones (µs for an append, tens of ms for a
+/// compaction), so blocking — not failing — is correct for the waiter.
+///
+/// Availability posture, same as the poison rule: the ledger must never stop writing. If the
+/// lock FILE cannot even be opened (a permissions/anti-virus pathology — anywhere an append
+/// could work, this open works too), we log loudly and proceed with the in-process lock only,
+/// which is exactly yesterday's behaviour, not a new failure mode.
+///
+/// ★ **And the wait is BOUNDED — the correction the 0.3 inspection forced.** The first cut called
+/// `lock_exclusive`, which is `LockFileEx` *without* `LOCKFILE_FAIL_IMMEDIATELY` / a blocking
+/// `flock`: an unbounded park with no timeout facility in either OS API. Held inside the
+/// process-global `FILE_LOCK`, one foreign holder stuck mid-hold (suspended under a crash dialog,
+/// parked in a debugger, its rename stalled by an anti-virus scan) froze **every** ledger write in
+/// this process forever — the awaiting command never returning, nothing surfaced. That traded a
+/// rare lost record for a permanent silent hang, which is the worse bug: before 0.3 the wait was
+/// bounded by this process's own threads, so the fix had made availability strictly worse.
+///
+/// So the OS lock is taken by `try_lock_exclusive` on a retry budget. The budget is set two orders
+/// of magnitude above the guard's real hold times (µs for an append, tens of ms for a compaction),
+/// so legitimate contention can never reach it; only a pathological holder can, and that holder now
+/// costs a bounded wait and a loud line instead of the process. On exhaustion we take the SAME road
+/// as an unopenable lock file — in-process exclusion only, pre-0.3 behaviour — because the aside
+/// copy makes a lost append recoverable while a hung command is not.
+struct LedgerGuard {
+    _mutex: std::sync::MutexGuard<'static, ()>,
+    os: Option<std::fs::File>, // exclusive OS lock; released on drop
+}
+
+impl LedgerGuard {
+    /// Whether cross-process exclusion is actually in force for this operation.
+    ///
+    /// The fallback (below) is right for `append`: blocking there would hang a user's command,
+    /// and an append that lands during a foreign compaction is still findable in the aside copy
+    /// the compaction keeps. **That argument is circular for the compaction itself** — the rename
+    /// is what CREATES the aside file, and nothing ever reads one back (that is exactly what
+    /// bounds the load). So the destructive path asks this, and refuses rather than proceeding
+    /// blind. It costs nothing: compaction is optional, `Refused` is a first-class outcome its
+    /// caller already handles distinctly, and it re-runs every boot.
+    fn cross_process(&self) -> bool {
+        self.os.is_some()
+    }
+}
+
+impl Drop for LedgerGuard {
+    fn drop(&mut self) {
+        if let Some(f) = self.os.take() {
+            // Explicitly fs4's, not std's inherent `unlock` (stable since 1.89, and it would win
+            // the method lookup silently): the lock was taken through fs4, so it is released
+            // through fs4 — the pair can never drift onto two different OS calls.
+            let _ = fs4::FileExt::unlock(&f);
+        }
+    }
+}
+
+/// The retry budget for the OS lock. Two orders of magnitude above a compaction's hold, so no
+/// legitimate contention reaches it; a pathological holder costs this much and no more.
+const OS_LOCK_BUDGET: std::time::Duration = std::time::Duration::from_secs(5);
+const OS_LOCK_RETRY: std::time::Duration = std::time::Duration::from_millis(2);
+
+/// Take the exclusive OS lock, waiting at most `OS_LOCK_BUDGET`.
+///
+/// Only *contention* is retried. Any other error — a bad handle, a filesystem that does not
+/// implement locking — cannot be fixed by waiting, so it returns immediately rather than burning
+/// the budget to reach the same fallback.
+fn lock_within_budget(f: &std::fs::File, budget: std::time::Duration) -> Result<(), String> {
+    use fs4::FileExt;
+    let contended = fs4::lock_contended_error().raw_os_error();
+    let deadline = std::time::Instant::now() + budget;
+    loop {
+        match f.try_lock_exclusive() {
+            Ok(()) => return Ok(()),
+            Err(e)
+                if e.raw_os_error() == contended
+                    || e.kind() == std::io::ErrorKind::WouldBlock =>
+            {
+                if std::time::Instant::now() >= deadline {
+                    return Err(format!("still held by another process after {budget:?}"));
+                }
+                std::thread::sleep(OS_LOCK_RETRY);
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+}
+
+/// Record that cross-process exclusion is OFF for this operation — **durably**.
+///
+/// `eprintln!` alone was how the first cut announced it, and this subsystem already knows better:
+/// `link_life_restore` carries the rule in-code ("NEVER `eprintln!` a failure a user needs —
+/// Windows GUI release builds send stderr nowhere"), written after the Boss's 2026-07-27 restore
+/// reported *"0 of 34 written"* with 33 records unaccounted for and no reason recorded anywhere.
+/// `main.rs` is `windows_subsystem = "windows"` in release, so that channel is not merely quiet,
+/// it does not exist.
+///
+/// What is being announced is not a lost write — the degraded state IS pre-0.3 behaviour, which
+/// ships on main today. It is that a documented loss path has been silently re-opened: a Universe
+/// on a share whose filesystem cannot lock runs an entire session with the 0.3 protection off,
+/// every command returning Ok. Erasing that evidence is what turns a detectable degradation into
+/// an undetectable one, so the line goes to the durable sink the user can actually open.
+fn degraded(dir: &Path, why: &str) {
+    let msg = format!(
+        "[link-life] {why} in {} — proceeding with in-process exclusion only (pre-0.3 behaviour): \
+         a SECOND INSTANCE could now compact this ledger under an append here",
+        dir.display()
+    );
+    // `dir` IS the `.constellation` dir (see `store_dir`), and `diag_log` takes the search.db path
+    // so callers never need to know the Universe root — the same shape link_life_restore uses.
+    // It mirrors to stderr itself for dev builds, so there is no second `eprintln!` here.
+    crate::search::diag_log(&dir.join("search.db"), &msg);
+}
+
+fn file_guard(dir: &Path) -> LedgerGuard {
+    let mutex = FILE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let os = match std::fs::OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(dir.join("ledger.lock"))
+    {
+        Ok(f) => match lock_within_budget(&f, OS_LOCK_BUDGET) {
+            Ok(()) => Some(f),
+            Err(e) => {
+                degraded(dir, &format!("ledger.lock could not be locked ({e})"));
+                None
+            }
+        },
+        Err(e) => {
+            degraded(dir, &format!("ledger.lock could not be opened ({e})"));
+            None
+        }
+    };
+    LedgerGuard { _mutex: mutex, os }
 }
 
 /// Append lines to a stream. ONE `write_all` per line including its `\n`, in append mode, so a
@@ -206,7 +348,7 @@ pub fn append(dir: &Path, s: Stream, lines: &[String]) -> Result<(), String> {
     if lines.is_empty() {
         return Ok(());
     }
-    let _g = file_guard();
+    let _g = file_guard(dir);
     let path = dir.join(s.file_name());
     let mut h = std::fs::OpenOptions::new()
         .create(true)
@@ -229,7 +371,7 @@ pub fn append(dir: &Path, s: Stream, lines: &[String]) -> Result<(), String> {
 pub fn fsync(dir: &Path, s: Stream) -> Result<(), String> {
     // Under the same lock as `append`: opening the tail while a compaction is renaming it would
     // otherwise recreate an empty file and sync that instead.
-    let _g = file_guard();
+    let _g = file_guard(dir);
     let path = dir.join(s.file_name());
     let h = std::fs::OpenOptions::new()
         .create(true)
@@ -311,7 +453,34 @@ fn read_lines(path: &Path, report: &mut LoadReport) -> Vec<serde_json::Value> {
 /// written, so plain file order already means "later wins" for decisions. It also means a crash
 /// between writing the snapshot and renaming the tail aside is harmless: both are read, and the
 /// duplicated region folds to the same answer it had before.
+///
+/// ★ **The read is UNDER THE GUARD — the second correction the 0.3 inspection forced.** That
+/// crash argument covers a *crash*, where nothing runs afterwards. It does not cover a
+/// **concurrent** compaction, and the two reads are two separate `read_to_string` calls: a
+/// compaction that persists the new snapshot and renames the tail aside *between* them leaves the
+/// reader folding the OLD snapshot plus an absent tail — and an absent tail is a FACT here, an
+/// empty store, not an error. Every record that lived in the tail simply vanishes from the fold,
+/// silently, with the load report reading perfectly normal.
+///
+/// The damage is the same shape as the append race and lands on the same data: `link_life_restore`
+/// treats the fold as authoritative for decisions, so a stale fold does not merely omit them — it
+/// **writes the pre-decision values back**, un-retiring a link the user retired, re-imposing a
+/// priority they cleared. Cross-process reachability is not hypothetical and not only MIG-111's
+/// end state: the Phase 0.2 owner lock is still record-only, so two instances can hold the same
+/// Universe today, and each boot runs restore → compact over this same directory.
+///
+/// The guard has to live HERE rather than at the callers, because "every reader takes it" is
+/// exactly the kind of promise a new caller silently breaks. `maybe_compact` is the one caller
+/// that already holds it, and it calls `read_state_locked` — the non-reentrancy is discharged by
+/// there being two names, not by remembering.
 pub fn read_state(dir: &Path) -> (LedgerState, LoadReport) {
+    let _g = file_guard(dir);
+    read_state_locked(dir)
+}
+
+/// `read_state`'s body, for the one caller that is already inside the guard. Never `pub`: the
+/// unlocked read is a compaction implementation detail, not a reading mode anyone may choose.
+fn read_state_locked(dir: &Path) -> (LedgerState, LoadReport) {
     let mut report = LoadReport::default();
     // The refusal must be OBSERVED, not remembered — see `quarantine_pending`. Every reader now
     // gets the same answer from the same fact on disk, so a guard that says "refuse" can actually
@@ -589,7 +758,16 @@ pub fn maybe_compact(dir: &Path, stamp: &str) -> Result<CompactOutcome, String> 
     // "decide what the tail contains, then declare that content handled". An append landing
     // between those two halves is a record that no reader will ever see again. Held only on the
     // rare occasion the threshold is actually crossed — see `FILE_LOCK` for the failure it stops.
-    let _g = file_guard();
+    let _g = file_guard(dir);
+    // ★ And if that critical section is not actually exclusive across processes, we do not enter
+    // it. See `LedgerGuard::cross_process` for why the append path's "proceed anyway" reasoning
+    // does not carry here: this is the operation that moves records OUT of the load path.
+    if !_g.cross_process() {
+        return Ok(CompactOutcome::Refused(
+            "cross-process exclusion unavailable — refusing to move the tail out of the load path \
+             while another instance could be appending to it",
+        ));
+    }
     // Re-read the size under the lock. Between the probe and the lock, another compaction (or a
     // quarantine) may have already dealt with this tail.
     let tail_bytes = std::fs::metadata(&tail).map(|m| m.len()).unwrap_or(0);
@@ -597,7 +775,9 @@ pub fn maybe_compact(dir: &Path, stamp: &str) -> Result<CompactOutcome, String> 
         return Ok(CompactOutcome::BelowThreshold { tail_bytes });
     }
 
-    let (state, load) = read_state(dir);
+    // The guard is already held — see `read_state`'s note on why the unlocked body has its own
+    // name. Calling `read_state` here would deadlock on the non-reentrant mutex.
+    let (state, load) = read_state_locked(dir);
     if load.refuse_write {
         // The store was structurally unusable and renamed aside. Writing a snapshot from a store
         // we could not read is how a compactor destroys the thing it exists to protect.
@@ -662,7 +842,12 @@ pub fn maybe_compact(dir: &Path, stamp: &str) -> Result<CompactOutcome, String> 
 /// write a fresh one until acknowledged. `stamp` is supplied by the caller (never `Date::now`
 /// inside, so the name is deterministic in tests).
 pub fn quarantine(dir: &Path, s: Stream, stamp: &str) -> LoadReport {
-    let _g = file_guard(); // it renames the live store — same exclusion as compaction
+    // Renames the live store — same exclusion as compaction, but deliberately NOT the same
+    // refusal. Compaction is optional and re-runs every boot, so refusing it when the OS lock is
+    // unavailable costs nothing; quarantine exists to stop the app reading a store it could not
+    // parse, and refusing THAT on a lockless filesystem would leave it reading the corruption.
+    // (Reachable from tests only today — the corrupt-store path is not yet wired to a caller.)
+    let _g = file_guard(dir);
     let src = dir.join(s.file_name());
     let dest = dir.join(format!("earned.corrupt-{stamp}.jsonl"));
     let mut report = LoadReport::default();
@@ -915,6 +1100,310 @@ pub fn conf_rank(conf: &str) -> u8 {
         "established" => 3,
         "evidence" => 2,
         _ => 1,
+    }
+}
+
+#[cfg(test)]
+mod tests_0_3_cross_process {
+    //! MIG-111 Phase 0.3 — the verification clause: two REAL processes, no line lost.
+    use super::*;
+    use std::path::PathBuf;
+
+    /// The child body: appends numbered lines to the Earned tail as fast as it can until the
+    /// stop marker vanishes. Ignored in normal runs; the parent invokes it explicitly.
+    #[test]
+    #[ignore = "child-process helper for the 0.3 two-process conservation test"]
+    fn ledger_appender_child() {
+        let (Ok(dir), Ok(stop)) = (
+            std::env::var("CONSTELLATION_LEDGER_DIR"),
+            std::env::var("CONSTELLATION_LEDGER_STOP"),
+        ) else {
+            return;
+        };
+        let dir = PathBuf::from(dir);
+        let stop = PathBuf::from(stop);
+        let mut i = 0u32;
+        while stop.exists() && i < 5_000 {
+            append(&dir, Stream::Earned, &[format!("CHILD-{i}")]).expect("child append");
+            i += 1;
+        }
+        // Tell the parent how many we wrote.
+        std::fs::write(dir.join("child.count"), i.to_string()).unwrap();
+    }
+
+    /// **Conservation across processes.** A real second process appends continuously while THIS
+    /// process repeatedly renames the tail aside under the guard (`quarantine` — the same
+    /// rename-under-append critical section as compaction, minus the fold). With the OS lock,
+    /// every appended line must survive INTACT, EXACTLY ONCE, somewhere findable (current tail
+    /// or an aside file) — no vanished lines, no torn fragments, no duplicates. Before 0.3 the
+    /// two processes' guards were invisible to each other, so a rename could slide under an
+    /// in-flight append (`FILE_SHARE_DELETE`) — the Slice-7 shape across the process boundary.
+    #[test]
+    fn two_process_append_vs_rename_loses_nothing() {
+        let t = tempfile::TempDir::new().unwrap();
+        let dir = t.path().to_path_buf();
+        let stop = dir.join("keep-going");
+        std::fs::write(&stop, b"1").unwrap();
+
+        let exe = std::env::current_exe().unwrap();
+        let mut child = std::process::Command::new(&exe)
+            .args([
+                "link_life::tests_0_3_cross_process::ledger_appender_child",
+                "--exact",
+                "--nocapture",
+                "--include-ignored",
+            ])
+            .env("CONSTELLATION_LEDGER_DIR", &dir)
+            .env("CONSTELLATION_LEDGER_STOP", &stop)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("spawn appender child");
+
+        // Interleave: this process appends its own lines AND renames the tail aside repeatedly,
+        // all through the real public API (the same critical sections production uses).
+        for k in 0..40u32 {
+            append(&dir, Stream::Earned, &[format!("PARENT-{k}")]).expect("parent append");
+            if k % 8 == 7 {
+                let _ = quarantine(&dir, Stream::Earned, &format!("t{k}"));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+
+        // Stop the child, collect its count.
+        std::fs::remove_file(&stop).unwrap();
+        let _ = child.wait();
+        let child_n: u32 = std::fs::read_to_string(dir.join("child.count"))
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
+        assert!(child_n > 0, "the child must actually have appended under contention");
+
+        // Gather every line from the current tail + every aside file.
+        let mut seen: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            if name == Stream::Earned.file_name() || name.starts_with("earned.corrupt-") {
+                if let Ok(txt) = std::fs::read_to_string(&path) {
+                    for line in txt.lines() {
+                        *seen.entry(line.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+        for i in 0..child_n {
+            let key = format!("CHILD-{i}");
+            assert_eq!(seen.get(&key), Some(&1), "child line {key} must survive exactly once");
+        }
+        for k in 0..40u32 {
+            let key = format!("PARENT-{k}");
+            assert_eq!(seen.get(&key), Some(&1), "parent line {key} must survive exactly once");
+        }
+        // And nothing torn: every surviving line is one of ours, whole.
+        for (line, n) in &seen {
+            assert_eq!(*n, 1, "duplicated line: {line}");
+            assert!(
+                line.starts_with("CHILD-") || line.starts_with("PARENT-"),
+                "torn or foreign fragment in the ledger: {line:?}"
+            );
+        }
+    }
+
+    /// The child body for the READER test: takes the real guard, announces that it holds it,
+    /// keeps it for `HOLD`, then releases. It performs the compaction's own two-step in that
+    /// window — persist a new snapshot, rename the tail aside — so a reader that slipped inside
+    /// would fold the old snapshot against an absent tail.
+    #[test]
+    #[ignore = "child-process helper for the 0.3 reader-exclusion test"]
+    fn ledger_lock_holder_child() {
+        let Ok(dir) = std::env::var("CONSTELLATION_LEDGER_DIR") else { return };
+        let dir = PathBuf::from(dir);
+        let _g = file_guard(&dir);
+        std::fs::write(dir.join("child.holding"), b"1").unwrap();
+        std::thread::sleep(HOLD);
+        // A FAITHFUL compaction — the module's own fold and serializer, then the real two-step in
+        // its dangerous order. Faithful matters: the snapshot it leaves behind holds everything
+        // the tail held, so if the reader still ends up missing a record, the miss is the race
+        // and not a lossy fixture.
+        let (state, _) = read_state_locked(&dir);
+        let mut text = String::new();
+        for line in snapshot_lines(&state) {
+            text.push_str(&line);
+            text.push('\n');
+        }
+        std::fs::write(dir.join(SNAPSHOT_FILE), text).unwrap();
+        let _ = std::fs::rename(
+            dir.join(Stream::Earned.file_name()),
+            dir.join("earned.tail-child.jsonl"),
+        );
+        std::fs::write(dir.join("child.done"), b"1").unwrap();
+    }
+
+    const HOLD: std::time::Duration = std::time::Duration::from_millis(500);
+
+    /// **A reader may not walk into a compaction.** `read_state` reads two files; a foreign
+    /// process that persists the new snapshot and renames the tail aside *between* them leaves
+    /// the reader folding the old snapshot plus an absent tail — and the restore then writes
+    /// those pre-decision values back over the user's decisions.
+    ///
+    /// RED before the fix: `read_state` took no lock at all, so this returned in microseconds
+    /// while the child held the guard. The elapsed-time assertion IS the exclusion claim — the
+    /// only thing that can make a two-file read atomic against another process.
+    #[test]
+    fn read_state_waits_for_a_foreign_holder() {
+        let t = tempfile::TempDir::new().unwrap();
+        let dir = t.path().to_path_buf();
+        append(
+            &dir,
+            Stream::Earned,
+            &[
+                r#"{"v":1,"t":"walk","cid":"C_A","to":"C_B","n":7}"#.to_string(),
+                r#"{"v":1,"t":"retire","cid":"C_A","to":"C_B","at":"2026-08-15T10:00:00Z"}"#
+                    .to_string(),
+            ],
+        )
+        .unwrap();
+
+        let exe = std::env::current_exe().unwrap();
+        let mut child = std::process::Command::new(&exe)
+            .args([
+                "link_life::tests_0_3_cross_process::ledger_lock_holder_child",
+                "--exact",
+                "--nocapture",
+                "--include-ignored",
+            ])
+            .env("CONSTELLATION_LEDGER_DIR", &dir)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("spawn lock-holder child");
+
+        // Wait for the child to actually hold it — otherwise we would be timing nothing.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        while !dir.join("child.holding").exists() {
+            assert!(std::time::Instant::now() < deadline, "child never took the lock");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+
+        let t0 = std::time::Instant::now();
+        let (state, report) = read_state(&dir);
+        let waited = t0.elapsed();
+        let _ = child.wait();
+
+        assert!(
+            waited >= HOLD / 2,
+            "read_state returned in {waited:?} while another process held the ledger guard — \
+             the two-file read is not excluded against a concurrent compaction"
+        );
+        assert!(dir.join("child.done").exists(), "the child must have finished its rename first");
+        // And having waited, the fold is whole: the decision that lived in the tail is present.
+        assert_eq!(report.skipped_lines, 0);
+        assert_eq!(
+            state.links.get("C_A>C_B").and_then(|e| e.status.clone()).as_deref(),
+            Some("archived"),
+            "the retire record must survive the compaction the reader waited out"
+        );
+    }
+
+    /// **Without cross-process exclusion, compaction REFUSES.** The append path proceeds when the
+    /// OS lock is unavailable, and that is right — blocking would hang a user's command, and the
+    /// appended record is still findable in the aside copy. The compaction is the operation that
+    /// CREATES that aside copy, and nothing ever reads one back, so proceeding blind there is the
+    /// one place the fallback could actually destroy a decision: a second instance appending a
+    /// retire during the fold-to-rename window would have it moved out of the load path, and the
+    /// next boot's restore would write the pre-decision value back over it.
+    ///
+    /// A directory named `ledger.lock` makes the lock file unopenable — the same `os: None` state
+    /// a share with no lock support produces, deterministically.
+    #[test]
+    fn compaction_refuses_when_it_cannot_exclude_another_process() {
+        let d = tempfile::TempDir::new().unwrap();
+        // A tail well past the threshold, so the only thing that can stop it is the refusal.
+        let mut lines = Vec::new();
+        for i in 0..40_000 {
+            lines.push(format!(
+                r#"{{"v":1,"t":"walk","cid":"C_A","to":"C_B{i}","n":3}}"#
+            ));
+        }
+        append(d.path(), Stream::Earned, &lines).unwrap();
+        assert!(
+            std::fs::metadata(d.path().join(Stream::Earned.file_name())).unwrap().len()
+                >= COMPACT_THRESHOLD_BYTES,
+            "the fixture must actually cross the threshold, or this proves nothing"
+        );
+
+        // The append above already created the lock FILE; replace it with a directory.
+        let lock = d.path().join("ledger.lock");
+        std::fs::remove_file(&lock).unwrap();
+        std::fs::create_dir(&lock).unwrap();
+        let out = maybe_compact(d.path(), "NOLOCK").unwrap();
+        assert!(
+            matches!(out, CompactOutcome::Refused(_)),
+            "expected a refusal with the exclusion unavailable, got {out:?}"
+        );
+        // And the refusal is real: the tail is untouched, nothing moved out of the load path.
+        assert!(d.path().join(Stream::Earned.file_name()).exists(), "the tail must still be live");
+        assert!(!d.path().join(SNAPSHOT_FILE).exists(), "and no snapshot was written over it");
+        assert_eq!(
+            read_state(d.path()).0.links.len(),
+            40_000,
+            "every record is still in the load path"
+        );
+    }
+
+    /// **Losing the OS lock must leave EVIDENCE ON DISK.** The first cut announced the fallback
+    /// with `eprintln!` only — and `main.rs` is `windows_subsystem = "windows"` in release, so
+    /// that channel does not exist for the user. A Universe on a share whose filesystem cannot
+    /// lock would then run an entire session with the 0.3 protection off, every command returning
+    /// Ok, with nothing anywhere recording that a documented loss path had been re-opened. This
+    /// pins the durable sink, which is the whole content of the fix.
+    #[test]
+    fn the_degraded_fallback_is_recorded_where_a_human_can_read_it() {
+        let t = tempfile::TempDir::new().unwrap();
+        degraded(t.path(), "ledger.lock could not be opened (simulated)");
+        let log = std::fs::read_to_string(t.path().join("diagnostics.log"))
+            .expect("the fallback must reach diagnostics.log, not just stderr");
+        assert!(log.contains("in-process exclusion only"), "it must say WHAT was lost: {log}");
+        assert!(log.contains("SECOND INSTANCE"), "and why that matters: {log}");
+    }
+
+    /// **The wait is bounded.** A stuck foreign holder must cost a bounded wait and a loud line,
+    /// never the process: the first 0.3 cut called `lock_exclusive`, an unbounded park held
+    /// inside the process-global mutex, which would have frozen every ledger write here forever.
+    #[test]
+    fn a_held_lock_times_out_instead_of_parking_forever() {
+        use fs4::FileExt;
+        let t = tempfile::TempDir::new().unwrap();
+        let path = t.path().join("ledger.lock");
+        let holder = std::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&path)
+            .unwrap();
+        holder.lock_exclusive().unwrap();
+
+        // A second HANDLE in this process is a genuine second lock owner to the OS.
+        let waiter = std::fs::OpenOptions::new().read(true).write(true).open(&path).unwrap();
+        let budget = std::time::Duration::from_millis(120);
+        let t0 = std::time::Instant::now();
+        let outcome = lock_within_budget(&waiter, budget);
+        let waited = t0.elapsed();
+
+        assert!(outcome.is_err(), "a held lock must not be reported as acquired");
+        assert!(waited >= budget, "it must actually have waited its budget, not failed fast");
+        assert!(
+            waited < budget * 8,
+            "it must give up near the budget, not park indefinitely (waited {waited:?})"
+        );
+
+        holder.unlock().unwrap();
+        assert!(
+            lock_within_budget(&waiter, budget).is_ok(),
+            "and once free, the very next attempt takes it"
+        );
     }
 }
 
@@ -1298,7 +1787,15 @@ mod tests_mig104_compact {
         assert_eq!(std::fs::read(d.path().join("earned.jsonl")).unwrap(), before);
         assert_eq!(std::fs::metadata(d.path().join("earned.jsonl")).unwrap().modified().unwrap(), stamp_before);
         assert!(!d.path().join(SNAPSHOT_FILE).exists(), "no snapshot is created for an idle store");
-        assert_eq!(std::fs::read_dir(d.path()).unwrap().count(), 1, "no aside copies, no temps left behind");
+        // MIG-111 0.3 — `ledger.lock` (the cross-process guard's OS-lock file) is a permanent
+        // resident of the dir, not a leftover; the census excludes it BY NAME so any OTHER new
+        // file still fails this invariant.
+        let residents: Vec<String> = std::fs::read_dir(d.path())
+            .unwrap()
+            .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().to_string()))
+            .filter(|n| n != "ledger.lock")
+            .collect();
+        assert_eq!(residents.len(), 1, "no aside copies, no temps left behind: {residents:?}");
     }
 
     /// Stream B's records ARE the payload; folding two of them destroys the intermediate state
