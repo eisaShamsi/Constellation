@@ -618,3 +618,138 @@ miss in v1.85**: the ninth sweep's two `migrate_legacy_data` findings were recor
 "joining the triage pile" and never filed in the ledger — the exact drift SO#9 exists to prevent,
 one step earlier. Registers banked: `SWEEP-2026-08-15-tenth-whole-app-INCOMPLETE.json` and
 `SWEEP-2026-08-15-mig111-phase03-diff.json` (all three diff rounds).
+
+---
+
+## The ①+② remediation pass — PJ-278…PJ-283 (the tenth sweep's nine findings), CODE-COMPLETE
+
+Six PJs, one concern: **silent failure on and around the save path.** Taken before MIG-111 Phase
+0.4 because six of the nine sit in the Boss's stated ①+② priority (knowledge actively lost; the
+index lying about your notes), and WA#6 forbids shipping a known finding.
+
+| PJ | what was wrong | what it is now |
+|---|---|---|
+| **281** | A transient read failure of a legacy `workbench.json` returned `Ok([])`. The frontend cannot tell that from a genuinely empty store: it seeds a Starred collection and persists it, **creating `collections.json` and closing the one-shot adoption gate forever** — the user's whole Workbench set gone, silently. | Routed through `read_persisted_json`, where only NotFound is trustworthy emptiness. Extracted as the pure, testable `adopt_legacy_collections`. |
+| **281b** | *Found while fixing the above, in the same block:* it **wrote before it parsed** — a corrupt `workbench.json` was copied verbatim into `collections.json` and the legacy retired, and only then did the parse fail. Every later boot then found a present-but-unparseable file with the gate closed: collections gone AND unloadable. | Parse first. Nothing is written unless the payload is known good. |
+| **279** | `resolve_structural_conflict` swallowed its reindex `Err` and never readied the DB — the one gated-RMW sibling that missed both 2026-08-01 treatments, three lines above a branch that *does* log its skip. Retrying was a dead end: the disk is already resolved, so the gate returns `OkUnchecked` and skips the reindex forever. | `ensure_search_db_ready` **before** the write (refuse rather than half-do it, keeping the retry live) + the failure logged. |
+| **280** | The review write pair was **half-pinned**: the 2026-08-01 fix pinned `review-pulse.json` to the click-time universe; `sync_action_to_row` still resolved the ACTIVE one. A switch between the halves wrote a ghost row into the other universe's `review_schedule` while the note kept resurfacing as due in the right one — PJ-187's symptom, through the unpinned half. | The connection is checked against the pinned dir and refused on mismatch, naming both. Re-routing needs Phase 1's Router; the pulse (the earned truth) already landed correctly. |
+| **278** | Three durable-save paths reindexed but never re-embedded — **Focus mode** (the designated fast-capture surface), the save-failure **Retry** (which also never told the second screen, while the user watched the banner clear), and **conflict merge** (which replaces the whole body by construction). None self-heals. | One `afterDurableSave` — the routine stops being something seven call sites remember. |
+| **282** | CECE's per-cataloger timeout **could not time out**: the worker ran inside `std::thread::scope`, which joins before returning. The bound did not exist, the Architect invariant was silently false, and the trail told the user the cataloger had been "isolated by orchestrator" when nothing was. | A detached thread — possible because the registry already holds `Arc<dyn Cataloger>`. Test: an 8 s cataloger against a 500 ms budget returns control in **0.51 s**. |
+| **283** | "Background classification = on save" dispatched an event whose only listener lives in a mounted `SourceReviewPanel`. In the normal typing state nothing listened: no classifier, no queue row, no log — the setting the user switched on did nothing, while its own contract says it "fires `classifier_suggest_for_note`". | The event is `cancelable`; an open panel claims it with `preventDefault`; unclaimed, the editor makes the call the setting promised. |
+
+### The finding the gate caught in my own fix — and it was the serious one
+
+The first cut of `afterDurableSave` took a `tabId` and read `getNoteModel(tabId)?.body` **after** the
+awaited write. **A tab id is a slot, not a note.** `openNoteTab` reuses it in place and only flushes
+the outgoing note when that note is DIRTY — so while note A's write is parked on `await`, a click on
+note B re-seeds the same id without ever serialising behind A. A's write then resolved and embedded
+**B's body under A's path** (`INSERT OR REPLACE`) — silent, permanent, and the same content-integrity
+class as BUG-023. With the tab CLOSED the lookup was `undefined` and `?? ''` force-embedded an empty
+body over the real vector.
+
+The identity-correct value was **already being handed to the callback and ignored**: `onSaved` receives
+`(path, content)`, and `content` is exactly the bytes that landed at `path`. The helper now derives the
+body from it and performs no lookup at all, so there is no window in which the answer can change and no
+disposal case to paper over. (The prop-save path already knew this — it captures its embed body before
+the await for the same reason.) Five tests in `tests/pj-278/` pin the property; the re-inspection of the
+corrected code returned **zero findings**.
+
+**Verification.** Rust **1477/0**, vitest **915/915** (81 files), svelte-check **0 errors**.
+Diff-scoped inspections: Rust half clean first pass; frontend half rejected once (the bleed above)
+then clean.
+
+**Coverage, per fix — because the gate caught me claiming it wrongly.** The first draft of the Boss
+test said "five new Rust tests" covering four fixes. The `ui-inspector` checked and it was false:
+four of those five covered PJ-281 (which the draft did not even mention), PJ-278's coverage is a
+**vitest** suite rather than Rust, and **PJ-279 and PJ-280 had no tests at all**. That is a gap in
+the *work*, not the write-up, so the missing tests were written rather than the absence merely
+disclosed:
+
+| fix | pinned by |
+|---|---|
+| PJ-278 | 5 vitest cases (`tests/pj-278/`) — the identity property, incl. the closed-tab case |
+| PJ-279 | **2 new** source-assertion wiring tests — order (ensure-before-write) and non-swallowing, following `index_repair.rs`'s precedent: *"a guard you have just written is exactly the guard you are least likely to check"* |
+| PJ-280 | **3 new** — the comparison extracted as the pure `open_db_belongs_to`, incl. fail-closed on an unidentifiable DB |
+| PJ-281 | 4 — absent / good / unreadable / corrupt |
+| PJ-282 | 1 — an 8 s cataloger against a 500 ms budget returns in 0.51 s |
+| PJ-283 | **none** — a hand-off between two mounted screens; Stage 2 of the Boss test IS its verification, stated as such in the test |
+
+*(The first cut of one PJ-279 wiring test matched the words `gate_rmw` inside the comment
+explaining the guard, asserting an ordering between two pieces of prose. The extractor now strips
+comments — a test that can be satisfied by writing a sentence is not a test.)*
+
+**The Boss test itself was rejected twice** by `ui-inspector` before approval: round 1 for a wrong
+label (`Saving…` vs `Saving...`), an invented "background repair job" characterisation of the
+Structure-panel action, the CECE fix missing from the accounting, and no allowance for
+classification latency in the queue check; round 2 for the false coverage claim above and for
+omitting PJ-281 — the batch's most severe fix — from the Boss's view entirely.
+
+**Not committed.** This batch changes save-path behaviour; it waits on the Boss's pass.
+
+### Also discovered, filed not fixed
+`tests/sight-v6/perf.test.ts` and `tradition-perf.test.ts` are **load-sensitive wall-clock assertions**
+that fail a *different number of tests run to run* — 3 failures on a clean tree, 1 with this batch
+applied, 12 under concurrent load. A gate that cannot distinguish a regression from machine noise is
+not a gate; deciding what it should measure instead is its own job, so it is filed rather than patched.
+
+---
+
+## PJ-284 — the unswept scopes, re-run (two of three closed), and what they found
+
+The tenth whole-app sweep died on a model quota with three hunt groups unrun. Two of them —
+**note-model ownership** and **cross-window integrity** — have now been swept over their files
+(`noteModel.ts`, `noteSession.ts`, `secondScreen.ts`, `SecondScreenPage.svelte`,
+`SecondScreenCockpit.svelte`). **The third, freeze-and-leaks, does not decompose into a file list
+and remains unswept** — PJ-284 stays open for it rather than being declared closed on two thirds.
+
+**Five confirmed findings, all pre-existing** — verified against the working tree: the PJ-278…283
+batch touches none of these files. Filed as **PJ-287…PJ-291** in ledger v1.87.
+
+**PJ-287 is the one that matters, and it is an app-killer shape.** `saveUnchained` ratifies a write
+whose model lineage has broken: `markSaved`/`noteDiskSynced` correctly refuse on a generation
+mismatch, but the function still runs `clearNetIf` + `onSuccess` and returns `ok:true`. The path is
+ordinary — a save fails on a locked `.md`, the ~10 s auto-retry parks on `await write`, and the user
+clicks **"Discard my changes"** in that window. A new model is minted from disk; the parked write
+then lands. **The bytes the user explicitly discarded are written to disk, and the version they
+chose to keep is destroyed** — it survives only in an in-memory model that reports CLEAN and will
+therefore never be written back. The write is watcher-suppressed so nothing adopts it, and
+`afterDurableSave` then reindexes and re-embeds from the discarded content. Nothing is surfaced
+anywhere. An explicit user decision, silently inverted, with the discarded alternative gone.
+
+It is not fixed in this pass **deliberately**: the batch in front of it is awaiting the Boss's test,
+and changing the save path mid-test would invalidate what he is testing. It is the top of the
+backlog the moment that batch commits — stated here so the deferral is a decision on the record,
+not a silence.
+
+### Boss test — PASSED, and one step withdrawn as unperformable
+
+**Stage 1 (regression):** Steps 1, 2, 3, 5 **PASS** — type-burst + debounced save; tab switch away
+and back; Focus round-trip with both lines intact; restart with content unchanged.
+
+**Step 4 WITHDRAWN.** It asked him to switch tabs *while in Focus mode*. His reply: *"Cannot comply.
+There is NO tabs in Focus mode. You should know that."* Verified after the fact: `.focus-pane` is
+`position: fixed; inset: 0; z-index: 100` — it covers the window, tab bar included. The step had
+been written by `tutorial-auditor`, gated by `ui-inspector`, and **APPROVED**, with
+`+layout.svelte:1694-1704` cited as evidence that a tab switch exits Focus. That effect is real; it
+is a defensive guard for a *programmatic* note change, and no user can trigger it. **The gate
+verified existence and never asked reachability.**
+
+Worse, when told it was impossible I went looking for another route to force it (a keyboard path to
+the quick switcher from inside Focus). The Boss stopped that too: *"You won't find anything to
+switch to another note or tab in Focus mode. We design it this way, and that's why we name it Focus
+mode."* The absence of navigation is the surface's concept, not a hole in it.
+
+**No coverage was lost.** The risk behind the step — a Focus write landing after the session moved
+on — is only reachable as exit-then-switch, which Steps 3 + 2 already exercised.
+
+Written up as **LL-045: a gate that verifies a code fact has not verified that a human can reach
+it**, with the reachability question stated as the second half of every UI claim.
+
+**Stage 2 (the PJ-283 fix):** **PASS**, with evidence — The Cataloger showed exactly **1 pending**
+card for Note C ("Field notes on the zarquon migration and blorptide sightings", Unanimous, sources
+Perception/Sensation 100%, content type Epistemic states 100%), classified while neither the
+Cataloger nor Source Review was open. That is precisely the state in which the setting used to do
+nothing at all. This was the batch's only fix with no automated test; the walkthrough was its
+verification, and it verified.
+
+**Committed after the pass, never before.**

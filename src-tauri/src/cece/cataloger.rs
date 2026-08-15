@@ -166,6 +166,10 @@ impl ReasoningTrail {
 /// to embed the note text) is handled at the wiring layer via the
 /// `MemoizedEmbed` helper that the orchestrator constructs once per
 /// IPC call and shares across cataloger registrations.
+/// `Clone` so the orchestrator can hand an owned copy to a DETACHED worker thread — the only
+/// way a per-cataloger timeout can be a real wall-clock bound (see `run_one_safe`). Cloned once
+/// per classification into an `Arc`, not once per cataloger.
+#[derive(Clone)]
 pub struct CatalogerContext {
     pub note_path: String,
     pub content: String,

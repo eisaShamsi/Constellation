@@ -920,6 +920,13 @@
     // instance (activeNotePath null), which still prepends them. Without this, an
     // X-scoped rail would be contaminated by note Y's freshly-classified card.
     if (activeNotePath && notePath !== activeNotePath) return;
+    // PJ-283 — CLAIM the event. The on-save dispatcher (NoteEditor) needs to know whether any
+    // panel actually took this note, because in the normal typing state — no Source Review rail,
+    // no Cataloger — there is no listener at all and the user's "background classification =
+    // on save" setting was a silent no-op. `preventDefault` is called only here, past every
+    // early return, so it means "a mounted panel is classifying this note", never merely "an
+    // instance exists"; the dispatcher invokes the classifier itself when nothing claims it.
+    e.preventDefault();
     classifying = true;
     error = null;
     try {

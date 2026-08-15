@@ -524,9 +524,11 @@ export async function retrySaveFailure(path: string): Promise<void> {
 	await saveNoteSession(tab.id, path, standardSaveEnv({
 		origin: 'retry_save',
 		name: tab.name,
-		onSaved: (savedPath) => {
-			void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
-		},
+		// PJ-278 — this path reindexed and did nothing else. A save that lands only via the Retry
+		// button or the ~10s auto-retry then left the embedding frozen at the pre-edit text AND
+		// never told the second screen — while the user watched the failure banner clear, which
+		// reads as complete success. It owes the same three things every other durable save owes.
+		onSaved: (savedPath, content) => afterDurableSave(savedPath, tab.name, tab.libraryName, content),
 	}), 'retry_save');
 }
 
@@ -648,18 +650,10 @@ function navFlushEnv(tab: { id: string; name: string; libraryName: string }, ori
 	return standardSaveEnv({
 		origin,
 		name: tab.name,
-		onSaved: (savedPath) => {
-			emit('screen:note-saved', { path: savedPath }).catch(() => {});
-			void reindexNote(savedPath, tab.libraryName); // bounded retry + surfaced failure inside
-			// PJ-207 §15 — the same swallowed embed as the editor's, on the nav-flush path: a
-			// rejected call left this note's vector frozen at its pre-edit text with nothing to
-			// retry it and no message. The outer gate stays only to avoid the O(N) rope
-			// toString() when semantic search is off; reembedNote re-checks it so the sites
-			// cannot drift apart on the condition.
-			if (get(appSettings).enabledFeatures?.semanticSearch) {
-				void reembedNote(savedPath, tab.name, getNoteModel(tab.id)?.body.toString() ?? '');
-			}
-		},
+		// PJ-207 §15 gave this path its embed; PJ-278 moved the whole routine into
+		// `afterDurableSave`, which this call is now byte-for-byte identical to. Kept as a caller
+		// rather than an exception so the nav-flush path can never drift back out of the set.
+		onSaved: (savedPath, content) => afterDurableSave(savedPath, tab.name, tab.libraryName, content),
 	});
 }
 
@@ -4100,6 +4094,70 @@ export async function constellationSearch(request: ConstellationSearchRequest): 
  *  correctly on screen but search/switcher/backlinks serve its OLD text until reindexed. */
 export const indexHealthError = writable<string | null>(null);
 
+/**
+ * **What must happen after a durable write lands — in ONE place.** (PJ-278, tenth sweep.)
+ *
+ * Three things are owed to a note whose bytes just reached disk: the second screen must be told,
+ * the lexical index must be refreshed, and — with semantic search on — the embedding vector must be
+ * recomputed. PJ-207 §15 established that third obligation and gave it to four save paths. The
+ * sweep found **three more durable-save paths that were never given it**, and the shape of the miss
+ * is the point: each site hand-assembled its own post-save routine, so "add the embed" had to be
+ * remembered seven separate times.
+ *
+ * - `commitFocusSave` — and Focus is the *designated fast-capture editing surface*, so a body
+ *   written there left semantic search, "similar notes" and CECE answering from the pre-Focus text
+ *   indefinitely.
+ * - `retrySaveFailure` — which also never told the second screen. Worse than merely missing: the
+ *   user watches the save-health banner CLEAR, which reads as complete success.
+ * - `resolveConflictMerge` — which replaces the whole body by construction.
+ *
+ * None self-corrects. The boot backfill only embeds notes with NO vector at all, `index_repair` and
+ * `constellation_search_reindex` never touch `note_embeddings`, and the model is marked clean by the
+ * durable write — so no later save fires for that content either. The staleness is permanent until
+ * the user happens to edit the same note again on a path that does re-embed.
+ *
+ * So the routine stops being something each caller remembers and becomes something one function
+ * does.
+ *
+ * ## Why the body is the WRITTEN BYTES, and never a model lookup
+ *
+ * The first cut of this helper took a `tabId` and read `getNoteModel(tabId)?.body` — after the
+ * awaited write. The gate caught it, and it was the worst kind of bug this codebase has: a
+ * **cross-note bleed**. A tab-id slot is a slot, not a note. `openNoteTab` reuses it in place and
+ * calls `openNoteModel(currentTab.id, …)` synchronously, and it only flushes the outgoing note
+ * when that note is DIRTY — so while a write for note A is parked on `await`, a click on note B
+ * can re-seed the same id with B's model without ever serialising behind A's write. When A's write
+ * then resolved, the lookup returned **B's body**, and `reembedNote(A_path, …, B_body, force)` did
+ * an `INSERT OR REPLACE` — storing a vector of B's text under A's path. Silent (the call
+ * succeeded), permanent (the boot backfill only embeds notes with NO row; repair and reindex never
+ * touch `note_embeddings`; A's model was clean so no later save re-fired), and its sibling failure
+ * was worse still: if the tab had been CLOSED the lookup was `undefined`, and `?? ''` turned that
+ * into a confident force-embed of an empty body — a title-only vector written over the real one.
+ *
+ * `onSaved` is handed `(path, content)` and `content` is exactly the bytes that just landed at
+ * `path`. Deriving the body from it needs no lookup, so there is no window in which the answer can
+ * change and no disposal case to paper over: the identity is carried by the argument rather than
+ * re-derived from mutable state. (The prop-save path already knew this — it captures its embed
+ * body BEFORE the await for the same reason.)
+ *
+ * Never rejects — every leg owns its retry and its surfaced failure.
+ */
+export function afterDurableSave(
+	savedPath: string,
+	name: string,
+	libraryName: string,
+	writtenContent: string,
+	force = true,
+): void {
+	emit('screen:note-saved', { path: savedPath }).catch(() => {});
+	void reindexNote(savedPath, libraryName); // bounded retry + surfaced failure inside
+	// The gate exists only to skip the frontmatter split when semantic search is off; reembedNote
+	// re-checks the same flag so the two can never drift apart on the condition.
+	if (get(appSettings).enabledFeatures?.semanticSearch) {
+		void reembedNote(savedPath, name, splitFrontmatter(writtenContent).body, force);
+	}
+}
+
 /** Reindex a single note after file change.
  *
  *  2026-08-01 inspection — the swallowed-reindex class fix, at the ONE choke point: every
@@ -6177,10 +6235,11 @@ export async function resolveConflictMerge(
 			standardSaveEnv({
 				origin: 'merge_resolve',
 				name: tab.name,
-				onSaved: (savedPath) => {
-					emit('screen:note-saved', { path: savedPath }).catch(() => {}); // second screen refresh
-					reindexNote(savedPath, tab.libraryName).catch(() => {}); // search/backlinks reflect the merge
-				},
+				// PJ-278 — a merge replaces the whole body by construction, so this was the path
+				// most certain to leave a wrong vector behind, and it was the one that re-embedded
+				// least: not at all. Semantic search kept ranking the note by content the merge
+				// may have discarded, indefinitely, while the flow reported complete success.
+				onSaved: (savedPath, content) => afterDurableSave(savedPath, tab.name, tab.libraryName, content),
 			}),
 			'merge_resolve',
 		);

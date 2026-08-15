@@ -25,7 +25,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
+		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, afterDurableSave, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		owningLibrary,
@@ -1790,10 +1790,14 @@
 		saveNoteSession(focusSessionId, path, standardSaveEnv({
 			origin: 'focus_pane',
 			name: ft?.name ?? path,
-			onSaved: (savedPath) => {
-				if (secondScreenOpen) broadcastNoteSaved(savedPath);
-				reindexNote(savedPath, libName).catch(() => {});
-			},
+			// PJ-278 (tenth sweep) — this path reindexed but never re-embedded, and Focus is the
+			// designated fast-capture editing surface: a body written or rewritten here left
+			// semantic search, "similar notes" and CECE answering from the PRE-Focus text for
+			// good. Nothing self-corrects it (the boot backfill only embeds notes with no vector
+			// at all; repair and reindex never touch note_embeddings), and the durable write marks
+			// the model clean, so no later save fires for that content either. The whole post-save
+			// routine now lives in one place — see `afterDurableSave`.
+			onSaved: (savedPath, content) => afterDurableSave(savedPath, ft?.name ?? path, libName, content),
 		}), 'focus_pane');
 	}
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; linkTypes?: string[]; traversalCount?: number }[]>([]);

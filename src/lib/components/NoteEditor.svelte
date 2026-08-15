@@ -328,12 +328,29 @@
 					// and no message. reembedNote owns the gate, the retry and the surface.
 					void reembedNote(savedPath, tab.name, text);
 					// MIG-021v3 — CECE on-save background scan (rides the 1500ms debounce,
-					// never per-keystroke). Dispatches the same event the manual
-					// "Suggest sources & content type" menu uses (Source Review listener).
+					// never per-keystroke).
+					//
+					// PJ-283 (tenth sweep) — this used to be the dispatch ALONE, and the only
+					// listener for that event lives in a mounted SourceReviewPanel (the right
+					// rail's sourceReview tab, or the Cataloger). In the normal typing state
+					// neither is mounted, so the event reached nobody: no classifier ran, no
+					// suggestion was queued, nothing was logged — the setting the user switched on
+					// was a silent no-op, while its own contract says plainly that on_save "fires
+					// classifier_suggest_for_note". The event is still dispatched so an OPEN panel
+					// keeps handling it (it prepends and highlights the card, which a bare invoke
+					// cannot do); it is now `cancelable`, and a panel that commits to the note
+					// calls preventDefault. If nothing claims it, we make the call the setting
+					// promised — which is what "background" was supposed to mean.
 					if (get(appSettings).cece?.backgroundScan === 'on_save') {
-						window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
+						const claimed = !window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
 							detail: { notePath: savedPath },
+							cancelable: true,
 						}));
+						if (!claimed) {
+							invoke('classifier_suggest_for_note', { notePath: savedPath }).catch((err) => {
+								console.warn('[CECE on-save] classifier_suggest_for_note failed:', err);
+							});
+						}
 					}
 				},
 			}), 'editor_save');

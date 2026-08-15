@@ -760,7 +760,7 @@ pub fn mark_reviewed(
 
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — cache the action into the schedule row (no-op until §C stamps).
-    sync_action_to_row(&app, |conn| review_row_mark(conn, &note_path, &today, next))?;
+    sync_action_to_row(&app, &cdir, |conn| review_row_mark(conn, &note_path, &today, next))?;
     Ok(())
 }
 
@@ -788,7 +788,7 @@ pub fn snooze_note(
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — push the schedule row's due day out (Lens-1) + record snoozed_until
     // (Lens-2) so the read excludes it from BOTH lenses.
-    sync_action_to_row(&app, |conn| review_row_snooze(conn, &note_path, &snooze_until))?;
+    sync_action_to_row(&app, &cdir, |conn| review_row_snooze(conn, &note_path, &snooze_until))?;
     Ok(())
 }
 
@@ -815,7 +815,7 @@ pub fn dismiss_note(
 
     save_pulse_data(&cdir, &pulse)?;
     // §B-2 — mark the schedule row dismissed (persists across re-index).
-    sync_action_to_row(&app, |conn| review_row_dismiss(conn, &note_path))?;
+    sync_action_to_row(&app, &cdir, |conn| review_row_dismiss(conn, &note_path))?;
     Ok(())
 }
 
@@ -1204,8 +1204,55 @@ pub fn delete_schedule_row(conn: &rusqlite::Connection, path: &str) -> Result<()
 /// Now it reports. `Ok(())` means the row was written; `Err` names which layer refused. The
 /// not-yet-stamped case stays a deliberate, NAMED no-op (§B-2 predates §C's stamp) rather
 /// than an anonymous one — a skip must never be indistinguishable from success (LL-033).
+///
+/// ## PJ-280 (tenth sweep) — and it must land in the SAME universe the pulse did
+///
+/// The 2026-08-01 cross-window-clobber fix pinned the `review-pulse.json` RMW to the universe the
+/// click was composed in (`universe_root`, captured at click time). It pinned only half the pair:
+/// this function resolved the **ACTIVE** universe's `SearchState`, with no pin and no check. These
+/// commands are `async`-offloaded, so a universe switch between the two halves — a second window
+/// is enough — put a ghost row for A's path into B's `review_schedule` (and snooze's UPDATE
+/// silently matched 0 rows), while A's row never learned `last_reviewed`/`interval`. Because
+/// `upsert_schedule_row` re-derives those from the ROW and not from the pulse, the note then keeps
+/// **resurfacing as due** in A: PJ-187's exact "came straight back in the queue" symptom,
+/// reintroduced through the unpinned half.
+///
+/// So the connection is checked against the pinned dir and REFUSED on mismatch. Refusal rather
+/// than re-routing is deliberate for now: writing to the correct universe's DB means opening a
+/// second connection, which is MIG-111 Phase 1's Router and does not exist yet. The pulse JSON —
+/// the earned source of truth — has already landed correctly in A; what is declined is the derived
+/// row cache, and the user is told, instead of a wrong-universe write nobody can see.
+/// Does the currently-open search database belong to the universe this action was composed in?
+///
+/// `db` is the connection's own path — `<root>/.constellation/search.db` — so its PARENT is the
+/// same `.constellation` dir the pulse write was pinned to (the `link_life::store_dir` idiom).
+/// Comparison goes through `universe_lock::canon` so path identity has one answer app-wide.
+///
+/// Pure and separate from the command purely so the decision can be tested: the whole of PJ-280
+/// is this comparison, and it fires only in a race no test could stage through the Tauri layer.
+fn open_db_belongs_to(db: Option<&str>, cdir: &Path) -> Result<(), String> {
+    match db.filter(|p| !p.is_empty()).and_then(|p| Path::new(p).parent()) {
+        Some(open_dir)
+            if crate::universe_lock::canon(open_dir) == crate::universe_lock::canon(cdir) =>
+        {
+            Ok(())
+        }
+        Some(open_dir) => Err(format!(
+            "review: this action was made in {} but the open database is now {} — the review \
+             record was saved, the schedule cache was not. Switch back to that Universe and the \
+             action will re-apply.",
+            cdir.display(),
+            open_dir.display()
+        )),
+        // An in-memory connection has no universe to be right or wrong about. Fail closed: a row
+        // written into a database we cannot identify is exactly what this guard exists to stop.
+        None => Err("review: the open database has no path to identify its universe".into()),
+    }
+}
+
 fn sync_action_to_row(
     app: &tauri::AppHandle,
+    cdir: &Path,
     f: impl FnOnce(&rusqlite::Connection) -> Result<(), String>,
 ) -> Result<(), String> {
     let state = app
@@ -1218,6 +1265,7 @@ fn sync_action_to_row(
     let conn = db
         .as_ref()
         .ok_or_else(|| "review: no db connection yet".to_string())?;
+    open_db_belongs_to(conn.path(), cdir)?;
     if !is_stamped(conn) {
         return Ok(()); // deliberate: the schedule table is not in play yet (§B-2 before §C)
     }
@@ -2229,5 +2277,52 @@ mod tests {
         assert_ne!(content_hash("a b"), content_hash("a  b"));
         // 16 hex chars always (fixed-width, so a TEXT-column compare is exact).
         assert_eq!(content_hash("anything at all").len(), 16);
+    }
+}
+
+/// PJ-280 (tenth sweep) — the review write pair must land in ONE universe.
+#[cfg(test)]
+mod tests_pj280_review_row_universe_pin {
+    use super::*;
+
+    /// The pulse RMW was pinned to the click-time universe by the 2026-08-01 fix; the paired row
+    /// write was not. A universe switch between the two halves wrote a ghost row for A's note into
+    /// B's `review_schedule` — and because `upsert_schedule_row` re-derives `last_reviewed` /
+    /// `interval` from the ROW rather than the pulse, A's note kept resurfacing as due. That is
+    /// PJ-187's "came straight back in the queue" symptom, reintroduced through the unpinned half.
+    #[test]
+    fn the_matching_universe_is_allowed() {
+        let t = tempfile::tempdir().unwrap();
+        let cdir = t.path().join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let db = cdir.join("search.db");
+        std::fs::write(&db, b"").unwrap(); // canon() resolves real paths; give it one
+        assert!(open_db_belongs_to(Some(db.to_str().unwrap()), &cdir).is_ok());
+    }
+
+    #[test]
+    fn a_different_universe_is_refused_and_the_message_names_both() {
+        let t = tempfile::tempdir().unwrap();
+        let a = t.path().join("A/.constellation");
+        let b = t.path().join("B/.constellation");
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::create_dir_all(&b).unwrap();
+        let b_db = b.join("search.db");
+        std::fs::write(&b_db, b"").unwrap();
+
+        let err = open_db_belongs_to(Some(b_db.to_str().unwrap()), &a).unwrap_err();
+        // The user has to be able to act on this, so it must name where the action was made AND
+        // where the database now is — a bare "wrong universe" tells them nothing to do.
+        assert!(err.contains("was made in"), "{err}");
+        assert!(err.contains("open database is now"), "{err}");
+        assert!(err.contains("re-apply"), "must say the action is not lost: {err}");
+    }
+
+    /// Fail CLOSED. A database we cannot identify is precisely the case this guard exists for.
+    #[test]
+    fn an_unidentifiable_database_is_refused_not_waved_through() {
+        let t = tempfile::tempdir().unwrap();
+        assert!(open_db_belongs_to(None, t.path()).is_err(), "no path at all");
+        assert!(open_db_belongs_to(Some(""), t.path()).is_err(), "in-memory connection");
     }
 }

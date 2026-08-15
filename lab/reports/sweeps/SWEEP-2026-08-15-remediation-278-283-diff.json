@@ -1,0 +1,80 @@
+{
+ "_register_note": "PJ-278\u2026PJ-283 remediation pass \u2014 per-build diff-scoped inspections. Every confirmed finding fixed BEFORE the commit (WA#6). The frontend round found a HIGH cross-note bleed in the PJ-278 fix itself: afterDurableSave read the note model after the awaited write, so a tab-id slot re-seeded during the write embedded the wrong note's body. Fixed by deriving the body from the written bytes; re-run returned zero findings.",
+ "rounds": [
+  {
+   "round": "Rust half \u2014 clean first pass",
+   "mode": "diff",
+   "scanned": [
+    "src-tauri/src/universe.rs",
+    "src-tauri/src/review.rs",
+    "src-tauri/src/libraries.rs"
+   ],
+   "by_scope": [
+    {
+     "scope": "src-tauri/src/universe.rs,src-tauri/src/review.rs,src-tauri/src/libraries.rs",
+     "confirmed": 0
+    }
+   ],
+   "confirmed_findings": []
+  },
+  {
+   "round": "frontend half \u2014 REJECTED: the cross-note bleed in afterDurableSave",
+   "mode": "diff",
+   "scanned": [
+    "src/lib/libraries/store.ts",
+    "src/routes/+layout.svelte",
+    "src/lib/components/NoteEditor.svelte",
+    "src/lib/components/SourceReviewPanel.svelte"
+   ],
+   "by_scope": [
+    {
+     "scope": "src/lib/libraries/store.ts,src/routes/+layout.svelte,src/lib/components/NoteEditor.svelte,src/lib/components/SourceReviewPanel.svelte",
+     "confirmed": 2
+    }
+   ],
+   "confirmed_findings": [
+    {
+     "klass": "cross-note-bleed",
+     "file": "src/lib/libraries/store.ts",
+     "line": 4137,
+     "summary": "`afterDurableSave` sources the embed body from `getNoteModel(tabId)` with NO path guard, while `onSaved` is already handed the identity-guarded `content` it ignores \u2014 a tab-id slot re-seeded onto another note during the awaited write makes the finished note's embedding row store the OTHER note's text.",
+     "silent_failure_scenario": "Preconditions: semantic search on; the note is open in Focus. (1) User exits Focus (or the 1500 ms timer fires). `commitFocusSave` (+layout.svelte:1769-1805) has NO dirty gate \u2014 it composes and calls `saveNoteSession` unconditionally, so a save for note A is issued even when the model is already CLEAN. (2) `saveUnchained` (noteSession.ts:253-258) composes and parks on `await e.write(...)` \u2014 `gate_write` fsyncs and retries sharing violations, so hundreds of ms to seconds under Defender/OneDrive/Syncthing is ordinary. (3) During that await the user clicks a wikilink or a file-tree note. `openNoteTab`'s in-place reuse gates its departure flush on `if (NAV_FLUSH_ENABLED && isNoteDirty(currentTab.id))` (store.ts:3415) \u2014 the model is clean, so there is NO flush and therefore NO `saveChains` serialization \u2014 and it calls `openNoteModel(currentTab.id, filePath, content)` (store.ts:3466) SYNCHRONOUSLY, replacing the model under the same tab id with note B. (4) A's write resolves. `M.markSaved` and `M.noteDiskSynced` correctly no-op on the gen/path guard (noteModel.ts:567-568), but `e.onSuccess?.(...)` at noteSession.ts:272 is called with NO such guard. (5) `afterDurableSave(sid, A_path, A_name, libA)` runs; `getNoteModel(tabId)` now returns note B's model, so line 4137 calls `reembedNote(A_path, A_name, B_body, force=true)`. Rust `constellation_embed_notes` with `force=true` skips the existence check (embeddings.rs:446) and runs `INSERT OR REPLACE INTO note_embeddings` (embeddings.rs:469) \u2014 note A's vector is REPLACED by a vector of note B's body. Silence and permanence: `reembedNote` returns Ok (a successful call, wrong input), no banner, no console line; nothing self-heals it \u2014 the boot backfill only embeds notes with NO row, `index_repair` and `constellation_search_reindex` never touch `note_embeddings`, and A's model was marked clean so no later save re-fires. Semantic search, 'similar notes' and the CECE Semantic cataloger answer for note A with note B's content until the user happens to edit A again on a path that re-embeds. The identity-correct value is sitting unused in the second `onSaved` argument (`standardSaveEnv` store.ts:506 forwards `opts.onSaved?.(path, content)`).",
+     "severity": "APP-KILLER",
+     "verdict": "CONFIRMED",
+     "reason": "Verified end to end in code. `afterDurableSave` (store.ts:4137) reads the embed body from `getNoteModel(tabId)` AFTER the awaited write, with no path/gen check, while holding the identity-correct `savedPath` and discarding the identity-correct `content` that `standardSaveEnv` (store.ts:504-507) passes it. `noteSession.ts:270-272` proves the hole is real and known: `markSaved` and `noteDiskSynced` are both path+gen guarded (PJ-207 \u00a715 added the gen guard exactly because an id-slot is re-seeded during the await), and `e.onSuccess?.()` on the next line has no guard at all. The precondition \u2014 a durable write in flight for a CLEAN model \u2014 is reached on every Focus exit: `commitFocusSave` (+layout.svelte:1769-1805) has no dirty gate, and `onflush` re-pushes unchanged text which `setBody` no-ops (noteModel.ts:266), so a full write is issued on a clean model. With the model clean, `openNoteTab`'s departure flush is skipped (`if (NAV_FLUSH_ENABLED && isNoteDirty(...))`, store.ts:3415), so there is no saveChains serialization and `openNoteModel(currentTab.id, ...)` (store.ts:3466) swaps a NEW model object under the same tab id (noteModel.ts:192-222, getModel keyed by id at :225). The DEV tripwire (noteModel.ts:198-206) only fires on a dirty replace, so the swap is silent even in dev. When A's write resolves, `reembedNote(A_path, A_name, B_body, force=true)` runs and Rust `constellation_embed_notes` with force skips the existence check and executes `INSERT OR REPLACE INTO note_embeddings` (embeddings.rs:446-470) \u2014 A's row now holds B's vector under A's path and cid_cn. Timing is realistic, not exotic: `write_note` is `#[tauri::command(async)]` (libraries.rs:965) on the worker pool with fsync plus 50*attempt ms sharing-violation retry sleeps (write_gate.rs:285), while the incoming note's `read_note` and `ensure_cid_cn_cmd` are sync and fast \u2014 and semantic search being ON (the bug's own precondition) puts multi-second CPU-bound embed inference on the same pool. A stronger, wider-window variant exists that the candidate did not name: `closeTab` (store.ts:3839-3864) calls `flushOutgoing` \u2014 a synchronous no-op on a clean model, zero IPC \u2014 then `closeNoteModel(tabId)`; exiting Focus and closing the tab makes the resolving write hit `getNoteModel(tabId) === undefined` and embed `''`, storing a title-only vector for A, the exact outcome the codebase already ruled unacceptable at +layout.svelte:6301. Silence and permanence confirmed: `reembedNote` returns Ok with no banner and no log, the boot backfill calls `embedNotes` WITHOUT force so it skips any existing row (store.ts:4499, +layout.svelte:6319), `index_repair` and `constellation_search_reindex` never touch `note_embeddings`, and the model was marked clean so no later save re-fires. The sibling prop-save path captures `embedBody` from the model BEFORE the await (store.ts:1858) and NoteEditor's handleSave embeds the identity-checked `text` \u2014 so this is a hole unique to the consolidated routine, not a deliberate contract. Fix: use the `content` already handed to `onSaved` (or gate on `getNoteModel(tabId)?.path === savedPath`), and give `commitFocusSave` a dirty gate so no clean-model write is issued at all.",
+     "final_severity": "HIGH",
+     "scope": "src/lib/libraries/store.ts,src/routes/+layout.svelte,src/lib/components/NoteEditor.svelte,src/lib/components/SourceReviewPanel.svelte"
+    },
+    {
+     "klass": "content-loss",
+     "file": "src/lib/libraries/store.ts",
+     "line": 4137,
+     "summary": "The `?? ''` fallback on the same line turns a disposed model into a SUCCESSFUL force-embed of empty text \u2014 the note's real vector is silently replaced by a title-only one rather than the embed being skipped.",
+     "silent_failure_scenario": "Same in-flight window as above, different departure. (1) `commitFocusSave` issues an unconditional save for note A (no dirty gate, +layout.svelte:1780-1805) and parks on `await e.write(...)`. (2) The user closes that tab. `closeTab` awaits `flushOutgoing(tabId, 'close_flush')` (store.ts:3847), which returns `{ok:true}` IMMEDIATELY because `isNoteDirty(tabId)` is false (store.ts:684) \u2014 so it never enters `save()` and never chains behind the in-flight write \u2014 then calls `closeNoteModel(tabId)` synchronously (store.ts:3863), deleting the model. (3) A's write resolves; `onSuccess` runs unguarded (noteSession.ts:272) \u2192 `afterDurableSave` \u2192 `getNoteModel(tabId)` is `undefined` \u2192 `?? ''` \u2192 `reembedNote(A_path, A_name, '', force=true)`. (4) Rust builds `format!(\"passage: {} {}\", name, content)` (embeddings.rs:460) = title only, embeds it, and `INSERT OR REPLACE`s it over A's real vector (embeddings.rs:469), returning Ok. The user sees nothing: no save-health entry (the write DID succeed), no `embedHealthError` (the embed call resolved), no console output. Note A is thereafter retrievable by semantic search only by its title, and \u2014 because the boot backfill skips notes that HAVE a row and neither reindex nor repair touches `note_embeddings` \u2014 permanently so. An absent model must skip the embed, never embed an empty string; the `?? ''` default makes a missing authority indistinguishable from a genuinely empty note.",
+     "severity": "HIGH",
+     "verdict": "CONFIRMED",
+     "reason": "The mechanism holds at every link, verified in source \u2014 and the codebase's own PJ-207 \u00a715 rule (\"Refusing to store beats storing something wrong\") already forbids exactly this shape at the sibling site.\\n\\nCHAIN VERIFIED:\\n1. `afterDurableSave` (src/lib/libraries/store.ts:4137) is `void reembedNote(savedPath, name, getNoteModel(tabId)?.body.toString() ?? '', force)` with `force = true` by default (:4130). A disposed/absent model is indistinguishable from an empty note.\\n2. `reembedNote` (:4196-4215) has NO empty-content guard \u2014 it only gates on `semanticSearch` and then invokes.\\n3. Rust `constellation_embed_notes` (src-tauri/src/embeddings.rs:435-478): with `force=true` the existence check at :450 is SKIPPED, the text becomes `format!(\"passage: {} {}\", name, \"\")` (:462), and the result is `INSERT OR REPLACE` over the note's row (:469), returning `Ok`. No error path, so `embedHealthError` is never set and the console stays silent.\\n4. No self-heal: the boot backfill (+layout.svelte:6272-6285) gates on `status.embedded_count < allNotes.length` \u2014 the bogus row satisfies the count. Grep of all Rust `note_embeddings` touches shows `index_repair`, `constellation_search_reindex`, rename/move (libraries.rs:1596-1600) and mig108 only MOVE or DELETE rows; nothing recomputes a vector. The model is marked clean by the durable write, so no later save fires either.\\n\\nWINDOW VERIFIED (the part I tried hardest to refute):\\n- `saveUnchained` marks clean AFTER the await (noteSession.ts:265-270), so during a normal dirty save the model is dirty and `closeTab`'s `flushOutgoing` chains behind it (per-id `saveChains`, :205-243) \u2014 that case is SAFE.\\n- The exposure needs a save in flight on a CLEAN model. `commitFocusSave` (+layout.svelte:1769-1805) is the producer: it is fire-and-forget and has NO dirty gate (only `focusSessionId`, `isCascading`/`isReseeding`, and compose's identity refusal). FocusPane's `flushNow()` (FocusPane.svelte:87-90) fires unconditionally on visibilitychange/beforeunload/teardown, and `setBody`'s string path (noteModel.ts:265) explicitly does NOT bump version on identical content \u2014 so the re-flush leaves the model CLEAN while its write is in flight.\\n- `flushOutgoing` (store.ts:684) returns `{ok:true}` immediately for a non-dirty model, so `closeTab` proceeds straight to `closeNoteModel(tabId)` (:3863) \u2014 synchronous `models.delete` (noteModel.ts:232). The same holds for the universe-switch sweep (:3530) and, in a wrong-body variant, for `openNoteTab` in-place reuse (the re-seeded model returns note B's body under note A's path).\\n- When the in-flight write resolves, `e.onSuccess` (noteSession.ts:272) \u2192 `afterDurableSave` \u2192 model gone \u2192 `''` \u2192 title-only vector force-written over the real one.\\n\\nThe window is the IPC + durable write round trip (`writeNote` \u2192 `invoke('write_note')`, store.ts:2919), which this codebase already treats as a real race window (flushIfDirty's bounded loop exists for \"a keystroke that lands during the awaited write\") and which stretches to seconds behind a stalled drive/sync or a multi-second embed inference queued ahead of it \u2014 the same stalls the 10 s save-health auto-retry exists for.\\n\\nNOT REFUTED BY: any guard (there is none at any of the four layers), any surfaced error (the write DID succeed and the embed DID return Ok), or any reconcile/repair (none touch vectors).\\n\\nSEVERITY MED, not HIGH: the corruption is confined to `note_embeddings`, a genuinely derived index \u2014 the `.md` source of truth and the FTS5/`note_meta` index are untouched, so no user knowledge is lost and nothing on screen is wrong. `semanticSearch` defaults to `false` (store.ts:7065), so the path requires the opt-in plugin, and it additionally requires a departure to land inside the write's flight. But within that scope the divergence is silent, permanent and never self-corrects, which is why it is a real finding rather than a theoretical one.\\n\\nFIX (matches the established rule and closes the sibling wrong-body variant in the same line): read the model once and skip the embed when it is absent or no longer holds `savedPath` \u2014 e.g. `const m = getNoteModel(tabId); if (m && m.path === savedPath) void reembedNote(savedPath, name, m.body.toString(), force);` \u2014 never default a missing authority to `''`.",
+     "final_severity": "MED",
+     "scope": "src/lib/libraries/store.ts,src/routes/+layout.svelte,src/lib/components/NoteEditor.svelte,src/lib/components/SourceReviewPanel.svelte"
+    }
+   ]
+  },
+  {
+   "round": "frontend half re-run after the identity fix \u2014 clean",
+   "mode": "diff",
+   "scanned": [
+    "src/lib/libraries/store.ts",
+    "src/routes/+layout.svelte",
+    "src/lib/components/NoteEditor.svelte",
+    "src/lib/components/SourceReviewPanel.svelte"
+   ],
+   "by_scope": [
+    {
+     "scope": "src/lib/libraries/store.ts,src/routes/+layout.svelte,src/lib/components/NoteEditor.svelte,src/lib/components/SourceReviewPanel.svelte",
+     "confirmed": 0
+    }
+   ],
+   "confirmed_findings": []
+  }
+ ]
+}

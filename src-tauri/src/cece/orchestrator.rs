@@ -68,10 +68,14 @@ impl Orchestrator {
         F: Fn(&[ReasoningTrail]) -> EarlyVerdict,
     {
         let mut trails: Vec<ReasoningTrail> = Vec::new();
+        // PJ-282 — ONE clone of the context per classification, shared by every cataloger's
+        // detached worker (not one clone per cataloger). See `run_one_safe` for why the workers
+        // need owned data at all.
+        let shared = Arc::new(ctx.clone());
 
         // ── Pass 1: cheap catalogers (cost <= 1). ──
         for r in self.catalogers.iter().filter(|r| r.cost <= 1) {
-            if let Some(t) = run_one_safe(r.cataloger.as_ref(), ctx) {
+            if let Some(t) = run_one_safe(Arc::clone(&r.cataloger), Arc::clone(&shared)) {
                 trails.push(t);
             }
         }
@@ -84,7 +88,7 @@ impl Orchestrator {
 
         // ── Pass 2: expensive catalogers (cost == 2). ──
         for r in self.catalogers.iter().filter(|r| r.cost == 2) {
-            if let Some(t) = run_one_safe(r.cataloger.as_ref(), ctx) {
+            if let Some(t) = run_one_safe(Arc::clone(&r.cataloger), Arc::clone(&shared)) {
                 trails.push(t);
             }
         }
@@ -139,20 +143,37 @@ impl EarlyVerdict {
 /// modern OS (~1ms / ~50KB stack); 6 catalogers per note × 7K notes
 /// in a Library scan = 42K thread spawns over the scan = negligible
 /// vs the actual classification work.
-fn run_one_safe(c: &dyn Cataloger, ctx: &CatalogerContext) -> Option<ReasoningTrail> {
-    let cataloger_name = c.name();
+///
+/// ## PJ-282 (tenth sweep) — the thread must be DETACHED, or the timeout is theatre
+///
+/// The fix above used `std::thread::scope`, and **`scope` joins every thread it spawned before
+/// it returns**. So `recv_timeout` only chose which value came back: after it fired, the function
+/// still blocked for `classify()`'s full true duration. The bound this function exists to provide
+/// did not exist, `Architect §10 invariant 12` ("ensemble timeouts are bounded") was silently
+/// false, and — worse than merely absent — the abstain trail told the user the cataloger had been
+/// *"isolated by orchestrator"* when nothing had been isolated. The codebase's own measurements
+/// show that mattering: `run_embedding` is ~32 s on a large note against Semantic's 2 s budget,
+/// and `constellation_embed_notes` holds the engine mutex across an entire batch, so a
+/// concurrent classification parks inside `classify()` for minutes.
+///
+/// Scoped threads were chosen because `&dyn Cataloger` cannot cross a thread boundary. That is no
+/// longer a constraint: the registry already holds `Arc<dyn Cataloger>` (`Send + Sync`), and
+/// `CatalogerContext` is owned data, so both can simply be MOVED into a detached thread.
+///
+/// The trade is deliberate and stated: an over-budget worker is orphaned rather than killed —
+/// Rust cannot kill a thread — so it runs to completion and dies unobserved, its `send` failing
+/// harmlessly into a dropped receiver. That is exactly what the old comment promised, and it costs
+/// one orphaned thread in a case that is already pathological. The caller gets its budget back.
+fn run_one_safe(c: Arc<dyn Cataloger>, ctx: Arc<CatalogerContext>) -> Option<ReasoningTrail> {
+    let cataloger_name = c.name(); // &'static str — survives the move below
     let timeout = cataloger_timeout(cataloger_name);
 
-    // Move the cataloger ref + context to the worker thread. We can't
-    // truly move `c: &dyn Cataloger` across threads (lifetime), so
-    // we use scoped threads with `std::thread::scope` to bound the
-    // lifetime to this call.
     use std::sync::mpsc;
     let (tx, rx) = mpsc::channel();
 
-    std::thread::scope(|scope| {
-        let _handle = scope.spawn(move || {
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.classify(ctx)));
+    {
+        std::thread::spawn(move || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.classify(&ctx)));
             // Send result; ignore if receiver already dropped (timeout fired).
             let _ = tx.send(result);
         });
@@ -192,7 +213,7 @@ fn run_one_safe(c: &dyn Cataloger, ctx: &CatalogerContext) -> Option<ReasoningTr
                 ))
             }
         }
-    })
+    }
 }
 
 /// Per-cataloger timeout budget. Cheap catalogers get tight budgets;
@@ -372,5 +393,60 @@ mod tests {
         });
         assert_eq!(trails.len(), 1);
         assert!(trails.iter().all(|t| t.cataloger == "cheap1"));
+    }
+}
+
+/// PJ-282 (tenth sweep) — the per-cataloger timeout must be a REAL wall-clock bound.
+#[cfg(test)]
+mod tests_pj282_timeout_is_a_real_bound {
+    use super::*;
+    use crate::cece::cataloger::Axis;
+
+    /// Named "structural" so `cataloger_timeout` gives it the 500 ms tier, then blocks for far
+    /// longer than that. It never returns a trail: reaching the end would mean the timeout lost.
+    struct SleepyCataloger;
+
+    impl Cataloger for SleepyCataloger {
+        fn name(&self) -> &'static str {
+            "structural"
+        }
+        fn classify(&self, _ctx: &CatalogerContext) -> Option<ReasoningTrail> {
+            std::thread::sleep(std::time::Duration::from_secs(8));
+            None
+        }
+        fn supported_axes(&self) -> &[Axis] {
+            &[Axis::Horizontal, Axis::Vertical]
+        }
+    }
+
+    /// **RED before the fix.** `std::thread::scope` joins its threads before returning, so the
+    /// old `run_one_safe` blocked the full 8 s here while reporting — in the trail it handed
+    /// back — that the cataloger had been "isolated by orchestrator". A guard that reports
+    /// success at isolating something it did not isolate is worse than no guard: the P1.4 hang
+    /// class stayed open while the code and the Architect invariant both said it was closed.
+    #[test]
+    fn an_over_budget_cataloger_returns_control_at_its_budget() {
+        let ctx = Arc::new(CatalogerContext::new(
+            "/probe.md".to_string(),
+            "body".to_string(),
+            Vec::new(),
+            Vec::new(),
+        ));
+        let t0 = std::time::Instant::now();
+        let trail = run_one_safe(Arc::new(SleepyCataloger), ctx);
+        let waited = t0.elapsed();
+
+        assert!(
+            waited < std::time::Duration::from_secs(4),
+            "run_one_safe blocked {waited:?} on a cataloger with a 500 ms budget — the timeout \
+             does not bound wall-clock time"
+        );
+        let trail = trail.expect("a timed-out cataloger abstains rather than vanishing");
+        assert!(!trail.voiced_opinion, "an abstention must not count as an opinion");
+        assert!(
+            trail.reasoning.contains("timeout"),
+            "and the trail must say WHY it abstained: {}",
+            trail.reasoning
+        );
     }
 }

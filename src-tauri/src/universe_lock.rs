@@ -81,7 +81,10 @@ pub enum Ownership {
     HeldElsewhere { info: Option<OwnerInfo> },
 }
 
-fn canon(root: &Path) -> PathBuf {
+/// The canonical form of a path, for identity comparisons. `pub(crate)` because path identity must
+/// have ONE answer app-wide — `review.rs` compares a pinned universe dir against the open DB's dir
+/// (PJ-280) and must not grow a second, subtly different notion of "the same place".
+pub(crate) fn canon(root: &Path) -> PathBuf {
     fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf())
 }
 

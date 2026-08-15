@@ -962,3 +962,53 @@ Windows file-lock silent-build-failure during Tauri release build, and the BASIC
 RULE / Predecessor Lookup violation that wired the wrong .svelte file twice before
 grep-verifying the import graph).*
 *For: Constellation — orientation/SO-#6 discipline + in-page drag in Tauri WebViews + release-build verification + file-name vs. import-graph discipline*
+
+---
+
+## LL-045: A GATE THAT VERIFIES A CODE FACT HAS NOT VERIFIED THAT A HUMAN CAN REACH IT
+
+**Symptom (2026-08-15, the PJ-278…283 Boss test).** Stage 1 Step 4 asked the Boss to switch tabs
+*while in Focus mode*. He replied: **"Cannot comply. There is NO tabs in Focus mode. You should
+know that."** The step was impossible to perform. It had been written by `tutorial-auditor`,
+gated by `ui-inspector`, and **APPROVED** — the inspector's own report lists
+`+layout.svelte:1694-1704` as verified evidence that "switching tabs while in Focus mode auto-exits
+Focus mode."
+
+**Both were right about the code and wrong about the app.** That effect exists and does exactly
+what it says: if the active note changes while `focusMode` is true, Focus exits. What neither
+checked is whether a user can *cause* that change. `.focus-pane` is `position: fixed; inset: 0;
+z-index: 100` — it covers the entire window, tab bar included. The guard is defensive, for a
+programmatic change; it is not a user journey.
+
+**Then the second error, worse than the first.** Told the step was impossible, I went looking for
+another route to force it — a keyboard path to the quick switcher that would fire from inside
+Focus. The Boss stopped that too: *"You won't find anything to switch to another note or tab in
+Focus mode. We design it this way, and that's why we name it Focus mode."* The absence of
+navigation is not a gap in the surface, **it is the surface**. I had spent the reachability
+question on "how do I still run my step" instead of "should this step exist."
+
+**The rule.** A UI claim has two halves, and the gate was only checking one:
+
+| | question | how it is answered |
+|---|---|---|
+| existence | does this control/behaviour exist in the code? | grep, read the component, resolve the i18n key |
+| **reachability** | **can the user get to it, in the state the step puts them in?** | **read what else is on screen in that state — overlays, `position: fixed`, `z-index`, and what the surface's CONCEPT permits** |
+
+Existence without reachability produced a step the Boss could not perform, in a message whose
+whole purpose was to be performable.
+
+**How to apply.** Before any test step, state the surface the user is standing on and ask what is
+reachable *from there* — not what exists somewhere in the app. When a step targets a defensive
+guard, ask what actually triggers it; if the answer is "another code path", the guard is not
+Boss-testable and the step does not exist. And when a surface's concept is a constraint (Focus =
+one note, no navigation; FocusPane = plain text, no markdown), **the constraint is the design** —
+do not go hunting for a way around it to make a test run. Drop the step and say why.
+
+**What it cost, and what it did not.** One round-trip with the Boss, twice. It cost no coverage:
+the risk behind the step — a Focus write landing after the session moved on — is only reachable in
+Constellation as exit-then-switch, which the surviving steps already exercised. The step was never
+testing anything the others did not.
+
+**Related.** *Never Describe the App Without Looking At It* (this is its subtler form — everything
+named was real, and the step was still impossible); *The Test Pipeline* (the gate needs the
+reachability question added to it, not more diligence applied to the existing one).

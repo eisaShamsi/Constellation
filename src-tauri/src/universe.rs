@@ -1878,37 +1878,70 @@ pub fn save_universe_session(universe_root: String, session: serde_json::Value) 
 /// never re-read; the retained backup keeps the change reversible.
 // (or an explicit root — the session.json precedent, mirrored on the load side
 // 2026-08-01.)
+/// Adopt a legacy `workbench.json` into `collections.json`, exactly once.
+///
+/// `Ok(None)` means there was nothing to adopt. **`Err` means there was something and we could not
+/// read it — and that distinction is the whole point of this function existing.**
+///
+/// ## Why this is a separate, strict, parse-first function (PJ-281, tenth sweep)
+///
+/// The gate is `!collections.json.exists()`, so this runs ONCE per universe, ever. Two defects
+/// turned that one shot into permanent loss of the user's entire Workbench collection set:
+///
+/// 1. **The read was swallowed.** `if let Ok(data) = read_to_string(&legacy)` dropped any transient
+///    failure — an AV scanner or sync client holding the file for that one read, the exact Windows
+///    sharing-violation case `read_persisted_json` was written to refuse — and fell through to
+///    `Ok([])`. The frontend cannot tell that from a genuinely empty store: it seeds a Starred
+///    collection and persists it, which CREATES `collections.json` and closes this gate forever.
+///    `workbench.json` then sits on disk unadopted, with no error, no log, and no `.migrated`
+///    marker. Routing through `read_persisted_json` makes the refusal structural — only NotFound
+///    is trustworthy emptiness — and the frontend's error path (which does not seed, and disables
+///    saves) already handles the `Err` correctly.
+///
+/// 2. **It wrote before it parsed.** The old order `atomic_write(legacy_bytes)` → rename →
+///    `from_str` meant a CORRUPT `workbench.json` was copied verbatim into `collections.json`, the
+///    legacy retired to `.migrated`, and only then did the parse fail. Every later boot then found
+///    `collections.json` present (the gate closed), failed to parse it, and returned Err — the
+///    user's collections gone AND collections unloadable at all. Parsing first makes the adopt
+///    all-or-nothing: nothing is written unless the payload is known good.
+///
+/// Two earlier passes (Safety Audit G6 W1-9, then PJ-140) hardened the WRITE side of this same
+/// block — atomic_write, fsync-before-rename, retire-only-on-commit — and both left the read.
+fn adopt_legacy_collections(dir: &Path, path: &Path) -> Result<Option<serde_json::Value>, String> {
+    let legacy = dir.join("workbench.json");
+    let parsed: serde_json::Value = match read_persisted_json(&legacy) {
+        // Genuinely absent — nothing to adopt, and the caller's empty answer is the truth.
+        Ok(None) => return Ok(None),
+        Ok(Some(v)) => v,
+        Err(e) => {
+            return Err(format!(
+                "Legacy Workbench collections could not be read, so they were NOT adopted \
+                 (they are still on disk and will be retried): {}",
+                String::from(e)
+            ))
+        }
+    };
+    let json = serde_json::to_string_pretty(&parsed)
+        .map_err(|e| format!("Failed to re-serialize legacy collections: {}", e))?;
+    // Retire the legacy file ONLY if the adopt committed; otherwise it stays and next boot retries.
+    match atomic_write(path, json.as_bytes()) {
+        Ok(_) => {
+            let _ = fs::rename(&legacy, dir.join("workbench.json.migrated"));
+        }
+        Err(e) => {
+            eprintln!("[collections] legacy adoption failed (will retry next boot): {}", e);
+        }
+    }
+    Ok(Some(parsed))
+}
+
 #[tauri::command]
 pub fn read_universe_collections(app: tauri::AppHandle, universe_root: Option<String>) -> Result<serde_json::Value, String> {
     let dir = resolve_constellation_dir(&app, universe_root)?;
     let path = dir.join("collections.json");
     if !path.exists() {
-        // Adopt a legacy workbench.json (same shape) exactly once.
-        let legacy = dir.join("workbench.json");
-        if legacy.exists() {
-            if let Ok(data) = fs::read_to_string(&legacy) {
-                // Safety Audit G6 (W1-9): atomic adopt + surfaced errors. The old
-                // `let _ =` on BOTH the write and the rename could leave a truncated
-                // collections.json (a crash mid-write) that then BLOCKS re-adoption
-                // (the `!path.exists()` gate is satisfied by the partial file). Write
-                // to a temp then rename; only retire the legacy backup if the adopt
-                // committed (else the legacy stays and re-adoption retries next boot).
-                // 2026-07-25 inspection (PJ-140): use atomic_write (fsync before
-                // rename) — the prior temp+rename skipped the fsync, so power loss
-                // could land the rename over unflushed blocks, leaving a truncated
-                // collections.json that the `!path.exists()` gate then treats as
-                // "already adopted", permanently blocking re-adoption of the legacy file.
-                match atomic_write(&path, data.as_bytes()) {
-                    Ok(_) => {
-                        let _ = fs::rename(&legacy, dir.join("workbench.json.migrated"));
-                    }
-                    Err(e) => {
-                        eprintln!("[collections] legacy adoption failed (will retry next boot): {}", e);
-                    }
-                }
-                return serde_json::from_str(&data)
-                    .map_err(|e| format!("Failed to parse collections (from legacy workbench): {}", e));
-            }
+        if let Some(adopted) = adopt_legacy_collections(&dir, &path)? {
+            return Ok(adopted);
         }
         return Ok(serde_json::Value::Array(vec![]));
     }
@@ -3272,5 +3305,68 @@ mod tests_persisted_read_refuses_emptiness {
         assert!(read_persisted_json::<Reg>(&absent).unwrap().is_none());
         assert!(read_persisted_json::<Reg>(&corrupt).is_err());
         let _ = std::fs::remove_file(&corrupt);
+    }
+}
+
+/// PJ-281 (tenth sweep) — the legacy Workbench adoption is a ONE-SHOT gate, so every way it can
+/// go wrong is permanent. These pin the two that were live.
+#[cfg(test)]
+mod tests_pj281_legacy_collections_adoption {
+    use super::*;
+
+    fn dirs() -> (tempfile::TempDir, PathBuf) {
+        let t = tempfile::tempdir().unwrap();
+        let target = t.path().join("collections.json");
+        (t, target)
+    }
+
+    #[test]
+    fn nothing_to_adopt_is_none_not_an_error() {
+        let (t, target) = dirs();
+        assert!(adopt_legacy_collections(t.path(), &target).unwrap().is_none());
+        assert!(!target.exists(), "and nothing is created");
+    }
+
+    #[test]
+    fn a_good_legacy_file_is_adopted_and_retired() {
+        let (t, target) = dirs();
+        std::fs::write(
+            t.path().join("workbench.json"),
+            br#"[{"id":"c1","name":"Reading","items":[{"path":"/a.md"}]}]"#,
+        )
+        .unwrap();
+        let adopted = adopt_legacy_collections(t.path(), &target).unwrap().expect("adopted");
+        assert_eq!(adopted[0]["name"], "Reading");
+        assert!(target.exists(), "collections.json is written");
+        assert!(t.path().join("workbench.json.migrated").exists(), "the legacy is retired, not deleted");
+        assert!(!t.path().join("workbench.json").exists());
+    }
+
+    /// **The one that mattered.** An unreadable/truncated legacy file must be an ERROR, never
+    /// `Ok(empty)`. The frontend seeds a Starred collection from an empty list and persists it,
+    /// which creates collections.json and closes this gate FOREVER — the user's whole Workbench
+    /// set gone, with no error anywhere. Only the Err keeps the gate open for the next boot.
+    #[test]
+    fn an_unreadable_legacy_file_refuses_rather_than_reporting_emptiness() {
+        let (t, target) = dirs();
+        std::fs::write(t.path().join("workbench.json"), b"").unwrap(); // the truncated case
+        let err = adopt_legacy_collections(t.path(), &target).unwrap_err();
+        assert!(err.contains("NOT adopted"), "the message must say it did not adopt: {err}");
+        assert!(!target.exists(), "NOTHING may be written — that write is what closes the gate");
+        assert!(t.path().join("workbench.json").exists(), "and the legacy file must survive");
+    }
+
+    /// The write-before-parse defect found in the same block: a corrupt legacy file used to be
+    /// copied verbatim into collections.json and the legacy retired, and only THEN did the parse
+    /// fail — leaving every later boot with a present-but-unparseable collections.json and no way
+    /// back. Parse first: nothing is written unless the payload is known good.
+    #[test]
+    fn a_corrupt_legacy_file_is_never_copied_over_the_gate() {
+        let (t, target) = dirs();
+        std::fs::write(t.path().join("workbench.json"), b"{not json at all").unwrap();
+        assert!(adopt_legacy_collections(t.path(), &target).is_err());
+        assert!(!target.exists(), "a corrupt payload must not become the adopted file");
+        assert!(t.path().join("workbench.json").exists(), "nor may the legacy be retired");
+        assert!(!t.path().join("workbench.json.migrated").exists());
     }
 }

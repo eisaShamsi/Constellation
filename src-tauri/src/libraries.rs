@@ -2615,6 +2615,13 @@ pub fn resolve_structural_conflict(
     if !path.exists() {
         return Err("Note does not exist.".to_string());
     }
+    // PJ-279 (tenth sweep) — the move_item treatment, which this sibling missed. Ready the DB
+    // BEFORE the write and refuse if it cannot be readied: the frontmatter write below is
+    // watcher-suppressed and boot never re-walks an indexed library, so a reindex that cannot run
+    // leaves the index on the OLD parent/contains with no way back. And there is no way back:
+    // re-clicking finds the frontmatter already resolved, so gate_rmw returns OkUnchecked and the
+    // early-return below skips the reindex forever. Refusing before the write keeps the retry live.
+    crate::search::ensure_search_db_ready(&app)?;
     let outcome = crate::write_gate::gate_rmw(path, "resolve_structural_conflict", |content| {
         let updated = match field.as_str() {
             "parent" => set_frontmatter_parent(content, &target_name),
@@ -2638,7 +2645,19 @@ pub fn resolve_structural_conflict(
         // wikilink-cascade tail: first-match stamped the universe-root library onto EVERY
         // cascade-rewritten referrer living in a nested sub-library.
         if let Some(lib_name) = owning_own_library_name(&app, &note_path) {
-            let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib_name);
+            // PJ-279 — never `let _ =` here. Every sibling gated-RMW site was converted to
+            // log-on-Err by the 2026-08-01 inspection; this one was left swallowed, three lines
+            // above a branch that DOES log its skip. The disk is correct either way, so this is
+            // not a refusal — but a divergence nobody can name is one nobody can fix.
+            if let Err(e) = crate::search::reindex_single_note(&search_state, &note_path, &lib_name) {
+                if let Ok(p) = crate::search::db_path(&app) {
+                    crate::search::diag_log(&p, &format!(
+                        "[cascade-tail] reindex FAILED for {} — the file is correct on disk but the \
+                         index keeps the old structural link until this note is next saved: {}",
+                        note_path, e
+                    ));
+                }
+            }
         } else if let Ok(p) = crate::search::db_path(&app) {
             // PJ-254 (panel) — same convention: a skipped reindex is logged, never silent.
             crate::search::diag_log(&p, &format!("[cascade-tail] reindex SKIPPED — no own library for {}", note_path));
@@ -9928,5 +9947,68 @@ mod tests_nested_library_helpers {
         // Separator boundary: "Research Notes" must not be stolen by a "Research" prefix
         // (there is no "Research" library here; the point is the bound holds).
         assert_eq!(library_name_for_path(&libs, "E:/U/Research Notes/x.md").as_deref(), Some("Research Notes"));
+    }
+}
+
+/// PJ-279 (tenth sweep) — the two properties of `resolve_structural_conflict` that the sweep
+/// found missing, asserted against the source.
+///
+/// A source assertion rather than a behavioural test because both properties live inside a
+/// `#[tauri::command]` that needs an `AppHandle`, and the failure they prevent only occurs in the
+/// cold-boot DB window. The precedent — and the reasoning — is `index_repair.rs`'s wiring module:
+/// *"a guard you have just written is exactly the guard you are least likely to check."* What is
+/// pinned here is ORDER and NON-SWALLOWING, both of which a future edit can undo silently.
+#[cfg(test)]
+mod tests_pj279_structural_conflict_guards {
+    fn body_of(func: &str) -> String {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("libraries.rs");
+        let all = std::fs::read_to_string(&p).expect("read libraries.rs");
+        let start = all.find(func).unwrap_or_else(|| panic!("{func} not found — was it renamed?"));
+        let rest = &all[start..];
+        // To the next top-level command/function, which is the end of this one's body.
+        let end = rest[1..].find("\n#[tauri::command").map(|i| i + 1).unwrap_or(rest.len());
+        // COMMENTS STRIPPED — the first cut of this test matched the words `gate_rmw` inside the
+        // very comment explaining the guard, and so asserted an ordering between two pieces of
+        // prose. A test that can be satisfied by writing a sentence is not a test.
+        rest[..end]
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// The `move_item` treatment: ready the index BEFORE the durable write, so a reindex that
+    /// cannot run means nothing was written — rather than a correct file and an index left on the
+    /// old parent/contains with no way back. There IS no way back on the old code: re-clicking
+    /// finds the frontmatter already resolved, so the gate returns `OkUnchecked` and the
+    /// early-return skips the reindex forever.
+    #[test]
+    fn the_db_is_readied_before_the_write_not_after() {
+        let body = body_of("pub fn resolve_structural_conflict");
+        let ensure = body.find("ensure_search_db_ready").expect(
+            "resolve_structural_conflict must ensure the search DB before writing (PJ-279)",
+        );
+        let write = body.find("gate_rmw").expect("gate_rmw call not found");
+        assert!(
+            ensure < write,
+            "ensure_search_db_ready must come BEFORE gate_rmw — readying the index after the \
+             write is the half-done state this guard exists to prevent"
+        );
+    }
+
+    /// Every sibling gated-RMW site was converted to log-on-Err by the 2026-08-01 inspection,
+    /// with the comment "never `let _ =` here". This one was left swallowed — three lines above a
+    /// branch that does log its skip.
+    #[test]
+    fn the_reindex_failure_is_never_swallowed() {
+        let body = body_of("pub fn resolve_structural_conflict");
+        assert!(
+            !body.contains("let _ = crate::search::reindex_single_note"),
+            "the reindex Err must be logged, never discarded (PJ-279)"
+        );
+        assert!(
+            body.contains("if let Err(e) = crate::search::reindex_single_note"),
+            "the reindex must be branched on and its failure recorded"
+        );
     }
 }
