@@ -39,6 +39,7 @@
 pub mod attach;
 pub mod failure;
 pub mod migrate;
+pub mod owner;
 pub mod query;
 
 #[cfg(test)]

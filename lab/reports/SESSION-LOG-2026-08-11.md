@@ -940,3 +940,33 @@ cache holding a DEGRADED resolve for a session, which silently turns every §0.4
 PJ-300 is deliberately filed rather than fixed: the remedy changes the failure semantics of the
 resolver the whole app reads through, and that does not belong tacked onto the fifth round of a
 long step. It degrades to the pre-§0.4 baseline, not to something worse.
+
+---
+
+## MIG-111 Phase 1.1 — `resolve_owner` (R2): which universe owns this path?
+
+The Router's first question, and the one every routed operation is built on. New module
+`src-tauri/src/federation/owner.rs`; the decision itself (`resolve_owner_in`) is free of
+`AppHandle` so the tests drive THAT function rather than a re-implementation — the
+`require_own_library_in` pattern, after the PJ-235 panel found tests that exercised only the
+primitives while the real check could be deleted with the suite still green.
+
+Three properties, each an adversarial finding from the Architect's pass, each pinned:
+
+1. **Roots from the FEDERATION TREE, never library lists** (`universe.json` children, recursive).
+   A library-derived resolver reports the parent for every path in a nested child, because
+   `universe_notes` is registered with `path == the universe root` — the confusion that made the
+   first PJ-235 guard admit exactly what it existed to refuse.
+2. **LONGEST match wins** (attack H3). MIG-108 nests linked universes under the active root, so a
+   note there is inside BOTH; first- or shortest-match writes a child's row into the parent's
+   database. Tested in both orderings, so ordering cannot decide.
+3. **Unknown is an ERROR, never "assume ours"** (attack H2). A universe on disk that nobody linked
+   is refused — and the SAME path resolves once it is linked, which is what proves the candidate
+   set is really `{active} ∪ {federation}` rather than a permissive parent-walk.
+
+The §0.4 lesson carried in deliberately: raw paths on both sides, normalised exactly as
+`libraries::path_is_under_any` normalises, with a test that slash direction and case cannot change
+the answer — that comparison-between-two-forms is what made the base guard a dead no-op.
+
+**Rust 1494/0** (+9). Diff-scoped inspection: **zero findings, first pass.**
+PJ ledger reviewed — no change (no PJ opened or closed by this step).
