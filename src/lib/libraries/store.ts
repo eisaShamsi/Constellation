@@ -506,6 +506,23 @@ export function standardSaveEnv(opts: {
 			opts.onSaved?.(path, content);
 		},
 		onError: ({ path, error }) => reportSaveFailure(path, opts.name ?? path, error),
+		// PJ-287 — the write landed for a model that no longer exists (the id was re-seeded, or the
+		// tab closed, while it was parked on `await`). The session layer has already refused to
+		// ratify it and re-stashed the kept version into the net; what is owed here is a DURABLE
+		// RECORD, because at this moment the file on disk holds bytes that are on no screen and in
+		// no model, and nothing else would ever say so. Same journal channel the app-close residual
+		// marker uses, for the same reason: a divergence has to stay decidable after the fact.
+		onSuperseded: ({ path, version }) => {
+			void invoke('journal_frontend_marker', {
+				surface: 'save_superseded',
+				// Stated for the case that actually fires it: `onSuperseded` is called ONLY on a
+				// genuine divergence, so the re-stash really did happen. (An earlier wording
+				// claimed it unconditionally, which was untrue for the model-gone case — a
+				// marker that misdescribes the state is worse than none, because it is the only
+				// record anyone will have.)
+				detail: `${path}: a write (v${version}) landed after its model was replaced — disk holds superseded bytes; the kept version was re-stashed to the recovery net`,
+			}).catch(() => {});
+		},
 	};
 }
 

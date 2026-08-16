@@ -502,9 +502,29 @@ export function markRecoveredFromNet(id: string, trueDiskContent: string | null)
  * DESTROYED the preserved net. With the TRUE baseline, a phantom event (disk ===
  * baseline) is refused and the net survives; only a genuinely-changed disk adopts.
  */
-export function setDiskBaseline(id: string, trueDiskContent: string, contentIsUnsavedRecovery = false): void {
+export function setDiskBaseline(
+	id: string,
+	trueDiskContent: string,
+	contentIsUnsavedRecovery = false,
+	expectPath?: string,
+	expectGen?: number,
+): void {
 	const m = models.get(id);
 	if (!m) return;
+	// PJ-287 — **the identity guard this was the last mutator to lack.** `setBody`, `setProps`,
+	// every MIG-107 intent, `adoptDisk`, `markSaved` and `noteDiskSynced` all prove identity
+	// before mutating; this one trusted its caller, and the caller that needed it most was the
+	// one added in the same change: `saveUnchained`'s superseded branch runs precisely BECAUSE
+	// the slot no longer holds the composed model — which includes it holding a DIFFERENT NOTE.
+	// Unguarded, that stamped note A's bytes as note B's disk baseline and flagged B as holding
+	// unsaved recovery: B's `adoptDisk` then refuses every external change, `diskDiffersFromBaseline`
+	// reports true for B's own untouched bytes, and — the genuinely silent one — merely VIEWING B
+	// stashes its net as real work, re-arming the PJ-181 stale-net class for a note that has none.
+	//
+	// The guard lives HERE rather than at that one call site for the same reason `read_state`'s
+	// does (MIG-111 §0.3): "every caller remembers" is exactly the promise a new caller breaks.
+	// Both parameters are optional, so existing callers keep today's behaviour verbatim.
+	if (!lineageHolds(id, expectPath, expectGen)) return;
 	m.diskBaseline = trueDiskContent;
 	// PJ-207 §15 — the true baseline alone only defeats a PHANTOM watcher event. A GENUINE
 	// external write (the same sync agent that locked the file finishing its pull from another
@@ -561,11 +581,34 @@ export function compose(id: string, expectPath: string): ComposeResult {
  * object misses even when id and path both match. Refusing is the safe direction — the model stays
  * dirty, so the next debounce or the 10 s retry saves it for real.
  */
+/**
+ * Is the model this id holds STILL the one a caller composed from?
+ *
+ * A tab id is a SLOT, not a note: `openModel` re-seeds an id in place — for the same path — and
+ * mints a new `gen`. So a caller holding a `(path, gen)` from compose time is holding a claim
+ * about a model that may no longer exist by the time its `await` returns.
+ *
+ * **This is THE predicate**, and `markSaved` / `noteDiskSynced` guard on it rather than repeating
+ * its two comparisons, so a guard and a caller's check can never disagree about whether the
+ * lineage held. (PJ-252's lesson, applied to lineage instead of frontmatter: two answers to one
+ * question in two places is how the disagreement gets in.)
+ *
+ * PJ-287: `saveUnchained` needed to ASK this, not merely benefit from it. The guards below return
+ * `void`, so a write whose lineage had broken was refused by both mutations and then ratified
+ * anyway by everything after them.
+ */
+export function lineageHolds(id: string, expectPath?: string, expectGen?: number): boolean {
+	const m = models.get(id);
+	if (!m) return false;
+	if (expectPath !== undefined && m.path !== expectPath) return false;
+	if (expectGen !== undefined && m.gen !== expectGen) return false;
+	return true;
+}
+
 export function markSaved(id: string, version: number, expectPath?: string, expectGen?: number): void {
 	const m = models.get(id);
 	if (!m) return;
-	if (expectPath !== undefined && m.path !== expectPath) return;
-	if (expectGen !== undefined && m.gen !== expectGen) return;
+	if (!lineageHolds(id, expectPath, expectGen)) return;
 	if (version > m.savedVersion) m.savedVersion = version;
 }
 
@@ -634,14 +677,13 @@ export function adoptDisk(id: string, diskContent: string, expectPath?: string):
 export function noteDiskSynced(id: string, content: string, expectPath?: string, expectGen?: number): void {
 	const m = models.get(id);
 	if (!m) return;
-	if (expectPath !== undefined && m.path !== expectPath) return;
 	// PJ-207 §15 — same lineage hole as `markSaved`, reached from the same two lines of
 	// `saveUnchained`. A same-path re-seed leaves this stamp landing on a NEW model, writing the
 	// PRE-re-seed bytes over a baseline that was just set to the real disk. That baseline is the
 	// arbiter for `adoptDisk`'s phantom guard and for `diskDiffersFromBaseline`: with a wrong one,
 	// our own echo reads as a genuine external edit (a spurious `.conflict` sidecar) and a real
 	// external edit can read as a phantom and be refused.
-	if (expectGen !== undefined && m.gen !== expectGen) return;
+	if (!lineageHolds(id, expectPath, expectGen)) return;
 	m.diskBaseline = content;
 	m.netUnsaved = false; // PJ-207 §15 — a DURABLE write is the one event that makes recovered content real
 }

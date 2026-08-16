@@ -1012,3 +1012,40 @@ testing anything the others did not.
 **Related.** *Never Describe the App Without Looking At It* (this is its subtler form — everything
 named was real, and the step was still impossible); *The Test Pipeline* (the gate needs the
 reachability question added to it, not more diligence applied to the existing one).
+
+---
+
+### LL-045b: THE HANDLER YOU FOUND IS NOT THE HANDLER THAT RUNS *(2026-08-15, same day)*
+
+Three more reachability failures followed within hours, on one test draft. The first two the gate
+caught once it had this lesson — a step told the Boss to click a note in the sidebar to open a
+second tab, and two claimed on-screen strings turned out to be **dead code** (`notePane.saving`, a
+prop no mount site ever passes; `notePane.placeholder`/`bodyPlaceholder`, keys with zero call sites
+in 15 locales). Both are the existence/reachability split working as intended.
+
+**The third one the gate got WRONG, and that is the lesson.** Correcting the tab step, the inspector
+verified `handleNoteClick` computes `newTab = e.ctrlKey || e.metaKey || e.button === 1`
+(`+layout.svelte:7638`) and told the Boss to Ctrl+click. He tried it and got the multi-select bar —
+*"1 selected · Move · Add tag · Delete"* — because `FileTree.handleClick` intercepts FIRST:
+
+```js
+if (e.ctrlKey || e.metaKey || e.shiftKey) { e.preventDefault(); onSelect?.(entry, e); return; }
+```
+
+`MIG-091 §B — a modifier click is a SELECT gesture, not an open.` The `newTab` branch is real and
+reachable — from callers that pass an unintercepted event — but **never from the sidebar tree**.
+
+**So reachability is not one lookup, it is a CHAIN.** Verifying the handler that would consume the
+gesture proves nothing until you have checked every handler between the user's finger and it: the
+element's own listener, its ancestors' capture handlers, `preventDefault`/`stopPropagation`, and any
+overlay above it. The inspector answered "does this code do what the step says" when the question is
+"**does this gesture, from this surface, arrive at this code**".
+
+**How to apply.** For any instructed gesture, trace it from the DOM node the user actually touches
+outward, and stop at the first handler that returns early. Where a component owns a gesture
+vocabulary (multi-select, drag, chords), read that vocabulary before instructing any modifier.
+And when the Boss says a step does something else — he is describing the running app, which
+outranks every file you have read.
+
+*(Also surfaced: the (+) new-tab button's tooltip is a hardcoded English `title="New tab"`
+(`+layout.svelte:8618`) rather than a `$t()` key — filed as PJ-293.)*

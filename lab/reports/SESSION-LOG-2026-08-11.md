@@ -753,3 +753,84 @@ nothing at all. This was the batch's only fix with no automated test; the walkth
 verification, and it verified.
 
 **Committed after the pass, never before.**
+
+---
+
+## PJ-287 — a write composed from a model that no longer exists was reported as SUCCESS
+
+Function in hand: **`saveUnchained`** (`src/lib/editor/noteSession.ts`) — the one durable-write path.
+
+**Reproduce-First, honoured.** The defect was red on demand before anything was designed:
+`tests/pj-287/discardDuringInFlightSave.test.ts` drives the session layer with a writer the test
+releases by hand, so the interleaving is deterministic rather than timed. First run: `ok:true`
+where it must be `false`, in both the discard case and the closed-tab case.
+
+**The defect.** A tab id is a SLOT, not a note. `markSaved`/`noteDiskSynced` had been lineage-guarded
+since PJ-207 §15 and both correctly refused a mid-flight re-seed — **but a guard that returns `void`
+tells its caller nothing**, so everything after them ran: the net was cleared, `onSuccess` reindexed
+and re-embedded, and the function returned success. Reachable ordinarily: a save fails on a locked
+`.md`, the ~10 s auto-retry parks on `await`, and the user clicks **"Discard my changes"**. The
+bytes they discarded went to disk; the version they kept survived only in a model reporting clean,
+so nothing ever wrote it back; the banner cleared, reading as success. The 2026-08-01 inspection had
+already bracketed the *teardown-flush* route into this same hazard — those brackets cannot reach a
+write already past composition.
+
+**The fix.** `lineageHolds` is now THE predicate, and `markSaved`/`noteDiskSynced` guard on it rather
+than repeating its comparisons, so a guard and a caller's check can never disagree. `saveUnchained`
+ASKS it, and on a break asks one further question — *does the slot's model actually disagree with
+what was written?* — with three outcomes: divergence → baseline as recovery + stash the kept version
++ report; agreement → baseline only; model gone → nothing. The compare-and-clear runs in every case.
+
+### Five gate rounds, and what each one was
+
+Recorded in full because the pattern matters more than the fix: **every finding was a consequence of
+the previous round's fix, not the same defect resurfacing**, and the branch ended with fewer special
+cases than it had at round three.
+
+| # | finding | what it actually was |
+|---|---|---|
+| 1 | the defect itself | a guard returning `void` into a caller that ratified anyway |
+| 2 | **cross-note bleed (HIGH)** | "lineage broke" covers THREE states — gone, re-seeded, **different note**. I wrote `lineageHolds` in that very change and then called `setDiskBaseline`, the one model mutator with no identity guard, stamping note A's bytes onto note B. Fixed at the mutator, not the caller — "every caller remembers" is the promise the next caller breaks (the `read_state` lesson from §0.3). |
+| 3 | the residue (MED) | refusing to ratify was right and left the kept version in memory only; a tab close then destroyed it while disk held the discarded bytes, with nothing recording the split. Added the net re-stash + a journal marker (`onSuperseded` — not `onError`, whose retry would find a clean model and clear itself again: churn, not a surface). |
+| 4 | phantom recovery (MED) | when the re-seed read back the very bytes just written (`write_note` async, `read_note` sync), the "repair" flagged already-durable content as work disk never had — a stale net entry that beats a NEWER file on the next open. **PJ-181 re-armed by a repair.** Fixed by asking whether there is any divergence at all. |
+| 5 | dropped compare-and-clear (HIGH) | **my own invented exception.** I had suppressed `clearNetIf` reasoning "the net may be the only copy" — but it clears ONLY IF the net still holds exactly the bytes just written, which are provably on disk by then. Skipping it stranded the pre-write stash, unflagged, on every superseded path. The fix was to DELETE the exception; one test had to change too, because it was asserting my wrong reasoning back at me. |
+
+Round six: **zero confirmed findings.**
+
+A line was drawn before round five and honoured: a fifth finding meant stopping to ask whether the
+approach was wrong rather than patching again. The rethink concluded it was not — the fix removed an
+exception rather than adding a guard — and the further line stands: a sixth would have gone to the
+Boss as a design question (return `superseded` and let one dedicated reconciler decide), not another
+edit.
+
+**Verification.** vitest **921/921** (82 files, 6 new), svelte-check **0 errors**, Rust **1477/0**.
+Diff-scoped inspection clean on the final round.
+
+**PJ-288 NOT taken.** The 30-site arbiter audit shows the durability gates interlock — eleven must
+move together, and once effective a locked `.md` can block navigation on a note the user never
+edited, while a checkbox tick, a Base cell edit or "link this mention" is refused on a restored note.
+Honest refusals replacing silent losses, but new refusals on four surfaces: a Boss ruling, not mine.
+
+### PJ-287 Boss test — PASSED, and the gate's own correction was wrong
+
+**Steps 1, 3, 4, 5 PASS.** Step 2's content assertion holds transitively: Step 3's pre-state
+required "zarquon one" intact after the tab round-trip, and Step 3 passed.
+
+**Step 2's ROUTE was wrong — twice.** The draft first said an ordinary sidebar click opens a second
+tab (it replaces the active tab in place); `ui-inspector` caught that and corrected it to
+**Ctrl+click**, citing `+layout.svelte:7638`'s `newTab = e.ctrlKey || e.metaKey || e.button === 1`.
+The Boss tried it and got the **multi-select bar** — *"1 selected · Move · Add tag · Delete"* —
+because `FileTree.handleClick` (`:49-55`) intercepts first: *"MIG-091 §B — a modifier click is a
+SELECT gesture, not an open"*, calling `preventDefault` and returning. The `newTab` branch is real
+and reachable from callers that pass an unintercepted event, but **never from the sidebar tree**.
+His route: the **(+)** button beside the tab, then pick from the file tree.
+
+**LL-045b written**: *the handler you found is not the handler that runs.* Reachability is a CHAIN,
+not a lookup — every handler between the user's finger and the code must be checked for an early
+return, and where a component owns a gesture vocabulary (multi-select, drag, chords) that vocabulary
+must be read before instructing any modifier. Three reachability failures in one session; the gate
+caught two (a dead `saving` prop, dead placeholder keys) and produced the third itself.
+
+Filed in the same pass: **PJ-292** (two dead UI strings in NotePane — the save indicator and the
+placeholder keys, the former described to the Boss twice) and **PJ-293** (the (+) tooltip is a
+hardcoded English `title="New tab"`).

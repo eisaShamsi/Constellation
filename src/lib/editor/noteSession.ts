@@ -42,6 +42,11 @@ export interface SaveEnv {
 	clearNetIf?: (path: string, content: string) => void;
 	onSuccess?: (info: { path: string; content: string; version: number }) => void;
 	onError?: (info: { path: string; content: string; version: number; error: unknown }) => void;
+	/** PJ-287 — a write landed for a model that no longer exists. NOT an error (the write itself
+	 *  succeeded) and NOT a success (nothing may be ratified against the note open now), so it
+	 *  gets its own channel rather than being squeezed into either. The host reports it; this
+	 *  module stays free of IPC. */
+	onSuperseded?: (info: { path: string; writtenContent: string; version: number }) => void;
 	cursorPos?: number;
 	scrollTop?: number;
 }
@@ -49,7 +54,11 @@ export interface SaveEnv {
 /** compose refusal | write failure | success. `ok:false` covers both non-durable outcomes. */
 export type SaveOutcome =
 	| M.ComposeResult
-	| { ok: false; reason: 'write_failed'; path: string; version: number; error: unknown };
+	| { ok: false; reason: 'write_failed'; path: string; version: number; error: unknown }
+	/** PJ-287 — the write landed, but for a model that no longer exists (the id was re-seeded, or
+	 *  the tab closed, while it was parked on `await`). NOT a success: nothing may be ratified
+	 *  against the note that is open now. See `saveUnchained`. */
+	| { ok: false; reason: 'superseded'; path: string; version: number };
 
 /** Open a note's session from its on-disk content (tab open / nav / reload). */
 export function open(id: string, path: string, diskContent: string): void {
@@ -266,6 +275,90 @@ async function saveUnchained(
 	// over a dirty model) and resets `version` to 0; the path guard alone let this stamp
 	// savedVersion = 12 onto that fresh model, and `isDirty` then reported clean for twelve real
 	// edits which the departure flush and the app-close flush both skipped.
+	// ★ PJ-287 — ASK whether the lineage still holds, before ratifying anything.
+	//
+	// The two mutations below have been lineage-guarded since PJ-207 §15, and they were doing
+	// their job: on a mid-flight re-seed both correctly refused. But a guard that returns `void`
+	// tells its caller nothing, so everything AFTER them ran anyway — the net was cleared,
+	// `onSuccess` reindexed and re-embedded, and this returned `ok:true`.
+	//
+	// What that cost: the user's save fails on a locked `.md`, the ~10 s auto-retry parks here,
+	// and in that window the user clicks **"Discard my changes"**. `discardFailedSave` re-seeds the
+	// tab from disk — their stated intent — minting a new model under the same id. Then this write
+	// lands. The bytes they DISCARDED go to disk; the version they chose to KEEP survives only in
+	// an in-memory model reporting clean, so nothing ever writes it back; the net (the last other
+	// copy) is cleared; the banner clears, reading as success. An explicit decision, inverted in
+	// silence. The 2026-08-01 inspection already bracketed the *teardown-flush* route into this
+	// same hazard (`discardFailedSave`'s markCascading/markReseeding) — those brackets cannot
+	// reach a write that is already past composition and parked on its `await`.
+	if (!M.lineageHolds(id, r.path, r.gen)) {
+		// The write is on disk — it was awaited; that cannot be undone from here. What CAN be
+		// prevented is every consequence of calling it this note's current state:
+		//   · the net is NOT cleared — it may be the only copy of something not on disk;
+		//   · `onSuccess` does NOT run — no reindex, no re-embed, no second-screen broadcast of
+		//     superseded content, and no save-health entry cleared on a save that did not happen
+		//     for the note that is now open;
+		//   · the outcome is a FAILURE, so callers that gate on it (the nav flush aborts, the
+		//     close flush retries) treat this note as still owing a write — which it does.
+		//
+		// Then record what the write broke: disk now holds `r.content`, which is NOT the live
+		// model's content, and the model would otherwise go on believing it matches disk.
+		//
+		// **Be precise about what this buys today.** `netUnsaved` makes `adoptDisk` REFUSE — so a
+		// watcher event carrying those superseded bytes can no longer be adopted over the version
+		// the user kept, and a genuine external edit routes to the conflict path instead of
+		// silently replacing it. That is real protection, and it is the half that works now.
+		// It does NOT yet cause a write-back: every departure/close flush still asks `isDirty`
+		// alone, for which this model is clean — **that is PJ-288, and it is not shipped.** Until
+		// it is, the kept version is protected in memory but is not re-persisted, and the file on
+		// disk holds the superseded bytes. Said plainly here rather than implied, because a
+		// comment claiming a repair that does not happen is worse than no comment.
+		// PATH-guarded, and deliberately NOT gen-guarded: this branch exists because the
+		// generation moved, so requiring it to match would refuse the very case being repaired.
+		// The path is what says "still the same NOTE" — if the slot now holds a DIFFERENT note,
+		// `r.content` is not its disk content and must not become its baseline.
+		// Does the model now in the slot actually DISAGREE with what we just wrote? `compose` is
+		// path-guarded, so this is `false` when the slot holds a different note (nothing of this
+		// note's remains to reconcile) and when the re-seed happened to read back these very
+		// bytes — `write_note` is async while `read_note` is sync, so a reload issued after the
+		// write lands can observe it and still deliver its response first.
+		const kept = M.compose(id, r.path);
+		const diverged = kept.ok && kept.content !== r.content;
+		if (diverged) {
+			// The slot's model holds content the disk does NOT have. Baseline it as recovery, and
+			// ★ STASH THE KEPT VERSION — it is now the only copy of that content.
+			// `discardFailedSave` clears the net before this write resolves, so without this a tab
+			// close disposes the model and the version the user chose to keep exists NOWHERE,
+			// while the file holds the bytes they discarded.
+			M.setDiskBaseline(id, r.content, true, r.path);
+			e.setNet?.(kept.path, kept.content, e.cursorPos ?? 0, e.scrollTop ?? 0);
+			// Report it. Not `onError` — that raises the save-health banner, whose retry would find
+			// a clean model and simply clear itself again (churn, not a surface) — and not silence,
+			// which is what made this a finding. The host records it where a divergence has to
+			// stay decidable after the fact.
+			e.onSuperseded?.({ path: r.path, writtenContent: r.content, version: r.version });
+		} else if (kept.ok) {
+			// Model and disk AGREE — the re-seed read back the very bytes we wrote (`write_note`
+			// is async, `read_note` sync, so a reload issued after the write lands can observe it
+			// and still answer first). Nothing exists in only one place; only the baseline is
+			// owed, and WITHOUT the recovery flag: marking already-durable content as "work the
+			// disk never had" leaves a stale net entry that beats a NEWER file on the next open
+			// and is then written back over an external edit — PJ-181, re-armed by a repair.
+			M.setDiskBaseline(id, r.content, false, r.path);
+		}
+		// ★ And the compare-and-clear runs HERE TOO — the exception was mine, and it was wrong.
+		// This is not "clear the net", it is "clear it ONLY IF it still holds exactly the bytes
+		// just written", which by this line are provably on disk. Skipping it stranded the
+		// pre-write stash — unflagged, so it reads as real unsaved work — on every superseded
+		// path, most reachably when the model is GONE (a tab disposed while its write was parked,
+		// where nothing re-stashes and nothing prunes a closed note's net). That entry then beats
+		// a newer file on the next open and is written back over it: the same PJ-181 app-killer,
+		// reached by the opposite mistake to the one above. Ordering is load-bearing — the
+		// divergent branch stashed `kept.content` first, which no longer equals `r.content`, so
+		// that stash is safe from this clear by construction.
+		e.clearNetIf?.(r.path, r.content);
+		return { ok: false, reason: 'superseded', path: r.path, version: r.version };
+	}
 	M.markSaved(id, r.version, r.path, r.gen); // clean trails durability — path + lineage guarded (APP-KILLER #2)
 	M.noteDiskSynced(id, r.content, r.path, r.gen); // PJ-070 — re-baseline, same two guards: a stale baseline mis-arbitrates the next external change
 	e.clearNetIf?.(r.path, r.content); // compare-and-clear: never wipe a newer edit's net
