@@ -32,7 +32,8 @@
 		"mergeCancel": "Annuler",
 		"mergeSave": "Enregistrer la fusion",
 		"mergeSaving": "Enregistrement…",
-		"copyAcross": "Copier vers la vôtre"
+		"copyAcross": "Copier vers la vôtre",
+		"externalNoCopy": "« {note} » a été modifié hors de Constellation. La version entrante n’a pas pu être enregistrée à côté, elle n’a donc pas été conservée."
 	},
 	"collision": {
 		"title": "Une note nommée {name} existe déjà",
@@ -1796,7 +1797,8 @@
 		"newNoteDestination": "Sera créée dans :",
 		"newNoteDestinationChange": "Modifier…",
 		"newNoteDestinationPick": "Choisir un emplacement pour",
-		"newNoteDestinationConfirm": "Choisir"
+		"newNoteDestinationConfirm": "Choisir",
+		"errSaveTemplate": "Impossible d’enregistrer comme modèle : {error}"
 	},
 	"secondScreen": {
 		"title": "Deuxième écran",

@@ -32,7 +32,8 @@
 		"mergeCancel": "Cancelar",
 		"mergeSave": "Salvar mesclado",
 		"mergeSaving": "Salvando…",
-		"copyAcross": "Copiar para a minha"
+		"copyAcross": "Copiar para a minha",
+		"externalNoCopy": "\"{note}\" foi alterado fora do Constellation. A versão recebida não pôde ser guardada ao lado dele, por isso não foi mantida."
 	},
 	"collision": {
 		"title": "Já existe uma nota chamada {name}",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "Será criada em:",
 		"newNoteDestinationChange": "Alterar…",
 		"newNoteDestinationPick": "Escolha um local para",
-		"newNoteDestinationConfirm": "Escolher"
+		"newNoteDestinationConfirm": "Escolher",
+		"errSaveTemplate": "Não foi possível guardar como modelo: {error}"
 	},
 	"secondScreen": {
 		"title": "Segunda tela",

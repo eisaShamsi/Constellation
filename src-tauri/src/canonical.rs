@@ -1475,7 +1475,12 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
 /// Tauri command wrapping `ensure_cid_cn` for call from the frontend's
 /// note-open pipeline.
 #[tauri::command]
-pub fn ensure_cid_cn_cmd(file_path: String) -> Result<String, String> {
+pub fn ensure_cid_cn_cmd(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
+    // MIG-111 §0.4 (R1) — this WRITES (it injects the note's identity into the frontmatter and
+    // saves), and it ran on the note-open path with no boundary check and no AppHandle to make
+    // one with. Opening a linked universe's note therefore rewrote that note's file — the one
+    // thing federation is not allowed to do, on the most ordinary action in the app.
+    crate::libraries::require_own_library(&app, &file_path)?;
     let path = Path::new(&file_path);
     if !path.is_file() { return Err(format!("Not a file: {}", file_path)); }
     let content = fs::read_to_string(path).map_err(|e| format!("read: {}", e))?;

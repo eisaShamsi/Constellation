@@ -10,7 +10,7 @@
 	// outside Constellation while its open model had unsaved edits — the local work is kept
 	// and the incoming disk copy is preserved to a `.conflict` sidecar. Distinct from a
 	// failure: no auto-clear, no retry — "Show copy" reveals the sidecar, "×" dismisses.
-	import { saveHealth, retrySaveFailure, saveConflicts, dismissConflict, saveRecoveredCopy, discardFailedSave } from '$lib/libraries/store';
+	import { saveHealth, retrySaveFailure, saveConflicts, dismissConflict, saveRecoveredCopy, discardFailedSave, CONFLICT_NO_SIDECAR } from '$lib/libraries/store';
 	import { openMergeView } from '$lib/stores/mergeView';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
@@ -18,7 +18,15 @@
 	import { onDestroy } from 'svelte';
 
 	const rows = $derived([...$saveHealth.entries()].map(([path, info]) => ({ path, name: info.name })));
-	const conflicts = $derived([...$saveConflicts.entries()].map(([sidecarPath, info]) => ({ sidecarPath, name: info.noteName, notePath: info.notePath })));
+	// MIG-111 §0.4 — a row whose sidecar could not be written (the copy lives in a linked universe
+	// Constellation may not write to) still appears, because the CONFLICT is real either way. It
+	// simply carries no file, so the two actions that need one are not offered.
+	const conflicts = $derived([...$saveConflicts.entries()].map(([key, info]) => ({
+		sidecarPath: key,
+		hasCopy: !key.startsWith(CONFLICT_NO_SIDECAR),
+		name: info.noteName,
+		notePath: info.notePath,
+	})));
 
 	function showCopy(sidecarPath: string) {
 		invoke('constellation_show_in_folder', { path: sidecarPath }).catch(() => {});
@@ -71,13 +79,19 @@
 		{#each conflicts as c (c.sidecarPath)}
 			<div class="shrow cfrow">
 				<span class="shicon" aria-hidden="true">⧉</span>
-				<span class="shmsg" dir={detectDir(c.name)}>{$t('conflict.externalKept', { note: c.name })}</span>
-				<button class="shbtn" type="button" onclick={() => merge(c)}>
-					{$t('conflict.merge')}
-				</button>
-				<button class="shbtn" type="button" onclick={() => showCopy(c.sidecarPath)}>
-					{$t('conflict.showCopy')}
-				</button>
+				<span class="shmsg" dir={detectDir(c.name)}>
+					{c.hasCopy
+						? $t('conflict.externalKept', { note: c.name })
+						: $t('conflict.externalNoCopy', { note: c.name })}
+				</span>
+				{#if c.hasCopy}
+					<button class="shbtn" type="button" onclick={() => merge(c)}>
+						{$t('conflict.merge')}
+					</button>
+					<button class="shbtn" type="button" onclick={() => showCopy(c.sidecarPath)}>
+						{$t('conflict.showCopy')}
+					</button>
+				{/if}
 				<button class="shdismiss" type="button" aria-label={$t('conflict.dismiss')} title={$t('conflict.dismiss')} onclick={() => dismissConflict(c.sidecarPath)}>
 					×
 				</button>

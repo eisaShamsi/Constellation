@@ -5379,6 +5379,14 @@
 			});
 			await refreshTemplates();
 		} catch (err) {
+			// MIG-111 §0.4 — SURFACED, not swallowed. This was `console.error` alone, and devtools
+			// are dev-only: in a shipped build the dialog closed, no file was written, and the user
+			// was told nothing — they learned of it when the template list turned out to be empty.
+			// Every refusal reaches here (an unreadable owning library, a `..` in the Template
+			// folder setting, a missing drive, an I/O error, name-collision exhaustion), so fixing
+			// only the guard above would have left the silence that made it invisible. The banner
+			// is the mechanism a dozen sibling handlers already use; this one was the outlier.
+			templateActionError = $t('templates.errSaveTemplate', { error: String(err) });
 			console.error('[save as template] failed:', err);
 		}
 	}

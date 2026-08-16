@@ -32,7 +32,8 @@
 		"mergeCancel": "キャンセル",
 		"mergeSave": "マージを保存",
 		"mergeSaving": "保存中…",
-		"copyAcross": "自分側にコピー"
+		"copyAcross": "自分側にコピー",
+		"externalNoCopy": "「{note}」が Constellation の外で変更されました。取り込まれた版をその隣に保存できなかったため、保持されていません。"
 	},
 	"collision": {
 		"title": "{name} という名前のノートは既に存在します",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "作成先:",
 		"newNoteDestinationChange": "変更…",
 		"newNoteDestinationPick": "作成場所を選択:",
-		"newNoteDestinationConfirm": "選択"
+		"newNoteDestinationConfirm": "選択",
+		"errSaveTemplate": "テンプレートとして保存できませんでした: {error}"
 	},
 	"secondScreen": {
 		"title": "セカンドスクリーン",

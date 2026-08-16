@@ -32,7 +32,8 @@
 		"mergeCancel": "取消",
 		"mergeSave": "保存合并结果",
 		"mergeSaving": "保存中…",
-		"copyAcross": "复制到我的版本"
+		"copyAcross": "复制到我的版本",
+		"externalNoCopy": "“{note}” 在 Constellation 之外被修改。传入的版本无法保存在它旁边，因此未予保留。"
 	},
 	"collision": {
 		"title": "已存在名为 {name} 的笔记",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "将创建于：",
 		"newNoteDestinationChange": "更改…",
 		"newNoteDestinationPick": "选择位置：",
-		"newNoteDestinationConfirm": "选择"
+		"newNoteDestinationConfirm": "选择",
+		"errSaveTemplate": "无法另存为模板：{error}"
 	},
 	"secondScreen": {
 		"title": "第二屏幕",

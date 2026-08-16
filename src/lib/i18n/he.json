@@ -32,7 +32,8 @@
 		"mergeCancel": "ביטול",
 		"mergeSave": "שמור מזוג",
 		"mergeSaving": "שומר…",
-		"copyAcross": "העתק לשלי"
+		"copyAcross": "העתק לשלי",
+		"externalNoCopy": "\"{note}\" השתנה מחוץ ל-Constellation. לא ניתן היה לשמור לצידו את הגרסה הנכנסת, ולכן היא לא נשמרה."
 	},
 	"collision": {
 		"title": "כבר קיימת פתקה בשם {name}",
@@ -1785,7 +1786,8 @@
 		"newNoteDestination": "תיווצר ב:",
 		"newNoteDestinationChange": "שינוי…",
 		"newNoteDestinationPick": "בחרו מיקום עבור",
-		"newNoteDestinationConfirm": "בחירה"
+		"newNoteDestinationConfirm": "בחירה",
+		"errSaveTemplate": "לא ניתן היה לשמור כתבנית: {error}"
 	},
 	"secondScreen": {
 		"title": "מסך שני",

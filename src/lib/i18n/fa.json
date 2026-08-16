@@ -32,7 +32,8 @@
 		"mergeCancel": "لغو",
 		"mergeSave": "ذخیرهٔ ادغام‌شده",
 		"mergeSaving": "در حال ذخیره…",
-		"copyAcross": "کپی به نسخهٔ شما"
+		"copyAcross": "کپی به نسخهٔ شما",
+		"externalNoCopy": "\"{note}\" بیرون از Constellation تغییر کرد. نسخهٔ واردشده را نشد کنارش ذخیره کرد، پس نگه داشته نشد."
 	},
 	"collision": {
 		"title": "یادداشتی با نام {name} از قبل وجود دارد",
@@ -1796,7 +1797,8 @@
 		"newNoteDestination": "ایجاد می‌شود در:",
 		"newNoteDestinationChange": "تغییر…",
 		"newNoteDestinationPick": "انتخاب مکان برای",
-		"newNoteDestinationConfirm": "انتخاب"
+		"newNoteDestinationConfirm": "انتخاب",
+		"errSaveTemplate": "ذخیره به‌عنوان الگو ممکن نشد: {error}"
 	},
 	"secondScreen": {
 		"title": "صفحه دوم",

@@ -878,3 +878,65 @@ derivation walked one directory and was blind to three imported keymaps; and a h
 editor keys — a decision about whether they should be commands at all) and **PJ-296** (the one
 reservation that cannot be derived: `Shift-Mod-\` arrives as `Ctrl+Shift+|` on a US layout, so no
 label-derived table can predict it — stated rather than guessed at).
+
+### PJ-294 Boss test — PASSED
+
+All ten steps. The rebind survived the restart (Step 9), which was the entire defect: before this,
+a recorded key was discarded and never reached disk at all. Conflict, both refusals, and Reset all
+behaved as written. `ui-inspector` REJECTED once first — Step 2 claimed the empty-tab screen is
+"headed New Tab", but that heading renders only in the SPLIT-VIEW branch; the reachable screen has
+three buttons and no heading. LL-045 again, caught before it reached him this time.
+
+---
+
+## MIG-111 Phase 0.4 — the writers on the federation boundary (R1). PHASE 0 CLOSES.
+
+**The plan named five writers. There were seven.** The two extra — `create_base` and
+`sources/bulk_ops.rs`'s Approve-All — were found only after the tests were rewritten to FIND
+writers instead of listing them, and both were reachable, silent, cross-universe writes.
+
+- `ensure_cid_cn_cmd` — the worst: it runs on the note-OPEN path and writes identity into
+  frontmatter, so opening a linked universe's note rewrote that universe's file. No `AppHandle`,
+  which is *why* it had no guard — there was nothing to ask.
+- `write_conflict_sidecar` — created a file inside a corpus Constellation only reads.
+- The two sources writers — guard moved INTO the write helpers, so all four commands are covered
+  by construction and a fifth caller cannot forget.
+- **Approve-All** — reached disk through its own `gate_rmw`, so per-card Accept correctly REFUSED
+  a linked note while the bulk path silently wrote to it.
+- The base writers — fixed in the SHARED `validate_base_path`, covering six writers rather than
+  the two the plan named; **`create_base`** was outside it entirely, authorising against the
+  FEDERATED resolver.
+
+**Rust 1485/0** (+8 wiring tests).
+
+### Five gate rounds on this step's own diff — and they are all ONE mistake
+
+**I kept proving properties over the sample I happened to look at.**
+
+1. **The base guard was a DEAD NO-OP** — a canonicalized `\?\E:\…` path compared against raw
+   registry roots can never match. Every base writer still wrote into linked universes. **The test
+   passed the whole time**, because it compared source-text byte offsets: it asserted the call was
+   *written* first, never that it *fired*.
+2. **Approve-All bypassed the boundary**, and the test named *"no sources command writes around
+   the helpers"* counted `gate_rmw` in ONE FILE — green over a bypass in the file next door.
+3. **`create_base` was outside the boundary**, missed because the test asserted the writers the
+   plan NAMED. Rewritten to search, it immediately found a sixth writer I did not know existed
+   (`create_workspace_base` — exempt *by construction*, its destination deriving from the active
+   universe).
+4. **A regression I introduced**: `create_template` got the guard on the SOURCE note instead of the
+   destination, breaking "Save as template" from a linked universe's note — dialog closing as
+   though it worked, no file, no error.
+5. **A comment of mine was false**: the sidecar guard claimed the conflict was still surfaced. It
+   was not — the frontend reported only on success. My refusal had turned "a stray file in a
+   corpus we only read" into "your external edit is clobbered, silently". Fixed: the conflict row
+   appears either way, says the copy could not be kept, and omits the actions needing a file.
+
+Each fix widened the sample until the test could find what I had not thought of — and every time,
+it immediately did.
+
+**Filed, not fixed:** PJ-297 (canonical.rs renames with no index migration), PJ-298 (its swallowed
+delete), PJ-299 (`move_item_db_tail`'s per-descendant lock hold), and **PJ-300** — the federation
+cache holding a DEGRADED resolve for a session, which silently turns every §0.4 guard into a no-op.
+PJ-300 is deliberately filed rather than fixed: the remedy changes the failure semantics of the
+resolver the whole app reads through, and that does not belong tacked onto the fifth round of a
+long step. It degrades to the pre-§0.4 baseline, not to something worse.

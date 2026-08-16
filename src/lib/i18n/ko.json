@@ -32,7 +32,8 @@
 		"mergeCancel": "취소",
 		"mergeSave": "병합본 저장",
 		"mergeSaving": "저장 중…",
-		"copyAcross": "내 버전으로 가져오기"
+		"copyAcross": "내 버전으로 가져오기",
+		"externalNoCopy": "\"{note}\"이(가) Constellation 외부에서 변경되었습니다. 들어온 버전을 옆에 저장할 수 없어 보관되지 않았습니다."
 	},
 	"collision": {
 		"title": "{name} 이름의 노트가 이미 있습니다",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "생성 위치:",
 		"newNoteDestinationChange": "변경…",
 		"newNoteDestinationPick": "생성 위치 선택:",
-		"newNoteDestinationConfirm": "선택"
+		"newNoteDestinationConfirm": "선택",
+		"errSaveTemplate": "템플릿으로 저장할 수 없습니다: {error}"
 	},
 	"secondScreen": {
 		"title": "보조 화면",

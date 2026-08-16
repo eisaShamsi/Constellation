@@ -32,7 +32,8 @@
 		"mergeCancel": "İptal",
 		"mergeSave": "Birleştirileni kaydet",
 		"mergeSaving": "Kaydediliyor…",
-		"copyAcross": "Sürümüme kopyala"
+		"copyAcross": "Sürümüme kopyala",
+		"externalNoCopy": "\"{note}\" Constellation dışında değişti. Gelen sürüm yanına kaydedilemedi, bu yüzden saklanmadı."
 	},
 	"collision": {
 		"title": "{name} adlı bir not zaten var",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "Şurada oluşturulacak:",
 		"newNoteDestinationChange": "Değiştir…",
 		"newNoteDestinationPick": "Konum seçin:",
-		"newNoteDestinationConfirm": "Seç"
+		"newNoteDestinationConfirm": "Seç",
+		"errSaveTemplate": "Şablon olarak kaydedilemedi: {error}"
 	},
 	"secondScreen": {
 		"title": "İkinci Ekran",

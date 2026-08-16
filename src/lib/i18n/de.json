@@ -32,7 +32,8 @@
 		"mergeCancel": "Abbrechen",
 		"mergeSave": "Zusammengeführt speichern",
 		"mergeSaving": "Wird gespeichert…",
-		"copyAcross": "In deine übernehmen"
+		"copyAcross": "In deine übernehmen",
+		"externalNoCopy": "\"{note}\" wurde außerhalb von Constellation geändert. Die eingehende Fassung konnte nicht daneben gespeichert werden und wurde daher nicht aufbewahrt."
 	},
 	"collision": {
 		"title": "Eine Notiz namens {name} existiert bereits",
@@ -1796,7 +1797,8 @@
 		"newNoteDestination": "Wird erstellt in:",
 		"newNoteDestinationChange": "Ändern…",
 		"newNoteDestinationPick": "Speicherort wählen für",
-		"newNoteDestinationConfirm": "Auswählen"
+		"newNoteDestinationConfirm": "Auswählen",
+		"errSaveTemplate": "Als Vorlage speichern fehlgeschlagen: {error}"
 	},
 	"secondScreen": {
 		"title": "Zweiter Bildschirm",

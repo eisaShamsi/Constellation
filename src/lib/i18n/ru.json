@@ -32,7 +32,8 @@
 		"mergeCancel": "Отмена",
 		"mergeSave": "Сохранить объединённое",
 		"mergeSaving": "Сохранение…",
-		"copyAcross": "Копировать к себе"
+		"copyAcross": "Копировать к себе",
+		"externalNoCopy": "«{note}» изменён вне Constellation. Входящую версию не удалось сохранить рядом, поэтому она не сохранена."
 	},
 	"collision": {
 		"title": "Заметка с именем {name} уже существует",
@@ -2225,7 +2226,8 @@
 		"newNoteDestination": "Будет создана в:",
 		"newNoteDestinationChange": "Изменить…",
 		"newNoteDestinationPick": "Выберите расположение для",
-		"newNoteDestinationConfirm": "Выбрать"
+		"newNoteDestinationConfirm": "Выбрать",
+		"errSaveTemplate": "Не удалось сохранить как шаблон: {error}"
 	},
 	"secondScreen": {
 		"title": "Второй экран",

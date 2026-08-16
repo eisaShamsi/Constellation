@@ -1022,7 +1022,17 @@ pub fn write_note(
 /// `gate_create_exclusive` (atomic + fsync + journalled + refuse-if-exists); a same-second name
 /// collision retries with a `-N` suffix. NOT `write_note` (which rejects any non-`.md` path).
 #[tauri::command]
-pub fn write_conflict_sidecar(note_path: String, disk_content: String) -> Result<String, String> {
+pub fn write_conflict_sidecar(
+    app: tauri::AppHandle,
+    note_path: String,
+    disk_content: String,
+) -> Result<String, String> {
+    // MIG-111 §0.4 (R1) — this CREATES a file next to the note. It had no boundary check and no
+    // AppHandle to make one with, so an external change to a linked universe's note dropped a
+    // `.conflict` sidecar into that universe's folder: a file Constellation created inside a
+    // corpus it is only supposed to read, which the owner would find with no idea where it came
+    // from. The conflict itself is still surfaced — the refusal stops the WRITE, not the warning.
+    require_own_library(&app, &note_path)?;
     let note = Path::new(&note_path);
     let parent = note.parent().ok_or("Note has no parent directory.")?;
     let stem = note
@@ -10009,6 +10019,202 @@ mod tests_pj279_structural_conflict_guards {
         assert!(
             body.contains("if let Err(e) = crate::search::reindex_single_note"),
             "the reindex must be branched on and its failure recorded"
+        );
+    }
+}
+
+/// MIG-111 §0.4 (R1) — the five writers that sat OUTSIDE the federation boundary.
+///
+/// Source assertions, for the same reason PJ-279's are: each guard lives inside a
+/// `#[tauri::command]` that needs an `AppHandle`, and the failure they prevent is an omission at
+/// the point a writer is DECLARED. `require_own_library_in` — the decision itself — already has a
+/// behavioural test above; what these pin is that each writer still ASKS it.
+#[cfg(test)]
+mod tests_mig111_04_boundary_writers {
+    fn src(file: &str) -> String {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join(file);
+        let all = std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("read {}: {e}", p.display()));
+        // Comments stripped — PJ-279's first cut matched the words of the comment EXPLAINING the
+        // guard rather than the call, and so asserted an ordering between two pieces of prose.
+        all.lines()
+            .filter(|l| !l.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn body_of(file: &str, func: &str) -> String {
+        let all = src(file);
+        let start = all.find(func).unwrap_or_else(|| panic!("{func} not found in {file} — renamed?"));
+        let rest = &all[start..];
+        let end = rest[1..].find("\n#[tauri::command").map(|i| i + 1).unwrap_or(rest.len());
+        rest[..end].to_string()
+    }
+
+    /// `ensure_cid_cn_cmd` runs on the note-OPEN path and writes the note's identity into its
+    /// frontmatter. Unguarded, opening a linked universe's note rewrote that universe's file.
+    #[test]
+    fn ensure_cid_cn_cmd_refuses_a_foreign_path() {
+        let b = body_of("canonical.rs", "pub fn ensure_cid_cn_cmd");
+        assert!(b.contains("require_own_library"), "the note-open write must ask whose note it is");
+    }
+
+    /// `write_conflict_sidecar` CREATES a file beside the note — inside a corpus we only read.
+    #[test]
+    fn conflict_sidecar_refuses_a_foreign_path() {
+        let b = body_of("libraries.rs", "pub fn write_conflict_sidecar");
+        assert!(b.contains("require_own_library"), "a sidecar must never be created in a linked universe");
+    }
+
+    /// **Both** frontmatter writers in the sources module — and the guard sits in the WRITE
+    /// helpers, not the commands, which is why all four commands are covered by construction.
+    ///
+    /// The first cut guarded `sources_set_manual` alone and the gate found the twin at once:
+    /// `cece_resolve_disambiguation`'s vertical arm calls `content_type_set_manual` directly, so
+    /// a vertical chip on a linked universe's note rewrote that note on disk. The Whole-Ecosystem
+    /// Fix Law's own origin story, repeated — fix the site in front of you, leave the sibling.
+    #[test]
+    fn both_frontmatter_writers_refuse_a_foreign_path() {
+        for func in ["fn rewrite_note_sources_on_disk", "fn rewrite_note_content_type_on_disk"] {
+            let b = body_of("sources/mod.rs", func);
+            assert!(
+                b.contains("require_own_library"),
+                "{func} writes a note's frontmatter and must refuse a foreign path"
+            );
+        }
+    }
+
+    /// **Every frontmatter write in the WHOLE sources module tree is guarded — file by file.**
+    ///
+    /// The first version of this counted `gate_rmw` in `sources/mod.rs` alone and asserted the
+    /// count was 2. `sources/bulk_ops.rs` — Approve-All — is a sibling file that reaches disk
+    /// through its own `gate_rmw`, so the count stayed 2 and this test read GREEN over precisely
+    /// the bypass it is named for, while per-card Accept refused a linked universe's note and the
+    /// bulk path silently wrote to it.
+    ///
+    /// A guard proven by counting occurrences in one file proves that file. Walk the directory.
+    #[test]
+    fn no_sources_writer_escapes_the_boundary() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("sources");
+        let mut writers = 0;
+        for entry in std::fs::read_dir(&dir).expect("read src/sources") {
+            let path = entry.expect("dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            let code = src(&format!("sources/{name}"));
+            let calls = code.matches("gate_rmw(").count();
+            if calls == 0 {
+                continue;
+            }
+            writers += calls;
+            assert!(
+                code.contains("require_own_library"),
+                "{name} writes a note through gate_rmw but never asks the federation boundary"
+            );
+        }
+        assert!(writers >= 3, "expected to FIND the frontmatter writers, found {writers}");
+    }
+
+    /// **The ORDER is the fix.** `validate_base_path`'s library loop was already own-scope, but the
+    /// universe-root check beneath it was a bare prefix test — and MIG-108 puts linked universes
+    /// UNDER the active root, so a nested one passed. The foreign refusal has to come FIRST or the
+    /// prefix check answers before it is asked.
+    #[test]
+    fn base_guard_checks_foreign_roots_before_the_universe_prefix() {
+        let b = src("bases.rs");
+        let f = b.find("path_is_under_any").expect("the base guard must consult the foreign roots");
+        let p = b.find("active_universe_dir").expect("universe-prefix check not found");
+        assert!(f < p, "the foreign refusal must precede the universe-root prefix check");
+    }
+
+    /// **Every writer that touches a `.base`, ENUMERATED — not the two §0.4 happened to name.**
+    ///
+    /// The first cut asserted exactly the two commands in the plan and passed, while `create_base`
+    /// sat outside the boundary authorising against the FEDERATED resolver and creating files
+    /// inside linked universes. A test that checks a hand-picked list confirms the list, not the
+    /// property. So this finds the writers by SEARCHING for them: any command whose body writes a
+    /// `.base` must reach `validate_base_path`.
+    #[test]
+    fn every_base_writer_goes_through_the_one_guard() {
+        let mut checked = 0;
+        for file in ["bases.rs", "lens/query.rs", "universe.rs"] {
+            let all = src(file);
+            for (idx, _) in all.match_indices("#[tauri::command") {
+                let rest = &all[idx..];
+                let end = rest[1..].find("
+#[tauri::command").map(|i| i + 1).unwrap_or(rest.len());
+                let body = &rest[..end];
+                // A writer is a command that names a .base path AND writes.
+                let writes = body.contains("atomic_write")
+                    || body.contains("gate_write")
+                    || body.contains("gate_create_exclusive")
+                    || body.contains("fs::write");
+                if !writes || !body.contains(".base") {
+                    continue;
+                }
+                // Exempt BY CONSTRUCTION, not by name: a writer whose destination is derived from
+                // the ACTIVE universe (`active_constellation_dir` / `workspace_bases_dir`) cannot
+                // be pointed at a linked one — there is no caller-supplied path to point. Only
+                // writers that take a destination from their caller need the boundary asked.
+                if body.contains("workspace_bases_dir") || body.contains("active_constellation_dir") {
+                    continue;
+                }
+                checked += 1;
+                assert!(
+                    body.contains("validate_base_path"),
+                    "a .base writer in {file} does not go through the boundary guard:
+{}",
+                    body.lines().take(4).collect::<Vec<_>>().join("
+")
+                );
+            }
+        }
+        assert!(checked >= 3, "expected to FIND the base writers, found {checked}");
+    }
+}
+
+/// MIG-111 §0.4 — the base guard must FIRE, not merely be written first.
+#[cfg(test)]
+mod tests_mig111_04_base_guard_fires {
+    /// The first version of the base guard compared a `fs::canonicalize`d path — Windows' verbatim
+    /// form — against registry roots normalised only for slashes and case. The comparison could
+    /// never match, so the guard was INERT and every base writer still wrote into linked
+    /// universes. The ordering test passed the whole time, because a byte offset in the source
+    /// says the call was WRITTEN first, never that it WORKED.
+    ///
+    /// This drives the real comparison with both path forms.
+    #[test]
+    fn the_foreign_prefix_match_is_not_defeated_by_path_form() {
+        let mut foreign = std::collections::HashSet::new();
+        foreign.insert("e:/u/linked/their lib".to_string()); // as `foreign_roots_of` produces it
+
+        let raw = r"E:\U\Linked\Their Lib\x.base";
+        let verbatim = r"\\?\E:\U\Linked\Their Lib\x.base";
+
+        assert!(
+            super::path_is_under_any(raw, &foreign),
+            "a raw Windows path under a foreign root must be recognised"
+        );
+        assert!(
+            !super::path_is_under_any(verbatim, &foreign),
+            "the verbatim form cannot match — so the guard must never be handed one"
+        );
+    }
+
+    /// …and the guard is not handed one: it must take the RAW `file_path`.
+    #[test]
+    fn the_base_guard_is_given_the_raw_path() {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("bases.rs");
+        let all = std::fs::read_to_string(&p).expect("read bases.rs");
+        let code: String = all
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            code.contains("path_is_under_any(file_path"),
+            "the foreign check must receive the raw file_path, never a canonicalized form"
         );
     }
 }

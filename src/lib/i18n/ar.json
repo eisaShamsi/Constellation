@@ -32,7 +32,8 @@
 		"mergeCancel": "إلغاء",
 		"mergeSave": "حفظ الدمج",
 		"mergeSaving": "جارٍ الحفظ…",
-		"copyAcross": "نسخ إلى نسختك"
+		"copyAcross": "نسخ إلى نسختك",
+		"externalNoCopy": "تغيّر \"{note}\" خارج Constellation. تعذّر حفظ النسخة الواردة بجانبه، لذا لم يتم الاحتفاظ بها."
 	},
 	"collision": {
 		"title": "توجد ملاحظة بالاسم {name} بالفعل",
@@ -2335,7 +2336,8 @@
 		"newNoteDestination": "سيتم إنشاؤها في:",
 		"newNoteDestinationChange": "تغيير…",
 		"newNoteDestinationPick": "اختر موقعًا لـ",
-		"newNoteDestinationConfirm": "اختيار"
+		"newNoteDestinationConfirm": "اختيار",
+		"errSaveTemplate": "تعذّر الحفظ كقالب: {error}"
 	},
 	"secondScreen": {
 		"title": "الشاشة الثانية",

@@ -401,6 +401,19 @@ struct AcceptOutcome {
 }
 
 fn accept_one(app: &AppHandle, note_path: &str) -> Result<AcceptOutcome, String> {
+    // ★ MIG-111 §0.4 (R1) — Approve-All is the FIFTH sources writer, and it reaches disk through
+    // its own `gate_rmw` rather than the two guarded helpers in `mod.rs`.
+    //
+    // It was missed twice over. First because §0.4 guarded the writers it went looking for and
+    // this one lives in a sibling file; then because the test written to prove no command could
+    // write around the helpers counted `gate_rmw` occurrences in `mod.rs` ALONE — so it read
+    // green over exactly the bypass it was named for.
+    //
+    // The consequence was the ugliest asymmetry in the boundary: per-card Accept correctly
+    // REFUSED a linked universe's note while Approve-All silently injected `sources:` and
+    // `content_type:` into that same note on disk, watcher-suppressed, counted as a completed
+    // batch with no error — the safe path erroring and the bulk path writing.
+    crate::libraries::require_own_library(app, note_path)?;
     // 1. Read the suggestion record from the queue.
     let record_opt = {
         let search_state = app.state::<crate::search::SearchState>();

@@ -25,6 +25,34 @@ pub(crate) fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Res
         })
         .map_err(|_| "Cannot resolve file path.".to_string())?;
 
+    // ★ MIG-111 §0.4 (R1) — the FOREIGN boundary, checked FIRST.
+    //
+    // The library loop below was already own-scope (MIG-065 §J, and it says so). The universe-root
+    // check underneath it was not: **MIG-108 puts every linked universe UNDER the active root**
+    // ("One Universe, One Location"), so `E:/U/Linked/Their Lib/x.base` starts with the active
+    // universe dir and sailed straight through — the same prefix-only hole the safety inspection
+    // proved against `require_own_library`'s first version, in the guard six base writers share.
+    //
+    // Refusing here rather than at each command is deliberate: this function IS the boundary for
+    // `save_base`, `update_base_columns`, `update_base_order`, and the three template writers in
+    // `universe.rs`. A guard added at two call sites would have left four open.
+    // ★ The RAW path, never `target`. `fs::canonicalize` returns Windows' verbatim form
+    // (`\\?\E:\…`), while the foreign roots are registry strings normalised only for slashes and
+    // case (`e:/…`) — so `//?/e:/…` can never prefix-match and the first version of this guard was
+    // a DEAD NO-OP that let every base writer through. Its pinning test compared source-text byte
+    // offsets, so it passed green over a guard that could not fire: it asserted the call was
+    // WRITTEN first, never that it WORKED. The three call sites that already worked
+    // (`index_repair`, `reconcile`, and the `require_own_library` sites added alongside this one)
+    // all pass raw paths, which is why they were never wrong.
+    let own = crate::libraries::load_libraries(app);
+    let foreign = crate::libraries::foreign_library_roots(app, &own);
+    if crate::libraries::path_is_under_any(file_path, &foreign) {
+        return Err(String::from(
+            "That file is inside a LINKED universe, which Constellation reads but never writes. \
+             Open that universe and edit it there. Nothing was changed.",
+        ));
+    }
+
     // Check if path is within the active universe directory
     if let Ok(universe_dir) = crate::universe::active_universe_dir(app) {
         if let Ok(canon_universe) = fs::canonicalize(&universe_dir) {
@@ -321,19 +349,16 @@ pub fn create_base(
     folder_path: String,
     file_name: String,
 ) -> Result<String, String> {
-    // Validate folder is in a registered library
-    let libraries = crate::libraries::load_libraries_pub(&app);
+    // ★ MIG-111 §0.4 (R1) — through the ONE guard, like every other base writer.
+    //
+    // This authorised against `load_libraries_pub` — which is `load_all_libraries`, the FEDERATED
+    // resolver — so a linked universe's folder passed, and `create_base` CREATED a file inside a
+    // corpus Constellation only reads. It was the single base writer outside the boundary, and it
+    // was missed because the first cut of §0.4 checked the two writers the plan NAMED rather than
+    // enumerating the writers that exist. (`load_libraries_pub` is a misleading alias of the
+    // federated loader — filed separately as PJ-275.)
     let folder = Path::new(&folder_path);
-    let canon_folder = fs::canonicalize(folder)
-        .map_err(|_| "Folder does not exist.".to_string())?;
-    let in_library = libraries.iter().any(|v| {
-        fs::canonicalize(&v.path)
-            .map(|vp| canon_folder.starts_with(vp))
-            .unwrap_or(false)
-    });
-    if !in_library {
-        return Err("Access denied: path is not within any registered library.".to_string());
-    }
+    validate_base_path(&app, &folder_path)?;
     if !folder.is_dir() {
         return Err("Folder does not exist.".to_string());
     }

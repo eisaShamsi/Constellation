@@ -2392,7 +2392,18 @@ pub fn create_template(
     snippet_text: Option<String>,
     folder: Option<String>,
 ) -> Result<String, String> {
-    crate::bases::validate_base_path(&app, &file_path)?;
+    // MIG-111 §0.4 — the READ-scope check, because `file_path` is the SOURCE note, not the
+    // destination. The template is written into `resolve_templates_dir`, inside the ACTIVE
+    // universe, and is safe by construction.
+    //
+    // This was `validate_base_path`, which §0.4 taught to refuse linked universes — turning a
+    // legitimate own-universe write into a refusal whenever the SOURCE note happened to live in a
+    // linked one. Since MIG-108 nests those under the active root, "Save as template" on such a
+    // note broke: the dialog closed, no file appeared, and the frontend swallowed the error into
+    // a console that does not exist in release. Making a template FROM something you can read is
+    // exactly what federation is for; the boundary belongs on where it lands, and that is already
+    // guarded at the two writers that actually touch a template file.
+    crate::libraries::validate_path_in_any_library(&app, &file_path)?;
     let template_kind = TemplateKind::parse(&kind)
         .ok_or_else(|| format!("Unknown template kind '{}'.", kind))?;
     let source = match content {

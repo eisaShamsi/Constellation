@@ -32,7 +32,8 @@
 		"mergeCancel": "منسوخ کریں",
 		"mergeSave": "ضم شدہ محفوظ کریں",
 		"mergeSaving": "محفوظ ہو رہا ہے…",
-		"copyAcross": "میرے نسخے میں نقل کریں"
+		"copyAcross": "میرے نسخے میں نقل کریں",
+		"externalNoCopy": "\"{note}\" Constellation کے باہر تبدیل ہوا۔ آنے والا نسخہ اس کے ساتھ محفوظ نہ ہو سکا، اس لیے رکھا نہیں گیا۔"
 	},
 	"collision": {
 		"title": "{name} نام کا نوٹ پہلے سے موجود ہے",
@@ -1785,7 +1786,8 @@
 		"newNoteDestination": "یہاں بنایا جائے گا:",
 		"newNoteDestinationChange": "تبدیل کریں…",
 		"newNoteDestinationPick": "مقام منتخب کریں:",
-		"newNoteDestinationConfirm": "منتخب کریں"
+		"newNoteDestinationConfirm": "منتخب کریں",
+		"errSaveTemplate": "بطور ٹیمپلیٹ محفوظ نہیں ہو سکا: {error}"
 	},
 	"secondScreen": {
 		"title": "دوسری اسکرین",

@@ -706,10 +706,24 @@ pub(super) fn announce_frontmatter_writes(app: &tauri::AppHandle, note_paths: &[
 }
 
 fn rewrite_note_sources_on_disk(
+    app: &tauri::AppHandle,
     note_path: &str,
     sources: &[String],
     merge: bool,
 ) -> Result<Vec<String>, String> {
+    // ★ MIG-111 §0.4 (R1) — THE BOUNDARY LIVES HERE, at the write, not at the commands.
+    //
+    // The first cut of §0.4 guarded `sources_set_manual` and stopped. The gate found the twin
+    // immediately: `cece_resolve_disambiguation`'s vertical arm calls `content_type_set_manual`
+    // DIRECTLY, so clicking a vertical chip on a linked universe's note rewrote that note's
+    // frontmatter on disk — watcher-suppressed, returning Ok, with the foreign path then filed
+    // into our own `note_meta`. That is the Whole-Ecosystem Fix Law's own origin story repeating:
+    // fix the call site you were looking at, leave the sibling.
+    //
+    // Both writers now refuse here, so all four commands (`sources_set_manual`, `sources_clear`,
+    // `content_type_set_manual`, `content_type_clear`) are covered by construction — and a fifth
+    // caller added tomorrow cannot forget.
+    crate::libraries::require_own_library(app, note_path)?;
     let path = Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
@@ -814,7 +828,7 @@ pub fn sources_set_manual(
     // 1. Write frontmatter to disk (canonical store). `effective` is what
     //    actually landed — for merge accepts, the union of the pick with the
     //    note's prior on-disk values; for exact-set, `sources` verbatim.
-    let effective = rewrite_note_sources_on_disk(&note_path, &sources, merge.unwrap_or(false))?;
+    let effective = rewrite_note_sources_on_disk(&app, &note_path, &sources, merge.unwrap_or(false))?;
     announce_frontmatter_write(&app, &note_path);
 
     // 2. Update note_meta.sources mirror + clear suggestion. Mirror the
@@ -1003,7 +1017,7 @@ pub fn sources_clear(
     let empty: Vec<String> = Vec::new();
 
     // Clear = exact-set to empty (the user's authority), never merge.
-    rewrite_note_sources_on_disk(&note_path, &empty, false)?;
+    rewrite_note_sources_on_disk(&app, &note_path, &empty, false)?;
     announce_frontmatter_write(&app, &note_path);
 
     let search_state = app.state::<crate::search::SearchState>();
@@ -1228,10 +1242,24 @@ pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) 
 /// contract (PJ-091). `merge = true` unions with the note's current on-disk
 /// `content_type:` under the lock; returns the effective set for the DB mirror.
 fn rewrite_note_content_type_on_disk(
+    app: &tauri::AppHandle,
     note_path: &str,
     content_type: &[String],
     merge: bool,
 ) -> Result<Vec<String>, String> {
+    // ★ MIG-111 §0.4 (R1) — THE BOUNDARY LIVES HERE, at the write, not at the commands.
+    //
+    // The first cut of §0.4 guarded `sources_set_manual` and stopped. The gate found the twin
+    // immediately: `cece_resolve_disambiguation`'s vertical arm calls `content_type_set_manual`
+    // DIRECTLY, so clicking a vertical chip on a linked universe's note rewrote that note's
+    // frontmatter on disk — watcher-suppressed, returning Ok, with the foreign path then filed
+    // into our own `note_meta`. That is the Whole-Ecosystem Fix Law's own origin story repeating:
+    // fix the call site you were looking at, leave the sibling.
+    //
+    // Both writers now refuse here, so all four commands (`sources_set_manual`, `sources_clear`,
+    // `content_type_set_manual`, `content_type_clear`) are covered by construction — and a fifth
+    // caller added tomorrow cannot forget.
+    crate::libraries::require_own_library(app, note_path)?;
     let path = Path::new(note_path);
     if !path.exists() {
         return Err(format!("Note not found: {}", note_path));
@@ -1303,7 +1331,7 @@ pub fn content_type_set_manual(
     };
 
     let effective =
-        rewrite_note_content_type_on_disk(&note_path, &content_type, merge.unwrap_or(false))?;
+        rewrite_note_content_type_on_disk(&app, &note_path, &content_type, merge.unwrap_or(false))?;
     // Indentation matters here: over-indented, this safety-critical line read as though it
     // sat inside a conditional. It is unconditional — the bytes are on disk, so an OPEN note
     // must be told to re-base whatever happens below (2026-07-22 APP-KILLER).
@@ -1357,7 +1385,7 @@ pub fn content_type_clear(
     crate::search::ensure_search_db_ready(&app)?;
     let empty: Vec<String> = Vec::new();
     // Clear = exact-set to empty (the user's authority), never merge.
-    rewrite_note_content_type_on_disk(&note_path, &empty, false)?;
+    rewrite_note_content_type_on_disk(&app, &note_path, &empty, false)?;
     announce_frontmatter_write(&app, &note_path);
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;

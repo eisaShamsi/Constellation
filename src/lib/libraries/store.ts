@@ -448,6 +448,11 @@ export function clearSaveFailure(path: string) {
  */
 export const saveConflicts = writable<Map<string, { noteName: string; notePath: string; since: number }>>(new Map());
 
+/** Prefix marking a conflict row that has NO sidecar file behind it (the copy could not be
+ *  written — e.g. the note lives in a linked universe Constellation may not write to). The
+ *  banner keys off this to hide the actions that need a file. */
+export const CONFLICT_NO_SIDECAR = 'nosidecar:';
+
 export function reportConflict(sidecarPath: string, noteName: string, notePath: string) {
 	saveConflicts.update((m) => {
 		const n = new Map(m);
@@ -476,7 +481,15 @@ export async function reportExternalConflict(notePath: string, noteName: string,
 		const sidecarPath = await invoke<string>('write_conflict_sidecar', { notePath, diskContent });
 		reportConflict(sidecarPath, noteName, notePath);
 	} catch (e) {
+		// MIG-111 §0.4 — the sidecar could not be written; the CONFLICT is still real and must
+		// still be seen. Previously this branch logged to a console that does not exist in a
+		// release build, so the row never appeared: the incoming external edit was clobbered and
+		// the user was told nothing. That was made reachable by §0.4's own boundary guard, which
+		// refuses a sidecar inside a LINKED universe — a refusal that must cost the copy, never
+		// the warning. Keyed by the note path (there is no sidecar path to key by); the banner
+		// omits "Show copy" and "Merge" for such a row, because there is no file behind them.
 		console.error('[PJ-070] failed to write conflict sidecar for', notePath, e);
+		reportConflict(`${CONFLICT_NO_SIDECAR}${notePath}`, noteName, notePath);
 	}
 }
 

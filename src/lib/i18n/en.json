@@ -32,7 +32,8 @@
 		"mergeCancel": "Cancel",
 		"mergeSave": "Save merged",
 		"mergeSaving": "Saving…",
-		"copyAcross": "Copy to mine"
+		"copyAcross": "Copy to mine",
+		"externalNoCopy": "\"{note}\" changed outside Constellation. The incoming version could not be saved beside it, so it has not been kept."
 	},
 	"collision": {
 		"title": "A note named {name} already exists",
@@ -2385,7 +2386,8 @@
 		"newNoteDestination": "Will be created in:",
 		"newNoteDestinationChange": "Change…",
 		"newNoteDestinationPick": "Choose a location for",
-		"newNoteDestinationConfirm": "Choose"
+		"newNoteDestinationConfirm": "Choose",
+		"errSaveTemplate": "Could not save as template: {error}"
 	},
 	"cockpit": {
 		"dial": "Coupling",
