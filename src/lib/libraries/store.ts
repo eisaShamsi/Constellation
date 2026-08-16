@@ -4112,6 +4112,19 @@ export async function constellationSearch(request: ConstellationSearchRequest): 
 export const indexHealthError = writable<string | null>(null);
 
 /**
+ * True while the Hotkeys screen is RECORDING a key combination. (PJ-294)
+ *
+ * The global dispatcher must stand down for exactly that moment, and **only a flag can do it**:
+ * the dispatcher is registered capture-phase on `document`, so it has already run by the time the
+ * recording field sees the event — `stopPropagation` there is issued after the fact and stops
+ * nothing. Without this, every key pressed while choosing a binding also EXECUTED its current
+ * command behind the Settings modal: pressing Ctrl+Shift+N to bind it ran Quick capture, writing
+ * a new note to disk and navigating the active tab away from what the user was reading, with a
+ * conflict message as their only feedback.
+ */
+export const hotkeyCaptureArmed = writable(false);
+
+/**
  * **What must happen after a durable write lands — in ONE place.** (PJ-278, tenth sweep.)
  *
  * Three things are owed to a note whose bytes just reached disk: the second screen must be told,

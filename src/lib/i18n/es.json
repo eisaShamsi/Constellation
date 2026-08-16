@@ -506,7 +506,15 @@
 			"filter": "Filtrar comandos...",
 			"notSet": "No configurado",
 			"noCommands": "No se encontraron comandos",
-			"pressKeys": "Presiona teclas..."
+			"pressKeys": "Presiona teclas...",
+			"reset": "Restablecer",
+			"resetHint": "Volver al atajo predeterminado",
+			"clear": "Quitar",
+			"clearHint": "Dejar este comando sin atajo",
+			"alreadyUsed": "Ya lo usa {command}.",
+			"needsModifier": "Usa una tecla modificadora (Ctrl, Alt o Mayús) o una tecla de función.",
+			"reservedKey": "Escape siempre cierra lo que esté abierto, por lo que no se puede reasignar.",
+			"reservedCombo": "Constellation reserva esta combinación para otra cosa."
 		},
 		"plugins": {
 			"intro": "Activa o desactiva los plug-ins. Los plug-ins desactivados se ocultan de la interfaz.",
@@ -811,7 +819,8 @@
 		"constellationMap": "Mapa del conocimiento",
 		"newLibrary": "Nueva biblioteca",
 		"cataloger": "Clasificador",
-		"newNoteFromTemplate": "Nueva nota desde plantilla"
+		"newNoteFromTemplate": "Nueva nota desde plantilla",
+		"newTab": "Nueva pestaña"
 	},
 	"actions": {
 		"untitled": "Sin título",

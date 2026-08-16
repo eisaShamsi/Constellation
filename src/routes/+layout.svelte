@@ -25,7 +25,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, afterDurableSave, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
+		parseFrontmatter, quoteIfNeeded, extractHeadings, saveTabContent, updateTabContent, buildFullContent, composeUpdatedContent, writeNote, readNote, reindexNote, afterDurableSave, hotkeyCaptureArmed, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead, standardSaveEnv, saveHealth, retrySaveFailure,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		owningLibrary,
@@ -67,7 +67,7 @@
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { detectDir, eventToShortcut, isEditableTarget, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
+	import { detectDir, eventToShortcut, isEditableTarget, normalizeShortcut, getResolvedShortcut, formatShortcut, RESERVED_SHORTCUTS, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
 	import { createBase, listWorkspaceBases, createWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
@@ -2516,47 +2516,64 @@
 	});
 
 	// ─── Commands for command palette ───
+	/** The DISPLAY form — for prose and labels the user reads. Never for matching. */
 	function sc(id: string): string { return formatShortcut(getResolvedShortcut(id, $appSettings.customShortcuts)); }
+	/**
+	 * The CANONICAL form — what a command is BOUND to, and the only thing the dispatcher may
+	 * compare against. (PJ-294)
+	 *
+	 * Commands used to carry `sc(id)`, the display string, and `handleGlobalKeydown` matched on
+	 * it — so every cosmetic substitution in `formatShortcut` was a binding that could never
+	 * fire. `ArrowUp`→`↑` has no inverse in `normalizeShortcut`, so `Ctrl+ArrowUp` saved,
+	 * displayed as live, survived restarts and did nothing; and the macOS branch (`⌘⇧T`) would
+	 * have killed EVERY shortcut in the app the moment that build existed. Display is a
+	 * rendering concern and belongs at the render site, not in the identity of the binding.
+	 */
+	function scRaw(id: string): string { return getResolvedShortcut(id, $appSettings.customShortcuts); }
 
 	function getCommands() {
 		return [
-			{ id: 'command-palette', name: $t('settings.plugins.commandPalette'), shortcut: sc('command-palette'), icon: '🚀', action: () => { showCommandPalette = !showCommandPalette; showQuickSwitcher = false; }, category: 'Navigation' },
-			{ id: 'new-note', name: $t('commands.newNote'), shortcut: sc('new-note'), icon: '📄', action: handleNewNote, category: 'File' },
-			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
-			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
-			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
-			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
-			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
-			{ id: 'new-note-from-template', name: $t('commands.newNoteFromTemplate'), icon: '🗂️', action: () => { templatePickerMode = 'newNote'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
-			{ id: 'open-templates-folder', name: $t('commands.openTemplatesFolder'), shortcut: sc('open-templates-folder'), icon: '📂', action: openTemplatesFolder, category: 'Templates' },
-			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
-			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
-			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
-			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
-			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive && !skyViewInspectMode) sidebarOpen = !sidebarOpen; }, category: 'View' },
-			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive && !skyViewInspectMode) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
-			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
-			{ id: 'new-library', name: $t('commands.newLibrary'), icon: '📚', action: handleNewLibrary, category: 'Library' },
-			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
-			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
-			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
+			{ id: 'command-palette', name: $t('settings.plugins.commandPalette'), shortcut: scRaw('command-palette'), icon: '🚀', action: () => { showCommandPalette = !showCommandPalette; showQuickSwitcher = false; }, category: 'Navigation' },
+			{ id: 'new-note', name: $t('commands.newNote'), shortcut: scRaw('new-note'), icon: '📄', action: handleNewNote, category: 'File' },
+			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: scRaw('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
+			{ id: 'new-base', name: $t('commands.newBase'), shortcut: scRaw('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
+			// PJ-294 — a new EMPTY tab, as a first-class command. It existed only as the "+" button
+			// beside the tab strip, so it had no shortcut, no palette entry, and no row in the
+			// Hotkeys screen; the only way to reach it was to know that button was there.
+			{ id: 'new-tab', name: $t('commands.newTab'), shortcut: scRaw('new-tab'), icon: '➕', action: () => { showCommandPalette = false; createEmptyTab(); }, category: 'Navigation' },
+			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: scRaw('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: scRaw('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
+			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: scRaw('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
+			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: scRaw('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
+			{ id: 'star-view', name: $t('commands.skyView'), shortcut: scRaw('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: scRaw('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: scRaw('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'new-note-from-template', shortcut: scRaw('new-note-from-template'), name: $t('commands.newNoteFromTemplate'), icon: '🗂️', action: () => { templatePickerMode = 'newNote'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'open-templates-folder', name: $t('commands.openTemplatesFolder'), shortcut: scRaw('open-templates-folder'), icon: '📂', action: openTemplatesFolder, category: 'Templates' },
+			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: scRaw('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
+			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: scRaw('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
+			{ id: 'split-view', name: $t('commands.splitView'), shortcut: scRaw('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
+			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: scRaw('close-note'), icon: '✕', action: closeNote, category: 'File' },
+			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: scRaw('toggle-left'), icon: '◧', action: () => { if (!fullPageActive && !skyViewInspectMode) sidebarOpen = !sidebarOpen; }, category: 'View' },
+			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: scRaw('toggle-right'), icon: '◨', action: () => { if (!fullPageActive && !skyViewInspectMode) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
+			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: scRaw('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
+			{ id: 'new-library', shortcut: scRaw('new-library'), name: $t('commands.newLibrary'), icon: '📚', action: handleNewLibrary, category: 'Library' },
+			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: scRaw('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
+			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: scRaw('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
+			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: scRaw('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
 			...(hasMultipleDisplays ? [
-				{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
-				{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+				{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: scRaw('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
+				{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: scRaw('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
 			] : []),
-			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
-			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
-			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
-			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
+			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: scRaw('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
+			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: scRaw('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
+			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: scRaw('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
+			{ id: 'index', name: $t('commands.index'), shortcut: scRaw('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'cataloger', shortcut: scRaw('cataloger'), name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
 			// MIG-103 §4 — open the Kind Studio.
-			{ id: 'template-studio', name: $t('templateStudio.studioName'), icon: '\u25C7', action: () => { showCommandPalette = false; showTemplateStudio = true; showReviewer = false; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
-			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
-			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
+			{ id: 'template-studio', shortcut: scRaw('template-studio'), name: $t('templateStudio.studioName'), icon: '\u25C7', action: () => { showCommandPalette = false; showTemplateStudio = true; showReviewer = false; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
+			{ id: 'review-pulse', shortcut: scRaw('review-pulse'), name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; showReviewer = true; cameFromReviewer = false; reviewerReturnPath = null; showSkyView = false; showIndex = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; showOrgChart = false; showKnowledgeHealth = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; showCalendarPage = false; }, category: 'View' },
+			{ id: 'open-trail', shortcut: scRaw('open-trail'), name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
 				const lib = get(libraries)[0];
 				if (!lib) return;
@@ -2572,21 +2589,21 @@
 					}
 				} catch {}
 			}, category: 'Navigation' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
-			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; showCCS = false; }, category: 'View' },
-			...($appSettings.enabledFeatures?.ccs !== false ? [{ id: 'ccs', name: $t('ccs.title') || 'Constellation Circulatory System', icon: '🫀', action: () => { showCommandPalette = false; showCCS = true; showKnowledgeHealth = false; }, category: 'View' }] : []),
-			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
-			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
-			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
-			{ id: 'insert-link', name: $t('commands.insertLink'), shortcut: sc('insert-link'), icon: '🔗', action: () => {}, category: 'Editor' },
-			{ id: 'duplicate-line', name: $t('commands.duplicateLine'), shortcut: sc('duplicate-line'), icon: '📋', action: () => {}, category: 'Editor' },
-			{ id: 'toggle-comment', name: $t('commands.toggleComment'), shortcut: sc('toggle-comment'), icon: '💬', action: () => {}, category: 'Editor' },
-			{ id: 'select-next', name: $t('commands.selectNextOccurrence'), shortcut: sc('select-next'), icon: '🔤', action: () => {}, category: 'Editor' },
-			{ id: 'fold-all', name: $t('commands.foldAll'), shortcut: sc('fold-all'), icon: '🔽', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:fold-all')); }, category: 'Editor' },
-			{ id: 'unfold-all', name: $t('commands.unfoldAll'), shortcut: sc('unfold-all'), icon: '🔼', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:unfold-all')); }, category: 'Editor' },
-			{ id: 'toggle-live-preview', name: $t('commands.toggleLivePreview'), shortcut: sc('toggle-live-preview'), icon: '📖', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:toggle-live-preview')); }, category: 'Editor' },
+			{ id: 'expression-forge', shortcut: scRaw('expression-forge'), name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', shortcut: scRaw('constellation-map'), name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
+			{ id: 'sense-making-canvas', shortcut: scRaw('sense-making-canvas'), name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+			{ id: 'knowledge-health', shortcut: scRaw('knowledge-health'), name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; showCCS = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.ccs !== false ? [{ id: 'ccs', shortcut: scRaw('ccs'), name: $t('ccs.title') || 'Constellation Circulatory System', icon: '🫀', action: () => { showCommandPalette = false; showCCS = true; showKnowledgeHealth = false; }, category: 'View' }] : []),
+			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: scRaw('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
+			{ id: 'settings', name: $t('commands.settings'), shortcut: scRaw('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
+			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: scRaw('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
+			{ id: 'insert-link', name: $t('commands.insertLink'), shortcut: scRaw('insert-link'), icon: '🔗', action: () => {}, category: 'Editor' },
+			{ id: 'duplicate-line', name: $t('commands.duplicateLine'), shortcut: scRaw('duplicate-line'), icon: '📋', action: () => {}, category: 'Editor' },
+			{ id: 'toggle-comment', name: $t('commands.toggleComment'), shortcut: scRaw('toggle-comment'), icon: '💬', action: () => {}, category: 'Editor' },
+			{ id: 'select-next', name: $t('commands.selectNextOccurrence'), shortcut: scRaw('select-next'), icon: '🔤', action: () => {}, category: 'Editor' },
+			{ id: 'fold-all', name: $t('commands.foldAll'), shortcut: scRaw('fold-all'), icon: '🔽', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:fold-all')); }, category: 'Editor' },
+			{ id: 'unfold-all', name: $t('commands.unfoldAll'), shortcut: scRaw('unfold-all'), icon: '🔼', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:unfold-all')); }, category: 'Editor' },
+			{ id: 'toggle-live-preview', name: $t('commands.toggleLivePreview'), shortcut: scRaw('toggle-live-preview'), icon: '📖', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:toggle-live-preview')); }, category: 'Editor' },
 		];
 	}
 
@@ -4629,6 +4646,14 @@
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (isLocked) { e.preventDefault(); e.stopPropagation(); return; }
 
+		// PJ-294 — the Hotkeys screen is RECORDING a combination: every key belongs to it, and
+		// none may run its command. This has to be a flag rather than the recording field calling
+		// stopPropagation, because this listener is capture-phase on `document` and has therefore
+		// ALREADY RUN by the time that field sees the event. Without it, pressing Ctrl+Shift+N to
+		// bind it also fired Quick capture — a new note on disk and the active tab navigated away,
+		// behind the modal, with nothing said.
+		if ($hotkeyCaptureArmed) return;
+
 		// Block browser defaults for known shortcuts (e.g., Ctrl+P = print → command palette)
 		if ((e.ctrlKey || e.metaKey) && e.key === 'p' && !e.shiftKey && !e.altKey) {
 			e.preventDefault();
@@ -4636,7 +4661,12 @@
 
 		// Ctrl+. → open the Emoji & Icon picker (Obsidian-parity shortcut).
 		// Gated on the Core Plug-In toggle.
-		if ((e.ctrlKey || e.metaKey) && e.key === '.' && !e.shiftKey && !e.altKey
+		//
+		// PJ-294 — matched through `eventToShortcut` against the shared RESERVED_SHORTCUTS table
+		// rather than re-testing the keys inline. The Hotkeys screen refuses to bind anything in
+		// that table, and this is what makes the table TRUE rather than a hopeful copy: a handler
+		// added here without an entry there is a combination the screen would happily hand out.
+		if (eventToShortcut(e) === 'Ctrl+.' && RESERVED_SHORTCUTS['Ctrl+.'] === 'emoji-icon-picker'
 			&& $appSettings.enabledFeatures?.emojiIconPicker !== false) {
 			e.preventDefault();
 			showPicker = true;

@@ -506,7 +506,15 @@
 			"filter": "コマンドを絞り込み...",
 			"notSet": "未設定",
 			"noCommands": "コマンドが見つかりません",
-			"pressKeys": "キーを押してください..."
+			"pressKeys": "キーを押してください...",
+			"reset": "リセット",
+			"resetHint": "既定のショートカットに戻す",
+			"clear": "解除",
+			"clearHint": "このコマンドをショートカットなしにする",
+			"alreadyUsed": "すでに「{command}」で使用されています。",
+			"needsModifier": "修飾キー（Ctrl・Alt・Shift）またはファンクションキーを使ってください。",
+			"reservedKey": "Escape は常に開いているものを閉じるため、割り当てを変更できません。",
+			"reservedCombo": "この組み合わせは Constellation が別の用途に使用しています。"
 		},
 		"plugins": {
 			"intro": "プラグインのオン/オフを切り替えます。無効にしたプラグインはインターフェースから非表示になります。",
@@ -811,7 +819,8 @@
 		"constellationMap": "ナレッジマップ",
 		"newLibrary": "新しいライブラリ",
 		"cataloger": "分類器",
-		"newNoteFromTemplate": "テンプレートから新規ノート"
+		"newNoteFromTemplate": "テンプレートから新規ノート",
+		"newTab": "新しいタブ"
 	},
 	"actions": {
 		"untitled": "無題",

@@ -834,3 +834,47 @@ caught two (a dead `saving` prop, dead placeholder keys) and produced the third 
 Filed in the same pass: **PJ-292** (two dead UI strings in NotePane — the save indicator and the
 placeholder keys, the former described to the Boss twice) and **PJ-293** (the (+) tooltip is a
 hardcoded English `title="New tab"`).
+
+---
+
+## PJ-294 — the Hotkeys screen binds keys for real (Boss-proposed), and New Tab becomes a command
+
+**The Boss's proposal**, after Ctrl+click turned out to be a multi-select gesture in the PJ-287
+test: *"we could let the user create their key combination through the Hotkeys in Settings,
+including the New Tab command."*
+
+**What was actually there.** The plumbing was done — `customShortcuts` persisted with the settings,
+and the dispatcher already resolved through it. But the screen was a **shell**: it listed every
+command, offered to record a key, and threw the keystroke away (*"hotkey persistence is a future
+feature"*), not even displaying it. And **New Tab was not a command at all** — only the `+` button.
+
+**Shipped.** New Tab as a first-class command (`Ctrl+Shift+T`); capture persisting through
+`eventToShortcut` (the same function the dispatcher matches, where the old hand-rolled version used
+a different modifier ORDER and so could never have matched); conflict detection that unions the full
+command set itself; Reset and Clear; refusals for bare keys, Escape, dispatcher-owned combinations,
+and every key the editor owns — derived from the six keymaps NotePane installs. macOS display
+(`⌘⇧T`) with the stored form left neutral so settings sync without migration. 15 locales,
+parity-gated. **vitest 966/966** (45 new), svelte-check 0 errors.
+
+### Twelve inspection rounds — written up as LL-046
+
+Round one passed 940 green tests and was, in truth: dead for a third of the commands, dead on
+macOS, dead for any arrow binding, one click from disabling every shortcut in the app, and capable
+of handing away the editor's own keys.
+
+The through-line, and the reason it took twelve: **every round, the thing I had written was shaped
+like a derivation and was really a list.** First literally a list; then a loop reading `b.key`, one
+of the four fields that can name a binding; then a canonicalisation describing the keymap's LABEL
+rather than the keystroke that triggers it (`Alt-A` is *reached* by pressing Shift+Alt+A — the
+reservation was exactly inverted). The findings shrank as the sourcing became honest, not as more
+cases were patched.
+
+Two of the rounds landed on **claims I had written**: a comment asserting the table was "derived so
+a keymap added tomorrow cannot quietly become a combination the screen hands out", while the
+derivation walked one directory and was blind to three imported keymaps; and a hand-listed set of
+"known shadowed defaults" that my own test then proved wrong in both directions.
+
+**Filed rather than folded in:** **PJ-295** (three palette commands with empty actions consuming
+editor keys — a decision about whether they should be commands at all) and **PJ-296** (the one
+reservation that cannot be derived: `Shift-Mod-\` arrives as `Ctrl+Shift+|` on a US layout, so no
+label-derived table can predict it — stated rather than guessed at).

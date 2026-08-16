@@ -506,7 +506,15 @@
 			"filter": "סנן פקודות...",
 			"notSet": "לא הוגדר",
 			"noCommands": "לא נמצאו פקודות",
-			"pressKeys": "לחץ על מקשים..."
+			"pressKeys": "לחץ על מקשים...",
+			"reset": "איפוס",
+			"resetHint": "חזרה לקיצור ברירת המחדל",
+			"clear": "הסרה",
+			"clearHint": "להשאיר את הפקודה ללא קיצור",
+			"alreadyUsed": "כבר בשימוש על ידי {command}.",
+			"needsModifier": "השתמש במקש מצרף (Ctrl, Alt או Shift) או במקש פונקציה.",
+			"reservedKey": "מקש Escape תמיד סוגר את מה שפתוח, ולכן לא ניתן לשנות אותו.",
+			"reservedCombo": "Constellation שומר את הצירוף הזה לשימוש אחר."
 		},
 		"plugins": {
 			"intro": "הפעל או כבה תוספים. תוספים מושבתים מוסתרים מהממשק.",
@@ -811,7 +819,8 @@
 		"constellationMap": "מפת ידע",
 		"newLibrary": "ספרייה חדשה",
 		"cataloger": "המסווג",
-		"newNoteFromTemplate": "פתק חדש מתבנית"
+		"newNoteFromTemplate": "פתק חדש מתבנית",
+		"newTab": "לשונית חדשה"
 	},
 	"actions": {
 		"untitled": "ללא כותרת",

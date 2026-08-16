@@ -506,7 +506,15 @@
 			"filter": "Komutları filtrele...",
 			"notSet": "Ayarlanmamış",
 			"noCommands": "Komut bulunamadı",
-			"pressKeys": "Tuşlara basın..."
+			"pressKeys": "Tuşlara basın...",
+			"reset": "Sıfırla",
+			"resetHint": "Varsayılan kısayola dön",
+			"clear": "Kaldır",
+			"clearHint": "Bu komutu kısayolsuz bırak",
+			"alreadyUsed": "Zaten {command} tarafından kullanılıyor.",
+			"needsModifier": "Bir değiştirici tuş (Ctrl, Alt veya Shift) ya da bir işlev tuşu kullanın.",
+			"reservedKey": "Escape her zaman açık olanı kapatır, bu yüzden yeniden atanamaz.",
+			"reservedCombo": "Constellation bu kombinasyonu başka bir şey için ayırıyor."
 		},
 		"plugins": {
 			"intro": "Eklentileri açın veya kapatın. Devre dışı bırakılan eklentiler arayüzden gizlenir.",
@@ -811,7 +819,8 @@
 		"constellationMap": "Bilgi Haritası",
 		"newLibrary": "Yeni kütüphane",
 		"cataloger": "Sınıflandırıcı",
-		"newNoteFromTemplate": "Şablondan yeni not"
+		"newNoteFromTemplate": "Şablondan yeni not",
+		"newTab": "Yeni sekme"
 	},
 	"actions": {
 		"untitled": "Başlıksız",

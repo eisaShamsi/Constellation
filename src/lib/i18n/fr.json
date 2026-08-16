@@ -506,7 +506,15 @@
 			"filter": "Filtrer les commandes...",
 			"notSet": "Non défini",
 			"noCommands": "Aucune commande trouvée",
-			"pressKeys": "Appuyez sur les touches..."
+			"pressKeys": "Appuyez sur les touches...",
+			"reset": "Réinitialiser",
+			"resetHint": "Revenir au raccourci par défaut",
+			"clear": "Supprimer",
+			"clearHint": "Laisser cette commande sans raccourci",
+			"alreadyUsed": "Déjà utilisé par {command}.",
+			"needsModifier": "Utilisez une touche de modification (Ctrl, Alt ou Maj) ou une touche de fonction.",
+			"reservedKey": "Échap ferme toujours ce qui est ouvert et ne peut donc pas être réattribué.",
+			"reservedCombo": "Constellation réserve cette combinaison à autre chose."
 		},
 		"plugins": {
 			"intro": "Activez ou désactivez les plug-ins. Les plug-ins désactivés sont masqués.",
@@ -811,7 +819,8 @@
 		"constellationMap": "Carte des connaissances",
 		"newLibrary": "Nouvelle bibliothèque",
 		"cataloger": "Classificateur",
-		"newNoteFromTemplate": "Nouvelle note à partir d’un modèle"
+		"newNoteFromTemplate": "Nouvelle note à partir d’un modèle",
+		"newTab": "Nouvel onglet"
 	},
 	"actions": {
 		"untitled": "Sans titre",

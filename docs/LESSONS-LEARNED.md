@@ -1049,3 +1049,58 @@ outranks every file you have read.
 
 *(Also surfaced: the (+) new-tab button's tooltip is a hardcoded English `title="New tab"`
 (`+layout.svelte:8618`) rather than a `$t()` key — filed as PJ-293.)*
+
+---
+
+## LL-046: A GUARD IS ONLY AS GOOD AS THE FACT IT DERIVES FROM — twelve rounds on one feature
+
+**Symptom (PJ-294, 2026-08-15).** Making the Hotkeys screen persist a key binding took **twelve
+diff-scoped inspection rounds**. Round one shipped a feature that looked finished, passed 940 green
+tests, and was in truth: dead for a third of the commands, dead on macOS, dead for any arrow
+binding, one click from disabling every shortcut in the app, and capable of handing away the
+editor's own keys. Nothing in the test suite saw any of it.
+
+**The findings, and what each one actually was:**
+
+| # | finding | the real defect |
+|---|---|---|
+| 1–2 | capture-phase; reserved combos | `stopPropagation` cannot stop a listener that already ran; the checker knew commands but not the dispatcher's own handlers |
+| 3 | the armed flag LATCHED | it was set by handlers that could never run (nothing focused the field) — one click killed every shortcut for the session |
+| 4 | commands carried the DISPLAY string | the dispatcher matched on it, so every cosmetic substitution was a dead binding — `Ctrl+↑` on Windows, EVERY key on macOS |
+| 5 | conditional commands | `second-screen` only registers with two monitors, so its key read as free |
+| 6 | 11 commands had no `shortcut` field | recording for them saved, displayed, never fired — and poisoned the combination for others |
+| 7 | `'+'.split('+')` | the separator is also a key; a bare `+` looked modified and walked through the bare-key refusal |
+| 8–9 | editor keymaps | first CodeMirror's stock keys, then the project's own; the table claimed to be "derived" and was a hand-list |
+| 10 | one field of four | the derivation read `b.key`, ignoring `b.shift` / `mac` / `win` / `linux` — nine live combinations still free |
+| 11 | `completionKeymap` | NotePane installs SIX keymaps; the docstring said three |
+| 12 | **the label is not the keystroke** | `Alt-A` is *reached* by pressing Shift+Alt+A, so the reservation was exactly INVERTED; bare `F3` was filtered out on a justification that was false |
+
+**The through-line.** Every single round, the thing I had written was *shaped* like a derivation and
+was really **a list**: first literally a list; then a loop reading one field of a four-field
+structure; then a canonicalisation that described the keymap's LABEL rather than the keystroke that
+triggers it. The findings shrank as the sourcing got more honest — not as more cases got patched.
+
+**The rule.** When a guard answers "is X safe?", the question that decides whether it works is not
+*is the logic right* but **where does its knowledge come from, and is that the same place the
+runtime reads?** Concretely:
+
+- **Derive, do not enumerate.** A table someone must remember to update is wrong the first time
+  anyone forgets. The conflict check unions the full command set ITSELF; the shadowed list is
+  computed by intersecting two tables; the reserved set is read off the installed keymaps.
+- **Read the whole structure.** `b.key` was one of four fields that name a binding. A loop over one
+  field is a hand-list wearing a loop.
+- **Model the EVENT, not the declaration.** The keymap says `Alt-A`; the user presses Shift+Alt+A.
+  A guard keyed on the declaration protects a combination nobody can press while handing out the
+  one they can.
+- **A comment claiming a protection is a claim that must be true.** Mine said "derived so a keymap
+  added tomorrow cannot quietly become a combination the screen hands out" while the derivation
+  walked one directory and was blind to three imported keymaps. Round nine was that sentence.
+- **Say what cannot be derived.** `Shift-Mod-\` arrives as `Ctrl+Shift+|` on a US layout — the
+  character depends on the user's keyboard, so no table computed from labels can predict it. Filed
+  (PJ-296), not papered over with a guess that would have looked like coverage.
+
+**Cost.** Twelve rounds of a Boss's session. **Value.** Every finding was real, silent, and would
+have shipped. The suite was green at every single round.
+
+**Related.** LL-045 / LL-045b (existence vs reachability — the same disease in the UI dimension);
+*Don't Make Things Up*; *No Guessing — Investigate*.

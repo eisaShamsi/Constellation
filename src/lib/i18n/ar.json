@@ -506,7 +506,15 @@
 			"filter": "تصفية الأوامر...",
 			"notSet": "لا يوجد",
 			"noCommands": "لم يتم العثور على أوامر",
-			"pressKeys": "اضغط المفاتيح..."
+			"pressKeys": "اضغط المفاتيح...",
+			"reset": "استعادة",
+			"resetHint": "العودة إلى الاختصار الافتراضي",
+			"clear": "إزالة",
+			"clearHint": "ترك هذا الأمر بلا اختصار",
+			"alreadyUsed": "مستخدم بالفعل في {command}.",
+			"needsModifier": "استخدم مفتاحًا معدِّلًا (Ctrl أو Alt أو Shift) أو مفتاح وظائف.",
+			"reservedKey": "مفتاح Escape يغلق ما هو مفتوح دائمًا، لذا لا يمكن إعادة تعيينه.",
+			"reservedCombo": "يحجز Constellation هذا التركيب لأمر آخر."
 		},
 		"plugins": {
 			"intro": "تبديل الإضافات. الإضافات المعطلة مخفية من الواجهة.",
@@ -811,7 +819,8 @@
 		"inspector360": "المنظار الكروي",
 		"constellationMap": "خريطة المعرفة",
 		"cataloger": "المُصنِّف",
-		"newNoteFromTemplate": "ملاحظة جديدة من قالب"
+		"newNoteFromTemplate": "ملاحظة جديدة من قالب",
+		"newTab": "علامة تبويب جديدة"
 	},
 	"actions": {
 		"untitled": "بدون عنوان",

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatShortcut } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 
@@ -91,7 +92,7 @@
 					<span class="pi-icon">{cmd.icon ?? '⌘'}</span>
 					<span class="pi-name">{cmd.name}</span>
 					{#if cmd.shortcut}
-						<span class="pi-shortcut">{cmd.shortcut}</span>
+						<span class="pi-shortcut">{formatShortcut(cmd.shortcut)}</span>
 					{/if}
 				</button>
 			{/each}

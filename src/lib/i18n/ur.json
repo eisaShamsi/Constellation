@@ -506,7 +506,15 @@
 			"filter": "کمانڈز فلٹر کریں...",
 			"notSet": "سیٹ نہیں ہے",
 			"noCommands": "کوئی کمانڈ نہیں ملی",
-			"pressKeys": "کیز دبائیں..."
+			"pressKeys": "کیز دبائیں...",
+			"reset": "ری سیٹ",
+			"resetHint": "طے شدہ شارٹ کٹ پر واپس",
+			"clear": "ہٹائیں",
+			"clearHint": "اس کمانڈ کو شارٹ کٹ کے بغیر چھوڑیں",
+			"alreadyUsed": "پہلے سے {command} کے زیرِ استعمال ہے۔",
+			"needsModifier": "کوئی موڈیفائر کلید (Ctrl، Alt یا Shift) یا فنکشن کلید استعمال کریں۔",
+			"reservedKey": "Escape ہمیشہ کھلی ہوئی چیز بند کرتا ہے، اس لیے اسے دوبارہ تفویض نہیں کیا جا سکتا۔",
+			"reservedCombo": "Constellation یہ مجموعہ کسی اور کام کے لیے محفوظ رکھتا ہے۔"
 		},
 		"plugins": {
 			"intro": "پلگ انز کو آن یا آف کریں۔ غیر فعال پلگ انز انٹرفیس سے چھپے ہوتے ہیں۔",
@@ -811,7 +819,8 @@
 		"constellationMap": "علم کا نقشہ",
 		"newLibrary": "نئی لائبریری",
 		"cataloger": "درجہ بند",
-		"newNoteFromTemplate": "سانچے سے نیا نوٹ"
+		"newNoteFromTemplate": "سانچے سے نیا نوٹ",
+		"newTab": "نیا ٹیب"
 	},
 	"actions": {
 		"untitled": "بغیر عنوان",

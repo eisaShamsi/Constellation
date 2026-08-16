@@ -692,6 +692,11 @@ export const DEFAULT_SHORTCUTS: Record<string, string> = {
 	'duplicate-line': 'Ctrl+Shift+D',
 	'toggle-comment': 'Ctrl+/',
 	'select-next': 'Ctrl+D',
+	// PJ-294 — a new EMPTY tab. Until now this lived only on the "+" button beside the tab
+	// strip: no command, no shortcut, no palette entry, so the only way to open one was to
+	// find and click that button. `Ctrl+Shift+T` is free in this table and reads the way it
+	// does everywhere else.
+	'new-tab': 'Ctrl+Shift+T',
 };
 
 /** True when a keyboard event targets an editable surface (an <input>, <textarea>,
@@ -750,14 +755,171 @@ export function getResolvedShortcut(commandId: string, customShortcuts: Record<s
 	return DEFAULT_SHORTCUTS[commandId] ?? '';
 }
 
-/** Format a shortcut string for display (e.g., "ArrowLeft" → "←"). */
-export function formatShortcut(s: string): string {
+/**
+ * Split a shortcut into its modifiers and its key — WITHOUT splitting on the delimiter blindly.
+ *
+ * `+` is both the separator and a key a user can press (the numpad one, and unshifted `+` on
+ * German and Nordic layouts). `'+'.split('+')` gives `['', '']`, so a naive parse counts two
+ * "parts" and concludes the combination has a modifier — which let a completely bare `+` past the
+ * bare-key refusal, and rendered as an EMPTY row on the macOS display. Consuming known modifier
+ * prefixes from the front instead leaves the remainder as the key, whatever character it is.
+ */
+export function parseShortcut(combo: string): { mods: string[]; key: string } {
+	const KNOWN = ['Ctrl', 'Shift', 'Alt'];
+	const mods: string[] = [];
+	let rest = combo;
+	for (;;) {
+		const m = KNOWN.find((k) => rest.startsWith(k + '+'));
+		if (!m) break;
+		mods.push(m);
+		rest = rest.slice(m.length + 1);
+	}
+	return { mods, key: rest };
+}
+
+/** True on macOS. Takes the platform string so it stays pure and testable. */
+export function isMacPlatform(ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''): boolean {
+	return /Mac|iPhone|iPad|iPod/.test(ua);
+}
+
+/**
+ * Format a shortcut string for display (e.g., "ArrowLeft" → "←").
+ *
+ * **Cross-Platform by Design.** The STORED form is already platform-neutral and must stay that
+ * way: `eventToShortcut` maps both `ctrlKey` AND `metaKey` to the single token `Ctrl`, so a
+ * binding saved on Windows with Ctrl is the same string a Mac user's ⌘ produces, and neither
+ * needs migrating when they sync settings between machines. Only the DISPLAY differs — a Mac
+ * user must see ⌘⇧T, not "Ctrl+Shift+T", for a key they press with Command.
+ */
+export function formatShortcut(s: string, mac = isMacPlatform()): string {
 	if (!s) return '';
-	return s
-		.replace('ArrowLeft', '←')
-		.replace('ArrowRight', '→')
-		.replace('ArrowUp', '↑')
-		.replace('ArrowDown', '↓');
+	const { mods, key } = parseShortcut(s);
+	const shownKey =
+		{ ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }[key] ?? key;
+	if (!mac) return [...mods, shownKey].join('+');
+	// Mac convention: symbols, no separators — ⌘⇧T rather than "Cmd+Shift+T".
+	const sym: Record<string, string> = { Ctrl: '⌘', Shift: '⇧', Alt: '⌥' };
+	return mods.map((m) => sym[m] ?? m).join('') + shownKey;
+}
+
+/**
+ * Combinations the global dispatcher answers ITSELF, before it ever reaches the command table —
+ * so no command can be bound to them. (PJ-294)
+ *
+ * **This table is the dispatcher's, not a copy of it.** `handleGlobalKeydown` compares against
+ * these same entries rather than re-testing the keys inline, because a private list that merely
+ * *matches* the dispatcher is a list that stops matching the first time someone adds a handler.
+ * The gate caught exactly that: `Ctrl+.` opens the emoji picker and returns before the command
+ * loop, but it is not in `DEFAULT_SHORTCUTS`, so a conflict check that consulted only the command
+ * ids reported it FREE — the binding saved, displayed as live, survived restarts, and could never
+ * once fire.
+ */
+export const RESERVED_SHORTCUTS: Record<string, string> = {
+	'Ctrl+.': 'emoji-icon-picker',
+	Escape: 'close-overlay',
+	// ── The EDITOR's keys. ────────────────────────────────────────────────────────────────────
+	// The same hazard one layer down, and the one that would have hurt most. A command bound to
+	// one of these wins: the global dispatcher is capture-phase and calls `preventDefault`, and
+	// CodeMirror's `runHandlers` stops on an already-defaulted event — so the editor's own binding
+	// never runs. Giving away Ctrl+Z means the user presses undo in a note, nothing happens, no
+	// error appears, and the edit they wanted to take back is what the debounced save writes to
+	// disk. Ctrl+F would likewise kill find-in-note, and Ctrl+X would leave the clipboard stale.
+	//
+	// These are the ones NotePane installs (`defaultKeymap`, `historyKeymap`, `searchKeymap`) that
+	// no shipped default already claims. Ctrl+B/I/K/D and Ctrl+/ are deliberately app-owned and so
+	// are absent here — the pinned test asserting no default lands on a reserved combination is
+	// what keeps that distinction honest.
+	'Ctrl+Z': 'editor-undo',
+	'Ctrl+Y': 'editor-redo',
+	'Ctrl+Shift+Z': 'editor-redo',
+	'Ctrl+X': 'editor-cut',
+	'Ctrl+C': 'editor-copy',
+	'Ctrl+V': 'editor-paste',
+	'Ctrl+A': 'editor-select-all',
+	'Ctrl+F': 'editor-find',
+	// Constellation's OWN editor keymaps (PJ-106 §B1/§B2/§B3 — the RTL-aware motion and selection
+	// keys, mounted in NotePane, FocusPane and the conflict-merge view). Reserving the CodeMirror
+	// stock keys above and stopping there was the eighth gate finding on this feature, and the
+	// point where hand-listing stopped being defensible: every round added a source I had not
+	// thought to consult. The list is now DERIVED — `tests/pj-294` scans every keymap declared in
+	// `src/lib/editor/` and fails if any modified binding is missing from this table — so a keymap
+	// added tomorrow cannot quietly become a combination the Hotkeys screen hands out.
+	'Ctrl+ArrowUp': 'editor-paragraph-up',
+	'Ctrl+ArrowDown': 'editor-paragraph-down',
+	'Ctrl+L': 'editor-select-line',
+	'Alt+L': 'editor-select-line',
+	'Ctrl+Shift+L': 'editor-select-paragraph',
+	'Ctrl+Shift+S': 'editor-select-sentence',
+};
+
+/** Why a combination may not be bound, or `null` when it may. */
+export type ShortcutRefusal = 'bare-key' | 'reserved';
+
+/**
+ * May this combination be bound to a command? (PJ-294) — ONE function, so the screen's refusal and
+ * its explanation cannot disagree about the reason.
+ *
+ * Two refusals, both about not taking keys away from the user:
+ *   · **A bare key.** The dispatcher early-returns for editable targets, so a bare `A` binding
+ *     would not eat your typing — but it WOULD fire on every stray press anywhere else, which is
+ *     not something a rebinding screen should let someone do to themselves by accident. Function
+ *     keys are exempt: they have no typing meaning.
+ *   · **A reserved combination** (above): Escape, which the dispatcher documents as "always closes
+ *     overlays (not remappable)" and whose loss would strand a user inside a full-page surface —
+ *     including the Settings screen they rebound it from — and anything else the dispatcher
+ *     handles before the command table.
+ */
+export function shortcutRefusal(
+	combo: string,
+	/** Additional reservations the CALLER knows about — in practice the editor's installed keymaps
+	 *  (`$lib/editor/reservedKeys`), passed in rather than imported so `utils` stays free of
+	 *  CodeMirror. */
+	extraReserved: Record<string, string> = {},
+): ShortcutRefusal | null {
+	if (!combo) return 'bare-key';
+	if (combo in RESERVED_SHORTCUTS || combo in extraReserved) return 'reserved';
+	// Parsed, never `split('+')` — see `parseShortcut`: a bare `+` splits into two empty parts and
+	// so counted as "modified", walking straight through the refusal below.
+	const { mods, key } = parseShortcut(combo);
+	// Escape in ANY form, not merely the bare key. Modifying it does not make it a different
+	// key to the user — it is still the one they reach for to get out — and on Windows the OS
+	// takes Ctrl+Escape for the Start menu, so the binding would be dead on arrival anyway.
+	if (key === 'Escape') return 'reserved';
+	const isFunctionKey = /^F([1-9]|1[0-9]|2[0-4])$/.test(key);
+	return mods.length > 0 || isFunctionKey ? null : 'bare-key';
+}
+
+/**
+ * Which OTHER command already answers to this combination? (PJ-294)
+ *
+ * Returns that command's id, or `null` when the combination is free. Resolution goes through
+ * `getResolvedShortcut` so a command the user has already re-bound is compared on its CURRENT
+ * binding, not the default it no longer uses — otherwise re-binding A to B's default and then B
+ * to something else would report a conflict that no longer exists.
+ */
+export function findShortcutConflict(
+	commandId: string,
+	combo: string,
+	customShortcuts: Record<string, string>,
+	commandIds: string[],
+): string | null {
+	const target = normalizeShortcut(combo);
+	if (!target) return null;
+	// The caller's list is what is REGISTERED RIGHT NOW, and that is not the whole set: some
+	// commands are conditional. `second-screen` (Ctrl+Shift+2) is only registered when a second
+	// display is detected, so on an ordinary single-monitor machine it is absent from the list the
+	// Hotkeys screen can pass — and its combination read as FREE. Binding something else to it
+	// saved happily; the day a monitor was attached, the two collided and the dispatcher's
+	// first-match-wins left the second-screen shortcut dead, with both rows still displaying it.
+	//
+	// So the union is taken HERE rather than asked of each caller. A caller holding a partial list
+	// is the normal case, not a mistake to be remembered around.
+	const ids = new Set([...commandIds, ...Object.keys(DEFAULT_SHORTCUTS), ...Object.keys(customShortcuts)]);
+	for (const id of ids) {
+		if (id === commandId) continue;
+		if (normalizeShortcut(getResolvedShortcut(id, customShortcuts)) === target) return id;
+	}
+	return null;
 }
 
 /** Slugify a human-readable name for a download filename. */

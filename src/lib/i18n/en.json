@@ -408,7 +408,15 @@
 			"filter": "Filter commands...",
 			"notSet": "Not set",
 			"noCommands": "No commands found",
-			"pressKeys": "Press keys..."
+			"pressKeys": "Press keys...",
+			"reset": "Reset",
+			"resetHint": "Back to the default",
+			"clear": "Clear",
+			"clearHint": "Leave this command without a shortcut",
+			"alreadyUsed": "Already used by {command}.",
+			"needsModifier": "Use a modifier (Ctrl, Alt or Shift) or a function key.",
+			"reservedKey": "Escape always closes what is open, so it cannot be reassigned.",
+			"reservedCombo": "Constellation reserves this combination for something else."
 		},
 		"plugins": {
 			"intro": "Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.",
@@ -782,7 +790,8 @@
 		"inspector360": "360.3D Inspector",
 		"constellationMap": "Constellation Map",
 		"cataloger": "The Cataloger",
-		"newNoteFromTemplate": "New note from template"
+		"newNoteFromTemplate": "New note from template",
+		"newTab": "New tab"
 	},
 	"actions": {
 		"untitled": "Untitled",

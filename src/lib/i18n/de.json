@@ -506,7 +506,15 @@
 			"filter": "Befehle filtern...",
 			"notSet": "Nicht gesetzt",
 			"noCommands": "Keine Befehle gefunden",
-			"pressKeys": "Tasten drücken..."
+			"pressKeys": "Tasten drücken...",
+			"reset": "Zurücksetzen",
+			"resetHint": "Zurück zur Standardbelegung",
+			"clear": "Entfernen",
+			"clearHint": "Diesen Befehl ohne Tastenkürzel lassen",
+			"alreadyUsed": "Bereits belegt von {command}.",
+			"needsModifier": "Verwende eine Modifikatortaste (Strg, Alt oder Umschalt) oder eine Funktionstaste.",
+			"reservedKey": "Escape schließt immer das Geöffnete und kann daher nicht neu belegt werden.",
+			"reservedCombo": "Constellation reserviert diese Tastenkombination für etwas anderes."
 		},
 		"plugins": {
 			"intro": "Plug-Ins ein- oder ausschalten. Deaktivierte Plug-Ins werden ausgeblendet.",
@@ -811,7 +819,8 @@
 		"constellationMap": "Wissenskarte",
 		"newLibrary": "Neue Bibliothek",
 		"cataloger": "Klassifikator",
-		"newNoteFromTemplate": "Neue Notiz aus Vorlage"
+		"newNoteFromTemplate": "Neue Notiz aus Vorlage",
+		"newTab": "Neuer Tab"
 	},
 	"actions": {
 		"untitled": "Unbenannt",

@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { getVersion } from '@tauri-apps/api/app';
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, tn, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { saveAppPrefs } from '$lib/appPrefs';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, flushAllForAppClose, type WriteJournalStats } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, flushAllForAppClose, hotkeyCaptureArmed, type WriteJournalStats } from '$lib/libraries/store';
 	// PJ-207 §11 — the Index-repair door: the rollback flags, the last run's report, and
 	// the runner's done event (the modal's first Tauri event listener; see the $effect).
 	import { listen } from '@tauri-apps/api/event';
 	import { REPAIR_DOOR_ENABLED, FULL_REREAD_ENABLED } from '$lib/index/repairFlag';
 	import { CONVERGE_FAMILIES, loadLastRepairReport, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { persistSessionNow } from '$lib/libraries/session';
-	import { downloadJSON, pickJSONFile } from '$lib/utils';
+	import { downloadJSON, pickJSONFile, eventToShortcut, shortcutRefusal, findShortcutConflict, formatShortcut } from '$lib/utils';
+	import { EDITOR_KEYMAP_RESERVED } from '$lib/editor/reservedKeys';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
@@ -706,18 +707,94 @@
 		}
 	}
 
+	/**
+	 * PJ-294 — the global dispatcher stands down while a combination is being recorded, and this
+	 * flag MIRRORS `editingHotkey` rather than being switched on and off by handlers.
+	 *
+	 * The first cut set it imperatively in the button's `onclick` and cleared it in the recording
+	 * field's `onkeydown`/`onblur` — neither of which could ever run, because nothing focused that
+	 * field. One click therefore latched it ON for the rest of the session and silently killed
+	 * every app-level shortcut, Escape-closes-overlays included, with no error and no way back but
+	 * a restart. A flag that is DERIVED cannot latch: there is no path that sets it without the
+	 * state that clears it. `onDestroy` covers the modal being torn down mid-recording.
+	 */
+	$effect(() => { hotkeyCaptureArmed.set(editingHotkey !== null); });
+	onDestroy(() => hotkeyCaptureArmed.set(false));
+
+	/** Focus the recording field the moment it appears — without it the capture handler is
+	 *  unreachable and the pulsing "Press keys…" chip does nothing at all. */
+	function captureField(node: HTMLElement) {
+		node.focus();
+		return {};
+	}
+
+	/** The command whose capture was refused, and why — cleared on the next attempt. */
+	let hotkeyError = $state<{ cmdId: string; message: string } | null>(null);
+
+	/**
+	 * PJ-294 — capture a key combination and SAVE it.
+	 *
+	 * This screen has always listed every command and offered to record a key; it then threw the
+	 * keystroke away ("hotkey persistence is a future feature"), so anyone who tried to rebind a
+	 * key had it silently do nothing. Everything else was already in place: `customShortcuts` is
+	 * persisted with the rest of the settings, and the global dispatcher builds each command with
+	 * its shortcut already resolved through it — so saving the value is the whole of the work.
+	 *
+	 * It uses `eventToShortcut`, the SAME function the dispatcher matches against, rather than
+	 * assembling the string itself. The old hand-rolled version emitted modifiers in a different
+	 * order (`Ctrl+Alt+Shift`) from the dispatcher's (`Ctrl+Shift+Alt`), so even had it persisted,
+	 * a three-modifier binding could never have fired. One function, one answer — the PJ-252
+	 * lesson applied to key combinations.
+	 */
 	function handleHotkeyCapture(cmdId: string, e: KeyboardEvent) {
-		if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
-			e.preventDefault();
-			const parts: string[] = [];
-			if (e.ctrlKey) parts.push('Ctrl');
-			if (e.altKey) parts.push('Alt');
-			if (e.shiftKey) parts.push('Shift');
-			parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
-			// For now just display the captured shortcut (hotkey persistence is a future feature)
-			editingHotkey = null;
-			hotkeyListening = false;
+		if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return; // still choosing
+		e.preventDefault();
+		e.stopPropagation();
+		const combo = eventToShortcut(e);
+		if (!combo) return;
+
+		const refusal = shortcutRefusal(combo, EDITOR_KEYMAP_RESERVED);
+		if (refusal) {
+			hotkeyError = {
+				cmdId,
+				message:
+					refusal === 'reserved'
+						? combo === 'Escape'
+							? ($t('settings.keyboard.reservedKey') || 'Escape always closes what is open, so it cannot be reassigned.')
+							: ($t('settings.keyboard.reservedCombo') || 'Constellation reserves this combination.')
+						: ($t('settings.keyboard.needsModifier') || 'Use a modifier (Ctrl, Alt or Shift) or a function key.'),
+			};
+			return;
 		}
+		const clash = findShortcutConflict(cmdId, combo, $appSettings.customShortcuts, commands.map((c) => c.id));
+		if (clash) {
+			const name = commands.find((c) => c.id === clash)?.name ?? clash;
+			hotkeyError = {
+				cmdId,
+				message: ($t('settings.keyboard.alreadyUsed') || 'Already used by {command}.').replace('{command}', name),
+			};
+			return;
+		}
+		updateSettings({ customShortcuts: { ...$appSettings.customShortcuts, [cmdId]: combo } });
+		hotkeyError = null;
+		editingHotkey = null;
+		hotkeyListening = false;
+	}
+
+	/** Back to the shipped default — REMOVES the override rather than storing the default's text,
+	 *  so a future change to that default reaches users who never chose their own. */
+	function resetHotkey(cmdId: string) {
+		const next = { ...$appSettings.customShortcuts };
+		delete next[cmdId];
+		updateSettings({ customShortcuts: next });
+		hotkeyError = null;
+	}
+
+	/** No shortcut at all. Stored as an empty override — which `getResolvedShortcut` returns as-is,
+	 *  so it genuinely means "none" rather than falling back to the default. */
+	function clearHotkey(cmdId: string) {
+		updateSettings({ customShortcuts: { ...$appSettings.customShortcuts, [cmdId]: '' } });
+		hotkeyError = null;
 	}
 
 	let containerEl: HTMLDivElement;
@@ -2369,21 +2446,34 @@
 								<div class="hotkey-binding">
 									{#if editingHotkey === cmd.id}
 										<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-										<kbd class="hotkey-recording" tabindex="0"
+										<kbd class="hotkey-recording" tabindex="0" use:captureField
 											onkeydown={(e) => handleHotkeyCapture(cmd.id, e)}
-											onblur={() => { editingHotkey = null; hotkeyListening = false; }}>
+											onblur={() => { editingHotkey = null; hotkeyListening = false; hotkeyError = null; }}>
 											{$t('settings.keyboard.pressKeys')}
 										</kbd>
 									{:else}
-										<button class="hotkey-edit-btn" onclick={() => { editingHotkey = cmd.id; hotkeyListening = true; }}>
+										<button class="hotkey-edit-btn" onclick={() => { editingHotkey = cmd.id; hotkeyListening = true; hotkeyError = null; }}>
 											{#if cmd.shortcut}
-												<kbd>{cmd.shortcut}</kbd>
+												<kbd>{formatShortcut(cmd.shortcut)}</kbd>
 											{:else}
 												<span class="hotkey-unset">{$t('settings.keyboard.notSet')}</span>
 											{/if}
 										</button>
 									{/if}
+									<!-- PJ-294 — only offered where it does something: reset appears when the user
+									     has an override to undo, clear when there is a binding to remove. -->
+									{#if cmd.id in $appSettings.customShortcuts}
+										<button class="hotkey-aux" title={$t('settings.keyboard.resetHint') || 'Back to the default'}
+											onclick={() => resetHotkey(cmd.id)}>{$t('settings.keyboard.reset') || 'Reset'}</button>
+									{/if}
+									{#if cmd.shortcut}
+										<button class="hotkey-aux" title={$t('settings.keyboard.clearHint') || 'Leave this command without a shortcut'}
+											onclick={() => clearHotkey(cmd.id)}>{$t('settings.keyboard.clear') || 'Clear'}</button>
+									{/if}
 								</div>
+								{#if hotkeyError?.cmdId === cmd.id}
+									<div class="hotkey-error">{hotkeyError.message}</div>
+								{/if}
 							</div>
 						{/each}
 						{#if filteredCommands.length === 0}
@@ -3325,6 +3415,13 @@
 	}
 	@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 	.hotkey-unset { font-size: 0.78rem; color: var(--text-faint); font-style: italic; }
+	/* PJ-294 — quiet secondary actions; they must not compete with the binding itself. */
+	.hotkey-aux {
+		background: none; border: none; cursor: pointer; padding: 2px 6px; margin-inline-start: 4px;
+		font-size: 0.72rem; color: var(--text-muted); border-radius: 4px;
+	}
+	.hotkey-aux:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.hotkey-error { font-size: 0.74rem; color: var(--text-error, #e5534b); padding: 2px 0 6px; }
 	.hotkey-empty { text-align: center; padding: 24px; color: var(--text-faint); font-size: 0.85rem; }
 
 	/* ═══ FEATURES GRID ═══ */

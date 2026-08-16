@@ -506,7 +506,15 @@
 			"filter": "筛选命令...",
 			"notSet": "未设置",
 			"noCommands": "未找到命令",
-			"pressKeys": "按下按键..."
+			"pressKeys": "按下按键...",
+			"reset": "重置",
+			"resetHint": "恢复默认快捷键",
+			"clear": "清除",
+			"clearHint": "让此命令不设快捷键",
+			"alreadyUsed": "已被「{command}」占用。",
+			"needsModifier": "请使用修饰键（Ctrl、Alt 或 Shift）或功能键。",
+			"reservedKey": "Escape 始终用于关闭当前打开的内容，因此不能重新指定。",
+			"reservedCombo": "Constellation 已将此组合键用于其他功能。"
 		},
 		"plugins": {
 			"intro": "开启或关闭插件。禁用的插件将从界面中隐藏。",
@@ -811,7 +819,8 @@
 		"constellationMap": "知识地图",
 		"newLibrary": "新建库",
 		"cataloger": "分类器",
-		"newNoteFromTemplate": "从模板新建笔记"
+		"newNoteFromTemplate": "从模板新建笔记",
+		"newTab": "新标签页"
 	},
 	"actions": {
 		"untitled": "未命名",
