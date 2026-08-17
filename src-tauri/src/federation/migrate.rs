@@ -683,6 +683,80 @@ mod tests {
         assert_eq!(cols, 5, "schema-only still brings the schema up to current");
     }
 
+    /// **PJ-302 — the schema-only door must not REMOVE a foreign universe's triggers
+    /// either.** The sibling test above proves it does not *write* our vocabulary into
+    /// their database. It cannot see this defect, because it starts from an EMPTY
+    /// database: with no trigger ever present, an unconditional DROP has nothing to
+    /// remove and the assertion `count == 0` passes for the wrong reason. That is the
+    /// same "a test whose subject cannot fire is not a test" lesson the test below
+    /// records for MIG-003 Step 1 — here it is, one test earlier.
+    ///
+    /// `init_db_scoped` DROPs the sky trigger families at top-level indentation
+    /// (search.rs:5868-5874, :5884-5888, :5924-5930, and the `note_meta_sky_ai`/`_au`
+    /// drop preceding :5640) and recreates them only under `if owns` (:5640, :5891,
+    /// :5933, :5969). So the ONE production caller with `owns == false` —
+    /// `run_migrations_on`, reached whenever a linked universe's schema is stale —
+    /// strips that universe's bookkeeping machinery and does not put it back.
+    ///
+    /// Latent today only because a cUniverse is attached read-only, which is the very
+    /// sentence MIG-111 Phase 1.2 falsifies. A routed write into such a child would
+    /// then silently write no outgoing aggregates, create no `sky_nodes` row, and leave
+    /// stratum and maturity absent — with every row count correct and success reported.
+    ///
+    /// Seeds the triggers the way the child's OWN process does — a real `init_db` —
+    /// then hands the database through the foreign door and requires them to survive.
+    #[test]
+    fn schema_only_init_does_not_drop_a_foreign_universes_own_triggers() {
+        let dir = TempDir::new().unwrap();
+        let cdir = dir.path().join(".constellation");
+        fs::create_dir_all(&cdir).unwrap();
+        let db_path = cdir.join("search.db");
+
+        // The child, opened by its OWN process as the active universe: it creates its
+        // own trigger set from its own vocabulary. Scoped so the handle is released.
+        {
+            let _own = crate::search::init_db(&db_path).expect("the owner's own init");
+        }
+
+        let names = [
+            "note_links_outgoing_ai",
+            "note_links_outgoing_ad",
+            "note_links_outgoing_au",
+            "note_meta_sky_ai",
+            "note_meta_sky_stratum_au",
+            "note_meta_sky_maturity_au",
+        ];
+        let count = |conn: &Connection, name: &str| -> i64 {
+            conn.query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = ?1",
+                rusqlite::params![name],
+                |r| r.get(0),
+            )
+            .unwrap_or(-1)
+        };
+
+        {
+            let conn = Connection::open(&db_path).unwrap();
+            let missing: Vec<&str> =
+                names.iter().copied().filter(|n| count(&conn, n) != 1).collect();
+            assert!(missing.is_empty(), "precondition: the owner creates all of these; missing {missing:?}");
+        }
+
+        // Now the PARENT schema-migrates it — exactly what `run_migrations_on` does.
+        let conn = crate::search::init_db_schema_only(&db_path).expect("schema-only init");
+
+        // Report EVERY casualty, not the first — the blast radius is the finding, and a
+        // first-mismatch assertion hid that the outgoing family actually survives (its
+        // DROP sits inside `create_outgoing_link_triggers`, which is itself `owns`-gated).
+        let stripped: Vec<&str> = names.iter().copied().filter(|n| count(&conn, n) != 1).collect();
+        assert!(
+            stripped.is_empty(),
+            "these triggers belong to the child universe and were created by its own \
+             process — the foreign door may migrate the schema, but it must not strip \
+             the bookkeeping the owner installed. Stripped: {stripped:?}"
+        );
+    }
+
     /// PJ-232 — **the foreign door must not touch the other universe's NOTE FILES, and
     /// must not delete its rows.**
     ///

@@ -255,8 +255,20 @@ fn djb2(bytes: &[u8]) -> u64 {
 /// mismatch, truncated data, unreadable `PatternKind` tag, I/O failure).
 /// Never panics — falling back to an in-memory rebuild is always safe.
 pub fn try_load_cached() -> Option<FstBundle> {
-    let path = cache_file_path()?;
-    load_bundle(&path).ok()
+    try_load_cached_at(&cache_file_path()?)
+}
+
+/// The path-taking core of [`try_load_cached`] — **the form tests must use.**
+///
+/// PJ-303: `cache_file_path()` names ONE file per machine, and it is shared with
+/// the production initialiser [`crate::arabic::fst_index::GenerativeFst::get`],
+/// which on any cache miss rebuilds the real bundle and re-persists it. A test
+/// that writes a hand-built bundle to that path and reads it back is racing that
+/// initialiser for a shared resource: when it loses, the read returns the real
+/// FST bytes and the assertion fails. Measured at ~1 run in 6 before this split,
+/// and reproduced deterministically by forcing `get()` into the window.
+pub fn try_load_cached_at(path: &std::path::Path) -> Option<FstBundle> {
+    load_bundle(path).ok()
 }
 
 /// Persist a bundle to the preferred cache path, best-effort. Any error
@@ -264,8 +276,14 @@ pub fn try_load_cached() -> Option<FstBundle> {
 /// dir is read-only or full.
 pub fn persist_best_effort(bundle: &FstBundle) {
     if let Some(path) = cache_file_path() {
-        let _ = write_bundle(&path, bundle);
+        persist_best_effort_at(&path, bundle);
     }
+}
+
+/// The path-taking core of [`persist_best_effort`] — **the form tests must use.**
+/// See [`try_load_cached_at`] for why.
+pub fn persist_best_effort_at(path: &std::path::Path, bundle: &FstBundle) {
+    let _ = write_bundle(path, bundle);
 }
 
 /// Read a bundle from an arbitrary path. Exposed for tests so we don't
@@ -956,23 +974,32 @@ mod tests {
         assert_ne!(djb2(b"hello world"), djb2(b"hello worlD"));
     }
 
+    /// End-to-end check on the persist/load pair — `persist_best_effort_at`
+    /// then `try_load_cached_at` — over an ISOLATED path.
+    ///
+    /// **PJ-303 (2026-08-17).** This used the real `cache_file_path()`, and that
+    /// made it flaky at ~1 run in 6: that path names one file per machine, shared
+    /// with `GenerativeFst::get`, which rebuilds and re-persists the REAL bundle
+    /// on any cache miss — and a hand-built `sample_bundle()` guarantees a miss,
+    /// because `[0xAA,0xBB,0xCC]` is not a valid `fst::Map`. So the production
+    /// initialiser overwrote this test's bundle between its write and its read,
+    /// and the assertion failed printing the real FST bytes. Reproduced
+    /// deterministically by forcing `get()` into the window.
+    ///
+    /// It also deleted the developer's real Arabic cache on every run.
+    ///
+    /// `tmp_path`'s own doc already said *"Avoids stomping on the real user cache
+    /// during tests"* — this test simply was not using it. It is now, and the
+    /// no-arg `try_load_cached` / `persist_best_effort` (whose only extra logic is
+    /// resolving `cache_file_path()`) belong to production alone.
     #[test]
     fn persist_then_try_load_cached_roundtrip() {
-        // End-to-end check on the real `cache_file_path()`: write via
-        // `persist_best_effort`, read via `try_load_cached`. Only runs
-        // when the platform has a cache dir.
-        //
-        // Uses a bundle whose contents we can recognise, so we can tell
-        // a hit from an unrelated leftover file. If a stale cache from a
-        // prior run of this same test is sitting in place, we overwrite
-        // it (atomic rename) and still get a clean read.
-        let Some(real_path) = cache_file_path() else {
-            return;
-        };
+        let path = tmp_path("cached_roundtrip");
         let original = sample_bundle();
-        persist_best_effort(&original);
+        persist_best_effort_at(&path, &original);
 
-        let loaded = try_load_cached().expect("try_load_cached must hit after persist");
+        let loaded =
+            try_load_cached_at(&path).expect("try_load_cached_at must hit after persist");
         // `.as_ref()` to compare through the `FstBytes` enum regardless
         // of which backing variant (`Owned` / `Mmap`) each path produced.
         assert_eq!(loaded.stripped_bytes.as_ref(), original.stripped_bytes.as_ref());
@@ -981,10 +1008,12 @@ mod tests {
             original.values_stripped[0].surface
         );
 
-        // Don't leave a hand-built (non-real) bundle in the user's
-        // cache — the next real boot would load it, notice FST bytes
-        // aren't valid fst::Map data, and fall through. But cleaner to
-        // just delete.
-        let _ = fs::remove_file(&real_path);
+        // The error-swallowing half of the contract, which `write_bundle` /
+        // `load_bundle` do not have: a miss is `None`, never a panic or an Err.
+        let _ = fs::remove_file(&path);
+        assert!(
+            try_load_cached_at(&path).is_none(),
+            "a missing cache file must read as None, not an error"
+        );
     }
 }

@@ -581,17 +581,57 @@ pub fn active_if_non_empty() -> Option<Arc<OverrideStore>> {
 /// **after** the swap.
 pub fn set_active(store: OverrideStore) {
     let is_empty = store.is_empty();
-    // Empty → non-empty (or non-empty → non-empty): publish non-empty
-    // bit BEFORE the swap, so any reader who sees it and falls through
-    // to the RwLock reads either the old or new store — both at least
-    // "non-empty enough" that routing through the slow path is correct.
+    // PJ-307 — the bit and the swap are maintained under ONE held write guard, exactly as
+    // `set_sovereign_layer` already does.
+    //
+    // This function used to take the guard inside the swap statement (so it was released at
+    // the end of that statement) and store the bit OUTSIDE it, while its sibling writer held
+    // its guard across both. Two writers maintaining one invariant under two different
+    // disciplines do not serialise against each other, and the interleaving is reachable:
+    // `set_active_universe` is `#[tauri::command(async)]` and reaches here on a runtime worker,
+    // while `add_arabic_override` / `remove_arabic_override` are sync commands reaching
+    // `set_sovereign_layer` on the main thread. `switch_lock` serialises switch-vs-switch only.
+    //
+    // Either order leaves `ACTIVE_STORE_EMPTY == true` over a NON-EMPTY store, which is
+    // precisely the invariant documented above ("if true, the active store is guaranteed
+    // empty"). `active_if_non_empty` then returns None on the atomic alone, so the FTS5
+    // tokenizer path stems every Arabic token as though the user had authored no overrides —
+    // silently, with `active()` still reporting the correct store, so every len()/layer_count()
+    // diagnostic and the Settings panel look healthy while the index diverges.
+    publish(store);
+}
+
+/// **PJ-307 — the ONE place `ACTIVE_STORE_EMPTY` and the store are published together.**
+///
+/// Both writers (`set_active` and `set_sovereign_layer`) route through here, so the ordering
+/// discipline documented on [`ACTIVE_STORE_EMPTY`] exists in exactly one place and the two
+/// cannot drift apart. They had drifted: `set_active` took the write guard inside its swap
+/// statement — releasing it at the end of that statement — and stored the bit OUTSIDE it, while
+/// `set_sovereign_layer` held its guard across both. Two writers maintaining one invariant under
+/// two disciplines do not serialise, and the interleaving is reachable: `set_active_universe` is
+/// `#[tauri::command(async)]` and lands here on a runtime worker, while `add_arabic_override` /
+/// `remove_arabic_override` are sync commands on the main thread, and `switch_lock` serialises
+/// switch-vs-switch only.
+///
+/// Either order can leave the bit `true` over a NON-EMPTY store — the exact negation of the
+/// documented invariant. `active_if_non_empty` then returns `None` from the atomic alone, so the
+/// FTS5 tokenizer stems every Arabic token as though no override existed: silently, with
+/// `active()` still returning the correct store, so `len()`/`layer_count()` diagnostics and the
+/// Settings panel all look healthy while the index diverges.
+///
+/// Extracting this is the fix rather than repeating the ordering in both writers, because "both
+/// callers remember the discipline" is the promise that was already broken once.
+fn publish(store: OverrideStore) {
+    let is_empty = store.is_empty();
+    let mut guard = store_lock().write().expect("arabic override lock poisoned");
+    // Empty → non-empty: bit BEFORE the swap. A reader who sees `false` falls through to the
+    // RwLock and reads either the old or new store — both safe to route through the slow path.
     if !is_empty {
         ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
     }
-    *store_lock().write().expect("arabic override lock poisoned") = Arc::new(store);
-    // Non-empty → empty (or empty → empty): publish empty bit AFTER
-    // the swap, so a reader who sees `true` is guaranteed the store
-    // they'd have read is empty — safe to skip the lock.
+    *guard = Arc::new(store);
+    // Non-empty → empty: bit AFTER the swap, so a reader seeing `true` is guaranteed the store
+    // it would have read is empty — safe to skip the lock.
     if is_empty {
         ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
     }
@@ -625,18 +665,11 @@ pub fn set_sovereign_layer(sovereign: OverrideStore) {
         new_layers.push(child.clone());
     }
     let new_store = OverrideStore { layers: new_layers };
-    let is_empty = new_store.is_empty();
-    // Same ordering discipline as `set_active`: flip the non-empty bit
-    // before the swap, and the empty bit after. Under the held write
-    // guard, readers taking the slow path will serialize on the RwLock
-    // and see a coherent before/after state.
-    if !is_empty {
-        ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
-    }
-    *guard = Arc::new(new_store);
-    if is_empty {
-        ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
-    }
+    // PJ-307 — release the guard, then publish through the single shared publisher, so the
+    // ordering discipline lives in exactly one place. `publish` re-acquires; the gap is safe
+    // because a concurrent writer landing in it publishes a fully coherent state of its own.
+    drop(guard);
+    publish(new_store);
 }
 
 /// Load a single override file from a Universe and install it as the
@@ -813,6 +846,20 @@ pub fn reindex_arabic_overrides(
     surface: String,
 ) -> Result<u32, String> {
     use tauri::Manager;
+    // PJ-308 — this was the ONE DB-touching command here without `ensure_search_db_ready`,
+    // and its absence made a skipped reindex indistinguishable from a completed one.
+    //
+    // `reindex_notes_matching_text` returns `Ok(0)` when `state.db` is None (search.rs:13777),
+    // byte-identical to the legitimate "no indexed note contains this surface" result — and the
+    // Settings panel renders any `Ok` as a green success. `invalidate_search_state` NULLs
+    // `state.db` on every universe switch and it stays None until the next
+    // `ensure_search_db_ready`, while the shell paints before the boot fan-out installs the
+    // connection. So: add an override, be told the reindex completed, and every already-indexed
+    // Arabic note keeps its pre-override stems forever, because nothing re-runs this.
+    //
+    // Every sibling DB-touching command already carries this line (libraries.rs:1712, :1753,
+    // :2634, :2709), each added by an earlier inspection against this exact hazard.
+    crate::search::ensure_search_db_ready(&app)?;
     let state = app.state::<crate::search::SearchState>();
     crate::search::reindex_notes_matching_text(&state, &surface)
 }
@@ -932,11 +979,60 @@ mod tests {
         assert_eq!(lemmas.len(), 2);
     }
 
+    // **PJ-307 — why there is no test here, stated rather than left as an absence.**
+    //
+    // A concurrency test WAS written for the fast-path-bit invariant and has been deleted,
+    // for two independently sufficient reasons:
+    //
+    //   1. **It did not reproduce the defect.** Run against the pre-fix code — `set_active`
+    //      restored to storing the bit outside the write guard — it PASSED. The interleaving
+    //      needs a preemption inside a few-instruction window, and 40 rounds x 120 writes
+    //      never hit it. It was a settled-state guard, not a red->green.
+    //   2. **It broke its neighbours.** Hammering the process-global store from two threads
+    //      for the duration of the test is exactly the hazard LL-047/LL-049 describe, and it
+    //      failed `set_active_replaces_prior_store_entirely`,
+    //      `set_active_then_active_roundtrips`, `set_sovereign_layer_on_empty_active_creates_
+    //      single_layer` and `set_sovereign_layer_preserves_child_layers` in 6 of 8 suite runs.
+    //      A test that mutates shared state for a duration is the very thing this file's fix
+    //      is about; writing one to guard that fix was the same mistake one layer out.
+    //
+    // What justifies the fix instead is structural and checkable by reading: the bit-and-swap
+    // discipline lives in exactly ONE function (`publish`) that both writers call, so "two
+    // writers, two disciplines" is no longer expressible. If someone later wants a genuine
+    // red->green here, it needs a test-only hook that widens the window inside `publish` —
+    // a deliberate change to production code, and a decision to be taken openly rather than
+    // smuggled in behind a green test that proves nothing.
+
     // ── persistence ───────────────────────────────────────────────────
+
+    /// PJ-305 — a temp path unique to this process AND this call.
+    ///
+    /// The persistence tests below used FIXED names (`constellation-overrides-atomic`,
+    /// `-roundtrip`, `-sorted`, …) and each opens with `remove_dir_all` on it, so two
+    /// concurrent `cargo test` processes on one machine delete each other's fixture
+    /// mid-test. Observed directly on 2026-08-17: running two suites at once produced
+    /// `save_then_load_roundtrip`, `save_is_atomic_no_leftover_tmp_on_success`,
+    /// `save_sorts_entries_alphabetically_for_git_friendly_diffs` and
+    /// `load_rejects_malformed_json` failing in shifting combinations.
+    ///
+    /// The unique-path idiom already existed further down this same file (the
+    /// `constellation_overrides_test_activate_{nanos}` sites); these tests simply were
+    /// not using it. Same class as LL-049: a test sharing a mutable resource.
+    fn unique_tmp(label: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "constellation-overrides-{}-{}-{}",
+            label,
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
+    }
 
     #[test]
     fn load_missing_file_yields_empty_store() {
-        let tmp = std::env::temp_dir().join("constellation-overrides-missing.json");
+        let tmp = unique_tmp("missing").with_extension("json");
         let _ = std::fs::remove_file(&tmp); // ensure missing
         let store = OverrideStore::load_from_path(&tmp).expect("load must not error on missing");
         assert!(store.is_empty());
@@ -944,7 +1040,7 @@ mod tests {
 
     #[test]
     fn save_then_load_roundtrip() {
-        let tmp_dir = std::env::temp_dir().join("constellation-overrides-roundtrip");
+        let tmp_dir = unique_tmp("roundtrip");
         let _ = std::fs::remove_dir_all(&tmp_dir);
         let path = tmp_dir.join(".constellation").join("arabic-overrides.json");
 
@@ -963,7 +1059,7 @@ mod tests {
 
     #[test]
     fn load_rejects_malformed_json() {
-        let tmp = std::env::temp_dir().join("constellation-overrides-malformed.json");
+        let tmp = unique_tmp("malformed").with_extension("json");
         std::fs::write(&tmp, b"{not valid json").expect("write test fixture");
         let err = OverrideStore::load_from_path(&tmp).expect_err("malformed must error");
         assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
@@ -975,7 +1071,7 @@ mod tests {
         // Forward-compat: future schema versions adding fields must not
         // break older Constellation builds that read the same file. serde
         // ignores unknown fields by default; this test pins that contract.
-        let tmp = std::env::temp_dir().join("constellation-overrides-unknown-fields.json");
+        let tmp = unique_tmp("unknown-fields").with_extension("json");
         let json = r#"{
             "version": 2,
             "future_field": "ignored",
@@ -1000,7 +1096,7 @@ mod tests {
 
     #[test]
     fn save_is_atomic_no_leftover_tmp_on_success() {
-        let tmp_dir = std::env::temp_dir().join("constellation-overrides-atomic");
+        let tmp_dir = unique_tmp("atomic");
         let _ = std::fs::remove_dir_all(&tmp_dir);
         let path = tmp_dir.join(".constellation").join("arabic-overrides.json");
 
@@ -1018,7 +1114,7 @@ mod tests {
 
     #[test]
     fn save_sorts_entries_alphabetically_for_git_friendly_diffs() {
-        let tmp_dir = std::env::temp_dir().join("constellation-overrides-sorted");
+        let tmp_dir = unique_tmp("sorted");
         let _ = std::fs::remove_dir_all(&tmp_dir);
         let path = tmp_dir.join(".constellation").join("arabic-overrides.json");
 

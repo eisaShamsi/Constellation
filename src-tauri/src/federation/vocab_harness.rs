@@ -130,7 +130,39 @@ pub fn deltas(ids: &[&str]) -> Vec<crate::link_types::LinkTypeDef> {
 /// Serialises harness runs. `link_types::REGISTRY` is a **process-global**, so two runs installing
 /// different vocabularies at once clobber each other — see `a_vocabulary_swap_reaches_back_into_an_
 /// already_open_database` for why that is a finding about Phase 1.2 and not merely test hygiene.
-static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+pub(crate) static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// **PJ-304 — restore the process-global on the way out, including on panic.**
+///
+/// This harness was committed to constrain Phase 1.2's design against LL-047, and it
+/// introduced that very hazard into the suite. `set_active` was called and **never undone**,
+/// so the first harness test to run left a 9-type vocabulary installed for *every subsequent
+/// test in the process* — not a race window, permanent contamination, with test scheduling
+/// order deciding whether it bit.
+///
+/// It bit two tests that assert the empty-sentinel rank `9` — which is
+/// `cognitive_ids().len() + 1`, correct only for the seeds-only registry. A custom type makes
+/// it 10. (The 1/2/4 ranks are unaffected: a custom type sorts *after* the seeds, so only the
+/// sentinel moves.) Measured on pristine `main` at commit 857530f5, before any Phase 1.2
+/// change: `links_backfill::tests::backfill_populates_existing_rows` and
+/// `search::tests_mig066_outgoing::outgoing_aggregates_maintained_by_triggers`, failing
+/// together roughly 1 run in 6.
+///
+/// Restoring on `Drop` is an interim measure and is honestly weaker than a fix: it shrinks the
+/// exposure from "the rest of the process" to "the duration of this call", but a non-harness
+/// test running concurrently can still read the mutated global. That residue is exactly what
+/// LL-047 says cannot be closed while the vocabulary is ambient — **Stage A removes it
+/// structurally**, by threading the vocabulary so this harness stops calling `set_active` at
+/// all. Delete this guard then.
+struct RestoreVocabulary;
+
+impl Drop for RestoreVocabulary {
+    fn drop(&mut self) {
+        // Seeds-only is the registry's own default (`LinkTypeRegistry::seeds_only`, which
+        // `cell()` initialises with), so this restores the state every other test assumes.
+        crate::link_types::set_active(Vec::new());
+    }
+}
 
 pub fn index_under_vocabulary(
     dir: &Path,
@@ -138,6 +170,7 @@ pub fn index_under_vocabulary(
     notes: &[(&str, &str)],
 ) -> rusqlite::Result<Aggregates> {
     let _serial = HARNESS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let _restore = RestoreVocabulary;
     crate::link_types::set_active(vocabulary);
     let conn = crate::search::init_db(&dir.join("search.db")).expect("init_db");
     for (name, body) in notes {
@@ -226,6 +259,8 @@ mod tests_mig111_12_h1_harness {
     #[test]
     fn a_vocabulary_swap_reaches_back_into_an_already_open_database() {
         let _serial = HARNESS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // PJ-304 — this test calls `set_active` directly, so it carries the same guard.
+        let _restore = RestoreVocabulary;
         let dir = tmp_dir("swap");
 
         // Open the database with the FULL vocabulary in force — as a routed pool would, having

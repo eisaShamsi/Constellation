@@ -416,13 +416,38 @@
 		return 'sh-hl-' + (m[cat] ?? cat);
 	}
 
+	// PJ-309 — HONOUR the server's `<mark>`, don't escape it into visible text.
+	//
+	// Rust builds a Contents snippet with the hit already wrapped: `search.rs`'s window
+	// extractor emits `…<mark>hit</mark>…`. This function used to `escapeHtml()` the whole
+	// string first, which turned that into `&lt;mark&gt;` — rendered as the literal characters
+	// `<mark>` — and then added a SECOND highlight of its own. The Boss's PJ-303 test round
+	// caught it: searching `دحرج` displayed `ال<mark>دحرج</mark>ة`, tag text and highlight both.
+	//
+	// The server's mark is also the AUTHORITATIVE one. It marks what FTS5 actually matched,
+	// which for Arabic is not the same as a raw-query substring: `دحرج` matches inside `دحرجة`
+	// through the morphological analyzer, and the client regex below cannot know that. So when
+	// the server has marked a string we adopt its marks verbatim and skip the client pass —
+	// which also stops the hit being wrapped twice and rendering a double-strength background.
+	//
+	// Only the exact bare tags are restored (no attributes are ever emitted server-side), so
+	// nothing else in the escaped text can become markup. A note whose body literally contains
+	// the characters `<mark>` would have them shown as a highlight instead of as text — an
+	// accepted, inert cosmetic edge; `<mark>` carries no attributes and no script.
 	function highlightInText(text: string, cssClass: string = ''): string {
+		const escaped = escapeHtml(text);
+		const openTag = cssClass ? `<mark class="${cssClass}">` : '<mark>';
+		const restored = escaped
+			.replace(/&lt;mark&gt;/g, openTag)
+			.replace(/&lt;\/mark&gt;/g, '</mark>');
+		if (restored !== escaped) return restored; // server marked it — its answer wins
+
 		const terms = getSearchTerms();
-		if (!terms.length) return escapeHtml(text);
-		const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-		const re = new RegExp(`(${escaped})`, 'gi');
+		if (!terms.length) return escaped;
+		const pattern = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+		const re = new RegExp(`(${pattern})`, 'gi');
 		const tag = cssClass ? `<mark class="${cssClass}">$1</mark>` : '<mark>$1</mark>';
-		return escapeHtml(text).replace(re, tag);
+		return escaped.replace(re, tag);
 	}
 
 	function escapeHtml(s: string): string {

@@ -1210,3 +1210,82 @@ layer over: *proving a property over the part you happened to look at.*
 **Related.** LL-046 (a guard is only as good as the fact it derives from); LL-047 (the same "which
 context is in force?" question in the time dimension); the §0.4 dead no-op documented at
 `bases.rs:38-45`.
+
+---
+
+## LL-049: A GREEN SUITE IS A CLAIM ABOUT A DISTRIBUTION, NOT ABOUT A RUN — and test infrastructure that shares a real resource with production is the usual reason
+
+**Symptom (MIG-111 Phase 1.2, 2026-08-17).** The handover said "Rust **1500 / 0**". Six baseline runs
+before touching anything said otherwise:
+
+```
+run 1: 1498 passed; 2 failed      ← names not captured
+runs 2,3,5,6: 1500 / 0
+run 4: 1499 passed; 1 failed      ← arabic::fst_bake::…::persist_then_try_load_cached_roundtrip
+```
+
+**Two independent flakes, both invisible to any single run, and the second one hidden behind the
+first.** "1500 / 0" was true of the run someone happened to execute; it was not true of the suite.
+
+**Both had the same shape: a test sharing a mutable resource with production code.**
+
+**PJ-303 — a file.** `persist_then_try_load_cached_roundtrip` wrote a hand-built bundle to the REAL
+per-machine Arabic cache path and read it back. The production initialiser `GenerativeFst::get`
+writes that same file on any cache miss — and the test's `sample_bundle()` FST bytes
+(`[0xAA,0xBB,0xCC]`) are not a valid `fst::Map`, so a miss was *guaranteed*. When `get()` landed
+between the write and the read, the assertion printed the real FST blob. The test also **deleted the
+developer's real cache on every run**. The module's own `tmp_path` helper was documented *"Avoids
+stomping on the real user cache during tests"* — this one test simply was not using it.
+
+**PJ-304 — a process-global.** `federation::vocab_harness::index_under_vocabulary` called
+`link_types::set_active` and **never undid it**. Not a window: once any harness test ran, a 9-type
+vocabulary was installed for *every subsequent test in the process*. It broke exactly the assertions
+that hardcode the empty-sentinel rank `9` (`cognitive_ids().len() + 1`) — a custom type makes it 10,
+while the 1/2/4 ranks are untouched because a custom type sorts *after* the seeds. **Only the
+sentinel moves**, which is why it looked arbitrary.
+
+**The irony, and the lesson.** That harness was committed *specifically* to constrain this migration's
+design against LL-047 — *never install context into shared state for a duration* — and it did exactly
+that to the test suite. **A rule you write for the production code applies to the harness that
+enforces it.**
+
+**The rules.**
+
+1. **Never trust a single green run as a property of the suite.** Before building on "the tests pass",
+   run it enough times to see the distribution. Record the count, not the adjective. A handover that
+   says "1500 / 0" is reporting one sample.
+2. **A test may not touch a resource production also writes** — not a file at a real user path, not a
+   process-global, not an env var, not a shared port. Where a path-taking form already exists, use it;
+   where it does not, add one. `load_bundle`/`write_bundle` existed for exactly this reason and were
+   documented as such, one screen above the test that ignored them.
+3. **When you fix one flake, re-measure — do not assume you fixed *the* flake.** PJ-304 was only
+   visible once PJ-303 stopped masking it.
+4. **Determine whether a flake is yours before you claim it is not.** The pre-existence of PJ-304 was
+   established by stashing every local change and reproducing it on pristine `main` at `857530f5` —
+   not by reasoning that the change looked unrelated.
+5. **Where an ambient global cannot yet be removed, say plainly that the mitigation is interim.** The
+   `RestoreVocabulary` RAII guard shrinks exposure from "the rest of the process" to "the duration of
+   the call"; it does not close it, because a concurrent test can still read the mutated global.
+   That residue is what LL-047 says is unclosable while the context is ambient — it goes away when
+   the vocabulary is threaded, and the guard is deleted then.
+
+6. **The test you write to guard a shared-state fix must not itself mutate shared state — and if it
+   neither reproduces the defect nor survives its neighbours, delete it.** Later the same session, a
+   concurrency test was written for `arabic/overrides.rs`'s fast-path-bit race. It hammered the
+   process-global override store from two threads for its whole duration, and it (a) **passed
+   against the pre-fix code**, so it reproduced nothing, and (b) **failed four sibling tests in 6 of
+   8 suite runs**. Written immediately after this very lesson, in the same file as the fix, for a
+   bug whose entire nature is *mutating shared state for a duration*. Deleted, with the reasoning
+   recorded at the call site so the absence reads as a decision rather than an oversight.
+   **A test is not automatically an asset.** One that guards nothing and destabilises its
+   neighbours is negative value, and keeping it because deleting looks like retreat is how a suite
+   becomes untrustworthy — which is the condition this whole lesson began with.
+7. **When a fix ships without a reproduction, say so out loud to the Boss.** The `publish()`
+   extraction is justified structurally — the bit-and-swap discipline now exists in exactly one
+   function, so "two writers, two disciplines" is unrepresentable — and that is a claim anyone can
+   check by reading. It is still not a red→green, and *Reproduce-First* says that is not mine to
+   wave through. Flag it; do not let a documentation sentence quietly stand in for evidence.
+
+**Related.** LL-047 (the same hazard in production, and the rule this violated); LL-048 (a test that
+drives the pure function has not tested the caller); *Reproduce-First* — PJ-303 and PJ-304 were red
+on demand before either was designed; PJ-307 was not, and says so.

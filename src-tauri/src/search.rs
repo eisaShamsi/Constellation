@@ -4573,9 +4573,28 @@ pub(crate) enum InitScope {
     Active,
     /// A foreign universe's database — schema only.
     ///
-    /// **The precise line, because a vaguer one already produced a false comment once.**
-    /// Skipped here: every DDL whose body is generated from the link-type registry (that
-    /// registry is the ACTIVE universe's), and every one-shot MIG-003 pass — Step 1
+    /// **PJ-302 (2026-08-17) — this comment was FALSE as written, in both directions, and
+    /// a test that started from an EMPTY database could not see either.**
+    ///
+    /// It claimed every registry-generated DDL was skipped. The `note_links_sky_ai/_ad/_au`
+    /// block sat outside every `owns` gate while interpolating `snapshot()`, so the foreign
+    /// door *did* write registry-generated SQL into another universe's `sqlite_master` —
+    /// harmless only by the accident that `structural_not_in_clause` is vocabulary-invariant.
+    ///
+    /// Worse, it said nothing about REMOVAL. The `note_meta` sky family's DROPs were
+    /// unconditional while their CREATEs were gated, so this door *stripped* triggers the
+    /// child's own process had installed and did not put them back — leaving that universe
+    /// with no `sky_nodes` INSERT, no stratum and no maturity maintenance until its owner
+    /// next launched. Latent only while a cUniverse stays read-only, which is exactly what
+    /// MIG-111 Phase 1.2 changes.
+    ///
+    /// **The rule now, stated as a construction rather than a list: this door migrates
+    /// SCHEMA and mutates NO trigger, in either direction.** Pinned by
+    /// `federation::migrate::tests::schema_only_init_does_not_drop_a_foreign_universes_own_triggers`,
+    /// which seeds the triggers through a real owner-side `init_db` first — because the
+    /// sibling test seeds nothing, and a test whose subject cannot fire is not a test.
+    ///
+    /// Also skipped: every one-shot MIG-003 pass — Step 1
     /// (writes `cid_cn:` frontmatter into `.md` files, deletes rows whose path no longer
     /// stats), Step 2, Step 3 (re-indexes rows, writes frontmatter) and Step 4 (RENAMES
     /// `.md` files). All four are stamped one-shots the owner runs for itself.
@@ -5528,6 +5547,13 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // guards below refreshes on the boot after §5 ships (CREATE IF NOT EXISTS alone
     // would keep the old, structural-blind body — the same reason the stratum /
     // maturity triggers DROP first). No-op while no structural type exists.
+    // PJ-302 — `owns`-gated, DROP **and** CREATE. This block was the counter-example to
+    // `InitScope`'s own doc comment: it sat outside every gate while interpolating
+    // `snapshot()` below, so the schema-only door DID write registry-generated SQL into a
+    // foreign `sqlite_master`. That was harmless only because `structural_not_in_clause`
+    // happens to be vocabulary-invariant (`merge` forces `structural = false` on every
+    // non-seed delta) — an accident, not the gate. See the note above `init_db_scoped`.
+    if owns {
     conn.execute_batch("
         DROP TRIGGER IF EXISTS note_links_sky_ai;
         DROP TRIGGER IF EXISTS note_links_sky_ad;
@@ -5573,6 +5599,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             WHERE NEW.status = 'active'{sx_new};
         END;
     ", sx_new = sx_new)).map_err(|e| format!("Failed to create sky_link triggers: {}", e))?;
+    } // PJ-302 — end `if owns` (sky_link triggers)
 
     // ─── Sky-node triggers (MIG-001 Step 4) ─────────────────────────────
     // Keep sky_nodes in lock-step with note_meta. Orphans are preserved
@@ -5628,10 +5655,13 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // MIG-002 §6 + §99/BUG-011: drop note_meta_sky_au AND note_meta_sky_ai
     // so their bodies can be rewritten for §6 (UPDATE-preserving AU) and
     // BUG-011 (merged AI with inline stratum + maturity).
-    conn.execute_batch("
-        DROP TRIGGER IF EXISTS note_meta_sky_au;
-        DROP TRIGGER IF EXISTS note_meta_sky_ai;
-    ").map_err(|e| format!("Failed to drop pre-§6/§99 sky triggers: {}", e))?;
+    // PJ-302 — `owns`-gated. See the note on the foreign door above `init_db_scoped`.
+    if owns {
+        conn.execute_batch("
+            DROP TRIGGER IF EXISTS note_meta_sky_au;
+            DROP TRIGGER IF EXISTS note_meta_sky_ai;
+        ").map_err(|e| format!("Failed to drop pre-§6/§99 sky triggers: {}", e))?;
+    }
 
     // PJ-232 — the sky_node trigger bodies interpolate `stratum_sql_expr()` /
     // `maturity_sql_expr()`, both of which read `link_types::snapshot()` — the ACTIVE
@@ -5865,13 +5895,16 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // DROP first so schema-version bumps that change the trigger body
     // (like v4 → v5 for BUG-010) pick up the new formula. CREATE TRIGGER
     // IF NOT EXISTS alone would silently keep the old body on upgrade.
-    conn.execute_batch("
-        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
-        DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
-        DROP TRIGGER IF EXISTS note_links_sky_stratum_ai;
-        DROP TRIGGER IF EXISTS note_links_sky_stratum_ad;
-        DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
-    ").map_err(|e| format!("Failed to drop old stratum triggers: {}", e))?;
+    // PJ-302 — `owns`-gated. See the note on the foreign door above `init_db_scoped`.
+    if owns {
+        conn.execute_batch("
+            DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
+            DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
+            DROP TRIGGER IF EXISTS note_links_sky_stratum_ai;
+            DROP TRIGGER IF EXISTS note_links_sky_stratum_ad;
+            DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
+        ").map_err(|e| format!("Failed to drop old stratum triggers: {}", e))?;
+    }
 
     // Drop diagnostic + any prior separate stratum AI / AU triggers.
     // BUG-011 investigation uncovered that on this SQLite build,
@@ -5881,11 +5914,14 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // help). Workaround: inline the stratum + maturity UPDATE into
     // the existing MIG-001 note_meta_sky_ai body so it's one trigger,
     // one body, no multi-trigger dispatch.
-    conn.execute_batch("
-        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai_DIAG;
-        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
-        DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
-    ").map_err(|e| format!("drop AI/AU legacy stratum: {}", e))?;
+    // PJ-302 — `owns`-gated. See the note on the foreign door above `init_db_scoped`.
+    if owns {
+        conn.execute_batch("
+            DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai_DIAG;
+            DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
+            DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
+        ").map_err(|e| format!("drop AI/AU legacy stratum: {}", e))?;
+    }
 
     // PJ-232 — `stratum_sql_expr()` reads the ACTIVE universe's registry. See above.
     if owns {
@@ -5921,13 +5957,16 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     //
     // DROP first (same pattern as §4 / §96) so formula changes on
     // version bumps pick up the new body.
-    conn.execute_batch("
-        DROP TRIGGER IF EXISTS note_meta_sky_maturity_ai;
-        DROP TRIGGER IF EXISTS note_meta_sky_maturity_au;
-        DROP TRIGGER IF EXISTS note_links_sky_maturity_ai;
-        DROP TRIGGER IF EXISTS note_links_sky_maturity_ad;
-        DROP TRIGGER IF EXISTS note_links_sky_maturity_au;
-    ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
+    // PJ-302 — `owns`-gated. See the note on the foreign door above `init_db_scoped`.
+    if owns {
+        conn.execute_batch("
+            DROP TRIGGER IF EXISTS note_meta_sky_maturity_ai;
+            DROP TRIGGER IF EXISTS note_meta_sky_maturity_au;
+            DROP TRIGGER IF EXISTS note_links_sky_maturity_ai;
+            DROP TRIGGER IF EXISTS note_links_sky_maturity_ad;
+            DROP TRIGGER IF EXISTS note_links_sky_maturity_au;
+        ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
+    }
 
     // PJ-232 — `maturity_sql_expr()` reads the ACTIVE universe's registry. See above.
     if owns {
@@ -5964,8 +6003,17 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // PJ-232 — the trigger BODIES are generated from `link_types::snapshot()`, the
     // ACTIVE universe's registry. Creating them in a foreign database would persist our
     // link vocabulary into someone else's `sqlite_master`. The owner creates them
-    // correctly on its own next launch; until then nobody writes through them, because
-    // the parent attaches a cUniverse read-only.
+    // correctly on its own next launch.
+    //
+    // **PJ-302 — the sentence that used to end this paragraph was "until then nobody
+    // writes through them, because the parent attaches a cUniverse read-only." MIG-111
+    // Phase 1.2 is the change that falsifies it**, which is why the routed context pool
+    // must PROBE a child's trigger set and refuse when it is incomplete, rather than
+    // create it here. Note the asymmetry this gate already had, and which PJ-302's test
+    // exposed: `drop_outgoing_link_triggers` lives INSIDE `create_outgoing_link_triggers`
+    // (see its first line), so the outgoing family is neither dropped nor created for a
+    // foreign database — it survives. It was the note_meta sky family, whose DROPs sat
+    // outside their gates, that a foreign init stripped and did not restore.
     if owns {
         create_outgoing_link_triggers(&conn)?;
     }
@@ -5974,7 +6022,12 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // Drop any incoming triggers a prior §C.2a build left in this DB; maintenance
     // now runs as a save-path Rust diff (maintain_incoming_after_save) that
     // recomputes ONLY changed targets, and reconcile recomputes all authoritatively.
-    let _ = drop_incoming_link_triggers(&conn);
+    // PJ-302 — `owns`-gated: shedding a foreign universe's obsolete triggers is its
+    // owner's job, done on its own next launch. The foreign door migrates SCHEMA and
+    // mutates no trigger, in either direction.
+    if owns {
+        let _ = drop_incoming_link_triggers(&conn);
+    }
 
     // Safety-inspection 2026-08-01 — crash-mid-reconcile self-heal for the OUTGOING
     // aggregates. reconcile_filesystem persists the `outgoing_triggers_dropped`
