@@ -1171,6 +1171,7 @@ Un panneau par Univers ou vous fixez la facon dont le moteur arabe analyse certa
 | `Ctrl+,` | Parametres |
 | `Ctrl+Shift+F` | Rechercher dans la bibliotheque |
 | `Ctrl+Shift+N` | Second ecran |
+| `Ctrl+Shift+T` | Nouvel onglet |
 
 ### Editeur
 
@@ -1195,6 +1196,18 @@ Un panneau par Univers ou vous fixez la facon dont le moteur arabe analyse certa
 | `0` | Reinitialiser la rotation 3D |
 | `W/A/S/D/Q/E` | Voler en 3D |
 | `Escape` | Fermer la Vue Etoiles |
+
+<a id="customising-hotkeys"></a>
+
+### Personnaliser les raccourcis
+
+Chaque raccourci ci-dessus est une **valeur par défaut**, non une règle figée. Ouvrez **Paramètres → Raccourcis clavier** pour attribuer à n'importe quelle commande les touches de votre choix.
+
+- La liste présente toutes les commandes de Constellation. Utilisez **Filtrer les commandes** en haut pour en trouver une par son nom ou par ses touches actuelles.
+- Cliquez sur les touches à côté d'une commande — ou sur **Non défini**, si elle n'en a pas — et la ligne devient **Appuyez sur les touches...**. Appuyez sur la combinaison souhaitée : elle est enregistrée. Cliquez ailleurs pour annuler.
+- **Réinitialiser** apparaît dès qu'une commande a été personnalisée et ramène cette seule commande à sa valeur par défaut. **Supprimer** supprime entièrement le raccourci d'une commande.
+- Certaines combinaisons sont refusées, et la ligne en donne la raison : une lettre ou un chiffre seul sans touche de modification (les touches de fonction comme `F2` sont acceptées), `Escape`, ainsi que les touches dont l'éditeur de notes a lui-même besoin — `Ctrl+Z`, `Ctrl+Y`, `Ctrl+X`, `Ctrl+C`, `Ctrl+V`, `Ctrl+A`, `Ctrl+F`, `Ctrl+L` et les flèches avec `Ctrl`. Si une autre commande répond déjà à cette combinaison, Constellation la nomme plutôt que de laisser les deux entrer en conflit.
+- Sur macOS, les mêmes attributions s'affichent avec `⌘` et `⇧`.
 
 ---
 

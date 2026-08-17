@@ -1898,6 +1898,7 @@ The scorecard is read-only; to refresh it, close Constellation and relaunch, the
 | `Ctrl+,` | Settings |
 | `Ctrl+Shift+F` | Search library |
 | `Ctrl+Shift+N` | Second screen |
+| `Ctrl+Shift+T` | New tab |
 
 ### Editor
 
@@ -1924,6 +1925,18 @@ The scorecard is read-only; to refresh it, close Constellation and relaunch, the
 | `0` | Reset 3D rotation |
 | `W/A/S/D/Q/E` | Fly through 3D |
 | `Escape` | Close Sky View |
+
+<a id="customising-hotkeys"></a>
+
+### Customising your shortcuts
+
+Every shortcut above is a **default**, not a fixed rule. Open **Settings → Hotkeys** to give any command the keys you prefer.
+
+- The list shows every command Constellation has. Use **Filter commands** at the top to find one by name or by its current keys.
+- Click the keys beside a command — or **Not set**, if it has none — and the row changes to **Press keys...**. Press the combination you want and it is saved. Click anywhere else to cancel.
+- **Reset** appears once a command has been customised and returns that one command to its default. **Clear** removes a command's shortcut entirely.
+- Some combinations are refused, and the row tells you why: a plain letter or digit with no modifier key (function keys such as `F2` are fine), `Escape`, and the keys the note editor needs for itself — `Ctrl+Z`, `Ctrl+Y`, `Ctrl+X`, `Ctrl+C`, `Ctrl+V`, `Ctrl+A`, `Ctrl+F`, `Ctrl+L` and the `Ctrl` arrow keys. If another command already answers to the combination, Constellation names it instead of letting the two collide.
+- On macOS the same bindings appear with `⌘` and `⇧`.
 
 ---
 

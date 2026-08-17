@@ -1201,6 +1201,7 @@ Um painel por Universo onde voce fixa como o motor arabe analisa certas formas d
 | `Ctrl+,` | Configuracoes |
 | `Ctrl+Shift+F` | Buscar na biblioteca |
 | `Ctrl+Shift+N` | Segunda tela |
+| `Ctrl+Shift+T` | Nova aba |
 
 ### Editor
 
@@ -1225,6 +1226,18 @@ Um painel por Universo onde voce fixa como o motor arabe analisa certas formas d
 | `0` | Redefinir rotacao 3D |
 | `W/A/S/D/Q/E` | Voar em 3D |
 | `Escape` | Fechar Vista Estelar |
+
+<a id="customising-hotkeys"></a>
+
+### Personalizar os atalhos
+
+Cada atalho acima é um **valor predefinido**, não uma regra fixa. Abra **Configurações → Atalhos de teclado** para dar a qualquer comando as teclas que preferir.
+
+- A lista mostra todos os comandos do Constellation. Use **Filtrar comandos** no topo para encontrar um comando pelo nome ou pelas teclas atuais.
+- Clique nas teclas ao lado de um comando — ou em **Não definido**, se não tiver nenhuma — e a linha muda para **Pressione teclas...**. Prima a combinação pretendida e ela fica guardada. Clique noutro sítio para cancelar.
+- **Redefinir** aparece depois de um comando ser personalizado e devolve apenas esse comando ao valor predefinido. **Remover** remove por completo o atalho de um comando.
+- Algumas combinações são recusadas, e a linha explica porquê: uma letra ou algarismo isolado sem tecla modificadora (teclas de função como `F2` são aceites), `Escape`, e as teclas de que o editor de notas precisa para si próprio — `Ctrl+Z`, `Ctrl+Y`, `Ctrl+X`, `Ctrl+C`, `Ctrl+V`, `Ctrl+A`, `Ctrl+F`, `Ctrl+L` e as setas com `Ctrl`. Se outro comando já responder a essa combinação, o Constellation nomeia-o em vez de deixar os dois colidirem.
+- No macOS as mesmas atribuições surgem com `⌘` e `⇧`.
 
 ---
 

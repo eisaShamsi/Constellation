@@ -1104,3 +1104,109 @@ have shipped. The suite was green at every single round.
 
 **Related.** LL-045 / LL-045b (existence vs reachability — the same disease in the UI dimension);
 *Don't Make Things Up*; *No Guessing — Investigate*.
+
+---
+
+## LL-047: SHARED MUTABLE STATE MAKES "WHICH VOCABULARY?" A QUESTION ABOUT *WHEN*, NOT ABOUT *WHERE*
+
+**Symptom (MIG-111 Phase 1.2 harness, 2026-08-17).** The H1 harness's determinism test failed on
+its very first run. Identical note, identical vocabulary installed, identical database schema — two
+different answers:
+
+```
+run A: edges [("source.md", "target",          "refutes")]      incoming_types "refutes (1)"
+run B: edges [("source.md", "refutes::target", "associative")]  incoming_types ""
+```
+
+**Mechanism.** `link_types::REGISTRY` is a **process-global** `OnceLock<RwLock<…>>`, and the 26 call
+sites that read it through `snapshot()` do so **at call time**. A sibling test running concurrently
+called `set_active` with a different vocabulary; it reached back into a database that was already
+open and a note that was already written, and changed what the index produced. Nothing about the
+connection, the file, or the schema was involved. Only the clock was.
+
+**Why it is a lesson and not a test-hygiene footnote.** It arrived *before* the code it constrains
+existed, and it eliminated the design that Phase 1.2 was most likely to reach for:
+
+> open the child universe's connection → `set_active` the child's vocabulary → write → restore.
+
+That shape has a window, and Constellation is full of things that land in windows: the active
+universe's own 1500 ms debounced save, a backfill tick, the file watcher's adopt path. Any of them
+firing mid-window computes with the wrong vocabulary and stores the answer in the child's rows —
+**with every row count still correct**, which is precisely why nothing would surface it.
+
+**The rule.** When an operation must run "under" some context (a vocabulary, a locale, a universe, a
+tenant), **carry the context through the call or bind it to the connection — never install it into
+shared state for a duration.** A duration is a window, and a window is a bug waiting for a
+scheduler. If the ambient global cannot be avoided today, the operation must hold exclusion across
+its *entire* extent, and that exclusion must be stated as a precondition rather than assumed.
+
+**What made it findable.** The harness compared **aggregate VALUES, not row counts** — the exact
+thing the Architect's adversarial pass demanded for H1. A row-counting harness would have reported
+`link_rows: 1` on both runs and declared them equal. This is the fourth consecutive time in MIG-111
+that the same failure shape appeared: *proving a property over the part you happened to look at*
+(the writers the plan named vs. the writers that exist; `gate_rmw` counted in one file while another
+bypassed; a guard's source position asserted instead of its behaviour; now a shape asserted instead
+of its values).
+
+**Pinned by.** `federation::vocab_harness::a_vocabulary_swap_reaches_back_into_an_already_open_database`
+— which asserts the coupling *is present*, so that if a future change makes the vocabulary a genuine
+property of the connection, the test fails loudly and 1.2's design premise gets re-examined rather
+than silently outliving its reason.
+
+**Related.** LL-046 (a guard is only as good as the fact it derives from); *Solve-the-Class, Not the
+Instance*; the Write-Time Derivation rule, whose "reads are cheap lookups" guarantee is void when
+what was written depended on ambient state at write time.
+
+---
+
+## LL-048: A TEST THAT DRIVES THE PURE FUNCTION HAS NOT TESTED THE CALLER — and the wrapper is where the form changes
+
+**Symptom (MIG-111 Phase 1.1, found by the per-build inspection 2026-08-17).** `federation/owner.rs`
+shipped with nine tests, all green, over a module whose **app entry point returned the inverted
+answer**. `resolve_owner_in` — the pure decision function — was correct. `resolve_owner` — the only
+thing the app can actually call — was not.
+
+**Mechanism.** `resolve_child_universe_roots_recursive` builds the federation list with
+`fs::canonicalize`, which on Windows returns the verbatim `\?\E:\…` form. The active root does not
+go through it: it comes raw from the registry. `norm()` folded slashes and case but had no idea a
+verbatim prefix existed, so `//?/e:/u/linked` could never contain `e:/u/linked/their lib/x.md`.
+
+The consequences were exactly the two failures the module's header claims to defeat:
+
+- **A nested linked universe** — the DEFAULT shape under MIG-108 — silently resolved to the **ACTIVE
+  PARENT** with `is_active: true`. That is attack H3, defeated in the pure function and reintroduced
+  by the wrapper. Routing on that answer writes a child universe's rows into the parent's database,
+  with no error and every row count still correct.
+- **A linked sibling** failed the other way and became permanently unroutable.
+
+**Why every test passed.** All nine drove `resolve_owner_in` with hand-built **raw** `PathBuf`s. Not
+one of them used the form the app supplies. The tests proved the decision logic and never touched
+the place where the decision meets reality.
+
+**This is the second occurrence of one shape in a single migration.** In §0.4 the base guard
+compared a canonicalized path against raw registry roots and **could never fire**, and its test
+passed because it asserted where the call *sat* rather than whether it *fired*. Same disease, one
+layer over: *proving a property over the part you happened to look at.*
+
+**The rules.**
+
+1. **Every pure/wrapper pair needs at least one test that enters through the WRAPPER**, in the form
+   the production caller actually produces. If the wrapper needs an `AppHandle` and cannot be
+   unit-tested, then feed the pure function the **exact value the wrapper would build** — here,
+   `std::fs::canonicalize(&child).unwrap()`, so the OS states the premise instead of me asserting it.
+2. **Do not fix it by promising to pass the right form.** That is a promise every future caller must
+   keep, and this codebase has now broken it twice in one migration. `norm` strips the verbatim
+   prefix, so the comparison is **total over path forms** and no caller can get it wrong. Replace the
+   promise a caller must remember with a structure that cannot forget.
+3. **A comment asserting where data comes from is a claim that decays** (LL-043). This module's
+   header said the roots "come from `universe.json` and the active-universe pointer, which are raw"
+   — false on the federation side, on the very day it was written, because the author had read the
+   *source of the list* and not the *function that builds it*.
+4. **One place, one identity.** The same defect produced a second, quieter one: `Owner.root` came
+   back raw from the active branch and verbatim from the federation branch, so one universe had two
+   string identities for any downstream pool key or lock key. Two keys for one resource is not a
+   weaker lock — it is **no lock**.
+
+**Related.** LL-046 (a guard is only as good as the fact it derives from); LL-047 (the same "which
+context is in force?" question in the time dimension); the §0.4 dead no-op documented at
+`bases.rs:38-45`.

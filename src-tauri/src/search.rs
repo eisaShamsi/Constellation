@@ -2634,7 +2634,7 @@ fn resolve_incoming_target_paths(
 /// Each affected note's recompute is the index-seeking `incoming_aggregate_assignments`
 /// (~ms). Gated on the incoming stamp by the caller; best-effort (reconcile is the
 /// authoritative self-heal).
-fn maintain_incoming_after_save(
+pub(crate) fn maintain_incoming_after_save(
     conn: &Connection,
     note_path: &str,
     old_targets: &std::collections::HashSet<String>,

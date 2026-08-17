@@ -41,6 +41,7 @@ pub mod failure;
 pub mod migrate;
 pub mod owner;
 pub mod query;
+pub mod vocab_harness;
 
 #[cfg(test)]
 mod tests;

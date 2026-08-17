@@ -1172,6 +1172,7 @@ Arapça motorun belirli yüzey biçimlerini nasıl çözümleyeceğini sabitledi
 | `Ctrl+,` | Ayarlar |
 | `Ctrl+Shift+F` | Kütüphanede ara |
 | `Ctrl+Shift+N` | İkinci ekran |
+| `Ctrl+Shift+T` | Yeni sekme |
 
 ### Düzenleyici
 
@@ -1196,6 +1197,18 @@ Arapça motorun belirli yüzey biçimlerini nasıl çözümleyeceğini sabitledi
 | `0` | 3D döndürmeyi sıfırla |
 | `W/A/S/D/Q/E` | 3D'de uç |
 | `Escape` | Sky View'ı kapat |
+
+<a id="customising-hotkeys"></a>
+
+### Kısayolları özelleştirme
+
+Yukarıdaki her kısayol bir **varsayılandır**, değişmez bir kural değil. Herhangi bir komuta dilediğiniz tuşları vermek için **Ayarlar → Kısayol Tuşları** bölümünü açın.
+
+- Liste Constellation'ın tüm komutlarını gösterir. Üstteki **Komutları filtrele** ile bir komutu adından ya da geçerli tuşlarından bulabilirsiniz.
+- Bir komutun yanındaki tuşlara — hiç yoksa **Ayarlanmamış** üzerine — tıklayın; satır **Tuşlara basın...** hâline gelir. İstediğiniz bileşimi basın, kaydedilir. Vazgeçmek için başka bir yere tıklayın.
+- **Sıfırla** bir komut özelleştirildikten sonra belirir ve yalnızca o komutu varsayılanına döndürür. **Kaldır** ise komutun kısayolunu tümüyle kaldırır.
+- Bazı bileşimler reddedilir ve satır nedenini söyler: değiştirici tuş olmadan tek bir harf veya rakam (`F2` gibi işlev tuşları uygundur), `Escape` ve not düzenleyicinin kendisi için gereken tuşlar — `Ctrl+Z`, `Ctrl+Y`, `Ctrl+X`, `Ctrl+C`, `Ctrl+V`, `Ctrl+A`, `Ctrl+F`, `Ctrl+L` ve `Ctrl` ile ok tuşları. Bileşime başka bir komut zaten yanıt veriyorsa, Constellation ikisinin çakışmasına izin vermek yerine o komutun adını söyler.
+- macOS'ta aynı atamalar `⌘` ve `⇧` ile görünür.
 
 ---
 

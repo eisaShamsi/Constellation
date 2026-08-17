@@ -1205,6 +1205,7 @@ Ein Panel pro Universum, in dem Sie festlegen, wie die Arabisch-Engine bestimmte
 | `Ctrl+,` | Einstellungen |
 | `Ctrl+Shift+F` | Bibliothek durchsuchen |
 | `Ctrl+Shift+N` | Zweiter Bildschirm |
+| `Ctrl+Shift+T` | Neuer Tab |
 
 ### Editor
 
@@ -1229,6 +1230,18 @@ Ein Panel pro Universum, in dem Sie festlegen, wie die Arabisch-Engine bestimmte
 | `0` | 3D-Rotation zuruecksetzen |
 | `W/A/S/D/Q/E` | Durch 3D fliegen |
 | `Escape` | Sternenansicht schliessen |
+
+<a id="customising-hotkeys"></a>
+
+### Kurzbefehle anpassen
+
+Jeder Kurzbefehl oben ist eine **Voreinstellung**, keine feste Regel. Öffnen Sie **Einstellungen → Tastenkürzel**, um einem Befehl die Tasten Ihrer Wahl zu geben.
+
+- Die Liste zeigt alle Befehle von Constellation. Mit **Befehle filtern** oben finden Sie einen Befehl über den Namen oder die aktuellen Tasten.
+- Klicken Sie auf die Tasten neben einem Befehl — oder auf **Nicht gesetzt**, wenn keine gesetzt sind — und die Zeile wechselt zu **Tasten drücken...**. Drücken Sie die gewünschte Kombination; sie wird gespeichert. Ein Klick woanders bricht ab.
+- **Zurücksetzen** erscheint, sobald ein Befehl angepasst wurde, und setzt genau diesen Befehl zurück. **Entfernen** entfernt den Kurzbefehl vollständig.
+- Manche Kombinationen werden abgelehnt, und die Zeile nennt den Grund: ein einzelner Buchstabe oder eine Ziffer ohne Modifikatortaste (Funktionstasten wie `F2` sind erlaubt), `Escape` sowie die Tasten, die der Notizeditor selbst braucht — `Ctrl+Z`, `Ctrl+Y`, `Ctrl+X`, `Ctrl+C`, `Ctrl+V`, `Ctrl+A`, `Ctrl+F`, `Ctrl+L` und die `Ctrl`-Pfeiltasten. Antwortet bereits ein anderer Befehl auf die Kombination, nennt Constellation ihn, statt beide kollidieren zu lassen.
+- Unter macOS erscheinen dieselben Belegungen mit `⌘` und `⇧`.
 
 ---
 
