@@ -580,7 +580,6 @@ pub fn active_if_non_empty() -> Option<Arc<OverrideStore>> {
 /// bit **before** the swap; non-empty→empty transitions flip the bit
 /// **after** the swap.
 pub fn set_active(store: OverrideStore) {
-    let is_empty = store.is_empty();
     // PJ-307 — the bit and the swap are maintained under ONE held write guard, exactly as
     // `set_sovereign_layer` already does.
     //
@@ -598,7 +597,8 @@ pub fn set_active(store: OverrideStore) {
     // tokenizer path stems every Arabic token as though the user had authored no overrides —
     // silently, with `active()` still reporting the correct store, so every len()/layer_count()
     // diagnostic and the Settings panel look healthy while the index diverges.
-    publish(store);
+    let mut guard = store_lock().write().expect("arabic override lock poisoned");
+    publish_under(&mut guard, store);
 }
 
 /// **PJ-307 — the ONE place `ACTIVE_STORE_EMPTY` and the store are published together.**
@@ -621,17 +621,19 @@ pub fn set_active(store: OverrideStore) {
 ///
 /// Extracting this is the fix rather than repeating the ordering in both writers, because "both
 /// callers remember the discipline" is the promise that was already broken once.
-fn publish(store: OverrideStore) {
+fn publish_under(
+    guard: &mut std::sync::RwLockWriteGuard<'_, Arc<OverrideStore>>,
+    store: OverrideStore,
+) {
     let is_empty = store.is_empty();
-    let mut guard = store_lock().write().expect("arabic override lock poisoned");
-    // Empty → non-empty: bit BEFORE the swap. A reader who sees `false` falls through to the
-    // RwLock and reads either the old or new store — both safe to route through the slow path.
+    // Empty -> non-empty: bit BEFORE the swap. A reader who sees `false` falls through to the
+    // RwLock and reads either the old or new store - both safe to route through the slow path.
     if !is_empty {
         ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
     }
-    *guard = Arc::new(store);
-    // Non-empty → empty: bit AFTER the swap, so a reader seeing `true` is guaranteed the store
-    // it would have read is empty — safe to skip the lock.
+    **guard = Arc::new(store);
+    // Non-empty -> empty: bit AFTER the swap, so a reader seeing `true` is guaranteed the store
+    // it would have read is empty - safe to skip the lock.
     if is_empty {
         ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
     }
@@ -665,11 +667,25 @@ pub fn set_sovereign_layer(sovereign: OverrideStore) {
         new_layers.push(child.clone());
     }
     let new_store = OverrideStore { layers: new_layers };
-    // PJ-307 — release the guard, then publish through the single shared publisher, so the
-    // ordering discipline lives in exactly one place. `publish` re-acquires; the gap is safe
-    // because a concurrent writer landing in it publishes a fully coherent state of its own.
-    drop(guard);
-    publish(new_store);
+    // PJ-307b — publish UNDER the guard this function already holds.
+    //
+    // The first version of this fix did `drop(guard); publish(new_store);` and justified it in a
+    // comment: "the gap is safe because a concurrent writer landing in it publishes a fully
+    // coherent state of its own." **That comment was false**, and it shipped in a673a548. Their
+    // state is coherent; this function then OVERWRITES it with `new_layers`, which were built
+    // from a `prior` read before the gap. A universe switch landing in that window has its whole
+    // layered store — including every child-universe layer it just loaded — clobbered by a store
+    // derived from the previous universe's.
+    //
+    // Stated directionally rather than as a severity ranking, because "strictly worse" would not
+    // survive a challenge — both defects need the same microsecond-wide collision. The honest
+    // statement: **the fix took a function that was already safe and made it unsafe**, in order to
+    // correct a flag-ordering problem in its neighbour.
+    //
+    // The read-modify-write (`prior` -> `new_layers` -> swap) must be ATOMIC, which it was before
+    // this fix touched it. Passing the held guard keeps that atomicity AND keeps the bit/swap
+    // ordering in exactly one place, which was the whole point of extracting it.
+    publish_under(&mut guard, new_store);
 }
 
 /// Load a single override file from a Universe and install it as the
