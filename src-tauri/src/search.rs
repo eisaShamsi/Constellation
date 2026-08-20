@@ -13801,27 +13801,75 @@ pub fn reindex_notes_matching_text(
     }
 
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
-    let mut count: u32 = 0;
-    for (rowid, name, body_text) in &rows {
-        // Delete the existing FTS row, then re-insert so the tokenizer
-        // runs again with the current ACTIVE_STORE in scope.
-        let del = conn.execute(
-            "INSERT INTO notes_fts(notes_fts, rowid, name, body_text) VALUES('delete', ?1, ?2, ?3)",
-            params![rowid, name, body_text],
-        );
-        if del.is_err() {
-            continue;
-        }
-        let ins = conn.execute(
-            "INSERT INTO notes_fts(rowid, name, body_text) VALUES (?1, ?2, ?3)",
-            params![rowid, name, body_text],
-        );
-        if ins.is_ok() {
+    let attempted = rows.len();
+    // PJ-316 — a row that cannot be re-tokenized ABORTS the pass and ROLLS BACK, instead of being
+    // silently skipped while the caller is told the whole thing succeeded.
+    //
+    // What this loop used to do: `if del.is_err() { continue; }`, count only on `ins.is_ok()`,
+    // COMMIT unconditionally, return `Ok(count)`. A row whose delete failed kept its OLD
+    // tokenization — the override the user had just authored did not apply to it — and the panel
+    // rendered a green "Reindexed N notes" over that. Reproduced 2026-08-17: three rows, one
+    // failing statement, `Ok(2)` returned over 3 attempted, success shown, the untouched note
+    // still carrying its pre-override stems.
+    //
+    // PJ-316b — **the first version of this fix left the transaction OPEN on the abort path.**
+    // `BEGIN IMMEDIATE` is issued by hand above, and an early `?` returns without COMMIT or
+    // ROLLBACK, so the connection stays mid-write for the rest of the session: every later
+    // `search.db` write looks saved, is invisible to the rest of the app, and is DISCARDED at
+    // exit. Per CLAUDE.md that file is today the only home for the earned half of the Living Link
+    // Architecture — traversal counts, weights, confidence promotions, archived links. A comment
+    // here claimed "`?` rolls everything back"; it did not. This codebase graded that exact shape
+    // HIGH ten days earlier and wrote `converge::commit_or_rollback` (converge.rs:364) so it could
+    // not recur; the shape below is `run_tag_counts` (converge.rs:374-385) verbatim.
+    //
+    // What is NOT claimed: the worse shape — delete succeeds, insert fails, note disappears from
+    // search — could NOT be reproduced. Both statements carry the same payload, so a value-based
+    // error hits the delete first; and the capacity route that would hit only the insert
+    // (SQLITE_FULL) also fails the commit, which rolls back. The defect fixed here is the FALSE
+    // SUCCESS, not a demonstrated loss.
+    //
+    // Aborting beats continuing for an FTS refresh: the rows share one transaction, a partial pass
+    // has no value the caller can use, and the rollback leaves the index exactly as it was rather
+    // than half-refreshed. The short-count check lives INSIDE the transaction so that it, too, can
+    // still roll back — outside it, it would report an error over a partial refresh already made
+    // permanent by the commit.
+    let refreshed: Result<u32, String> = (|| {
+        let mut count: u32 = 0;
+        for (rowid, name, body_text) in &rows {
+            // Delete the existing FTS row, then re-insert so the tokenizer
+            // runs again with the current ACTIVE_STORE in scope.
+            conn.execute(
+                "INSERT INTO notes_fts(notes_fts, rowid, name, body_text) VALUES('delete', ?1, ?2, ?3)",
+                params![rowid, name, body_text],
+            )
+            .map_err(|e| format!("Could not refresh the search index for {name} (removing its old entry): {e}"))?;
+            conn.execute(
+                "INSERT INTO notes_fts(rowid, name, body_text) VALUES (?1, ?2, ?3)",
+                params![rowid, name, body_text],
+            )
+            .map_err(|e| format!("Could not refresh the search index for {name} (adding its new entry): {e}"))?;
             count += 1;
         }
+        if count as usize != attempted {
+            // Unreachable today (every failure returns above); kept so a future edit that
+            // reintroduces a skip cannot commit a partial pass.
+            return Err(format!(
+                "The search index was only partly refreshed ({count} of {attempted} notes)."
+            ));
+        }
+        Ok(count)
+    })();
+
+    match refreshed {
+        Ok(count) => {
+            crate::converge::commit_or_rollback(conn)?;
+            Ok(count)
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            Err(e)
+        }
     }
-    conn.execute_batch("COMMIT").map_err(|e| e.to_string())?;
-    Ok(count)
 }
 
 /// Return incoming link counts for all notes from the search database.
@@ -14307,6 +14355,68 @@ mod tests_m8c {
             1,
             "sentinel stem must be present in FTS after reindex"
         );
+
+        cleanup(&dir);
+    }
+
+    /// **PJ-316 — a partial refresh must not be reported as a success.**
+    ///
+    /// The loop used to `continue` past a row whose FTS delete failed, count only the rows whose
+    /// insert succeeded, COMMIT regardless, and return `Ok(count)`. The Settings panel renders any
+    /// `Ok` as a green "Reindexed N notes", so a note that kept its PRE-override tokenization —
+    /// i.e. the override the user just authored silently not applying to it — was indistinguishable
+    /// from a clean run.
+    ///
+    /// Reproduced 2026-08-17 against real external-content FTS5 (SQLite 3.50.4): three rows, one
+    /// failing statement, `Ok(2)` returned over 3 attempted, success shown, the untouched note
+    /// still carrying its old stems.
+    ///
+    /// **Scope, stated because the register overstated it:** the worse shape — delete succeeds,
+    /// insert fails, note vanishes from search — was NOT reproducible. Both statements carry the
+    /// same payload so a value-based error hits the delete first, and the capacity route that
+    /// would hit only the insert (`SQLITE_FULL`) also fails the COMMIT, which already propagates
+    /// and rolls the pass back. This test therefore pins the FALSE SUCCESS, which is what was
+    /// demonstrated — not a data-loss claim that was not.
+    ///
+    /// It drives the real `reindex_notes_matching_text`, not a re-implementation of its loop
+    /// (LL-048: a test over a copy of the logic keeps passing after the original changes).
+    #[test]
+    fn pj316_a_row_that_cannot_be_refreshed_is_reported_not_skipped() {
+        let _g = OverrideTestGuard::new();
+        let dir = unique_tmp_dir("pj316");
+        let state = seeded_state(&dir, "/notes/a.md", "خليفة راشدة");
+
+        // Baseline: the row refreshes cleanly and the count equals the rows attempted.
+        let ok = reindex_notes_matching_text(&state, "خليفة").expect("clean pass must succeed");
+        assert_eq!(ok, 1, "one mentioning row, one refreshed");
+
+        // Now make the FTS write impossible for the whole pass, the way a real capacity or I/O
+        // failure would. The contract under test is the SHAPE of the answer: a pass that cannot
+        // do all its work must return Err, never Ok over a smaller count.
+        {
+            let db = state.db.lock().expect("db lock");
+            let conn = db.as_ref().expect("conn");
+            conn.execute_batch("DROP TABLE notes_fts").expect("drop fts");
+        }
+        let outcome = reindex_notes_matching_text(&state, "خليفة");
+        assert!(
+            outcome.is_err(),
+            "a refresh that cannot complete must be an Err the panel can surface — got {outcome:?}, which the Settings panel would paint as a green success over work that did not happen"
+        );
+
+        // PJ-316b — THE ASSERTION THAT WAS MISSING, and the reason it matters more than the one
+        // above: the first version of this fix returned exactly that Err while leaving the
+        // hand-opened `BEGIN IMMEDIATE` transaction OPEN. The test above passed over it unchanged.
+        // A connection left mid-transaction silently discards every later `search.db` write at
+        // exit — traversal counts, weights, confidence promotions, archived links.
+        {
+            let db = state.db.lock().expect("db lock");
+            let conn = db.as_ref().expect("conn");
+            assert!(
+                conn.is_autocommit(),
+                "the failed refresh left the connection inside an open transaction — every subsequent search.db write this session would be discarded at exit"
+            );
+        }
 
         cleanup(&dir);
     }
