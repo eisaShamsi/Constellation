@@ -1243,11 +1243,24 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
         let existing_canon = fs::canonicalize(&existing.path)
             .unwrap_or_else(|_| PathBuf::from(&existing.path));
         if existing_canon == canon {
-            // Already registered — just activate it
-            let state = app.state::<UniverseState>();
-            let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-            *lock = Some(canon.clone());
-            crate::universe_lock::activate(&canon); // MIG-111 0.2 (R5)
+            // PJ-310 — REGISTER ONLY. Activation belongs to `set_active_universe`, the one door
+            // that does it completely.
+            //
+            // This used to set the in-memory active pointer and take the OS folder lock here, and
+            // that is exactly half a switch: `set_active_universe` also calls
+            // `invalidate_libraries_cache` (:1051), `invalidate_search_state` (:1061) and
+            // `activate_layered_for_universe` (:1077). Without the middle one,
+            // `ensure_search_db_ready` early-returns on `state.db.is_some()`, so the connection to
+            // the PREVIOUS universe's `search.db` stays open — the app believes it is in universe
+            // B while every search and every index write goes to universe A's database. That is
+            // the class MIG-111 exists to end, shipped and reachable from the Universe Manager.
+            //
+            // `create_universe`, the oldest and most-used door, already worked this way: it never
+            // writes the pointer and leaves activation to its caller. This makes the registration
+            // doors match the one that was already right, rather than inventing a new rule.
+            //
+            // `registry.active_id` + `save_registry` STAY: that is the user's durable intent, and
+            // the correct door rewrites it anyway.
             registry.active_id = Some(existing.id.clone());
             save_registry(&app, &registry)?;
             return Ok(existing.clone());
@@ -1310,11 +1323,8 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     // Ensure universe notes folder is registered
     ensure_universe_notes_folder(universe_dir)?;
 
-    // Set managed state
-    let state = app.state::<UniverseState>();
-    let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(universe_dir.to_path_buf());
-    crate::universe_lock::activate(universe_dir); // MIG-111 0.2 (R5)
+    // PJ-310 — REGISTER ONLY; activation belongs to `set_active_universe`. See the note in the
+    // already-registered branch above for why half a switch is worse than none.
 
     Ok(entry)
 }
@@ -1431,11 +1441,8 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
     registry.active_id = Some(entry.id.clone());
     save_registry(&app, &registry)?;
 
-    // Set managed state
-    let state = app.state::<UniverseState>();
-    let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(library_dir.to_path_buf());
-    crate::universe_lock::activate(library_dir); // MIG-111 0.2 (R5)
+    // PJ-310 — REGISTER ONLY; activation belongs to `set_active_universe`. Its caller
+    // (`UniverseSetup.handleLinkLibrary`) already calls it immediately after this returns.
 
     Ok(entry)
 }

@@ -139,7 +139,34 @@
 			if (!result) return;
 			error = '';
 			creating = true;
-			await openExistingUniverse(result);
+			// PJ-310 — `open_existing_universe` REGISTERS; it does not activate. Every other
+			// caller already follows it with the one door that switches completely
+			// (`UniverseSetup.handleLinkLibrary`, and `handleUniverseCreated` for the setup
+			// flow). This one did not, so the Rust side moved its active-universe pointer while
+			// the libraries cache, the search-DB connection and the Arabic override store all
+			// still belonged to the previous universe — the app reading and writing universe A's
+			// index while believing it was in B.
+			//
+			// Mirrors `handleSwitch` above, including the departure flush: a switch that skips it
+			// can lose an unsaved edit in the universe being left.
+			const entry = await openExistingUniverse(result);
+			// PJ-310b — and including its FIRST line, which the first version of this dropped.
+			// `handleSwitch` opens with `if (id === activeId) return;`. Without the equivalent
+			// here, picking the universe you are ALREADY in runs the full teardown and re-init
+			// for nothing — measured at roughly ten seconds on the Boss's 8,031-note universe
+			// (its own boot log: 9,969 ms hydration). The guard has to come AFTER the register
+			// call, because that call is what tells us which universe the folder actually is.
+			if (entry.id === activeId) {
+				await refresh();
+				creating = false;
+				return;
+			}
+			if (onBeforeSwitch) {
+				try { await onBeforeSwitch(); } catch { /* net + banner hold it */ }
+			}
+			await setActiveUniverse(entry.id);
+			activeId = entry.id;
+			onSwitch();
 			await refresh();
 		} catch (e: unknown) {
 			error = e instanceof Error ? e.message : String(e);

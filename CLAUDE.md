@@ -528,6 +528,49 @@ Agent({ subagent_type: 'ui-inspector',     prompt: '<the complete draft, verbati
 
 **Not skippable for a "small" test.** The §6 tutorial that caused this was three lines long and contained two inventions.
 
+## The Panel Speaks First (top of all rules — Boss-mandated 2026-08-18, LAW)
+
+> "Before ask for my ruling or testing something, pass it to the panel. I want to hear their voices." — Eisa, 2026-08-18
+
+**Nothing reaches the Boss un-panelled.** Before I ask him to rule on anything, and before I send him
+anything to test, it goes to the panel first — and what reaches him carries *their* verdict, not only
+mine.
+
+**What this gates.** Every ruling request ("fix now or after?", "revert or fix?", "accept this
+exception?", "which option?"), every severity claim, every recommendation, every options paper, and
+every piece of test material. If I am about to write "your call" or "I'd like your go", the panel has
+not yet spoken and the message is not ready.
+
+**Why, in one line each — every one of these is from the day the rule was written:**
+
+- I called PJ-313 a HIGH that corrupts the index. The panel reproduced it: **no corruption, no broken
+  search, the escalation did not reproduce.** MEDIUM.
+- I recommended cache-read-only for PJ-311 from the code. The panel queried **his live database**:
+  7,814 of 8,031 notes already had headlines, ~97% of misses never touch the model. **My recommended
+  fix would have blanked the notes he writes**, and the real cost was the writer lane, not inference.
+- I inherited the panel's "only true app-killer" framing of PJ-316 and would have sent it to him that
+  way. Reproducing it showed the data-loss shape **is not reachable** — the false success is.
+- The `ui-inspector` rejected two of my test drafts for inventing UI: an app-open cache rebuild that
+  cannot happen, and a "Child Universes" heading that exists on a different, inert surface.
+
+The through-line: **my single view was wrong in a specific, confident, checkable way every time, and
+an adversarial second pass caught it every time.** The Boss's time is the scarcest thing in this
+project; spending it on a claim no one has attacked yet is the most expensive thing I can do.
+
+**How.** Convene a `Workflow` panel — independent proposals from deliberately conflicting lenses, an
+adversarial pass on each, then a synthesis that RULES rather than surveys. Hand it the honest
+register, **including what I got wrong**, and let it correct me in front of him. For test material the
+existing pipeline stands and the panel wraps it: `tutorial-auditor` → `ui-inspector` → **panel** →
+Boss.
+
+**What the panel may not do.** It does not decide risk appetite, product direction, or taste — those
+are the Boss's, and a panel that refuses to rule on them is behaving correctly. It reports what it
+declines to rule on, and why, and that reaches him too.
+
+**Not skippable because a question looks small.** "Should I add a test harness?" looks like a yes/no.
+It is a scope, cost and precedent decision, and it is exactly the shape I have been getting wrong
+alone.
+
 ## Working Agreement (ground rules, non-negotiable)
 
 1. **Do the work yourself. Don't offload it to the user.** If you can run a command, query a DB, read a log, diagnose a bug, or write a test — do it. The user is the Boss, not the lab assistant. The only thing you ask of them is what genuinely requires a human: interacting with the running Constellation GUI (create a note, click a button), making design decisions, approving a plan, confirming a release is ready. Everything else — SQL queries, file inspection, log greps, schema checks, build verification — is your job. If you catch yourself writing "please run this query and tell me the result," stop and run it yourself via Bash + sqlite3 (or equivalent).
