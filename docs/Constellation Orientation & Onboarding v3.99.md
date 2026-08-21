@@ -1,36 +1,82 @@
 # Constellation — Orientation & Onboarding
 
-**Version 3.99 | 2026-08-17**
 
-> **What changed in v3.99** (**MIG-111 Phase 1.2 OPENS — Architect + Plan done and Boss-approved. The Architect step found a defect that Phase 1.2 would have converted into a silent app-killer, ruled out as its own job first: PJ-302, fixed. And the test suite turned out not to be deterministic — TWO independent flakes, PJ-303 and PJ-304, both fixed. LL-049 written on why a green run is a claim about a distribution**):
->
-> ### MIG-111 Phase 1.2 — the routed context pool: Architect + Plan
-> **The concept (the horse):** a routed write must carry the vocabulary of the universe it writes into — as a value it holds, not a global it consults — so that *which universe happens to be active* can never change *what is stored in another universe's rows*.
->
-> - **The call-site count is 29, not the 26** the harness header claims, and `sight.rs:113` is a false positive (`is_null_type` is a constant `matches!` that never reads the global).
-> - **A connection-bound vocabulary is not expressible.** Four of the six parse-chain readers are pure `&str → value` with no connection in scope and no prospect of one — the deepest **five frames** below `index_note`. Whatever bundle exists at the top, below the connection layer the mechanism is a threaded `&LinkTypeRegistry`. Forced by the call graph, not chosen.
-> - **Boss rulings:** approach approved (one path-taking constructor that resolves the owner itself, delete the three global-reading shortcuts, three refusal preconditions) · missing triggers ⇒ **REFUSE**, naming the universe · the trigger defect gets its **own PJ, fixed first** · **renames ARE in scope**, against the Architect's recommendation.
-> - **Renames force a hard ordering:** the vocabulary reaches `rewrite_wikilinks_in_text` FIRST (B5), the federation fence comes down SECOND (B6) — never the reverse, never the same commit. Reversed, renaming a note in a linked universe rewrites that universe's `.md` files under the PARENT's vocabulary: `[[refutes::Old]]`, where `refutes` is a child-only type, reads as an untyped target named `refutes::Old`, the rewrite silently does not fire, and the link breaks **on disk** with no error.
-> - Docs: `MIG-111-ARCHITECT-1.2.md`, `-EVIDENCE.md` (1,808 lines, 14 agents), `MIG-111-PLAN-1.2.md` (16 steps).
->
-> ### PJ-302 — the foreign door STRIPPED a linked universe's triggers (fixed)
-> `init_db_scoped` DROPped the `note_meta` sky trigger family unconditionally and recreated it only under `if owns`. The one production caller with `owns == false` is `federation::migrate::run_migrations_on`, reached whenever a linked universe's schema is stale — **the ordinary state of a cUniverse not opened since an update.** So opening a Universe stripped its linked universe's bookkeeping and did not restore it.
-> Safe today only because of the sentence at `search.rs:5966-5968` — *"nobody writes through them, because the parent attaches a cUniverse read-only"* — **which Phase 1.2 is precisely the change that falsifies.** A routed write would then have produced no `sky_nodes` row, no stratum, no maturity; and `maintain_sky_after_save` cannot repair it, being an `UPDATE … WHERE path = ?1` that affects zero rows, returns `Ok(())`, and leaves `maint.sky_failed` FALSE — **success reported.**
-> **Fix as a construction:** *the foreign door migrates SCHEMA and mutates NO trigger, in either direction.* `InitScope`'s doc comment was false in **both** directions and is corrected — the `note_links_sky_ai/_ad/_au` block sat outside every gate while interpolating `snapshot()`, so the schema-only door **did** write registry-generated SQL into a foreign `sqlite_master`, harmless only because `structural_not_in_clause` is vocabulary-invariant by accident rather than by the gate.
->
-> ### The Architect doc was WRONG about the blast radius, and the red test caught it
-> It claimed a parent-migrated child also loses its **outgoing-aggregate** triggers. It does not — `drop_outgoing_link_triggers` is the first line of `create_outgoing_link_triggers`, itself `owns`-gated, so that family is neither dropped nor created and survives. True casualty list, printed by the test on its first run: `["note_meta_sky_ai", "note_meta_sky_stratum_au", "note_meta_sky_maturity_au"]`. **A blast radius asserted from reading the gates instead of executing them** — in a document whose own §7 warns against exactly that. Corrected in place, with the error recorded rather than overwritten.
-> Why the existing sibling test could not see it: it starts from an EMPTY database, so `count == 0` passed *for the wrong reason*. **A test whose subject cannot fire is not a test** — a lesson the very next test's doc comment already recorded for MIG-003 Step 1.
->
-> ### The suite was not deterministic — two independent flakes (→ LL-049)
-> Measured baseline: six runs → **1500/0 five times, 1499/1 once**, and the day's very first run showed **2** failures. "1500 / 0" was true of a run, not of the suite.
-> - **PJ-303** — a test wrote a hand-built bundle to the **real per-machine Arabic cache path** and read it back, while the production initialiser writes that same file on any cache miss (guaranteed here, since the fixture's FST bytes are not a valid `fst::Map`). It also **deleted the developer's real cache on every run**. The module's own `tmp_path` helper was documented *"Avoids stomping on the real user cache during tests"*; this one test was not using it.
-> - **PJ-304** — `vocab_harness::index_under_vocabulary` called `set_active` and **never undid it**, so the first harness test to run left a 9-type vocabulary installed for **every subsequent test in the process**. It broke exactly the assertions hardcoding the empty-sentinel rank `9`; a custom type makes it 10, while the 1/2/4 ranks are untouched because a custom type sorts *after* the seeds — **only the sentinel moves.** Proven pre-existing by stashing every local change and reproducing on pristine `main` at `857530f5`.
-> **The irony is the lesson:** that harness was committed *specifically* to constrain Phase 1.2 against LL-047 — *never install context into shared state for a duration* — and did exactly that to the suite. Its RAII restore is labelled interim; **Stage A removes it structurally.**
-> - **PJ-305** (fixed) six Arabic-overrides tests shared fixed temp folders; **PJ-306** (latent, not fixed) the `lens` clock-boundary tests carry no tolerance despite their own comment claiming ±2s — filed at the confidence the evidence supports, having appeared only under an artificial double-CPU load.
->
-> **Gates.** Rust **1501 / 0**, and this time as a *distribution*: 16 consecutive clean single-process runs.
+## What changed in v3.99 — 2026-08-20
 
+> ### ⚠️ NAMING RULING, recorded here because losing it is what caused this version
+>
+> **The federation level is a "Linked Universe".** Never "cUniverse", never "Child Universe", in any
+> user-facing text, help file, User Manual, or new document. Boss ruling, re-stated 2026-08-20:
+> *"We have decided to change the naming from 'cUniverse/Child Universe' to 'Linked Universe'. Have
+> you forgotten?"*
+>
+> **It had been ruled before and written into neither `CLAUDE.md` nor this document.** Searched
+> before answering: "linked universe" appears **431 times across 75 files** as descriptive prose —
+> the term was long established in practice — while `CLAUDE.md` still *defined* the level as
+> "cUniverse (Child Universe)" and v3.98 of this document still listed `cUniverse` among brand
+> labels that "intentionally stay English."
+>
+> **The consequence, and the reason this is the first item in v3.99:** a nine-agent review panel read
+> these documents, found the retired name in them, and formally *recommended it back to the Boss*.
+> A ruling that lives only in a conversation does not merely fade — **it gets contradicted by the
+> project's own records and then re-proposed as advice.** The exact 12-string rename inventory is
+> **PJ-331**; "cUniverse" survives only as code identifiers, which are explicitly out of scope, and
+> historical records are never rewritten.
+>
+> **Boss's own diagnosis of the root cause, same day: _"That's why you have to conduct the PCS and
+> orientations more often."_** Correct. The mechanism that makes a ruling durable is the PCS and this
+> file; a decision that reaches neither has no way to outlive the session it was made in.
+
+### MIG-111 Phase 1.2 — Stage A opened (A1–A4 built, A5–A8 not started)
+
+The job: *an operation on a note that lives in a Linked Universe must do its bookkeeping in THAT
+universe's database, using THAT universe's link vocabulary.* Definition of done is unchanged and
+**not yet reached** — `federation/vocab_harness.rs::routed_write_must_match_the_owners_vocabulary`
+is still `#[ignore]`d.
+
+- **A1** — `link_types::registry_for_root`: reads a universe's vocabulary **without making it
+  active**, the door the codebase did not have. Strict: absent ⇒ the 8 seeds; unreadable/empty/
+  corrupt ⇒ refuse, naming the universe. Also extracted `write_link_types_at` (the save command's
+  body) so tests exercise the real writer.
+- **A2** — a merge-invariance pin: a Linked Universe's `link-types.json` cannot flip the structural
+  flag and hide a cognitive type from the parent's analytics.
+- **A3** — `federation::write_scope::WriteScope`: the pair of answers ("whose database, whose
+  vocabulary") resolved once and carried explicitly. **Holds no `AppHandle`** — see LL-050.
+- **A4** — four refusals, each naming the universe. The trigger floor is derived from what `init_db`
+  creates, **not** from the active universe's live `sqlite_master` (which a background repair
+  transiently empties).
+
+**A1 and A2 were mutation-tested** — the code each protects was deliberately broken to confirm the
+tests go red.
+
+### PJ-322 — the readers that answered "nothing" when they meant "I could not look"
+
+`universe::resolve_child_universe_roots` returned an empty list for *no children*, *unreadable
+manifest*, and *unparseable manifest* alike; `load_registry` does the same for the universe registry.
+Under MIG-108 nesting an empty federation list does not make `resolve_owner` refuse — **it makes it
+answer PARENT**, and a routed write lands in the wrong database with every row count still correct.
+
+Two independent guards now cover the concern: `mig108::classify` asks the **disk** (immune to any
+reader degrading), and `assemble_foreign_roots` **refuses** when its report is untrustworthy
+(catches what a disk walk cannot see). The previously-invisible failure now surfaces as a `blocked`
+card in the unify dialog — **Boss decision 1, 2026-08-20: "Yes."**
+
+### New Lessons-Learned
+
+- **LL-050** — *a green run is only as trustworthy as the binary it ran.* A link failed with
+  `LNK1104` and cargo's fingerprint then served the **corrupt** exe as up-to-date for several runs.
+  Records the `AppHandle`/`STATUS_ENTRYPOINT_NOT_FOUND` bisection **as unexplained**, and states the
+  durable rule as a corollary to LL-048: *a scope is a value; app state is passed at call time.*
+
+### Concept paper — The Broken Universe Link (v1.0 → v1.1)
+
+Answers Boss decision 3. **v1.0's concept was accepted unanimously and its diagnosis rejected on
+fact**; v1.1 records all nine corrections. Headline findings: the app is **silent** for a deleted or
+unreachable Linked Universe, not wrong; and **you cannot unlink a Linked Universe at all** outside
+the first-run setup wizard (PJ-326) — which is why v1 must be detection-only.
+
+
+**Version 3.98 | 2026-08-17**
 
 > **What changed in v3.98** (**MIG-111 PHASE 0 CLOSES and Phase 1.1 lands — the Router can now answer *which universe owns this path*. PJ-287 and PJ-294 closed and Boss-validated. The H1 harness is committed BEFORE the code it constrains, and found a defect in Phase 1.2's most likely design on its first run**):
 >
@@ -1717,7 +1763,7 @@
 > **What changed in v3.14** (**Item 6 — StyleSetter category labels localized ×15 (data-only; the `sky_view` category was English in 13/14), Boss-validated**. Backlog item 6 of 7; Ultracode):
 > - **No code change — pure i18n data.** The Style Setter already renders every category/element/control label through `L(en)` → `$t('styleSetter.labels.<slug>')` **with an English fallback** (MIG-072 follow-up), so "hardcoded English" actually meant the `styleSetter.labels.*` keys were **untranslated** (falling back to English). Headline: the **`sky_view` ("Sky View") category was English in 13/14 locales** despite `panels.skyView` already being translated.
 > - **36 English-left keys → 6 keep-English (brand/codes: 360.3D, cUniverse, MOC, X/Y/Z gizmo axes) + 24 auto-reuse the exact established native term** (`sky_view`←`panels.skyView`, etc. — guaranteed consistency) **+ 41 native-translated** (small Workflow `wf_2fc42cc7-3c3`; cognates kept identical where the native term *is* English). **65 `styleSetter.labels` applied ×13 locales** (byte-identical). The 13-category left rail now reads native end-to-end (fr: Vue du ciel / Système nerveux (CNS) / Organigramme / Classificateur / Cadre …). svelte-check 0, all parse, Boss Stage-1 (fr/de) PASS.
-> - **Canonical fact:** Style Setter labels are localized via the `styleSetter.labels.<ssSlug(english)>` slug map with English fallback — to localize a new label, add its slugged key (don't hardcode); brand/code labels (360.3D/cUniverse/MOC/X/Y/Z) intentionally stay English.
+> - **Canonical fact:** Style Setter labels are localized via the `styleSetter.labels.<ssSlug(english)>` slug map with English fallback — to localize a new label, add its slugged key (don't hardcode); brand/code labels (360.3D/MOC/X/Y/Z) intentionally stay English — **`cUniverse` was on this list and is REMOVED as of v3.99: it is a "Linked Universe" and it is translated like any other user-facing term (PJ-331)**.
 > - **NEXT (backlog, FINAL item):** item 7 — **PJ-066 speed** (the residual ~3 s on very large notes during the now-background reindex + finish the read-connection split). **Reproduce-First:** one instrumented split-measurement on the heaviest note (Ancient history, 533 links) to pin remaining-writer-lock-read vs frontend-re-render (mis-diagnosed twice before); then route remaining pure-read commands via `with_read_conn`/`read_db` + make sibling long-running reads `#[tauri::command(async)]`. Re-read `search.rs` first (db_ready/read_db/with_read_conn shipped 2026-06-25).
 >
 > ---

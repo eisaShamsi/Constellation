@@ -61,6 +61,44 @@ bookkeeping triggers deleted and not restored.** Latent only because nothing wri
 
 ## Stage A — the routed context (this is what removes the `#[ignore]`)
 
+### Build status — 2026-08-20
+
+| step | state | evidence |
+|---|---|---|
+| **A1** | **DONE** | `link_types::registry_for_root` + `link_types_file_in` + `write_link_types_at` (the save command's body, extracted so tests exercise the real writer). 5 tests over real directories. **Mutation-tested**: making the read lenient turns all three refusals red. |
+| **A2** | **DONE** | `merge_decides_the_structural_lane_no_matter_what_the_deltas_claim`. **Mutation-tested**: removing `d.structural = false` from the custom branch turns it red. |
+| **A3** | **DONE** | `federation::write_scope::WriteScope` — `for_note` (resolves the owner itself) and `routed_at` (path-taking, so production and the tests call the same function). Active arm = `SearchState.db` + `active_universe_vocabulary()`, unchanged. Routed arm = the `reconcile_filesystem` open shape, asserted `PRAGMA recursive_triggers == 1`. |
+| **A4** | **DONE, and it found a second surface** | Four refusals, each naming the universe. The trigger probe **self-calibrates against the active universe's own `sqlite_master`** rather than a hardcoded list, so it cannot go stale when a 15th trigger is added. |
+| **A5** | **PART-LANDED — the plan said "not started" and that was false** | `active_universe_vocabulary()` exists (link_types.rs) and `snapshot()` survives as a transitional alias delegating to it. The RENAME landed; the DELETION of the three ambient readers and the ~26 call-site threading did not. Corrected after the panel caught the doc contradicting the code. |
+| A6–A8 | not started | |
+
+### What A4 turned up — the fourth refusal was not a formality
+
+`universe::resolve_child_universe_roots` (universe.rs:674-696) returns an **empty list** for an
+unreadable manifest, an unparseable manifest, *and* genuinely having no children. Under MIG-108
+nesting a linked universe lives UNDER the active root, so losing it from the candidate set does not
+make `resolve_owner` refuse — **it makes it answer PARENT, `is_active: true`.** The routed write
+then lands in the wrong database with every row count correct.
+
+`resolve_owner`'s own doc comment says it reads roots fresh rather than from `load_all_libraries`'
+cache *specifically* to avoid a degraded federation (PJ-300). It then called a reader that degraded
+silently one layer down. The comment described the intent; the code did not implement it.
+
+Fixed with `resolve_child_universe_roots_strict` / `..._recursive_strict` (fail-closed on an
+unreadable manifest; a declared child that cannot be canonicalized is **kept as its declared path**
+rather than dropped, since dropping is what removes it from the candidate set). The test
+`a_manifest_that_cannot_be_parsed_refuses_instead_of_reporting_no_children` **demonstrates the
+misroute first**, then the refusal.
+
+**Second surface, NOT fixed — `mig108::assemble_foreign_roots` (mig108.rs:2084-2097)** builds the
+set of roots the unification engine treats as foreign from the same lenient reader. That is a write
+path in a different migration whose failure mode is moving directories. Filed **PJ-322**, severity
+UNVERIFIED (I read the enumerator and its caller; I did not trace the consumer). **Panel ruling owed
+before 1.2 closes.** The two display surfaces (`bases.rs:729`, `lens/system_notes.rs:186`) stay
+lenient on purpose — the same strict/lenient split the codebase already runs for `read_deltas` vs
+`read_persisted_json`.
+
+
 | step | what | verification |
 |---|---|---|
 | **A1** | **`link_types::registry_for_root(root) -> Result<LinkTypeRegistry, String>`** — the missing door. Reads `<root>/.constellation/link-types.json` through the STRICT `universe::read_persisted_json` (universe.rs:260), never the lenient `read_deltas`. | Unit tests over REAL directories: absent file ⇒ the 8 seeds; unreadable ⇒ `Err`; zero-length ⇒ `Err`; corrupt ⇒ `Err`. Written by `save_universe_link_types`, read back here — the production writer's format, not a literal. |
@@ -73,6 +111,69 @@ bookkeeping triggers deleted and not restored.** Latent only because nothing wri
 | **A8** | **The harness rewrite + `#[ignore]` removed.** Per Architect §7: drive `reindex_single_note` (the production funnel, crossing the `is_built` gate at search.rs:12712), build both universes with `create_universe` / `add_child_universe` / `save_universe_link_types`, and **resolve** the Owner rather than constructing it. Extend `Aggregates` with the four `outgoing_*` columns, `sky_nodes.stratum/maturity`, and `weight`/`confidence`/`traversal_count`. Re-author `a_vocabulary_swap_reaches_back_into_an_already_open_database` into its positive form (construct the scope BEFORE the swap; assert the result is UNCHANGED) — **and not by passing `&active_universe_vocabulary()`, which would restore the anti-pattern and turn it green.** | **`routed_write_must_match_the_owners_vocabulary` passes with the attribute removed. This is the definition of done.** |
 
 ---
+
+## A5–A7 — the measured surface, replacing the plan's estimate
+
+**Mapped 2026-08-20 by grep, not by memory.** The Architect estimated "~26 call sites across 11
+files". The *ambient-reader* surface is smaller and more concentrated than that, and knowing exactly
+where it is changes A5 from a sprawl into one coherent change.
+
+### The three ambient readers — every PRODUCTION site
+
+| reader | production sites | note |
+|---|---|---|
+| `is_known_type` | `libraries.rs:7490` (the rename rewriter), `search.rs:7297` (`parse_link_body`), `search.rs:7424` (`emit_frontmatter_links`) | 3 |
+| `is_structural_type` | `search.rs:8071`, `:8538`, `:8614` (all inside `index_note_impl`), `search.rs:9603` (`structured_search`) | 4 |
+| `structural_frontmatter_targets` | `search.rs:7132` (`extract_wikilinks`), `strata.rs:199`, `inspector360.rs:368` | 3 |
+
+**10 production sites, not 26.** `cache.rs:1654` is inside `#[cfg(test)] mod tests` (module opens at
+`cache.rs:1581`) and is **not** a production reader — the Architect's count included it.
+
+### The shape this reveals
+
+Seven of the ten sit in ONE call graph:
+
+```
+index_note / index_note_bulk  →  index_note_impl(search.rs:7937)
+                                   ├─ extract_wikilinks(:7121)        → structural_frontmatter_targets
+                                   ├─ parse_link_body(:7296)          → is_known_type
+                                   ├─ emit_frontmatter_links(:7414)   → is_known_type
+                                   └─ is_structural_type ×3 (:8071, :8538, :8614)
+```
+
+`index_note_impl` is the **single chokepoint**. Give it the vocabulary and the whole parse chain is
+threaded. Its production callers are only three: `index_repair.rs:1018` (the bulk walk) and
+`search.rs:4280` / `:4339` (the reindex paths). Everything else calling `index_note` is a test.
+
+### The decision this forces, stated so it is not made by accident
+
+`index_note` keeps its current signature and calls **`active_universe_vocabulary()` explicitly, at
+that one line, with a comment saying why** — a note indexed through the active universe's connection
+genuinely should use the active universe's vocabulary. The routed path gets
+**`index_note_with(conn, path, lib, force, vocab)`**, which is what `WriteScope` callers and the
+acceptance harness drive.
+
+That is not a loophole. **A5's purpose is to delete the reads that are HIDDEN inside the parser,
+where no caller can see which vocabulary is being used.** One named, commented, greppable call at a
+funnel is the honest form of the same fact — and it keeps ~40 existing test call sites from churning
+for no gain in truth. The A5 call-site-pinning test (file + count on `active_universe_vocabulary`)
+is what stops an eleventh one appearing quietly.
+
+### Order of execution
+
+1. `structural_frontmatter_targets` becomes `&self` on `LinkTypeRegistry`; the three callers take a registry.
+2. `is_known_type` / `is_structural_type` deleted; the 7 sites become `reg.is_known(..)` / `reg.is_structural(..)`.
+3. `index_note_impl` + the three parse helpers take `&LinkTypeRegistry`; `index_note_with` added.
+4. `maintain_incoming_after_save` (search.rs:2637) takes it — A7's half; this is the function the
+   harness calls after `index_note`, and it is where the incoming aggregates get their answer.
+5. `snapshot()` alias deleted; the pinning test lands.
+6. **Only then** the harness rewrite (A8) and the `#[ignore]` removal.
+
+`strata.rs:199`, `inspector360.rs:368`, `libraries.rs:7490` and `search.rs:9603` are Stage B's B3/B4/B5
+and take the registry from their own walk context — but they must be converted in the SAME pass as the
+deletion, because deleting the free functions is what makes them stop compiling. **B5's ordering rule
+still holds absolutely: the vocabulary reaches `rewrite_wikilinks_in_text` first; the rename fence comes
+down in a LATER commit.**
 
 ## Stage B — the whole ecosystem, same pass (Whole-Ecosystem Fix Law)
 

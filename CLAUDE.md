@@ -243,8 +243,8 @@ Universe (root) — directory; auto-registered as the default "universe_notes"
 │    └── Folder
 │         └── Note
 │
-└── cUniverse (zero or more — optional federation links)
-     └── Library (libraries from the linked Universe — recursive)
+└── Linked Universe (zero or more — optional federation links)
+     └── Library (libraries from the Linked Universe — recursive)
           └── Folder
                └── Note
 ```
@@ -253,7 +253,18 @@ The structural levels of stored knowledge are **Universe → Library → Folder 
 
 - **Universe**: The top-level container directory. Named by the user. Auto-registers a default `universe_notes` library pointing at itself. Contains its own libraries (own + the auto-`universe_notes` one), settings, bases, bookmarks, and an optional list of cUniverse children. One Universe is "active" per Constellation instance. Stored as a directory with `universe.json` (the federation + meta manifest) and `.constellation/libraries.json` (the libraries manifest).
 - **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault) — **a direct child of a Universe**. Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. The default `universe_notes` library has `path == Universe root` (the flat layout). **One Universe, One Location (MIG-108, Boss-ruled 2026-07-29): every additional library lives UNDER the Universe root** — `add_library` enforces it (`ensure_under_active_root`), external folders enter via `bring_in_library` (Copy — original untouched — or Move, the user's per-use choice), and a pre-MIG-108 universe with external libraries gets the journaled, snapshot-first **unification proposal** (the `mig108.rs` engine: verified backup → atomic dir moves → in-place path rewrite across every SQLite/JSON store with in-transaction aggregate verification → one `.trash` at the root). *The pre-MIG-108 sentence "libraries can have any path… never copied — read in place" is REPEALED; nothing may reference content outside the root.* The trash is likewise ONE: `<root>/.trash` (the scope setting was retired).
-- **cUniverse (Child Universe)** — *optional layer*: A linked Universe whose libraries get federated into the parent at runtime. Each cUniverse is itself a full Universe (with its own libraries and its own optional cUniverse children); `resolve_libraries_recursive` flattens the federation tree into one library list. Enables viewing notes from multiple independent Universes in one window. **A Universe with zero cUniverses is a complete, valid setup** — federation is opt-in.
+- **Linked Universe** — *optional layer*: a Universe whose libraries get federated into this one at runtime. Each Linked Universe is itself a full Universe (with its own libraries and its own optional Linked Universes); `resolve_libraries_recursive` flattens the federation tree into one library list. Enables viewing notes from multiple independent Universes in one window. **A Universe with zero Linked Universes is a complete, valid setup** — federation is opt-in.
+
+  > **NAMING RULING (Boss, re-stated 2026-08-20): it is a "Linked Universe".** Never "cUniverse",
+  > never "Child Universe", in any user-facing text, help file, User Manual, or new document.
+  > "cUniverse" is jargon; "Child" implies a subordinate, and a linked universe is a peer whose
+  > libraries are federated in. **This ruling was taken once, never written down, and was
+  > consequently lost and contradicted by the app's own UI** — which is why it is recorded here.
+  > The old names survive as *code identifiers* (`add_child_universe`, `ChildUniverseInfo`,
+  > `resolve_child_universe_roots*`, `cuniverse_path`, `federation.cuniverseLabel`) and on the UI
+  > surfaces listed in PJ-331; renaming the **visible strings** is the job, renaming identifiers is
+  > optional and separate. **Do not rewrite historical records** — session logs and superseded
+  > doc versions stay as written.
 - **Folder**: A subdirectory within a Library. Organizational structure only. Supports nesting.
 - **Note**: A single `.md` file with optional YAML frontmatter. The atomic unit of knowledge.
 

@@ -1289,3 +1289,85 @@ enforces it.**
 **Related.** LL-047 (the same hazard in production, and the rule this violated); LL-048 (a test that
 drives the pure function has not tested the caller); *Reproduce-First* — PJ-303 and PJ-304 were red
 on demand before either was designed; PJ-307 was not, and says so.
+
+---
+
+## LL-050: A GREEN RUN IS ONLY AS TRUSTWORTHY AS THE BINARY IT RAN — the build system will happily serve you a corrupt one
+
+**2026-08-20 · MIG-111 §1.2 Stage A · ~8 rebuilds, one 26 GB clean, ~3 hours**
+
+**The rule.** `cargo` decides "up to date" from a **fingerprint**, not from the artifact. When a link
+fails — on Windows, `LNK1104: cannot open file …exe`, which means the linker could not write the output
+because something held it — the *previous* artifact stays on disk, and the next `cargo test` reports
+`Finished` in 0.6s and runs **that** binary. A build that never happened is indistinguishable from a
+build that did, and every test result after it is a claim about code you are not running.
+
+**How it presented.** A newly added test made the whole lib test binary fail to start:
+`STATUS_ENTRYPOINT_NOT_FOUND` (0xc0000139), before a single test executed. Three separate diagnoses were
+attempted and two were wrong:
+
+1. *"A stale artifact"* → ran `cargo clean -p constellation`. It removed **36,940 files / 26.4 GB** (the
+   whole dependency tree, not the crate) and forced an ~18-minute cold rebuild. **The failure survived**,
+   which was then read as proof the artifact was not the problem. It was — a different artifact.
+2. *"A missing `onnxruntime.dll`"* → the DLL is absent from `target/debug/deps` **and** from the ort
+   cache. **Red herring, now settled:** `onnxruntime.lib` in that cache is **305,821,070 bytes** — a
+   static archive, not an import library. ONNX Runtime is statically linked; no DLL is expected. Do not
+   file this.
+3. The real confound: `LNK1104` had left a **corrupt exe**, which cargo's fingerprint then served as
+   up-to-date across several runs.
+
+**The guard.** After ANY link error, delete the output binary and force a relink before believing the
+next result. Record the test binary's **size and mtime** alongside any "N tests, 0 failed" claim. A run
+count without a binary identity is an unfalsifiable claim — and on a migration whose whole subject is
+*routing writes to the right database*, that is a first-class hazard, not a build annoyance.
+
+### Recorded inside this entry because it is UNEXPLAINED, not because it is understood
+
+The bisection that ended the outage, every step measured:
+
+| configuration | exe bytes | starts? |
+|---|---|---|
+| module absent | 86,437,376 | ✅ 1532 tests |
+| module present, no tests | 86,438,400 | ✅ 1532 |
+| trivial no-call test in the module | 86,438,400 | ✅ |
+| trivial test in a **different** module | 86,438,400 | ✅ 1533 — rules out a test-count threshold |
+| test calling `search::init_db` from the module | 86,441,472 | ✅ — rules out "any heavy call" |
+| test calling `WriteScope::routed_at` | 86,816,256 | ❌ |
+| …with the `AppHandle` field removed from the type | 86,456,832 | ✅ |
+
+Removing a `tauri::AppHandle` **field** from a type a test constructs made the failure go away.
+
+**The mechanism is NOT established, and the first write-up asserted one anyway** — "returning one
+instantiated the Wry runtime's type graph" — a cause that was never measured, stated as fact, in a
+durable code comment, one file away from the migration that exists to stop exactly this. The panel
+caught it. At least two other hypotheses fit all eight data points: a **size threshold** somewhere in the
+86,441,472–86,816,256 gap (the current passing binary sits inside it), and a **stale sibling
+`constellation_lib.dll`** in `deps/` — `Cargo.toml` builds a `cdylib`, and 0xc0000139 is by definition a
+named export missing from a DLL the loader *did* resolve. Note also that `dumpbin /dependents` lists DLL
+**names**, not imported functions; "the import tables are identical" is not a claim that flag can make.
+**`dumpbin /imports`, diffed between a passing and a failing binary, is the measurement that settles it.
+Until someone runs it, this table is an observation, not an explanation.**
+
+### The rule that survives however that resolves — a corollary to LL-048
+
+> **A scope is a value; app state is passed at call time. A type that answers a question must be
+> constructible without a running application — because a type you cannot construct in a test is a type
+> whose refusals you cannot prove.**
+
+Justified on testability it stands whichever way 0xc0000139 goes; justified on the linker it dies with a
+bad diagnosis. This codebase had **already found this rule once and never generalized it**:
+`search.rs`'s `WalkCtx` holds `Option<&AppHandle>` with a doc comment saying `None` in unit tests, and
+the pure split lives at `index_repair.rs`. It is this house's rule under three other names already —
+LL-047's "carry the context through the call", LL-048's "replace the promise a caller must remember with
+a structure that cannot forget", and Display-not-Domain.
+
+**One known instance remains, latent:** `index_repair.rs`'s `RunGuard { app: AppHandle }` — an owned
+handle as a field, whose `Drop` needs it, constructed at one site inside the background repair worker.
+**No test constructs it, so it is latent, not armed.** Align it with the `WalkCtx` pattern when
+convenient. Do NOT open a codebase-wide sweep on the strength of an unproven mechanism — and note that
+two review agents ran that sweep, reported "population one, already compliant," and **missed this one**,
+which is its own small lesson about trusting an enumeration that can come back short.
+
+**Related.** LL-049 (a green suite is a claim about a distribution — this is the same claim attacked from
+the other side: the *binary*, not the schedule); LL-048 (the corollary above); *No Guessing — Investigate
+to Build Awareness* (the law the first write-up violated); *Don't Make Things Up*.
