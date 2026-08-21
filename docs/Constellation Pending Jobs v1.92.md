@@ -220,7 +220,7 @@
 >
 > **Priority: scheduled with the PJ-326..330 job after MIG-111 Stage A** (Boss accepted the panel's ordering, 2026-08-20).
 >
-> ### 🆕 PJ-332 *(HIGH · index-divergence · **PRE-EXISTING**, not introduced by MIG-111)* - the Sky back-fill thread has no universe identity
+> ### ✅ PJ-332 *(CLOSED 2026-08-22 · Boss-validated · HIGH · index-divergence · **PRE-EXISTING**, not introduced by MIG-111)* - the Sky back-fill thread has no universe identity
 > **Confirmed by the 2026-08-21 diff-scoped safety inspection** (20 agents, refute-before-confirm). Candidate was raised as APP-KILLER and **downgraded to HIGH by its own verifier**, which explicitly declined to sustain the broader claim - recorded because a refuted escalation is as valuable as a confirmed one.
 >
 > `sky_backfill::run()` binds `app.state::<SearchState>()` once and **re-locks the SWAPPABLE `state.db` at every phase** (sky_backfill.rs :172, :183, :224, :313, :347, :378, :458), carrying **no path and no `federation_generation` token**, with no cancel check. Phase B (:301-305) is lock-free by design and performs up to 1000 `fs::read_to_string` calls - where nearly all the wall-clock sits. A universe switch inside that window (`invalidate_search_state` sets `*db = None` and bumps the generation; `ensure_search_db_ready` then installs the NEW universe's connection into the SAME mutex) silently redirects the thread.
@@ -244,7 +244,7 @@
 > **Why it is MED and not higher:** it requires an unregistered universe on disk AND the user selecting a folder inside it. **Not verified:** what the other universe's own index does afterwards.
 > **The fix is one line** - route `bring_in_library` through `universe_manifest_at_or_above` instead of `carries_universe_manifest` - but it changes what the app refuses, so it is **Boss's call**, exactly as the code comment says.
 >
-> ### 🆕 PJ-334 *(HIGH · index-divergence · **LIVE: 770 notes across 5 universes** · origin ESTABLISHED · fix RULED)* - indexed notes with no Sky node, and no path back
+> ### ✅ PJ-334 *(CLOSED 2026-08-22 · Boss-validated · HIGH · index-divergence · **LIVE: 770 notes across 5 universes** · origin ESTABLISHED · fix RULED)* - indexed notes with no Sky node, and no path back
 > **Full panel ruling: `docs/migrations/PJ-235-federation-boundary/PJ-334-PANEL-RULING.md`.** Four lenses, each adversarially attacked, read-only throughout. **It overturned the entry this replaces, corrected the author twice, corrected four of its own members, and established the origin.**
 >
 > #### The scope is 770, not 8
@@ -293,6 +293,32 @@
 > **`Eisa Universe`'s Sky View will gain 758 nodes and 1,853 edges on its next launch, and three trashed notes will reappear in ECK's.** A visible change to a knowledge surface, unannounced. **Panel recommendation: ship it silently but loudly logged** - automatic repair, one status-bar line naming the number repaired, no button, no progress strip, no 15 locale files. Nobody answers "leave 758 of my notes invisible", so a permission door is disproportionate; a notification is not. **Panel explicitly declines to decide it.**
 >
 > **NOT VERIFIED / labelled by the panel:** Phase 2's write cost (~30 ms insert + ~190 ms stamp for 758 rows) is second-hand - measured by one member on a scratch copy, not re-run. The post-fix "zero exceptions after 2026-08-10 07:30 UTC" sample is only 19 notes: the date boundary is strong, the sample is small, **and the ruled design does not depend on it.**
+>
+> ### ✅ PJ-332b *(MED · concurrency-race · FOUND IN AND FIXED IN THE SAME PASS)* - the PJ-332 fix introduced a window, and its own comment claimed a guarantee it did not provide
+> **Found by the diff-scoped safety inspection run on the PJ-332 diff itself**, before the commit. Raised HIGH; **its verifier refuted the candidate's mechanism and magnitude** and confirmed a narrower defect — recorded because the refutation is as valuable as the finding: the claimed multi-thousand-row abandoned band could not occur (thread 2 reads the HIGH-WATER cursor, and thread 1 exits at most one batch after the generation bump).
+>
+> **Two real defects, both fixed:**
+> 1. **`maybe_schedule` had no in-flight guard** (pre-existing). `is_needed` is version-only, so an unstamped universe re-arms on every call, and an A→B→A switch calls `ensure_search_db_ready` → `maybe_schedule` again while the first thread is still inside the lock-free file-read phase. **`review_backfill.rs:29-52` carries exactly the `static RUNNING: AtomicBool` compare_exchange guard for this hazard** ("threads racing on the same WAL"); sky_backfill had none. Copied byte-for-byte, released in the thread tail so the universe-switch early return frees the slot too.
+> 2. **`run` read the cursor TWICE** — once for the stratum/maturity wipe, once for the walk start — with `ANALYZE` and the wipe UPDATE in between, both contending for the write lock. A cursor advance committed in that window made the wipe cover `(C_old, C_new]` while the walk began at `C_new`, so that band kept NULL stratum/maturity permanently, and `.unwrap_or(0)` wrote rank 0 into the Reviewer for every note in it. **Now read once, used for both.**
+>
+> **And a false claim corrected where it was made.** The PJ-332 comment asserted that the generation stop prevents a second thread being spawned on a switch back. **It does not** — `still_ours()` is evaluated only at the loop top, so the thread keeps working for up to one more batch, which is exactly the window the second thread spawns into. The correction is recorded in place rather than quietly deleted: **a comment asserting a guarantee the code does not provide is worse than no comment**, and this one was written in the very fix that created the need for the guard.
+>
+> **Known residual, recorded not glossed:** a panic inside `run` skips the slot release and leaks it for the process lifetime (no back-fill until restart; no data loss — the walk is cursor-resumable). Left as-is because it matches `review_backfill` exactly, and one consistent shape across the back-fills beats a lone RAII variant. **Revisit for all of them together, or not at all.**
+>
+> ### ✅ CLOSE-OUT 2026-08-22 — PJ-332, PJ-332b and PJ-334 all shipped, Boss-validated
+> **Boss test: PASS.** Went `tutorial-auditor` → `ui-inspector` (**APPROVED**, 27 claims) → panel (**SEND WITH 8 EDITS**, three of which would otherwise have produced a false failure report) → Boss. All eight applied.
+>
+> **The pipeline HELD the first attempt and was right to — it found a defect in the receipt wiring that no gate could have caught.** `loadSkyRestoreReceipt()` fired at `+layout.svelte:2837`, while the database only opens at `:2963` (`refreshLibraryCaches` → `ensure_search_db_ready`), and `take_sky_restore_receipt` returns `None` the moment `state.db` is still `None`. **The repair ran and the line announcing it could never appear** — a silent no-op in the half whose entire job is not being silent, and precisely the behaviour the Boss had approved. Caused by piggy-backing the read onto an existing boot call for convenience; the comment on that very line said "independent failure". Rust 1530/0, vitest 997/997 and svelte-check were **all green throughout** — it is a call-ordering fact between two lines 126 apart in one file, invisible to every suite. Fixed by moving the read to after the database opens, with the reasoning recorded in place.
+>
+> **What shipped:**
+> - **PJ-332** — the Sky back-fill thread opens its own connection (as every sibling already did) and stops when the user leaves. **Reproduced first**: universe B stamped complete by a thread back-filling A. The original reproduction can no longer be written — the functions take a pinned connection, so there is no swappable handle to pass. The defect is inexpressible, not merely guarded.
+> - **PJ-332b** — the single-run-slot guard copied byte-for-byte from `review_backfill`, one cursor read instead of two, and a **false claim corrected where it was made** (the generation stop does NOT prevent a second thread; `still_ours()` is evaluated only at the loop top).
+> - **PJ-334** — the boot restore widened past the `cid_cn = ''` clause that stranded 770 notes. Count-gated, two-phase, `INSERT OR IGNORE`, stamp widened with the insert, `owns`-gated, `.trash` included, three-number receipt. **Mutation-proved**: disabling the stamp turns the test red, enforcing the panel's sharpest clause — *restored complete or not restored*.
+> - **The receipt** — one faint centred status-bar line naming the number repaired, dismissible, shown only on the launch that repaired (the Rust side clears it as it reads). 2 keys x 15 locales, parity verified. **Deliberately not a `JobProgressStrip`** although four exist: there is no job to watch, the repair finished before the window painted.
+>
+> **Two things the tests taught me, recorded because both were my errors:** `stratum` is stored as TEXT (which is why every reader CASTs it, and why a missing value becomes rank 0 rather than an error); and my duplicate-cid collision test was **unconstructible** — `note_meta.cid_cn` is itself UNIQUE, which is exactly why the panel measured zero duplicates. Rewritten to assert the invariant that closes the hazard.
+>
+> **Still open from this family:** PJ-333 (MED, `bring_in_library` does not ancestor-walk — one line, but it changes what the app refuses, so it is the Boss's call) and the **origin of the missing rows** is established for the *permanence* but not for the *first event*.
 >
 > ### 📋 Housekeeping
 > - **Gates.** Rust **1501 / 0** (20 ignored, incl. the 1.2 acceptance test) — and this time the number is a **distribution, not a sample**: 16 consecutive clean single-process runs after PJ-303/PJ-304, then **9 more consecutive green** on the final state after PJ-307/PJ-308 and the deletion of the harmful test. (1501 not 1502 because that test was removed. One sweep run was lost to a transient Windows `LNK1104` linker lock — a file-lock on the freshly-linked exe, not a test failure.) **Release binary built 2026-08-17 17:02**, after every fix in the batch. Against a baseline failing ~1 in 6, that is ~5% likely by luck alone, so the runs corroborate; the proof is that both mechanisms were reproduced deterministically and removed. Diff-scoped inspection on the PJ-303 diff: **0 confirmed findings**; a combined re-inspection of the full five-file diff was run because the first PJ-302 inspection spanned the stash used for the pristine test and could have read the wrong bytes.
@@ -794,13 +820,12 @@
 > 2a. **PJ-258** — `listItemsOf`'s raw-comma split, the quote-aware sibling of a defect PJ-207 §15 already closed elsewhere.
 >
 > ---
-> **► Next action (2026-08-21, after MIG-111 Phase 1.2 closed — commit `227f5b3a`, Boss-validated):**
-> **A Boss ruling is owed, and it is the gate on everything else.** Does **PJ-332** (HIGH · the Sky
-> back-fill thread has no universe identity · **pre-existing**, and every sibling back-fill already
-> does it correctly) go ahead of **MIG-111 Stage B** (the rename path, read-side analytics, the
-> watcher fence)? **PJ-333** (MED · `bring_in_library` does not ancestor-walk) is a one-line fix that
-> changes what the app refuses, so it rides on the same ruling.
-> Behind that: the **PJ-326..331** job the Boss already scheduled for after Stage A.
+> **► Next action (2026-08-22, after PJ-332 / 332b / 334 shipped Boss-validated):**
+> **MIG-111 Stage B** — the rename path, read-side analytics, the watcher fence. Its hard ordering rule
+> stands: the vocabulary reaches `rewrite_wikilinks_in_text` FIRST (B5); the rename fence comes down in
+> a LATER commit (B6), never the same one.
+> Beside it: **PJ-333** needs a one-line Boss ruling, and the **PJ-326..331** job the Boss already
+> scheduled for after Stage A.
 > ---
 > 2b. **PJ-269** — the indexer stores every block list as an empty string; a THIRD frontmatter parser.
 > 3. **PJ-235 + PJ-254** — the federation-boundary family: `move_item` can move a note **into** a linked universe, and every rename/move/create tail files a linked universe's note into THIS universe's index. **One concern, two surfaces — fix together.**

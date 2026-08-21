@@ -1072,7 +1072,9 @@
     "libraries": "Bibliotheken",
     "notes": "Notizen",
     "indexing": "Indizierung",
-    "indexingTooltip": "Index wird erstellt: Notizinhalte werden gescannt, um bedeutungsvolle Begriffe in Ihrem Universum zu finden. Jede Bibliothek wird nacheinander gescannt — das Panel füllt sich, sobald Bibliotheken abgeschlossen sind."
+    "indexingTooltip": "Index wird erstellt: Notizinhalte werden gescannt, um bedeutungsvolle Begriffe in Ihrem Universum zu finden. Jede Bibliothek wird nacheinander gescannt — das Panel füllt sich, sobald Bibliotheken abgeschlossen sind.",
+    "skyRestored": "{count} in der Himmelsansicht wiederhergestellt",
+    "skyRestoredShortfallTip": "Einige Notizen konnten nicht wiederhergestellt werden — siehe Diagnoseprotokoll."
   },
   "notePane": {
     "saving": "Wird gespeichert...",

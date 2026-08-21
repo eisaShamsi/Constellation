@@ -1072,7 +1072,9 @@
     "libraries": "bibliotecas",
     "notes": "notas",
     "indexing": "Indexando",
-    "indexingTooltip": "Construyendo el Índice: escaneando el contenido de las notas para encontrar los términos significativos en tu Universo. Cada biblioteca se escanea por turnos — el panel se irá llenando a medida que terminen las bibliotecas."
+    "indexingTooltip": "Construyendo el Índice: escaneando el contenido de las notas para encontrar los términos significativos en tu Universo. Cada biblioteca se escanea por turnos — el panel se irá llenando a medida que terminen las bibliotecas.",
+    "skyRestored": "Se han restaurado {count} en la Vista del Cielo",
+    "skyRestoredShortfallTip": "Algunas notas no se han podido restaurar: consulta el registro de diagnóstico."
   },
   "notePane": {
     "saving": "Guardando...",

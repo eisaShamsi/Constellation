@@ -537,6 +537,7 @@ pub fn run() {
             search::constellation_search_reindex,
             search::reindex_changed_paths,
             search::diag_log_line,
+            search::take_sky_restore_receipt,
             search::constellation_search_store_embedding,
             search::constellation_search_similar,
             search::constellation_search_universal,

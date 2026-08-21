@@ -1512,7 +1512,9 @@
     "libraries": "kasa",
     "notes": "not",
     "indexing": "Dizin oluşturma",
-    "indexingTooltip": "Dizin oluşturuluyor: Evreninizdeki anlamlı terimleri bulmak için not içerikleri taranıyor. Her kütüphane sırayla taranır — kütüphaneler tamamlandıkça panel dolacaktır."
+    "indexingTooltip": "Dizin oluşturuluyor: Evreninizdeki anlamlı terimleri bulmak için not içerikleri taranıyor. Her kütüphane sırayla taranır — kütüphaneler tamamlandıkça panel dolacaktır.",
+    "skyRestored": "{count} Gökyüzü Görünümü'ne geri yüklendi",
+    "skyRestoredShortfallTip": "Bazı notlar geri yüklenemedi — tanılama günlüğüne bakın."
   },
   "notePane": {
     "saving": "Kaydediliyor...",

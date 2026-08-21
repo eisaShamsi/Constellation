@@ -1679,7 +1679,9 @@
     "libraries": "libraries",
     "notes": "notes",
     "indexing": "Indexing",
-    "indexingTooltip": "Building Index: scanning note contents to find the meaningful terms across your Universe. Each library is scanned in turn — the panel will populate as libraries finish."
+    "indexingTooltip": "Building Index: scanning note contents to find the meaningful terms across your Universe. Each library is scanned in turn — the panel will populate as libraries finish.",
+    "skyRestored": "Restored {count} to Sky View",
+    "skyRestoredShortfallTip": "Some notes could not be restored — see the diagnostics log."
   },
   "notePane": {
     "saving": "Saving...",

@@ -333,3 +333,72 @@ resolved reason naming the universe AND the file AND why an empty file is not "n
 The recipe never touched Scratch's own files: a throwaway universe registers itself on creation, and
 `assemble_foreign_roots` walks **every** registered root — so breaking the throwaway's own manifest
 is sufficient, with no linking required.
+
+---
+
+# 2026-08-22 — PJ-332 / PJ-332b / PJ-334 shipped, Boss-validated
+
+**Gates:** Rust **1530 / 0 / 19 ignored** · vitest **997 / 997** · svelte-check **0 errors** ·
+**15/15 locales in parity** · release binary `constellation.exe` 95,615,488 bytes, 2026-08-21 23:39,
+built after the bundle (23:36) and verified by grepping `build/`, never the exe.
+
+## The finding that justifies the whole test pipeline
+
+**The pipeline HELD the first attempt**, and what it found was a defect no gate could have caught:
+`loadSkyRestoreReceipt()` fired at `+layout.svelte:2837`; the database only opens at `:2963`
+(`refreshLibraryCaches` → `ensure_search_db_ready`); and `take_sky_restore_receipt` returns `None`
+the moment `state.db` is still `None`.
+
+**The repair ran, and the line announcing it could never appear** — a silent no-op in the half whose
+entire job is *not being silent*, and exactly the behaviour the Boss had approved.
+
+Cause: I piggy-backed the receipt read onto an existing boot call for convenience. **My own comment
+on that line said "independent failure."** I bundled it anyway, and the bundling was the bug.
+
+**Rust, vitest and svelte-check were all green throughout.** It is a call-ordering fact between two
+lines 126 apart in one file — invisible to every suite the project has. Second time in two days the
+pipeline caught something no test could.
+
+## What shipped
+
+- **PJ-332** — the Sky back-fill thread has a universe identity: its own connection, and it stops
+  when the user leaves. **Reproduced first** (universe B stamped complete by a thread back-filling
+  A). **The original reproduction can no longer be written** — the functions take a pinned
+  connection, so there is no swappable handle. Inexpressible, not merely guarded.
+- **PJ-332b** — found by the diff-scoped inspection ON the PJ-332 diff: the single-run-slot guard
+  (copied byte-for-byte from `review_backfill`), one cursor read instead of two, and **a false claim
+  corrected where it was made** — the generation stop does NOT prevent a second thread, because
+  `still_ours()` is evaluated only at the loop top. Its verifier also **refuted the candidate's own
+  magnitude**, and that refutation is recorded with the finding.
+- **PJ-334** — the boot restore widened past the `cid_cn = ''` clause that stranded 770 notes.
+  **Mutation-proved**: disabling the stamp turns the test red, enforcing *restored complete or not
+  restored*. A row restored with NULL stratum would send rank 0 straight back into the Reviewer —
+  re-creating the harm while reporting success.
+- **The receipt** — one faint centred status-bar line, dismissible, shown only on the launch that
+  repaired. 2 keys × 15 locales. **Deliberately not a `JobProgressStrip`** though four exist: there
+  is no job to watch.
+
+## Regressions caught by measuring live data before shipping — both mine
+
+1. **The completeness guard.** First version made `finalize` REFUSE to stamp while any note lacked a
+   node. On `Eisa Cognitive Knowledge` that universe would then never stamp, and the walk re-arms
+   from an empty cursor — **8,031 notes and their files re-read on every boot, forever.** Changed to
+   report.
+2. **The receipt ordering**, above.
+
+## Two errors the tests taught me
+
+- `stratum` is stored as **TEXT** — which is why every reader CASTs it, and why a missing value
+  becomes rank 0 rather than an error.
+- My duplicate-cid collision test was **unconstructible**: `note_meta.cid_cn` is itself UNIQUE, which
+  is exactly why the panel measured zero duplicates. Rewritten to assert the invariant that closes
+  the hazard.
+
+## Open
+
+**PJ-333** (MED — one line, but it changes what the app refuses, so it is the Boss's call) and the
+**origin of the first event** — established for the defect's permanence, not for how the rows went
+missing in the first place.
+
+**Next: MIG-111 Stage B**, with its ordering rule intact — vocabulary reaches the rename rewriter
+FIRST; the fence comes down in a LATER commit, never the same one.

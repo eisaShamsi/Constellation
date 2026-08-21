@@ -36,6 +36,7 @@ use std::time::Duration;
 use tauri::Manager;
 
 use crate::search::{SearchState, SKY_SCHEMA_VERSION};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Batch size for each transaction. Tuned for:
 /// - ~1-2 ms per note in the hot path (trigger-free bulk insert)
@@ -46,6 +47,20 @@ const BATCH_SIZE: usize = 1000;
 /// Sleep between batches. Gives the DB mutex to other callers. Keeps the
 /// back-fill from saturating WAL during startup on large universes.
 const INTER_BATCH_SLEEP_MS: u64 = 50;
+
+/// **PJ-332b — the single run-slot. Copied byte-for-byte from `review_backfill.rs:29-52`.**
+///
+/// `is_needed` is version-only, so an unstamped universe re-arms on EVERY call — and a universe
+/// switch away and back calls `ensure_search_db_ready` again, which calls `maybe_schedule` again.
+/// Without this, an A→B→A switch spawns a SECOND thread on universe A while the first is still
+/// inside the lock-free file-read phase, and the two contend on the same WAL.
+///
+/// **The generation check added by PJ-332 does NOT prevent this, and a comment in this file
+/// claimed it did.** `still_ours()` is evaluated only at the top of the loop, so thread 1 keeps
+/// running for up to one more batch — which is precisely the window thread 2 spawns into. That
+/// claim was wrong and is corrected where it was made. Found by the diff-scoped safety inspection
+/// on the PJ-332 diff itself.
+static RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Schedule the back-fill on a background thread. Returns immediately.
 /// Called from `ensure_search_db_ready` after init_db completes and the
@@ -69,6 +84,11 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
         return;
     }
 
+    // Claim the single run-slot; if a back-fill is already in flight, do nothing.
+    if RUNNING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        return;
+    }
+
     // Clone the AppHandle into the thread. AppHandle is Clone and cheap.
     let app_bg = app.clone();
     thread::spawn(move || {
@@ -80,6 +100,16 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
                 diag(&app_bg, &format!("[sky_backfill] FAILED: {}", e));
             }
         }
+        // Released in the tail, so the universe-switch early return frees the slot too — a
+        // switch back must be able to resume, not be locked out for the rest of the session.
+        //
+        // **Known residual, stated rather than glossed:** a PANIC inside `run` skips this store
+        // and leaks the slot for the process lifetime — no back-fill until restart. No data is
+        // lost or corrupted by that; the walk is resumable from its cursor. Left as-is because it
+        // matches `review_backfill` byte-for-byte and one consistent shape across the back-fills
+        // is worth more here than a lone RAII variant. Revisit for ALL of them together, or not
+        // at all.
+        RUNNING.store(false, Ordering::SeqCst);
     });
 }
 
@@ -135,8 +165,15 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
 
     // The generation token, captured with the path. If the user leaves this universe we STOP —
     // not for correctness (our connection is pinned, so our writes are still this universe's own)
-    // but because continuing wastes I/O, and because `maybe_schedule` would spawn a SECOND thread
-    // for this same universe if the user came back while we were still running.
+    // but because continuing wastes I/O.
+    //
+    // **CORRECTION (PJ-332b).** The first version of this comment also claimed the generation stop
+    // prevents a second thread being spawned for this universe on a switch back. **It does not.**
+    // `still_ours()` is evaluated only at the top of the loop, so this thread keeps working for up
+    // to one more batch — exactly the window the second thread spawns into. The thing that actually
+    // prevents it is the `RUNNING` slot on `maybe_schedule`, added in PJ-332b. Recorded rather than
+    // quietly deleted: a comment that asserts a guarantee the code does not provide is worse than
+    // no comment, and this one was written in the fix that introduced the need for the guard.
     let gen0 = crate::search::federation_generation_now(app);
     let still_ours = || crate::search::federation_generation_now(app) == gen0;
 
@@ -163,19 +200,28 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // gracefully with cache_reconcile's parallel writes (§99 / BUG-008
     // class). Previously this block was the one back-fill phase that
     // ran without an explicit timeout.
-    let last_path_for_wipe = read_cursor(&conn)?;
+    // **PJ-332b — read ONCE, use for both.** This used to be read here (for the wipe) and AGAIN
+    // below (for the walk start), with `ANALYZE` and the wipe UPDATE in between — both contending
+    // for the write lock. If another thread committed a cursor advance in that window, the wipe
+    // covered `(C_old, C_new]` — rows whose stratum/maturity had just been stamped — and then the
+    // walk started at `C_new` and never revisited them. Phase D is scoped
+    // `path > after AND path <= last`, so that band kept NULL stratum/maturity permanently, and
+    // `.unwrap_or(0)` then wrote rank 0 into the Reviewer for every one of them.
+    //
+    // One read, one value, no window. Found by the safety inspection on the PJ-332 diff.
+    let cursor_at_start = read_cursor(&conn)?;
     {
         // PJ-332 — on the pinned connection; its busy timeout is set once in `run`.
         conn.execute_batch("ANALYZE")
             .map_err(|e| format!("ANALYZE: {}", e))?;
         conn.execute(
             "UPDATE sky_nodes SET stratum = NULL, maturity = NULL WHERE path > ?1",
-            params![last_path_for_wipe],
+            params![cursor_at_start],
         )
         .map_err(|e| format!("stratum/maturity wipe: {}", e))?;
     }
 
-    let mut last_path = read_cursor(&conn)?;
+    let mut last_path = cursor_at_start.clone();
     let mut total: u64 = 0;
 
     loop {

@@ -4616,6 +4616,56 @@ pub(crate) fn init_db_schema_only(path: &Path) -> Result<Connection, String> {
     init_db_scoped(path, InitScope::ForeignSchemaOnly)
 }
 
+/// PJ-334 — persist the restore receipt so the app can SAY what it repaired.
+///
+/// Boss-approved 2026-08-21 on the panel's recommendation: **repair automatically, but say so.**
+/// Nobody answers "leave 758 of my notes invisible", so a permission door is disproportionate — a
+/// notification is not. A knowledge surface gaining 758 nodes unannounced is the thing to avoid.
+///
+/// Single row, keyed `id = 1`, written with an explicit UPSERT rather than `INSERT OR REPLACE` —
+/// REPLACE is DELETE + INSERT and is the idiom that caused PJ-334 in the first place. Best-effort
+/// throughout: a receipt that cannot be written must never fail the boot that just repaired the
+/// user's data.
+fn record_sky_restore_receipt(conn: &Connection, candidates: usize, inserted: usize, stamped: usize) {
+    let _ = conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS sky_restore_receipt (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            candidates INTEGER NOT NULL,
+            inserted   INTEGER NOT NULL,
+            stamped    INTEGER NOT NULL,
+            at         INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        );",
+    );
+    let _ = conn.execute(
+        "INSERT INTO sky_restore_receipt (id, candidates, inserted, stamped, at)
+         VALUES (1, ?1, ?2, ?3, strftime('%s','now'))
+         ON CONFLICT(id) DO UPDATE SET
+            candidates = excluded.candidates,
+            inserted   = excluded.inserted,
+            stamped    = excluded.stamped,
+            at         = excluded.at",
+        params![candidates as i64, inserted as i64, stamped as i64],
+    );
+}
+
+/// PJ-334 — the receipt the status bar reads, then clears. `(candidates, inserted, stamped)`.
+#[tauri::command]
+pub fn take_sky_restore_receipt(app: tauri::AppHandle) -> Option<(i64, i64, i64)> {
+    let state = app.state::<SearchState>();
+    let guard = state.db.lock().ok()?;
+    let conn = guard.as_ref()?;
+    let row = conn
+        .query_row(
+            "SELECT candidates, inserted, stamped FROM sky_restore_receipt WHERE id = 1",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .ok()?;
+    // Read-once: the user is told the number the launch that repaired it, not on every launch after.
+    let _ = conn.execute("DELETE FROM sky_restore_receipt WHERE id = 1", []);
+    Some(row)
+}
+
 pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection, String> {
     let owns = scope == InitScope::Active;
     let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
@@ -6341,6 +6391,120 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             stratum_expr = stratum_sql_expr(),
             maturity_expr = maturity_sql_expr(),
         )).map_err(|e| format!("Failed to stamp stratum/maturity on restored sky_nodes rows: {}", e))?;
+    }
+
+    // ── PJ-334 — the SAME restore, widened past the clause that stranded 770 notes ──
+    //
+    // **The arm above is correct and stays exactly as it is.** Its predicate is `m.cid_cn = ''`,
+    // which was right for the cohort it was written for and wrong for the cohort that had already
+    // moved on. The collision it repairs (`INSERT OR REPLACE` on a then-FULL `UNIQUE(cid_cn)`,
+    // where REPLACE is DELETE + INSERT, so each cid-less note deleted the previous one's row)
+    // strands a note permanently — and a stranded note then acquires its `cid_cn` in the ordinary
+    // way. **From that moment the arm above can never see it again**: it is no longer blank-cid,
+    // the AI trigger only fires for a path new to `note_meta`, `index_note` upserts, the AU trigger
+    // is UPDATE-only, and `recompute_all_sky` iterates `SELECT path FROM sky_nodes` so it cannot
+    // create what is absent. Five silent no-ops and one version-stamped one-shot.
+    //
+    // **Measured on the Boss's live databases, 2026-08-21, read-only:** 770 stranded rows across
+    // five universes — 758 in `Eisa Universe`, **27.8% of it** — plus 1,853 `sky_links` edges drawn
+    // from nodes that do not exist. `موسوعة عيسى`, the real PKF, is clean. **Every one of the 770
+    // carries a NON-EMPTY cid**, which is precisely why the arm above never touched them.
+    //
+    // **And it is not cosmetic.** `index_note` and `review.rs` both read
+    // `CAST(stratum AS INTEGER) … .unwrap_or(0)`, so a missing node writes rank 0 into the
+    // Reviewer: in every universe checked, `COUNT(review_schedule.stratum = 0)` equals the
+    // missing-node count EXACTLY. Every stranded note sits permanently at the bottom of the
+    // review queue.
+    //
+    // Panel-ruled 2026-08-21 (four adversarial lenses; full ruling in
+    // `docs/migrations/PJ-235-federation-boundary/PJ-334-PANEL-RULING.md`), Boss-approved. The
+    // shape below is theirs, and every clause carries a reason:
+    //
+    //  * **Count gate first.** The anti-join is 806 ms COLD on an 8,031-note / 1.6 GB database, and
+    //    boot is cold by definition. Two covering-index counts cost 54.6 ms cold / 0.0 ms warm and
+    //    skip it entirely once nothing is missing — so the 806 ms is paid once, on the one boot
+    //    that actually repairs.
+    //  * **Two phases, and the per-path INSERT is not an optimisation.** A single statement with
+    //    the full column list plans `SCAN m` over the table b-tree, dragging 273 MB of `body_text`.
+    //    Phase 1 is a covering-index anti-join; Phase 2 is a primary-key seek per candidate.
+    //  * **`INSERT OR IGNORE`, never `OR REPLACE`.** REPLACE is DELETE + INSERT and is the exact
+    //    mechanism that CAUSED this defect. Never a bare `INSERT` either — one constraint violation
+    //    would abort the enclosing statement.
+    //  * **The stamp is widened WITH the insert.** Restoring rows while leaving `stratum` NULL
+    //    would send rank 0 straight back into the Reviewer — re-creating the harm and reporting
+    //    success.
+    //  * **The whole arm is `owns`-gated**, because `stratum_sql_expr` / `maturity_sql_expr` read
+    //    the ACTIVE universe's link-type registry (PJ-232). A foreign database is not given a
+    //    half-built row; its owner repairs it on its next launch. Boss ruling 2 (2026-08-17) holds.
+    //  * **No `.trash` exclusion.** 54 of 57 trashed notes already have nodes; excluding them would
+    //    make the derived view less consistent than it is now.
+    //  * **Three numbers, not one.** `OR IGNORE` can silently under-heal on a cid collision — not
+    //    reachable today (0 duplicate non-empty cids in any database, and 0 of the 770 stranded
+    //    cids appear in any existing row) — but a count that ASSUMES success is the false-success
+    //    class this Charter exists to catch.
+    if owns {
+        let (n_notes, n_sky): (i64, i64) = conn
+            .query_row(
+                "SELECT (SELECT COUNT(*) FROM note_meta), (SELECT COUNT(*) FROM sky_nodes)",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap_or((0, 0));
+        if n_notes != n_sky {
+            let candidates: Vec<String> = {
+                let mut st = conn
+                    .prepare(
+                        "SELECT m.path FROM note_meta m
+                          WHERE NOT EXISTS (SELECT 1 FROM sky_nodes s WHERE s.path = m.path)",
+                    )
+                    .map_err(|e| format!("PJ-334 prepare candidates: {}", e))?;
+                let rows = st
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| format!("PJ-334 query candidates: {}", e))?;
+                rows.filter_map(|r| r.ok()).collect()
+            };
+            let mut inserted: usize = 0;
+            let mut stamped: usize = 0;
+            let stamp_sql = format!(
+                "UPDATE sky_nodes SET stratum = ({stratum_expr}), maturity = ({maturity_expr})
+                  WHERE stratum IS NULL AND path = ?1",
+                stratum_expr = stratum_sql_expr(),
+                maturity_expr = maturity_sql_expr(),
+            );
+            for path in &candidates {
+                let n = conn
+                    .execute(
+                        "INSERT OR IGNORE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
+                         SELECT path, COALESCE(name_lower, LOWER(name)), name, library_name, cid_cn, strftime('%s','now')
+                           FROM note_meta WHERE path = ?1",
+                        params![path],
+                    )
+                    .map_err(|e| format!("PJ-334 restore {}: {}", path, e))?;
+                inserted += n;
+                if n > 0 {
+                    stamped += conn
+                        .execute(&stamp_sql, params![path])
+                        .map_err(|e| format!("PJ-334 stamp {}: {}", path, e))?;
+                }
+            }
+            if !candidates.is_empty() {
+                diag_log(
+                    path,
+                    &format!(
+                        "[sky-restore] PJ-334: {} candidates, {} inserted, {} stamped{}",
+                        candidates.len(),
+                        inserted,
+                        stamped,
+                        if inserted < candidates.len() {
+                            " — SOME CANDIDATES WERE NOT RESTORED (a cid collision swallowed them); investigate before trusting this universe's Sky View"
+                        } else {
+                            ""
+                        }
+                    ),
+                );
+                record_sky_restore_receipt(&conn, candidates.len(), inserted, stamped);
+            }
+        }
     }
 
     // MIG-003 Step 3 — boot-time soft re-backfill. Repairs any cid_cn
@@ -17275,5 +17439,181 @@ mod tests_pj207_s8_index_write_scope {
         assert!(crate::libraries::path_is_under_any(r"E:\Universes\Research\a.md", &foreign));
         assert!(!crate::libraries::path_is_under_any("E:/Universes/Research Notes/a.md", &foreign));
         assert!(!crate::libraries::path_is_under_any("E:/Universes/Other/a.md", &foreign));
+    }
+}
+
+#[cfg(test)]
+mod tests_pj334_sky_restore {
+    use super::*;
+
+    fn tmp(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "constellation_pj334_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&d).expect("tmp dir");
+        d
+    }
+
+    fn add_note(conn: &Connection, path: &str, name: &str, cid: &str) {
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, content_hash, cid_cn) \
+             VALUES (?1, ?2, 'lib', 0, 'h', ?3)",
+            params![path, name, cid],
+        )
+        .expect("insert note");
+    }
+
+    fn has_sky(conn: &Connection, path: &str) -> bool {
+        conn.query_row("SELECT COUNT(*) FROM sky_nodes WHERE path = ?1", params![path], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap_or(0)
+            > 0
+    }
+
+    /// **The defect, end to end, through the production initializer.**
+    ///
+    /// A note with a NON-EMPTY cid and no sky row — the exact shape of all 770 stranded notes on
+    /// the Boss's machine, and precisely the shape the shipped `cid_cn = ''` arm cannot see.
+    #[test]
+    fn a_stranded_note_with_a_real_cid_is_restored_on_the_next_launch() {
+        let dir = tmp("restore");
+        let db = dir.join("search.db");
+        {
+            let conn = init_db(&db).expect("init 1");
+            add_note(&conn, "/u/stranded.md", "stranded", "20260101T000000Z_NOTE_AAAA");
+            add_note(&conn, "/u/healthy.md", "healthy", "20260101T000000Z_NOTE_BBBB");
+            // Strand it exactly as the collision did: the note stays, its node goes.
+            conn.execute("DELETE FROM sky_nodes WHERE path = '/u/stranded.md'", [])
+                .expect("strand it");
+            assert!(!has_sky(&conn, "/u/stranded.md"), "precondition: stranded");
+            assert!(has_sky(&conn, "/u/healthy.md"), "precondition: the other is fine");
+        }
+
+        // The next launch.
+        let conn = init_db(&db).expect("init 2");
+
+        assert!(has_sky(&conn, "/u/stranded.md"), "the stranded note must come back");
+        // `stratum` is stored as TEXT — which is exactly why every reader CASTs it, and why a
+        // NULL there becomes rank 0 via `.unwrap_or(0)` rather than an error.
+        let (stratum, maturity): (Option<String>, Option<String>) = conn
+            .query_row(
+                "SELECT stratum, maturity FROM sky_nodes WHERE path = '/u/stranded.md'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .expect("read the restored row");
+        assert!(
+            stratum.is_some(),
+            "**restored COMPLETE or not at all.** A row with NULL stratum sends rank 0 straight \
+             back into the Reviewer via `.unwrap_or(0)` — re-creating the exact harm and \
+             reporting success."
+        );
+        assert!(maturity.is_some(), "maturity stamped with the same expression the AI trigger uses");
+
+        // And the receipt says what happened, in three numbers.
+        let (cand, ins, stamp): (i64, i64, i64) = conn
+            .query_row(
+                "SELECT candidates, inserted, stamped FROM sky_restore_receipt WHERE id = 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("a repair must leave a receipt");
+        assert_eq!((cand, ins, stamp), (1, 1, 1), "candidates / inserted / stamped");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **The query-plan guard — the difference between 2 ms and 806 ms, measured.**
+    ///
+    /// A single statement carrying the full column list plans `SCAN m` over the table b-tree and
+    /// drags `body_text` with it (273 MB on the Boss's largest universe). Phase 1 must stay a
+    /// covering-index anti-join. This asserts the PLAN, not the timing — timings flake, plans do not.
+    #[test]
+    fn phase_one_never_scans_the_note_meta_table() {
+        let dir = tmp("plan");
+        let db = dir.join("search.db");
+        let conn = init_db(&db).expect("init");
+        for i in 0..200 {
+            add_note(&conn, &format!("/u/n{i:04}.md"), &format!("n{i}"), &format!("cid{i}"));
+        }
+        conn.execute_batch("ANALYZE").ok();
+
+        let mut st = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN
+                 SELECT m.path FROM note_meta m
+                  WHERE NOT EXISTS (SELECT 1 FROM sky_nodes s WHERE s.path = m.path)",
+            )
+            .expect("prepare EQP");
+        let plan: String = st
+            .query_map([], |r| r.get::<_, String>(3))
+            .expect("eqp rows")
+            .filter_map(|r| r.ok())
+            .collect::<Vec<_>>()
+            .join(" | ");
+
+        assert!(
+            plan.contains("COVERING INDEX") || plan.contains("USING INDEX"),
+            "Phase 1 must use an index. Plan was: {plan}"
+        );
+        assert!(
+            !plan.contains("SCAN note_meta AS m\n") && !plan.trim_start().starts_with("SCAN note_meta"),
+            "**Phase 1 planned a table SCAN.** On the Boss's 1.6 GB universe that reads `body_text` \
+             for every note. Plan was: {plan}"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **Why the `OR IGNORE` under-heal is NOT reachable — asserted, not assumed.**
+    ///
+    /// The panel required a test that a candidate which cannot be restored is counted rather than
+    /// silently swallowed. Writing it revealed the scenario is **unconstructible**: `note_meta.cid_cn`
+    /// carries its own UNIQUE constraint, so two notes cannot share a non-empty cid in the first
+    /// place — which is exactly why the panel measured **0 duplicate non-empty cids in any of the
+    /// Boss's databases**, and 0 of the 770 stranded cids appearing in any existing sky row.
+    ///
+    /// So the honest test is of the INVARIANT that closes the hazard. If a future change ever drops
+    /// that constraint, this goes red and the three-number receipt becomes load-bearing rather than
+    /// belt-and-braces.
+    #[test]
+    fn two_notes_cannot_share_a_cid_which_is_what_closes_the_or_ignore_hazard() {
+        let dir = tmp("collide");
+        let db = dir.join("search.db");
+        let conn = init_db(&db).expect("init");
+        add_note(&conn, "/u/incumbent.md", "incumbent", "SHARED_CID");
+
+        let second = conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, content_hash, cid_cn)              VALUES ('/u/collider.md', 'collider', 'lib', 0, 'h', 'SHARED_CID')",
+            [],
+        );
+        assert!(
+            second.is_err(),
+            "note_meta.cid_cn must stay UNIQUE — it is what makes two restore candidates unable              to collide, and therefore what makes `INSERT OR IGNORE` unable to under-heal"
+        );
+        assert!(has_sky(&conn, "/u/incumbent.md"), "the incumbent is untouched");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The gate: a healthy universe must do no work at all beyond two counts.
+    #[test]
+    fn a_healthy_universe_leaves_no_receipt() {
+        let dir = tmp("healthy");
+        let db = dir.join("search.db");
+        {
+            let conn = init_db(&db).expect("init 1");
+            add_note(&conn, "/u/a.md", "a", "cidA");
+            add_note(&conn, "/u/b.md", "b", "cidB");
+        }
+        let conn = init_db(&db).expect("init 2");
+        let receipts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sky_restore_receipt", [], |r| r.get(0))
+            .unwrap_or(0);
+        assert_eq!(receipts, 0, "nothing was missing, so nothing is reported");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

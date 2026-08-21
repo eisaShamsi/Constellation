@@ -1072,7 +1072,9 @@
     "libraries": "coffres",
     "notes": "notes",
     "indexing": "Indexation",
-    "indexingTooltip": "Construction de l'index : analyse du contenu des notes pour trouver les termes significatifs dans votre Univers. Chaque bibliothèque est analysée tour à tour — le panneau se remplira au fur et à mesure que les bibliothèques se terminent."
+    "indexingTooltip": "Construction de l'index : analyse du contenu des notes pour trouver les termes significatifs dans votre Univers. Chaque bibliothèque est analysée tour à tour — le panneau se remplira au fur et à mesure que les bibliothèques se terminent.",
+    "skyRestored": "{count} restauré(s) dans la Vue du Ciel",
+    "skyRestoredShortfallTip": "Certaines notes n'ont pas pu être restaurées — voir le journal de diagnostic."
   },
   "notePane": {
     "saving": "Enregistrement...",

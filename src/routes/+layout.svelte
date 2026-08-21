@@ -1530,6 +1530,29 @@
 	// Refreshed on boot + on universe switch; surfaces in the status bar
 	// when length > 0. Click → popup with details.
 	let federationWarnings = $state<FederationWarning[]>([]);
+
+	/**
+	 * PJ-334 — the number of notes this launch restored to Sky View, or null.
+	 *
+	 * **Boss-approved 2026-08-21 on the panel's recommendation: repair automatically, but SAY SO.**
+	 * A knowledge surface gaining 758 nodes unannounced is the thing to avoid. Nobody answers
+	 * "leave 758 of my notes invisible", so a permission door is disproportionate — a notification
+	 * is not.
+	 *
+	 * Deliberately NOT a `JobProgressStrip`: there is no job to watch. The repair is pure SQL that
+	 * finished before the window painted; this is a receipt, and it reads once (the Rust side
+	 * clears it) so it never reappears on a later launch.
+	 */
+	let skyRestored = $state<{ candidates: number; inserted: number } | null>(null);
+
+	async function loadSkyRestoreReceipt() {
+		try {
+			const r = await invoke<[number, number, number] | null>('take_sky_restore_receipt');
+			if (r && r[1] > 0) skyRestored = { candidates: r[0], inserted: r[1] };
+		} catch {
+			// A receipt that cannot be read must never affect the boot that just repaired the data.
+		}
+	}
 	let showFederationWarningsPopup = $state(false);
 
 	// Child universes for sidebar
@@ -2938,6 +2961,17 @@
 		// user can see, so deferring them is free.
 		// See lab/boot-perf/boot-bundle-cold-start.md.
 		await refreshLibraryCaches().catch(() => {});
+
+		// PJ-334 — **read the receipt HERE, and the position is the whole point.**
+		//
+		// The first wiring piggy-backed this on `loadFederationWarnings()` for convenience, ~126
+		// lines earlier. `take_sky_restore_receipt` returns None the moment `SearchState.db` is
+		// still None, and `refreshLibraryCaches` above is the ONLY thing on this path that reaches
+		// `ensure_search_db_ready` and opens it. So the read fired before the database existed,
+		// every cold boot, and the status-bar line the Boss approved could never appear — while
+		// the repair itself ran fine. A silent no-op in the half whose entire job is not being
+		// silent. Caught by the test pipeline before it reached him, not by a test.
+		void loadSkyRestoreReceipt();
 
 		// MIG-100 §3 — auto-restore the last session's tabs. Fire-and-forget,
 		// strictly post-hydration: zero awaited work on the boot path, and the
@@ -10529,6 +10563,20 @@
 			     derived family — not a note count. Shows only on a launch that follows
 			     an interrupted repair, so an ordinary boot renders nothing. -->
 			<JobProgressStrip eventName="derived-heal:progress" statusCommand="derived_heal_status" cancelCommand="derived_heal_cancel" labelPrefix="derivedHeal" />
+			<!-- PJ-334 — a one-line receipt, not a strip. Shows only on the launch that actually
+			     repaired something; the Rust side clears the receipt as it is read. -->
+			{#if skyRestored}
+				<span class="sb-sky-restored">
+					{($t('statusBar.skyRestored') || 'Restored {count} to Sky View')
+						.replace('{count}', $tn('plurals.notes', skyRestored.inserted))}
+					{#if skyRestored.inserted < skyRestored.candidates}
+						<span class="sb-sky-shortfall" title={$t('statusBar.skyRestoredShortfallTip') || 'Some notes could not be restored — see the diagnostics log.'}>
+							({skyRestored.candidates - skyRestored.inserted})
+						</span>
+					{/if}
+					<button class="sb-sky-dismiss" onclick={() => (skyRestored = null)} title={$t('mig108.notNow') || 'Not now'}>×</button>
+				</span>
+			{/if}
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
@@ -11985,6 +12033,33 @@
 	.sb-universe:hover { color: var(--interactive-accent); }
 
 	/* MIG-056 §H — Federation warning badge + popup */
+	/* PJ-334 — quiet by default: this is information, not an alarm. */
+	.sb-sky-restored {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		opacity: 0.85;
+		white-space: nowrap;
+	}
+	.sb-sky-shortfall {
+		opacity: 0.7;
+		font-variant-numeric: tabular-nums;
+	}
+	.sb-sky-dismiss {
+		background: none;
+		border: none;
+		padding: 0 2px;
+		cursor: pointer;
+		color: inherit;
+		opacity: 0.6;
+		font-size: 13px;
+		line-height: 1;
+	}
+	.sb-sky-dismiss:hover {
+		opacity: 1;
+	}
+
 	.sb-federation-warning {
 		display: inline-flex; align-items: center; gap: 4px;
 		border: none; background: none; color: var(--text-warning, #d97706);

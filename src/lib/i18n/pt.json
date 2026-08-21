@@ -1512,7 +1512,9 @@
     "libraries": "cofres",
     "notes": "notas",
     "indexing": "Indexando",
-    "indexingTooltip": "Construindo o Índice: escaneando o conteúdo das notas para encontrar os termos significativos no seu Universo. Cada biblioteca é escaneada por vez — o painel irá preencher à medida que as bibliotecas forem concluídas."
+    "indexingTooltip": "Construindo o Índice: escaneando o conteúdo das notas para encontrar os termos significativos no seu Universo. Cada biblioteca é escaneada por vez — o painel irá preencher à medida que as bibliotecas forem concluídas.",
+    "skyRestored": "{count} restaurada(s) na Vista do Céu",
+    "skyRestoredShortfallTip": "Algumas notas não puderam ser restauradas — consulte o registo de diagnóstico."
   },
   "notePane": {
     "saving": "Salvando...",
