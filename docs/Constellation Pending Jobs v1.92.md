@@ -741,7 +741,17 @@
 > **Group 1 — Safety & correctness** *(fix before any feature work)*
 > ~~1. **PJ-252**~~ — **CLOSED 2026-08-11**, Boss-validated across five test rounds (Stage 1 + Stage 2 Parts 1–4). One classifier; two further shapes found by running; a CRLF regression of its own caught by the `ui-inspector` gate; the blank-line family closed in both Rust and TS. See the v1.80 preamble.
 > ~~2. **PJ-234 + PJ-240**~~ — **CLOSED 2026-08-11**, Boss-validated. FOUR surfaces, one rule; the wrong predicate deleted. See the v1.81 preamble.
-> 2a. **PJ-258** — `listItemsOf`'s raw-comma split, the quote-aware sibling of a defect PJ-207 §15 already closed elsewhere. *(► Next action)*
+> 2a. **PJ-258** — `listItemsOf`'s raw-comma split, the quote-aware sibling of a defect PJ-207 §15 already closed elsewhere.
+>
+> ---
+> **► Next action (2026-08-21, after MIG-111 Phase 1.2 closed — commit `227f5b3a`, Boss-validated):**
+> **A Boss ruling is owed, and it is the gate on everything else.** Does **PJ-332** (HIGH · the Sky
+> back-fill thread has no universe identity · **pre-existing**, and every sibling back-fill already
+> does it correctly) go ahead of **MIG-111 Stage B** (the rename path, read-side analytics, the
+> watcher fence)? **PJ-333** (MED · `bring_in_library` does not ancestor-walk) is a one-line fix that
+> changes what the app refuses, so it rides on the same ruling.
+> Behind that: the **PJ-326..331** job the Boss already scheduled for after Stage A.
+> ---
 > 2b. **PJ-269** — the indexer stores every block list as an empty string; a THIRD frontmatter parser.
 > 3. **PJ-235 + PJ-254** — the federation-boundary family: `move_item` can move a note **into** a linked universe, and every rename/move/create tail files a linked universe's note into THIS universe's index. **One concern, two surfaces — fix together.**
 > 3a. **PJ-253** — the cascade's case-fold miss. **BLOCKED: Boss ruling required** (it changes which links are rewritten on disk).

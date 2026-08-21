@@ -333,6 +333,12 @@ After every phase, step, or significant commit:
    4. **Bump the version** — write a NEW `vX.Y+1` file with a "What changed" preamble capturing the delta (never overwrite; the trail is durable, same discipline as the orientation doc). A job that genuinely touches nothing in the backlog still requires a one-line "PJ ledger reviewed — no change" note in the session log, so the check is never silently skipped.
    This is the **end-guard** that pairs with SO#8's **start-guard**: SO#8 keeps a stale entry from being worked; SO#9 keeps the ledger from going stale in the first place. Both exist because the ledger twice drifted badly (the v1.13 reconciliation found it ~3 weeks / 37 migration-numbers stale; the v1.18 reconciliation had to close 16 entries the ledger still carried as open) — SO#9 makes that drift structurally impossible by updating the ledger at the moment each job ends.
 
+10. **PCS and Orientation BEFORE any ruling request.** *(Boss-mandated 2026-08-21: "PCS and Orientation, before ruling, and consider it a standing order.")* Never ask the Boss to rule on anything — a severity, a priority, a fix-now-or-file, an options paper — until the PCS is complete and the orientation doc is current **as of that moment**. Commit, push, session log, ledger reconciliation, orientation v-bump: all of it lands first, and the ruling request is written afterwards, against the updated record.
+
+    **Why, from the day it was ordered.** On 2026-08-20 a naming ruling ("it is a *Linked Universe*") had been taken once and written into none of the three canonical documents. A nine-agent review panel then read those documents, found the retired name, and **formally recommended it back to the Boss as its considered advice.** A ruling requested against a stale record is not merely unhelpful — it actively launders the staleness into a recommendation. The Boss's own diagnosis: *"That's why you have to conduct the PCS and orientations more often."*
+
+    The rule is also a forcing function on me: if the record cannot be brought current, the thing I am about to ask for a ruling on is not yet understood well enough to rule on.
+
 **PCS = Push + Commit + SO** — always includes help files, user manual updates, **and the SO#9 Pending-Jobs ledger reconciliation.**
 
 ## Testing Instructions Rule (top principal)
