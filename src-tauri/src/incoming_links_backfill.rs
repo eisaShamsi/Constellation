@@ -46,7 +46,7 @@ pub(crate) const SCHEMA_VERSION: i64 = 1;
 /// backfilled before this gate existed has no vocab stamp (0 ≠ fingerprint) and
 /// re-materializes once — the same one-time upgrade path as outgoing §A→§B.
 pub(crate) fn is_stamped(conn: &Connection) -> bool {
-    is_built(conn) && stored_vocab_fingerprint(conn) == crate::link_types::snapshot().fingerprint()
+    is_built(conn) && stored_vocab_fingerprint(conn) == crate::link_types::active_universe_vocabulary().fingerprint()
 }
 
 /// **Structure exists** — the aggregate has been built at least once, whatever vocabulary it
@@ -146,7 +146,7 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     // run up-front (the links_backfill MIG-067 §B pattern): if the vocabulary
     // changes mid-run, the stamp below differs from the then-current fingerprint,
     // is_stamped stays false, and the next schedule re-runs — eventual consistency.
-    let run_fp = crate::link_types::snapshot().fingerprint();
+    let run_fp = crate::link_types::active_universe_vocabulary().fingerprint();
 
     // PJ-207 §6 — through the one assembly, via the entry point named for this caller:
     // it is the BUILD of the incoming aggregates, not a heal, so it is deliberately
@@ -266,7 +266,7 @@ mod tests {
         assert!(!is_stamped(&conn), "never built ⇒ never stamped");
 
         // Built and stamped under the CURRENT vocabulary: both true.
-        let fp = crate::link_types::snapshot().fingerprint();
+        let fp = crate::link_types::active_universe_vocabulary().fingerprint();
         conn.execute(
             "INSERT INTO schema_versions(module,version) VALUES ('incoming_links',?1)",
             [SCHEMA_VERSION],
@@ -320,7 +320,7 @@ mod tests {
         // Version stamped but no vocab stamp → 0 ≠ the seed fingerprint → not stamped.
         assert!(!is_stamped(&conn), "missing vocab stamp must read as NOT stamped");
 
-        let fp = crate::link_types::snapshot().fingerprint();
+        let fp = crate::link_types::active_universe_vocabulary().fingerprint();
         assert_ne!(fp, 0, "seed registry fingerprint is non-zero");
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('incoming_links_vocab', ?1)",
@@ -360,7 +360,7 @@ mod tests {
         .unwrap();
         // Mirror production: the copy carries the real note_meta FTS trigger.
         crate::search::register_fts5_tokenizer(&mut conn).unwrap();
-        eprintln!("[incoming-rehearsal] assign SQL: {}", crate::search::incoming_aggregate_assignments("note_meta"));
+        eprintln!("[incoming-rehearsal] assign SQL: {}", crate::search::incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta"));
 
         let t = std::time::Instant::now();
         let n = crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();

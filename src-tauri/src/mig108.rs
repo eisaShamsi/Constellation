@@ -189,6 +189,18 @@ pub fn classify(
             EntryClass::Missing
         } else if let Some(reason) = foreign_reason(&lib.path, foreign_roots) {
             EntryClass::ForeignUniverse { reason }
+        } else if let Some(owner) = universe_manifest_at_or_above(Path::new(&lib.path)) {
+            // The structural backstop. Reached only when `foreign_roots` did NOT already name
+            // this path — i.e. exactly when the registry or a child manifest came back short.
+            // Ahead of the Copy arm on purpose: copying a universe's files into another
+            // universe as plain content is the same mangling as moving them, which is why
+            // `bring_in_library` refuses it too.
+            EntryClass::ForeignUniverse {
+                reason: format!(
+                    "is, or sits inside, a universe of its own: {}",
+                    owner.display()
+                ),
+            }
         } else if copy_set.contains(&norm(&lib.path)) {
             EntryClass::Copy
         } else {
@@ -252,6 +264,49 @@ pub fn classify(
         entries,
         decollided,
     }
+}
+
+/// **Does this directory carry a universe manifest?** Asks the DISK, not a report.
+///
+/// `foreign_reason` answers "is this inside a universe?" from `foreign_roots`, which the caller
+/// assembles from `registered_universe_roots` → `load_registry` (universe.rs:138-161) — and
+/// `load_registry` returns an EMPTY registry on a path error, a read failure, and a parse
+/// failure alike. An empty registry means an empty foreign set, which means `foreign_reason`
+/// answers `None` for everything, which means **every** external registered library falls
+/// through to `EntryClass::Move`. One unreadable `universes.json` and the plan proposes
+/// relocating other universes' content.
+///
+/// This is the structural backstop: a fact on disk cannot be lost by whichever reader degraded.
+///
+/// **`fs::metadata`, deliberately not `Path::exists()`.** `exists()` returns `false` both for
+/// "absent" and for "present but the metadata could not be read" — reintroducing the very
+/// lenient-reader defect one layer down, inside the window between the dialog's plan and the
+/// plan `mig108_execute` recomputes. Here an unreadable manifest counts as PRESENT: the guard
+/// is monotone toward refusing to relocate, and refusing to move something the user can see is
+/// recoverable in a way that moving another universe's files is not.
+pub(crate) fn carries_universe_manifest(dir: &Path) -> bool {
+    for candidate in [dir.join(".constellation").join("universe.json"), dir.join("universe.json")] {
+        match std::fs::metadata(&candidate) {
+            Ok(_) => return true,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(_) => return true, // cannot confirm absence ⇒ assume present
+        }
+    }
+    false
+}
+
+/// The nearest directory at or above `path` that carries a universe manifest, if any.
+/// Walks to the volume root: a library registered three folders deep inside another universe
+/// is that universe's content just as much as its root is.
+fn universe_manifest_at_or_above(path: &Path) -> Option<PathBuf> {
+    let mut cur = Some(path);
+    while let Some(d) = cur {
+        if carries_universe_manifest(d) {
+            return Some(d.to_path_buf());
+        }
+        cur = d.parent();
+    }
+    None
 }
 
 fn foreign_reason(path: &str, foreign_roots: &[String]) -> Option<String> {
@@ -570,6 +625,90 @@ mod tests {
         let root = td.path().join("Universe");
         std::fs::create_dir_all(root.join(".constellation")).unwrap();
         (td, root.to_string_lossy().to_string())
+    }
+
+    // ── PJ-322 — the structural backstop (panel-ordered, 2026-08-20) ──
+    //
+    // `foreign_roots` is a REPORT, assembled from `load_registry`, which returns an EMPTY
+    // registry on a path error, a read failure, and a parse failure alike (universe.rs:141-158).
+    // These tests pass `&[]` for `foreign_roots` — which is exactly what a degraded read
+    // produces — and assert the classifier still refuses to relocate another universe.
+
+    #[test]
+    fn a_universe_is_never_moved_even_when_the_registry_came_back_empty() {
+        let (td, root) = scratch_universe();
+        let other = td.path().join("Other Universe");
+        std::fs::create_dir_all(other.join(".constellation")).unwrap();
+        std::fs::write(other.join(".constellation").join("universe.json"), b"{}").unwrap();
+        let libs = vec![lib("x", "Other", &other.to_string_lossy())];
+
+        // The degraded case: NO foreign roots reported at all.
+        let report = classify(&root, &libs, &[], &[]);
+        let e = &report.entries[0];
+        assert!(
+            matches!(e.class, EntryClass::ForeignUniverse { .. }),
+            "a universe root must never be Move, even with an empty foreign set; got {:?}",
+            e.class
+        );
+        assert!(e.dest.is_none(), "and it must have no destination: {:?}", e.dest);
+        drop(td);
+    }
+
+    #[test]
+    fn a_library_nested_inside_another_universe_is_foreign_by_structure() {
+        let (td, root) = scratch_universe();
+        let other = td.path().join("Other Universe");
+        std::fs::create_dir_all(other.join("Deep").join("Nested Lib")).unwrap();
+        std::fs::write(other.join("universe.json"), b"{}").unwrap(); // root-level manifest form
+        let libs = vec![lib(
+            "x",
+            "Nested",
+            &other.join("Deep").join("Nested Lib").to_string_lossy(),
+        )];
+
+        let report = classify(&root, &libs, &[], &[]);
+        assert!(
+            matches!(report.entries[0].class, EntryClass::ForeignUniverse { .. }),
+            "the walk must reach an ancestor's manifest; got {:?}",
+            report.entries[0].class
+        );
+        drop(td);
+    }
+
+    /// The guard must not over-refuse: an ordinary external folder is still relocatable, or
+    /// the whole unification stops working.
+    #[test]
+    fn an_ordinary_external_folder_is_still_moved() {
+        let (td, root) = scratch_universe();
+        let ext = td.path().join("Ordinary Lib");
+        std::fs::create_dir_all(&ext).unwrap();
+        let libs = vec![lib("x", "Ordinary", &ext.to_string_lossy())];
+        let report = classify(&root, &libs, &[], &[]);
+        assert_eq!(
+            report.entries[0].class,
+            EntryClass::Move,
+            "no manifest anywhere above ⇒ ordinary content"
+        );
+        drop(td);
+    }
+
+    /// An explicit Copy choice does not override the structure. Copying a universe's files in
+    /// as plain content is the same mangling as moving them — `bring_in_library` refuses it on
+    /// the same grounds.
+    #[test]
+    fn an_explicit_copy_choice_cannot_override_the_structure() {
+        let (td, root) = scratch_universe();
+        let other = td.path().join("Other Universe");
+        std::fs::create_dir_all(other.join(".constellation")).unwrap();
+        std::fs::write(other.join(".constellation").join("universe.json"), b"{}").unwrap();
+        let libs = vec![lib("x", "Other", &other.to_string_lossy())];
+        let report = classify(&root, &libs, &[other.to_string_lossy().to_string()], &[]);
+        assert!(
+            matches!(report.entries[0].class, EntryClass::ForeignUniverse { .. }),
+            "structure beats the copy list; got {:?}",
+            report.entries[0].class
+        );
+        drop(td);
     }
 
     // ── classifier ──
@@ -2081,20 +2220,62 @@ fn active_cdir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     crate::universe::active_constellation_dir(app)
 }
 
-fn assemble_foreign_roots(app: &tauri::AppHandle, own_root: &str) -> Vec<String> {
+/// The set of roots this migration must treat as **foreign** — other universes' content,
+/// which it may never relocate.
+///
+/// **Fallible since PJ-322 (Boss decision 1, 2026-08-20).** Both readers underneath used to
+/// answer "nothing" for "I could not look": `registered_universe_roots` via the lenient
+/// `load_registry`, and `resolve_child_universe_roots_recursive` via the lenient child reader.
+/// An empty answer here does not fail loudly — it makes `foreign_reason` return `None` for
+/// everything, and every external registered library falls through `classify` to
+/// `EntryClass::Move`. **A plan that moves directories must refuse rather than guess.**
+///
+/// This is the *reported* half of the guard. `classify` also asks the disk directly
+/// (`universe_manifest_at_or_above`), which is what still holds if a reader degrades in a way
+/// neither of these catches. Two independent guards on one concern, deliberately.
+/// Carry the *kind* of failure across the IPC boundary, which is `Result<_, String>`.
+///
+/// **Found by the panel, 2026-08-20, in code written the same morning.** `universe.rs`
+/// deliberately preserves `PersistedError::{Unreadable, Corrupt}` — with a comment explaining
+/// that `Unreadable` is usually a transient lock where a retry succeeds, while `Corrupt` is
+/// permanent and retrying is pointless — and then this function threw that distinction away one
+/// call later with `.map_err(|e| e.message().to_string())`. The unify dialog consequently told
+/// the user "this is usually temporary… Try again" about a file that will never repair itself.
+///
+/// A machine-readable prefix, not English prose: the frontend must not have to pattern-match a
+/// translated sentence to decide which buttons are honest. The prefix is stripped before display
+/// (`Mig108UnifyDialog.svelte`), so the user never sees it.
+pub(crate) const REFUSAL_TRANSIENT: &str = "transient|";
+pub(crate) const REFUSAL_DAMAGED: &str = "damaged|";
+
+fn classify_refusal(e: crate::universe::PersistedError) -> String {
+    match e {
+        crate::universe::PersistedError::Unreadable(m) => format!("{REFUSAL_TRANSIENT}{m}"),
+        crate::universe::PersistedError::Corrupt(m) => format!("{REFUSAL_DAMAGED}{m}"),
+    }
+}
+
+fn assemble_foreign_roots(app: &tauri::AppHandle, own_root: &str) -> Result<Vec<String>, String> {
     let mut roots: Vec<String> = Vec::new();
-    for r in crate::universe::registered_universe_roots(app) {
+    // `registered_universe_roots_strict` only ever refuses for the TRANSIENT reason — a corrupt
+    // registry is set aside and treated as genuinely empty by `load_registry_for_update`, so it
+    // returns `Ok`. Tagged explicitly rather than left bare, so the dialog never has to guess.
+    for r in crate::universe::registered_universe_roots_strict(app)
+        .map_err(|m| format!("{REFUSAL_TRANSIENT}{m}"))?
+    {
         let rs = r.to_string_lossy().to_string();
         // Children of ANY registered universe are foreign content too (H6) — including the
         // active universe's own cUniverses.
-        for c in crate::universe::resolve_child_universe_roots_recursive(&r) {
+        for c in crate::universe::resolve_child_universe_roots_recursive_strict(&r)
+            .map_err(classify_refusal)?
+        {
             roots.push(c.to_string_lossy().to_string());
         }
         if norm(&rs) != norm(own_root) {
             roots.push(rs);
         }
     }
-    roots
+    Ok(roots)
 }
 
 /// Read-only: classify the active universe for the proposal dialog. `copy_paths` lets the
@@ -2108,7 +2289,7 @@ pub fn mig108_preflight(
         .to_string_lossy()
         .to_string();
     let libs = crate::libraries::load_all_libraries(&app);
-    let foreign = assemble_foreign_roots(&app, &root);
+    let foreign = assemble_foreign_roots(&app, &root)?;
     Ok(classify(&root, &libs, &copy_paths.unwrap_or_default(), &foreign))
 }
 
@@ -2346,7 +2527,7 @@ pub fn bring_in_library(
         return Err("That folder is already inside the universe — use Add library.".to_string());
     }
     // H6 — never ingest another universe's root or child.
-    let foreign = assemble_foreign_roots(&app, &root);
+    let foreign = assemble_foreign_roots(&app, &root)?;
     if let Some(reason) = foreign_reason(&source_path, &foreign) {
         return Err(format!("That folder cannot be brought in: it {}.", reason));
     }
@@ -2364,9 +2545,13 @@ pub fn bring_in_library(
     // Phase-4 audit — a folder that IS a universe (registered or not) must be opened, not
     // ingested: swallowing its .constellation (search.db, universe.json, earned ledger)
     // into another universe as plain files is data mangling.
-    if src.join(".constellation").join("universe.json").exists()
-        || src.join("universe.json").exists()
-    {
+    // Through the shared predicate so this and `classify` cannot drift apart again (the
+    // Whole-Ecosystem Fix Law's exact shape — one concern, two surfaces). NOTE the deliberate
+    // difference in SCOPE: this refuses only when the folder ITSELF is a universe, which is
+    // this command's existing contract; `classify` walks upward as well, because there the
+    // guard is monotone-safe. Widening this one is a user-facing behaviour change and belongs
+    // to the Boss, not to a mid-cascade edit.
+    if carries_universe_manifest(src) {
         return Err(
             "That folder is a universe of its own — open it from the universe switcher instead."
                 .to_string(),

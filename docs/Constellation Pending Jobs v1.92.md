@@ -220,6 +220,30 @@
 >
 > **Priority: scheduled with the PJ-326..330 job after MIG-111 Stage A** (Boss accepted the panel's ordering, 2026-08-20).
 >
+> ### 🆕 PJ-332 *(HIGH · index-divergence · **PRE-EXISTING**, not introduced by MIG-111)* - the Sky back-fill thread has no universe identity
+> **Confirmed by the 2026-08-21 diff-scoped safety inspection** (20 agents, refute-before-confirm). Candidate was raised as APP-KILLER and **downgraded to HIGH by its own verifier**, which explicitly declined to sustain the broader claim - recorded because a refuted escalation is as valuable as a confirmed one.
+>
+> `sky_backfill::run()` binds `app.state::<SearchState>()` once and **re-locks the SWAPPABLE `state.db` at every phase** (sky_backfill.rs :172, :183, :224, :313, :347, :378, :458), carrying **no path and no `federation_generation` token**, with no cancel check. Phase B (:301-305) is lock-free by design and performs up to 1000 `fs::read_to_string` calls - where nearly all the wall-clock sits. A universe switch inside that window (`invalidate_search_state` sets `*db = None` and bumps the generation; `ensure_search_db_ready` then installs the NEW universe's connection into the SAME mutex) silently redirects the thread.
+>
+> **Two independently reachable end states, both silent and permanent:**
+> 1. The zombie thread's `finalize` (:456-471) stamps `schema_versions.sky` and DELETEs the cursor in the OTHER universe unconditionally on a drained batch. `is_needed` (:88) is version-only, so it returns false forever and that universe stays partially populated.
+> 2. The zombie's `write_cursor` lands while the other universe's own thread is blocked behind its `ANALYZE`, so that thread's `read_cursor` picks up a foreign path and every note sorting below it is skipped - then stamped complete.
+> Additionally **Phase E (:342-352) inserts `note_aliases` rows with NO existence guard**, writing one universe's paths into another's alias table, which `libraries.rs` and `map.rs` consult for wikilink resolution.
+>
+> **Nothing repairs any of this:** `index_repair.rs:415` states outright that nothing in the codebase rebuilds `sky_links`; `converge.rs:296` is a no-op on empty `sky_nodes`. Diagnostics log `[sky_backfill] completed`.
+>
+> **The guard already exists and every sibling uses it.** `ensure_search_db_ready` captures `init_gen` and discards on mismatch; `derived_heal.rs` re-checks the generation; `name_fold_backfill`, `links_backfill`, `incoming_links_backfill` and `review_backfill` each resolve a path ONCE and open their own connection. **`sky_backfill` is the lone outlier that reads the mutable "whichever universe is active NOW" handle.**
+> **Fix shape:** capture `federation_generation` + `db_path` at thread start and abort on mismatch (or open its own connection like its siblings); add a completeness check before `finalize` stamps; add an existence guard to the Phase E alias insert.
+> **Not fixed in this pass** - it is pre-existing, it is in a subsystem this diff only renamed one line in, and it is big enough to deserve its own reproduction. **Boss ruling owed on whether it precedes MIG-111 Stage B.**
+>
+> ### 🆕 PJ-333 *(MED · index-divergence)* - `bring_in_library` does not ancestor-walk, so content nested inside an UNREGISTERED universe can be moved out of it
+> **Confirmed by the same inspection.** PJ-322 gave `classify` an ancestor-walking manifest backstop (`universe_manifest_at_or_above`), and **deliberately did not give it to `bring_in_library`**, whose only structural guard is `carries_universe_manifest(src)` - the folder ITSELF. That choice is documented in the code as belonging to the Boss because widening it is a user-facing behaviour change.
+>
+> **The hole it leaves:** a second Constellation universe on disk that is NOT in this install's registry (synced from another machine, or removed from the list but kept). `assemble_foreign_roots` cannot name it, so `foreign_reason` answers `None` for every path under it. The user picks a plain subfolder inside it - which carries no manifest of its own - and Bring-In → Move succeeds. That universe's content is relocated out of it with no error.
+>
+> **Why it is MED and not higher:** it requires an unregistered universe on disk AND the user selecting a folder inside it. **Not verified:** what the other universe's own index does afterwards.
+> **The fix is one line** - route `bring_in_library` through `universe_manifest_at_or_above` instead of `carries_universe_manifest` - but it changes what the app refuses, so it is **Boss's call**, exactly as the code comment says.
+>
 > ### 📋 Housekeeping
 > - **Gates.** Rust **1501 / 0** (20 ignored, incl. the 1.2 acceptance test) — and this time the number is a **distribution, not a sample**: 16 consecutive clean single-process runs after PJ-303/PJ-304, then **9 more consecutive green** on the final state after PJ-307/PJ-308 and the deletion of the harmful test. (1501 not 1502 because that test was removed. One sweep run was lost to a transient Windows `LNK1104` linker lock — a file-lock on the freshly-linked exe, not a test failure.) **Release binary built 2026-08-17 17:02**, after every fix in the batch. Against a baseline failing ~1 in 6, that is ~5% likely by luck alone, so the runs corroborate; the proof is that both mechanisms were reproduced deterministically and removed. Diff-scoped inspection on the PJ-303 diff: **0 confirmed findings**; a combined re-inspection of the full five-file diff was run because the first PJ-302 inspection spanned the stash used for the pristine test and could have read the wrong bytes.
 > - **A measurement-discipline note, recorded because it is the same disease as the bugs.** I twice ran two `cargo test` loops concurrently and once edited source mid-loop, then read the resulting failures as evidence. They were artefacts of my own concurrency — shared mutable state with a window, created by the person cataloguing shared mutable state with a window. The contaminated runs were discarded and re-measured clean. **Rule for the rest of this migration: one suite at a time, no source edits mid-sweep.**

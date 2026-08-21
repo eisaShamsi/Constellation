@@ -280,7 +280,7 @@ fn process_batch(
         // parent/contains edges would copy them into sky_links and inflate Sky-View node
         // counts. Append the same registry exclusion the triggers use. Empty string when
         // no structural type exists ⇒ byte-identical to before the lane registered.
-        let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+        let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
         tx.execute(
             &format!(
                 "INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)

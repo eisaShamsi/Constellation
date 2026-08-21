@@ -95,7 +95,8 @@ pub fn compute_note_strata(
 
     // Phase 1: Scan all notes — collect word count + outgoing links + link types
     let mut notes: HashMap<String, NoteRecord> = HashMap::new();
-    scan_notes_recursive(Path::new(&library_path), &re, &mut notes);
+    let reg = crate::link_types::active_universe_vocabulary();
+    scan_notes_recursive(&reg, Path::new(&library_path), &re, &mut notes);
 
     // Phase 2: Build inbound map
     let note_names: HashSet<String> = notes.keys().cloned().collect();
@@ -154,6 +155,7 @@ pub fn compute_note_strata(
 
 /// Recursively scan a directory for .md files, building NoteRecords.
 fn scan_notes_recursive(
+    reg: &crate::link_types::LinkTypeRegistry,
     dir: &Path,
     re: &regex::Regex,
     notes: &mut HashMap<String, NoteRecord>,
@@ -164,8 +166,11 @@ fn scan_notes_recursive(
     };
 
     // MIG-067 §D — registry membership (8 typed acts + custom + the null
-    // `associative`), snapshot once per directory instead of a hardcoded list.
-    let reg = crate::link_types::snapshot();
+    // `associative`). **MIG-111 §1.2/A5: the registry now arrives as a PARAMETER.** It used to
+    // be re-read from the process-global once per directory, which meant a walk spanning a
+    // vocabulary change could classify the first half of a library under one vocabulary and the
+    // second half under another — LL-047's "which vocabulary?" is a question about WHEN.
+    // One value, resolved once by the caller, used for the whole walk.
 
     for entry in read_dir.flatten() {
         let path = entry.path();
@@ -177,7 +182,7 @@ fn scan_notes_recursive(
         }
 
         if path.is_dir() {
-            scan_notes_recursive(&path, re, notes);
+            scan_notes_recursive(reg, &path, re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // MIG-008 Step 3: stratum results use the frontmatter title
@@ -196,7 +201,7 @@ fn scan_notes_recursive(
                 // only the frontmatter occurrence, so a body link to the same note is
                 // still counted. Populated since §5 (empty only if the lane is ever un-registered).
                 let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
-                let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
+                let struct_fm = crate::link_types::structural_frontmatter_targets(reg, &content[..fm_len]);
 
                 // Parse outgoing wikilinks + link types
                 let mut outgoing: Vec<String> = Vec::new();

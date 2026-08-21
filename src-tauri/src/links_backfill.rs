@@ -96,7 +96,7 @@ fn is_needed(conn: &Connection) -> bool {
     // every row. This also covers the §A→§B upgrade: a universe last back-filled
     // under §A has no `links_vocab` stamp (fingerprint 0), so the seed registry's
     // non-zero fingerprint mismatches → a one-time pass fills the new JSON column.
-    stored_vocab_fingerprint(conn) != crate::link_types::snapshot().fingerprint()
+    stored_vocab_fingerprint(conn) != crate::link_types::active_universe_vocabulary().fingerprint()
 }
 
 /// True once the §A.2 back-fill version stamp has reached target — i.e. a completed
@@ -157,7 +157,7 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // stamped at finalize. If the vocabulary changes again mid-run, the stamp will
     // differ from the then-current fingerprint and `is_needed` re-runs us next time
     // (eventual consistency, without tracking the vocabulary per batch).
-    let run_fp = crate::link_types::snapshot().fingerprint();
+    let run_fp = crate::link_types::active_universe_vocabulary().fingerprint();
 
     // MIG-067 §B — if the version is already current, this run was triggered purely
     // by the vocabulary-change gate; any cursor left by a prior run belongs to the
@@ -245,7 +245,7 @@ fn process_batch(
 pub(crate) fn recompute_range(conn: &Connection, after_path: &str, last_path: &str) -> rusqlite::Result<usize> {
     let sql = format!(
         "UPDATE note_meta SET {assign} WHERE path > ?1 AND path <= ?2",
-        assign = outgoing_aggregate_assignments("note_meta.path"),
+        assign = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta.path"),
     );
     conn.execute(&sql, params![after_path, last_path])
 }
@@ -304,7 +304,7 @@ pub(crate) fn recompute_all_outgoing(conn: &Connection, _key: &crate::converge::
 pub(crate) fn recompute_incoming_range(conn: &Connection, after: &str, last: &str) -> rusqlite::Result<usize> {
     let sql = format!(
         "UPDATE note_meta SET {assign} WHERE path > ?1 AND path <= ?2",
-        assign = crate::search::incoming_aggregate_assignments("note_meta"),
+        assign = crate::search::incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta"),
     );
     conn.execute(&sql, params![after, last])
 }
@@ -582,7 +582,7 @@ mod tests {
         assert!(is_needed(&conn), "missing vocab stamp must re-trigger the back-fill");
 
         // Stamp the CURRENT fingerprint → in sync → not needed.
-        let fp = crate::link_types::snapshot().fingerprint();
+        let fp = crate::link_types::active_universe_vocabulary().fingerprint();
         assert_ne!(fp, 0, "seed registry fingerprint is non-zero");
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('links_vocab', ?1)",
@@ -736,8 +736,8 @@ mod tests {
              CREATE TRIGGER note_links_outgoing_au AFTER UPDATE ON note_links \
                BEGIN UPDATE note_meta SET {del} WHERE path = OLD.source_path; \
                      UPDATE note_meta SET {ins} WHERE path = NEW.source_path; END;",
-            ins = outgoing_aggregate_assignments("NEW.source_path"),
-            del = outgoing_aggregate_assignments("OLD.source_path"),
+            ins = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "NEW.source_path"),
+            del = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "OLD.source_path"),
         ))
         .unwrap();
 

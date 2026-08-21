@@ -354,24 +354,17 @@ fn cell() -> &'static RwLock<LinkTypeRegistry> {
     REGISTRY.get_or_init(|| RwLock::new(LinkTypeRegistry::seeds_only()))
 }
 
-/// True if `id` is a known type in the active registry (seeds + custom). Used by
-/// the parser. Falls back to the 8 seed ids if the lock is poisoned.
-pub fn is_known_type(id: &str) -> bool {
-    cell()
-        .read()
-        .map(|r| r.is_known(id))
-        .unwrap_or_else(|_| SEED_IDS.contains(&id))
-}
-
-/// PJ-065 — true if `id` is a structural (non-cognitive parent/TOC) type in the
-/// active registry. Falls back to `STRUCTURAL_SEED_IDS` on a poisoned lock.
-/// (TS mirror: linkTypeRegistry.ts::isStructuralLinkType.)
-pub fn is_structural_type(id: &str) -> bool {
-    cell()
-        .read()
-        .map(|r| r.is_structural(id))
-        .unwrap_or_else(|_| STRUCTURAL_SEED_IDS.contains(&id))
-}
+// ─── MIG-111 §1.2/A5 — the ambient readers are GONE ──────────────────────
+//
+// `is_known_type` and `is_structural_type` used to answer "is this a link type?" by reading the
+// process-global registry at CALL time. They were deleted, not deprecated, because a deprecated
+// function still compiles: every caller now has to name the registry it means, and an eleventh
+// ambient reader cannot appear without a compile error. Use `LinkTypeRegistry::is_known` /
+// `::is_structural` on a registry you were HANDED — from a `WriteScope` for a routed write, or
+// from `active_universe_vocabulary()` at a named, commented call site for the active universe.
+//
+// This is LL-047's structural fix: the question "which vocabulary?" stops being a question about
+// WHEN the call happened and becomes a question about WHICH VALUE the caller was given.
 
 /// PJ-065 — the lowercased wikilink targets declared under a STRUCTURAL (parent/TOC)
 /// frontmatter key, given the note's frontmatter region (the caller passes
@@ -382,12 +375,14 @@ pub fn is_structural_type(id: &str) -> bool {
 /// frontmatter parser — the registry DRY rule). Active since §5 — a fast no-op only
 /// if no structural type is registered. Block-aware: tracks the current top-level key so `- ` list items
 /// attribute to the right property (mirrors `extract_frontmatter_typed_links`).
-pub fn structural_frontmatter_targets(frontmatter: &str) -> std::collections::HashSet<String> {
+pub fn structural_frontmatter_targets(
+    reg: &LinkTypeRegistry,
+    frontmatter: &str,
+) -> std::collections::HashSet<String> {
     use std::sync::OnceLock;
     static WL: OnceLock<regex::Regex> = OnceLock::new();
     let wl = WL.get_or_init(|| regex::Regex::new(r"\[\[([^\[\]]+)\]\]").unwrap());
     let mut out = std::collections::HashSet::new();
-    let reg = snapshot();
     if reg.structural_ids().is_empty() {
         return out; // no structural type ⇒ nothing to skip
     }
@@ -494,18 +489,84 @@ pub fn is_null_type(id: &str) -> bool {
     matches!(id, "associative" | "relates" | "")
 }
 
-/// A clone of the active registry for off-lock reads (parser snapshot / SQL gen).
-pub fn snapshot() -> LinkTypeRegistry {
+/// A clone of the **ACTIVE universe's** registry, for off-lock reads (parser / SQL gen).
+///
+/// MIG-111 §1.2/A5 renamed this from `snapshot()`. The old name described the mechanism (a
+/// clone taken under the lock) and said nothing about the question it answers, which is the
+/// one that matters at every call site: *whose vocabulary is this?* Every remaining caller is
+/// asserting that the ACTIVE universe's answer is the right one for what it is about to do —
+/// which is true for a note in the active universe and false for a note in a linked one.
+pub fn active_universe_vocabulary() -> LinkTypeRegistry {
     cell()
         .read()
         .map(|r| r.clone())
         .unwrap_or_else(|_| LinkTypeRegistry::seeds_only())
 }
 
+
+
 // ─── Per-universe persistence (the property-types.json pattern) ────────
 
 fn link_types_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(crate::universe::active_constellation_dir(app)?.join("link-types.json"))
+}
+
+/// The vocabulary file inside an EXPLICIT universe root — the same path
+/// `link_types_path` produces for the active universe, without asking which
+/// universe is active. Every routed (non-active) read and write goes through here.
+pub fn link_types_file_in(universe_root: &std::path::Path) -> std::path::PathBuf {
+    crate::universe::constellation_dir(universe_root).join("link-types.json")
+}
+
+/// Write vocabulary deltas to an EXPLICIT path — the production writer's body,
+/// extracted so a caller (and a test) can exercise the real serialization and the
+/// real atomic write without an `AppHandle` and without touching the global.
+///
+/// `save_universe_link_types` is this plus "and make it the active vocabulary".
+/// The split matters for MIG-111: writing another universe's vocabulary must NOT
+/// make it active, and a test that hand-rolls `serde_json::to_string` is testing
+/// its own format rather than the one the app actually stores (LL-048).
+pub(crate) fn write_link_types_at(
+    path: &std::path::Path,
+    deltas: &[LinkTypeDef],
+) -> Result<(), String> {
+    let json = serde_json::to_string_pretty(deltas).map_err(|e| e.to_string())?;
+    crate::universe::atomic_write(path, json.as_bytes())
+        .map_err(|e| format!("Failed to save link types: {}", e))
+}
+
+/// MIG-111 §1.2/A1 — **the vocabulary of a universe that is not the active one.**
+///
+/// This is the door the routed write path needs and the codebase did not have: a
+/// way to answer "what does THAT universe call its link types?" without making it
+/// active. Before this, the only answers available were `snapshot()` and the three
+/// ambient readers — all of which report the ACTIVE universe's vocabulary, which is
+/// the wrong answer for a note that lives somewhere else (LL-047).
+///
+/// **Strict on purpose — it does not share `read_deltas`' fallback.** `read_deltas`
+/// returns the 8 seeds for an unreadable file so a broken vocabulary can never break
+/// the link grammar at boot; that is right when the alternative is an app that will
+/// not start. It is wrong here. Falling back to the seeds for a *routed* write does
+/// not degrade gracefully — it writes one universe's data using another universe's
+/// answer, silently, with every row count still correct. That is precisely the
+/// failure the harness pins. So: absent ⇒ the 8 seeds (a universe that has never
+/// customized its vocabulary genuinely has the seeds); unreadable, empty, or corrupt
+/// ⇒ **refuse, naming the universe** (Boss ruling 2, 2026-08-17).
+pub fn registry_for_root(universe_root: &std::path::Path) -> Result<LinkTypeRegistry, String> {
+    let path = link_types_file_in(universe_root);
+    let deltas = crate::universe::read_persisted_json::<Vec<LinkTypeDef>>(&path)
+        .map_err(|e| {
+            format!(
+                "Cannot read the link vocabulary of the universe \"{}\" — {}",
+                universe_root
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| universe_root.display().to_string()),
+                e.message()
+            )
+        })?
+        .unwrap_or_default();
+    Ok(LinkTypeRegistry::merge(deltas))
 }
 
 /// Read custom-type deltas from `.constellation/link-types.json`. Empty when the
@@ -543,14 +604,14 @@ pub fn read_universe_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef
 #[tauri::command(async)]
 pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>) -> Result<(), String> {
     let path = link_types_path(&app)?;
-    let json = serde_json::to_string_pretty(&deltas).map_err(|e| e.to_string())?;
     // 2026-08-02 triage — this was a plain `fs::write`: truncate-then-write, so an
     // interruption mid-write leaves the user's link vocabulary partial, which the loader
     // then reads as "no custom types". Every other persisted-state file in the app already
-    // goes through `atomic_write` (temp + fsync + rename); this one was missed.
-    crate::universe::atomic_write(&path, json.as_bytes())
-        .map_err(|e| format!("Failed to save link types: {}", e))?;
-    let before_fp = snapshot().fingerprint();
+    // goes through `atomic_write` (temp + fsync + rename); this one was missed. The write
+    // itself now lives in `write_link_types_at` so a routed write can reuse it without
+    // also making the vocabulary active (MIG-111 §1.2/A1).
+    write_link_types_at(&path, &deltas)?;
+    let before_fp = active_universe_vocabulary().fingerprint();
     set_active(deltas); // reflect immediately (parser + SQL generators see it now)
     // MIG-067 §B — re-materialize the outgoing-link aggregates ONLY when the VOCABULARY
     // (ordered ids) actually changed. `fingerprint()` is over ids, so a colour/label edit
@@ -559,7 +620,7 @@ pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>)
     // trigger recreation + backfill schedule that each grab the writer lock. This is what
     // made a colour-only save free; the earlier code claimed "no-op when unchanged" but had
     // no such guard, so every recolour needlessly took (and could wait on) the writer lock.
-    if snapshot().fingerprint() != before_fp {
+    if active_universe_vocabulary().fingerprint() != before_fp {
         crate::search::on_link_vocabulary_changed(&app);
     }
     Ok(())
@@ -586,7 +647,7 @@ pub fn list_link_types(app: tauri::AppHandle) -> Result<Vec<LinkTypeDef>, String
     let path = link_types_path(&app)?;
     let deltas = crate::universe::read_persisted_json::<Vec<LinkTypeDef>>(&path)?.unwrap_or_default();
     set_active(deltas);
-    Ok(snapshot().ordered().to_vec())
+    Ok(active_universe_vocabulary().ordered().to_vec())
 }
 
 #[cfg(test)]
@@ -611,19 +672,19 @@ mod tests {
     #[test]
     fn pj182_structural_targets_see_a_zero_indent_block() {
         let fm = "title: Part I\ncontains:\n- \"[[Chapter One]]\"\n- \"[[Chapter Two]]\"\n";
-        let mut got: Vec<String> = structural_frontmatter_targets(fm).into_iter().collect();
+        let mut got: Vec<String> = structural_frontmatter_targets(&LinkTypeRegistry::merge(vec![custom("contains", None, 1)]), fm).into_iter().collect();
         got.sort();
         assert_eq!(got, vec!["chapter one".to_string(), "chapter two".to_string()]);
 
         // CONTROL — the indented form is unchanged.
         let indented = "title: Part I\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n";
-        let mut got2: Vec<String> = structural_frontmatter_targets(indented).into_iter().collect();
+        let mut got2: Vec<String> = structural_frontmatter_targets(&LinkTypeRegistry::merge(vec![custom("contains", None, 1)]), indented).into_iter().collect();
         got2.sort();
         assert_eq!(got2, got);
 
         // A COGNITIVE key's zero-indent block must NOT be treated as structural.
         let cognitive = "supports:\n- \"[[Alpha]]\"\n";
-        assert!(structural_frontmatter_targets(cognitive).is_empty());
+        assert!(structural_frontmatter_targets(&LinkTypeRegistry::merge(vec![custom("contains", None, 1)]), cognitive).is_empty());
     }
 
     #[test]
@@ -726,5 +787,262 @@ mod tests {
     fn empty_id_ignored() {
         let r = LinkTypeRegistry::merge(vec![custom("", None, 9)]);
         assert_eq!(r.ids().len(), 10, "blank-id delta dropped; the 8 cognitive + 2 structural seeds remain");
+    }
+
+
+    // ─── MIG-111 §1.2 / A5 — the ambient-read census ──────────────────────
+
+    /// **Every place that still reads the ACTIVE universe's vocabulary, counted and named.**
+    ///
+    /// A5 deleted `is_known_type` and `is_structural_type` outright and turned
+    /// `structural_frontmatter_targets` into a registry-taking function, so the parser can no
+    /// longer reach the process-global at all. What remains is a set of call sites that read it
+    /// *deliberately* — a backfill over the active database, DDL generated for the active
+    /// database, a read-side analytic over the active database. For those, "the active
+    /// universe's vocabulary" is the correct answer and the function name now says so.
+    ///
+    /// **This test exists because "correct answer" is a claim that decays.** Nothing stops a
+    /// future edit from adding a thirty-eighth call in a routed write path, where the active
+    /// universe's vocabulary is exactly the wrong answer and nothing would fail — not a type
+    /// check, not a row count, not a test. That is LL-047's whole shape.
+    ///
+    /// So the census is pinned. Adding or removing a call site turns this red, and the fix is to
+    /// look at the new site and answer the question out loud: *whose vocabulary is this, and why
+    /// is the active universe's the right one here?* Then update the map. **Updating the map
+    /// without answering that question is the failure this test is trying to prevent** — it costs
+    /// one line and buys nothing.
+    #[test]
+    fn the_ambient_vocabulary_reads_are_census_ed() {
+        // (file, count) — the source of truth is the source tree, not this list.
+        // Each entry was looked at and asked "whose vocabulary is this?" — the answer is
+        // recorded beside it. **A5/A7 grew this list on purpose:** the generators and the
+        // maintenance pass now TAKE a registry, so the sites below are the callers that supply
+        // one, and they say which they mean instead of the callee reaching for it.
+        const CENSUS: &[(&str, usize)] = &[
+            ("cache.rs", 3),                   // read-side analytics over the active DB
+            ("federation/migrate.rs", 2),      // schema migration of a foreign DB — see PJ-302
+            ("federation/vocab_harness.rs", 2),// the harness asserting what the ACTIVE one is
+            ("federation/write_scope.rs", 3),  // the active ARM of the scope — correct by definition
+            ("incoming_links_backfill.rs", 5), // backfill over the active DB
+            ("inspector360.rs", 2),            // **ANNOTATION CORRECTED 2026-08-21 by the safety
+                                               //   inspection — the first version of this line
+                                               //   said "the active universe" and that is FALSE.
+                                               //   `get_360_view` validates through
+                                               //   `validate_path_in_any_library` (libraries.rs:730),
+                                               //   which iterates `load_all_libraries` — federated
+                                               //   libraries INCLUDED. So it can classify a Linked
+                                               //   Universe's note with the ACTIVE vocabulary.
+                                               //   **B4 must thread this.** Left as-is here only
+                                               //   because it is a READ; it writes nothing.
+            ("libraries.rs", 2),               // rename rewriter — **B6 must revisit: a rename
+                                               //   inside a Linked Universe needs the OWNER's**
+            ("link_types.rs", 4),
+            ("links_backfill.rs", 7),          // backfill + trigger DDL over the active DB
+            // name_fold_backfill.rs is DELIBERATELY ABSENT. It used to be here with 1. The
+            // 2026-08-21 safety inspection found that its connection is pinned to one universe's
+            // search.db while its vocabulary was read from the global eighty lines later — a
+            // switch in that window recomputed one universe's aggregates with another's rank CASE
+            // and then stamped the module complete. It now uses `registry_for_root` on the same
+            // root it opened, so it reads the global not at all. **This is the shape every entry
+            // above should eventually reach.**
+            ("search.rs", 15),                 // trigger DDL + backfills + the index tail.
+                                               //   **Phase 1.3 must revisit the index tail:
+                                               //   `maintain_incoming_after_save`'s caller is on
+                                               //   the write path a routed note will travel.**
+            ("sight.rs", 1),
+            ("sky_backfill.rs", 1),
+            ("strata.rs", 1),
+            ("tension.rs", 1),
+        ];
+
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut actual: Vec<(String, usize)> = Vec::new();
+        let mut stack = vec![src.clone()];
+        while let Some(dir) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+            for e in rd.flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                    let Ok(text) = std::fs::read_to_string(&p) else { continue };
+                    let n = text
+                        .lines()
+                        // the definition itself is not a call site
+                        .filter(|l| !l.contains(concat!("pub fn active_universe_", "vocabulary")))
+                        // The needle is assembled so this file does not textually contain it —
+                        // otherwise the census counts its own matcher and can never agree.
+                        .map(|l| l.matches(concat!("active_universe_", "vocabulary()")).count())
+                        .sum::<usize>();
+                    if n > 0 {
+                        let rel = p
+                            .strip_prefix(&src)
+                            .unwrap()
+                            .to_string_lossy()
+                            .replace('\\', "/");
+                        actual.push((rel, n));
+                    }
+                }
+            }
+        }
+        actual.sort();
+        let expected: Vec<(String, usize)> =
+            CENSUS.iter().map(|(f, n)| (f.to_string(), *n)).collect();
+
+        assert_eq!(
+            actual, expected,
+            "\n\nThe set of places reading the ACTIVE universe's vocabulary changed.\n\
+             Before updating the list above, answer this at the new call site:\n\
+             **whose vocabulary is this, and why is the active universe's the right one here?**\n\
+             If the code runs on behalf of a note that might live in a Linked Universe, the answer \
+             is NO — take a `&LinkTypeRegistry` (from a `WriteScope`) instead.\n"
+        );
+    }
+
+    // ─── MIG-111 §1.2 / A1 — the routed vocabulary door ───────────────────
+    //
+    // These run over REAL directories, and the file they read is written by the
+    // production writer (`write_link_types_at`, the body of the save command), not
+    // by a hand-rolled literal. A test that writes its own JSON proves its own
+    // format round-trips; it says nothing about the format the app stores (LL-048).
+
+    fn tmp_universe(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "constellation_lt_a1_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(crate::universe::constellation_dir(&d)).expect("tmp universe");
+        d
+    }
+
+    #[test]
+    fn a_universe_that_never_customized_its_vocabulary_has_the_seeds() {
+        let root = tmp_universe("absent");
+        let reg = registry_for_root(&root).expect("absent file is not an error");
+        assert_eq!(
+            reg.ids(),
+            LinkTypeRegistry::seeds_only().ids(),
+            "no link-types.json means the universe genuinely has the seeds —              the ONE case where falling back is the truth and not a guess"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn registry_for_root_reads_back_what_the_production_writer_wrote() {
+        let root = tmp_universe("roundtrip");
+        let path = link_types_file_in(&root);
+        write_link_types_at(&path, &[custom("refutes", None, 9)]).expect("write");
+
+        let reg = registry_for_root(&root).expect("read back");
+        assert!(reg.is_known("refutes"), "the custom type survives the real writer's format");
+        assert!(reg.is_known("supports"), "and the seeds are still there");
+        assert!(
+            !LinkTypeRegistry::seeds_only().is_known("refutes"),
+            "guard: `refutes` is genuinely custom, so this test cannot pass on the seeds alone"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The three refusals. Each asserts the message NAMES the universe (Boss ruling 2,
+    /// 2026-08-17): a routed write that cannot read its vocabulary must say WHICH
+    /// universe it could not read, because the user has several and the parent is not
+    /// the one at fault.
+    #[test]
+    fn registry_for_root_refuses_a_truncated_file() {
+        let root = tmp_universe("empty");
+        std::fs::write(link_types_file_in(&root), b"").expect("write empty");
+        let err = registry_for_root(&root).expect_err("a zero-length file is not 'no custom types'");
+        assert!(
+            err.contains(root.file_name().unwrap().to_str().unwrap()),
+            "the refusal must name the universe; got: {err}"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn registry_for_root_refuses_corrupt_json() {
+        let root = tmp_universe("corrupt");
+        std::fs::write(link_types_file_in(&root), b"[{\"id\": ").expect("write partial");
+        let err = registry_for_root(&root).expect_err("half a JSON array is not an empty one");
+        assert!(
+            err.contains(root.file_name().unwrap().to_str().unwrap()),
+            "the refusal must name the universe; got: {err}"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn registry_for_root_refuses_a_file_it_cannot_read() {
+        // A directory where the file should be: an I/O error that is NOT NotFound, on
+        // both Windows (access denied) and Unix (is-a-directory) — the shape a sync
+        // tool or antivirus holding the file produces, without needing to hold one.
+        let root = tmp_universe("unreadable");
+        std::fs::create_dir_all(link_types_file_in(&root)).expect("dir in the file's place");
+        let err = registry_for_root(&root).expect_err("unreadable is not empty");
+        assert!(
+            err.contains(root.file_name().unwrap().to_str().unwrap()),
+            "the refusal must name the universe; got: {err}"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    // ─── MIG-111 §1.2 / A2 — the merge invariance pin ─────────────────────
+
+    /// **A declared contract, not a property of a function body.** Everything the
+    /// cognitive surfaces exclude is derived from the `structural` flag, and `merge`
+    /// is the only place that flag is decided: a custom type is forced cognitive, a
+    /// cognitive seed is forced non-structural, and only the two structural seeds
+    /// come out structural — no matter what the deltas on disk claim.
+    ///
+    /// This matters for MIG-111 specifically: a linked universe's `link-types.json`
+    /// is a file the parent did not write and does not control. If a delta could
+    /// flip `structural`, a child's vocabulary file could make a *cognitive* type
+    /// invisible to every maturity / strata / tension / sky query the parent runs
+    /// over it. It cannot — and this test goes red the day that stops being true.
+    #[test]
+    fn merge_decides_the_structural_lane_no_matter_what_the_deltas_claim() {
+        let structural_delta = |id: &str, order: i64| LinkTypeDef {
+            id: id.into(),
+            label: id.into(),
+            parent: None,
+            color: "#123456".into(),
+            order,
+            builtin: false,
+            emoji: None,
+            desc: None,
+            structural: true, // the claim under test
+        };
+        let mut cognitive_seed_claiming_structural = structural_delta("supports", 1);
+        cognitive_seed_claiming_structural.builtin = true;
+        let mut structural_seed_claiming_cognitive = structural_delta("parent", 2);
+        structural_seed_claiming_cognitive.structural = false;
+
+        let reg = LinkTypeRegistry::merge(vec![
+            custom("refutes", None, 9),                 // a plain custom type
+            structural_delta("toc-like", 10),           // a custom type CLAIMING structural
+            cognitive_seed_claiming_structural,         // a seed override claiming structural
+            structural_seed_claiming_cognitive,         // a structural seed claiming cognitive
+        ]);
+
+        let mut structural = reg.structural_ids();
+        structural.sort();
+        assert_eq!(
+            structural,
+            vec!["contains".to_string(), "parent".to_string()],
+            "only the two structural seeds are structural — a delta cannot add to or              remove from the lane"
+        );
+        assert!(reg.is_known("toc-like"), "the custom type is still ADDED, just not structural");
+        assert!(
+            reg.cognitive_ids().contains(&"toc-like".to_string()),
+            "a custom type is cognitive regardless of what it claims"
+        );
+        assert!(
+            reg.cognitive_ids().contains(&"supports".to_string()),
+            "a seed override cannot hide a cognitive seed from the cognitive surfaces"
+        );
     }
 }

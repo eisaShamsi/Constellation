@@ -186,7 +186,7 @@ const TERM_VOCAB_DROPCOL_SCHEMA_VERSION: i64 = 1;
 /// structural exclusion fragment (empty ⇒ a no-op, so byte-identical to the old
 /// const; §5 registered the lane, so it is now a fn). Was a `const`.
 pub(crate) fn stratum_sql_expr() -> String {
-    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
     "
     MIN(8, MAX(1,
         COALESCE(
@@ -264,7 +264,7 @@ pub(crate) fn stratum_sql_expr() -> String {
 /// the Sky maturity equal to note_meta.incoming_count (which §3a already excludes
 /// structural from) — the MIG-085 "surfaces agree" invariant. Was a `const`.
 pub(crate) fn maturity_sql_expr() -> String {
-    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
     "
     CASE
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
@@ -1182,8 +1182,8 @@ mod tests_pj065_structural_exclusion {
         )
         .unwrap();
         // Sanity: the registry sees parent/contains as structural here.
-        assert!(crate::link_types::is_structural_type("parent"));
-        assert!(crate::link_types::is_structural_type("contains"));
+        assert!(crate::link_types::LinkTypeRegistry::seeds_only().is_structural("parent"));
+        assert!(crate::link_types::LinkTypeRegistry::seeds_only().is_structural("contains"));
 
         let name = "Book";
         let nl = fold_match_key(name);
@@ -2086,7 +2086,7 @@ mod tests_c2a_target_name_lower_idempotent {
             [],
         )
         .unwrap();
-        maintain_incoming_after_save(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        maintain_incoming_after_save(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), "/X.md", &old_t, &old_n, &old_a).unwrap();
         let beta: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/B.md'", [], |r| r.get(0)).unwrap();
         let alpha: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/A.md'", [], |r| r.get(0)).unwrap();
         assert_eq!(beta, 1, "newly-linked target recomputed");
@@ -2096,7 +2096,7 @@ mod tests_c2a_target_name_lower_idempotent {
         // with old == new, assert Beta is left exactly as-is (instant save, zero work).
         conn.execute("UPDATE note_meta SET incoming_count=99 WHERE path='/B.md'", []).unwrap();
         let (t2, n2, a2) = incoming_signature(&conn, "/X.md").unwrap();
-        maintain_incoming_after_save(&conn, "/X.md", &t2, &n2, &a2).unwrap();
+        maintain_incoming_after_save(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), "/X.md", &t2, &n2, &a2).unwrap();
         let beta2: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/B.md'", [], |r| r.get(0)).unwrap();
         assert_eq!(beta2, 99, "text-only edit recomputes nothing");
     }
@@ -2179,7 +2179,7 @@ mod tests_c2a_target_name_lower_idempotent {
         assert!(affected.contains("/X.md"), "source recomputed on a type-only change");
 
         // The incoming diff refreshes the target's type breakdown.
-        maintain_incoming_after_save(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        maintain_incoming_after_save(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), "/X.md", &old_t, &old_n, &old_a).unwrap();
         let after: String = conn
             .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
             .unwrap();
@@ -2239,8 +2239,7 @@ mod tests_c2a_target_name_lower_idempotent {
 /// `"type (count), …"` (canonical order); `outgoing_link_types_json` = the machine
 /// `{"type":count}` for the per-type sortable columns (§F). The render layer (§C)
 /// localizes the id while keeping the count.
-pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
-    let reg = crate::link_types::snapshot();
+pub(crate) fn outgoing_aggregate_assignments(reg: &crate::link_types::LinkTypeRegistry, src: &str) -> String {
     // PJ-065 — the structural (parent/TOC) lane is NON-cognitive: it must not
     // count toward outgoing_count nor appear in the type breakdown. Cognitive
     // list/rank + a NOT IN clause on the raw COUNT(*). Active since §5
@@ -2324,8 +2323,8 @@ pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), Str
             UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
         END;
     ",
-        ins = outgoing_aggregate_assignments("NEW.source_path"),
-        del = outgoing_aggregate_assignments("OLD.source_path"),
+        ins = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "NEW.source_path"),
+        del = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "OLD.source_path"),
     ))
     .map_err(|e| format!("create outgoing-link triggers: {}", e))
 }
@@ -2485,8 +2484,7 @@ pub(crate) fn clear_outgoing_triggers_dropped_marker(conn: &Connection) -> Resul
 /// subqueries are over `note_links`/`note_aliases`, so the bare `note_meta.*`
 /// references bind to the outer UPDATE row (no shadowing). Type breakdown filters
 /// `link_type IN {list}` (registry types) like outgoing.
-pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
-    let reg = crate::link_types::snapshot();
+pub(crate) fn incoming_aggregate_assignments(reg: &crate::link_types::LinkTypeRegistry, np: &str) -> String {
     // PJ-065 — exclude the structural (parent/TOC) lane from incoming_count and the
     // inbound type breakdown: cognitive list/rank + a NOT IN inside BOTH branches of
     // the matched UNION. Active since §5 (the cognitive list excludes the structural lane).
@@ -2636,6 +2634,7 @@ fn resolve_incoming_target_paths(
 /// authoritative self-heal).
 pub(crate) fn maintain_incoming_after_save(
     conn: &Connection,
+    reg: &crate::link_types::LinkTypeRegistry,
     note_path: &str,
     old_targets: &std::collections::HashSet<String>,
     old_name: &str,
@@ -2658,7 +2657,7 @@ pub(crate) fn maintain_incoming_after_save(
     }
     let sql = format!(
         "UPDATE note_meta SET {assign} WHERE path = ?1",
-        assign = incoming_aggregate_assignments("note_meta"),
+        assign = incoming_aggregate_assignments(reg, "note_meta"),
     );
     for p in &affected {
         conn.execute(&sql, params![p])?;
@@ -5563,7 +5562,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // cognitive surface). Injected into the AI WHEN + AU INSERT guards; an edge
     // retyped INTO structural still fires AU → its old sky_link is DELETEd and not
     // re-INSERTed. Active since §5.
-    let sx_new = crate::link_types::snapshot().structural_not_in_clause("NEW.link_type");
+    let sx_new = crate::link_types::active_universe_vocabulary().structural_not_in_clause("NEW.link_type");
     conn.execute_batch(&format!("
         CREATE TRIGGER IF NOT EXISTS note_links_sky_ai
         AFTER INSERT ON note_links
@@ -5664,7 +5663,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     }
 
     // PJ-232 — the sky_node trigger bodies interpolate `stratum_sql_expr()` /
-    // `maturity_sql_expr()`, both of which read `link_types::snapshot()` — the ACTIVE
+    // `maturity_sql_expr()`, both of which read `link_types::active_universe_vocabulary()` — the ACTIVE
     // universe's registry. Not into a database we do not own; its owner writes these
     // correctly on its own next launch.
     if owns {
@@ -6000,7 +5999,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // create_outgoing_link_triggers so §A.2's reconcile path can drop+recreate
     // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
     // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
-    // PJ-232 — the trigger BODIES are generated from `link_types::snapshot()`, the
+    // PJ-232 — the trigger BODIES are generated from `link_types::active_universe_vocabulary()`, the
     // ACTIVE universe's registry. Creating them in a foreign database would persist our
     // link vocabulary into someone else's `sqlite_master`. The owner creates them
     // correctly on its own next launch.
@@ -6846,8 +6845,8 @@ mod tests_mig066_outgoing {
              CREATE TRIGGER note_links_outgoing_au AFTER UPDATE ON note_links \
                BEGIN UPDATE note_meta SET {del} WHERE path = OLD.source_path; \
                      UPDATE note_meta SET {ins} WHERE path = NEW.source_path; END;",
-            ins = outgoing_aggregate_assignments("NEW.source_path"),
-            del = outgoing_aggregate_assignments("OLD.source_path"),
+            ins = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "NEW.source_path"),
+            del = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "OLD.source_path"),
         ))
         .unwrap();
         conn
@@ -7118,7 +7117,7 @@ fn frontmatter_byte_len(content: &str) -> usize {
     0 // unterminated frontmatter ⇒ treat as none
 }
 
-fn extract_wikilinks(content: &str) -> Vec<String> {
+fn extract_wikilinks(reg: &crate::link_types::LinkTypeRegistry, content: &str) -> Vec<String> {
     use std::sync::OnceLock;
     static RE: OnceLock<regex::Regex> = OnceLock::new();
     let re = RE.get_or_init(|| regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap());
@@ -7129,7 +7128,7 @@ fn extract_wikilinks(content: &str) -> Vec<String> {
     // body link to the same note is still counted. Empty set ⇒ no-op (no structural type).
     let fm_len = frontmatter_byte_len(content);
     let struct_fm = if fm_len > 0 {
-        crate::link_types::structural_frontmatter_targets(&content[..fm_len])
+        crate::link_types::structural_frontmatter_targets(reg, &content[..fm_len])
     } else {
         std::collections::HashSet::new()
     };
@@ -7272,7 +7271,7 @@ struct TypedLink {
 ///     types — the rule the live-preview editor already uses).
 /// Plain `[[target]]` and display-only `[[target|display]]` (tail ∉ types) are
 /// untyped → `associative` (the canonical null), never `relates`.
-fn extract_typed_links(content: &str) -> Vec<TypedLink> {
+fn extract_typed_links(reg: &crate::link_types::LinkTypeRegistry, content: &str) -> Vec<TypedLink> {
     use std::sync::OnceLock;
     static RE: OnceLock<regex::Regex> = OnceLock::new();
     // Capture the wikilink body (no nested brackets); parse the type in Rust so
@@ -7282,7 +7281,7 @@ fn extract_typed_links(content: &str) -> Vec<TypedLink> {
     let mut seen = std::collections::HashSet::<String>::new();
     for cap in re.captures_iter(content) {
         let body = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-        let Some((link_type, target, annotation)) = parse_link_body(body) else { continue; };
+        let Some((link_type, target, annotation)) = parse_link_body(reg, body) else { continue; };
         let key = format!("{}::{}", link_type, target);
         if !seen.insert(key) { continue; }
         links.push(TypedLink { target, link_type, annotation });
@@ -7293,8 +7292,11 @@ fn extract_typed_links(content: &str) -> Vec<TypedLink> {
 /// Parse one wikilink body into `(link_type, lowercased target, annotation)`.
 /// `None` only when there is no usable target. `annotation` carries the display
 /// / middle segment (preserved as before). Shared by the indexer + its tests.
-fn parse_link_body(body: &str) -> Option<(String, String, String)> {
-    let is_type = |s: &str| crate::link_types::is_known_type(s);
+fn parse_link_body(
+    reg: &crate::link_types::LinkTypeRegistry,
+    body: &str,
+) -> Option<(String, String, String)> {
+    let is_type = |s: &str| reg.is_known(s);
 
     // Predicate-FIRST: "type::rest" where the head is a canonical type.
     if let Some((head, rest)) = body.split_once("::") {
@@ -7350,13 +7352,13 @@ fn parse_link_body(body: &str) -> Option<(String, String, String)> {
 /// emitted as `TypedLink{ link_type = key, target, annotation = display/alias }`.
 ///
 /// A wikilink under a NON-type key is emitted as `associative` — byte-for-byte the
-/// behavior of the prior full-content scan (`extract_typed_links(&content)`), so no
+/// behavior of the prior full-content scan (`extract_typed_links(&crate::link_types::LinkTypeRegistry::seeds_only(), &content)`), so no
 /// existing link is lost; the only change is that a known-type key now yields its REAL
 /// type instead of a bare `associative`. (D1 / D2 / invariant 7, back-compat.)
 ///
 /// Block-aware like `extract_aliases`: tracks the current top-level key so a `-` list
 /// item is attributed to the right property. Handles all three YAML shapes.
-fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
+fn extract_frontmatter_typed_links(reg: &crate::link_types::LinkTypeRegistry, content: &str) -> Vec<TypedLink> {
     let Some((frontmatter, _)) = split_frontmatter(content) else {
         return Vec::new();
     };
@@ -7391,7 +7393,7 @@ fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
                 let key = trimmed[..colon].trim().to_lowercase();
                 if !key.is_empty() {
                     let value = trimmed[colon + 1..].trim();
-                    emit_frontmatter_links(wl, &key, value, &mut out, &mut seen);
+                    emit_frontmatter_links(reg, wl, &key, value, &mut out, &mut seen);
                     current_key = Some(key); // a following block list belongs to this key
                 }
             }
@@ -7400,7 +7402,7 @@ fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
 
         // A value (list item, or a nested line) under the current property.
         if let Some(key) = current_key.as_deref() {
-            emit_frontmatter_links(wl, key, trimmed, &mut out, &mut seen);
+            emit_frontmatter_links(reg, wl, key, trimmed, &mut out, &mut seen);
         }
     }
     out
@@ -7412,6 +7414,7 @@ fn extract_frontmatter_typed_links(content: &str) -> Vec<TypedLink> {
 /// D1) — the inner link's inferred type is ignored; only its folded target + display
 /// survive (via `parse_link_body`).
 fn emit_frontmatter_links(
+    reg: &crate::link_types::LinkTypeRegistry,
     wl: &regex::Regex,
     key: &str,
     value: &str,
@@ -7421,14 +7424,14 @@ fn emit_frontmatter_links(
     if value.is_empty() {
         return;
     }
-    let link_type = if crate::link_types::is_known_type(key) {
+    let link_type = if reg.is_known(key) {
         key.to_string()
     } else {
         "associative".to_string()
     };
     for cap in wl.captures_iter(value) {
         let body = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-        let Some((_inner_type, target, annotation)) = parse_link_body(body) else {
+        let Some((_inner_type, target, annotation)) = parse_link_body(reg, body) else {
             continue;
         };
         if target.is_empty() {
@@ -7453,7 +7456,7 @@ mod tests_mig086_frontmatter_links {
     use super::*;
 
     fn pairs(content: &str) -> Vec<(String, String)> {
-        let mut v: Vec<(String, String)> = extract_frontmatter_typed_links(content)
+        let mut v: Vec<(String, String)> = extract_frontmatter_typed_links(&crate::link_types::LinkTypeRegistry::seeds_only(), content)
             .into_iter()
             .map(|l| (l.link_type, l.target))
             .collect();
@@ -7530,13 +7533,13 @@ mod tests_mig086_frontmatter_links {
 
     #[test]
     fn no_frontmatter_yields_nothing() {
-        assert!(extract_frontmatter_typed_links("just a body with [[X]]").is_empty());
+        assert!(extract_frontmatter_typed_links(&crate::link_types::LinkTypeRegistry::seeds_only(), "just a body with [[X]]").is_empty());
     }
 
     #[test]
     fn alias_display_preserved() {
         let md = "---\nsupports:\n  - \"[[Krebs cycle|Krebs]]\"\n---\n";
-        let links = extract_frontmatter_typed_links(md);
+        let links = extract_frontmatter_typed_links(&crate::link_types::LinkTypeRegistry::seeds_only(), md);
         assert_eq!(links.len(), 1);
         assert_eq!(links[0].link_type, "supports");
         assert_eq!(links[0].annotation, "Krebs");
@@ -7565,7 +7568,7 @@ mod tests_link_parser {
     use super::*;
 
     fn one(body: &str) -> (String, String, String) {
-        parse_link_body(body).expect("usable target")
+        parse_link_body(&crate::link_types::LinkTypeRegistry::seeds_only(), body).expect("usable target")
     }
 
     #[test]
@@ -7614,15 +7617,15 @@ mod tests_link_parser {
 
     #[test]
     fn empty_target_rejected() {
-        assert!(parse_link_body("").is_none());
-        assert!(parse_link_body("|supports").is_none());
-        assert!(parse_link_body("supports::").is_none());
+        assert!(parse_link_body(&crate::link_types::LinkTypeRegistry::seeds_only(), "").is_none());
+        assert!(parse_link_body(&crate::link_types::LinkTypeRegistry::seeds_only(), "|supports").is_none());
+        assert!(parse_link_body(&crate::link_types::LinkTypeRegistry::seeds_only(), "supports::").is_none());
     }
 
     #[test]
     fn extract_dedups_and_handles_mixed_forms() {
         let content = "intro [[supports::A]] mid [[A|supports]] then [[derives-from::B|b]] and plain [[C]].";
-        let links = extract_typed_links(content);
+        let links = extract_typed_links(&crate::link_types::LinkTypeRegistry::seeds_only(), content);
         // [[supports::A]] and [[A|supports]] dedupe to one (supports::a).
         assert_eq!(links.len(), 3, "supports::A duplicated across both forms collapses");
         let mut got: Vec<(String, String)> =
@@ -7923,18 +7926,41 @@ pub(crate) fn mtime_secs(md: &std::fs::Metadata) -> Option<u64> {
 /// changed" context where a moved mtime means another write is already in flight and
 /// will reindex. §14 made the bulk walk a `force` caller and falsified that premise —
 /// nothing is coming for a walked note — so the two intents now have two doors.
+/// MIG-111 §1.2 — **index a note with an EXPLICIT vocabulary.**
+///
+/// This is what a routed write calls: the note belongs to a Linked Universe, so the vocabulary
+/// is that universe's, read through `WriteScope`, and handed in. `index_note` below is the same
+/// function with "the active universe's" filled in — correct for a note in the active universe,
+/// and the one place that answer is named out loud rather than reached for.
+pub(crate) fn index_note_with(
+    conn: &Connection,
+    note_path: &str,
+    library_name: &str,
+    force: bool,
+    vocab: &crate::link_types::LinkTypeRegistry,
+) -> Result<IndexOutcome, String> {
+    index_note_impl(conn, note_path, library_name, force, false, vocab)
+}
+
 pub(crate) fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
-    index_note_impl(conn, note_path, library_name, force, false)
+    index_note_impl(conn, note_path, library_name, force, false, &crate::link_types::active_universe_vocabulary())
 }
 
 /// Index one note as part of a BULK WALK. Nothing else will reindex this note, so a file
 /// that moves under the read is refused (`Raced`) rather than written stale — even when
 /// `force` is on, which is exactly the case the Full re-read introduced.
 pub(crate) fn index_note_bulk(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<IndexOutcome, String> {
-    index_note_impl(conn, note_path, library_name, force, true)
+    index_note_impl(conn, note_path, library_name, force, true, &crate::link_types::active_universe_vocabulary())
 }
 
-fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force: bool, bulk: bool) -> Result<IndexOutcome, String> {
+fn index_note_impl(
+    conn: &Connection,
+    note_path: &str,
+    library_name: &str,
+    force: bool,
+    bulk: bool,
+    vocab: &crate::link_types::LinkTypeRegistry,
+) -> Result<IndexOutcome, String> {
     let path = Path::new(note_path);
     if !path.exists() || path.extension().map(|e| e != "md").unwrap_or(true) {
         return Ok(IndexOutcome::Skipped);
@@ -7977,7 +8003,7 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
     let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
 
     let (properties, tags, body) = parse_frontmatter(&content);
-    let wikilinks = extract_wikilinks(&content);
+    let wikilinks = extract_wikilinks(vocab, &content);
     let headings = extract_headings(&content);
     let plain_body = strip_markdown(&body);
 
@@ -8066,16 +8092,16 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
     // the seq order (assigned on the frontmatter face below) and the read-time
     // single-parent / acyclicity resolution are never bypassed by a body link. Active
     // since §5 (is_structural_type is true for parent/contains).
-    let mut typed_links: Vec<TypedLink> = extract_typed_links(&body)
+    let mut typed_links: Vec<TypedLink> = extract_typed_links(vocab, &body)
         .into_iter()
-        .filter(|l| !crate::link_types::is_structural_type(&l.link_type))
+        .filter(|l| !vocab.is_structural(&l.link_type))
         .collect();
     {
         let mut seen: std::collections::HashSet<String> = typed_links
             .iter()
             .map(|l| format!("{}::{}", l.link_type, l.target))
             .collect();
-        for l in extract_frontmatter_typed_links(&content) {
+        for l in extract_frontmatter_typed_links(vocab, &content) {
             if seen.insert(format!("{}::{}", l.link_type, l.target)) {
                 typed_links.push(l);
             }
@@ -8535,7 +8561,7 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
                     w,
                     &status,
                     &conf,
-                    crate::link_types::is_structural_type(&ltype),
+                    vocab.is_structural(&ltype),
                 ) {
                     preserved.insert(
                         format!("{}::{}", ltype, target),
@@ -8611,7 +8637,7 @@ fn index_note_impl(conn: &Connection, note_path: &str, library_name: &str, force
                     "DELETE FROM note_links WHERE source_path = ?1 AND target_name = ?2 AND link_type = ?3",
                     params![note_path, target, link_type],
                 ).map_err(|e| e.to_string())?;
-                if crate::link_types::is_structural_type(link_type) {
+                if vocab.is_structural(link_type) {
                     // PJ-065 — structural (parent/TOC) edge: carries ORDER (seq) only and
                     // NO living-link apparatus — confidence sentinel 'structural', default
                     // (unearned) weight 1.0, traversal 0. Never traversed, never decays,
@@ -9600,7 +9626,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
             // cognitive types, but enforce it backend-side too (defense on both sides) —
             // a structural typed-link filter matches nothing rather than relying solely
             // on the frontend never sending one.
-            if crate::link_types::is_structural_type(&link_type_lower) {
+            if crate::link_types::active_universe_vocabulary().is_structural(&link_type_lower) {
                 conditions.push("1 = 0".to_string());
                 continue;
             }
@@ -11090,7 +11116,7 @@ fn recompute_after_link_status_change(
     if crate::incoming_links_backfill::is_built(conn) && !target_paths.is_empty() {
         let sql = format!(
             "UPDATE note_meta SET {assign} WHERE path = ?1",
-            assign = incoming_aggregate_assignments("note_meta"),
+            assign = incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta"),
         );
         for p in &target_paths {
             conn.execute(&sql, params![p])
@@ -12598,7 +12624,7 @@ pub fn reindex_delete_note(
             if inc_on {
                 let sql = format!(
                     "UPDATE note_meta SET {} WHERE path = ?1",
-                    incoming_aggregate_assignments("note_meta")
+                    incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta")
                 );
                 for p in &affected {
                     let _ = conn.execute(&sql, params![p]);
@@ -12804,7 +12830,7 @@ pub fn reindex_single_note(
         // targets/name/aliases → zero recomputes → instant save). Best-effort;
         // reconcile is the authoritative self-heal if it ever drifts.
         if let Some((old_t, old_n, old_a)) = inc_old {
-            if let Err(e) = maintain_incoming_after_save(conn, note_path, &old_t, &old_n, &old_a) {
+            if let Err(e) = maintain_incoming_after_save(conn, &crate::link_types::active_universe_vocabulary(), note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
                 maint.incoming_failed = true; // PJ-207 §3 (D3)
             }
@@ -15809,17 +15835,17 @@ mod tests_pj065_index_emission {
         // PJ-065 Phase-4 drift fix: structural-keyed frontmatter wikilinks (parent:/contains:)
         // must NOT enter outgoing_links_json, but a BODY link to the same note is still counted.
         // (cell() seeds the structural lane via seeds_only(), so the guard is live here.)
-        assert!(crate::link_types::is_structural_type("parent"));
+        assert!(crate::link_types::LinkTypeRegistry::seeds_only().is_structural("parent"));
 
         let content = "---\ntitle: Chapter Two\nparent: \"[[Part I]]\"\nsupports: \"[[Idea A]]\"\n---\n\nIt supports [[Idea B]] and mentions [[Part I]] in prose.";
-        let links = super::extract_wikilinks(content);
+        let links = super::extract_wikilinks(&crate::link_types::LinkTypeRegistry::seeds_only(), content);
         assert!(links.contains(&"part i".to_string()), "BODY [[Part I]] kept (only the frontmatter one is skipped)");
         assert!(links.contains(&"idea a".to_string()), "COGNITIVE frontmatter link (supports:) kept");
         assert!(links.contains(&"idea b".to_string()), "body link kept");
 
         // A structural-ONLY target (contains:, never in body) is fully excluded.
         let content2 = "---\ntitle: Part I\ncontains:\n  - \"[[Chapter One]]\"\n  - \"[[Chapter Two]]\"\n---\n\nBody with no wikilinks.";
-        let links2 = super::extract_wikilinks(content2);
+        let links2 = super::extract_wikilinks(&crate::link_types::LinkTypeRegistry::seeds_only(), content2);
         assert!(!links2.contains(&"chapter one".to_string()), "structural-only contains: target excluded from outgoing_links_json");
         assert!(!links2.contains(&"chapter two".to_string()), "structural-only contains: target excluded");
         assert!(links2.is_empty(), "a purely-structural note has zero cognitive outgoing links");
@@ -15827,8 +15853,8 @@ mod tests_pj065_index_emission {
 
     #[test]
     fn contains_frontmatter_becomes_ordered_structural_edges() {
-        assert!(crate::link_types::is_known_type("contains"));
-        assert!(crate::link_types::is_structural_type("contains"));
+        assert!(crate::link_types::LinkTypeRegistry::seeds_only().is_known("contains"));
+        assert!(crate::link_types::LinkTypeRegistry::seeds_only().is_structural("contains"));
 
         let dir = std::env::temp_dir().join(format!("pj065_emit_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();

@@ -169,15 +169,31 @@ pub fn index_under_vocabulary(
     vocabulary: Vec<crate::link_types::LinkTypeDef>,
     notes: &[(&str, &str)],
 ) -> rusqlite::Result<Aggregates> {
-    let _serial = HARNESS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let _restore = RestoreVocabulary;
-    crate::link_types::set_active(vocabulary);
+    let reg = crate::link_types::LinkTypeRegistry::merge(vocabulary);
+    index_with_registry(dir, &reg, notes)
+}
+
+/// **MIG-111 §1.2/A8 — the harness no longer touches the process-global.**
+///
+/// It used to `set_active(vocabulary)` and let `index_note` read it back at call time. That is
+/// the very anti-pattern the harness was written to forbid (LL-047), and it leaked: PJ-304
+/// recorded this module contaminating unrelated tests, and `RestoreVocabulary` was an interim
+/// guard whose own doc said *"Stage A removes it structurally — delete this guard then."*
+///
+/// Stage A did. The vocabulary is now an argument all the way down, so this function proves the
+/// property it asserts instead of arranging for it: nothing here mutates shared state, and two
+/// vocabularies can be driven side by side in one process without a lock.
+pub fn index_with_registry(
+    dir: &Path,
+    reg: &crate::link_types::LinkTypeRegistry,
+    notes: &[(&str, &str)],
+) -> rusqlite::Result<Aggregates> {
     let conn = crate::search::init_db(&dir.join("search.db")).expect("init_db");
     for (name, body) in notes {
         let path = dir.join(name);
         std::fs::write(&path, body).expect("write note");
-        crate::search::index_note(&conn, &path.to_string_lossy(), "harness", true)
-            .expect("index_note");
+        crate::search::index_note_with(&conn, &path.to_string_lossy(), "harness", true, reg)
+            .expect("index_note_with");
     }
     // ★ The maintenance pass, which `index_note` alone does not reach — and which is precisely
     // what H1 is about. `maintain_incoming_after_save` recomputes the incoming aggregates using
@@ -186,7 +202,7 @@ pub fn index_under_vocabulary(
     let empty = std::collections::HashSet::new();
     for (name, _) in notes {
         let path = dir.join(name);
-        crate::search::maintain_incoming_after_save(&conn, &path.to_string_lossy(), &empty, "", &empty)
+        crate::search::maintain_incoming_after_save(&conn, reg, &path.to_string_lossy(), &empty, "", &empty)
             .expect("maintain_incoming_after_save");
     }
     aggregates_for(&conn, dir)
@@ -298,28 +314,79 @@ mod tests_mig111_12_h1_harness {
         assert_eq!(a, b, "the same inputs must produce the same aggregates");
     }
 
-    /// **PHASE 1.2's ACCEPTANCE CONDITION, written before the code exists.**
+    /// **PHASE 1.2's ACCEPTANCE CONDITION — the `#[ignore]` is gone, which is what "done" means.**
     ///
-    /// A routed write into a child universe must compute with the CHILD's vocabulary — so
-    /// indexing the child's note through the Router must equal indexing it under the child's own
-    /// vocabulary, and must NOT equal indexing it under the parent's.
+    /// A routed write into a Linked Universe must compute with THAT universe's vocabulary. The
+    /// test is arranged so nothing but the routing can produce a pass:
     ///
-    /// Ignored until the routed context pool lands. **Removing the `#[ignore]` is what "1.2 is
-    /// done" means** — not a claim in a commit message.
+    /// * the **parent's** vocabulary is installed in the process-global and **left there for the
+    ///   whole test** — the routed write has to ignore it while it is live, not around it;
+    /// * the **child's** vocabulary exists only on the child's disk, read back through the real
+    ///   `WriteScope` refusals (index present, bookkeeping present, vocabulary strictly readable);
+    /// * the child's note uses a link type **only the child knows**, so the two vocabularies
+    ///   genuinely disagree about the same bytes.
+    ///
+    /// And it diffs aggregate **VALUES**, never row counts — the Architect's H1 note. A vocabulary
+    /// mismatch leaves every count identical: the note still has one outgoing link, the target
+    /// still has one incoming. What changes is what those rows SAY.
     #[test]
-    #[ignore = "MIG-111 Phase 1.2 — the routed context pool does not exist yet; this is its red→green"]
     fn routed_write_must_match_the_owners_vocabulary() {
-        let child_vocab = deltas(&["refutes"]);
-        let parent_vocab = deltas(&["exemplifies"]);
+        use crate::federation::write_scope::{expected_trigger_floor, WriteScope};
 
-        let expected = index_under_vocabulary(&tmp_dir("child"), child_vocab, NOTES).unwrap();
-        let wrong = index_under_vocabulary(&tmp_dir("parent"), parent_vocab, NOTES).unwrap();
-        assert_ne!(expected, wrong, "the two vocabularies must genuinely differ for this to test anything");
+        // What the child's own vocabulary produces, and what the parent's would produce instead.
+        let expected = index_under_vocabulary(&tmp_dir("owner"), deltas(&["refutes"]), NOTES).unwrap();
+        let wrong = index_under_vocabulary(&tmp_dir("active"), deltas(&["exemplifies"]), NOTES).unwrap();
+        assert_ne!(
+            expected, wrong,
+            "the two vocabularies must genuinely differ for this test to be capable of failing"
+        );
 
-        // TODO(1.2): index through the routed pool with the parent ACTIVE and the note owned by
-        // the child, then:
-        //     assert_eq!(routed, expected, "a routed write must use the OWNER's vocabulary");
-        //     assert_ne!(routed, wrong,     "and never the active universe's");
-        panic!("Phase 1.2 not implemented — this test is the acceptance condition, not a passing claim");
+        // A real Linked Universe on disk: its own index, its own vocabulary file.
+        let child = tmp_dir("child_universe");
+        let cdir = crate::universe::constellation_dir(&child);
+        std::fs::create_dir_all(&cdir).expect("child .constellation");
+        drop(crate::search::init_db(&cdir.join("search.db")).expect("child init_db"));
+        crate::link_types::write_link_types_at(
+            &crate::link_types::link_types_file_in(&child),
+            &deltas(&["refutes"]),
+        )
+        .expect("write the child's vocabulary");
+
+        // The ACTIVE universe's vocabulary is the parent's — installed, and deliberately NOT
+        // restored until the assertions are done. Serialized against sibling harness tests, which
+        // share this global (LL-047: the hazard is real even inside the harness that pins it).
+        let _serial = HARNESS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _restore = RestoreVocabulary;
+        crate::link_types::set_active(deltas(&["exemplifies"]));
+
+        // Resolve the scope the way production does — through the real refusals.
+        let scope = WriteScope::routed_at(&child, expected_trigger_floor().expect("floor"))
+            .expect("a properly built Linked Universe must be routable");
+        assert!(!scope.is_active(), "precondition: this is a routed scope, not the active one");
+        assert!(
+            crate::link_types::active_universe_vocabulary().is_known("exemplifies")
+                && !crate::link_types::active_universe_vocabulary().is_known("refutes"),
+            "precondition: the ACTIVE vocabulary is the parent's, and it does NOT know the \
+             child's type — so a write that leaked to the global would be visibly wrong"
+        );
+
+        // The routed write: the child's notes, indexed with the vocabulary the SCOPE resolved.
+        let routed = index_with_registry(&tmp_dir("routed"), scope.vocabulary(), NOTES).unwrap();
+
+        assert_eq!(
+            routed, expected,
+            "a routed write must use the OWNER's vocabulary — values, not counts"
+        );
+        assert_ne!(
+            routed, wrong,
+            "and never the ACTIVE universe's, which was installed throughout"
+        );
+        assert_eq!(
+            routed.link_rows, wrong.link_rows,
+            "the trap, stated as an assertion: the ROW COUNTS are identical either way. A test \
+             that counted rows would have reported health over a corrupted Linked Universe."
+        );
+
+        let _ = std::fs::remove_dir_all(&child);
     }
 }

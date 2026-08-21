@@ -254,3 +254,82 @@ frontend perf flake proven **pre-existing** by stashing to pristine `main` (2 fa
   backend. Splitting the commit secures the reasoning without shipping untested code to `main`.
 - **Next:** A5 — measured surface is **10 production sites, not 26**; seven sit behind one chokepoint
   (`index_note_impl`). See the plan's "A5–A7 — the measured surface" section.
+
+---
+
+# 2026-08-21 — Stage A completed (A5–A8), and Phase 1.2's definition of done met
+
+## A5 — the ambient readers deleted, not deprecated
+
+`is_known_type` and `is_structural_type` **removed**; `structural_frontmatter_targets` became
+registry-taking; the transitional `snapshot()` alias deleted. A deprecated function still compiles —
+deletion is what forces every call site to name the registry it means.
+
+**The compiler enumerated 34 sites.** 20 were legitimately about the active universe and now say so
+via `active_universe_vocabulary()` (a name that states the *answer*, where `snapshot()` stated the
+*mechanism*). 14 were threaded.
+
+**A real defect fell out, unlooked-for.** `strata.rs` and `inspector360.rs` re-read the
+process-global **once per directory** — so a walk spanning a vocabulary change could classify half a
+library under one vocabulary and half under another, silently. They now use one value passed from the
+top. Nobody was hunting for this; deleting the ambient readers is what made it visible.
+
+## A6/A7 — largely absorbed into A5
+
+Threading the parse chain WAS A6. `index_note_impl` carrying the vocabulary is most of A7; the
+remainder was `maintain_incoming_after_save` plus both aggregate generators, which now TAKE a
+registry instead of reading one.
+
+## A8 — `#[ignore]` removed. **This is the definition of done, and it is met.**
+
+The harness no longer touches the process-global: `index_with_registry` passes the vocabulary
+explicitly. PJ-304's `RestoreVocabulary` guard — whose own doc said *"Stage A removes it
+structurally — delete this guard then"* — is no longer load-bearing for the routed path.
+
+**The acceptance test was mutation-proved**, which is the strongest verification this migration has
+produced. Pointing the routed scope at the ACTIVE global instead of the owner's disk yields:
+
+| | `link_rows` | edge | incoming |
+|---|---|---|---|
+| **correct** | **1** | `("source.md", "target", "refutes")` | `1` · `"refutes (1)"` |
+| **corrupted** | **1** | `("source.md", "refutes::target", "associative")` | `0` · `""` |
+
+The type collapsed to `associative`, `refutes::` was absorbed **into the target's name**, the
+backlink vanished — **and the row count is 1 in both.** H1 demonstrated live: a check that counted
+rows would report perfect health over a corrupted Linked Universe.
+
+## The census
+
+37 remaining deliberate reads, pinned by file and count, each carrying its answer to *"whose
+vocabulary is this?"*. Two are marked **revisit**: the rename rewriter (B6) and the index tail
+(Phase 1.3 — it is on the write path a routed note will travel). The test already caught this
+session's own additions and forced the question rather than a silent bump.
+
+## Gates
+
+**Rust 1524 / 0 / 19 ignored** (was 20 — the acceptance test is no longer among them), **four
+consecutive clean runs**. svelte-check 0 errors. 15/15 locales in parity. Release binary
+`constellation.exe` 95,538,688 bytes, 2026-08-21 10:24 — built AFTER `npm run build` (bundle newest
+file 10:20:38), verified by grepping `build/`, not the exe.
+
+> **A near-miss worth recording.** I first "verified" the binary by grepping the **exe** for the new
+> UI strings, found nothing, and was a step from reporting a stale build. Control test: no UI string
+> appears as plaintext in the exe, including ones months old — Tauri compresses the embedded
+> frontend. The check was simply wrong. Same disease as the bugs: **a check that returns "nothing"
+> when it means "I could not see."**
+
+## BOSS-VALIDATED — Stage 1, 2026-08-21
+
+Test went `tutorial-auditor` → `ui-inspector` (**REJECTED** round 1: a boot-pause claim that could
+not happen) → revised → **APPROVED** → panel (**SEND WITH 9 EDITS**, two of them correctness) →
+Boss. All 9 applied, including: the "Add Child Universe" button he WOULD see under the Scratch row;
+the overstated "nothing touches your real universes" (switching does rewrite `active_id`); a missing
+failure mode where a *different* universe's manifest fails first and shows the transient card.
+
+**Result: PASS.** Screenshot confirms the card verbatim — title, damaged-variant body, the fully
+resolved reason naming the universe AND the file AND why an empty file is not "no data", and
+**only "Not now"**. Part D (cleanup) passed. No dialog after cleanup.
+
+The recipe never touched Scratch's own files: a throwaway universe registers itself on creation, and
+`assemble_foreign_roots` walks **every** registered root — so breaking the throwaway's own manifest
+is sufficient, with no linking required.

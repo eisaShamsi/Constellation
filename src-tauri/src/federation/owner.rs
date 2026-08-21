@@ -149,7 +149,11 @@ pub fn resolve_owner_in(path: &str, active: &Path, federation: &[PathBuf]) -> Re
 pub fn resolve_owner(app: &tauri::AppHandle, path: &str) -> Result<Owner, String> {
     let active = crate::universe::active_universe_dir(app)
         .map_err(|e| format!("Cannot resolve the active universe ({e}). Nothing was changed."))?;
-    let federation = crate::universe::resolve_child_universe_roots_recursive(&active);
+    // MIG-111 §1.2/A4 — the STRICT enumeration. The lenient one answers "no children" for an
+    // unreadable manifest, and under MIG-108 nesting that turns a child's note into a
+    // confident `is_active: true` for the PARENT. Refusing is the only safe answer to "I
+    // cannot tell what is linked."
+    let federation = crate::universe::resolve_child_universe_roots_recursive_strict(&active)?;
     resolve_owner_in(path, &active, &federation)
 }
 

@@ -49,13 +49,47 @@
 	let { onDone, onDismiss }: { onDone?: () => void; onDismiss?: () => void } = $props();
 
 	let visible = $state(false);
-	let mode = $state<'proposal' | 'running' | 'summary' | 'resume'>('proposal');
+	let mode = $state<'proposal' | 'running' | 'summary' | 'resume' | 'blocked'>('proposal');
 	let report = $state<PreflightReport | null>(null);
 	let resumeState = $state<JournalState | null>(null);
 	/** Entries the user flipped to Copy (old_path strings) — Boss D2/D3. */
 	let copySet = $state<Set<string>>(new Set());
 	let phaseLabel = $state('');
 	let errorText = $state<string | null>(null);
+	/**
+	 * PJ-322 — WHICH failure the blocked card is describing.
+	 *
+	 * `transient` = a file was briefly locked (a backup, antivirus or sync tool). Retrying works.
+	 * `damaged`   = the file is unreadable or empty. **Retrying is pointless** and offering it is
+	 *               a lie, so the Try-again button is not rendered in that state.
+	 *
+	 * The backend already knew the difference and threw it away at the IPC boundary; the panel
+	 * caught the card telling the user "usually temporary" about a permanently damaged file.
+	 * The marker is machine-readable on purpose — the frontend must never pattern-match a
+	 * translated sentence to decide which buttons are honest.
+	 */
+	let blockedKind = $state<'transient' | 'damaged'>('transient');
+
+	const REFUSAL_TRANSIENT = 'transient|';
+	const REFUSAL_DAMAGED = 'damaged|';
+
+	/** Split the marker off an error and record the kind. The marker is never shown. */
+	function readRefusal(e: unknown): string {
+		const raw = String(e);
+		if (raw.includes(REFUSAL_DAMAGED)) {
+			blockedKind = 'damaged';
+			return raw.slice(raw.indexOf(REFUSAL_DAMAGED) + REFUSAL_DAMAGED.length);
+		}
+		if (raw.includes(REFUSAL_TRANSIENT)) {
+			blockedKind = 'transient';
+			return raw.slice(raw.indexOf(REFUSAL_TRANSIENT) + REFUSAL_TRANSIENT.length);
+		}
+		// Unmarked: assume transient, which is the recoverable reading — offering a retry that
+		// turns out to be useless costs a click; withholding one that would have worked strands
+		// the user.
+		blockedKind = 'transient';
+		return raw;
+	}
 	let summary = $state<{ moved: number; copied: number; skipped: number } | null>(null);
 	let unlisten: (() => void) | null = null;
 	let unlistenClose: (() => void) | null = null;
@@ -102,8 +136,18 @@
 				visible = true;
 			}
 		} catch (e) {
-			// A failed preflight probe must never block boot — the proposal is not a gate.
+			// PJ-322 (Boss decision 1, 2026-08-20) — this used to be a console-only log, and
+			// devtools is dev-only in a release build, so the failure was INVISIBLE. That was
+			// tolerable only while the probe could not fail for a reason that mattered; now it
+			// refuses when it cannot tell which folders belong to other universes, and a
+			// proposal that silently fails to appear is the same silent-failure class as a
+			// wrong proposal. It must reach the user.
+			//
+			// Still not a gate: the 'blocked' card offers "Not now" and never wedges boot.
 			console.error('[mig108] preflight probe failed:', e);
+			errorText = readRefusal(e);
+			mode = 'blocked';
+			visible = true;
 		}
 		// Safety inspection 2026-08-01 — EVERY path out of this probe must release the boot
 		// gate. The layout parks the whole watcher/session fan-out on a promise only this
@@ -114,6 +158,28 @@
 		if (!visible) onDismiss?.();
 	});
 	onDestroy(() => { unlisten?.(); unlistenClose?.(); });
+
+	/**
+	 * PJ-322 — the reason the probe refuses is usually TRANSIENT (an antivirus or sync tool
+	 * holding `universes.json` for a moment), which the backend distinguishes from a
+	 * permanently corrupt file. Retrying is the correct affordance for that case and costs
+	 * nothing when it is not.
+	 */
+	async function retryPreflight() {
+		errorText = null;
+		try {
+			const r = await invoke<PreflightReport>('mig108_preflight', { copyPaths: [] });
+			if (r.entries.some((e) => e.class.kind === 'move' || e.class.kind === 'copy')) {
+				report = r;
+				mode = 'proposal';
+			} else {
+				// Nothing to propose — the check now succeeds and there is nothing to ask.
+				dismiss();
+			}
+		} catch (e) {
+			errorText = readRefusal(e);
+		}
+	}
 
 	function toggleCopy(oldPath: string) {
 		const next = new Set(copySet);
@@ -266,6 +332,28 @@
 				</p>
 				<div class="m108-actions">
 					<button class="m108-primary" onclick={reloadNow}>{$t('mig108.reloadNow') || 'Reload Constellation'}</button>
+				</div>
+			{:else if mode === 'blocked'}
+				<!-- PJ-322 — Constellation could not establish which folders belong to OTHER
+				     universes, so it proposes nothing. Saying so is the point: the previous
+				     behaviour was to fail into a console the user cannot see, which looks
+				     exactly like "there was nothing to propose". -->
+				<h2>{$t('mig108.blockedTitle') || 'Constellation could not check your other universes'}</h2>
+				<p class="m108-intro">
+					{#if blockedKind === 'damaged'}
+						{$t('mig108.blockedBodyDamaged') || 'To suggest tidying your libraries, Constellation first has to know which folders belong to your other universes — and one of those records is damaged or empty, so it cannot be read at all. Rather than guess, it has stopped and changed nothing. This will not clear up on its own: the file named below needs to be restored or that universe re-linked. Nothing else in Constellation is affected.'}
+					{:else}
+						{$t('mig108.blockedBody') || 'To suggest tidying your libraries, Constellation first has to know which folders belong to your other universes — and it could not read that just now. Rather than guess, it has stopped and changed nothing. This is usually temporary: a backup, antivirus or sync tool holding a file for a moment. Try again, or carry on and Constellation will ask another time.'}
+					{/if}
+				</p>
+				{#if errorText}<p class="m108-reason">{errorText}</p>{/if}
+				<div class="m108-actions">
+					<button class="m108-secondary" onclick={dismiss}>{$t('mig108.notNow') || 'Not now'}</button>
+					<!-- No retry for `damaged`: the file will not repair itself, and a button that
+					     cannot work is worse than no button. -->
+					{#if blockedKind !== 'damaged'}
+						<button class="m108-primary" onclick={retryPreflight}>{$t('mig108.tryAgain') || 'Try again'}</button>
+					{/if}
 				</div>
 			{:else if mode === 'resume'}
 				<h2>{$t('mig108.resumeTitle') || 'An unfinished unification was found'}</h2>

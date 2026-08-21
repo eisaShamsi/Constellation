@@ -146,7 +146,7 @@ pub fn run_migrations_on(
     //   * `init_db` unconditionally DROPs and re-CREATEs the outgoing-aggregate triggers
     //     (`search.rs` `create_outgoing_link_triggers`) and the Sky stratum/maturity
     //     triggers, and every one of those bodies is generated from
-    //     `link_types::snapshot()` — the ACTIVE (parent) universe's registry, loaded at
+    //     `link_types::active_universe_vocabulary()` — the ACTIVE (parent) universe's registry, loaded at
     //     `search.rs`'s `load_active` immediately before `init_db` for the ACTIVE
     //     universe only. So this call persists parent-flavoured DDL into the child's
     //     `sqlite_master`.
@@ -640,7 +640,7 @@ mod tests {
     /// database, and must not touch their data or their files.**
     ///
     /// The trigger bodies for the outgoing aggregates and for Sky stratum/maturity are
-    /// generated from `link_types::snapshot()`, a process-global holding the ACTIVE
+    /// generated from `link_types::active_universe_vocabulary()`, a process-global holding the ACTIVE
     /// universe's registry. Creating them here would persist the parent's link types
     /// into the child's `sqlite_master`; the data passes that follow would then fire
     /// them on the child's own rows, and write identity keys into the child's `.md`

@@ -72,6 +72,17 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 /// busy-tolerant). Convergent with the live `index_note` writer (both compute the same fold).
 fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     let path = crate::search::db_path(app)?;
+    // **Safety inspection 2026-08-21 (index-divergence, MED).** This connection is pinned to ONE
+    // universe's `search.db`, resolved once, right here — but the vocabulary used to build the
+    // incoming-aggregate SQL below was read from the process-global at the moment it was needed,
+    // eighty lines later. A universe switch inside that window recomputes THIS universe's
+    // aggregates with the OTHER universe's rank CASE and IN-list, and then stamps the module
+    // complete so it never re-runs. Silent, permanent, every row count still correct.
+    //
+    // Resolve the vocabulary from the same root, at the same instant, so the pair cannot drift.
+    // This is what `registry_for_root` (MIG-111 §1.2/A1) exists for.
+    let universe_root = crate::universe::active_universe_dir(app)?;
+    let vocab = crate::link_types::registry_for_root(&universe_root)?;
     let mut conn = Connection::open(&path).map_err(|e| format!("open name_fold conn: {}", e))?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
@@ -154,7 +165,7 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
         rows.filter_map(|r| r.ok()).collect()
     };
 
-    let incoming_assign = crate::search::incoming_aggregate_assignments("note_meta");
+    let incoming_assign = crate::search::incoming_aggregate_assignments(&vocab, "note_meta");
     for p in &affected {
         // 1. sky_nodes.id → the folded name (so target_name = sky_nodes.id matches).
         conn.execute(

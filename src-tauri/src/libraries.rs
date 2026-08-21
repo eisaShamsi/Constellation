@@ -4037,7 +4037,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
     };
     // MIG-067 §D — registry membership (8 typed acts + custom + `associative`),
     // snapshot once per directory instead of a hardcoded list (see strata.rs).
-    let reg = crate::link_types::snapshot();
+    let reg = crate::link_types::active_universe_vocabulary();
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
@@ -7343,7 +7343,7 @@ fn rewrite_candidates(
         .map(|path| {
             let mut changed = false;
             match crate::write_gate::gate_rmw(path, "cascade", |content| {
-                let updated = rewrite_wikilinks_in_text(content, re, new_name);
+                let updated = rewrite_wikilinks_in_text(&crate::link_types::active_universe_vocabulary(), content, re, new_name);
                 if updated != content {
                     changed = true;
                     Ok(Some(updated))
@@ -7475,7 +7475,12 @@ fn cascade_pattern(old_name: &str) -> String {
 /// Prefix-collision safety is unchanged: `[[Foo]]` → `Bar` still does NOT touch
 /// `[[Foo Bar]]` or `[[Foo_v2]]` — the delimiter alternation requires the next char
 /// after the title to be one of `]]`, `|`, `#`, `^`, nothing else.
-fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -> String {
+fn rewrite_wikilinks_in_text(
+    reg: &crate::link_types::LinkTypeRegistry,
+    content: &str,
+    re: &regex::Regex,
+    new_name: &str,
+) -> String {
     re.replace_all(content, |caps: &regex::Captures| {
         // PJ-249 §5 — the folder qualifier (group 3) rides through verbatim in every
         // branch that rewrites: the note did not move, only its title changed.
@@ -7487,7 +7492,7 @@ fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -
                 // `Foo` is not a type has the whole string `Foo::Old` as its target — a
                 // different note from `Old`, and rewriting its tail would re-point a link
                 // the rename never touched. Same check parse_link_body uses.
-                if crate::link_types::is_known_type(&head.as_str().trim().to_lowercase()) {
+                if reg.is_known(&head.as_str().trim().to_lowercase()) {
                     let gap = caps.get(2).map(|m| m.as_str()).unwrap_or("");
                     format!("[[{}::{}{}{}{}", head.as_str(), gap, folder, new_name, delim)
                 } else {
@@ -7507,7 +7512,7 @@ fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
     // pattern production had stopped using: exactly the drift that let the typed-link and
     // anchor misses sit unnoticed under a green suite.
     let re = regex::Regex::new(&cascade_pattern(old_name)).unwrap();
-    rewrite_wikilinks_in_text(content, &re, new_name)
+    rewrite_wikilinks_in_text(&crate::link_types::LinkTypeRegistry::seeds_only(), content, &re, new_name)
 }
 
 #[cfg(test)]

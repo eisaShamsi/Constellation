@@ -695,6 +695,129 @@ pub(crate) fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// MIG-111 §1.2/A4 — **the same enumeration, fail-closed.**
+///
+/// `resolve_child_universe_roots` answers "no children" for three different situations:
+/// there are none, the manifest could not be READ, and the manifest could not be PARSED.
+/// For the sidebar surfaces that is tolerable — a group is missing from a list. For the
+/// **owner resolver** it is not, and the reason is MIG-108: linked universes live UNDER the
+/// active root, so a note inside one is inside the parent too. Lose the child from the
+/// candidate set and `resolve_owner` does not refuse — it confidently returns the PARENT,
+/// `is_active: true`.
+///
+/// **This is PRE-EMPTIVE, not a bug that shipped.** `resolve_owner` has no production caller
+/// yet (`WriteScope::for_note` is its only caller, and nothing calls that), so no write has
+/// ever taken the wrong branch. The hazard is what would happen the moment Phase 1.2 wires it
+/// — the routed write would land in the wrong universe's database with every row count still
+/// correct. Closing it before the wiring is the point; do not read this as a defect log. (`resolve_owner`'s own doc comment says it reads
+/// fresh rather than from `load_all_libraries`' cache to avoid a degraded federation — and
+/// then called a reader that degraded silently one layer down.)
+///
+/// Two deliberate differences from the lenient reader, neither of which invents a policy:
+///
+/// 1. **A manifest that exists but cannot be read or parsed is an ERROR**, not an empty list.
+///    This is `read_persisted_json`'s standing doctrine — only "not found" is trustworthy
+///    emptiness — applied to the file that defines the federation. A universe with no
+///    manifest, or a manifest declaring no children, is still `Ok(vec![])`: zero cUniverses
+///    is a complete, valid setup.
+/// 2. **A declared child that cannot be canonicalized is KEPT, as its declared path**, not
+///    dropped. Canonicalization here is de-duplication, not a membership test; dropping on
+///    its failure removes a universe from the candidate set, which is the misroute above.
+///    Keeping it can only make the set MORE complete — and if the folder really is gone, no
+///    path resolves inside it anyway, while if it is merely unreachable the *next* precondition
+///    (its `search.db` must already exist) refuses by name instead of writing elsewhere.
+pub(crate) fn resolve_child_universe_roots_strict(
+    parent: &Path,
+) -> Result<Vec<PathBuf>, PersistedError> {
+    let cdir = constellation_dir(parent);
+    let meta_path = cdir.join("universe.json");
+    let meta_path = if meta_path.exists() { meta_path } else { parent.join("universe.json") };
+
+    let Some(meta) = read_persisted_json::<UniverseMeta>(&meta_path)
+        .map_err(|e| name_the_universe(parent, e))?
+    else {
+        return Ok(Vec::new()); // no manifest ⇒ genuinely no declared children
+    };
+
+    let mut out = Vec::with_capacity(meta.children.len());
+    for child in &meta.children {
+        match fs::canonicalize(child) {
+            Ok(p) => out.push(p),
+            // The folder is genuinely gone — a universe that was deleted. Keep the DECLARED
+            // path: nothing resolves inside a directory that does not exist, so keeping it
+            // cannot misroute, while dropping it is exactly what removes a universe from the
+            // candidate set.
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => out.push(PathBuf::from(child)),
+            // Anything else — permission denied, a sharing violation, an offline placeholder,
+            // a disconnected share — means the directory IS there and we could not look at it.
+            // `Unreadable`, so a caller can retry rather than treat it as permanent.
+            Err(e) => {
+                return Err(PersistedError::Unreadable(format!(
+                    "A universe linked to \"{}\" could not be checked ({}: {e}). Refusing to treat it as absent. Nothing was changed.",
+                    universe_label(parent),
+                    child
+                )))
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Name the universe in a persisted-read failure **while preserving which KIND it was.**
+///
+/// The first version of `resolve_child_universe_roots_strict` collapsed both variants into one
+/// `String` — losing exactly the distinction `load_registry_for_update` makes twenty lines
+/// above, under a comment recording why it exists: *"the FIRST version of this fix returned Err
+/// here too, and that blocked EVERY route into the app … refusing to overwrite must never
+/// become refusing to continue."* That scar was re-cut in a new file and the panel caught it.
+///
+/// The two are not the same decision downstream. `Unreadable` is usually transient (an
+/// antivirus or sync tool holding the file for a moment) and the right response is to keep the
+/// note dirty and retry. `Corrupt` is permanent until something intervenes, and retrying is
+/// pointless. A caller handed one `String` cannot tell them apart.
+fn name_the_universe(parent: &Path, e: PersistedError) -> PersistedError {
+    let msg = format!(
+        "Cannot determine which universes are linked to \"{}\" — {} Nothing was changed.",
+        universe_label(parent),
+        e.message()
+    );
+    match e {
+        PersistedError::Unreadable(_) => PersistedError::Unreadable(msg),
+        PersistedError::Corrupt(_) => PersistedError::Corrupt(msg),
+    }
+}
+
+fn universe_label(root: &Path) -> String {
+    root.file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| root.display().to_string())
+}
+
+/// The recursive form of the fail-closed enumeration. Same cycle guard and same subtree
+/// order as `resolve_child_universe_roots_recursive`; the difference is that an unreadable
+/// manifest ANYWHERE in the tree aborts rather than silently pruning that branch.
+pub(crate) fn resolve_child_universe_roots_recursive_strict(
+    parent: &Path,
+) -> Result<Vec<PathBuf>, PersistedError> {
+    let mut out: Vec<PathBuf> = Vec::new();
+    let mut visited: Vec<PathBuf> = Vec::new();
+    let canon_parent = fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
+    visited.push(canon_parent);
+    let mut stack: Vec<PathBuf> = resolve_child_universe_roots_strict(parent)?;
+    while let Some(root) = stack.pop() {
+        let canon = fs::canonicalize(&root).unwrap_or_else(|_| root.clone());
+        if visited.contains(&canon) {
+            continue; // cycle / duplicate guard
+        }
+        visited.push(canon);
+        for child in resolve_child_universe_roots_strict(&root)? {
+            stack.push(child);
+        }
+        out.push(root);
+    }
+    Ok(out)
+}
+
 /// MIG-062 §B — recursively resolve ALL cUniverse roots in the federation
 /// tree (direct children, their children, …), de-duplicated and cycle-guarded.
 ///
@@ -1555,6 +1678,31 @@ pub fn registered_universe_roots(app: &tauri::AppHandle) -> Vec<PathBuf> {
         .into_iter()
         .map(|e| PathBuf::from(e.path))
         .collect()
+}
+
+/// PJ-322 — the same list, but **it never reports "no universes" when it means "I could not
+/// look"** (Boss-approved 2026-08-20, decision 1).
+///
+/// `registered_universe_roots` goes through the lenient `load_registry`, which returns an empty
+/// registry for a path error, a read failure, and a parse failure alike. That is correct for a
+/// *display* consumer — a list showing nothing is a display problem. It is wrong for
+/// `mig108::assemble_foreign_roots`, which uses this list to decide which folders are **another
+/// universe's** and therefore must never be relocated: an empty answer there means *nothing is
+/// foreign*, and every external registered library becomes a candidate to move.
+///
+/// This reuses `load_registry_for_update`'s split verbatim rather than inventing a third
+/// policy: **`Unreadable` refuses** (transient — an antivirus or sync tool holding the file;
+/// a retry will succeed), while **`Corrupt` sets the unusable file aside and proceeds from
+/// empty** — which is then TRUE rather than assumed, and preserves the bytes for recovery.
+/// That split is a recorded scar (see the comment on `load_registry_for_update`): the first
+/// version returned `Err` for both and locked the user out of the app entirely. Refusing to
+/// overwrite must never become refusing to continue.
+pub fn registered_universe_roots_strict(app: &tauri::AppHandle) -> Result<Vec<PathBuf>, String> {
+    Ok(load_registry_for_update(app)?
+        .entries
+        .into_iter()
+        .map(|e| PathBuf::from(e.path))
+        .collect())
 }
 
 /// Info about a child universe — name, path, and how many libraries it contributes.
@@ -3050,6 +3198,108 @@ mod tests {
         assert!(set.contains(&fs::canonicalize(&d).unwrap()));
         // Parent A is NOT included.
         assert!(!set.contains(&fs::canonicalize(&a).unwrap()));
+    }
+
+    // ─── MIG-111 §1.2/A4 — the fail-closed federation enumeration ───────
+    //
+    // Real directories, real manifests. The misroute these prevent is not a lost
+    // list item: under MIG-108 a linked universe lives UNDER the active root, so a
+    // child dropped from the candidate set does not make `resolve_owner` refuse —
+    // it makes it answer PARENT, confidently, and the write lands in the wrong
+    // database. Each test therefore also demonstrates the misroute it stops.
+
+    #[test]
+    fn a_manifest_that_cannot_be_parsed_refuses_instead_of_reporting_no_children() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        let child = a.join("Linked"); // MIG-108: the child lives UNDER the parent
+        fs::create_dir_all(&child).unwrap();
+        write_universe(&a, "A", &[&child]);
+        write_universe(&child, "Linked", &[]);
+
+        // Sanity: intact, the child IS enumerated.
+        assert_eq!(resolve_child_universe_roots_recursive_strict(&a).unwrap().len(), 1);
+
+        // Now corrupt the parent's manifest, the way a half-written file or a sync
+        // tool leaves it.
+        fs::write(a.join("universe.json"), b"{\"name\": \"A\", \"childr").unwrap();
+
+        // The lenient reader says "no children" — and THAT is the misroute:
+        let lenient = resolve_child_universe_roots_recursive(&a);
+        assert!(lenient.is_empty(), "precondition: the lenient reader loses the child");
+        let misrouted = crate::federation::owner::resolve_owner_in(
+            &child.join("note.md").to_string_lossy(),
+            &a,
+            &lenient,
+        )
+        .expect("the lenient path does not even refuse");
+        assert!(
+            misrouted.is_active,
+            "THE BUG: with the child lost, the parent claims a note it does not own"
+        );
+
+        // The strict reader refuses, and names the universe it could not read.
+        let err = resolve_child_universe_roots_recursive_strict(&a)
+            .expect_err("an unparseable manifest is not an empty federation");
+        assert!(
+            matches!(err, PersistedError::Corrupt(_)),
+            "an unparseable manifest is CORRUPT, not merely unreadable — retrying it is              pointless and the caller must be able to tell: {err:?}"
+        );
+        assert!(err.message().contains("A"), "the refusal must name the universe: {err:?}");
+        assert!(err.message().contains("Nothing was changed"), "{err:?}");
+    }
+
+    #[test]
+    fn a_manifest_that_cannot_be_read_refuses() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        fs::create_dir_all(&a).unwrap();
+        // A directory where the manifest belongs: an I/O error that is not NotFound,
+        // on Windows and Unix alike.
+        fs::create_dir_all(a.join("universe.json")).unwrap();
+        let err = resolve_child_universe_roots_strict(&a)
+            .expect_err("unreadable is not 'no children'");
+        assert!(
+            matches!(err, PersistedError::Unreadable(_)),
+            "a manifest we could not READ is transient — the caller may retry, so the variant              must survive: {err:?}"
+        );
+        assert!(err.message().contains("Nothing was changed"), "{err:?}");
+    }
+
+    #[test]
+    fn no_manifest_at_all_is_zero_children_not_an_error() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        fs::create_dir_all(&a).unwrap();
+        assert!(
+            resolve_child_universe_roots_strict(&a).unwrap().is_empty(),
+            "a universe with zero cUniverses is a complete, valid setup"
+        );
+    }
+
+    #[test]
+    fn a_declared_child_that_cannot_be_canonicalized_is_kept_not_dropped() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        let gone = a.join("Unreachable");
+        fs::create_dir_all(&a).unwrap();
+        write_universe(&a, "A", &[&gone]); // declared, but never created
+
+        let roots = resolve_child_universe_roots_strict(&a).unwrap();
+        assert_eq!(roots.len(), 1, "the declared child is kept: {roots:?}");
+        assert_eq!(roots[0], gone, "kept as its DECLARED path, since it cannot be canonicalized");
+
+        // Why it matters: keeping it means a path inside it still resolves to IT.
+        let owner = crate::federation::owner::resolve_owner_in(
+            &gone.join("note.md").to_string_lossy(),
+            &a,
+            &roots,
+        )
+        .unwrap();
+        assert!(
+            !owner.is_active,
+            "the note belongs to the declared child, not to the parent that contains it"
+        );
     }
 
     // MIG-062 §B — a federation cycle (A->B->A) must terminate, not loop.

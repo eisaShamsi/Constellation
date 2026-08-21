@@ -130,7 +130,8 @@ pub fn get_360_view(
 
     // Scan all notes in the library
     let mut all_notes: HashMap<String, NoteInfo> = HashMap::new();
-    scan_all_notes(Path::new(&library_path), &link_re, &tag_re, &mut all_notes);
+    let reg = crate::link_types::active_universe_vocabulary();
+    scan_all_notes(&reg, Path::new(&library_path), &link_re, &tag_re, &mut all_notes);
 
     // §112: Pre-compute stratum for every note in the library so each
     // LinkedNote can carry its source/target's stratum (the matrix
@@ -281,7 +282,7 @@ pub fn get_360_view(
     // MIG-067 §D — the typed acts a note lacks come from the active registry
     // (the 8 seeds + custom, ordered), not a hardcoded 7. This is the drift fix:
     // `supersedes` (and any custom type) now appears as a possible gap.
-    let all_link_types = crate::link_types::snapshot().ids();
+    let all_link_types = crate::link_types::active_universe_vocabulary().ids();
     let missing_link_types: Vec<String> = all_link_types
         .iter()
         .filter(|t| !used_types.contains(t.as_str()))
@@ -330,6 +331,7 @@ struct NoteInfo {
 }
 
 fn scan_all_notes(
+    reg: &crate::link_types::LinkTypeRegistry,
     dir: &Path,
     link_re: &regex::Regex,
     tag_re: &regex::Regex,
@@ -340,7 +342,8 @@ fn scan_all_notes(
     // hardcoded set rebuilt per note); `is_link_type_value` accepts the 8 typed
     // acts + custom + the null `associative`, so custom types and `supersedes`
     // are recognized here too. Off-lock clone, reused across this dir's notes.
-    let reg = crate::link_types::snapshot();
+    // MIG-111 §1.2/A5 — `reg` is a PARAMETER now; it used to be re-read from the
+    // process-global per directory (see strata.rs's twin for why that mattered).
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -351,7 +354,7 @@ fn scan_all_notes(
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
-            scan_all_notes(&path, link_re, tag_re, notes);
+            scan_all_notes(reg, &path, link_re, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // MIG-008 Step 2: prefer frontmatter title for the scanned
@@ -365,7 +368,7 @@ fn scan_all_notes(
                 // key (byte-offset guard so a body link to the same note still counts).
                 // Active since §5.
                 let fm_len = body.as_ptr() as usize - content.as_ptr() as usize;
-                let struct_fm = crate::link_types::structural_frontmatter_targets(&content[..fm_len]);
+                let struct_fm = crate::link_types::structural_frontmatter_targets(reg, &content[..fm_len]);
 
                 let mut outgoing: Vec<(String, Option<String>)> = Vec::new();
 

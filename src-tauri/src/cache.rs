@@ -513,7 +513,7 @@ fn backlink_rows_in_schema(
     // PJ-065 — the structural (parent/TOC) lane never shows as a cognitive backlink
     // (the TOC panel is its only surface) and must not break the getBacklinks ==
     // incoming_count parity. Active since §5 (no-op only if the lane is ever un-registered).
-    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence, \
@@ -545,7 +545,7 @@ fn outgoing_rows_in_schema(
 ) -> Result<Vec<NoteLink>, String> {
     // PJ-065 — exclude the structural (parent/TOC) lane from the cognitive
     // outgoing-links panel (the TOC panel is its surface). Active since §5.
-    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence, \
@@ -1285,7 +1285,7 @@ fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>
     // cognitive: the structural (parent/TOC) lane is served only by the dedicated
     // get_structural_* APIs, never the boot bundle (so boot-bundle size is
     // unchanged and frontend cognitive graph consumers never see it). Active since §5.
-    let sx = crate::link_types::snapshot().structural_not_in_clause("link_type");
+    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
     // PJ-249 §6g — the column list comes from `link_boot_index::BOOT_LINK_COLUMNS`, the
     // same constant the covering index is built from. Spelled out here, it drifted from the
     // index in `6c810836` (when `created` was added for the UI) and un-covered the boot
@@ -1651,7 +1651,7 @@ mod tests {
         for (source, target, ltype) in links {
             // PJ-065 — structural (parent/TOC) edges never enter the sky graph
             // (Sky View is a cognitive surface). Active since §5.
-            if crate::link_types::is_structural_type(&ltype) {
+            if crate::link_types::LinkTypeRegistry::seeds_only().is_structural(&ltype) {
                 continue;
             }
             conn.execute(
