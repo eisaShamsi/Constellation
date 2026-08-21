@@ -7244,7 +7244,7 @@ Constellation has a **five-level knowledge hierarchy**:
 
 ```
 Universe (root, named by user, contains universe.json)
-  └── cUniverse (child universe — federation of libraries)
+  └── Linked Universe (federation of libraries)
        └── Library (self-contained knowledge base, like Obsidian vault)
             └── Folder (subdirectory inside a Library)
                  └── Note (single .md file with optional YAML frontmatter)
