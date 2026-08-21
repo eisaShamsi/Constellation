@@ -244,6 +244,56 @@
 > **Why it is MED and not higher:** it requires an unregistered universe on disk AND the user selecting a folder inside it. **Not verified:** what the other universe's own index does afterwards.
 > **The fix is one line** - route `bring_in_library` through `universe_manifest_at_or_above` instead of `carries_universe_manifest` - but it changes what the app refuses, so it is **Boss's call**, exactly as the code comment says.
 >
+> ### 🆕 PJ-334 *(HIGH · index-divergence · **LIVE: 770 notes across 5 universes** · origin ESTABLISHED · fix RULED)* - indexed notes with no Sky node, and no path back
+> **Full panel ruling: `docs/migrations/PJ-235-federation-boundary/PJ-334-PANEL-RULING.md`.** Four lenses, each adversarially attacked, read-only throughout. **It overturned the entry this replaces, corrected the author twice, corrected four of its own members, and established the origin.**
+>
+> #### The scope is 770, not 8
+> | database | notes | sky rows | **missing** |
+> |---|---|---|---|
+> | **Eisa Universe** | 2,731 | 1,973 | **758 - 27.8% of that universe** |
+> | Eisa Cognitive Knowledge | 8,031 | 8,024 | 7 |
+> | Scratch / جوامع عيسى الشامسي / 3 nested كون عيسى | - | - | 1 each |
+> | **موسوعة عيسى (the real PKF)** | 832 | 832 | **0** |
+>
+> **1,853 `sky_links` edges are drawn from nodes that do not exist.** Orphan sky rows: 0 everywhere.
+>
+> #### It is NOT only Sky View - it reaches the Reviewer
+> `index_note` reads `SELECT CAST(stratum AS INTEGER) FROM sky_nodes … .unwrap_or(0)` (search.rs:8402-8406); `review.rs:1408-1412` does the same. **In every universe checked, `COUNT(review_schedule.stratum = 0)` equals the missing-sky count EXACTLY** (ECK 7/7, Eisa Universe 758/758, موسوعة عيسى 0/0). Every stranded note is parked permanently at the bottom of the review queue.
+>
+> #### ✅ ORIGIN - ESTABLISHED, and the leak is already sealed
+> 1. Notes are indexed while `cid_cn` is still `''` (a bulk library import; the Five Acts system note written at universe init).
+> 2. `note_meta_sky_ai`'s **`INSERT OR REPLACE`** collides on the then-**FULL** `UNIQUE INDEX idx_sky_nodes_cid_cn`. REPLACE = DELETE + INSERT, so **each cid-less note deleted the previous one's row - one survivor per cohort.**
+> 3. The cid is injected later, which takes the **UPDATE** branch: `note_meta_sky_ai` never fires again, `note_meta_sky_au` only UPDATEs a row that is not there. **Permanent.**
+> 4. **`2edc97d7` (2026-08-10 11:30:58 +0400)** made the index partial - sealing the producer - and added the §15 restore scoped `WHERE m.cid_cn = ''`. It healed everyone still blank (ECK 25, Eisa Universe 231, all sharing one `updated_at` second: **2026-08-10 05:06:31Z**) and **permanently skipped everyone who had already acquired a cid.**
+>
+> **Reproduced in miniature**, not merely inferred: `Eisa Universe\كون عيسى` (5 notes, still carrying the legacy FULL index) holds **exactly two cid-less notes and exactly one sky row between them.** The same file - `Five Acts\Observation — Recent Captures.md` - is the sole stranded note in **five** separate universes.
+>
+> **MIG-108 is EXONERATED** by a stronger test than any lens proposed: its own pre-run snapshot joined on **`cid_cn`, not `path`** (a path join proves nothing when the migration rewrites paths). Of the 758 stranded, **162 existed pre-run and 0 of them had a sky row.** MIG-108 destroyed nothing.
+>
+> #### ❌ TWO AUTHOR CLAIMS OVERTURNED
+> 1. **"Nothing restores it" is FALSE.** `search.rs:6329` is PJ-207 §15's restore - top-level in `init_db`, not version-gated, running on **every boot of every universe** - and it demonstrably works (the 231-row cluster above). The entry quoted §15's post-mortem while missing §15's remediation twenty lines below it. **The correct framing is "the existing restore's predicate is one clause too narrow", and that reframing changes the entire answer.**
+> 2. The proposed trigger fix was **inert three times over**, not once. The author doubted the `WHEN` guard and was right - *reproduced* in a `:memory:` harness built from the live trigger bodies: an ordinary edit touches none of `path`/`name`/`library_name`/`cid_cn`, and `content_hash` is not even in the upsert's `DO UPDATE SET` list. Worse: the AU **body** is UPDATE-only, so widening the guard alone still produces no row. **Decisively: all 770 stranded notes carry a NON-EMPTY `cid_cn`**, so the one non-rename arm of the guard can never fire for any of them. Only a rename/move could have healed anything - and three of ECK's seven are in `.trash` and will never be renamed.
+>
+> #### ⛔ THE WRITE-PATH TRIGGER IS REJECTED - and the panel reproduced the harm
+> A heal trigger firing before `note_meta_sky_au` inserts a bare row at `NEW.path`; the rename's `UPDATE sky_nodes SET path = …` then hits **`UNIQUE constraint failed: sky_nodes.path`** (it is the PRIMARY KEY). `migrate_note_db_paths` runs statements through a **log-and-continue** runner (libraries.rs:1584-1596), so the file moves on disk, every other table migrates, and **`note_meta` is left at a dead path** - turning a cosmetic gap into silent index↔disk divergence. Reachable by renaming any of ECK's 31 or Eisa Universe's 231 blank-cid notes. SQLite also fires AFTER-UPDATE triggers in **reverse creation order** and guarantees no order by contract, so a "place it correctly" mitigation is not available.
+> *(The latency objection was separately **rejected on its own terms** - a `NOT EXISTS` probe is microseconds against a ≥1500 ms debounce, and `note_meta_sky_maturity_au` already fires on every save. The trigger dies on the rename hazard and on being unnecessary, not on cost.)*
+>
+> #### ✅ THE RULING - widen the repair that already exists, in `init_db`. Change no trigger.
+> Placed **after** `ensure_dependent_tables_mig003_indexes` (search.rs:6304) for §15's own stated reason. **Leave the shipped narrow arm at search.rs:6327-6344 exactly as it is**; add a count-gated two-phase arm inside the existing `if owns` block:
+> - **GATE:** `COUNT(note_meta)` vs `COUNT(sky_nodes)`; proceed only when they differ.
+> - **PHASE 1:** anti-join for the missing paths. **PHASE 2:** per-path `INSERT OR IGNORE … SELECT … WHERE path = ?` (PK seek), then stamp `stratum`/`maturity`.
+>
+> **Measured on the Boss's live databases, read-only:** gate **54.6 ms cold / 0.0 ms warm**; Phase 1 anti-join **806 ms cold** on ECK (8,031 notes / 1.6 GB) but paid **once, only on the boot that repairs**; 2.2 ms on Eisa Universe. **The trap, measured:** a single statement with the full column list plans `SCAN m` and drags 273 MB of `body_text` - the query plan must be asserted, not assumed.
+>
+> **Non-negotiable clauses, each with its reason:** `INSERT OR IGNORE` **never** `OR REPLACE` (REPLACE is the mechanism that CAUSED this) and never a bare `INSERT`; **widen the stamp with the insert** - the shipped stamp carries the same narrow predicate, and restoring 770 rows with `stratum` NULL would put stratum 0 straight back into the Reviewer, **re-creating the exact harm and reporting success**; keep the new arm **`owns`-gated** (the stratum/maturity SQL reads the active universe's link registry - Boss ruling 2 holds); **no `.trash` exclusion** (54 of 57 trashed notes already have sky rows); **three separate numbers** - candidates / inserted / stamped - to `diag_log`, because `OR IGNORE` can silently under-heal; **no `scan_*`/`rebuild_*`, no walk, no file I/O, `sky_backfill::is_needed` untouched** - the PJ-332 bar is cleared by construction.
+>
+> **Verification before it ships:** exactly the 7 named ECK paths restored and 0 elsewhere; **`SCAN m` must NOT appear in Phase 1's plan**; restored rows carry non-NULL stratum and maturity; a duplicate-cid candidate is skipped rather than destroying the incumbent, and is counted.
+>
+> #### ⏳ BOSS DECISION OWED - the only one
+> **`Eisa Universe`'s Sky View will gain 758 nodes and 1,853 edges on its next launch, and three trashed notes will reappear in ECK's.** A visible change to a knowledge surface, unannounced. **Panel recommendation: ship it silently but loudly logged** - automatic repair, one status-bar line naming the number repaired, no button, no progress strip, no 15 locale files. Nobody answers "leave 758 of my notes invisible", so a permission door is disproportionate; a notification is not. **Panel explicitly declines to decide it.**
+>
+> **NOT VERIFIED / labelled by the panel:** Phase 2's write cost (~30 ms insert + ~190 ms stamp for 758 rows) is second-hand - measured by one member on a scratch copy, not re-run. The post-fix "zero exceptions after 2026-08-10 07:30 UTC" sample is only 19 notes: the date boundary is strong, the sample is small, **and the ruled design does not depend on it.**
+>
 > ### 📋 Housekeeping
 > - **Gates.** Rust **1501 / 0** (20 ignored, incl. the 1.2 acceptance test) — and this time the number is a **distribution, not a sample**: 16 consecutive clean single-process runs after PJ-303/PJ-304, then **9 more consecutive green** on the final state after PJ-307/PJ-308 and the deletion of the harmful test. (1501 not 1502 because that test was removed. One sweep run was lost to a transient Windows `LNK1104` linker lock — a file-lock on the freshly-linked exe, not a test failure.) **Release binary built 2026-08-17 17:02**, after every fix in the batch. Against a baseline failing ~1 in 6, that is ~5% likely by luck alone, so the runs corroborate; the proof is that both mechanisms were reproduced deterministically and removed. Diff-scoped inspection on the PJ-303 diff: **0 confirmed findings**; a combined re-inspection of the full five-file diff was run because the first PJ-302 inspection spanned the stash used for the pristine test and could have read the wrong bytes.
 > - **A measurement-discipline note, recorded because it is the same disease as the bugs.** I twice ran two `cargo test` loops concurrently and once edited source mid-loop, then read the resulting failures as evidence. They were artefacts of my own concurrency — shared mutable state with a window, created by the person cataloguing shared mutable state with a window. The contaminated runs were discarded and re-measured clean. **Rule for the rest of this migration: one suite at a time, no source edits mid-sweep.**

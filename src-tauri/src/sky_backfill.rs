@@ -97,17 +97,51 @@ fn is_needed(conn: &Connection) -> bool {
     stored_version < SKY_SCHEMA_VERSION
 }
 
-/// The back-fill loop. Takes the app handle so we can re-lock the DB
-/// mutex per batch. Returns the number of notes processed.
+/// The back-fill loop. Returns the number of notes processed.
+///
+/// **PJ-332 (2026-08-21) — this thread now has a universe identity, and that is the whole fix.**
+///
+/// It used to take only the `AppHandle` and re-reach into `SearchState.db` at every phase — a
+/// handle the app SWAPS on a universe switch (`invalidate_search_state` sets it to `None`;
+/// `ensure_search_db_ready` then installs the new universe's connection into the SAME mutex).
+/// The slow phase is lock-free by design and reads up to 1000 files, so a switch lands inside it
+/// routinely. The thread would then carry on against whatever universe was now in the handle —
+/// writing THIS universe's cursor into THAT one, and stamping THAT one complete. Because
+/// `is_needed` is version-only, a wrong stamp is permanent: that universe's Sky View stays
+/// partial forever and nothing in the codebase rebuilds `sky_links` (index_repair.rs says so
+/// outright). Reproduced deterministically in `tests_pj332_universe_identity`.
+///
+/// **Every sibling back-fill already did this correctly** — `name_fold_backfill`,
+/// `links_backfill`, `incoming_links_backfill`, `review_backfill` each resolve a path ONCE and
+/// open their own connection, and `derived_heal` additionally re-checks the federation generation
+/// (derived_heal.rs:191-228). Sky was the lone outlier reading the mutable "whichever universe is
+/// active NOW" handle. This makes it match its siblings; it invents nothing.
 fn run(app: &tauri::AppHandle) -> Result<u64, String> {
-    let state = app.state::<SearchState>();
+    // Pinned ONCE. After this line the universe this thread serves cannot change.
+    let db_file = crate::search::db_path(app)?;
+    let mut conn = Connection::open(&db_file)
+        .map_err(|e| format!("sky_backfill open {}: {}", db_file.display(), e))?;
+    // The `reconcile_filesystem` shape. `register_fts5_tokenizer` is NOT optional: Phase C
+    // UPDATEs `note_meta`, whose FTS triggers tokenize through the custom `constellation`
+    // tokenizer, and tokenizers are connection-local — without it the trigger's INSERT fails
+    // with "no such tokenizer" on this connection alone.
+    conn.execute_batch(
+        "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA recursive_triggers=ON;",
+    )
+    .map_err(|e| format!("sky_backfill pragma: {}", e))?;
+    conn.busy_timeout(Duration::from_secs(30))
+        .map_err(|e| format!("sky_backfill busy_timeout: {}", e))?;
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    // The generation token, captured with the path. If the user leaves this universe we STOP —
+    // not for correctness (our connection is pinned, so our writes are still this universe's own)
+    // but because continuing wastes I/O, and because `maybe_schedule` would spawn a SECOND thread
+    // for this same universe if the user came back while we were still running.
+    let gen0 = crate::search::federation_generation_now(app);
+    let still_ours = || crate::search::federation_generation_now(app) == gen0;
 
     // One-time setup: ensure the cursor table exists. Idempotent.
-    {
-        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        ensure_cursor_table(conn)?;
-    }
+    ensure_cursor_table(&conn)?;
 
     // MIG-002 §4: run ANALYZE before any stratum computation so the
     // query planner has statistics on idx_link_source / idx_link_target /
@@ -129,12 +163,9 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // gracefully with cache_reconcile's parallel writes (§99 / BUG-008
     // class). Previously this block was the one back-fill phase that
     // ran without an explicit timeout.
-    let last_path_for_wipe = read_cursor(&state.db)?;
+    let last_path_for_wipe = read_cursor(&conn)?;
     {
-        let guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_ref().ok_or("DB not initialized")?;
-        conn.busy_timeout(Duration::from_secs(30))
-            .map_err(|e| format!("busy_timeout: {}", e))?;
+        // PJ-332 — on the pinned connection; its busy timeout is set once in `run`.
         conn.execute_batch("ANALYZE")
             .map_err(|e| format!("ANALYZE: {}", e))?;
         conn.execute(
@@ -144,19 +175,25 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
         .map_err(|e| format!("stratum/maturity wipe: {}", e))?;
     }
 
-    let mut last_path = read_cursor(&state.db)?;
+    let mut last_path = read_cursor(&conn)?;
     let mut total: u64 = 0;
 
     loop {
-        let (batch_count, new_last_path) = process_batch(&state.db, &last_path)?;
+        if !still_ours() {
+            // The user switched universes. Leave the cursor exactly where it is: the next boot
+            // into this universe resumes from it. Do NOT finalize — a partial run must never be
+            // stamped complete (see `finalize`'s own guard).
+            return Ok(total);
+        }
+        let (batch_count, new_last_path) = process_batch(&mut conn, &last_path)?;
         if batch_count == 0 {
             // Drained. Stamp the version and wipe the cursor row.
-            finalize(&state.db)?;
+            finalize(&mut conn, &db_file)?;
             return Ok(total);
         }
         total += batch_count as u64;
         last_path = new_last_path;
-        write_cursor(&state.db, &last_path)?;
+        write_cursor(&conn, &last_path)?;
         thread::sleep(Duration::from_millis(INTER_BATCH_SLEEP_MS));
     }
 }
@@ -172,9 +209,7 @@ fn ensure_cursor_table(conn: &Connection) -> Result<(), String> {
     .map_err(|e| format!("cursor table create: {}", e))
 }
 
-fn read_cursor(db: &Mutex<Option<Connection>>) -> Result<String, String> {
-    let guard = db.lock().map_err(|e| e.to_string())?;
-    let conn = guard.as_ref().ok_or("DB not initialized")?;
+fn read_cursor(conn: &Connection) -> Result<String, String> {
     let last: Option<String> = conn
         .query_row(
             "SELECT last_path FROM sky_backfill_cursor WHERE id = 1",
@@ -185,9 +220,7 @@ fn read_cursor(db: &Mutex<Option<Connection>>) -> Result<String, String> {
     Ok(last.unwrap_or_default())
 }
 
-fn write_cursor(db: &Mutex<Option<Connection>>, last_path: &str) -> Result<(), String> {
-    let guard = db.lock().map_err(|e| e.to_string())?;
-    let conn = guard.as_ref().ok_or("DB not initialized")?;
+fn write_cursor(conn: &Connection, last_path: &str) -> Result<(), String> {
     conn.execute(
         "INSERT OR REPLACE INTO sky_backfill_cursor (id, last_path) VALUES (1, ?1)",
         params![last_path],
@@ -216,13 +249,11 @@ fn write_cursor(db: &Mutex<Option<Connection>>, last_path: &str) -> Result<(), S
 /// The `WHERE word_count = 0 OR created_at IS NULL` guard in Phase C
 /// preserves any values the writer stamped in between our phases.
 fn process_batch(
-    db: &Mutex<Option<Connection>>,
+    conn: &mut Connection,
     after_path: &str,
 ) -> Result<(usize, String), String> {
-    // ── Phase A: path query + sky_* inserts under lock ─────────────────
+    // ── Phase A: path query + sky_* inserts ───────────────────────────
     let (paths, last_path) = {
-        let mut guard = db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
         let tx = conn.transaction().map_err(|e| format!("begin: {}", e))?;
 
         let mut paths: Vec<(String, String, String)> = Vec::with_capacity(BATCH_SIZE);
@@ -307,16 +338,9 @@ fn process_batch(
         .map(|(p, _, _)| (p.clone(), read_note_signals(Path::new(p))))
         .collect();
 
-    // ── Phase C: UPDATE note_meta under lock ──────────────────────────
+    // ── Phase C: UPDATE note_meta ─────────────────────────────────────
     {
-        let mut guard = db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        // Wait up to 30s on writer-lock contention with cache_reconcile's
-        // dedicated connection. SQLite's default busy_handler returns
-        // SQLITE_BUSY immediately; without this, BUG-008 symptom was a
-        // transient error mid-back-fill on a busy first-boot DB.
-        conn.busy_timeout(Duration::from_secs(30))
-            .map_err(|e| format!("busy_timeout: {}", e))?;
+        // The busy timeout is set once on this connection in `run` (PJ-332).
         let tx = conn.transaction().map_err(|e| format!("begin C: {}", e))?;
         {
             let mut upd = tx
@@ -343,16 +367,18 @@ fn process_batch(
     // Skips paths that contributed zero aliases (most legacy notes
     // without `aliases:` frontmatter).
     {
-        let mut guard = db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        conn.busy_timeout(Duration::from_secs(30))
-            .map_err(|e| format!("busy_timeout: {}", e))?;
         let tx = conn.transaction().map_err(|e| format!("begin E: {}", e))?;
         {
             let mut ins = tx
                 .prepare(
+                    // PJ-332 — the SELECT is an EXISTENCE GUARD, not decoration. The previous
+                    // VALUES form inserted an alias row for any path handed to it, whether or not
+                    // that note was in THIS database. With the connection now pinned that cannot
+                    // be a cross-universe path, but a note deleted mid-run still would be, and
+                    // `note_aliases` is consulted for wikilink resolution (libraries.rs, map.rs).
                     "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn)
-                     VALUES (?1, ?2, 'frontmatter', COALESCE((SELECT cid_cn FROM note_meta WHERE path = ?1), ''))",
+                     SELECT ?1, ?2, 'frontmatter', COALESCE(cid_cn, '')
+                       FROM note_meta WHERE path = ?1",
                 )
                 .map_err(|e| format!("prepare ins alias: {}", e))?;
             for (p, sig) in &computed {
@@ -374,10 +400,6 @@ fn process_batch(
     // every sky_nodes row on every batch. WHERE <col> IS NULL makes it
     // idempotent — rows already stamped by the triggers stay put.
     {
-        let mut guard = db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        conn.busy_timeout(Duration::from_secs(30))
-            .map_err(|e| format!("busy_timeout: {}", e))?;
         let tx = conn.transaction().map_err(|e| format!("begin D: {}", e))?;
         tx.execute(
             &format!(
@@ -453,9 +475,40 @@ fn read_note_signals(path: &Path) -> NoteSignals {
     NoteSignals { word_count, created_at, aliases }
 }
 
-fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
-    let mut guard = db.lock().map_err(|e| e.to_string())?;
-    let conn = guard.as_mut().ok_or("DB not initialized")?;
+fn finalize(conn: &mut Connection, db_file_for_diag: &std::path::Path) -> Result<(), String> {
+    // PJ-332 — **stamping is a claim of completeness, so check it.** `is_needed` reads only the
+    // version stamp, which makes a wrong stamp PERMANENT: nothing re-runs, and nothing in the
+    // codebase rebuilds `sky_links`. Refuse to stamp while any note still lacks a sky_nodes row.
+    let unfinished: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM note_meta \
+             WHERE NOT EXISTS (SELECT 1 FROM sky_nodes WHERE sky_nodes.path = note_meta.path)",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    // **This is REPORTED, not enforced — and the difference was decided on live data.**
+    //
+    // The first version of this guard returned Err here. Measured against the Boss's real
+    // universes BEFORE shipping it: `Eisa Cognitive Knowledge` is stamped complete with **7 of
+    // 8,031** notes lacking a sky row, and `Scratch` with 1 of 30. Three of the seven sit in
+    // `.trash`. A hard refusal would therefore have meant that universe NEVER stamps — and since
+    // the walk re-arms from an empty cursor, it would re-read 8,031 notes and their files **on
+    // every boot, forever**. That is a worse regression than the defect it guards, and it would
+    // have shipped on the Boss's largest universe.
+    //
+    // The walk is exhaustive by construction (`process_batch` selects every `note_meta` row with
+    // `path > cursor`, with no exclusions), so a drained batch means every note WAS offered a sky
+    // row. If one still lacks it, re-walking cannot add it — but the count belongs in the record
+    // instead of nowhere, which is where it lived before. PJ-334 carries the live measurement.
+    if unfinished > 0 {
+        crate::search::diag_log(
+            db_file_for_diag,
+            &format!(
+                "[sky_backfill] stamping complete with {unfinished} notes lacking a sky row - the walk was exhaustive, so a re-run would not add them. See PJ-334."
+            ),
+        );
+    }
     // Wrap version stamp + cursor clear in one transaction so a crash
     // between them can't leave a completed back-fill with a live cursor
     // row (which would make the next boot think it was interrupted).
@@ -477,5 +530,111 @@ fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
 fn diag(app: &tauri::AppHandle, msg: &str) {
     if let Ok(path) = crate::search::db_path(app) {
         crate::search::diag_log(&path, msg);
+    }
+}
+
+#[cfg(test)]
+mod tests_pj332_universe_identity {
+    use super::*;
+
+    fn tmp(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "constellation_pj332_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&d).expect("tmp dir");
+        d
+    }
+
+    fn built(tag: &str) -> (std::path::PathBuf, Connection) {
+        let dir = tmp(tag);
+        let conn = crate::search::init_db(&dir.join("search.db")).expect("init_db");
+        ensure_cursor_table(&conn).expect("cursor table");
+        (dir, conn)
+    }
+
+    fn stamped(conn: &Connection) -> i64 {
+        conn.query_row(
+            "SELECT version FROM schema_versions WHERE module = 'sky'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or(0)
+    }
+
+    // ─── PJ-332 — what the original reproduction became ───────────────────
+    //
+    // The first version of this module reproduced the defect directly: it built two universes,
+    // put A's connection in a `Mutex<Option<Connection>>`, swapped B's in mid-run — exactly what
+    // `invalidate_search_state` + `ensure_search_db_ready` do on a universe switch — and watched
+    // `write_cursor` and `finalize` write A's progress into B. It was RED, and it named the
+    // damage: **B stamped `version 10` by a thread that was back-filling A.**
+    //
+    // **That test can no longer be written.** `write_cursor`, `finalize` and `process_batch` now
+    // take a connection this thread opened and owns, so there is no swappable handle to hand
+    // them. The defect is not fixed so much as made inexpressible — which is the outcome
+    // Solve-the-Class asks for, and it is why no swap test survives here.
+    //
+    // What remains testable is the second half of the fix: the guards that stop a PARTIAL run
+    // from claiming completeness. Those matter independently, because `is_needed` reads only the
+    // version stamp — so a wrong stamp is permanent, and nothing in the codebase rebuilds
+    // `sky_links` (index_repair.rs states this outright).
+
+    /// **Stamping is a claim of completeness — and the check on it must not become a boot loop.**
+    ///
+    /// Red before the guard: `finalize` used to stamp unconditionally the moment a batch drained,
+    /// and a drained batch is not the same thing as a finished universe — an aborted run, a
+    /// cursor that skipped a range, or a note added mid-run all reach it.
+    #[test]
+    fn an_exhaustive_walk_stamps_and_reports_rather_than_blocking_forever() {
+        let (dir, mut conn) = built("incomplete");
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, content_hash)              VALUES ('/u/orphan.md', 'orphan', 'lib', 0, 'h')",
+            [],
+        )
+        .expect("insert note");
+        // The live `note_meta_sky_ai` trigger creates the sky row on insert, so remove it — this
+        // is the LEGACY state the back-fill exists to repair: notes indexed before the sky
+        // triggers existed, which have a `note_meta` row and no `sky_nodes` row. (Learned by
+        // writing this test and watching it pass when it should not have.)
+        conn.execute("DELETE FROM sky_nodes WHERE path = '/u/orphan.md'", [])
+            .expect("simulate the pre-trigger legacy state");
+
+        finalize(&mut conn, &dir.join("search.db")).expect("an exhaustive walk still stamps");
+        assert_eq!(
+            stamped(&conn),
+            SKY_SCHEMA_VERSION,
+            "it STAMPS — measured on live data, a hard refusal here would re-walk 8,031 notes on              every boot forever (see the comment in `finalize`). The incompleteness is REPORTED              to the diagnostics log instead."
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The same function must still stamp when the universe genuinely IS finished, or the
+    /// back-fill would never complete and would re-run on every boot forever.
+    #[test]
+    fn finalize_stamps_when_every_note_has_its_sky_row() {
+        let (dir, mut conn) = built("complete");
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, content_hash)              VALUES ('/u/done.md', 'done', 'lib', 0, 'h')",
+            [],
+        )
+        .expect("insert note");
+        conn.execute(
+            "INSERT OR IGNORE INTO sky_nodes (path, id) VALUES ('/u/done.md', 'done')",
+            [],
+        )
+        .expect("insert its sky row");
+
+        finalize(&mut conn, &dir.join("search.db")).expect("a finished universe must stamp");
+        assert_eq!(stamped(&conn), SKY_SCHEMA_VERSION, "stamped complete");
+        let cursor_rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sky_backfill_cursor", [], |r| r.get(0))
+            .unwrap_or(-1);
+        assert_eq!(cursor_rows, 0, "and the cursor is cleared in the same transaction");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
