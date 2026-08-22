@@ -299,6 +299,128 @@ the move-refusal are boundaries, not cocoons, and stand). Ledger v1.93 files the
 federated Knowledge Health accordingly. **B4's refusal stays** — it replaced a wrong answer
 with an honest state — and the federated form is now on the books as the end-state.
 
+---
+
+## §B5 — the rename cascade takes the OWNER's vocabulary (fences UP)
+
+> Working on: **MIG-111 Stage B5** — `rewrite_wikilinks_in_text` + `update_links_recursive`
+> take the OWNER's registry, threaded from the top of `update_links_on_rename`. **Both
+> federation fences untouched** — B6 is a separate, later commit.
+
+**Concept:** a rename's "is `[[refutes::Old]]` a typed link or a target name?" decision must
+be made with the vocabulary of the universe that owns the files being rewritten.
+
+**What the investigation established before the edit:**
+- The one ambient read sat inside `rewrite_candidates`' rayon closure — read **per file**,
+  so a vocabulary change mid-cascade could split one rename's rewrites across two
+  vocabularies (the LL-047 window, per candidate), and it was always the ACTIVE vocabulary.
+- Both branches (index-seek and walk) funnel into `rewrite_candidates` — one threading
+  point covers the cascade.
+- Unlike B4's clause-invariant sites, the rewriter's `reg.is_known(head)` genuinely differs
+  between vocabularies — but under the fences a linked cascade rewrites ZERO files in both
+  branches (the seek's foreign skip; the walk's foreign boundary), and an active-universe
+  cascade resolves owner = active. So B5 is behavior-preserving for every reachable path
+  today, while making the OWNER's grammar the one B6 will act on.
+
+**The change:** `update_links_on_rename` resolves ONE registry per cascade
+(`registry_for_owner_of(&app, &library_path)`, `?`-propagated — a linked universe's corrupt
+vocabulary is an ERROR naming it, never a rewrite pass under the wrong grammar);
+`update_links_recursive` and `rewrite_candidates` take `reg`; the per-file global read is
+gone. Census: libraries.rs ABSENT (was 1), answer recorded in the map.
+
+**Verification:**
+- `cascade_rewrites_a_child_only_typed_link_under_the_childs_vocabulary_and_not_the_parents`
+  — the plan's clause as a discrimination pair, entered through `update_links_recursive`
+  (LL-048), child registry built by the PRODUCTION writer + strict reader: child registry ⇒
+  `[[refutes::Old]]` → `[[refutes::New]]`; seeds ⇒ the typed form untouched (a target name)
+  while plain `[[Old]]` still rewrites. **MUTATION-PROVED:** restoring the global read
+  inside the closure turns it red (0.03s fail), reverted.
+- `cascade_still_refuses_to_cross_a_foreign_root_after_b5` — the fence holds: a matching
+  foreign-root file stays byte-identical while its sibling rewrites.
+- Suite **1537/0 ×3** (two new tests), binary 2026-08-22 17:39:11.
+- **Per-build inspection `wf_54802e43-408`: 1 pass, 0 CONFIRMED findings** — the empty
+  result was verified against the journal, not assumed (the hunter's trace covers the
+  frontend caller `handleRenameComplete` — which always passes the ACTIVE universe root
+  and surfaces a cascade `Err` via `templateActionError` + a journal marker, answering the
+  half-complete-rename question — both fences, the rayon shared-reference use, and the
+  census consistency; its verdict: "strictly narrows a real prior hazard (the LL-047
+  mid-cascade vocabulary-split window). Clean.").
+
+### The B5 test pipeline
+
+- Release exe rebuilt with B5: **17:49:03**, 95,669,248 bytes, verified newer than both
+  changed sources (Rust-only diff; the 11:02 frontend bundle is current).
+- **tutorial-auditor** built the regression tutorial (12 verified claims — B5 is
+  behavior-preserving, so the test is an ordinary two-probe rename: plain + typed referrer
+  links must BOTH heal, `supports::` surviving intact being the exact decision the changed
+  code makes).
+- **ui-inspector: REJECTED ×2, then APPROVED (18 + 5 + 1 claims across three passes):**
+  1. The draft's "the universe row is at the very top of the sidebar" is FALSE against the
+     Boss's LIVE sidebar — his كون عيسى renders "Five Acts" and "Bases" sections above the
+     universe row (verified on his disk), and those headers carry no context menu.
+  2. My correction then claimed right-clicking those headers "shows no menu at all" —
+     ALSO false: without an `oncontextmenu` suppressor the webview's NATIVE menu appears
+     (the app's own comment on the sibling handler documents this). The gate caught the
+     fixer; the inspector's source-verified wording was adopted verbatim.
+  Deep checks that passed: the reopen path cannot show stale pre-cascade content (the
+  write-ahead snapshot logic re-verified), Ctrl+A genuinely needed (the rename input is
+  not pre-selected), no template auto-fills a new note (his live settings read).
+- **Panel `wf_129dc803-24c` (3 lenses + synthesis): SEND_WITH_AMENDMENTS — 9 edits.** The
+  material ones:
+  1. **BLOCKING register correction — my "unreachable for active-universe renames" claim
+     was FALSE.** `resolve_owner` runs `resolve_child_universe_roots_recursive_strict`
+     BEFORE the active arm of `registry_for_owner_of` returns, and كون عيسى declares one
+     linked child (Two Universe UNIVERSE) — so **every rename the Boss makes today runs
+     the strict federation-readability check**. An unreadable linked-universe folder now
+     makes the cascade REFUSE (note renamed, links stale until retried) where pre-B5 it
+     shrugged and continued. Deliberate (refuse-never-guess, Boss ruling 2026-08-17), but
+     a NEW shape the Boss hears about in the register, not discovers. The
+     retry/repair-affordance question is his (panel declined to rule).
+  2. **The probe upgraded from `supports::` to the Boss's own custom `inspires::`**
+     (live-verified in كون عيسى's link-types.json): a builtin exists in every possible
+     registry including seeds-fallback, so only a custom word can expose a wrong-list bug
+     on screen — the test gains real discriminating power against vocabulary-resolution
+     failures.
+  3. **The cascade freeze overlay pre-framed**: the tree shows the new name BEFORE the
+     cascade dispatches, and `CascadeFreezeOverlay` ("Updating links…") blocks the ⋯
+     button until cascade + tab-reload settle — a stable false failure is impossible, but
+     an unexplained spinner would read as a glitch.
+  4. **Delete honesty**: `trashDestination:'local'` live — Step 6 CREATES `.trash` in his
+     everyday universe root (no in-app viewer) and open probe tabs self-close; both now
+     stated, with the optional Explorer cleanup. Register also discloses the permanent
+     MIG-104 delete-archive envelope, alongside the panel's line-by-line verification
+     that the in-app purge (aliases from the rename included) is complete in one
+     transaction.
+  5. **Venue RULED**: كون عيسى is the right place (only registered universe; probes
+     self-created/self-deleted; blast radius = exactly the one probe referrer). One lens
+     had read the WRONG universe's settings; the panel re-checked the right one — the
+     refutation layer working on the panel itself.
+  Declined to rule (the Boss's): the build verdict itself; the stale-links-shape
+  follow-up; the .trash/archive-viewer product question; the tension-gate scope (already
+  slated for v1.93+ reconciliation).
+
+## §B5 — BOSS-VALIDATED (2026-08-22, all six steps passed)
+
+- Steps 1–4 pass (probe creation under كون عيسى, both link forms authored via the
+  suggestion list — screenshot shows the live-preview "Inspires" pill on the typed link —
+  rename executed).
+- **Step 5 (the check): PASS** — Source mode shows exactly `[[Rename Probe Renamed]]` and
+  `[[inspires::Rename Probe Renamed]]`; both lines the new title, the Boss's own custom
+  `inspires::` intact before it (screenshot on file). The cascade's decisions demonstrably
+  carry his vocabulary through the owner-resolved path.
+- Step 6 cleanup done (probes deleted; `.trash` behavior disclosed in the tutorial).
+- Incidental observation (recorded, not acted on): the probes were created under the
+  `Templates` folder of كون عيسى (the New-Note Location default from the row he
+  right-clicked) — immaterial to the test; the cascade heals referrers wherever they live.
+
+### B5 close bookkeeping
+
+- **Help/manual (SO#2): no user-facing delta** — B5 is behavior-preserving; the
+  stale-links refuse shape gets documented when PJ-341 is ruled (documenting an error
+  path the ruling may change would be churn).
+- Ledger **v1.94** (B5 closed; PJ-341 + PJ-342 filed; ► = B6) and orientation **v4.5**
+  in this commit. MoCh-2026-08-22-1430 written.
+
 ### Open follow-ups filed into this stage's later steps (not new PJs)
 
 - B1: thread the backfills' `recompute_*` functions (links_backfill / sky_backfill annotations

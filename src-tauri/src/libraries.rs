@@ -6870,6 +6870,18 @@ pub fn update_links_on_rename(
         }
     };
     t_phase("federation-boundary-resolved");
+    // MIG-111 B5 — the OWNER's vocabulary, resolved ONCE for the whole cascade. The
+    // rewriter's "is `[[Foo::Old]]` a typed link?" decision (`reg.is_known`) must be made
+    // with the vocabulary of the universe that owns the files being rewritten: under the
+    // still-up fences every candidate is in `library_path`'s own universe, so one value
+    // covers both branches. This also ends the per-FILE global read inside the rayon
+    // closure — a vocabulary change mid-cascade could previously split one rename's
+    // rewrites across two vocabularies (the LL-047 window, per candidate). For an
+    // active-universe rename this resolves to the active registry — behavior unchanged;
+    // a Linked Universe's cascade (fenced to zero candidates until B6) gets its OWN
+    // vocabulary, read strictly from its own disk — corrupt ⇒ an ERROR naming the
+    // universe, never a rewrite pass under the wrong grammar.
+    let reg = crate::link_types::registry_for_owner_of(&app, &library_path)?;
     let seek: Option<(Vec<String>, std::collections::HashMap<String, u64>)> = {
         use tauri::Manager;
         let state = app.state::<crate::search::SearchState>();
@@ -6986,7 +6998,7 @@ pub fn update_links_on_rename(
         if let Ok(p) = crate::search::db_path(&app) {
             crate::search::diag_log(&p, &format!("[cascade] path=SEEK candidates={}", candidates.len()));
         }
-        rewrite_candidates(&candidates, &re, &new_name, &mut result);
+        rewrite_candidates(&candidates, &re, &reg, &new_name, &mut result);
         t_phase("rewrite-done");
     } else {
         if let Ok(p) = crate::search::db_path(&app) {
@@ -6995,6 +7007,7 @@ pub fn update_links_on_rename(
         update_links_recursive(
             Path::new(&library_path),
             &re,
+            &reg,
             &mut result,
             &exclude,
             &mut excluded_hit,
@@ -7120,6 +7133,7 @@ pub fn update_links_on_rename(
 fn update_links_recursive(
     dir: &Path,
     re: &regex::Regex,
+    reg: &crate::link_types::LinkTypeRegistry,
     result: &mut CascadeResult,
     exclude: &std::collections::HashSet<String>,
     excluded_hit: &mut std::collections::HashSet<String>,
@@ -7128,10 +7142,10 @@ fn update_links_recursive(
 ) {
     // PJ-207 §15 — walk to COLLECT (no file reads), then rewrite in parallel. Split so the
     // expensive half can be parallel while the exclusion bookkeeping stays single-threaded and
-    // deterministic.
+    // deterministic. B5 — `reg` is the cascade owner's vocabulary, threaded from the top.
     let mut candidates: Vec<std::path::PathBuf> = Vec::new();
     collect_cascade_candidates(dir, exclude, excluded_hit, foreign, &mut candidates);
-    rewrite_candidates(&candidates, re, new_name, result);
+    rewrite_candidates(&candidates, re, reg, new_name, result);
 }
 
 /// The walk half of the cascade: every `.md` under `dir` that is a rewrite candidate.
@@ -7336,6 +7350,7 @@ fn collect_cascade_candidates(
 fn rewrite_candidates(
     candidates: &[std::path::PathBuf],
     re: &regex::Regex,
+    reg: &crate::link_types::LinkTypeRegistry,
     new_name: &str,
     result: &mut CascadeResult,
 ) {
@@ -7352,7 +7367,9 @@ fn rewrite_candidates(
         .map(|path| {
             let mut changed = false;
             match crate::write_gate::gate_rmw(path, "cascade", |content| {
-                let updated = rewrite_wikilinks_in_text(&crate::link_types::active_universe_vocabulary(), content, re, new_name);
+                // B5 — ONE owner-resolved registry for the whole cascade (threaded from
+                // `update_links_on_rename`), not a per-file read of the process-global.
+                let updated = rewrite_wikilinks_in_text(reg, content, re, new_name);
                 if updated != content {
                     changed = true;
                     Ok(Some(updated))
@@ -7565,6 +7582,95 @@ mod cascade_walker_tests {
         );
     }
 
+    // ─── MIG-111 B5 — the cascade's decisions are the GIVEN registry's ─────────
+    //
+    // The plan's clause: "a rename inside a linked universe, driven with the child's
+    // vocabulary but still fenced, proves the rewriter's decisions are the child's —
+    // before anything can act on them." Entered through `update_links_recursive`, the
+    // wrapper the walk branch actually calls (LL-048 — not the pure rewriter), with the
+    // child's registry produced by the PRODUCTION writer + strict reader
+    // (`write_link_types_at` → `registry_for_root`), never a hand-built literal.
+    #[test]
+    fn cascade_rewrites_a_child_only_typed_link_under_the_childs_vocabulary_and_not_the_parents() {
+        // The child universe's vocabulary: the seeds + a child-only type `refutes`.
+        let child_root = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(crate::universe::constellation_dir(child_root.path())).unwrap();
+        crate::link_types::write_link_types_at(
+            &crate::link_types::link_types_file_in(child_root.path()),
+            &[crate::link_types::LinkTypeDef {
+                id: "refutes".into(), label: "Refutes".into(), parent: None,
+                color: "#123456".into(), order: 11, builtin: false, emoji: None,
+                desc: None, structural: false,
+            }],
+        )
+        .unwrap();
+        let child_reg = crate::link_types::registry_for_root(child_root.path()).unwrap();
+        assert!(child_reg.is_known("refutes"), "precondition: the child knows its own type");
+        let parent_reg = crate::link_types::LinkTypeRegistry::seeds_only();
+        assert!(!parent_reg.is_known("refutes"), "precondition: the parent does NOT");
+
+        let content = "typed [[refutes::Old]] and plain [[Old]] here";
+        let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
+
+        // Under the CHILD's vocabulary the typed link's tail is rewritten…
+        let dir_child = tempfile::tempdir().unwrap();
+        let f_child = dir_child.path().join("Referrer.md");
+        std::fs::write(&f_child, content).unwrap();
+        let mut r1 = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        let mut hit = HashSet::new();
+        update_links_recursive(dir_child.path(), &re, &child_reg, &mut r1, &HashSet::new(), &mut hit, &HashSet::new(), "New");
+        assert_eq!(
+            std::fs::read_to_string(&f_child).unwrap(),
+            "typed [[refutes::New]] and plain [[New]] here",
+            "the child's own type IS a typed link under the child's vocabulary — its target rewrites"
+        );
+
+        // …and under the PARENT's vocabulary the same text is a different decision:
+        // `refutes::Old` is one whole target name, so the typed form is left alone
+        // (rewriting its tail would re-point a link the rename never touched) while
+        // the plain link still rewrites — proving the decisions follow the GIVEN
+        // registry, not a process-global.
+        let dir_parent = tempfile::tempdir().unwrap();
+        let f_parent = dir_parent.path().join("Referrer.md");
+        std::fs::write(&f_parent, content).unwrap();
+        let mut r2 = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        let mut hit2 = HashSet::new();
+        update_links_recursive(dir_parent.path(), &re, &parent_reg, &mut r2, &HashSet::new(), &mut hit2, &HashSet::new(), "New");
+        assert_eq!(
+            std::fs::read_to_string(&f_parent).unwrap(),
+            "typed [[refutes::Old]] and plain [[New]] here",
+            "under the parent's vocabulary `refutes::Old` is a target NAME — untouched"
+        );
+    }
+
+    // B5 — the fences are NOT lowered by the vocabulary threading: a matching file
+    // under a foreign root stays byte-identical even while its sibling rewrites.
+    #[test]
+    fn cascade_still_refuses_to_cross_a_foreign_root_after_b5() {
+        let dir = tempfile::tempdir().unwrap();
+        let foreign_root = dir.path().join("Linked");
+        std::fs::create_dir_all(&foreign_root).unwrap();
+        let own = dir.path().join("Own.md");
+        let theirs = foreign_root.join("Theirs.md");
+        std::fs::write(&own, "links [[Old]] here").unwrap();
+        std::fs::write(&theirs, "links [[Old]] here").unwrap();
+
+        let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
+        let foreign: HashSet<String> =
+            [foreign_root.to_string_lossy().replace('\\', "/").to_lowercase()].into();
+        let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
+        let mut hit = HashSet::new();
+        update_links_recursive(dir.path(), &re, &crate::link_types::LinkTypeRegistry::seeds_only(), &mut result, &HashSet::new(), &mut hit, &foreign, "New");
+
+        assert_eq!(result.rewritten.len(), 1, "only the own file rewrites");
+        assert_eq!(
+            std::fs::read_to_string(&theirs).unwrap(),
+            "links [[Old]] here",
+            "the foreign file's bytes are UNTOUCHED — the fence holds through B5; B6 lowers it deliberately"
+        );
+        assert_eq!(std::fs::read_to_string(&own).unwrap(), "links [[New]] here");
+    }
+
     #[test]
     fn walker_excludes_by_identity_and_rewrites_the_rest() {
         let dir = tempfile::tempdir().unwrap();
@@ -7588,7 +7694,7 @@ mod cascade_walker_tests {
             [excluded_alt_sep].iter().map(|p| path_identity_key(Path::new(p))).collect();
         let mut hit: HashSet<String> = HashSet::new();
 
-        update_links_recursive(dir.path(), &re, &mut result, &exclude, &mut hit, &HashSet::new(), "New");
+        update_links_recursive(dir.path(), &re, &crate::link_types::LinkTypeRegistry::seeds_only(), &mut result, &exclude, &mut hit, &HashSet::new(), "New");
 
         assert_eq!(result.rewritten.len(), 1, "exactly the non-excluded file is rewritten");
         assert!(result.rewritten[0].contains("Rewritten"));
@@ -7789,7 +7895,7 @@ mod cascade_walker_tests {
         let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
         let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
         let mut hit: HashSet<String> = HashSet::new();
-        update_links_recursive(dir.path(), &re, &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
+        update_links_recursive(dir.path(), &re, &crate::link_types::LinkTypeRegistry::seeds_only(), &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
         assert_eq!(result.rewritten.len(), 2, "empty exclude rewrites everything (rollback-equivalent)");
     }
 
@@ -7864,7 +7970,7 @@ mod cascade_walker_tests {
         let re = regex::Regex::new(&cascade_pattern("Old")).unwrap();
         let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new(), failed_truncated: 0 };
         let mut hit = HashSet::new();
-        update_links_recursive(dir.path(), &re, &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
+        update_links_recursive(dir.path(), &re, &crate::link_types::LinkTypeRegistry::seeds_only(), &mut result, &HashSet::new(), &mut hit, &HashSet::new(), "New");
         let walked: std::collections::HashSet<String> = result.rewritten.iter().cloned().collect();
         assert_eq!(
             walked.len(),

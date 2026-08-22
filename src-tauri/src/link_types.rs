@@ -919,11 +919,14 @@ mod tests {
             // thread this", and B4 did): `get_360_view` accepts Linked-Universe paths, so
             // it resolves the OWNER's registry once (`registry_for_owner_of`) for both the
             // walk and the gap list.
-            ("libraries.rs", 1),               // the rename rewriter's caller — **B5/B6: a rename
-                                               //   inside a Linked Universe needs the OWNER's.**
-                                               //   (Was 2: `scan_links_recursive` was threaded by
-                                               //   B4 — owner-resolved, once per walk, ending its
-                                               //   per-directory re-read.)
+            // libraries.rs is ABSENT since B5 (was 2, then 1 after B4 threaded
+            // `scan_links_recursive`). The rename cascade now resolves the OWNER's
+            // registry ONCE in `update_links_on_rename` (`registry_for_owner_of`) and
+            // threads it through BOTH branches (seek + walk) into `rewrite_candidates` —
+            // ending the per-FILE global read inside the rayon closure, which could
+            // split one cascade's rewrites across two vocabularies. The federation
+            // FENCES are untouched by B5 and stay up; B6 lowers them for the owner's
+            // own universe in a SEPARATE commit, never this one.
             ("link_types.rs", 7),              // the registry's own lock plumbing (4), plus the
                                                //   B4 resolvers' ACTIVE arms: `registry_for_owner_of`
                                                //   (owner IS the active universe — 2 arms: the
