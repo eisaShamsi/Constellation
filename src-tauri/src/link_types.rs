@@ -569,6 +569,93 @@ pub fn registry_for_root(universe_root: &std::path::Path) -> Result<LinkTypeRegi
     Ok(LinkTypeRegistry::merge(deltas))
 }
 
+/// MIG-111 Stage B4 — the vocabulary for the universe that OWNS `path`.
+///
+/// The read-side twin of `WriteScope`'s resolution: a read that CLASSIFIES links on
+/// behalf of a path that may live in a Linked Universe (the 360 Inspector's typed-act
+/// scan and gap list, the strata walk, `scan_library_links`) must classify with the
+/// OWNER's vocabulary, not the active one. Active owner ⇒ the in-memory active
+/// registry — the same value every active-arm reader uses. Linked owner ⇒ that
+/// universe's own disk, through the STRICT reader. Unknown owner, or an unreadable /
+/// corrupt vocabulary ⇒ `Err` naming the universe — never a silent fall-back to the
+/// active vocabulary (the misclassification this migration exists to remove), and
+/// never the seeds (a guess).
+pub(crate) fn registry_for_owner_of(
+    app: &tauri::AppHandle,
+    path: &str,
+) -> Result<LinkTypeRegistry, String> {
+    match crate::federation::owner::resolve_owner(app, path) {
+        Ok(owner) if owner.is_active => {
+            // Whose vocabulary is this? The ACTIVE universe's — the owner IS the active universe.
+            Ok(active_universe_vocabulary())
+        }
+        Ok(owner) => registry_for_root(&owner.root),
+        Err(e) => {
+            // `resolve_owner` is root-containment over {active} ∪ {federation} — it cannot
+            // see an OWN library registered at an EXTERNAL path (the pre-MIG-108 legacy
+            // layout, still live until a universe accepts its unification proposal). Such a
+            // library's vocabulary IS the active universe's — its registry lists it, which is
+            // a fact, not a guess. Checked ONLY here in the Err branch: run first, the
+            // prefix resolver would hand a NESTED linked universe to `universe_notes` (whose
+            // path IS the active root) — the exact trap documented on `require_own_library_in`.
+            // STRICT own-set read: an unreadable registry is a refusal, not an empty pass.
+            let own = crate::libraries::try_load_libraries(app)
+                .map_err(|le| format!("{e} (and the library registry could not be read: {le})"))?;
+            if crate::libraries::owning_own_library_name_in(&own, path).is_some() {
+                return Ok(active_universe_vocabulary());
+            }
+            Err(e)
+        }
+    }
+}
+
+/// MIG-111 Stage B4 — the vocabulary for a federated schema alias (`main`, `cu0`, …)
+/// over the active federated connection. The per-schema readers in `cache.rs`
+/// concatenate each universe's own rows; each schema's rows are classified with that
+/// universe's own vocabulary. `main` is the ACTIVE universe; each `cuN` is the Linked
+/// Universe attached at that alias (`SearchState.federation`), read STRICTLY from its
+/// own disk. Unknown alias or unreadable vocabulary ⇒ `Err` naming it — the same
+/// fail-closed rule as `registry_for_owner_of` above.
+pub(crate) fn registry_for_schema(
+    app: &tauri::AppHandle,
+    schema: &str,
+) -> Result<LinkTypeRegistry, String> {
+    if schema == "main" {
+        // Whose vocabulary is this? The ACTIVE universe's — `main` IS its schema.
+        return Ok(active_universe_vocabulary());
+    }
+    let attached: Vec<(String, std::path::PathBuf)> = {
+        use tauri::Manager;
+        let state = app.state::<crate::search::SearchState>();
+        let fed = state
+            .federation
+            .lock()
+            .map_err(|e| format!("federation lock poisoned: {}", e))?;
+        fed.attached().to_vec()
+    };
+    registry_for_attached_in(&attached, schema)
+}
+
+/// The decision half of `registry_for_schema`, free of `AppHandle` so the test
+/// drives THIS function with the exact list `attach_all` builds (LL-048: the pure
+/// function is fed the form production supplies — canonicalized roots included).
+pub(crate) fn registry_for_attached_in(
+    attached: &[(String, std::path::PathBuf)],
+    schema: &str,
+) -> Result<LinkTypeRegistry, String> {
+    let root = attached
+        .iter()
+        .find(|(alias, _)| alias == schema)
+        .map(|(_, root)| root.clone())
+        .ok_or_else(|| {
+            format!(
+                "Unknown federated schema \"{}\" — not in the attached Linked Universe list.",
+                schema
+            )
+        })?;
+    registry_for_root(&root)
+}
+
 /// Read custom-type deltas from `.constellation/link-types.json`. Empty when the
 /// file is absent/corrupt (a pristine or broken file ⇒ the 8 seeds — never breaks
 /// the grammar).
@@ -819,40 +906,74 @@ mod tests {
         // maintenance pass now TAKE a registry, so the sites below are the callers that supply
         // one, and they say which they mean instead of the callee reaching for it.
         const CENSUS: &[(&str, usize)] = &[
-            ("cache.rs", 3),                   // read-side analytics over the active DB
+            // cache.rs is ABSENT since B4: its three per-schema readers (backlink /
+            // outgoing / boot-links) take a `&LinkTypeRegistry` resolved per schema by
+            // `registry_for_schema` — a Linked Universe's rows are classified with its
+            // OWN vocabulary, read from its own disk, and the "main" arm's active read
+            // lives in that helper (counted under link_types.rs below).
             ("federation/migrate.rs", 2),      // schema migration of a foreign DB — see PJ-302
             ("federation/vocab_harness.rs", 2),// the harness asserting what the ACTIVE one is
             ("federation/write_scope.rs", 3),  // the active ARM of the scope — correct by definition
             ("incoming_links_backfill.rs", 5), // backfill over the active DB
-            ("inspector360.rs", 2),            // **ANNOTATION CORRECTED 2026-08-21 by the safety
-                                               //   inspection — the first version of this line
-                                               //   said "the active universe" and that is FALSE.
-                                               //   `get_360_view` validates through
-                                               //   `validate_path_in_any_library` (libraries.rs:730),
-                                               //   which iterates `load_all_libraries` — federated
-                                               //   libraries INCLUDED. So it can classify a Linked
-                                               //   Universe's note with the ACTIVE vocabulary.
-                                               //   **B4 must thread this.** Left as-is here only
-                                               //   because it is a READ; it writes nothing.
-            ("libraries.rs", 2),               // rename rewriter — **B6 must revisit: a rename
-                                               //   inside a Linked Universe needs the OWNER's**
-            ("link_types.rs", 4),
-            ("links_backfill.rs", 7),          // backfill + trigger DDL over the active DB
+            // inspector360.rs is ABSENT since B4 (its 2026-08-21 annotation said "B4 must
+            // thread this", and B4 did): `get_360_view` accepts Linked-Universe paths, so
+            // it resolves the OWNER's registry once (`registry_for_owner_of`) for both the
+            // walk and the gap list.
+            ("libraries.rs", 1),               // the rename rewriter's caller — **B5/B6: a rename
+                                               //   inside a Linked Universe needs the OWNER's.**
+                                               //   (Was 2: `scan_links_recursive` was threaded by
+                                               //   B4 — owner-resolved, once per walk, ending its
+                                               //   per-directory re-read.)
+            ("link_types.rs", 7),              // the registry's own lock plumbing (4), plus the
+                                               //   B4 resolvers' ACTIVE arms: `registry_for_owner_of`
+                                               //   (owner IS the active universe — 2 arms: the
+                                               //   resolve_owner hit, and the pre-MIG-108 legacy
+                                               //   external-own-library fallback, whose membership
+                                               //   is read STRICTLY from the own registry) and
+                                               //   `registry_for_schema` ("main" IS the active
+                                               //   schema) — each correct by definition, and the
+                                               //   single place the active answer enters a
+                                               //   scope-resolving read.
+            ("links_backfill.rs", 8),          // backfill + trigger DDL over the active DB.
+                                               //   (+1 in B4: `recompute_sky_range` now reads
+                                               //   explicitly what the expr generators used to
+                                               //   read for it invisibly. **B1 threads the
+                                               //   recompute_* functions to their callers'
+                                               //   pinned scope.**)
             // name_fold_backfill.rs is DELIBERATELY ABSENT. It used to be here with 1. The
             // 2026-08-21 safety inspection found that its connection is pinned to one universe's
             // search.db while its vocabulary was read from the global eighty lines later — a
             // switch in that window recomputed one universe's aggregates with another's rank CASE
             // and then stamped the module complete. It now uses `registry_for_root` on the same
-            // root it opened, so it reads the global not at all. **This is the shape every entry
+            // root it opened, so it reads the global not at all — and since B4 the stratum /
+            // maturity generators take that same pinned `&vocab`, so the last hidden global
+            // read inside this module's call graph is gone. **This is the shape every entry
             // above should eventually reach.**
-            ("search.rs", 15),                 // trigger DDL + backfills + the index tail.
+            ("search.rs", 16),                 // trigger DDL + backfills + the index tail.
+                                               //   B4: the stratum/maturity generators no longer
+                                               //   read the global; each caller answers at its own
+                                               //   line — the DDL + PJ-334 restore arms are
+                                               //   `owns`-gated (PJ-232) so the active answer is
+                                               //   right there (B2 threads the DDL layer); the
+                                               //   save/de-index tails hoist ONE read shared by
+                                               //   their incoming+sky pair.
                                                //   **Phase 1.3 must revisit the index tail:
                                                //   `maintain_incoming_after_save`'s caller is on
                                                //   the write path a routed note will travel.**
-            ("sight.rs", 1),
-            ("sky_backfill.rs", 1),
-            ("strata.rs", 1),
-            ("tension.rs", 1),
+            ("sight.rs", 1),                   // active by CONSTRUCTION: no path parameter, reads
+                                               //   only `state.db` under one lock. Federated Sight
+                                               //   is the reserved MIG-063 family.
+            ("sky_backfill.rs", 1),            // active universe's own DB (PJ-332 pinned conn);
+                                               //   B4 made it ONE read per batch shared by the
+                                               //   sx + stratum/maturity (was three moments).
+                                               //   **B1 threads it from the pinned root.**
+            // strata.rs is ABSENT since B4: `compute_note_strata` is called for EVERY
+            // federated library by the Sky enrichment loop, so it resolves the OWNER's
+            // registry once per walk (`registry_for_owner_of`).
+            ("tension.rs", 1),                 // active by SCOPE since B4: `detect_tensions` now
+                                               //   genuinely refuses non-own libraries (the
+                                               //   refusal its comment had always claimed), so
+                                               //   the rows are always the active universe's own.
         ];
 
         let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
@@ -945,6 +1066,63 @@ mod tests {
             "guard: `refutes` is genuinely custom, so this test cannot pass on the seeds alone"
         );
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    // ─── MIG-111 Stage B4 — per-schema resolution over the attached list ──────
+    //
+    // The clause layer cannot prove "each universe's own types": A2 pins the
+    // structural lane to {contains, parent} in every constructible registry, so
+    // `structural_not_in_clause` is registry-invariant and two universes' SQL is
+    // byte-identical. The observable difference between vocabularies is their
+    // CUSTOM types — so that is the marker these tests use, and the proof lands
+    // at the resolution layer: a cu-alias resolves to the CHILD's own disk.
+
+    #[test]
+    fn a_cu_alias_resolves_to_that_linked_universes_own_vocabulary() {
+        let child_root = tmp_universe("attached_child");
+        write_link_types_at(&link_types_file_in(&child_root), &[custom("refutes", None, 9)])
+            .expect("write child vocab via the production writer");
+        // LL-048 — the exact form `attach_all` builds: `unique_cuniverse_roots`
+        // canonicalizes, so the attached list holds the OS's form, not a hand-built one.
+        let attached = vec![(
+            "cu0".to_string(),
+            std::fs::canonicalize(&child_root).expect("canonicalize child root"),
+        )];
+
+        let reg = registry_for_attached_in(&attached, "cu0").expect("resolve cu0");
+        assert!(
+            reg.is_known("refutes"),
+            "cu0 must resolve to the CHILD's own disk — its custom type is the marker"
+        );
+        assert!(
+            !LinkTypeRegistry::seeds_only().is_known("refutes"),
+            "guard: the marker is genuinely custom, so this cannot pass on the seeds alone"
+        );
+        let _ = std::fs::remove_dir_all(&child_root);
+    }
+
+    #[test]
+    fn an_unknown_schema_alias_refuses_instead_of_guessing() {
+        let err = registry_for_attached_in(&[], "cu7")
+            .expect_err("an alias with no attached root cannot resolve to ANY vocabulary");
+        assert!(err.contains("cu7"), "the refusal names the alias; got: {err}");
+    }
+
+    #[test]
+    fn a_cu_alias_whose_vocabulary_is_corrupt_refuses_naming_the_universe() {
+        let child_root = tmp_universe("attached_corrupt");
+        std::fs::write(link_types_file_in(&child_root), b"[{\"id\": ").expect("write partial");
+        let attached = vec![(
+            "cu0".to_string(),
+            std::fs::canonicalize(&child_root).expect("canonicalize"),
+        )];
+        let err = registry_for_attached_in(&attached, "cu0")
+            .expect_err("corrupt is a refusal, never a silent fallback to the active vocabulary");
+        assert!(
+            err.contains(child_root.file_name().unwrap().to_str().unwrap()),
+            "the refusal must name the universe; got: {err}"
+        );
+        let _ = std::fs::remove_dir_all(&child_root);
     }
 
     /// The three refusals. Each asserts the message NAMES the universe (Boss ruling 2,

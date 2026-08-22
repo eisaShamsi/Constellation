@@ -228,6 +228,49 @@ Canonical violation: 2026-06-11 — the first CNS preview shipped as a fixed 180
 - Watch the Windows-only assumptions: **keyboard conventions** (Ctrl vs ⌘Cmd — the PJ-106 / §B4 RTL gestures use explicit `Ctrl` and will need a macOS keymap pass; CM6 `Mod-` maps Cmd-on-mac / Ctrl-on-Win, but explicit-`Ctrl` paths won't), **paths** (`\` vs `/`, case-sensitivity, NFC/NFD — the rename cascade already handles NFC; keep it), **file-locking / process quirks** (Windows-only *tooling*, not app code), and **packaging** (`.exe`/NSIS vs `.app`/`.dmg`/notarization; gate platform code behind `#[cfg(...)]`).
 - This sits alongside **Language-First by Design**: both are foundational "works everywhere, by design" constraints, not later add-ons.
 
+### Universe of Universes (top-principal — Boss-dictated 2026-08-22)
+
+> "When I decided to give Constellation the ability to link or add other universe(s) (What I
+> used to call cUniverse), it was based on the idea of linking between notes, from the main
+> universe and any linked universe(s), NOT to keep each universe (main and linked) in its own
+> cocoon. That's why Constellation should be a Universe of Universes in every aspect and
+> concept, and you should make it happen." — Eisa, 2026-08-22
+
+**Federation exists so that notes CONNECT across universes. It is not a viewing arrangement.**
+Every function and every concept treats the active universe plus its Linked Universes as ONE
+connected knowledge space: linking, resolving, analyzing, navigating — all of it spans the
+federation. A feature that stops at the universe boundary is incomplete, not scoped; an
+honest "unavailable for a Linked Universe" state is a *stopgap that carries an obligation* —
+the end-state is the federated form of that function. This generalizes the 2026-07-05
+"It is ONE universe" ruling (every name resolver spans all libraries) from resolvers to
+**every aspect and concept**.
+
+How to apply:
+- When designing or fixing ANY surface, ask: *what does this do for a note in a Linked
+  Universe?* "Nothing, by design" is no longer an acceptable end-state answer. Wherever a
+  cross-universe form is not yet built, the surface must be HONEST about it (never a wrong
+  answer computed from the wrong universe's data), and the federated form goes on the ledger
+  as owed work — it is direction, not backlog garnish.
+- Cross-universe **note linking** is the founding purpose: wikilinks, backlinks, typed links,
+  and their analytics must treat a link from a main-universe note to a linked-universe note
+  (and back) as a first-class edge, not an edge case.
+
+What this does NOT repeal (each is a safety boundary, not a cocoon — verified rulings):
+- **Write sovereignty** (MIG-111 / Boss ruling 2, 2026-08-17): an operation on a Linked
+  Universe's note does its bookkeeping in THAT universe's own database with THAT universe's
+  own vocabulary. Being one connected space means members keep their identity — it never
+  means the parent overwrites a member's schema, vocabulary, or files.
+- **One Universe, One Location** (MIG-108): governs the physical layout of a universe's OWN
+  libraries. Federation is the connection layer above it.
+- **Data placement**: physically MOVING a note into a Linked Universe remains refused
+  (PJ-235) — connecting to a note is not relocating it.
+
+Canonical origin: 2026-08-22, at the MIG-111 B4 test — the Knowledge Health tab honestly
+refusing a Linked-Universe note ("Analysis unavailable") replaced a silent wrong answer, and
+the Boss's response was this ruling: honesty is the floor, federated function is the target.
+The reserved federated-analytics family (MIG-063) is thereby elevated from "reserved" to
+"owed."
+
 ### Constellation Knowledge Hierarchy
 Constellation organizes knowledge in a four-level structural hierarchy with an **optional federation layer** at the top — no other PKM system has this depth:
 

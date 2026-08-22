@@ -85,12 +85,19 @@ pub fn detect_tensions(
     library_path: String,
     library_name: String,
 ) -> Result<TensionReport, String> {
-    // Same access contract as the retired fs walk: cUniverse library
-    // paths are not registered own-libraries and are refused — the
-    // health tab keeps its honest `unavailable` state for them
-    // (federated tension reads are the reserved MIG-063 family).
-    crate::libraries::validate_path_in_any_library(&app, &library_path)
-        .map_err(|e| format!("Access denied: {}", e))?;
+    // MIG-111 B4 — the refusal this comment always claimed, now real. The previous
+    // guard was `validate_path_in_any_library`, whose own doc says it accepts
+    // "any registered library (including child universe libraries)" — so a Linked
+    // Universe's library passed, and the detection then ran over the ACTIVE
+    // database's rows under that library's NAME: an empty (fake-healthy) report,
+    // or the active universe's namesake library on a name collision. Tension is
+    // name-keyed over `main` and its federated form is the reserved MIG-063
+    // family, so the only honest answer for a linked library is a refusal — the
+    // frontend renders it as the Health tab's built-in "Analysis unavailable"
+    // state. `require_own_library` is the shared own-scope decision (fail-closed
+    // on an unreadable registry).
+    crate::libraries::require_own_library(&app, &library_path)
+        .map_err(|e| format!("Knowledge Health is scoped to this universe's own libraries. {}", e))?;
 
     // Phase 1: load the per-library inputs from the DB. Lock held for
     // the three reads only, released before any detection work.
@@ -274,6 +281,10 @@ fn load_notes_from_db(
         // PJ-065 — exclude the structural (parent/TOC) lane: tension's orphan / SPOF /
         // contradiction analysis is a cognitive instrument, so a node with ONLY
         // structural links reads as a cognitive orphan (correct). Active since §5.
+        // MIG-111 B4 — whose vocabulary is this? The ACTIVE universe's, and it is
+        // right BY SCOPE: `detect_tensions` now refuses non-own libraries (the
+        // require_own_library gate above), so these rows are always the active
+        // universe's own.
         let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
         let mut stmt = conn
             .prepare(&format!(

@@ -354,10 +354,14 @@ pub(crate) fn recompute_all_incoming(conn: &Connection, _key: &crate::converge::
 /// the triggers + sky_backfill use (single source of truth — cannot drift). One combined
 /// UPDATE per window. Replaces the per-edge sky triggers' work on the bulk/reconcile path.
 pub(crate) fn recompute_sky_range(conn: &Connection, after: &str, last: &str) -> rusqlite::Result<usize> {
+    // Whose vocabulary? The ACTIVE universe's — today every caller of this recompute runs
+    // over the active universe's own connection. B1 threads the recompute_* functions so
+    // the value arrives from the caller's pinned scope instead of being read here.
+    let reg = crate::link_types::active_universe_vocabulary();
     let sql = format!(
         "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path > ?1 AND path <= ?2",
-        stratum = crate::search::stratum_sql_expr(),
-        maturity = crate::search::maturity_sql_expr(),
+        stratum = crate::search::stratum_sql_expr(&reg),
+        maturity = crate::search::maturity_sql_expr(&reg),
     );
     conn.execute(&sql, params![after, last])
 }

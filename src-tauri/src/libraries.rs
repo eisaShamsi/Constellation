@@ -3991,10 +3991,16 @@ pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_n
     if !libraries.iter().any(|v| v.path == library_path) {
         return Err("Access denied: not a registered library.".to_string());
     }
+    // MIG-111 B4 — whose vocabulary is this? The universe that OWNS `library_path`.
+    // The gate above accepts FEDERATED libraries (`load_all_libraries`), so the walk
+    // below can run over a Linked Universe — classified, before B4, with the ACTIVE
+    // vocabulary, re-read once per directory (the per-walk drift A5 fixed in
+    // strata/inspector360). One owner-resolved registry, passed down the recursion.
+    let reg = crate::link_types::registry_for_owner_of(&app, &library_path)?;
     let mut links = Vec::new();
     let re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]").unwrap();
-    let nested = nested_library_paths(&load_all_libraries(&app), &library_path);
-    scan_links_recursive(Path::new(&library_path), &re, &mut links, &library_name, &nested);
+    let nested = nested_library_paths(&libraries, &library_path);
+    scan_links_recursive(&reg, Path::new(&library_path), &re, &mut links, &library_name, &nested);
     Ok(links)
 }
 
@@ -4030,14 +4036,17 @@ pub fn reindex_library(app: tauri::AppHandle, library_path: String, library_name
     ))
 }
 
-fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str, exclude: &std::collections::HashSet<String>) {
+fn scan_links_recursive(reg: &crate::link_types::LinkTypeRegistry, dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>, library_name: &str, exclude: &std::collections::HashSet<String>) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
     };
-    // MIG-067 §D — registry membership (8 typed acts + custom + `associative`),
-    // snapshot once per directory instead of a hardcoded list (see strata.rs).
-    let reg = crate::link_types::active_universe_vocabulary();
+    // MIG-067 §D — registry membership (8 typed acts + custom + `associative`).
+    // B4 — ONE owner-resolved registry threaded from the top of the walk (the same
+    // fix A5 landed in strata.rs / inspector360.rs): the old per-directory re-read
+    // of the process-global could classify half a walk under one vocabulary and
+    // half under another, and always used the ACTIVE universe's even for a walk
+    // over a Linked Universe's library.
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
@@ -4046,7 +4055,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
         }
         if path.is_dir() {
             if is_nested_library(&path, exclude) { continue; } // Library != Folder
-            scan_links_recursive(&path, re, links, library_name, exclude);
+            scan_links_recursive(reg, &path, re, links, library_name, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 // Use frontmatter title for canonical files (matching collect_library_notes)
@@ -4063,7 +4072,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                     // [[note|causes]] / [[note|type:causes]] alias forms). Target keeps
                     // its case (matches the prior cap[1] behaviour).
                     let (target, link_type) = crate::link_types::resolve_wikilink_type(
-                        &reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
+                        reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
                     );
                     // Extract context: the line containing the link
                     let pos = cap.get(0).map(|m| m.start()).unwrap_or(0);

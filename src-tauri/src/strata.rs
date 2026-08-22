@@ -94,8 +94,13 @@ pub fn compute_note_strata(
         .map_err(|e| e.to_string())?;
 
     // Phase 1: Scan all notes — collect word count + outgoing links + link types
+    // MIG-111 B4 — whose vocabulary is this? The universe that OWNS `library_path`.
+    // The access gate above accepts Linked-Universe libraries, and the Sky
+    // enrichment loop calls this for EVERY federated library — so the active
+    // vocabulary mislabeled a linked library's typed links. One owner-resolved
+    // registry for the whole walk (the B3 one-value-from-the-top rule).
+    let reg = crate::link_types::registry_for_owner_of(&app, &library_path)?;
     let mut notes: HashMap<String, NoteRecord> = HashMap::new();
-    let reg = crate::link_types::active_universe_vocabulary();
     scan_notes_recursive(&reg, Path::new(&library_path), &re, &mut notes);
 
     // Phase 2: Build inbound map

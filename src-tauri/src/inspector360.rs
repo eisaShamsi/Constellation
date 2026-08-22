@@ -129,8 +129,13 @@ pub fn get_360_view(
     let note_lower = note_name.to_lowercase();
 
     // Scan all notes in the library
+    // MIG-111 B4 — whose vocabulary is this? The universe that OWNS `library_path`.
+    // The access gate above ACCEPTS Linked-Universe libraries (its own doc says so),
+    // and the 360 Inspector genuinely serves them — so classifying with the active
+    // vocabulary here mislabeled a linked note's typed links and gap list. One
+    // owner-resolved registry for the whole walk (the B3 one-value-from-the-top rule).
+    let reg = crate::link_types::registry_for_owner_of(&app, &library_path)?;
     let mut all_notes: HashMap<String, NoteInfo> = HashMap::new();
-    let reg = crate::link_types::active_universe_vocabulary();
     scan_all_notes(&reg, Path::new(&library_path), &link_re, &tag_re, &mut all_notes);
 
     // §112: Pre-compute stratum for every note in the library so each
@@ -279,10 +284,12 @@ pub fn get_360_view(
         .unwrap_or_default();
 
     // ─── Gaps ───
-    // MIG-067 §D — the typed acts a note lacks come from the active registry
-    // (the 8 seeds + custom, ordered), not a hardcoded 7. This is the drift fix:
+    // MIG-067 §D — the typed acts a note lacks come from the registry (the 8
+    // seeds + custom, ordered), not a hardcoded 7. This is the drift fix:
     // `supersedes` (and any custom type) now appears as a possible gap.
-    let all_link_types = crate::link_types::active_universe_vocabulary().ids();
+    // B4 — the OWNER's registry (`reg`, resolved once above): a Linked Universe's
+    // note lists ITS universe's possible acts, not the active universe's customs.
+    let all_link_types = reg.ids();
     let missing_link_types: Vec<String> = all_link_types
         .iter()
         .filter(|t| !used_types.contains(t.as_str()))

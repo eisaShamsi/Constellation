@@ -185,8 +185,11 @@ const TERM_VOCAB_DROPCOL_SCHEMA_VERSION: i64 = 1;
 /// cognitive density). The `/*SX*/` markers are replaced with the registry's
 /// structural exclusion fragment (empty ⇒ a no-op, so byte-identical to the old
 /// const; §5 registered the lane, so it is now a fn). Was a `const`.
-pub(crate) fn stratum_sql_expr() -> String {
-    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+/// MIG-111 Stage B4 — takes the registry instead of reading the process-global
+/// inside the generator, where no caller could see whose vocabulary was used.
+/// Each caller now answers "whose vocabulary is this?" at its own line.
+pub(crate) fn stratum_sql_expr(reg: &crate::link_types::LinkTypeRegistry) -> String {
+    let sx = reg.structural_not_in_clause("link_type");
     "
     MIN(8, MAX(1,
         COALESCE(
@@ -263,8 +266,9 @@ pub(crate) fn stratum_sql_expr() -> String {
 /// exclusion (empty ⇒ no-op, byte-identical to the old const; active since §5). This keeps
 /// the Sky maturity equal to note_meta.incoming_count (which §3a already excludes
 /// structural from) — the MIG-085 "surfaces agree" invariant. Was a `const`.
-pub(crate) fn maturity_sql_expr() -> String {
-    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+/// MIG-111 Stage B4 — registry-taking, same as `stratum_sql_expr` above.
+pub(crate) fn maturity_sql_expr(reg: &crate::link_types::LinkTypeRegistry) -> String {
+    let sx = reg.structural_not_in_clause("link_type");
     "
     CASE
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
@@ -1087,7 +1091,9 @@ mod tests_mig085b_surfaces_agree {
 
         // (2) The Sky trigger maturity.
         conn.execute(
-            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path='/ile.md'", maturity_sql_expr()),
+            // B4 — seeds, not the process-global: deterministic under concurrent tests (LL-049),
+            // and the structural clause is registry-invariant anyway (A2 pins the lane).
+            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path='/ile.md'", maturity_sql_expr(&crate::link_types::LinkTypeRegistry::seeds_only())),
             [],
         )
         .unwrap();
@@ -2704,6 +2710,7 @@ fn sky_affected_paths(
 /// authoritative self-heal.
 fn maintain_sky_after_save(
     conn: &Connection,
+    reg: &crate::link_types::LinkTypeRegistry,
     note_path: &str,
     old_targets: &std::collections::HashSet<String>,
     old_name: &str,
@@ -2715,8 +2722,8 @@ fn maintain_sky_after_save(
     }
     let sql = format!(
         "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
-        stratum = stratum_sql_expr(),
-        maturity = maturity_sql_expr(),
+        stratum = stratum_sql_expr(reg),
+        maturity = maturity_sql_expr(reg),
     );
     for p in &affected {
         conn.execute(&sql, params![p])?;
@@ -5712,11 +5719,13 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
         ").map_err(|e| format!("Failed to drop pre-§6/§99 sky triggers: {}", e))?;
     }
 
-    // PJ-232 — the sky_node trigger bodies interpolate `stratum_sql_expr()` /
-    // `maturity_sql_expr()`, both of which read `link_types::active_universe_vocabulary()` — the ACTIVE
-    // universe's registry. Not into a database we do not own; its owner writes these
-    // correctly on its own next launch.
+    // PJ-232 — the sky_node trigger bodies interpolate the stratum/maturity expressions,
+    // generated from the ACTIVE universe's registry (B4: the read is explicit at this
+    // call, no longer hidden inside the generators; B2 makes the DDL layer take it).
+    // Not into a database we do not own; its owner writes these correctly on its own
+    // next launch.
     if owns {
+        let ddl_reg = crate::link_types::active_universe_vocabulary();
         conn.execute_batch(&format!("
             -- BUG-011 workaround: inline stratum + maturity computation in
             -- the INSERT trigger body. On this SQLite build, keeping them
@@ -5916,7 +5925,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
                           AND link_type = 'derives-from'
                           AND status = 'active');
             END;
-        ", stratum_expr = stratum_sql_expr(), maturity_expr = maturity_sql_expr()))
+        ", stratum_expr = stratum_sql_expr(&ddl_reg), maturity_expr = maturity_sql_expr(&ddl_reg)))
         .map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
     }
 
@@ -5972,8 +5981,9 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
         ").map_err(|e| format!("drop AI/AU legacy stratum: {}", e))?;
     }
 
-    // PJ-232 — `stratum_sql_expr()` reads the ACTIVE universe's registry. See above.
+    // PJ-232 — the ACTIVE universe's registry, read explicitly here (B4). See above.
     if owns {
+        let ddl_reg = crate::link_types::active_universe_vocabulary();
         conn.execute_batch(&format!("
             -- note_meta update: recompute only when word_count actually
             -- changes. AU triggers don't seem to have the same skip issue
@@ -5992,7 +6002,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             -- maintain_sky_after_save (the save/delete changed-targets+source diff) and
             -- recompute_all_sky (reconcile / sky_backfill self-heal). The unconditional DROP
             -- statements above shed these triggers from existing DBs on next boot.
-        ", expr = stratum_sql_expr()))
+        ", expr = stratum_sql_expr(&ddl_reg)))
         .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
     }
 
@@ -6017,8 +6027,9 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
         ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
     }
 
-    // PJ-232 — `maturity_sql_expr()` reads the ACTIVE universe's registry. See above.
+    // PJ-232 — the ACTIVE universe's registry, read explicitly here (B4). See above.
     if owns {
+        let ddl_reg = crate::link_types::active_universe_vocabulary();
         conn.execute_batch(&format!("
             -- note_meta insert: maturity AI is INLINED into note_meta_sky_ai
             -- above (BUG-011 workaround — multiple AFTER INSERT triggers on
@@ -6041,7 +6052,7 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             -- (see the stratum block). Maturity is maintained write-time by maintain_sky_after_save
             -- + recompute_all_sky. note_meta_sky_ai still seeds maturity inline on note INSERT,
             -- and note_meta_sky_maturity_au (above) refreshes it on a modified/created_at change.
-        ", expr = maturity_sql_expr()))
+        ", expr = maturity_sql_expr(&ddl_reg)))
         .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
     }
 
@@ -6049,10 +6060,10 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
     // create_outgoing_link_triggers so §A.2's reconcile path can drop+recreate
     // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
     // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
-    // PJ-232 — the trigger BODIES are generated from `link_types::active_universe_vocabulary()`, the
-    // ACTIVE universe's registry. Creating them in a foreign database would persist our
-    // link vocabulary into someone else's `sqlite_master`. The owner creates them
-    // correctly on its own next launch.
+    // PJ-232 — the trigger BODIES are generated from the ACTIVE universe's registry
+    // (read explicitly at each generation site since B4). Creating them in a foreign
+    // database would persist our link vocabulary into someone else's `sqlite_master`.
+    // The owner creates them correctly on its own next launch.
     //
     // **PJ-302 — the sentence that used to end this paragraph was "until then nobody
     // writes through them, because the parent attaches a cUniverse read-only." MIG-111
@@ -6384,12 +6395,15 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
         [],
     ).map_err(|e| format!("Failed to restore sky_nodes rows lost to the cid_cn collision: {}", e))?;
     if owns {
+        // Whose vocabulary? The ACTIVE universe's — this arm is `owns`-gated (PJ-232), so the
+        // expressions are only ever written into the active universe's own database (B4).
+        let restore_reg = crate::link_types::active_universe_vocabulary();
         conn.execute_batch(&format!(
             "UPDATE sky_nodes SET stratum = ({stratum_expr}), maturity = ({maturity_expr})
               WHERE stratum IS NULL
                 AND path IN (SELECT path FROM note_meta WHERE cid_cn = '')",
-            stratum_expr = stratum_sql_expr(),
-            maturity_expr = maturity_sql_expr(),
+            stratum_expr = stratum_sql_expr(&restore_reg),
+            maturity_expr = maturity_sql_expr(&restore_reg),
         )).map_err(|e| format!("Failed to stamp stratum/maturity on restored sky_nodes rows: {}", e))?;
     }
 
@@ -6465,11 +6479,14 @@ pub(crate) fn init_db_scoped(path: &Path, scope: InitScope) -> Result<Connection
             };
             let mut inserted: usize = 0;
             let mut stamped: usize = 0;
+            // Whose vocabulary? The ACTIVE universe's — this whole arm is `owns`-gated (see the
+            // bullet list above: PJ-232 / Boss ruling 2). Explicit since B4.
+            let restore_reg = crate::link_types::active_universe_vocabulary();
             let stamp_sql = format!(
                 "UPDATE sky_nodes SET stratum = ({stratum_expr}), maturity = ({maturity_expr})
                   WHERE stratum IS NULL AND path = ?1",
-                stratum_expr = stratum_sql_expr(),
-                maturity_expr = maturity_sql_expr(),
+                stratum_expr = stratum_sql_expr(&restore_reg),
+                maturity_expr = maturity_sql_expr(&restore_reg),
             );
             for path in &candidates {
                 let n = conn
@@ -11274,13 +11291,17 @@ fn recompute_after_link_status_change(
     resolve_incoming_target_paths(conn, target_lower, &mut target_paths)
         .map_err(|e| format!("resolve target paths: {}", e))?;
 
+    // Whose vocabulary? The ACTIVE universe's — this recompute runs over the active
+    // connection. ONE read shared by the incoming + sky recomputes below (B4).
+    let reg = crate::link_types::active_universe_vocabulary();
+
     // Incoming aggregates — gated on the incoming stamp exactly like the save
     // path (before the backfill stamps, the columns are inert and reads fall
     // back to the live getBacklinks path).
     if crate::incoming_links_backfill::is_built(conn) && !target_paths.is_empty() {
         let sql = format!(
             "UPDATE note_meta SET {assign} WHERE path = ?1",
-            assign = incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta"),
+            assign = incoming_aggregate_assignments(&reg, "note_meta"),
         );
         for p in &target_paths {
             conn.execute(&sql, params![p])
@@ -11294,8 +11315,8 @@ fn recompute_after_link_status_change(
     // harmless 0-row UPDATE.
     let sky_sql = format!(
         "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
-        stratum = stratum_sql_expr(),
-        maturity = maturity_sql_expr(),
+        stratum = stratum_sql_expr(&reg),
+        maturity = maturity_sql_expr(&reg),
     );
     let mut sky_paths = target_paths;
     sky_paths.insert(source_path.to_string());
@@ -12783,12 +12804,15 @@ pub fn reindex_delete_note(
                 // resolve by the NAME half only.
                 let _ = resolve_incoming_target_paths(conn, sig_target_name(t), &mut affected);
             }
+            // Whose vocabulary? The ACTIVE universe's — the de-index tail runs over the
+            // active connection. ONE read shared by both recomputes below (B4).
+            let reg = crate::link_types::active_universe_vocabulary();
             // The INCOMING aggregate columns are inert until the back-fill stamps, so their
             // recompute stays gated; the SKY recompute below does not.
             if inc_on {
                 let sql = format!(
                     "UPDATE note_meta SET {} WHERE path = ?1",
-                    incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta")
+                    incoming_aggregate_assignments(&reg, "note_meta")
                 );
                 for p in &affected {
                     let _ = conn.execute(&sql, params![p]);
@@ -12800,8 +12824,8 @@ pub fn reindex_delete_note(
             // former targets are). Mirrors the incoming recompute above; shared sky exprs.
             let sky_sql = format!(
                 "UPDATE sky_nodes SET stratum = ({stratum}), maturity = ({maturity}) WHERE path = ?1",
-                stratum = stratum_sql_expr(),
-                maturity = maturity_sql_expr(),
+                stratum = stratum_sql_expr(&reg),
+                maturity = maturity_sql_expr(&reg),
             );
             for p in &affected {
                 let _ = conn.execute(&sky_sql, params![p]);
@@ -12993,8 +13017,12 @@ pub fn reindex_single_note(
         // notes whose backlink-from-this-note changed (a text-only edit changes no
         // targets/name/aliases → zero recomputes → instant save). Best-effort;
         // reconcile is the authoritative self-heal if it ever drifts.
+        // Whose vocabulary? The ACTIVE universe's — this is the active save tail (`state.db`).
+        // ONE read shared by the incoming and sky maintenance below, so the pair cannot use two
+        // different vocabularies within one save. Phase 1.3 revisits this for routed saves.
+        let maint_reg = crate::link_types::active_universe_vocabulary();
         if let Some((old_t, old_n, old_a)) = inc_old {
-            if let Err(e) = maintain_incoming_after_save(conn, &crate::link_types::active_universe_vocabulary(), note_path, &old_t, &old_n, &old_a) {
+            if let Err(e) = maintain_incoming_after_save(conn, &maint_reg, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
                 maint.incoming_failed = true; // PJ-207 §3 (D3)
             }
@@ -13005,7 +13033,7 @@ pub fn reindex_single_note(
         // (reconcile) is the authoritative self-heal. PJ-187: independent of the INCOMING
         // stamp — sky has its own back-fill and its own completion stamp.
         if let Some((old_t, old_n, old_a)) = sig_old {
-            if let Err(e) = maintain_sky_after_save(conn, note_path, &old_t, &old_n, &old_a) {
+            if let Err(e) = maintain_sky_after_save(conn, &maint_reg, note_path, &old_t, &old_n, &old_a) {
                 eprintln!("[sky] maintain after save failed for {}: {}", note_path, e);
                 maint.sky_failed = true; // PJ-207 §3 (D3)
             }

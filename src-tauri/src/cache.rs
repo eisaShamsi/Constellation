@@ -411,6 +411,12 @@ pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
     // universe, the attached `federated_conn` when cUniverses are present.
     let schemas = get_federated_schemas(&app);
     let is_federated = schemas.len() > 1;
+    // B4 — each schema's rows are classified with THAT universe's own vocabulary,
+    // resolved BEFORE any connection lock (see get_backlink_rows). STRICT here, not the
+    // skip form: this payload is memoized by `ensureFullLinks` (`linksReady` latches on
+    // Ok), so a skipped universe would be frozen out for the session — an ERROR keeps
+    // the frontend's `!linksReady` 3s retry armed and a transient hold self-heals.
+    let regs = registries_for_schemas_strict(&app, &schemas)?;
 
     let t1 = Instant::now();
     let state = app.state::<crate::search::SearchState>();
@@ -454,8 +460,8 @@ pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
     // each universe's edges are independent).
     let t3 = Instant::now();
     let mut links: Vec<NoteLink> = Vec::new();
-    for schema in &schemas {
-        links.extend(read_links_in_schema(conn, schema)?);
+    for (schema, reg) in &regs {
+        links.extend(read_links_in_schema(conn, schema, reg)?);
     }
     timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
 
@@ -504,6 +510,7 @@ pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
 fn backlink_rows_in_schema(
     conn: &Connection,
     schema: &str,
+    reg: &crate::link_types::LinkTypeRegistry,
     targets_lower: &[String],
 ) -> Result<Vec<NoteLink>, String> {
     if targets_lower.is_empty() {
@@ -513,7 +520,9 @@ fn backlink_rows_in_schema(
     // PJ-065 — the structural (parent/TOC) lane never shows as a cognitive backlink
     // (the TOC panel is its only surface) and must not break the getBacklinks ==
     // incoming_count parity. Active since §5 (no-op only if the lane is ever un-registered).
-    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+    // MIG-111 B4 — `reg` is the vocabulary of the universe this SCHEMA belongs to
+    // (`registry_for_schema`), so a Linked Universe's rows are classified with its own.
+    let sx = reg.structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence, \
@@ -541,11 +550,13 @@ fn backlink_rows_in_schema(
 fn outgoing_rows_in_schema(
     conn: &Connection,
     schema: &str,
+    reg: &crate::link_types::LinkTypeRegistry,
     source_path: &str,
 ) -> Result<Vec<NoteLink>, String> {
     // PJ-065 — exclude the structural (parent/TOC) lane from the cognitive
     // outgoing-links panel (the TOC panel is its surface). Active since §5.
-    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+    // MIG-111 B4 — per-schema vocabulary (see backlink_rows_in_schema).
+    let sx = reg.structural_not_in_clause("link_type");
     let sql = format!(
         "SELECT source_path, source_name, target_name, link_type, library_name, \
                 weight, traversal_count, annotation, last_traversed, confidence, \
@@ -621,13 +632,18 @@ pub fn get_backlink_rows(
     let _ = crate::search::ensure_search_db_ready(&app);
     let schemas = get_federated_schemas(&app);
     let is_federated = schemas.len() > 1;
+    // B4 — each schema's rows are classified with THAT universe's own vocabulary.
+    // Resolved BEFORE any connection lock is taken: `registry_for_schema` locks
+    // `state.federation`, and holding `federated_conn` across it would nest the
+    // two mutexes for the first time in the codebase.
+    let regs = registries_for_schemas(&app, &schemas);
     let state = app.state::<crate::search::SearchState>();
     if is_federated {
         let fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
         let conn = match fed_guard.as_ref() { Some(c) => c, None => return Ok(Vec::new()) };
         let mut out: Vec<NoteLink> = Vec::new();
-        for schema in &schemas {
-            out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
+        for (schema, reg) in &regs {
+            out.extend(backlink_rows_in_schema(conn, schema, reg, &targets)?);
         }
         return Ok(out);
     }
@@ -635,8 +651,8 @@ pub fn get_backlink_rows(
     // the writer's lock, and no per-call connection open like the old `open_reader`).
     crate::search::with_read_conn(state.inner(), |conn| {
         let mut out: Vec<NoteLink> = Vec::new();
-        for schema in &schemas {
-            out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
+        for (schema, reg) in &regs {
+            out.extend(backlink_rows_in_schema(conn, schema, reg, &targets)?);
         }
         Ok(out)
     })
@@ -660,21 +676,23 @@ pub fn get_outgoing_rows(
     let _ = crate::search::ensure_search_db_ready(&app);
     let schemas = get_federated_schemas(&app);
     let is_federated = schemas.len() > 1;
+    // B4 — per-schema vocabularies, resolved BEFORE any connection lock (see get_backlink_rows).
+    let regs = registries_for_schemas(&app, &schemas);
     let state = app.state::<crate::search::SearchState>();
     if is_federated {
         let fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
         let conn = match fed_guard.as_ref() { Some(c) => c, None => return Ok(Vec::new()) };
         let mut out: Vec<NoteLink> = Vec::new();
-        for schema in &schemas {
-            out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
+        for (schema, reg) in &regs {
+            out.extend(outgoing_rows_in_schema(conn, schema, reg, &note_path)?);
         }
         return Ok(out);
     }
     // PJ-066 §C3 — single-schema: cached READ-ONLY reader (never waits on the writer).
     crate::search::with_read_conn(state.inner(), |conn| {
         let mut out: Vec<NoteLink> = Vec::new();
-        for schema in &schemas {
-            out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
+        for (schema, reg) in &regs {
+            out.extend(outgoing_rows_in_schema(conn, schema, reg, &note_path)?);
         }
         Ok(out)
     })
@@ -782,6 +800,83 @@ pub struct BootSnapshotSky {
 /// deterministic tiebreak for name collisions across universes.
 /// `path_to_idx` / `name_to_idx` are built in this order during the merge
 /// pass; first-insert-wins → schema-order wins.
+/// B4 — resolve each schema's vocabulary up front, before the caller takes any
+/// connection lock. One `(schema, registry)` pair per RESOLVED schema, in schema order.
+///
+/// Safety inspection 2026-08-22 (B4 diff-scoped, MED) — a schema whose vocabulary cannot
+/// be read is SKIPPED with a notice, never allowed to fail the whole command. The first
+/// version propagated the refusal wholesale, so one corrupt/held Linked-Universe
+/// link-types.json blanked Backlinks + Outgoing for EVERY note — the active universe's own
+/// rows included — and the frontend's catch swallowed the named refusal into empty arrays.
+/// Skipping only the unreadable universe is the federation's established failure model
+/// (`attach_all`'s skip_unavailable: a child that fails to attach becomes a warning, the
+/// rest keep working). "main" is the active arm and cannot fail. What this does NOT do is
+/// fall back to the active vocabulary for the broken schema — that is the
+/// misclassification B4 exists to remove.
+///
+/// **Which consumer may use which form (second inspection pass, same day):** this SKIP
+/// form is only correct for a caller that RE-RESOLVES on every read — the per-note
+/// `get_backlink_rows` / `get_outgoing_rows`, which re-run per note focus, so a skipped
+/// universe's rows reappear on the next read once its file is readable. A MEMOIZED
+/// consumer must NOT use it: `ensureFullLinks` latches `linksReady=true` on any Ok, so a
+/// skip during its single fetch would freeze an incomplete edge list for the whole
+/// session, indistinguishable from the universe having no links. `cache_full_links`
+/// therefore uses the STRICT form below — an error keeps the frontend's `!linksReady`
+/// retry armed, and a transient hold (the common shape) self-heals on the next attempt.
+fn registries_for_schemas(
+    app: &tauri::AppHandle,
+    schemas: &[String],
+) -> Vec<(String, crate::link_types::LinkTypeRegistry)> {
+    schemas
+        .iter()
+        .filter_map(|s| match crate::link_types::registry_for_schema(app, s) {
+            Ok(reg) => Some((s.clone(), reg)),
+            Err(e) => {
+                // The refusal already names the universe (registry_for_root's contract).
+                // Third inspection pass 2026-08-22 — stderr is invisible in a Windows
+                // release build, so the notice ALSO goes to diagnostics.log, once per
+                // (schema, message) per session (this fires per note-switch while a
+                // vocabulary file is broken — unbounded repeats would flood the log).
+                // A panel-visible degradation hint needs an IPC-shape + UI decision and
+                // is filed on the ledger, not bolted on here.
+                eprintln!("[federation] skipping schema {}'s links this read: {}", s, e);
+                {
+                    use std::collections::HashSet;
+                    use std::sync::Mutex;
+                    static NOTICED: Mutex<Option<HashSet<String>>> = Mutex::new(None);
+                    let key = format!("{}|{}", s, e);
+                    let first = NOTICED
+                        .lock()
+                        .map(|mut g| g.get_or_insert_with(HashSet::new).insert(key))
+                        .unwrap_or(false);
+                    if first {
+                        if let Ok(db) = crate::search::db_path(app) {
+                            crate::search::diag_log(
+                                &db,
+                                &format!("[federation] skipping schema {}'s links: {}", s, e),
+                            );
+                        }
+                    }
+                }
+                None
+            }
+        })
+        .collect()
+}
+
+/// The STRICT sibling, for memoized consumers only (see the note above): every schema
+/// must resolve or the whole fetch fails, so the caller's retry machinery stays armed
+/// instead of latching a silently-incomplete payload.
+fn registries_for_schemas_strict(
+    app: &tauri::AppHandle,
+    schemas: &[String],
+) -> Result<Vec<(String, crate::link_types::LinkTypeRegistry)>, String> {
+    schemas
+        .iter()
+        .map(|s| Ok((s.clone(), crate::link_types::registry_for_schema(app, s)?)))
+        .collect()
+}
+
 fn get_federated_schemas(app: &tauri::AppHandle) -> Vec<String> {
     let state = app.state::<crate::search::SearchState>();
     let mut schemas = vec!["main".to_string()];
@@ -1268,10 +1363,8 @@ fn read_notes_in_schema(conn: &Connection, schema: &str) -> Result<Vec<BootNote>
     Ok(notes)
 }
 
-/// Read all links from the typed note_links table.
-fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
-    read_links_in_schema(conn, "main")
-}
+// (B4 — the single-schema `read_links` wrapper was dead: every production caller
+// goes through the federated per-schema loop. Deleted rather than threaded.)
 
 /// MIG-061 §M — schema-parameterized variant of read_links.
 /// Reads `{schema}.note_links`. Each cUniverse's note_links table is
@@ -1279,13 +1372,18 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
 /// payload is a pure concatenation of each universe's own links, with
 /// no cross-universe merge or remapping. Detach a cUniverse and the
 /// remaining universes' link data is unaffected.
-fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>, String> {
+fn read_links_in_schema(
+    conn: &Connection,
+    schema: &str,
+    reg: &crate::link_types::LinkTypeRegistry,
+) -> Result<Vec<NoteLink>, String> {
     let mut out = Vec::new();
     // PJ-065 — the federated full-links payload + boot BootLinks bundle stay
     // cognitive: the structural (parent/TOC) lane is served only by the dedicated
     // get_structural_* APIs, never the boot bundle (so boot-bundle size is
     // unchanged and frontend cognitive graph consumers never see it). Active since §5.
-    let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+    // MIG-111 B4 — per-schema vocabulary (see backlink_rows_in_schema).
+    let sx = reg.structural_not_in_clause("link_type");
     // PJ-249 §6g — the column list comes from `link_boot_index::BOOT_LINK_COLUMNS`, the
     // same constant the covering index is built from. Spelled out here, it drifted from the
     // index in `6c810836` (when `created` was added for the UI) and un-covered the boot
@@ -1993,6 +2091,9 @@ mod tests {
     // appear independently in the combined result.
     #[test]
     fn test_federated_links_concatenate_across_schemas() {
+        // B4 — explicit seeds, not the process-global: deterministic under
+        // concurrent tests (LL-049); the structural clause is registry-invariant (A2).
+        let seeds = crate::link_types::LinkTypeRegistry::seeds_only();
         let main_dir = TempDir::new().unwrap();
         let cu_dir = TempDir::new().unwrap();
         let main_db = main_dir.path().join("search.db");
@@ -2044,8 +2145,8 @@ mod tests {
         attach_as(&conn, &cu_db, "cu0");
 
         let mut links: Vec<NoteLink> = Vec::new();
-        links.extend(read_links_in_schema(&conn, "main").unwrap());
-        links.extend(read_links_in_schema(&conn, "cu0").unwrap());
+        links.extend(read_links_in_schema(&conn, "main", &seeds).unwrap());
+        links.extend(read_links_in_schema(&conn, "cu0", &seeds).unwrap());
 
         // Both universes' links present, no merging, no resolution.
         assert_eq!(links.len(), 2);
@@ -2174,7 +2275,7 @@ mod tests_c2c_per_note_rows {
         // Backlinks to Alpha (name 'alpha' + alias 'al'): raw matched edges =
         // S1(name) + S1(alias) + S2(case-insensitive); archived S4 excluded.
         let targets = vec!["alpha".to_string(), "al".to_string()];
-        let bl = backlink_rows_in_schema(&conn, "main", &targets).unwrap();
+        let bl = backlink_rows_in_schema(&conn, "main", &crate::link_types::LinkTypeRegistry::seeds_only(), &targets).unwrap();
         assert_eq!(bl.len(), 3, "S1(name)+S1(alias)+S2; archived excluded");
         let srcs: Vec<&str> = bl.iter().map(|l| l.source_path.as_str()).collect();
         assert!(srcs.contains(&"/S1.md") && srcs.contains(&"/S2.md"));
@@ -2183,7 +2284,7 @@ mod tests_c2c_per_note_rows {
         assert!(bl.iter().any(|l| l.link_type.as_deref() == Some("supports")));
         assert!(bl.iter().any(|l| l.link_type.is_none()));
         // Outgoing of A: Gamma active; Delta archived excluded.
-        let og = outgoing_rows_in_schema(&conn, "main", "/A.md").unwrap();
+        let og = outgoing_rows_in_schema(&conn, "main", &crate::link_types::LinkTypeRegistry::seeds_only(), "/A.md").unwrap();
         assert_eq!(og.len(), 1);
         assert_eq!(og[0].target, "Gamma");
     }
@@ -2251,7 +2352,7 @@ mod tests_c2c_per_note_rows {
             let tset: HashSet<&String> = targets.iter().collect();
 
             // ACTUAL — the §C.2c query, deduped by source (getBacklinks dedupeBySource).
-            let actual = backlink_rows_in_schema(&conn, "main", &targets).unwrap();
+            let actual = backlink_rows_in_schema(&conn, "main", &crate::link_types::LinkTypeRegistry::seeds_only(), &targets).unwrap();
             let actual_srcs: HashSet<String> = actual.iter().map(|l| l.source_path.clone()).collect();
 
             // ORACLE — independent brute-force scan of all active edges.
@@ -2300,7 +2401,7 @@ mod tests_c2c_per_note_rows {
             // PANEL later dedupes by raw target — distinct targets ≤ edges — which is a
             // frontend concern, not this row query.) Independent oracle: brute-force
             // active edges from `all` for this source.
-            let og = outgoing_rows_in_schema(&conn, "main", path).unwrap();
+            let og = outgoing_rows_in_schema(&conn, "main", &crate::link_types::LinkTypeRegistry::seeds_only(), path).unwrap();
             let oracle = all.iter().filter(|(s, _)| s == path).count();
             if og.len() != oracle || og.len() as i64 != outc {
                 og_mismatch += 1;

@@ -92,14 +92,16 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
     // Clone the AppHandle into the thread. AppHandle is Clone and cheap.
     let app_bg = app.clone();
     thread::spawn(move || {
-        match run(&app_bg) {
+        let clean_exit = match run(&app_bg) {
             Ok(n) => {
                 diag(&app_bg, &format!("[sky_backfill] completed: {} notes populated", n));
+                true
             }
             Err(e) => {
                 diag(&app_bg, &format!("[sky_backfill] FAILED: {}", e));
+                false
             }
-        }
+        };
         // Released in the tail, so the universe-switch early return frees the slot too — a
         // switch back must be able to resume, not be locked out for the rest of the session.
         //
@@ -110,6 +112,18 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
         // is worth more here than a lone RAII variant. Revisit for ALL of them together, or not
         // at all.
         RUNNING.store(false, Ordering::SeqCst);
+        // Safety inspection 2026-08-22 (B4 diff-scoped, fire-and-forget) — re-arm after release.
+        // A switch to an UNSTAMPED universe while this thread was draining its batch hit the CAS
+        // above, was silently dropped, and nothing else in the codebase calls `maybe_schedule`
+        // again this session (search.rs's call sits behind the db_ready fast path; review_backfill
+        // has a second re-arm site, sky had none) — so the destination universe's Sky stayed
+        // partial for the whole session. The exiting thread now re-invokes the scheduler: for the
+        // CURRENT universe `is_needed` decides, the freed slot lets it claim, and a completed
+        // universe returns immediately. Gated on a clean exit so a persistent `run` error keeps
+        // today's no-retry behavior instead of hot-looping.
+        if clean_exit {
+            maybe_schedule(app_bg);
+        }
     });
 }
 
@@ -117,14 +131,24 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 /// stamp is below target, or (b) there's a cursor row indicating a prior
 /// run was interrupted.
 fn is_needed(conn: &Connection) -> bool {
-    let stored_version: i64 = conn
+    // Safety inspection 2026-08-22 — distinguish "no stamp row" (a genuinely fresh /
+    // re-armed universe ⇒ run) from a READ ERROR (⇒ do NOT run). The old `.unwrap_or(0)`
+    // collapsed both into "needs run", and "needs run" now gates a stratum/maturity wipe —
+    // a transient error must never authorize a destructive pass. Fail closed; the next
+    // boot re-checks.
+    use rusqlite::OptionalExtension;
+    match conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'sky'",
             [],
-            |row| row.get(0),
+            |row| row.get::<_, i64>(0),
         )
-        .unwrap_or(0);
-    stored_version < SKY_SCHEMA_VERSION
+        .optional()
+    {
+        Ok(Some(v)) => v < SKY_SCHEMA_VERSION,
+        Ok(None) => true,
+        Err(_) => false,
+    }
 }
 
 /// The back-fill loop. Returns the number of notes processed.
@@ -180,6 +204,20 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // One-time setup: ensure the cursor table exists. Idempotent.
     ensure_cursor_table(&conn)?;
 
+    // Safety inspection 2026-08-22 (B4 diff-scoped, TOCTOU) — re-check `is_needed` on the
+    // connection this thread PINNED, not the one `maybe_schedule` read. The scheduler's check
+    // ran on the active `SearchState` connection, and `set_active_universe` flips `active_path`
+    // 18 lines before it bumps the generation — so a thread spawned for unstamped universe A
+    // could pin freshly-activated, ALREADY-STAMPED universe B (gen0 captured stale, `still_ours`
+    // true) and run the unconditional wipe below over a completed universe with an empty cursor:
+    // every sky_nodes row's stratum/maturity NULLed, and a mid-walk switch would then abandon
+    // them WITHOUT clearing the stamp — rank 0 in the Reviewer, permanently, silently. One
+    // re-check on the pinned handle closes the misroute; the stamp-clear inside the wipe
+    // transaction below closes the abandonment.
+    if !is_needed(&conn) {
+        return Ok(0);
+    }
+
     // MIG-002 §4: run ANALYZE before any stratum computation so the
     // query planner has statistics on idx_link_source / idx_link_target /
     // idx_link_type. Without them, the planner picked idx_link_status
@@ -214,11 +252,26 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
         // PJ-332 — on the pinned connection; its busy timeout is set once in `run`.
         conn.execute_batch("ANALYZE")
             .map_err(|e| format!("ANALYZE: {}", e))?;
-        conn.execute(
+        // Safety inspection 2026-08-22 — wipe + stamp-clear in ONE transaction. `is_needed`'s
+        // own doc has always promised "(b) there's a cursor row indicating a prior run was
+        // interrupted" as a re-arm condition, and the code never implemented it: a walk that
+        // wiped rows past the cursor and was then abandoned (universe switch, crash) left the
+        // stamp intact, so nothing ever came back for the NULL band. Clearing the stamp the
+        // moment the wipe commits makes an interrupted re-walk re-arm through condition (a) —
+        // the code now keeps the contract the comment stated. `finalize` re-stamps on
+        // completion. Readers gating on the stamp (`is_federated_sky_ready`) already treated
+        // an in-progress back-fill as not-ready, so this changes nothing for them.
+        let tx = conn
+            .transaction()
+            .map_err(|e| format!("wipe tx begin: {}", e))?;
+        tx.execute(
             "UPDATE sky_nodes SET stratum = NULL, maturity = NULL WHERE path > ?1",
             params![cursor_at_start],
         )
         .map_err(|e| format!("stratum/maturity wipe: {}", e))?;
+        tx.execute("DELETE FROM schema_versions WHERE module = 'sky'", [])
+            .map_err(|e| format!("stamp clear with wipe: {}", e))?;
+        tx.commit().map_err(|e| format!("wipe tx commit: {}", e))?;
     }
 
     let mut last_path = cursor_at_start.clone();
@@ -298,6 +351,20 @@ fn process_batch(
     conn: &mut Connection,
     after_path: &str,
 ) -> Result<(usize, String), String> {
+    // Whose vocabulary? The ACTIVE universe's — this back-fill runs over the active
+    // universe's own database (the connection is pinned by PJ-332). ONE read per batch,
+    // shared by the Phase-A structural exclusion and the Phase-D stratum/maturity
+    // expressions — before B4 those were three separate reads at three separate moments,
+    // so a vocabulary change mid-batch could mix vocabularies WITHIN one batch.
+    //
+    // This is STILL an ambient read (the census pins it), and conn+vocab agreeing today
+    // rests on interlocks that live elsewhere: `load_active` runs strictly after the
+    // generation bump in `set_active_universe`, the pinned `is_needed` re-check in `run`
+    // refuses a misrouted thread, and the RUNNING slot prevents a double spawn. **B1 is
+    // future work**: thread the registry from the pinned root (the `name_fold_backfill`
+    // shape) so this call stops depending on those interlocks — until then, do not weaken
+    // any of them on the strength of this comment.
+    let reg = crate::link_types::active_universe_vocabulary();
     // ── Phase A: path query + sky_* inserts ───────────────────────────
     let (paths, last_path) = {
         let tx = conn.transaction().map_err(|e| format!("begin: {}", e))?;
@@ -357,7 +424,7 @@ fn process_batch(
         // parent/contains edges would copy them into sky_links and inflate Sky-View node
         // counts. Append the same registry exclusion the triggers use. Empty string when
         // no structural type exists ⇒ byte-identical to before the lane registered.
-        let sx = crate::link_types::active_universe_vocabulary().structural_not_in_clause("link_type");
+        let sx = reg.structural_not_in_clause("link_type");
         tx.execute(
             &format!(
                 "INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
@@ -453,7 +520,7 @@ fn process_batch(
                    WHERE stratum IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::stratum_sql_expr(),
+                expr = crate::search::stratum_sql_expr(&reg),
             ),
             params![after_path, last_path.clone()],
         )
@@ -464,7 +531,7 @@ fn process_batch(
                    WHERE maturity IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::maturity_sql_expr(),
+                expr = crate::search::maturity_sql_expr(&reg),
             ),
             params![after_path, last_path.clone()],
         )

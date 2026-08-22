@@ -79,10 +79,18 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     // aggregates with the OTHER universe's rank CASE and IN-list, and then stamps the module
     // complete so it never re-runs. Silent, permanent, every row count still correct.
     //
-    // Resolve the vocabulary from the same root, at the same instant, so the pair cannot drift.
-    // This is what `registry_for_root` (MIG-111 §1.2/A1) exists for.
+    // Resolve the vocabulary from the same root the connection is pinned to, so the pair
+    // cannot drift. This is what `registry_for_root` (MIG-111 §1.2/A1) exists for.
+    //
+    // Safety inspection 2026-08-22 (B4 diff-scoped, LOW) — the STRICT vocabulary read no
+    // longer gates the phases that need NO vocabulary. It used to sit here, before Phase A,
+    // so a present-but-corrupt link-types.json (which the lenient boot path tolerates
+    // silently) aborted the whole repair every boot — including the name_lower fold that
+    // fixes false orphans and has nothing to do with link types. The root is still resolved
+    // HERE (one universe identity for conn + vocab); the registry itself is read just
+    // before Phase B, its first consumer. A refusal there leaves the module unstamped, so
+    // Phase A's idempotent work persists and Phase B retries next boot.
     let universe_root = crate::universe::active_universe_dir(app)?;
-    let vocab = crate::link_types::registry_for_root(&universe_root)?;
     let mut conn = Connection::open(&path).map_err(|e| format!("open name_fold conn: {}", e))?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
@@ -165,6 +173,10 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
         rows.filter_map(|r| r.ok()).collect()
     };
 
+    // Phase B's first vocabulary consumer — the STRICT read, from the SAME pinned root
+    // (see the header note). Refusal here names the universe and leaves the module
+    // unstamped for a retry; it can no longer block Phase A above.
+    let vocab = crate::link_types::registry_for_root(&universe_root)?;
     let incoming_assign = crate::search::incoming_aggregate_assignments(&vocab, "note_meta");
     for p in &affected {
         // 1. sky_nodes.id → the folded name (so target_name = sky_nodes.id matches).
@@ -180,13 +192,17 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
         )
         .map_err(|e| format!("recompute incoming: {}", e))?;
         // 3. stratum + maturity (read target_name = sky_nodes.id, now correct).
+        // B4 — `&vocab`, the registry resolved from THIS module's pinned root at the top.
+        // Before the generators took a parameter, these two calls still read the process-
+        // global internally — the exact conn/vocab drift the 2026-08-21 inspection fix
+        // above was written to close. Now the pair genuinely cannot drift.
         conn.execute(
-            &format!("UPDATE sky_nodes SET stratum = ({}) WHERE path = ?1", crate::search::stratum_sql_expr()),
+            &format!("UPDATE sky_nodes SET stratum = ({}) WHERE path = ?1", crate::search::stratum_sql_expr(&vocab)),
             params![p],
         )
         .map_err(|e| format!("recompute stratum: {}", e))?;
         conn.execute(
-            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path = ?1", crate::search::maturity_sql_expr()),
+            &format!("UPDATE sky_nodes SET maturity = ({}) WHERE path = ?1", crate::search::maturity_sql_expr(&vocab)),
             params![p],
         )
         .map_err(|e| format!("recompute maturity: {}", e))?;
