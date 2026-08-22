@@ -402,3 +402,58 @@ missing in the first place.
 
 **Next: MIG-111 Stage B**, with its ordering rule intact — vocabulary reaches the rename rewriter
 FIRST; the fence comes down in a LATER commit, never the same one.
+
+---
+
+# 2026-08-22 — PJ-333 + PJ-335: four fixes to Bring In, Boss-validated
+
+**Boss test: PASS** — the refusal fired and named the universe. `tutorial-auditor` → `ui-inspector`
+(**APPROVED**, 24 claims, **zero** findings) → panel (**SEND WITH 6 EDITS**, two blocking).
+
+**The blocking edit is the finding of this pass.** The Boss's **installed** Constellation is dated
+**2026-06-13** and contains no `bring_in_library` at all — verified by grepping that exe. Had he run
+it, Step 1's button would not exist, and the nearest equivalent would have produced **exactly the
+sight the tutorial's own first failure mode told him to report as an app-killer.** A false emergency,
+averted by a gate that thought to ask which binary the instructions assumed. I had verified the *new*
+binary carefully and never once considered which one he would actually launch.
+
+## PJ-333 — the guard walks upward (Boss-ruled)
+
+Reproduced first as the discriminator between the two predicates: `carries_universe_manifest` answers
+false for a nested folder while `universe_manifest_at_or_above` names the owner. Both surfaces now
+share one predicate, so they cannot drift apart again. The refusal distinguishes *is* a universe from
+*inside* one, because those call for different actions.
+
+## PJ-335 — three PRE-EXISTING defects, found because PJ-333 made the inspection look
+
+1. **HIGH · silent-data-loss** — the registered-library guard **failed open**: the lenient reader
+   returns empty on a read OR parse failure and caches it for the process lifetime, making the
+   `any()` vacuously false. A registered library could be relocated, its registry entry left at an
+   empty folder, every index row stranded. **The strict twin was two lines above it**, from Boss
+   decision 1.
+2. **MED · content-loss** — the cross-volume Move deleted the source unverified.
+   **⚠️ The prescribed fix would not have caught its own scenario.** It asked for the existing
+   src/dst count compare — but `count_files` skips symlinks *by the same rule* `copy_dir_recursive`
+   does, so the counts MATCH while a junction's subtree is missing; the check would pass and the
+   source would still be deleted. **Verified by reading both walkers side by side.** Guarded on the
+   reparse point itself: the original is KEPT, and the message names the link and both copies.
+3. **MED · content-loss** — a failed copy left hundreds of valid `.md` files under the universe root,
+   which IS a library, so the indexer took them as real notes; a retry de-collided to "Name 2" and
+   the orphan persisted as duplicates. Now cleaned up, with the message stating whether the cleanup
+   succeeded.
+
+## The through-line
+
+All four are one shape: **an operation that moves the user's files treating "I could not read that"
+as "there is nothing there."** Fourth occurrence this session, after PJ-322, PJ-332 and PJ-334.
+
+## Gates
+
+Rust **1532 / 0 / 19 ignored**. Release binary `constellation.exe` 95,588,352 bytes, 2026-08-22 09:16,
+built after the bundle (23:36 the previous day). **All four new refusal strings verified present in
+the exe** — a check that works for Rust strings but not for the compressed frontend, and knowing
+which is which is the difference between a real verification and the previous day's near-miss false
+"stale build" alarm.
+
+**Next: MIG-111 Stage B / B4** — seven read-side sites, all the identical `structural_not_in_clause`
+shape. B5/B6 after, in two commits, never one.

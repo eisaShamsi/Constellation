@@ -627,6 +627,49 @@ mod tests {
         (td, root.to_string_lossy().to_string())
     }
 
+    // ── PJ-333 — the same concern, the OTHER surface (Boss-ruled 2026-08-22) ──
+
+    /// **The hole, stated as the discriminator between the two predicates.**
+    ///
+    /// `bring_in_library` asked only `carries_universe_manifest(src)` — "is this folder ITSELF a
+    /// universe?" — so a plain subfolder inside an UNREGISTERED universe passed every check and
+    /// was relocated out of it. `classify` had already been given the upward walk by PJ-322; this
+    /// asserts the two predicates disagree exactly where the defect lived, and that the walking
+    /// one is the one that closes it.
+    #[test]
+    fn a_folder_inside_another_universe_is_seen_only_by_the_walking_predicate() {
+        let td = tempfile::tempdir().unwrap();
+        let other = td.path().join("Unregistered Universe");
+        let inside = other.join("Research").join("Notes");
+        std::fs::create_dir_all(&inside).unwrap();
+        std::fs::create_dir_all(other.join(".constellation")).unwrap();
+        std::fs::write(other.join(".constellation").join("universe.json"), b"{}").unwrap();
+
+        assert!(
+            !carries_universe_manifest(&inside),
+            "THE HOLE: the folder itself carries no manifest, so the narrow predicate waves it \
+             through — and this is the shape `bring_in_library` used to accept"
+        );
+        let owner = universe_manifest_at_or_above(&inside)
+            .expect("the walking predicate must find the universe above it");
+        assert_eq!(owner, other, "and it names WHICH universe, so the refusal can say so");
+        drop(td);
+    }
+
+    /// The guard must not over-refuse: an ordinary folder with no universe anywhere above it
+    /// stays bring-in-able, or the feature is dead.
+    #[test]
+    fn an_ordinary_folder_is_still_bring_in_able() {
+        let td = tempfile::tempdir().unwrap();
+        let plain = td.path().join("Just A Folder").join("Deeper");
+        std::fs::create_dir_all(&plain).unwrap();
+        assert!(
+            universe_manifest_at_or_above(&plain).is_none(),
+            "no manifest at or above ⇒ ordinary content, still ingestible"
+        );
+        drop(td);
+    }
+
     // ── PJ-322 — the structural backstop (panel-ordered, 2026-08-20) ──
     //
     // `foreign_roots` is a REPORT, assembled from `load_registry`, which returns an EMPTY
@@ -2255,6 +2298,56 @@ fn classify_refusal(e: crate::universe::PersistedError) -> String {
     }
 }
 
+/// **Safety inspection 2026-08-22 (MED, content-loss): a failed copy used to leave its debris
+/// under the universe root — which IS a library.**
+///
+/// `copy_dir_recursive` propagates with `?` partway through (disk full, MAX_PATH on a deep
+/// attachment tree, a permission-denied subfolder). The dialog then showed "Failed to copy file:
+/// …" and the user reasonably concluded nothing had happened — while several hundred valid `.md`
+/// files sat under the root, where the indexer and the watcher pick them up as real notes. A retry
+/// de-collides to "Name 2", so the orphan persists as a duplicate set, indexed and searchable.
+///
+/// Best-effort cleanup: if the copy fails, remove what it wrote before returning the error, and
+/// say in the message whether that succeeded. Never silently.
+fn copy_or_clean_up(src: &Path, dest: &Path) -> Result<(), String> {
+    match crate::libraries::copy_dir_recursive(src, dest) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            let cleaned = std::fs::remove_dir_all(dest).is_ok();
+            Err(if cleaned {
+                format!("{e} — the partial copy was removed, so nothing was added to your universe.")
+            } else {
+                format!(
+                    "{e} — and the partial copy at {} could NOT be removed. Delete that folder \
+                     yourself before retrying, or its files will be indexed as real notes.",
+                    dest.display()
+                )
+            })
+        }
+    }
+}
+
+/// The first symlink/junction anywhere under `root`, if any.
+///
+/// A reparse point is the one thing `copy_dir_recursive` drops **silently and by design** (it must
+/// not follow one — a junction cycle recurses unboundedly). That makes its presence, not a file
+/// count, the honest test of "was this copy complete?".
+fn first_reparse_point(root: &Path) -> Option<std::path::PathBuf> {
+    let rd = std::fs::read_dir(root).ok()?;
+    for e in rd.flatten() {
+        if e.file_type().map(|t| t.is_symlink()).unwrap_or(false) {
+            return Some(e.path());
+        }
+        let p = e.path();
+        if p.is_dir() {
+            if let Some(found) = first_reparse_point(&p) {
+                return Some(found);
+            }
+        }
+    }
+    None
+}
+
 fn assemble_foreign_roots(app: &tauri::AppHandle, own_root: &str) -> Result<Vec<String>, String> {
     let mut roots: Vec<String> = Vec::new();
     // `registered_universe_roots_strict` only ever refuses for the TRANSIENT reason — a corrupt
@@ -2534,7 +2627,25 @@ pub fn bring_in_library(
     // A registered external library is the MIGRATION's business, not this flow's — bringing
     // it in here would strand its index rows at the old path (the proposal dialog relocates
     // registered externals with the full rewrite).
-    let libs = crate::libraries::load_all_libraries(&app);
+    //
+    // **Safety inspection 2026-08-22 (HIGH, silent-data-loss): this guard used to FAIL OPEN.**
+    // It read `load_all_libraries`, the LENIENT reader, whose own doc says every caller must be
+    // read-only — and it swallows both a read failure and a parse failure into an empty list,
+    // then CACHES that empty answer for the process lifetime. An empty list makes the `any()`
+    // below vacuously false, so the guard the user is relying on simply is not there, and a
+    // registered external library gets relocated: its registry entry left pointing at a now-empty
+    // folder, every index row stranded, and `add_library` afterwards reporting either success or
+    // a registry error that reads as "nothing happened" — AFTER an irreversible move.
+    //
+    // The strict twin already exists. Two lines above, `assemble_foreign_roots` refuses on a
+    // degraded read for exactly this reason (PJ-322, Boss decision 1: *a plan that moves
+    // directories must refuse rather than guess*). This is the surviving instance of that class.
+    let libs = crate::libraries::try_load_libraries(&app).map_err(|e| {
+        format!(
+            "Cannot check whether that folder is already a registered library ({e}). \
+             Nothing was changed."
+        )
+    })?;
     if libs.iter().any(|l| norm(&l.path) == norm(&source_path)) {
         return Err(
             "That folder is a registered library — the unification proposal relocates it safely."
@@ -2545,17 +2656,40 @@ pub fn bring_in_library(
     // Phase-4 audit — a folder that IS a universe (registered or not) must be opened, not
     // ingested: swallowing its .constellation (search.db, universe.json, earned ledger)
     // into another universe as plain files is data mangling.
-    // Through the shared predicate so this and `classify` cannot drift apart again (the
-    // Whole-Ecosystem Fix Law's exact shape — one concern, two surfaces). NOTE the deliberate
-    // difference in SCOPE: this refuses only when the folder ITSELF is a universe, which is
-    // this command's existing contract; `classify` walks upward as well, because there the
-    // guard is monotone-safe. Widening this one is a user-facing behaviour change and belongs
-    // to the Boss, not to a mid-cascade edit.
-    if carries_universe_manifest(src) {
-        return Err(
+    //
+    // **PJ-333 (Boss-ruled 2026-08-22) — this now WALKS UPWARD, and that is the change.**
+    //
+    // It used to ask `carries_universe_manifest(src)`: is this folder ITSELF a universe? That
+    // left a hole the 2026-08-21 safety inspection confirmed. A second Constellation universe
+    // sitting on disk but NOT in this install's registry — synced from another machine, or
+    // removed from the list while its files were kept — cannot be named by
+    // `assemble_foreign_roots`, so `foreign_reason` answers `None` for every path beneath it.
+    // Pick a plain subfolder inside it, which carries no manifest of its own, and Bring-In →
+    // Move succeeded: that universe's content was relocated OUT of it, with no error.
+    //
+    // `classify` was given the upward walk by PJ-322 because there the guard is monotone-safe.
+    // The comment that stood here said widening THIS one was a user-facing behaviour change and
+    // belonged to the Boss rather than a mid-cascade edit. It was, he ruled it, and here it is —
+    // one concern, one predicate, both surfaces (the Whole-Ecosystem Fix Law).
+    //
+    // The message distinguishes the two conditions, because they call for different actions: a
+    // folder that IS a universe should be OPENED; a folder INSIDE one should be moved from
+    // within that universe, and the user is told which universe that is.
+    if let Some(owner) = universe_manifest_at_or_above(src) {
+        let owner_is_the_folder = norm(&owner.to_string_lossy()) == norm(&src.to_string_lossy());
+        return Err(if owner_is_the_folder {
             "That folder is a universe of its own — open it from the universe switcher instead."
-                .to_string(),
-        );
+                .to_string()
+        } else {
+            format!(
+                "That folder is inside another universe (\"{}\"), so bringing it in would take \
+                 content out of that universe. Open that universe and move it from there instead.",
+                owner
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| owner.display().to_string())
+            )
+        });
     }
     let dest = bring_in_dest(&source_path, &root)?;
     match mode.as_str() {
@@ -2564,12 +2698,51 @@ pub fn bring_in_library(
                 crate::write_gate::gate_rename(src, &dest, "bring_in")
                     .map_err(|e| format!("Move failed: {}", e))?;
             } else {
-                crate::libraries::copy_dir_recursive(src, &dest)?;
+                copy_or_clean_up(src, &dest)?;
+
+                // **Safety inspection 2026-08-22 (MED, content-loss): this delete used to be
+                // unconditional.** `copy_dir_recursive` skips symlinks and junctions with a bare
+                // `continue` and no log, so a junction'd subtree — an attachments folder, a shared
+                // Research tree, an ordinary Windows layout — was not copied and was then
+                // DESTROYED at the source, with `Ok` returned and nothing recorded.
+                //
+                // **The fix the inspection prescribed would not have caught its own scenario, and
+                // that is worth stating.** It asked for `run_move_phase`'s src/dst file-count
+                // compare — but `count_files` skips symlinks too, and by the same rule, so the
+                // counts MATCH while the subtree is missing. The check would have passed and the
+                // source would still have been deleted. Verified by reading both walkers.
+                //
+                // So the guard is on the thing that actually differs: if the source contains any
+                // reparse point, the copy is by definition not a complete copy, and we keep the
+                // original. Nothing is destroyed; the user is told exactly why and where both
+                // copies are. The count compare is kept as a second, independent check for a
+                // shortfall that is not symlink-related (an unreadable subdirectory, which
+                // `count_files` swallows and `copy_dir_recursive` propagates).
+                if let Some(link) = first_reparse_point(src) {
+                    return Err(format!(
+                        "Copied, but the original was NOT removed: {} contains a shortcut or \
+                         junction ({}) that cannot be copied. Both copies are on disk — the new \
+                         one at {} — so move or recreate that link yourself, then delete the \
+                         original.",
+                        src.display(),
+                        link.display(),
+                        dest.display()
+                    ));
+                }
+                let (src_n, dst_n) = (count_files(src), count_files(&dest));
+                if src_n != dst_n {
+                    return Err(format!(
+                        "Copied, but the original was NOT removed: {src_n} files at the source \
+                         and {dst_n} at the destination. Both copies are on disk — the new one at \
+                         {} — so nothing has been lost; compare them before deleting the original.",
+                        dest.display()
+                    ));
+                }
                 std::fs::remove_dir_all(src).map_err(|e| format!("Move cleanup failed: {}", e))?;
             }
         }
         _ => {
-            crate::libraries::copy_dir_recursive(src, &dest)?;
+            copy_or_clean_up(src, &dest)?;
         }
     }
     crate::libraries::add_library(app, dest.to_string_lossy().to_string())
