@@ -178,3 +178,27 @@ The universe folder structure follows the Obsidian model: notes go directly in t
 ## RTL support
 
 The Universe setup wizard and manager fully support right-to-left (RTL) languages including Arabic, Hebrew, Persian, and Urdu. The interface direction adapts automatically based on your language setting.
+
+## Bringing a folder in — and when Constellation refuses
+
+**Bring In a Library** takes a folder of notes that lives outside your universe and adds it as a
+library, either **Copy in** (the original stays put) or **Move in** (the folder relocates). This is
+how **One Universe, One Location** is kept: nothing is ever referenced in place from outside.
+
+Bring In refuses, changing nothing, when:
+
+- **the folder is a universe of its own** — open it from the universe switcher instead;
+- **the folder sits inside another universe**, even one not listed on this computer. The refusal
+  names that universe. Moving the folder would take content out of it, so move it from within that
+  universe instead;
+- **the folder is already a registered library** — the unification proposal relocates those safely,
+  keeping their index intact;
+- **Constellation cannot read its own library list** — momentarily locked or damaged. It refuses
+  rather than guessing whether the folder is already registered. Usually temporary; try again.
+
+### Moving between two drives
+
+A *Move* across drives copies first, then removes the original — and **keeps the original** when the
+folder contains a shortcut or junction that cannot be copied, naming the link and both locations. If
+the copy fails part-way, the partial copy is removed, so a failed Bring In never leaves half a
+library inside your universe.

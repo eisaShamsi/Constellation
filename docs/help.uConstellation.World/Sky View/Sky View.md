@@ -315,3 +315,19 @@ Sky View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a
 - **Non-blocking layout** — force simulation never freezes the UI
 - **Hover is visual-only** — hovering never triggers physics recalculation
 - **The simulation stops after settling** — once nodes find their positions, the physics engine fully stops. Only dragging a node or changing settings restarts it.
+
+## Missing dots repair themselves
+
+Every indexed note should have a dot here. An old fault could destroy one: notes saved before
+Constellation had given them their internal identity were filed under the same blank identity, so
+each one replaced the previous one's dot instead of adding its own. The note was never harmed and
+stayed fully searchable — it just lost its dot, permanently, and nothing could put it back. It also
+sank down among the lowest-ranked notes in the **Reviewer**, since a note with no dot reads as
+having no review priority.
+
+Constellation now checks for this every time you open a universe and puts the missing dots back. If
+it repairs anything, a small line appears at the bottom of the window naming how many notes were
+restored; dismiss it with the **×**. It shows only on the launch that did the repair, never again
+afterwards.
+
+Nothing is asked of you and no note file is touched — only the universe's own internal index.

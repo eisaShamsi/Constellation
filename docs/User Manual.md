@@ -368,6 +368,43 @@ one folder. Constellation enforces this everywhere:
   against those numbers before it completes, and refuses to finish otherwise. On a large
   universe it can take several minutes.
 
+### What Bring In refuses, and why
+
+Bring In will **stop and explain itself** rather than move anything, in four situations. Each
+refusal leaves every file exactly where it was.
+
+- **The folder is a universe of its own.** Swallowing another universe's folder as if it were
+  ordinary notes would bury its index, its settings and its earned link history inside yours. Open
+  it from the universe switcher instead.
+- **The folder sits *inside* another universe.** Even if that universe is not in this computer's
+  list — one set up on another machine, or removed from the list while its files stayed — Bring In
+  recognises it and names it, because moving the folder would quietly take content *out* of that
+  universe. Open that universe and move the folder from within it.
+- **The folder is already a registered library.** Relocating it here would leave its entry pointing
+  at an empty folder. The unification proposal is the tool that moves registered libraries safely.
+- **Constellation cannot read its own library list.** If that list is momentarily locked or damaged,
+  Bring In refuses rather than guessing, because it cannot tell whether the folder you picked is
+  already registered. This is usually temporary — try again.
+
+**On a *Move* between two different drives**, Constellation copies first and only then removes the
+original — and it will **keep the original** if the folder contains a shortcut or junction that
+cannot be copied, telling you which one and where both copies are. If a copy fails part-way, the
+partial copy is removed, so a failed Bring In never leaves half a library sitting in your universe.
+
+### Sky View repairs itself
+
+Every note should have a dot in **Sky View**. An old fault could destroy a note's dot: notes saved
+before Constellation had given them their internal identity were filed under the same blank
+identity, so each one replaced the previous one's dot instead of adding its own. The note itself was
+never harmed and stayed fully searchable — it simply lost its dot, and nothing could put it back.
+It also sank down among the lowest-ranked notes in the **Reviewer**, because a note with no dot
+reads as having no review priority.
+
+Constellation now **checks and repairs this automatically** whenever you open a universe. If it puts
+any dots back, it tells you: a small line at the bottom of the window naming how many notes it
+restored, which you can dismiss. It appears only on the launch that actually repaired something —
+not every time afterwards.
+
 ## 3. Creating and Editing Notes
 
 ### Creating a Note
