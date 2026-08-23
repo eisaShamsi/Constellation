@@ -20,7 +20,6 @@
 		loadLibraries, loadAllStats, bringInLibrary, createNewLibraryAt,
 		resetWorkspacesForUniverse,
 		registerFocusSurface,
-		activeUniverseRootSync,
 		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab, flushDisposeClearTabs, flushAllDirtyTabs, flushAllForAppClose,
@@ -7527,12 +7526,15 @@
 						// otherwise. Caught by the tutorial auditor while it was checking whether the
 						// behaviour was real enough to ask the Boss to look at. It was not.
 						//
-						// One walk, not a loop: MIG-108 puts every own library UNDER the root, so rooting
-						// there reaches them all with no duplicate passes. A LINKED universe is excluded on
-						// the Rust side (foreign_library_roots). `lib.name` remains the caller fallback for
-						// re-index attribution — the walker resolves each rewritten file own library itself.
-						const cascadeWalkRoot = activeUniverseRootSync() ?? lib.path;
-						const result = await updateLinksOnRename(cascadeWalkRoot, lib.name, oldName, newName, excludedPaths);
+						// MIG-111 B6 — pass the note's OWNING library path; the backend resolves the
+						// owner from it and derives the walk scope itself: an own note cascades from
+						// the ACTIVE universe root (every own library is under it — one walk reaches
+						// them all), a note in a LINKED universe cascades from THAT universe's root
+						// with that universe's own vocabulary, and a third universe is fenced on the
+						// Rust side. The old frontend-computed activeUniverseRootSync() hardcoded the
+						// active root, which walked the wrong tree for a linked note. `lib.name`
+						// remains the caller fallback for re-index attribution.
+						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName, excludedPaths);
 						// Safety inspection 2026-08-01 — SURFACE the cascade's per-file failures.
 						// `result.failed` is `[path, error]` for every referrer the walker tried to
 						// rewrite and could NOT (libraries.rs — the gate_rmw error arm: the file is

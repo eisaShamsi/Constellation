@@ -14,7 +14,7 @@ description: Federation lets one Universe show the content of other Universes (a
 
 A **Universe** in Constellation is a complete, self-contained knowledge base — its own folder on disk with its own notes, libraries, links, and index. **Federation** lets you add one Universe to another as a **cUniverse** (child Universe), so the parent's windows can show the child's content alongside its own.
 
-The key idea — and Constellation's firm rule: **federation reads, it never merges.** When Universe A is added as a cUniverse of Universe B, nothing is copied, moved, or rewritten. B simply *reads* A's data at runtime and displays it. A's files stay exactly where they are, untouched.
+The key idea — and Constellation's firm rule: **federation reads, it never merges.** When Universe A is added as a Linked Universe of Universe B, nothing is copied, moved, or rewritten. B simply *reads* A's data at runtime and displays it. A's files stay exactly where they are, untouched. The one refinement: when you perform an operation *on* one of A's own notes — renaming it, say — that operation does its work inside A, with A's own settings and vocabulary, and its bookkeeping lands in A's own records. B never rewrites A's notes because of something that happened in B.
 
 ## Why Does It Matter?
 

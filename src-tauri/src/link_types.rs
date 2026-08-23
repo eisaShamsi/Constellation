@@ -584,12 +584,29 @@ pub(crate) fn registry_for_owner_of(
     app: &tauri::AppHandle,
     path: &str,
 ) -> Result<LinkTypeRegistry, String> {
+    owner_scope_of(app, path).map(|(_, reg)| reg)
+}
+
+/// MIG-111 B6 — the OWNER's full scope for `path`: `(routed_root, registry)`.
+///
+/// `routed_root` is `None` when the owner is the ACTIVE universe (including the
+/// pre-MIG-108 legacy fallback below) and `Some(owner_root)` for a Linked Universe.
+/// One resolution answers both "whose vocabulary?" (B5) and "whose tree do we
+/// operate in?" (B6 — the rename cascade's walk root and fences key off the SAME
+/// owner decision, so scope and vocabulary can never disagree).
+pub(crate) fn owner_scope_of(
+    app: &tauri::AppHandle,
+    path: &str,
+) -> Result<(Option<std::path::PathBuf>, LinkTypeRegistry), String> {
     match crate::federation::owner::resolve_owner(app, path) {
         Ok(owner) if owner.is_active => {
             // Whose vocabulary is this? The ACTIVE universe's — the owner IS the active universe.
-            Ok(active_universe_vocabulary())
+            Ok((None, active_universe_vocabulary()))
         }
-        Ok(owner) => registry_for_root(&owner.root),
+        Ok(owner) => {
+            let reg = registry_for_root(&owner.root)?;
+            Ok((Some(owner.root), reg))
+        }
         Err(e) => {
             // `resolve_owner` is root-containment over {active} ∪ {federation} — it cannot
             // see an OWN library registered at an EXTERNAL path (the pre-MIG-108 legacy
@@ -602,7 +619,7 @@ pub(crate) fn registry_for_owner_of(
             let own = crate::libraries::try_load_libraries(app)
                 .map_err(|le| format!("{e} (and the library registry could not be read: {le})"))?;
             if crate::libraries::owning_own_library_name_in(&own, path).is_some() {
-                return Ok(active_universe_vocabulary());
+                return Ok((None, active_universe_vocabulary()));
             }
             Err(e)
         }

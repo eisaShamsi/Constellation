@@ -421,6 +421,264 @@ gone. Census: libraries.rs ABSENT (was 1), answer recorded in the map.
 - Ledger **v1.94** (B5 closed; PJ-341 + PJ-342 filed; ► = B6) and orientation **v4.5**
   in this commit. MoCh-2026-08-22-1430 written.
 
+---
+
+## §B6 — the fences come down for the owner's own universe (build phase)
+
+> Working on: **MIG-111 Stage B6** — the SEEK-branch foreign skip + the walk's foreign
+> exclusion, lowered for a rename whose owner is a Linked Universe; the rename DB tail
+> routed through `WriteScope` (the FIRST production wiring of A3). A rename still refuses
+> a THIRD universe (Phase 3 / R23).
+
+**Territory mapped first** (4-agent parallel sweep, evidence-only): rename is OFFERED on
+linked notes through SIX frontend entry points, all funneling into `handleRenameComplete`;
+`rename_item` ADMITS linked paths today — the file renames + frontmatter rewrites in the
+foreign universe while the 'rename' alias lands in the ACTIVE DB (a live wrong-DB write)
+and the owner's index goes stale; the cascade walked the wrong tree (frontend hardcoded
+the active root); WriteScope had zero production callers; `maintain_sky_after_save` was
+private; the cascade reindex tail carried an adoption landmine (foreign path fallback →
+active DB).
+
+**The design (one owner decision):** `owner_scope_of` → (routed_root, registry).
+- Active owner: walk root = active universe root (backend-derived now), fence = the
+  pre-B6 federated foreign set — byte-identical behavior.
+- Routed owner: walk root = the OWNER's root; fence = the owner's own children via the
+  STRICT resolver (unreadable manifest ⇒ the cascade REFUSES — a third universe that
+  cannot be enumerated cannot be fenced); seek disabled (the active index cannot hold the
+  owner's referrers — walk = disk truth); rewritten referrers reindex via
+  `WriteScope::routed_at` on the owner's connection with the owner's vocabulary +
+  maintenance pair (empty-old full recompute, the A8 shape). Refusals are DISK-FIRST:
+  files are the source of truth, already healed; a scope refusal skips only derived
+  state, loudly, and NEVER falls back to the active DB.
+- `rename_item_db_tail`: routed arm runs the 11-table `migrate_note_db_paths` + the
+  rename-alias INSERT + reindex on the OWNER's connection — the wrong-DB alias write is
+  gone; legacy external own libraries (for_note Err + own-registry claim) keep the ACTIVE
+  tail (the B4-class regression, caught by self-review pre-inspection).
+
+**The B6 fence test caught a REAL production defect red-first:** the strict child resolver
+canonicalizes (Windows verbatim prefix), and the fence normalization missed the prefix —
+the grandchild's file was rewritten in the test's first run (the §0.4 / LL-048 class).
+Fixed by sharing `owner::strip_verbatim` (now pub(crate)) — one identity per path, one
+function, no second copy to drift.
+
+**Verification:** `b6_routed_cascade_heals_the_owner_and_fences_the_grandchild` (real
+universe.json child declaration, production resolver; owner referrer heals typed+plain,
+grandchild byte-identical) and `b6_routed_rename_tail_lands_in_the_owners_db_under_the_owners_vocabulary`
+(production init_db child fixture; routed_at through the A4 refusals; asserted against an
+INDEPENDENTLY-opened child DB: the `refutes`-typed link renamed and classified under the
+child's vocabulary, the rename alias + note_meta migration in the CHILD DB). Suite
+**1539/0 ×2** (two new tests), binary 19:20:42. Inspection `wf_b605fa1c-9e8` launched;
+verdict below.
+
+### B6 inspection pass 1 (`wf_b605fa1c-9e8`): 2 CONFIRMED, both FIXED
+
+1. **HIGH · content-corruption** — my routed fence enumerated only the OWNER's declared
+   children, so a third universe physically nested under the owner but declared elsewhere
+   in the federation (the active app knows it; the owner's manifest doesn't) would be
+   walked, rewritten under the owner's vocabulary, and planted into the owner's index —
+   silent cross-universe file corruption, unreachable pre-B6. **Fixed with a better
+   rule:** `routed_cascade_fence` (pure, unit-tested with the exact C-inside-B topology)
+   — every universe root the ACTIVE app's STRICT recursive federation knows, minus the
+   owner and its ancestors. Subsumes the owner's children; closes undeclared nesting;
+   unreadable federation ⇒ the cascade refuses.
+2. **MED · content-loss** — the legacy pre-MIG-108 arm walked only the active root,
+   silently skipping referrers inside the renamed note's own EXTERNAL library. **Fixed:**
+   `walk_roots` — the legacy arm walks both the active root and the external library;
+   net + walk iterate the vector.
+
+Post-fix: **1540/0 ×2** (the fence-formula test added), binary 19:40:46. **Pass 2
+(`wf_97663781-6a6`)** launched over libraries.rs (the only file changed since pass 1) —
+verifying the fixes themselves (segment-boundary fencing, dual-root bookkeeping, the
+strict federation read against the Boss's live layouts, active-arm byte-identity).
+
+### B6 inspection pass 2 (`wf_97663781-6a6`): 3 CONFIRMED, all FIXED
+
+1. **HIGH · concurrency-race (largely PRE-EXISTING, exposed by the sweep)** — the four
+   detached ACTIVE-arm DB tails (folder rename, move, single rename, cascade reindex)
+   re-acquire `SearchState.db` per batch with NO generation check; a universe switch
+   mid-tail writes the departing universe's notes into the NEW universe's database —
+   silent, durable (reconcile skips-not-heals such rows), the PJ-332 class on the rename
+   family. **Fixed:** federation-generation switch guards on all four (capture at start,
+   re-check per batch/note, STOP loudly; the departing universe's own reconcile heals the
+   remainder). The ROUTED tails need no guard — pinned connections by construction.
+2. **LOW · swallowed-write-error** — the 'rename' alias stamp was `let _`-dropped in both
+   arms; a failed stamp is a PERMANENT resolution gap (the old title exists nowhere on
+   disk afterwards; reindex preserves-but-never-creates rename aliases). **Fixed:** the
+   active arm logs the failure; the routed arm propagates it as an Err.
+3. **LOW · index-divergence** — `move_item_db_tail`'s attribution-miss arm skipped the
+   reindex with zero log (its sibling folder tail logs the identical arm). **Fixed:**
+   logged + counted in the summary.
+
+Post-fix: **1540/0 ×3** (one more transient link error answered with the LL-050
+forced-relink guard; binary 19:57:18). **Pass 3 (`wf_716eba67-ce4`)** launched over the
+guard code itself (TOCTOU residue, interleavings, early-STOP consistency).
+
+### B6 inspection pass 3 (`wf_716eba67-ce4`): 3 CONFIRMED, all FIXED
+
+1. **HIGH · index-divergence (Whole-Ecosystem asymmetry — mine)** — I routed the NOTE
+   rename tail and left the FOLDER tail active-only: a folder rename inside a Linked
+   Universe (reachable — the folder guard refuses only folders CONTAINING a linked
+   library root) stranded the owner's whole subtree at dead paths in ITS database, the
+   exact hazard the note tail closed. **Fixed:** `rename_folder_db_tail` routes by owner
+   exactly like the note tail — per-descendant migrate + reindex + maintenance on the
+   pinned routed connection, owner-library attribution, legacy fallback, loud refusals.
+   (The MOVE tail is exempt by construction: moves inside a linked universe are already
+   refused end-to-end by PJ-235's `require_own_library`.)
+2. **MED · toctou** — my loop guards checked the generation BEFORE parking on the writer
+   lock; a switch completing while parked still slipped one write into the new universe's
+   DB. **Fixed as the CLASS (Solve-the-Class):** `reindex_single_note` itself now
+   captures the generation before parking and refuses after waking if it moved — every
+   caller (the four tails AND the save path) is guarded at the one place the park
+   happens; the loop-level guards remain as cheap early stops.
+3. **LOW · index-divergence** — my legacy dual-root fix covered only the CALLER's
+   external library; a SIBLING external own library's referrers were still silently
+   skipped on the walk path — the same defect one door over. **Fixed:** the legacy arm
+   walks the active root + EVERY own library at an external path (deduped).
+
+Post-fix: **1540/0 ×2**, binary 20:14:32. **Pass 4 (`wf_c2a11058-edb`)** launched over
+the folder tail's new routed write path + the reindex guard (old-path reconstruction
+forms, interleavings, multi-root double-visitation, happy-path byte-identity).
+
+### B6 inspection pass 4 (`wf_c2a11058-edb`): 2 CONFIRMED, both FIXED
+
+1. **MED · index-divergence (mine)** — my routed tails resolved owner-library attribution
+   through the LENIENT `own_libraries_for_root` ([] on read error, no log) and fell back
+   to the literal "universe_notes" — which matches NO real owner library (the owner's
+   root library carries the universe's DISPLAY name): durable misattribution stamped into
+   the owner's note_meta, silent, unhealed by mtime-gated reconcile. **Fixed:** new
+   `owner_libs_strict` (absent = a fact; unreadable/corrupt = Err); all three routed
+   tails skip the attribution-dependent REINDEX half loudly on Err/miss (migrate + alias,
+   which are attribution-free, still run) — never a fabricated name.
+2. **LOW · index-divergence (mine, the third recurrence of one shape)** — the routed walk
+   covered only the owner's ROOT; a routed owner's own EXTERNAL (pre-MIG-108) libraries
+   had their referrers silently skipped — the identical skip pass 3 fixed on the legacy
+   arm. **Fixed with the shared-helper law:** `cascade_walk_roots(base, libs)` now serves
+   BOTH arms, so the external-library coverage cannot drift between them again.
+
+Post-fix: **1540/0 ×2 force-relinked** (binary 20:36:17; one more transient link error
+answered with the LL-050 guard, no error in the fresh run). **Pass 5 (`wf_67d6dd69-8aa`)**
+launched over the deltas — loop-until-dry: the cycle closes on a DRY round, not a
+converging one.
+
+### B6 inspection pass 5 (`wf_67d6dd69-8aa`): 2 CONFIRMED, both FIXED — both in my guards
+
+1. **HIGH · concurrency-race (mine)** — the rename tail's STOPPED branch logged and then
+   FELL THROUGH to Step 6, whose fresh prefix-resolve against the NEW universe's registry
+   would adopt the departing child's note into the parent's index as a lexically-own row
+   that reconcile keeps forever (worse than foreign_rows — it never even counts). The
+   guard detected the hazard and then did the hazardous thing anyway. **Fixed:** STOPPED
+   now returns, ending the whole tail.
+2. **MED · toctou (mine)** — the move tail's migrate guard was VACUOUS: captured and
+   re-checked back-to-back BEFORE the park; a switch completing while parked handed the
+   pre-DELETEs the wrong universe's connection. The correct after-lock pattern sat twenty
+   lines away in my own diff. **Fixed** in the move tail AND the folder tail's migrate
+   batches (same shape, Whole-Ecosystem): the generation check lives INSIDE the acquired
+   lock everywhere now.
+
+Post-fix: **1540/0 ×2 force-relinked** (binary 20:55:16). **Pass 6 (`wf_e915d722-e6e`)**
+launched as the DRY check over the three-guard delta.
+
+### B6 inspection pass 6 (`wf_e915d722-e6e`): 1 CONFIRMED LOW, FIXED
+
+**LOW · content-corruption (a pre-existing degraded mode B6 WIDENED)** — with
+libraries.json transiently unreadable at rename time, the fence collapses to {} (the
+documented one-boot fallback), and B6's backend-derived walk root gave EVERY rename
+whole-active-root reach — so a linked universe nested under the active root could have
+its notes' [[OldTitle]] wikilinks rewritten by the active universe's rename. **Fixed with
+defense-in-depth the B6 machinery makes cheap:** the ACTIVE arm's fence now also carries
+the UNIVERSE-ROOT fence (the same `routed_cascade_fence` formula over the active
+federation) — derived from universe.json, which fails independently of libraries.json,
+so one locked file no longer strips both boundaries. Best-effort on the active arm
+(refusing a plain own rename on a bad manifest would be a regression); the routed arm
+keeps its strict refusal.
+
+Post-fix: **1540/0 ×2 force-relinked** (binary 21:12:45). **Pass 7 (`wf_de8820fe-0a6`)**
+launched over the one additive change — the dry candidate at 15 findings / 15 fixed.
+
+### B6 inspection pass 7 (`wf_de8820fe-0a6`): the B6 delta is DRY — the cycle closes
+
+Pass 7 confirmed NOTHING against the pass-6 fence change. Its single finding is an
+UNRELATED, LATENT, pre-existing LOW spotted in passing: `save_clipboard_image` named
+attachments at 1-second resolution and wrote with bare `File::create` — a silent
+same-second overwrite (permanent image loss, both embeds rendering the survivor),
+unreachable today (zero frontend call sites; the paste wiring is future work) but armed
+the moment it lands. **Fixed in-pass** (WA#6): exclusive `create_new` (the OS's atomic
+O_EXCL — no exists-check race) with a de-collision suffix — the binary sibling of the
+`gate_create_exclusive` discipline every text create path in the file follows.
+
+**THE B6 INSPECTION CYCLE: 7 passes, 16 CONFIRMED findings, 16 FIXED, zero parked.**
+Severity trajectory: HIGH/MED → HIGH/LOW/LOW → HIGH/MED/LOW → MED/LOW → HIGH/MED → LOW
+→ (unrelated LOW; delta dry). Six of the sixteen were defects in MY OWN fixes for
+earlier findings — the loop caught the fixer every time it needed to. Final gates:
+**1540/0 ×2 force-relinked**, binary 21:26:00.
+
+### The B6 test pipeline — the auditor's pre-flight caught a stale-bundle binary
+
+The tutorial-auditor's pre-flight (its own initiative) found `build/` dated 11:02 while
+B6's frontend fix landed at 19:10 — my 21:29 release rebuild ran only
+`cargo build --release`, re-embedding the eight-hour-stale bundle
+(`feedback_frontend_build_before_cargo`, the exact recorded trap). **The 21:29 exe
+contained only the RUST half of B6**; a test on it would have silently exercised the old
+dispatch and produced a false failure indistinguishable from a real regression. My
+earlier statement that "the fix is genuinely in the binary" was true of the Rust half
+only — corrected here. Rebuilt properly: `npm run build` (build/ 21:50:40) →
+`cargo build --release` (exe **21:53:30**, 95,668,736 bytes, newer than the fresh
+bundle). The draft (staged: Stage 1 headline + Stage 2 boundary/regression/cleanup, 26
+verified claims incl. the load-bearing cross-universe alias-resolution chain for Stage
+2A) is with the ui-inspector.
+
+### The B6 pipeline verdicts
+
+- **ui-inspector: REJECTED ×1 then APPROVED** — the draft called the sidebar
+  Linked-Universe icon "multi-colored"; it is a single-indigo planet-with-orbit outline
+  (the multi-colored icon is the status-bar button). 31 claims verified incl. the
+  load-bearing Stage-2A cross-universe alias-resolution chain, live reads of all three
+  universes, and the fresh two-half binary (build/ 21:50:40, exe 21:53:30).
+- **Panel (`wf_97f19b36-611`): SEND_WITH_AMENDMENTS — 8 edits.** Material ones: the
+  tutorial undersold the Boss's time (TRUE switch count six, not three; two switches
+  stall 10–20 s per the live boot-perf records — now stated); a machine-side cleanup
+  option added (WA#1 — none of the cleanup genuinely needs a human; watcher-index-
+  freshness reconciles); Stage-1 gets a self-contained stop-here ending; the second
+  sidebar group (كون عيسى) pre-framed; NOT-COVERED gains the switch-race guards and the
+  owed full federated Editor-Surface Gate run; the REGISTER gains the admission that an
+  early B6 version WIDENED the degraded-registry mode before the cycle closed it, and
+  PJ-342 restored to the open list. Panel corrections of my premises: كون عيسى holds SIX
+  notes (not ~9,600 — the corpora are ECK 8,031 / EU 2,731); venue RULED approved (ECK is
+  the only real federated pair; the tutorial itself is the ask, probes self-created).
+  Blast radius walked at source: real notes are READ ONLY. PJ-321: the standing bundle
+  suffices; machine-side post-run re-stat ordered. Housekeeping ordered and DONE: the
+  mid-switch error string's garbled spacing collapsed (suite 1540/0 after; the path is
+  untouched by this test so the 21:53 exe stays valid); this rejection/approval cycle
+  recorded here per the panel's order.
+- Panel declined to rule (the Boss's): cleanup path choice; PJ-341; PJ-342; the
+  misleading cascade-refusal wording (fix-now-or-file — panel recommends filing at PCS);
+  scheduling of the owed full federated Gate run; the cross-universe text-healing
+  phase's priority.
+
+## §B6 — BOSS-VALIDATED (2026-08-23, all stages passed)
+
+- **Stage 1 PASS** (screenshot on file): a rename performed through the Eisa Universe view
+  on a note inside Eisa Cognitive Knowledge healed BOTH referrer lines —
+  `[[Zelkovine Target Renamed]]` and `[[inspires::Zelkovine Target Renamed]]`, the custom
+  typed head intact. The Boss heard the disk walk ("PC hard disk thrashing") — the routed
+  cascade's deliberate disk-truth scan of ~8,000 notes; no banner appeared (no open note
+  pane in the way — "may appear" per the tutorial).
+- **Stage 2 Part A PASS** — the parent-universe referrer's text stayed old (the honest
+  Phase-3 boundary) AND clicking it opened the RENAMED note: the cross-universe old-name
+  resolution through the owner-stamped alias works live, same session.
+- **Stage 2 Part B PASS** — the own-universe regression rename healed both forms.
+- **Cleanup:** the Boss took the recommended path (deleted the Florzeth pair, closed);
+  I deleted the three Zelkovine probe files from their verified paths (0 remain outside
+  `.trash`).
+- **PJ-321 third corroboration:** the registry file is byte-identical AGAIN
+  (277 B · mtime 2026-08-07 · sha256 c20f9694…) after the full B6 run's ~6 switches on
+  the 21:53 binary — the frozen-file observation now stands across the B4 and B6 test
+  rounds. Recorded; the STOP holds.
+- **Boss question answered in-chat:** why tests use "Open Existing Universe" over the
+  Universe Manager list — test discipline (the list's ids are PJ-321's unexplained side;
+  the folder route pins the universe by path); his daily list habit is fine and is itself
+  evidence the app reads a reliable store that is not the watched file.
+
 ### Open follow-ups filed into this stage's later steps (not new PJs)
 
 - B1: thread the backfills' `recompute_*` functions (links_backfill / sky_backfill annotations

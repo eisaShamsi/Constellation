@@ -2708,7 +2708,7 @@ fn sky_affected_paths(
 /// Each affected node is one index-seeking UPDATE with the SHARED `STRATUM_SQL_EXPR` /
 /// `MATURITY_SQL_EXPR` (fast after §A1). Best-effort; `recompute_all_sky` (reconcile) is the
 /// authoritative self-heal.
-fn maintain_sky_after_save(
+pub(crate) fn maintain_sky_after_save(
     conn: &Connection,
     reg: &crate::link_types::LinkTypeRegistry,
     note_path: &str,
@@ -12952,7 +12952,26 @@ pub fn reindex_single_note(
     library_name: &str,
 ) -> Result<MaintenanceOutcome, String> {
     let mut maint = MaintenanceOutcome::default();
+    // Safety inspection 2026-08-22 (B6 pass 3, MED) — the PARK-WINDOW guard, closed for
+    // EVERY caller at once (Solve-the-Class): a caller's own pre-lock generation check
+    // cannot see a universe switch that completes while this call is PARKED on the
+    // writer lock — it would wake holding the NEW universe's connection and write the
+    // departing universe's note into it, silently and durably. Capture the generation
+    // before parking; if it moved while we waited, the connection under this guard is
+    // another universe's — refuse.
+    let gen_entry = state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst);
     let db = state.db.lock().map_err(|e| e.to_string())?;
+    if state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst)
+        != gen_entry
+    {
+        return Err(String::from(
+            "universe switched while waiting for the index writer — refusing to write into the new universe's database; the note reindexes on its own universe's next touch or reconcile",
+        ));
+    }
     if let Some(conn) = db.as_ref() {
         // MIG-013 §1C — capture old body BEFORE index_note overwrites
         // the row. The CTSE hook needs both old and new bodies to

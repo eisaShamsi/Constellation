@@ -77,7 +77,7 @@ pub struct Owner {
 /// `\\?\E:\U` and `E:\U` are the same directory and no amount of slash-folding makes them equal, so
 /// this runs BEFORE any comparison and on anything this module hands back. `\\?\UNC\server\share`
 /// is the network form of the same thing and folds back to `\\server\share`.
-fn strip_verbatim(p: &Path) -> PathBuf {
+pub(crate) fn strip_verbatim(p: &Path) -> PathBuf {
     let s = p.to_string_lossy();
     if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
         return PathBuf::from(format!(r"\\{rest}"));
