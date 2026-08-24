@@ -1654,3 +1654,33 @@ elsewhere.
 
 **The tell, now written down: if Eisa has to ask "what about the X?", the work was not finished,
 whatever the code was doing.**
+
+### PJ-375 investigated (2026-08-24) — Reproduce-First, and the instrument was the bug
+
+Three findings and one unknown, each from evidence rather than reading:
+
+1. **The fragmentation probe has never worked in 130 runs.** `SELECT MAX(segid) FROM
+   notes_fts_data` — that table's columns are `id` and `block`; **there is no `segid` column.**
+   The query errors every time and `.unwrap_or(-1)` swallows it, which is why every log line
+   reads `(segid -1 → -1)`. That is not "no change", it is the probe failing twice. The
+   diagnostic built to show whether the optimize was doing anything was itself broken and
+   silent — which is exactly why this went unnoticed for months.
+2. **A repeat optimize genuinely IS free.** Measured on a copy of his 2 GB index: three
+   consecutive optimizes, 0.0 s each. So the 25–78 s runs are real merge work on a genuinely
+   fragmented index, not a broken optimize. The in-code comment is right about the no-op.
+3. **Elapsed time does not predict the cost.** 0.0 s after 12.8 h, but **54.1 s just 17 minutes
+   after a 34.4 s run.** So "it only happens after a long gap" is false.
+
+**The unknown, named rather than filled:** what re-fragments the index within minutes. The
+obvious candidate is that `Eisa Cognitive Knowledge` is not a read-only Linked Universe at all —
+it is his daily universe, which he also opens and writes directly, while the prewarm's design
+assumes a child that sits still. **I have not established that from evidence, so it is not a
+conclusion**, and the next step is to establish it rather than act on it.
+
+The fix direction follows from #1: the code cannot decide whether an optimize is needed because
+the probe that would tell it is broken. Repair the probe first — then skipping becomes possible,
+and finding #2 says the skipped path is already free. Do not remove the prewarm.
+
+**The shape worth remembering:** the bug and the reason it survived are the same thing. A
+broken, silently-swallowed diagnostic is not a missing feature — it is an active concealment
+mechanism, and it hid a minute of disk thrashing per session for months.

@@ -7,7 +7,11 @@
 > project: 46 confirmed findings across SEVENTEEN inspection passes — 40 fixed, 6 filed — plus a
 > whole-app sweep register**):
 >
-> **► NEXT ACTION (post-B1, 2026-08-23): PJ-375** — the disk churn he CONFIRMED hearing. It is
+> **► NEXT ACTION (2026-08-24): PJ-375 — INVESTIGATED, one unknown left to close.** The probe
+> repair is designable now; what re-fragments the index within minutes is not yet evidenced and
+> must be established before anything is changed. See the investigation under PJ-375 below.
+>
+> **► (superseded) NEXT ACTION (post-B1, 2026-08-23): PJ-375** — the disk churn he CONFIRMED hearing. It is
 > the only item in the queue backed by a measurement on his own machine of a cost he is already
 > paying (54s and 78s FTS5 optimizes today; 130 runs, 510s total, against an in-code claim that
 > it is cheap after the first), and it fires on exactly the federated path his ruling below
@@ -447,10 +451,36 @@
 >   just said he is adopting. Today it costs him a minute of thrashing per session; from tomorrow
 >   it costs him that every time he works the way he intends to.
 >
->   Investigate before fixing (Reproduce-First): why is `optimize` doing full work repeatedly —
->   is the segid check wrong, is something invalidating the index between runs, or is the
->   idempotency claim simply false for FTS5 in this configuration? Do not "fix" it by removing
->   the prewarm; it exists to make federated search usable.
+>   **INVESTIGATED 2026-08-24 (Reproduce-First). Three findings, and one honest unknown.**
+>
+>   **1. The fragmentation probe has never worked — not once in 130 runs.** The code reads
+>   `SELECT MAX(segid) FROM notes_fts_data` before and after the optimize, "so we can see
+>   optimize's effect in the diag log." That table's columns are `id` and `block` — **there is no
+>   `segid` column.** The query errors every time and `.unwrap_or(-1)` swallows it, which is why
+>   every line in his log reads `(segid -1 → -1)`. That is not "no change"; it is the probe
+>   failing twice. **The instrument built to reveal this problem was itself broken and silent** —
+>   the Charter's "a comment that became false" class, and the reason nobody noticed for months.
+>
+>   **2. A repeat optimize genuinely IS a no-op — the comment is right about that.** Measured on
+>   a copy of his 2 GB `Eisa Cognitive Knowledge` index: three consecutive optimizes, **0.0 s
+>   each**. So the 25–78 s runs are not a broken optimize; they are real merge work on an index
+>   that was genuinely fragmented at that moment.
+>
+>   **3. Elapsed time does NOT predict the cost, which kills the obvious explanation.** From his
+>   log: 0.0 s after 12.8 h, but **54.1 s just 17 minutes after a 34.4 s run**. So "it only
+>   happens after a long gap" is false — the index can be re-fragmented heavily within minutes.
+>
+>   **THE UNKNOWN, named rather than guessed: what re-fragments it.** The obvious candidate is
+>   that `Eisa Cognitive Knowledge` is not a read-only Linked Universe at all — it is his DAILY
+>   universe, which he also opens and writes directly, and the prewarm's whole design assumes a
+>   child that sits still. But I have not established that from evidence, so it is not a
+>   conclusion. **The next step is to establish it, not to act on it.**
+>
+>   **Fix direction (NOT to be built before the unknown is closed):** the code cannot currently
+>   decide whether an optimize is needed, because the probe that would tell it is broken. Repair
+>   the probe first — then skipping becomes possible and the whole cost may simply disappear on
+>   the runs that do not need it. Do NOT remove the prewarm: it exists to make federated search
+>   usable, and #2 shows the no-op path is already free.
 >
 > ### 🧹 PJ-376 — an error banner from one universe survives into another
 > - **PJ-376** *(MED · Group 2 · cross-universe UI)* — **the rename-refusal banner persisted
