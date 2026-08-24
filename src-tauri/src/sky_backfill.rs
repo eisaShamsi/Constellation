@@ -30,7 +30,6 @@
 
 use rusqlite::{params, Connection};
 use std::path::Path;
-use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
@@ -84,6 +83,55 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
         return;
     }
 
+    // B1 pass 10 — resolve the log sink HERE, while the ambient universe is still the
+    // one this run serves (see `diag_at`).
+    let log_path = crate::search::db_path(&app).ok();
+
+    // Safety inspection 2026-08-23 (B1 pass 11, MED) — **the STRICT vocabulary read happens
+    // HERE, before the run-slot is claimed — the shape both link back-fills already use, and
+    // the one this module lacked.**
+    //
+    // B1 put this read at the top of `run`, above `Connection::open`, so a present-but-
+    // unreadable `link-types.json` (the Windows sync/AV hold, or a half-written file) aborted
+    // the WHOLE walk — including the phases that need no vocabulary at all — and, because the
+    // thread then exits with `clean_exit == false`, the re-arm was skipped and nothing
+    // rescheduled it: terminal for the session, on a boot where the app otherwise behaves
+    // perfectly (`load_active` is lenient for the same file) and with one diagnostics line as
+    // the only trace. `name_fold_backfill` had already moved its own read below the
+    // vocabulary-free phases for exactly this reason; the two link back-fills read at
+    // schedule time and decline the slot on refusal. Sky was the one module that claimed the
+    // slot and then failed inside it.
+    //
+    // Refusing here costs nothing and retries naturally at the next schedule; and a read that
+    // SUCCEEDS is the moment to repair a degraded session (the pass-10 rule), which this
+    // module also did not do.
+    let db_for_vocab = match crate::search::db_path(&app) {
+        Ok(p) => p,
+        Err(e) => {
+            diag_at(log_path.as_deref(), &format!("[sky_backfill] NOT scheduled — database path unavailable: {}", e));
+            return;
+        }
+    };
+    let universe_root = match db_for_vocab.parent().and_then(|c| c.parent()) {
+        Some(r) => r.to_path_buf(),
+        None => return,
+    };
+    let vocab = match crate::link_types::registry_for_root(&universe_root) {
+        Ok(v) => {
+            if crate::link_types::recover_active_vocabulary(&app) {
+                diag_at(
+                    log_path.as_deref(),
+                    "[link_types] link-types.json became readable — this universe's own link types are active again",
+                );
+            }
+            v
+        }
+        Err(e) => {
+            diag_at(log_path.as_deref(), &format!("[sky_backfill] NOT scheduled — vocabulary unreadable: {}; the walk retries at the next start, and the run-slot was NOT consumed", e));
+            return;
+        }
+    };
+
     // Claim the single run-slot; if a back-fill is already in flight, do nothing.
     if RUNNING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
         return;
@@ -92,13 +140,13 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
     // Clone the AppHandle into the thread. AppHandle is Clone and cheap.
     let app_bg = app.clone();
     thread::spawn(move || {
-        let clean_exit = match run(&app_bg) {
+        let clean_exit = match run(&app_bg, &vocab) {
             Ok(n) => {
-                diag(&app_bg, &format!("[sky_backfill] completed: {} notes populated", n));
+                diag_at(log_path.as_deref(), &format!("[sky_backfill] completed: {} notes populated", n));
                 true
             }
             Err(e) => {
-                diag(&app_bg, &format!("[sky_backfill] FAILED: {}", e));
+                diag_at(log_path.as_deref(), &format!("[sky_backfill] FAILED: {}", e));
                 false
             }
         };
@@ -170,9 +218,13 @@ fn is_needed(conn: &Connection) -> bool {
 /// open their own connection, and `derived_heal` additionally re-checks the federation generation
 /// (derived_heal.rs:191-228). Sky was the lone outlier reading the mutable "whichever universe is
 /// active NOW" handle. This makes it match its siblings; it invents nothing.
-fn run(app: &tauri::AppHandle) -> Result<u64, String> {
+fn run(app: &tauri::AppHandle, vocab: &crate::link_types::LinkTypeRegistry) -> Result<u64, String> {
     // Pinned ONCE. After this line the universe this thread serves cannot change.
     let db_file = crate::search::db_path(app)?;
+    // MIG-111 B1 — the VOCABULARY arrives from `maybe_schedule`, resolved STRICTLY from the
+    // root derived from this same database path, before the run-slot was claimed (pass 11).
+    // Reading it here instead let an unreadable file burn the slot and kill the walk for the
+    // session; refusing at schedule time costs nothing and retries.
     let mut conn = Connection::open(&db_file)
         .map_err(|e| format!("sky_backfill open {}: {}", db_file.display(), e))?;
     // The `reconcile_filesystem` shape. `register_fts5_tokenizer` is NOT optional: Phase C
@@ -247,7 +299,20 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // `.unwrap_or(0)` then wrote rank 0 into the Reviewer for every one of them.
     //
     // One read, one value, no window. Found by the safety inspection on the PJ-332 diff.
-    let cursor_at_start = read_cursor(&conn)?;
+    let run_fp = vocab.fingerprint();
+    let (mut cursor_at_start, cursor_fp) = read_cursor(&conn)?;
+    if !cursor_at_start.is_empty() && cursor_fp != run_fp {
+        // The interrupted band below the cursor was computed under a DIFFERENT
+        // vocabulary — restart from the top so the wipe covers everything (the wipe is
+        // scoped `path > cursor`, so resetting the cursor is what widens it).
+        diag_at(Some(&db_file), &format!(
+            "[sky_backfill] cursor band was computed under a different vocabulary (fp {} ≠ {}) — restarting the walk from the top",
+            cursor_fp, run_fp
+        ));
+        conn.execute("DELETE FROM sky_backfill_cursor", [])
+            .map_err(|e| format!("stale-vocab cursor reset: {}", e))?;
+        cursor_at_start = String::new();
+    }
     {
         // PJ-332 — on the pinned connection; its busy timeout is set once in `run`.
         conn.execute_batch("ANALYZE")
@@ -284,7 +349,7 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
             // stamped complete (see `finalize`'s own guard).
             return Ok(total);
         }
-        let (batch_count, new_last_path) = process_batch(&mut conn, &last_path)?;
+        let (batch_count, new_last_path) = process_batch(&mut conn, &last_path, vocab)?;
         if batch_count == 0 {
             // Drained. Stamp the version and wipe the cursor row.
             finalize(&mut conn, &db_file)?;
@@ -292,7 +357,7 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
         }
         total += batch_count as u64;
         last_path = new_last_path;
-        write_cursor(&conn, &last_path)?;
+        write_cursor(&conn, &last_path, run_fp)?;
         thread::sleep(Duration::from_millis(INTER_BATCH_SLEEP_MS));
     }
 }
@@ -305,24 +370,54 @@ fn ensure_cursor_table(conn: &Connection) -> Result<(), String> {
             started_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
         );",
     )
-    .map_err(|e| format!("cursor table create: {}", e))
+    .map_err(|e| format!("cursor table create: {}", e))?;
+    // Safety inspection 2026-08-23 (B1 pass 3, LOW) — the links_backfill cursor
+    // fingerprint, extended here (the identical resume shape): a first-time walk
+    // interrupted under V1 and resumed under V2 would leave rows at or below the cursor
+    // with V1-derived stratum/maturity under the version-only stamp forever. 0 =
+    // unknown (pre-column cursor) and deliberately mismatches every real fingerprint.
+    //
+    // **Honest scope (corrected at pass 6): today this is a GUARD, not a live fix.**
+    // Sky's two generators reach the registry only through `structural_not_in_clause`,
+    // and the structural lane is immutable (`merge` hardcodes it to `parent`/`contains`
+    // — see the note on `converge::after_vocabulary_change`), so the mixed-vocabulary
+    // band it prevents is not reachable from any user action in the current build. It
+    // stays because it costs one integer per cursor write and becomes load-bearing the
+    // day the structural lane becomes user-definable — at which point the sibling
+    // fingerprint gate must be added here too.
+    // Safety inspection 2026-08-23 (B1 pass 5, MED) — tolerate ONLY the expected
+    // "duplicate column" (the column already exists); propagate every OTHER failure
+    // (busy/locked/io) so the run aborts HERE, before any destructive step reads
+    // through the missing column. The old `let _` swallowed a busy-timeout failure,
+    // read_cursor's .ok() then collapsed "no such column" into an EMPTY cursor, and
+    // sky's whole-table wipe ran scoped `path > ''`.
+    if let Err(e) = conn.execute(
+        "ALTER TABLE sky_backfill_cursor ADD COLUMN vocab_fp INTEGER NOT NULL DEFAULT 0",
+        [],
+    ) {
+        let msg = e.to_string();
+        if !msg.contains("duplicate column") {
+            return Err(format!("cursor vocab_fp column: {}", msg));
+        }
+    }
+    Ok(())
 }
 
-fn read_cursor(conn: &Connection) -> Result<String, String> {
-    let last: Option<String> = conn
+fn read_cursor(conn: &Connection) -> Result<(String, i64), String> {
+    let row: Option<(String, i64)> = conn
         .query_row(
-            "SELECT last_path FROM sky_backfill_cursor WHERE id = 1",
+            "SELECT COALESCE(last_path, ''), COALESCE(vocab_fp, 0) FROM sky_backfill_cursor WHERE id = 1",
             [],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .ok();
-    Ok(last.unwrap_or_default())
+    Ok(row.unwrap_or_default())
 }
 
-fn write_cursor(conn: &Connection, last_path: &str) -> Result<(), String> {
+fn write_cursor(conn: &Connection, last_path: &str, vocab_fp: i64) -> Result<(), String> {
     conn.execute(
-        "INSERT OR REPLACE INTO sky_backfill_cursor (id, last_path) VALUES (1, ?1)",
-        params![last_path],
+        "INSERT OR REPLACE INTO sky_backfill_cursor (id, last_path, vocab_fp) VALUES (1, ?1, ?2)",
+        params![last_path, vocab_fp],
     )
     .map_err(|e| format!("cursor write: {}", e))?;
     Ok(())
@@ -350,24 +445,17 @@ fn write_cursor(conn: &Connection, last_path: &str) -> Result<(), String> {
 fn process_batch(
     conn: &mut Connection,
     after_path: &str,
+    reg: &crate::link_types::LinkTypeRegistry,
 ) -> Result<(usize, String), String> {
-    // Whose vocabulary? The ACTIVE universe's — this back-fill runs over the active
-    // universe's own database (the connection is pinned by PJ-332). ONE read per batch,
-    // shared by the Phase-A structural exclusion and the Phase-D stratum/maturity
-    // expressions — before B4 those were three separate reads at three separate moments,
-    // so a vocabulary change mid-batch could mix vocabularies WITHIN one batch.
-    //
-    // This is STILL an ambient read (the census pins it), and conn+vocab agreeing today
-    // rests on interlocks that live elsewhere: `load_active` runs strictly after the
-    // generation bump in `set_active_universe`, the pinned `is_needed` re-check in `run`
-    // refuses a misrouted thread, and the RUNNING slot prevents a double spawn. **B1 is
-    // future work**: thread the registry from the pinned root (the `name_fold_backfill`
-    // shape) so this call stops depending on those interlocks — until then, do not weaken
-    // any of them on the strength of this comment.
-    let reg = crate::link_types::active_universe_vocabulary();
+    // MIG-111 B1 — the registry arrives from `run`'s pinned root (the name_fold shape):
+    // conn and vocabulary are the same universe's by construction; one value serves the
+    // Phase-A structural exclusion and the Phase-D stratum/maturity expressions.
     // ── Phase A: path query + sky_* inserts ───────────────────────────
     let (paths, last_path) = {
-        let tx = conn.transaction().map_err(|e| format!("begin: {}", e))?;
+        let tx = // B1 pass 9 (LOW, Whole-Ecosystem) — IMMEDIATE: these batches read then write on a
+        // PRIVATE connection, and SQLite does not run the busy handler for a DEFERRED
+        // snapshot upgrade. See the note in `links_backfill::process_batch`.
+        conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).map_err(|e| format!("begin: {}", e))?;
 
         let mut paths: Vec<(String, String, String)> = Vec::with_capacity(BATCH_SIZE);
         {
@@ -454,12 +542,20 @@ fn process_batch(
     // ── Phase C: UPDATE note_meta ─────────────────────────────────────
     {
         // The busy timeout is set once on this connection in `run` (PJ-332).
-        let tx = conn.transaction().map_err(|e| format!("begin C: {}", e))?;
+        let tx = // B1 pass 9 (LOW, Whole-Ecosystem) — IMMEDIATE: these batches read then write on a
+        // PRIVATE connection, and SQLite does not run the busy handler for a DEFERRED
+        // snapshot upgrade. See the note in `links_backfill::process_batch`.
+        conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).map_err(|e| format!("begin C: {}", e))?;
         {
             let mut upd = tx
                 .prepare(
+                    // Safety inspection 2026-08-23 (B1 pass 2, LOW) — per-COLUMN guards,
+                    // not a row-level OR: the old row filter let a created_at-IS-NULL row
+                    // (permanent on filesystems with no birth timestamp) take word_count=0
+                    // from a transiently unreadable file, silently dropping the note's
+                    // stratum to the lowest band. Each column now fills only its own gap.
                     "UPDATE note_meta
-                        SET word_count = ?1,
+                        SET word_count = CASE WHEN word_count = 0 THEN ?1 ELSE word_count END,
                             created_at = COALESCE(created_at, ?2)
                       WHERE path = ?3
                         AND (word_count = 0 OR created_at IS NULL)",
@@ -480,7 +576,10 @@ fn process_batch(
     // Skips paths that contributed zero aliases (most legacy notes
     // without `aliases:` frontmatter).
     {
-        let tx = conn.transaction().map_err(|e| format!("begin E: {}", e))?;
+        let tx = // B1 pass 9 (LOW, Whole-Ecosystem) — IMMEDIATE: these batches read then write on a
+        // PRIVATE connection, and SQLite does not run the busy handler for a DEFERRED
+        // snapshot upgrade. See the note in `links_backfill::process_batch`.
+        conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).map_err(|e| format!("begin E: {}", e))?;
         {
             let mut ins = tx
                 .prepare(
@@ -513,14 +612,17 @@ fn process_batch(
     // every sky_nodes row on every batch. WHERE <col> IS NULL makes it
     // idempotent — rows already stamped by the triggers stay put.
     {
-        let tx = conn.transaction().map_err(|e| format!("begin D: {}", e))?;
+        let tx = // B1 pass 9 (LOW, Whole-Ecosystem) — IMMEDIATE: these batches read then write on a
+        // PRIVATE connection, and SQLite does not run the busy handler for a DEFERRED
+        // snapshot upgrade. See the note in `links_backfill::process_batch`.
+        conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).map_err(|e| format!("begin D: {}", e))?;
         tx.execute(
             &format!(
                 "UPDATE sky_nodes SET stratum = ({expr})
                    WHERE stratum IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::stratum_sql_expr(&reg),
+                expr = crate::search::stratum_sql_expr(reg),
             ),
             params![after_path, last_path.clone()],
         )
@@ -531,7 +633,7 @@ fn process_batch(
                    WHERE maturity IS NULL
                      AND path > ?1
                      AND path <= ?2",
-                expr = crate::search::maturity_sql_expr(&reg),
+                expr = crate::search::maturity_sql_expr(reg),
             ),
             params![after_path, last_path.clone()],
         )
@@ -625,7 +727,10 @@ fn finalize(conn: &mut Connection, db_file_for_diag: &std::path::Path) -> Result
     // Wrap version stamp + cursor clear in one transaction so a crash
     // between them can't leave a completed back-fill with a live cursor
     // row (which would make the next boot think it was interrupted).
-    let tx = conn.transaction().map_err(|e| format!("finalize begin: {}", e))?;
+    let tx = // B1 pass 9 (LOW, Whole-Ecosystem) — IMMEDIATE: these batches read then write on a
+        // PRIVATE connection, and SQLite does not run the busy handler for a DEFERRED
+        // snapshot upgrade. See the note in `links_backfill::process_batch`.
+        conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).map_err(|e| format!("finalize begin: {}", e))?;
     tx.execute(
         "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('sky', ?1)",
         params![SKY_SCHEMA_VERSION],
@@ -640,11 +745,19 @@ fn finalize(conn: &mut Connection, db_file_for_diag: &std::path::Path) -> Result
 /// Write a line to the universe's diagnostics log. Thin wrapper around
 /// search::diag_log — kept here so this module doesn't depend on the
 /// search module's private helpers.
-fn diag(app: &tauri::AppHandle, msg: &str) {
-    if let Ok(path) = crate::search::db_path(app) {
-        crate::search::diag_log(&path, msg);
+/// Safety inspection 2026-08-23 (B1 pass 10, LOW) — **the log line goes to the universe the
+/// work was done for.** `diag` resolves its sink from the AMBIENT active universe at call
+/// time, so a thread pinned to universe A that finishes after a switch to B writes A's
+/// completion / FAILED / reset lines into B's `diagnostics.log`: absent where an
+/// investigator would look, and present-but-wrong where they would not. `finalize` was
+/// already given a pinned path for exactly this reason; the surrounding lines were not.
+/// The path is resolved ONCE at schedule time, when ambient is still correct, and carried.
+fn diag_at(db_file: Option<&std::path::Path>, msg: &str) {
+    if let Some(p) = db_file {
+        crate::search::diag_log(p, msg);
     }
 }
+
 
 #[cfg(test)]
 mod tests_pj332_universe_identity {

@@ -5,7 +5,7 @@ aliases:
   - Child Universe
   - Federated Universe
   - Cross-Universe
-description: Federation lets one Universe show the content of other Universes (added as cUniverses) without copying or merging their data. Search, the gravity well (CNS), Sky View, Backlinks, Outgoing Links, the tag list, Five Acts, and Workspace Bases all read across your federated cUniverses at runtime. Each cUniverse keeps its own files; detaching one leaves it fully intact and able to stand alone.
+description: Federation lets one Universe show the content of other Universes (added as cUniverses) without copying or merging their data. The gravity well (CNS), Sky View, Backlinks, Outgoing Links, the tag list, Five Acts, and Workspace Bases all read across your federated cUniverses at runtime. Search is the exception today — see "A Known Limit" below. Each cUniverse keeps its own files; detaching one leaves it fully intact and able to stand alone.
 ---
 
 # Federation (cUniverses)
@@ -29,7 +29,10 @@ This is the "the wheel is already there" principle: each Universe already has ev
 
 When you're in a Universe that has cUniverses, these surfaces show federated content:
 
-- **Search** — finds notes across the parent + all cUniverses.
+- **Search** — **does NOT currently reach a Linked Universe's notes.** This is the one surface in
+  this list that stops at the boundary, and it returns *no results* rather than saying it did not
+  look. See "A Known Limit" below for exactly what is and is not searched. (Corrected 2026-08-23:
+  this entry claimed the opposite, and the claim was wrong.)
 - **Constellation Nervous System (CNS)** — the gravity well shows every connected note across the federation.
 - **Sky View** — the same federated node set, as bubbles.
 - **Backlinks** and **Outgoing Links** — show links across the federation (each universe's links resolve within that universe).
@@ -52,6 +55,35 @@ A few things are intentionally *not* federated, because they belong to the unive
 - **Bookmarks** are scoped to the active Universe.
 - The **`Five Acts/` folder** is hidden from the file tree (in every Universe) because its note is surfaced through the dedicated Five Acts section instead — this avoids showing the same note twice. The file is never deleted; it stays on disk.
 
+## The Folder a Linked Universe Lives In
+
+The link between two universes is recorded as a **location on disk**. If a Linked Universe
+physically sits inside a folder of the universe you have open, that folder is now protected:
+renaming, moving or deleting it is **refused**, with the linked universe named in the message, and
+nothing is changed.
+
+Without that guard the recorded location would stop existing and the linked universe would simply
+stop appearing — no error, no explanation. If you want to reorganise the folder, unlink that
+universe first, or open it directly and work inside it.
+
+This only applies to a universe nested inside another's folder. Linked Universes kept side by side
+are untouched by it.
+
+## A Known Limit: Ordinary Search Does Not Span Linked Universes Yet
+
+Worth knowing so you do not misread a result: **searching from Search Hub looks only inside the
+universe you have open.** A note that lives in a Linked Universe will not appear — and it comes back
+as *no results*, not as a message telling you it was not searched, which is the misleading part.
+
+This applies to plain text and to nearly every written search form: `#tag`, `in:Library`,
+`property=value`, `links to [[Note]]`, the typed-link searches and `orphans` all look only in the
+open universe. (The one partial exception is a search that mixes free text WITH one of those
+operators, where the free-text half alone reaches further — which is not a distinction you should
+have to know, and is part of why this is filed as a gap.)
+
+This is a gap, not a design decision — federation exists so that knowledge connects across
+universes, and a search that stops at the boundary is incomplete. It is recorded and will be closed.
+
 ## How Detaching Works
 
 Because federation only ever reads, detaching a cUniverse is lossless:
@@ -66,4 +98,5 @@ Nothing about being federated changes the cUniverse's own data. It was always it
 
 - **Knowledge Hierarchy** — Universe → Library → Folder → Note, and where cUniverses sit.
 - **Constellation Nervous System** — the federated gravity well.
-- **Search** — federated search across cUniverses.
+- **Search** — see the known limit above: searching from Search Hub does not currently reach
+  Linked Universes.

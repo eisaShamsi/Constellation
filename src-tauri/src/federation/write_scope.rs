@@ -493,4 +493,93 @@ mod tests_mig111_12_write_scope {
         assert!(err.contains("note_meta_sky_ai"), "names ALL of it, not just the first: {err}");
         let _ = std::fs::remove_dir_all(&root);
     }
+
+    /// MIG-111 B1 / plan R4 — **a routed write changes NO `schema_versions` row.**
+    ///
+    /// `schema_versions` is where the back-fills stamp "this universe's derived surfaces are
+    /// complete under vocabulary fingerprint F". The wrong-stamp class (PJ-332's shape): a write
+    /// on behalf of universe A that stamps universe B's table — or stamps A's table under B's
+    /// fingerprint — silently marks work done that never ran, and the next boot trusts it.
+    ///
+    /// The routed write path must therefore never touch the table. The full production tail a
+    /// routed note travels (index + incoming + sky maintenance, the B6 composition) runs here
+    /// against a routed scope, and the table is asserted byte-identical before and after —
+    /// every module row, every version, in one ordered snapshot.
+    ///
+    /// The other half of R4 is call-graph, stated here because a test cannot execute an
+    /// absence: the two stamp WRITERS — `links_backfill::finalize` (module `links_outgoing` +
+    /// `links_vocab`) and the `incoming_links` / `incoming_links_vocab` stamp inside
+    /// `incoming_links_backfill::run` — are both module-PRIVATE `fn`s whose only callers are
+    /// their own `run(app: &AppHandle)` schedulers, which resolve the ACTIVE universe. No
+    /// `WriteScope` method calls either module, so no routed write can reach a stamp. If either
+    /// fn is ever made `pub` or gains a caller taking a bare `Connection`, this comment is the
+    /// tripwire — re-prove R4 then.
+    #[test]
+    fn r4_a_routed_write_changes_no_schema_versions_row() {
+        let root = built_universe("r4_stamps");
+        crate::link_types::write_link_types_at(
+            &crate::link_types::link_types_file_in(&root),
+            &[custom("refutes")],
+        )
+        .unwrap();
+        let target = root.join("Target.md");
+        let referrer = root.join("Referrer.md");
+        std::fs::write(&target, "the target's body").unwrap();
+        std::fs::write(&referrer, "See [[refutes::Target]]").unwrap();
+
+        let db = crate::universe::constellation_dir(&root).join("search.db");
+        let snapshot = |label: &str| -> Vec<(String, i64)> {
+            let conn = Connection::open(&db).unwrap();
+            let mut st = conn
+                .prepare("SELECT module, version FROM schema_versions ORDER BY module")
+                .unwrap();
+            let rows = st
+                .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+                .unwrap()
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            assert!(!rows.is_empty(), "{label}: init_db stamps rows — an empty snapshot would prove nothing");
+            rows
+        };
+        let before = snapshot("before");
+
+        let scope = WriteScope::routed_at(&root, &floor()).expect("routed scope");
+        assert!(!scope.is_active());
+        let empty: std::collections::HashSet<String> = std::collections::HashSet::new();
+        scope
+            .with_routed_conn(|conn| {
+                for p in [&target, &referrer] {
+                    let path = p.to_string_lossy();
+                    crate::search::index_note_with(conn, &path, "universe_notes", true, scope.vocabulary())?;
+                    crate::search::maintain_incoming_after_save(conn, scope.vocabulary(), &path, &empty, "", &empty)
+                        .map_err(|e| e.to_string())?;
+                    crate::search::maintain_sky_after_save(conn, scope.vocabulary(), &path, &empty, "", &empty)
+                        .map_err(|e| e.to_string())?;
+                }
+                Ok(())
+            })
+            .unwrap()
+            .unwrap();
+
+        // The write itself happened — the guard that this test exercised a real tail,
+        // not a no-op whose "no stamp" would be vacuous.
+        {
+            let conn = Connection::open(&db).unwrap();
+            let links: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM note_links WHERE link_type = 'refutes' AND status = 'active'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(links, 1, "the routed write really indexed the typed link");
+        }
+
+        let after = snapshot("after");
+        assert_eq!(
+            before, after,
+            "R4: a routed write must not create, bump, or re-stamp ANY schema_versions row              (links_outgoing / links_vocab / incoming_links / incoming_links_vocab / sky included)"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
 }

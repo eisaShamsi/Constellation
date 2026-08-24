@@ -386,10 +386,32 @@ refusal leaves every file exactly where it was.
   Bring In refuses rather than guessing, because it cannot tell whether the folder you picked is
   already registered. This is usually temporary — try again.
 
-**On a *Move* between two different drives**, Constellation copies first and only then removes the
-original — and it will **keep the original** if the folder contains a shortcut or junction that
-cannot be copied, telling you which one and where both copies are. If a copy fails part-way, the
-partial copy is removed, so a failed Bring In never leaves half a library sitting in your universe.
+**Shortcuts and junctions are refused up front, in both modes.** A Windows shortcut or junction
+inside the folder cannot be copied, so the result would silently be missing whatever lives behind
+it. On **Copy**, Constellation now stops *before* copying anything and names the link, so you can
+turn it into a real folder and try again — nothing is created and nothing is left half-done. On a
+**Move** between two different drives, Constellation copies first and only then removes the
+original, and it will **keep the original** in that case, telling you which link it found and where
+both copies are. If a copy fails part-way, the partial copy is removed, so a failed Bring In never
+leaves half a library sitting in your universe.
+
+*Why this changed:* Copy used to skip such a subtree in silence and report success. The natural
+next step — "the copy worked, I can delete the original" — would then have lost that content.
+
+### A folder that holds a Linked Universe cannot be renamed, moved or deleted
+
+If one of your Linked Universes physically lives inside a folder of the universe you have open,
+Constellation now **refuses** to rename, move or delete that folder, and names the linked universe
+in the message. Nothing is changed.
+
+The reason is that the link between two universes is recorded as a *location on disk*. Renaming the
+folder above it moves that location, and the recorded one no longer exists — so the linked universe
+quietly drops out of the federation: its notes stop appearing, with nothing to explain why. Refusing
+is the honest answer. Unlink that universe first if you really want to reorganise the folder, or
+work inside it directly.
+
+You will only ever see this if you have deliberately placed one universe inside another's folder;
+linked universes kept side by side are unaffected.
 
 ### Sky View repairs itself
 

@@ -67,6 +67,11 @@ const EVENT: &str = "derived-heal:progress";
 pub struct HealState {
     running: AtomicBool,
     cancel: AtomicBool,
+    /// B1 pass 2 — set ONLY when the cancel (or the stop closure's fingerprint-drift
+    /// check) is vocabulary-driven, so the give-way tail below can tell "the user
+    /// cancelled / a repair took over" (no follow-up) from "my in-flight family may
+    /// have overwritten newer-vocabulary rows" (clear the vocab stamps + reschedule).
+    vocab_cancel: AtomicBool,
     completed: AtomicUsize,
     total: AtomicUsize,
     last_error: Mutex<Option<String>>,
@@ -75,6 +80,27 @@ pub struct HealState {
 impl HealState {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+/// Safety inspection 2026-08-23 (B1 diff pass, MED) — **the heal gives way to a
+/// vocabulary change.** The heal pins its registry once at start; a structural
+/// vocabulary save mid-heal spawns the two backfills pinned to the NEW registry, and
+/// nothing serialized the three writers — whichever finished last left ITS registry's
+/// values under the backfills' new-fingerprint stamp (the cross-module instance of the
+/// wrong-stamp class the per-module RUNNING slots cannot see). A vocabulary save now
+/// cancels any in-flight heal; the stop closure observes it before the next family,
+/// the heal exits `stopped` (markers stay armed), and the next boot re-heals under the
+/// new vocabulary. Residual, stated rather than glossed: the family already in flight
+/// finishes its writes under the old registry — closing that needs per-window stop
+/// checks inside the shared recompute walkers, which the backfills' own full-table
+/// passes make redundant in every ordering except a mid-family overtake during
+/// writer-lock starvation.
+pub fn cancel_for_vocabulary_change(app: &AppHandle) {
+    let state = app.state::<HealState>();
+    if state.running.load(Ordering::SeqCst) {
+        state.vocab_cancel.store(true, Ordering::SeqCst);
+        state.cancel.store(true, Ordering::SeqCst);
     }
 }
 
@@ -137,6 +163,7 @@ pub fn maybe_schedule(app: AppHandle) {
         return;
     }
     state.cancel.store(false, Ordering::SeqCst);
+    state.vocab_cancel.store(false, Ordering::SeqCst);
     state.completed.store(0, Ordering::Relaxed);
     state.total.store(FAMILY_COUNT, Ordering::Relaxed);
 
@@ -195,6 +222,22 @@ fn run(app: &AppHandle) -> Result<ConvergeReport, String> {
     // once before each family, which is exactly the five-step cadence the strip renders.
     let ticks = AtomicUsize::new(0);
     let repair_overlapped = AtomicBool::new(false);
+    // Resolved BEFORE the stop closure so the closure can watch this exact pair.
+    let heal_root = path
+        .parent()
+        .and_then(|c| c.parent())
+        .ok_or_else(|| String::from("search.db path has no universe root"))?
+        .to_path_buf();
+    let heal_reg = match crate::link_types::registry_for_root(&heal_root) {
+        Ok(r) => r,
+        Err(e) => {
+            let msg = format!("vocabulary unreadable (markers kept; retried next launch): {}", e);
+            crate::search::diag_log(&path, &format!("[derived-heal] SKIPPED — {}", msg));
+            return Err(msg);
+        }
+    };
+    let heal_fp = heal_reg.fingerprint();
+    let heal_root_s = heal_root.clone();
     let app_s = app.clone();
     let stop_fn = move || -> bool {
         let st = app_s.state::<HealState>();
@@ -207,12 +250,80 @@ fn run(app: &AppHandle) -> Result<ConvergeReport, String> {
             repair_overlapped.store(true, Ordering::SeqCst);
             return true;
         }
-        st.cancel.load(Ordering::SeqCst)
+        if st.cancel.load(Ordering::SeqCst)
             || crate::search::federation_generation_now(&app_s) != gen0
+        {
+            return true;
+        }
+        // Fingerprint drift on the heal's own pinned root (one strict read per family,
+        // five per heal): the belt to `cancel_for_vocabulary_change`'s suspenders.
+        match crate::link_types::registry_for_root(&heal_root_s) {
+            Ok(now) => {
+                if now.fingerprint() != heal_fp {
+                    st.vocab_cancel.store(true, Ordering::SeqCst);
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(_) => true,
+        }
     };
 
     emit(app, "start");
-    let report = crate::converge::heal_interrupted_walk(&conn, cdir.as_deref(), &stop_fn);
+    // MIG-111 B1 — `heal_reg` was resolved above (STRICT, from THIS heal's pinned
+    // root) so the stop closure could watch the same pair; an unreadable vocabulary
+    // failed the heal loudly there — markers kept, retried next launch.
+    let report = crate::converge::heal_interrupted_walk(&conn, &heal_reg, cdir.as_deref(), &stop_fn);
+
+    // Safety inspection 2026-08-23 (B1 pass 2, LOW) — close the one-family residual by
+    // CORRECTION instead of prevention: when the give-way was vocabulary-driven and at
+    // least one family reached a terminal outcome (i.e. this heal wrote under the now-
+    // retired registry, possibly AFTER a new-registry backfill covered the same rows),
+    // clear the two vocabulary stamps and reschedule. The stamps are cleared strictly
+    // AFTER the heal's last write, so the follow-up backfill's full re-materialize
+    // under the disk vocabulary is the final word on every possibly-poisoned band.
+    // Best-effort: a failed clear is logged and the stamps stay (today's behavior).
+    {
+        let state = app.state::<HealState>();
+        let vocab_driven = state.vocab_cancel.load(Ordering::SeqCst);
+        let any_ran = [&report.outgoing, &report.incoming, &report.sky, &report.tag_counts, &report.review]
+            .iter()
+            .any(|o| matches!(o, crate::converge::ConvergeOutcome::Converged(_) | crate::converge::ConvergeOutcome::Failed(_)));
+        if vocab_driven && report.stopped && any_ran {
+            // B1 pass 3 (self-caught) — the clear must land strictly AFTER every
+            // in-flight backfill's finalize, or that finalize re-stamps over it and
+            // the re-arm gate reads stored == disk across a band this heal poisoned.
+            // Wait (bounded) for both single-flight slots to free; this thread is the
+            // detached background heal, so the wait blocks nothing user-facing. On
+            // timeout, do NOT clear (a clear here recreates the race) — log the honest
+            // residual instead.
+            let mut waited_ms: u64 = 0;
+            while (crate::links_backfill::is_running() || crate::incoming_links_backfill::is_running())
+                && waited_ms < 600_000
+            {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                waited_ms += 500;
+            }
+            if crate::links_backfill::is_running() || crate::incoming_links_backfill::is_running() {
+                crate::search::diag_log(&path, "[derived-heal] gave way to a vocabulary change, but a backfill was still running after 10 minutes — vocab stamps NOT cleared (clearing now would race its finalize); the stored aggregates may mix vocabularies until the next vocabulary edit or repair");
+            } else {
+            match conn.execute(
+                "DELETE FROM schema_versions WHERE module IN ('links_vocab', 'incoming_links_vocab')",
+                [],
+            ) {
+                Ok(_) => {
+                    crate::search::diag_log(&path, "[derived-heal] gave way to a vocabulary change after writing — vocab stamps cleared; backfills rescheduled to re-materialize under the current vocabulary");
+                    crate::links_backfill::maybe_schedule(app.clone());
+                    crate::incoming_links_backfill::maybe_schedule(app.clone());
+                }
+                Err(e) => {
+                    crate::search::diag_log(&path, &format!("[derived-heal] gave way to a vocabulary change but the stamp clear FAILED ({}); the stored aggregates may mix vocabularies until the next vocabulary edit or repair", e));
+                }
+            }
+            }
+        }
+    }
 
     for (family, msg) in report.failures() {
         crate::search::diag_log(

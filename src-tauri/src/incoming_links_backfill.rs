@@ -46,6 +46,13 @@ pub(crate) const SCHEMA_VERSION: i64 = 1;
 /// backfilled before this gate existed has no vocab stamp (0 ≠ fingerprint) and
 /// re-materializes once — the same one-time upgrade path as outgoing §A→§B.
 pub(crate) fn is_stamped(conn: &Connection) -> bool {
+    // Whose vocabulary? The ACTIVE universe's IN-MEMORY one — correct because this is
+    // the READER gate (the search.rs read-flip): it asks "may the stored columns be
+    // served under the vocabulary the UI is rendering right now?" A mismatch (including
+    // a stale lenient-boot global) sends readers to the live fallback — slow but always
+    // correct. The SCHEDULER no longer routes through this fn (B1 pass 2): its gate in
+    // `maybe_schedule` compares against the DISK fingerprint the run pins and stamps,
+    // so a stale global cannot loop the re-arm.
     is_built(conn) && stored_vocab_fingerprint(conn) == crate::link_types::active_universe_vocabulary().fingerprint()
 }
 
@@ -94,7 +101,86 @@ fn stored_vocab_fingerprint(conn: &Connection) -> i64 {
 
 /// Schedule the one-shot backfill on a background thread. Silent no-op once
 /// stamped. Mirrors `note_body_backfill::maybe_schedule`.
+/// **Safety inspection 2026-08-23 (B1 sweep, MED) — the PJ-332b single-flight slot,
+/// extended to this module (the Whole-Ecosystem gap the sweep named).** `maybe_schedule`
+/// is re-armed by every structural vocabulary save (`on_link_vocabulary_changed`), and a
+/// run takes multi-seconds on a large universe — so two rapid saves used to spawn two
+/// CONCURRENT recomputes pinned (B1) to two DIFFERENT registries, batch-interleaving over
+/// the same rows and racing the fingerprint stamp: in the overtake-then-re-overtake
+/// ordering the stamp claims the current vocabulary over a band computed under the
+/// retired one — silent, and never re-healed because the stamp matches. The slot makes
+/// the second save a no-op; the re-arm on clean exit re-checks the gate, sees the stale
+/// fingerprint, and runs ONE follow-up pass pinned to the newest vocabulary. Copied from
+/// `sky_backfill` / `review_backfill` — one consistent shape across the back-fills.
+static RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// B1 pass 3 — whether a run currently holds the single-flight slot. The derived
+/// heal's vocabulary give-way waits on this before clearing the vocab stamp: a clear
+/// issued while a run is in flight would be overwritten by that run's finalize, and
+/// the re-arm gate would then read stored == disk over a band the heal poisoned.
+/// Safety inspection 2026-08-23 (B1 pass 12, MED) — **the write-side gate must also be open
+/// WHILE the first build is running.**
+///
+/// `is_built` only becomes true when the version stamp lands, at the very END of the run. For
+/// the whole first build the save path therefore skipped incoming maintenance entirely —
+/// and the build walks `note_meta` in ASCENDING path order and never revisits. So a link
+/// created during the walk, whose TARGET sorts below the cursor, is maintained by nobody: not
+/// by the save (gate closed) and not by the walk (already past). The stamp then flips every
+/// reader onto those columns, and the miss is permanent — a badge one short, a type missing
+/// from a breakdown, with nothing to heal it.
+///
+/// The module's own doc reasoned this through for the vocabulary re-materialize case and
+/// declared the FIRST build safe because "the columns are genuinely inert" — true for
+/// READERS, and only until the stamp at the end of that same run. The write side has no such
+/// excuse: maintaining a column nobody is reading yet is harmless, and the walk's later pass
+/// over the same target recomputes the identical value (the maintenance and the bulk pass
+/// share `incoming_aggregate_assignments`). Keeping it open costs an idempotent recompute;
+/// keeping it closed costs a silent permanent hole.
+pub(crate) fn maintenance_is_live(conn: &Connection) -> bool {
+    is_built(conn) || is_running()
+}
+
+pub(crate) fn is_running() -> bool {
+    RUNNING.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 pub fn maybe_schedule(app: tauri::AppHandle) {
+    // B1 pass 10 — resolve the log sink HERE, while the ambient universe is still the
+    // one this run serves (see `diag_at`).
+    let log_path = crate::search::db_path(&app).ok();
+    // B1 pass 2 (MED) — the scheduler's gate compares against the DISK fingerprint,
+    // the same source the run pins and stamps (see links_backfill::maybe_schedule for
+    // the loop this closes). `is_stamped` stays the READER gate on the in-memory
+    // vocabulary. STRICT read; a refusal skips scheduling (retried next call).
+    let current_fp = {
+        let root = match crate::search::db_path(&app) {
+            Ok(db) => match db.parent().and_then(|c| c.parent()).map(|r| r.to_path_buf()) {
+                Some(r) => r,
+                None => return,
+            },
+            Err(_) => return,
+        };
+        match crate::link_types::registry_for_root(&root) {
+            Ok(r) => {
+                // B1 pass 10 — the strict read just SUCCEEDED. If this session started on
+                // the seed fallback (an unreadable link-types.json at boot), that is the
+                // moment to repair it: adopt the real vocabulary now, so the rest of the
+                // session's saves stop writing seed-vocabulary aggregates and the stamp this
+                // run is about to write is true rather than merely re-issued.
+                if crate::link_types::recover_active_vocabulary(&app) {
+                    diag_at(
+                        log_path.as_deref(),
+                        "[link_types] link-types.json became readable — this universe's own link types are active again; the derived link aggregates are being rebuilt under them",
+                    );
+                }
+                r.fingerprint()
+            }
+            Err(e) => {
+                diag_at(log_path.as_deref(), &format!("[incoming_links_backfill] NOT scheduled — vocabulary unreadable: {}", e));
+                return;
+            }
+        }
+    };
     let state = app.state::<SearchState>();
     let needs_run = {
         let guard = match state.db.lock() {
@@ -104,15 +190,43 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
         let Some(conn) = guard.as_ref() else {
             return;
         };
-        !is_stamped(conn)
+        // B1 pass 8 — the `trigger_vocab` term was REMOVED from this gate. It belongs to
+        // the OUTGOING triggers, which this module neither owns nor rebuilds, so it was a
+        // condition this module's run could never clear: with the clean-exit re-arm, one
+        // disagreement became a permanent full-universe recompute loop. The outgoing
+        // back-fill both detects and REPAIRS that disagreement (see its run); the incoming
+        // aggregates do not depend on those triggers at all.
+        !(is_built(conn) && stored_vocab_fingerprint(conn) == current_fp)
     };
     if !needs_run {
         return;
     }
+    // Claim the single run-slot; if a run is already in flight, do nothing — the
+    // in-flight run's clean-exit re-arm below picks up whatever this call wanted.
+    if RUNNING
+        .compare_exchange(false, true, std::sync::atomic::Ordering::SeqCst, std::sync::atomic::Ordering::SeqCst)
+        .is_err()
+    {
+        return;
+    }
     let app_bg = app.clone();
-    std::thread::spawn(move || match run(&app_bg) {
-        Ok(n) => diag(&app_bg, &format!("[incoming_links_backfill] completed: {} notes recomputed", n)),
-        Err(e) => diag(&app_bg, &format!("[incoming_links_backfill] FAILED (non-fatal): {}", e)),
+    std::thread::spawn(move || {
+        let clean_exit = match run(&app_bg) {
+            Ok(n) => {
+                diag_at(log_path.as_deref(), &format!("[incoming_links_backfill] completed: {} notes recomputed", n));
+                true
+            }
+            Err(e) => {
+                diag_at(log_path.as_deref(), &format!("[incoming_links_backfill] FAILED (non-fatal): {}", e));
+                false
+            }
+        };
+        RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
+        // Re-arm after release (the sky_backfill shape): a save dropped by the CAS above
+        // re-enters through the `is_stamped` gate — one follow-up pass, no hot loop.
+        if clean_exit {
+            maybe_schedule(app_bg);
+        }
     });
 }
 
@@ -120,7 +234,22 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 /// busy-tolerant) then stamp. Convergent with the live triggers (both read
 /// note_links), so no single-transaction atomicity is required.
 fn run(app: &tauri::AppHandle) -> Result<usize, String> {
+    // MIG-111 B1 — path, root and VOCABULARY pinned together, from the same universe at
+    // the same moment (the name_fold shape): the fingerprint stamped below and the
+    // aggregates computed below then describe the same registry as the connection's
+    // universe, whatever becomes active later.
     let path = crate::search::db_path(app)?;
+    // ONE active read: the universe root is DERIVED from the pinned db path
+    // (`<root>/.constellation/search.db` — `active_constellation_dir`'s own layout),
+    // never read from the ambient active universe a second time. Two sequential
+    // ambient reads leave a window where a switch pairs universe A's database with
+    // universe B's vocabulary — the exact class B1 removes.
+    let universe_root = path
+        .parent()
+        .and_then(|c| c.parent())
+        .ok_or_else(|| String::from("search.db path has no universe root"))?
+        .to_path_buf();
+    let vocab = crate::link_types::registry_for_root(&universe_root)?;
     let mut conn = Connection::open(&path).map_err(|e| format!("open incoming conn: {}", e))?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
@@ -146,12 +275,12 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     // run up-front (the links_backfill MIG-067 §B pattern): if the vocabulary
     // changes mid-run, the stamp below differs from the then-current fingerprint,
     // is_stamped stays false, and the next schedule re-runs — eventual consistency.
-    let run_fp = crate::link_types::active_universe_vocabulary().fingerprint();
+    let run_fp = vocab.fingerprint();
 
     // PJ-207 §6 — through the one assembly, via the entry point named for this caller:
     // it is the BUILD of the incoming aggregates, not a heal, so it is deliberately
     // ungated on the stamp it is itself about to write.
-    let rep = crate::converge::after_incoming_backfill(&conn);
+    let rep = crate::converge::after_incoming_backfill(&conn, &vocab);
     let n = match &rep.incoming {
         crate::converge::ConvergeOutcome::Converged(n) => *n,
         crate::converge::ConvergeOutcome::Failed(e) => return Err(format!("recompute: {}", e)),
@@ -180,11 +309,19 @@ fn run(app: &tauri::AppHandle) -> Result<usize, String> {
     Ok(n as usize)
 }
 
-fn diag(app: &tauri::AppHandle, msg: &str) {
-    if let Ok(path) = crate::search::db_path(app) {
-        crate::search::diag_log(&path, msg);
+/// Safety inspection 2026-08-23 (B1 pass 10, LOW) — **the log line goes to the universe the
+/// work was done for.** `diag` resolves its sink from the AMBIENT active universe at call
+/// time, so a thread pinned to universe A that finishes after a switch to B writes A's
+/// completion / FAILED / reset lines into B's `diagnostics.log`: absent where an
+/// investigator would look, and present-but-wrong where they would not. `finalize` was
+/// already given a pinned path for exactly this reason; the surrounding lines were not.
+/// The path is resolved ONCE at schedule time, when ambient is still correct, and carried.
+fn diag_at(db_file: Option<&std::path::Path>, msg: &str) {
+    if let Some(p) = db_file {
+        crate::search::diag_log(p, msg);
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -230,7 +367,7 @@ mod tests {
                ('/S4.md','Alpha','supports','archived');",
         )
         .unwrap();
-        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
         let a: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
             .unwrap();
@@ -363,7 +500,7 @@ mod tests {
         eprintln!("[incoming-rehearsal] assign SQL: {}", crate::search::incoming_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "note_meta"));
 
         let t = std::time::Instant::now();
-        let n = crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        let n = crate::links_backfill::recompute_all_incoming(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
         eprintln!("[incoming-rehearsal] recompute_all_incoming: {} notes in {:?}", n, t.elapsed());
 
         let mut got: HashMap<String, i64> = HashMap::new();

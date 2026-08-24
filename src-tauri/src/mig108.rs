@@ -1086,6 +1086,40 @@ pub fn run_move_phase(journal: &mut Journal, constellation_dir: &Path) -> Result
                 .map_err(|e| format!("mig108 move {} -> {}: {}", old_p.display(), new_p.display(), e))?;
         } else {
             // Copy-based (copy-class, or cross-volume move).
+            //
+            // Safety inspection 2026-08-23 (FROZEN pass 2, APP-KILLER) — **this guard must come
+            // BEFORE the copy, and the first version of it did not.**
+            //
+            // The hazard it closes: `copy_dir_recursive` skips a junction/symlink with a bare
+            // `continue`, and the completeness check below uses `count_files`, which skips them
+            // by the SAME rule — so the counts MATCH while the subtree is missing, and the
+            // removal at the end of this branch then deletes the original. `take_snapshot` backs
+            // up `search.db`, its sidecars and the JSON stores; it never copies note trees.
+            // There is no recovery path.
+            //
+            // **Why the placement is the whole fix.** The first attempt put this check after the
+            // copy AND after `journal.entries[i].copied = true` was persisted — so the first run
+            // certified an incomplete destination as verified, then refused with a message
+            // telling the user to fix the link and run again. Doing exactly that and resuming
+            // reloads the same journal, sees `copied`, SKIPS the copy and its verification
+            // entirely, finds no reparse point any more, and deletes the source — including the
+            // real files the user had just materialised, which were never copied. The refusal
+            // wrote the instructions that led to the deletion.
+            //
+            // Placed here it is re-evaluated on every run and every resume, nothing has been
+            // written when it fires, and no journal flag can carry a false certification past it.
+            // This is where the sibling `bring_in_library` Copy arm has always had it.
+            if let Some(link) = first_reparse_point(&old_p) {
+                return Err(format!(
+                    "Unification stopped before anything was copied or deleted: \"{}\" contains a \
+                     shortcut or junction ({}) that cannot be copied to another drive, so the copy \
+                     would silently be missing whatever lives behind it. Everything is exactly \
+                     where it was. Replace that link with a real folder, then run the unification \
+                     again.",
+                    old_p.display(),
+                    link.display()
+                ));
+            }
             if !copied {
                 crate::libraries::copy_dir_recursive(&old_p, &new_p)
                     .map_err(|e| format!("mig108 copy {} -> {}: {}", old_p.display(), new_p.display(), e))?;
@@ -1386,7 +1420,14 @@ pub fn run_db_rewrite(
         // PJ-207 §6 — through the one assembly. This site ran ONE family by hand while
         // the reconcile tail ran five; the difference was correct (a path rewrite moves
         // rows without changing links or content) but invisible. Now it is named.
-        let rep = crate::converge::after_mig108(conn);
+        // MIG-111 B1 — the registry from the unification's own root (`constellation_dir`
+        // is `<root>/.constellation`). STRICT; a refusal aborts the step (the engine's
+        // transaction convention) rather than recomputing under a guessed vocabulary.
+        let mig_reg = constellation_dir
+            .parent()
+            .ok_or_else(|| String::from("constellation dir has no universe root"))
+            .and_then(|root| crate::link_types::registry_for_root(root))?;
+        let rep = crate::converge::after_mig108(conn, &mig_reg);
         if let Some((_, msg)) = rep.failures().into_iter().next() {
             return Err(msg);
         }
@@ -2742,6 +2783,20 @@ pub fn bring_in_library(
             }
         }
         _ => {
+            // Safety inspection 2026-08-23 (B1 diff pass, LOW — Whole-Ecosystem): the SAME
+            // reparse-point guard as the Move arm above, for the SAME reason —
+            // `copy_dir_recursive` skips junctions silently, so a Copy would register an
+            // INCOMPLETE library as a clean success, and the natural next step ("the copy
+            // worked, delete my original") loses the junction'd subtree with no record
+            // anywhere. Copy destroys nothing itself, so this refusal runs BEFORE the
+            // copy: nothing to clean up, the user restructures and retries.
+            if let Some(link) = first_reparse_point(src) {
+                return Err(format!(
+                    "Not copied: {} contains a shortcut or junction ({}) that cannot be                      copied, so the result would silently be missing that subtree. Move or                      recreate that link as a real folder, then bring the library in again.                      Nothing was changed.",
+                    src.display(),
+                    link.display()
+                ));
+            }
             copy_or_clean_up(src, &dest)?;
         }
     }

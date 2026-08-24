@@ -1083,7 +1083,7 @@ mod tests_mig085b_surfaces_agree {
         }
 
         // (1) The Reviewer / Backlinks badge source — DISTINCT, and NON-ZERO despite the accent.
-        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
         let inc: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/ile.md'", [], |r| r.get(0))
             .unwrap();
@@ -1207,7 +1207,7 @@ mod tests_pj065_structural_exclusion {
             )
             .unwrap();
         }
-        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
 
         let inc: i64 = conn
             .query_row("SELECT incoming_count FROM note_meta WHERE path='/book.md'", [], |r| r.get(0))
@@ -2165,7 +2165,7 @@ mod tests_c2a_target_name_lower_idempotent {
         )
         .unwrap();
         // Seed Alpha's aggregate to the current (supports) state.
-        crate::links_backfill::recompute_all_incoming(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        crate::links_backfill::recompute_all_incoming(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
         let before: String = conn
             .query_row("SELECT incoming_link_types FROM note_meta WHERE path='/A.md'", [], |r| r.get(0))
             .unwrap();
@@ -2289,10 +2289,43 @@ pub(crate) fn outgoing_aggregate_assignments(reg: &crate::link_types::LinkTypeRe
 /// runs `links_backfill::recompute_all_outgoing` once. Live single-edge edits
 /// keep maintaining the columns write-time.
 pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
+    create_outgoing_link_triggers_with(conn, &crate::link_types::active_universe_vocabulary())
+}
+
+/// Safety inspection 2026-08-23 (B1 pass 8, MED) — the EXPLICIT-vocabulary form, and the
+/// repair for the stamp the gates read.
+///
+/// Pass 7 added a `trigger_vocab` stamp so the back-fill gates could SEE that these
+/// triggers had been built under a vocabulary that disagrees with the one on disk. That was
+/// only half a mechanism, and the missing half was a real defect: nothing a back-fill run
+/// does writes this stamp, so the gate condition could never be cleared, and with the
+/// clean-exit re-arm one disagreement became a permanent, zero-delay loop of full-table
+/// re-materializes — the very loop pass 2 removed, reintroduced by pass 7's own fix.
+///
+/// Detection alone was the wrong shape. `links_backfill::run` holds a registry pinned
+/// STRICTLY to its universe's own root, which is exactly what these triggers should have
+/// been built from; when it sees the disagreement it now rebuilds them through this
+/// function and the stamp becomes correct. The condition is therefore self-clearing in one
+/// pass, and — the point — the triggers stop being wrong instead of merely being known to
+/// be wrong.
+pub(crate) fn create_outgoing_link_triggers_with(
+    conn: &Connection,
+    trigger_reg: &crate::link_types::LinkTypeRegistry,
+) -> Result<(), String> {
     // MIG-067 §B — drop first so the triggers always carry the CURRENT registry's
     // rank CASE + IN-list (the vocabulary may have changed since they were last
     // created). Cheap; runs on every boot via init_db.
     drop_outgoing_link_triggers(conn)?;
+    // Safety inspection 2026-08-23 (B1 pass 7, MED) — ONE registry, stamped. B1 pointed the
+    // back-fills' gates and stamps at the STRICT on-disk registry while this DDL kept
+    // reading the LENIENT in-memory global; when they disagree (a transiently unreadable
+    // link-types.json at boot) these triggers silently drop the user's custom types from
+    // every live edge write, while the gate — comparing a stored stamp that already equals
+    // the disk fingerprint — schedules no re-materialize, and nothing ever heals those
+    // rows. Stamping what the triggers were ACTUALLY built under lets the gate see the
+    // disagreement and re-materialize. (Making this generator take the vocabulary
+    // explicitly is B2; this stamp is the honest interim that keeps the state detectable
+    // and self-healing rather than silent and permanent.)
     conn.execute_batch(&format!("
         CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ai
         AFTER INSERT ON note_links
@@ -2329,10 +2362,18 @@ pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), Str
             UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
         END;
     ",
-        ins = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "NEW.source_path"),
-        del = outgoing_aggregate_assignments(&crate::link_types::active_universe_vocabulary(), "OLD.source_path"),
+        ins = outgoing_aggregate_assignments(trigger_reg, "NEW.source_path"),
+        del = outgoing_aggregate_assignments(trigger_reg, "OLD.source_path"),
     ))
-    .map_err(|e| format!("create outgoing-link triggers: {}", e))
+    .map_err(|e| format!("create outgoing-link triggers: {}", e))?;
+    // The stamp the back-fill gates read. Best-effort: a failed stamp leaves the gate on
+    // its other conditions (today's behaviour), never blocks trigger creation.
+    let _ = conn.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('trigger_vocab', ?1, strftime('%s','now'))",
+        rusqlite::params![trigger_reg.fingerprint()],
+    );
+    Ok(())
 }
 
 /// MIG-066 §A.2 — drop the three outgoing-link aggregate triggers. Used by
@@ -2789,6 +2830,10 @@ pub fn on_link_vocabulary_changed(app: &tauri::AppHandle) {
             }
         }
     }
+    // Safety inspection 2026-08-23 (B1 diff pass, MED) — an in-flight boot heal is
+    // pinned to the PREVIOUS vocabulary; let it give way before the re-materializes
+    // pinned to the new one start (see `cancel_for_vocabulary_change`).
+    crate::derived_heal::cancel_for_vocabulary_change(app);
     crate::links_backfill::maybe_schedule(app.clone());
     // Safety-inspection 2026-08-01 — the INCOMING aggregates are just as
     // vocabulary-derived as the outgoing ones (type breakdown + top rank), but only
@@ -7123,7 +7168,7 @@ mod tests_mig066_outgoing {
 
         // Recreate + recompute_all → columns restored from note_links (both edges).
         create_outgoing_link_triggers(&conn).unwrap();
-        crate::links_backfill::recompute_all_outgoing(&conn, &crate::converge::ConvergeKey::for_test()).unwrap();
+        crate::links_backfill::recompute_all_outgoing(&conn, &crate::link_types::LinkTypeRegistry::seeds_only(), &crate::converge::ConvergeKey::for_test()).unwrap();
         assert_eq!(
             read(&conn),
             (2, "supports (1), contradicts (1)".to_string(), 1),
@@ -11298,7 +11343,7 @@ fn recompute_after_link_status_change(
     // Incoming aggregates — gated on the incoming stamp exactly like the save
     // path (before the backfill stamps, the columns are inert and reads fall
     // back to the live getBacklinks path).
-    if crate::incoming_links_backfill::is_built(conn) && !target_paths.is_empty() {
+    if crate::incoming_links_backfill::maintenance_is_live(conn) && !target_paths.is_empty() {
         let sql = format!(
             "UPDATE note_meta SET {assign} WHERE path = ?1",
             assign = incoming_aggregate_assignments(&reg, "note_meta"),
@@ -11869,6 +11914,23 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // IN-list. Cheap; reloads on universe-switch (this fn re-runs when state.db resets).
     crate::link_types::load_active(app);
     let conn = init_db(&path)?;
+    // Safety inspection 2026-08-23 (B1 pass 9, MED) — **do not leave a certificate behind
+    // for a session the vocabulary could not be read for.** The write-time maintainers use
+    // the in-memory registry, which is the seed fallback right now; the stored stamps name
+    // the fingerprint on disk. Clearing them means nothing certifies the rows this session
+    // is about to write, so the next boot that CAN read the file re-materializes them under
+    // the vocabulary the file actually contains. Before B1 this self-heal came for free
+    // (stamp and maintainers shared one source); B1 split them, and this restores it.
+    // Best-effort: a failed clear leaves today's behaviour, and the next boot retries.
+    if crate::link_types::active_vocabulary_is_degraded() {
+        match conn.execute(
+            "DELETE FROM schema_versions WHERE module IN ('links_vocab', 'incoming_links_vocab')",
+            [],
+        ) {
+            Ok(_) => diag_log(&path, "[link_types] this universe's link-types.json could not be read — running on the built-in types. The derived link aggregates are UNCERTIFIED for this session and will be rebuilt on the next start that reads the file."),
+            Err(e) => diag_log(&path, &format!("[link_types] link-types.json unreadable AND the aggregate certificates could not be cleared ({}) — the stored link-type breakdowns may describe the built-in vocabulary until the next repair", e)),
+        }
+    }
     // Stamp the schema version now that init_db (incl. any rebuild) succeeded —
     // before the store/discard decision below, so a discarded-stale rebuild is
     // not repeated on the next open of this universe.
@@ -12171,17 +12233,61 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
 
                 // Safe to write — same bind-then-mutate pattern as
                 // `invalidate_search_state` (MIG-055 §H.1).
-                let fed_conn_guard = state.federated_conn.lock();
-                if let Ok(mut g) = fed_conn_guard {
-                    *g = Some(conn);
-                } else {
-                    eprintln!("[federation] state.federated_conn Mutex poisoned");
+                //
+                // Safety inspection 2026-08-23 (B1 sweep, MED) — the check above is
+                // BEFORE the locks, so an invalidate that ran entirely inside the
+                // check→store window used to let this thread publish the PREVIOUS
+                // universe's attached connection and ready=true context into the NEW
+                // universe's state — every federated consumer gates only on
+                // `is_ready()`, so the staleness was undetectable. The state.db publish
+                // was moved inside its lock for exactly this race (PJ-207 §15); the
+                // federation publish now re-checks INSIDE each lock. Invalidate bumps
+                // the generation BEFORE its clears, so: unchanged-inside-lock ⇒ no
+                // completed invalidate ⇒ safe to store (a bump that lands while we
+                // hold the lock parks the invalidate's clear behind us — it clears our
+                // store right after, converging on not-ready).
+                let mut published = true;
+                match state.federated_conn.lock() {
+                    Ok(mut g) => {
+                        if state
+                            .federation_generation
+                            .load(std::sync::atomic::Ordering::SeqCst)
+                            == start_generation
+                        {
+                            *g = Some(conn);
+                        } else {
+                            published = false;
+                        }
+                    }
+                    Err(_) => {
+                        eprintln!("[federation] state.federated_conn Mutex poisoned");
+                        published = false;
+                    }
                 }
-                let fed_ctx_guard = state.federation.lock();
-                if let Ok(mut g) = fed_ctx_guard {
-                    *g = ctx;
-                } else {
-                    eprintln!("[federation] state.federation Mutex poisoned");
+                match state.federation.lock() {
+                    Ok(mut g) => {
+                        if published
+                            && state
+                                .federation_generation
+                                .load(std::sync::atomic::Ordering::SeqCst)
+                                == start_generation
+                        {
+                            *g = ctx;
+                        } else {
+                            published = false;
+                        }
+                    }
+                    Err(_) => {
+                        eprintln!("[federation] state.federation Mutex poisoned");
+                        published = false;
+                    }
+                }
+                if !published {
+                    eprintln!(
+                        "[federation] background-attach abandoned at publish: universe switched inside the store window (gen {} moved)",
+                        start_generation
+                    );
+                    return;
                 }
 
                 // MIG-061 §J — notify the frontend that federation is ready.
@@ -12372,7 +12478,31 @@ fn reconcile_filesystem(app: &tauri::AppHandle, run_id: u64, force: bool) -> Res
     // `Skipped("back-fill not stamped")`, so a run that converged two of five families
     // can no longer be reported as a whole repair.
     let cdir = path.parent().map(|p| p.to_path_buf());
-    let converge_report = crate::converge::after_repair_run(&walk_conn, cdir.as_deref());
+    // MIG-111 B1 — the registry from the walk's own pinned scope: `path` is the
+    // search.db this whole repair ran against, so its universe root is two levels up.
+    // STRICT read; a refusal is reported as a fully-FAILED converge so every marker
+    // decision below keeps the heal armed and the command surfaces the outgoing Err —
+    // loud, never a recompute under a guessed vocabulary.
+    let converge_report = match path
+        .parent()
+        .and_then(|c| c.parent())
+        .ok_or_else(|| String::from("search.db path has no universe root"))
+        .and_then(|root| crate::link_types::registry_for_root(root))
+    {
+        Ok(reg) => crate::converge::after_repair_run(&walk_conn, &reg, cdir.as_deref()),
+        Err(e) => {
+            let msg = format!("vocabulary unreadable — derived views not recomputed: {}", e);
+            eprintln!("[converge] after reconcile: {}", msg);
+            crate::converge::ConvergeReport {
+                outgoing: crate::converge::ConvergeOutcome::Failed(msg.clone()),
+                incoming: crate::converge::ConvergeOutcome::Failed(msg.clone()),
+                sky: crate::converge::ConvergeOutcome::Failed(msg.clone()),
+                tag_counts: crate::converge::ConvergeOutcome::Failed(msg.clone()),
+                review: crate::converge::ConvergeOutcome::Failed(msg),
+                stopped: false,
+            }
+        }
+    };
     for (family, msg) in converge_report.failures() {
         eprintln!("[converge] after reconcile: {} failed: {}", family, msg);
     }
@@ -12635,8 +12765,29 @@ pub fn reindex_delete_note(
     ctx: DeleteCtx,
 ) -> Result<(), String> {
     // ── PHASE 1 — read everything, serialize it, then RELEASE the guard ───────────────────
+    // Safety inspection 2026-08-23 (B1 sweep, MED) — the PARK-WINDOW guard, the
+    // `reindex_single_note` twin this delete funnel never received (Solve-the-Class +
+    // Whole-Ecosystem): a universe switch that completes while this call is parked on
+    // the writer lock — at Phase 1, or at Phase 3 across Phase 2's archive fsync —
+    // would wake it holding the NEW universe's connection; Phase 3's DELETEs on the
+    // departed note's path would then match zero rows, COMMIT, and return Ok — a false
+    // success that leaves the departing universe's index carrying a file that no longer
+    // exists, with the archive already claiming the history was sealed. Capture the
+    // generation once at entry; refuse after EITHER wake on mismatch.
+    let gen_entry = state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst);
     let (archive, store, old_body, old_tags_json, del_targets, inc_on, review_on) = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
+        if state
+            .federation_generation
+            .load(std::sync::atomic::Ordering::SeqCst)
+            != gen_entry
+        {
+            return Err(String::from(
+                "universe switched while waiting for the index writer — refusing to read the delete's rows from the new universe's database; the departed universe prunes the row on its next boot reconcile",
+            ));
+        }
         let Some(conn) = db.as_ref() else {
             // Safety-inspection 2026-08-01 — Ok-on-None was a false success: the caller
             // believed the note was de-indexed while NOTHING was purged.
@@ -12680,7 +12831,7 @@ pub fn reindex_delete_note(
         // stratum/maturity. This is the exact defect fixed on the SAVE path earlier today and
         // left standing here — the delete-side twin.
         let del_targets = incoming_signature(conn, note_path).ok().map(|(t, _, _)| t);
-        let inc_on = crate::incoming_links_backfill::is_built(conn);
+        let inc_on = crate::incoming_links_backfill::maintenance_is_live(conn);
         // Safety-inspection 2026-08-01 — the four CORE de-index writes must not be
         // swallowed: a busy/locked failure (writer connections can hold the lock far
         // past the 5 s busy_timeout) left the rows live while the caller was told Ok
@@ -12726,6 +12877,19 @@ pub fn reindex_delete_note(
     // Was 7+ auto-commit statements: a crash mid-purge left a half-deleted note, and now that
     // an archive exists it would also leave archive/DB disagreement.
     let db = state.db.lock().map_err(|e| e.to_string())?;
+    if state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst)
+        != gen_entry
+    {
+        // The Phase-2 archive is already durably written — honest in the error: the
+        // history is sealed, only the purge is refused; the departed universe's own
+        // boot reconcile prunes the rows (delete is idempotent there).
+        return Err(format!(
+            "universe switched while waiting for the index writer — refusing to purge {} from the new universe's database (archive already written; the departed universe prunes the row on its next boot reconcile)",
+            note_path
+        ));
+    }
     let Some(conn) = db.as_ref() else {
         return Err(format!(
             "search DB not initialized — de-index skipped for {} (archive already written)",
@@ -12951,6 +13115,23 @@ pub fn reindex_single_note(
     note_path: &str,
     library_name: &str,
 ) -> Result<MaintenanceOutcome, String> {
+    reindex_single_note_in_generation(state, note_path, library_name, None)
+}
+
+/// Safety inspection 2026-08-23 (B1 pass 7, MED) — **the caller's generation, checked
+/// inside the lock.** The park-window guard below can only capture the generation at ITS
+/// entry, which for a detached tail is already after any switch that completed while the
+/// tail was doing uncached registry reads — so the tail's own pre-call check is vacuous
+/// (the class this file twice names) and the guard compares new-against-new and passes.
+/// A caller that knows which universe its work belongs to passes that generation here and
+/// the comparison becomes the one that matters: "is the connection I am about to write to
+/// still the universe this operation was issued for?"
+pub fn reindex_single_note_in_generation(
+    state: &SearchState,
+    note_path: &str,
+    library_name: &str,
+    expected_generation: Option<u64>,
+) -> Result<MaintenanceOutcome, String> {
     let mut maint = MaintenanceOutcome::default();
     // Safety inspection 2026-08-22 (B6 pass 3, MED) — the PARK-WINDOW guard, closed for
     // EVERY caller at once (Solve-the-Class): a caller's own pre-lock generation check
@@ -12959,9 +13140,14 @@ pub fn reindex_single_note(
     // departing universe's note into it, silently and durably. Capture the generation
     // before parking; if it moved while we waited, the connection under this guard is
     // another universe's — refuse.
-    let gen_entry = state
-        .federation_generation
-        .load(std::sync::atomic::Ordering::SeqCst);
+    // The caller's generation when it supplied one (the only value that can span a
+    // detached tail's pre-lock work); otherwise our own entry value, which still closes
+    // the park window for callers running on the command thread.
+    let gen_entry = expected_generation.unwrap_or_else(|| {
+        state
+            .federation_generation
+            .load(std::sync::atomic::Ordering::SeqCst)
+    });
     let db = state.db.lock().map_err(|e| e.to_string())?;
     if state
         .federation_generation
@@ -12995,7 +13181,7 @@ pub fn reindex_single_note(
         // any boot where the incoming aggregate is not yet stamped) EVERY save skipped sky
         // maintenance and the Sky View silently froze at stale sizes and levels.
         let sig_old = incoming_signature(conn, note_path).ok();
-        let inc_old = if crate::incoming_links_backfill::is_built(conn) {
+        let inc_old = if crate::incoming_links_backfill::maintenance_is_live(conn) {
             sig_old.clone()
         } else {
             None

@@ -57,13 +57,21 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
     if !needs_run {
         return;
     }
+    // B1 pass 10 — resolve the log sink HERE, while the ambient universe is still the
+    // one this run serves (see `diag_at`).
+    let log_path = crate::search::db_path(&app).ok();
     let app_bg = app.clone();
     std::thread::spawn(move || match run(&app_bg) {
-        Ok((filled, fixed)) => diag(
-            &app_bg,
+        // B1 pass 11 (LOW) — the COMPLETION line goes to the pinned sink too. Pass 10 fixed
+        // only the failure arm here, so a run that finished after a universe switch wrote
+        // "completed: N name_lower filled" into the OTHER universe's log — the repaired
+        // universe's record silent, the untouched one's claiming a repair. These back-fills
+        // produce no UI signal at all, so this file is the only evidence a repair ever ran.
+        Ok((filled, fixed)) => diag_at(
+            log_path.as_deref(),
             &format!("[name_fold_backfill] completed: {} name_lower filled, {} accented notes recomputed", filled, fixed),
         ),
-        Err(e) => diag(&app_bg, &format!("[name_fold_backfill] FAILED (non-fatal): {}", e)),
+        Err(e) => diag_at(log_path.as_deref(), &format!("[name_fold_backfill] FAILED (non-fatal): {}", e)),
     });
 }
 
@@ -90,7 +98,16 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     // HERE (one universe identity for conn + vocab); the registry itself is read just
     // before Phase B, its first consumer. A refusal there leaves the module unstamped, so
     // Phase A's idempotent work persists and Phase B retries next boot.
-    let universe_root = crate::universe::active_universe_dir(app)?;
+    // ONE active read: the universe root is DERIVED from the pinned db path
+    // (`<root>/.constellation/search.db` — `active_constellation_dir`'s own layout),
+    // never read from the ambient active universe a second time. Two sequential
+    // ambient reads leave a window where a switch pairs universe A's database with
+    // universe B's vocabulary — the exact class B1 removes.
+    let universe_root = path
+        .parent()
+        .and_then(|c| c.parent())
+        .ok_or_else(|| String::from("search.db path has no universe root"))?
+        .to_path_buf();
     let mut conn = Connection::open(&path).map_err(|e| format!("open name_fold conn: {}", e))?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| format!("pragma: {}", e))?;
@@ -217,8 +234,16 @@ fn run(app: &tauri::AppHandle) -> Result<(usize, usize), String> {
     Ok((filled, affected.len()))
 }
 
-fn diag(app: &tauri::AppHandle, msg: &str) {
-    if let Ok(path) = crate::search::db_path(app) {
-        crate::search::diag_log(&path, msg);
+/// Safety inspection 2026-08-23 (B1 pass 10, LOW) — **the log line goes to the universe the
+/// work was done for.** `diag` resolves its sink from the AMBIENT active universe at call
+/// time, so a thread pinned to universe A that finishes after a switch to B writes A's
+/// completion / FAILED / reset lines into B's `diagnostics.log`: absent where an
+/// investigator would look, and present-but-wrong where they would not. `finalize` was
+/// already given a pinned path for exactly this reason; the surrounding lines were not.
+/// The path is resolved ONCE at schedule time, when ambient is still correct, and carried.
+fn diag_at(db_file: Option<&std::path::Path>, msg: &str) {
+    if let Some(p) = db_file {
+        crate::search::diag_log(p, msg);
     }
 }
+

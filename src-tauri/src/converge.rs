@@ -228,6 +228,7 @@ impl<'a> Ctx<'a> {
 /// the caller decides what a failure means for it.
 pub fn converge_derived_views(
     conn: &Connection,
+    reg: &crate::link_types::LinkTypeRegistry,
     _key: &ConvergeKey,
     families: Families,
     ctx: &Ctx<'_>,
@@ -256,7 +257,7 @@ pub fn converge_derived_views(
     // is closing, a repair claimed the DB) must do no work at all, not one family's worth.
     checkpoint!();
     if want_outgoing {
-        report.outgoing = match crate::links_backfill::recompute_all_outgoing(conn, _key) {
+        report.outgoing = match crate::links_backfill::recompute_all_outgoing(conn, reg, _key) {
             Ok(n) => ConvergeOutcome::Converged(n),
             Err(e) => ConvergeOutcome::Failed(e.to_string()),
         };
@@ -282,7 +283,7 @@ pub fn converge_derived_views(
             let _ = conn.execute_batch(
                 "CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);",
             );
-            report.incoming = match crate::links_backfill::recompute_all_incoming(conn, _key) {
+            report.incoming = match crate::links_backfill::recompute_all_incoming(conn, reg, _key) {
                 Ok(n) => ConvergeOutcome::Converged(n),
                 Err(e) => ConvergeOutcome::Failed(e.to_string()),
             };
@@ -294,7 +295,7 @@ pub fn converge_derived_views(
     checkpoint!();
     if want_links {
         // Ungated and idempotent; a no-op on an empty sky_nodes (pre-backfill).
-        report.sky = match crate::links_backfill::recompute_all_sky(conn, _key) {
+        report.sky = match crate::links_backfill::recompute_all_sky(conn, reg, _key) {
             Ok(n) => ConvergeOutcome::Converged(n),
             Err(e) => ConvergeOutcome::Failed(e.to_string()),
         };
@@ -392,9 +393,10 @@ fn run_tag_counts(conn: &Connection, key: &ConvergeKey) -> Result<usize, String>
 // that produced five divergent assemblies.
 
 /// After a full walk: everything it invalidated.
-pub fn after_repair_run(conn: &Connection, constellation_dir: Option<&std::path::Path>) -> ConvergeReport {
+pub fn after_repair_run(conn: &Connection, reg: &crate::link_types::LinkTypeRegistry, constellation_dir: Option<&std::path::Path>) -> ConvergeReport {
     converge_derived_views(
         conn,
+        reg,
         &ConvergeKey(()),
         Families::All,
         &Ctx::new(constellation_dir),
@@ -422,11 +424,13 @@ pub fn after_repair_run(conn: &Connection, constellation_dir: Option<&std::path:
 /// so it comes through here, and there is still exactly one assembly.
 pub fn heal_interrupted_walk(
     conn: &Connection,
+    reg: &crate::link_types::LinkTypeRegistry,
     constellation_dir: Option<&std::path::Path>,
     stop: &dyn Fn() -> bool,
 ) -> ConvergeReport {
     converge_derived_views(
         conn,
+        reg,
         &ConvergeKey(()),
         Families::All,
         &Ctx { constellation_dir, stop: Some(stop) },
@@ -434,9 +438,10 @@ pub fn heal_interrupted_walk(
 }
 
 /// After MIG-108's mass path rewrite: rows moved, links and content did not.
-pub fn after_mig108(conn: &Connection) -> ConvergeReport {
+pub fn after_mig108(conn: &Connection, reg: &crate::link_types::LinkTypeRegistry) -> ConvergeReport {
     converge_derived_views(
         conn,
+        reg,
         &ConvergeKey(()),
         Families::OutgoingOnly,
         &Ctx::new(None),
@@ -445,9 +450,32 @@ pub fn after_mig108(conn: &Connection) -> ConvergeReport {
 
 /// After the link vocabulary changed: the aggregates' SQL is built from the registry's
 /// rank/type lists, so every link-derived value can shift without a single edge moving.
-pub fn after_vocabulary_change(conn: &Connection) -> ConvergeReport {
+///
+/// **UNWIRED, deliberately — and this note exists because the safety inspection found the
+/// function had zero callers while its name implied otherwise (2026-08-23, B1 pass 6).**
+/// `on_link_vocabulary_changed` does not call it, and must not:
+///
+/// - Its OUTGOING and INCOMING families are already covered there by
+///   `links_backfill::maybe_schedule` + `incoming_links_backfill::maybe_schedule` — the
+///   pinned, resumable, single-flight machinery that also stamps the fingerprints the
+///   read-gates compare. Calling this in addition would put a SECOND writer, on a
+///   different connection, over the same rows while those runs are in flight: precisely
+///   the two-writers-one-stamp race the B1 pass-2 fixes removed.
+/// - Its SKY family needs no vocabulary pass at all. `stratum_sql_expr` /
+///   `maturity_sql_expr` touch the registry ONLY through `structural_not_in_clause`, and
+///   the structural lane is IMMUTABLE: `LinkTypeRegistry::merge` forces `structural =
+///   false` for every seed and every custom type, and `true` only for the two hardcoded
+///   `STRUCTURAL_SEED_IDS` (`parent`, `contains`). No user edit can change that set, so
+///   both generators emit byte-identical SQL for every registry (the A2 invariance B4
+///   established) and sky's stored values cannot go stale on a vocabulary change.
+///
+/// Kept — not deleted — because it is the correct entry point the moment either premise
+/// changes (a user-definable structural lane, or a vocabulary path that does not go
+/// through the two backfills). If you wire it, serialize it against them first.
+pub fn after_vocabulary_change(conn: &Connection, reg: &crate::link_types::LinkTypeRegistry) -> ConvergeReport {
     converge_derived_views(
         conn,
+        reg,
         &ConvergeKey(()),
         Families::LinksOnly,
         &Ctx::new(None),
@@ -460,9 +488,10 @@ pub fn after_vocabulary_change(conn: &Connection) -> ConvergeReport {
 /// Deliberately ungated (see the gate note in [`converge_derived_views`]): this caller
 /// recomputes and then stamps, so the stamp it would be gated on is the one it is about
 /// to write.
-pub fn after_incoming_backfill(conn: &Connection) -> ConvergeReport {
+pub fn after_incoming_backfill(conn: &Connection, reg: &crate::link_types::LinkTypeRegistry) -> ConvergeReport {
     converge_derived_views(
         conn,
+        reg,
         &ConvergeKey(()),
         Families::IncomingOnly,
         &Ctx::new(None),
@@ -547,6 +576,7 @@ mod tests {
         let t = std::time::Instant::now();
         let report = converge_derived_views(
             &conn,
+            &crate::link_types::LinkTypeRegistry::seeds_only(),
             &ConvergeKey::for_test(),
             Families::All,
             &Ctx::new(cdir.as_deref()),
@@ -610,6 +640,7 @@ mod tests {
         let always = || true;
         let r = converge_derived_views(
             &conn,
+            &crate::link_types::LinkTypeRegistry::seeds_only(),
             &ConvergeKey::for_test(),
             Families::All,
             &Ctx { constellation_dir: None, stop: Some(&always) },
@@ -623,6 +654,7 @@ mod tests {
         let never = || false;
         let r2 = converge_derived_views(
             &conn,
+            &crate::link_types::LinkTypeRegistry::seeds_only(),
             &ConvergeKey::for_test(),
             Families::All,
             &Ctx { constellation_dir: None, stop: Some(&never) },
@@ -649,6 +681,7 @@ mod tests {
 
         let report = converge_derived_views(
             &conn,
+            &crate::link_types::LinkTypeRegistry::seeds_only(),
             &ConvergeKey::for_test(),
             Families::All,
             &Ctx::new(None),
@@ -676,6 +709,7 @@ mod tests {
 
         let report = converge_derived_views(
             &conn,
+            &crate::link_types::LinkTypeRegistry::seeds_only(),
             &ConvergeKey::for_test(),
             Families::OutgoingOnly,
             &Ctx::new(None),

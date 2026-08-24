@@ -492,3 +492,37 @@ were in code the same session had just written, and several were in **comments**
 become false. The inspection's most valuable catches this cycle were not missing guards but
 **assertions that no longer matched the code**, including two of mine. That is the argument for
 running it on the diff every build rather than only at cycle boundaries.
+
+## Whole-app sweep register — 2026-08-23 (during MIG-111 Stage B1)
+
+**How it ran.** Intended as the per-build diff-scoped B1 inspection; an args-format mistake
+made the workflow fall back to the whole-app cycle sweep (49 agents, 14 scopes). The accident
+counts as the cycle sweep arriving early — the register is real. Full detail with every
+verified scenario: `lab/reports/safety-sweep-2026-08-23-whole-app.md`.
+
+**29 confirmed** (0 APP-KILLER, 2 HIGH at one site, 18 MED, 9 LOW). Headlines:
+
+- **HIGH — the normPath cascade-reload class** (`store.ts:1130`, +:1163/:1184, siblings
+  :1433/:3829, `focusPathAmong` NFC gap :1100): `reloadTabsFromDisk` matches open tabs to
+  cascade-rewritten paths by RAW string equality while both siblings that arbitrate the same
+  concern were normPath-fixed 2026-08-01. A form-drifted open referrer silently keeps the
+  pre-cascade body; the first keystroke's save durably reverts the cascade's rewrite on disk.
+  Scheduled immediately after the B1 commit, inside Stage B (cascade integrity is this
+  stage's own concern).
+- **4 findings in B1-diff files FIXED IN THE B1 BUILD** (same pass, before commit):
+  PJ-332b single-flight RUNNING slots extended to `links_backfill` + `incoming_links_backfill`
+  (register #18/#19); the `reindex_delete_note` park-window guard, the `reindex_single_note`
+  twin it never received (#9); the federation background-attach publish now re-checks the
+  generation INSIDE each publish lock, the state.db-publish precedent (#15).
+- The remaining 24 filed as PJs in the ledger reconciliation landing with the B1 commit
+  (classes: missing `screen:note-saved` emits ×4 sites; closed-note frontmatter RMW; false
+  success on immutable block keys; YAML escaping ×2; `migrate_to_constellation` /
+  `migrate_legacy_data` journaling; `create_note` / `apply_shape` missing ensure-or-refuse;
+  `shape.rs` silent returns; calendar-toggle silent failure; SS switch-mode residue;
+  `markRecoveredFromNet` arbiter gap; `saveRecoveredCopy` probe; cece thread pileup;
+  FocusPane per-keystroke O(N) listener; `delete_path` owner-routing = MIG-111 territory).
+
+**Method note.** The sweep independently re-derived the Whole-Ecosystem Fix Law twice: the
+PJ-332b slot had been added to sky/review but not the two mirror backfills, and the park-window
+guard to the save funnel but not the delete funnel. Class fixes that stop at the surface where
+the bug was seen keep getting re-found at the sibling.

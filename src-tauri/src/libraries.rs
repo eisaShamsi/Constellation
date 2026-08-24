@@ -439,6 +439,39 @@ pub(crate) fn foreign_roots_of(
 /// itself, and everything else — the owner's children, its siblings, the active root
 /// when disjoint, and a third universe physically nested under the owner but declared
 /// elsewhere — is a tree this rename must never rewrite.
+/// Safety inspection 2026-08-23 (B1 pass 5, LOW) — the moved-with-the-rename fence
+/// translation, in the file's own normalize-before-compare convention (every sibling
+/// lowercases and forward-slashes; the first version used raw case-sensitive
+/// `Path::strip_prefix`, which a casing difference between the declared child path and
+/// the rename's path string silently defeats). Returns the NORMALIZED new-location
+/// string for a root that lived inside the renamed folder, ready to insert into a
+/// fence set.
+pub(crate) fn translate_moved_root(
+    declared: &Path,
+    old_folder: &Path,
+    new_folder: &Path,
+) -> Option<String> {
+    let norm = |pth: &Path| {
+        crate::federation::owner::strip_verbatim(pth)
+            .to_string_lossy()
+            .replace(char_backslash(), "/")
+            .trim_end_matches('/')
+            .to_lowercase()
+    };
+    let d = norm(declared);
+    let o = norm(old_folder);
+    let n = norm(new_folder);
+    if d == o {
+        return Some(n);
+    }
+    d.strip_prefix(&format!("{}/", o)).map(|rel| format!("{}/{}", n, rel))
+}
+
+/// The backslash as a char, kept out of string literals that scripts mangle.
+fn char_backslash() -> char {
+    char::from(92u8)
+}
+
 pub(crate) fn routed_cascade_fence(
     all_universe_roots: &[std::path::PathBuf],
     owner_root: &Path,
@@ -603,6 +636,58 @@ fn guard_no_foreign_library_under(app: &tauri::AppHandle, root: &str) -> Result<
         )
     })?;
     let stranded = stranded_library_names(&own, &load_all_libraries(app), root);
+    // Safety inspection 2026-08-23 (B1 pass 4, HIGH) — the UNIVERSE-ROOT check, the
+    // pass-6 two-file principle at the door: the stranded check above reads the
+    // session-cached lenient LIBRARY resolver, which a linked universe's unreadable
+    // libraries.json degrades for the whole session — leaving a nested linked
+    // universe's root invisible here, the rename proceeding, its declared path going
+    // stale in universe.json (the federation silently severed), and the tail's fence
+    // fencing a path that no longer exists. The DECLARED child roots come from
+    // universe.json — a DIFFERENT file — so check them directly, strictly. A strict
+    // failure does NOT refuse (that would resurrect the pass-3 over-refusal on an
+    // unrelated corrupt manifest); the tail's loud fence-failure skip is the backstop.
+    match crate::universe::active_universe_dir(app).and_then(|active_root| {
+        crate::universe::resolve_child_universe_roots_recursive_strict(&active_root)
+            .map_err(|e| e.message().to_string())
+    }) {
+        // Pass 5 (LOW) — the skipped door check is LOUD now: one corrupt manifest
+        // anywhere used to disable this check silently for the whole session. The
+        // skip itself stays (refusing here would resurrect the pass-3 over-refusal on
+        // an unrelated corrupt manifest; the tails' fence-failure skips backstop the
+        // index) — but it is a logged fact, not an invisible one. The unrepaired
+        // universe.json↔disk divergence a blind rename can still cause is PJ-359.
+        Err(e) => {
+            eprintln!("[guard_no_foreign_library_under] declared-root check SKIPPED — federation unreadable: {}", e);
+            if let Ok(dbp) = crate::search::db_path(app) {
+                crate::search::diag_log(&dbp, &format!("[folder-guard] declared-root check SKIPPED — federation unreadable: {}", e));
+            }
+        }
+        Ok(kids) => {
+            let mut folder_set = std::collections::HashSet::new();
+            folder_set.insert(
+                crate::federation::owner::strip_verbatim(Path::new(root))
+                    .to_string_lossy()
+                    .replace('\\', "/")
+                    .trim_end_matches('/')
+                    .to_lowercase(),
+            );
+            for kid in &kids {
+                let kid_str = crate::federation::owner::strip_verbatim(kid)
+                    .to_string_lossy()
+                    .to_string();
+                if path_is_under_any(&kid_str, &folder_set) {
+                    return Err(format!(
+                        "This folder holds a LINKED universe ({}). Renaming, moving or \
+                         deleting it would leave the federation pointing at a folder that \
+                         no longer exists, and that universe would silently drop out of \
+                         this one. Unlink it first, or work inside it directly. Nothing \
+                         was changed.",
+                        kid.display()
+                    ));
+                }
+            }
+        }
+    }
     if stranded.is_empty() {
         return Ok(());
     }
@@ -1744,6 +1829,14 @@ pub(crate) fn migrate_note_db_paths(conn: &rusqlite::Connection, old_path: &str,
 
 #[tauri::command(async)]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<String, String> {
+    // Safety inspection 2026-08-23 (B1 pass 3, LOW) — the federation generation is
+    // captured HERE, on the IPC thread, as the command's first act: "the universe this
+    // rename belongs to is the one active when the user issued it." The detached tails
+    // used to capture it themselves, AFTER work that can straddle a completed switch
+    // (for_note's manifest reads, the descendant walk, spawn scheduling) — a switch
+    // completing in that window made gen0 equal the NEW generation and every guard
+    // passed against the wrong universe's connection.
+    let tail_gen0 = crate::search::federation_generation_now(&app);
     validate_path_in_any_library(&app, &old_path)?;
     let old = Path::new(&old_path);
     if !old.exists() {
@@ -1801,7 +1894,7 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         let tail_old = old_path.clone();
         let tail_new = new_path.clone();
         tauri::async_runtime::spawn_blocking(move || {
-            rename_folder_db_tail(&tail_app, &tail_old, &tail_new);
+            rename_folder_db_tail(&tail_app, &tail_old, &tail_new, tail_gen0);
         });
         return Ok(new_path);
     }
@@ -1884,6 +1977,7 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     let tail_new_path = new_path.clone();
     let tail_old_title = old_title.clone();
     let tail_new_title = new_title.clone();
+    let gen0 = tail_gen0;
     // MIG-098 instrumentation (Reproduce-First): mark the SCHEDULE point. If this
     // logs but "[rename-tail] START" never does, the spawn_blocking task never ran
     // (starved/dropped) — vs. running-but-failing, which the tail logs distinguish.
@@ -1891,7 +1985,7 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         crate::search::diag_log(&p, &format!("[rename-tail] scheduling tail old={} new={}", old_path, new_path));
     }
     tauri::async_runtime::spawn_blocking(move || {
-        rename_item_db_tail(&tail_app, &tail_old_path, &tail_new_path, &tail_old_title, &tail_new_title);
+        rename_item_db_tail(&tail_app, &tail_old_path, &tail_new_path, &tail_old_title, &tail_new_title, gen0);
     });
 
     // Journal marker (stall forensics): the command RETURNED — any future
@@ -1899,6 +1993,79 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     crate::write_gate::journal_marker(new_p, "rename_return");
 
     Ok(new_path)
+}
+
+/// Safety inspection 2026-08-23 (B1 pass 2, MED) — the shared decision for the two
+/// rename tails' Err-fallbacks: **may this path take the ACTIVE tail as a legacy
+/// external own-library path?**
+///
+/// The legacy pre-MIG-108 case is definitionally OUTSIDE the active universe root; a
+/// nested Linked-Universe path is INSIDE it. Deciding by that geometry removes the
+/// dependence on the session-cached lenient foreign-root set, which pass 2 proved can
+/// be DEGRADED for a whole session (a child whose libraries.json was unreadable at
+/// cache time vanishes from the set — the PJ-300 shape), letting `require_own_library`
+/// admit a nested linked path via the universe_notes prefix. The two-boundary check
+/// stays as the second belt for the genuinely-external case; an unreadable active
+/// root fails CLOSED (no active tail).
+/// Safety inspection 2026-08-23 (B1 pass 3, LOW) — the OTHER admission for the two
+/// rename tails' Err-fallbacks: a plain ACTIVE-universe note refused only because the
+/// strict federation enumeration failed SOMEWHERE ELSE in the tree (one linked
+/// universe's manifest corrupt/locked makes `for_note` Err for every note, including
+/// the active universe's own — and the tail then skipped ALL rename bookkeeping,
+/// permanently losing the non-recomputable 'rename' alias, session-long, while the
+/// wikilink cascade's `owner_scope_of` fallback disagreed and proceeded).
+///
+/// Admission requires ALL of: the path under the active root; the ACTIVE universe's
+/// OWN manifest readable (strict, FIRST level — exact for declared children even when
+/// a child's own manifest is unreadable deeper down); the path under NONE of those
+/// declared child roots; and the own registry claiming it. Residual, stated: a
+/// grandchild universe physically nested under the active root but OUTSIDE every
+/// declared child root is invisible at first level — that layout requires a child to
+/// declare its own child inside the PARENT's tree yet outside itself.
+pub(crate) fn active_own_despite_unreadable_federation(app: &tauri::AppHandle, path: &str) -> bool {
+    let norm = |pth: &Path| {
+        crate::federation::owner::strip_verbatim(pth)
+            .to_string_lossy()
+            .replace('\\', "/")
+            .trim_end_matches('/')
+            .to_lowercase()
+    };
+    let root = match crate::universe::active_universe_dir(app) {
+        Ok(r) => r,
+        Err(_) => return false,
+    };
+    let mut root_set = std::collections::HashSet::new();
+    root_set.insert(norm(&root));
+    if !path_is_under_any(path, &root_set) {
+        return false;
+    }
+    let kids = match crate::universe::resolve_child_universe_roots_strict(&root) {
+        Ok(k) => k,
+        Err(_) => return false,
+    };
+    let kid_set: std::collections::HashSet<String> = kids.iter().map(|k| norm(k)).collect();
+    if path_is_under_any(path, &kid_set) {
+        return false;
+    }
+    owning_own_library_name(app, path).is_some()
+}
+
+fn legacy_external_own_path(app: &tauri::AppHandle, path: &str) -> bool {
+    let under_active_root = match crate::universe::active_universe_dir(app) {
+        Ok(r) => {
+            let root_norm = crate::federation::owner::strip_verbatim(&r)
+                .to_string_lossy()
+                .replace('\\', "/")
+                .trim_end_matches('/')
+                .to_lowercase();
+            let mut set = std::collections::HashSet::new();
+            set.insert(root_norm);
+            path_is_under_any(path, &set)
+        }
+        // Active root unreadable ⇒ we cannot prove the path is external ⇒ fail closed.
+        Err(_) => return false,
+    };
+    !under_active_root && require_own_library(app, path).is_ok()
 }
 
 /// The rename's DB bookkeeping (Steps 4–6), detached from the awaited IPC
@@ -1911,6 +2078,8 @@ fn rename_item_db_tail(
     new_path: &str,
     old_title: &str,
     new_title: &str,
+    // B1 pass 3 — captured on the IPC thread at command start, never in this tail.
+    gen0: u64,
 ) {
     // MIG-098 instrumentation (Reproduce-First): trace WHY the note_meta rename
     // update can be lost on a large/busy universe. diag_log lands in the universe's
@@ -1938,8 +2107,17 @@ fn rename_item_db_tail(
             // ACTIVE tail is correct, exactly as it ran before B6. Otherwise the
             // path belongs to no universe this app can answer for: skip the derived
             // tail loudly (the file rename already happened; files are the truth).
-            if owning_own_library_name(app, new_path).is_some() {
-                log("[rename-tail] owner unresolved but own-registry claims the path (legacy layout) — ACTIVE tail");
+            //
+            // Safety inspection 2026-08-23 (B1 diff pass, HIGH; hardened in pass 2, MED)
+            // — never the bare prefix resolver (`universe_notes` claims every nested
+            // linked path), and not `require_own_library` alone either (its foreign set
+            // is the session-cached lenient resolver, degradable for a whole session).
+            // `legacy_external_own_path` decides by geometry: the legacy case is
+            // OUTSIDE the active root, a nested linked path is INSIDE it.
+            if legacy_external_own_path(app, new_path)
+                || active_own_despite_unreadable_federation(app, new_path)
+            {
+                log("[rename-tail] owner unresolved but own-registry claims the path (legacy layout or active-own with unreadable federation) — ACTIVE tail");
                 (None, true)
             } else {
                 log(&format!("[rename-tail] SKIPPED — owner refused: {}", e));
@@ -1961,7 +2139,6 @@ fn rename_item_db_tail(
             // STOPPED and then fell through to Step 6, whose fresh prefix-resolve
             // against the NEW universe's registry would adopt the departing child's
             // note into the parent's index as a lexically-own row nothing ever heals.
-            let gen0 = crate::search::federation_generation_now(app);
             let search_state = app.state::<crate::search::SearchState>();
             let db_lock = search_state.db.lock();
             if let Ok(guard) = db_lock {
@@ -1997,10 +2174,25 @@ fn rename_item_db_tail(
         // Step 6: reindex at new path.
         {
             use tauri::Manager;
+            // Safety inspection 2026-08-23 (B1 pass 6, MED) — the switch re-check its
+            // OWN siblings already had: the Steps-4+5 guard released the writer lock,
+            // and a switch parked on that same lock can complete before this block
+            // runs. `owning_own_library_name` would then resolve against the NEW
+            // universe's registry — whose universe_notes root lexically claims a
+            // nested child universe's paths — and `reindex_single_note`'s internal
+            // guard captures its generation AFTER the switch, so it passes: the
+            // departing universe's note lands in the arriving universe's index as a
+            // lexically-own row nothing ever heals. The folder tail re-checks per
+            // descendant and the move tail per batch; this one did not.
+            if crate::search::federation_generation_now(app) != gen0 {
+                log("[rename-tail] reindex SKIPPED — universe switched before Step 6; the note reindexes on its own universe's next touch or reconcile");
+                log("[rename-tail] END");
+                return;
+            }
             let search_state = app.state::<crate::search::SearchState>();
             // PJ-254 — OWN libraries only (this feeds a reindex).
             if let Some(lib_name) = owning_own_library_name(app, new_path) {
-                match crate::search::reindex_single_note(&search_state, new_path, &lib_name) {
+                match crate::search::reindex_single_note_in_generation(&search_state, new_path, &lib_name, Some(gen0)) {
                     Ok(_) => log(&format!("[rename-tail] reindex OK for {} (lib {})", new_path, lib_name)),
                     Err(e) => log(&format!("[rename-tail] reindex ERROR: {}", e)),
                 }
@@ -2084,7 +2276,7 @@ fn rename_item_db_tail(
 /// truth — but a failure is LOGGED rather than dropped: a descendant whose reindex fails is a
 /// note that keeps stale content/links in the index at its new path, and the diagnostics log is
 /// the only way to tell that from a clean run afterwards.
-fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str) {
+fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str, gen0: u64) {
     use tauri::Manager;
     let dbp = crate::search::db_path(app).ok();
     let log = |m: &str| { if let Some(p) = &dbp { crate::search::diag_log(p, m); } };
@@ -2105,6 +2297,52 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
                 "[rename-folder-tail] ROUTED to {} — old={} new={} descendants={}",
                 scope.root().display(), old_path, new_path, md_paths.len()
             ));
+            // Safety inspection 2026-08-23 (B1 pass 3, MED) — the third-universe FENCE,
+            // the same rule the routed CASCADE enforces (`routed_cascade_fence` and its
+            // test): `collect_md_paths` has no boundary notion, and the owner's
+            // universe_notes entry (path == owner root) claims every nested path — so a
+            // grandchild universe nested inside the renamed folder would be indexed
+            // into the OWNER's database as owner-owned rows. STRICT, like the cascade's
+            // routed arm: an unreadable federation refuses the whole routed tail
+            // (files are the truth; the owner's own app heals from them).
+            // Safety inspection 2026-08-23 (B1 pass 7, MED) — a fence failure withholds the
+            // REINDEX, never the path migration. `migrate_note_db_paths` can only rewrite
+            // rows already present in this database (its `src_exists` guard), so it carries
+            // no adoption vector and the fence's sole purpose is to stop the reindex
+            // adopting a nested third universe. Returning early — as this arm did — left
+            // the owner universe's whole renamed subtree at dead paths across all eleven
+            // path-bearing tables: its search returns nothing, its backlinks break, its
+            // review rows orphan. The ACTIVE arm already makes exactly this distinction.
+            let routed_fence: Option<std::collections::HashSet<String>> = (|| {
+                let active_root = match crate::universe::active_universe_dir(app) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        log(&format!("[rename-folder-tail] ROUTED fence unavailable — active root unreadable ({}); paths still migrate, reindex skipped", e));
+                        return None;
+                    }
+                };
+                match crate::universe::resolve_child_universe_roots_recursive_strict(&active_root) {
+                    Ok(mut all) => {
+                        // Pass 4 — a declared root that lived INSIDE the renamed folder
+                        // moved with it on disk while its declared path went stale;
+                        // fence its NEW location too, or the walk (which uses new
+                        // paths) passes straight through it. Pass 5: normalized
+                        // translation (`translate_moved_root`), never raw strip_prefix.
+                        let moved: Vec<String> = all
+                            .iter()
+                            .filter_map(|r| translate_moved_root(r, old, new_p))
+                            .collect();
+                        all.push(active_root);
+                        let mut f = routed_cascade_fence(&all, scope.root());
+                        f.extend(moved);
+                        Some(f)
+                    }
+                    Err(e) => {
+                        log(&format!("[rename-folder-tail] ROUTED fence unavailable — federation unreadable ({}), a third universe cannot be fenced; paths still migrate, reindex skipped", e.message()));
+                        None
+                    }
+                }
+            })();
             // Pass-4 MED — STRICT owner-registry read; unreadable => migrate-only
             // (paths still follow the files), loudly, never a fabricated name.
             let owner_libs: Option<Vec<LibraryInfo>> = match owner_libs_strict(scope.root()) {
@@ -2116,8 +2354,15 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
             };
             let empty: std::collections::HashSet<String> = std::collections::HashSet::new();
             let (mut ok, mut failed, mut unattributed) = (0usize, 0usize, 0usize);
+            let mut fenced = 0usize;
             for new_desc in &md_paths {
                 let nd = new_desc.to_string_lossy().to_string();
+                if let Some(fence) = &routed_fence {
+                    if path_is_under_any(&nd, fence) {
+                        fenced += 1;
+                        continue;
+                    }
+                }
                 let od = match new_desc.strip_prefix(new_p) {
                     Ok(rel) => old.join(rel).to_string_lossy().to_string(),
                     Err(_) => continue,
@@ -2130,7 +2375,9 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
                 }
                 let outcome = scope.with_routed_conn(|conn| {
                     migrate_note_db_paths(conn, &od, &nd);
-                    if let Some(lib) = &lib {
+                    // No fence ⇒ migrate-only: the reindex is the adoption vector, the
+                    // migration is not (see the fence note above).
+                    if let (Some(lib), Some(_)) = (&lib, &routed_fence) {
                         crate::search::index_note_with(conn, &nd, lib, true, scope.vocabulary())?;
                         crate::search::maintain_incoming_after_save(conn, scope.vocabulary(), &nd, &empty, "", &empty)
                             .map_err(|e| format!("incoming maintenance: {}", e))?;
@@ -2148,8 +2395,8 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
                 }
             }
             log(&format!(
-                "[rename-folder-tail] ROUTED END ok={} failed={} unattributed={} of {}",
-                ok, failed, unattributed, md_paths.len()
+                "[rename-folder-tail] ROUTED END ok={} failed={} unattributed={} fenced={} of {}",
+                ok, failed, unattributed, fenced, md_paths.len()
             ));
             return;
         }
@@ -2157,7 +2404,12 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
         Err(e) => {
             // Legacy external own library ⇒ the ACTIVE tail is correct (same rule as
             // the note tail). Otherwise: skip loudly, files are the truth.
-            if owning_own_library_name(app, new_path).is_none() {
+            // Safety inspection 2026-08-23 (B1 diff pass, HIGH; hardened in pass 2, MED)
+            // — same geometric decision as the note tail: a wrong ACTIVE tail here would
+            // mass-adopt EVERY descendant of the renamed folder into the parent's index.
+            if !(legacy_external_own_path(app, new_path)
+                || active_own_despite_unreadable_federation(app, new_path))
+            {
                 log(&format!("[rename-folder-tail] SKIPPED — owner refused: {}", e));
                 return;
             }
@@ -2198,7 +2450,6 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
     // healed by the departing universe's own next reconcile, while continuing would
     // contaminate. (The ROUTED tails are immune: they hold their own pinned
     // connection, the PJ-332 pattern.)
-    let gen0 = crate::search::federation_generation_now(app);
     let mut switched = false;
     const MIGRATE_BATCH: usize = 50;
     for chunk in md_paths.chunks(MIGRATE_BATCH) {
@@ -2226,17 +2477,57 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
 
     // Refresh each note's content/links/library at the new path (outside the lock;
     // reindex_single_note takes it itself). upsert_schedule_row preserves the migrated schedule.
+    // B1 pass 3 → HARDENED in pass 4 (HIGH): the pass-3 version swallowed a failed
+    // strict enumeration into an EMPTY fence with no log — and the Err-arm admission
+    // fires in exactly the states where that enumeration fails, so the fence was
+    // provably absent whenever the admission opened the door. The fence build is now
+    // STRICT for the reindex loop: on failure, the path MIGRATION still runs (it only
+    // rewrites rows already in this DB, following the files — no adoption vector) but
+    // the reindex loop is SKIPPED loudly; plain notes re-index on their next touch or
+    // reconcile. Roots that moved WITH this rename are fenced at their NEW location
+    // too (their declared paths went stale the moment the folder moved).
+    let active_fence: Option<std::collections::HashSet<String>> =
+        match crate::universe::active_universe_dir(app) {
+            Ok(root) => match crate::universe::resolve_child_universe_roots_recursive_strict(&root) {
+                Ok(mut kids) => {
+                    let moved: Vec<String> = kids
+                        .iter()
+                        .filter_map(|r| translate_moved_root(r, old, new_p))
+                        .collect();
+                    kids.push(root.clone());
+                    let mut f = routed_cascade_fence(&kids, &root);
+                    f.extend(moved);
+                    Some(f)
+                }
+                Err(e) => {
+                    log(&format!("[rename-folder-tail] reindex loop SKIPPED — federation unreadable ({}), the anti-adoption fence cannot be built; paths migrated, notes re-index on next touch or reconcile", e.message()));
+                    None
+                }
+            },
+            Err(e) => {
+                log(&format!("[rename-folder-tail] reindex loop SKIPPED — active root unreadable ({}); paths migrated, notes re-index on next touch or reconcile", e));
+                None
+            }
+        };
     let mut failed = 0usize;
     let mut skipped = 0usize;
+    let mut fenced = 0usize;
     for new_desc in &md_paths {
         if switched || crate::search::federation_generation_now(app) != gen0 {
             switched = true;
             break;
         }
+        let Some(active_fence) = &active_fence else {
+            break; // fence unavailable — the loud skip above already said why
+        };
         let nd = new_desc.to_string_lossy().to_string();
+        if path_is_under_any(&nd, active_fence) {
+            fenced += 1;
+            continue;
+        }
         match library_name_for_path(&libs, &nd) {
             Some(name) => {
-                if let Err(e) = crate::search::reindex_single_note(&search_state, &nd, &name) {
+                if let Err(e) = crate::search::reindex_single_note_in_generation(&search_state, &nd, &name, Some(gen0)) {
                     failed += 1;
                     log(&format!("[rename-folder-tail] reindex ERROR {}: {}", nd, e));
                 }
@@ -2251,10 +2542,11 @@ fn rename_folder_db_tail(app: &tauri::AppHandle, old_path: &str, new_path: &str)
         log("[rename-folder-tail] STOPPED — universe switched mid-tail; the remainder heals on this universe's next reconcile");
     }
     log(&format!(
-        "[rename-folder-tail] END descendants={} failed={} skipped={}",
+        "[rename-folder-tail] END descendants={} failed={} skipped={} fenced={}",
         md_paths.len(),
         failed,
-        skipped
+        skipped,
+        fenced
     ));
 }
 
@@ -2961,6 +3253,8 @@ pub fn resolve_structural_conflict(
 // cascade + reindex run after the locks release. See SESSION-LOG-2026-07-03.
 #[tauri::command(async)]
 pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
+    // B1 pass 3 — generation captured at command start (see rename_item).
+    let tail_gen0 = crate::search::federation_generation_now(&app);
     validate_path_in_any_library(&app, &source_path)?;
     validate_path_in_any_library(&app, &target_folder)?;
     // PJ-235 — `validate_path_in_any_library` resolves the FEDERATED set, so it authorises a
@@ -3024,7 +3318,7 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     let tail_source = source_path.clone();
     let tail_dest = dest_str.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        move_item_db_tail(&tail_app, &tail_source, &tail_dest);
+        move_item_db_tail(&tail_app, &tail_source, &tail_dest, tail_gen0);
     });
 
     Ok(dest_str)
@@ -3038,7 +3332,7 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
 /// previously did NOT reindex, so the FTS/links index kept the old path and a
 /// cross-library move would index the note under the wrong library. Handles a
 /// folder move by reindexing every .md descendant at its new path.
-fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) {
+fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str, gen0: u64) {
     use tauri::Manager;
     let search_state = app.state::<crate::search::SearchState>();
     // PJ-254 — OWN libraries only (this feeds a reindex), loaded ONCE for every descendant.
@@ -3068,7 +3362,6 @@ fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) 
     // Safety inspection 2026-08-22 (B6 pass 2, HIGH) — the SWITCH GUARD, same as the
     // folder tail's: stop the moment the federation generation moves, or the remaining
     // writes land in the NEW universe's database.
-    let gen0 = crate::search::federation_generation_now(app);
     let mut switched = false;
     // Pass-5 MED — the generation is re-checked AFTER the lock is acquired (a check
     // before the park is vacuous: a switch completing while parked hands this guard
@@ -3100,7 +3393,7 @@ fn move_item_db_tail(app: &tauri::AppHandle, source_path: &str, dest_str: &str) 
         }
         match library_name_for_path(&libs, new_p) {
             Some(name) => {
-                if let Err(e) = crate::search::reindex_single_note(&search_state, new_p, &name) {
+                if let Err(e) = crate::search::reindex_single_note_in_generation(&search_state, new_p, &name, Some(gen0)) {
                     failed += 1;
                     if let Some(p) = &dbp {
                         crate::search::diag_log(p, &format!("[move-tail] reindex ERROR {}: {}", new_p, e));
@@ -7120,6 +7413,11 @@ pub fn update_links_on_rename(
     exclude_paths: Vec<String>,
 ) -> Result<CascadeResult, String> {
     use tauri::Emitter;
+    // Safety inspection 2026-08-23 (B1 pass 8, HIGH) — the universe this cascade belongs
+    // to, captured as the command's FIRST act (the sibling rule from `rename_item` /
+    // `move_item`). The detached reindex worker below used to sample this AFTER the
+    // seconds-long walk, which is after any switch that completed during it.
+    let cascade_gen0 = crate::search::federation_generation_now(&app);
     validate_path_in_any_library(&app, &library_path)?;
     // §B2-4 stall forensics — the cascade was ENTERED (pairs with the
     // rename's "rename_return" marker; see write_gate::journal_marker).
@@ -7601,7 +7899,16 @@ pub fn update_links_on_rename(
             // universe's database. Stop when the generation moves — the remainder is
             // healed by the departing universe's next reconcile. (The ROUTED loop
             // above is immune: its scope holds a pinned connection.)
-            let gen0 = crate::search::federation_generation_now(&reindex_app);
+            // Safety inspection 2026-08-23 (B1 pass 8, HIGH) — the generation now comes
+            // from the COMMAND thread (`cascade_gen0`, captured before the walk), not from
+            // inside this worker. Sampling it here was the vacuous-capture class the three
+            // sibling tails were fixed for in pass 7 and this fourth one was missed: the
+            // cascade walk ahead of this spawn takes SECONDS on a large universe, so a
+            // switch completing during it made the sample equal the NEW generation — every
+            // per-iteration check then compared new-against-new and passed, and the
+            // departing universe's referrers were indexed into the arriving universe's
+            // database under a library name that does not exist there.
+            let gen0 = cascade_gen0;
             let (mut ok, mut failed) = (0usize, 0usize);
             for path in &reindex_paths {
                 if crate::search::federation_generation_now(&reindex_app) != gen0 {
@@ -7610,7 +7917,7 @@ pub fn update_links_on_rename(
                 }
                 let lib = owning_own_library_name_in(&libs, path)
                     .unwrap_or_else(|| reindex_lib.clone());
-                match crate::search::reindex_single_note(&search_state, path, &lib) {
+                match crate::search::reindex_single_note_in_generation(&search_state, path, &lib, Some(gen0)) {
                     Ok(_) => ok += 1,
                     Err(e) => {
                         failed += 1;
@@ -8378,6 +8685,51 @@ mod cascade_walker_tests {
             )
             .unwrap();
         assert_eq!(migrated, 1, "note_meta followed the file to its new path in the OWNER's DB");
+    }
+
+    /// **The ratchet, pass 14 — `translate_moved_root`.** A folder rename MOVES a nested
+    /// Linked Universe on disk while `universe.json` still declares the old path, so the fence
+    /// must also cover the root's NEW location or the walk passes straight through the moved
+    /// universe and indexes its notes into the wrong database. The first version compared with
+    /// raw case-sensitive `Path::strip_prefix`, against this file's own normalize-before-
+    /// compare convention — a casing difference silently produced no fence entry and a log
+    /// line reading `fenced=0`, which looks exactly like "nothing needed fencing".
+    #[test]
+    fn a_root_that_moved_with_the_rename_is_fenced_at_its_new_location() {
+        let old = Path::new("E:/U/Docs");
+        new_p_test_helper(old);
+    }
+
+    fn new_p_test_helper(old: &Path) {
+        let new_p = Path::new("E:/U/Papers");
+
+        // Nested under the renamed folder → translated to the new location.
+        assert_eq!(
+            crate::libraries::translate_moved_root(Path::new("E:/U/Docs/Linked"), old, new_p).as_deref(),
+            Some("e:/u/papers/linked"),
+        );
+        // CASE-DRIFTED declared path — the whole point of the normalized compare. A verbatim
+        // declared path keeps whatever casing it was written with, and `canonicalize` does not
+        // correct it once the folder has moved.
+        assert_eq!(
+            crate::libraries::translate_moved_root(Path::new("e:/u/docs/Linked"), old, new_p).as_deref(),
+            Some("e:/u/papers/linked"),
+            "a casing difference must not silently drop the fence entry"
+        );
+        // Separator-drifted, likewise.
+        assert_eq!(
+            crate::libraries::translate_moved_root(Path::new("E:\\U\\Docs\\Linked"), old, new_p).as_deref(),
+            Some("e:/u/papers/linked"),
+        );
+        // The renamed folder ITSELF being a declared root maps to the new folder.
+        assert_eq!(
+            crate::libraries::translate_moved_root(old, old, new_p).as_deref(),
+            Some("e:/u/papers"),
+        );
+        // A sibling that merely SHARES the prefix is not under it — separator-bounded.
+        assert_eq!(crate::libraries::translate_moved_root(Path::new("E:/U/DocsTwo"), old, new_p), None);
+        // Outside the renamed folder entirely — untouched.
+        assert_eq!(crate::libraries::translate_moved_root(Path::new("E:/Other/Linked"), old, new_p), None);
     }
 
     // B5 — the fences are NOT lowered by the vocabulary threading: a matching file

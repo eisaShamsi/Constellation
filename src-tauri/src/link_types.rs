@@ -350,6 +350,66 @@ fn flatten_ordered(types: Vec<LinkTypeDef>) -> Vec<LinkTypeDef> {
 
 static REGISTRY: OnceLock<RwLock<LinkTypeRegistry>> = OnceLock::new();
 
+/// Safety inspection 2026-08-23 (B1 pass 9, MED) — **is the active vocabulary a fallback
+/// rather than the universe's own?**
+///
+/// `load_active` is deliberately lenient: a `link-types.json` that exists but cannot be read
+/// or parsed (the Windows sync/AV sharing violation this codebase documents repeatedly)
+/// falls back to the 8 seeds so a broken file can never break the grammar in-process. That
+/// was self-correcting before B1, because the back-fill stamped the SAME in-memory
+/// fingerprint the write-time maintainers used — so a degraded session stamped "seeds", and
+/// the next clean boot's mismatch forced a full re-materialize.
+///
+/// B1 pointed the stamp and the gate at the STRICT on-disk registry. That is right for the
+/// run, but it dissolved the self-heal: during a degraded session the maintainers keep
+/// writing aggregates under the seeds while the stored stamp still names the disk
+/// fingerprint, and at the next clean boot memory, disk and stamp all agree — a stable fixed
+/// point in which poisoned rows are certified as current forever.
+///
+/// The flag exists so the degraded session can refuse to leave a certificate behind: see
+/// `ensure_search_db_ready`, which clears the two vocabulary stamps when this is set. Rows
+/// written under the fallback are then re-materialized at the next boot that can read the
+/// file, under the vocabulary that file actually contains.
+static ACTIVE_VOCAB_DEGRADED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// True when the active registry is the seed fallback because the universe's own
+/// `link-types.json` could not be read or parsed — NOT when it is genuinely absent (then the
+/// seeds ARE the vocabulary and nothing is degraded).
+pub(crate) fn active_vocabulary_is_degraded() -> bool {
+    ACTIVE_VOCAB_DEGRADED.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Safety inspection 2026-08-23 (B1 pass 10, MED) — **recover the session, don't just refuse
+/// to certify it.**
+///
+/// Pass 9 made a degraded boot clear the vocabulary stamps so nothing certified rows written
+/// under the seed fallback. The hole: seconds later, in the SAME boot, each back-fill
+/// scheduler does its own STRICT read of the same file. A lock that has cleared in the
+/// meantime lets those runs succeed and re-stamp the disk fingerprint — re-issuing the
+/// certificate that was just torn up — while the in-memory registry stays on the seeds for
+/// the rest of the session, because `load_active` runs only at boot and universe switch. The
+/// save path then poisons rows all session under a certificate that says otherwise.
+///
+/// A scheduler's successful strict read is not merely a licence to stamp: it is proof the
+/// file is readable NOW, which is exactly the moment to repair the session. This adopts that
+/// vocabulary as the active one and clears the degraded flag, so every subsequent save uses
+/// the universe's real link types, the outgoing triggers are rebuilt by the back-fill's own
+/// `trigger_vocab` repair, and the certificate the run then writes is TRUE.
+///
+/// Returns true when a recovery actually happened (for the caller's log line).
+pub(crate) fn recover_active_vocabulary(app: &tauri::AppHandle) -> bool {
+    if !active_vocabulary_is_degraded() {
+        return false;
+    }
+    let Ok(path) = link_types_path(app) else { return false };
+    let Ok(data) = std::fs::read_to_string(&path) else { return false };
+    let Ok(deltas) = serde_json::from_str::<Vec<LinkTypeDef>>(&data) else { return false };
+    set_active(deltas);
+    ACTIVE_VOCAB_DEGRADED.store(false, std::sync::atomic::Ordering::SeqCst);
+    true
+}
+
 fn cell() -> &'static RwLock<LinkTypeRegistry> {
     REGISTRY.get_or_init(|| RwLock::new(LinkTypeRegistry::seeds_only()))
 }
@@ -618,7 +678,59 @@ pub(crate) fn owner_scope_of(
             // STRICT own-set read: an unreadable registry is a refusal, not an empty pass.
             let own = crate::libraries::try_load_libraries(app)
                 .map_err(|le| format!("{e} (and the library registry could not be read: {le})"))?;
-            if crate::libraries::owning_own_library_name_in(&own, path).is_some() {
+            // Safety inspection 2026-08-23 (B1 pass 7, MED) — **the geometry gate the two
+            // rename tails already had, and this one did not.** The comment above says the
+            // prefix resolver would hand a nested linked universe to `universe_notes` — and
+            // then called it anyway. `universe_notes` is registered with path == the active
+            // universe root, so under MIG-108 nesting EVERY Linked-Universe path matches and
+            // was answered `(None, active vocabulary)`: the rename cascade took its ACTIVE
+            // arm, fenced the OWNER's own tree out of the walk, and left the owner's
+            // referrers pointing at a title that no longer exists — a successful-looking
+            // rename with silently dead links, plus active-vocabulary classification at
+            // inspector360 / strata / the link-type filters. The Err arm is reachable
+            // whenever the strict federation enumeration refuses anywhere in the tree (an
+            // offline placeholder, a permission-denied folder, a locked manifest) while the
+            // lenient resolver keeps that universe visible and renameable.
+            //
+            // A legacy pre-MIG-108 own library is by DEFINITION outside the active root
+            // (that is what makes it legacy). Require that, exactly as
+            // `libraries::legacy_external_own_path` does for the rename tails, so a match
+            // via the root-as-library entry can never satisfy it. An unreadable active root
+            // fails CLOSED — we cannot prove the path is external, so we refuse.
+            let outside_active_root = match crate::universe::active_universe_dir(app) {
+                Ok(root) => {
+                    let mut set = std::collections::HashSet::new();
+                    set.insert(
+                        crate::federation::owner::strip_verbatim(&root)
+                            .to_string_lossy()
+                            .replace(char::from(92u8), "/")
+                            .trim_end_matches('/')
+                            .to_lowercase(),
+                    );
+                    !crate::libraries::path_is_under_any(path, &set)
+                }
+                Err(_) => false,
+            };
+            if outside_active_root
+                && crate::libraries::owning_own_library_name_in(&own, path).is_some()
+            {
+                return Ok((None, active_universe_vocabulary()));
+            }
+            // Safety inspection 2026-08-23 (FROZEN pass) — **the arm I removed and should not
+            // have.** The geometry gate above correctly stops a NESTED Linked-Universe path
+            // being answered as active, but it also removed the admission that every ordinary
+            // ACTIVE-universe note relied on: `resolve_owner` errs for EVERY path when the
+            // strict federation read refuses anywhere in the tree — one Linked Universe on a
+            // disconnected drive is enough — so this whole function began refusing the active
+            // universe's own notes. The callers swallow it (`compute_note_strata`'s Sky
+            // enrichment loop catches and skips), so every note silently lost its stratum in
+            // Sky View while the app looked healthy.
+            //
+            // The right admission is the one the rename tails already use: under the active
+            // root, the active universe's OWN manifest readable at first level, the path under
+            // NONE of its declared child roots, and the own registry claiming it. That answers
+            // active-universe notes without reopening the nested-linked trap.
+            if crate::libraries::active_own_despite_unreadable_federation(app, path) {
                 return Ok((None, active_universe_vocabulary()));
             }
             Err(e)
@@ -684,8 +796,55 @@ pub fn read_deltas(app: &tauri::AppHandle) -> Vec<LinkTypeDef> {
 
 /// Load the active-universe registry from disk into the global static. Call at
 /// boot + universe-switch. Idempotent.
+///
+/// Safety inspection 2026-08-23 (B1 pass 7, MED) — **"absent is a fact, unreadable is an
+/// unknown" applied here too.** `read_deltas` collapses both into the 8 seeds, which was
+/// tolerable while every consumer read the same global; B1 made the back-fills' gates and
+/// stamps read the STRICT on-disk registry, so a lenient seeds fallback now DISAGREES with
+/// them — and the trigger DDL, still built from this global, would write seed-vocabulary
+/// aggregates all session under a stamp certifying the real vocabulary. The read is still
+/// lenient by design (a broken file must never break the grammar in-process), but a file
+/// that EXISTS and cannot be read is always ANNOUNCED rather than passing silently.
+///
+/// Pass 8 corrected the remedy this note originally proposed. Keeping the
+/// previously-loaded registry looked kinder than falling back to seeds — but `load_active`
+/// also runs on every universe SWITCH, so "keep what is loaded" meant leaving the
+/// DEPARTING universe's custom types active for the ARRIVING one: its triggers, its
+/// aggregates and its wikilink classification would all be built from another universe's
+/// vocabulary, which is worse than the seeds in every direction and violates write
+/// sovereignty. Seeds are a universe-neutral floor; another universe's types are not.
+/// The disagreement is instead caught and REPAIRED downstream — `create_outgoing_link_triggers_with`
+/// plus the outgoing back-fill's rebuild — rather than papered over here.
 pub fn load_active(app: &tauri::AppHandle) {
-    set_active(read_deltas(app));
+    if let Ok(path) = link_types_path(app) {
+        if path.exists() {
+            match std::fs::read_to_string(&path) {
+                Ok(data) => match serde_json::from_str::<Vec<LinkTypeDef>>(&data) {
+                    Ok(deltas) => {
+                        set_active(deltas);
+                        ACTIVE_VOCAB_DEGRADED.store(false, std::sync::atomic::Ordering::SeqCst);
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("[link_types] link-types.json is present but could not be parsed ({e}) — falling back to the built-in types for THIS universe; its custom types return as soon as the file reads cleanly");
+                        set_active(Vec::new());
+                        ACTIVE_VOCAB_DEGRADED.store(true, std::sync::atomic::Ordering::SeqCst);
+                        return;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("[link_types] link-types.json is present but could not be read ({e}) — falling back to the built-in types for THIS universe; its custom types return as soon as the file reads cleanly");
+                    set_active(Vec::new());
+                    ACTIVE_VOCAB_DEGRADED.store(true, std::sync::atomic::Ordering::SeqCst);
+                    return;
+                }
+            }
+        }
+    }
+    // Genuinely absent (or no active universe yet): the seeds ARE the vocabulary, and that
+    // is a fact rather than a fallback — not degraded.
+    set_active(Vec::new());
+    ACTIVE_VOCAB_DEGRADED.store(false, std::sync::atomic::Ordering::SeqCst);
 }
 
 /// 2026-08-02 triage concern #1 — **the command must be STRICT even though `read_deltas` is
@@ -931,7 +1090,17 @@ mod tests {
             ("federation/migrate.rs", 2),      // schema migration of a foreign DB — see PJ-302
             ("federation/vocab_harness.rs", 2),// the harness asserting what the ACTIVE one is
             ("federation/write_scope.rs", 3),  // the active ARM of the scope — correct by definition
-            ("incoming_links_backfill.rs", 5), // backfill over the active DB
+            ("incoming_links_backfill.rs", 4), // B1: the RUN pins root+vocabulary together
+                                               //   and stamps the pinned fingerprint; the
+                                               //   SCHEDULER compares against the strict DISK
+                                               //   read (pass 2 — no re-arm loop). Survivors:
+                                               //   `is_stamped` as the READER gate ("may the
+                                               //   stored columns serve the vocabulary the UI
+                                               //   renders right now?" — mismatch ⇒ live
+                                               //   fallback, safe), two tests OF that reader
+                                               //   contract, and the #[ignore] live-DB
+                                               //   rehearsal (printing the ACTIVE SQL is its
+                                               //   point).
             // inspector360.rs is ABSENT since B4 (its 2026-08-21 annotation said "B4 must
             // thread this", and B4 did): `get_360_view` accepts Linked-Universe paths, so
             // it resolves the OWNER's registry once (`registry_for_owner_of`) for both the
@@ -944,7 +1113,21 @@ mod tests {
             // split one cascade's rewrites across two vocabularies. The federation
             // FENCES are untouched by B5 and stay up; B6 lowers them for the owner's
             // own universe in a SEPARATE commit, never this one.
-            ("link_types.rs", 7),              // the registry's own lock plumbing (4), plus the
+            ("link_types.rs", 8),              // the registry's own lock plumbing (4), plus the
+                                               //   FROZEN-pass restoration (+1): `owner_scope_of`'s
+                                               //   Err branch has a SECOND admission for a plain
+                                               //   ACTIVE-universe note when the strict federation
+                                               //   read refuses somewhere else in the tree (one
+                                               //   Linked Universe on a disconnected drive errs for
+                                               //   EVERY path). Whose vocabulary? The ACTIVE
+                                               //   universe's — and here that is PROVEN, not
+                                               //   assumed: the path is under the active root, the
+                                               //   active universe's own manifest reads at first
+                                               //   level, the path is under NONE of its declared
+                                               //   child roots, and its own registry claims it.
+                                               //   Without this arm every note silently lost its
+                                               //   stratum in Sky View (the caller catches and
+                                               //   skips) while the app looked healthy.
                                                //   B4 resolvers' ACTIVE arms: `registry_for_owner_of`
                                                //   (owner IS the active universe — 2 arms: the
                                                //   resolve_owner hit, and the pre-MIG-108 legacy
@@ -954,12 +1137,12 @@ mod tests {
                                                //   schema) — each correct by definition, and the
                                                //   single place the active answer enters a
                                                //   scope-resolving read.
-            ("links_backfill.rs", 8),          // backfill + trigger DDL over the active DB.
-                                               //   (+1 in B4: `recompute_sky_range` now reads
-                                               //   explicitly what the expr generators used to
-                                               //   read for it invisibly. **B1 threads the
-                                               //   recompute_* functions to their callers'
-                                               //   pinned scope.**)
+            // links_backfill.rs is ABSENT since B1 pass 2 (was 8, then 2). The RUN pins
+            // db_path + root + vocabulary together and stamps the PINNED fingerprint;
+            // the SCHEDULER gate `is_needed` now takes the fingerprint from its caller's
+            // STRICT DISK read of the same root — gate and run share ONE source, so the
+            // clean-exit re-arm cannot loop on a stale in-memory global (the lenient
+            // boot fallback). The gate test passes the seeds fingerprint explicitly.
             // name_fold_backfill.rs is DELIBERATELY ABSENT. It used to be here with 1. The
             // 2026-08-21 safety inspection found that its connection is pinned to one universe's
             // search.db while its vocabulary was read from the global eighty lines later — a
@@ -969,7 +1152,20 @@ mod tests {
             // maturity generators take that same pinned `&vocab`, so the last hidden global
             // read inside this module's call graph is gone. **This is the shape every entry
             // above should eventually reach.**
-            ("search.rs", 16),                 // trigger DDL + backfills + the index tail.
+            ("search.rs", 15),                 // trigger DDL + backfills + the index tail.
+                                               //   B1 pass 7 (was 16): the outgoing-trigger
+                                               //   DDL read the global TWICE (ins + del arms);
+                                               //   it now takes ONE `trigger_reg` local and
+                                               //   STAMPS that fingerprint (`trigger_vocab`),
+                                               //   which the two back-fill gates compare — so
+                                               //   a lenient-boot global disagreeing with the
+                                               //   strict disk registry is detectable and
+                                               //   self-healing instead of silent. Whose
+                                               //   vocabulary? The ACTIVE universe's: these
+                                               //   triggers live in the ACTIVE universe's own
+                                               //   database (a routed write brings its owner's
+                                               //   registry with it). B2 makes this generator
+                                               //   take the vocabulary explicitly.
                                                //   B4: the stratum/maturity generators no longer
                                                //   read the global; each caller answers at its own
                                                //   line — the DDL + PJ-334 restore arms are
@@ -983,10 +1179,10 @@ mod tests {
             ("sight.rs", 1),                   // active by CONSTRUCTION: no path parameter, reads
                                                //   only `state.db` under one lock. Federated Sight
                                                //   is the reserved MIG-063 family.
-            ("sky_backfill.rs", 1),            // active universe's own DB (PJ-332 pinned conn);
-                                               //   B4 made it ONE read per batch shared by the
-                                               //   sx + stratum/maturity (was three moments).
-                                               //   **B1 threads it from the pinned root.**
+            // sky_backfill.rs is ABSENT since B1 (was 1). `run` resolves the vocabulary
+            // from the SAME root it opened (`registry_for_root`, the name_fold shape) and
+            // threads it into every `process_batch` — conn and vocabulary are one universe's
+            // by construction, no longer by the interlocks the old comment leaned on.
             // strata.rs is ABSENT since B4: `compute_note_strata` is called for EVERY
             // federated library by the Sky enrichment loop, so it resolves the OWNER's
             // registry once per walk (`registry_for_owner_of`).
