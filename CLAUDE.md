@@ -382,7 +382,15 @@ After every phase, step, or significant commit:
 
     The rule is also a forcing function on me: if the record cannot be brought current, the thing I am about to ask for a ruling on is not yet understood well enough to rule on.
 
-**PCS = Push + Commit + SO** — always includes help files, user manual updates, **and the SO#9 Pending-Jobs ledger reconciliation.**
+11. **The PCS + Orientation closes EVERY piece of work. The Boss does not have to remind me.** *(Boss-mandated 2026-08-23: "You have to complete the PCS (including the MoCh) + the Orientation after every work. I don't have to remind you. IT IS A SO.")*
+
+    SO#10 made the PCS a gate **before a ruling request**. This makes it a gate **after every piece of work** — a `/migration` step, a `PJ-NNN`, a fix, a test pass, an investigation, a session close. The work is not finished when the code is finished; it is finished when the record is. **The MoCh is part of the PCS, not an optional extra**, and so is the orientation bump.
+
+    **Why it had to become its own standing order.** On 2026-08-23 the Boss had to enforce this **twice inside half an hour**: first "PCS + Orientation before proceeding!", then "What about the MoCh?" — after a commit had landed and I had begun moving to the next task. Neither was a judgement I got wrong; both were obligations I moved past because the interesting work was elsewhere. That is the exact shape the rule must prevent, because **a stale record does not announce itself.** It reads precisely like a current one, and the next decision made against it inherits the staleness silently — which is how a retired name was once recommended back to the Boss as considered advice (SO#10's origin).
+
+    The tell that this rule has been broken: **the Boss asks about it.** If he has to say "what about the X?", the work was not finished, whatever the code was doing.
+
+**PCS = Push + Commit + SO** — Push + Commit, **plus every record obligation**: the session log (SO#1), help files + User Manual (SO#2), the SO#9 Pending-Jobs ledger reconciliation, **the MoCh (SO#7)**, and the orientation v-bump (SO#6). If any one of those is missing, the PCS is not complete and the work is not closed.
 
 ## Testing Instructions Rule (top principal)
 

@@ -1633,3 +1633,24 @@ defect I would not have found by reading.
 from the record, twice in half an hour. SO#10 exists precisely because a stale record does not
 announce itself — it reads exactly like a current one, and the next decision inherits the
 staleness silently.
+
+### STANDING ORDER #11 — the PCS + Orientation closes every piece of work (2026-08-23)
+
+> "You have to complete the PCS (including the MoCh) + the Orientation after every work. I don't
+> have to remind you. IT IS A SO." — Eisa
+
+Written into `CLAUDE.md` as SO#11 and into memory. SO#10 made the PCS a gate BEFORE a ruling
+request; this makes it a gate AFTER every piece of work — a migration step, a PJ, a fix, a test
+pass, an investigation, a session close. **The work is not finished when the code is finished;
+it is finished when the record is.** The PCS definition was also corrected in the same edit: it
+had listed help files, the manual and the ledger, and had never named the MoCh or the orientation
+bump — so the definition itself permitted the gap he twice had to close by hand.
+
+The rule records its own origin, because that is the useful part: he enforced it **twice inside
+half an hour** — "PCS + Orientation before proceeding!", then "What about the MoCh?" — both
+immediately after a commit landed and I had begun moving to the next task. Neither was a
+judgement I got wrong; both were obligations I moved past because the interesting work was
+elsewhere.
+
+**The tell, now written down: if Eisa has to ask "what about the X?", the work was not finished,
+whatever the code was doing.**
