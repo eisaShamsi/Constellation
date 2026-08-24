@@ -781,7 +781,14 @@ function extractCidCn(content: string): string | null {
 /** Decision returned by a `walkAuxStatePaths` callback. */
 type AuxStateAction =
 	| { kind: 'delete' }
-	| { kind: 'rename'; newKey: string };
+	| { kind: 'rename'; newKey: string }
+	// PJ-377 (2026-08-24 panel) — spare THIS key while still acting on its siblings. Without
+	// it, "one note under this folder holds unsaved work" could only be honoured by skipping
+	// the cleanup for the ENTIRE folder, leaking every sibling's aux state on every such
+	// delete — a map and a localStorage blob that only grow, whose quota overflow is
+	// swallowed by an empty catch. The decision is per-key because the fact it protects is
+	// per-key.
+	| { kind: 'keep' };
 
 /**
  * §141 — single walker shared by `migratePathKeyedAuxStateOnRename` and
@@ -809,6 +816,7 @@ function walkAuxStatePaths(targetPath: string, decide: (originalKey: string, isE
 			const isDescendant = !isExact && keyNorm.startsWith(prefix);
 			if (!isExact && !isDescendant) continue;
 			const action = decide(k, isExact);
+			if (action.kind === 'keep') continue;
 			if (action.kind === 'rename') moves.push([k, action.newKey]);
 			else dels.push(k);
 		}
@@ -836,6 +844,7 @@ function walkAuxStatePaths(targetPath: string, decide: (originalKey: string, isE
 			const isDescendant = !isExact && keyNorm.startsWith(prefix);
 			if (!isExact && !isDescendant) continue;
 			const action = decide(k, isExact);
+			if (action.kind === 'keep') continue;
 			if (action.kind === 'rename') moves.push([k, action.newKey]);
 			else dels.push(k);
 		}
@@ -878,8 +887,17 @@ function migratePathKeyedAuxStateOnRename(oldPath: string, newPath: string): voi
  * future note created at the same path hits the dead entry on
  * `openNoteTab` and loads the deleted note's content.
  */
-function clearPathKeyedAuxStateOnDelete(path: string): void {
-	walkAuxStatePaths(path, () => ({ kind: 'delete' }));
+function clearPathKeyedAuxStateOnDelete(path: string, keep?: ReadonlySet<string>): void {
+	// PJ-377 — `keep` holds the normalised paths whose recovery net is the only copy of the
+	// user's work (see `preserveWorkBeforeVacating`). Every OTHER key under `path` is still
+	// cleared, so protecting one note no longer leaks the aux state of every note beside it.
+	if (!keep || keep.size === 0) {
+		walkAuxStatePaths(path, () => ({ kind: 'delete' }));
+		return;
+	}
+	walkAuxStatePaths(path, (originalKey) =>
+		keep.has(normalizePathKey(originalKey)) ? { kind: 'keep' } : { kind: 'delete' },
+	);
 }
 
 /** §3-redo.5 — paths currently inside a wikilink rename cascade window.
@@ -5197,13 +5215,15 @@ export async function deleteWithSetting(path: string): Promise<void> {
 	// 2026-08-02 audit — flush BEFORE the file moves, so what lands in `.trash` is what the
 	// user last saw. A delete is advertised as recoverable; recovering a version missing the
 	// last paragraph does not honour that.
-	const preserved = await preserveWorkBeforeVacating(path);
+	const keepNets = await preserveWorkBeforeVacating(path);
 	await deletePath(path, mode, trashRoot);
 	// §140 — drop the path's aux state + close any tabs at/under it (as deleteItem did).
-	// Only when the work is provably durable: if the flush failed, the write-ahead net is the
-	// ONLY copy and must survive the file it belonged to.
-	if (preserved) {
-		clearPathKeyedAuxStateOnDelete(path);
+	// PJ-377 — everything EXCEPT the paths whose net is the only copy of the user's work. This
+	// used to be all-or-nothing: one unrecoverable note under a deleted folder skipped the
+	// cleanup for every note beside it, leaking their aux state into a map and a localStorage
+	// blob that only grow.
+	clearPathKeyedAuxStateOnDelete(path, keepNets);
+	if (keepNets.size === 0) {
 		clearSaveFailure(path); // the banner named a note that no longer exists, with dead buttons
 	}
 	// PJ-187 — dropping a tab from the list is NOT disposing its model. Every other departure
@@ -5257,51 +5277,87 @@ function collapseSplitIfBelowTwo(remaining: number): void {
  * resident — and resident is exactly what lets it write later.
  */
 /**
- * **Preserve the user's work BEFORE its file is displaced.** Returns whether it is safe to
- * destroy the path-keyed recovery state afterwards.
+ * PJ-377 — what a vacate may destroy, decided from the state that actually records the work.
  *
- * 2026-08-02 audit, found in THIS session's own fix. Giving `moveToTrash` the delete teardown
- * closed an app-killer and opened a smaller one: the teardown erases the write-ahead recovery
- * buffer and disposes the in-memory note WITHOUT saving it. So a note whose last save FAILED —
- * the file locked by OneDrive, antivirus, a full disk — held its only surviving copy in that
- * buffer, and an Overwrite destroyed it. Worse, the "your edit is safe and will retry" banner
- * stayed on screen with its Retry and Save-a-copy buttons now silently dead, and restoring from
- * the trash returned the PRE-EDIT version.
+ * Returns the set of normalised paths whose recovery net must SURVIVE the vacate. Empty set =
+ * everything under `path` is durable and the caller may clear it all.
  *
- * Overwrite and Delete both promise a RECOVERABLE outcome ("it moves to .trash"). A recoverable
- * copy that is missing the user's last paragraph does not honour that. So:
+ * WHY THE PREDICATE MOVED OFF `openTabs` (2026-08-24 panel). Three fixes have now been made to
+ * this one function, each correct and each too narrow, because each asked a question about the
+ * TAB when the thing being protected is keyed to the PATH:
  *
- * 1. **Flush first.** If the model is dirty, write it through the durability gate, so whatever
- *    lands in `.trash` is what the user last saw.
- * 2. **If the flush cannot be proven, keep the net.** A failed flush means the buffer is still
- *    the only copy; destroying it is the one thing we must never do. The file leaves, the
- *    recovery state stays, and the banner keeps telling the truth.
+ *   1. 2026-08-03 — matched the exact path while `releaseTabsForVacatedPath` matched at-or-under
+ *      it, so deleting a FOLDER preserved nothing and wiped every open note's net inside it.
+ *   2. 2026-08-24 (a) — asked `isNoteDirty` alone, missing the model that is CLEAN yet holds
+ *      write-ahead-recovered content (`netUnsaved`), which is how a restored session looks after
+ *      a failed save.
+ *   3. 2026-08-24 (b) — asked `get(openTabs)`, and the net OUTLIVES THE TAB. `closeTab` clears
+ *      neither the net nor the save-failure banner, and says so in its own comment: they
+ *      "preserve a failed write and restore it on reopen." So the commonest real sequence —
+ *      save fails, user closes the tab, user later deletes the note or its folder — walked
+ *      straight past every guard above, because by then there was no tab to ask about.
+ *
+ * The net itself is the record: `setNet` stashes it BEFORE the write and `clearNetIf` clears it
+ * only on a durable success (`standardSaveEnv`). So an entry that is still present, and is not a
+ * mere `snapshot` view-stash of already-durable bytes, means exactly "work disk does not have" —
+ * whether or not a tab, a model, or this session ever existed. Asking it directly ends the
+ * sequence of narrower questions rather than adding a fourth.
  */
-async function preserveWorkBeforeVacating(path: string): Promise<boolean> {
-	// 2026-08-03 per-build inspection — an APP-KILLER in THIS session's own fix, found by four
-	// independent hunters. This matched only the EXACT path while `releaseTabsForVacatedPath`
-	// matches at-or-under it. So deleting a FOLDER preserved nothing, then disposed every open
-	// note inside it and wiped their write-ahead nets: the unsaved work of every open note in
-	// that folder, gone, with no error. The single-note case was fixed and its generalisation was
-	// not — half a sweep, inside the fix for half a sweep.
-	//
-	// Both halves now take the SAME predicate from `vacatedBy`, so they cannot disagree again
-	// about which tabs an operation affects.
+function netPathsToPreserve(path: string): Set<string> {
+	const isGone = vacatedBy(path);
+	const keep = new Set<string>();
+	// `snapshot: true` means the content is ALREADY DURABLE and recovers nothing (PJ-181), so it
+	// is safe to drop. Everything else is real work. Omission is the safe default, and is
+	// therefore treated as real work — never as a snapshot.
+	for (const [k, v] of writeAheadBuffer) {
+		if (isGone(k) && v?.snapshot !== true) keep.add(normalizePathKey(k));
+	}
+	// The localStorage backup can hold keys the in-memory map does not — it is what survives a
+	// crash or restart, which is precisely the case this protects.
+	try {
+		const all = JSON.parse(localStorage.getItem(WAB_LS_KEY) || '{}');
+		for (const k of Object.keys(all)) {
+			if (isGone(k) && all[k]?.snapshot !== true) keep.add(normalizePathKey(k));
+		}
+	} catch {}
+	return keep;
+}
+
+/**
+ * Flush what can be flushed, then report what must be preserved.
+ *
+ * The flush comes FIRST and the net is read AFTER it, because a successful durable save clears
+ * its own net (`clearNetIf`) — so the ordinary "dirty note, then delete" case ends with nothing
+ * to preserve and the caller clears everything, exactly as before. Only work that could not be
+ * made durable, or was never durable to begin with, remains.
+ */
+async function preserveWorkBeforeVacating(path: string): Promise<Set<string>> {
 	const isGone = vacatedBy(path);
 	const affected = get(openTabs).filter((t) => isGone(t.path) && isNoteDirty(t.id));
-	if (affected.length === 0) return true; // nothing open here, or all already durable
-	// Every one must be proven durable before the caller destroys recovery state. One failure
-	// keeps the net for ALL of them: partial preservation is not preservation.
-	const results = await Promise.all(affected.map((t) => flushOutgoing(t.id, 'vacate_flush')));
-	const allOk = results.every((f) => f.ok);
-	if (!allOk) {
+	if (affected.length > 0) {
+		const results = await Promise.all(affected.map((t) => flushOutgoing(t.id, 'vacate_flush')));
+		const failed = results.filter((f) => !f.ok).length;
+		if (failed > 0) {
+			console.warn(
+				'[vacate] could not flush', failed, 'of', affected.length, 'dirty note(s) under', path,
+				'— their write-ahead nets are the only copy of that work and are being kept',
+			);
+		}
+	}
+	// Deliberately NOT `flushOutgoing` for a clean-but-recovering model: `flushIfDirty` returns
+	// `{ok:true}` WITHOUT writing when the model is clean (noteSession.ts:392), so flushing one
+	// would report durability having written nothing. Nor could it be made durable here — the
+	// path is being vacated. Its net is kept instead, which is what the caller now honours
+	// per-path rather than wholesale.
+	const keep = netPathsToPreserve(path);
+	if (keep.size > 0) {
 		console.warn(
-			'[vacate] could not flush', results.filter((f) => !f.ok).length, 'of', affected.length,
-			'dirty note(s) under', path,
-			'— KEEPING the write-ahead net, it is the only copy of that work',
+			'[vacate]', keep.size, 'note(s) at or under', path,
+			'hold work that is not on disk — KEEPING their write-ahead nets, which are the only copy.',
+			'The file still goes to the trash; restoring it and reopening the note brings the work back.',
 		);
 	}
-	return allOk;
+	return keep;
 }
 
 /**
@@ -5380,14 +5436,23 @@ function releaseTabsForVacatedPath(path: string): void {
  */
 export async function moveToTrash(path: string): Promise<void> {
 	const { mode, trashRoot } = resolveTrashDestination(path);
-	const preserved = await preserveWorkBeforeVacating(path);
+	const keepNets = await preserveWorkBeforeVacating(path);
 	await deletePath(path, mode, trashRoot);
 	// 2026-08-02 triage APP-KILLER — the file leaves, so the tab must too. Without this an
 	// Overwrite left a live model owning a path the survivor was about to occupy, and the
 	// stale model wrote over it at the next flush. Same teardown Delete has always done;
 	// see `releaseTabsForVacatedPath`.
-	if (preserved) {
-		clearPathKeyedAuxStateOnDelete(path);
+	//
+	// PJ-377 CAVEAT, recorded because it is NOT fixed here: on the Overwrite-on-collision path
+	// the vacated path is IMMEDIATELY RE-OCCUPIED by the incoming note (`moveToTrash` then
+	// `renameItem`, one click). A kept net is keyed to that path, so preserving it here would
+	// leave a net belonging to the trashed note sitting under the survivor's path. Keeping it
+	// is still the lesser evil — `openNoteTab` prefers disk and the restore path requires the
+	// file — but path-keyed preservation cannot be made CORRECT for a path that is re-occupied.
+	// The real remedies are a `(recovered copy).md` sibling written before vacating, or an
+	// honest warning in the collision dialog; both are product decisions, not refactors.
+	clearPathKeyedAuxStateOnDelete(path, keepNets);
+	if (keepNets.size === 0) {
 		clearSaveFailure(path);
 	}
 	releaseTabsForVacatedPath(path);
