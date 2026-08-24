@@ -1590,3 +1590,29 @@ none of this; one honest question to the person using the app found a minute of 
 session. Second: I was ready to believe my own loop was the cause, and it was not — the
 discipline of checking the log before answering is the only reason this is a correct diagnosis
 rather than a confident wrong one.
+
+### PCS — Stage B1 closed out (2026-08-23, night)
+
+The Boss stopped me proceeding to PJ-375 with an incomplete record: **"PCS + Orientation before
+proceeding."** He was right. B1 was committed (`3f0f06a7`), but everything learned AFTER that
+commit — his Stage 2 pass, the runtime answer and its diagnosis, PJ-375/376, the PJ-368/369
+live measurements, the PJ-321 controlled corroboration — was sitting uncommitted, and the
+orientation still described B1 as ready-but-unvalidated. Starting new work against that record
+is exactly what SO#10 exists to prevent: a ruling asked against a stale record launders the
+staleness into a recommendation.
+
+Done in this PCS:
+- **Ledger v1.96 reconciled**: B1 flipped to SHIPPED · BOSS-VALIDATED · COMMITTED with the
+  commit hash and the reason it is one commit rather than two; the ► line now names **PJ-375**
+  as the next action, on the argument that it is the only queue item backed by a measurement of
+  a cost he is ALREADY paying, on the path his own ruling selected; delta updated to PJ-344…376.
+- **Orientation v4.8 written as a new file** (v4.7 kept — the trail is durable). It leads with
+  what his machine said rather than with the feature: the runtime gate paying for itself, the
+  diagnosis that it was NOT the loop I feared, and the six product findings the test gate has
+  now produced against seventeen code passes' none.
+- **Session log** carries the Stage 2 pass, the runtime investigation, and his correction of my
+  Step 5 instruction.
+- **Help/User Manual**: no change needed — nothing user-facing shipped after the commit; the two
+  corrections they required landed inside it.
+- **Cleanup**: the throwaway universes are gone (25 files, one auto-generated note, nothing of
+  his). No registry edit was needed, which is itself the PJ-321 observation.

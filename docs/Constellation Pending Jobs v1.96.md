@@ -7,6 +7,14 @@
 > project: 46 confirmed findings across SEVENTEEN inspection passes — 40 fixed, 6 filed — plus a
 > whole-app sweep register**):
 >
+> **► NEXT ACTION (post-B1, 2026-08-23): PJ-375** — the disk churn he CONFIRMED hearing. It is
+> the only item in the queue backed by a measurement on his own machine of a cost he is already
+> paying (54s and 78s FTS5 optimizes today; 130 runs, 510s total, against an in-code claim that
+> it is cheap after the first), and it fires on exactly the federated path his ruling below
+> selects. Reproduce-First governs it: investigate WHY the optimize keeps doing full work before
+> changing anything, and do not "fix" it by deleting the prewarm, which exists to make federated
+> search usable. Then the federation-honesty cluster (PJ-367 → PJ-366 → PJ-360), then B2.
+>
 > **► BOSS RULING 2026-08-23: "Do you expect to start working across Linked Universes soon?"
 > — YES.** The close panel's branch is therefore selected: **federated search is fixed next,
 > ahead of everything.** And his answer promotes a CLUSTER, not one item, because all three of
@@ -29,7 +37,14 @@
 > integrity, this stage's own concern), then **B2** (DDL takes the vocabulary explicitly), then
 > **B7** (pin the watcher fence). PJ-326..331 + PJ-341..343 rulings queued.
 >
-> ### ✅ MIG-111 Stage B1 — SHIPPED (committed with this ledger)
+> ### ✅ MIG-111 Stage B1 — SHIPPED, BOSS-VALIDATED, COMMITTED `3f0f06a7` (2026-08-23)
+> Stage 1 (rename in the active universe · rename inside a Linked Universe · reopen from disk ·
+> delete) and Stage 2 (the new folder-holds-a-Linked-Universe refusal, banner verbatim) both
+> passed on the 18:31 release binary. Committed as ONE commit: the pre-existing repairs are
+> interleaved with B1's own hunks in the same files, so a split would have manufactured an
+> intermediate state nobody ever built or tested — the panel's own condition for collapsing it.
+> The commit message carries a "NOT B1" section naming every pre-existing repair for a future
+> bisect.
 > All six backfill `recompute_*` functions and the five converge entry points take
 > `&LinkTypeRegistry` from their callers' pinned scope. The B1 investigation found
 > `links_backfill::run` still re-locked the swappable `SearchState.db` per batch with no pin
@@ -447,6 +462,26 @@
 >   kind of cross-universe state leak the Universe-of-Universes work is meant to eliminate.
 >   Fix shape: clear the banner (and any other universe-scoped transient UI state) on switch.
 >
+> ### 🔬 PJ-321 — FOURTH corroboration, and the first CONTROLLED one
+> The Boss CREATED TWO UNIVERSES today through the Universe Manager ("Folder Guard Test" and
+> "Folder Guard Inner"), SWITCHED to one, worked in it, and triggered a refusal inside it. The
+> registry afterwards: **277 bytes, mtime 2026-08-07, one entry (`كون عيسى`), sha256
+> c20f9694… — byte-identical to every previous observation.**
+>
+> The three earlier corroborations were passive (the file did not change while the app ran). This
+> one is a **controlled experiment**: the single action most certain to write a universe registry
+> — creating a universe — was performed twice, and the file did not change. Meanwhile the app
+> plainly knew about both universes: it listed them, switched to them, and titled its window with
+> one of them.
+>
+> **The STOP order holds: observed, not diagnosed.** I did not go looking for where the app
+> actually keeps this state, because that is the investigation PJ-321 reserves. Recorded as
+> evidence and left alone.
+>
+> *(Cleanup note: this is also why removing the throwaway universes needed no registry edit —
+> they were never in it. The folder was deleted; 25 files, one of them the auto-generated Five
+> Acts note, nothing of the Boss's.)*
+>
 > ### Also this close
 > - **PJ-300 escalation note**: three B1-cycle findings (pass-2 fallback degradation, the
 >   routed-folder-fence blindability, the gate loops) all traced through the SAME degraded
@@ -456,7 +491,8 @@
 >   cross-window-integrity, freeze-and-leaks) were covered by this sweep — that Charter item
 >   can close.
 >
-> Ledger delta: B1 closed; **31 filed (PJ-344..374)**, **of which PJ-358 is withdrawn by its own
+> Ledger delta: B1 closed, Boss-validated and committed (`3f0f06a7`); **33 filed
+> (PJ-344..376)**, plus a fourth and first-CONTROLLED PJ-321 corroboration, **of which PJ-358 is withdrawn by its own
 > author within the same close** — 16 live; ► names PJ-344 (ruling owed) then B2, with
 > **PJ-360 going to the panel first** as the most consequential filing of the day.
 
