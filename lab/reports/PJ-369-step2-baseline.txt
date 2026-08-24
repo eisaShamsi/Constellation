@@ -1,0 +1,120 @@
+PJ-369 Step 2 — pre-boot baseline, BOTH universes the test touches
+Captured 2026-08-24, read-only (sqlite mode=ro), before the Step-2 build was ever launched.
+
+WHY THIS EXISTS
+Step 2 is the WRITE-FREE step: it counts phantom index entries and says so, and must delete
+nothing. Rather than ask the Boss to take that on trust, these numbers are re-queried after his
+boot test. Identical counts = proof the counting pass wrote nothing. Any drop = Step 2 failed
+its central promise and is reverted, not patched.
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+Eisa Cognitive Knowledge  (the Boss's DAILY universe)
+E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db
+
+  note_meta rows                8031
+  note_links rows               234899
+  review_schedule rows          8031
+  file size (bytes)             2026405888
+
+  libraries registered          19   (all 19 directories present)
+  rows outside every live root  0
+  rows whose file is gone       0
+  EXPECTED PHANTOM COUNT        0    <- the sentence must NOT appear here
+
+  Structurally zero, not coincidentally: this universe's own root is itself a registered
+  library (`universe_notes`, path == universe root), so no row beneath it can ever be
+  "outside a library." Silence here is the fail-closed half of the verification.
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+Eisa Universe
+E:\Constellation Universes\Eisa Universe\.constellation\search.db
+
+  note_meta rows                2731
+  note_links rows               31368
+  review_schedule rows          2731
+
+  libraries registered          5    (all 5 directories present)
+  rows outside every live root  621
+  of those, file-gone           603  <- the phantoms
+  edges from the dead path      19472  (note_links sourced under E:\Cognitive Knowledge)
+  EXPECTED PHANTOM COUNT        603  <- the sentence must appear here
+
+  The 621 decompose exactly as the Step-1 audit reported, which is why that audit is trusted:
+      9 linked-universe rows + 7 earned-data rows + 603 file-gone phantoms + 2 still-alive = 621
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+PROVENANCE CORRECTION (2026-08-24)
+Step 1's audit ran against `Eisa Universe`. Source comments in `phantom_prune.rs`,
+`reconcile.rs` and `driftReport.ts` described that result as "the Boss's live/daily universe",
+which is false — his daily universe is `Eisa Cognitive Knowledge` and it is clean. All three
+comments were corrected. The error was caught by measuring the boot cost of this very pass:
+the replay reported "0 rows outside own roots", which could not be reconciled with a claimed
+603 until both databases were queried.
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+EVERY UNIVERSE — expected phantom count (measured read-only 2026-08-24)
+
+Added because the test must NOT depend on predicting which universe opens. The app's universe
+registry lists one entry while the app demonstrably works with others (PJ-321, five
+corroborations, STOP order: observe, do not diagnose). Knowing the expected number for ALL of
+them makes the Boss's observation self-checking whichever one he lands in.
+
+  UNIVERSE                      notes   libs    outside roots   PHANTOMS   expected sentence
+  Constellation Test             5161    3/3            3218       1200    "1200 entries ..."
+  Eisa Cognitive Knowledge       8031  19/19               0          0    (none)
+  Eisa Universe                  2731    5/5             621        603    "603 entries ..."
+  MIG108 Rehearsal               7827  20/20               0          0    (none)
+  Review Demo                       3    1/1               0          0    (none)
+  Scratch                          30    1/1               0          0    (none)
+  جوامع عيسى الشامسي                6    2/2               0          0    (none)
+  كون عيسى                          6    1/1               0          0    (none)
+
+Note: كون عيسى — the one universe the registry actually lists as active — has ZERO phantoms.
+If the app boots there, honest silence is the correct result and proves nothing about the
+positive case; a universe with phantoms must be opened for that half.
+
+Two universes carry real phantom loads (1,200 and 603). Both point at paths that no longer
+exist and belong to no library — which is the defect PJ-369 exists to make visible.
+
+NUMBER FORMATTING (verified 2026-08-24, tutorial-auditor round 3)
+The sentence interpolates the count with plain String(count) — interpCount, in
+src/lib/i18n/index.ts:162-170, does form.replace(/{count}/g, String(count)) with no
+Intl.NumberFormat. So 1200 renders as "1200 entries", NOT "1,200 entries". An earlier
+version of this file wrote it with a comma; corrected, because a tutorial that quotes a
+thousands separator the app never prints teaches the Boss to report a non-bug.
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+FEDERATION — checked, because a partial federation makes the classifier REFUSE (count 0)
+
+ClassifierCtx::build refuses to classify ANY row when a universe declares child universes and
+none of them resolve (the Attack-1 guard). A refusal and a genuinely-clean universe look
+IDENTICAL to the user (no sentence), so the two must not be conflated in the record.
+
+Read from each universe's .constellation/universe.json:
+
+  Eisa Universe            declares 2 children, BOTH resolve  -> no refusal; the 603 stands.
+                           Its children are:
+                              E:\Constellation Universes\كون عيسى
+                              E:\Constellation Universes\Eisa Cognitive Knowledge   <-- his DAILY
+                           So inside Eisa Universe, his daily universe is federated in as a
+                           Linked Universe, and its notes are Keep-linked, never phantoms.
+                           (The Step-1 Rust audit's "Keep-linked 9" is exactly this.)
+
+  كون عيسى                 declares 1 child that DOES NOT EXIST
+                              E:\Constellation Universes\Two universe UNIVERSE\Two Universe UNIVERSE
+                           -> declared_children = 1, linked_roots empty -> REFUSAL FIRES.
+                           Its zero is "the app refuses to guess", NOT "this universe is clean".
+
+  All others               declare 0 children -> no refusal.
+
+Why the refusal fires rather than silently passing: for a genuinely-missing child
+(ErrorKind::NotFound) `resolve_child_universe_roots_strict` KEEPS the declared path in its
+output (universe.rs:750) rather than dropping it, so declared_children stays 1 while
+foreign_library_roots resolves nothing. Had it dropped the missing child, declared_children
+would have been 0 and the Attack-1 guard would never have fired. Verified by reading both
+functions, not assumed.
+
+CONSEQUENCE WORTH KEEPING: the partial-federation refusal is LIVE and reachable on the Boss's
+own machine. That is the fail-closed path I declined to test by asking him to eject a drive.
+It is not directly observable to him (silence looks the same either way), so it is recorded as
+verified-by-inspection rather than dressed up as a user-visible test.
