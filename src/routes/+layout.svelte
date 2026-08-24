@@ -3,7 +3,7 @@
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t, tn, reconcileLocaleFromDisk } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
-	import { DRIFT_REPORT_EVENT, hasFindings, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
+	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -596,6 +596,16 @@
 	let indexDrift = $state<DriftReport | null>(null);
 	let indexDriftDismissed = $state(false);
 	/**
+	 * PJ-369 (2026-08-24 panel) — the phantom row dismisses SEPARATELY from the drift row.
+	 *
+	 * They are two sentences, with two different findings and two different remedies, stacked
+	 * in the same band with a ✕ each. One shared flag made either ✕ hide both — so a user
+	 * clearing the repairable-drift notice he had just acted on would silently erase the
+	 * phantom count as well, which is this step's entire deliverable, without ever having read
+	 * it. Two rows, two flags.
+	 */
+	let indexPhantomDismissed = $state(false);
+	/**
 	 * PJ-207 §11 — the "Repair now" button's busy state. Set on press, cleared by the
 	 * `index-repair:done` listener. The GUARANTEE that two quick presses produce one run
 	 * is the runner's single-flight flag (a second submit returns `alreadyRunning`), not
@@ -634,6 +644,23 @@
 		if (!r.walkComplete || r.filesUnreadable > 0)
 			parts.push(tOr('indexDrift.incomplete', 'Some folders or files could not be read, so there may be more.'));
 		return parts.join(' ');
+	});
+	// PJ-369 — the phantom sentence, deliberately SEPARATE from `indexDriftMessage`.
+	//
+	// Two reasons it is not another `parts.push` above. First, its remedy is different: the
+	// band above offers "Repair now", and a repair provably cannot fix a phantom (it walks
+	// libraries and re-reads files; a phantom has neither). Putting the sentence there would
+	// place a button under a claim it cannot act on. Second, it must be able to appear when
+	// `hasFindings` is FALSE — a universe with no repairable drift can still carry 603
+	// phantoms, and on the Boss's own universe that is exactly the case.
+	const indexPhantomMessage = $derived.by(() => {
+		const r = indexDrift;
+		if (!REPAIR_DOOR_ENABLED || indexPhantomDismissed || !hasPhantoms(r)) return '';
+		return tOr(
+			'indexDrift.stalePhantoms',
+			"{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. Nothing has been changed — they have only been counted.",
+			{ noun: $tn('plurals.entries', r.stalePhantoms) }
+		);
 	});
 	// Safety inspection 2026-08-01 — `$t` returns the KEY ITSELF when a key is missing
 	// (i18n/index.ts — documented there), so the usual `$t(k) || 'fallback'` chain never
@@ -3182,6 +3209,7 @@
 		// re-populates it.
 		indexDrift = null;
 		indexDriftDismissed = false;
+		indexPhantomDismissed = false; // PJ-369 — the phantom row's own flag clears with it
 		// A cascade in flight in the previous Universe could leave entries
 		// in cascadingPaths that gate edits in the new one if any path
 		// happens to collide — start the new Universe with a clean slate.
@@ -3925,7 +3953,7 @@
 		// `classifier_scan_status` discipline the progress strips already follow.
 		if (REPAIR_DOOR_ENABLED) {
 			const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
-				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; }
+				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; }
 			});
 			cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
 			loadDriftReport().then((r) => { if (r && !indexDrift) indexDrift = r; });
@@ -7886,6 +7914,18 @@
 					{repairRunning ? tOr('indexDrift.repairing', 'Repairing…') : tOr('indexDrift.repairNow', 'Repair now')}
 				</button>
 				<button class="tpl-err-x" onclick={() => (indexDriftDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+		<!-- PJ-369 — the phantom notice. Its own row, with NO "Repair now" button, because a
+		     repair cannot fix a phantom (it walks libraries and re-reads files; a phantom has
+		     neither). It renders independently of the drift band above: a universe with zero
+		     repairable drift can still carry hundreds of phantoms, which is exactly the state
+		     of the Boss's own universe. The remedy it names lives in Settings, and this build
+		     only COUNTS — nothing here removes anything. -->
+		{#if indexPhantomMessage}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{indexPhantomMessage}</span>
+				<button class="tpl-err-x" onclick={() => (indexPhantomDismissed = true)} aria-label={$t('common.close')}>✕</button>
 			</div>
 		{/if}
 	</div>

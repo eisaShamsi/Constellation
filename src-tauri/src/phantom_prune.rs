@@ -5,10 +5,19 @@
 //! *"The index must not carry entries for notes that don't exist and belong to no library —
 //! a search result must correspond to a real, openable note."*
 //!
-//! The Boss's own daily universe carries **603 `note_meta` rows and 19,472 `note_links`
+//! The Boss's **`Eisa Universe`** carries **603 `note_meta` rows and 19,472 `note_links`
 //! edges** pointing at files under `E:\Cognitive Knowledge\…` that no longer exist on disk.
-//! They surface as search results that open nothing, plus phantom edges in the link graph,
-//! Sky View and the Reviewer. The boot reconcile has never removed them because it is
+//!
+//! *Which* universe is load-bearing, not trivia. Measured 2026-08-24 against both databases:
+//! `Eisa Universe` (2,731 rows) has 621 rows outside every live library root, 603 of them
+//! file-gone. The Boss's **daily** universe, `Eisa Cognitive Knowledge` (8,031 rows), has
+//! **zero** of either — every row sits under one of its 19 registered libraries, and its
+//! own root is itself a registered library (`universe_notes`), so nothing can fall outside.
+//! An earlier draft of this header said "the Boss's own daily universe", which would have
+//! sent his verification test to a universe where this module correctly reports nothing.
+//!
+//! Those rows surface as search results that open nothing, plus phantom edges in the link
+//! graph, Sky View and the Reviewer. The boot reconcile has never removed them because it is
 //! disk-first (walks registered library roots and checks the index against files found), so
 //! rows under no walked root are never even visited — and step 3 of `reconcile.rs`
 //! **deliberately** skips outside-root rows for a load-bearing safety reason: `Path::exists()`
@@ -47,9 +56,15 @@
 //!
 //! 4. **No earned data on the row.** Any outgoing link with a promoted `confidence`,
 //!    a non-`active` `status`, a `weight > 1.0`, or a `traversal_count > 0`; OR a non-NULL
-//!    `note_meta.review_priority` (user's explicit override); OR any `review_schedule` row —
-//!    is a KEEP. Earned data is the user's work; a phantom row with earned data is a data
-//!    puzzle to investigate, not something to delete.
+//!    `note_meta.review_priority` (user's explicit override); OR a `review_schedule` row that
+//!    has actually been **reviewed or snoozed** (`last_reviewed IS NOT NULL OR snoozed_until
+//!    IS NOT NULL`) — is a KEEP. Earned data is the user's work; a phantom row with earned
+//!    data is a data puzzle to investigate, not something to delete.
+//!
+//!    *Not* "any `review_schedule` row": one is auto-created as a baseline for every indexed
+//!    note, so that reading matched all 603 candidates and the ground-truth audit returned
+//!    `Prune: 0`. An earlier version of this list said exactly that, and would have kept every
+//!    row the user wants removed. See `has_earned_data`.
 //!
 //! # The governing law: FAIL CLOSED
 //!
@@ -149,16 +164,74 @@ impl ClassifierCtx {
         // `foreign_library_roots` returns an empty set both when there are no linked
         // universes AND when it could not resolve any. We disambiguate by asking the
         // universe manifest directly: if any child is DECLARED and none resolved, we refuse.
-        let declared_children = crate::universe::active_universe_dir(app)
-            .ok()
-            .map(|root| {
-                crate::universe::resolve_child_universe_roots_recursive_strict(&root)
-                    .map(|v| v.len())
-                    .unwrap_or(0)
-            })
-            .unwrap_or(0);
+        // 2026-08-24 panel — this block previously read `.ok()` … `.unwrap_or(0)`, which
+        // collapsed **"I could not read the federation"** into **"there is no federation"**.
+        // That is failing OPEN, in the guard whose entire purpose is to fail closed, and it
+        // disarmed the guard in precisely the case it exists for: an unreadable manifest
+        // yields 0 declared children, so the refusal below never fires, and a linked
+        // universe's notes — sitting under roots we could not resolve — become prunable.
+        // Harmless while this step only COUNTS; at Step 3/4 it deletes another universe's
+        // index rows, which is the Attack-1 scenario itself. An unknown federation is not an
+        // absent one.
+        let declared_roots = match crate::universe::active_universe_dir(app) {
+            Ok(root) => match crate::universe::resolve_child_universe_roots_recursive_strict(&root)
+            {
+                Ok(v) => v,
+                Err(_) => {
+                    return Self {
+                        own_roots,
+                        linked_roots: Default::default(),
+                        refused: Some(
+                            "the universe manifest could not be read — refusing to classify any row, because an unreadable federation is not an absent one",
+                        ),
+                        ancestor_cache: Default::default(),
+                    };
+                }
+            },
+            Err(_) => {
+                return Self {
+                    own_roots,
+                    linked_roots: Default::default(),
+                    refused: Some(
+                        "the active universe root could not be resolved — refusing to classify any row",
+                    ),
+                    ancestor_cache: Default::default(),
+                };
+            }
+        };
         let linked_roots = foreign_library_roots(app, &libs);
-        if declared_children > 0 && linked_roots.is_empty() {
+        // 2026-08-24 diff-scoped inspection — this used to test `linked_roots.is_empty()`, so it
+        // refused only when the federation resolved to NOTHING. The doc four fields above states
+        // the actual contract: *"If ANY linked universe fails to resolve … `refused` is set."*
+        // With two Linked Universes where A resolves and B's folder was renamed in Explorer
+        // between sessions, `declared` still counts B (the strict resolver deliberately KEEPS a
+        // NotFound child) while `foreign_library_roots` silently drops it — a NON-empty set, so
+        // the guard stayed silent and every parent-index row under B's old path classified as a
+        // phantom. Those notes exist; they are merely somewhere else. Today that is a wrong
+        // number stated as fact; at Step 3/4 the same verdict feeds `reindex_delete_note` and
+        // deletes a Linked Universe's index rows — the Attack-1 scenario this guard exists for,
+        // and a write-sovereignty violation.
+        //
+        // So the test is now per-child: every declared child must have contributed at least one
+        // resolved library root. A child universe always registers its own root as a library
+        // (`universe_notes`), so "contributed nothing" means we could not read it — not that it
+        // is legitimately empty.
+        let mut linked_roots = linked_roots;
+        let mut unresolved = 0usize;
+        for d in &declared_roots {
+            let dn = norm(&d.to_string_lossy());
+            match declared_child_status(&dn, &linked_roots, absence_is_trustworthy(d)) {
+                DeclaredChild::Contributed => {}
+                DeclaredChild::AbsentButTrusted => {
+                    // Its folder is gone, so it can hide no note — the run continues. But rows
+                    // may still point under its old path, and those must never be pruned, so its
+                    // declared root joins the protected set. Attack-1 holds either way.
+                    linked_roots.insert(dn);
+                }
+                DeclaredChild::Unresolved => unresolved += 1,
+            }
+        }
+        if unresolved > 0 {
             return Self {
                 own_roots,
                 linked_roots: Default::default(),
@@ -180,6 +253,16 @@ impl ClassifierCtx {
     /// Test-only constructor: build a ctx directly from already-resolved root sets. Used by
     /// the test battery to exercise the classifier without a live `AppHandle`. Production
     /// code MUST use `build`.
+    /// Why this run declined to classify anything, if it did.
+    ///
+    /// Exposed read-only (2026-08-24 panel) so the caller can say so in `diagnostics.log`: a
+    /// refused run reports zero phantoms and therefore looks exactly like a clean universe,
+    /// and "we could not tell" must be distinguishable from "there is nothing to tell". The
+    /// field stays private — a caller may READ the refusal, never set one.
+    pub fn refusal(&self) -> Option<&'static str> {
+        self.refused
+    }
+
     #[cfg(test)]
     pub(crate) fn for_test(
         own_roots: std::collections::HashSet<String>,
@@ -290,11 +373,148 @@ pub fn classify(conn: &Connection, path: &str, ctx: &ClassifierCtx) -> Verdict {
 /// Normalise a path for containment testing. Mirrors `libraries::path_is_under_any`'s own
 /// convention (lowercase forward-slash, trailing-slash-stripped).
 fn norm(p: &str) -> String {
+    // Strip the Windows VERBATIM prefix first. `fs::canonicalize` returns `\\?\E:\…` on
+    // Windows, while every path that reaches us from `libraries.json` is a plain `E:\…`.
+    // Normalising without stripping produced `//?/e:/…` on one side and `e:/…` on the other,
+    // so the two could never compare equal.
+    //
+    // This was not theoretical: the 2026-08-24 Attack-1 fix compared canonicalised declared
+    // child roots against plain linked-library roots, concluded that EVERY declared child had
+    // failed to resolve, and refused the whole run — turning a working feature into permanent
+    // silence. It reached the Boss's test as "there is no sentence at all", and his run is what
+    // caught it. The unit tests could not: they fed the comparison pre-normalised literals, so
+    // they exercised the LOGIC and never the INPUT FORM.
+    //
+    // Stripping is a no-op for the plain paths that dominate here, so it cannot disturb them.
+    let p = p.strip_prefix(r"\\?\").unwrap_or(p);
     p.replace('\\', "/").trim_end_matches('/').to_lowercase()
+}
+
+/// Did EVERY declared linked universe actually contribute a resolved library root?
+///
+/// The Attack-1 decision, extracted free of `AppHandle` so a regression test exercises the REAL
+/// function rather than a copy that would keep passing after this one changed — the
+/// `libraries::foreign_roots_of` pattern.
+///
+/// Found by the 2026-08-24 diff-scoped inspection: the guard used to ask
+/// `linked_roots.is_empty()`, which refuses only a federation that resolved to NOTHING. The two
+/// inputs disagree about a missing child — `resolve_child_universe_roots_recursive_strict`
+/// deliberately KEEPS a child whose folder is `NotFound`, while `resolve_libraries_recursive`
+/// silently skips it — so with one child present and one renamed away, the set was non-empty,
+/// the guard stayed silent, and every parent-index row under the renamed child's old path
+/// classified as a phantom. Those notes exist; they are merely somewhere else.
+///
+/// A child universe always registers its own root as a library (`universe_notes`), so a child
+/// that contributed nothing was unreadable — never legitimately empty.
+fn child_contributed(dn: &str, linked_roots: &std::collections::HashSet<String>) -> bool {
+    let prefix = format!("{}/", dn);
+    linked_roots.iter().any(|l| l == dn || l.starts_with(&prefix))
+}
+
+/// Test-only: did EVERY declared child contribute a resolved root?
+///
+/// This is the *contribution* half of the decision, not the whole of it — `declared_child_status`
+/// is the real arbiter, because a child whose folder is genuinely gone contributes nothing and
+/// must still not stop the run. Kept because the cases built on it pin things that remain true
+/// and were expensive to learn: that a canonicalised declared root must match its plain linked
+/// twin, and that a prefix lookalike (`child b2`) must not satisfy `child b`.
+#[cfg(test)]
+fn federation_is_complete(
+    declared_norm: &[String],
+    linked_roots: &std::collections::HashSet<String>,
+) -> bool {
+    declared_norm.iter().all(|d| child_contributed(d, linked_roots))
+}
+
+/// What a single declared child means for the run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DeclaredChild {
+    /// It resolved and contributed at least one library root. Nothing to do.
+    Contributed,
+    /// Its folder is genuinely gone, on a mount we can still read. It can hide no note, so it
+    /// must NOT stop the run — but any index row still pointing under it is protected anyway.
+    AbsentButTrusted,
+    /// It exists and yielded nothing, or we could not trust its absence (possible unmounted
+    /// drive). Ambiguous → the whole run refuses.
+    Unresolved,
+}
+
+/// Decide one declared child. Pure, and takes the filesystem answer as a VALUE
+/// (`absence_is_trustworthy` = the folder does not exist AND its nearest existing ancestor is
+/// readable) so it can be tested with the same inputs the caller really supplies.
+///
+/// # Why "genuinely gone" must not refuse the run
+///
+/// The first version of this guard refused whenever any declared child failed to resolve. That
+/// reads as maximally safe and is not: `resolve_child_universe_roots_recursive_strict` is
+/// **recursive**, so a universe inherits the declared children of its linked universes. The
+/// Boss's `Eisa Universe` links `كون عيسى`, which still declares a grandchild
+/// (`Two universe UNIVERSE`) whose folder was deleted long ago. One dead grandchild therefore
+/// refused every run, permanently, and the feature showed nothing at all — twice, in his own
+/// testing, before this was understood.
+///
+/// A folder that does not exist can hide no note, so it cannot make the "don't touch federated
+/// rows" check vacuous — which is the only thing the refusal protects. What it CAN do is leave
+/// index rows pointing under its old path, so the caller adds that path to the protected set:
+/// the run proceeds, and those rows are still never pruned. Attack-1 is preserved exactly, and
+/// the refusal is reserved for real ambiguity: a child that is present but unreadable, or an
+/// absence we cannot trust because the mount itself may be gone.
+pub(crate) fn declared_child_status(
+    dn: &str,
+    linked_roots: &std::collections::HashSet<String>,
+    absence_is_trustworthy: bool,
+) -> DeclaredChild {
+    if child_contributed(dn, linked_roots) {
+        DeclaredChild::Contributed
+    } else if absence_is_trustworthy {
+        DeclaredChild::AbsentButTrusted
+    } else {
+        DeclaredChild::Unresolved
+    }
+}
+
+/// The nearest EXISTING ancestor of `path` is readable — the same mount-aware probe `classify`
+/// uses per row, in a free form usable before a `ClassifierCtx` exists. Called once per declared
+/// child, so it needs no cache.
+fn absence_is_trustworthy(path: &Path) -> bool {
+    if path.exists() {
+        return false; // present: its silence is not explained by absence
+    }
+    let mut cur = path.parent();
+    while let Some(dir) = cur {
+        if dir.as_os_str().is_empty() {
+            return false;
+        }
+        if dir.exists() {
+            return std::fs::read_dir(dir).is_ok();
+        }
+        cur = dir.parent();
+    }
+    false
 }
 
 /// True if this note_meta row carries any earned data. Any query error returns `Err` — the
 /// caller turns that into `Unknown`, which is not-prunable, which is the correct posture.
+///
+/// # Do not "optimise" this into three batched scans — it was measured, and it is worse
+///
+/// The shape below is three indexed point lookups per candidate, which reads as wasteful next
+/// to "just pre-load the earned paths into a set once." Measured 2026-08-24 against the live
+/// `Eisa Universe` database (312 MB, 621 candidates), read-only:
+///
+/// | approach                                    | cold    | warm    |
+/// |---------------------------------------------|---------|---------|
+/// | per-row point lookups (this code)           | 11.6 s  | 0.042 s |
+/// | three batched `DISTINCT`/`IS NOT NULL` scans| 38.8 s  |    —    |
+///
+/// The batched form is ~3× SLOWER because the cost here is not query shape but **cold random
+/// page reads**: three full scans touch far more pages than 621 lookups that each ride an
+/// existing index (`idx_link_boot` covers the `note_links` predicate; the other two are primary
+/// keys). Warm, the whole pass costs 42 ms — the queries were never the problem.
+///
+/// The cost is also paid on a background thread (`reconcile::maybe_schedule` spawns and returns),
+/// so it delays no paint, and it is **0.000 s** on the Boss's daily universe, which has zero
+/// outside-root rows to classify at all.
 fn has_earned_data(conn: &Connection, path: &str) -> Result<bool, rusqlite::Error> {
     // Outgoing links: any promoted confidence, any archive/other status, any weight > 1.0,
     // any traversal_count > 0. The defaults are 'hypothesis' / 'active' / 1.0 / 0
@@ -510,6 +730,135 @@ mod tests {
             Verdict::Unknown(_) => (),
             other => panic!("expected Unknown on refused ctx, got {:?}", other),
         }
+    }
+
+    // The Attack-1 DECISION itself (the guard that sets `refused`), as opposed to
+    // `attack1b` above which only proves a refused ctx yields `Unknown`. The bug the
+    // 2026-08-24 diff-scoped inspection found lived here, and no test could see it:
+    // the old guard asked `linked_roots.is_empty()`, so a PARTIALLY-resolved federation
+    // sailed through while the module's doc promised it would refuse.
+
+    #[test]
+    fn attack1c_a_child_that_contributed_nothing_is_not_counted_as_contributing() {
+        // Two Linked Universes declared. A resolves; B's folder was renamed in Explorer
+        // between sessions, so `foreign_library_roots` silently drops it while the strict
+        // declared list still carries it. The set is NON-EMPTY — which is exactly why the
+        // old `is_empty()` test stayed silent and let B's notes be called phantoms.
+        let declared = vec!["e:/u/child a".to_string(), "e:/u/child b".to_string()];
+        let mut linked = HashSet::new();
+        linked.insert("e:/u/child a".to_string());
+        linked.insert("e:/u/child a/library one".to_string());
+
+        assert!(
+            !federation_is_complete(&declared, &linked),
+            "a federation missing ONE of several declared children must refuse",
+        );
+    }
+
+    #[test]
+    fn attack1g_a_canonicalised_declared_root_still_matches_a_plain_linked_root() {
+        // THE BUG THE BOSS'S TEST CAUGHT, pinned. `resolve_child_universe_roots_recursive_strict`
+        // returns CANONICALISED paths — on Windows that is the verbatim form `\\?\E:\…` — while
+        // `foreign_library_roots` normalises the plain `E:\…` strings from `libraries.json`.
+        // Comparing them without stripping the prefix made every declared child look unresolved,
+        // so the guard refused every run and the feature went permanently silent.
+        //
+        // The earlier tests could not catch it: they fed `federation_is_complete` pre-normalised
+        // literals, exercising the LOGIC while never exercising the INPUT FORM the caller
+        // actually supplies. This one builds the declared side the way the real code does.
+        let tmp = TempDir::new().unwrap();
+        let child = tmp.path().join("Child Universe");
+        std::fs::create_dir_all(&child).unwrap();
+
+        // The declared side, produced exactly as ClassifierCtx::build produces it.
+        let canonical = std::fs::canonicalize(&child).unwrap();
+        let declared = vec![norm(&canonical.to_string_lossy())];
+
+        // The linked side, produced as foreign_library_roots does: the plain path, normalised.
+        let mut linked = HashSet::new();
+        linked.insert(norm(&child.to_string_lossy()));
+
+        assert!(
+            federation_is_complete(&declared, &linked),
+            "a canonicalised declared root must match its own plain linked root\n\
+             declared={:?}\n  linked={:?}",
+            declared,
+            linked,
+        );
+    }
+
+    #[test]
+    fn attack1h_a_dead_grandchild_universe_must_not_refuse_the_whole_run() {
+        // THE SECOND FAILURE THE BOSS'S TEST CAUGHT, pinned.
+        //
+        // `resolve_child_universe_roots_recursive_strict` is RECURSIVE: a universe inherits the
+        // declared children of its linked universes. `Eisa Universe` links `كون عيسى`, which
+        // still declares a grandchild whose folder was deleted long ago. Under the first version
+        // of this guard that single dead grandchild refused every run, permanently — the feature
+        // showed nothing at all, twice, in his own testing.
+        //
+        // A folder that does not exist can hide no note, so it cannot make the federated-rows
+        // check vacuous, which is the only thing the refusal protects.
+        let tmp = TempDir::new().unwrap();
+        let gone = tmp.path().join("Deleted Universe");
+        // deliberately NOT created — but its parent exists and is readable
+        assert!(!gone.exists());
+
+        let dn = norm(&gone.to_string_lossy());
+        let linked = HashSet::new(); // it contributed nothing, because it is not there
+
+        assert_eq!(
+            declared_child_status(&dn, &linked, absence_is_trustworthy(&gone)),
+            DeclaredChild::AbsentButTrusted,
+            "a declared child whose folder is genuinely gone, on a readable mount, must not refuse",
+        );
+    }
+
+    #[test]
+    fn attack1i_a_child_that_is_present_but_contributed_nothing_still_refuses() {
+        // The refusal must survive for real ambiguity: the folder is there, so its silence is
+        // NOT explained by absence — it could be an unreadable manifest hiding real notes.
+        let tmp = TempDir::new().unwrap();
+        let present = tmp.path().join("Present But Silent");
+        std::fs::create_dir_all(&present).unwrap();
+
+        let dn = norm(&present.to_string_lossy());
+        let linked = HashSet::new();
+
+        assert_eq!(
+            declared_child_status(&dn, &linked, absence_is_trustworthy(&present)),
+            DeclaredChild::Unresolved,
+            "a child that EXISTS but resolved nothing is ambiguous and must refuse",
+        );
+    }
+
+    #[test]
+    fn attack1d_every_child_resolved_is_complete() {
+        let declared = vec!["e:/u/child a".to_string(), "e:/u/child b".to_string()];
+        let mut linked = HashSet::new();
+        linked.insert("e:/u/child a".to_string());
+        linked.insert("e:/u/child b/some library".to_string()); // contributes via a descendant
+        assert!(federation_is_complete(&declared, &linked));
+    }
+
+    #[test]
+    fn attack1e_no_declared_children_means_nothing_to_judge() {
+        // A universe with no federation at all must NOT be refused — that would disable the
+        // whole feature for the common case.
+        assert!(federation_is_complete(&[], &HashSet::new()));
+    }
+
+    #[test]
+    fn attack1f_a_prefix_lookalike_does_not_count_as_resolved() {
+        // "child b2" must not satisfy "child b" — a substring match here would re-open the
+        // hole this guard closes.
+        let declared = vec!["e:/u/child b".to_string()];
+        let mut linked = HashSet::new();
+        linked.insert("e:/u/child b2".to_string());
+        assert!(
+            !federation_is_complete(&declared, &linked),
+            "a sibling whose name merely starts with the declared path must not count",
+        );
     }
 
     // ── Attack 2: earned data always wins over "the file is gone" ───────────────────

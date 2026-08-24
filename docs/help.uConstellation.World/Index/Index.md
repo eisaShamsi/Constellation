@@ -86,6 +86,8 @@ The Index reads directly from Constellation's full-text search index, which is m
 
 The one interval nothing can watch is the time the app is **closed**. A note edited by another device, a sync tool, or `git pull` while Constellation was shut down is not in the index until it is read again. Constellation checks for exactly that just after it opens, and if it finds anything it says so in a band across the top of the window, with a **Repair now** button. The same repair is always available from **Settings → Index → Index repair**. It re-reads what changed, indexes anything never seen before, and rebuilds the derived views — without ever writing to your note files. See the User Manual, "If your notes changed while Constellation was closed".
 
+That same band may also report a different kind of leftover: entries that point at notes which no longer exist on disk, belong to no library of this universe, and carry none of your work — the reason a search result can occasionally open nothing. That sentence deliberately carries **no Repair now button**, because the repair reaches notes by walking your libraries and re-reading their files, and one of these leftovers has neither. Constellation reports the number; removing them is a separate explicit action. The count is conservative — if a drive holding a library is unavailable it reports nothing rather than risk mistaking your real notes for leftovers — and zero is a normal, healthy answer.
+
 ## Multilingual NLP
 
 Behind the Index, every word is tokenized through a language-aware pipeline:

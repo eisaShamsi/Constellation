@@ -6,7 +6,8 @@
     "incomplete": "No se pudieron leer algunas carpetas o archivos, así que podría haber más.",
     "repairNow": "Reparar ahora",
     "repairing": "Reparando…",
-    "repairBlocked": "No se pudo iniciar la reparación: {reason}"
+    "repairBlocked": "No se pudo iniciar la reparación: {reason}",
+    "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. No se ha cambiado nada: solo se han contado."
   },
   "saveHealth": {
     "copySuffix": "copia recuperada",
@@ -4032,6 +4033,11 @@
       "one": "{count} mención",
       "many": "{count} menciones",
       "other": "{count} menciones"
+    },
+    "entries": {
+      "one": "{count} entrada",
+      "many": "{count} entradas",
+      "other": "{count} entradas"
     }
   },
   "embeds": {

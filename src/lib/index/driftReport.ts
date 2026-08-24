@@ -44,6 +44,18 @@ export interface DriftReport {
 	walkComplete: boolean;
 	dirsUnreadable: number;
 	filesUnreadable: number;
+	/**
+	 * PJ-369 — rows whose note is gone, that belong to no library of this universe and no
+	 * linked universe, and that carry no earned link or review data. They surface as search
+	 * results that open nothing, plus phantom edges in the link graph, Sky View and the
+	 * Reviewer. On the Boss's `Eisa Universe`: 603 rows dragging 19,472 link edges. On his
+	 * DAILY universe (`Eisa Cognitive Knowledge`) the count is zero — measured, not assumed —
+	 * so a clean daily boot showing no sentence is the feature working, not a failure.
+	 *
+	 * Counted at boot, never acted on there. Removal is offered from Settings → Index, and
+	 * this is deliberately NOT part of `hasFindings` — see the note there.
+	 */
+	stalePhantoms: number;
 }
 
 /**
@@ -67,6 +79,21 @@ export function hasFindings(r: DriftReport | null | undefined): r is DriftReport
 			r.dirsUnreadable > 0 ||
 			r.filesUnreadable > 0)
 	);
+}
+
+/**
+ * PJ-369 — are there stale phantom entries to offer removal for? Deliberately separate from
+ * `hasFindings`, mirroring `DriftReport::has_phantoms`.
+ *
+ * The reason is the button. The notice band that `hasFindings` gates offers **Repair now**,
+ * and a repair provably cannot fix a phantom: the repair walks libraries and re-reads files,
+ * while a phantom's whole nature is that it lives under no library and has no file. Folding
+ * this into `hasFindings` would put a control in front of the user that cannot act on the
+ * sentence above it — the "false door" the PJ-369 design attack named. Phantoms get their own
+ * sentence and their own control in Settings → Index.
+ */
+export function hasPhantoms(r: DriftReport | null | undefined): r is DriftReport {
+	return !!r && r.stalePhantoms > 0;
 }
 
 /**

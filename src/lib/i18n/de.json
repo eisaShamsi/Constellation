@@ -6,7 +6,8 @@
     "incomplete": "Einige Ordner oder Dateien konnten nicht gelesen werden, daher könnte es mehr geben.",
     "repairNow": "Jetzt reparieren",
     "repairing": "Wird repariert…",
-    "repairBlocked": "Die Reparatur konnte nicht starten: {reason}"
+    "repairBlocked": "Die Reparatur konnte nicht starten: {reason}",
+    "stalePhantoms": "{noun} im Suchindex verweisen auf Notizen, die nicht mehr auf der Festplatte existieren. Sie können als Suchergebnisse erscheinen, die nichts öffnen, und als Verbindungen zu Notizen, die es nicht gibt. Es wurde nichts verändert — sie wurden nur gezählt."
   },
   "saveHealth": {
     "copySuffix": "wiederhergestellte Kopie",
@@ -4005,6 +4006,10 @@
     "mentions": {
       "one": "{count} Erwähnung",
       "other": "{count} Erwähnungen"
+    },
+    "entries": {
+      "one": "{count} Eintrag",
+      "other": "{count} Einträge"
     }
   },
   "embeds": {

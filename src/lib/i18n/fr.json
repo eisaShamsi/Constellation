@@ -6,7 +6,8 @@
     "incomplete": "Certains dossiers ou fichiers n'ont pas pu être lus, il pourrait donc y en avoir davantage.",
     "repairNow": "Réparer maintenant",
     "repairing": "Réparation…",
-    "repairBlocked": "La réparation n'a pas pu démarrer : {reason}"
+    "repairBlocked": "La réparation n'a pas pu démarrer : {reason}",
+    "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Rien n'a été modifié — elles ont seulement été comptées."
   },
   "saveHealth": {
     "copySuffix": "copie récupérée",
@@ -4032,6 +4033,11 @@
       "one": "{count} mention",
       "many": "{count} mentions",
       "other": "{count} mentions"
+    },
+    "entries": {
+      "one": "{count} entrée",
+      "many": "{count} entrées",
+      "other": "{count} entrées"
     }
   },
   "embeds": {

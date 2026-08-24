@@ -6,7 +6,8 @@
     "incomplete": "Some folders or files could not be read, so there may be more.",
     "repairNow": "Repair now",
     "repairing": "Repairing…",
-    "repairBlocked": "The repair could not start: {reason}"
+    "repairBlocked": "The repair could not start: {reason}",
+    "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. Nothing has been changed — they have only been counted."
   },
   "saveHealth": {
     "copySuffix": "recovered copy",
@@ -4182,6 +4183,10 @@
     "mentions": {
       "one": "{count} mention",
       "other": "{count} mentions"
+    },
+    "entries": {
+      "one": "{count} entry",
+      "other": "{count} entries"
     }
   },
   "embeds": {

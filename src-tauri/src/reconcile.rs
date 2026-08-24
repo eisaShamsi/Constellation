@@ -99,7 +99,7 @@ pub struct DriftReport {
     /// copies §8 stopped creating and §13 may one day offer to remove.
     ///
     /// Counted by PATH against the federated root set, never by `library_name NOT IN
-    /// (own)`. On the Boss's live universe those two differ by 69×: 9 rows genuinely
+    /// (own)`. On the Boss's `Eisa Universe` those two differ by 69×: 9 rows genuinely
     /// belong to a linked universe, while 621 merely sit outside the own roots — 603 of
     /// them pointing at `E:\Cognitive Knowledge\…`, the pre-MIG-108 location, where no
     /// file exists any more. Reporting 621 as "duplicated from linked universes" would be
@@ -125,6 +125,24 @@ pub struct DriftReport {
     /// gates dead-row REMOVAL, and one unreadable file must not disarm that.
     pub dirs_unreadable: usize,
     pub files_unreadable: usize,
+    /// PJ-369 — rows this pass classified as **stale phantoms**: their file is gone, the
+    /// mount is provably live, they sit under no registered library and no linked universe,
+    /// and they carry no earned link or review data. On the Boss's `Eisa Universe` this is
+    /// 603 rows dragging 19,472 link edges, all pointing into `E:\Cognitive Knowledge`
+    /// (a separate legacy universe whose content now lives in a Linked Universe).
+    ///
+    /// On his DAILY universe (`Eisa Cognitive Knowledge`) it is **0** — measured 2026-08-24,
+    /// not assumed: all 8,031 rows sit under one of its 19 registered libraries, and the
+    /// universe root is itself a library (`universe_notes`), so no row can fall outside.
+    /// A zero here is the honest answer, not a broken count.
+    ///
+    /// **Counted, never acted on.** This pass is disk-first and only *visits* rows under a
+    /// walked root; these are found by a separate classifier sweep that writes nothing. The
+    /// removal is user-offered from Settings → Index (PJ-369 Step 4), because deleting index
+    /// rows is exactly the class of operation this project requires to be visible.
+    ///
+    /// Deliberately **NOT** part of `has_findings()` — see the note there.
+    pub stale_phantoms: usize,
 }
 
 impl DriftReport {
@@ -148,12 +166,26 @@ impl DriftReport {
     /// Keyed on the COUNTS rather than on `!walk_complete`, deliberately: `walk_complete`
     /// is `false` in `DriftReport::default()`, so a `!` test would make every default-
     /// constructed value look like a finding.
+    /// **PJ-369 — `stale_phantoms` is deliberately absent from this test.** The notice band
+    /// this gates offers "Repair now", and a repair cannot fix a phantom: the repair walks
+    /// libraries and re-reads files, while a phantom's whole nature is that it lives under no
+    /// library and has no file. Including it here would put a button in front of the user
+    /// that provably cannot act on the thing it appears beneath — the "false door" the
+    /// PJ-369 design attack named. Phantoms get their own sentence and their own control in
+    /// Settings → Index; this stays the definition of *repairable* findings.
     pub fn has_findings(&self) -> bool {
         self.drifted > 0
             || self.missing_from_index > 0
             || self.missing_on_disk > 0
             || self.dirs_unreadable > 0
             || self.files_unreadable > 0
+    }
+
+    /// PJ-369 — is there anything to tell the user about phantoms? Separate from
+    /// `has_findings` precisely because the remedy is different (a user-offered prune in
+    /// Settings, not "Repair now").
+    pub fn has_phantoms(&self) -> bool {
+        self.stale_phantoms > 0
     }
 }
 
@@ -222,7 +254,15 @@ fn under(path_norm: &str, root_norm: &str) -> bool {
 /// Schedule the reconcile on a background thread. Returns immediately.
 /// Called from `ensure_search_db_ready` after the connection is live.
 pub fn maybe_schedule(app: tauri::AppHandle) {
-    thread::spawn(move || match run(&app) {
+    thread::spawn(move || {
+    // 2026-08-24 panel — the generation as it stood when this pass was scheduled. `run`
+    // gates its own returns on the same value, but a switch can also land in the window
+    // between `run` returning and the emit below, and the emit is what the user SEES.
+    // Captured here rather than threaded out of `run` so the check cannot be forgotten by
+    // a future early return inside it: whatever `run` decides, nothing is surfaced unless
+    // the universe is still the one that was active when we started.
+    let generation_at_start = crate::search::federation_generation_now(&app);
+    match run(&app) {
         Ok(outcome) => {
             if outcome.relocated > 0 || outcome.readopted > 0 || outcome.removed > 0 {
                 diag(
@@ -245,10 +285,33 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
                     if report.dirs_unreadable > 0 { format!(", {} folder(s) unreadable", report.dirs_unreadable) } else { String::new() },
                     if report.files_unreadable > 0 { format!(", {} file(s) unreadable", report.files_unreadable) } else { String::new() },
                 ));
-                crate::index_repair::record_drift_report(&app, report);
+                // PJ-369 — its own line, not appended to the drift sentence: a phantom is a
+                // different finding with a different remedy, and burying it inside a line
+                // whose subject is "repairable drift" is how it would be misread as one.
+                if report.stale_phantoms > 0 {
+                    diag(&app, &format!(
+                        // No "offered for removal in Settings → Index" here: that control does
+                        // not exist until Step 4, and the user-facing sentence had the same
+                        // claim removed for the same reason. A log line that promises a door
+                        // which is not built misleads whoever reads the log next — including me.
+                        "[reconcile] {} stale index entr{} point at notes that no longer exist and belong to no library — counted only, nothing was changed",
+                        report.stale_phantoms,
+                        if report.stale_phantoms == 1 { "y" } else { "ies" },
+                    ));
+                }
+                if crate::index_repair::walk_may_proceed(
+                    false,
+                    crate::search::federation_generation_now(&app),
+                    generation_at_start,
+                ) {
+                    crate::index_repair::record_drift_report(&app, report);
+                } else {
+                    diag(&app, "[reconcile] universe switched before the report could be shown — discarded (its numbers describe the universe just left).");
+                }
             }
         }
         Err(e) => diag(&app, &format!("[reconcile] FAILED (non-fatal): {}", e)),
+    }
     });
 }
 
@@ -337,6 +400,25 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
     //    under an accessible root are candidates (never touch a bad mount).
     let mut stale: Vec<(String, String)> = Vec::new();
     let mut foreign_rows = 0usize;
+    // PJ-369 Step 2 — the phantom COUNT, computed inside the loop that already visits every
+    // row so it costs no extra scan. Write-free: this only counts. The classifier context is
+    // built once; if it cannot be built (unreadable registry, partially-resolved federation)
+    // every classification returns `Unknown` and the count stays 0 — honest silence rather
+    // than a number we cannot stand behind.
+    let mut stale_phantoms = 0usize;
+    // Rows the classifier declined to judge. Never surfaced as a count to the user — a doubt
+    // is not a finding — but logged, so "the run refused" can be told apart from "there was
+    // nothing to report" by anyone reading the diagnostics afterwards.
+    let mut phantom_unknown = 0usize;
+    let phantom_ctx = crate::phantom_prune::ClassifierCtx::build(app);
+    // Deliberately the READ-ONLY reader, not a plain `Connection::open`: `SQLITE_OPEN_READ_ONLY`
+    // + `query_only=ON` make "this counting pass cannot write" an invariant SQLite ENFORCES
+    // rather than a promise the reviewer has to verify by reading every query. It also carries
+    // the 5s `busy_timeout`, so a row is classified rather than silently skipped when the writer
+    // holds the lock — without it the Boss would see a different number on every boot.
+    // `.ok()` → `None` → the branch below never runs → count stays 0 → honest silence.
+    let phantom_conn =
+        crate::search::open_read_only_search_conn(&crate::search::db_path(app)?).ok();
     for (p, cid, _) in &rows {
         if p.is_empty() {
             continue;
@@ -352,6 +434,23 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
             // mass-touch rows on a root we cannot see).
             if crate::libraries::path_is_under_any(p, &foreign_roots) {
                 foreign_rows += 1;
+            } else if let Some(pc) = phantom_conn.as_ref() {
+                // PJ-369 — the rows this `continue` has always skipped are exactly the
+                // phantom candidates: outside every own root AND not a linked universe's.
+                // Classify (never act). Only a definite `Prune` verdict counts; `Keep` and
+                // `Unknown` both leave the tally untouched, so a doubt is never a number.
+                match crate::phantom_prune::classify(pc, p, &phantom_ctx) {
+                    crate::phantom_prune::Verdict::Prune(_) => stale_phantoms += 1,
+                    // 2026-08-24 panel — a REFUSED run and a genuinely clean universe both
+                    // produced `0`, and rendered identically: no sentence. That makes "we
+                    // could not tell" indistinguishable from "there is nothing to tell",
+                    // which is the silence this whole migration exists to end. Counted here
+                    // so the refusal is at least visible in `diagnostics.log`; the
+                    // user-facing form belongs with Step 4's control and its receipt, and is
+                    // recorded as owed rather than invented now.
+                    crate::phantom_prune::Verdict::Unknown(_) => phantom_unknown += 1,
+                    crate::phantom_prune::Verdict::Keep(_) => {}
+                }
             }
             continue;
         }
@@ -391,7 +490,19 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         walk_complete,
         dirs_unreadable: walk.dirs_unreadable,
         files_unreadable: walk.files_unreadable,
+        stale_phantoms,
     };
+    // 2026-08-24 panel — say so when the classifier declined. A refusal reports `0` phantoms
+    // and therefore renders exactly like a clean universe; without this line there is no way,
+    // afterwards, to tell which of the two happened. `refused` is whole-run (a partial
+    // federation, an unreadable manifest); `phantom_unknown` is per-row.
+    if phantom_unknown > 0 || phantom_ctx.refusal().is_some() {
+        diag(app, &format!(
+            "[reconcile] phantom classification INCOMPLETE — {} row(s) undecided{}. The phantom count below is a floor, not a total.",
+            phantom_unknown,
+            phantom_ctx.refusal().map(|r| format!("; run refused: {}", r)).unwrap_or_default(),
+        ));
+    }
     // The row snapshot is finished with — `known` holds the only part still needed, and
     // `rows` is ~1.5 MB of paths that would otherwise live through the walk (seconds, on a
     // cold disk) and the whole write phase below.
@@ -402,6 +513,20 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         // this pass's healing (nothing at boot re-reads a changed file; that is the whole
         // premise of PJ-207). Returning early here without the report is how the check
         // would have stayed silent on the ONLY universe state it was written to catch.
+        //
+        // 2026-08-24 panel — but it must still be OUR report. The write-phase gate below
+        // already refuses to surface a departed universe's numbers ("the same cross-universe
+        // contamination §8 exists to prevent, in the notice instead of the index"); this
+        // return published them anyway, and it is the path a universe with no stale or
+        // orphan rows takes on EVERY boot. Concretely: the pass starts in a universe with
+        // phantoms, the user switches to a clean one while it is still running, and the
+        // clean universe displays the departed one's count. That is the wrong-universe
+        // error this project has already made on paper this week; the software must not
+        // make it too.
+        if !still_ours() {
+            diag(app, "[reconcile] universe switched mid-pass — no report (its numbers describe the universe just left).");
+            return Ok(ReconcileOutcome::default());
+        }
         return Ok(ReconcileOutcome { report: Some(report), ..Default::default() });
     }
 
@@ -414,6 +539,13 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         // it. Refusing to act is correct here (WA#4), but refusing to act silently is what
         // left the Boss's 825 missing notes reported to a log file and nowhere else. The
         // cap decides what this pass may TOUCH; it does not decide what the user may KNOW.
+        //
+        // 2026-08-24 panel — same universe gate as the clean-drift return above. "What the
+        // user may know" still means what they may know ABOUT THE UNIVERSE THEY ARE IN.
+        if !still_ours() {
+            diag(app, "[reconcile] universe switched mid-pass — no report (its numbers describe the universe just left).");
+            return Ok(ReconcileOutcome::default());
+        }
         return Ok(ReconcileOutcome { report: Some(report), ..Default::default() });
     }
 

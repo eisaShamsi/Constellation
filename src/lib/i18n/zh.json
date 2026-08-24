@@ -6,7 +6,8 @@
     "incomplete": "有些文件夹或文件无法读取，因此可能还有更多。",
     "repairNow": "立即修复",
     "repairing": "修复中…",
-    "repairBlocked": "修复无法启动：{reason}"
+    "repairBlocked": "修复无法启动：{reason}",
+    "stalePhantoms": "搜索索引中的 {noun} 指向磁盘上已不存在的笔记。它们可能显示为打不开任何内容的搜索结果，以及指向不存在笔记的关联。未做任何更改 — 只是进行了统计。"
   },
   "saveHealth": {
     "copySuffix": "恢复副本",
@@ -3978,6 +3979,9 @@
     },
     "mentions": {
       "other": "{count}处提及"
+    },
+    "entries": {
+      "other": "{count} 个条目"
     }
   },
   "embeds": {

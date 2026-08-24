@@ -6,7 +6,8 @@
     "incomplete": "Algumas pastas ou ficheiros não puderam ser lidos, por isso pode haver mais.",
     "repairNow": "Reparar agora",
     "repairing": "A reparar…",
-    "repairBlocked": "Não foi possível iniciar a reparação: {reason}"
+    "repairBlocked": "Não foi possível iniciar a reparação: {reason}",
+    "stalePhantoms": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Podem aparecer como resultados que não abrem nada e como ligações a notas inexistentes. Nada foi alterado — apenas foram contadas."
   },
   "saveHealth": {
     "copySuffix": "cópia recuperada",
@@ -4032,6 +4033,11 @@
       "one": "{count} menção",
       "many": "{count} menções",
       "other": "{count} menções"
+    },
+    "entries": {
+      "one": "{count} entrada",
+      "many": "{count} entradas",
+      "other": "{count} entradas"
     }
   },
   "embeds": {

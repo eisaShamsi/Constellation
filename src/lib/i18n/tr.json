@@ -6,7 +6,8 @@
     "incomplete": "Bazı klasörler veya dosyalar okunamadı; daha fazlası olabilir.",
     "repairNow": "Şimdi onar",
     "repairing": "Onarılıyor…",
-    "repairBlocked": "Onarım başlatılamadı: {reason}"
+    "repairBlocked": "Onarım başlatılamadı: {reason}",
+    "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Hiçbir şey değiştirilmedi — yalnızca sayıldılar."
   },
   "saveHealth": {
     "copySuffix": "kurtarılan kopya",
@@ -4005,6 +4006,10 @@
     "mentions": {
       "one": "{count} değinme",
       "other": "{count} değinme"
+    },
+    "entries": {
+      "one": "{count} giriş",
+      "other": "{count} giriş"
     }
   },
   "embeds": {
