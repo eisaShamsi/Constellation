@@ -600,3 +600,66 @@ smuggled into this step.
 
 **Not Boss-tested and not shippable to him yet by design:** Step 3 has no UI. Step 4 adds the
 Settings control, the danger-confirm and the receipt, and that is the next Boss test gate.
+
+---
+
+## §17 — PJ-369 Step 4: the door, and three defects the gates caught in it
+
+**Function in hand:** the Settings → Index control that removes the phantoms Step 2 counts.
+
+**Built:** "Remove stale index entries", rendered only at `phantomCount > 0` (an always-visible
+control for a problem the user does not have invites him to go looking for one, and "Remove 0
+entries" is a button that cannot act). A `danger: true` confirm quoting the count — consent to a
+number, not to a verb. A receipt with a separate honest line per outcome, because `removed` alone
+would flatter a partial run. Strings in all 15 locales, flat with a `{noun}` param so the plural
+agreement lives in `plurals.entries` alone rather than being duplicated across six categories in
+fifteen files.
+
+**Step 2's deferred promise kept in the same commit that earns it:** the notice sentence's tail
+changed from "they have only been counted" to "you can remove them in Settings → Index" — never
+before the door existed.
+
+### Three defects, none of them found by me
+
+1. **Safety inspection (MED).** `RepairState.drift` was written by the boot pass and cleared
+   NOWHERE, so after a universe switch `index_drift_report` kept answering with the DEPARTED
+   universe's numbers — and Settings reads that command directly, re-importing the value the
+   layout had just discarded on switch. Result: "Remove stale index entries — 603 entries" in a
+   universe with none, and a danger dialog asking consent for that number. No wrong deletion was
+   possible (the executor re-derives from the current universe and the classifier fails closed),
+   so the harm was a false statement of state inside a destructive consent. Fixed with
+   `forget_drift_report`, called from `invalidate_search_state` — the ONE fence every switch
+   passes through, so no future switch path can miss it.
+
+2. **Tutorial-auditor (product defect, not a tutorial problem).** It traced the refresh path
+   instead of assuming, and found that after a successful removal BOTH surfaces still said "603"
+   until a restart — the count comes from a cached report only `reconcile::maybe_schedule` writes.
+   Telling the user "603 entries" immediately after removing 603 is the false-success shape at the
+   worst possible moment. It had honestly built the test around the quirk; the right answer was to
+   fix the quirk. `update_drift_phantom_count` now patches ONLY `stale_phantoms` and re-emits the
+   drift event; `SettingsModal` subscribes to it so an open modal is no longer frozen at mount.
+   The residue is **derived** (`candidates - removed`), so a run that stopped early or skipped rows
+   reports its real remainder instead of claiming zero.
+
+3. **ui-inspector (interaction hazard).** `Enter` instantly confirmed the dialog — a held key or a
+   return pressed at an unread dialog would have removed 603 entries. **My first fix was too
+   broad:** I keyed it to `danger`, which would also have taken Enter from the everyday
+   note-delete confirm — an unasked-for change to a daily flow, and a note delete is recoverable
+   from the trash. Narrowed to an explicit `enterConfirms` opt-out used only where there is no way
+   back. Escape still cancels everywhere; only the unsafe direction now costs a deliberate click.
+
+### What the inspector established that I had only hedged
+
+The tutorial said "I have not verified there is a screen that shows you the archived copy". The
+inspector checked and can state it as fact: `read_history_for` — the only reader of
+`note-history.jsonl` — has **zero callers outside its own tests**, and the two commands that expose
+note history query the live `note_state_history` table, which the removal deletes. **No shipped code
+path can read that archive back.** The archive is a durable record, not a restore.
+
+It also re-ran the live harness independently against a copy of the Boss's database and reproduced
+603 removed / 0 failed / 603 archived / idempotent — a second pair of hands on the same claim.
+
+**Verification:** Rust 1566, frontend 1008, `svelte-check` 0 errors, 15 locales in parity, binary
+20:30:52 newer than all 22 changed sources, both build exit codes captured unpiped.
+
+**Not committed.** The Boss tests before commit. The panel is the last gate.
