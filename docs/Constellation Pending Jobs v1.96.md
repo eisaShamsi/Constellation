@@ -377,10 +377,33 @@
 >   no owned root. So the one mechanism that would remove them is the one that refuses to look at
 >   them, and they have survived every boot since.
 >
->   Fix shape: a one-off prune of note_meta rows whose path is under no registered library of
->   this universe AND whose file does not exist — with a receipt, and offered rather than
->   silently applied, because deleting index rows is exactly the class of operation this project
->   requires to be visible.
+>   **INVESTIGATED & REPRODUCED on the LIVE db 2026-08-24.** Bigger than the headline: not 601
+>   search results but **603 phantom notes** carrying **19,472 phantom note_links edges**, plus
+>   603 rows each in `sky_nodes`, `review_schedule`, `note_body` and 127 `note_aliases` — all
+>   under `E:\Cognitive Knowledge\...`, 601 confirmed absent from disk. The dead notes pollute the link
+>   graph, Sky View and the Reviewer, not just search.
+>
+>   **Mechanism confirmed (reconcile.rs step 3; search.rs:12371):** the boot reconcile is
+>   DISK-FIRST — it walks each registered library's own root and checks the index against the
+>   files found. Rows under NO walked root are never visited (it reports "0 rows without a file"
+>   while 603 sit unseen), and step 3 **deliberately `continue`s** every row outside its
+>   own+foreign roots for a load-bearing reason (WA#4): `path.exists()==false` cannot tell a
+>   truly-deleted note from one on an UNMOUNTED drive, so a blind delete would destroy real
+>   notes on an offline mount.
+>
+>   **The safety crux (why it is not a one-liner):** a correct prune needs a MOUNT-AWARE
+>   discriminator — a true phantom is file-gone AND nearest-existing-ancestor-readable (mount is
+>   live, so "gone" is trustworthy) AND under no registered library AND under no linked-universe
+>   root. Verified live: `E:\Cognitive Knowledge` is a readable tree (8 entries) whose specific indexed
+>   `.md` files no longer exist — drive up, files genuinely gone.
+>
+>   **Whole-Ecosystem tables to prune together:** note_meta, note_links, note_aliases, note_body,
+>   sky_nodes, review_schedule, note_embeddings, notes_fts (via triggers), tag_counts (decrement)
+>   — one funnel per path, ideally reindex_delete_note itself.
+>
+>   **Status: DESIGN, not built.** Destructive + safety invariant + offered-with-receipt
+>   (cross-surface) → panel before any code or ruling (Panel-Speaks-First), then a plan to the
+>   Boss. He selected it as the next work 2026-08-24.
 >
 >   **CONFIRMED AGAINST THE LIVE DATABASE 2026-08-23** (read-only, app running, nothing
 >   disturbed): **601** searchable phantom rows, and **9** Linked-Universe rows (PJ-368) —

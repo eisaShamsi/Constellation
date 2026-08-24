@@ -1711,3 +1711,28 @@ measurement.
 
 This is the No-Guessing law working as intended: a plausible unproven mechanism was available at
 every step and I recorded "unknown" instead each time.
+
+### PJ-369 investigated + design launched (2026-08-24) — the Boss's chosen next work
+
+He was offered four next steps and chose **PJ-369** — the phantom search results. Reproduced and
+measured on the LIVE db, and it is bigger than filed: **603 phantom notes, 19,472 phantom link
+edges**, plus 603 rows each in sky/review/body and 127 aliases, all under `E:\Cognitive Knowledge`
+(the pre-MIG-108 location), 601 confirmed gone from disk. So the dead notes pollute the link
+graph, Sky View and the Reviewer, not just search.
+
+**Why it survives every boot (confirmed in reconcile.rs):** reconcile is disk-first — it walks
+registered library roots and checks the index against files found, so rows under no walked root
+are never seen ("0 rows without a file" while 603 sit unseen). And step 3 deliberately `continue`s
+outside-root rows for a load-bearing reason: `exists()==false` is identical for a deleted note and
+one on an unmounted drive.
+
+**The safety crux, and why this is not "just DELETE the rows":** a correct prune needs a
+mount-aware discriminator — file gone AND nearest existing ancestor readable (mount live) AND
+under no registered library AND under no linked-universe root. Verified `E:\Cognitive Knowledge`
+is a live readable tree whose specific files are gone, so the live case is safely prunable — but
+the general rule must fail closed on any doubt.
+
+Because it is destructive on his live index, carries a safety invariant, and needs an
+offered-with-receipt surface, it takes the Migration Rule path: an Architect/design workflow whose
+hardest job is answering "can this ever delete a real note?" adversarially, BEFORE any code or any
+ruling request (Panel-Speaks-First). Launched; it returns a Boss-approvable plan or an honest HOLD.
