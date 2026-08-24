@@ -106,6 +106,7 @@ mod style_presets;
 mod map;
 mod maturity;
 mod perf_trace;
+mod phantom_prune; // PJ-369 — the mount-aware classifier for stale index rows
 mod provenance;
 mod review;
 mod review_backfill;

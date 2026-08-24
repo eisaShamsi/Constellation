@@ -1757,3 +1757,42 @@ verified the two that mattered, because one contradicted what I had told the Bos
 Net: the prune is SAFER than I first framed — these are not this universe's own notes and their
 content is preserved in the linked universe. The plan and the one open decision (archive-all vs
 skip) now go to the Boss for approval — the record corrected first, per SO#10.
+
+### PJ-369 Step 1 — hardened classifier + Rust test battery SHIPPED (2026-08-24)
+
+`src-tauri/src/phantom_prune.rs` — a pure predicate `classify(conn, path, ctx) -> Verdict` with
+13 tests, all green. Every adversary-forced guard is named after the attack it closes:
+`attack0` (registered libraries tested pre-`is_dir()`), `attack1a` (linked-universe rows kept),
+`attack1b` (partial federation → `Unknown` for all rows), `attack2a/b/c` (promoted confidence /
+traversal / review-priority all keep).
+
+**The bug the ground-truth audit caught, which unit tests could not have.** After the 11 initial
+tests were green, I ran the classifier logic against a COPY of the Boss's live db. The first
+run returned **`Prune: 0`** — every one of the 603 phantoms was mis-classified as "carries
+earned data." Decomposition showed all 603 had a `review_schedule` row, but **NONE** had a
+promoted confidence, traversal, weight, non-active status, or review-priority. `review_schedule`
+rows are auto-created as the baseline for every indexed note (`search.rs:4886`), so bare
+existence is not user work — only `last_reviewed IS NOT NULL` OR `snoozed_until IS NOT NULL` is.
+
+Fixed the earned-data query, added two tests pinning the distinction
+(`a_bare_review_schedule_row_is_NOT_earned_data` + `a_reviewed_schedule_row_IS_earned_data`),
+and re-ran the audit. **Corrected ground truth on his live db:**
+
+| verdict | count |
+|---|---|
+| Prune | **603** (taking **19,472 phantom link edges** with them) |
+| Keep — under own library | 2,110 |
+| Keep — linked universe | 9 |
+| Keep — earned data outside libraries | 7 |
+| Keep — file actually exists | 2 |
+| Unknown | 0 |
+| **total** | **2,731** ✓ |
+
+The Boss's headline count (603) is confirmed *empirically*, not just from the ledger's earlier
+`WHERE path LIKE 'E:\Cognitive Knowledge%'`. The 7 earned rows outside libraries and the 2
+still-existing rows outside every root are worth surfacing when Step 4's receipt renders — small
+residuals that deserve their own investigation but should not block Step 1's close.
+
+**The shape worth remembering:** unit tests validate the logic; only running against the real
+data validates the *policy*. My initial "any schedule row = earned" was defensible in theory and
+disastrous in practice — 100% false positives on his exact use case.
