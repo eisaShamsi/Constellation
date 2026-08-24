@@ -80,14 +80,42 @@ function syntheticUniverse(n: number): LayoutCacheRow[] {
 
 // ── Tests ─────────────────────────────────────────────────────────
 
+/**
+ * PJ-380 — time the BEST of several runs, not one cold run.
+ *
+ * These budgets guard against an algorithmic regression. Timed once, cold, they were also
+ * measuring JIT warm-up and whatever GC happened to land in that single call — so on
+ * 2026-08-24 the 32 ms case went red three times in five full-suite runs, purely because
+ * vitest was running other files in parallel and, on another occasion, because a
+ * `cargo build --release` was saturating the CPU. Nothing in the diff touched Sight v6.
+ *
+ * A suite that can go red for reasons unrelated to the code teaches everyone to re-run red
+ * tests instead of reading them, which is exactly how a real regression gets waved through.
+ *
+ * The minimum across runs is the standard estimator for this: scheduler noise and GC can only
+ * ever ADD time, so the fastest run is the closest thing to the true cost — while a genuine
+ * regression slows every run, including the fastest. The budget keeps its meaning; only the
+ * noise is removed.
+ */
+function fastestMs(fn: () => unknown, runs = 5): number {
+	let best = Infinity;
+	for (let i = 0; i < runs; i++) {
+		const t0 = performance.now();
+		fn();
+		best = Math.min(best, performance.now() - t0);
+	}
+	return best;
+}
+
 describe('Sight v6 render-budget', () => {
 	it('computeStarPositions on 1,000 notes completes in ≤100 ms', () => {
 		const rows = syntheticUniverse(1_000);
 		const layout = computeDomeLayout(1200, 800);
 
-		const t0 = performance.now();
-		const stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
-		const elapsed = performance.now() - t0;
+		let stars!: ReturnType<typeof computeStarPositions>;
+		const elapsed = fastestMs(() => {
+			stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+		});
 
 		expect(stars.length).toBe(1_000);
 		expect(elapsed).toBeLessThan(100);
@@ -100,9 +128,10 @@ describe('Sight v6 render-budget', () => {
 		const rows = syntheticUniverse(7_636);
 		const layout = computeDomeLayout(1200, 800);
 
-		const t0 = performance.now();
-		const stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
-		const elapsed = performance.now() - t0;
+		let stars!: ReturnType<typeof computeStarPositions>;
+		const elapsed = fastestMs(() => {
+			stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+		});
 
 		expect(stars.length).toBe(7_636);
 		expect(elapsed).toBeLessThan(200);
@@ -115,9 +144,10 @@ describe('Sight v6 render-budget', () => {
 		const rows = syntheticUniverse(7_636);
 		const filters = toggleFilter(emptyFilters(), 'library', 'Research');
 
-		const t0 = performance.now();
-		const filtered = applyFilters(rows, filters);
-		const elapsed = performance.now() - t0;
+		let filtered!: ReturnType<typeof applyFilters>;
+		const elapsed = fastestMs(() => {
+			filtered = applyFilters(rows, filters);
+		});
 
 		expect(filtered.length).toBeGreaterThan(0);
 		expect(filtered.length).toBeLessThan(rows.length);
@@ -130,9 +160,10 @@ describe('Sight v6 render-budget', () => {
 		const rows = syntheticUniverse(7_636);
 		const filters = toggleFilter(emptyFilters(), 'stratum', 'foundation');
 
-		const t0 = performance.now();
-		const facets = computeFacetCounts(rows, filters);
-		const elapsed = performance.now() - t0;
+		let facets!: ReturnType<typeof computeFacetCounts>;
+		const elapsed = fastestMs(() => {
+			facets = computeFacetCounts(rows, filters);
+		});
 
 		expect(facets.length).toBe(6);
 		expect(facets[0].id).toBe('folder'); // §11 invariant 8 — Folder TOP

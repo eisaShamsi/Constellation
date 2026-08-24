@@ -52,7 +52,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 import { invoke } from '@tauri-apps/api/core';
-import { openTabs, reloadTabsFromDisk } from '$lib/libraries/store';
+import { openTabs, reloadTabsFromDisk, type OpenTab } from '$lib/libraries/store';
 
 /** Did the cascade actually go and READ this file? That is the discriminator. */
 function wasRead(path: string): boolean {
@@ -70,7 +70,7 @@ function tabAt(path: string) {
 		content: 'See [[Old]] here',
 		libraryId: 'lib',
 		library_id: 'lib',
-	} as unknown as ReturnType<typeof get<typeof openTabs>>[number];
+	} as unknown as OpenTab;
 }
 
 describe('PJ-344 — reloadTabsFromDisk skips an open tab whose path form differs', () => {

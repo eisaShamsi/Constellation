@@ -8,8 +8,41 @@ export const meta = {
 // ── Invocation ────────────────────────────────────────────────────────────────
 // Workflow({ name: 'safety-inspection' })                       → whole-app cycle sweep
 // Workflow({ name: 'safety-inspection', args: { files:[...] } }) → per-build diff sweep
+//
+// PJ-378 guard (2026-08-24) — REFUSE a malformed `args`, never degrade to whole-app.
+//
+// This line used to read `Array.isArray(args.files) ? … : []`, so passing `files` as a STRING
+// — the natural mistake, because every other tool in this project takes a prose description —
+// silently produced an empty list, `DIFF_MODE = false`, and a full whole-app cycle sweep. The
+// run then LOOKED successful: dozens of agents, a long register of real findings, no error.
+// The caller had no way to notice, and I made the identical mistake on 2026-08-23 and again on
+// 2026-08-24, the second time after the first was already written up in that day's own report.
+// The per-build inspection the standing order requires had therefore never once run.
+//
+// A silent degrade from "check exactly these files" to "check everything" is the same defect
+// class this workflow exists to hunt: a false success. So it now throws. Passing NO args is
+// still the explicit, documented way to ask for the whole-app sweep — the refusal is only for
+// an `args` that was clearly meant to scope the run and could not be understood.
+if (args !== undefined && args !== null) {
+  const bad =
+    typeof args !== 'object' || Array.isArray(args)
+      ? `args must be an object like { files: ["a.rs"] } — received ${Array.isArray(args) ? 'an array' : typeof args}`
+      : !('files' in args)
+        ? 'args was given but has no `files` key. For a whole-app sweep, pass no args at all.'
+        : !Array.isArray(args.files)
+          ? `args.files must be an ARRAY of paths — received ${typeof args.files}. A string here used to silently become a whole-app sweep.`
+          : args.files.some((f) => typeof f !== 'string')
+            ? 'args.files must contain only strings (file paths).'
+            : args.files.filter(Boolean).length === 0
+              ? 'args.files is empty. For a whole-app sweep, pass no args at all.'
+              : null
+  if (bad) throw new Error(`safety-inspection: ${bad}`)
+}
 const files = (args && Array.isArray(args.files)) ? args.files.filter(Boolean) : []
 const DIFF_MODE = files.length > 0
+log(DIFF_MODE
+  ? `mode=DIFF over ${files.length} file(s): ${files.join(', ')}`
+  : 'mode=WHOLE-APP (no args.files given) — this is the per-cycle sweep, not the per-build one')
 
 const HUNT = {
   type: 'object', additionalProperties: false,
