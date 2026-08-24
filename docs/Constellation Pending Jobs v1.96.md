@@ -476,11 +476,42 @@
 >   child that sits still. But I have not established that from evidence, so it is not a
 >   conclusion. **The next step is to establish it, not to act on it.**
 >
->   **Fix direction (NOT to be built before the unknown is closed):** the code cannot currently
->   decide whether an optimize is needed, because the probe that would tell it is broken. Repair
->   the probe first — then skipping becomes possible and the whole cost may simply disappear on
->   the runs that do not need it. Do NOT remove the prewarm: it exists to make federated search
->   usable, and #2 shows the no-op path is already free.
+>   **Deeper investigation 2026-08-24 — three MORE hypotheses raised and FALSIFIED, so the
+>   mechanism is still not identified and is recorded as such rather than guessed:**
+>
+>   - *Falsified: "the duplicate-cid self-heal re-writes the index each boot."* There are 11
+>     distinct duplicate cids (one logged 212×), and the self-heal DOES write (`do_upsert("")`,
+>     search.rs:8537). But 11 notes cannot produce 30–78s of FTS merge, and the pre-optimize
+>     boot activity is near-identical before a 0s run and a 78s run (same duplicates, same
+>     `reindexed=0`).
+>   - *Falsified: "Eisa Cognitive Knowledge is also his daily universe, written directly."* It
+>     is independently openable (own universe.json), so the theory was plausible — but its OWN
+>     diagnostics.log has **zero** lines in the 10-hour window between a 0s optimize (08-23 18:45)
+>     and a 78s one (08-24 05:29). It was not opened directly in that window, yet its index still
+>     fragmented enough to cost 78s.
+>   - *Falsified: "it fragments only after a long idle gap."* Already dead from the 54s-run-17-
+>     minutes-after-34s data above.
+>
+>   **What IS now established (search.rs:11690–11760):** the prewarm opens the cUniverse db with a
+>   plain read-WRITE `Connection::open` and runs `optimize`, which is a genuine FTS segment
+>   rewrite — so the prewarm itself writes the index on every boot. The cost is real merge work;
+>   what is NOT established is why `optimize` does not converge to a cheap steady state across
+>   boots, given that three back-to-back optimizes in one process ARE free (#2).
+>
+>   **The honest close: I falsified every mechanism I could construct from the available
+>   evidence, and did not manufacture one to fill the gap.** The next step requires evidence I
+>   cannot get from logs — instrument the actual `MAX(segid)`-equivalent (via the REAL FTS5
+>   introspection, `fts5vocab` or `notes_fts_data` row counts, since PJ-375 finding #1 proved the
+>   current probe reads a non-existent column) before and after each boot's optimize on his live
+>   machine, across several sessions, to see whether the segment count genuinely climbs between
+>   boots and what it climbs in response to. That is a Boss-machine measurement, not a code read.
+>
+>   **Fix direction, unchanged and still sound regardless of the unknown:** repair the broken
+>   probe (finding #1) so the code can DECIDE whether to optimize; #2 proves the skip path is
+>   free, so a working probe caps the worst case at one honest merge when genuinely fragmented,
+>   not one on every boot. Do NOT remove the prewarm. **The probe repair is designable now; the
+>   convergence question is the measurement above and must precede any change to the optimize
+>   cadence itself.**
 >
 > ### 🧹 PJ-376 — an error banner from one universe survives into another
 > - **PJ-376** *(MED · Group 2 · cross-universe UI)* — **the rename-refusal banner persisted

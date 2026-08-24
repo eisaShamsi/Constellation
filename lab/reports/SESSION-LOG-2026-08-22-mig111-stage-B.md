@@ -1684,3 +1684,30 @@ and finding #2 says the skipped path is already free. Do not remove the prewarm.
 **The shape worth remembering:** the bug and the reason it survived are the same thing. A
 broken, silently-swallowed diagnostic is not a missing feature — it is an active concealment
 mechanism, and it hid a minute of disk thrashing per session for months.
+
+### PJ-375 deeper — three more hypotheses raised and falsified (2026-08-24)
+
+Continued the investigation and knocked down three candidate mechanisms with evidence rather
+than settling on a plausible one:
+
+- **Duplicate-cid self-heal** — real write path (`do_upsert("")`), 11 distinct cids (one logged
+  212×), recurs every boot. But 11 notes can't make 30–78s of merge, and the pre-optimize boot
+  activity is near-identical before a 0s run and a 78s run.
+- **"It's also his daily universe, written directly"** — falsified hard: its own diagnostics.log
+  has ZERO lines in the 10-hour window between a 0s optimize and a 78s one. Not opened directly,
+  still fragmented.
+- **"Only fragments after a long gap"** — already dead (54s run 17 min after a 34s run).
+
+**Established:** the prewarm opens the cUniverse db read-WRITE and its `optimize` is a genuine
+segment rewrite every boot. **Not established:** why optimize doesn't converge to a cheap steady
+state across boots, when three back-to-back optimizes in one process are free.
+
+**Honest close:** I falsified every mechanism I could build from the logs and did not invent one
+to fill the gap. The remaining question needs a Boss-machine measurement — the REAL segment
+count (via fts5vocab / notes_fts_data row counts, since finding #1 proved the current probe reads
+a column that doesn't exist) before and after optimize across several live boots. The probe
+repair is designable now and is sound regardless; the optimize-cadence change must wait on that
+measurement.
+
+This is the No-Guessing law working as intended: a plausible unproven mechanism was available at
+every step and I recorded "unknown" instead each time.
