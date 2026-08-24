@@ -450,6 +450,7 @@ pub fn run() {
             app_prefs::load_app_prefs,
             app_prefs::save_app_prefs,
             index_repair::index_drift_report,
+            phantom_prune::phantom_prune_run, // PJ-369 Step 3 — no UI caller until Step 4
             index_repair::index_repair_last_report,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,

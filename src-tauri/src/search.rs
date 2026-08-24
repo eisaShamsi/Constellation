@@ -12696,6 +12696,15 @@ pub enum DeleteReason {
     Vanished,
     /// Boot reconcile found it already gone.
     ReconcileGone,
+    /// PJ-369 — a stale index entry the user chose to remove: its file is gone, it belongs to
+    /// no library of this universe and no linked universe, and it carries no earned data.
+    ///
+    /// Distinct from `ReconcileGone`, which is the boot pass healing a row under a walked
+    /// library root. This one is never automatic: boot only counts, and the removal is asked
+    /// for from Settings. The archive keeps the history exactly as every other delete does —
+    /// the Boss's ruling was "archive all", and this funnel is archive-first regardless, so
+    /// a phantom's history survives its row.
+    PhantomPrune,
 }
 
 impl DeleteReason {
@@ -12706,6 +12715,7 @@ impl DeleteReason {
             DeleteReason::Permanent => "permanent",
             DeleteReason::Vanished => "vanished",
             DeleteReason::ReconcileGone => "reconcile_gone",
+            DeleteReason::PhantomPrune => "phantom_prune",
         }
     }
 }
@@ -13033,7 +13043,30 @@ fn build_delete_archive(
     if cid.is_empty() {
         // No identity ⇒ nothing can be keyed or restored. Archiving under an empty cid would
         // write records no reader could ever find. Say so rather than write noise.
-        eprintln!("[mig104] delete archive skipped for {} — note has no cid_cn", note_path);
+        //
+        // 2026-08-24 diff inspection — this said so to STDERR, which a release Windows GUI
+        // build has nowhere to show. The skip is silent exactly where it matters: Phase 2 is
+        // gated on `!archive.is_empty()`, so an empty archive bypasses the archive-first
+        // contract and Phase 3 purges anyway, returning Ok. On the Boss's `Eisa Universe` 234
+        // of 2,731 rows carry an empty cid, and 15 of the daily universe's 25 such rows carry
+        // `note_state_history` that a permanent delete or a boot-reconcile removal would end
+        // here, unseen. It now reaches `diagnostics.log`, which is this codebase's own stated
+        // convention for a fallback that must be discoverable after the fact.
+        //
+        // PJ-369's phantom path additionally REFUSES such a row rather than purging it
+        // unarchived, because there the file is already gone and the index holds the last copy
+        // (see `prune_confirmed`). Making the archive itself survive an empty cid — keying it
+        // on the universe-relative path — changes shared delete semantics and is filed as its
+        // own job rather than smuggled in here.
+        if let Some(p) = conn.path() {
+            crate::search::diag_log(
+                std::path::Path::new(p),
+                &format!(
+                    "[mig104] delete archive SKIPPED for {} — no cid_cn, so its change history is not being kept",
+                    note_path
+                ),
+            );
+        }
         return Vec::new();
     }
 

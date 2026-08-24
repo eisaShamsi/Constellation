@@ -535,3 +535,68 @@ The through-line of all three is one defect class — **a signal degrading silen
 success** — which is also two of the three things committed here. The lesson that generalises
 beyond this feature: *verify by calling the real function on the real data; a re-implementation
 can only confirm what you already believe.*
+
+---
+
+## §16 — PJ-369 Step 3: the prune executor, proven on a copy of the live database
+
+**Function in hand:** the backend command that removes confirmed phantom rows through the single
+delete funnel, archive-first, with no UI caller until Step 4.
+
+`phantom_prune_run` → `prune_stale_phantoms` (classify) → `prune_confirmed` (act). The loop was
+deliberately split out **free of `AppHandle`** so the harness runs the SHIPPING function rather
+than a copy of it — the direct lesson of §12/§13, where two "verifications" that re-implemented
+production logic agreed with a wrong hypothesis because they shared its misunderstanding.
+
+Guards, and why each is where it is:
+- **Universe check before EVERY delete**, not once per run — a sweep is hundreds of deletes, and
+  one landing after a switch destroys a row that was never ours (`reconcile.rs`'s precedent).
+- **Re-stat immediately before each delete** — a drive can come back between classify and act; a
+  reappeared file is a real note again.
+- **No safety cap.** Every other bulk path aborts above a threshold; here the human confirm IS the
+  ceiling, so a silent partial abort would be a different operation than the one approved.
+- **Archive-first inherited, not re-implemented** — the funnel refuses and purges nothing if the
+  archive cannot be written (invariant 9: one funnel, no hand-rolled bulk DELETE).
+
+### The verification clause, met in full — against a COPY of the live `Eisa Universe`
+
+| check | result |
+|---|---|
+| candidates classified | **603** |
+| removed / failed | **603 / 0** |
+| path-bearing tables purged | **12 of 12**, incl. `sky_nodes` + `sky_links` |
+| archive lines written | **603** ("archive all", the Boss's ruling) |
+| rows after | 2,731 → **2,128** — exactly 603, no more |
+| second run | **0 candidates, 0 removed** (idempotent) |
+| switch mid-run | stopped after 3, `stopped_early` set, counts honest |
+
+The 2,128 survivors include the 9 linked-universe rows and the 7 carrying earned work.
+
+**The harness caught two defects, both mine, both in the harness:** it opened a raw connection
+without the app's custom FTS5 tokenizer (all 603 deletes failed with "no such tokenizer"), and its
+idempotency case replayed a hard-coded list where the command re-derives from `note_meta`. The
+second *looked* like a product defect — a second run reporting "removed: 603" — and was a test
+defect. It surfaced only because the harness goes through the real funnel.
+
+### The diff inspection found one thing, and the two agents disagreed by reading different universes
+
+`build_delete_archive` returns an empty archive when `cid_cn` is empty; Phase 2 is gated on
+`!archive.is_empty()`, so the archive-first contract is skipped **silently** and Phase 3 purges
+anyway, returning Ok. The hunter measured 234/2,731 empty-cid rows; the verifier called that
+"wrong" and cited 25/8,031 — **both are right, for different universes**, and the verifier checked
+the daily one rather than the one under test. That is the identical which-universe error I made on
+paper this morning, made this time by a verifying agent.
+
+Measured directly: **0 of the 603 candidates have an empty cid**, so the phantom path is latent.
+Guarded anyway, because the overlap is one lost file away and this module's law is FAIL CLOSED —
+the executor now refuses such a row with a reason a receipt can carry, and the skip notice moved
+from `eprintln!` (invisible in a release Windows GUI build) to `diagnostics.log`, which helps the
+two live funnels that reach the same line. The root fix — keying the archive on the
+universe-relative path — changes SHARED delete semantics and is filed as **PJ-384** rather than
+smuggled into this step.
+
+**Rust suite: 1566 passed** (3 live harness tests `#[ignore]`d by default; run with
+`cargo test --lib phantom_prune::live -- --ignored`).
+
+**Not Boss-tested and not shippable to him yet by design:** Step 3 has no UI. Step 4 adds the
+Settings control, the danger-confirm and the receipt, and that is the next Boss test gate.

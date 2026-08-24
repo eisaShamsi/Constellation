@@ -100,6 +100,30 @@
 >   the caller produces it, or the test only proves the arithmetic.**
 >   `attack1g` now canonicalises a real temp directory; it goes red without the strip.
 >
+> ### 🗄️ PJ-384 — a delete with no content id purges without an archive, silently
+> - **PJ-384** *(LOW · Group 3 · silent-data-loss · found 2026-08-24 by the Step-3 diff inspection ·
+>   PARTLY mitigated, root fix owed)* — `build_delete_archive` returns an EMPTY archive when
+>   `note_meta.cid_cn` is empty (deliberately: a record keyed on no identity is one no reader could
+>   find). But Phase 2 of `reindex_delete_note` is gated on `!archive.is_empty()`, so an empty
+>   archive **skips the archive-first contract entirely** and Phase 3 purges anyway, returning Ok.
+>   The note's `body_text` and its `note_state_history` (destroyed by the ON DELETE CASCADE at the
+>   `note_meta` delete) go with it. CLAUDE.md states that history lives in exactly one place.
+>   **Measured, and the two agents disagreed because they read different universes** — the same
+>   which-universe error made on paper earlier the same day: `Eisa Universe` has **234 of 2,731**
+>   rows with an empty cid (8.6%); `Eisa Cognitive Knowledge` has **25 of 8,031** (0.31%), of which
+>   15 carry change history. Of the 603 current phantom candidates, **0** have an empty cid — so the
+>   phantom path is latent, not live.
+>   **Mitigated in-pass:** PJ-369's executor now REFUSES such a row (`skipped`, with a reason a
+>   receipt can carry) rather than purging it unarchived — for a phantom the file is already gone,
+>   so the index holds the last copy. The skip notice also moved from `eprintln!` (invisible in a
+>   release Windows GUI build) to `diagnostics.log`.
+>   **Root fix still owed, and deliberately not smuggled in:** the archive should survive an empty
+>   cid by keying on the universe-relative path the `link_life` header already promises. That
+>   changes SHARED delete semantics — it affects trash, permanent delete and boot reconcile — so it
+>   is its own job, not a rider on Step 3. Two live funnels reach the unguarded line today:
+>   `delete_path` mode="permanent" (`libraries.rs:9717`) and reconcile's `ReconcileGone`
+>   (`reconcile.rs:663`).
+>
 > ### 🧾 PJ-378 — the 58 remaining confirmed findings from the 2026-08-24 whole-app sweep
 > - **PJ-378** *(Group 1 triage · 8 HIGH + ~26 MED + ~24 LOW)* — a full cycle's remediation,
 >   filed as ONE entry for ranking rather than 58 rows that would bury the ledger. They are **not**

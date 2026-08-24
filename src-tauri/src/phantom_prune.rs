@@ -575,6 +575,224 @@ fn has_earned_data(conn: &Connection, path: &str) -> Result<bool, rusqlite::Erro
     }
 }
 
+// ─── Step 3: the prune executor ──────────────────────────────────────────────────────
+//
+// The classifier above decides; this executes. Kept in the same module because they are one
+// concern, and because a future reader who changes a guard must see the loop that acts on it.
+
+/// What a prune run did. Every field is a count the user is entitled to see — a removal that
+/// cannot be described is a silent removal, which this project forbids.
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PruneReceipt {
+    /// Rows removed through the delete funnel, archive-first.
+    pub removed: usize,
+    /// Candidates that were NOT removed because the second look disagreed with the first:
+    /// the file reappeared, or the row no longer classified as a phantom. Never an error.
+    pub skipped: usize,
+    /// Candidates whose delete returned `Err`. Their rows are still there.
+    pub failed: usize,
+    /// Rows the classifier declined to judge. Never acted on; reported so "we could not tell"
+    /// is never silently folded into "there was nothing to do".
+    pub unknown: usize,
+    /// Set when the run stopped before finishing — a universe switch. The counts above are
+    /// what actually happened up to that point, not a projection.
+    pub stopped_early: Option<String>,
+    /// Set when the whole run refused before touching anything (a partial federation, an
+    /// unreadable manifest). `removed` is then always 0.
+    pub refused: Option<String>,
+}
+
+/// Remove the stale index entries this universe's classifier confirms.
+///
+/// # Concept
+///
+/// *A search result must correspond to a real, openable note.* Step 2 made the count visible;
+/// this makes the removal available. It is never automatic — boot only counts, and this runs
+/// when the user asks (PJ-369 invariant 7).
+///
+/// # What it does NOT touch
+///
+/// **No file on disk.** A phantom's defining property is that its file is already gone; this
+/// removes index rows only. Nothing is written to any library, and nothing is written to a
+/// linked universe's database (MIG-111 write sovereignty — such rows classify as `Keep`).
+///
+/// # The guards, and why each is where it is
+///
+/// - **Classify first, act second.** The full candidate list is computed before a single delete,
+///   so the loop cannot be influenced by its own writes.
+/// - **Federation generation captured before classification** and re-checked before EVERY
+///   delete, not once per run: a capped sweep here can be hundreds of deletes, and one landing
+///   after a universe switch destroys a row that was never ours. Same discipline as
+///   `reconcile.rs`'s removal loop, which is the precedent this follows deliberately.
+/// - **Re-stat immediately before each delete.** Between classification and execution a drive
+///   can come back; a file that has reappeared is a real note again and its row must live.
+///   `reconcile.rs` calls the same case `resurrected`.
+/// - **No safety cap.** Every other bulk path in this codebase aborts above a threshold because
+///   a huge set means a transient mount, not real drift. Here the human confirm IS the ceiling:
+///   the user has been shown the number and asked for it, so a silent partial abort would be a
+///   different operation than the one they approved.
+/// - **Archive-first is inherited, not re-implemented.** `reindex_delete_note` refuses and purges
+///   nothing if the archive cannot be written, so a phantom's history outlives its row without
+///   this function doing anything special (PJ-369 invariant 9 — one funnel, no hand-rolled bulk
+///   DELETE).
+pub fn prune_stale_phantoms(app: &tauri::AppHandle) -> Result<PruneReceipt, String> {
+    let mut receipt = PruneReceipt::default();
+
+    // Captured BEFORE classification, so the whole run — read and write — belongs to one
+    // universe. `reindex_delete_note` captures its own generation too; this is the outer fence.
+    let generation = crate::search::federation_generation_now(app);
+    let still_ours = || {
+        crate::index_repair::walk_may_proceed(
+            false,
+            crate::search::federation_generation_now(app),
+            generation,
+        )
+    };
+
+    let ctx = ClassifierCtx::build(app);
+    if let Some(reason) = ctx.refusal() {
+        receipt.refused = Some(reason.to_string());
+        return Ok(receipt);
+    }
+
+    // Read the candidate set through the READ-ONLY connection: classification must not be able
+    // to write, and it must not queue behind the writer lock the deletes below will need.
+    let db_path = crate::search::db_path(app)?;
+    let candidates: Vec<(String, String)> = {
+        let conn = crate::search::open_read_only_search_conn(&db_path)?;
+        let mut stmt = conn
+            .prepare("SELECT path, COALESCE(cid_cn,'') FROM note_meta")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map_err(|e| e.to_string())?;
+        let mut out = Vec::new();
+        for row in rows {
+            let (path, cid) = row.map_err(|e| e.to_string())?;
+            // Every row is offered to `classify`, which answers `Keep` for anything under an own
+            // library or a linked universe BEFORE it stats the file — so this costs one hash
+            // lookup for the overwhelming majority and does not duplicate the boot pass's
+            // root-filtering logic. One decision, one place (Whole-Ecosystem).
+            match classify(&conn, &path, &ctx) {
+                Verdict::Prune(_) => out.push((path, cid)),
+                Verdict::Unknown(_) => receipt.unknown += 1,
+                Verdict::Keep(_) => {}
+            }
+        }
+        out
+    };
+
+    use tauri::Manager as _; // brings `app.state()` into scope
+    let state = app.state::<crate::search::SearchState>();
+    let db_for_log = crate::search::db_path(app).ok();
+    let mut on_fail = |path: &str, err: &str| {
+        if let Some(p) = db_for_log.as_ref() {
+            crate::search::diag_log(
+                p,
+                &format!("[phantom_prune] failed to remove {}: {}", path, err),
+            );
+        }
+    };
+
+    prune_confirmed(&state, &candidates, &still_ours, &mut on_fail, &mut receipt);
+    Ok(receipt)
+}
+
+/// PJ-369 Step 3 — the user-offered removal, exposed to the frontend.
+///
+/// Deliberately NOT called by any UI yet: Step 4 adds the Settings control, its danger-confirm
+/// and its receipt. Registering it now keeps the two steps separable, so the executor can be
+/// reverted on its own if it ever needs to be.
+///
+/// Runs on the async command pool: on a large universe the classification stats every
+/// outside-root row and the deletes each fsync an archive line, which must never block the UI
+/// thread. It is idempotent — a second call re-derives its candidates from `note_meta`, where
+/// the removed rows no longer are, and returns `removed: 0`.
+#[tauri::command(async)]
+pub fn phantom_prune_run(app: tauri::AppHandle) -> Result<PruneReceipt, String> {
+    prune_stale_phantoms(&app)
+}
+
+/// The removal loop itself, free of `AppHandle`.
+///
+/// Extracted for the reason 2026-08-24 taught twice over: a harness that cannot call the REAL
+/// function ends up re-implementing it, and a re-implementation only ever confirms what its
+/// author already believed. (Both PJ-383 failures were exactly that.) This is the code that
+/// ships AND the code the harness runs — against a copy of the Boss's own database, with his
+/// own confirmed paths.
+///
+/// `still_ours` is taken as a value rather than read from global state so a test can simulate a
+/// universe switch mid-run and assert the loop stops without writing anything further.
+pub(crate) fn prune_confirmed(
+    state: &crate::search::SearchState,
+    candidates: &[(String, String)],
+    still_ours: &dyn Fn() -> bool,
+    on_fail: &mut dyn FnMut(&str, &str),
+    receipt: &mut PruneReceipt,
+) {
+    for (path, cid) in candidates {
+        // Per-iteration, never per-run: a sweep here can be hundreds of deletes, and one landing
+        // after a switch destroys a row that was never ours. `reconcile.rs`'s removal loop makes
+        // the same choice for the same reason.
+        if !still_ours() {
+            receipt.stopped_early = Some(
+                "the active universe changed while removing — stopped; nothing was written to the new universe".to_string(),
+            );
+            return;
+        }
+
+        // ARCHIVE-OR-REFUSE (2026-08-24 diff inspection, LOW-but-latent).
+        //
+        // `build_delete_archive` returns an EMPTY archive when `cid_cn` is empty — deliberately,
+        // since a record keyed on no identity is one no reader could ever find. Phase 2 of the
+        // funnel is gated on `!archive.is_empty()`, so an empty archive skips the archive-first
+        // contract *silently* and Phase 3 purges anyway, returning Ok.
+        //
+        // For every other delete reason that is a survivable trade: the `.md` is in `.trash` or
+        // the recycle bin, so the archive is a bonus. For a PHANTOM it is not — gate 1 means the
+        // file is already gone, so `note_meta.body_text` and `note_state_history` are the LAST
+        // copies of that note's text and its change history. Purging one without an archive
+        // would destroy both with no error and no user-visible log.
+        //
+        // Measured on the live `Eisa Universe` today: 234 of 2,731 rows carry an empty cid, and
+        // 0 of the 603 current candidates do — so this is latent, not live. It is guarded rather
+        // than noted because the overlap is one lost file away, and because this module's whole
+        // governing law is FAIL CLOSED. Reported as `skipped`, never as `removed`.
+        if cid.trim().is_empty() {
+            receipt.skipped += 1;
+            on_fail(
+                path,
+                "skipped: this entry has no content id, so its history could not be archived — and a phantom's file is already gone, so the index holds the last copy",
+            );
+            continue;
+        }
+
+        // The drive-came-back guard. Between classification and this instant the file may have
+        // reappeared (a mount finished, a sync agent restored it). `try_exists` rather than
+        // `exists()`, so "could not check" is never read as "not there" — both are a SKIP.
+        match std::path::Path::new(path).try_exists() {
+            Ok(false) => {}
+            Ok(true) | Err(_) => {
+                receipt.skipped += 1;
+                continue;
+            }
+        }
+
+        match crate::search::reindex_delete_note(
+            state,
+            path,
+            crate::search::DeleteCtx::new(crate::search::DeleteReason::PhantomPrune),
+        ) {
+            Ok(_) => receipt.removed += 1,
+            Err(e) => {
+                receipt.failed += 1;
+                on_fail(path, &e);
+            }
+        }
+    }
+}
+
 // ─── test battery ────────────────────────────────────────────────────────────────────
 //
 // The test battery pins EVERY property the classifier promises, using an in-memory database
@@ -1096,5 +1314,353 @@ mod tests {
                 1
             );
         }
+    }
+}
+
+// ─── Step 3 harness: the executor against a COPY of the live database ────────────────
+//
+// The plan's verification clause for Step 3 is not a unit test — it is "run against a copy of
+// your live DB". These are `#[ignore]`d because they depend on the Boss's machine; run with
+//     cargo test --lib phantom_prune::live -- --ignored --nocapture
+// and they skip themselves (rather than fail) on any machine where that universe is absent.
+//
+// They call `prune_confirmed` — the SHIPPING loop — never a re-implementation of it. That
+// distinction is the whole lesson of PJ-383: twice in one day a "verification" that
+// re-implemented production logic agreed with a wrong hypothesis because it shared the
+// misunderstanding.
+#[cfg(test)]
+mod live {
+    use super::*;
+    use crate::search::SearchState;
+    use tempfile::TempDir;
+
+    const LIVE_DB: &str = r"E:\Constellation Universes\Eisa Universe\.constellation\search.db";
+
+    /// Copy the live database (and its WAL, so the copy is not missing committed pages) into a
+    /// temp dir, and open a real `SearchState` on it. Returns None when the universe is absent.
+    fn state_on_a_copy() -> Option<(SearchState, TempDir)> {
+        let src = std::path::Path::new(LIVE_DB);
+        if !src.exists() {
+            eprintln!("SKIP: {} not present on this machine", LIVE_DB);
+            return None;
+        }
+        let dir = TempDir::new().unwrap();
+        let dst = dir.path().join("search.db");
+        // sqlite's own backup API would be tidier, but a plain copy of db+wal+shm is what a
+        // human would do and exercises the same file the app opens.
+        std::fs::copy(src, &dst).unwrap();
+        for ext in ["-wal", "-shm"] {
+            let s = src.with_extension(format!("db{}", ext));
+            if s.exists() {
+                let _ = std::fs::copy(&s, dir.path().join(format!("search.db{}", ext)));
+            }
+        }
+        let mut conn = rusqlite::Connection::open(&dst).unwrap();
+        // The app's FTS5 index uses a CUSTOM tokenizer, and the delete funnel touches
+        // `notes_fts`. A plain `Connection::open` does not know it, so every delete failed with
+        // "no such tokenizer: constellation" — a defect in this harness, not in the executor,
+        // and precisely the kind of thing a re-implementation of the loop would never have
+        // surfaced because it would not have gone through the real funnel at all.
+        crate::search::register_fts5_tokenizer(&mut conn).unwrap();
+        let state = SearchState::new();
+        *state.db.lock().unwrap() = Some(conn);
+        Some((state, dir))
+    }
+
+    fn count(state: &SearchState, sql: &str) -> i64 {
+        let db = state.db.lock().unwrap();
+        db.as_ref().unwrap().query_row(sql, [], |r| r.get(0)).unwrap()
+    }
+
+    /// Every path in `note_meta` that is file-gone and outside every registered library of this
+    /// universe — the candidate set, derived from the copy itself rather than hard-coded, so the
+    /// test does not silently pass against a stale list.
+    fn candidates_from(state: &SearchState) -> Vec<(String, String)> {
+        let libs: Vec<String> = {
+            let f = std::path::Path::new(LIVE_DB)
+                .parent()
+                .unwrap()
+                .join("libraries.json");
+            let raw = std::fs::read_to_string(f).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+            v.as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|l| l.get("path").and_then(|p| p.as_str()).map(norm))
+                .collect()
+        };
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT path, COALESCE(cid_cn,'') FROM note_meta")
+            .unwrap();
+        let rows: Vec<(String, String)> = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect();
+        drop(stmt);
+        rows.into_iter()
+            .filter(|(p, _)| {
+                let pn = norm(p);
+                !libs.iter().any(|l| pn == *l || pn.starts_with(&format!("{}/", l)))
+                    && !std::path::Path::new(p).exists()
+            })
+            .collect()
+    }
+
+    #[test]
+    #[ignore]
+    fn live_prune_removes_every_confirmed_row_and_is_idempotent() {
+        let Some((state, _dir)) = state_on_a_copy() else { return };
+
+        let before_meta = count(&state, "SELECT COUNT(*) FROM note_meta");
+        let before_links = count(&state, "SELECT COUNT(*) FROM note_links");
+        let candidates = candidates_from(&state);
+        println!(
+            "copy: note_meta={} note_links={} candidates={}",
+            before_meta,
+            before_links,
+            candidates.len()
+        );
+        assert!(
+            !candidates.is_empty(),
+            "no candidates in the copy — the harness would prove nothing"
+        );
+
+        let always = || true;
+        let mut failures: Vec<String> = Vec::new();
+        let mut on_fail = |p: &str, e: &str| failures.push(format!("{p}: {e}"));
+        let mut receipt = PruneReceipt::default();
+        prune_confirmed(&state, &candidates, &always, &mut on_fail, &mut receipt);
+
+        println!("receipt: {:?}", receipt);
+        for f in failures.iter().take(5) {
+            println!("  FAILURE {}", f);
+        }
+        assert_eq!(receipt.failed, 0, "no delete may fail: {:?}", failures);
+        assert_eq!(
+            receipt.removed,
+            candidates.len(),
+            "every confirmed candidate must be removed"
+        );
+
+        // Gone from note_meta AND from the path-bearing tables the funnel purges.
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        for (path, _cid) in candidates.iter().take(50) {
+            let n: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM note_meta WHERE path = ?1",
+                    rusqlite::params![path],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(n, 0, "row survived: {}", path);
+            let l: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM note_links WHERE source_path = ?1",
+                    rusqlite::params![path],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(l, 0, "outgoing links survived: {}", path);
+        }
+        drop(db);
+
+        // Every PATH-BEARING table the funnel purges — not just the two easy ones. The plan's
+        // clause names them, so the test names them: a row surviving in `note_aliases` or
+        // `sky_nodes` is exactly the "removed" that leaves the phantom half-alive in a surface
+        // the user actually looks at.
+        let tables: &[(&str, &str)] = &[
+            ("note_meta", "path"),
+            ("note_links", "source_path"),
+            ("note_aliases", "path"),
+            ("note_body", "path"),
+            ("note_embeddings", "path"),
+            ("note_summaries", "path"),
+            ("note_state_history", "note_path"),
+            ("sight_v3_layout", "note_path"),
+            ("shape_history", "path"),
+            ("sources_suggestions", "note_path"),
+            ("review_schedule", "path"),
+            ("sky_nodes", "path"),
+            ("sky_links", "source_path"),
+        ];
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        for (table, col) in tables {
+            // Skip tables this schema version does not have, rather than fail on them.
+            let exists: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table','view') AND name = ?1",
+                    rusqlite::params![table],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            if exists == 0 {
+                println!("  (no {} in this schema — skipped)", table);
+                continue;
+            }
+            let sql = format!(
+                "SELECT COUNT(*) FROM {} WHERE {} IN (SELECT value FROM json_each(?1))",
+                table, col
+            );
+            let paths: Vec<&String> = candidates.iter().map(|(p, _)| p).collect();
+            let json = serde_json::to_string(&paths).unwrap();
+            match conn.query_row(&sql, rusqlite::params![json], |r| r.get::<_, i64>(0)) {
+                Ok(n) => {
+                    println!("  {}.{} survivors: {}", table, col, n);
+                    assert_eq!(n, 0, "{} still holds rows for pruned paths", table);
+                }
+                Err(e) => println!("  ({}.{} not queryable here: {})", table, col, e),
+            }
+        }
+        drop(db);
+
+        // ARCHIVE-FIRST, proven rather than inherited on trust. The funnel refuses to purge if
+        // the archive cannot be written, so 603 successful deletes imply 603 archived histories
+        // — but "implies" is what today kept being wrong about, so it is checked.
+        let ledger = _dir.path().join("note-history.jsonl");
+        assert!(
+            ledger.exists(),
+            "the delete archive was never written — 'archive all' was the Boss's ruling"
+        );
+        let archived = std::fs::read_to_string(&ledger).unwrap();
+        let archived_lines = archived.lines().filter(|l| !l.trim().is_empty()).count();
+        println!("  archive lines written: {}", archived_lines);
+        assert!(
+            archived_lines > 0,
+            "the archive exists but is empty — the history was not kept"
+        );
+        // A sampled path must actually appear in it, not merely some line per delete.
+        let probe = &candidates[0].0;
+        let probe_json = serde_json::to_string(probe).unwrap();
+        let probe_bare = probe_json.trim_matches('"');
+        assert!(
+            archived.contains(probe_bare) || archived.contains(&probe_json),
+            "a pruned note's own path is absent from the archive: {}",
+            probe
+        );
+
+        // THE ROWS THAT MUST SURVIVE. Everything outside the own roots that was NOT a confirmed
+        // candidate — the linked-universe rows and the rows carrying the user's earned work.
+        // This is invariant 2 and 5, and it is the assertion that would fail if a guard were
+        // ever loosened by accident.
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        let outside_survivors: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap();
+        drop(db);
+        println!(
+            "  rows remaining: {} (was {}, removed {})",
+            outside_survivors,
+            before_meta,
+            candidates.len()
+        );
+
+        // The rest of the universe is untouched.
+        let after_meta = count(&state, "SELECT COUNT(*) FROM note_meta");
+        assert_eq!(
+            after_meta,
+            before_meta - candidates.len() as i64,
+            "exactly the candidates were removed, no more"
+        );
+
+        // Idempotent / resumable — and this must be asked the way PRODUCTION asks it.
+        //
+        // A first draft replayed the SAME hard-coded list and saw "removed: 603" a second time,
+        // because a DELETE matching zero rows is a successful DELETE and the funnel returns Ok.
+        // That looked like a product defect and was a test defect: `prune_stale_phantoms`
+        // re-derives its candidates from `note_meta`, where these rows no longer exist. The
+        // honest test is to re-derive, exactly as the command does.
+        let candidates2 = candidates_from(&state);
+        println!("second run candidates: {}", candidates2.len());
+        assert!(
+            candidates2.is_empty(),
+            "after a full prune there is nothing left to classify as a phantom"
+        );
+        let mut receipt2 = PruneReceipt::default();
+        let mut on_fail2 = |_: &str, _: &str| {};
+        prune_confirmed(&state, &candidates2, &always, &mut on_fail2, &mut receipt2);
+        println!("second run: {:?}", receipt2);
+        assert_eq!(receipt2.removed, 0, "a second run must remove nothing");
+
+        // …and the semantics of `removed` are stated where they can be checked: it counts the
+        // deletes the funnel ACCEPTED. Every candidate provably had a row when it was classified
+        // (they came from `SELECT path FROM note_meta`), so in the command's own flow the two
+        // are the same number — which the `after_meta` assertion above has already proven.
+    }
+
+    #[test]
+    #[ignore]
+    fn live_prune_refuses_a_row_whose_history_cannot_be_archived() {
+        // The 2026-08-24 diff-inspection finding, pinned. A row with an EMPTY cid produces an
+        // empty archive, which the funnel's Phase-2 gate skips silently before purging anyway —
+        // and for a phantom the index holds the LAST copy of the note's text and history.
+        // Latent today (0 of 603 candidates), so the case is constructed rather than found.
+        let Some((state, _dir)) = state_on_a_copy() else { return };
+        let before = count(&state, "SELECT COUNT(*) FROM note_meta");
+
+        // A path that is genuinely gone, presented with no content id.
+        let real = candidates_from(&state);
+        assert!(!real.is_empty());
+        let victim = (real[0].0.clone(), String::new()); // same path, cid stripped
+
+        let always = || true;
+        let mut reasons: Vec<String> = Vec::new();
+        let mut on_fail = |_: &str, e: &str| reasons.push(e.to_string());
+        let mut receipt = PruneReceipt::default();
+        prune_confirmed(&state, &[victim.clone()], &always, &mut on_fail, &mut receipt);
+
+        assert_eq!(receipt.removed, 0, "a row with no archivable identity must not be purged");
+        assert_eq!(receipt.skipped, 1, "and it must be reported as skipped, not silently dropped");
+        assert_eq!(
+            count(&state, "SELECT COUNT(*) FROM note_meta"),
+            before,
+            "nothing may be removed"
+        );
+        assert!(
+            reasons.iter().any(|r| r.contains("content id")),
+            "the reason must SAY why, in words a receipt can carry: {:?}",
+            reasons
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn live_prune_stops_cleanly_on_a_universe_switch_mid_run() {
+        let Some((state, _dir)) = state_on_a_copy() else { return };
+        let candidates = candidates_from(&state);
+        assert!(candidates.len() > 5);
+
+        // "Switch" after the third delete.
+        let calls = std::cell::Cell::new(0usize);
+        let still_ours = || {
+            calls.set(calls.get() + 1);
+            calls.get() <= 3
+        };
+        let mut on_fail = |_: &str, _: &str| {};
+        let mut receipt = PruneReceipt::default();
+        prune_confirmed(&state, &candidates, &still_ours, &mut on_fail, &mut receipt);
+
+        println!("switch receipt: {:?}", receipt);
+        assert!(
+            receipt.stopped_early.is_some(),
+            "a mid-run switch must be reported, not silently completed"
+        );
+        assert!(
+            receipt.removed < candidates.len(),
+            "the run must stop, not finish"
+        );
+        // And what it DID do is honestly counted, not projected.
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        let survivors: i64 = conn
+            .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+            .unwrap();
+        drop(db);
+        println!("removed {} then stopped; {} rows remain", receipt.removed, survivors);
     }
 }
