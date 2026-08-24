@@ -1616,3 +1616,20 @@ Done in this PCS:
   corrections they required landed inside it.
 - **Cleanup**: the throwaway universes are gone (25 files, one auto-generated note, nothing of
   his). No registry edit was needed, which is itself the PJ-321 observation.
+
+### MoCh — the second record-discipline catch, and the pattern behind both
+
+He asked "What about the MoCh?" immediately after having to tell me "PCS + Orientation before
+proceeding." Both were owed, both were mine, and neither was a judgement call I got wrong — they
+were obligations I moved past because the interesting work was elsewhere.
+
+`docs/MoCh/MoCh-2026-08-23-1840.md` now covers the evening block, which is where nearly all the
+real steering happened: his YES ruling, both stage passes, his correction of my Step 5
+instruction (his own habit was the correct route and my instruction the defective one), and his
+YES on the disk noise — the single most valuable sentence of the day, and the one that found a
+defect I would not have found by reading.
+
+**The pattern worth keeping:** once the commit landed I drifted toward the next task and away
+from the record, twice in half an hour. SO#10 exists precisely because a stale record does not
+announce itself — it reads exactly like a current one, and the next decision inherits the
+staleness silently.
