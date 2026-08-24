@@ -381,7 +381,13 @@
 >   search results but **603 phantom notes** carrying **19,472 phantom note_links edges**, plus
 >   603 rows each in `sky_nodes`, `review_schedule`, `note_body` and 127 `note_aliases` — all
 >   under `E:\Cognitive Knowledge\...`, 601 confirmed absent from disk. The dead notes pollute the link
->   graph, Sky View and the Reviewer, not just search.
+>   graph, Sky View and the Reviewer, not just search. **PROVENANCE CORRECTED 2026-08-24: `E:\Cognitive Knowledge`
+>   is a SEPARATE legacy universe (bare root `universe.json`, name "Constellation Discovery"), NOT
+>   pre-MIG-108 residue of THIS universe's libraries as I first wrote — I inferred that from the
+>   path shape without reading the file (No-Guessing miss, caught by the design workflow and then
+>   verified). Its content now lives in the linked universe "Eisa Cognitive Knowledge": 40/40
+>   sampled phantom filenames have a same-named note there. The prune is therefore SAFER than
+>   first thought — not this universe's own notes, content preserved elsewhere.**
 >
 >   **Mechanism confirmed (reconcile.rs step 3; search.rs:12371):** the boot reconcile is
 >   DISK-FIRST — it walks each registered library's own root and checks the index against the

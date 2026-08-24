@@ -1736,3 +1736,24 @@ Because it is destructive on his live index, carries a safety invariant, and nee
 offered-with-receipt surface, it takes the Migration Rule path: an Architect/design workflow whose
 hardest job is answering "can this ever delete a real note?" adversarially, BEFORE any code or any
 ruling request (Panel-Speaks-First). Launched; it returns a Boss-approvable plan or an honest HOLD.
+
+
+### PJ-369 plan received + a provenance error of mine, corrected (2026-08-24)
+
+The design/attack workflow returned a buildable plan (no unclosable hole; each adversary kill
+closed by a classifier scoping change, not a redesign). Before relaying ANY of its claims I
+verified the two that mattered, because one contradicted what I had told the Boss:
+
+- **My provenance was wrong.** I said E:\Cognitive Knowledge was "pre-MIG-108 residue of his own
+  libraries." Reading its `universe.json` shows it is a SEPARATE legacy universe named
+  "Constellation Discovery" (bare root manifest, no `.constellation/`, unregistered, not a child
+  of Eisa Universe). I had inferred provenance from the path shape without opening the file — the
+  No-Guessing law, broken by me, caught by the workflow and confirmed by verification. Corrected
+  in the ledger and orientation.
+- **The plan's load-bearing measurement checks out:** 40/40 sampled phantom filenames have a
+  same-named note in the linked universe "Eisa Cognitive Knowledge," corroborating the workflow's
+  "597/603 bodies survive elsewhere." Name-match not content-match, stated as such.
+
+Net: the prune is SAFER than I first framed — these are not this universe's own notes and their
+content is preserved in the linked universe. The plan and the one open decision (archive-all vs
+skip) now go to the Boss for approval — the record corrected first, per SO#10.
