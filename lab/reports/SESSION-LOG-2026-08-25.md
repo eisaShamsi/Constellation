@@ -317,3 +317,215 @@ Committed **`35a9921d`**, pushed to `origin/main`. 38 files, +15,067/−97.
 - **Before that ruling he must confirm the active universe is `Eisa Universe`** — the status-bar
   universe name; Universe Manager → **Switch** if not. Every figure here is that universe's.
 - PJ-387 (the 234) · PJ-378 (58 sweep findings) · PJ-388–393 as filed.
+
+---
+
+## §11 — PJ-387 INVESTIGATION (Boss-ordered) — the 234 with no identity; the 13 explained
+
+**Function in hand:** the 234 `Eisa Universe` index rows carrying an empty `cid_cn`, and specifically
+the 13 whose files carry a real one.
+
+**Boss's order (2026-08-25):** *"Start with the 13, not the 221. Why that happened is not known.
+Investigate it — don't theorise it… The other 221 have no frontmatter. Giving them identities means
+writing into my notes, so bring me the options; don't act."*
+
+**Nothing was written.** No `.md` file, no live database. Every database read was against a scratch
+copy taken with its `-wal`/`-shm`. Constellation was verified not running before the copy.
+`git status --porcelain` empty at `9d4cb7ec` throughout.
+
+### §11.1 — The population, measured (all `Eisa Universe` unless named)
+
+`note_meta` 2,128 rows · **234** with `cid_cn = ''` (empty string; **0 NULL**; a `typeof` sweep
+returned `text` for all 2,128) · all 234 files exist on disk · all `.md`.
+
+Split by a real frontmatter parse, not a substring search: **13** carry a `cid_cn` key in their file,
+**221** have no frontmatter fence at all.
+
+The 234 hold **32,625,753 characters** of `body_text` — **65% of the universe's 50,123,949** — and are
+the source of **2,461** `note_links` rows. **0** rows target them.
+
+### §11.2 — Cause 1: TEN of the 13 are a deliberate refusal, and the app logged it 845 times
+
+`search.rs:8497-8536`. After the `note_meta` upsert, on a UNIQUE violation of `note_meta.cid_cn`
+where the current owner's file **still exists on disk**, the indexer refuses to steal the identity
+and calls `do_upsert("")` — the documented `''` sentinel — emitting:
+
+```
+[index_note] cid DUPLICATE (both files live): <cid> also claimed by <owner> — indexed <path> with '' sentinel, NOT stolen
+```
+
+`.constellation/diagnostics.log` holds **845 such lines naming exactly 10 distinct paths and 6
+distinct cids**, most recently **2026-08-25 12:36:27Z** — the latest app run, not history. Those 10
+are a subset of the 13. Verified per path by a second method independent of the log (read the file's
+own `cid_cn`, query the owning row, `stat` the owner): **10/10**, every owner live, and the log's
+named owner agreed in all ten.
+
+**Re-indexing does not fix them** — the arm re-fires while all three conditions hold. Each path has
+been re-attempted **81-85 times across 46-54 distinct log timestamps**. (Caveat: `index_note`'s mtime
+gate at `:8217-8227` short-circuits an *unforced* re-index of an unchanged file, so this is the
+forced-reindex path.)
+
+**Where the duplicates came from, established:** `كون عيسى 2\` and `كون عيسى 3\` are folder copies of
+a **whole universe** (`كون عيسى`) sitting inside `Eisa Universe`'s root — each carries its own
+`.constellation\` with its own `search.db` and a `universe.json` naming itself `كون عيسى`. Their notes
+carry the original's identities verbatim, so 4 notes per copy collide three ways.
+**The check that could have disagreed and did not:** a 5th note in each copy
+(`إختبار المرحلة 2.md`) has a *different* cid in each copy (`…F8CD` / `…4103` / `…F8A3`) and indexed
+cleanly. The other two of the ten are `BUG-015-target-NOTE_531D-corrupted-snapshot.md` (cid owned by
+`BUG-015-source-NOTE_EE1E-snapshot.md`, a lab artifact of BUG-015) and
+`Constellation Working Docs\README.md` (cid owned by `MIG-090-Plan-Notes-Navigator.md`) — the latter
+two being *differently-named* files sharing one cid, not copies.
+
+### §11.3 — Cause 2: THREE of the 13 have two frontmatter blocks, and the app can never repair them
+
+`موسوعة عيسى\الزراعة\الكيماويات السامة.md` · `موسوعة عيسى\العرب\الحروف العربية.md` ·
+`موسوعة عيسى\…\دورة InDesign 2025 من Linkedin Learning\الواجهة.md`.
+
+Each has a first block carrying a legacy `cid:` and no `cid_cn`, a blank line, then a second block
+carrying `cid_cn` **with the same value**. `split_frontmatter` (`search.rs:3835-3845`) takes only up
+to the FIRST closing fence; everything after is body. So `properties.get("cid_cn")` (`:8257`) yields
+`""`.
+
+Proven three ways that separate this cleanly from Cause 1: the rows' `properties_json` holds the
+first block's keys (`cid`, `created`, `title`); their `body_text` **literally begins with the second
+block**; and they appear **zero** times in `diagnostics.log`. File mtime `== note_meta.modified`, so
+this is the parser's verdict on these exact bytes.
+
+**`canonical::ensure_cid_cn` can never repair them.** `canonical.rs:1451` returns early when
+`content.contains("\ncid_cn:")` — a **whole-file** scan — which is true because block 2 contains it.
+
+**Origin of the double block:** the three files' mtimes are `2026-05-28 13:40:32/33/34Z`, one per
+second, with no other file in the universe written in that window. Neither `migrate_cid_to_cid_cn`
+nor `inject_cid_cn` can produce the shape, at HEAD or at `b19908c1` (and **no commit touched
+`canonical.rs` between 2026-04-14 and 2026-06-11**). **The author is NOT established and is not
+attributed.** What IS established is §11.6 N1 — a live path at HEAD that produces exactly this shape.
+
+`note_state_history` rows 445/446/447 (`captured_at` **2026-08-08T12:46:45Z**) record these three
+notes' properties changing from a set containing `cid_cn` to one containing the retired `cid`, with
+`title` and `created` byte-identical on both sides. Row 902 (`README.md`) is `{}` → `{cid_cn:…}`.
+**All four `note_state_history` rows on the 234 are the app's own identity churn — zero user content.**
+
+### §11.4 — The consequence, and where it is NOT exposed
+
+`build_delete_archive` (`search.rs:13078-13113`) returns an **empty Vec** when the resolved cid is
+empty. Phase 2 — the entire archive-or-refuse contract — sits inside `if !archive.is_empty()`
+(`:12881`), so an empty archive **skips it silently**. Phase 3 purges and returns `Ok` (`:12909`).
+
+- **`PhantomPrune` is NOT exposed** — `phantom_prune.rs:836-843` refuses an empty-cid candidate and
+  reports it as `skipped`, never `removed`.
+- **`Trash` / `SystemTrash`** leave the `.md`, so the loss is bounded.
+- **`Permanent`, `Vanished`, `ReconcileGone` are the unbounded cases**, and the latter two are
+  **automatic** (watcher `search.rs:13488`/`:13581`; boot reconcile `reconcile.rs:666`). All three
+  sites re-`stat` immediately before deleting and fire **only when the file is already absent** —
+  verified, and it is why a naive "refuse to purge" fix is wrong.
+- The pinning test `a_note_without_a_cid_is_purged_but_not_archived` (`search.rs:17467-17488`)
+  asserts only the *not archived* half. **It never asserts the row was purged** — a regression that
+  stopped purging would keep it green.
+
+**No earned data is at risk on this population.** Across both live universes, of the empty-cid rows'
+outgoing links: `weight <> 1.0` → **0**; `traversal_count > 0` → **0**; all `confidence =
+'hypothesis'`; all `status = 'active'`. `review_priority` NULL for all. (`review_schedule` **does**
+hold a row for each — because it holds one for *every* note; all are `never_reviewed`, and
+`last_reviewed IS NOT NULL` returns **0 across both universes**.)
+
+### §11.5 — The 221, and the fact that reverses the options
+
+219 are `Constellation Orientation & Onboarding v*.md`; the other 2 are
+`CANONICAL-FILENAME-ARCHITECTURE.md` and `CANONICAL-FILENAME-ARCHITECTURE 1.md`. All in
+`Constellation PKM\Constellation Working Docs\`. Against the repo's `docs\`, by basename:
+
+| | count |
+|---|---:|
+| byte-identical | 102 |
+| identical after CRLF/LF normalisation (library LF, repo CRLF) | 113 |
+| same name, content differs | 5 |
+| no file of that basename in the repo | 1 |
+
+The 5 differ by **120 changed lines (+29 / −91)** and it is **not** cosmetic: the library copy of
+`CANONICAL-FILENAME-ARCHITECTURE.md` is missing the entire `## 0. Post-MIG-003 — Architecture
+Inverted` section. The no-twin file, `CANONICAL-FILENAME-ARCHITECTURE 1.md`, is byte-identical to the
+repo's `CANONICAL-FILENAME-ARCHITECTURE.md` and is the **newer** of the library pair.
+
+**THE REVERSAL — `ensure_cid_cn` writes NONE of the 234 on open.** Proven by running the *shipping*
+function against copies of all 234 files: **234/234 — no disk write, no content change.** 232 trip
+the whole-file `\ncid_cn:` guard because the orientation documents contain a worked YAML example
+showing a `cid_cn:` line; the 2 `CANONICAL` files take the legacy-`cid:` branch instead, where
+`migrate_cid_to_cid_cn` (`canonical.rs:1382-1384`) returns early because neither file has a leading
+fence. **A note is permanently denied an identity because it explains how identities work.**
+The set is therefore **stable** — "leave them" is durable, not a slow drift.
+
+### §11.6 — Discovered on the way (filed, not smuggled in)
+
+- **N1 → PJ-396.** A **live frontend path at HEAD** prepends a second frontmatter block. Rust
+  `split_frontmatter` uses `trim_start()`; the frontend's two parsers (`yamlDoc.ts:182-186`,
+  `store.ts:2573-2575`) require line 0 to be exactly `---`. On a note whose bytes begin with a
+  newline before the fence, the frontend concludes there is no frontmatter and
+  `composeFrontmatter` (`yamlDoc.ts:449-459`) prepends one. **Reproduced through the shipping entry
+  points** — `composeUpdatedContent` (`store.ts:2957`) and the `noteModel` compose path
+  (`noteModel.ts:183-189 → 549`) — with a control on an ordinary note that merged correctly.
+  The **Rust** half of this class was fixed by PJ-207 §15 (`fence_offset`, `sources/mod.rs:326-347`,
+  which records "a scan of the live universes found 28 notes with exactly this shape"). **The
+  frontend half was never swept.** Currently **0 of 10,159 indexed notes** are in the vulnerable
+  state; 9 files have the shape, all under `.trash`.
+- **N2 → PJ-397.** **34 files already carry two stacked YAML blocks** (26 `Eisa Universe`,
+  8 `Eisa Cognitive Knowledge`), distinct from the 46 files with a benign `---` rule after
+  frontmatter. Asking the index itself — *does `body_text` begin with the second block?* — **12** have
+  the second block filed as body. **Nine of those keep a valid identity in block 1, so PJ-387's own
+  `cid_cn = ''` lens could never reach them.**
+- **N3 → PJ-398.** Block-list properties with no dedicated storage are **dropped**.
+  `parse_frontmatter` returns `HashMap<String,String>`; a list key stores `""`. `tags`, `sources`,
+  `content_type` and `aliases` DO survive (dedicated columns / `note_aliases`), so the honest
+  residual is **1,204 notes** (394 EU + 810 ECK) — not the 3,244 an unfiltered count gives. Top keys:
+  `المجموعة` 197 · `institutions` 191 · `main_interests` 170 · `school` 143 · `field` 133 ·
+  `notable_ideas` 130 · `notable_works` 128 · `author` 100 · `collections` 99 · `up` 84.
+- **N4 → PJ-397.** `Eisa Cognitive Knowledge\Eisa Test\تجربة الكتابة باللغة العربية.md` carries
+  `tags: idea` in its second block. Index `tags_json` = `[]`; `tag_counts` has no `idea` row among
+  20,462; a filesystem sweep of all 8,070 ECK `.md` finds **0** notes with `idea` as a first-block
+  tag. **A tag the Boss wrote exists nowhere in the app.**
+- **N5 → fix in-pass.** Five shipped comments cite **2,731** as `Eisa Universe`'s row count
+  (`search.rs:13067`, `:13094`, `phantom_prune.rs:12`, `:832`, `deleted_notes.rs:37`). Live is
+  **2,128** — 2,731 was the pre-prune count and `35a9921d` removed the 603. `search.rs:13094` is also
+  the source of a true-but-misleading figure: of `Eisa Cognitive Knowledge`'s 25 empty-cid rows,
+  **11 are `\Templates\` and cid-exempt BY DESIGN** (Boss ruling 2026-07-19 — a template is a MOLD),
+  4 are in `.trash`, and **0 are ordinary live user notes.**
+- **N6 → PJ-399.** `write_gate`'s self-attestation is **blind to this corruption**: with
+  `expect: None` it reads `extract_frontmatter_cid_cn(content)`, and a stacked-block rewrite's *first*
+  block has no `cid_cn`, so the verdict is `OkUnchecked` and no anomaly is journalled.
+- **N7 → PJ-400.** cid minting has **8 sites** (not 5) and **no identity-uniqueness check**. The loop
+  in `generate_canonical` (`canonical.rs:49-93`) only tests whether a *file of that canonical name*
+  exists in one directory — dead since MIG-003 made filenames human, and **entirely dead at the 5 of 8
+  sites that pass `target_dir: None`**, where it returns on the first iteration. The suffix is
+  16 bits (`rand … {:04X}`). The only real enforcement is the partial UNIQUE index, whose remedy is
+  §11.2 — silently blanking the note's identity. Orientation §6.4's "collision avoidance tries 10 hex
+  suffixes" describes real code but implies a protection that does not exist for `cid_cn`.
+- **N8 → PJ-401.** `ensure_cid_cn`'s write is **not undoable** — `atomic_write` → `ReplaceFileW` with
+  `lpBackupFileName = std::ptr::null()`, the API's own backup facility explicitly declined; the
+  journal stores an FNV-1a hash, not content; neither universe root is a git repo. And the behaviour
+  is documented **nowhere** in `docs/User Manual.md` or any of the 15 `docs/help.*` trees (313 files
+  searched, including the native identity vocabulary in each language).
+- **N9 → PJ-402.** Every `note_links` row in both universes has `last_traversed == created`
+  (2,461/2,461 and 41/41 on this population). A column that reads as evidence of traversal is stamped
+  at creation — a cross-check that cannot disagree, for anyone who uses it as one.
+
+### §11.7 — Process: three gates ran, and each one changed the answer
+
+- **`findings-verifier`** on 24 claims: 22 CONFIRMED, **2 REFUTED**. It broke my ecosystem scan
+  (a Latin-alphabet key regex on a majority-Arabic corpus — moved the count from 4 to 12) and it
+  caught the `search.rs:13094` template-exemption framing before it reached the Boss.
+- **A 9-agent adversarial panel** (4 lenses, each refuted, then a synthesis that ruled) **overturned
+  the single most decision-relevant claim in my brief** — that opening these notes writes identities
+  into them — and caught me ranking a change as "writes no user file" when it writes 221 of his.
+- **`findings-verifier` on the panel's own 12 new claims**: it **refuted the panel** on three
+  (the on-open count is 0 of 234 and my "2 exceptions" were also wrong; the 5 differing docs lose
+  120 lines including real content, not "23 lines of headings"; "216 have an exact twin" is 215, and
+  the 216 was arithmetic rather than a check) — and **confirmed N1 with a running reproduction**.
+
+**Errors of mine, corrected in the open before any reached a durable record:** the Latin-only regex;
+the on-open claim (twice — my original, then my own correction of it); "9 files lose properties"
+(several are not losses); and a `note_state_history` query keyed on the wrong column that returned a
+false zero.
+
+### §11.8 — State
+
+**Awaiting the Boss's ruling. Nothing built, nothing written to his data.** PJ ledger → **v2.01**,
+orientation → **v4.18**, MoCh `MoCh-2026-08-25-1700.md`.
