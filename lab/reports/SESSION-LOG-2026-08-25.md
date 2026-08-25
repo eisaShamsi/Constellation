@@ -294,6 +294,22 @@ unknown and must be found before any cleanup.
 
 ---
 
+## §9e — PCS complete
+
+Committed **`35a9921d`**, pushed to `origin/main`. 38 files, +15,067/−97.
+
+- Session logs: `SESSION-LOG-2026-08-24.md` §21 (the shadow-file resolution) and this file.
+- Help + User Manual: English corrected. **The 14 translations could not be** — the section does not
+  exist in 11 of them → **PJ-394**, filed rather than skipped (§9b).
+- Ledger reconciled twice: **v1.99** at the build, **v2.00** at the close (PJ-385 and PJ-369 closed
+  with evidence; PJ-395 filed; `► Next action` → PJ-387).
+- MoCh: `MoCh-2026-08-25-0900.md` and `MoCh-2026-08-25-1300.md`.
+- Orientation: **v4.16** at the build, **v4.17** at the close — v4.16 stated the build was
+  uncommitted and untested, which the Boss's test and the removal made false within the hour.
+- Handover: `lab/reports/HANDOVER-2026-08-25.md`.
+
+---
+
 ## §10 — Open
 
 - **Boss test of PJ-385 (Deleted notes)**, then the 603 ruling — carrying PJ-390's collateral
