@@ -1189,12 +1189,24 @@ fn read_sky_nodes_raw(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
 /// `schema` MUST be `"main"` or an alphanumeric alias from
 /// `get_federated_schemas`.
 ///
-/// Q3 Option B (federated link resolution): the `path_to_idx`,
-/// `name_to_idx`, and `alias_to_path` maps passed in are built across
-/// the MERGED node set (all schemas) by §E. So a link with
-/// `target_name = "FooBar"` from cu0's sky_links resolves to whichever
-/// schema has the FooBar node — first-insert-wins on cross-schema
-/// name collision (schema-order winner: main > cu0 > cu1 > ...).
+/// The `path_to_idx`, `name_to_idx` and `alias_to_path` maps passed in are built by §E from
+/// **THIS schema's nodes only** — see `cache.rs` §E, which says so in its own comment and sizes
+/// them with `schema_len`. Their indices point into the merged `nodes` vec via the `schema_start`
+/// offset, so the `link_count` / `outgoing_count` bumps below land on the right rows.
+///
+/// A link therefore resolves **within its own universe**; it does not reach across schemas, and
+/// there is no cross-schema name collision to break a tie on.
+///
+/// ⚠ Corrected 2026-08-25. This docstring previously described the opposite — maps "built across
+/// the MERGED node set (all schemas)", with "first-insert-wins on cross-schema name collision
+/// (schema-order winner: main > cu0 > cu1 > ...)". That contradicted §E twenty lines away and sent
+/// a verifier to a wrong conclusion. Comment-only; no behaviour changed.
+///
+/// Note the standing tension this exposes rather than resolves: the Universe-of-Universes
+/// principle wants a link from a main-universe note to a Linked-Universe note treated as a
+/// first-class edge, and this resolver does not do that. That is owed work (the federated-
+/// analytics family), not a defect to be patched here — but the comment must not claim the
+/// federated behaviour already exists.
 fn read_sky_links_raw_in_schema(
     conn: &Connection,
     schema: &str,

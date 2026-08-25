@@ -7,7 +7,7 @@
     "repairNow": "Réparer maintenant",
     "repairing": "Réparation…",
     "repairBlocked": "La réparation n'a pas pu démarrer : {reason}",
-    "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Rien n'a été modifié — elles ont seulement été comptées."
+    "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Vous pouvez les supprimer dans Paramètres → Index."
   },
   "saveHealth": {
     "copySuffix": "copie récupérée",
@@ -673,6 +673,21 @@
           "button": "Relecture complète",
           "confirm": "Relire toutes les notes ?\n\nCeci ouvre et relit toutes vos notes, pas seulement celles qui ont changé. Mesuré sur un Univers d'environ 1 250 notes, cela a pris à peu près 25 secondes, contre moins d'une seconde pour la Réparation ordinaire ; un grand Univers peut demander quelques minutes.\n\nCela s'exécute en arrière-plan et vous pouvez l'arrêter à tout moment. Vos fichiers de notes ne sont jamais modifiés."
         }
+      },
+      "phantoms": {
+        "button": "Supprimer",
+        "confirm": "Supprimer définitivement {noun} de l'index de recherche ? Chacune est d'abord inscrite dans le relevé — avec son texte tel que l'index de recherche le détenait, qui n'est pas le fichier de la note et ne peut pas la reconstituer — et vous pourrez le lire ensuite dans Paramètres → Univers et bibliothèques → Notes supprimées. Les liens que portent ces entrées sont supprimés avec elles et ne sont pas consignés. Cette action est irréversible, et vos fichiers de notes ne sont pas touchés.",
+        "couldNotCount": "Le nombre d'entrées n'a pas pu être déterminé ; rien n'a donc été proposé à la suppression. Constellation n'agit pas sur un décompte dont il n'est pas sûr.",
+        "description": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Les supprimer efface ces entrées et chaque lien qui y est rattaché.",
+        "failed": "Impossible de supprimer {noun}. Elles sont toujours dans l'index — réessayez.",
+        "name": "Supprimer les entrées d'index obsolètes",
+        "receiptTitle": "Dernière suppression",
+        "refused": "La suppression n'a pas été exécutée : {reason}",
+        "removed": "{noun} supprimées. Un enregistrement de chacune a été écrit dans le dossier de votre univers.",
+        "running": "Suppression…",
+        "skipped": "{noun} conservées : la note est réapparue, ou son historique n'a pas pu être archivé.",
+        "stoppedEarly": "La suppression s'est arrêtée prématurément car l'univers actif a changé. Rien n'a été écrit dans l'autre univers — relancez-la pour terminer.",
+        "unknown": "{noun} n'ont pas pu être évaluées et ont été laissées intactes."
       }
     },
     "review": {
@@ -771,7 +786,30 @@
       "day": "jour",
       "days": "jours"
     },
-    "languageNotSaved": "La langue a changé ici, mais n’a pas pu être enregistrée — elle pourrait revenir au prochain démarrage."
+    "languageNotSaved": "La langue a changé ici, mais n’a pas pu être enregistrée — elle pourrait revenir au prochain démarrage.",
+    "deleted": {
+      "empty": "Le relevé existe et il est vide — aucune suppression n'a été consignée dans cet univers.",
+      "heading": "Notes supprimées",
+      "intro": "Un relevé de ce que cet univers a supprimé — via la corbeille de Constellation ou celle du système, une suppression définitive, un fichier disparu en dehors de Constellation, ou un nettoyage de l'index de recherche. Chaque entrée conserve le texte de la note tel que l'index de recherche le détenait, ce qui n'est pas le fichier de la note : l'index stocke une version dépouillée, si bien que les titres, la mise en valeur, le contenu des blocs de code et les adresses des liens sont retirés, les diacritiques arabes avec eux, les liens apparaissent en texte brut et les propriétés de la note ne sont pas montrées du tout. Lisez-le pour voir ce qui a été supprimé, non pour relire la note — rien ici ne restaure quoi que ce soit. Ce n'est pas non plus un relevé complet : une note à laquelle Constellation n'a jamais donné d'identité propre est supprimée sans laisser d'entrée.",
+      "load": "Afficher",
+      "loadFailed": "Le relevé n'a pas pu être lu : {reason}",
+      "loading": "Lecture…",
+      "noArchive": "Aucun fichier de relevé n'existe encore dans cet univers — rien n'y a été consigné.",
+      "noTextKept": "aucun texte indexé conservé",
+      "noTextStored": "Le relevé n'a conservé aucun texte pour cette note. Cela indique seulement que l'index de recherche n'en avait aucun — une note ne contenant rien d'autre que ses propriétés n'en stocke pas. Ce n'est pas une affirmation sur le fichier de la note, ni sur sa présence.",
+      "notLoaded": "Lire le relevé ouvre un fichier dans le dossier de votre univers. Le consulter ne change rien à vos notes.",
+      "readFailed": "Le texte n'a pas pu être lu depuis le relevé. Il peut très bien s'y trouver — il s'agit d'un échec de lecture, pas d'une entrée vide.",
+      "reason": {
+        "trash": "mise à la corbeille",
+        "system_trash": "envoyée à la corbeille du système",
+        "permanent": "supprimée définitivement",
+        "vanished": "disparue du disque hors de Constellation",
+        "reconcile_gone": "déjà absente au démarrage",
+        "phantom_prune": "entrée d'index obsolète supprimée"
+      },
+      "textCaption": "La copie de cette note détenue par l'index de recherche — pas son fichier. Enregistrer du texte pour la recherche retire la mise en forme qui l'entoure : le # des titres, les * de la mise en valeur, les [[ ]] des liens, et les diacritiques arabes. Ce que visait un lien demeure ; les crochets non.",
+      "allUnreadable": "Le relevé n'a pas pu être lu. Chacune de ses lignes a échoué à l'analyse, donc rien ne peut être listé — il s'agit d'un échec de lecture, non d'un relevé vide."
+    }
   },
   "commands": {
     "newNote": "Nouvelle note",
@@ -4038,6 +4076,31 @@
       "one": "{count} entrée",
       "many": "{count} entrées",
       "other": "{count} entrées"
+    },
+    "deleted_count": {
+      "one": "{count} suppression(s) enregistrée(s)",
+      "many": "{count} suppression(s) enregistrée(s)",
+      "other": "{count} suppression(s) enregistrée(s)"
+    },
+    "deleted_showingNewest": {
+      "one": "affichage des {count} plus récentes",
+      "many": "affichage des {count} plus récentes",
+      "other": "affichage des {count} plus récentes"
+    },
+    "deleted_unreadable": {
+      "one": "{count} ligne(s) de ce relevé n'ont pas pu être lues — ce que vous voyez peut être incomplet.",
+      "many": "{count} ligne(s) de ce relevé n'ont pas pu être lues — ce que vous voyez peut être incomplet.",
+      "other": "{count} ligne(s) de ce relevé n'ont pas pu être lues — ce que vous voyez peut être incomplet."
+    },
+    "deleted_textKept": {
+      "one": "{count} caractères de texte indexé conservés",
+      "many": "{count} caractères de texte indexé conservés",
+      "other": "{count} caractères de texte indexé conservés"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} modification(s) enregistrée(s)",
+      "many": "{count} modification(s) enregistrée(s)",
+      "other": "{count} modification(s) enregistrée(s)"
     }
   },
   "embeds": {

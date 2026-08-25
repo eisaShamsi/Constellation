@@ -7,7 +7,7 @@
     "repairNow": "Repair now",
     "repairing": "Repairing…",
     "repairBlocked": "The repair could not start: {reason}",
-    "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. Nothing has been changed — they have only been counted."
+    "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index."
   },
   "saveHealth": {
     "copySuffix": "recovered copy",
@@ -581,6 +581,21 @@
           "button": "Full re-read",
           "confirm": "Re-read every note?\n\nThis opens and re-reads all of your notes, not just the changed ones. Measured on a Universe of about 1,250 notes it took roughly 25 seconds, against under a second for the ordinary Repair; a large Universe can take a few minutes.\n\nIt runs in the background and you can stop it at any time. Your note files are never written to."
         }
+      },
+      "phantoms": {
+        "button": "Remove",
+        "confirm": "Permanently remove {noun} from the search index? Each one is written into the record first — with its text as the search index held it, which is not the note's file and cannot rebuild it — and you can read that afterwards in Settings → Universe & Libraries → Deleted notes. The connections these entries carry are removed with them and are not recorded. This cannot be undone, and your note files are not touched.",
+        "couldNotCount": "The number of entries could not be determined, so nothing was offered for removal. Constellation refuses to act on a count it is not sure of.",
+        "description": "{noun} in the search index point at notes that no longer exist on disk. Removing them deletes those entries and every connection attached to them.",
+        "failed": "Could not remove {noun}. They are still in the index — try again.",
+        "name": "Remove stale index entries",
+        "receiptTitle": "Last removal",
+        "refused": "The removal did not run: {reason}",
+        "removed": "Removed {noun}. A record of each was saved in your universe folder.",
+        "running": "Removing…",
+        "skipped": "Kept {noun}: the note reappeared, or its history could not be archived.",
+        "stoppedEarly": "The removal stopped early because the active universe changed. Nothing was written to the other universe — run it again to finish.",
+        "unknown": "{noun} could not be judged, and were left alone."
       }
     },
     "review": {
@@ -742,7 +757,30 @@
       "day": "day",
       "days": "days"
     },
-    "languageNotSaved": "The language changed here, but could not be saved — it may go back at the next launch."
+    "languageNotSaved": "The language changed here, but could not be saved — it may go back at the next launch.",
+    "deleted": {
+      "empty": "The record exists and is empty — no removal has been recorded in this universe.",
+      "heading": "Deleted notes",
+      "intro": "A record of what this universe removed — through the trash or the recycle bin, a permanent delete, a file that disappeared outside Constellation, or a cleanup of the search index. Each entry keeps the note's text as the search index held it, which is not the note's file: the index stores a stripped version, so headings, emphasis, the contents of code blocks and link addresses are removed, Arabic diacritics with them, links appear as bare text, and the note's properties are not shown at all. Read it to see what was removed, not to read the note back — nothing here restores anything. It is not a complete record either: a note Constellation never gave an identity of its own is removed without leaving an entry.",
+      "load": "Show",
+      "loadFailed": "The record could not be read: {reason}",
+      "loading": "Reading…",
+      "noArchive": "No record file exists in this universe yet — nothing has been recorded here.",
+      "noTextKept": "no indexed text kept",
+      "noTextStored": "The record kept no text for this note. That says only that the search index held no text for it — a note carrying nothing beyond its properties stores none. It is not a statement about the note's file, or about whether the file was there.",
+      "notLoaded": "Reading the record opens a file in your universe folder. Nothing about your notes is changed by looking.",
+      "readFailed": "The text could not be read from the record. It may still be there — this is a read failure, not an empty entry.",
+      "reason": {
+        "trash": "moved to trash",
+        "system_trash": "sent to the recycle bin",
+        "permanent": "deleted permanently",
+        "vanished": "disappeared from disk outside Constellation",
+        "reconcile_gone": "already gone at startup",
+        "phantom_prune": "stale index entry removed"
+      },
+      "textCaption": "The search index's copy of this note — not its file. Storing text for search removes the formatting around it: the # on headings, the * around emphasis, the [[ ]] around links, and Arabic diacritics. What a link pointed at stays; the brackets do not.",
+      "allUnreadable": "The record could not be read. Every line in it failed to parse, so nothing can be listed — this is a read failure, not an empty record."
+    }
   },
   "commands": {
     "newNote": "New note",
@@ -4187,6 +4225,26 @@
     "entries": {
       "one": "{count} entry",
       "other": "{count} entries"
+    },
+    "deleted_count": {
+      "one": "{count} deletion recorded",
+      "other": "{count} deletions recorded"
+    },
+    "deleted_showingNewest": {
+      "one": "showing the newest {count}",
+      "other": "showing the newest {count}"
+    },
+    "deleted_unreadable": {
+      "one": "{count} line in this record could not be read — what you see may be incomplete.",
+      "other": "{count} lines in this record could not be read — what you see may be incomplete."
+    },
+    "deleted_textKept": {
+      "one": "{count} character of indexed text kept",
+      "other": "{count} characters of indexed text kept"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} change recorded",
+      "other": "{count} changes recorded"
     }
   },
   "embeds": {

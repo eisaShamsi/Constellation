@@ -12,6 +12,8 @@
 	import { listen } from '@tauri-apps/api/event';
 	import { REPAIR_DOOR_ENABLED, FULL_REREAD_ENABLED } from '$lib/index/repairFlag';
 	import { CONVERGE_FAMILIES, loadLastRepairReport, submitRepair, type RepairReport } from '$lib/index/repairReport';
+	import { loadDriftReport, lastPruneReceipt, DRIFT_REPORT_EVENT, type DriftReport, type PruneReceipt } from '$lib/index/driftReport'; // PJ-369 Step 4
+	import type { DeletedNotesPage } from '$lib/index/deletedNotes'; // PJ-385
 	import { persistSessionNow } from '$lib/libraries/session';
 	import { downloadJSON, pickJSONFile, eventToShortcut, shortcutRefusal, findShortcutConflict, formatShortcut } from '$lib/utils';
 	import { EDITOR_KEYMAP_RESERVED } from '$lib/editor/reservedKeys';
@@ -110,6 +112,7 @@
 		confirmLabel: string;
 		cancelLabel: string;
 		danger?: boolean;
+		enterConfirms?: boolean; // PJ-369 — false for actions with no way back
 		onConfirm: () => void;
 	}>(null);
 
@@ -199,11 +202,227 @@
 			onConfirm: () => { void startRepairFromSettings(true); },
 		};
 	}
+
+	// ═══ PJ-369 Step 4 — remove the stale index entries the boot count reports ═══
+	//
+	// The door Step 2's sentence deliberately did NOT promise. That sentence ends "Nothing has
+	// been changed — they have only been counted", precisely because this control did not exist
+	// yet; it gains its Settings pointer in the same change that gives it somewhere to point.
+	//
+	// Unlike Repair above, this one CONFIRMS, with `danger: true`. Repair writes nothing a note
+	// did not already say; this removes index rows permanently. The count is quoted in the
+	// question so the user is consenting to a number, not to a verb (the §M1 discipline the
+	// Full-re-read dialog already follows).
+	let phantomCount = $state(0);
+	let phantomBusy = $state(false);
+	// Reads the session store, so closing and reopening Settings does not destroy the record
+	// of a removal that already happened (PJ-369 panel).
+	const phantomReceipt = $derived($lastPruneReceipt);
+
+	/** Recover-on-mount: the count comes from the boot pass's own report, never recomputed
+	 *  here — one source of truth for a number the user has already seen in the notice band. */
+	async function refreshPhantomCount() {
+		try {
+			const r = await loadDriftReport();
+			// PJ-369 (2026-08-24 panel) — `?? 0` turned "no answer yet" into "all clear". The
+			// loader's own doc says null "does NOT mean 'all clear'" — the boot pass runs on a
+			// background thread and may still be going — and `+layout.svelte` already honours
+			// that. Here it decided whether a REMOVAL CONTROL exists, so a null read hid the
+			// door rather than admitting it did not know yet. Leave the count untouched on null.
+			if (r) phantomCount = r.stalePhantoms;
+		} catch (e) {
+			console.error('[Settings] phantom count failed:', e);
+		}
+	}
+
+	async function runPhantomPrune() {
+		phantomBusy = true;
+		try {
+			lastPruneReceipt.set(await invoke<PruneReceipt>('phantom_prune_run'));
+			// Re-read the count from the source rather than assuming it is now zero: a run that
+			// stopped early, skipped rows, or failed some has a REAL residue, and showing 0 for
+			// it would be the false success this whole migration exists to end.
+			await refreshPhantomCount();
+			// PJ-385 (safety inspection 2026-08-25) — the Deleted-notes list loads once and had
+			// no refresh path, so after the prune it went on showing the pre-prune record while
+			// sitting on the same page as the button that had just added 603 entries to it. If
+			// the reader is open, re-read it; if it has never been opened, leave it closed so
+			// this stays a read the user asked for.
+			if (deletedPage !== null) await loadDeletedNotes();
+		} catch (e) {
+			console.error('[Settings] phantom_prune_run failed:', e);
+			lastPruneReceipt.set({
+				removed: 0,
+				skipped: 0,
+				failed: 0,
+				unknown: 0,
+				stoppedEarly: null,
+				refused: String(e),
+			});
+		} finally {
+			phantomBusy = false;
+		}
+	}
+
+	async function confirmPhantomPrune() {
+		// PJ-369 (2026-08-24 panel) — quote a count computed NOW, not the boot pass's stored one.
+		// That stored number can be stale in the direction that matters: deregistering a library
+		// makes its rows candidates immediately while the stored count still shows the smaller
+		// figure, so the user would consent to one number and a larger set would be removed —
+		// permanently. Classification is read-only, so asking costs nothing but a moment.
+		let count = phantomCount;
+		try {
+			// `null` means the classifier REFUSED (a partial federation, an unreadable manifest) —
+			// which is "I could not tell", not "there is nothing". The first version encoded that
+			// as 0, which made the control vanish and read as all-clear: the fail-closed guard
+			// rendered to the user as a clean bill of health (2026-08-25 inspection).
+			const answer = await invoke<number | null>('phantom_prune_count');
+			if (answer === null) {
+				lastPruneReceipt.set({
+					removed: 0, skipped: 0, failed: 0, unknown: 0, stoppedEarly: null,
+					refused: $t('settings.index.phantoms.couldNotCount'),
+				});
+				return;
+			}
+			count = answer;
+			phantomCount = count; // the row's own description must agree with the dialog
+		} catch (e) {
+			// Could not recount. Refuse rather than fall back to a number we now doubt — the
+			// whole point of asking was that the stored one might be wrong.
+			console.error('[Settings] phantom_prune_count failed:', e);
+			phantomBusy = false;
+			lastPruneReceipt.set({
+				removed: 0, skipped: 0, failed: 0, unknown: 0, stoppedEarly: null,
+				refused: String(e),
+			});
+			return;
+		}
+		if (count === 0) return; // nothing left to offer; the row will vanish on the next tick
+		confirmDialog = {
+			message: $t('settings.index.phantoms.confirm', { noun: $tn('plurals.entries', count) }),
+			confirmLabel: $t('settings.index.phantoms.button') || 'Remove',
+			cancelLabel: $t('common.cancel') || 'Cancel',
+			danger: true,
+			// No way back: the index rows go, and nothing in this app can read their archive
+			// out again. A deliberate click is the right price; Escape still cancels.
+			enterConfirms: false,
+			onConfirm: () => { void runPhantomPrune(); },
+		};
+	}
+
+
+	// ═══ PJ-385 — Deleted notes: reading the delete archive back ═══
+	//
+	// Concept: when Constellation destroys something permanently, the person must be able to see
+	// what it destroyed. Every delete already writes an envelope before anything is purged and
+	// refuses to purge if that write fails — but until now nothing could read it, so "its history
+	// was kept" was a promise with no door.
+	//
+	// It lives under Universe, not Index: the archive covers EVERY deletion in this universe
+	// (trash, permanent, an external delete the watcher saw, a boot-reconcile removal, an index
+	// prune), while Index is about vocabulary and search. Putting it there would have filed a
+	// record of destroyed notes under a heading about words.
+	let deletedPage = $state<DeletedNotesPage | null>(null);
+	let deletedBusy = $state(false);
+	let deletedLoadError = $state<string | null>(null);
+	// Keyed by cid AND time: one note can have several deletion envelopes (a sync agent removing
+	// and re-adding a file archives a `vanished` envelope, then the same note is deleted later).
+	// Tracking the open row by cid alone expanded every one of them and showed the newest
+	// envelope's text under all of them (2026-08-25 inspection).
+	let deletedOpenKey = $state<string | null>(null);
+	let deletedBody = $state<string | null>(null);
+	let deletedBodyBusy = $state(false);
+	let deletedBodyFailed = $state(false);
+	const deletedKey = (cid: string, at: number) => `${cid}@${at}`;
+
+	async function loadDeletedNotes() {
+		deletedBusy = true;
+		deletedLoadError = null;
+		try {
+			deletedPage = await invoke<DeletedNotesPage>('deleted_notes_list', { limit: 500 });
+		} catch (e) {
+			// Distinct from "not loaded yet". Rendering a FAILED read as an idle "Show" prompt is
+			// the same silence this surface was built to end (2026-08-25 inspection).
+			console.error('[Settings] deleted_notes_list failed:', e);
+			deletedPage = null;
+			deletedLoadError = String(e);
+		} finally {
+			deletedBusy = false;
+		}
+	}
+
+	async function openDeletedNote(cid: string, at: number) {
+		const key = deletedKey(cid, at);
+		// Toggle: a second click on the same row closes it, so the list stays navigable.
+		if (deletedOpenKey === key) {
+			deletedOpenKey = null;
+			deletedBody = null;
+			deletedBodyFailed = false;
+			return;
+		}
+		deletedOpenKey = key;
+		deletedBody = null;
+		deletedBodyFailed = false;
+		deletedBodyBusy = true;
+		try {
+			const text = await invoke<string | null>('deleted_note_body', { cid, at });
+			// STALE-RESULT GUARD (2026-08-25 inspection, HIGH). Reading the archive re-reads the
+			// whole file, so a click on another row can start a second fetch before the first
+			// resolves — and these commands run on an async pool, so completion order is not click
+			// order. Without this, a late answer for row A painted A's text under row B's heading,
+			// as a settled result, with no error and no cue. On a note whose file is already gone
+			// this archive is the LAST copy of that text, so the reader would be presenting one
+			// destroyed note's content as another's.
+			if (deletedOpenKey !== key) return;
+			deletedBody = text;
+		} catch (e) {
+			console.error('[Settings] deleted_note_body failed:', e);
+			if (deletedOpenKey !== key) return;
+			// A failed READ is not "no text was kept" — the archive may hold the text and simply
+			// not have been readable. Saying the wrong one of those, on the last copy, is the
+			// error this whole surface exists to prevent.
+			deletedBody = null;
+			deletedBodyFailed = true;
+		} finally {
+			if (deletedOpenKey === key) deletedBodyBusy = false;
+		}
+	}
+
+	/** The stored reason, in the user's language. Unknown reasons render verbatim rather than
+	 *  being hidden — an archive written by a future version must not read as blank here. */
+	function deletedReasonLabel(reason: string): string {
+		const known = ['trash', 'system_trash', 'permanent', 'vanished', 'reconcile_gone', 'phantom_prune'];
+		return known.includes(reason)
+			? ($t(`settings.deleted.reason.${reason}`) || reason)
+			: reason;
+	}
+
+	function deletedWhen(ms: number): string {
+		if (!ms) return '—';
+		try {
+			return new Date(ms).toLocaleString($locale);
+		} catch {
+			return new Date(ms).toISOString();
+		}
+	}
+
 	$effect(() => {
 		if (!REPAIR_DOOR_ENABLED) return;
 		refreshRepairState();
+		refreshPhantomCount(); // PJ-369 — the count the notice band already showed
 		let unlisten: (() => void) | null = null;
 		let gone = false;
+		// PJ-369 (2026-08-24 diff inspection) — the count must not freeze at mount. The boot pass
+		// runs on a background thread and reports LATER, and a universe switch re-runs it; a modal
+		// left open would otherwise keep quoting a number that has since changed — inside a
+		// destructive confirm. One listener per concern, both torn down together below.
+		let unlistenDrift: (() => void) | null = null;
+		listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
+			phantomCount = ev?.payload?.stalePhantoms ?? 0;
+		}).then((un) => {
+			if (gone) un();
+			else unlistenDrift = un;
+		});
 		listen<{ report?: RepairReport }>('index-repair:done', (ev) => {
 			repairBusy = false;
 			// `report` rides only for Full runs; a ColdStart's done falls back to the
@@ -219,6 +438,7 @@
 		return () => {
 			gone = true;
 			unlisten?.();
+			unlistenDrift?.(); // PJ-369 — both listeners die with the modal (Rule 4)
 		};
 	});
 
@@ -339,12 +559,38 @@
 	const totalNotes = $derived($libraryStats.reduce((sum, v) => sum + (v.star_count || 0), 0));
 	const totalLibraries = $derived($libraries.length);
 
+	/**
+	 * PJ-369 (2026-08-25 inspection) — the ONE way this modal closes.
+	 *
+	 * A removal takes seconds and its receipt is the only account the user will ever get of it;
+	 * closing mid-run left the run to finish with its outcome shown nowhere. The first fix guarded
+	 * the overlay alone and left Escape and the ✕ open — a third of a sweep. Worse, reopening reset
+	 * `phantomBusy` to false and re-enabled Remove while the first run was still going.
+	 *
+	 * Routing all three paths through one function is what makes "you cannot close mid-removal"
+	 * true rather than mostly true. The run itself is a backend command and is unaffected either
+	 * way; this protects the RECEIPT.
+	 */
+	// The ONE door out of Settings. Returns false when it refused, so a caller that also
+	// navigates somewhere can abandon the whole action rather than travel with the modal open.
+	//
+	// 2026-08-25 inspection — three buttons (Import, Open Style Setter, Open the Circulatory
+	// System) called `onClose?.()` directly and bypassed this gate. The gate exists because
+	// `phantomBusy` is the ONLY re-entrancy guard on the permanent bulk index removal and it is
+	// component-local: closing mid-run destroys it, and reopening Settings starts a SECOND
+	// concurrent `phantom_prune_run` whose receipt overwrites the first's.
+	function closeSettings(): boolean {
+		if (phantomBusy) return false;
+		onClose();
+		return true;
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (hotkeyListening) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			e.stopPropagation();
-			onClose();
+			closeSettings();
 		}
 	}
 
@@ -861,7 +1107,10 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="settings-overlay" onclick={onClose} onkeydown={handleKeydown} tabindex="0" bind:this={containerEl} role="dialog" aria-modal="true" aria-label={$t('settings.title')}>
+<!-- PJ-369 — closing is routed through `closeSettings()`, which refuses while a removal is in
+     flight. See its definition: the first version guarded only this overlay, leaving Escape and
+     the ✕ open. -->
+<div class="settings-overlay" onclick={() => closeSettings()} onkeydown={handleKeydown} tabindex="0" bind:this={containerEl} role="dialog" aria-modal="true" aria-label={$t('settings.title')}>
 	<div class="settings-modal" onclick={(e) => e.stopPropagation()}>
 		<!-- Sidebar -->
 		<div class="settings-sidebar">
@@ -882,7 +1131,7 @@
 		<div class="settings-content">
 			<div class="settings-content-header">
 				<h2>{sections.find(s => s.id === activeSection)?.label ?? ''}</h2>
-				<button class="settings-close" onclick={onClose} aria-label="Close">
+				<button class="settings-close" onclick={() => closeSettings()} aria-label="Close">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 				</button>
 			</div>
@@ -1125,12 +1374,131 @@
 							<div class="setting-name">{$t('ribbon.importNotes') || 'Import Notes'}</div>
 							<div class="setting-desc">{$t('importer.desc') || 'Import notes from another application'}</div>
 						</div>
-						<button class="setting-control btn-action" onclick={() => { onClose?.(); setTimeout(() => document.dispatchEvent(new CustomEvent('constellation:show-importer')), 100); }}>
+						<button class="setting-control btn-action" onclick={() => { if (!closeSettings()) return; setTimeout(() => document.dispatchEvent(new CustomEvent('constellation:show-importer')), 100); }}>
 							{$t('importer.import') || 'Import'}
 						</button>
 					</div>
 
 				<!-- ═══ EDITOR ═══ -->
+
+					<!-- ═══ PJ-385 — Deleted notes ═══ -->
+					<div class="setting-section-heading">{$t('settings.deleted.heading') || 'Deleted notes'}</div>
+					<p class="section-intro">{$t('settings.deleted.intro')}</p>
+
+					{#if deletedLoadError && !deletedBusy}
+						<!-- A failed read is NOT an idle prompt. -->
+						<div class="repair-blocked" role="status" dir="auto">
+							{$t('settings.deleted.loadFailed', { reason: deletedLoadError })}
+						</div>
+						<div class="setting-item">
+							<div class="setting-info"><div class="setting-desc">{$t('settings.deleted.notLoaded')}</div></div>
+							<button class="setting-btn" onclick={() => void loadDeletedNotes()}>
+								{$t('settings.deleted.load') || 'Show'}
+							</button>
+						</div>
+					{:else if deletedPage === null && !deletedBusy}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-desc">{$t('settings.deleted.notLoaded')}</div>
+							</div>
+							<button class="setting-btn" onclick={() => void loadDeletedNotes()}>
+								{$t('settings.deleted.load') || 'Show'}
+							</button>
+						</div>
+					{:else if deletedBusy}
+						<div class="setting-item"><div class="setting-info">
+							<div class="setting-desc">{$t('settings.deleted.loading') || 'Reading…'}</div>
+						</div></div>
+					{:else if deletedPage}
+						{#if !deletedPage.archivePresent}
+							<!-- Distinct from "nothing has been deleted": the file itself is absent. -->
+							<div class="setting-item"><div class="setting-info">
+								<div class="setting-desc">{$t('settings.deleted.noArchive')}</div>
+							</div></div>
+						{:else if deletedPage.total === 0 && deletedPage.unreadableLines > 0}
+							<!-- The file opened, and EVERY line in it failed to parse. Panel finding,
+							     2026-08-25: without this branch `total === 0` fell through to
+							     `settings.deleted.empty` — "The record exists and is empty — no removal
+							     has been recorded in this universe" — a definite statement of fact about
+							     the last surviving record of destroyed notes, produced by a wholly
+							     unreadable file. The unreadableLines banner could not rescue it because
+							     it lives inside the `total > 0` branch below. `link_life.rs` names this
+							     hole in its own comment. Both existing gates miss it by construction: the
+							     string matches its source, and the data claim about that string is true. -->
+							<div class="repair-blocked" role="status" dir="auto">
+								{$t('settings.deleted.allUnreadable')}
+							</div>
+							<div class="setting-item"><div class="setting-info">
+								<div class="setting-desc">
+									{$tn('plurals.deleted_unreadable', deletedPage.unreadableLines)}
+								</div>
+							</div></div>
+						{:else if deletedPage.total === 0}
+							<div class="setting-item"><div class="setting-info">
+								<div class="setting-desc">{$t('settings.deleted.empty')}</div>
+							</div></div>
+						{:else}
+							{#if deletedPage.unreadableLines > 0}
+								<!-- Surfaced, never swallowed: a partly-unreadable archive must not
+								     look like a complete one. -->
+								<div class="repair-blocked" role="status" dir="auto">
+									{$tn('plurals.deleted_unreadable', deletedPage.unreadableLines)}
+								</div>
+							{/if}
+							<div class="setting-item"><div class="setting-info">
+								<div class="setting-desc">
+									{$tn('plurals.deleted_count', deletedPage.total)}
+									{#if deletedPage.notes.length < deletedPage.total}
+										· {$tn('plurals.deleted_showingNewest', deletedPage.notes.length)}
+									{/if}
+								</div>
+							</div></div>
+
+							<div class="deleted-list">
+								{#each deletedPage.notes as n (n.cid + n.at)}
+									<div class="deleted-row" class:deleted-open={deletedOpenKey === deletedKey(n.cid, n.at)}>
+										<button class="deleted-head" onclick={() => void openDeletedNote(n.cid, n.at)}>
+											<span class="deleted-name" dir="auto">{n.name || n.path}</span>
+											<span class="deleted-meta" dir="auto">
+												{deletedReasonLabel(n.reason)} · {deletedWhen(n.at)}
+												{#if n.library}· {n.library}{/if}
+											</span>
+											<span class="deleted-body-size">
+												{n.bodyChars > 0
+													? $tn('plurals.deleted_textKept', n.bodyChars)
+													: $t('settings.deleted.noTextKept')}
+												{#if n.historyEvents > 0}
+													· {$tn('plurals.deleted_historyEvents', n.historyEvents)}
+												{/if}
+											</span>
+										</button>
+										{#if deletedOpenKey === deletedKey(n.cid, n.at)}
+											<div class="deleted-detail">
+												<div class="deleted-path" dir="auto">{n.path}</div>
+												{#if deletedBodyBusy}
+													<div class="deleted-empty">{$t('settings.deleted.loading') || 'Reading…'}</div>
+												{:else if deletedBody}
+													<!-- The caption is NOT decoration. Panel-ruled 2026-08-25: the text below is
+													     the search index's stripped rendering, and it was rendered with no label
+													     of any kind. The true sentence lives in the section intro, a scroll away
+													     and read once before the list is even loaded — a caveat at the top of a
+													     screen does not repair a false impression created at the bottom. -->
+													<div class="deleted-caption" dir="auto">{$t('settings.deleted.textCaption')}</div>
+													<pre class="deleted-text" dir="auto">{deletedBody}</pre>
+												{:else if deletedBodyFailed}
+													<!-- A failed READ, said as one. It is not "no text was kept". -->
+													<div class="deleted-empty">{$t('settings.deleted.readFailed')}</div>
+												{:else}
+													<div class="deleted-empty">{$t('settings.deleted.noTextStored')}</div>
+												{/if}
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+					{/if}
+
 				{:else if activeSection === 'editor'}
 					<div class="setting-item">
 						<div class="setting-info">
@@ -1644,14 +2012,14 @@
 							<div class="setting-name">{$t('settings.links.editTypes') || 'Link types & colours'}</div>
 							<div class="setting-desc">{$t('settings.links.editTypesDesc') || 'Define your link types (the 8 acts + your own) and their colours in the Style Setter.'}</div>
 						</div>
-						<button class="w-btn" onclick={() => { onClose?.(); openStyleSetterToCategory('links'); }}>{$t('settings.links.editTypesBtn') || 'Open Style Setter →'}</button>
+						<button class="w-btn" onclick={() => { if (!closeSettings()) return; openStyleSetterToCategory('links'); }}>{$t('settings.links.editTypesBtn') || 'Open Style Setter →'}</button>
 					</div>
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.links.ccs') || 'Circulatory System (CCS)'}</div>
 							<div class="setting-desc">{$t('settings.links.ccsDesc') || 'Your links as a living circulation — what is alive, cooling, settled, contested, or retired.'}</div>
 						</div>
-						<button class="w-btn" onclick={() => { onClose?.(); document.dispatchEvent(new CustomEvent('constellation:open-ccs')); }}>{$t('settings.links.ccsBtn') || 'Open the Circulatory System →'}</button>
+						<button class="w-btn" onclick={() => { if (!closeSettings()) return; document.dispatchEvent(new CustomEvent('constellation:open-ccs')); }}>{$t('settings.links.ccsBtn') || 'Open the Circulatory System →'}</button>
 					</div>
 
 				{:else if activeSection === 'skyview'}
@@ -2299,6 +2667,69 @@
 						{#if repairBlockedMsg}
 							<div class="repair-blocked" role="status" dir="auto">{repairBlockedMsg}</div>
 						{/if}
+						<!-- ═══ PJ-369 Step 4 — remove the stale index entries ═══
+						     Sits with Repair because both are index health, but it is a
+						     different act: Repair re-reads files and writes no note; this
+						     removes rows permanently. Hence `danger: true` and a question that
+						     quotes the count, so the consent is to a number.
+
+						     Hidden entirely at zero. An always-visible control for a problem
+						     the user does not have is an invitation to go looking for one, and
+						     "Remove 0 entries" is a button that cannot do anything. -->
+						{#if phantomCount > 0}
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.index.phantoms.name') || 'Remove stale index entries'}</div>
+									<div class="setting-desc">
+										{$t('settings.index.phantoms.description', { noun: $tn('plurals.entries', phantomCount) })}
+									</div>
+								</div>
+								<button class="setting-btn" disabled={phantomBusy} onclick={() => void confirmPhantomPrune()}>
+									{phantomBusy
+										? ($t('settings.index.phantoms.running') || 'Removing…')
+										: ($t('settings.index.phantoms.button') || 'Remove')}
+								</button>
+							</div>
+						{/if}
+						{#if phantomReceipt}
+							<!-- The run's own account of itself. `removed` alone would flatter a
+							     partial run, so every non-zero outcome gets its own sentence and
+							     a refusal replaces the lot. -->
+							<div class="repair-report" dir="auto">
+								<div class="repair-report-title">
+									{$t('settings.index.phantoms.receiptTitle') || 'Last removal'}
+								</div>
+								{#if phantomReceipt.refused}
+									<div class="repair-report-row repair-failed">
+										{$t('settings.index.phantoms.refused', { reason: phantomReceipt.refused })}
+									</div>
+								{:else}
+									<div class="repair-report-row">
+										{$t('settings.index.phantoms.removed', { noun: $tn('plurals.entries', phantomReceipt.removed) })}
+									</div>
+									{#if phantomReceipt.stoppedEarly}
+										<div class="repair-report-row repair-failed">
+											{$t('settings.index.phantoms.stoppedEarly') || 'The removal stopped early because the active universe changed. Nothing was written to the other universe — run it again to finish.'}
+										</div>
+									{/if}
+									{#if phantomReceipt.skipped > 0}
+										<div class="repair-report-row">
+											{$t('settings.index.phantoms.skipped', { noun: $tn('plurals.entries', phantomReceipt.skipped) })}
+										</div>
+									{/if}
+									{#if phantomReceipt.failed > 0}
+										<div class="repair-report-row repair-failed">
+											{$t('settings.index.phantoms.failed', { noun: $tn('plurals.entries', phantomReceipt.failed) })}
+										</div>
+									{/if}
+									{#if phantomReceipt.unknown > 0}
+										<div class="repair-report-row">
+											{$t('settings.index.phantoms.unknown', { noun: $tn('plurals.entries', phantomReceipt.unknown) })}
+										</div>
+									{/if}
+								{/if}
+							</div>
+						{/if}
 						{#if repairReport}
 							<!-- The last run's account of itself, verbatim. `walk` is what the
 							     re-read did; the five families are the derived views. -->
@@ -2873,6 +3304,7 @@
 		confirmLabel={confirmDialog.confirmLabel}
 		cancelLabel={confirmDialog.cancelLabel}
 		danger={confirmDialog.danger ?? false}
+		enterConfirms={confirmDialog.enterConfirms ?? true}
 		onConfirm={() => {
 			const cb = confirmDialog?.onConfirm;
 			confirmDialog = null;
@@ -3626,6 +4058,71 @@
 	.repair-family-name { flex: 0 0 auto; }
 	.repair-family-outcome { text-align: end; overflow-wrap: anywhere; }
 	.repair-failed { color: var(--text-error, #a12b1e); }
+	/* PJ-385 — Deleted notes. Deliberately plain: this is a record to read, not a
+	   surface to admire, and every row must stay legible in fifteen languages and both
+	   text directions. */
+	.deleted-list {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		margin: 8px 0 16px;
+	}
+	.deleted-row {
+		border: 1px solid var(--border-color, rgba(128,128,128,0.25));
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.deleted-head {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+		width: 100%;
+		padding: 8px 10px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: start;
+		color: inherit;
+		font: inherit;
+	}
+	.deleted-head:hover { background: var(--bg-hover, rgba(128,128,128,0.08)); }
+	.deleted-name { font-weight: 600; }
+	.deleted-meta,
+	.deleted-body-size {
+		font-size: 0.85em;
+		opacity: 0.75;
+	}
+	.deleted-detail {
+		padding: 8px 10px 10px;
+		border-top: 1px solid var(--border-color, rgba(128,128,128,0.25));
+	}
+	.deleted-path {
+		font-size: 0.8em;
+		opacity: 0.6;
+		margin-bottom: 6px;
+		word-break: break-all;
+	}
+	.deleted-caption {
+		font-size: 0.78rem;
+		opacity: 0.72;
+		line-height: 1.45;
+		margin-block-end: 6px;
+	}
+	.deleted-text {
+		margin: 0;
+		padding: 8px;
+		max-height: 320px;
+		overflow: auto;
+		white-space: pre-wrap;
+		word-break: break-word;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.85em;
+		background: var(--bg-secondary, rgba(128,128,128,0.06));
+		border-radius: 4px;
+	}
+	.deleted-empty { font-size: 0.85em; opacity: 0.7; }
+
 	.repair-blocked { margin-block: 4px 10px; font-size: 0.8rem; color: var(--text-error, #a12b1e); }
 
 	.update-progress {

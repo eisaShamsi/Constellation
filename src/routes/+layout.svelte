@@ -3,7 +3,7 @@
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t, tn, reconcileLocaleFromDisk } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
-	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
+	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, lastPruneReceipt, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -658,7 +658,7 @@
 		if (!REPAIR_DOOR_ENABLED || indexPhantomDismissed || !hasPhantoms(r)) return '';
 		return tOr(
 			'indexDrift.stalePhantoms',
-			"{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. Nothing has been changed — they have only been counted.",
+			"{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index.",
 			{ noun: $tn('plurals.entries', r.stalePhantoms) }
 		);
 	});
@@ -3210,6 +3210,12 @@
 		indexDrift = null;
 		indexDriftDismissed = false;
 		indexPhantomDismissed = false; // PJ-369 — the phantom row's own flag clears with it
+		// PJ-369 (safety inspection 2026-08-25) — the prune receipt is per-universe too, and it
+		// was the one item on this list nothing cleared. It is a MODULE-level store, chosen so it
+		// survives Settings being closed and reopened; that same durability carried it across a
+		// universe switch, so Settings in the NEW universe showed "Last removal — removed 603
+		// entries" about the universe just left, with that universe's paths in its failure lines.
+		lastPruneReceipt.set(null);
 		// A cascade in flight in the previous Universe could leave entries
 		// in cascadingPaths that gate edits in the new one if any path
 		// happens to collide — start the new Universe with a clean slate.

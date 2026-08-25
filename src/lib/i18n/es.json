@@ -7,7 +7,7 @@
     "repairNow": "Reparar ahora",
     "repairing": "Reparando…",
     "repairBlocked": "No se pudo iniciar la reparación: {reason}",
-    "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. No se ha cambiado nada: solo se han contado."
+    "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. Puedes eliminarlas en Ajustes → Índice."
   },
   "saveHealth": {
     "copySuffix": "copia recuperada",
@@ -673,6 +673,21 @@
           "button": "Relectura completa",
           "confirm": "¿Volver a leer todas las notas?\n\nEsto abre y vuelve a leer todas sus notas, no solo las modificadas. Medido en un Universo de unas 1250 notas tardó unos 25 segundos, frente a menos de un segundo para la Reparación normal; un Universo grande puede tardar unos minutos.\n\nSe ejecuta en segundo plano y puede detenerlo cuando quiera. Nunca se escribe en sus archivos de notas."
         }
+      },
+      "phantoms": {
+        "button": "Eliminar",
+        "confirm": "¿Eliminar {noun} de forma permanente del índice de búsqueda? Cada una se escribe primero en el registro —con su texto tal como lo tenía el índice de búsqueda, que no es el archivo de la nota y no puede reconstruirla— y podrá leerlo después en Ajustes → Universo y bibliotecas → Notas eliminadas. Las conexiones que llevan estas entradas se eliminan con ellas y no quedan registradas. Esto no se puede deshacer, y sus archivos de notas no se tocan.",
+        "couldNotCount": "No se pudo determinar el número de entradas, así que no se ofreció eliminar nada. Constellation no actúa sobre un recuento del que no está seguro.",
+        "description": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Eliminarlas borra esas entradas y todas las conexiones asociadas a ellas.",
+        "failed": "No se pudieron eliminar {noun}. Siguen en el índice: inténtalo de nuevo.",
+        "name": "Eliminar entradas obsoletas del índice",
+        "receiptTitle": "Última eliminación",
+        "refused": "La eliminación no se ejecutó: {reason}",
+        "removed": "Se eliminaron {noun}. Se guardó un registro de cada una en la carpeta de tu universo.",
+        "running": "Eliminando…",
+        "skipped": "Se conservaron {noun}: la nota reapareció o no se pudo archivar su historial.",
+        "stoppedEarly": "La eliminación se detuvo antes de tiempo porque cambió el universo activo. No se escribió nada en el otro universo: vuelve a ejecutarla para terminar.",
+        "unknown": "No se pudo juzgar {noun}, así que se dejaron intactas."
       }
     },
     "review": {
@@ -771,7 +786,30 @@
       "day": "día",
       "days": "días"
     },
-    "languageNotSaved": "El idioma cambió aquí, pero no se pudo guardar: puede volver al anterior en el próximo inicio."
+    "languageNotSaved": "El idioma cambió aquí, pero no se pudo guardar: puede volver al anterior en el próximo inicio.",
+    "deleted": {
+      "empty": "El registro existe y está vacío: no se ha registrado ninguna eliminación en este universo.",
+      "heading": "Notas eliminadas",
+      "intro": "Un registro de lo que este universo ha eliminado: a través de la papelera o de la papelera de reciclaje, un borrado permanente, un archivo que desapareció fuera de Constellation o una limpieza del índice de búsqueda. Cada entrada conserva el texto de la nota tal como lo tenía el índice de búsqueda, que no es el archivo de la nota: el índice almacena una versión despojada, de modo que se eliminan los encabezados, el énfasis, el contenido de los bloques de código y las direcciones de los enlaces, junto con los diacríticos árabes; los enlaces aparecen como texto simple y las propiedades de la nota no se muestran en absoluto. Léalo para ver qué se eliminó, no para volver a leer la nota: aquí nada restaura nada. Tampoco es un registro completo: una nota a la que Constellation nunca dio una identidad propia se elimina sin dejar entrada.",
+      "load": "Mostrar",
+      "loadFailed": "No se pudo leer el registro: {reason}",
+      "loading": "Leyendo…",
+      "noArchive": "Todavía no existe ningún archivo de registro en este universo: aquí no se ha registrado nada.",
+      "noTextKept": "sin texto indexado guardado",
+      "noTextStored": "El registro no guardó texto para esta nota. Eso solo indica que el índice de búsqueda no tenía texto para ella: una nota que no contiene nada más que sus propiedades no almacena ninguno. No dice nada sobre el archivo de la nota ni sobre si el archivo estaba allí.",
+      "notLoaded": "Leer el registro abre un archivo en la carpeta de tu universo. Mirar no cambia nada de tus notas.",
+      "readFailed": "No se pudo leer el texto del registro. Puede seguir ahí: esto es un fallo de lectura, no una entrada vacía.",
+      "reason": {
+        "trash": "movida a la papelera",
+        "system_trash": "enviada a la papelera del sistema",
+        "permanent": "eliminada permanentemente",
+        "vanished": "desapareció del disco fuera de Constellation",
+        "reconcile_gone": "ya no estaba al iniciar",
+        "phantom_prune": "entrada obsoleta del índice eliminada"
+      },
+      "textCaption": "La copia de esta nota que tiene el índice de búsqueda, no su archivo. Guardar texto para la búsqueda elimina el formato que lo rodea: la # de los encabezados, los * del énfasis, los [[ ]] de los enlaces y los diacríticos árabes. A dónde apuntaba un enlace se conserva; los corchetes no.",
+      "allUnreadable": "No se pudo leer el registro. Ninguna de sus líneas pudo analizarse, así que no hay nada que listar: esto es un fallo de lectura, no un registro vacío."
+    }
   },
   "commands": {
     "newNote": "Nueva nota",
@@ -4038,6 +4076,31 @@
       "one": "{count} entrada",
       "many": "{count} entradas",
       "other": "{count} entradas"
+    },
+    "deleted_count": {
+      "one": "{count} eliminación(es) registrada(s)",
+      "many": "{count} eliminación(es) registrada(s)",
+      "other": "{count} eliminación(es) registrada(s)"
+    },
+    "deleted_showingNewest": {
+      "one": "mostrando los {count} más recientes",
+      "many": "mostrando los {count} más recientes",
+      "other": "mostrando los {count} más recientes"
+    },
+    "deleted_unreadable": {
+      "one": "No se pudieron leer {count} línea(s) de este registro: lo que ves puede estar incompleto.",
+      "many": "No se pudieron leer {count} línea(s) de este registro: lo que ves puede estar incompleto.",
+      "other": "No se pudieron leer {count} línea(s) de este registro: lo que ves puede estar incompleto."
+    },
+    "deleted_textKept": {
+      "one": "{count} caracteres de texto indexado guardados",
+      "many": "{count} caracteres de texto indexado guardados",
+      "other": "{count} caracteres de texto indexado guardados"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} cambio(s) registrado(s)",
+      "many": "{count} cambio(s) registrado(s)",
+      "other": "{count} cambio(s) registrado(s)"
     }
   },
   "embeds": {

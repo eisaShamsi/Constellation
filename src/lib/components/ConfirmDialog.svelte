@@ -4,6 +4,7 @@
 		confirmLabel = 'Delete',
 		cancelLabel = 'Cancel',
 		danger = true,
+		enterConfirms = true,
 		onConfirm,
 		onCancel
 	}: {
@@ -11,13 +12,32 @@
 		confirmLabel?: string;
 		cancelLabel?: string;
 		danger?: boolean;
+		/** PJ-369 Step 4 — set false when the action CANNOT BE UNDONE, so a stray Enter cannot
+		 *  perform it. Separate from `danger` on purpose: `danger` marks "destructive", and most
+		 *  destructive things here are recoverable — a deleted note goes to the trash. This is
+		 *  for the ones with no way back. */
+		enterConfirms?: boolean;
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onCancel();
-		if (e.key === 'Enter') onConfirm();
+		// PJ-369 Step 4 (2026-08-24, found by the ui-inspector gating a destructive test) —
+		// Enter confirms unless the caller says the action cannot be undone.
+		//
+		// This dialog is shared by every confirmation in the app, and Enter was bound to the
+		// confirm button unconditionally: a single stray keypress — a held key, a return pressed
+		// at a dialog not yet read — was enough to perform the action. For a note delete that is
+		// survivable, because the file goes to the trash. For removing hundreds of index entries
+		// whose archive no code path in this app can read back, it is not.
+		//
+		// Gated on `enterConfirms` rather than on `danger` deliberately. `danger` marks
+		// DESTRUCTIVE, and most destructive things here are RECOVERABLE; switching on it would
+		// have silently taken Enter away from the everyday note-delete confirmation, which is a
+		// change nobody asked for. Escape still cancels either way — the keyboard keeps its safe
+		// direction, and only the unsafe one costs a deliberate click.
+		if (e.key === 'Enter' && enterConfirms) onConfirm();
 	}
 </script>
 

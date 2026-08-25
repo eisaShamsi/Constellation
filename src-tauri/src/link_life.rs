@@ -94,6 +94,20 @@ pub struct LoadReport {
     /// When true the caller must NOT write a fresh store: a blind overwrite would destroy the
     /// backup that was about to save the user. Requires acknowledgement first.
     pub refuse_write: bool,
+    /// **The file EXISTS but could not be read at all** — set to the OS error. `None` covers both
+    /// "read fine" and "genuinely absent"; only a caller that needs the difference must ask, and
+    /// `archive_present` (`deleted_notes.rs`) already separates absent from empty.
+    ///
+    /// 2026-08-25 inspection, HIGH false-success. `read_lines` mapped EVERY `read_to_string`
+    /// error to an empty Vec, so an archive that exists and cannot be decoded — a tear inside a
+    /// multi-byte UTF-8 sequence, a Windows sharing violation from an antivirus or backup agent,
+    /// an unhydrated cloud placeholder — arrived at the Deleted-notes surface as
+    /// `{ notes: [], total: 0, unreadableLines: 0, archivePresent: true }`, which renders as
+    /// *"The record exists and is empty — no removal has been recorded in this universe."*
+    /// Asserted as fact, with no error and no cue, about the last surviving record of notes whose
+    /// files are gone. The `unreadableLines` banner could not fire: it lives inside the
+    /// `total > 0` branch. Absent stays a FACT; unreadable is now a different fact.
+    pub unreadable_file: Option<String>,
 }
 
 /// One folded link-life record: the current state of one earned link.
@@ -423,10 +437,35 @@ pub fn quarantine_pending(dir: &Path) -> Option<PathBuf> {
 }
 
 /// Read one JSONL file, skipping (and counting) unparseable lines. Never throws on content.
+/// PJ-385 — the same line reader, for the delete-archive reader in `deleted_notes.rs`.
+///
+/// Exposed rather than copied: it is the one place that treats an absent file as a FACT (an
+/// empty store, not an error) and charges one unreadable line to `skipped_lines` instead of
+/// discarding the file. A second implementation would drift from those two rules, and both are
+/// exactly what a reader of a destroyed note's only record must get right.
+pub(crate) fn read_archive_lines(path: &Path, report: &mut LoadReport) -> Vec<serde_json::Value> {
+    // Takes the ledger lock, like every other reader in this module. The 2026-08-25 inspection
+    // found the first version skipping it: this file is APPENDED to by every delete, and a read
+    // racing an append can observe a torn final line and charge it to `skipped_lines` — turning a
+    // healthy archive into one that reports itself as partly unreadable, on the surface whose
+    // whole job is to say whether the record is complete.
+    let _g = path.parent().map(file_guard);
+    read_lines(path, report)
+}
+
 fn read_lines(path: &Path, report: &mut LoadReport) -> Vec<serde_json::Value> {
     let text = match std::fs::read_to_string(path) {
         Ok(t) => t,
-        Err(_) => return Vec::new(), // absent is a FACT: an empty store, not an error
+        // Absent is a FACT: an empty store, not an error. Anything ELSE is a failure to look,
+        // and "I could not look" must never be returned as "there is nothing there" — see
+        // `LoadReport::unreadable_file`. Callers that do not consult the field keep their old
+        // behaviour exactly (an empty Vec); the one surface where the difference is the whole
+        // point (`deleted_notes_list`) refuses instead.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Vec::new(),
+        Err(e) => {
+            report.unreadable_file = Some(e.to_string());
+            return Vec::new();
+        }
     };
     let mut out = Vec::new();
     for line in text.lines() {
@@ -1426,6 +1465,48 @@ mod tests_mig104_link_life {
         assert_eq!(raw.iter().filter(|b| **b == b'\n').count(), 1);
         assert!(!raw.contains(&b'\r'), "no CRLF — the ledger must read byte-correctly on macOS");
         assert_eq!(*raw.last().unwrap(), b'\n');
+    }
+
+    /// 2026-08-25 inspection, HIGH false-success. `read_lines` mapped EVERY `read_to_string`
+    /// error to an empty Vec, so "I could not open the file" and "the file is not there" became
+    /// the same answer — and the Deleted-notes surface renders the second as *"The record exists
+    /// and is empty — no removal has been recorded in this universe."* about an archive that may
+    /// be the last surviving record of destroyed notes.
+    ///
+    /// A directory is used as the unreadable path because it is the one input that fails
+    /// `read_to_string` with a NON-NotFound error on every platform this ships to, without
+    /// needing permissions the test runner may not have. What is asserted is the DISTINCTION, so
+    /// this cannot pass by accident: absent leaves the field `None`, unreadable sets it, and both
+    /// still return an empty Vec so no existing caller changes behaviour.
+    #[test]
+    fn an_unreadable_store_is_not_reported_as_an_empty_one() {
+        let dir = tempfile::tempdir().unwrap();
+
+        // 1. Genuinely absent — a FACT, and must stay one.
+        let mut absent = LoadReport::default();
+        let out = read_archive_lines(&dir.path().join("note-history.jsonl"), &mut absent);
+        assert!(out.is_empty());
+        assert_eq!(absent.unreadable_file, None, "an absent store must not read as unreadable");
+
+        // 2. Present and readable — the control. If this ever set the field, the assertion in (3)
+        //    would be worthless because it could not have failed.
+        let real = dir.path().join("real.jsonl");
+        std::fs::write(&real, "{\"v\":1,\"t\":\"del\",\"cid\":\"c\"}
+").unwrap();
+        let mut ok = LoadReport::default();
+        assert_eq!(read_archive_lines(&real, &mut ok).len(), 1);
+        assert_eq!(ok.unreadable_file, None);
+
+        // 3. Exists but cannot be read.
+        let unreadable = dir.path().join("as_a_directory");
+        std::fs::create_dir(&unreadable).unwrap();
+        let mut bad = LoadReport::default();
+        let out = read_archive_lines(&unreadable, &mut bad);
+        assert!(out.is_empty(), "still empty — callers that ignore the field are unaffected");
+        assert!(
+            bad.unreadable_file.is_some(),
+            "a store that exists and cannot be read must be distinguishable from an empty one;              without this, `deleted_notes_list` returns archivePresent=true with zero notes and              the UI states as fact that nothing was ever deleted"
+        );
     }
 
     #[test]

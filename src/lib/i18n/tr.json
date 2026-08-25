@@ -7,7 +7,7 @@
     "repairNow": "Şimdi onar",
     "repairing": "Onarılıyor…",
     "repairBlocked": "Onarım başlatılamadı: {reason}",
-    "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Hiçbir şey değiştirilmedi — yalnızca sayıldılar."
+    "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Bunları Ayarlar → Dizin bölümünden kaldırabilirsiniz."
   },
   "saveHealth": {
     "copySuffix": "kurtarılan kopya",
@@ -673,6 +673,21 @@
           "button": "Tam yeniden okuma",
           "confirm": "Tüm notlar yeniden okunsun mu?\n\nBu işlem yalnızca değişenleri değil, tüm notlarınızı açıp yeniden okur. Yaklaşık 1.250 notluk bir Evrende ölçüldüğünde yaklaşık 25 saniye sürdü; olağan Onarım bir saniyenin altındaydı. Büyük bir Evren birkaç dakika sürebilir.\n\nArka planda çalışır ve istediğiniz zaman durdurabilirsiniz. Not dosyalarınıza asla yazılmaz."
         }
+      },
+      "phantoms": {
+        "button": "Kaldır",
+        "confirm": "{noun} arama dizininden kalıcı olarak kaldırılsın mı? Her biri önce kayda yazılır — metni, arama dizininin tuttuğu haliyle; bu notun dosyası değildir ve notu yeniden oluşturamaz — ve sonrasında bunu Ayarlar → Evren ve Kitaplıklar → Silinen notlar bölümünde okuyabilirsiniz. Bu girdilerin taşıdığı bağlantılar onlarla birlikte kaldırılır ve kaydedilmez. Bu geri alınamaz ve not dosyalarınıza dokunulmaz.",
+        "couldNotCount": "Giriş sayısı belirlenemedi, bu yüzden kaldırma için hiçbir şey sunulmadı. Constellation emin olmadığı bir sayıya göre işlem yapmaz.",
+        "description": "Arama dizinindeki {noun}, diskte artık bulunmayan notları gösteriyor. Bunları kaldırmak, o girdileri ve onlara bağlı her bağlantıyı siler.",
+        "failed": "{noun} kaldırılamadı. Hâlâ dizindeler — tekrar deneyin.",
+        "name": "Eski dizin girişlerini kaldır",
+        "receiptTitle": "Son kaldırma",
+        "refused": "Kaldırma çalıştırılmadı: {reason}",
+        "removed": "{noun} kaldırıldı. Her birinin bir kaydı evren klasörünüze yazıldı.",
+        "running": "Kaldırılıyor…",
+        "skipped": "{noun} korundu: not yeniden ortaya çıktı veya geçmişi arşivlenemedi.",
+        "stoppedEarly": "Etkin evren değiştiği için kaldırma erken durdu. Diğer evrene hiçbir şey yazılmadı — tamamlamak için yeniden çalıştırın.",
+        "unknown": "{noun} değerlendirilemedi ve olduğu gibi bırakıldı."
       }
     },
     "review": {
@@ -771,7 +786,30 @@
       "day": "gün",
       "days": "gün"
     },
-    "languageNotSaved": "Dil burada değişti ancak kaydedilemedi — bir sonraki açılışta eskiye dönebilir."
+    "languageNotSaved": "Dil burada değişti ancak kaydedilemedi — bir sonraki açılışta eskiye dönebilir.",
+    "deleted": {
+      "empty": "Kayıt var ve boş — bu evrende hiçbir kaldırma kaydedilmemiş.",
+      "heading": "Silinen notlar",
+      "intro": "Bu evrenin neleri kaldırdığının kaydı — çöp kutusu ya da geri dönüşüm kutusu yoluyla, kalıcı silme, Constellation dışında kaybolan bir dosya veya arama dizininin temizlenmesi. Her girdi, notun metnini arama dizininin tuttuğu haliyle saklar; bu notun dosyası değildir: dizin ayıklanmış bir sürüm saklar, bu yüzden başlıklar, vurgular, kod bloklarının içeriği ve bağlantı adresleri kaldırılır, Arapça harekeler de onlarla birlikte gider, bağlantılar düz metin olarak görünür ve notun özellikleri hiç gösterilmez. Neyin kaldırıldığını görmek için okuyun, notu geri okumak için değil — burada hiçbir şey hiçbir şeyi geri getirmez. Eksiksiz bir kayıt da değildir: Constellation'ın kendine ait bir kimlik vermediği bir not, geride girdi bırakmadan kaldırılır.",
+      "load": "Göster",
+      "loadFailed": "Kayıt okunamadı: {reason}",
+      "loading": "Okunuyor…",
+      "noArchive": "Bu evrende henüz bir kayıt dosyası yok — burada hiçbir şey kaydedilmemiş.",
+      "noTextKept": "dizine alınmış metin saklanmadı",
+      "noTextStored": "Kayıt bu not için metin saklamadı. Bu yalnızca arama dizininde bu nota ait metin bulunmadığı anlamına gelir — özelliklerinden başka bir şey taşımayan bir not metin saklamaz. Notun dosyası hakkında ya da dosyanın orada olup olmadığı hakkında bir ifade değildir.",
+      "notLoaded": "Kaydı okumak evren klasörünüzdeki bir dosyayı açar. Bakmak notlarınızda hiçbir şeyi değiştirmez.",
+      "readFailed": "Metin kayıttan okunamadı. Hâlâ orada olabilir — bu bir okuma hatasıdır, boş bir giriş değil.",
+      "reason": {
+        "trash": "çöp kutusuna taşındı",
+        "system_trash": "geri dönüşüm kutusuna gönderildi",
+        "permanent": "kalıcı olarak silindi",
+        "vanished": "Constellation dışında diskten kayboldu",
+        "reconcile_gone": "açılışta zaten yoktu",
+        "phantom_prune": "eski dizin girişi kaldırıldı"
+      },
+      "textCaption": "Bu notun arama dizinindeki kopyası — dosyası değil. Metni arama için saklamak, çevresindeki biçimlendirmeyi kaldırır: başlıklardaki #, vurgunun çevresindeki *, bağlantıların çevresindeki [[ ]] ve Arapça harekeler. Bir bağlantının işaret ettiği şey kalır; köşeli parantezler kalmaz.",
+      "allUnreadable": "Kayıt okunamadı. İçindeki her satırın çözümlenmesi başarısız oldu, bu yüzden listelenecek bir şey yok — bu bir okuma hatasıdır, boş bir kayıt değil."
+    }
   },
   "commands": {
     "newNote": "Yeni not",
@@ -4010,6 +4048,26 @@
     "entries": {
       "one": "{count} giriş",
       "other": "{count} giriş"
+    },
+    "deleted_count": {
+      "one": "{count} kaldırma kaydedildi",
+      "other": "{count} kaldırma kaydedildi"
+    },
+    "deleted_showingNewest": {
+      "one": "en yeni {count} tanesi gösteriliyor",
+      "other": "en yeni {count} tanesi gösteriliyor"
+    },
+    "deleted_unreadable": {
+      "one": "Bu kaydın {count} satırı okunamadı — gördüğünüz eksik olabilir.",
+      "other": "Bu kaydın {count} satırı okunamadı — gördüğünüz eksik olabilir."
+    },
+    "deleted_textKept": {
+      "one": "{count} karakter dizine alınmış metin saklandı",
+      "other": "{count} karakter dizine alınmış metin saklandı"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} değişiklik kaydedildi",
+      "other": "{count} değişiklik kaydedildi"
     }
   },
   "embeds": {

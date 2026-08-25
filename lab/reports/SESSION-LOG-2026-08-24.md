@@ -134,13 +134,18 @@ current first. Several should be fixed as *families* (Whole-Ecosystem Fix Law): 
 - **PJ-369 Step 2 awaits the Boss's test** (tutorial through `tutorial-auditor` →
   `ui-inspector` → panel → Boss). Commit is gated on his pass — the standing order is that he
   tests every build **before** commit, so nothing here is committed yet.
-- **One unresolved fact, stated as unresolved:** the live registry
-  (`%APPDATA%\world.uconstellation.app\universes.json`, identifier confirmed at
-  `tauri.conf.json:5`) lists **one** universe — `كون عيسى` — and was last written 2026-08-07,
-  yet both other universes' databases were written today and today's write journal names all
-  three. The file and the observed behaviour disagree and **I could not reconcile them.** This
-  matters because the test asks him to switch universes via the Universe Manager; the
-  `ui-inspector` was asked to rule on whether that step is followable as written.
+- **~~One unresolved fact, stated as unresolved:~~ RESOLVED 2026-08-25 — see §21. The paragraph
+  below is WRONG and is kept only because it was on the record.** It reads:
+  *"the live registry (`%APPDATA%\world.uconstellation.app\universes.json`, identifier confirmed
+  at `tauri.conf.json:5`) lists one universe — `كون عيسى` — and was last written 2026-08-07, yet
+  both other universes' databases were written today and today's write journal names all three.
+  The file and the observed behaviour disagree and I could not reconcile them."*
+  **It is not the live registry.** That path, read from this sandbox, resolves to a frozen copy
+  inside the Claude Desktop MSIX container (`…\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\…`).
+  The app's own registry was never observed. There was no disagreement to reconcile — the file and
+  the behaviour describe two different files. The secondary claim in the same paragraph is also
+  overstated: `write-journal.jsonl` names three universes because the app has written notes in
+  three universes since 2026-06-08, not because three were active that day.
 - Queue after Step 2: Steps 3–5, then PJ-375 probe repair, then PJ-367 → PJ-366 → PJ-360
   (federation), then MIG-111 B2/B7.
 
@@ -663,3 +668,241 @@ It also re-ran the live harness independently against a copy of the Boss's datab
 20:30:52 newer than all 22 changed sources, both build exit codes captured unpiped.
 
 **Not committed.** The Boss tests before commit. The panel is the last gate.
+
+---
+
+## §18 — PJ-385: the delete-archive reader (Boss-ruled, 2026-08-25)
+
+**His ruling, verbatim:** *"First, build a way to read that archive back."* Asked whether to
+proceed with the 603-row removal or build the reader first, he chose the reader. The 603 are
+untouched.
+
+**Concept (the horse).** *When Constellation destroys something permanently, the person must be
+able to see what it destroyed.* Every delete already wrote an envelope before anything was purged
+and refused to purge if that write failed — a guarantee that was true and useless in the same
+breath, because the only reader took a content id the caller had to already know and returned only
+the change-events. The app could say "its history was kept" while offering no way to look.
+
+**Built:** `Settings → Universe → Deleted notes`. Every removal this universe has recorded —
+trash, permanent, a file vanished outside the app, a startup cleanup, an index prune — newest
+first, with what/when/where/why, how much text was kept, and how many changes came with it. Click
+a row for the archived text. Reads a file, opens no database, writes nothing. **Read-only: it is a
+record, not an undo.**
+
+Placed under **Universe**, not Index, because the archive covers every deletion in the universe
+while Index is about vocabulary and search — filing a record of destroyed notes under a heading
+about words would have been the wrong shelf.
+
+### What it immediately showed about his real data
+
+> **⚠️ WITHDRAWN — see §19.** The framing below ("what an unreadable archive was hiding") was a
+> manufactured alarm and is false. Those entries are FRONTMATTER-ONLY notes; nothing was hidden.
+> Kept unedited to show what was believed at the time.
+
+5 deletions in `Eisa Universe`, 8 in `Eisa Cognitive Knowledge`, zero unreadable lines — and
+**several entries that kept 0 characters of text**. The record exists; the body does not. That is
+what an unreadable archive was hiding, and it is the argument for having built this before the
+removal rather than after.
+
+### Nine inspection findings, all in code written the same hour, all mine
+
+Two were serious, and both told the user something FALSE about the last surviving copy of a
+destroyed note:
+
+- **A stale-result race (HIGH).** Clicking row A then row B, with A resolving last, painted A's
+  text under B's heading — as a settled answer, no error, no cue. On an archive that is the last
+  copy, that is presenting one destroyed note's content as another's. Now the resolved cid is
+  compared against the still-open row and a late answer is discarded.
+- **Wrong-envelope addressing (MED).** One note can have several deletion envelopes (a sync agent
+  removing and re-adding a file archives a `vanished` envelope; the note may be deleted again
+  later). Addressed by cid alone, every row for that note expanded together and all showed the
+  NEWEST envelope's text — a row could advertise "12,000 characters kept" and then display none,
+  or display a different deletion's text as what was destroyed. Now addressed by `(cid, at)` end
+  to end, and change-events are attributed by FILE ORDER to the deletion they were appended with.
+
+The other seven are the same shape in smaller places: a failed body read rendering as "no text was
+kept"; a failed list load rendering as "not loaded yet"; a classifier refusal rendering as
+`Ok(0)` — which made the removal control vanish and read as all-clear; the archive read skipping
+the ledger lock every other reader in that module takes; `limit` bounding the payload but not the
+work (documented rather than hidden); and the modal's close guard covering one of three paths.
+
+### The one worth naming, because it is mine and it repeated
+
+**My test was a copy of the parser.** When the real one was fixed, the copy kept asserting the old
+behaviour and the test failed against correct code. That is the identical defect this session has
+now hit four times — a verification that does not enter through the shipping entry point. There is
+now ONE `parse_archive`, called by the command and by every test.
+
+**Verification:** Rust **1571 passed** (5 new), frontend **1008**, `svelte-check` **0 errors**,
+15 locales in parity, and the live test reads both real archives cleanly.
+
+**Also fixed:** `tests/sight-v6/tradition-perf.test.ts` — the sibling of the perf file fixed
+yesterday, left behind then and red today on a change that touched nothing near it. Same
+best-of-five estimator. Three consecutive clean full-suite runs.
+
+---
+
+## §19 — The panel overturned the premise the reader was announced on
+
+**DO_NOT_SEND as a viewer test.** Five changes, two of them blocking, plus a correction to my own
+framing that would have put a manufactured alarm in front of the Boss.
+
+### The framing I got wrong
+
+I told him: *"several entries kept 0 characters — the record exists, the body doesn't; that's what
+the unreadable archive was hiding."* Measured, that is not a finding at all. Those notes are
+**frontmatter-only** — 101 of 2,731 rows hold no `body_text` while their files sit on disk with
+real content, and the one I opened is four lines of properties and nothing else. Nothing hidden.
+
+Worse, I had generalised it into a claim about the 603, in code comments, the TS mirror and the
+user-facing explanation: *a phantom has no text "because its file was already gone when it was
+indexed"*. **Backwards.** Measured: **601 of the 603 carry body text — 20,484,230 characters,
+median 18,944.** The prune would archive ~20 MB of real text.
+
+I had already caught and fixed the user-facing half of this myself, an hour before the panel
+reported, by asking *why* the text was missing and reading `search.rs:12836` — the body comes from
+`note_meta.body_text`, the INDEX, not the file. The panel caught the rest: the same false premise
+still sitting in three code comments and the TS doc.
+
+### The blocker that matters most
+
+**The prune's consent sentence still said "Constellation cannot read it back" — in all 15 locales
+— shipping in the same tree as the reader that refutes it.** That is the exact falsehood that made
+him order the reader. Two documents said it too: `User Manual.md:317` ("There is no screen that
+shows it to you") and the Index help topic. All corrected; the consent sentence now points at
+Settings → Universe & Libraries → Deleted notes.
+
+Also corrected: `settings.deleted.intro` claimed a record of **every** note removed, and a blanket
+"removes nothing if it cannot be written". Neither is true — 234 rows have no content id and leave
+no entry at all, and a permanent delete destroys the file before the archive write.
+
+### What the panel established about the 603, independently
+
+- All 603 paths are under `E:\Cognitive Knowledge\…` — the OLD address of a collection that now
+  lives in the Linked Universe `Eisa Cognitive Knowledge`. Leftovers from a move, not deletions.
+- **597 have a live twin** matched by permanent id; 590 identical length, **7 where the surviving
+  copy is LONGER, none shorter.**
+- **6 orphans, 134 characters** (I had said 5 — the missed one contributes 0 characters, so my
+  total matched anyway; an error invisible in its own arithmetic).
+- All 603 carry a content id, so all 603 will archive.
+
+### PJ-384 escalated
+
+**234 real notes, all files on disk, would be purged with no archive entry at all** — invisible in
+the very panel just built. None of the 603 are affected. Boss ruling owed: close it before the
+prune, or file it separately.
+
+### The lesson
+
+Two of three panel lenses made a BLOCKER of a string that was **not in the tree** — they quoted the
+`noTextStored` text I had already corrected mid-run. Their headline finding was against stale text;
+only the lens that grepped caught it. Adversarial review is not immune to the defect it hunts, and
+the synthesis catching its own lenses is what made the output usable.
+
+---
+
+## §20 — The orphan count: the panel was right, I was wrong, and the error was invisible
+
+I reported **5 true orphans, 134 characters**. The panel said **6**. Re-measured: **the panel is
+right.**
+
+There are TWO `Collision Test.md` paths among the 603 — one in `Eisa Test\.trash\` with **no twin**
+(a genuine orphan, 0 characters) and one live at `Eisa Test\Collision Test.md` (38 characters, twin
+present). My script resolved each phantom by content id and then **fell back to matching on
+filename**. For the `.trash` orphan that fallback found the LIVE note of the same basename in the
+daily universe and scored it "alive".
+
+**The total still came to 134 characters**, because the missed orphan contributes zero — so the
+number I checked against agreed perfectly with the number I had wrong. An error cannot hide better
+than that: a flawed method, a plausible result, and an internal cross-check that confirms it.
+
+Corrected count: **6 orphans, 134 characters.** The conclusion is unchanged — the stakes are still
+134 characters of test scraps — but the count I gave the Boss was wrong and is now right.
+
+This is the third distinct failure of the same shape today (a Python re-implementation that shared
+my misunderstanding; a test that was a copy of its parser; a filename fallback that silently matched
+the wrong note), and it is what motivated the Boss's instruction to build a standing verifier.
+
+---
+
+## §21 — The registry was never stale. I was reading a shadow copy, and so was PJ-321.
+
+*(Written 2026-08-25. Resolves the "one unresolved fact" above, and closes a Group-1 ledger entry
+that had accumulated five corroborations.)*
+
+**The finding.** `%APPDATA%\world.uconstellation.app\universes.json`, read from inside this
+session's sandbox, is **not the file Constellation reads and writes**. It is a stale copy held by
+the Claude Desktop MSIX container:
+
+```
+fsutil hardlink list "C:\Users\ealsh\AppData\Roaming\world.uconstellation.app\universes.json"
+  \Users\ealsh\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\world.uconstellation.app\universes.json
+```
+
+Two methods, either of which could have disagreed:
+
+1. `fsutil hardlink list` on all four files in that directory. Only `universes.json` resolves into
+   the container's `LocalCache`. The three siblings (`write-journal.jsonl`, `app-prefs.json`,
+   `style-presets.json`) return `Error 50: The request is not supported` — the signature of a
+   handle served by the virtualization filter, i.e. **pass-through to the real location**. A
+   wholly container-local directory would have answered the same way for all four. It did not.
+2. Directory divergence. The container path holds **exactly one file**; the merged view shows five
+   entries including a 1.1 MB `write-journal.jsonl` written 2026-08-24 17:12. The container
+   shadows one file and lets the rest fall through.
+
+**Every observation PJ-321 rested on is explained by this, and no other explanation is needed.**
+The file never changed under registry writes because a snapshot does not change. The app listed
+nine universes while "the file" held one because the app was reading the real file. The Boss's
+controlled experiment — creating two universes through the Universe Manager and watching the file
+stay byte-identical — measured the snapshot, not the registry.
+
+**The app is proven correct, from its own trace.** `Eisa Universe`'s `boot-perf.latest.json` holds
+the process-lifetime IPC log for the 2026-08-24 boot: `load_app_prefs` at process start
+(13:42:35.013Z), then `list_universes`, then **one** `set_active_universe` at +16 ms. That report
+is written to the *active* universe's `.constellation`, and it landed in `Eisa Universe`
+(`note_count 2731`). `set_active_universe` hard-fails at `universe.rs:1026` when the id is not in
+the registry, and writes `active_id` + `save_registry` at `:1225-1226`. **Therefore the real
+registry contained an `Eisa Universe` entry and was written that day.** `owner.info.json`
+corroborates independently: `universe_lock::write_info` is called from exactly one place —
+a *successful* `OwnerLock::acquire` — and `refresh_heartbeat` has **zero callers**, so its mtime is
+an acquisition time, not a touch.
+
+**The contamination is three records deep, and the third is the one that looks most authoritative:**
+
+- `lab/reports/SESSION-LOG-2026-08-24.md:135-142` — corrected above.
+- `docs/Constellation Pending Jobs v1.98.md:362-369` and `:923-941` — the fifth and fourth PJ-321
+  corroborations.
+- **`lab/reports/pj321-evidence-snapshot-2026-08-22/universes.json`** — committed to the repo as
+  PJ-321's durable evidence by `bbb6ba9e` / `5ae1036d`. It is a copy of the shadow. Three hashes
+  on three objects that could have differed — the committed blob, the working tree, and the live
+  container file — are all `c20f9694c5b3d21c9dce964700250c6c7e3f614f3115db0c6c9d04aa17946afd`. The
+  ledger entry at `:926` records that invariance **as the finding**. It is a finding: that a
+  snapshot does not change. The bundle's two siblings came from `E:\` and are genuine.
+
+**The shape, named.** This is the fourth failure mode from the law written yesterday — *a
+cross-check that could not disagree* — in its purest form. Five corroborations were gathered, each
+re-reading the same frozen 277 bytes through the same redirected path, and their agreement was
+recorded as mounting evidence. No number of repetitions could have produced a different answer.
+The discriminating measurement took **one command** and was never run, because the observation
+looked self-confirming. The ledger entry's own instruction — *"the next person to touch this
+reproduces it under instrumentation or leaves it alone"* — was right, and the instrument was
+`fsutil hardlink list`.
+
+**Standing method rule, added to the verifier's brief:** any Constellation file read under
+`%APPDATA%` from this environment must be `fsutil hardlink list`-checked **before** its contents are
+treated as fact. If the answer names `…\Packages\Claude_…\LocalCache\…`, the bytes are a snapshot.
+
+**Two real defects surfaced while settling this** (neither is the premise, both are genuine):
+
+- **`set_active_universe` saves the durable intent LAST, with no rollback** (`universe.rs`): it
+  flips `active_path` at `:1166` and takes the OS owner lock at `:1170`, but `save_registry` is the
+  final statement at `:1226`. If that write fails, the command returns `Err` *after* the process
+  has already switched — `UniverseManager.handleSwitch` then does not call `onSwitch()`, so the
+  window keeps rendering universe A while every Rust command targets universe B. That is the
+  "half a switch" state PJ-310 closed at the function's *entry* and left open at its *tail*. At
+  boot, `+layout.svelte:3596` swallows the throw and `continue`s, calling the command again for the
+  next entry — moving the pointer and the lock a second time in a loop that believes the first
+  attempt did nothing. **Filed.**
+- **`remove_universe_from_registry` never clears `active_path` or releases the owner lock** — a
+  universe can be active but unregistered in-session. **Already filed under PJ-322**; this is an
+  independent second observation of it, not a new entry.

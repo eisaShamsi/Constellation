@@ -11578,6 +11578,29 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     if let Ok(mut rdb) = read_guard {
         *rdb = None;
     }
+
+    // PJ-369 Step 4 (2026-08-24 diff inspection, MED) — the last drift report dies with the
+    // universe that produced it.
+    //
+    // `RepairState.drift` was written by `record_drift_report` and cleared NOWHERE, so
+    // `index_drift_report` kept answering with the DEPARTED universe's numbers until the newly
+    // active one happened to record its own — and in three real cases it never does: no
+    // accessible library root, an empty index, or a switch that lands mid-pass (the report is
+    // then discarded by design). `+layout.svelte` nulls its own copy on switch for exactly this
+    // reason, but that is frontend-only; Settings reads the command directly and so re-imported
+    // the value the layout had just discarded.
+    //
+    // What that produced is the shape this project keeps having to kill: a wrong answer computed
+    // from the wrong universe's data, and here it sat inside a DESTRUCTIVE consent dialog —
+    // "Permanently remove 603 entries?" in a universe with none. No wrong deletion was possible
+    // (the executor re-derives its candidates from the current universe and the classifier fails
+    // closed), so the harm was a false statement of state, asked as a question. That is still a
+    // consent obtained under a false number.
+    //
+    // Cleared HERE rather than in `set_active_universe` so it cannot be missed by a future switch
+    // path: this function is the one fence every switch passes through, and it is where the
+    // generation bump that invalidates everything else already lives.
+    crate::index_repair::forget_drift_report(app);
     // MIG-056 §B.1 — also drop the federated connection. The next
     // `ensure_search_db_ready` background-thread spawn will rebuild it
     // for the new active universe + its cUniverses.
@@ -13022,8 +13045,28 @@ pub fn reindex_delete_note(
 /// line per history row, in the ledger's existing `note-history.jsonl` shape so
 /// `read_history_for` keeps working unchanged (`t:"nh"`).
 ///
-/// Slice 8b (Boss ruling #6) — the envelope carries the note BODY, so the time machine survives
-/// an emptied recycle bin. ~35 KB per deleted note, paid once, only on delete.
+/// Slice 8b (Boss ruling #6) — the envelope carries the note's text **as the search index held
+/// it**, which is NOT the note's file. Corrected 2026-08-25; the sentence this replaces said the
+/// envelope "carries the note BODY, so the time machine survives an emptied recycle bin," and
+/// that premise is what every user-facing string on this surface was written from.
+///
+/// What `body` actually is, by the time it arrives here: `parse_frontmatter` (`:6849`) has already
+/// discarded the entire YAML block; `strip_markdown` (`:8234`) has replaced every fenced and
+/// inline code span with a single space, dropped every markdown link URL, dropped the annotation
+/// half of every `[[target|annotation]]` wikilink, and replaced every `#`, `*` and `_` anywhere in
+/// prose; `normalize_arabic_for_search` (`:8274`) has removed every tashkeel and tatweel.
+///
+/// Proven against real shipping output, not a re-implementation. The live envelope for
+/// `…\Constellation PKM\Vindar.md`, whose recovered file reads
+/// `[[supports::Quazzle Renamed|it explains why]]`, archived `supports::Quazzle Renamed` — the
+/// annotation, one of the eight Living-Link properties, is gone. Three sibling files of 148–166
+/// bytes archived as `''`.
+///
+/// **This is a RECORD of what was removed, not a copy that could restore it. Do NOT cite this
+/// archive as grounds for destroying a last copy.** 28.0 KB mean per deleted note measured across
+/// 2,731 rows (the "~35 KB" this line used to claim was never measured), paid once, only on
+/// delete. The links a note carried are not recorded here at all — `build_delete_archive` runs no
+/// `note_links` query.
 fn build_delete_archive(
     conn: &Connection,
     note_path: &str,
@@ -17353,8 +17396,17 @@ mod tests_mig104_slice8 {
         );
     }
 
-    /// Slice 8b (Boss ruling #6) — the time machine must survive an emptied recycle bin, so the
-    /// envelope carries the note's TEXT and the reason it went.
+    /// Slice 8b (Boss ruling #6) — the envelope carries the note's text as the INDEX held it,
+    /// plus the reason it went. (Corrected 2026-08-25 with `build_delete_archive`'s own doc: the
+    /// archive is a record, not a restorable copy.)
+    ///
+    /// ⚠ **This fixture cannot fail on the loss it is named for.** Its body is
+    /// `"the body that must survive"` — no frontmatter, no heading, no code fence, no wikilink,
+    /// no Arabic — so every transform `body_text` applies is a no-op on it, and the test would
+    /// stay green if the archive lost all of them. A cross-check that could not disagree.
+    /// Re-seeding it with a real note (frontmatter + heading + fenced block + `[[a|b]]` + a
+    /// diacritic) and asserting what actually survives is **PJ-388's first deliverable**, named
+    /// there so it cannot be lost; it is a test-design change, not a one-liner.
     #[test]
     fn the_envelope_carries_the_body_and_the_reason() {
         let (state, dir) = state_with_schema();

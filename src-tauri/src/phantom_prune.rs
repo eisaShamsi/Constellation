@@ -661,26 +661,7 @@ pub fn prune_stale_phantoms(app: &tauri::AppHandle) -> Result<PruneReceipt, Stri
     let db_path = crate::search::db_path(app)?;
     let candidates: Vec<(String, String)> = {
         let conn = crate::search::open_read_only_search_conn(&db_path)?;
-        let mut stmt = conn
-            .prepare("SELECT path, COALESCE(cid_cn,'') FROM note_meta")
-            .map_err(|e| e.to_string())?;
-        let rows = stmt
-            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
-            .map_err(|e| e.to_string())?;
-        let mut out = Vec::new();
-        for row in rows {
-            let (path, cid) = row.map_err(|e| e.to_string())?;
-            // Every row is offered to `classify`, which answers `Keep` for anything under an own
-            // library or a linked universe BEFORE it stats the file — so this costs one hash
-            // lookup for the overwhelming majority and does not duplicate the boot pass's
-            // root-filtering logic. One decision, one place (Whole-Ecosystem).
-            match classify(&conn, &path, &ctx) {
-                Verdict::Prune(_) => out.push((path, cid)),
-                Verdict::Unknown(_) => receipt.unknown += 1,
-                Verdict::Keep(_) => {}
-            }
-        }
-        out
+        derive_candidates(&conn, &ctx, &mut receipt)?
     };
 
     use tauri::Manager as _; // brings `app.state()` into scope
@@ -696,7 +677,59 @@ pub fn prune_stale_phantoms(app: &tauri::AppHandle) -> Result<PruneReceipt, Stri
     };
 
     prune_confirmed(&state, &candidates, &still_ours, &mut on_fail, &mut receipt);
+
+    // Correct what the user is about to look at. The stored drift report is written only by the
+    // boot pass, so without this both surfaces that quote it — the notice band and the Settings
+    // row — would keep saying "603 entries" immediately after 603 were removed, until the next
+    // restart. A false statement of state is bad anywhere; directly after a destructive action
+    // it is the worst moment to be wrong, and it is precisely the false-success shape this
+    // migration exists to end.
+    //
+    // The residue is DERIVED, not assumed: candidates minus what actually went. A run that
+    // stopped early on a universe switch, skipped a resurrected file, or failed a delete has a
+    // real remainder, and `candidates.len() - removed` reports it honestly where
+    // "it must be zero now" would not. Only when the run was OURS throughout — a switch means
+    // the report belongs to a universe we are no longer in, and `invalidate_search_state` has
+    // already forgotten it.
+    if still_ours() {
+        let residue = candidates.len().saturating_sub(receipt.removed);
+        crate::index_repair::update_drift_phantom_count(app, residue);
+    }
+
     Ok(receipt)
+}
+
+/// PJ-369 Step 4 (2026-08-24 panel) — how many would go, computed NOW.
+///
+/// The confirmation dialog used to quote the boot pass's stored count. That number can be stale in
+/// the direction that matters: deregister a library and its rows become candidates immediately,
+/// while the stored count still shows the old, smaller figure — so the user would consent to 603
+/// and a larger set would be removed, permanently. The universe-switch defect fixed earlier the
+/// same day was this same staleness running the *harmless* way (it overcounted, producing a wrong
+/// question); this is the direction that produces a wrong ACT.
+///
+/// Read-only and classification-only: it shares `derive_candidates` with the command that removes,
+/// so the number quoted is produced by the same code that decides, not by a parallel count that
+/// could drift from it.
+#[tauri::command(async)]
+pub fn phantom_prune_count(app: tauri::AppHandle) -> Result<Option<usize>, String> {
+    let ctx = ClassifierCtx::build(&app);
+    if let Some(reason) = ctx.refusal() {
+        // 2026-08-25 inspection — this returned `Ok(0)`, and the caller wrote that 0 straight into
+        // the count. A refusal therefore made the removal control VANISH and read as "there is
+        // nothing to remove" — the classifier failing closed, rendered to the user as all-clear.
+        // `None` is "I could not tell", which is a different sentence and must stay one.
+        if let Ok(p) = crate::search::db_path(&app) {
+            crate::search::diag_log(
+                &p,
+                &format!("[phantom_prune] count refused: {}", reason),
+            );
+        }
+        return Ok(None);
+    }
+    let conn = crate::search::open_read_only_search_conn(&crate::search::db_path(&app)?)?;
+    let mut receipt = PruneReceipt::default();
+    Ok(Some(derive_candidates(&conn, &ctx, &mut receipt)?.len()))
 }
 
 /// PJ-369 Step 3 — the user-offered removal, exposed to the frontend.
@@ -712,6 +745,40 @@ pub fn prune_stale_phantoms(app: &tauri::AppHandle) -> Result<PruneReceipt, Stri
 #[tauri::command(async)]
 pub fn phantom_prune_run(app: tauri::AppHandle) -> Result<PruneReceipt, String> {
     prune_stale_phantoms(&app)
+}
+
+/// Which rows this run would remove, and how many it could not judge.
+///
+/// Extracted (2026-08-24 panel) because `prune_stale_phantoms` had **never executed** — both
+/// "proven" live runs entered one level below it, at `prune_confirmed`, so the derivation and the
+/// residue patch written the same day had run nowhere at all. That is the exact shape this session
+/// kept being burned by: a verification that does not go through the code that ships.
+///
+/// Every row is offered to `classify`, which answers `Keep` for anything under an own library or a
+/// linked universe BEFORE it stats the file — so this costs one hash lookup for the overwhelming
+/// majority, and it does not duplicate the boot pass's root-filtering logic. One decision, one
+/// place (Whole-Ecosystem).
+pub(crate) fn derive_candidates(
+    conn: &Connection,
+    ctx: &ClassifierCtx,
+    receipt: &mut PruneReceipt,
+) -> Result<Vec<(String, String)>, String> {
+    let mut stmt = conn
+        .prepare("SELECT path, COALESCE(cid_cn,'') FROM note_meta")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows {
+        let (path, cid) = row.map_err(|e| e.to_string())?;
+        match classify(conn, &path, ctx) {
+            Verdict::Prune(_) => out.push((path, cid)),
+            Verdict::Unknown(_) => receipt.unknown += 1,
+            Verdict::Keep(_) => {}
+        }
+    }
+    Ok(out)
 }
 
 /// The removal loop itself, free of `AppHandle`.
@@ -751,9 +818,16 @@ pub(crate) fn prune_confirmed(
         //
         // For every other delete reason that is a survivable trade: the `.md` is in `.trash` or
         // the recycle bin, so the archive is a bonus. For a PHANTOM it is not — gate 1 means the
-        // file is already gone, so `note_meta.body_text` and `note_state_history` are the LAST
-        // copies of that note's text and its change history. Purging one without an archive
-        // would destroy both with no error and no user-visible log.
+        // file is already gone, so `note_meta.body_text` and `note_state_history` MAY be the last
+        // copies of that note's text and its change history. Purging one without an archive would
+        // destroy both with no error and no user-visible log.
+        //
+        // "MAY BE" is deliberate and was "ARE" until 2026-08-25, when it was measured false for
+        // the current population: 597 of the 603 candidates have live, byte-identical-or-newer
+        // twins in a Linked Universe, and the other 6 are real files in that universe's `.trash`.
+        // The guard stays exactly as it is — fail-closed is correct PRECISELY because the
+        // assumption does not always hold and this code cannot tell which case it is in. Do not
+        // cite this comment as evidence that a phantom's index row is a last copy.
         //
         // Measured on the live `Eisa Universe` today: 234 of 2,731 rows carry an empty cid, and
         // 0 of the 603 current candidates do — so this is latent, not live. It is guarded rather
@@ -1332,6 +1406,7 @@ mod tests {
 mod live {
     use super::*;
     use crate::search::SearchState;
+    use std::collections::HashSet;
     use tempfile::TempDir;
 
     const LIVE_DB: &str = r"E:\Constellation Universes\Eisa Universe\.constellation\search.db";
@@ -1591,6 +1666,51 @@ mod live {
         // deletes the funnel ACCEPTED. Every candidate provably had a row when it was classified
         // (they came from `SELECT path FROM note_meta`), so in the command's own flow the two
         // are the same number — which the `after_meta` assertion above has already proven.
+    }
+
+    #[test]
+    #[ignore]
+    fn live_derive_candidates_finds_exactly_the_phantoms() {
+        // C4 (2026-08-24 panel): `derive_candidates` — the shipping command's own first act —
+        // had NEVER executed. Both earlier live runs entered at `prune_confirmed`, one level
+        // below it, using a candidate list this test's harness built itself. So the classifier
+        // loop the Boss's click would actually run had been verified nowhere.
+        //
+        // This runs it: the real function, the real classifier, against a copy of his database.
+        let Some((state, _dir)) = state_on_a_copy() else { return };
+
+        // The context the command builds needs an AppHandle, so construct the equivalent from
+        // the same manifest the command reads — own roots unfiltered, linked roots resolved.
+        let cons = std::path::Path::new(LIVE_DB).parent().unwrap();
+        let libs: Vec<String> = {
+            let raw = std::fs::read_to_string(cons.join("libraries.json")).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+            v.as_array().unwrap().iter()
+                .filter_map(|l| l.get("path").and_then(|p| p.as_str()).map(norm))
+                .collect()
+        };
+        let ctx = ClassifierCtx::for_test(libs.into_iter().collect(), HashSet::new(), None);
+
+        let db = state.db.lock().unwrap();
+        let conn = db.as_ref().unwrap();
+        let mut receipt = PruneReceipt::default();
+        let found = derive_candidates(conn, &ctx, &mut receipt).unwrap();
+        drop(db);
+
+        println!(
+            "derive_candidates: {} candidates, {} undecided",
+            found.len(),
+            receipt.unknown
+        );
+        // The harness's own independent derivation, for comparison.
+        let expected = candidates_from(&state);
+        assert_eq!(
+            found.len(),
+            expected.len(),
+            "the SHIPPING derivation must agree with the harness's own"
+        );
+        assert_eq!(receipt.unknown, 0, "nothing should be undecided on a live mount");
+        assert!(!found.is_empty(), "a run finding nothing would prove nothing");
     }
 
     #[test]

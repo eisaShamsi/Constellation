@@ -7,7 +7,7 @@
     "repairNow": "Reparar agora",
     "repairing": "A reparar…",
     "repairBlocked": "Não foi possível iniciar a reparação: {reason}",
-    "stalePhantoms": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Podem aparecer como resultados que não abrem nada e como ligações a notas inexistentes. Nada foi alterado — apenas foram contadas."
+    "stalePhantoms": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Podem aparecer como resultados que não abrem nada e como ligações a notas inexistentes. Pode removê-las em Definições → Índice."
   },
   "saveHealth": {
     "copySuffix": "cópia recuperada",
@@ -673,6 +673,21 @@
           "button": "Releitura completa",
           "confirm": "Reler todas as notas?\n\nIsto abre e relê todas as suas notas, não apenas as alteradas. Medido num Universo de cerca de 1250 notas demorou aproximadamente 25 segundos, contra menos de um segundo para a Reparação normal; um Universo grande pode demorar alguns minutos.\n\nCorre em segundo plano e pode pará-lo a qualquer momento. Os seus ficheiros de notas nunca são escritos."
         }
+      },
+      "phantoms": {
+        "button": "Remover",
+        "confirm": "Remover {noun} definitivamente do índice de pesquisa? Cada uma é primeiro escrita no registo — com o seu texto tal como o índice de pesquisa o guardava, que não é o ficheiro da nota e não a consegue reconstruir — e poderá lê-lo depois em Definições → Universo e bibliotecas → Notas eliminadas. As ligações que estas entradas transportam são removidas com elas e não ficam registadas. Isto não pode ser anulado, e os seus ficheiros de notas não são tocados.",
+        "couldNotCount": "Não foi possível determinar o número de entradas, pelo que nada foi proposto para remoção. O Constellation não age com base numa contagem de que não tem certeza.",
+        "description": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Removê-las apaga essas entradas e todas as ligações associadas a elas.",
+        "failed": "Não foi possível remover {noun}. Continuam no índice — tente novamente.",
+        "name": "Remover entradas obsoletas do índice",
+        "receiptTitle": "Última remoção",
+        "refused": "A remoção não foi executada: {reason}",
+        "removed": "{noun} removidas. Foi guardado um registo de cada uma na pasta do seu universo.",
+        "running": "A remover…",
+        "skipped": "{noun} mantidas: a nota reapareceu, ou o histórico não pôde ser arquivado.",
+        "stoppedEarly": "A remoção parou mais cedo porque o universo ativo mudou. Nada foi escrito no outro universo — execute novamente para terminar.",
+        "unknown": "{noun} não puderam ser avaliadas e foram deixadas intactas."
       }
     },
     "review": {
@@ -771,7 +786,30 @@
       "day": "dia",
       "days": "dias"
     },
-    "languageNotSaved": "O idioma mudou aqui, mas não foi possível guardar — pode voltar ao anterior no próximo arranque."
+    "languageNotSaved": "O idioma mudou aqui, mas não foi possível guardar — pode voltar ao anterior no próximo arranque.",
+    "deleted": {
+      "empty": "O registo existe e está vazio — nenhuma remoção foi registada neste universo.",
+      "heading": "Notas eliminadas",
+      "intro": "Um registo do que este universo removeu — através do lixo ou da reciclagem, uma eliminação permanente, um ficheiro que desapareceu fora do Constellation, ou uma limpeza do índice de pesquisa. Cada entrada guarda o texto da nota tal como o índice de pesquisa o guardava, o que não é o ficheiro da nota: o índice guarda uma versão despojada, pelo que títulos, ênfase, o conteúdo dos blocos de código e os endereços das ligações são removidos, os diacríticos árabes com eles, as ligações aparecem como texto simples e as propriedades da nota não são mostradas de todo. Leia-o para ver o que foi removido, não para reler a nota — nada aqui restaura seja o que for. Também não é um registo completo: uma nota a que o Constellation nunca deu uma identidade própria é removida sem deixar entrada.",
+      "load": "Mostrar",
+      "loadFailed": "Não foi possível ler o registo: {reason}",
+      "loading": "A ler…",
+      "noArchive": "Ainda não existe ficheiro de registo neste universo — nada foi registado aqui.",
+      "noTextKept": "sem texto indexado guardado",
+      "noTextStored": "O registo não guardou texto para esta nota. Isso apenas indica que o índice de pesquisa não tinha texto para ela — uma nota que não contém nada além das suas propriedades não guarda nenhum. Não é uma afirmação sobre o ficheiro da nota, nem sobre se o ficheiro lá estava.",
+      "notLoaded": "Ler o registo abre um ficheiro na pasta do seu universo. Consultar não altera nada nas suas notas.",
+      "readFailed": "Não foi possível ler o texto do registo. Pode continuar lá — isto é uma falha de leitura, não uma entrada vazia.",
+      "reason": {
+        "trash": "movida para o lixo",
+        "system_trash": "enviada para a reciclagem",
+        "permanent": "eliminada permanentemente",
+        "vanished": "desapareceu do disco fora do Constellation",
+        "reconcile_gone": "já ausente no arranque",
+        "phantom_prune": "entrada obsoleta do índice removida"
+      },
+      "textCaption": "A cópia desta nota que o índice de pesquisa tem — não o seu ficheiro. Guardar texto para pesquisa remove a formatação à sua volta: o # dos títulos, os * da ênfase, os [[ ]] das ligações e os diacríticos árabes. Aquilo para onde uma ligação apontava permanece; os parênteses não.",
+      "allUnreadable": "Não foi possível ler o registo. Todas as suas linhas falharam na análise, por isso nada pode ser listado — isto é uma falha de leitura, não um registo vazio."
+    }
   },
   "commands": {
     "newNote": "Nova nota",
@@ -4038,6 +4076,31 @@
       "one": "{count} entrada",
       "many": "{count} entradas",
       "other": "{count} entradas"
+    },
+    "deleted_count": {
+      "one": "{count} eliminação(ões) registada(s)",
+      "many": "{count} eliminação(ões) registada(s)",
+      "other": "{count} eliminação(ões) registada(s)"
+    },
+    "deleted_showingNewest": {
+      "one": "a mostrar as {count} mais recentes",
+      "many": "a mostrar as {count} mais recentes",
+      "other": "a mostrar as {count} mais recentes"
+    },
+    "deleted_unreadable": {
+      "one": "Não foi possível ler {count} linha(s) deste registo — o que vê pode estar incompleto.",
+      "many": "Não foi possível ler {count} linha(s) deste registo — o que vê pode estar incompleto.",
+      "other": "Não foi possível ler {count} linha(s) deste registo — o que vê pode estar incompleto."
+    },
+    "deleted_textKept": {
+      "one": "{count} caracteres de texto indexado guardados",
+      "many": "{count} caracteres de texto indexado guardados",
+      "other": "{count} caracteres de texto indexado guardados"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} alteração(ões) registada(s)",
+      "many": "{count} alteração(ões) registada(s)",
+      "other": "{count} alteração(ões) registada(s)"
     }
   },
   "embeds": {

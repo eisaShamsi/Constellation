@@ -303,6 +303,48 @@ pub(crate) fn record_drift_report(app: &AppHandle, report: crate::reconcile::Dri
     let _ = app.emit("index-drift:report", report);
 }
 
+/// PJ-369 (2026-08-24) — forget the last drift report, because the universe it described is gone.
+///
+/// Called from `invalidate_search_state`, the single fence every universe switch passes through.
+/// Without it `index_drift_report` kept answering with the DEPARTED universe's numbers until the
+/// arriving one recorded its own — which in three real cases it never does (no accessible library
+/// root, an empty index, or a switch landing mid-pass, where the report is discarded by design).
+///
+/// The field stays private: callers may CLEAR the report or record one, never poke at it.
+pub(crate) fn forget_drift_report(app: &AppHandle) {
+    if let Ok(mut g) = app.state::<RepairState>().drift.lock() {
+        *g = None;
+    }
+}
+
+/// PJ-369 Step 4 — the phantom count changed, and only the phantom count changed.
+///
+/// After a prune the stored report still says 603 while 603 are gone, because the report is
+/// written ONLY by the boot pass (`reconcile::maybe_schedule`) — so both surfaces that quote it,
+/// the notice band and the Settings row, kept asserting a number the user had just acted on.
+/// Telling someone "603 entries" immediately after successfully removing 603 is the false-success
+/// shape this whole migration exists to end, and it lands right after a destructive action, which
+/// is the worst possible moment to be wrong.
+///
+/// Deliberately a PATCH of one field rather than a fresh reconcile: the prune changed exactly one
+/// thing, and re-walking the tree to learn that would also re-heal, re-adopt and re-remove — a
+/// far larger act than the user asked for. Every other number in the report was true before and
+/// is true now.
+///
+/// No-ops when no report is stored (nothing to correct, and inventing one would assert a walk
+/// that never happened).
+pub(crate) fn update_drift_phantom_count(app: &AppHandle, stale_phantoms: usize) {
+    // Bind the state first: the guard borrows it, so a temporary would be dropped mid-statement.
+    let state = app.state::<RepairState>();
+    let updated = {
+        let Ok(mut g) = state.drift.lock() else { return };
+        let Some(report) = g.as_mut() else { return };
+        report.stale_phantoms = stale_phantoms;
+        *report
+    };
+    let _ = app.emit("index-drift:report", updated);
+}
+
 /// PJ-207 §11 — one progress event for the repair strip, in the exact shape §10's
 /// `JobProgressStrip` consumes (`JobProgressEvent { phase, total, completed, error }`).
 ///

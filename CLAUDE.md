@@ -596,6 +596,52 @@ Agent({ subagent_type: 'ui-inspector',     prompt: '<the complete draft, verbati
 
 **Not skippable for a "small" test.** The §6 tutorial that caused this was three lines long and contained two inventions.
 
+## Verify the Finding, Not Just the Wording (top of all rules — Boss-mandated 2026-08-25, LAW)
+
+> "I want you to develop a method to double-check your future judgments to avoid falsifying any
+> findings. Maybe by using an SME for this purpose." — Eisa, 2026-08-25
+
+**Every factual or causal claim about the system must be independently verified against primary
+evidence BEFORE it lands anywhere durable** — a code comment, a user-facing string, a document, a
+ledger entry, or a message to the Boss. The verifier is the **`findings-verifier`** agent
+(`.claude/agents/findings-verifier.md`), and its default verdict is REFUTED.
+
+```
+Agent({ subagent_type: 'findings-verifier', prompt: '<the claims, verbatim, one per line>' })
+```
+
+**What this gates.** Any claim that something IS the case: a count, a measurement, a state, a
+cause. "601 of the 603 carry text." "This is empty because the file was gone." "Every deletion
+leaves a record." "No code path can read this back." If I am about to write it as fact, it goes
+through the verifier first.
+
+**Why the existing gates were not enough, stated exactly.** `ui-inspector` verifies that quoted
+strings **match the source**. On 2026-08-25 it passed a sentence twice, correctly — the string
+matched perfectly. *The source was false.* The app told the user, in fifteen languages, that a
+deleted note's text was missing "because its file was already gone", when the text comes from the
+index, not the file, and 601 of the 603 notes the claim described DO carry text. There was no gate
+for **is the claim true**, only for **does the text match**. This law adds the missing one.
+
+**The four shapes it must catch**, all observed in a single day:
+
+1. **A re-implementation that shares the misunderstanding.** Verifying a fix by rewriting its logic
+   in another language proves only that the two agree — and they agree *because* both are mine.
+   Call the shipping function.
+2. **A test that is a copy of the code under test.** Fixing the real one then makes the test fail
+   against correct code.
+3. **A cross-check that cannot disagree.** An orphan count was wrong; the character total agreed
+   anyway, because the missed item contributed zero. Before trusting a confirming figure, ask
+   whether it could have differed.
+4. **A causal claim nobody traced.** "X because Y" reads as an explanation and is almost never
+   checked. It is the most dangerous shape in this codebase.
+
+**The standing question, before any finding is recorded:** *if my method were wrong, would this
+result look different?* If no, the result is worthless — get a second method that could disagree.
+
+**Not skippable because a claim seems obvious.** The false sentence above seemed obvious. It
+survived a tutorial auditor, two inspector rounds, and my own review, and was caught only when a
+panel lens was explicitly told to attack a causal claim — after it had already reached the Boss.
+
 ## The Panel Speaks First (top of all rules — Boss-mandated 2026-08-18, LAW)
 
 > "Before ask for my ruling or testing something, pass it to the panel. I want to hear their voices." — Eisa, 2026-08-18

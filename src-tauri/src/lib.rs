@@ -106,6 +106,7 @@ mod style_presets;
 mod map;
 mod maturity;
 mod perf_trace;
+mod deleted_notes; // PJ-385 — reading the delete archive back
 mod phantom_prune; // PJ-369 — the mount-aware classifier for stale index rows
 mod provenance;
 mod review;
@@ -450,7 +451,10 @@ pub fn run() {
             app_prefs::load_app_prefs,
             app_prefs::save_app_prefs,
             index_repair::index_drift_report,
-            phantom_prune::phantom_prune_run, // PJ-369 Step 3 — no UI caller until Step 4
+            phantom_prune::phantom_prune_run, // PJ-369 Step 3
+            phantom_prune::phantom_prune_count, // PJ-369 Step 4 — the count the confirm dialog quotes
+            deleted_notes::deleted_notes_list, // PJ-385
+            deleted_notes::deleted_note_body,  // PJ-385
             index_repair::index_repair_last_report,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,

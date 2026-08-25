@@ -7,7 +7,7 @@
     "repairNow": "Jetzt reparieren",
     "repairing": "Wird repariert…",
     "repairBlocked": "Die Reparatur konnte nicht starten: {reason}",
-    "stalePhantoms": "{noun} im Suchindex verweisen auf Notizen, die nicht mehr auf der Festplatte existieren. Sie können als Suchergebnisse erscheinen, die nichts öffnen, und als Verbindungen zu Notizen, die es nicht gibt. Es wurde nichts verändert — sie wurden nur gezählt."
+    "stalePhantoms": "{noun} im Suchindex verweisen auf Notizen, die nicht mehr auf der Festplatte existieren. Sie können als Suchergebnisse erscheinen, die nichts öffnen, und als Verbindungen zu Notizen, die es nicht gibt. Sie können sie unter Einstellungen → Index entfernen."
   },
   "saveHealth": {
     "copySuffix": "wiederhergestellte Kopie",
@@ -673,6 +673,21 @@
           "button": "Vollständig einlesen",
           "confirm": "Jede Notiz erneut einlesen?\n\nDies öffnet und liest alle Ihre Notizen erneut, nicht nur die geänderten. Gemessen an einem Universum mit etwa 1.250 Notizen dauerte das rund 25 Sekunden, gegenüber unter einer Sekunde für die normale Reparatur; ein großes Universum kann einige Minuten brauchen.\n\nEs läuft im Hintergrund und Sie können es jederzeit anhalten. In Ihre Notizdateien wird nie geschrieben."
         }
+      },
+      "phantoms": {
+        "button": "Entfernen",
+        "confirm": "{noun} endgültig aus dem Suchindex entfernen? Jeder Eintrag wird zuvor in den Nachweis geschrieben — mit seinem Text so, wie der Suchindex ihn hielt; das ist nicht die Datei der Notiz und kann sie nicht wiederherstellen — und Sie können ihn danach unter Einstellungen → Universum & Bibliotheken → Gelöschte Notizen lesen. Die Verbindungen dieser Einträge werden mit ihnen entfernt und nicht festgehalten. Dies kann nicht rückgängig gemacht werden, und Ihre Notizdateien bleiben unberührt.",
+        "couldNotCount": "Die Anzahl der Einträge konnte nicht ermittelt werden, daher wurde nichts zum Entfernen angeboten. Constellation handelt nicht auf Grundlage einer unsicheren Zahl.",
+        "description": "{noun} im Suchindex verweisen auf Notizen, die es auf der Festplatte nicht mehr gibt. Sie zu entfernen löscht diese Einträge und jede daran hängende Verbindung.",
+        "failed": "{noun} konnten nicht entfernt werden. Sie sind noch im Index — bitte erneut versuchen.",
+        "name": "Veraltete Indexeinträge entfernen",
+        "receiptTitle": "Letzte Entfernung",
+        "refused": "Die Entfernung wurde nicht ausgeführt: {reason}",
+        "removed": "{noun} entfernt. Ein Eintrag zu jedem wurde in Ihrem Universum-Ordner gespeichert.",
+        "running": "Wird entfernt…",
+        "skipped": "{noun} behalten: Die Notiz ist wieder aufgetaucht, oder ihre Historie konnte nicht archiviert werden.",
+        "stoppedEarly": "Die Entfernung wurde vorzeitig beendet, weil das aktive Universum gewechselt hat. In das andere Universum wurde nichts geschrieben — führen Sie sie erneut aus.",
+        "unknown": "{noun} konnten nicht beurteilt werden und blieben unangetastet."
       }
     },
     "review": {
@@ -771,7 +786,30 @@
       "day": "Tag",
       "days": "Tage"
     },
-    "languageNotSaved": "Die Sprache wurde hier geändert, konnte aber nicht gespeichert werden – beim nächsten Start gilt womöglich wieder die alte."
+    "languageNotSaved": "Die Sprache wurde hier geändert, konnte aber nicht gespeichert werden – beim nächsten Start gilt womöglich wieder die alte.",
+    "deleted": {
+      "empty": "Der Nachweis existiert und ist leer — in diesem Universum wurde keine Entfernung festgehalten.",
+      "heading": "Gelöschte Notizen",
+      "intro": "Ein Nachweis dessen, was dieses Universum entfernt hat — über den Papierkorb oder den Systempapierkorb, ein endgültiges Löschen, eine außerhalb von Constellation verschwundene Datei oder eine Bereinigung des Suchindex. Jeder Eintrag bewahrt den Text der Notiz so auf, wie der Suchindex ihn hielt, und das ist nicht die Datei der Notiz: Der Index speichert eine reduzierte Fassung, sodass Überschriften, Hervorhebungen, die Inhalte von Codeblöcken und Linkadressen entfernt werden, arabische Diakritika ebenso, Links als bloßer Text erscheinen und die Eigenschaften der Notiz gar nicht gezeigt werden. Lesen Sie ihn, um zu sehen, was entfernt wurde, nicht um die Notiz zurückzulesen — nichts hier stellt etwas wieder her. Vollständig ist er auch nicht: Eine Notiz, der Constellation nie eine eigene Identität gegeben hat, wird entfernt, ohne einen Eintrag zu hinterlassen.",
+      "load": "Anzeigen",
+      "loadFailed": "Das Verzeichnis konnte nicht gelesen werden: {reason}",
+      "loading": "Wird gelesen…",
+      "noArchive": "In diesem Universum existiert noch keine Nachweisdatei — hier wurde nichts festgehalten.",
+      "noTextKept": "kein indexierter Text aufbewahrt",
+      "noTextStored": "Der Nachweis hat für diese Notiz keinen Text aufbewahrt. Das besagt nur, dass der Suchindex keinen Text für sie hatte — eine Notiz, die nichts außer ihren Eigenschaften enthält, speichert keinen. Es ist keine Aussage über die Datei der Notiz oder darüber, ob sie vorhanden war.",
+      "notLoaded": "Das Lesen öffnet eine Datei in Ihrem Universum-Ordner. An Ihren Notizen ändert das Ansehen nichts.",
+      "readFailed": "Der Text konnte nicht aus dem Verzeichnis gelesen werden. Er kann durchaus vorhanden sein — dies ist ein Lesefehler, kein leerer Eintrag.",
+      "reason": {
+        "trash": "in den Papierkorb verschoben",
+        "system_trash": "an den Papierkorb des Systems übergeben",
+        "permanent": "dauerhaft gelöscht",
+        "vanished": "außerhalb von Constellation von der Festplatte verschwunden",
+        "reconcile_gone": "beim Start bereits verschwunden",
+        "phantom_prune": "veralteter Indexeintrag entfernt"
+      },
+      "textCaption": "Die Kopie dieser Notiz im Suchindex — nicht ihre Datei. Beim Speichern von Text für die Suche wird die Formatierung darum herum entfernt: das # bei Überschriften, die * um Hervorhebungen, die [[ ]] um Links und arabische Diakritika. Wohin ein Link zeigte, bleibt erhalten; die Klammern nicht.",
+      "allUnreadable": "Der Nachweis konnte nicht gelesen werden. Jede Zeile darin ließ sich nicht auswerten, daher kann nichts aufgelistet werden — dies ist ein Lesefehler, kein leerer Nachweis."
+    }
   },
   "commands": {
     "newNote": "Neue Notiz",
@@ -4010,6 +4048,26 @@
     "entries": {
       "one": "{count} Eintrag",
       "other": "{count} Einträge"
+    },
+    "deleted_count": {
+      "one": "{count} Löschung(en) verzeichnet",
+      "other": "{count} Löschung(en) verzeichnet"
+    },
+    "deleted_showingNewest": {
+      "one": "die neuesten {count} werden gezeigt",
+      "other": "die neuesten {count} werden gezeigt"
+    },
+    "deleted_unreadable": {
+      "one": "{count} Zeile(n) dieses Verzeichnisses konnten nicht gelesen werden — das Angezeigte ist möglicherweise unvollständig.",
+      "other": "{count} Zeile(n) dieses Verzeichnisses konnten nicht gelesen werden — das Angezeigte ist möglicherweise unvollständig."
+    },
+    "deleted_textKept": {
+      "one": "{count} Zeichen indexierter Text aufbewahrt",
+      "other": "{count} Zeichen indexierter Text aufbewahrt"
+    },
+    "deleted_historyEvents": {
+      "one": "{count} Änderung(en) verzeichnet",
+      "other": "{count} Änderung(en) verzeichnet"
     }
   },
   "embeds": {

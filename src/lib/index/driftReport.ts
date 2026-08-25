@@ -13,6 +13,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import { writable } from 'svelte/store';
 
 /**
  * The event the boot pass pushes after every scan — clean or not (§11: a post-repair
@@ -97,6 +98,32 @@ export function hasPhantoms(r: DriftReport | null | undefined): r is DriftReport
 }
 
 /**
+ * PJ-369 Step 3/4 — what a prune run did. Mirrors `phantom_prune::PruneReceipt`
+ * (serde `rename_all = "camelCase"`).
+ *
+ * Every field is a count the user is entitled to see. A removal that cannot be described is a
+ * silent removal, and `removed` alone would be a summary that flatters: a run that stopped on a
+ * universe switch, skipped rows whose file reappeared, or failed some deletes has a real
+ * residue, and the receipt has to say so.
+ */
+export interface PruneReceipt {
+	/** Rows removed through the delete funnel, archive-first. */
+	removed: number;
+	/** Not removed because the second look disagreed with the first — the file reappeared, or
+	 *  the row had no content id so its history could not be archived. Never an error. */
+	skipped: number;
+	/** Deletes that returned an error. Those rows are still there. */
+	failed: number;
+	/** Rows the classifier declined to judge. Never acted on. */
+	unknown: number;
+	/** Set when the run stopped before finishing (a universe switch). The counts are what
+	 *  actually happened up to that point, not a projection. */
+	stoppedEarly: string | null;
+	/** Set when the whole run refused before touching anything. `removed` is then always 0. */
+	refused: string | null;
+}
+
+/**
  * Read the report the boot pass already produced. Starts nothing and walks nothing.
  *
  * `null` means "no answer yet" — the pass runs on a background thread and may still be
@@ -110,3 +137,17 @@ export async function loadDriftReport(): Promise<DriftReport | null> {
 		return null;
 	}
 }
+
+/**
+ * PJ-369 Step 4 (2026-08-24 panel) — the last prune's receipt, for the length of the session.
+ *
+ * It lived as component-local state, so closing Settings destroyed it. The modal can be closed
+ * mid-run (its overlay closes on click) and reopening showed nothing at all: the button that
+ * changes NOTHING — Repair — keeps a durable report, while the one that permanently removes
+ * hundreds of rows kept none. A removal the user cannot see the outcome of is a silent removal.
+ *
+ * A module-level store rather than component state, so it survives close/reopen. Not persisted to
+ * disk on purpose: it describes one run in one session, and a receipt that outlived the app would
+ * start asserting a past it can no longer vouch for.
+ */
+export const lastPruneReceipt = writable<PruneReceipt | null>(null);
