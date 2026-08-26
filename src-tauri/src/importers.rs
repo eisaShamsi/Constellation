@@ -306,6 +306,14 @@ fn import_notion_folder(source: &str, dest: &Path) -> Result<ImportResult, Strin
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
+                // MIG-112 §1 — the same guard its three siblings in this file already apply
+                // (`copy_full_tree`, `collect_all_files_recursive`, `collect_source_files_recursive`).
+                // A Notion export unzipped over an existing folder can carry `.git/`,
+                // `__MACOSX/` or `node_modules/`, and without this those are imported as notes.
+                let name = path.file_name().unwrap_or_default().to_string_lossy();
+                if name.starts_with('.') || EXCLUDED_DIRS.iter().any(|d| name.eq_ignore_ascii_case(d)) {
+                    continue;
+                }
                 walk_notion(&path, dest, result);
             } else if let Some(ext) = path.extension() {
                 let ext_lower = ext.to_string_lossy().to_lowercase();

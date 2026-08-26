@@ -255,7 +255,7 @@ fn scan_tasks_recursive(
             continue;
         }
         if path.is_dir() {
-            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if crate::libraries::is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_tasks_recursive(&path, library_name, library_path, tasks, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -300,7 +300,7 @@ fn scan_dates_recursive(
             continue;
         }
         if path.is_dir() {
-            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if crate::libraries::is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_dates_recursive(&path, library_name, daily_dir, daily_format, entries, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let file_path_str = path.to_string_lossy().to_string();

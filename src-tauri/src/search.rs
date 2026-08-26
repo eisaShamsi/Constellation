@@ -3578,6 +3578,15 @@ pub(crate) fn mig003_backfill_cid_cn(
             rows.push(Row { path, current_cid_cn: cid_cn });
         }
     }
+    // MIG-112 §7 — the universe this pass is allowed to write to. `db_dir` is the search.db
+    // path, so its grandparent is the universe root (<root>/.constellation/search.db).
+    // A row-driven pass is NOT stopped by any of MIG-112's walk fences: it iterates
+    // `note_meta` and writes to whatever file a row names, so a single contaminated row is
+    // enough to rewrite a file in ANOTHER universe. `None` (an in-memory/test connection)
+    // disables the check rather than refusing every write, matching diag_log's own posture.
+    let own_universe_root: Option<std::path::PathBuf> =
+        db_dir.parent().and_then(|p| p.parent()).map(|p| p.to_path_buf());
+    let mut foreign_writes_refused = 0usize;
     diag_log(db_dir, &format!(
         "[search] mig003_backfill_cid_cn: snapshot {} note_meta row(s) in {:?}",
         rows.len(),
@@ -3630,6 +3639,14 @@ pub(crate) fn mig003_backfill_cid_cn(
         let new_cid_cn = match pre_existing {
             Some(c) if cid_cn_re.is_match(&c) => c,
             _ => {
+                // MIG-112 §7 — never write a file that belongs to another universe.
+                if own_universe_root.as_deref().is_some_and(|root|
+                    crate::libraries::path_is_in_foreign_universe(path, root))
+                {
+                    foreign_writes_refused += 1;
+                    plans.push((row, Plan::Error, mtime));
+                    continue;
+                }
                 // Inject via canonical helper. Returns updated content;
                 // we extract the new cid_cn from it.
                 match crate::canonical::ensure_cid_cn(path, &content) {
@@ -3701,6 +3718,17 @@ pub(crate) fn mig003_backfill_cid_cn(
                     continue;
                 }
             };
+            // MIG-112 §7 — never re-mint the identity of a file in another universe. This is
+            // the arm that STRIPS a note's identity line and injects a fresh one, so a miss
+            // here changes another universe's note irreversibly (`gate_write` keeps no prior
+            // copy — `ReplaceFileW` is called with a null backup parameter).
+            if own_universe_root.as_deref().is_some_and(|root|
+                crate::libraries::path_is_in_foreign_universe(path_obj, root))
+            {
+                foreign_writes_refused += 1;
+                plans[loser_idx].1 = Plan::Error;
+                continue;
+            }
             let stripped = strip_cid_cn_line(&content);
             // MIG-076 §A2 — gated (rewrites a live note's frontmatter).
             if crate::write_gate::gate_write(path_obj, &stripped, None, "cid_dedupe").is_err() {
@@ -3728,9 +3756,10 @@ pub(crate) fn mig003_backfill_cid_cn(
 
     let phase_b_elapsed = t_start.elapsed();
     diag_log(db_dir, &format!(
-        "[search] mig003_backfill_cid_cn: Phase B (dedup) done in {:?}; {} duplicates resolved",
+        "[search] mig003_backfill_cid_cn: Phase B (dedup) done in {:?}; {} duplicates resolved; {} write(s) refused as belonging to another universe (MIG-112)",
         phase_b_elapsed,
         duplicates_resolved,
+        foreign_writes_refused,
     ));
 
     // ── Phase C: apply all DB changes inside ONE transaction. The
@@ -9011,8 +9040,11 @@ fn index_library_recursive(
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
-            if exclude.contains(&norm) { continue; }
+            // MIG-112 — was a hand-inlined copy of the exclude-set test, which is exactly the
+            // drift the Whole-Ecosystem Fix Law warns about: it kept working while the shared
+            // predicate learned a second reason (a universe root is a boundary too), and this
+            // walk — the one that populates `note_meta` — would have kept adopting them.
+            if crate::libraries::is_walk_boundary(&path, exclude) { continue; }
             tally.absorb(index_library_recursive(conn, &path, libs, exclude, depth + 1, ctx));
             if ctx.stopped { return tally; }
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
@@ -12728,6 +12760,23 @@ pub enum DeleteReason {
     /// the Boss's ruling was "archive all", and this funnel is archive-first regardless, so
     /// a phantom's history survives its row.
     PhantomPrune,
+    /// MIG-112 §8 — the note belongs to a **universe nested inside this one**, so its row was
+    /// never ours to hold. **The `.md` is NOT deleted and is not even touched**: the note keeps
+    /// living in its own universe, which is exactly why this is a de-adoption rather than a
+    /// delete.
+    ///
+    /// It still goes through this funnel, and that is deliberate: the funnel is the only thing
+    /// that clears all eleven dependent tables, so hand-rolling the row removal would leave
+    /// orphans in `note_links` / `note_body` / `review_schedule` / `note_embeddings` and the
+    /// rest — the class PJ-392 already records.
+    ///
+    /// The empty-cid case is survivable HERE in a way it is not for `PhantomPrune`. There,
+    /// gate 1 means the file is already gone, so the index row may be the last copy and the
+    /// prune refuses. Here the file is present and untouched, so an unarchivable row costs a
+    /// record, not the note. (Measured on the Boss's `Eisa Universe`: 8 of the 16 rows carry an
+    /// empty `cid_cn` — not because those notes have no identity, but because a duplicate
+    /// claimed it first; their files carry a real one.)
+    ForeignUniverse,
 }
 
 impl DeleteReason {
@@ -12739,6 +12788,7 @@ impl DeleteReason {
             DeleteReason::Vanished => "vanished",
             DeleteReason::ReconcileGone => "reconcile_gone",
             DeleteReason::PhantomPrune => "phantom_prune",
+            DeleteReason::ForeignUniverse => "foreign_universe",
         }
     }
 }
@@ -13370,7 +13420,26 @@ fn reindex_md_descendants(
     dir_path: &str,
 ) -> usize {
     let mut count = 0usize;
-    let mut stack = vec![std::path::PathBuf::from(dir_path)];
+    // MIG-112 — the START directory, not only what descent finds. Every other fence in this
+    // migration is a descent test, and a descent test cannot see the root it was handed: a
+    // nested universe's SUBdirectories carry no manifest of their own, so seeding the stack
+    // with `كون عيسى 2` (or any folder inside it) walked the entire subtree unchecked. Both
+    // callers are also guarded, and this stays as the second line: this function is reachable
+    // from more than one place and the caller's guard is easy to lose in a later edit.
+    let start = std::path::PathBuf::from(dir_path);
+    if crate::libraries::carries_universe_manifest(&start, crate::libraries::BareManifest::MustLookLikeOne)
+        || crate::libraries::universe_manifest_at_or_above(&start, crate::libraries::BareManifest::MustLookLikeOne).is_some_and(|owner| {
+            let n = |q: &std::path::Path| {
+                q.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase()
+            };
+            libs.iter()
+                .find(|l| l.is_universe_notes)
+                .is_some_and(|root| n(std::path::Path::new(&root.path)) != n(&owner))
+        })
+    {
+        return 0;
+    }
+    let mut stack = vec![start];
     while let Some(dir) = stack.pop() {
         let rd = match std::fs::read_dir(&dir) {
             Ok(r) => r,
@@ -13384,7 +13453,11 @@ fn reindex_md_descendants(
                     .and_then(|n| n.to_str())
                     .map(|n| n.starts_with('.'))
                     .unwrap_or(false);
-                if !hidden {
+                // MIG-112 — a universe is never content of another universe. This is the
+                // WATCHER's descendant walk: `watcher.rs` installs a RECURSIVE watch on the
+                // universe root, so without this one touched file inside a nested universe
+                // re-adopts its whole subtree — including everything a de-index just removed.
+                if !hidden && !crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) {
                     stack.push(path);
                 }
             } else if path
@@ -13520,6 +13593,13 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
     // purging the row of a file that no longer exists is correct in every scope, and it
     // can only ever remove rows, never create them.
     let libs = crate::libraries::try_load_libraries(&app)?;
+    // MIG-112 — the active universe's root, taken from the `universe_notes` library whose
+    // `path` IS that root (§2 of the orientation doc). Used by the per-file arm below to tell
+    // "a note of ours" from "a note of a universe that happens to sit inside our folder".
+    let own_root: Option<std::path::PathBuf> = libs
+        .iter()
+        .find(|l| l.is_universe_notes)
+        .map(|l| std::path::PathBuf::from(&l.path));
     let mut done = 0usize;
     // Pass 1 — ADDS (existing dirs + `.md` files). Run BEFORE deletes so a folder
     // rename's new rows already exist when the old-side prefix-purge runs its
@@ -13546,6 +13626,19 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
             continue;
         }
         let pb = std::path::Path::new(p);
+        // MIG-112 — BOTH arms, before the branch. This guard first sat inside the `.md` arm
+        // only, and the 2026-08-26 safety inspection confirmed that as an APP-KILLER: Windows
+        // emits ONE directory event for a folder add/rename, so the watcher hands this loop a
+        // DIRECTORY path, the `is_dir` arm ran, and `reindex_md_descendants` re-adopted the
+        // whole subtree of a nested universe — silently undoing the fence in the very same
+        // build that added it, on the next external touch. `library_name_for_path` cannot stop
+        // it either: every path under the root resolves to `universe_notes`, whose path IS the
+        // universe root.
+        if let Some(root) = own_root.as_deref() {
+            if crate::libraries::path_is_in_foreign_universe(pb, root) {
+                continue;
+            }
+        }
         if pb.is_dir() {
             // Existing directory — NEW side of an external folder rename/move, or a
             // bulk folder add. Index every not-yet-known `.md` descendant.
@@ -13557,7 +13650,8 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
                 .unwrap_or(false)
         {
             // Existing `.md`: (re)index it. If no registered library owns the path
-            // it has no note_meta identity, so skip.
+            // it has no note_meta identity, so skip. (The MIG-112 foreign-universe fence
+            // now sits above the branch so it covers the directory arm too.)
             if let Some(lib) = crate::libraries::library_name_for_path(&libs, p) {
                 if reindex_single_note(&state, p, &lib).is_ok() {
                     done += 1;
@@ -17676,14 +17770,26 @@ mod tests_pj207_s8_index_write_scope {
         let recursive = recursive_set(&parent);
         let own = own_set(&parent);
 
-        // Narrowing the ROOTS alone — the half-fix the plan warned would only look complete.
+        // Narrowing the ROOTS alone. Until MIG-112 this asserted **1** — the half-fix the plan
+        // warned would only look complete: dropping the child from the list of roots to START
+        // at does not stop the walk REACHING it, which is why the exclusion set exists.
+        //
+        // MIG-112 changed the answer to **0**, and that change is the point rather than a
+        // convenience: `is_walk_boundary` now also stops at any directory carrying a universe
+        // manifest, which this fixture's child does. That is a FACT ON DISK, so it holds even
+        // when the registry-derived exclusion set is empty — which is exactly what the live
+        // defect was (three universe roots physically inside `Eisa Universe`, declared nowhere,
+        // so no exclusion set could ever have named them).
+        //
+        // The old assertion is not simply deleted: it remains true for a nested own LIBRARY,
+        // which carries no manifest, and `the_exclusion_set_is_still_load_bearing_for_a_nested_library`
+        // below pins that half — so relaxing this one cannot quietly retire the exclusion set.
         let half = init_db(&tmp.path().join("half.db")).expect("init_db");
         walk_from(&half, &own, &Default::default());
         assert_eq!(
             rows_under(&half, &child),
-            1,
-            "narrowing the root list alone does NOT stop the walk descending into a nested \
-             linked universe — this is why the exclusion set exists"
+            0,
+            "MIG-112: a nested universe ROOT is stopped by its own manifest, with no exclusion set"
         );
 
         // Roots narrowed AND the foreign root excluded.
@@ -17695,6 +17801,69 @@ mod tests_pj207_s8_index_write_scope {
             1,
             "the parent's own note, which sits beside it, is untouched"
         );
+    }
+
+    /// MIG-112's other half. The manifest check cannot REPLACE the exclusion set: a nested
+    /// **library** is an ordinary directory with no `universe.json` in it, so only the
+    /// registry-derived set can stop a walk there. Without this test, relaxing the assertion
+    /// above from 1 to 0 would let someone delete the exclusion set entirely and still see green
+    /// — the exact "a check that could not disagree" shape this codebase keeps paying for.
+    #[test]
+    fn the_exclusion_set_is_still_load_bearing_for_a_nested_library() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().join("Universe");
+        let lib = root.join("Physics");
+        std::fs::create_dir_all(&lib).unwrap();
+        put_json(
+            &root.join(".constellation").join("libraries.json"),
+            serde_json::json!([
+                {"id": "a", "name": "Notes", "path": root.to_string_lossy(), "is_universe_notes": true},
+                {"id": "b", "name": "Physics", "path": lib.to_string_lossy(), "is_universe_notes": false}
+            ]),
+        );
+        put_json(
+            &root.join(".constellation").join("universe.json"),
+            serde_json::json!({"name": "U", "created": "2026-08-07T00:00:00Z", "version": 2, "children": []}),
+        );
+        put(&lib.join("Physics Note.md"), "---\ntitle: Physics Note\n---\nblorptide\n");
+
+        // The library dir carries no manifest, so MIG-112's check cannot see it. Asserted
+        // rather than assumed — if a future fixture change gave it one, this test would
+        // silently stop testing anything.
+        assert!(
+            !crate::libraries::carries_universe_manifest(
+                &lib,
+                crate::libraries::BareManifest::MustLookLikeOne
+            ),
+            "fixture: a library is NOT a universe — that is the whole point of this test"
+        );
+
+        // Walk with ONLY the root library in the set, so `walk_exclusions` yields nothing (a
+        // library never excludes itself). That is "no exclusion set", reproduced through the
+        // production helper rather than by handing the walker an empty HashSet directly.
+        let root_only: Vec<_> = own_set(&root).into_iter().filter(|l| l.is_universe_notes).collect();
+        assert_eq!(root_only.len(), 1, "fixture: exactly one universe_notes library");
+        let bare = init_db(&tmp.path().join("bare.db")).expect("init_db");
+        walk_from(&bare, &root_only, &Default::default());
+        assert_eq!(
+            rows_under(&bare, &lib),
+            1,
+            "with no exclusion set the root's walk still descends into its own nested library"
+        );
+
+        // With the real set the note is still indexed — but ONCE, and under the library that
+        // owns it. That is what the exclusion set buys, and MIG-112's manifest check cannot
+        // buy it: a library is not a universe, so the manifest check never fires here.
+        let whole = init_db(&tmp.path().join("whole.db")).expect("init_db");
+        walk_from(&whole, &own_set(&root), &Default::default());
+        let owner: String = whole
+            .query_row(
+                "SELECT library_name FROM note_meta WHERE path LIKE ?1",
+                params![format!("{}%", lib.to_string_lossy())],
+                |r| r.get(0),
+            )
+            .expect("the nested library's note is indexed exactly once");
+        assert_eq!(owner, "Physics", "it is attributed to the library that owns it, not the root");
     }
 
     /// The case that must not regress — and it is the live one. Every universe on this

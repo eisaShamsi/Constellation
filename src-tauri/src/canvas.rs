@@ -136,6 +136,8 @@ fn scan_canvases_recursive(dir: &Path, canvases: &mut Vec<CanvasInfo>) {
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             scan_canvases_recursive(&path, canvases);
         } else if path.extension().and_then(|e| e.to_str()) == Some("canvas") {
             let name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();

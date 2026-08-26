@@ -391,7 +391,16 @@
 	/** The stored reason, in the user's language. Unknown reasons render verbatim rather than
 	 *  being hidden — an archive written by a future version must not read as blank here. */
 	function deletedReasonLabel(reason: string): string {
-		const known = ['trash', 'system_trash', 'permanent', 'vanished', 'reconcile_gone', 'phantom_prune'];
+		// MIG-112 — `foreign_universe` MUST be in this list. Unknown reasons fall through to the
+		// raw token below, so omitting it renders the internal string `foreign_universe` at the top
+		// of this list, in all 15 languages, for notes whose files were deliberately NOT deleted.
+		// `i18n-parity` cannot catch that: the key was missing from EVERY locale, so the locales
+		// were consistently wrong and the check passed 15/15. Caught by the panel, after the
+		// tutorial-auditor, six ui-inspector rounds and two safety-inspection passes had all
+		// missed it. Any new `DeleteReason` variant needs this array, the key ×15, and a look at
+		// the intro sentence below — which describes what this universe REMOVED, and a de-adopt
+		// removes only the index row.
+		const known = ['trash', 'system_trash', 'permanent', 'vanished', 'reconcile_gone', 'phantom_prune', 'foreign_universe'];
 		return known.includes(reason)
 			? ($t(`settings.deleted.reason.${reason}`) || reason)
 			: reason;

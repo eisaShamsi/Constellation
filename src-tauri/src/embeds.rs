@@ -215,7 +215,7 @@ fn walk<F: FnMut(&Path, usize)>(root: &Path, exclude: &std::collections::HashSet
             }
             let md = match e.metadata() { Ok(m) => m, Err(_) => continue };
             if md.is_dir() {
-                if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library ≠ Folder
+                if crate::libraries::is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
                 inner(&path, depth + 1, exclude, cb);
             } else if md.is_file() {
                 cb(&path, depth);

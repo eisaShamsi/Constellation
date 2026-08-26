@@ -790,7 +790,7 @@
     "deleted": {
       "empty": "Le relevé existe et il est vide — aucune suppression n'a été consignée dans cet univers.",
       "heading": "Notes supprimées",
-      "intro": "Un relevé de ce que cet univers a supprimé — via la corbeille de Constellation ou celle du système, une suppression définitive, un fichier disparu en dehors de Constellation, ou un nettoyage de l'index de recherche. Chaque entrée conserve le texte de la note tel que l'index de recherche le détenait, ce qui n'est pas le fichier de la note : l'index stocke une version dépouillée, si bien que les titres, la mise en valeur, le contenu des blocs de code et les adresses des liens sont retirés, les diacritiques arabes avec eux, les liens apparaissent en texte brut et les propriétés de la note ne sont pas montrées du tout. Lisez-le pour voir ce qui a été supprimé, non pour relire la note — rien ici ne restaure quoi que ce soit. Ce n'est pas non plus un relevé complet : une note à laquelle Constellation n'a jamais donné d'identité propre est supprimée sans laisser d'entrée.",
+      "intro": "Un relevé de ce que cet univers a supprimé — via la corbeille de Constellation ou celle du système, une suppression définitive, un fichier disparu en dehors de Constellation, ou un nettoyage de l'index de recherche. Chaque entrée conserve le texte de la note tel que l'index de recherche le détenait, ce qui n'est pas le fichier de la note : l'index stocke une version dépouillée, si bien que les titres, la mise en valeur, le contenu des blocs de code et les adresses des liens sont retirés, les diacritiques arabes avec eux, les liens apparaissent en texte brut et les propriétés de la note ne sont pas montrées du tout. Lisez-le pour voir ce qui a été supprimé, non pour relire la note — rien ici ne restaure quoi que ce soit. Ce n'est pas non plus un relevé complet : une note sans identité dans l'index est supprimée sans laisser d'entrée — soit que Constellation ne lui en ait jamais donné, soit qu'un autre fichier ait déjà revendiqué la même.",
       "load": "Afficher",
       "loadFailed": "Le relevé n'a pas pu être lu : {reason}",
       "loading": "Lecture…",
@@ -805,7 +805,8 @@
         "permanent": "supprimée définitivement",
         "vanished": "disparue du disque hors de Constellation",
         "reconcile_gone": "déjà absente au démarrage",
-        "phantom_prune": "entrée d'index obsolète supprimée"
+        "phantom_prune": "entrée d'index obsolète supprimée",
+        "foreign_universe": "appartenait à un univers situé dans celui-ci — son fichier n'a pas été touché"
       },
       "textCaption": "La copie de cette note détenue par l'index de recherche — pas son fichier. Enregistrer du texte pour la recherche retire la mise en forme qui l'entoure : le # des titres, les * de la mise en valeur, les [[ ]] des liens, et les diacritiques arabes. Ce que visait un lien demeure ; les crochets non.",
       "allUnreadable": "Le relevé n'a pas pu être lu. Chacune de ses lignes a échoué à l'analyse, donc rien ne peut être listé — il s'agit d'un échec de lecture, non d'un relevé vide."

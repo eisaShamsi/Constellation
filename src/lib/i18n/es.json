@@ -790,7 +790,7 @@
     "deleted": {
       "empty": "El registro existe y está vacío: no se ha registrado ninguna eliminación en este universo.",
       "heading": "Notas eliminadas",
-      "intro": "Un registro de lo que este universo ha eliminado: a través de la papelera o de la papelera de reciclaje, un borrado permanente, un archivo que desapareció fuera de Constellation o una limpieza del índice de búsqueda. Cada entrada conserva el texto de la nota tal como lo tenía el índice de búsqueda, que no es el archivo de la nota: el índice almacena una versión despojada, de modo que se eliminan los encabezados, el énfasis, el contenido de los bloques de código y las direcciones de los enlaces, junto con los diacríticos árabes; los enlaces aparecen como texto simple y las propiedades de la nota no se muestran en absoluto. Léalo para ver qué se eliminó, no para volver a leer la nota: aquí nada restaura nada. Tampoco es un registro completo: una nota a la que Constellation nunca dio una identidad propia se elimina sin dejar entrada.",
+      "intro": "Un registro de lo que este universo ha eliminado: a través de la papelera o de la papelera de reciclaje, un borrado permanente, un archivo que desapareció fuera de Constellation o una limpieza del índice de búsqueda. Cada entrada conserva el texto de la nota tal como lo tenía el índice de búsqueda, que no es el archivo de la nota: el índice almacena una versión despojada, de modo que se eliminan los encabezados, el énfasis, el contenido de los bloques de código y las direcciones de los enlaces, junto con los diacríticos árabes; los enlaces aparecen como texto simple y las propiedades de la nota no se muestran en absoluto. Léalo para ver qué se eliminó, no para volver a leer la nota: aquí nada restaura nada. Tampoco es un registro completo: una nota sin identidad en el índice se elimina sin dejar entrada, ya sea porque Constellation nunca le dio una o porque otro archivo ya había reclamado la misma.",
       "load": "Mostrar",
       "loadFailed": "No se pudo leer el registro: {reason}",
       "loading": "Leyendo…",
@@ -805,7 +805,8 @@
         "permanent": "eliminada permanentemente",
         "vanished": "desapareció del disco fuera de Constellation",
         "reconcile_gone": "ya no estaba al iniciar",
-        "phantom_prune": "entrada obsoleta del índice eliminada"
+        "phantom_prune": "entrada obsoleta del índice eliminada",
+        "foreign_universe": "pertenecía a un universo dentro de este — su archivo no se tocó"
       },
       "textCaption": "La copia de esta nota que tiene el índice de búsqueda, no su archivo. Guardar texto para la búsqueda elimina el formato que lo rodea: la # de los encabezados, los * del énfasis, los [[ ]] de los enlaces y los diacríticos árabes. A dónde apuntaba un enlace se conserva; los corchetes no.",
       "allUnreadable": "No se pudo leer el registro. Ninguna de sus líneas pudo analizarse, así que no hay nada que listar: esto es un fallo de lectura, no un registro vacío."

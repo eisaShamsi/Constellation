@@ -600,6 +600,8 @@ fn collect_notes_recursive(dir: &Path, notes: &mut Vec<NoteRecord>) {
         if name.starts_with('.') { continue; }
 
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             collect_notes_recursive(&path, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -682,6 +684,8 @@ fn build_tree(
                 if name.starts_with('.') { continue; }
 
                 if path.is_dir() {
+                    // MIG-112 — a universe is never content of another universe.
+                    if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
                     let child = build_tree(&path, note_meta, depth + 1, max_depth);
                     total_weight += child.weight;
                     total_notes += child.note_count;

@@ -361,6 +361,8 @@ fn scan_all_notes(
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             scan_all_notes(reg, &path, link_re, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -588,6 +590,8 @@ fn scan_trails_for_note(dir: &Path, note_name: &str, link_re: &regex::Regex, tra
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             scan_trails_for_note(&path, note_name, link_re, trails);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {

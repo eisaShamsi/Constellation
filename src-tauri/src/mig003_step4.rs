@@ -86,6 +86,8 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>, depth: u32) {
             continue;
         }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             walk(&path, out, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false)
             && crate::canonical::is_canonical_filename(&path)

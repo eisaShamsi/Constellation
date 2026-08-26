@@ -2901,6 +2901,13 @@ fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
     };
     for entry in entries.flatten() {
         let path = entry.path();
+        // MIG-112 §1 — the dot-directory guard every other recursive `.md` walker in this
+        // codebase applies, and the only one that was missing it. Without it a Templates
+        // folder containing `.trash/` (or `.git/`, or `.constellation/`) offers deleted and
+        // bookkeeping files in the template picker as if they were templates.
+        if entry.file_name().to_string_lossy().starts_with('.') {
+            continue;
+        }
         if path.is_dir() {
             collect_templates_recursive(&path, templates);
         } else if path.extension().map_or(false, |ext| ext == "md") {

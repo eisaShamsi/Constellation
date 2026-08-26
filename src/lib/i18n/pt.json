@@ -790,7 +790,7 @@
     "deleted": {
       "empty": "O registo existe e está vazio — nenhuma remoção foi registada neste universo.",
       "heading": "Notas eliminadas",
-      "intro": "Um registo do que este universo removeu — através do lixo ou da reciclagem, uma eliminação permanente, um ficheiro que desapareceu fora do Constellation, ou uma limpeza do índice de pesquisa. Cada entrada guarda o texto da nota tal como o índice de pesquisa o guardava, o que não é o ficheiro da nota: o índice guarda uma versão despojada, pelo que títulos, ênfase, o conteúdo dos blocos de código e os endereços das ligações são removidos, os diacríticos árabes com eles, as ligações aparecem como texto simples e as propriedades da nota não são mostradas de todo. Leia-o para ver o que foi removido, não para reler a nota — nada aqui restaura seja o que for. Também não é um registo completo: uma nota a que o Constellation nunca deu uma identidade própria é removida sem deixar entrada.",
+      "intro": "Um registo do que este universo removeu — através do lixo ou da reciclagem, uma eliminação permanente, um ficheiro que desapareceu fora do Constellation, ou uma limpeza do índice de pesquisa. Cada entrada guarda o texto da nota tal como o índice de pesquisa o guardava, o que não é o ficheiro da nota: o índice guarda uma versão despojada, pelo que títulos, ênfase, o conteúdo dos blocos de código e os endereços das ligações são removidos, os diacríticos árabes com eles, as ligações aparecem como texto simples e as propriedades da nota não são mostradas de todo. Leia-o para ver o que foi removido, não para reler a nota — nada aqui restaura seja o que for. Também não é um registo completo: uma nota sem identidade no índice é removida sem deixar entrada — quer o Constellation nunca lhe tenha dado uma, quer outro ficheiro já tivesse reclamado a mesma.",
       "load": "Mostrar",
       "loadFailed": "Não foi possível ler o registo: {reason}",
       "loading": "A ler…",
@@ -805,7 +805,8 @@
         "permanent": "eliminada permanentemente",
         "vanished": "desapareceu do disco fora do Constellation",
         "reconcile_gone": "já ausente no arranque",
-        "phantom_prune": "entrada obsoleta do índice removida"
+        "phantom_prune": "entrada obsoleta do índice removida",
+        "foreign_universe": "pertencia a um universo dentro deste — o ficheiro não foi tocado"
       },
       "textCaption": "A cópia desta nota que o índice de pesquisa tem — não o seu ficheiro. Guardar texto para pesquisa remove a formatação à sua volta: o # dos títulos, os * da ênfase, os [[ ]] das ligações e os diacríticos árabes. Aquilo para onde uma ligação apontava permanece; os parênteses não.",
       "allUnreadable": "Não foi possível ler o registo. Todas as suas linhas falharam na análise, por isso nada pode ser listado — isto é uma falha de leitura, não um registo vazio."

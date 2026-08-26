@@ -790,7 +790,7 @@
     "deleted": {
       "empty": "Der Nachweis existiert und ist leer — in diesem Universum wurde keine Entfernung festgehalten.",
       "heading": "Gelöschte Notizen",
-      "intro": "Ein Nachweis dessen, was dieses Universum entfernt hat — über den Papierkorb oder den Systempapierkorb, ein endgültiges Löschen, eine außerhalb von Constellation verschwundene Datei oder eine Bereinigung des Suchindex. Jeder Eintrag bewahrt den Text der Notiz so auf, wie der Suchindex ihn hielt, und das ist nicht die Datei der Notiz: Der Index speichert eine reduzierte Fassung, sodass Überschriften, Hervorhebungen, die Inhalte von Codeblöcken und Linkadressen entfernt werden, arabische Diakritika ebenso, Links als bloßer Text erscheinen und die Eigenschaften der Notiz gar nicht gezeigt werden. Lesen Sie ihn, um zu sehen, was entfernt wurde, nicht um die Notiz zurückzulesen — nichts hier stellt etwas wieder her. Vollständig ist er auch nicht: Eine Notiz, der Constellation nie eine eigene Identität gegeben hat, wird entfernt, ohne einen Eintrag zu hinterlassen.",
+      "intro": "Ein Nachweis dessen, was dieses Universum entfernt hat — über den Papierkorb oder den Systempapierkorb, ein endgültiges Löschen, eine außerhalb von Constellation verschwundene Datei oder eine Bereinigung des Suchindex. Jeder Eintrag bewahrt den Text der Notiz so auf, wie der Suchindex ihn hielt, und das ist nicht die Datei der Notiz: Der Index speichert eine reduzierte Fassung, sodass Überschriften, Hervorhebungen, die Inhalte von Codeblöcken und Linkadressen entfernt werden, arabische Diakritika ebenso, Links als bloßer Text erscheinen und die Eigenschaften der Notiz gar nicht gezeigt werden. Lesen Sie ihn, um zu sehen, was entfernt wurde, nicht um die Notiz zurückzulesen — nichts hier stellt etwas wieder her. Vollständig ist er auch nicht: Eine Notiz ohne Identität im Index wird ohne Eintrag entfernt — sei es, dass Constellation ihr nie eine gegeben hat, oder dass eine andere Datei dieselbe bereits beansprucht hatte.",
       "load": "Anzeigen",
       "loadFailed": "Das Verzeichnis konnte nicht gelesen werden: {reason}",
       "loading": "Wird gelesen…",
@@ -805,7 +805,8 @@
         "permanent": "dauerhaft gelöscht",
         "vanished": "außerhalb von Constellation von der Festplatte verschwunden",
         "reconcile_gone": "beim Start bereits verschwunden",
-        "phantom_prune": "veralteter Indexeintrag entfernt"
+        "phantom_prune": "veralteter Indexeintrag entfernt",
+        "foreign_universe": "gehörte zu einem Universum innerhalb dieses Universums – die Datei wurde nicht angerührt"
       },
       "textCaption": "Die Kopie dieser Notiz im Suchindex — nicht ihre Datei. Beim Speichern von Text für die Suche wird die Formatierung darum herum entfernt: das # bei Überschriften, die * um Hervorhebungen, die [[ ]] um Links und arabische Diakritika. Wohin ein Link zeigte, bleibt erhalten; die Klammern nicht.",
       "allUnreadable": "Der Nachweis konnte nicht gelesen werden. Jede Zeile darin ließ sich nicht auswerten, daher kann nichts aufgelistet werden — dies ist ein Lesefehler, kein leerer Nachweis."

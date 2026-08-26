@@ -163,6 +163,8 @@ fn scan_notes_recursive(
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             scan_notes_recursive(&path, link_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {

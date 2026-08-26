@@ -761,7 +761,7 @@
     "deleted": {
       "empty": "The record exists and is empty — no removal has been recorded in this universe.",
       "heading": "Deleted notes",
-      "intro": "A record of what this universe removed — through the trash or the recycle bin, a permanent delete, a file that disappeared outside Constellation, or a cleanup of the search index. Each entry keeps the note's text as the search index held it, which is not the note's file: the index stores a stripped version, so headings, emphasis, the contents of code blocks and link addresses are removed, Arabic diacritics with them, links appear as bare text, and the note's properties are not shown at all. Read it to see what was removed, not to read the note back — nothing here restores anything. It is not a complete record either: a note Constellation never gave an identity of its own is removed without leaving an entry.",
+      "intro": "A record of what this universe removed — through the trash or the recycle bin, a permanent delete, a file that disappeared outside Constellation, or a cleanup of the search index. Each entry keeps the note's text as the search index held it, which is not the note's file: the index stores a stripped version, so headings, emphasis, the contents of code blocks and link addresses are removed, Arabic diacritics with them, links appear as bare text, and the note's properties are not shown at all. Read it to see what was removed, not to read the note back — nothing here restores anything. It is not a complete record either: a note whose identity is blank in the index leaves no entry — whether Constellation never gave it one, or another file had already claimed the same one.",
       "load": "Show",
       "loadFailed": "The record could not be read: {reason}",
       "loading": "Reading…",
@@ -776,7 +776,8 @@
         "permanent": "deleted permanently",
         "vanished": "disappeared from disk outside Constellation",
         "reconcile_gone": "already gone at startup",
-        "phantom_prune": "stale index entry removed"
+        "phantom_prune": "stale index entry removed",
+        "foreign_universe": "belonged to a universe inside this one — its file was not touched"
       },
       "textCaption": "The search index's copy of this note — not its file. Storing text for search removes the formatting around it: the # on headings, the * around emphasis, the [[ ]] around links, and Arabic diacritics. What a link pointed at stays; the brackets do not.",
       "allUnreadable": "The record could not be read. Every line in it failed to parse, so nothing can be listed — this is a read failure, not an empty record."

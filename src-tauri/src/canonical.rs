@@ -1358,7 +1358,7 @@ fn collect_files_recursive_depth(
             {
                 continue;
             }
-            if crate::libraries::is_nested_library(&path, exclude) { continue; } // Library ≠ Folder
+            if crate::libraries::is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             files.extend(collect_files_recursive_depth(&path, depth + 1, exclude));
         } else {
             files.push(path);

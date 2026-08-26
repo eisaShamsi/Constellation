@@ -284,29 +284,23 @@ pub fn classify(
 /// plan `mig108_execute` recomputes. Here an unreadable manifest counts as PRESENT: the guard
 /// is monotone toward refusing to relocate, and refusing to move something the user can see is
 /// recoverable in a way that moving another universe's files is not.
-pub(crate) fn carries_universe_manifest(dir: &Path) -> bool {
-    for candidate in [dir.join(".constellation").join("universe.json"), dir.join("universe.json")] {
-        match std::fs::metadata(&candidate) {
-            Ok(_) => return true,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(_) => return true, // cannot confirm absence ⇒ assume present
-        }
-    }
-    false
-}
+// MIG-112 — `carries_universe_manifest` and `universe_manifest_at_or_above` MOVED to
+// `libraries.rs`, beside `is_walk_boundary`, and re-exported here so this module's call sites
+// read unchanged. They were `pub(crate)` but consulted only by this module, while ~30 walkers
+// that needed exactly this question had no way to ask it. One definition, one concern — the
+// Whole-Ecosystem Fix Law's "a shared helper so they cannot drift again". Their doc comments,
+// including why `fs::metadata` rather than `Path::exists()`, live with the definition.
+pub(crate) use crate::libraries::BareManifest;
 
-/// The nearest directory at or above `path` that carries a universe manifest, if any.
-/// Walks to the volume root: a library registered three folders deep inside another universe
-/// is that universe's content just as much as its root is.
+/// MIG-108's callers RELOCATE or IMPORT files, so a bare `universe.json` counts on presence
+/// alone: a false negative moves another universe's content and is not recoverable. The walk
+/// fences choose the opposite (`MustLookLikeOne`) because their false positive silently hides a
+/// user's folder. Wrapped here so neither posture can be picked up by accident.
+pub(crate) fn carries_universe_manifest(dir: &Path) -> bool {
+    crate::libraries::carries_universe_manifest(dir, BareManifest::PresenceIsEnough)
+}
 fn universe_manifest_at_or_above(path: &Path) -> Option<PathBuf> {
-    let mut cur = Some(path);
-    while let Some(d) = cur {
-        if carries_universe_manifest(d) {
-            return Some(d.to_path_buf());
-        }
-        cur = d.parent();
-    }
-    None
+    crate::libraries::universe_manifest_at_or_above(path, BareManifest::PresenceIsEnough)
 }
 
 fn foreign_reason(path: &str, foreign_roots: &[String]) -> Option<String> {

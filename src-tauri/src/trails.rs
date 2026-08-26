@@ -102,6 +102,8 @@ fn scan_trails_recursive(dir: &Path, trails: &mut Vec<TrailInfo>) {
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             scan_trails_recursive(&path, trails);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -216,6 +218,8 @@ fn find_note_recursive(dir: &Path, note_name: &str) -> Option<String> {
         let fname = entry.file_name().to_string_lossy().to_string();
         if fname.starts_with('.') { continue; }
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe.
+            if crate::libraries::carries_universe_manifest(&path, crate::libraries::BareManifest::MustLookLikeOne) { continue; }
             if let Some(found) = find_note_recursive(&path, note_name) {
                 return Some(found);
             }

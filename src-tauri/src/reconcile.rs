@@ -399,6 +399,43 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
     //    subdir would then make its files look dead and get removed). Only rows
     //    under an accessible root are candidates (never touch a bad mount).
     let mut stale: Vec<(String, String)> = Vec::new();
+    // MIG-112 §8 — rows whose note belongs to a universe NESTED inside this one. Collected in
+    // the loop that already visits every row (no extra scan) and BEFORE `rows` is dropped.
+    // `own_root` is the active universe's root — `universe_notes`' path IS that root. If it
+    // cannot be resolved this stays empty and the pass below does nothing: a de-adoption driven
+    // by a mis-resolved root would remove rows that ARE ours.
+    let mig112_own_root: Option<std::path::PathBuf> = libs
+        .iter()
+        .find(|l| l.is_universe_notes)
+        .map(|l| std::path::PathBuf::from(&l.path));
+    let mut mig112_foreign: Vec<String> = Vec::new();
+    // Memoised per DIRECTORY, not per note. `path_is_in_foreign_universe` walks a note's
+    // ancestors doing up to two `fs::metadata` calls per level; called naively for all 8,031
+    // rows of the daily universe that is tens of thousands of syscalls added to BOOT, which
+    // CLAUDE.md's Rule 8 forbids ("no new feature may regress boot time"). Notes share
+    // ancestors, so one verdict per distinct parent directory collapses it to a few hundred
+    // checks. Bounded above by `own_root`: nothing at or above our own root can be foreign.
+    let mut mig112_seen: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+    // The roots the user has EXPLICITLY REGISTERED as libraries, excluding `universe_notes`
+    // (whose path IS the universe root, so it claims everything and can discriminate nothing).
+    //
+    // 2026-08-26 safety inspection, CONFIRMED HIGH — this pass decided ownership from the
+    // FILESYSTEM alone and never consulted `libraries.json`. A registered library whose folder
+    // happens to sit inside another universe's directory would have had EVERY one of its notes
+    // purged from `note_meta` and all eleven dependent tables at boot. `.md` files survive, but
+    // `note_links.weight` / `traversal_count` / `last_traversed` / `confidence` / `status`,
+    // `note_meta.review_priority` and `review_schedule` do NOT — CLAUDE.md's storage section
+    // records `search.db` as their ONLY system of record, and `build_delete_archive` does not
+    // carry them either. No live registry trips this today (all eight checked), but `add_library`
+    // had no manifest check, so it was one "New Library" click away.
+    //
+    // **An explicit declaration beats a filesystem inference.** If the user registered it, it is
+    // his, and this pass has no business removing it.
+    let mig112_declared: Vec<String> = libs
+        .iter()
+        .filter(|l| !l.is_universe_notes)
+        .map(|l| norm(&l.path))
+        .collect();
     let mut foreign_rows = 0usize;
     // PJ-369 Step 2 — the phantom COUNT, computed inside the loop that already visits every
     // row so it costs no extra scan. Write-free: this only counts. The classifier context is
@@ -454,6 +491,43 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
             }
             continue;
         }
+        // MIG-112 §8 — a note inside a nested universe. Checked BEFORE the existence test:
+        // these files DO exist, so the dead-row path can never see them, which is precisely why
+        // they would otherwise stay frozen in this index forever.
+        if let Some(root) = mig112_own_root.as_deref() {
+            let parent = Path::new(p).parent().map(|d| d.to_path_buf());
+            let foreign = match parent {
+                None => false,
+                Some(dir) => {
+                    let key = norm(&dir.to_string_lossy());
+                    match mig112_seen.get(&key) {
+                        Some(v) => *v,
+                        None => {
+                            let v = crate::libraries::path_is_in_foreign_universe(&dir, root);
+                            mig112_seen.insert(key, v);
+                            v
+                        }
+                    }
+                }
+            };
+            if foreign {
+                // …unless the user DECLARED a library there. Checked on the row's own path, not
+                // the memoised directory verdict, because the declaration is about this path.
+                let pn = norm(p);
+                let declared = mig112_declared
+                    .iter()
+                    .any(|r| pn == *r || pn.starts_with(&format!("{}/", r)));
+                if declared {
+                    diag(app, &format!(
+                        "[reconcile] MIG-112: {} sits inside a nested universe but belongs to a REGISTERED library — kept. An explicit declaration beats a filesystem inference.",
+                        p
+                    ));
+                } else {
+                    mig112_foreign.push(p.clone());
+                    continue;
+                }
+            }
+        }
         if !Path::new(p).exists() {
             stale.push((p.clone(), cid.clone()));
         }
@@ -506,7 +580,76 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
     // The row snapshot is finished with — `known` holds the only part still needed, and
     // `rows` is ~1.5 MB of paths that would otherwise live through the walk (seconds, on a
     // cold disk) and the whole write phase below.
+    let row_count = rows.len();
     drop(rows);
+
+    // 4b. MIG-112 §8 — DE-ADOPT notes that belong to a universe nested inside this one.
+    //
+    //     Steps 1-7 stop the app REACHING them; nothing removes the rows already written, and
+    //     without this pass those rows are strictly worse off than before the fence: every walk
+    //     now skips them, the watcher's arms drop them, and step 8 above only removes rows whose
+    //     FILE IS MISSING — which these are not. They would sit frozen at whatever body text
+    //     they had, serving stale answers to search, Quick Switcher and backlinks forever, with
+    //     no drift notice and no repair receipt. (2026-08-26 safety inspection, CONFIRMED.)
+    //
+    //     **POSITION IS LOAD-BEARING — this ran as step 8b and was DEAD CODE.** The second
+    //     inspection pass caught it: two unconditional returns sit below (`stale.is_empty() &&
+    //     orphans.is_empty()`, and the stale safety cap), and the state this pass exists to fix
+    //     is exactly the state that takes the first of them. A nested-universe row can never
+    //     enter `stale` — the MIG-112 arm in step 3 `continue`s before the `!exists()` test, and
+    //     those files DO exist — and can never enter `orphans`, because `collect_md` skips the
+    //     nested root via the same predicate. So whenever `mig112_foreign` is non-empty, both
+    //     other sets get nothing from it, the clean-drift return fires, and the de-adopt never
+    //     runs. It must therefore sit ABOVE those returns; it depends on neither set.
+    //
+    //     **No `.md` is deleted or touched.** The note keeps living in its own universe; only
+    //     this universe's claim on it goes. Routed through `reindex_delete_note` because that is
+    //     the only thing that clears all eleven dependent tables.
+    let mut de_adopted = 0usize;
+    {
+        let foreign_rows_here = &mig112_foreign;
+
+        // FAIL CLOSED on an implausible sweep. This pass can only ever fire on notes physically
+        // inside a nested universe root, which is a rare accident (the MIG-108 unification made
+        // three of them on the Boss's machine and that hole is closed) — so a large set means
+        // the root resolved wrongly, not that the user has thousands of nested notes. Refuse and
+        // say so rather than act on a number we cannot stand behind.
+        let cap = std::cmp::max(50, row_count / 20);
+        if foreign_rows_here.len() > cap {
+            diag(app, &format!(
+                "[reconcile] MIG-112 de-adopt REFUSED: {} of {} rows resolve to a nested universe (cap {}) — that is implausible, so the universe root is more likely wrong than the rows. Nothing removed.",
+                foreign_rows_here.len(), row_count, cap
+            ));
+        } else {
+            for p in foreign_rows_here {
+                if !still_ours() {
+                    // Same discipline as every other write loop here, and the same reason:
+                    // a de-adopt landing after a switch would remove a row from a universe
+                    // that was never the one this pass measured. No report either — its
+                    // numbers describe the universe just left.
+                    diag(app, "[reconcile] universe switched mid de-adopt — stopping.");
+                    return Ok(ReconcileOutcome::default());
+                }
+                match reindex_delete_note(
+                    &state,
+                    p,
+                    crate::search::DeleteCtx::new(crate::search::DeleteReason::ForeignUniverse),
+                ) {
+                    Ok(_) => de_adopted += 1,
+                    // Never silent: a failed de-adopt leaves a frozen row, which is the exact
+                    // state this pass exists to end.
+                    Err(e) => diag(app, &format!("[reconcile] MIG-112 de-adopt failed for {}: {}", p, e)),
+                }
+            }
+            if de_adopted > 0 {
+                diag(app, &format!(
+                    "[reconcile] MIG-112: de-adopted {} row(s) belonging to a nested universe — no .md file was touched.",
+                    de_adopted
+                ));
+            }
+        }
+    }
+
 
     if stale.is_empty() && orphans.is_empty() {
         // Existence drift is clean — but MTIME drift may not be, and it is invisible to
@@ -883,7 +1026,7 @@ fn collect_md(
         }
         if entry_is_dir(&entry, &path) {
             // A linked universe's root nested under ours — not our notes, not our orphans.
-            if crate::libraries::is_nested_library(&path, foreign) {
+            if crate::libraries::is_walk_boundary(&path, foreign) {
                 continue;
             }
             collect_md(&path, known, foreign, walk, depth + 1);
@@ -953,6 +1096,93 @@ fn entry_mtime(entry: &std::fs::DirEntry) -> Option<u64> {
 fn diag(app: &tauri::AppHandle, msg: &str) {
     if let Ok(path) = crate::search::db_path(app) {
         crate::search::diag_log(&path, msg);
+    }
+}
+
+#[cfg(test)]
+mod tests_mig112_deadopt_position {
+    //! MIG-112 §8 — the de-adopt must run BEFORE `run`'s early returns.
+    //!
+    //! ## The bug this exists to catch, which shipped past every other gate
+    //!
+    //! The de-adopt was first written as step **8b**, below two unconditional returns —
+    //! `if stale.is_empty() && orphans.is_empty()` and the stale safety cap. It compiled, all
+    //! 1,581 tests passed, and it was **dead code on every boot that mattered**, because the
+    //! state it exists to fix is exactly the state that takes the first return:
+    //!
+    //! * a nested-universe row can never enter `stale` — step 3's MIG-112 arm `continue`s
+    //!   before the `!Path::exists()` test, and those files DO exist; and
+    //! * it can never enter `orphans` — `collect_md` skips the nested root via the same
+    //!   predicate.
+    //!
+    //! So whenever there is something to de-adopt, both other sets are empty, `run` returns,
+    //! and nothing happens. Caught by the second safety-inspection pass, not by a test — hence
+    //! this one.
+    //!
+    //! ## Why a SOURCE-ORDER test rather than a behavioural one
+    //!
+    //! `run` needs an `AppHandle`, so this module's other tests drive the helpers instead and
+    //! none of them can see placement. This asserts the one property that failed, using the
+    //! `body_of` pattern already established in `libraries.rs`. Comments are stripped first:
+    //! a test that can be satisfied by writing a sentence is not a test.
+
+    fn run_body_without_comments() -> String {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("reconcile.rs");
+        let all = std::fs::read_to_string(&p).expect("read reconcile.rs");
+        // Cut EVERY test module off before searching. The first cut of this helper did not, and
+        // searched for a function signature that also appears in this test's own source — so it
+        // matched ITS OWN line, extracted a "body" that was really the test module, found no
+        // de-adopt in it and reported the production code broken. Same family as the comment
+        // trap `libraries.rs::body_of` records: a structural test must not be able to see itself.
+        let prod = &all[..all.find("#[cfg(test)]").unwrap_or(all.len())];
+        let start = prod
+            .find("fn run(app: &tauri::AppHandle)")
+            .expect("reconcile::run was renamed — re-derive this test against the new name");
+        prod[start..]
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("
+")
+    }
+
+    #[test]
+    fn the_de_adopt_runs_before_the_clean_drift_early_return() {
+        let body = run_body_without_comments();
+        let de_adopt = body
+            .find("DeleteReason::ForeignUniverse")
+            .expect("the MIG-112 de-adopt is gone from run() — if it moved, move this test with it");
+        let clean_return = body
+            .find("if stale.is_empty() && orphans.is_empty()")
+            .expect("the clean-drift early return is gone — re-derive this test against what replaced it");
+        assert!(
+            de_adopt < clean_return,
+            "MIG-112 REGRESSION: the de-adopt sits AFTER the clean-drift early return, so it is              dead code on exactly the boots where it is needed. A nested-universe row never              enters `stale` (its file exists) and never enters `orphans` (the walk skips it), so              that return fires and the de-adopt never runs. Move it back above the return."
+        );
+    }
+
+    #[test]
+    fn the_de_adopt_also_runs_before_the_safety_cap_return() {
+        let body = run_body_without_comments();
+        let de_adopt = body.find("DeleteReason::ForeignUniverse").expect("de-adopt missing");
+        let cap_return = body
+            .find("if stale.len() > cap")
+            .expect("the stale safety-cap return is gone — re-derive this test");
+        assert!(
+            de_adopt < cap_return,
+            "MIG-112 REGRESSION: an unrelated stale-row spike would skip the de-adopt entirely"
+        );
+    }
+
+    #[test]
+    fn the_de_adopt_is_still_guarded_by_the_universe_switch_check() {
+        let body = run_body_without_comments();
+        let start = body.find("DeleteReason::ForeignUniverse").expect("de-adopt missing");
+        let window_start = body[..start].rfind("still_ours()").unwrap_or(0);
+        assert!(
+            window_start > 0 && start - window_start < 1200,
+            "the de-adopt lost its `still_ours()` guard — a removal landing after a universe              switch would drop a row from a universe this pass never measured"
+        );
     }
 }
 

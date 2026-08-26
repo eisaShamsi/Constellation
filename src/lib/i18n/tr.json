@@ -790,7 +790,7 @@
     "deleted": {
       "empty": "Kayıt var ve boş — bu evrende hiçbir kaldırma kaydedilmemiş.",
       "heading": "Silinen notlar",
-      "intro": "Bu evrenin neleri kaldırdığının kaydı — çöp kutusu ya da geri dönüşüm kutusu yoluyla, kalıcı silme, Constellation dışında kaybolan bir dosya veya arama dizininin temizlenmesi. Her girdi, notun metnini arama dizininin tuttuğu haliyle saklar; bu notun dosyası değildir: dizin ayıklanmış bir sürüm saklar, bu yüzden başlıklar, vurgular, kod bloklarının içeriği ve bağlantı adresleri kaldırılır, Arapça harekeler de onlarla birlikte gider, bağlantılar düz metin olarak görünür ve notun özellikleri hiç gösterilmez. Neyin kaldırıldığını görmek için okuyun, notu geri okumak için değil — burada hiçbir şey hiçbir şeyi geri getirmez. Eksiksiz bir kayıt da değildir: Constellation'ın kendine ait bir kimlik vermediği bir not, geride girdi bırakmadan kaldırılır.",
+      "intro": "Bu evrenin neleri kaldırdığının kaydı — çöp kutusu ya da geri dönüşüm kutusu yoluyla, kalıcı silme, Constellation dışında kaybolan bir dosya veya arama dizininin temizlenmesi. Her girdi, notun metnini arama dizininin tuttuğu haliyle saklar; bu notun dosyası değildir: dizin ayıklanmış bir sürüm saklar, bu yüzden başlıklar, vurgular, kod bloklarının içeriği ve bağlantı adresleri kaldırılır, Arapça harekeler de onlarla birlikte gider, bağlantılar düz metin olarak görünür ve notun özellikleri hiç gösterilmez. Neyin kaldırıldığını görmek için okuyun, notu geri okumak için değil — burada hiçbir şey hiçbir şeyi geri getirmez. Eksiksiz bir kayıt da değildir: dizinde kimliği bulunmayan bir not, geride girdi bırakmadan kaldırılır — ister Constellation ona hiç kimlik vermemiş olsun, ister başka bir dosya aynı kimliği önceden almış olsun.",
       "load": "Göster",
       "loadFailed": "Kayıt okunamadı: {reason}",
       "loading": "Okunuyor…",
@@ -805,7 +805,8 @@
         "permanent": "kalıcı olarak silindi",
         "vanished": "Constellation dışında diskten kayboldu",
         "reconcile_gone": "açılışta zaten yoktu",
-        "phantom_prune": "eski dizin girişi kaldırıldı"
+        "phantom_prune": "eski dizin girişi kaldırıldı",
+        "foreign_universe": "bu evrenin içindeki bir evrene aitti — dosyasına dokunulmadı"
       },
       "textCaption": "Bu notun arama dizinindeki kopyası — dosyası değil. Metni arama için saklamak, çevresindeki biçimlendirmeyi kaldırır: başlıklardaki #, vurgunun çevresindeki *, bağlantıların çevresindeki [[ ]] ve Arapça harekeler. Bir bağlantının işaret ettiği şey kalır; köşeli parantezler kalmaz.",
       "allUnreadable": "Kayıt okunamadı. İçindeki her satırın çözümlenmesi başarısız oldu, bu yüzden listelenecek bir şey yok — bu bir okuma hatasıdır, boş bir kayıt değil."

@@ -549,7 +549,7 @@ pub(crate) fn walk_exclusions(
 /// `foreign_library_roots`' — separator-bounded, so `…/Research` never matches
 /// `…/Research Notes`.
 ///
-/// `is_nested_library` answers "is this directory itself a boundary"; this answers "is
+/// `is_walk_boundary` answers "is this directory itself a boundary"; this answers "is
 /// this file on the far side of one". PJ-207 §8 needs the second because `collect_md_paths`
 /// has no boundary notion at all — it descends through every non-dot directory — so the
 /// only place to drop a linked universe's notes is after they have been collected.
@@ -560,12 +560,156 @@ pub(crate) fn path_is_under_any(path: &str, roots: &std::collections::HashSet<St
         .any(|r| p == *r || p.starts_with(&format!("{}/", r)))
 }
 
-/// True when `dir` is itself a registered library (present in an exclude set built by
-/// `nested_library_paths`) — the one check every tree/folder/aggregate walker uses to
-/// stop at a nested library boundary. Kept trivial so it inlines.
-pub(crate) fn is_nested_library(dir: &Path, exclude: &std::collections::HashSet<String>) -> bool {
+/// True when `dir` carries a universe manifest — i.e. `dir` **is** a universe root.
+///
+/// Moved here from `mig108.rs` by MIG-112 so it is one definition, not two: it was
+/// `pub(crate)` but module-local in practice, consulted only by the MIG-108 preflight and
+/// `bring_in_library`, while ~30 walkers that needed exactly this question had no way to ask
+/// it. Its reasoning is preserved verbatim below because both halves are load-bearing.
+///
+/// **Both manifest forms are checked.** `.constellation/universe.json` is the current layout;
+/// a bare `universe.json` at the root is the pre-v2 one (`universe.rs::migrate_legacy_data`).
+/// A walker that knew only the current form would walk straight into a legacy universe.
+///
+/// **`fs::metadata`, deliberately not `Path::exists()`.** `exists()` returns `false` both for
+/// "absent" and for "present but the metadata could not be read" — so a permissions blip or a
+/// disconnected mount would silently downgrade a universe to an ordinary folder. Here an
+/// unreadable manifest counts as **PRESENT**: the guard is monotone toward refusing to enter,
+/// and refusing to walk into something is recoverable in a way that writing into another
+/// universe's files is not.
+/// Which way to fail when a BARE `universe.json` exists but cannot be shown to be a manifest.
+///
+/// The two callers of `carries_universe_manifest` fear OPPOSITE errors, so this is a parameter
+/// rather than a policy baked into the function — the caller must state which mistake it can
+/// afford. (Discovered when tightening the bare form for the walk fences broke MIG-108's
+/// `a_library_nested_inside_another_universe_is_foreign_by_structure`, correctly: that test
+/// guards a path that MOVES files.)
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum BareManifest {
+    /// **Presence is enough.** For callers that RELOCATE or IMPORT another universe's files
+    /// (`mig108::classify`, `bring_in_library`): a false negative moves someone's universe into
+    /// another as plain content, which is the mangling MIG-112 exists to prevent and is not
+    /// recoverable. Doubt must mean "universe".
+    PresenceIsEnough,
+    /// **Must parse as an object carrying `name`.** For WALK fences: a false positive turns an
+    /// ordinary note folder — one that merely contains a JSON dataset or a cloned repo with that
+    /// filename — into an INVISIBLE boundary for ~25 surfaces at once, and a boundary skip is a
+    /// `continue`, so it has no voice at all. Doubt must mean "ordinary folder".
+    /// (2026-08-26 safety inspection, CONFIRMED against the first cut of this fence.)
+    MustLookLikeOne,
+}
+
+pub(crate) fn carries_universe_manifest(dir: &Path, bare: BareManifest) -> bool {
+    // FORM 1 — `.constellation/universe.json`, the current layout. `.constellation` is
+    // unambiguously ours, so mere presence is enough and an UNREADABLE file counts as present,
+    // for BOTH callers: there is no plausible way for a user's own data to land at that exact
+    // path, so doubt here carries none of the false-positive risk that Form 2 does.
+    match std::fs::metadata(dir.join(".constellation").join("universe.json")) {
+        Ok(_) => return true,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => return true, // cannot confirm absence ⇒ assume present
+    }
+
+    // FORM 2 — a BARE `universe.json`, the pre-v2 layout (`universe.rs::migrate_legacy_data`).
+    // Constellation has written the manifest inside `.constellation/` since v2, so this form is
+    // legacy-only — while a stray file of that name in a user's folder is ordinary. Which error
+    // to prefer is therefore the CALLER's to choose; see `BareManifest`.
+    let path = dir.join("universe.json");
+    match bare {
+        BareManifest::PresenceIsEnough => match std::fs::metadata(&path) {
+            Ok(_) => true,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => false,
+            Err(_) => true, // cannot confirm absence ⇒ assume present
+        },
+        BareManifest::MustLookLikeOne => std::fs::read_to_string(&path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+            .and_then(|v| v.get("name").cloned())
+            .is_some(),
+    }
+}
+
+/// The nearest directory at or above `path` that carries a universe manifest, if any.
+/// Walks to the volume root: a library registered three folders deep inside another universe
+/// is that universe's content just as much as its root is.
+pub(crate) fn universe_manifest_at_or_above(path: &Path, bare: BareManifest) -> Option<std::path::PathBuf> {
+    let mut cur = Some(path);
+    while let Some(d) = cur {
+        if carries_universe_manifest(d, bare) {
+            return Some(d.to_path_buf());
+        }
+        cur = d.parent();
+    }
+    None
+}
+
+/// True when `file` lies inside a universe **other than** `own_root` — the boundary for code
+/// that is NOT walking a tree (MIG-112 §7).
+///
+/// Every other fence in this file stops a *walk* at a directory. That is useless against the
+/// row-driven passes: the identity back-fill and its siblings iterate `note_meta` and write to
+/// whatever file a row names, so one contaminated row is enough to rewrite a file in another
+/// universe with no walk involved. `mig003_backfill_cid_cn`'s own doc describes it plainly —
+/// on a duplicate id "the LATER-modified file gets a fresh cid_cn injected (write + update DB)".
+///
+/// Answers from the **nearest** manifest at or above the file, so a file three folders deep
+/// inside a nested universe is that universe's, not ours. Fail-closed twice over:
+/// `carries_universe_manifest` treats an unreadable manifest as present, and a file with **no**
+/// universe above it at all returns `false` (not ours to refuse — that is the caller's own
+/// library-scope question, and answering `true` here would break every non-universe caller).
+pub(crate) fn path_is_in_foreign_universe(file: &Path, own_root: &Path) -> bool {
+    let norm = |p: &Path| p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let root_n = norm(own_root);
+    // Walk UP, stopping at our own root. Bounded on purpose: `universe_manifest_at_or_above`
+    // continues to the volume root, and this is called per note on the boot path, so an
+    // unbounded climb would add two `fs::metadata` calls for every ancestor of every note —
+    // a boot regression, which Rule 8 forbids. Nothing at or above our own root can be
+    // foreign, so there is nothing up there worth paying for.
+    let mut cur = Some(file);
+    while let Some(d) = cur {
+        if norm(d) == root_n {
+            return false; // reached our own root without meeting another universe
+        }
+        // The file itself is not a directory; `carries_universe_manifest` simply answers false
+        // for it, so the first iteration costs a stat and is harmless.
+        if carries_universe_manifest(d, BareManifest::MustLookLikeOne) {
+            return true;
+        }
+        cur = d.parent();
+    }
+    // Ran past the top without ever meeting `own_root`: the file is not under our root at all.
+    // Fail OPEN — this predicate answers "is it in a DIFFERENT universe", and "not ours at all"
+    // is the caller's own library-scope question. Answering true here would make every
+    // non-universe caller (tests, import staging, an unmounted root) refuse its own work.
+    false
+}
+
+/// True when `dir` is a boundary a walk must not cross — the one check every
+/// tree/folder/aggregate walker uses. Two independent reasons, deliberately in one predicate
+/// so no caller can honour half of it:
+///
+/// 1. **`dir` is a registered library** (present in an exclude set built by
+///    `nested_library_paths` / `foreign_library_roots`) — "Library ≠ Folder".
+/// 2. **`dir` is a universe root** (MIG-112) — *a universe is never content of another
+///    universe.* Until MIG-112 the boundary came only from the REGISTRY, so it covered a
+///    **declared** Linked Universe and missed a universe root that merely sits inside another
+///    universe's folder undeclared: `resolve_libraries_recursive` builds library identity from
+///    `libraries.json` + `universe.json.children` and never lists directories, so such a root
+///    contributes nothing to any exclude set. Measured on the Boss's `Eisa Universe`, which
+///    physically contained three of them (copied in by the MIG-108 unification itself — see its
+///    `mig108-journal.json`, `"action": "copy"`): 16 of their notes were indexed as the parent's
+///    own, 8 with a blanked identity because a duplicate already claimed it.
+///
+/// **Reason 2 is a fact on disk, so it cannot be lost by whichever reader degraded** — which is
+/// the point: reason 1 is only as good as the registry that produced the set.
+///
+/// **Call it on child entries during descent, never on the walk's own start root** — every
+/// caller does, and a universe's `universe_notes` library has `path == the universe root`, so
+/// testing the start root would make that walk return nothing. `path_is_under_any` answers the
+/// other question ("is this file on the far side of a boundary") for walkers that collect first.
+pub(crate) fn is_walk_boundary(dir: &Path, exclude: &std::collections::HashSet<String>) -> bool {
     let norm = dir.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
-    exclude.contains(&norm)
+    exclude.contains(&norm) || carries_universe_manifest(dir, BareManifest::MustLookLikeOne)
 }
 
 /// Save registered libraries to the active universe's config.
@@ -970,6 +1114,40 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
     // MIG-108 — One Universe, One Location.
     let root = crate::universe::active_universe_dir(&app)?.to_string_lossy().to_string();
     ensure_under_active_root(&path, &root)?;
+
+    // MIG-112 — a universe is never content of another universe, and that includes being
+    // registered as one of its libraries. `ensure_under_active_root` passes happily for
+    // `<root>/كون عيسى 2`, which is a complete universe of its own: on the Boss's machine three
+    // such directories sit under `Eisa Universe`, put there by the MIG-108 unification itself.
+    //
+    // Registering one is not a cosmetic mistake. `mig108::classify` marks such an entry
+    // `ForeignUniverse` and REFUSES to relocate it, so it would persist in the registry
+    // permanently by design; and until the guard added alongside this one, reconcile's de-adopt
+    // would then have purged every note of it at boot — taking the earned link weights,
+    // traversal counts and review history that live ONLY in the index with them.
+    // (2026-08-26 safety inspection, CONFIRMED. The two guards are a pair: this one stops it
+    // being created, the other stops it being acted on if it already exists.)
+    //
+    // NOTE the shape: `universe_manifest_at_or_above` alone would be WRONG here and would refuse
+    // EVERY library. The path is already constrained under the active root by the check above,
+    // so climbing from it always reaches the ACTIVE universe's own manifest — the answer is
+    // "yes, a universe is above you" for every legitimate library in the app. The question has
+    // to be asked relative to our own root, which is what `path_is_in_foreign_universe` does.
+    let lib_path = Path::new(&path);
+    if carries_universe_manifest(lib_path, BareManifest::PresenceIsEnough) {
+        // `PresenceIsEnough`: this REFUSES an action, so doubt must mean "universe" — the same
+        // posture `bring_in_library` and the MIG-108 preflight use, for the same reason.
+        return Err(
+            "That folder is a universe of its own, not a library. Open it from the universe switcher, or link it as a Linked Universe."
+                .to_string(),
+        );
+    }
+    if path_is_in_foreign_universe(lib_path, Path::new(&root)) {
+        return Err(
+            "That folder is inside another universe that sits within this one, so it cannot be registered as a library here."
+                .to_string(),
+        );
+    }
 
     // Any directory is accepted as a library — no .obsidian or .md requirement
 
@@ -3447,6 +3625,12 @@ pub(crate) fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
             }
             let p = entry.path();
             if p.is_dir() {
+                // MIG-112 — a universe is never content of another universe. This collector
+                // feeds the index-repair runner and the folder-move/rename re-index tails, so
+                // a miss here does not merely LIST another universe's notes — it ADOPTS them
+                // into this universe's `note_meta`. Its own doc used to say it "has no
+                // boundary notion at all"; it has this one, which needs no set to consult.
+                if carries_universe_manifest(&p, BareManifest::MustLookLikeOne) { continue; }
                 collect_md_paths(&p, out);
             } else if p.extension().map(|e| e == "md").unwrap_or(false) {
                 out.push(p);
@@ -3543,8 +3727,10 @@ fn collect_folders(
             // A subdirectory that is itself a registered library is a Library, not a
             // folder of THIS one — skip it (and its subtree); it is walked under its
             // OWN identity by list_universe_folders. Same rule as read_dir_recursive.
-            let norm = p.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
-            if exclude.contains(&norm) {
+            // MIG-112: and a subdirectory that is itself a UNIVERSE is never offered as a
+            // destination — this is the picker that answers "where may I move a note to",
+            // so a miss here proposes writing INTO another universe.
+            if is_walk_boundary(&p, exclude) {
                 continue;
             }
             let name = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
@@ -3933,6 +4119,13 @@ fn find_note_by_name(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth
         if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe. The RULING
+            // (recorded with PJ-403): an UNDECLARED nested universe is fenced here; a
+            // DECLARED Linked Universe is NOT, because "It is ONE universe"
+            // (2026-07-05) exists so wikilinks span the universes the user CHOSE to
+            // federate — and a declared one is never reached by this walk anyway, since
+            // resolution is driven per-library from the resolved federation list.
+            if carries_universe_manifest(&path, BareManifest::MustLookLikeOne) { continue; }
             find_note_by_name(&path, target, results, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let stem = name.trim_end_matches(".md").to_lowercase();
@@ -3970,6 +4163,13 @@ fn find_note_by_title_or_alias(dir: &Path, target: &str, results: &mut Vec<PathB
         if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
+            // MIG-112 — a universe is never content of another universe. The RULING
+            // (recorded with PJ-403): an UNDECLARED nested universe is fenced here; a
+            // DECLARED Linked Universe is NOT, because "It is ONE universe"
+            // (2026-07-05) exists so wikilinks span the universes the user CHOSE to
+            // federate — and a declared one is never reached by this walk anyway, since
+            // resolution is driven per-library from the resolved federation list.
+            if carries_universe_manifest(&path, BareManifest::MustLookLikeOne) { continue; }
             find_note_by_title_or_alias(&path, target, results, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -4446,12 +4646,12 @@ fn read_dir_recursive(
 
         let is_dir = path.is_dir();
         // A subdirectory that is itself a registered library is a Library, not a
-        // folder of THIS one — skip it (and its whole subtree).
-        if is_dir {
-            let norm = path.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
-            if exclude.contains(&norm) {
-                continue;
-            }
+        // folder of THIS one — skip it (and its whole subtree). MIG-112: and a
+        // subdirectory that is itself a UNIVERSE is not this universe's content at all.
+        // Was a hand-inlined copy of the exclude test; routed through the shared predicate
+        // so it cannot miss the second reason the way it just did.
+        if is_dir && is_walk_boundary(&path, exclude) {
+            continue;
         }
         let extension = if !is_dir {
             path.extension().map(|e| e.to_string_lossy().to_string())
@@ -4655,7 +4855,7 @@ fn scan_links_recursive(reg: &crate::link_types::LinkTypeRegistry, dir: &Path, r
             continue;
         }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_links_recursive(reg, &path, re, links, library_name, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -4932,7 +5132,7 @@ fn scan_tags_recursive(dir: &Path, tags: &mut std::collections::HashMap<String, 
             continue;
         }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_tags_recursive(&path, tags, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -4981,7 +5181,7 @@ fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, wanted: &str
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             collect_notes_with_tag(&path, lib_id, lib_name, wanted, results, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -5670,7 +5870,7 @@ fn scan_stages_recursive(dir: &Path, stages: &mut Vec<(String, String)>, exclude
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_stages_recursive(&path, stages, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -6043,7 +6243,7 @@ fn scan_index_words_recursive(
             continue;
         }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             scan_index_words_recursive(&path, md_strip, stopwords, index, bigrams, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
@@ -7176,7 +7376,7 @@ fn collect_notes_names_recursive(
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            if is_nested_library(&path, exclude) { continue; } // Library != Folder
+            if is_walk_boundary(&path, exclude) { continue; } // a library or a universe is never content (MIG-112)
             collect_notes_names_recursive(&path, notes, exclude);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // Use frontmatter title for canonical files, file stem for human-named files
@@ -8076,7 +8276,7 @@ fn collect_fresh_suspects(
             continue;
         }
         if ft.map(|t| t.is_dir()).unwrap_or_else(|| path.is_dir()) {
-            if is_nested_library(&path, foreign) {
+            if is_walk_boundary(&path, foreign) {
                 continue;
             }
             collect_fresh_suspects(&path, known, foreign, out, stats);
@@ -8131,7 +8331,7 @@ fn collect_cascade_candidates(
         if name.starts_with('.') { continue; }
         if ft.map(|t| t.is_dir()).unwrap_or_else(|| path.is_dir()) {
             // Stop at a linked universe's root — see this function's doc comment.
-            if is_nested_library(&path, foreign) {
+            if is_walk_boundary(&path, foreign) {
                 continue;
             }
             collect_cascade_candidates(&path, exclude, excluded_hit, foreign, candidates);
@@ -11140,10 +11340,244 @@ mod tests_pj140_path_migrate {
 }
 
 #[cfg(test)]
+mod tests_mig112_add_library_guard {
+    //! MIG-112 — a universe may not be registered as a library of another universe.
+    //!
+    //! The 2026-08-26 safety inspection confirmed the pair this guards: `add_library` had only
+    //! `ensure_under_active_root`, which passes happily for `<root>/كون عيسى 2` — a complete
+    //! universe of its own, and three such directories exist under the Boss's `Eisa Universe`
+    //! because the MIG-108 unification put them there. Registering one is not cosmetic:
+    //! `mig108::classify` refuses to relocate such an entry so it persists permanently, and
+    //! reconcile's de-adopt would then have purged every note of it at boot — taking the earned
+    //! link weights, traversal counts and review history that live ONLY in the index.
+    //!
+    //! The first cut of this guard was WRONG in a way these tests exist to prevent: it used
+    //! `universe_manifest_at_or_above` alone, which — because the path is already constrained
+    //! under the active root — always finds the ACTIVE universe's own manifest and would have
+    //! refused EVERY library in the app.
+    use super::*;
+    use tempfile::TempDir;
+
+    fn universe_at(p: &Path) {
+        std::fs::create_dir_all(p.join(".constellation")).unwrap();
+        std::fs::write(p.join(".constellation").join("universe.json"), br#"{"name":"U"}"#).unwrap();
+    }
+
+    #[test]
+    fn an_ordinary_folder_under_the_root_is_still_a_valid_library() {
+        // THE REGRESSION GUARD. If this fails, the app can no longer add libraries at all.
+        let t = TempDir::new().unwrap();
+        let root = t.path().join("Universe");
+        universe_at(&root);
+        let lib = root.join("Constellation PKM");
+        std::fs::create_dir_all(&lib).unwrap();
+
+        assert!(ensure_under_active_root(&lib.to_string_lossy(), &root.to_string_lossy()).is_ok());
+        assert!(
+            !carries_universe_manifest(&lib, BareManifest::PresenceIsEnough),
+            "an ordinary folder is not a universe"
+        );
+        assert!(
+            !path_is_in_foreign_universe(&lib, &root),
+            "a library under our OWN root must not read as foreign — the active universe's own              manifest is above every legitimate library and must not trip the guard"
+        );
+    }
+
+    #[test]
+    fn a_nested_universe_root_is_refused() {
+        let t = TempDir::new().unwrap();
+        let root = t.path().join("Eisa Universe");
+        universe_at(&root);
+        let nested = root.join("كون عيسى 2");
+        universe_at(&nested);
+
+        assert!(
+            ensure_under_active_root(&nested.to_string_lossy(), &root.to_string_lossy()).is_ok(),
+            "it IS under the root — which is exactly why the old guard let it through"
+        );
+        assert!(
+            carries_universe_manifest(&nested, BareManifest::PresenceIsEnough),
+            "and it is a universe, which is what the new guard catches"
+        );
+    }
+
+    #[test]
+    fn a_folder_inside_a_nested_universe_is_refused() {
+        let t = TempDir::new().unwrap();
+        let root = t.path().join("Eisa Universe");
+        universe_at(&root);
+        let nested = root.join("كون عيسى 3");
+        universe_at(&nested);
+        let inner = nested.join("Five Acts");
+        std::fs::create_dir_all(&inner).unwrap();
+
+        assert!(
+            !carries_universe_manifest(&inner, BareManifest::PresenceIsEnough),
+            "the inner folder is not itself a universe — so the first check alone is not enough"
+        );
+        assert!(
+            path_is_in_foreign_universe(&inner, &root),
+            "but it lives in one, and the second check catches it"
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_mig112_universe_boundary {
+    //! MIG-112 — *a universe is never content of another universe.*
+    //!
+    //! The defect these pin, measured on the Boss's `Eisa Universe` before the fix: it
+    //! physically contained three complete universe roots (`كون عيسى`, `كون عيسى 2`,
+    //! `كون عيسى 3`) — copied in by the MIG-108 unification itself, which its own
+    //! `mig108-journal.json` records as `"action": "copy"` — and **16 of their notes were
+    //! indexed as the parent universe's own**, 8 of them with a blanked identity because a
+    //! duplicate already owned it.
+    //!
+    //! Why the registry-based fence could not catch it: `resolve_libraries_recursive` builds
+    //! library identity from `libraries.json` + `universe.json.children` and **never lists
+    //! directories**, so an UNDECLARED nested universe contributes nothing to any exclude set.
+    //! Each of those three copies' own `libraries.json`, in fact, holds a single entry pointing
+    //! at the ORIGINAL — so "just declare them" would have changed nothing.
+    use super::{carries_universe_manifest, is_walk_boundary, path_is_in_foreign_universe, BareManifest};
+    use std::collections::HashSet;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    fn make_universe(root: &Path) {
+        std::fs::create_dir_all(root.join(".constellation")).unwrap();
+        std::fs::write(root.join(".constellation").join("universe.json"), b"{}").unwrap();
+    }
+
+    #[test]
+    fn a_directory_carrying_a_manifest_is_a_universe_root() {
+        let t = TempDir::new().unwrap();
+        let nested = t.path().join("Nested Universe");
+        std::fs::create_dir_all(&nested).unwrap();
+        assert!(!carries_universe_manifest(&nested, BareManifest::MustLookLikeOne), "an ordinary folder is not a universe");
+        make_universe(&nested);
+        assert!(carries_universe_manifest(&nested, BareManifest::MustLookLikeOne));
+    }
+
+    #[test]
+    fn the_legacy_root_level_manifest_counts_too() {
+        // Pre-v2 layout (`universe.rs::migrate_legacy_data`). A fence that knew only the
+        // current form would walk straight into a universe that had not been migrated yet.
+        let t = TempDir::new().unwrap();
+        let legacy = t.path().join("Legacy Universe");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("universe.json"), br#"{"name":"Legacy","version":1}"#).unwrap();
+        assert!(carries_universe_manifest(&legacy, BareManifest::MustLookLikeOne));
+    }
+
+    #[test]
+    fn a_stray_file_named_universe_json_does_not_hide_a_users_folder() {
+        // 2026-08-26 safety inspection, CONFIRMED against the first cut of this fence: accepting
+        // the bare name on presence alone made any note folder containing a JSON dataset, an
+        // exported config or a cloned repo an INVISIBLE boundary for ~25 walkers — the notes
+        // vanish from tree, index, search, tags and the Move picker, and a later rename leaves
+        // their wikilinks stale, with nothing logged. A boundary skip is a `continue`, not a
+        // finding, so this failure has no voice at all. The bare form must LOOK like a manifest.
+        let t = TempDir::new().unwrap();
+        let notes = t.path().join("Research").join("data");
+        std::fs::create_dir_all(&notes).unwrap();
+
+        std::fs::write(notes.join("universe.json"), br#"{"rows":[1,2,3]}"#).unwrap();
+        assert!(!carries_universe_manifest(&notes, BareManifest::MustLookLikeOne), "a JSON file with that name is not a universe");
+        assert!(carries_universe_manifest(&notes, BareManifest::PresenceIsEnough), "…but a RELOCATING caller still refuses to move it");
+
+        std::fs::write(notes.join("universe.json"), b"not json at all").unwrap();
+        assert!(!carries_universe_manifest(&notes, BareManifest::MustLookLikeOne), "unparseable is not a universe either");
+
+        std::fs::write(notes.join("universe.json"), br#"[1,2,3]"#).unwrap();
+        assert!(!carries_universe_manifest(&notes, BareManifest::MustLookLikeOne), "a JSON array is not a manifest");
+
+        // …and the real thing still is.
+        std::fs::write(notes.join("universe.json"), br#"{"name":"Real","version":2}"#).unwrap();
+        assert!(carries_universe_manifest(&notes, BareManifest::MustLookLikeOne));
+    }
+
+    #[test]
+    fn an_unreadable_constellation_manifest_still_counts_but_a_missing_one_does_not() {
+        // Form 1 stays fail-CLOSED: `.constellation` is unambiguously ours, so doubt means
+        // "universe". This pins the asymmetry with the bare form so a later edit cannot
+        // quietly make both branches agree.
+        let t = TempDir::new().unwrap();
+        let u = t.path().join("U");
+        std::fs::create_dir_all(u.join(".constellation")).unwrap();
+        assert!(!carries_universe_manifest(&u, BareManifest::MustLookLikeOne), "an empty .constellation is not a manifest");
+        std::fs::write(u.join(".constellation").join("universe.json"), b"").unwrap();
+        assert!(carries_universe_manifest(&u, BareManifest::MustLookLikeOne), "present-but-empty under .constellation still counts");
+        assert!(carries_universe_manifest(&u, BareManifest::PresenceIsEnough), "and for a relocating caller too — Form 1 is fail-closed for both");
+    }
+
+    #[test]
+    fn a_nested_universe_is_a_walk_boundary_even_with_an_empty_exclude_set() {
+        // THE regression: the exclude set comes from the registry, and an undeclared nested
+        // universe is absent from it. Empty set = "the registry knows nothing about this".
+        let t = TempDir::new().unwrap();
+        let nested = t.path().join("كون عيسى 2");
+        std::fs::create_dir_all(&nested).unwrap();
+        let empty: HashSet<String> = HashSet::new();
+        assert!(!is_walk_boundary(&nested, &empty), "an ordinary folder is not a boundary");
+        make_universe(&nested);
+        assert!(
+            is_walk_boundary(&nested, &empty),
+            "a universe root must be a boundary even when no exclude set names it"
+        );
+    }
+
+    #[test]
+    fn an_ordinary_folder_is_still_not_a_boundary() {
+        // The other half: this fence must not make every walk return nothing.
+        let t = TempDir::new().unwrap();
+        let plain = t.path().join("Daily Notes");
+        std::fs::create_dir_all(&plain).unwrap();
+        assert!(!is_walk_boundary(&plain, &HashSet::new()));
+    }
+
+    #[test]
+    fn a_file_inside_a_nested_universe_is_foreign_but_our_own_notes_are_not() {
+        // The row-driven fence (§7). Walk fences are useless against a pass that iterates
+        // `note_meta` and writes to whatever file a row names.
+        let t = TempDir::new().unwrap();
+        let own = t.path().join("Eisa Universe");
+        make_universe(&own);
+        let ours = own.join("Constellation PKM").join("Note.md");
+        std::fs::create_dir_all(ours.parent().unwrap()).unwrap();
+        std::fs::write(&ours, b"x").unwrap();
+
+        let nested = own.join("كون عيسى 2");
+        make_universe(&nested);
+        let theirs = nested.join("Five Acts").join("Observation.md");
+        std::fs::create_dir_all(theirs.parent().unwrap()).unwrap();
+        std::fs::write(&theirs, b"x").unwrap();
+
+        assert!(!path_is_in_foreign_universe(&ours, &own), "our own note is ours");
+        assert!(
+            path_is_in_foreign_universe(&theirs, &own),
+            "a note inside a nested universe belongs to THAT universe"
+        );
+    }
+
+    #[test]
+    fn a_file_under_no_universe_at_all_is_not_reported_foreign() {
+        // Fail-open on purpose: answering `true` here would make every non-universe caller
+        // (tests, import staging, an unmounted root) refuse its own work.
+        let t = TempDir::new().unwrap();
+        let own = t.path().join("Eisa Universe");
+        make_universe(&own);
+        let stray = t.path().join("somewhere else").join("Note.md");
+        std::fs::create_dir_all(stray.parent().unwrap()).unwrap();
+        std::fs::write(&stray, b"x").unwrap();
+        assert!(!path_is_in_foreign_universe(&stray, &own));
+    }
+}
+
+#[cfg(test)]
 mod tests_nested_library_helpers {
     //! 2026-07-25 Whole-Ecosystem Fix Law — the shared helpers every tree/folder/aggregate
     //! walker uses so "Library != Folder" holds identically everywhere.
-    use super::{is_nested_library, library_name_for_path, nested_library_paths, LibraryInfo};
+    use super::{is_walk_boundary, library_name_for_path, nested_library_paths, LibraryInfo};
     use std::path::Path;
 
     fn lib(id: &str, name: &str, path: &str) -> LibraryInfo {
@@ -11167,8 +11601,8 @@ mod tests_nested_library_helpers {
         assert!(ex.contains("e:/u/creating new library"));
         assert!(ex.contains("e:/u/research notes"));
         assert!(!ex.contains("e:/u"), "a library must never exclude ITSELF");
-        assert!(is_nested_library(Path::new("E:/U/Eisa Test"), &ex));
-        assert!(!is_nested_library(Path::new("E:/U/Daily Notes"), &ex), "an ordinary folder is not excluded");
+        assert!(is_walk_boundary(Path::new("E:/U/Eisa Test"), &ex));
+        assert!(!is_walk_boundary(Path::new("E:/U/Daily Notes"), &ex), "an ordinary folder is not excluded");
     }
 
     #[test]
@@ -11452,3 +11886,4 @@ mod tests_mig111_04_base_guard_fires {
         );
     }
 }
+
