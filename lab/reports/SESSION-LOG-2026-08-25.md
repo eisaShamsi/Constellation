@@ -529,3 +529,186 @@ false zero.
 
 **Awaiting the Boss's ruling. Nothing built, nothing written to his data.** PJ ledger → **v2.01**,
 orientation → **v4.18**, MoCh `MoCh-2026-08-25-1700.md`.
+
+---
+
+## §12 — "Fix the duplication across other universes" — MIG-112 investigated; the generator FOUND and already closed
+
+**Function in hand:** identity duplication across the universes — the whole concern, not the two
+folders §11 asked a ruling on.
+
+**Boss's order, verbatim (2026-08-25):** *"I noticed the duplication across other universes. Fix it."*
+
+**Nothing was written.** No `.md`, no live database, no repo change. Awaiting plan approval
+(Migration Rule Phase 2 → "User approves the plan"; SO#10 — this record lands first).
+
+### §12.1 — The measurement, whole-ecosystem
+
+`20,945 .md` scanned under `E:\Constellation Universes` (**including** `.trash`; a panel scan that
+**excluded** hidden folders measured 20,259 / 7,873 — both are right, and the criterion must be
+stated whenever the figure is). **17,876** carry a `cid_cn` in the first frontmatter block;
+**9,809** distinct identities; **8,006 identities claimed by more than one file, across 16,073 files.**
+
+| shared identities | between |
+|---:|---|
+| 7,778 | `Eisa Cognitive Knowledge` ↔ **`MIG108 Rehearsal`** (4.6 GB / 7,835 notes, last written 2026-07-30; federated to nothing) |
+| 182 | `Eisa Universe\موسوعة عيسى\التصوير` ↔ `Eisa Cognitive Knowledge\التصوير` — **byte-identical** |
+| 24 / 15 / 5 | `Scratch` · `MIG108 Rehearsal External` · `Eisa Universe` ↔ `كون عيسى` |
+
+**Duplication a single index can actually see** (i.e. that produces the `''` sentinel): **6**
+identities in `Eisa Universe`, **11** in `Eisa Cognitive Knowledge` (a `3mooR\` folder — not a
+universe root — copying `Eisa Test\`), **1** in `MIG108 Rehearsal`. Everything else is inert.
+
+### §12.2 — THE GENERATOR, from the app's own journal
+
+`E:\Constellation Universes\Eisa Universe\.constellation\mig108-journal.json`:
+
+```json
+"entries": [{ "library_id": "universe_notes_18a07818851b54309948",
+              "library_name": "كون عيسى",
+              "old_path":  "E:\\Constellation Universes\\كون عيسى",
+              "new_path":  "E:\\Constellation Universes\\Eisa Universe\\كون عيسى 3",
+              "action": "copy", "moved": true, "copied": true }]
+```
+
+**Constellation copied a WHOLE UNIVERSE into another universe's root, as if it were a library** —
+because that universe's `universe_notes` library has `path == the universe root`. That is the MIG-108
+"One Universe, One Location" unification, and it is the origin of `كون عيسى 3` (and, from the earlier
+run whose backup survives as `mig108-backup.prev`, of `كون عيسى` and `كون عيسى 2`).
+
+**The hole is ALREADY CLOSED.** `mig108.rs:192` — `classify` now consults
+`universe_manifest_at_or_above` **ahead of the Copy arm**, with the comment *"copying a universe's
+files into another universe as plain content is the same mangling as moving them, which is why
+`bring_in_library` refuses it too."* Landed `227f5b3a` (2026-08-21, MIG-111 Phase 1.2), strengthened
+`a088226b` (2026-08-22, PJ-333/335). The copies were made **2026-08-07/08** — before the fix.
+
+So: **generator fixed · debris remains · downstream blindness remains.**
+
+### §12.3 — The downstream blindness (the actual fix)
+
+Constellation refuses to index a **declared** Linked Universe's notes (`foreign_library_roots`,
+PJ-207 §8) — verified working: `Eisa Universe` holds **0** rows for the federated top-level
+`كون عيسى`. It has **no notion that an undeclared, physically-nested universe root is a boundary**,
+because `resolve_libraries_recursive` (`universe.rs:601`) builds library identity from the **registry
+only** and never lists directories. `require_own_library_in`'s own doc confesses the gap
+(`libraries.rs:322-323`).
+
+Result: **16 notes** from the three nested roots are indexed as `Eisa Universe`'s own; **8 carry the
+blanked identity** of §11's Cause A.
+
+An exhaustive Whole-Ecosystem audit found **~40 participating surfaces**; coverage today is `both`
+(nested ∪ foreign) at **5** sites, `nested` only at ~15, and **none at all** at ~15 — including
+wikilink resolution (`libraries.rs:3923`/`:3960`), strata, provenance, trails, canvas and
+inspector360. **Correction to my own brief: ~30 of them close through TWO shared switches**
+(`walk_exclusions` and one new parameter), not 40 hand-edits — and the Whole-Ecosystem Fix Law asks
+for exactly that ("a shared helper so they cannot drift again").
+
+**The primitive already exists in fail-closed form and is unreachable**: `carries_universe_manifest`
+(`mig108.rs:287`, checks BOTH `.constellation/universe.json` and the legacy root form, and treats an
+unreadable manifest as PRESENT) + `universe_manifest_at_or_above` (`mig108.rs:301`, **private**).
+
+### §12.4 — Severity, corrected DOWN from my own brief
+
+I flagged four commands that can rename files / rewrite wikilinks inside another universe. Verified
+myself:
+- `canonicalize_execute`, `de_canonicalize_library`, `inject_cid_library` — wrappers exist in
+  `src/lib/importers/store.ts` but **have no caller anywhere in `src/`**. Dead from the UI.
+- `repair_external_libraries_on_startup` **IS live** (`+layout.svelte:3554`, localStorage-gated — and
+  localStorage is proven non-durable, PJ-110/PJ-103) and calls `de_canonicalize_library`, which
+  **renames files**. But it fires only on a canonical-named `.md`, and **a scan of all 20,945 notes
+  found none inside any nested universe** (the 6 that exist are elsewhere, in registered libraries).
+  Structural, not currently reachable.
+- **The rename cascade is the one genuinely live path** — `update_links_on_rename` walks the Universe
+  root fenced only by `foreign`, so renaming a note can rewrite `[[links]]` inside `كون عيسى 2`/`3`.
+  Realised reach today, measured: **three lines in three files** (one image link, repeated).
+
+**Nothing has been destroyed.** All four copies of `كون عيسى` compared byte by byte: no renamed file,
+no stripped frontmatter, no damaged note. **13 of the 16** adopted notes are byte-identical to a note
+in the linked `كون عيسى`; the other 3 are `إختبار المرحلة 2.md`, which differ **only in the identity
+line** (each copy carries a different one — `…F8CD` / `…4103` / `…F8A3` — which is precisely why that
+note never collided).
+
+### §12.5 — A SECOND MIG-108 casualty, traced by me from the backups
+
+The panel found 589 index rows labelled `موسوعة عيسى`, a library **absent from
+`Eisa Universe`'s `libraries.json`**, and could not trace it. Traced here from the run backups:
+
+| file | mtime | entries |
+|---|---|---|
+| `mig108-backup.prev/libraries.json` | 2026-08-07 16:53 | **6** — incl. `موسوعة عيسى` |
+| `mig108-backup/libraries.json` | 2026-08-07 16:54 | **5** — `موسوعة عيسى` gone |
+| `libraries.json` (live) | 2026-08-08 14:09 | **5** |
+
+**The first MIG-108 unification run dropped a registered library from the registry**, one minute
+before the second run's backup was taken. Its folder is still on disk and its **589 notes are still
+indexed under a library name that no longer exists**. Two smaller cases share the shape: 9 rows
+labelled `Eisa Cognitive Knowledge` and 9 labelled `PJ-065-test-book`. **607 rows in total carry an
+unregistered library name.** → **PJ-404**.
+
+### §12.6 — A panel finding DISSOLVED: the shadow trap, third occurrence
+
+The panel reported the master universe registry as holding "one entry, last written 7 August" while
+`Eisa Universe` was opened on 25 August — flagged unexplained, and load-bearing for its claim that
+two copies are "reachable from no open universe."
+
+**It is PJ-321's artifact, and I checked before filing:**
+
+```
+fsutil hardlink list "C:\Users\ealsh\AppData\Roaming\world.uconstellation.app\universes.json"
+  \Users\ealsh\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\...
+```
+
+277 bytes, 2026-08-07 — the same frozen copy that cost this project a Group-1 entry and a committed
+evidence bundle. **NOT filed.** The dependent claim is withdrawn rather than repeated.
+
+### §12.7 — The sequencing constraint, corrected by the panel
+
+I told the panel that cleaning up the 16 rows would destroy 8 of them "with no record at all", making
+PJ-387's archive fix a prerequisite. **Both halves were wrong:**
+1. There IS a record — `build_delete_archive` writes a durable per-note line to `diagnostics.log`
+   naming each skipped note (`[mig104] delete archive SKIPPED for …`). No archive, but not no record.
+2. **Those 8 are not identity-less.** Their files carry real identities; they are blank *in the index*
+   because a duplicate already claimed the identity. So the de-index step can read the identity off
+   the file and archive properly. **The prerequisite is removed from the plan**, and
+   `build_delete_archive`'s own comment — that changing this "changes shared delete semantics and is
+   filed as its own job" — is obeyed rather than smuggled into this migration.
+
+**The real ordering constraints that survive:** the boundary must land as ONE commit across index +
+sidebar (or notes stay findable in search that are absent from the tree); the watcher path must be
+fenced BEFORE the de-index (or one touched file re-adds what was removed); and the index-driven
+writers (§12.8) must be fenced too, because a folder boundary does not stop them.
+
+### §12.8 — NEW, and the plan had no step for it
+
+Steps that fence *walking* do not fence the routines that iterate **`note_meta` rows** and write to
+whatever file a row names — the identity back-fill and identity-healing family. A folder boundary
+cannot stop them. This is the shape that best fits the one thing that demonstrably happened: on
+**2026-08-08 at 18:05:50**, three files — one inside each copy — were rewritten within 0.4 s of each
+other, each receiving a **different** identity, while every other file in those folders still carries
+its June timestamp. **The writer is NOT established**: Constellation's write journal contains **no
+record of any write into those three folders, ever** — itself a defect (**PJ-406**). Named as a
+shape, attributed to nothing. → **PJ-405**.
+
+### §12.9 — What the plan is, and what needs the Boss
+
+Eight steps, ledger **v2.02**, filed as **MIG-112**. Ours: the boundary code and the de-index of 16
+index rows (no file deleted). **His:** the three copy folders, the 182 duplicated photography notes,
+the 4.6 GB rehearsal universe, `3mooR`, and the two duplicated working docs.
+
+**Operational warning that must reach him before anything else:** *do not move or delete the three
+copy folders before the de-index step lands.* On today's code the next start-up would see the files
+gone and purge the 8 blank rows with only a diagnostics line as a record.
+
+**Declaring the three copies as Linked Universes is provably inert** — each copy's own
+`libraries.json` holds a **single entry pointing at the ORIGINAL** `E:\Constellation Universes\كون عيسى`,
+not at itself, and that original is already a declared Linked Universe of `Eisa Universe`. Verified in
+all three. The app would accept the declaration and report success while changing nothing.
+
+### §12.10 — Errors of mine in this pass, corrected before the Boss saw them
+
+Six, all caught by the adversarial pass rather than by me: the "no record at all" claim · the
+"archive fix is a prerequisite" framing · "the Move picker has no boundary" (it has one) · "the
+incremental re-index has no boundary at all" (it has a different one that fails here for a specific
+reason) · "~40 surfaces" (≈30 close through two shared switches) · and a global duplication figure I
+quoted without stating its hidden-folder criterion. The panel also corrected itself twice, and I
+dissolved one of its two "unexplained" findings as the shadow trap.
