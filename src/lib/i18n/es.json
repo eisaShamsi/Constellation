@@ -7,7 +7,9 @@
     "repairNow": "Reparar ahora",
     "repairing": "Reparando…",
     "repairBlocked": "No se pudo iniciar la reparación: {reason}",
-    "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. Puedes eliminarlas en Ajustes → Índice."
+    "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. Puedes eliminarlas en Ajustes → Índice.",
+    "hiddenDotfiles": "Constellation no está buscando en {noun} del disco, porque un nombre de archivo que empieza por un punto marca el archivo como oculto. No puede encontrar una nota así ni informar de que falta. Quitar el punto inicial del nombre del archivo permite que Constellation vuelva a ver la nota.",
+    "fencedLibraries": "Constellation no está comprobando si hay cambios en {noun}. Una carpeta situada por encima de cada una contiene un archivo universe.json que la marca como un universo aparte y hace que Constellation deje de leer dentro. Las notas del índice de búsqueda siguen apareciendo, pero las ediciones hechas desde entonces no. Quitar el universe.json que está por encima de una biblioteca restaura su lectura; quitar la biblioteca en sí solo oculta este mensaje — sus notas siguen en el índice y no se vuelven a leer."
   },
   "saveHealth": {
     "copySuffix": "copia recuperada",

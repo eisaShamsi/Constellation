@@ -57,6 +57,41 @@ export interface DriftReport {
 	 * this is deliberately NOT part of `hasFindings` — see the note there.
 	 */
 	stalePhantoms: number;
+
+	/**
+	 * PJ-407 — `.md` files on disk whose NAME begins with a dot, so every walker skips them.
+	 *
+	 * The dot rule is correct and stays: it is what keeps `.trash`, `.obsidian`, `.git` and
+	 * `.constellation` out of the index, and it is Obsidian's explicit design decision — asked
+	 * what the fix would be, they said "most likely preventing users from creating .dot files".
+	 * Constellation prevents it at the note-creation door, at both import doors and at the
+	 * template namer. It does NOT yet prevent it when a note or folder is RENAMED, in New Folder,
+	 * in New Library, or in the daily-note and quick-capture folder fields — each filed with its
+	 * own PJ, because each needs a decision (strip silently, or refuse and say why) plus strings
+	 * in fifteen languages. An earlier version of this comment claimed the import door was the
+	 * only one open; that was false, and the review panel caught it the day it was written.
+	 *
+	 * What was wrong was the SILENCE. Such a note is invisible twice over — never indexed, and
+	 * never reportable as an orphan because the orphan walk skips it on the same rule. Obsidian's
+	 * own users discovered this only when files vanished after a restart. Measured on the Boss's
+	 * daily universe before the fix: two real notes, 23 KB and 35 KB.
+	 *
+	 * NOT part of `hasFindings` — see `hasHidden`. The remedy is a rename, never a repair.
+	 */
+	hiddenDotfiles: number;
+
+	/**
+	 * PJ-428 — registered libraries the walk could not reach, because a directory ABOVE them
+	 * carries a universe manifest and every fence stops there. Their rows are KEPT (the
+	 * declaration exemption: an explicit declaration beats a filesystem inference) but nothing
+	 * verified them this pass.
+	 *
+	 * NOT part of `hasFindings` — see `hasFenced`, and the identical reasoning on
+	 * `hiddenDotfiles`. That band offers "Repair now", and the repair walks the same fence that
+	 * hid these. The remedy is to unregister the library, or remove the universe marker from the
+	 * folder above it.
+	 */
+	fencedLibraries: number;
 }
 
 /**
@@ -95,6 +130,27 @@ export function hasFindings(r: DriftReport | null | undefined): r is DriftReport
  */
 export function hasPhantoms(r: DriftReport | null | undefined): r is DriftReport {
 	return !!r && r.stalePhantoms > 0;
+}
+
+/**
+ * PJ-407 — are there notes on disk the app cannot see because their name begins with a dot?
+ * Separate from `hasFindings` for the same reason `hasPhantoms` is, and it is the same "false
+ * door" test: the band `hasFindings` gates offers **Repair now**, and a repair provably cannot
+ * fix this — it walks and re-reads, and skips a dot-name on exactly the rule that hid it.
+ *
+ * The remedy is to RENAME the file, so the sentence says that and offers no button.
+ */
+export function hasHidden(r: DriftReport | null | undefined): r is DriftReport {
+	return !!r && r.hiddenDotfiles > 0;
+}
+
+/**
+ * PJ-428 — is a library the user DECLARED sitting behind a universe manifest, unverified?
+ * Separate from `hasFindings` for the same reason `hasHidden` is: "Repair now" walks the very
+ * fence that hid it, so the repair cannot act on it.
+ */
+export function hasFenced(r: DriftReport | null | undefined): r is DriftReport {
+	return !!r && r.fencedLibraries > 0;
 }
 
 /**

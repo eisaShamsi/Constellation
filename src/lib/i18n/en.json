@@ -7,7 +7,9 @@
     "repairNow": "Repair now",
     "repairing": "Repairing…",
     "repairBlocked": "The repair could not start: {reason}",
-    "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index."
+    "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index.",
+    "hiddenDotfiles": "Constellation is not searching {noun} on disk, because a file name that begins with a dot marks the file as hidden. It can neither find such a note nor report it as missing. Removing the leading dot from the file name lets Constellation see the note again.",
+    "fencedLibraries": "Constellation is not checking {noun} for changes. A folder above each one holds a universe.json file, which marks that folder as a separate universe and stops Constellation reading inside it. Notes already in the search index are still listed, but edits made since are not. Removing the universe.json above a library restores reading for it; removing the library itself only hides this message — its notes stay in the index, never re-read."
   },
   "saveHealth": {
     "copySuffix": "recovered copy",

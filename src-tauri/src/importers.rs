@@ -254,6 +254,54 @@ fn import_markdown_folder(source: &str, dest: &Path) -> Result<ImportResult, Str
     Ok(result)
 }
 
+/// PJ-407 — a note must not be COPIED IN under a name the app can never read.
+///
+/// `copy_full_tree`'s directory arm already refuses dot-directories; its FILE arm did not, so a
+/// vault holding `.NET.md` landed `.NET.md` in the user's library and the note was invisible to the
+/// whole app the moment it arrived — every walker skips dot-names, so it could neither be indexed
+/// NOR reported as missing. That is the same door `sanitize_filename` closes for the other
+/// importers, left open for the four formats that route through `copy_full_tree`
+/// (`markdown | folder | bear | obsidian`, dispatched at the `import_from_source` match).
+/// `obsidian` is the default selection in the first-run Universe Setup wizard, so this is the
+/// likeliest import a new user ever performs.
+///
+/// Deliberately NARROW, and deliberately NOT `sanitize_filename`:
+/// * only the LEAF is rewritten, so the source's folder structure is reproduced unchanged;
+/// * only when the leaf is a `.md` file, so `.gitignore`, `.DS_Store` and any other dotfile the
+///   user chose to carry across are copied through untouched — they are not notes, and renaming
+///   them would corrupt a vault;
+/// * `sanitize_filename` would additionally truncate at 200 bytes, and a collision produced that
+///   way is reported by `copy_full_tree` as `skipped` rather than as an error — a silent loss.
+///
+/// Measured with a `rustc` probe rather than assumed (2026-08-27): `Path::extension()` is `None`
+/// for `.md`, `.gitignore` and `.DS_Store` (a name whose only dot is the leading one), and
+/// `Some("md")` for `..md` / `...md`. The second check rejects that second group: trimming them
+/// would produce a bare `md` with no extension — still unindexable, and less honest than the junk
+/// name it arrived under.
+fn unhide_md_leaf(rel: &Path) -> std::borrow::Cow<'_, Path> {
+    let leaf = match rel.file_name().and_then(|n| n.to_str()) {
+        Some(l) if l.starts_with('.') => l,
+        _ => return std::borrow::Cow::Borrowed(rel),
+    };
+    let is_md = |n: &str| {
+        Path::new(n)
+            .extension()
+            .map(|e| e.eq_ignore_ascii_case("md"))
+            .unwrap_or(false)
+    };
+    if !is_md(leaf) {
+        return std::borrow::Cow::Borrowed(rel);
+    }
+    let fixed = leaf.trim_start_matches('.');
+    if !is_md(fixed) {
+        return std::borrow::Cow::Borrowed(rel);
+    }
+    match rel.parent() {
+        Some(pp) if !pp.as_os_str().is_empty() => std::borrow::Cow::Owned(pp.join(fixed)),
+        _ => std::borrow::Cow::Owned(PathBuf::from(fixed)),
+    }
+}
+
 fn copy_full_tree(
     current: &Path,
     dest_base: &Path,
@@ -274,7 +322,8 @@ fn copy_full_tree(
             let _ = fs::create_dir_all(&sub_dest);
             copy_full_tree(&path, dest_base, src_root, result)?;
         } else {
-            let target = dest_base.join(rel);
+            let rel = unhide_md_leaf(rel);
+            let target = dest_base.join(rel.as_ref());
             if let Some(parent) = target.parent() {
                 let _ = fs::create_dir_all(parent);
             }
@@ -579,15 +628,153 @@ fn sanitize_filename(name: &str) -> String {
             }
         })
         .collect();
-    s = s.trim().to_string();
+    // PJ-407 — TRIM LEADING/TRAILING DOTS, exactly as `libraries::note_display_filename` does
+    // for a note the user creates.
+    //
+    // A dot-prefixed name is HIDDEN — POSIX convention, and Obsidian's explicit design decision
+    // ("Files and folders beginning with a `.` are intended to be hidden", and asked what the fix
+    // would be: "most likely preventing users from creating .dot files"; forum.obsidian.md/t/
+    // markdown-files-and-folders-with-leading-dots-are-not-visible/1622, WhiteNoise, 2020-06-13
+    // and 2020-07-09 — the thread's opening report is a file named `.NET Framework.md`). This
+    // door copied such names through verbatim, and the note landed on disk invisible to the
+    // ENTIRE app: every walker skips dot-names (`search.rs:9041` in the indexer,
+    // `reconcile.rs` in the orphan check), so it could neither be indexed NOR detected as
+    // missing — invisible to the very pass built to find invisible notes.
+    //
+    // DO NOT READ THIS AS "the dot rule is now closed." It is not, and an earlier version of
+    // this comment said it was — a false structural claim, caught by the review panel on the day
+    // it was written. Closed here and in `unhide_md_leaf` (the folder/Obsidian import) and
+    // `universe::sanitize_template_stem` ("Save as template"). STILL OPEN, each filed with its
+    // own PJ because each needs a refuse-or-strip decision and fifteen locale strings: renaming
+    // a note or a folder (`libraries::rename_item`), New Folder (`libraries::sanitize_name`),
+    // New Library (`create_new_library_at`), and the daily-note / quick-capture folder fields.
+    //
+    // Measured on the Boss's machine before this fix: `.NET.md` (23,227 B) and
+    // `.NET Framework.md` (35,578 B), both real notes with frontmatter and tags, in
+    // `Computer Science\Algorithms & Data Structures`. Wikipedia-derived, so exactly the shape an
+    // import produces. Renaming at the door is what Obsidian would do; what Constellation adds is
+    // that it does not do it in silence (see the drift count).
+    s = s.trim().trim_matches('.').trim().to_string();
     if s.is_empty() {
         s = "Untitled".to_string();
     }
-    // Limit length
+    // Limit length.
+    //
+    // PJ-409 — `String::truncate` PANICS when the byte index is not a UTF-8 char boundary, and an
+    // import is exactly where non-ASCII titles arrive; a panic here aborts the command mid-loop,
+    // after some notes have already been written. Fixed in-pass because it is inside the function
+    // this change edits and a panic on the Boss's Arabic notes is not something to file for later.
     if s.len() > 200 {
-        s.truncate(200);
+        let mut cut = 200;
+        while !s.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        s.truncate(cut);
+        s = s.trim_end().to_string();
     }
     s
+}
+
+#[cfg(test)]
+mod tests_pj407_import_filename {
+    //! PJ-407 — an imported note must not land on disk with a name the app can never see.
+    //!
+    //! Researched before fixing (WA#5). Obsidian's position, from a thread now in its Bug
+    //! graveyard: *"This is not a bug but a design decision. Files and folders beginning with a
+    //! `.` are intended to be hidden"*, and the fix they would choose is *"most likely preventing
+    //! users from creating .dot files."* So the convention stays — it is also what keeps
+    //! `.trash`, `.obsidian`, `.git` and `.constellation` out of the index — and prevention moves
+    //! to the door. Constellation already prevented it for a note the USER creates
+    //! (`libraries::note_display_filename` trims dots); this door did not. It was not the only
+    //! one — see the list in `sanitize_filename`'s comment. Saying otherwise is what the first
+    //! version of this pass did, and the panel refuted it the same day.
+    use super::sanitize_filename;
+
+    #[test]
+    fn a_leading_dot_is_stripped_so_the_note_is_not_born_invisible() {
+        // The Boss's actual files, measured on his machine before the fix: 23,227 B and 35,578 B
+        // of real content, in `Computer Science\Algorithms & Data Structures`, indexed nowhere.
+        assert_eq!(sanitize_filename(".NET"), "NET");
+        assert_eq!(sanitize_filename(".NET Framework"), "NET Framework");
+        assert_eq!(sanitize_filename("..hidden"), "hidden");
+    }
+
+    #[test]
+    fn a_name_that_is_only_dots_falls_back_rather_than_becoming_empty() {
+        assert_eq!(sanitize_filename("."), "Untitled");
+        assert_eq!(sanitize_filename("..."), "Untitled");
+    }
+
+    #[test]
+    fn an_ordinary_name_is_untouched_and_inner_dots_survive() {
+        // The fix must not mangle the common case: version numbers, file-ish titles, abbreviations.
+        assert_eq!(sanitize_filename("Node.js"), "Node.js");
+        assert_eq!(sanitize_filename("v1.2.3 release notes"), "v1.2.3 release notes");
+        assert_eq!(sanitize_filename("Ordinary Note"), "Ordinary Note");
+        assert_eq!(sanitize_filename("الكيماويات السامة"), "الكيماويات السامة");
+    }
+
+    /// The two doors must agree **on the dot rule**. They do NOT agree in general, and saying
+    /// otherwise would be the over-claim this test exists to prevent: `note_display_filename`
+    /// replaces reserved characters with a space and collapses runs, guards Windows reserved
+    /// names (`CON` -> `CON_`), and truncates at 240 bytes; `sanitize_filename` substitutes `_`,
+    /// has no reserved-name guard, and truncates at 200. Only the leading-dot behaviour is
+    /// pinned here — which is the one that made a note invisible.
+    #[test]
+    fn the_two_doors_agree_on_the_dot_rule() {
+        for t in [".NET", ".NET Framework", "..hidden", "Node.js", "Ordinary Note"] {
+            assert_eq!(
+                sanitize_filename(t),
+                crate::libraries::note_display_filename(t),
+                "import and creation must agree on the DOT RULE for {t:?}"
+            );
+        }
+    }
+
+    /// PJ-407 second door — the folder / Obsidian / Bear / Markdown import copies a tree
+    /// verbatim; it never sees `sanitize_filename`. Found by the review panel AFTER the first fix
+    /// shipped a comment claiming "this one line is the whole defect." It was not — this door,
+    /// and the template namer, were both open, and four more remain open behind a filed decision.
+    #[test]
+    fn a_copied_tree_does_not_carry_a_hidden_note_in_with_it() {
+        use super::unhide_md_leaf;
+        use std::path::{Path, PathBuf};
+        let f = |s: &str| unhide_md_leaf(Path::new(s)).into_owned();
+
+        // The Boss's own two files, as they would arrive inside an imported vault.
+        assert_eq!(f(".NET.md"), PathBuf::from("NET.md"));
+        assert_eq!(f(".NET Framework.md"), PathBuf::from("NET Framework.md"));
+        // Nested: the folder structure must be reproduced exactly, only the leaf changes.
+        assert_eq!(
+            f("Computer Science/Algorithms/.NET.md"),
+            PathBuf::from("Computer Science/Algorithms/NET.md")
+        );
+
+        // NOT notes. A vault legitimately carries these and renaming them would corrupt it.
+        for keep in [".gitignore", ".DS_Store", ".obsidian/app.json", "notes/.gitignore"] {
+            assert_eq!(f(keep), PathBuf::from(keep), "{keep} must be copied through untouched");
+        }
+        // Junk whose only dot-stripped form would lose the extension — leave it as it came.
+        for keep in [".md", "..md", "...md"] {
+            assert_eq!(f(keep), PathBuf::from(keep), "{keep} must not become a bare `md`");
+        }
+        // Ordinary names are never touched, inner dots survive.
+        for keep in ["Node.js.md", "Ordinary Note.md", "v1.2.3.md", "الكيماويات.md"] {
+            assert_eq!(f(keep), PathBuf::from(keep));
+        }
+    }
+
+    #[test]
+    fn a_long_non_ascii_title_truncates_without_panicking() {
+        // PJ-409: `String::truncate` panics off a char boundary, and an import is exactly where
+        // non-ASCII titles arrive. 300 Arabic chars = 600 bytes, so the cut lands mid-codepoint
+        // on the old code.
+        let long = "ا".repeat(300);
+        let out = sanitize_filename(&long);
+        assert!(out.len() <= 200);
+        assert!(!out.is_empty());
+        assert!(std::str::from_utf8(out.as_bytes()).is_ok(), "must remain valid UTF-8");
+    }
 }
 
 fn extract_between(text: &str, open: &str, close: &str, occurrence: usize) -> Option<String> {

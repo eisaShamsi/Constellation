@@ -1476,15 +1476,61 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
 /// note-open pipeline.
 #[tauri::command]
 pub fn ensure_cid_cn_cmd(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
-    // MIG-111 §0.4 (R1) — this WRITES (it injects the note's identity into the frontmatter and
-    // saves), and it ran on the note-open path with no boundary check and no AppHandle to make
-    // one with. Opening a linked universe's note therefore rewrote that note's file — the one
-    // thing federation is not allowed to do, on the most ordinary action in the app.
     crate::libraries::require_own_library(&app, &file_path)?;
     let path = Path::new(&file_path);
     if !path.is_file() { return Err(format!("Not a file: {}", file_path)); }
     let content = fs::read_to_string(path).map_err(|e| format!("read: {}", e))?;
-    ensure_cid_cn(path, &content).map_err(|e| format!("ensure_cid_cn: {}", e))
+    let updated = ensure_cid_cn(path, &content).map_err(|e| format!("ensure_cid_cn: {}", e))?;
+
+    // PJ-431 — RE-INDEX WHEN WE JUST STAMPED THE FILE, or the index keeps saying the note has
+    // no identity while the file on disk says it has one.
+    //
+    // Measured on the Boss's own universe, 2026-08-29, right after the PJ-407 rename: both
+    // recovered notes carried `cid_cn: 20260414T092241Z_NOTE_39F9` / `_45E6` in their
+    // frontmatter while `note_meta.cid_cn` was still `''` — and every one of the 27 links
+    // pointing at them still held `target_cid_cn = ''`.
+    //
+    // The chain, read off the code rather than guessed:
+    //   1. The note is indexed while its file has no `cid_cn`, so `note_meta.cid_cn` is ''.
+    //   2. `note_meta_sky_ai`'s propagation is correctly guarded by
+    //      `NEW.cid_cn IS NOT NULL AND NEW.cid_cn <> ''`, so it declines — nothing to spread.
+    //   3. First open: `ensure_cid_cn` above injects the identity INTO THE FILE, through
+    //      `gate_write`, which suppresses the watcher precisely so a gated write cannot
+    //      re-trigger indexing.
+    //   4. Nothing else updates `note_meta`, so `note_meta_sky_au` — the twin whose own comment
+    //      says it exists for "the lazy `cid_cn` injection on first open" — never fires either.
+    // Both triggers are correct; the write path simply never told the index it had happened.
+    //
+    // Only when the content actually CHANGED: `ensure_cid_cn` early-returns the input unmodified
+    // for a note that already carries an identity, which is every note after the first open. So
+    // this costs one re-index once in a note's life, never on the ordinary open path.
+    if updated != content {
+        match crate::libraries::owning_own_library_name(&app, &file_path) {
+            Some(lib_name) => {
+                use tauri::Manager as _;
+                let search_state = app.state::<crate::search::SearchState>();
+                if let Err(e) =
+                    crate::search::reindex_single_note(&search_state, &file_path, &lib_name)
+                {
+                    if let Ok(p) = crate::search::db_path(&app) {
+                        crate::search::diag_log(&p, &format!(
+                            "[ensure_cid_cn] identity written to {} but the re-index FAILED: {} — the index and the file now disagree about this note's identity",
+                            file_path, e
+                        ));
+                    }
+                }
+            }
+            None => {
+                if let Ok(p) = crate::search::db_path(&app) {
+                    crate::search::diag_log(&p, &format!(
+                        "[ensure_cid_cn] identity written to {} but no OWN library claims it — not re-indexed",
+                        file_path
+                    ));
+                }
+            }
+        }
+    }
+    Ok(updated)
 }
 
 // ─── Startup safeguard ─────────────────────────────────────────────

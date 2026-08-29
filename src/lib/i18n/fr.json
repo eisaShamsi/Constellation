@@ -7,7 +7,9 @@
     "repairNow": "Réparer maintenant",
     "repairing": "Réparation…",
     "repairBlocked": "La réparation n'a pas pu démarrer : {reason}",
-    "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Vous pouvez les supprimer dans Paramètres → Index."
+    "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Vous pouvez les supprimer dans Paramètres → Index.",
+    "hiddenDotfiles": "Constellation ne recherche pas dans {noun} présentes sur le disque, car un nom de fichier commençant par un point marque le fichier comme masqué. Il ne peut ni trouver une telle note ni signaler son absence. Retirer le point initial du nom de fichier permet à Constellation de revoir la note.",
+    "fencedLibraries": "Constellation ne vérifie pas les modifications de {noun}. Un dossier situé au-dessus de chacune contient un fichier universe.json, qui marque ce dossier comme un univers distinct et empêche Constellation d'y lire. Les notes déjà dans l'index de recherche restent répertoriées, mais pas les modifications apportées depuis. Supprimer le universe.json situé au-dessus d'une bibliothèque en rétablit la lecture ; retirer la bibliothèque elle-même ne fait que masquer ce message — ses notes restent dans l’index sans jamais être relues."
   },
   "saveHealth": {
     "copySuffix": "copie récupérée",
@@ -3944,9 +3946,9 @@
       "other": "{count} notes"
     },
     "libraries": {
-      "one": "{count} coffre",
-      "many": "{count} coffres",
-      "other": "{count} coffres"
+      "one": "{count} bibliothèque",
+      "many": "{count} bibliothèques",
+      "other": "{count} bibliothèques"
     },
     "properties": {
       "one": "{count} propriété",

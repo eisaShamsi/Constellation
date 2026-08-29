@@ -81,6 +81,7 @@ Constellation's built-in Importer lets you bring notes from other apps into your
 - **No overwriting**: Existing files are never overwritten. Duplicates are skipped and counted.
 - **Library validation**: The target path is validated to ensure it's within a registered library.
 - **Error reporting**: Any files that fail to import are listed with their error messages.
+- **Never hidden**: a source note whose name begins with a dot (`.NET`) is saved without it (`NET`). A dot-prefixed file name marks a file as hidden, and Constellation — like Obsidian — does not read hidden files; without this, an imported note would land on disk invisible to search, backlinks and every panel, and Constellation could not even report it as missing. This applies to every format, including a folder or Obsidian-vault copy. Files that are not notes (`.gitignore`, `.DS_Store`) are copied through untouched.
 
 > [!tip]
 > Create a dedicated subfolder like "Imported" to keep your imported notes organized and separate from your existing notes.

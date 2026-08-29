@@ -7,7 +7,9 @@
     "repairNow": "立即修复",
     "repairing": "修复中…",
     "repairBlocked": "修复无法启动：{reason}",
-    "stalePhantoms": "搜索索引中的 {noun} 指向磁盘上已不存在的笔记。它们可能显示为打不开任何内容的搜索结果，以及指向不存在笔记的关联。您可以在 设置 → 索引 中移除它们。"
+    "stalePhantoms": "搜索索引中的 {noun} 指向磁盘上已不存在的笔记。它们可能显示为打不开任何内容的搜索结果，以及指向不存在笔记的关联。您可以在 设置 → 索引 中移除它们。",
+    "hiddenDotfiles": "Constellation 没有搜索磁盘上的 {noun}，因为以点开头的文件名会把文件标记为隐藏。它既找不到这样的笔记，也无法报告它缺失。把文件名开头的点去掉，Constellation 就能重新看到这条笔记。",
+    "fencedLibraries": "Constellation 未在检查 {noun} 的更改。每一个的上层文件夹中都有一个 universe.json 文件，它把该文件夹标记为独立的宇宙，并使 Constellation 停止读取其中的内容。已在搜索索引中的笔记仍会列出，但此后所做的编辑不会。移除某个库上层的 universe.json，即可恢复对该库的读取。移除该库本身只会隐藏这条消息——它的笔记仍留在索引中，永不再被读取。"
   },
   "saveHealth": {
     "copySuffix": "恢复副本",
@@ -3942,7 +3944,7 @@
       "other": "{count}篇笔记"
     },
     "libraries": {
-      "other": "{count}个仓库"
+      "other": "{count}个库"
     },
     "properties": {
       "other": "{count}个属性"

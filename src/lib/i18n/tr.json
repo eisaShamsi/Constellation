@@ -7,7 +7,9 @@
     "repairNow": "Şimdi onar",
     "repairing": "Onarılıyor…",
     "repairBlocked": "Onarım başlatılamadı: {reason}",
-    "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Bunları Ayarlar → Dizin bölümünden kaldırabilirsiniz."
+    "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Bunları Ayarlar → Dizin bölümünden kaldırabilirsiniz.",
+    "hiddenDotfiles": "Constellation diskteki {noun} içinde arama yapmıyor, çünkü nokta ile başlayan bir dosya adı dosyayı gizli olarak işaretler. Böyle bir notu ne bulabiliyor ne de eksik olduğunu bildirebiliyor. Dosya adından baştaki noktayı kaldırmak, notu Constellation için yeniden görünür kılar.",
+    "fencedLibraries": "Constellation {noun} için değişiklikleri denetlemiyor. Her birinin üstündeki klasörde bir universe.json dosyası var; bu, o klasörü ayrı bir evren olarak işaretler ve Constellation'ın içini okumasını durdurur. Arama dizinindeki notlar listelenmeye devam eder, ancak o tarihten sonraki düzenlemeler alınmaz. Bir kütüphanenin üstündeki universe.json kaldırıldığında okunması geri gelir; kütüphanenin kendisini kaldırmak yalnızca bu iletiyi gizler — notları dizinde kalır ve bir daha okunmaz."
   },
   "saveHealth": {
     "copySuffix": "kurtarılan kopya",

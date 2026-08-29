@@ -7,7 +7,9 @@
     "repairNow": "Reparar agora",
     "repairing": "A reparar…",
     "repairBlocked": "Não foi possível iniciar a reparação: {reason}",
-    "stalePhantoms": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Podem aparecer como resultados que não abrem nada e como ligações a notas inexistentes. Pode removê-las em Definições → Índice."
+    "stalePhantoms": "{noun} no índice de pesquisa apontam para notas que já não existem no disco. Podem aparecer como resultados que não abrem nada e como ligações a notas inexistentes. Pode removê-las em Definições → Índice.",
+    "hiddenDotfiles": "O Constellation não está a pesquisar {noun} no disco, porque um nome de ficheiro começado por um ponto marca o ficheiro como oculto. Não consegue encontrar uma nota assim nem comunicar que falta. Retirar o ponto inicial do nome do ficheiro faz com que o Constellation volte a ver a nota.",
+    "fencedLibraries": "O Constellation não está verificando alterações em {noun}. Uma pasta acima de cada uma contém um arquivo universe.json, que a marca como um universo separado e impede o Constellation de ler ali dentro. As notas já no índice de busca continuam listadas, mas não as edições feitas desde então. Remover o universe.json acima de uma biblioteca restaura a leitura dela; remover a própria biblioteca apenas oculta esta mensagem — suas notas continuam no índice e nunca mais são lidas."
   },
   "saveHealth": {
     "copySuffix": "cópia recuperada",
@@ -3944,9 +3946,9 @@
       "other": "{count} notas"
     },
     "libraries": {
-      "one": "{count} cofre",
-      "many": "{count} cofres",
-      "other": "{count} cofres"
+      "one": "{count} biblioteca",
+      "many": "{count} bibliotecas",
+      "other": "{count} bibliotecas"
     },
     "properties": {
       "one": "{count} propriedade",

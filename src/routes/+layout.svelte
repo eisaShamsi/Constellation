@@ -3,7 +3,7 @@
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t, tn, reconcileLocaleFromDisk } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
-	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, lastPruneReceipt, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
+	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, hasHidden, hasFenced, lastPruneReceipt, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -605,6 +605,8 @@
 	 * it. Two rows, two flags.
 	 */
 	let indexPhantomDismissed = $state(false);
+	let indexHiddenDismissed = $state(false); // PJ-407 — its own flag; its remedy is a rename, not a repair
+	let indexFencedDismissed = $state(false); // PJ-428 — its own flag; its remedy is on disk, not a repair
 	/**
 	 * PJ-207 §11 — the "Repair now" button's busy state. Set on press, cleared by the
 	 * `index-repair:done` listener. The GUARANTEE that two quick presses produce one run
@@ -660,6 +662,44 @@
 			'indexDrift.stalePhantoms',
 			"{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index.",
 			{ noun: $tn('plurals.entries', r.stalePhantoms) }
+		);
+	});
+	// PJ-407 — the hidden-note sentence. A THIRD row, for the same reason the phantom row is a
+	// second one: "Repair now" cannot fix this. A repair walks libraries and re-reads files, and
+	// skips a dot-name on exactly the rule that hid it — a button here would sit under a claim it
+	// cannot act on. The remedy is a rename, so the sentence says so and offers no control.
+	//
+	// The dot rule itself is right and is not changing: it keeps `.trash`, `.obsidian`, `.git` and
+	// `.constellation` out of the index, and it is Obsidian's stated design decision. What this
+	// ends is the SILENCE — Obsidian's own users found out only when files vanished after a
+	// restart, and a note that is neither indexed NOR reportable as missing is invisible to the
+	// very pass built to find invisible notes.
+	const indexFencedMessage = $derived.by(() => {
+		const r = indexDrift;
+		if (!REPAIR_DOOR_ENABLED || indexFencedDismissed || !hasFenced(r)) return '';
+		return tOr(
+			'indexDrift.fencedLibraries',
+			// VERBATIM equal to `en.json`'s value — same discipline as the row above, and for the
+			// same reason: `tOr` renders this whenever the key fails to resolve, so a stale copy is
+			// a second, quieter source of truth.
+			"Constellation is not checking {noun} for changes. A folder above each one holds a universe.json file, which marks that folder as a separate universe and stops Constellation reading inside it. Notes already in the search index are still listed, but edits made since are not. Removing the universe.json above a library restores reading for it; removing the library itself only hides this message — its notes stay in the index, never re-read.",
+			{ noun: $tn('plurals.libraries', r.fencedLibraries) },
+		);
+	});
+
+	const indexHiddenMessage = $derived.by(() => {
+		const r = indexDrift;
+		if (!REPAIR_DOOR_ENABLED || indexHiddenDismissed || !hasHidden(r)) return '';
+		return tOr(
+			'indexDrift.hiddenDotfiles',
+			// This fallback must stay VERBATIM equal to `en.json`'s value. `tOr` renders it whenever
+			// the key fails to resolve, so a stale copy is a second, quieter source of truth — and
+			// the first version of it survived a whole correction round: the string was fixed in
+			// all 15 locales while this literal kept the old wording, which both over-promised
+			// ("will appear at the next start" — re-adoption is capped and has been logged
+			// skipping) and disagreed with its own injected number.
+			"Constellation is not searching {noun} on disk, because a file name that begins with a dot marks the file as hidden. It can neither find such a note nor report it as missing. Removing the leading dot from the file name lets Constellation see the note again.",
+			{ noun: $tn('plurals.notes', r.hiddenDotfiles) }
 		);
 	});
 	// Safety inspection 2026-08-01 — `$t` returns the KEY ITSELF when a key is missing
@@ -3210,6 +3250,8 @@
 		indexDrift = null;
 		indexDriftDismissed = false;
 		indexPhantomDismissed = false; // PJ-369 — the phantom row's own flag clears with it
+		indexHiddenDismissed = false;  // PJ-407 — same, for the hidden-note row
+		indexFencedDismissed = false;  // PJ-428 — same, for the fenced-library row
 		// PJ-369 (safety inspection 2026-08-25) — the prune receipt is per-universe too, and it
 		// was the one item on this list nothing cleared. It is a MODULE-level store, chosen so it
 		// survives Settings being closed and reopened; that same durability carried it across a
@@ -3959,7 +4001,7 @@
 		// `classifier_scan_status` discipline the progress strips already follow.
 		if (REPAIR_DOOR_ENABLED) {
 			const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
-				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; }
+				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; indexHiddenDismissed = false; indexFencedDismissed = false; }
 			});
 			cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
 			loadDriftReport().then((r) => { if (r && !indexDrift) indexDrift = r; });
@@ -7932,6 +7974,28 @@
 			<div class="drift-note" role="status" dir="auto">
 				<span>{indexPhantomMessage}</span>
 				<button class="tpl-err-x" onclick={() => (indexPhantomDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+		<!-- PJ-407 — the hidden-note row. Also no button: the remedy is a rename on disk, and
+		     "Repair now" would skip these on the very rule that hid them. Renders independently
+		     of both rows above — a universe with no drift and no phantoms can still hold a note
+		     the app cannot see, which is exactly the state of the Boss's daily universe. -->
+		{#if indexHiddenMessage}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{indexHiddenMessage}</span>
+				<button class="tpl-err-x" onclick={() => (indexHiddenDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+		<!-- PJ-428 — the fenced-library row. No button either, and for a sharper reason than the
+		     rows above: the repair walks libraries and re-reads their files, and it stops at the
+		     very manifest that fenced this one off. The remedy is on disk — remove the universe
+		     marker from the folder above the library, or remove the library from this universe.
+		     Renders independently of all three rows above; a universe can be otherwise spotless
+		     and still hold a declared library nothing has verified. -->
+		{#if indexFencedMessage}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{indexFencedMessage}</span>
+				<button class="tpl-err-x" onclick={() => (indexFencedDismissed = true)} aria-label={$t('common.close')}>✕</button>
 			</div>
 		{/if}
 	</div>

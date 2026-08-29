@@ -125,6 +125,30 @@ pub struct DriftReport {
     /// gates dead-row REMOVAL, and one unreadable file must not disarm that.
     pub dirs_unreadable: usize,
     pub files_unreadable: usize,
+    /// PJ-407 — `.md` files on disk whose NAME begins with a dot, so every walker skips them.
+    ///
+    /// **Not drift, and not repairable** — which is exactly why it is reported separately from
+    /// `has_findings` (see `has_hidden`). The dot rule is correct: it keeps `.trash`,
+    /// `.obsidian`, `.git` and `.constellation` out of the index, and it is Obsidian's stated
+    /// design decision. What was wrong was doing it in silence. Such a note is invisible twice
+    /// over — never indexed (`search.rs:9041`) AND never reportable as an orphan, because this
+    /// walk skipped it too. Measured on the Boss's daily universe: two real notes, 23 KB and
+    /// 35 KB, that the app could neither see nor say it could not see.
+    ///
+    /// The remedy is a RENAME, never a repair — "Repair now" walks and re-reads, and would skip
+    /// these on exactly the same rule. Same reasoning as `stale_phantoms`, different remedy.
+    pub hidden_dotfiles: usize,
+    /// PJ-428 — registered libraries the walk could not reach, because a directory ABOVE them
+    /// carries a universe manifest and every fence stops there. Step 3 KEEPS their rows on the
+    /// declaration exemption ("an explicit declaration beats a filesystem inference"); nothing
+    /// verified them this pass.
+    ///
+    /// **NOT part of `has_findings`** — see `has_fenced`, and see the identical reasoning on
+    /// `hidden_dotfiles` and `stale_phantoms`. That band offers "Repair now", and the repair
+    /// walker carries this very fence: a button beneath a claim it cannot act on is the "false
+    /// door" this file already forbids twice. The remedy is to unregister the library or remove
+    /// the universe marker from the folder above it.
+    pub fenced_libraries: usize,
     /// PJ-369 — rows this pass classified as **stale phantoms**: their file is gone, the
     /// mount is provably live, they sit under no registered library and no linked universe,
     /// and they carry no earned link or review data. On the Boss's `Eisa Universe` this is
@@ -181,6 +205,21 @@ impl DriftReport {
             || self.files_unreadable > 0
     }
 
+    /// PJ-407 — is there a hidden note to tell the user about? Separate from `has_findings`
+    /// for the same reason `has_phantoms` is: the remedy differs. "Repair now" cannot fix
+    /// these — it walks and re-reads, and skips a dot-name on the same rule that hid it. The
+    /// remedy is to rename the file.
+    pub fn has_hidden(&self) -> bool {
+        self.hidden_dotfiles > 0
+    }
+
+    /// PJ-428 — is a library the user DECLARED sitting behind a universe manifest, unverified?
+    /// Separate from `has_findings` for the same reason `has_hidden` is: "Repair now" walks the
+    /// same fence that hid it, so the repair cannot act on it.
+    pub fn has_fenced(&self) -> bool {
+        self.fenced_libraries > 0
+    }
+
     /// PJ-369 — is there anything to tell the user about phantoms? Separate from
     /// `has_findings` precisely because the remedy is different (a user-offered prune in
     /// Settings, not "Repair now").
@@ -218,6 +257,9 @@ struct Walk {
     unchanged: usize,
     dirs_unreadable: usize,
     files_unreadable: usize,
+    /// PJ-407 — `.md` files skipped because their NAME begins with a dot. Not a walk failure:
+    /// the rule is correct and stays. Counted so the skip can be reported instead of silent.
+    hidden_dotfiles: usize,
 }
 
 /// `complete` starts **true** and is cleared by evidence, so `Default` is hand-written
@@ -237,6 +279,7 @@ impl Default for Walk {
             unchanged: 0,
             dirs_unreadable: 0,
             files_unreadable: 0,
+            hidden_dotfiles: 0,
         }
     }
 }
@@ -404,10 +447,18 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
     // `own_root` is the active universe's root — `universe_notes`' path IS that root. If it
     // cannot be resolved this stays empty and the pass below does nothing: a de-adoption driven
     // by a mis-resolved root would remove rows that ARE ours.
-    let mig112_own_root: Option<std::path::PathBuf> = libs
-        .iter()
-        .find(|l| l.is_universe_notes)
-        .map(|l| std::path::PathBuf::from(&l.path));
+    // PJ-428 — taken from the ACTIVE-UNIVERSE pointer, NOT from the registry's
+    // `universe_notes.path`. That field is a COPY of the root and is measurably drifted on this
+    // machine: 7 of 17 `libraries.json` files on disk name a different directory than the one
+    // they sit in (the three `كون عيسى` copies nested under `Eisa Universe`, three backup
+    // snapshots — one of them a copy of the daily universe carrying 18 libraries and pointing at
+    // the LIVE root — and one storing doubled separators). A drifted value makes
+    // `path_is_in_foreign_universe` answer "foreign" for our OWN notes, which would turn every
+    // guard built on it into a silent no-op. Reaching this line already required
+    // `try_load_libraries` to succeed, and that resolves the registry through this same
+    // accessor, so it cannot be unavailable here.
+    let mig112_own_root: Option<std::path::PathBuf> =
+        crate::universe::active_universe_dir(app).ok();
     let mut mig112_foreign: Vec<String> = Vec::new();
     // Memoised per DIRECTORY, not per note. `path_is_in_foreign_universe` walks a note's
     // ancestors doing up to two `fs::metadata` calls per level; called naively for all 8,031
@@ -549,7 +600,58 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         collect_md(Path::new(root), &known, &foreign_roots, &mut walk, 0);
     }
     let orphans = std::mem::take(&mut walk.orphans);
-    let walk_complete = walk.complete;
+
+    // PJ-428 — a DECLARED library the walk could not reach, because a directory ABOVE it
+    // carries a universe manifest and every fence stops there.
+    //
+    // Step 3 above KEEPS such a library's rows — "an explicit declaration beats a filesystem
+    // inference." That exemption lives at exactly one address. This walk has no equivalent, so
+    // the subtree is never visited: `drifted` and `orphans` stay 0 for it, `has_findings()` is
+    // false, and **the boot notice renders a clean launch for content nobody looked at.** That
+    // is the precise shape `walk_complete`'s own doc forbids two hundred lines up — *"a sweep
+    // that could not look must never report 'nothing changed'."*
+    //
+    // TWO consequences, deliberately separate, because clearing `walk_complete` alone delivers
+    // only the first. **An earlier version of this comment claimed otherwise and was false** —
+    // caught by the review panel, and it is exactly the 2026-08-25 law's shape: a sentence that
+    // matches its source perfectly and does not match reality.
+    //   1. `walk_complete` goes false, so dead-row removal is disabled for the pass — the
+    //      conservative side to fail on.
+    //   2. `has_findings()` is keyed on the COUNTS and deliberately EXCLUDES `walk_complete`
+    //      (read its doc), and every count is zero for a fenced library. The frontend's
+    //      `indexDriftMessage` returns early on `!hasFindings(r)` before it ever reaches the
+    //      `!r.walkComplete` branch — so flipping the flag alone would have left the user with
+    //      exactly the clean launch this paragraph names as the defect. The count therefore gets
+    //      its own field, its own `has_fenced()` and its own sentence, precisely as PJ-407's
+    //      hidden-note row did in this same diff — and deliberately NOT a place in
+    //      `has_findings`, whose band offers "Repair now" while the repair walker carries this
+    //      same fence.
+    //
+    // Cost is per REGISTERED LIBRARY (~19–25 on the Boss's daily universe), not per note, and
+    // each check is an ancestor climb bounded at our own root. It cannot scale with the 8,031
+    // notes the walk visits.
+    //
+    // Deliberately NOT done inside `collect_md`: an ordinary linked-universe root being skipped
+    // is not a failure to look at OUR content, and
+    // `collect_md_skips_a_linked_universes_root_without_marking_the_walk_incomplete` pins that.
+    // Only a library the user DECLARED as ours changes the answer.
+    let fenced_libraries: Vec<&str> = match mig112_own_root.as_deref() {
+        None => Vec::new(),
+        Some(own) => libs
+            .iter()
+            .filter(|l| !l.is_universe_notes)
+            .filter(|l| crate::libraries::path_is_in_foreign_universe(Path::new(&l.path), own))
+            .map(|l| l.name.as_str())
+            .collect(),
+    };
+    if !fenced_libraries.is_empty() {
+        diag(app, &format!(
+            "[reconcile] PJ-428: {} registered librar(ies) sit behind a universe manifest and could not be walked — {}. Their rows are KEPT (step 3's declaration exemption) but were NOT verified this pass, so the sweep is reported INCOMPLETE and dead-row removal is disabled.",
+            fenced_libraries.len(),
+            fenced_libraries.join(", "),
+        ));
+    }
+    let walk_complete = walk.complete && fenced_libraries.is_empty();
 
     // PJ-207 §9 — the report as the walk found it. Healing below subtracts from it, so
     // what finally reaches the user is the residual.
@@ -564,6 +666,8 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         walk_complete,
         dirs_unreadable: walk.dirs_unreadable,
         files_unreadable: walk.files_unreadable,
+        hidden_dotfiles: walk.hidden_dotfiles,
+        fenced_libraries: fenced_libraries.len(),
         stale_phantoms,
     };
     // 2026-08-24 panel — say so when the classifier declined. A refusal reports `0` phantoms
@@ -1022,6 +1126,65 @@ fn collect_md(
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') {
+            // PJ-407 — COUNT the ones that are notes before dropping them.
+            //
+            // The dot rule itself is correct and stays: it is what keeps `.trash`,
+            // `.obsidian`, `.git` and `.constellation` out of the index, and it is Obsidian's
+            // explicit design decision ("Files and folders beginning with a `.` are intended to
+            // be hidden"). What is NOT correct is doing it in silence — Obsidian's own users
+            // found out only when files vanished after a restart, and silence is the failure
+            // class this app exists to refuse.
+            //
+            // A dot-prefixed `.md` is invisible twice over: the indexer skips it
+            // (`search.rs:9041`) so it is never indexed, and THIS walk skips it so it can never
+            // be reported as an orphan either — invisible to the very pass built to find
+            // invisible notes. Measured on the Boss's daily universe: `.NET.md` (23,227 B) and
+            // `.NET Framework.md` (35,578 B), both real notes, indexed nowhere and unreportable.
+            //
+            // Only FILES whose `Path::extension()` is `md` are counted — a dot-DIRECTORY is
+            // bookkeeping, not a note, and counting `.constellation` would make the number
+            // meaningless.
+            //
+            // Say `extension()`, NOT "ends in `.md`", and do not let a future tidy-up rewrite it
+            // as `name.ends_with(".md")`. Measured with a `rustc` probe (2026-08-27): for a file
+            // named literally `.md`, `extension()` is `None` — the leading dot is not a separator
+            // — while `ends_with(".md")` is TRUE. The Boss's `Eisa Universe` holds exactly two
+            // such files, 1 byte each. Counting them would put a number in front of him with a
+            // remedy attached ("remove the leading dot") that does not work: the remedy leaves
+            // `md`, which is still not a note. The current behaviour is right; only the sentence
+            // describing it was wrong.
+            // DEDUPED through the SAME `walk.seen` set the indexed files use, because this arm
+            // skips BEFORE the guard the ordinary file path uses.
+            //
+            // **Correction, recorded because the first version of this comment was wrong.** It
+            // claimed the Boss's `.NET.md` would otherwise be counted twice, since it sits under
+            // both his universe root and his registered `Computer Science` library. That is FALSE
+            // for the shipping path: `run` de-overlaps roots before walking (see the
+            // `roots.iter().any(.. under ..)` skip), so a nested library root is never walked
+            // separately and the file is visited once either way. The claim was stated as an
+            // error caught — and was itself an uncaught error of the same species.
+            //
+            // The insert stays, and is defensive rather than load-bearing: `collect_md` is
+            // reachable directly (its own tests call it twice over overlapping roots), and a
+            // future caller that walks overlapping roots would double-count without it. Correct
+            // by construction beats correct by a caller's discipline.
+            // …and only if it is NOT already in the index. The sentence this feeds tells the
+            // user a note "is not in the search index"; counting an indexed one would make that
+            // sentence FALSE, which is worse than the silence it was added to end.
+            //
+            // Not merely belt-and-braces: `reindex_md_descendants` (search.rs) tests
+            // `starts_with('.')` on its DIRECTORY branch only — its `.md` branch has no such
+            // guard, and neither does `library_name_for_path` nor `reindex_single_note`. So a
+            // dot-named note CAN reach the index by the watcher path. The Boss's database is
+            // clean of that today, but that is a state, not an invariant.
+            let pn = norm(&path.to_string_lossy());
+            if !entry_is_dir(&entry, &path)
+                && path.extension().map(|e| e == "md").unwrap_or(false)
+                && !known.contains_key(&pn)
+                && walk.seen.insert(pn)
+            {
+                walk.hidden_dotfiles += 1;
+            }
             continue;
         }
         if entry_is_dir(&entry, &path) {
@@ -1269,6 +1432,63 @@ mod tests {
         assert_eq!(walk.orphans[0].1, "CIDNEW", "orphan carries its cid_cn for relocate/re-adopt");
         assert_eq!(norm(&walk.orphans[0].0), norm(&orphan.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// PJ-407 — a note the app can never see must be COUNTED, exactly once.
+    ///
+    /// Two halves. The first: a dot-prefixed `.md` is skipped by every walker, so it is never
+    /// indexed AND never reportable as an orphan — invisible to the very pass built to find
+    /// invisible notes. It must at least be counted, so the user can be told.
+    ///
+    /// The second half pins the dedupe. `collect_md` is reachable directly, and this test calls
+    /// it twice over overlapping roots — without the arm's own `walk.seen` insert the count
+    /// double-reports. Proven RED->GREEN by removing the insert.
+    ///
+    /// **It does NOT reproduce a production bug, and an earlier version of this comment wrongly
+    /// said it did.** `run` de-overlaps roots before walking, so a nested library root is never
+    /// walked separately and the Boss's `.NET.md` is visited once regardless. The dedupe is
+    /// defensive — correct by construction rather than by a caller's discipline — and the false
+    /// claim is recorded here rather than deleted, because it was presented as an error caught
+    /// while being an uncaught error of the same species.
+    ///
+    /// Uses `TempDir` rather than a process-id path: the first cut did
+    /// `remove_dir_all` + `create_dir_all` on a fixed path and failed 1 run in 3 on Windows,
+    /// where the delete has not finished when the create lands. A flaky test trains everyone
+    /// to re-run and move on, which is how the disabled-test above went unnoticed.
+    #[test]
+    fn a_dot_prefixed_note_is_counted_once_even_when_roots_overlap() {
+        let td = tempfile::TempDir::new().unwrap();
+        let dir = td.path();
+        let nested = dir.join("Computer Science");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join(".NET.md"), "---
+title: .NET
+---
+body
+").unwrap();
+        std::fs::write(nested.join("Ordinary.md"), "body
+").unwrap();
+        // A dot-DIRECTORY is bookkeeping, not a note — counting `.trash` would make the
+        // number meaningless, and it is the reason the arm tests the extension as well.
+        std::fs::create_dir_all(dir.join(".trash")).unwrap();
+        std::fs::write(dir.join(".trash").join("Deleted.md"), "body
+").unwrap();
+
+        let known: HashMap<String, u64> = HashMap::new();
+        let foreign: HashSet<String> = HashSet::new();
+        let mut walk = Walk::default();
+        // Walk BOTH overlapping roots, exactly as `run` does.
+        collect_md(dir, &known, &foreign, &mut walk, 0);
+        collect_md(&nested, &known, &foreign, &mut walk, 0);
+
+        assert_eq!(
+            walk.hidden_dotfiles, 1,
+            "the hidden note is counted ONCE across overlapping roots, not once per root"
+        );
+        assert_eq!(
+            walk.orphans.len(), 1,
+            "and the ordinary note is still found exactly once — the dedupe was not broken"
+        );
     }
 
     /// PJ-207 §8 — the oscillation this step exists to prevent, at its source.
@@ -1530,5 +1750,237 @@ mod tests {
         assert_eq!(lib_for(&roots, &norm("E:/U/Nested/note.md")), Some("Nested"));
         assert_eq!(lib_for(&roots, &norm("E:/U/top.md")), Some("universe_notes"));
         assert_eq!(lib_for(&roots, &norm("E:/Other/x.md")), None);
+    }
+    // ── PJ-428 — the fence contract: what one half refuses, the other half must not destroy ──
+    //
+    // These read the SHIPPING SOURCE with comments stripped, deliberately: the invariants they
+    // pin span two functions in two files, and a runtime test would need a full AppHandle, a
+    // universe on disk and a watcher event. Comments are stripped because an earlier test in
+    // this codebase matched the very sentence explaining a guard — "a test that can be satisfied
+    // by writing a sentence is not a test."
+    fn code_of(file: &str, func: &str) -> String {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join(file);
+        let all = std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("read {file}: {e}"));
+        let start = all
+            .find(func)
+            .unwrap_or_else(|| panic!("{func} not found in {file} — renamed?"));
+        let rest = &all[start..];
+        // Bound the BODY at whichever comes first: the next `#[tauri::command]` or the next test
+        // module. Two bugs, both hit while writing these tests, both caught only by reverting the
+        // fix and re-running:
+        //   * unbounded by `#[cfg(test)]`, a function with no command after it runs to EOF, so the
+        //     body swallows THIS module and an assertion matches its own literal — green forever;
+        //   * truncating the FILE at the first `#[cfg(test)]` instead breaks the search outright,
+        //     because `search.rs` carries inline test modules from line 495 while the function
+        //     under test sits at 13573.
+        // A test that cannot fail is not a test, and neither is one that cannot find its subject.
+        let end = [rest[1..].find("
+#[tauri::command"), rest[1..].find("
+#[cfg(test)]")]
+            .into_iter()
+            .flatten()
+            .min()
+            .map(|i| i + 1)
+            .unwrap_or(rest.len());
+        rest[..end]
+            .lines()
+            .filter(|l| {
+                let t = l.trim_start();
+                !t.starts_with("//") && !t.starts_with("///")
+            })
+            .collect::<Vec<_>>()
+            .join("
+")
+    }
+
+    /// **The app-killer this pass exists to end.** `reindex_changed_paths` runs two loops over
+    /// the same paths. Pass 1 REFUSES to index anything inside a foreign universe. Pass 2 had no
+    /// such fence, so an external rename inside a fenced-but-declared library vanished the old
+    /// path and created a new one Pass 1 would not touch — and Pass 2 purged the old row, taking
+    /// `note_links.weight`, `traversal_count`, `last_traversed`, `confidence`, `status`,
+    /// `review_priority` and the `review_schedule` row with it. `search.db` is the ONLY system of
+    /// record for that earned data (CLAUDE.md), so no walk and no repair can bring it back.
+    ///
+    /// The invariant, stated once: **what Pass 1 will not index, Pass 2 must not purge.**
+    /// FAILS against the code before this pass — there was exactly ONE fence.
+    #[test]
+    fn both_passes_of_the_watcher_agree_on_what_is_ours() {
+        let body = code_of("search.rs", "pub fn reindex_changed_paths");
+        let fences = body.matches("path_is_in_foreign_universe").count();
+        assert_eq!(
+            fences, 2,
+            "expected the foreign-universe fence in BOTH passes; found {fences}.              A fence in the add pass without one in the delete pass destroys earned link data              that nothing can regenerate."
+        );
+        let purge = body
+            .find("reindex_delete_note")
+            .expect("Pass 2 must still purge vanished notes — renamed?");
+        let second_fence = body
+            .rfind("path_is_in_foreign_universe")
+            .expect("checked above");
+        assert!(
+            second_fence < purge,
+            "the delete pass's fence must be reached BEFORE the purge, not after it"
+        );
+    }
+
+    /// A sweep that could not look must never report "nothing changed" — `walk_complete`'s own
+    /// contract. A registered library behind a universe manifest is kept by step 3's declaration
+    /// exemption and walked by nothing, so its subtree is unverified while the report reads clean.
+    /// FAILS against the code before this pass: `walk_complete` was `walk.complete` alone.
+    #[test]
+    fn a_declared_library_the_walk_could_not_reach_makes_the_sweep_incomplete() {
+        let body = code_of("reconcile.rs", "fn run(app: &tauri::AppHandle)");
+        assert!(
+            body.contains("let walk_complete = walk.complete && fenced_libraries.is_empty();"),
+            "walk_complete must account for a declared library the walk could not reach"
+        );
+        let calc = body
+            .find("fenced_libraries")
+            .expect("fenced_libraries must be computed in run()");
+        let used = body
+            .find("let walk_complete")
+            .expect("walk_complete must be computed in run()");
+        assert!(calc < used, "compute fenced_libraries BEFORE walk_complete reads it");
+        // ANCHORED to the PJ-428 computation, not to the whole extracted window. Unanchored, this
+        // assertion was satisfied by `mig112_declared`'s identical filter ~140 lines earlier —
+        // pre-existing MIG-112 code, present at HEAD — so it would have stayed green with the
+        // PJ-428 filter deleted outright. It pinned nothing, while reading like a third verified
+        // invariant. Found by the review panel, and it is the FOURTH self-satisfying check in
+        // this pass.
+        assert!(
+            body[calc..used].contains("!l.is_universe_notes"),
+            "only a library the user DECLARED counts — the universe_notes root is not one"
+        );
+        assert!(
+            body.contains("fenced_libraries: fenced_libraries.len()"),
+            "the count must reach the report — clearing walk_complete alone reaches NO user, \
+             because has_findings() excludes it and the frontend returns early on !hasFindings"
+        );
+    }
+
+    /// Behavioural, not source-text. The three tests above pin WIRING; this one calls the
+    /// shipping predicate and pins the ANSWER — with a control that must come out the other way.
+    /// Without the control the test could pass while the fence answered "foreign" for everything,
+    /// which would disable dead-row removal for the whole universe and make both watcher passes
+    /// silent no-ops.
+    #[test]
+    fn the_fence_answers_foreign_only_for_a_real_nested_universe() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        std::fs::create_dir_all(root.join(".constellation")).unwrap();
+        std::fs::write(root.join(".constellation/universe.json"), "{\"name\":\"Own\"}").unwrap();
+
+        let plain = root.join("Plain").join("Lib");
+        std::fs::create_dir_all(&plain).unwrap();
+
+        let nested = root.join("Nested");
+        std::fs::create_dir_all(nested.join(".constellation")).unwrap();
+        std::fs::write(nested.join(".constellation/universe.json"), "{\"name\":\"Nested\"}").unwrap();
+        let inner = nested.join("Lib");
+        std::fs::create_dir_all(&inner).unwrap();
+
+        // CONTROL — an ordinary library of ours must NEVER read as foreign.
+        assert!(
+            !crate::libraries::path_is_in_foreign_universe(&plain.join("a.md"), root),
+            "our own library read as foreign — the fence would swallow the whole universe"
+        );
+        assert!(
+            crate::libraries::path_is_in_foreign_universe(&inner.join("a.md"), root),
+            "a note under a nested universe must read as foreign"
+        );
+
+        // The report contract: counted, surfaced by its own predicate, and deliberately NOT by
+        // `has_findings` — whose band offers a repair that walks this same fence.
+        let r = DriftReport { fenced_libraries: 1, ..DriftReport::default() };
+        assert!(r.has_fenced(), "a fenced library must be reportable");
+        assert!(!r.has_findings(), "it must NOT put a Repair now button under a claim it cannot act on");
+    }
+
+    /// The doors that can manufacture the contradiction: turning a folder that already sits inside
+    /// a universe — or that stands above a registered library — into a universe of its own.
+    /// `add_library`'s guards refuse only at REGISTRATION time and cannot stop the reverse order.
+    ///
+    /// BOTH doors, per the Whole-Ecosystem Fix Law. `create_universe` is the one reachable from the
+    /// Universe Manager while a universe is open; `link_library_as_universe` is reachable only from
+    /// the first-run setup screen. The first pass guarded only the second, and keyed it on the
+    /// active-universe pointer — which the UI inspector showed made it dead code, since that screen
+    /// appears only when no universe is registered. Both now ask the FILESYSTEM, which has no such
+    /// dependency.
+    #[test]
+    fn neither_door_can_make_a_universe_inside_another_universe() {
+        for func in [
+            "pub fn link_library_as_universe",
+            "pub fn create_universe",
+            // The third door, found by the ui-inspector while checking a sentence in the Boss's
+            // test that claimed there were only two. Unreachable while a registry exists, which
+            // is a fact about a machine, not about this code.
+            "pub fn migrate_legacy_data",
+        ] {
+            let body = code_of("universe.rs", func);
+            let guard = body
+                .find("universe_manifest_at_or_above")
+                .unwrap_or_else(|| panic!("{func} must ask the filesystem whether it is inside a universe"));
+            assert!(
+                body[guard..].contains("MustLookLikeOne"),
+                "{func}: doubt on a REFUSAL must resolve to 'ordinary folder'"
+            );
+            let write = body
+                .find("fs::create_dir_all")
+                .unwrap_or_else(|| panic!("{func}: the creation path must remain"));
+            assert!(
+                guard < write,
+                "{func}: the refusal must be reached before anything is written to disk"
+            );
+            assert!(
+                !body[..guard].contains("active_universe_dir"),
+                "{func}: the refusal must not depend on the active-universe pointer — that made it \
+                 unreachable, because the only screen that calls it appears when none is active"
+            );
+        }
+        // The open-existing delegation must still come FIRST: opening a universe that happens to
+        // live inside another is harmless and must keep working. It is CREATION that is refused.
+        let link = code_of("universe.rs", "pub fn link_library_as_universe");
+        let delegate = link
+            .find("return open_existing_universe")
+            .expect("the open-existing delegation must remain");
+        assert!(
+            delegate < link.find("universe_manifest_at_or_above").unwrap(),
+            "opening an existing universe must not be blocked"
+        );
+    }
+
+    /// PJ-431 — the identity write on first open must tell the INDEX, not only the file.
+    ///
+    /// Found on the Boss's own universe minutes after the PJ-407 rename passed: both recovered
+    /// notes carried a `cid_cn` in their frontmatter while `note_meta.cid_cn` was still empty,
+    /// and all 27 links pointing at them still held `target_cid_cn = ''`. Both propagation
+    /// triggers are correct and both were right to decline — `note_meta_sky_ai` is guarded on
+    /// `NEW.cid_cn <> ''`, and `note_meta_sky_au` never fired because nothing updated
+    /// `note_meta` at all. `gate_write` suppresses the watcher by design, so the write was
+    /// invisible to every other path.
+    ///
+    /// Guarded on the content having actually CHANGED: `ensure_cid_cn` returns its input
+    /// unmodified for a note that already has an identity, which is every note after the first
+    /// open — so this must never cost a re-index on the ordinary open path.
+    #[test]
+    fn stamping_a_notes_identity_also_tells_the_index() {
+        let body = code_of("canonical.rs", "pub fn ensure_cid_cn_cmd");
+        let guard = body
+            .find("if updated != content")
+            .expect("the re-index must be guarded on the content having changed — otherwise every \
+                     note open pays for one");
+        let reindex = body
+            .find("reindex_single_note")
+            .expect("writing an identity into the file must re-index, or the index and the file \
+                     disagree about that note's identity and every incoming link keeps an empty one");
+        assert!(
+            guard < reindex,
+            "the changed-content guard must come BEFORE the re-index"
+        );
+        assert!(
+            body.contains("owning_own_library_name"),
+            "the re-index must resolve an OWN library — a linked universe's note must never be \
+             filed into this universe's index"
+        );
     }
 }

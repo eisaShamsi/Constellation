@@ -13589,17 +13589,24 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
     // inside `reindex_md_descendants` — so a foreign path now resolves to no owning
     // library and is skipped.
     //
-    // Pass 2 (deletes) deliberately keeps its own shape and consults no library set:
+    // Pass 2 (deletes) keeps its own shape and consults no library set:
     // purging the row of a file that no longer exists is correct in every scope, and it
     // can only ever remove rows, never create them.
     let libs = crate::libraries::try_load_libraries(&app)?;
     // MIG-112 — the active universe's root, taken from the `universe_notes` library whose
     // `path` IS that root (§2 of the orientation doc). Used by the per-file arm below to tell
     // "a note of ours" from "a note of a universe that happens to sit inside our folder".
-    let own_root: Option<std::path::PathBuf> = libs
-        .iter()
-        .find(|l| l.is_universe_notes)
-        .map(|l| std::path::PathBuf::from(&l.path));
+    // PJ-428 — taken from the ACTIVE-UNIVERSE pointer, NOT from the registry's
+    // `universe_notes.path`. That field is a COPY of the root and is measurably drifted on this
+    // machine: 7 of 17 `libraries.json` files on disk name a different directory than the one
+    // they sit in (the three `كون عيسى` copies nested under `Eisa Universe`, three backup
+    // snapshots — one of them a copy of the daily universe carrying 18 libraries and pointing at
+    // the LIVE root — and one storing doubled separators). A drifted value makes
+    // `path_is_in_foreign_universe` answer "foreign" for our OWN notes, which would turn every
+    // guard built on it into a silent no-op. Reaching this line already required
+    // `try_load_libraries` to succeed, and that resolves the registry through this same
+    // accessor, so it cannot be unavailable here.
+    let own_root: Option<std::path::PathBuf> = crate::universe::active_universe_dir(&app).ok();
     let mut done = 0usize;
     // Pass 1 — ADDS (existing dirs + `.md` files). Run BEFORE deletes so a folder
     // rename's new rows already exist when the old-side prefix-purge runs its
@@ -13665,6 +13672,32 @@ pub fn reindex_changed_paths(app: tauri::AppHandle, paths: Vec<String>) -> Resul
         let pb = std::path::Path::new(p);
         if pb.exists() {
             continue;
+        }
+        // PJ-428 — the SAME foreign-universe fence Pass 1 carries, for the opposite reason.
+        //
+        // The note above says a delete "is correct in every scope … it can only ever remove
+        // rows, never create them." That is true of the row and false of the USER'S DATA, and
+        // the asymmetry with Pass 1 is what makes it an app-killer: Pass 1 REFUSES to index a
+        // path inside a foreign universe, so an external rename there vanishes the old path and
+        // creates a new one that Pass 1 will not touch. Pass 2 then purges the old row — taking
+        // `note_links.weight`, `traversal_count`, `last_traversed`, `confidence`, `status`,
+        // `note_meta.review_priority` and the `review_schedule` row with it. CLAUDE.md records
+        // `search.db` as the ONLY system of record for that earned half of the Living Link
+        // Architecture: **no walk and no repair can regenerate it.** Destroy-without-recreate is
+        // not "removing a row", it is losing what the user earned.
+        //
+        // The invariant this restores, stated once: **Pass 1 and Pass 2 must agree on what is
+        // ours.** Whatever Pass 1 will not index, Pass 2 must not purge.
+        //
+        // Self-correcting for the case that SHOULD purge: the check walks UP from the path
+        // looking for a manifest. If the nested universe folder itself was deleted, its manifest
+        // is gone too, the check reads false, and the prefix-purge proceeds exactly as before —
+        // which is the cleanup MIG-112 wants. It only holds back when the foreign universe is
+        // still there, which is precisely when its rows are not ours to delete.
+        if let Some(root) = own_root.as_deref() {
+            if crate::libraries::path_is_in_foreign_universe(pb, root) {
+                continue;
+            }
         }
         if pb
             .extension()

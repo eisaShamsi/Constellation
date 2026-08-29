@@ -905,6 +905,26 @@ pub fn create_universe(
         return Err("A directory with this name already exists at the chosen location.".to_string());
     }
 
+    // PJ-428 (Whole-Ecosystem) — a universe is never content of another universe, and THIS is the
+    // door that is reachable while a universe is already open (Universe Manager -> Create New
+    // Universe). `link_library_as_universe` carries the same refusal but is only reachable from
+    // the first-run setup screen, so guarding that one alone left the likelier door open. One
+    // concern, two doors.
+    //
+    // Asked of the FILESYSTEM, not the registry: a universe that exists on disk but is not in
+    // this install's registry is still a universe, and this machine holds several such copies.
+    // `MustLookLikeOne` because doubt on a REFUSAL must resolve to "ordinary folder" — the
+    // opposite posture from `add_library`'s `PresenceIsEnough`, which fears the opposite error.
+    if let Some(above) = crate::libraries::universe_manifest_at_or_above(
+        Path::new(&path),
+        crate::libraries::BareManifest::MustLookLikeOne,
+    ) {
+        return Err(format!(
+            "That location is inside another universe ({}). A universe cannot sit inside another universe. Choose a location outside it.",
+            above.display()
+        ));
+    }
+
     // Create directory structure
     let cdir = constellation_dir(&universe_dir);
     fs::create_dir_all(&cdir)
@@ -1481,6 +1501,62 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
     // treat as "open existing"
     if cdir.join("universe.json").exists() {
         return open_existing_universe(app, path);
+    }
+
+    // PJ-428 — refuse to MAKE a universe out of a folder that sits inside the active universe,
+    // or that stands above one of its registered libraries.
+    //
+    // This is the one door that can create the contradiction MIG-112 left open. `add_library`'s
+    // guards (`libraries.rs:1137`/`1145`) refuse only at REGISTRATION time, so they cannot stop
+    // the reverse ordering: register the library first, then turn a folder ABOVE it into a
+    // universe. From that moment the two halves of the system disagree permanently —
+    // `reconcile`'s step 3 KEEPS the library's rows because the user declared it, while every
+    // walker and the watcher fence the subtree off because a manifest sits above it.
+    //
+    // Placed AFTER the "already a universe" delegation on purpose: OPENING an existing universe
+    // that happens to live there is harmless and must keep working. It is the CREATION that
+    // manufactures the contradiction.
+    //
+    // Both existing laws point the same way, so this invents no new rule: MIG-108 "One Universe,
+    // One Location" (a universe's libraries live under its own root) and MIG-112 "a universe is
+    // never content of another universe."
+    // PJ-428 — refuse to MAKE a universe out of a folder that already sits inside one, or that
+    // stands above a registered library.
+    //
+    // Asked of the FILESYSTEM first, deliberately. An earlier version keyed the whole guard on
+    // `active_universe_dir` plus a registration liveness check — and the UI inspector showed that
+    // made it DEAD CODE: this command is reachable only from `UniverseSetup`, which is shown only
+    // when no universe is registered or none could be activated (`+layout.svelte` 3618/3624/3631/
+    // 3650/10765). In every one of those states the liveness check computes false and the guard
+    // skips itself. The recommendation that added the liveness check defeated the change it was
+    // protecting; the filesystem question has no such dependency and is the same one
+    // `create_universe` now asks. One concern, one mechanism.
+    //
+    // `MustLookLikeOne` because doubt on a REFUSAL must resolve to "ordinary folder" — the opposite
+    // posture from `add_library`'s `PresenceIsEnough`, which fears the opposite error.
+    if let Some(above) = crate::libraries::universe_manifest_at_or_above(
+        library_dir.parent().unwrap_or(library_dir),
+        crate::libraries::BareManifest::MustLookLikeOne,
+    ) {
+        return Err(format!(
+            "That folder is inside another universe ({}). A universe cannot sit inside another universe, so this folder cannot become one. Choose a folder outside it, or bring it in as a library instead.",
+            above.display()
+        ));
+    }
+    // The containment question needs a registry, so it stays conditional — but it no longer gates
+    // the check above.
+    if let Ok(libs) = crate::libraries::try_load_libraries(&app) {
+        let target = library_dir.to_string_lossy().to_string();
+        if let Some(hit) = libs
+            .iter()
+            .filter(|l| !l.is_universe_notes)
+            .find(|l| crate::mig108::norm_under(&l.path, &target))
+        {
+            return Err(format!(
+                "That folder contains \"{}\", a library of your open universe. Making it a universe would leave that library registered as yours while Constellation treats its notes as another universe's — so those notes would stop being kept up to date, and nothing would tell you. Remove that library first, or choose a different folder.",
+                hit.name
+            ));
+        }
     }
 
     // Create .constellation/ inside the library folder
@@ -2161,6 +2237,28 @@ pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Va
 #[tauri::command]
 pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: String) -> Result<UniverseEntry, String> {
     let universe_dir = PathBuf::from(&universe_path);
+
+    // PJ-428 (Whole-Ecosystem) — the THIRD door, and the one an audit nearly missed.
+    //
+    // `create_universe` and `link_library_as_universe` both refuse to make a universe inside
+    // another one. This one writes `.constellation/universe.json` at an arbitrary caller-chosen
+    // path and had neither check. It is unreachable on an installation that already has a
+    // registry — `check_migration_needed` requires the registry file to be ABSENT — but that is a
+    // fact about a machine's current state, not a property of this code, and a first-run or
+    // reset installation reaches it from the same screen as `link_library_as_universe`.
+    //
+    // Found by the `ui-inspector` while checking a sentence in the Boss's test that claimed
+    // "the only two ways the app can create that state" — the claim was false, and the door it
+    // was false about is this one.
+    if let Some(above) = crate::libraries::universe_manifest_at_or_above(
+        &universe_dir,
+        crate::libraries::BareManifest::MustLookLikeOne,
+    ) {
+        return Err(format!(
+            "That location is inside another universe ({}). A universe cannot sit inside another universe. Choose a location outside it.",
+            above.display()
+        ));
+    }
     let app_dir = app.path().app_data_dir()
         .map_err(|_| "Failed to get app data dir.".to_string())?;
 
@@ -2521,7 +2619,14 @@ fn sanitize_template_stem(name: &str) -> String {
         .chars()
         .map(|c| if matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') { ' ' } else { c })
         .collect();
-    let cleaned = cleaned.trim().trim_end_matches('.').to_string();
+    // PJ-407 — trim dots at BOTH ends, matching `libraries::note_display_filename` and the
+    // importer's `sanitize_filename`. This trimmed only the TRAILING dot, so "Save as template"
+    // under a name like `.Draft` wrote `.Draft.md`, which the templates walker then skips on the
+    // leading-dot rule — the command returned `Ok`, the template appeared nowhere, and nothing
+    // told the user. That is a silent false success on a write path, which is the class this
+    // codebase treats as an app-killer. Two callers: `create_template` and
+    // `adopt_discovered_kind`.
+    let cleaned = cleaned.trim().trim_matches('.').trim().to_string();
     if cleaned.is_empty() { "Template".to_string() } else { cleaned }
 }
 
@@ -3471,6 +3576,22 @@ mod tests_mig103_template {
         assert_eq!(sanitize_template_stem("A/B:C?"), "A B C");
         assert_eq!(sanitize_template_stem("  "), "Template");
         assert_eq!(sanitize_template_stem("Name."), "Name");
+    }
+
+    /// PJ-407 — a LEADING dot hides the template from the very walker that lists templates, so
+    /// "Save as template" succeeded, returned `Ok`, and produced nothing the user could ever
+    /// see. Found by the review panel; this door was missed by the first pass, which had
+    /// claimed in a comment that the importer "was the one path" left open.
+    #[test]
+    fn a_template_name_cannot_start_with_a_dot() {
+        assert_eq!(sanitize_template_stem(".Draft"), "Draft");
+        assert_eq!(sanitize_template_stem("..hidden"), "hidden");
+        assert_eq!(sanitize_template_stem(".Draft."), "Draft");
+        assert_eq!(sanitize_template_stem("."), "Template");
+        assert_eq!(sanitize_template_stem("..."), "Template");
+        // The common case must survive untouched — inner dots are ordinary.
+        assert_eq!(sanitize_template_stem("Node.js snippet"), "Node.js snippet");
+        assert_eq!(sanitize_template_stem("مسودة"), "مسودة");
     }
 }
 

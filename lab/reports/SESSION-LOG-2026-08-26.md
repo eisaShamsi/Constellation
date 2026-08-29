@@ -331,3 +331,8 @@ checking my own claims against the filesystem — which I did only because the p
 **Records committed; the CODE IS DELIBERATELY LEFT UNCOMMITTED for his test** (standing order: he
 tests every build before commit). Next: he runs Stage 1. Then D1 (surface `de_adopted` in the drift
 notice, or file it) as a one-word decision, and Stage 2.
+
+---
+
+**PJ-407 continues in `SESSION-LOG-2026-08-27.md` (§16–§17).** The work ran past midnight; the
+sections were moved to the 27 August file before anything was committed.
