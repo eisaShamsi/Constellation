@@ -141,18 +141,18 @@ Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un
 
 ### Réouverture automatique
 
-Constellation se souvient de votre dernier univers actif et le rouvre automatiquement au lancement. Si l'univers a été déplacé ou si son chemin a changé, Constellation le détecte et corrige automatiquement le chemin.
+Constellation se souvient de votre dernier univers actif et le rouvre au lancement. Si le dossier de l'univers a été déplacé sur le disque, rouvrez-le depuis son nouvel emplacement via le Gestionnaire d'Univers (le nom de l'univers à l'extrémité droite de la barre d'état → **Ouvrir un univers existant**). Une barre de message apparaît alors pour expliquer que l'univers a été déplacé — vos notes sont toutes là et s'ouvrent normalement, rien n'est perdu — avec un bouton **« Réparer l'index — sûr, tout est conservé »** qui réécrit l'index en une seule étape tout-ou-rien, après une sauvegarde vérifiée : l'ancienneté des liens et les plannings de révision sont conservés, et une fois la réparation terminée, l'application se recharge une fois d'elle-même. Rien n'est jamais supprimé à cause d'un déplacement.
 
 ### Univers portables
 
-Les univers de Constellation sont entierement portables. Vous pouvez deplacer le dossier d'un univers n'importe ou — un autre disque, une cle USB ou un autre ordinateur — et Constellation detectera et corrigera automatiquement tous les chemins internes lors de la reouverture.
+Les univers de Constellation sont entierement portables. Vous pouvez deplacer le dossier d'un univers n'importe ou — un autre disque, une cle USB ou un autre ordinateur — et vos notes et bibliothèques réapparaissent dès que vous rouvrez l'univers depuis son nouvel emplacement. L'index de recherche, lui, n'est pas réécrit automatiquement : une barre de message vous signale que l'univers a été déplacé, avec un bouton **« Réparer l'index — sûr, tout est conservé »** qui effectue la réparation en un clic — sauvegarde vérifiée d'abord, réécriture en une seule étape tout-ou-rien, ancienneté des liens et plannings de révision conservés, puis l'application se recharge une fois d'elle-même.
 
 Pour deplacer un univers :
 1. Fermez Constellation
 2. Deplacez ou copiez le dossier de l'univers vers le nouvel emplacement
 3. Ouvrez Constellation → l'ecran d'accueil s'affiche (l'ancien chemin n'est plus valide)
 4. Choisissez **Ouvrir un univers existant** et pointez vers le nouvel emplacement
-5. Toutes les notes et bibliotheques apparaissent immediatement — les chemins sont corriges automatiquement
+5. Toutes les notes et bibliotheques apparaissent immediatement — une barre de message signale ensuite que l'univers a été déplacé : cliquez sur **« Réparer l'index — sûr, tout est conservé »** pour réécrire l'index de recherche en toute sécurité (sauvegarde vérifiée d'abord, puis l'application se recharge une fois d'elle-même)
 
 La structure du dossier univers suit le modele Obsidian : les notes vont directement dans le dossier racine, la configuration reside dans `.constellation/`.
 

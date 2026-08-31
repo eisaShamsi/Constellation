@@ -92,6 +92,15 @@ export interface DriftReport {
 	 * folder above it.
 	 */
 	fencedLibraries: number;
+
+	/**
+	 * PJ-435 — an armed relocation record exists: this universe was MOVED and the index still
+	 * records every note at the old root. The old/new pair travels via `get_relocation_record`,
+	 * fetched only when this is true. While armed, the DRIFT and PHANTOM rows are SUPPRESSED:
+	 * their numbers are true, their impression is false (nothing is missing — it is all one
+	 * folder over), and each carries a button that is destructive on a moved universe.
+	 */
+	moved: boolean;
 }
 
 /**
@@ -151,6 +160,11 @@ export function hasHidden(r: DriftReport | null | undefined): r is DriftReport {
  */
 export function hasFenced(r: DriftReport | null | undefined): r is DriftReport {
 	return !!r && r.fencedLibraries > 0;
+}
+
+/** PJ-435 — was this universe moved, with the index still at the old root? */
+export function hasMoved(r: DriftReport | null | undefined): r is DriftReport {
+	return !!r && r.moved;
 }
 
 /**

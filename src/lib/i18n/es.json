@@ -9,7 +9,10 @@
     "repairBlocked": "No se pudo iniciar la reparación: {reason}",
     "stalePhantoms": "{noun} del índice de búsqueda apuntan a notas que ya no existen en el disco. Pueden aparecer como resultados que no abren nada y como conexiones a notas inexistentes. Puedes eliminarlas en Ajustes → Índice.",
     "hiddenDotfiles": "Constellation no está buscando en {noun} del disco, porque un nombre de archivo que empieza por un punto marca el archivo como oculto. No puede encontrar una nota así ni informar de que falta. Quitar el punto inicial del nombre del archivo permite que Constellation vuelva a ver la nota.",
-    "fencedLibraries": "Constellation no está comprobando si hay cambios en {noun}. Una carpeta situada por encima de cada una contiene un archivo universe.json que la marca como un universo aparte y hace que Constellation deje de leer dentro. Las notas del índice de búsqueda siguen apareciendo, pero las ediciones hechas desde entonces no. Quitar el universe.json que está por encima de una biblioteca restaura su lectura; quitar la biblioteca en sí solo oculta este mensaje — sus notas siguen en el índice y no se vuelven a leer."
+    "fencedLibraries": "Constellation no está comprobando si hay cambios en {noun}. Una carpeta situada por encima de cada una contiene un archivo universe.json que la marca como un universo aparte y hace que Constellation deje de leer dentro. Las notas del índice de búsqueda siguen apareciendo, pero las ediciones hechas desde entonces no. Quitar el universe.json que está por encima de una biblioteca restaura su lectura; quitar la biblioteca en sí solo oculta este mensaje — sus notas siguen en el índice y no se vuelven a leer.",
+    "universeMoved": "Este universo se ha movido. Ahora está en {new}, pero su índice de búsqueda aún registra cada nota en {old}. Todas tus notas están aquí y se abren con normalidad. La búsqueda y los enlaces pueden apuntar a la ubicación antigua hasta que se repare el índice — no se ha perdido nada, y Constellation no eliminará nada por esto.",
+    "movedRepairNow": "Reparar el índice — seguro, lo conserva todo",
+    "movedRepairFailed": "La reparación del traslado no pudo terminar: {reason}. No se cambió nada sin una copia de seguridad — simplemente puedes intentarlo de nuevo."
   },
   "saveHealth": {
     "copySuffix": "copia recuperada",
@@ -1790,8 +1793,8 @@
       "importLocationLabel": "Ubicación de importación",
       "importPreviewHeading": "Vista previa",
       "importingNotes": "Importando notas...",
-      "linkLibrary": "Traer una biblioteca",
-      "linkLibraryDesc": "Copia o mueve una carpeta de notas existente a este Universo"
+      "linkLibrary": "Usar una carpeta que ya tengo",
+      "linkLibraryDesc": "Convierte una carpeta de notas en un Universo exactamente donde está — en cualquier unidad, incluida una memoria USB. No se copia ni se mueve nada."
     },
     "manager": {
       "heading": "Gestor de Universos",

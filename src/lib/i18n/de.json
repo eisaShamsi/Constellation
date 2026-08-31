@@ -9,7 +9,10 @@
     "repairBlocked": "Die Reparatur konnte nicht starten: {reason}",
     "stalePhantoms": "{noun} im Suchindex verweisen auf Notizen, die nicht mehr auf der Festplatte existieren. Sie können als Suchergebnisse erscheinen, die nichts öffnen, und als Verbindungen zu Notizen, die es nicht gibt. Sie können sie unter Einstellungen → Index entfernen.",
     "hiddenDotfiles": "Constellation durchsucht {noun} auf der Festplatte nicht, weil ein Dateiname, der mit einem Punkt beginnt, die Datei als versteckt kennzeichnet. Es kann eine solche Notiz weder finden noch als fehlend melden. Wird der führende Punkt aus dem Dateinamen entfernt, sieht Constellation die Notiz wieder.",
-    "fencedLibraries": "Constellation prüft {noun} nicht auf Änderungen. Ein Ordner oberhalb jeder davon enthält eine Datei universe.json, die diesen Ordner als eigenes Universum kennzeichnet und Constellation daran hindert, darin zu lesen. Notizen im Suchindex werden weiterhin aufgeführt, seither vorgenommene Änderungen jedoch nicht. Wird die universe.json oberhalb einer Bibliothek entfernt, wird sie wieder gelesen; die Bibliothek selbst zu entfernen verbirgt nur diese Meldung — ihre Notizen bleiben im Index und werden nie wieder gelesen."
+    "fencedLibraries": "Constellation prüft {noun} nicht auf Änderungen. Ein Ordner oberhalb jeder davon enthält eine Datei universe.json, die diesen Ordner als eigenes Universum kennzeichnet und Constellation daran hindert, darin zu lesen. Notizen im Suchindex werden weiterhin aufgeführt, seither vorgenommene Änderungen jedoch nicht. Wird die universe.json oberhalb einer Bibliothek entfernt, wird sie wieder gelesen; die Bibliothek selbst zu entfernen verbirgt nur diese Meldung — ihre Notizen bleiben im Index und werden nie wieder gelesen.",
+    "universeMoved": "Dieses Universum ist umgezogen. Es liegt jetzt unter {new}, doch der Suchindex verzeichnet jede Notiz noch unter {old}. Ihre Notizen sind alle hier und öffnen sich normal. Suche und Verknüpfungen können auf den alten Ort zeigen, bis der Index repariert ist — nichts ist verloren, und Constellation entfernt deswegen nichts.",
+    "movedRepairNow": "Index reparieren — sicher, alles bleibt erhalten",
+    "movedRepairFailed": "Die Umzugsreparatur konnte nicht abgeschlossen werden: {reason}. Ohne Sicherung wurde nichts verändert — versuchen Sie es einfach erneut."
   },
   "saveHealth": {
     "copySuffix": "wiederhergestellte Kopie",
@@ -1790,8 +1793,8 @@
       "importLocationLabel": "Importort",
       "importPreviewHeading": "Vorschau",
       "importingNotes": "Notizen werden importiert …",
-      "linkLibrary": "Bibliothek hereinholen",
-      "linkLibraryDesc": "Einen bestehenden Notizordner in dieses Universum kopieren oder verschieben"
+      "linkLibrary": "Einen vorhandenen Ordner verwenden",
+      "linkLibraryDesc": "Macht einen Notizordner genau dort, wo er liegt, zu einem Universum — auf jedem Laufwerk, auch einem USB-Stick. Es wird nichts kopiert oder verschoben."
     },
     "manager": {
       "heading": "Universum-Manager",

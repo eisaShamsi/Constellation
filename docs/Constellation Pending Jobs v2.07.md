@@ -1,6 +1,122 @@
 # Constellation Pending Jobs
 
-**Version 2.05 | 2026-08-27 — PJ-407 + PJ-409 BUILT and panel-cleared; awaiting the Boss's test. CODE UNCOMMITTED.**
+**Version 2.07 | 2026-08-31 — PJ-435 CLOSED: Boss-passed TWICE (full 3-stage live test, then the post-inspection smoke re-test 8/8) · "keeps everything" measured (1,000/1,000 link dates byte-identical; 501/501 review rows re-addressed) · 8 inspection findings fixed RED→GREEN in between · PJ-439 filed.**
+
+> **What changed in v2.07** (**PJ-435 live-passed and verified; the inspection then earned its
+> standing order; one cosmetic PJ filed**):
+>
+> **► NEXT ACTION: PJ-433** (the silent boot fallback persisted as the user's choice) tops the
+> Group-1 queue, then PJ-438 / PJ-434; PJ-437 (identity-relative addressing) remains the
+> direction that outlives them all. PJ-435 is CLOSED — smoke re-test passed 8/8 on the 21:23
+> build (session log §28), everything since `4aee6ea2` committed.
+>
+> ### 🛡 AFTER the pass: the diff-scoped inspection returned 8 confirmed findings — all fixed
+> All in the new PJ-435 code, all on edge paths the live test never walked (session log §27):
+> a COPIED moved-but-unrepaired universe inherits a record aiming the rewrite at the SOURCE's
+> living root (HIGH — activation now deletes foreign/unreadable records, and the command refuses
+> them); an unreadable record blacked out every notice incl. the repair button itself (HIGH —
+> `moved` now parses, never bare-exists); the window's stale in-memory stores could silently
+> clobber the repaired JSON on the next save (MED — post-repair reload through the boot path, the
+> proven mig108 pattern); the record write was the file's one non-atomic manifest write (MED —
+> `atomic_write`); a swallowed disarm left false text armed forever while re-clicks rotated the
+> only genuine backup toward deletion (LOW×2 — disarm-with-retry + the already-repaired fast path
+> that never re-runs the engine); a failed post-repair init_db was eprintln-only (LOW — retry +
+> diagnostics receipt; the receipt now also carries the remapped-row count). RED→GREEN throughout;
+> suite **1,612/0** (+4 = the tests added). The re-inspection then confirmed all six dead
+> with ONE new LOW (unconditional "removed" logging at the removal sites — fixed via the
+> reporting helper; its read-only premise REFUTED by probe: Rust 1.94 deletes read-only files).
+> Final: suite **1,613/0**, binary 21:23:37.
+>
+> ### ✅ PJ-435 — CLOSED (2026-08-31): Boss-passed twice — the full three stages, then the smoke re-test
+> Stage 1 (the honest banner, 8 steps), Stage 2A (the small universe: cold-start persistence — also
+> proven through a genuine PC crash — and the predicted 3→2 duplicate fold, without a relaunch), and
+> Stage 2B (501 notes, the scale where the self-heal caps refuse and the one-click repair is the ONLY
+> path) all passed on his screen. Offline verification through findings-verifier, **7/7 CONFIRMED**:
+> **1,000 of 1,000 link `created` dates byte-identical** to the repair's own pre-write backup;
+> **501 of 501 review-schedule rows re-addressed**; record deleted, backup + journal present,
+> receipts logged in both universes. His reported "~95 seconds" forensically attributed: **91.6 s**
+> was the pre-existing MIG-003 identity-injection pass reaching 500 generator-made stamp-less notes
+> for the first time — the PJ-435 rewrite itself fits in ~3 s, and his daily universe would surface
+> at most 13 candidates (27 empty cid_cn − 14 exempt templates), seconds at an ordinary boot.
+> CLAUDE.md's storage section amended in the same commit, as its own closing instruction ordered:
+> the MOVE exposure of `created` + `review_schedule` is closed; the REBUILD exposure remains, owned
+> by the PJ-437 direction. Session log §26.
+>
+> ### 🆕 PJ-439 *(LOW — Group 3 — cosmetic)* — the relocation backup's db file is named `search.db.pre-mig108`
+> `take_snapshot` (mig108.rs:564) hardcodes the filename regardless of the PJ-435
+> `backup_dir_name` parameter, so `relocation-backup\` holds a file whose name claims a different
+> migration. Misleading to anyone hand-restoring. Renaming touches restore guidance → its own small
+> job, filed rather than reopening a Boss-passed build.
+>
+> ### 📌 PJ-331 scope measured wider: the User Manual violates the naming ruling 24×
+> While sweeping the manuals for the false auto-repair claim (2026-08-31), a grep found the
+> ENGLISH User Manual uses "cUniverse" / "Child Universe" **24 times** — including a whole
+> "### Child Universes" section — against the Boss's naming ruling ("it is a Linked Universe,
+> never cUniverse/Child Universe, in any user-facing text, help file, User Manual, or new
+> document"). The 14 translations presumably mirror it. This is PJ-331's rename job (visible
+> strings), now explicitly including **User Manual ×15**; filed rather than silently parked —
+> a 15-file systematic rename does not belong inside the PJ-435 close.
+>
+> ### 📌 Carried datum: PJ-438's which-route-wins question got no new evidence
+> The Stage-2B tutorial asked which first-indexing route the Boss observed (progress strip or not);
+> his report did not say. The race stays characterized by code-reading only.
+
+
+> **What changed in v2.06** (**two Boss passes committed at `4aee6ea2`; the portability arc ran from
+> a ruling to a shipped repair in one day; five new PJs filed and one closed in-pass**):
+>
+> **► NEXT ACTION: the Boss runs the PJ-435 test** — a real move of a disposable universe. Commit on
+> his pass.
+>
+> ### ✅ PASSED AND COMMITTED (`4aee6ea2`): PJ-407 + PJ-409, PJ-428, PJ-431
+> PJ-407 Boss-verified on his screen (7494 → 7496 notes; 27 dead links resolving). PJ-428's refusal
+> fired verbatim on his own attempt (`zarquan` into his open universe — refused, nothing created,
+> list unchanged). PJ-431 (the on-open identity write never told the index) fixed with a RED-proven
+> test.
+>
+> ### 🧭 THE PORTABILITY RULING → CLAUDE.md, and the audit it triggered
+> Boss-ruled: a universe may live ANYWHERE; "identify" = explicit registration must work anywhere,
+> NOT auto-discovery. Audit verdict: **capability already honoured by construction** — no location
+> constraint exists in production code. What was wrong was the TELLING: the docs promised an
+> auto-repair that did not exist, and the first-run button described the ruling's own operation as
+> its opposite. Both fixed; **PJ-433…PJ-436 filed** (silent boot fallback persisted as the user's
+> choice; unreachable Linked Universe shown as present-and-empty; the move gap = PJ-435; the
+> unwired Open Folder action) and **PJ-437** (the root direction: the index addresses notes less
+> portably than the durable layer beneath it).
+>
+> ### 🚨 PJ-435 — BUILT (2026-08-30), the full four phases, awaiting his test
+> The panel's philosophy review re-scoped it first: **CLAUDE.md's storage section was STALE** —
+> `earned.jsonl` (MIG-104) already carries walks/trust/retire/priority on disk, identity-keyed;
+> what a move (or the recommended Full re-read!) actually destroys is **every link's `created`**
+> (234,917 of 234,917 carry one) **and the path-keyed review schedule** (8,033 rows). The section
+> was corrected; the harmful re-read advice pulled from the manual the same hour it was written.
+> Then, on his order ("Handle the earned.jsonl first, then proceed"):
+> - **Phase 0** — the earned layer proven through the SHIPPING restore across a physical move, with
+>   a control and both casualties pinned as executable assertions; the CLEAN fixture reproduces.
+> - **Phase 1** — ONE detector (`heal_paths_after_move`): pair persisted to `relocation.json`
+>   BEFORE healing, read-back verified; a COPY never arms; second moves CHAIN the original root;
+>   moving back home disarms; the duplicate registry entry on reopen is dead (identity-match +
+>   mandatory repoint). Five behavioural tests; **two caught real bugs in the first version**.
+> - **Phase 2** — `DriftReport.moved`; the honest sentence ×15 REPLACES the drift+phantom rows
+>   (both suppressed while armed — each offers a destructive button on a moved universe).
+> - **Phase 3** — `relocate.rs::repair_moved_universe`: verified backup into its OWN directory
+>   (`take_snapshot` parameterised, 11 call sites), its OWN journal file (never mig108's — the
+>   boot resume would present a crashed relocation as a half-finished unification), no move phase,
+>   post-run trigger recreation, one-click, idempotent-by-re-click. **The engine's destination
+>   purge is now CONDITIONAL** (spares any dest row with no old counterpart — also fixes a latent
+>   mig108 defect that deleted a note genuinely created in a crash window). RED-proven.
+> Suite **1,608 / 0** (+8 = exactly the eight tests added). Binary 2026-08-30 06:19:53, chain
+> verified, strings in the bundle. Docs updated to describe the SHIPPED repair.
+> **Honest gap:** the DIRTY end-to-end (self-healed rows through the full command) is unit-proven
+> only; the Boss's test exercises the CLEAN end-to-end.
+>
+> ### 📌 The self-matching trap, third instance — caught BEFORE first run this time
+> A negative source-text assertion whose own literal contained the forbidden token. Truncate at the
+> test module + build the token with `concat!`. The first two instances cost revert-and-rerun to
+> find; this one died unborn.
+
+---
+
 
 > **What changed in v2.05** (**PJ-407 built and its blast radius corrected DOWNWARD, PJ-409 closed
 > in-pass, three more dot-doors closed than the first pass claimed, eight new PJs filed. The review
@@ -3273,7 +3389,7 @@ surfaces (`LibrarySwitcher.svelte:131`, `DashboardView.svelte:216`, `+layout.sve
 **Escalation:** `remove_child_universe` has no reachable UI caller outside the setup session that
 created the link — so a dead link **cannot be retracted without hand-editing `universe.json`.**
 
-### 🚨 PJ-435 *(HIGH — Group 1 — Boss-approved 2026-08-29, plan agreed)* — moving a universe leaves the index at the old location, AND the remedy the app recommends destroys the link graph's age
+### ✅ PJ-435 *(CLOSED 2026-08-31 — Boss-passed twice: three-stage live test + post-inspection smoke re-test; session log §26–§28; ledger v2.07 preamble carries the close evidence)* — moving a universe leaves the index at the old location, AND the remedy the app recommends destroys the link graph’s age
 
 **SCOPE CORRECTED 2026-08-29 after a philosophy panel — the original framing rested on a stale
 rulebook.** CLAUDE.md asserted that earned link data lives nowhere on disk. **False since MIG-104
@@ -3323,6 +3439,19 @@ and the app never prompts for it. The documentation now says so plainly; **makin
 real fix** and is what would let a universe genuinely "just work" from a USB stick, which is the
 ruling's stated intent.
 
+### 🆕 PJ-438 *(LOW — Group 3 — double work on first open, found by an inspector tracing a test claim)* — a never-indexed universe may be indexed TWICE at first open
+
+Two boot paths fire on the same trigger ("zero indexed notes, registered libraries present"):
+the PJ-065 §8 cold-start loop (`+layout.svelte:3153-3174` → `Scope::ColdStart` — silent by design)
+AND the BUG-022 recovery check inside `loadAllStats().then` (`:3182-3208` →
+`constellation_search_init` → `Scope::Full` — emits the progress strip). `ColdStart.covers(&Full)`
+is false, so the Full QUEUES behind the running ColdStart and re-reads the whole universe again the
+moment it finishes. Cost: one redundant full pass on first open, and a progress strip that may or
+may not appear depending on the race. Not data-unsafe (both passes are idempotent); filed rather
+than fixed because the fix touches the boot fan-out hours before a Boss test, and the redundancy is
+pre-existing (neither path is from PJ-435). The Stage-2 test now reports which path wins as data.
+**Found by the `ui-inspector` refusing to verify a "no progress bar" sentence it could not prove.**
+
 ### 🧭 PJ-437 *(Group 2 — owed DIRECTION, not a task)* — the index addresses notes less portably than the durable layer beneath it
 
 `earned.jsonl` keys on `cid_cn` — identity — and therefore travels with a universe wherever the user
@@ -3338,6 +3467,15 @@ entire workspace follows"* becomes literally true.
 **Filed as direction so that "one click per move, forever" does not become the permanent answer by
 default.** Full `/migration`; not today's work. Recorded in the same commit as PJ-435's plan, per the
 panel's explicit condition for endorsing the smaller fix.
+
+**CLOSED 2026-08-30 — the full arc above shipped and Boss-passed.** Detection persisted
+(`relocation.json`; copy never arms, second moves chain, move-back disarms), the honest banner ×15
+replacing the destructive alarm, the one-click snapshot-first journaled repair (mig108 engine,
+conditional destination purge), and the count refresh. Both fields the entry names as casualties
+were carried through and MEASURED intact (1,000/1,000 created dates; 501/501 review rows). What
+this entry does NOT close: the REBUILD exposure (`created` still absent from `earned.jsonl`) — that
+is PJ-437's direction, restated in CLAUDE.md's amended storage section.
+
 
 ### 🆕 PJ-436 *(LOW — Group 3)* — a documented "Open Folder" action that was never wired
 

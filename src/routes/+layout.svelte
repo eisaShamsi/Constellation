@@ -3,7 +3,7 @@
 	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t, tn, reconcileLocaleFromDisk } from '$lib/i18n';
 	import { REPAIR_DOOR_ENABLED } from '$lib/index/repairFlag';
-	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, hasHidden, hasFenced, lastPruneReceipt, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
+	import { DRIFT_REPORT_EVENT, hasFindings, hasPhantoms, hasHidden, hasFenced, hasMoved, lastPruneReceipt, loadDriftReport, type DriftReport } from '$lib/index/driftReport';
 	import { repairHasFailures, submitRepair, type RepairReport } from '$lib/index/repairReport';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -607,6 +607,23 @@
 	let indexPhantomDismissed = $state(false);
 	let indexHiddenDismissed = $state(false); // PJ-407 — its own flag; its remedy is a rename, not a repair
 	let indexFencedDismissed = $state(false); // PJ-428 — its own flag; its remedy is on disk, not a repair
+	let indexMovedDismissed = $state(false); // PJ-435 — its own flag
+	// PJ-435 — the old→new pair, fetched via get_relocation_record ONLY when the report says
+	// moved (never on the ordinary boot path). Cleared on universe switch and on a clean report.
+	let movedInfo = $state<{ oldRoot: string; newRoot: string } | null>(null);
+	// PJ-435 — ONE fetch path for the pair, used by the event handler AND the mount-read
+	// fallback. The fallback originally set `indexDrift` alone: on a cold boot where the
+	// reconcile event fired before this listener mounted (near-certain on a small universe),
+	// `movedInfo` stayed null, the moved row gated on it and rendered NOTHING — while the drift
+	// and phantom rows stayed suppressed on `moved`. A silent armed state: no banner, no alarm,
+	// and a tester reporting "detection did not fire" against working detection. Found by the
+	// panel wrap on the Boss test, after two inspector rounds passed the code.
+	function syncMovedInfo(moved: boolean) {
+		if (!moved) { movedInfo = null; return; }
+		invoke<{ old_root: string; new_root: string } | null>('get_relocation_record')
+			.then((r) => { movedInfo = r ? { oldRoot: r.old_root, newRoot: r.new_root } : null; })
+			.catch(() => { movedInfo = null; });
+	}
 	/**
 	 * PJ-207 §11 — the "Repair now" button's busy state. Set on press, cleared by the
 	 * `index-repair:done` listener. The GUARANTEE that two quick presses produce one run
@@ -615,6 +632,35 @@
 	 * repair some other door started.
 	 */
 	let repairRunning = $state(false);
+	// PJ-435 — the SAFE repair for a moved universe: a path rewrite through the proven mig108
+	// engine (verified backup first, one transaction, conservation proved inside it). Never the
+	// walk-based repair above — that one re-reads by the healed library paths and resets every
+	// link's birth date, which is exactly what this row exists to prevent. On success the
+	// command deletes the relocation record and schedules a fresh walk, whose report disarms
+	// this row; a failure is shown and the record stays, so the button remains available.
+	let movedRepairRunning = $state(false);
+	async function startMovedRepair() {
+		movedRepairRunning = true;
+		try {
+			await invoke('repair_moved_universe');
+			// Safety sweep 2026-08-30 (MED): the repair also rewrote collections/bookmarks/
+			// workspaces/session on DISK, but this window's stores still hold the OLD-path lists
+			// they loaded at boot — the next whole-list save would silently write the stale paths
+			// back over the repaired files, undoing the repair for that store with no error. The
+			// mig108 unification flow solves the same problem by reloading through the boot path
+			// (Mig108UnifyDialog's `window.location.href = '/'`); reuse the proven pattern. This
+			// also refreshes the status-bar count (the earlier targeted loadAllStats() call is
+			// subsumed) and naturally clears the banner: the record is gone, so the reloaded
+			// report says moved=false.
+			window.location.href = '/';
+		} catch (e) {
+			// The template appends its own period after {reason}; Rust reasons that end in one
+			// rendered "…repair.. Nothing was changed…" (inspector-caught 2026-08-30). Strip it.
+			templateActionError = tOr('indexDrift.movedRepairFailed', 'The move repair could not finish: {reason}. Nothing was changed without a backup — you can simply try again.', { reason: (e instanceof Error ? e.message : String(e)).replace(/\.$/, '') });
+		} finally {
+			movedRepairRunning = false;
+		}
+	}
 	async function startRepairFromNotice() {
 		repairRunning = true;
 		const running = await submitRepair((reason) => {
@@ -631,6 +677,15 @@
 		const r = indexDrift;
 		// The flag is checked here as well as at the listener (below) — belt and braces on a
 		// rollback lever, so removing one gate does not silently un-gate the feature.
+		// PJ-435 — while a MOVE is armed this row is SUPPRESSED, dismissed or not. Its numbers are
+		// true (thousands of rows look stale) and its impression is false (nothing is missing — it
+		// is all one folder over), and its Repair button re-reads by the healed library paths,
+		// resetting every link's birth date. The panel's ruling: "An app that tells you your life's
+		// notes are gone when they are all fine, and then offers a button that quietly damages
+		// them, is not Constellation." The moved row below replaces it. (Raw flag, not the
+		// hasMoved() type-guard: negating a positive guard narrows `r` to null for the rest of
+		// this body — svelte-check caught nine `never` accesses.)
+		if (r?.moved) return '';
 		if (!REPAIR_DOOR_ENABLED || indexDriftDismissed || !hasFindings(r)) return '';
 		const parts: string[] = [];
 		if (r.drifted > 0)
@@ -657,6 +712,11 @@
 	// phantoms, and on the Boss's own universe that is exactly the case.
 	const indexPhantomMessage = $derived.by(() => {
 		const r = indexDrift;
+		// PJ-435 — suppressed while a MOVE is armed, same reasoning as the drift row above: after
+		// a move the old-path rows LOOK phantom (file gone, under no current library root), and the
+		// prune this sentence points at would offer to DELETE them. The moved row replaces both.
+		// (Raw flag, not the type-guard — see the drift row above.)
+		if (r?.moved) return '';
 		if (!REPAIR_DOOR_ENABLED || indexPhantomDismissed || !hasPhantoms(r)) return '';
 		return tOr(
 			'indexDrift.stalePhantoms',
@@ -674,6 +734,21 @@
 	// ends is the SILENCE — Obsidian's own users found out only when files vanished after a
 	// restart, and a note that is neither indexed NOR reportable as missing is invisible to the
 	// very pass built to find invisible notes.
+	// PJ-435 — the moved-universe sentence. A FIFTH row that REPLACES two others (drift +
+	// phantom, both suppressed above while this is armed): their numbers are true and their
+	// impression is false. Its button runs the SAFE repair (relocate.rs — the mig108 rewrite
+	// with a one-entry journal); the remedy the app used to point at (Full re-read) resets
+	// every link's birth date, which is why the docs warn against it.
+	const indexMovedMessage = $derived.by(() => {
+		const r = indexDrift;
+		if (!REPAIR_DOOR_ENABLED || indexMovedDismissed || !hasMoved(r) || !movedInfo) return '';
+		return tOr(
+			'indexDrift.universeMoved',
+			// VERBATIM equal to `en.json` — same discipline as every fallback above.
+			"This universe has moved. It now lives at {new}, but its search index still records every note at {old}. Your notes are all here and open normally. Search and links may point at the old location until the index is repaired — nothing is lost, and Constellation will not remove anything over this.",
+			{ old: movedInfo.oldRoot, new: movedInfo.newRoot },
+		);
+	});
 	const indexFencedMessage = $derived.by(() => {
 		const r = indexDrift;
 		if (!REPAIR_DOOR_ENABLED || indexFencedDismissed || !hasFenced(r)) return '';
@@ -3252,6 +3327,8 @@
 		indexPhantomDismissed = false; // PJ-369 — the phantom row's own flag clears with it
 		indexHiddenDismissed = false;  // PJ-407 — same, for the hidden-note row
 		indexFencedDismissed = false;  // PJ-428 — same, for the fenced-library row
+		indexMovedDismissed = false;   // PJ-435 — same, for the moved-universe row
+		movedInfo = null;
 		// PJ-369 (safety inspection 2026-08-25) — the prune receipt is per-universe too, and it
 		// was the one item on this list nothing cleared. It is a MODULE-level store, chosen so it
 		// survives Settings being closed and reopened; that same durability carried it across a
@@ -4001,10 +4078,19 @@
 		// `classifier_scan_status` discipline the progress strips already follow.
 		if (REPAIR_DOOR_ENABLED) {
 			const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
-				if (ev?.payload) { indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; indexHiddenDismissed = false; indexFencedDismissed = false; }
+				if (ev?.payload) {
+					indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; indexHiddenDismissed = false; indexFencedDismissed = false; indexMovedDismissed = false;
+					// PJ-435 — one fetch, only when armed. The record read is a tiny JSON file.
+					syncMovedInfo(ev.payload.moved);
+				}
 			});
 			cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
-			loadDriftReport().then((r) => { if (r && !indexDrift) indexDrift = r; });
+			loadDriftReport().then((r) => {
+				if (r && !indexDrift) {
+					indexDrift = r;
+					syncMovedInfo(r.moved); // PJ-435 — see syncMovedInfo: without this, an armed boot shows NOTHING
+				}
+			});
 		}
 
 		// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
@@ -7996,6 +8082,20 @@
 			<div class="drift-note" role="status" dir="auto">
 				<span>{indexFencedMessage}</span>
 				<button class="tpl-err-x" onclick={() => (indexFencedDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
+		<!-- PJ-435 — the moved-universe row. It REPLACES the drift and phantom rows (suppressed
+		     while it is armed): after a move their true numbers give a false impression, and each
+		     carries a button that is destructive on a moved universe. THIS row's button is the
+		     safe one: a path rewrite through the mig108 engine — backup first, one transaction,
+		     conservation proved — carrying link birth dates and the review schedule through. -->
+		{#if indexMovedMessage}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{indexMovedMessage}</span>
+				<button class="drift-repair-btn" onclick={startMovedRepair} disabled={movedRepairRunning}>
+					{movedRepairRunning ? tOr('indexDrift.repairing', 'Repairing…') : tOr('indexDrift.movedRepairNow', 'Repair the index — safe, keeps everything')}
+				</button>
+				<button class="tpl-err-x" onclick={() => (indexMovedDismissed = true)} aria-label={$t('common.close')}>✕</button>
 			</div>
 		{/if}
 	</div>

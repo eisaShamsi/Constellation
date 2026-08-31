@@ -107,6 +107,7 @@ mod map;
 mod maturity;
 mod perf_trace;
 mod deleted_notes; // PJ-385 — reading the delete archive back
+mod relocate; // PJ-435 — repairing a moved universe's index
 mod phantom_prune; // PJ-369 — the mount-aware classifier for stale index rows
 mod provenance;
 mod review;
@@ -660,6 +661,8 @@ pub fn run() {
             universe::create_universe,
             universe::set_active_universe,
             universe::get_active_universe_path,
+            universe::get_relocation_record, // PJ-435
+            relocate::repair_moved_universe, // PJ-435
             universe::remove_universe_from_registry,
             universe::check_migration_needed,
             universe::add_child_universe,

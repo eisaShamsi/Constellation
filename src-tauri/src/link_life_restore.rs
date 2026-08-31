@@ -884,4 +884,124 @@ mod tests_mig104_restore {
         assert_eq!(r.restored, 1, "the identity resolves the record to the renamed target");
         assert_eq!(row(&conn, "/a.md", "New Title").0, 5);
     }
+
+    /// PJ-435 — the earned layer must survive the universe MOVING, not only the index dying in
+    /// place. `store_dir` derives the store from the CONNECTION's own path, so wherever
+    /// `search.db` sits, `earned.jsonl` is read beside it — this test pins that property by
+    /// physically renaming the whole universe directory between seed and restore, then restoring
+    /// through the shipping function at the NEW location.
+    ///
+    /// It also pins the two measured CASUALTIES, so the boundary is executable rather than prose
+    /// (CLAUDE.md "Storage — WHAT SURVIVES LOSING THE INDEX", corrected 2026-08-29):
+    ///   * a link's `created` date is NOT in the store and does NOT come back;
+    ///   * a `review_schedule` row is keyed on an absolute path and is orphaned by the move.
+    /// If either assertion ever fails because the gap was CLOSED — update that CLAUDE.md section
+    /// in the same commit, per its own closing instruction, and then this test.
+    #[test]
+    fn the_earned_layer_survives_the_universe_moving() {
+        let root = tempfile::tempdir().unwrap();
+        let old_u = root.path().join("old").join("Universe");
+        let new_u = root.path().join("elsewhere").join("Universe");
+        std::fs::create_dir_all(old_u.join(".constellation")).unwrap();
+
+        let old_store = old_u.join(".constellation");
+        {
+            let conn = crate::search::init_db(&old_store.join("search.db")).unwrap();
+            conn.execute(
+                "INSERT INTO note_meta (path, name, library_name, modified, body_text, cid_cn)
+                 VALUES (?1, 'A', 'L', 0, '', 'C_A')",
+                rusqlite::params![old_u.join("a.md").to_string_lossy()],
+            ).unwrap();
+            conn.execute(
+                "INSERT INTO note_meta (path, name, library_name, modified, body_text, cid_cn)
+                 VALUES (?1, 'B', 'L', 0, '', 'C_B')",
+                rusqlite::params![old_u.join("b.md").to_string_lossy()],
+            ).unwrap();
+            conn.execute(
+                "INSERT INTO note_links
+                   (source_path, source_name, target_name, link_type, library_name,
+                    traversal_count, confidence, status, weight, last_traversed, created)
+                 VALUES (?1, 'A', 'B', 'associative', 'L',
+                    5, 'evidence', 'active', 2.79, '2026-07-01T00:00:00Z', '2024-03-01T00:00:00Z')",
+                rusqlite::params![old_u.join("a.md").to_string_lossy()],
+            ).unwrap();
+            // A review rhythm keyed, as shipped, on the ABSOLUTE path.
+            conn.execute(
+                "INSERT INTO review_schedule (path, reason, due_days, is_checkpoint)
+                 VALUES (?1, 'r', 3, 0)",
+                rusqlite::params![old_u.join("a.md").to_string_lossy()],
+            ).unwrap();
+            link_life_backfill::seed(&conn, &old_store).unwrap();
+        } // connection CLOSED before the move — Windows will not rename an open database's dir
+
+        // THE MOVE — the user drags the folder somewhere else entirely.
+        std::fs::create_dir_all(new_u.parent().unwrap()).unwrap();
+        std::fs::rename(&old_u, &new_u).unwrap();
+        let new_store = new_u.join(".constellation");
+        assert!(new_store.join("earned.jsonl").exists(), "the store travelled with the folder");
+
+        let conn = crate::search::init_db(&new_store.join("search.db")).unwrap();
+        // A rebuild at the new location: re-indexing rewrites note_meta to the NEW paths (the
+        // cid-keyed self-heal, or a fresh insert — either way the cids are unchanged), and the
+        // link returns from the note text as brand new — fresh count, fresh confidence, and a
+        // FRESH birth date. (This is what a Full re-read does to all 234,917 of the Boss's
+        // links, which is why the docs now warn against it.) The first version of this test
+        // skipped the note_meta rewrite and got restored=0: the restore resolves a cid to its
+        // CURRENT path, so an inconsistent fixture matched nothing — the failure was the
+        // fixture's, and it is kept in this comment because it demonstrates the matching is
+        // genuinely identity-first.
+        conn.execute(
+            "UPDATE note_meta SET path = ?1 WHERE cid_cn = 'C_A'",
+            rusqlite::params![new_u.join("a.md").to_string_lossy()],
+        ).unwrap();
+        conn.execute(
+            "UPDATE note_meta SET path = ?1 WHERE cid_cn = 'C_B'",
+            rusqlite::params![new_u.join("b.md").to_string_lossy()],
+        ).unwrap();
+        conn.execute("DELETE FROM note_links", []).unwrap();
+        conn.execute(
+            "INSERT INTO note_links
+               (source_path, source_name, target_name, link_type, library_name,
+                traversal_count, confidence, status, weight, last_traversed, created)
+             VALUES (?1, 'A', 'B', 'associative', 'L',
+                0, 'hypothesis', 'active', 1.0, '', '2026-08-30T00:00:00Z')",
+            rusqlite::params![new_u.join("a.md").to_string_lossy()],
+        ).unwrap();
+
+        // CONTROL — a restore aimed at the OLD location must find nothing. If this half ever
+        // passes with records > 0 the positive half below proves nothing (a check that cannot
+        // fail is not a check).
+        let ghost = restore(&conn, &old_store).unwrap();
+        assert_eq!(ghost.records, 0, "the old location is empty — the store MOVED");
+
+        // THE POINT — restored from beside the database, at the new location.
+        let r = restore(&conn, &new_store).unwrap();
+        assert_eq!(r.records, 1);
+        assert_eq!(r.restored, 1, "what the user earned follows the folder");
+
+        let (n, conf, status, w, created): (i64, String, String, f64, String) = conn
+            .query_row(
+                "SELECT traversal_count, confidence, status, weight, created FROM note_links",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
+            )
+            .unwrap();
+        assert_eq!((n, conf.as_str(), status.as_str()), (5, "evidence", "active"));
+        assert!((w - crate::search::earned_link_weight(5)).abs() < 1e-9);
+
+        // THE TWO CASUALTIES, pinned as facts rather than left as prose:
+        assert_eq!(
+            created, "2026-08-30T00:00:00Z",
+            "the link's BIRTH DATE is not in the store and did not come back — if this failed \
+             because the store now carries it, close the loop: CLAUDE.md storage section, then here"
+        );
+        let review_path: String = conn
+            .query_row("SELECT path FROM review_schedule", [], |row| row.get(0))
+            .unwrap();
+        assert!(
+            review_path.starts_with(&old_u.to_string_lossy().to_string()),
+            "the review row still points at the OLD location — orphaned by the move, exactly as \
+             measured on the Boss's universe (8,033 rows keyed by absolute path)"
+        );
+    }
 }

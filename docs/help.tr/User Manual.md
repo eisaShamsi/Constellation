@@ -141,18 +141,18 @@ Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreni
 
 ### Otomatik yeniden açma
 
-Constellation son aktif evreninizi hatırlar ve başlatıldığında otomatik olarak yeniden açar. Evren taşınmışsa veya yolu değişmişse, Constellation bunu algılar ve yolu otomatik olarak düzeltir.
+Constellation son aktif evreninizi hatırlar ve başlatıldığında yeniden açar. Evren klasörünü diskte taşıdıysanız, evreni yeni konumundan Evren Yöneticisi üzerinden yeniden açın: durum çubuğunun sağ ucundaki evren adına tıklayın → **Mevcut evreni aç**. Ardından pencerenin üstünde evrenin taşındığını açıklayan bir mesaj çubuğu belirir — notlarınızın tümü yerindedir ve normal şekilde açılır; hiçbir şey kaybolmamıştır ve Constellation bir taşınma yüzünden hiçbir şeyi silmez. Çubuktaki **«Dizini onar — güvenli, her şey korunur»** düğmesi, önce doğrulanmış bir yedek alır ve dizini tek bir ya-hep-ya-hiç adımda güvenle yeniden yazar: bağlantı yaşları ve gözden geçirme zamanlamaları korunur, işlem bitince uygulama kendini bir kez yeniden yükler.
 
 ### Taşınabilir Evrenler
 
-Constellation evrenleri tamamen taşınabilirdir. Evren klasörünü herhangi bir konuma taşıyabilirsiniz — farklı bir sürücü, USB bellek veya başka bir bilgisayar — ve Constellation yeniden açıldığında tüm dahili yolları otomatik olarak algılar ve düzeltir.
+Constellation evrenleri tamamen taşınabilirdir. Evren klasörünü herhangi bir konuma taşıyabilirsiniz — farklı bir sürücü, USB bellek veya başka bir bilgisayar. Evreni yeni konumundan yeniden açtığınızda tüm notlarınız ve kütüphaneleriniz hemen yerindedir; yalnızca arama dizini kendiliğinden yeniden yazılmaz — pencerenin üstünde evrenin taşındığını bildiren bir mesaj çubuğu belirir ve çubuktaki **«Dizini onar — güvenli, her şey korunur»** düğmesi onarımı tek tıkla güvenle yapar: önce doğrulanmış bir yedek alınır, dizin tek bir ya-hep-ya-hiç adımda yeniden yazılır, bağlantı yaşları ve gözden geçirme zamanlamaları korunur ve işlem bitince uygulama kendini bir kez yeniden yükler.
 
 Bir evreni taşımak için:
 1. Constellation'ı kapatın
 2. Evren klasörünü yeni konuma taşıyın veya kopyalayın
 3. Constellation'ı açın → Karşılama ekranı görünür (eski yol artık geçerli değil)
 4. **Mevcut Evreni Aç**'ı seçin ve yeni konumu gösterin
-5. Tüm notlar ve kütüphaneler anında görünür — yollar otomatik olarak düzeltilir
+5. Tüm notlar ve kütüphaneler anında görünür; arama dizini için pencerenin üstünde beliren mesaj çubuğundaki **«Dizini onar — güvenli, her şey korunur»** düğmesine tıklayın — onarım tek adımda, güvenle yapılır
 
 Evren klasör yapısı Obsidian modelini takip eder: notlar doğrudan kök klasörde yer alır, yapılandırma `.constellation/` içinde bulunur.
 

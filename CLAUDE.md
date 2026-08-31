@@ -140,47 +140,64 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - Links must be **searchable by all properties** in the user's own language.
 - Every link operation must be **reversible** — archival, not deletion.
 
-#### Storage — READ THIS BEFORE TRUSTING A LINK PROPERTY TO SURVIVE *(corrected 2026-07-24)*
+#### Storage — WHAT SURVIVES LOSING THE INDEX *(corrected 2026-07-24, **superseded 2026-08-29**)*
 
-> **The target is dual-layer storage: LINK files on disk (source of truth) +
-> `note_links` SQLite table (fast index). TODAY ONLY THE SECOND LAYER EXISTS.**
+> **Dual-layer storage now EXISTS for the earned half.** MIG-104 Slice 6 shipped
+> `.constellation/earned.jsonl` — a plain-text, identity-keyed record of the user's reading that is
+> replayed into the index on every boot. Its own header states the purpose: *"losing or rebuilding
+> the index costs nothing the user created."*
 
-This section previously asserted the dual-layer design and a `LINK` file kind
-(`YYYYMMDDTHHMMSSZ_LINK_XXXX.md`) as though both were built. **They are not.** Verified
-2026-07-24 by exhaustive search of Rust and Svelte: **no code writes a LINK file, and no
-code persists a link's weight, confidence, traversal count, or archival state to any file
-on disk.** `constellation_link_traverse` (`search.rs`) and the archive command
-(`search.rs`, `status='archived'`) write to `search.db` and nowhere else;
-`set_review_priority` (`review.rs`) likewise.
+**This section said the opposite until 2026-08-29, and the error was expensive.** The 2026-07-24 text
+asserted in bold that *"no code persists a link's weight, confidence, traversal count, or archival
+state to any file on disk"* and that closing the gap was Boss-directed and pending. MIG-104 Slice 6
+closed it — and the section's own closing instruction (*"amend this section again when it ships, and
+only then"*) was never carried out. **Two panels were then convened on the stale premise on
+2026-08-29 and both were briefed wrongly by it**, which is precisely the failure SO#10 exists to
+prevent, arriving from the direction SO#10 does not cover: not a stale ledger, a stale rulebook.
+Verified before this rewrite: the Boss's `Eisa Cognitive Knowledge` carries 53 records —
+`walk` ×47, `trust` ×3, `retire` ×2, `priority` ×1.
 
-What that means, concretely:
+**SURVIVES the index being lost or rebuilt** (restored from `earned.jsonl` by `link_life_restore`,
+keyed on `cid_cn`, so it travels with the folder):
+- **traversal count** (`n`) — and therefore **weight**, which is DERIVED (`1 + ln(1 + n)`), never
+  stored as truth. A stored weight is a cache of an arithmetic function of `n`.
+- **confidence** promotions (`trust`), **archival** (`retire`), **review priority** (`priority`).
 
-- **Recomputable from the `.md` files** (safe): a link's existence, its type, its target,
-  and its annotation — all re-parsed from the `[[type::target|annotation]]` wikilink body.
-- **Living ONLY in `search.db`** (lost if that file is lost): `traversal_count`, `weight`,
-  `last_traversed`, `confidence` promotions, `status='archived'`, `note_meta.review_priority`,
-  and the `review_schedule` rows (`last_reviewed`, `interval`, `snoozed_until`).
-- Because the wikilink stays in the note, **rebuilding the index resurrects every archived
-  link as active** — silently reversing the user's decision and contradicting
-  "every link operation must be reversible."
+**RECOMPUTABLE from the `.md` files** (safe): a link's existence, type, target, annotation — all
+re-parsed from the `[[type::target|annotation]]` body.
 
-Consequences for anyone working here:
+**STILL LIVES ONLY IN `search.db`, and is LOST if the index is rebuilt — measured 2026-08-29,
+amended 2026-08-30 when PJ-435 shipped:**
+- **A link's `created` date.** Absent from `earned.jsonl` (fields are `at, cid, conf, n, p, seed, t,
+  tn, to, v`). **234,917 of 234,917 live rows carry one.** The Living Link Architecture names
+  **Created** as one of the eight properties and rests temporal reasoning on it; a rebuild silently
+  resets the age of the entire link graph to today. **A MOVE no longer costs it** — see below.
+- **The review schedule** (`last_reviewed`, `interval`, `snoozed_until`). Keyed on `path`, every row
+  an absolute path — so a rebuild loses it, and moving a universe *used to* orphan it. **The move
+  half is closed**: PJ-435's repair re-addresses every row in place.
 
-1. **`search.db` is NOT a disposable derived index.** It is currently the system of record
-   for the earned half of the Living Link Architecture. Never delete it, never "just
-   rebuild it", and treat any code that does as an app-killer until the disk layer exists.
-   (The 2026-07-24 inspection found exactly that: the schema-version gate deleted it, and
-   an *absent* version marker was enough to trigger the deletion. Fixed — the gate now
-   renames aside and never deletes — but the underlying exposure remains until the disk
-   layer lands.)
-2. **Write-Time Derivation's "persist the derived view, reads are cheap lookups" assumes the
-   source of truth is elsewhere.** For earned link data there is no elsewhere yet.
-3. **Do not cite this section as evidence that link data is durable on disk.** It is not.
+**PJ-435 (shipped + Boss-tested live 2026-08-30) closed the MOVE exposure of both fields.** Opening
+a moved universe now arms a persisted `relocation.json` (a copy never arms; a second move chains;
+moving back home disarms), an honest banner replaces the old false "not in the search index" alarm,
+and one click runs a snapshot-first, journaled path rewrite (the mig108 engine) that carries both
+fields through. Measured in the live test: 1,000 of 1,000 link `created` dates byte-identical to the
+pre-repair backup; 501 of 501 review rows re-addressed; receipt in `diagnostics.log`.
 
-Closing this gap — implementing the disk layer so the index becomes genuinely
-rebuildable — is Boss-directed (2026-07-24) and `/migration`-sized: it changes the
-source-of-truth for a core subsystem and touches the write path, the indexer, rename/move,
-and sync. Amend this section again when it ships, and only then.
+**Consequences for anyone working here:**
+1. **"Just re-index" is still not free.** A REBUILD (not a move) costs every link's birth date and
+   the review rhythm. Never recommend a Full re-read as a repair for a moved universe — the app now
+   detects the move itself and offers **"Repair the index — safe, keeps everything"**; that button is
+   the answer, and it is the ONLY path at scale (the self-heal caps refuse above max(200, 10%)).
+2. **The remaining gap is the REBUILD exposure only**: `created` is still absent from
+   `earned.jsonl`, and `review_schedule` is still path-keyed. A deliberate index rebuild still
+   loses both. Closing that is the identity-relative direction below, not a patch.
+3. **The deeper direction, filed as PJ-437:** the index stores note locations as absolute paths
+   while the durable layer beneath it uses identity — the DERIVED layer is less portable than its
+   source. Making it identity-relative would make moving a universe a non-event and would close
+   consequence 2 structurally.
+4. **Amend this section again when PJ-437 (or any earned-layer widening) ships.** The 2026-08-29
+   instruction to amend-on-ship was carried out this time — same-day, in the shipping commit.
+
 
 ### Constraint as Design
 - Don't add features just because you can. Every feature must justify its existence.
@@ -295,6 +312,31 @@ Universe (root) — directory; auto-registered as the default "universe_notes"
 The structural levels of stored knowledge are **Universe → Library → Folder → Note** (four levels). **The Universe root is itself a Library** — when a Universe is created, `ensure_universe_notes_folder` (in `universe.rs`) auto-registers a `universe_notes` library entry whose `path` equals the Universe root, marked `is_universe_notes: true`. This is the Obsidian-style flat default; notes/folders dropped directly at the Universe root are content of this library, not "loose files." A Universe can also have **additional registered libraries — always under its root (MIG-108, Boss-ruled 2026-07-29: "One Universe, One Location")** — and **optional cUniverse children** for federation. Verified against `src-tauri/src/universe.rs::resolve_libraries_recursive` (loads `libraries.json` directly, then recurses into `universe.json` children) and `ensure_universe_notes_folder` (auto-creates the root-as-library entry on universe init).
 
 - **Universe**: The top-level container directory. Named by the user. Auto-registers a default `universe_notes` library pointing at itself. Contains its own libraries (own + the auto-`universe_notes` one), settings, bases, bookmarks, and an optional list of cUniverse children. One Universe is "active" per Constellation instance. Stored as a directory with `universe.json` (the federation + meta manifest) and `.constellation/libraries.json` (the libraries manifest).
+
+  > **A UNIVERSE MAY LIVE ANYWHERE (Boss-ruled 2026-08-29).** *"Constellation should identify and
+  > index any Universes, even if they are located outside the expected location. It is up to the
+  > users; if they decide to keep their universe(s) somewhere, Constellation should provide it."*
+  > Clarified by him the same day: **"identify" means explicit registration must work anywhere** — it
+  > is NOT a request for Constellation to discover universes it was never told about.
+  >
+  > `E:\Constellation Universes` is a **convention, not a constraint**. On the Boss's own machine,
+  > `موسوعة عيسى` sits at `E:\موسوعة عيسى` and is a first-class registered universe. Any default
+  > folder, picker start location or documentation phrasing is a *suggestion the user may ignore*;
+  > nothing may require, assume or silently degrade because a universe root sits elsewhere.
+  >
+  > **This does NOT repeal MIG-108** — that rule governs where a universe's own LIBRARIES live (under
+  > ITS root, wherever that root is). Nor MIG-112: refusing to create a universe *inside another
+  > universe* is a nesting rule, not a location rule, and its three guards ask the filesystem rather
+  > than any root list. The two are orthogonal; do not let either be over-applied to universe
+  > LOCATION.
+  >
+  > Recorded here because a ruling the Boss states once and that is written nowhere gets lost — see
+  > the Linked Universe naming ruling below, which was contradicted by the app's own UI for exactly
+  > that reason. **It also corrects a method, not only the app:** an audit that scans one root and
+  > reports "zero found" has measured a convention, not the truth. On 2026-08-29 that mistake was
+  > made — a count of trapped libraries covered `E:\Constellation Universes` only and therefore
+  > could never have seen this universe.
+
 - **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault) — **a direct child of a Universe**. Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. The default `universe_notes` library has `path == Universe root` (the flat layout). **One Universe, One Location (MIG-108, Boss-ruled 2026-07-29): every additional library lives UNDER the Universe root** — `add_library` enforces it (`ensure_under_active_root`), external folders enter via `bring_in_library` (Copy — original untouched — or Move, the user's per-use choice), and a pre-MIG-108 universe with external libraries gets the journaled, snapshot-first **unification proposal** (the `mig108.rs` engine: verified backup → atomic dir moves → in-place path rewrite across every SQLite/JSON store with in-transaction aggregate verification → one `.trash` at the root). *The pre-MIG-108 sentence "libraries can have any path… never copied — read in place" is REPEALED; nothing may reference content outside the root.* The trash is likewise ONE: `<root>/.trash` (the scope setting was retired).
 - **Linked Universe** — *optional layer*: a Universe whose libraries get federated into this one at runtime. Each Linked Universe is itself a full Universe (with its own libraries and its own optional Linked Universes); `resolve_libraries_recursive` flattens the federation tree into one library list. Enables viewing notes from multiple independent Universes in one window. **A Universe with zero Linked Universes is a complete, valid setup** — federation is opt-in.
 

@@ -1,6 +1,62 @@
 # Constellation Pending Jobs
 
-**Version 2.05 | 2026-08-27 — PJ-407 + PJ-409 BUILT and panel-cleared; awaiting the Boss's test. CODE UNCOMMITTED.**
+**Version 2.06 | 2026-08-30 — PJ-407+409 PASSED · PJ-428 PASSED · PJ-431 fixed · PJ-435 BUILT, awaiting the Boss's test. CODE UNCOMMITTED since 4aee6ea2.**
+
+> **What changed in v2.06** (**two Boss passes committed at `4aee6ea2`; the portability arc ran from
+> a ruling to a shipped repair in one day; five new PJs filed and one closed in-pass**):
+>
+> **► NEXT ACTION: the Boss runs the PJ-435 test** — a real move of a disposable universe. Commit on
+> his pass.
+>
+> ### ✅ PASSED AND COMMITTED (`4aee6ea2`): PJ-407 + PJ-409, PJ-428, PJ-431
+> PJ-407 Boss-verified on his screen (7494 → 7496 notes; 27 dead links resolving). PJ-428's refusal
+> fired verbatim on his own attempt (`zarquan` into his open universe — refused, nothing created,
+> list unchanged). PJ-431 (the on-open identity write never told the index) fixed with a RED-proven
+> test.
+>
+> ### 🧭 THE PORTABILITY RULING → CLAUDE.md, and the audit it triggered
+> Boss-ruled: a universe may live ANYWHERE; "identify" = explicit registration must work anywhere,
+> NOT auto-discovery. Audit verdict: **capability already honoured by construction** — no location
+> constraint exists in production code. What was wrong was the TELLING: the docs promised an
+> auto-repair that did not exist, and the first-run button described the ruling's own operation as
+> its opposite. Both fixed; **PJ-433…PJ-436 filed** (silent boot fallback persisted as the user's
+> choice; unreachable Linked Universe shown as present-and-empty; the move gap = PJ-435; the
+> unwired Open Folder action) and **PJ-437** (the root direction: the index addresses notes less
+> portably than the durable layer beneath it).
+>
+> ### 🚨 PJ-435 — BUILT (2026-08-30), the full four phases, awaiting his test
+> The panel's philosophy review re-scoped it first: **CLAUDE.md's storage section was STALE** —
+> `earned.jsonl` (MIG-104) already carries walks/trust/retire/priority on disk, identity-keyed;
+> what a move (or the recommended Full re-read!) actually destroys is **every link's `created`**
+> (234,917 of 234,917 carry one) **and the path-keyed review schedule** (8,033 rows). The section
+> was corrected; the harmful re-read advice pulled from the manual the same hour it was written.
+> Then, on his order ("Handle the earned.jsonl first, then proceed"):
+> - **Phase 0** — the earned layer proven through the SHIPPING restore across a physical move, with
+>   a control and both casualties pinned as executable assertions; the CLEAN fixture reproduces.
+> - **Phase 1** — ONE detector (`heal_paths_after_move`): pair persisted to `relocation.json`
+>   BEFORE healing, read-back verified; a COPY never arms; second moves CHAIN the original root;
+>   moving back home disarms; the duplicate registry entry on reopen is dead (identity-match +
+>   mandatory repoint). Five behavioural tests; **two caught real bugs in the first version**.
+> - **Phase 2** — `DriftReport.moved`; the honest sentence ×15 REPLACES the drift+phantom rows
+>   (both suppressed while armed — each offers a destructive button on a moved universe).
+> - **Phase 3** — `relocate.rs::repair_moved_universe`: verified backup into its OWN directory
+>   (`take_snapshot` parameterised, 11 call sites), its OWN journal file (never mig108's — the
+>   boot resume would present a crashed relocation as a half-finished unification), no move phase,
+>   post-run trigger recreation, one-click, idempotent-by-re-click. **The engine's destination
+>   purge is now CONDITIONAL** (spares any dest row with no old counterpart — also fixes a latent
+>   mig108 defect that deleted a note genuinely created in a crash window). RED-proven.
+> Suite **1,608 / 0** (+8 = exactly the eight tests added). Binary 2026-08-30 06:19:53, chain
+> verified, strings in the bundle. Docs updated to describe the SHIPPED repair.
+> **Honest gap:** the DIRTY end-to-end (self-healed rows through the full command) is unit-proven
+> only; the Boss's test exercises the CLEAN end-to-end.
+>
+> ### 📌 The self-matching trap, third instance — caught BEFORE first run this time
+> A negative source-text assertion whose own literal contained the forbidden token. Truncate at the
+> test module + build the token with `concat!`. The first two instances cost revert-and-rerun to
+> find; this one died unborn.
+
+---
+
 
 > **What changed in v2.05** (**PJ-407 built and its blast radius corrected DOWNWARD, PJ-409 closed
 > in-pass, three more dot-doors closed than the first pass claimed, eight new PJs filed. The review
@@ -3322,6 +3378,19 @@ search and links point at the old location until the user runs **Settings → In
 and the app never prompts for it. The documentation now says so plainly; **making it automatic is the
 real fix** and is what would let a universe genuinely "just work" from a USB stick, which is the
 ruling's stated intent.
+
+### 🆕 PJ-438 *(LOW — Group 3 — double work on first open, found by an inspector tracing a test claim)* — a never-indexed universe may be indexed TWICE at first open
+
+Two boot paths fire on the same trigger ("zero indexed notes, registered libraries present"):
+the PJ-065 §8 cold-start loop (`+layout.svelte:3153-3174` → `Scope::ColdStart` — silent by design)
+AND the BUG-022 recovery check inside `loadAllStats().then` (`:3182-3208` →
+`constellation_search_init` → `Scope::Full` — emits the progress strip). `ColdStart.covers(&Full)`
+is false, so the Full QUEUES behind the running ColdStart and re-reads the whole universe again the
+moment it finishes. Cost: one redundant full pass on first open, and a progress strip that may or
+may not appear depending on the race. Not data-unsafe (both passes are idempotent); filed rather
+than fixed because the fix touches the boot fan-out hours before a Boss test, and the redundancy is
+pre-existing (neither path is from PJ-435). The Stage-2 test now reports which path wins as data.
+**Found by the `ui-inspector` refusing to verify a "no progress bar" sentence it could not prove.**
 
 ### 🧭 PJ-437 *(Group 2 — owed DIRECTION, not a task)* — the index addresses notes less portably than the durable layer beneath it
 

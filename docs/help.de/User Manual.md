@@ -128,18 +128,18 @@ Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein
 
 ### Automatisches Wiedereröffnen
 
-Constellation merkt sich das zuletzt aktive Universum und öffnet es beim Start automatisch wieder. Wenn das Universum verschoben wurde oder sich sein Pfad geändert hat, erkennt Constellation dies und korrigiert den Pfad automatisch.
+Constellation merkt sich das zuletzt aktive Universum und öffnet es beim Start automatisch wieder. Wurde der Universumsordner auf der Festplatte verschoben, öffnen Sie ihn über den Universum-Manager vom neuen Speicherort aus (Klick auf den Universumsnamen am rechten Ende der Statusleiste → **Bestehendes Universum öffnen**). Danach erscheint eine Meldungsleiste, die erklärt, dass das Universum umgezogen ist: Ihre Notizen sind alle da und öffnen sich normal, nur der Suchindex verzeichnet sie noch unter dem alten Ort — nichts ist verloren, und Constellation entfernt deswegen nichts. Die Schaltfläche **"Index reparieren — sicher, alles bleibt erhalten"** schreibt den Index in einem einzigen Alles-oder-nichts-Schritt sicher um, nachdem zuvor ein verifiziertes Backup angelegt wurde: Das Alter Ihrer Verknüpfungen und Ihre Wiederholungspläne bleiben erhalten, und nach Abschluss lädt sich die App einmal selbst neu. Durch einen Umzug wird niemals etwas gelöscht.
 
 ### Portable Universen
 
-Constellation-Universen sind vollstaendig portabel. Sie koennen einen Universumsordner an einen beliebigen Ort verschieben — ein anderes Laufwerk, einen USB-Stick oder einen anderen Computer — und Constellation erkennt und repariert automatisch alle internen Pfade beim erneuten Oeffnen.
+Constellation-Universen sind vollstaendig portabel. Sie koennen einen Universumsordner an einen beliebigen Ort verschieben — ein anderes Laufwerk, einen USB-Stick oder einen anderen Computer — und sobald Sie das Universum vom neuen Speicherort aus wieder oeffnen, sind alle Notizen und Bibliotheken sofort wieder da. Nur der Suchindex wird nicht automatisch umgeschrieben: Eine Meldungsleiste weist darauf hin, dass das Universum umgezogen ist, und die Schaltflaeche **"Index reparieren — sicher, alles bleibt erhalten"** erledigt die Reparatur mit einem Klick — zuerst ein verifiziertes Backup, dann ein einziger Alles-oder-nichts-Umschreibvorgang; das Alter Ihrer Verknuepfungen und Ihre Wiederholungsplaene bleiben erhalten, und zum Abschluss laedt sich die App einmal selbst neu.
 
 So verschieben Sie ein Universum:
 1. Schliessen Sie Constellation
 2. Verschieben oder kopieren Sie den Universumsordner an den neuen Speicherort
 3. Oeffnen Sie Constellation → der Willkommensbildschirm erscheint (alter Pfad nicht mehr gueltig)
 4. Waehlen Sie **Vorhandenes Universum oeffnen** und navigieren Sie zum neuen Speicherort
-5. Alle Notizen und Bibliotheken erscheinen sofort — Pfade werden automatisch korrigiert
+5. Alle Notizen und Bibliotheken erscheinen sofort. Eine Meldungsleiste weist darauf hin, dass das Universum umgezogen ist — klicken Sie auf **"Index reparieren — sicher, alles bleibt erhalten"**, damit auch der Suchindex den neuen Speicherort uebernimmt
 
 Die Ordnerstruktur des Universums folgt dem Obsidian-Modell: Notizen befinden sich direkt im Stammordner, die Konfiguration befindet sich in `.constellation/`.
 

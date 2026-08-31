@@ -127,18 +127,18 @@ Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario
 
 ### Reabertura automática
 
-O Constellation lembra o último universo ativo e o reabre automaticamente ao iniciar. Se o universo foi movido ou seu caminho mudou, o Constellation detecta e corrige o caminho automaticamente.
+O Constellation lembra o último universo ativo e o reabre automaticamente ao iniciar. Se a pasta do universo foi movida no disco, reabra-a a partir do novo local pelo Gerenciador de Universos (clique no nome do universo na extremidade direita da barra de status → **Abrir universo existente**). Uma barra de mensagem aparece então explicando que o universo foi movido — suas notas estão todas lá e abrem normalmente; nada foi perdido — com um botão **«Reparar o índice — seguro, mantém tudo»** que reescreve o índice com segurança em um único passo tudo-ou-nada, depois de fazer um backup verificado: as idades dos links e o plano de revisão são mantidos e, ao terminar, o aplicativo se recarrega uma vez sozinho. Nada é excluído por causa de uma movimentação.
 
 ### Universos portáteis
 
-Os universos do Constellation sao totalmente portáteis. Voce pode mover a pasta do universo para qualquer local — uma unidade diferente, pen drive USB ou outro computador — e o Constellation detectara e corrigira automaticamente todos os caminhos internos ao reabri-lo.
+Os universos do Constellation sao totalmente portáteis. Voce pode mover a pasta do universo para qualquer local — uma unidade diferente, pen drive USB ou outro computador — e reabri-lo a partir do novo local: suas notas e bibliotecas reaparecem normalmente. O índice de busca, porém, não é reescrito sozinho: uma barra de mensagem avisa que o universo foi movido, com o botão **«Reparar o índice — seguro, mantém tudo»**, que faz a reparação segura em um clique — backup verificado primeiro, uma única reescrita tudo-ou-nada, as idades dos links e o plano de revisão mantidos, e o aplicativo se recarrega uma vez sozinho ao terminar.
 
 Para mover um universo:
 1. Feche o Constellation
 2. Mova ou copie a pasta do universo para o novo local
 3. Abra o Constellation → a tela de boas-vindas aparece (o caminho antigo nao e mais valido)
 4. Escolha **Abrir Universo Existente** e aponte para o novo local
-5. Todas as notas e bibliotecas aparecem imediatamente — os caminhos sao corrigidos automaticamente
+5. Todas as notas e bibliotecas aparecem imediatamente. Uma barra de mensagem avisa que o universo foi movido — clique no botão **«Reparar o índice — seguro, mantém tudo»** para reescrever o índice de busca com segurança (backup verificado primeiro; as idades dos links e o plano de revisão são mantidos; o aplicativo se recarrega uma vez ao terminar)
 
 A estrutura de pastas do universo segue o modelo Obsidian: as notas ficam diretamente na pasta raiz, a configuracao reside em `.constellation/`.
 

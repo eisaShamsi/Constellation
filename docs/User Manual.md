@@ -360,18 +360,22 @@ You can nest universes inside universes. A **Child Universe** is another univers
 
 ### Auto-Reopen
 
-Constellation remembers your last active universe and reopens it automatically on launch. If the universe was moved or its path changed, Constellation detects and heals the path automatically.
+Constellation remembers your last active universe and reopens it automatically on launch. If that universe's folder has moved or its drive is not connected, Constellation quietly tries the next universe it knows about instead — so a normal-looking window on the *wrong* universe is the symptom of an unreachable one. Re-open the moved universe with **Open Existing Universe** and point it at the new location.
 
 ### Portable Universes
 
-Constellation universes are fully portable. You can move a universe folder to any location — a different drive, USB stick, or another computer — and Constellation will automatically detect and fix all internal paths when you reopen it.
+**A universe can live wherever you want it.** A different drive, a USB stick, a network share, another computer. Constellation requires no particular folder, has no preferred location, and never moves a universe without being told to. Where you keep your knowledge is your decision, and the app's job is to follow it.
 
 To move a universe:
-1. Close Constellation
-2. Move or copy the universe folder to the new location
-3. Open Constellation → it shows the Welcome screen (old path no longer valid)
-4. Choose **Open Existing Universe** and point to the new location
-5. All notes and libraries appear immediately — paths are auto-fixed
+1. Close Constellation.
+2. Move or copy the universe folder wherever you want it.
+3. Open Constellation. It will not announce that the old location is gone — it quietly opens a different universe instead. That is a known shortcoming; nothing is lost.
+4. Click the universe name at the right-hand end of the status bar → **Open Existing Universe**, and point it at the new location. Your notes, folders and libraries appear immediately.
+5. Within moments, a message bar appears at the top of the window: *"This universe has moved. It now lives at …, but its search index still records every note at …"* — with a button reading **"Repair the index — safe, keeps everything."** Click it. The repair takes a verified backup first (kept inside the universe folder), rewrites the stored locations in one all-or-nothing step, and proves nothing was lost before finishing. When it finishes, Constellation reloads itself once — the window briefly goes blank and comes back with the message bar gone and everything reading from the new location. Your link ages, review rhythm and everything you have earned come through untouched.
+
+**Why the repair is a rewrite, not a re-read.** When you open a moved universe, Constellation rewrites its list of libraries, which is why your notes and folders show up straight away. The search index is a separate store, and every note in it still records the *old* location. What your links have EARNED — which ones you walked, what you came to trust, what you retired, your review priorities — travels with the folder in a plain-text file keyed by note identity, so that survives a move intact. Two things do not yet travel: each link's birth date, and your review schedule, which is still recorded by location. That is why the button on the bar performs a rewrite — same entries, new addresses, every date and every earned value carried through — and why you should still not reach for a Full re-read to “fix” a move: it rebuilds from scratch and resets every link's birth date to today.
+
+Nothing is lost in the meantime. Your `.md` files are never touched by a move, and Constellation deliberately **refuses** to remove index entries when a large share of them suddenly look wrong — it assumes a drive is disconnected rather than that your notes disappeared, and says so in its diagnostics rather than acting. The one Full re-read rebuilds the index at the new location and clears all of it.
 
 The universe folder structure follows the Obsidian model: notes go directly in the root folder, configuration lives in `.constellation/`.
 

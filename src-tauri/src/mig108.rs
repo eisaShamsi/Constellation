@@ -405,6 +405,13 @@ pub struct Journal {
     /// card so the user is told rather than left guessing.
     #[serde(default)]
     pub last_error: Option<String>,
+    /// PJ-435 — the file this journal persists to. `None` = the mig108 default. The relocate
+    /// engine drives this same machinery with a ONE-ENTRY journal, and it must never land in
+    /// `mig108-journal.json`: the boot resume machinery reads that name and would present a
+    /// crashed relocation as a half-finished library unification — wrong card, wrong words,
+    /// wrong preflight assumptions. Serde-defaulted so every existing journal loads unchanged.
+    #[serde(default)]
+    pub journal_file: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -442,6 +449,7 @@ impl Journal {
                 .collect(),
             baseline: None,
             last_error: None,
+            journal_file: None,
         }
     }
 
@@ -453,7 +461,11 @@ impl Journal {
     /// on intent and behind it on completion, so a crash window is always recorded.
     pub fn save(&self, constellation_dir: &Path) -> Result<(), String> {
         let data = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
-        crate::universe::atomic_write(&Self::path_for(constellation_dir), data.as_bytes())
+        let path = match &self.journal_file {
+            Some(name) => constellation_dir.join(name),
+            None => Self::path_for(constellation_dir),
+        };
+        crate::universe::atomic_write(&path, data.as_bytes())
             .map_err(|e| format!("mig108 journal write failed: {}", e))
     }
 
@@ -513,8 +525,14 @@ pub fn take_snapshot(
     conn: &rusqlite::Connection,
     db_path: &Path,
     constellation_dir: &Path,
+    // PJ-435 — the caller names the backup directory. The relocate engine snapshots into
+    // `relocation-backup`; calling this unmodified would have ROTATED the user's existing
+    // multi-GB `mig108-backup` to `.prev` — a repair silently displacing the safety net of an
+    // unrelated, completed migration (the review chair measured 1.9 GB live on the Boss's
+    // universe). mig108's own callers pass `BACKUP_DIR`, behaviour unchanged.
+    backup_dir_name: &str,
 ) -> Result<(String, Vec<(String, String)>, Baseline), String> {
-    let backup_dir = constellation_dir.join(BACKUP_DIR);
+    let backup_dir = constellation_dir.join(backup_dir_name);
     // Phase-4 audit (LOW, migration-path) — a second run used to copy straight over the first
     // run's backup, silently breaking the summary's promise that "the backup is kept until you
     // choose to remove it". Move the previous one aside instead. Exactly ONE generation is
@@ -525,7 +543,7 @@ pub fn take_snapshot(
             .map(|mut d| d.next().is_some())
             .unwrap_or(false)
     {
-        let prev = constellation_dir.join(format!("{}.prev", BACKUP_DIR));
+        let prev = constellation_dir.join(format!("{}.prev", backup_dir_name));
         let _ = std::fs::remove_dir_all(&prev);
         if let Err(e) = std::fs::rename(&backup_dir, &prev) {
             // Never block the migration on backup housekeeping — but never pretend either.
@@ -915,7 +933,7 @@ mod tests {
         let cdir = Path::new(&root).join(".constellation");
         let (conn, db_path) = seed_db(&cdir);
 
-        let (backup, json_backups, baseline) = take_snapshot(&conn, &db_path, &cdir).unwrap();
+        let (backup, json_backups, baseline) = take_snapshot(&conn, &db_path, &cdir, BACKUP_DIR).unwrap();
         assert_eq!(baseline.note_meta_rows, 2);
         assert_eq!(baseline.note_links_rows, 3);
         assert!((baseline.note_links_weight_sum - 4.0).abs() < 1e-9);
@@ -941,7 +959,7 @@ mod tests {
         std::fs::write(cdir.join("collections.json"), b"[]").unwrap();
         let (conn, db_path) = seed_db(&cdir);
 
-        let (_b, json_backups, _base) = take_snapshot(&conn, &db_path, &cdir).unwrap();
+        let (_b, json_backups, _base) = take_snapshot(&conn, &db_path, &cdir, BACKUP_DIR).unwrap();
         let names: Vec<&str> = json_backups.iter().map(|(n, _)| n.as_str()).collect();
         assert!(names.contains(&"libraries.json"));
         assert!(names.contains(&"collections.json"));
@@ -1271,7 +1289,40 @@ pub fn run_db_rewrite(
         // against a dirty world. (The root library's own notes are under the ROOT but not
         // under any per-library destination dir, so they are untouchable by this.)
         let dest_prefixes = NormPrefixes::new(pairs.iter().map(|(_, n)| n.as_str()));
+        // PJ-435 — THE PURGE IS NOW CONDITIONAL, and the condition is the row's OLD counterpart.
+        //
+        // The unconditional version deleted every destination-prefix row. For mig108's own
+        // resume that was ALMOST right — crash-window re-adoption junk coexists with its earned
+        // original at the old path, and the original is about to be remapped in. But two real
+        // populations have NO old counterpart and were being destroyed:
+        //   * a note the user genuinely CREATED at the destination during a crash window;
+        //   * (PJ-435) a note the per-note self-heal already RELOCATED — a user who declines the
+        //     repair offer and works for a week accumulates real rows at the new root, and the
+        //     purge would have deleted them all, with the in-transaction baseline captured AFTER
+        //     the purge and therefore structurally blind to the loss (LL-040's exact shape — the
+        //     review panel identified this as the engine's disqualifying defect for PJ-435).
+        //
+        // The rule: a destination row whose old-path counterpart EXISTS in note_meta is junk
+        // (the original carries the earned data and is about to be remapped onto it) — purge.
+        // A destination row with NO old counterpart is the only copy of something real — spare.
+        // Conservation still holds: the baseline below is captured after this block, so spared
+        // rows are counted and the verifier covers them.
+        let rev_pairs: Vec<(String, String)> =
+            pairs.iter().map(|(o, n)| (n.clone(), o.clone())).collect();
+        let meta_paths_norm: std::collections::HashSet<String> = {
+            let mut stmt = conn
+                .prepare("SELECT path FROM note_meta")
+                .map_err(|e| e.to_string())?;
+            let set = stmt
+                .query_map([], |r| r.get::<_, String>(0))
+                .map_err(|e| e.to_string())?
+                .filter_map(|r| r.ok())
+                .map(|p| norm(&p))
+                .collect();
+            set
+        };
         let mut purged = 0usize;
+        let mut spared = 0usize;
         for (table, col) in [
             ("note_meta", "path"),
             ("note_links", "source_path"),
@@ -1299,15 +1350,23 @@ pub fn run_db_rewrite(
                 Err(e) => return Err(e.to_string()),
             };
             for v in stale {
+                let junk = remap_any(&v, &rev_pairs)
+                    .map(|old_v| meta_paths_norm.contains(&norm(&old_v)))
+                    .unwrap_or(false);
+                if !junk {
+                    spared += 1;
+                    continue;
+                }
                 conn.execute(&format!("DELETE FROM {t} WHERE {c} = ?1", t = table, c = col), [&v])
                     .map_err(|e| e.to_string())?;
                 purged += 1;
             }
         }
-        if purged > 0 {
+        if purged > 0 || spared > 0 {
+            // No silent caps: what was NOT purged is reported alongside what was.
             eprintln!(
-                "[mig108] purged {} destination-prefix rows (crash-window re-adoption junk)",
-                purged
+                "[mig108] destination-prefix rows: {} purged (old counterpart exists — junk), {} spared (only copy of something real)",
+                purged, spared
             );
         }
 
@@ -1590,7 +1649,7 @@ pub fn run_engine(
     constellation_dir: &Path,
 ) -> Result<(), String> {
     if matches!(journal.phase, Phase::Planned) {
-        let (db_backup, json_backups, baseline) = take_snapshot(conn, db_path, constellation_dir)?;
+        let (db_backup, json_backups, baseline) = take_snapshot(conn, db_path, constellation_dir, BACKUP_DIR)?;
         journal.snapshot_db = Some(db_backup);
         journal.json_backups = json_backups;
         journal.baseline = Some(baseline);
@@ -1920,6 +1979,66 @@ mod slice2_tests {
         assert!(old_paths.iter().any(|p| !norm_under(p, &f.root)), "backup keeps old paths");
     }
 
+
+    /// PJ-435 — the destination purge is CONDITIONAL: a dest row whose old-path counterpart
+    /// exists in note_meta is crash-window junk (the earned original is about to be remapped
+    /// onto it) and is purged; a dest row with NO old counterpart is the only copy of something
+    /// real and is SPARED. The unconditional version deleted both — including notes the
+    /// per-note self-heal had already relocated after a universe move — with the in-transaction
+    /// baseline captured after the purge and therefore blind to the loss (LL-040's shape; the
+    /// PJ-435 review panel named it the engine's disqualifying defect).
+    #[test]
+    fn the_destination_purge_spares_rows_with_no_old_counterpart() {
+        let f = build_fixture();
+        let mut j = plan(&f);
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
+        j.snapshot_db = Some(db_backup);
+        j.json_backups = json_backups;
+        j.baseline = Some(baseline);
+        j.phase = Phase::Snapshotted;
+        run_move_phase(&mut j, &f.cdir).unwrap();
+
+        // The first journal entry's pair, exactly as the purge will see it.
+        let (old_root, new_root) = (j.entries[0].old_path.clone(), j.entries[0].new_path.clone());
+        // JUNK: a dest twin of a row that exists at the old path (build_fixture seeded a.md
+        // there). Its earned original will be remapped onto this very path.
+        let twin = std::path::Path::new(&new_root).join("a.md").to_string_lossy().to_string();
+        f.conn.execute(
+            "INSERT INTO note_meta (path, name) VALUES (?1, 'junk-twin')",
+            [&twin],
+        ).unwrap();
+        // REAL: a note that exists ONLY at the destination — created (or self-healed) after
+        // the move. No old counterpart anywhere.
+        let fresh = std::path::Path::new(&new_root).join("fresh.md").to_string_lossy().to_string();
+        f.conn.execute(
+            "INSERT INTO note_meta (path, name) VALUES (?1, 'only-copy')",
+            [&fresh],
+        ).unwrap();
+        // The old original carries a marker so the two are distinguishable at the same path.
+        f.conn.execute(
+            "UPDATE note_meta SET name = 'earned-original' WHERE path = ?1",
+            [&std::path::Path::new(&old_root).join("a.md").to_string_lossy().to_string()],
+        ).unwrap();
+
+        run_db_rewrite(&f.conn, &mut j, &f.cdir).unwrap();
+
+        // The twin was purged and the earned original now sits at the dest path.
+        let body: String = f.conn.query_row(
+            "SELECT name FROM note_meta WHERE path = ?1", [&twin], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(body, "earned-original", "junk purged; the earned original remapped onto the path");
+        let n: i64 = f.conn.query_row(
+            "SELECT COUNT(*) FROM note_meta WHERE path = ?1", [&twin], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(n, 1, "exactly one row at the destination — no duplicate survived");
+
+        // The only-copy row SURVIVED. Under the unconditional purge it was deleted here.
+        let kept: i64 = f.conn.query_row(
+            "SELECT COUNT(*) FROM note_meta WHERE path = ?1 AND name = 'only-copy'",
+            [&fresh], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(kept, 1, "a dest row with no old counterpart is the only copy — it must be SPARED");
+    }
     #[test]
     fn interrupt_after_moves_resumes_to_done() {
         let f = build_fixture();
@@ -1927,7 +2046,7 @@ mod slice2_tests {
         j.save(&f.cdir).unwrap();
 
         // Phase 1 run: snapshot + moves only (simulated crash before the DB rewrite).
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -1955,7 +2074,7 @@ mod slice2_tests {
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
 
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -1988,7 +2107,7 @@ mod slice2_tests {
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
 
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -2029,7 +2148,7 @@ mod slice2_tests {
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
 
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -2070,7 +2189,7 @@ mod slice2_tests {
         let f = build_fixture();
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -2133,7 +2252,7 @@ mod slice2_tests {
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
         let (db_backup, json_backups, baseline) =
-            take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+            take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -2174,7 +2293,7 @@ mod slice2_tests {
         let f = build_fixture();
         let mut j = plan(&f);
         j.save(&f.cdir).unwrap();
-        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir).unwrap();
+        let (db_backup, json_backups, baseline) = take_snapshot(&f.conn, &f.db_path, &f.cdir, BACKUP_DIR).unwrap();
         j.snapshot_db = Some(db_backup);
         j.json_backups = json_backups;
         j.baseline = Some(baseline);
@@ -2459,7 +2578,7 @@ fn run_engine_step(
 ) -> Result<(), String> {
     match journal.phase {
         Phase::Planned => {
-            let (b, jb, base) = take_snapshot(conn, db_path, constellation_dir)?;
+            let (b, jb, base) = take_snapshot(conn, db_path, constellation_dir, BACKUP_DIR)?;
             journal.snapshot_db = Some(b);
             journal.json_backups = jb;
             journal.baseline = Some(base);

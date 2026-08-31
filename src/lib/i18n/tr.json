@@ -9,7 +9,10 @@
     "repairBlocked": "Onarım başlatılamadı: {reason}",
     "stalePhantoms": "Arama dizinindeki {noun}, diskte artık bulunmayan notlara işaret ediyor. Hiçbir şey açmayan arama sonuçları olarak ve var olmayan notlara bağlantılar olarak görünebilirler. Bunları Ayarlar → Dizin bölümünden kaldırabilirsiniz.",
     "hiddenDotfiles": "Constellation diskteki {noun} içinde arama yapmıyor, çünkü nokta ile başlayan bir dosya adı dosyayı gizli olarak işaretler. Böyle bir notu ne bulabiliyor ne de eksik olduğunu bildirebiliyor. Dosya adından baştaki noktayı kaldırmak, notu Constellation için yeniden görünür kılar.",
-    "fencedLibraries": "Constellation {noun} için değişiklikleri denetlemiyor. Her birinin üstündeki klasörde bir universe.json dosyası var; bu, o klasörü ayrı bir evren olarak işaretler ve Constellation'ın içini okumasını durdurur. Arama dizinindeki notlar listelenmeye devam eder, ancak o tarihten sonraki düzenlemeler alınmaz. Bir kütüphanenin üstündeki universe.json kaldırıldığında okunması geri gelir; kütüphanenin kendisini kaldırmak yalnızca bu iletiyi gizler — notları dizinde kalır ve bir daha okunmaz."
+    "fencedLibraries": "Constellation {noun} için değişiklikleri denetlemiyor. Her birinin üstündeki klasörde bir universe.json dosyası var; bu, o klasörü ayrı bir evren olarak işaretler ve Constellation'ın içini okumasını durdurur. Arama dizinindeki notlar listelenmeye devam eder, ancak o tarihten sonraki düzenlemeler alınmaz. Bir kütüphanenin üstündeki universe.json kaldırıldığında okunması geri gelir; kütüphanenin kendisini kaldırmak yalnızca bu iletiyi gizler — notları dizinde kalır ve bir daha okunmaz.",
+    "universeMoved": "Bu evren taşındı. Artık {new} konumunda, ancak arama dizini her notu hâlâ {old} konumunda kayıtlı tutuyor. Notlarınızın tümü burada ve normal şekilde açılıyor. Dizin onarılana kadar arama ve bağlantılar eski konumu gösterebilir — hiçbir şey kaybolmadı ve Constellation bu yüzden hiçbir şeyi silmeyecek.",
+    "movedRepairNow": "Dizini onar — güvenli, her şey korunur",
+    "movedRepairFailed": "Taşıma onarımı tamamlanamadı: {reason}. Yedek olmadan hiçbir şey değiştirilmedi — yeniden denemeniz yeterli."
   },
   "saveHealth": {
     "copySuffix": "kurtarılan kopya",
@@ -2219,8 +2222,8 @@
       "importLocationLabel": "İçe Aktarma Konumu",
       "importPreviewHeading": "Önizleme",
       "importingNotes": "Notlar içe aktarılıyor...",
-      "linkLibrary": "Kütüphane getir",
-      "linkLibraryDesc": "Mevcut bir not klasörünü bu Evrene kopyala veya taşı"
+      "linkLibrary": "Zaten Sahip Olduğum Bir Klasörü Kullan",
+      "linkLibraryDesc": "Bir not klasörünü tam bulunduğu yerde bir Evrene dönüştürür — USB bellek dahil her sürücüde. Hiçbir şey kopyalanmaz veya taşınmaz."
     },
     "manager": {
       "heading": "Evren Yöneticisi",

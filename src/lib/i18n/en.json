@@ -9,7 +9,10 @@
     "repairBlocked": "The repair could not start: {reason}",
     "stalePhantoms": "{noun} in the search index point at notes that no longer exist on disk. They can show up as search results that open nothing, and as connections to notes that aren't there. You can remove them in Settings → Index.",
     "hiddenDotfiles": "Constellation is not searching {noun} on disk, because a file name that begins with a dot marks the file as hidden. It can neither find such a note nor report it as missing. Removing the leading dot from the file name lets Constellation see the note again.",
-    "fencedLibraries": "Constellation is not checking {noun} for changes. A folder above each one holds a universe.json file, which marks that folder as a separate universe and stops Constellation reading inside it. Notes already in the search index are still listed, but edits made since are not. Removing the universe.json above a library restores reading for it; removing the library itself only hides this message — its notes stay in the index, never re-read."
+    "fencedLibraries": "Constellation is not checking {noun} for changes. A folder above each one holds a universe.json file, which marks that folder as a separate universe and stops Constellation reading inside it. Notes already in the search index are still listed, but edits made since are not. Removing the universe.json above a library restores reading for it; removing the library itself only hides this message — its notes stay in the index, never re-read.",
+    "universeMoved": "This universe has moved. It now lives at {new}, but its search index still records every note at {old}. Your notes are all here and open normally. Search and links may point at the old location until the index is repaired — nothing is lost, and Constellation will not remove anything over this.",
+    "movedRepairNow": "Repair the index — safe, keeps everything",
+    "movedRepairFailed": "The move repair could not finish: {reason}. Nothing was changed without a backup — you can simply try again."
   },
   "saveHealth": {
     "copySuffix": "recovered copy",
@@ -2377,8 +2380,8 @@
       "importLocationLabel": "Import Location",
       "importPreviewHeading": "Preview",
       "importingNotes": "Importing notes...",
-      "linkLibrary": "Bring In a Library",
-      "linkLibraryDesc": "Copy or move an existing folder of notes into this Universe",
+      "linkLibrary": "Use a Folder I Already Have",
+      "linkLibraryDesc": "Turn a folder of notes into a Universe exactly where it sits — any drive, including a USB stick. Nothing is copied or moved.",
       "starterKit": "Starter Kit",
       "starterKitDesc": "Begin with a pre-made collection of notes"
     },

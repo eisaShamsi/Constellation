@@ -998,6 +998,216 @@ pub fn create_universe(
 // switch_lock below restores, off the main thread, the whole-switch
 // serialization SYNC dispatch used to provide (double-checked with the §A
 // already-active guard, which re-runs under the lock).
+// ─── PJ-435 Phase 1 — ONE detector for "this universe is not where its records say" ───
+
+/// The persisted fact of a move, written the moment it is detected — BEFORE `libraries.json`
+/// is healed, because healing destroys the only evidence (the stale `universe_notes` path is
+/// where the old root was recorded). `.constellation/relocation.json`.
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+pub struct RelocationRecord {
+    /// Where the index's absolute paths still point. If the universe moves AGAIN before a
+    /// repair, this keeps the ORIGINAL root — the index was never rewritten, so its rows still
+    /// carry this prefix, and a chained pair (original → latest) is exactly the rewrite needed.
+    pub old_root: String,
+    /// Where the universe actually is now.
+    pub new_root: String,
+    pub detected_at: String,
+}
+
+/// PJ-435 — true only when a relocation record exists AND parses. Bare existence must never
+/// arm `moved`: an unreadable record would suppress the drift and phantom rows while the moved
+/// row — which needs the parsed pair — renders nothing, a total notice blackout with the safe
+/// repair unreachable inside the unrendered row (safety sweep 2026-08-30, HIGH).
+pub(crate) fn relocation_armed(universe_root: &Path) -> bool {
+    fs::read_to_string(constellation_dir(universe_root).join("relocation.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str::<RelocationRecord>(&s).ok())
+        .is_some()
+}
+
+/// PJ-435 — the armed relocation pair, for the frontend's honest notice. `None` when nothing is
+/// armed. Called once per report that says `moved` — never on a hot path.
+#[tauri::command]
+pub fn get_relocation_record(app: tauri::AppHandle) -> Option<RelocationRecord> {
+    let root = active_universe_dir(&app).ok()?;
+    let raw = fs::read_to_string(root.join(".constellation").join("relocation.json")).ok()?;
+    serde_json::from_str(&raw).ok()
+}
+
+/// Heal `libraries.json` after a universe move, and — when it genuinely IS a move — persist the
+/// old→new pair for the repair to consume. Returns the armed pair, or `None`.
+///
+/// Extracted from two copy-pasted blocks (`set_active_universe`, `open_existing_universe`) that
+/// were healing the paths and THROWING AWAY the pair — the app computed exactly what the repair
+/// needs on every activation and told no one (PJ-435's origin).
+///
+/// The discipline, in order, each step justified:
+/// 1. **Detect from `universe_notes.path`** — the one entry whose path IS the old root.
+/// 2. **A COPY never arms.** If the old root still exists on disk, this is a duplicate, not a
+///    move: the index's paths point at files that are all still there, nothing is stale, and
+///    offering a "repair" would rewrite a healthy index toward a copy. Heal `libraries.json`
+///    (this copy's registry must point at itself) and return `None`.
+/// 3. **Persist BEFORE healing, and verify by reading back.** `relocation.json` is written and
+///    re-read; only then is `libraries.json` rewritten. If the record cannot be persisted the
+///    healing is SKIPPED TOO — the stale path stays, so the condition is re-detectable next
+///    boot. A heal-without-record would be the old behaviour: evidence destroyed, repair
+///    impossible.
+/// 4. **A second move chains.** An existing unrepaired record keeps its `old_root` (the index
+///    still carries that prefix); only `new_root` advances. Moving BACK to the original root
+///    makes the pair degenerate (old == new) — the record is deleted: nothing is stale any more.
+pub(crate) fn heal_paths_after_move(universe_root: &Path) -> Option<(String, String)> {
+    let cdir = constellation_dir(universe_root);
+    let libs_path = cdir.join("libraries.json");
+    let libs_data = fs::read_to_string(&libs_path).ok()?;
+    let mut libs: Vec<crate::libraries::LibraryInfo> = serde_json::from_str(&libs_data).ok()?;
+
+    let root_str = universe_root.to_string_lossy().to_string();
+    let old_root = libs
+        .iter()
+        .find(|l| l.is_universe_notes)
+        .map(|l| l.path.clone())
+        .filter(|p| *p != root_str);
+
+    // The pair, armed only for a genuine move (step 2).
+    let armed: Option<(String, String)> = match &old_root {
+        Some(old) if !Path::new(old).exists() => Some((old.clone(), root_str.clone())),
+        _ => None,
+    };
+
+    let reloc_path = cdir.join("relocation.json");
+    // Safety sweep 2026-08-30 (HIGH + MED): when nothing armed HERE, an existing record must be
+    // one this folder wrote — `new_root` pointing at this root. Two impostors get removed:
+    //   * a FOREIGN record (arrives by copying a moved-but-unrepaired universe; its `new_root`
+    //     is the SOURCE folder) — left in place it suppresses this copy's drift/phantom rows
+    //     and arms a repair aimed at another universe's living root;
+    //   * an UNREADABLE record (torn write, sync conflict) — left in place it arms `moved` by
+    //     bare existence while the moved row, needing the parsed pair, renders nothing: a
+    //     total notice blackout with the safe repair unreachable inside the unrendered row.
+    // A parsed record whose `new_root` IS this root survives — that is the legitimate
+    // armed-and-declined state between boots.
+    if armed.is_none() {
+        if let Ok(raw) = fs::read_to_string(&reloc_path) {
+            let ours = serde_json::from_str::<RelocationRecord>(&raw)
+                .map(|r| {
+                    crate::mig108::norm_under(&r.new_root, &root_str)
+                        && crate::mig108::norm_under(&root_str, &r.new_root)
+                })
+                .unwrap_or(false);
+            if !ours {
+                // Re-inspection 2026-08-30: route through the reporting helper and log the
+                // truth — the first version logged "removed" unconditionally, a lie whenever
+                // the removal failed (e.g. a sync tool holding the file).
+                match crate::relocate::disarm_relocation(&reloc_path) {
+                    Ok(()) => eprintln!(
+                        "[universe] PJ-435: removed a relocation record that does not belong \
+                         to this folder (foreign or unreadable) — the honest drift report resumes"
+                    ),
+                    Err(e) => eprintln!(
+                        "[universe] PJ-435: a relocation record that does not belong to this \
+                         folder could not be removed ({e}) — the moved notice may show another \
+                         folder's paths until it is deleted"
+                    ),
+                }
+            }
+        }
+    }
+    // Step 4 — chain, never overwrite: the pair that leaves this function (disk AND return
+    // value) carries the ORIGINAL old root of an unrepaired move. The first version chained
+    // only the persisted record and returned the freshly-detected pair — the tests caught it:
+    // a caller acting on the return value would have rewritten a prefix the index never held.
+    let armed: Option<(String, String)> = match armed {
+        None => None,
+        Some((detected_old, new)) => {
+            // Safety sweep 2026-08-30 (MED): say so when an EXISTING record cannot be read —
+            // the silent `.ok()` fallback hid exactly the state (torn record + second move)
+            // where the chained old root is unknowable and the fallback pair may be wrong.
+            let old = match fs::read_to_string(&reloc_path) {
+                Ok(s) => match serde_json::from_str::<RelocationRecord>(&s) {
+                    Ok(r) => r.old_root,
+                    Err(e) => {
+                        eprintln!(
+                            "[universe] PJ-435: existing relocation record unreadable ({e}) — \
+                             chaining from the freshly detected old root instead; if a repair \
+                             then finds nothing to remap, this is why"
+                        );
+                        detected_old
+                    }
+                },
+                Err(_) => detected_old,
+            };
+            if crate::mig108::norm_under(&old, &new) && crate::mig108::norm_under(&new, &old) {
+                // Moved back home: the index's prefix is the root again. Nothing is stale —
+                // disarm entirely (the healing below still runs; libraries.json must heal).
+                if reloc_path.exists() {
+                    if let Err(e) = crate::relocate::disarm_relocation(&reloc_path) {
+                        eprintln!("[universe] PJ-435: moved-back-home record could not be removed ({e})");
+                    }
+                }
+                None
+            } else {
+                let record = RelocationRecord {
+                    old_root: old.clone(),
+                    new_root: new.clone(),
+                    detected_at: chrono::Local::now().to_rfc3339(),
+                };
+                let json = match serde_json::to_string_pretty(&record) {
+                    Ok(j) => j,
+                    Err(_) => return None,
+                };
+                // Step 3 — write ATOMICALLY (temp + rename, the same helper every manifest in
+                // this file uses), then PROVE it landed, before any healing. A bare fs::write
+                // here was the one non-atomic manifest write in this file, and a torn record
+                // is what used to cause the notice blackout above (safety sweep 2026-08-30).
+                if atomic_write(&reloc_path, json.as_bytes()).is_err() {
+                    eprintln!(
+                        "[universe] PJ-435: relocation record could not be written — leaving \
+                         libraries.json UNHEALED so the move stays detectable next boot"
+                    );
+                    return None;
+                }
+                match fs::read_to_string(&reloc_path) {
+                    Ok(back) if back == json => Some((old, new)),
+                    _ => {
+                        eprintln!(
+                            "[universe] PJ-435: relocation record failed read-back verification — \
+                             leaving libraries.json unhealed"
+                        );
+                        return None;
+                    }
+                }
+            }
+        }
+    };
+
+    // The healing both call sites always did — verbatim behaviour, now in one place.
+    let mut changed = false;
+    for lib in &mut libs {
+        if lib.is_universe_notes {
+            if lib.path != root_str {
+                eprintln!("[universe] Fixing universe notes path: {} → {}", lib.path, root_str);
+                lib.path = root_str.clone();
+                changed = true;
+            }
+        } else if !Path::new(&lib.path).exists() {
+            if let Some(folder_name) = Path::new(&lib.path).file_name() {
+                let candidate = universe_root.join(folder_name);
+                if candidate.is_dir() {
+                    let new_path = candidate.to_string_lossy().to_string();
+                    eprintln!("[universe] Fixing library path: {} → {}", lib.path, new_path);
+                    lib.path = new_path;
+                    changed = true;
+                }
+            }
+        }
+    }
+    if changed {
+        if let Ok(json) = serde_json::to_string_pretty(&libs) {
+            persist_json_best_effort(&libs_path, &json);
+        }
+    }
+    armed
+}
+
 #[tauri::command(async)]
 pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), String> {
     // App-freeze audit R2 (2026-07-04): phase timing measured this command at
@@ -1143,41 +1353,10 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
         }
     }
 
-    // ─── Fix stale library paths on every activation ───
-    // If the universe was moved, libraries.json still has old absolute paths.
-    // Fix is_universe_notes to point to current root, and resolve other stale paths.
-    let cdir_fix = constellation_dir(&final_path);
-    let libs_fix_path = cdir_fix.join("libraries.json");
-    if libs_fix_path.exists() {
-        if let Ok(libs_data) = fs::read_to_string(&libs_fix_path) {
-            if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
-                let root_str = final_path.to_string_lossy().to_string();
-                let mut changed = false;
-                for lib in &mut libs {
-                    if lib.is_universe_notes && lib.path != root_str {
-                        eprintln!("[universe] Fixing universe notes path: {} → {}", lib.path, root_str);
-                        lib.path = root_str.clone();
-                        changed = true;
-                    } else if !lib.is_universe_notes && !Path::new(&lib.path).exists() {
-                        if let Some(folder_name) = Path::new(&lib.path).file_name() {
-                            let candidate = final_path.join(folder_name);
-                            if candidate.is_dir() {
-                                let new_path = candidate.to_string_lossy().to_string();
-                                eprintln!("[universe] Fixing library path: {} → {}", lib.path, new_path);
-                                lib.path = new_path;
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-                if changed {
-                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        persist_json_best_effort(&libs_fix_path, &json);
-                    }
-                }
-            }
-        }
-    }
+    // ─── PJ-435 — detect a move, persist the pair, heal libraries.json (one helper) ───
+    // The armed pair is persisted to `.constellation/relocation.json` by the helper itself;
+    // Phase 2 surfaces it through the DriftReport. Nothing else to do at this site.
+    let _relocated = heal_paths_after_move(&final_path);
 
 
     // Update managed state
@@ -1410,6 +1589,39 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
         }
     }
 
+    // PJ-435 — THE MOVED UNIVERSE IS THE SAME UNIVERSE. The loop above matches by PATH, so a
+    // universe opened at its new location matched nothing and a DUPLICATE entry was registered —
+    // the registry then listed the same universe twice, once at a dead path (the Boss's own list
+    // carried two such ghosts on 2026-08-29). Identity is the manifest, which travelled with the
+    // folder: same name, same created stamp, and the recorded path no longer on disk. Re-point
+    // that entry rather than duplicating it.
+    //
+    // The repoint is MANDATORY, not cosmetic: matching by identity and returning the entry
+    // unchanged would hand the caller the dead old path — converting a duplicate-entry bug into
+    // a cannot-open-at-all bug (the review chair caught exactly this in the proposed fix).
+    // All three conditions are required — name alone is not identity (two universes may share a
+    // name), and a LIVE path is a different universe that happens to share both.
+    for existing in registry.entries.iter_mut() {
+        if existing.name == meta.name
+            && existing.created == meta.created
+            && !Path::new(&existing.path).exists()
+        {
+            eprintln!(
+                "[universe] PJ-435: re-pointing moved universe '{}': {} → {}",
+                existing.name, existing.path, path
+            );
+            existing.path = path.clone();
+            let repointed = existing.clone();
+            registry.active_id = Some(repointed.id.clone());
+            save_registry(&app, &registry)?;
+            // The helper below still runs on this route via the shared tail — but this branch
+            // RETURNS, so run it here: heal libraries.json and persist the relocation pair.
+            let _relocated = heal_paths_after_move(universe_dir);
+            ensure_universe_notes_folder(universe_dir)?;
+            return Ok(repointed);
+        }
+    }
+
     let entry = UniverseEntry {
         id: format!("universe_{}", uuid_simple()),
         name: meta.name.clone(),
@@ -1421,47 +1633,8 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     registry.active_id = Some(entry.id.clone());
     save_registry(&app, &registry)?;
 
-    // ─── Fix library paths after universe move ───
-    // libraries.json stores absolute paths from the old location. After a move,
-    // update is_universe_notes library to point to the new universe root.
-    // Also update any library whose old path no longer exists but whose folder
-    // name exists under the new universe root.
-    let libs_path = cdir.join("libraries.json");
-    if libs_path.exists() {
-        if let Ok(libs_data) = fs::read_to_string(&libs_path) {
-            if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
-                let root_str = universe_dir.to_string_lossy().to_string();
-                let mut changed = false;
-                for lib in &mut libs {
-                    let old_path = Path::new(&lib.path);
-                    if lib.is_universe_notes {
-                        // Universe notes library always points to root
-                        if lib.path != root_str {
-                            eprintln!("[universe] Fixing universe notes path: {} → {}", lib.path, root_str);
-                            lib.path = root_str.clone();
-                            changed = true;
-                        }
-                    } else if !old_path.exists() {
-                        // Non-universe library with stale path — try to find it under new root
-                        if let Some(folder_name) = old_path.file_name() {
-                            let candidate = universe_dir.join(folder_name);
-                            if candidate.is_dir() {
-                                let new_path = candidate.to_string_lossy().to_string();
-                                eprintln!("[universe] Fixing library path: {} → {}", lib.path, new_path);
-                                lib.path = new_path;
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-                if changed {
-                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
-                        persist_json_best_effort(&libs_path, &json);
-                    }
-                }
-            }
-        }
-    }
+    // ─── PJ-435 — same detector as set_active_universe; see the helper for the discipline ───
+    let _relocated = heal_paths_after_move(universe_dir);
 
     // Ensure universe notes folder is registered
     ensure_universe_notes_folder(universe_dir)?;
@@ -3764,5 +3937,218 @@ mod tests_pj281_legacy_collections_adoption {
         assert!(!target.exists(), "a corrupt payload must not become the adopted file");
         assert!(t.path().join("workbench.json").exists(), "nor may the legacy be retired");
         assert!(!t.path().join("workbench.json.migrated").exists());
+    }
+}
+
+#[cfg(test)]
+mod tests_pj435_move_detection {
+    //! PJ-435 Phase 1 — the detector's four disciplines, each pinned behaviourally against the
+    //! SHIPPING helper. No AppHandle needed: `heal_paths_after_move` is pure filesystem.
+    use super::heal_paths_after_move;
+    use std::path::Path;
+
+    fn universe_at(root: &Path, universe_notes_path: &str, extra: Option<(&str, &str)>) {
+        let cdir = root.join(".constellation");
+        std::fs::create_dir_all(&cdir).unwrap();
+        let mut libs = vec![serde_json::json!({
+            "id": "universe_notes_x", "name": "notes", "path": universe_notes_path,
+            "is_universe_notes": true, "canonical_mode": "native"
+        })];
+        if let Some((name, path)) = extra {
+            libs.push(serde_json::json!({
+                "id": "lib_x", "name": name, "path": path,
+                "is_universe_notes": false, "canonical_mode": "native"
+            }));
+        }
+        std::fs::write(&cdir.join("libraries.json"), serde_json::to_string_pretty(&libs).unwrap()).unwrap();
+    }
+    fn notes_path(root: &Path) -> String {
+        let s = std::fs::read_to_string(root.join(".constellation/libraries.json")).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&s).unwrap();
+        v.as_array().unwrap().iter()
+            .find(|l| l["is_universe_notes"].as_bool() == Some(true))
+            .unwrap()["path"].as_str().unwrap().to_string()
+    }
+    fn reloc(root: &Path) -> Option<super::RelocationRecord> {
+        std::fs::read_to_string(root.join(".constellation/relocation.json")).ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+    }
+
+    /// A MOVE arms: old root gone → pair returned, relocation.json persisted, libraries healed.
+    #[test]
+    fn a_genuine_move_arms_and_persists_the_pair() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        let old = td.path().join("gone").join("Universe"); // never created — the move left nothing
+        universe_at(&root, &old.to_string_lossy(), None);
+
+        let pair = heal_paths_after_move(&root);
+        let (o, n) = pair.expect("an absent old root is a MOVE and must arm");
+        assert_eq!(o, old.to_string_lossy());
+        assert_eq!(n, root.to_string_lossy());
+        let r = reloc(&root).expect("the pair must be PERSISTED, not only returned");
+        assert_eq!((r.old_root.as_str(), r.new_root.as_str()), (o.as_str(), n.as_str()));
+        assert_eq!(notes_path(&root), root.to_string_lossy(), "libraries.json healed");
+    }
+
+    /// A COPY never arms: the old root still exists, its index is healthy, and offering a
+    /// "repair" would rewrite a healthy index toward the copy. Healing still happens.
+    #[test]
+    fn a_copy_heals_but_never_arms() {
+        let td = tempfile::tempdir().unwrap();
+        let original = td.path().join("Original");
+        std::fs::create_dir_all(&original).unwrap(); // the original SURVIVES — this is a copy
+        let copy = td.path().join("Copy");
+        universe_at(&copy, &original.to_string_lossy(), None);
+
+        assert!(heal_paths_after_move(&copy).is_none(), "a copy must NEVER arm the repair");
+        assert!(reloc(&copy).is_none(), "no relocation record for a copy");
+        assert_eq!(notes_path(&copy), copy.to_string_lossy(), "the copy's registry heals to itself");
+    }
+
+    /// A second move before any repair CHAINS: old_root stays the ORIGINAL (the index still
+    /// carries that prefix), only new_root advances. Overwriting would make the recorded pair
+    /// describe a rewrite the index does not need and miss the one it does.
+    #[test]
+    fn a_second_move_keeps_the_original_old_root() {
+        let td = tempfile::tempdir().unwrap();
+        let a = td.path().join("A"); // original — index rows still point here
+        let b = td.path().join("B");
+        let c = td.path().join("C");
+        universe_at(&b, &a.to_string_lossy(), None);
+        heal_paths_after_move(&b).expect("first move arms");
+        // Move again: B → C. The folder (with its .constellation) travels.
+        std::fs::create_dir_all(c.parent().unwrap()).unwrap();
+        std::fs::rename(&b, &c).unwrap();
+        // After the physical move, libraries.json points at B (healed there), which is now gone.
+        let pair = heal_paths_after_move(&c).expect("second move arms too");
+        assert_eq!(pair.0, a.to_string_lossy(), "old_root must stay the ORIGINAL root");
+        assert_eq!(pair.1, c.to_string_lossy());
+        let r = reloc(&c).unwrap();
+        assert_eq!(r.old_root, a.to_string_lossy());
+        assert_eq!(r.new_root, c.to_string_lossy());
+    }
+
+    /// Moving BACK home deletes the record: the index's prefix is the root again, nothing is
+    /// stale, and a surviving record would offer a repair with nothing to repair.
+    #[test]
+    fn moving_back_home_disarms() {
+        let td = tempfile::tempdir().unwrap();
+        let home = td.path().join("Home");
+        let away = td.path().join("Away");
+        universe_at(&away, &home.to_string_lossy(), None);
+        heal_paths_after_move(&away).expect("the move away arms");
+        std::fs::rename(&away, &home).unwrap();
+        // libraries.json inside now says `away` (healed there), which no longer exists — but the
+        // CHAINED old root is `home`, which is where we are: degenerate pair, disarm.
+        assert!(heal_paths_after_move(&home).is_none(), "home again — nothing is stale");
+        assert!(reloc(&home).is_none(), "the record must be DELETED, not left armed");
+        assert_eq!(notes_path(&home), home.to_string_lossy());
+    }
+
+    /// The healing the two old call sites always did, preserved: a non-universe_notes library
+    /// whose recorded path is stale is re-pointed by folder name under the new root.
+    #[test]
+    fn a_member_library_is_repointed_under_the_new_root() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        let old = td.path().join("gone");
+        std::fs::create_dir_all(root.join("Physics")).unwrap();
+        universe_at(&root, &old.join("U").to_string_lossy(),
+                    Some(("Physics", &old.join("U").join("Physics").to_string_lossy())));
+        heal_paths_after_move(&root);
+        let s = std::fs::read_to_string(root.join(".constellation/libraries.json")).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&s).unwrap();
+        let lib = v.as_array().unwrap().iter().find(|l| l["name"] == "Physics").unwrap();
+        assert_eq!(lib["path"].as_str().unwrap(), root.join("Physics").to_string_lossy());
+    }
+
+    /// Safety sweep 2026-08-30 (HIGH + MED): a COPY of a moved-but-unrepaired universe inherits
+    /// the source's armed relocation.json — a record whose `new_root` is the SOURCE folder.
+    /// Left in place it suppresses this copy's drift/phantom rows and arms a repair aimed at
+    /// ANOTHER universe's living root. Activation must remove it.
+    #[test]
+    fn a_foreign_record_inherited_by_a_copy_is_removed() {
+        let td = tempfile::tempdir().unwrap();
+        let original = td.path().join("Original");
+        std::fs::create_dir_all(&original).unwrap(); // the source still exists — this is a copy
+        let copy = td.path().join("Copy");
+        universe_at(&copy, &original.to_string_lossy(), None);
+        let foreign = super::RelocationRecord {
+            old_root: td.path().join("EvenOlder").to_string_lossy().to_string(),
+            new_root: original.to_string_lossy().to_string(), // describes the SOURCE, not us
+            detected_at: "2026-08-30T00:00:00+04:00".to_string(),
+        };
+        std::fs::write(copy.join(".constellation/relocation.json"),
+                       serde_json::to_string_pretty(&foreign).unwrap()).unwrap();
+
+        assert!(heal_paths_after_move(&copy).is_none(), "a copy must never arm");
+        assert!(reloc(&copy).is_none(),
+                "the inherited foreign record must be REMOVED — it aims the repair at the source");
+    }
+
+    /// The legitimate counterpart the fix must NOT break: a move was detected earlier, the
+    /// repair declined, libraries.json already healed. The next boot detects nothing new —
+    /// and the armed record for THIS folder must survive so the notice and repair remain.
+    #[test]
+    fn an_armed_record_for_this_folder_survives_the_next_boot() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        universe_at(&root, &root.to_string_lossy(), None); // already healed — nothing to detect
+        let armed = super::RelocationRecord {
+            old_root: td.path().join("gone").join("Universe").to_string_lossy().to_string(),
+            new_root: root.to_string_lossy().to_string(), // OURS
+            detected_at: "2026-08-30T00:00:00+04:00".to_string(),
+        };
+        std::fs::write(root.join(".constellation/relocation.json"),
+                       serde_json::to_string_pretty(&armed).unwrap()).unwrap();
+
+        heal_paths_after_move(&root);
+        assert!(reloc(&root).is_some(),
+                "an armed record for THIS folder must survive an ordinary boot — deleting it \
+                 would disarm a declined-but-real repair");
+    }
+
+    /// Re-inspection 2026-08-30 (LOW): the foreign-record removal goes through
+    /// `disarm_relocation`, which reports failure instead of letting the log claim "removed"
+    /// unconditionally. This pins the read-only case end-to-end (on Rust 1.94 std handles the
+    /// attribute itself — probe-verified — so this guards the guarantee, not the mechanism).
+    #[test]
+    fn a_readonly_foreign_record_is_still_removed_at_activation() {
+        let td = tempfile::tempdir().unwrap();
+        let original = td.path().join("Original");
+        std::fs::create_dir_all(&original).unwrap();
+        let copy = td.path().join("Copy");
+        universe_at(&copy, &original.to_string_lossy(), None);
+        let foreign = super::RelocationRecord {
+            old_root: td.path().join("EvenOlder").to_string_lossy().to_string(),
+            new_root: original.to_string_lossy().to_string(),
+            detected_at: "2026-08-30T00:00:00+04:00".to_string(),
+        };
+        let rp = copy.join(".constellation/relocation.json");
+        std::fs::write(&rp, serde_json::to_string_pretty(&foreign).unwrap()).unwrap();
+        let mut perms = std::fs::metadata(&rp).unwrap().permissions();
+        perms.set_readonly(true);
+        std::fs::set_permissions(&rp, perms).unwrap();
+
+        heal_paths_after_move(&copy);
+        assert!(reloc(&copy).is_none(),
+                "a read-only attribute must not defeat the foreign-record removal");
+    }
+
+    /// Safety sweep 2026-08-30 (HIGH): a record that EXISTS but does not PARSE used to black
+    /// out every notice — `moved` armed on bare existence while the moved row (needing the
+    /// parsed pair) rendered nothing. Activation must remove the unreadable record so the
+    /// honest drift report resumes.
+    #[test]
+    fn an_unreadable_record_is_removed_at_activation() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("Universe");
+        universe_at(&root, &root.to_string_lossy(), None);
+        std::fs::write(root.join(".constellation/relocation.json"), b"{ torn mid-wr").unwrap();
+
+        heal_paths_after_move(&root);
+        assert!(std::fs::read_to_string(root.join(".constellation/relocation.json")).is_err(),
+                "an unreadable record must be removed, not left to suppress every notice");
     }
 }

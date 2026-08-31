@@ -162,14 +162,14 @@ Since a Universe is a self-contained directory, you can:
 
 ### Portable Universes
 
-Constellation universes are fully portable. You can move a universe folder to any location — a different drive, USB stick, or another computer — and Constellation will automatically detect and fix all internal paths when you reopen it.
+Constellation universes are fully portable. You can move a universe folder to any location — a different drive, USB stick, or another computer — and Constellation rewrites the universe's library list when you reopen it, so your notes and folders appear immediately. The search index is a separate store and still holds the old location, so click the repair button on the moved-universe bar; Constellation refuses to remove index entries when that many look wrong at once, so nothing is at risk even if you wait.
 
 To move a universe:
 1. Close Constellation
 2. Move or copy the universe folder to the new location
-3. Open Constellation → it shows the Welcome screen (old path no longer valid)
+3. Open Constellation → it does NOT announce the old path is gone — it quietly opens a different universe instead
 4. Choose **Open Existing Universe** and point to the new location
-5. All notes and libraries appear immediately — paths are auto-fixed
+5. All notes and libraries appear immediately — use the **“Repair the index — safe, keeps everything”** button on the bar that appears — it backs up first, rewrites the stored locations in one step, and keeps link ages, review rhythm and everything earned. Do NOT use a Full re-read for a move: it rebuilds from scratch and resets every link's birth date
 
 The universe folder structure follows the Obsidian model: notes go directly in the root folder, configuration lives in `.constellation/`.
 

@@ -9,7 +9,10 @@
     "repairBlocked": "La réparation n'a pas pu démarrer : {reason}",
     "stalePhantoms": "{noun} de l'index de recherche pointent vers des notes qui n'existent plus sur le disque. Elles peuvent apparaître comme des résultats qui n'ouvrent rien et comme des liens vers des notes absentes. Vous pouvez les supprimer dans Paramètres → Index.",
     "hiddenDotfiles": "Constellation ne recherche pas dans {noun} présentes sur le disque, car un nom de fichier commençant par un point marque le fichier comme masqué. Il ne peut ni trouver une telle note ni signaler son absence. Retirer le point initial du nom de fichier permet à Constellation de revoir la note.",
-    "fencedLibraries": "Constellation ne vérifie pas les modifications de {noun}. Un dossier situé au-dessus de chacune contient un fichier universe.json, qui marque ce dossier comme un univers distinct et empêche Constellation d'y lire. Les notes déjà dans l'index de recherche restent répertoriées, mais pas les modifications apportées depuis. Supprimer le universe.json situé au-dessus d'une bibliothèque en rétablit la lecture ; retirer la bibliothèque elle-même ne fait que masquer ce message — ses notes restent dans l’index sans jamais être relues."
+    "fencedLibraries": "Constellation ne vérifie pas les modifications de {noun}. Un dossier situé au-dessus de chacune contient un fichier universe.json, qui marque ce dossier comme un univers distinct et empêche Constellation d'y lire. Les notes déjà dans l'index de recherche restent répertoriées, mais pas les modifications apportées depuis. Supprimer le universe.json situé au-dessus d'une bibliothèque en rétablit la lecture ; retirer la bibliothèque elle-même ne fait que masquer ce message — ses notes restent dans l’index sans jamais être relues.",
+    "universeMoved": "Cet univers a été déplacé. Il se trouve maintenant à {new}, mais son index de recherche enregistre encore chaque note à {old}. Vos notes sont toutes là et s'ouvrent normalement. La recherche et les liens peuvent pointer vers l'ancien emplacement jusqu'à la réparation de l'index — rien n'est perdu, et Constellation ne supprimera rien pour autant.",
+    "movedRepairNow": "Réparer l'index — sûr, tout est conservé",
+    "movedRepairFailed": "La réparation du déplacement n'a pas pu aboutir : {reason}. Rien n'a été modifié sans sauvegarde — vous pouvez simplement réessayer."
   },
   "saveHealth": {
     "copySuffix": "copie récupérée",
@@ -1790,8 +1793,8 @@
       "importLocationLabel": "Emplacement d'importation",
       "importPreviewHeading": "Aperçu",
       "importingNotes": "Importation des notes...",
-      "linkLibrary": "Faire entrer une bibliothèque",
-      "linkLibraryDesc": "Copier ou déplacer un dossier de notes existant dans cet Univers"
+      "linkLibrary": "Utiliser un dossier que j'ai déjà",
+      "linkLibraryDesc": "Transforme un dossier de notes en Univers là où il se trouve — sur n'importe quel disque, y compris une clé USB. Rien n'est copié ni déplacé."
     },
     "manager": {
       "heading": "Gestionnaire d'Univers",

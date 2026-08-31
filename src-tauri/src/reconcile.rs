@@ -149,6 +149,20 @@ pub struct DriftReport {
     /// door" this file already forbids twice. The remedy is to unregister the library or remove
     /// the universe marker from the folder above it.
     pub fenced_libraries: usize,
+    /// PJ-435 — an armed relocation record exists: this universe was MOVED and its index still
+    /// records every note at the old root. A `bool`, not the paths, deliberately: `DriftReport`
+    /// is `Copy` and must stay so; the pair travels via `get_relocation_record` (universe.rs),
+    /// invoked by the frontend only when this is true — never on the ordinary boot path.
+    ///
+    /// NOT part of `has_findings`, and MORE: while this is armed the frontend SUPPRESSES the
+    /// generic drift row and the phantom row. Their numbers are true (thousands of rows look
+    /// stale/phantom) and their impression is false (nothing is missing — it is all one folder
+    /// over), and each carries a button that is DESTRUCTIVE on a moved universe: "Repair now"
+    /// re-reads by the healed library paths and resets every link's birth date; the phantom
+    /// prune would offer to DELETE the rows. The panel's ruling, verbatim: "An app that tells
+    /// you your life's notes are gone when they are all fine, and then offers a button that
+    /// quietly damages them, is not Constellation."
+    pub moved: bool,
     /// PJ-369 — rows this pass classified as **stale phantoms**: their file is gone, the
     /// mount is provably live, they sit under no registered library and no linked universe,
     /// and they carry no earned link or review data. On the Boss's `Eisa Universe` this is
@@ -218,6 +232,11 @@ impl DriftReport {
     /// same fence that hid it, so the repair cannot act on it.
     pub fn has_fenced(&self) -> bool {
         self.fenced_libraries > 0
+    }
+
+    /// PJ-435 — was this universe moved, with the index still at the old root?
+    pub fn has_moved(&self) -> bool {
+        self.moved
     }
 
     /// PJ-369 — is there anything to tell the user about phantoms? Separate from
@@ -668,6 +687,13 @@ fn run(app: &tauri::AppHandle) -> Result<ReconcileOutcome, String> {
         files_unreadable: walk.files_unreadable,
         hidden_dotfiles: walk.hidden_dotfiles,
         fenced_libraries: fenced_libraries.len(),
+        // PJ-435 — armed by `heal_paths_after_move` at activation; consumed here so the boot
+        // notice can tell the truth instead of the drift row's misleading thousands. Parse,
+        // never bare-exists: an unreadable record arming this flag would suppress the drift
+        // and phantom rows while the moved row renders nothing (safety sweep 2026-08-30).
+        moved: crate::universe::active_universe_dir(app)
+            .map(|r| crate::universe::relocation_armed(&r))
+            .unwrap_or(false),
         stale_phantoms,
     };
     // 2026-08-24 panel — say so when the classifier declined. A refusal reports `0` phantoms
