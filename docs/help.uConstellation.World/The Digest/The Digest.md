@@ -83,11 +83,11 @@ The toggle is per-session; close and reopen the Digest and it goes back to recen
 
 ---
 
-## Federation: child Universes appear inline
+## Federation: Linked Universes appear inline
 
-If your Universe has **linked child Universes** (cUniverses), every library from a child Universe appears in the Digest as **its own peer Library header**, alongside the parent Universe's libraries. The Digest is a unified view of everything reachable from this Universe, not just the libraries that physically live here.
+If your Universe has **Linked Universes**, every library from a Linked Universe appears in the Digest as **its own peer Library header**, alongside your own Universe's libraries. The Digest is a unified view of everything reachable from this Universe, not just the libraries that physically live here.
 
-(A future Constellation update will add an on/off toggle to hide child-Universe libraries from the Digest temporarily; for now they always appear.)
+(A future Constellation update will add an on/off toggle to hide Linked-Universe libraries from the Digest temporarily; for now they always appear.)
 
 ---
 
@@ -110,8 +110,8 @@ Open the Digest. Type X (a word that would appear in the note's title, headline,
 **"I want to write a top-down review of my Library."**
 Open the Digest, sort = Alphabetical. Walk the headlines in order. Click chevrons to read fuller summaries when something catches you. Use this as the spine of a new MOC (Map of Content) note.
 
-**"I'm exploring a federated cUniverse for the first time."**
-Open the Digest. Scroll past your own libraries to the cUniverse's libraries — they're peer rows. Read the headlines to learn what the linked Universe contains, without opening anything from it.
+**"I'm exploring a Linked Universe for the first time."**
+Open the Digest. Scroll past your own libraries to the Linked Universe's libraries — they're peer rows. Read the headlines to learn what the Linked Universe contains, without opening anything from it.
 
 ---
 

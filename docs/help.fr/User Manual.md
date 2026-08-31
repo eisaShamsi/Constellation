@@ -72,7 +72,7 @@ L'**Arborescence** est l'Explorateur de fichiers de Constellation : elle sert a 
 
 **Selection multiple.** **Ctrl-clic** (⌘-clic sur Mac) pour ajouter ou retirer une note ou un dossier de la selection ; **Maj-clic** pour selectionner une plage entiere. Un simple clic sur une note l'ouvre toujours — la selection reste en place jusqu'a ce que vous appuyiez sur **Echap** ou que vous l'effaciez. Les lignes selectionnees sont surlignees par une barre d'accentuation.
 
-**Operations par lot.** Lorsque des elements sont selectionnes, une barre apparait en bas de la barre laterale et affiche leur nombre, avec **Deplacer**, **Ajouter une etiquette** et **Supprimer**. Chaque action s'applique a toute la selection via les memes operations sures et controlees qu'une note isolee — l'etiquetage par lot ne corrompt donc jamais une note, et la suppression passe par la corbeille. Les notes provenant d'univers enfants lies (en lecture seule) sont ignorees automatiquement.
+**Operations par lot.** Lorsque des elements sont selectionnes, une barre apparait en bas de la barre laterale et affiche leur nombre, avec **Deplacer**, **Ajouter une etiquette** et **Supprimer**. Chaque action s'applique a toute la selection via les memes operations sures et controlees qu'une note isolee — l'etiquetage par lot ne corrompt donc jamais une note, et la suppression passe par la corbeille. Les notes provenant d'univers liés (en lecture seule) sont ignorees automatiquement.
 
 **Les bases restent :** deplier/replier les dossiers au clic ou avec les fleches, clic droit pour le menu contextuel (Ouvrir, Renommer, Deplacer, Ajouter une etiquette, Supprimer…), et glisser-deposer pour deplacer des notes entre dossiers.
 
@@ -135,9 +135,9 @@ Quand elle se termine, l'application se met à jour **sans redémarrage** — la
 
 **Un autre message que vous pouvez voir.** Si une réparation est interrompue — le plus souvent parce que vous fermez Constellation pendant qu'elle s'exécute — la reconstruction restante est achevée au lancement suivant. Cela se produit *après* que la fenêtre est ouverte et utilisable, avec en bas le message *« Finalisation d'une réparation d'index interrompue… »*. Vous n'avez rien à faire ; cela prend quelques secondes puis disparaît. Les versions antérieures effectuaient ce travail pendant que l'application démarrait encore, avant qu'elle ne soit utilisable — environ trois secondes sans rien à l'écran pour expliquer l'attente.
 
-### Univers enfants
+### Univers liés
 
-Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
+Vous pouvez lier d'autres univers au vôtre — d'égal à égal, un univers n'est jamais le contenu d'un autre. Un **Univers lié** est un autre dossier d'univers que le vôtre référence. Les notes des univers liés apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
 
 ### Réouverture automatique
 
@@ -309,7 +309,7 @@ Quand vous renommez une note — depuis l'arborescence (clic droit → Renommer)
 
 **Toutes les formes de lien sont mises à jour**, pas seulement les plus simples : un lien simple (`[[Nom de la note]]`), un lien avec votre propre texte affiché (`[[Nom de la note|les mots que vous vouliez lire]]`), un lien **typé** qui porte une relation (`[[supports::Nom de la note]]`, et avec votre annotation `[[supports::Nom de la note|pourquoi cela appuie]]`), et un lien qui pointe *à l'intérieur* d'une note, vers un titre (`[[Nom de la note#Titre]]`) ou vers un bloc (`[[Nom de la note^bloc]]`). Seul le nom change : la relation, votre texte affiché, votre annotation et le titre ou le bloc visé sont conservés exactement tels que vous les avez écrits. Auparavant, les liens typés et les liens pointant vers un titre ou un bloc étaient laissés en arrière, portant encore l'ancien nom, sans le moindre avertissement. Un lien qui indique le dossier sur le chemin de la note (`[[Nom du dossier/Nom de la note]]`) est lui aussi mis à jour et conserve son dossier tel quel : la note a changé de titre, pas d'emplacement. **Un cas n'est pas encore couvert :** un lien qui écrit le titre avec une casse différente de celle de la note continue de fonctionner, mais après le renommage il nomme toujours l'ancien titre.
 
-**Toutes les bibliothèques de votre univers sont couvertes.** La mise à jour atteint les notes de **toutes** les bibliothèques de l'univers ouvert, et pas seulement celle où se trouve la note renommée : un lien qui va d'une bibliothèque à une autre survit donc au renommage. Les notes d'un **univers enfant lié** sont volontairement laissées intactes — c'est une base de connaissances distincte, et Constellation ne réécrit pas ses notes.
+**Toutes les bibliothèques de votre univers sont couvertes.** La mise à jour atteint les notes de **toutes** les bibliothèques de l'univers ouvert, et pas seulement celle où se trouve la note renommée : un lien qui va d'une bibliothèque à une autre survit donc au renommage. Les notes d'un **univers lié** sont volontairement laissées intactes — c'est une base de connaissances distincte, et Constellation ne réécrit pas ses notes.
 
 **Si certaines notes n'ont pas pu être mises à jour, on vous le dit.** Il arrive qu'un fichier soit verrouillé, en lecture seule ou utilisé par un autre programme. Plutôt que d'annoncer une réussite complète, Constellation nomme ces notes et vous indique que leurs liens portent encore l'ancien nom, pour que vous sachiez exactement quoi vérifier.
 
@@ -670,7 +670,7 @@ Le second ecran modifie son contenu en fonction du mode actif de la barre latera
 
 | Mode de la barre laterale | Le second ecran affiche |
 |---|---|
-| **Explorateur de fichiers** | Tableau de bord de l'univers — statistiques, repartition des bibliotheques, univers enfants, etiquettes, notes recemment modifiees/ouvertes |
+| **Explorateur de fichiers** | Tableau de bord de l'univers — statistiques, repartition des bibliotheques, univers liés, etiquettes, notes recemment modifiees/ouvertes |
 | **Vue du ciel** | Arbre de la Vue du ciel avec structure des repertoires |
 | **Vue Etoiles** | Complementaire Vue Etoiles avec retroliens, liens avant, etiquettes et graphe local |
 
@@ -678,8 +678,8 @@ Le second ecran modifie son contenu en fonction du mode actif de la barre latera
 
 Lorsque la fenetre principale est en mode Explorateur de fichiers, le second ecran affiche un tableau de bord avec :
 
-- **Cartes de statistiques** — Nom de l'univers, nombre d'univers enfants, total des bibliotheques, dossiers et notes
-- **Univers enfants** — Chaque univers enfant avec ses bibliotheques liees et le nombre de dossiers/notes
+- **Cartes de statistiques** — Nom de l'univers, nombre d'univers liés, total des bibliotheques, dossiers et notes
+- **Univers liés** — Chaque univers lié avec ses bibliotheques liees et le nombre de dossiers/notes *(à l'écran, cette section porte encore le libellé « Sous-univers », antérieur au nom actuel)*
 - **Bibliotheques** — Chaque bibliotheque avec le nombre de dossiers/notes dans des boites statistiques colorees
 - **Recemment modifiees** — Notes que vous avez modifiees dans la session actuelle (suivies lors de la sauvegarde)
 - **Recemment ouvertes** — Notes que vous avez ouvertes mais pas modifiees dans la session actuelle
@@ -1048,7 +1048,7 @@ En affichage de la note, le bloc de code est remplace par un tableau interactif 
 
 **Dimensions disponibles en v1 :** `note.name`, `note.path`, `note.created_at`, `note.headline`.
 
-**Federation :** par defaut, les blocs Lens lisent dans l'univers actif ET chaque cUnivers lie. Definissez `federation: active` dans le YAML pour limiter a l'univers actif.
+**Federation :** par defaut, les blocs Lens lisent dans l'univers actif ET chaque univers lié. Definissez `federation: active` dans le YAML pour limiter a l'univers actif.
 
 ### Five Acts — Lenses integrees
 
@@ -1115,7 +1115,7 @@ Un onglet dedie pour la personnalisation fine de chaque element visible de l'int
 - **Couleurs** — fond, surfaces, texte (normal/attenue/faible), accent, bordures, couleurs d'etat
 - **Typographie** — tailles de police interface/note/code, tailles H1–H6, graisse des titres, hauteurs de ligne, espacement des paragraphes
 - **Mise en page et forme** — rayons de coin petit/moyen/grand, largeurs de bordure, ombres, longueur de ligne lisible de l'editeur, marges laterales
-- **Composants** — dock ruban, barre d'actions laterale, barre de mise en page (bascules de panneaux), barre superieure/bande d'onglets, barre d'etat, barre laterale droite (inspecteur), explorateur de fichiers (notes d'Univers, univers enfants, bibliotheques, dossiers, notes), boutons, etiquettes, callouts — chacun avec taille, rayon, couleur independants, et style d'etat actif le cas echeant
+- **Composants** — dock ruban, barre d'actions laterale, barre de mise en page (bascules de panneaux), barre superieure/bande d'onglets, barre d'etat, barre laterale droite (inspecteur), explorateur de fichiers (notes d'Univers, univers liés, bibliotheques, dossiers, notes), boutons, etiquettes, callouts — chacun avec taille, rayon, couleur independants, et style d'etat actif le cas echeant
 - **Editeur** — couleur/survol/decoration du lien, couleur/fond/rayon du code en ligne, largeur/couleur de la barre de citation, couleur du curseur, fond de selection
 
 **Importer / Exporter** — barre d'outils en haut de l'onglet :
@@ -1307,7 +1307,7 @@ La Carte des connaissances est une visualisation radiale (sunburst) qui montre l
 ### Ce que vous voyez
 
 - **Centre**: Le nom de votre Univers avec le nombre total de notes et de mots
-- **Premier anneau**: Les bibliotheques (chacune avec sa couleur). Si votre univers a des univers enfants, ils apparaissent ici aussi.
+- **Premier anneau**: Les bibliotheques (chacune avec sa couleur). Si votre univers a des univers liés, ils apparaissent ici aussi.
 - **Anneaux plus profonds**: Dossiers et sous-dossiers dans chaque bibliotheque
 - **Segments exterieurs**: Notes individuelles
 

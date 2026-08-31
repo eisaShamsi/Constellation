@@ -130,8 +130,8 @@ Every setting lives under one of the five blocks above. Highlights:
 - **Top bar / Tab strip** — only visible when notes are open in tabs; controls strip height, background, tab height/font/radius, active and inactive tab colors
 - **Status bar** — height, font size, background, text color
 - **Right sidebar (inspector)** — background, tab row height, tab icon size, tab icon colors
-- **File explorer (left sidebar)** — Universe notes row, child universe (cUniverse) rows, library names, folders, notes — each with independent size, weight, and color; plus vertical row spacing
-- **Library icon** — the small **library-building mark** that stands for each Library in the sidebar, the Move dialog, and the Dashboard has its own **Icon size** control (Style Setter → Library → *Icon size*). It sizes the library glyph only; a linked Universe (cUniverse) keeps its planet-and-orbit mark, and the toolbar/folder icons have their own size controls.
+- **File explorer (left sidebar)** — Universe notes row, Linked Universe rows (the control is labelled "cUniverse" — its label predates the current name), library names, folders, notes — each with independent size, weight, and color; plus vertical row spacing
+- **Library icon** — the small **library-building mark** that stands for each Library in the sidebar, the Move dialog, and the Dashboard has its own **Icon size** control (Style Setter → Library → *Icon size*). It sizes the library glyph only; a Linked Universe keeps its planet-and-orbit mark, and the toolbar/folder icons have their own size controls.
 
 ### Editor
 
@@ -241,7 +241,7 @@ Below them are your **saved styles** — click one to apply that whole look at o
 
 **CNS — style the gravity well.** The **CNS** category styles the Constellation Nervous System's gravity well. Four controls: **Background** (the colour behind the well), **Hover label background**, **Hover label text**, and **Text size** (9–24 px) for the name label that appears when you hover a note in the well — the label's pill grows with the text, so nothing clips at any size. The centre shows a **miniature gravity well** (three percentile rings and a name chip) that re-colours and re-sizes live as you edit. Press **Keep** to save: the background reaches the real well immediately; the label colours and text size take effect the next time the CNS opens.
 
-**Inspect — click the app to find its controls.** Click **⌖ Inspect** in the top bar, then hover your **real app**: the part under your cursor is highlighted and named, and clicking it jumps the Setter straight to that part's controls (then exits inspect). It reaches the dock, toolbars, tabs, sidebars, status bar, file tree and folders, note text, tags, the Universe panel, the sidebar's **library** and **child-universe** rows, and generic **buttons**. Press **Esc** to leave inspect.
+**Inspect — click the app to find its controls.** Click **⌖ Inspect** in the top bar, then hover your **real app**: the part under your cursor is highlighted and named, and clicking it jumps the Setter straight to that part's controls (then exits inspect). It reaches the dock, toolbars, tabs, sidebars, status bar, file tree and folders, note text, tags, the Universe panel, the sidebar's **library** and **Linked Universe** rows (Inspect still names the latter "cUniverse" — its label predates the current name), and generic **buttons**. Press **Esc** to leave inspect.
 
 **Keep, Discard, Reset.** When you like what you see, click **Keep** (top right) to save the look **for this Universe** — it survives a restart. **Discard** (or simply closing with **✕** or **Esc**) throws away your unsaved edits and the real app snaps back to the saved look. **Reset** clears everything back to the plain theme. Nothing is written to disk until you Keep.
 

@@ -12,7 +12,7 @@ Constellation organizes knowledge in a five-level hierarchy. No other PKM system
 
 ```
 Universe
-  └── Child Universe (cUniverse)
+  └── Linked Universe
        └── Library
             └── Folder
                  └── Note
@@ -23,21 +23,21 @@ Universe
 The **Universe** is the top-level container — the root of everything in Constellation. Each Constellation instance has one active Universe. The Universe holds:
 
 - All registered Libraries
-- Child Universes (federated knowledge domains)
+- Linked Universes (federated knowledge domains)
 - Settings, Bases, Bookmarks, and Search Index
 - Universe-level metadata (`universe.json`)
 
 The Universe is stored as a directory on your local filesystem. It is portable and can be moved, backed up, or synced across devices.
 
-## Child Universe (cUniverse)
+## Linked Universe
 
-A **Child Universe** is a linked Universe that contributes its libraries to a parent Universe. This enables:
+A **Linked Universe** is a full, independent Universe whose libraries are federated into the Universe it is linked to. This enables:
 
 - **Federation**: View notes from multiple independent Universes in one window
 - **Domain separation**: Keep work, personal, and project knowledge in separate Universes
-- **Collaboration**: Share a cUniverse with others while keeping your parent Universe private
+- **Collaboration**: Share a Linked Universe with others while keeping your own Universe private
 
-Child Universes appear grouped in the sidebar, with their libraries nested inside.
+Linked Universes appear grouped in the sidebar, with their libraries nested inside.
 
 ## Library
 
@@ -95,6 +95,6 @@ The Constellation Knowledge Hierarchy enables:
 
 1. **Scale**: Manage thousands of notes across multiple domains without chaos
 2. **Independence**: Each Library is self-contained — sync, share, or archive independently
-3. **Federation**: Child Universes let you combine knowledge from different sources
+3. **Federation**: Linked Universes let you combine knowledge from different sources
 4. **Discovery**: The Search Hub, Sky View, and Constellation Sight operate across the entire Universe — finding connections between Libraries that no single-vault system can see
 5. **Multilingual**: Each Library can have its own language, font, and directionality preferences

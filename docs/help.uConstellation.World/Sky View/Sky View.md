@@ -252,7 +252,7 @@ Sky View provides first-class support for Arabic, Hebrew, and other RTL scripts:
 
 ## Picture-in-Picture (PiP) overlay
 
-When Sky View is open and you click a child universe, library, or folder in the Notes Management sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main graph.
+When Sky View is open and you click a Linked Universe, library, or folder in the Notes Management sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main graph.
 
 ### What the PiP shows
 
@@ -269,7 +269,7 @@ The PiP displays a filtered sub-graph containing only the nodes that belong to t
 
 ### Cross-mode selection sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode (Tree, List, or OrgChart) highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness while browsing in the sidebar.
+Clicking a Linked Universe, library, folder, or note in any sidebar mode (Tree, List, or OrgChart) highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness while browsing in the sidebar.
 
 ---
 

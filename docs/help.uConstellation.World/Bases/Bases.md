@@ -56,7 +56,7 @@ view: table
 | `schema` | Format version (currently `1`). |
 | `lens` | The name shown at the top of the table. |
 | `scope.libraries` | `all`, or a list of specific libraries to include. |
-| `scope.federation` | `auto` — also include notes from any linked Universes (cUniverses). |
+| `scope.federation` | `auto` — also include notes from any Linked Universes. |
 | `columns` | The columns to show. A new Base starts with just the note **Name**. |
 | `view` | `table` (the table is the Base view). |
 
@@ -152,7 +152,7 @@ If you switch from Obsidian, or from an earlier version of Constellation, your e
 
 ## Federation
 
-A Base is Universe-aware. With `federation: auto`, it includes notes from any linked Universes (cUniverses) alongside your own. Notes that live in a linked Universe are read-only — you can view and sort them in the Base, but editing is reserved for notes you own.
+A Base is Universe-aware. With `federation: auto`, it includes notes from any Linked Universes alongside your own. Notes that live in a Linked Universe are read-only — you can view and sort them in the Base, but editing is reserved for notes you own.
 
 ---
 

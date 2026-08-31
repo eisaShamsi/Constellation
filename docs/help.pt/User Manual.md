@@ -121,9 +121,9 @@ Quando termina, o aplicativo põe-se em dia **sem reiniciar** — a pesquisa enc
 
 **Mais uma mensagem que poderá ver.** Se uma reparação for interrompida — na maioria das vezes por se fechar o Constellation enquanto uma está a decorrer — a reconstrução que ficou por fazer é concluída no arranque seguinte. Isso acontece *depois* de a janela estar aberta e utilizável, com uma mensagem na parte inferior a dizer que está a concluir uma reparação interrompida: *«A concluir uma reparação do índice interrompida…»*. Não é nada em que precise de agir; demora alguns segundos e depois desaparece. As versões anteriores faziam isto enquanto o aplicativo ainda estava a arrancar, antes de estar utilizável — cerca de três segundos sem nada na tela para explicar a espera.
 
-### Universos Secundarios
+### Universos Vinculados
 
-Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
+Voce pode vincular universos entre si, como pares — um universo nunca e conteudo de outro. Um **Universo Vinculado** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos vinculados aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
 
 ### Reabertura automática
 
@@ -171,7 +171,7 @@ Com um ou mais itens selecionados, uma barra aparece na parte inferior da barra 
 - **Mover** — move a seleção para uma única pasta (um seletor que abrange todo o universo)
 - **Excluir** — exclui a seleção (com respaldo na lixeira e uma confirmação com a contagem)
 
-Cada ação em lote passa pelas mesmas operações seguras e protegidas que uma única nota usa — então marcar em lote nunca corrompe uma nota. Notas de universos secundários vinculados (somente leitura) são ignoradas automaticamente.
+Cada ação em lote passa pelas mesmas operações seguras e protegidas que uma única nota usa — então marcar em lote nunca corrompe uma nota. Notas de universos vinculados (somente leitura) são ignoradas automaticamente.
 
 ### Abas de modo da barra lateral
 
@@ -337,7 +337,7 @@ Quando você renomeia uma nota — pela árvore de ficheiros (clique com o botã
 
 **Todas as formas de link são atualizadas**, e não apenas as simples: um link simples (`[[Nome da Nota]]`), um link com o seu próprio texto visível (`[[Nome da Nota|as palavras que queria ler]]`), um link **tipado** que carrega uma relação (`[[supports::Nome da Nota]]`, e com a sua anotação `[[supports::Nome da Nota|porque sustenta]]`), e um link que aponta *para dentro* de uma nota — para um título (`[[Nome da Nota#Um Titulo]]`) ou para um bloco (`[[Nome da Nota^bloco]]`). Só o nome muda: a relação, o seu texto visível, a sua anotação e o título ou bloco visado ficam exatamente como os escreveu. Antes, os links tipados e os links que apontavam para um título ou bloco ficavam para trás, ainda com o nome antigo, e nada era dito sobre isso. Uma ligação que indica a pasta no caminho até à nota (`[[Nome da pasta/Nome da nota]]`) também é atualizada e mantém a pasta exatamente como escrita — a nota mudou de título, não de lugar. **Um caso ainda não coberto:** uma ligação que escreve o título com maiúsculas e minúsculas diferentes das da nota continua a funcionar, mas após a mudança de nome continua a nomear o título antigo.
 
-**Todas as bibliotecas do seu universo são abrangidas.** A atualização chega às notas de **todas** as bibliotecas do universo aberto, e não apenas à biblioteca onde a nota renomeada vive — por isso um link que atravessa de uma biblioteca para outra sobrevive à mudança de nome. As notas de um **universo filho ligado** são deliberadamente deixadas intactas: é uma base de conhecimento separada, e o Constellation não reescreve as suas notas.
+**Todas as bibliotecas do seu universo são abrangidas.** A atualização chega às notas de **todas** as bibliotecas do universo aberto, e não apenas à biblioteca onde a nota renomeada vive — por isso um link que atravessa de uma biblioteca para outra sobrevive à mudança de nome. As notas de um **universo vinculado** são deliberadamente deixadas intactas: é uma base de conhecimento separada, e o Constellation não reescreve as suas notas.
 
 **Se algumas notas não puderam ser atualizadas, você é informado.** De vez em quando um ficheiro está bloqueado, é só de leitura ou está aberto noutro programa. Em vez de anunciar um sucesso limpo, o Constellation nomeia essas notas e diz que os seus links continuam a apontar para o título antigo, para que saiba exatamente o que verificar.
 
@@ -698,7 +698,7 @@ A segunda tela altera seu conteudo com base no modo ativo da barra lateral na ja
 
 | Modo da Barra Lateral | A Segunda Tela Mostra |
 |---|---|
-| **Explorador de Arquivos** | Painel do Universo — estatisticas, detalhamento de bibliotecas, universos secundarios, tags, notas editadas/abertas recentemente |
+| **Explorador de Arquivos** | Painel do Universo — estatisticas, detalhamento de bibliotecas, universos vinculados, tags, notas editadas/abertas recentemente |
 | **Navegador** | Visualizacao completa do Navegador para navegar notas |
 | **Vista do Ceu** | Arvore da Vista do Ceu com estrutura de diretorios |
 | **Vista Estelar** | Complemento da Vista Estelar com retrolinks, links para frente, tags e grafo local |
@@ -707,8 +707,8 @@ A segunda tela altera seu conteudo com base no modo ativo da barra lateral na ja
 
 Quando a janela principal esta no modo Explorador de Arquivos, a segunda tela exibe um painel com:
 
-- **Cartoes de estatisticas** — Nome do universo, contagem de universos secundarios, total de bibliotecas, pastas e notas
-- **Universos Secundarios** — Cada universo secundario com suas bibliotecas vinculadas e contagens de pastas/notas
+- **Cartoes de estatisticas** — Nome do universo, contagem de universos vinculados, total de bibliotecas, pastas e notas
+- **Universos Vinculados** — Cada universo vinculado com suas bibliotecas e contagens de pastas/notas (na tela, o cartao ainda mostra o rotulo «Sub-universos», anterior ao nome atual)
 - **Bibliotecas** — Cada biblioteca com contagens de pastas/notas em caixas de estatisticas codificadas por cores
 - **Editadas Recentemente** — Notas que voce modificou na sessao atual (rastreadas ao salvar)
 - **Abertas Recentemente** — Notas que voce abriu mas nao editou na sessao atual
@@ -1114,7 +1114,7 @@ Ao visualizar a nota, o bloco de codigo e substituido por uma tabela interativa 
 
 **Dimensoes disponiveis na v1:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
 
-**Federacao:** por padrao, blocos Lens leem do universo ativo E de cada cUniverso vinculado. Defina `federation: active` no YAML para limitar ao universo ativo.
+**Federacao:** por padrao, blocos Lens leem do universo ativo E de cada universo vinculado. Defina `federation: active` no YAML para limitar ao universo ativo.
 
 ### Cinco Atos (Five Acts) — Lenses integradas
 
@@ -1145,7 +1145,7 @@ Uma aba dedicada para personalizacao detalhada de cada elemento visivel da inter
 - **Cores** — fundo, superficies, texto (normal/atenuado/fraco), acento, bordas, cores de estado
 - **Tipografia** — tamanhos de fonte interface/nota/codigo, tamanhos H1–H6, peso de titulos, alturas de linha, espacamento entre paragrafos
 - **Layout e Forma** — raios de canto pequeno/medio/grande, larguras de borda, sombras, comprimento de linha legivel do editor, margens laterais
-- **Componentes** — dock de faixa, barra de acoes lateral, barra de layout (alternadores de painel), barra superior/faixa de abas, barra de status, barra lateral direita (inspetor), explorador de arquivos (notas do Universo, universos filhos, bibliotecas, pastas, notas), botoes, tags, callouts — cada um com tamanho, raio, cor independentes, e estilo de estado ativo quando aplicavel
+- **Componentes** — dock de faixa, barra de acoes lateral, barra de layout (alternadores de painel), barra superior/faixa de abas, barra de status, barra lateral direita (inspetor), explorador de arquivos (notas do Universo, universos vinculados, bibliotecas, pastas, notas), botoes, tags, callouts — cada um com tamanho, raio, cor independentes, e estilo de estado ativo quando aplicavel
 - **Editor** — cor/hover/decoracao do link, cor/fundo/raio do codigo em linha, largura/cor da barra de citacao, cor do cursor, fundo de selecao
 
 **Importar / Exportar** — barra de ferramentas no topo da aba:
@@ -1337,7 +1337,7 @@ O Mapa do conhecimento e uma visualizacao radial (sunburst) que mostra a estrutu
 ### O que voce ve
 
 - **Centro**: Nome do seu Universo com total de notas e palavras
-- **Primeiro anel**: Bibliotecas (cada uma com sua cor). Se seu universo tem universos filhos, eles aparecem aqui tambem.
+- **Primeiro anel**: Bibliotecas (cada uma com sua cor). Se seu universo tem universos vinculados, eles aparecem aqui tambem.
 - **Aneis mais profundos**: Pastas e subpastas dentro de cada biblioteca
 - **Segmentos externos**: Notas individuais
 

@@ -121,9 +121,9 @@ Cuando termina, la aplicación se pone al día **sin reiniciar** — la búsqued
 
 **Otro mensaje que puedes ver.** Si una reparación se interrumpe — lo más habitual, al cerrar Constellation mientras se está ejecutando una — la reconstrucción pendiente se termina en el siguiente arranque. Eso ocurre *después* de que la ventana esté abierta y utilizable, con un mensaje en la parte inferior: *«Finalizando una reparación del índice interrumpida…»*. No es algo sobre lo que tengas que actuar; tarda unos segundos y luego desaparece. Las versiones anteriores hacían esto mientras la aplicación aún se estaba iniciando, antes de que fuera utilizable — unos tres segundos sin nada en pantalla que explicara la espera.
 
-### Universos Secundarios
+### Universos Enlazados
 
-Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.
+Puedes enlazar universos entre sí, como pares. Un **Universo Enlazado** es otra carpeta de universo referenciada por tu universo principal — no un universo dentro de otro, sino un universo independiente cuyas bibliotecas se federan con las tuyas. Las notas de los universos enlazados aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas. (En algunas pantallas todavía verás etiquetas como «Agregar universo secundario» o «Universos hijos»: son anteriores al nombre actual y se refieren a Universos Enlazados.)
 
 ### Reapertura automática
 
@@ -154,7 +154,7 @@ El **Explorador de Archivos** (el árbol de archivos de la barra lateral) es la 
 
 **Selección múltiple.** **Ctrl+clic** (⌘+clic en Mac) añade o quita una nota o carpeta de la selección; **Mayús+clic** selecciona un rango completo. Un clic normal sigue simplemente abriendo la nota — la selección permanece hasta que pulsas **Escape** o la limpias. Las filas seleccionadas se resaltan con una barra de acento; puedes seleccionar tanto notas como carpetas.
 
-**Operaciones por lotes.** Con elementos seleccionados, en la parte inferior de la barra lateral aparece una barra que muestra el recuento, con **Mover**, **Añadir etiqueta** y **Eliminar**. Cada acción se aplica a toda la selección mediante las mismas operaciones seguras y protegidas que usa una sola nota — así el etiquetado por lotes nunca corrompe una nota, y la eliminación va respaldada por la papelera. Las notas de universos hijos vinculados (de solo lectura) se omiten automáticamente.
+**Operaciones por lotes.** Con elementos seleccionados, en la parte inferior de la barra lateral aparece una barra que muestra el recuento, con **Mover**, **Añadir etiqueta** y **Eliminar**. Cada acción se aplica a toda la selección mediante las mismas operaciones seguras y protegidas que usa una sola nota — así el etiquetado por lotes nunca corrompe una nota, y la eliminación va respaldada por la papelera. Las notas de universos enlazados (de solo lectura) se omiten automáticamente.
 
 ---
 
@@ -309,7 +309,7 @@ Cuando renombras una nota — desde el árbol de archivos (clic derecho → Reno
 
 **Se actualizan todas las formas de enlace**, no solo las sencillas: un enlace simple (`[[Nombre de la Nota]]`), un enlace con tu propio texto visible (`[[Nombre de la Nota|las palabras que querías leer]]`), un enlace **tipado** que lleva una relación (`[[supports::Nombre de la Nota]]`, y con tu anotación `[[supports::Nombre de la Nota|por qué la respalda]]`), y un enlace que apunta *dentro* de una nota — a un encabezado (`[[Nombre de la Nota#Un Encabezado]]`) o a un bloque (`[[Nombre de la Nota^bloque]]`). Solo cambia el nombre: la relación, tu texto visible, tu anotación y el encabezado o bloque al que apuntabas se conservan exactamente como los escribiste. Antes, los enlaces tipados y los que apuntaban a un encabezado o a un bloque quedaban atrás, nombrando todavía el título antiguo, y sin avisar de nada. También se actualiza un enlace que indica la carpeta camino a la nota (`[[Carpeta/Nombre de la nota]]`), y conserva su carpeta tal cual: la nota cambió de título, no de lugar. **Un caso aún no cubierto:** un enlace que escribe el título con mayúsculas y minúsculas distintas de las de la nota sigue funcionando, pero tras el renombrado continúa nombrando el título antiguo.
 
-**Se cubren todas las bibliotecas de tu universo.** La actualización llega a las notas de **todas** las bibliotecas del universo abierto, no solo a la biblioteca donde vive la nota renombrada: así, un enlace que cruza de una biblioteca a otra sobrevive al cambio de nombre. Las notas de un **universo hijo enlazado** se dejan intactas a propósito: es una base de conocimiento aparte, y Constellation no reescribe sus notas.
+**Se cubren todas las bibliotecas de tu universo.** La actualización llega a las notas de **todas** las bibliotecas del universo abierto, no solo a la biblioteca donde vive la nota renombrada: así, un enlace que cruza de una biblioteca a otra sobrevive al cambio de nombre. Las notas de un **Universo Enlazado** se dejan intactas a propósito: es una base de conocimiento aparte, y Constellation no reescribe sus notas.
 
 **Si alguna nota no se pudo actualizar, se te dice cuál.** De vez en cuando un archivo está bloqueado, es de solo lectura o lo tiene abierto otro programa. En lugar de informar de un éxito limpio, Constellation nombra esas notas y te indica que sus enlaces siguen apuntando al título antiguo, para que sepas exactamente qué revisar.
 
@@ -670,7 +670,7 @@ La segunda pantalla cambia su contenido segun el modo activo de la barra lateral
 
 | Modo de barra lateral | La segunda pantalla muestra |
 |---|---|
-| **Explorador de archivos** | Panel del universo — estadisticas, desglose de bibliotecas, universos hijos, etiquetas, notas editadas/abiertas recientemente |
+| **Explorador de archivos** | Panel del universo — estadisticas, desglose de bibliotecas, universos enlazados, etiquetas, notas editadas/abiertas recientemente |
 | **Vista del cielo** | Arbol de Vista del cielo con estructura de directorios |
 | **Vista estelar** | Complemento de Vista estelar con retroenlaces, enlaces hacia adelante, etiquetas y grafo local |
 
@@ -678,8 +678,8 @@ La segunda pantalla cambia su contenido segun el modo activo de la barra lateral
 
 Cuando la ventana principal esta en modo Explorador de archivos, la segunda pantalla muestra un panel con:
 
-- **Tarjetas de estadisticas** — Nombre del universo, cantidad de universos hijos, total de bibliotecas, carpetas y notas
-- **Universos hijos** — Cada universo hijo con sus bibliotecas vinculadas y conteos de carpetas/notas
+- **Tarjetas de estadisticas** — Nombre del universo, cantidad de universos enlazados, total de bibliotecas, carpetas y notas
+- **Universos enlazados** — Cada universo enlazado con sus bibliotecas vinculadas y conteos de carpetas/notas (en pantalla esta sección aún se titula «Sub-universos», una etiqueta anterior al nombre actual)
 - **Bibliotecas** — Cada biblioteca con conteos de carpetas/notas en cajas de estadisticas con codigo de colores
 - **Editadas recientemente** — Notas que modificaste en la sesion actual (rastreadas al guardar)
 - **Abiertas recientemente** — Notas que abriste pero no editaste en la sesion actual
@@ -1057,7 +1057,7 @@ Al ver la nota, el bloque de codigo se reemplaza por una tabla interactiva con l
 
 **Dimensiones disponibles en v1:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
 
-**Federacion:** por defecto, los bloques Lens leen del universo activo Y de cada cUniverso enlazado. Establece `federation: active` en el YAML para limitar al universo activo.
+**Federacion:** por defecto, los bloques Lens leen del universo activo Y de cada Universo Enlazado. Establece `federation: active` en el YAML para limitar al universo activo.
 
 ### Five Acts — Lenses integradas
 
@@ -1124,7 +1124,7 @@ Una pestana dedicada para la personalizacion detallada de cada elemento visible 
 - **Colores** — fondo, superficies, texto (normal/atenuado/debil), acento, bordes, colores de estado
 - **Tipografia** — tamanos de fuente de interfaz/nota/codigo, tamanos H1–H6, peso de encabezados, alturas de linea, espacio entre parrafos
 - **Diseno y forma** — radios de esquina pequeno/mediano/grande, anchos de borde, sombras, longitud de linea legible del editor, margenes laterales
-- **Componentes** — barra de listones, barra de acciones lateral, barra de diseno (alternadores de panel), barra superior/tiras de pestanas, barra de estado, barra lateral derecha (inspector), explorador de archivos (notas del Universo, universos hijo, bibliotecas, carpetas, notas), botones, etiquetas, callouts — cada uno con tamano, radio, color independientes, y estilo de estado activo cuando corresponda
+- **Componentes** — barra de listones, barra de acciones lateral, barra de diseno (alternadores de panel), barra superior/tiras de pestanas, barra de estado, barra lateral derecha (inspector), explorador de archivos (notas del Universo, universos enlazados, bibliotecas, carpetas, notas), botones, etiquetas, callouts — cada uno con tamano, radio, color independientes, y estilo de estado activo cuando corresponda
 - **Editor** — color/hover/decoracion de enlace, color/fondo/radio de codigo en linea, ancho/color de la barra de cita, color del cursor, fondo de seleccion
 
 **Importar / Exportar** — barra de herramientas arriba de la pestana:
@@ -1316,7 +1316,7 @@ El Mapa del conocimiento es una visualizacion radial (sunburst) que muestra la e
 ### Lo que ves
 
 - **Centro**: El nombre de tu Universo con el total de notas y palabras
-- **Primer anillo**: Bibliotecas (cada una con su color). Si tu universo tiene universos hijos, aparecen aqui tambien.
+- **Primer anillo**: Bibliotecas (cada una con su color). Si tu universo tiene universos enlazados, aparecen aqui tambien.
 - **Anillos mas profundos**: Carpetas y subcarpetas dentro de cada biblioteca
 - **Segmentos exteriores**: Notas individuales
 

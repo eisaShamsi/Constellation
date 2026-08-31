@@ -79,7 +79,7 @@ Right-clicking surfaces the same dialog from these surfaces:
 |----------------|------------|--------------|
 | **A note in the file tree** | Open · Open in new tab · Rename · Move · Add tag · Copy path · Copy name · Reveal in tree · Suggest sources · Delete | Opens, renames, moves (universe-wide folder picker), adds a tag to frontmatter, copies path/name to clipboard, reveals in tree, classifies, or deletes the note. |
 | **A folder in the file tree** | New Note · New Folder · New Base · Rename · Move · Delete | The first three open the Create dialog with that folder pre-filled as Location. Move opens a universe-wide folder picker. |
-| **A library row** (the universe-notes header, an own library, or a child-universe library) | New Note · New Folder · New Base | Opens the Create dialog with that library's root pre-filled as Location. Library rows do not offer Rename or Delete here — those operations live in the Library Manager. |
+| **A library row** (the universe-notes header, an own library, or a Linked-Universe library) | New Note · New Folder · New Base | Opens the Create dialog with that library's root pre-filled as Location. Library rows do not offer Rename or Delete here — those operations live in the Library Manager. |
 
 ### Renaming a note updates every link to it
 
@@ -100,7 +100,7 @@ While those links are being updated you'll see a brief read-only **"Updating lin
 
 Only the name changes. The relationship (*supports*, *contradicts*, *part-of* and the rest — including the structural *parent* and *contains*), your display text, your annotation, and the heading or block you pointed at are all kept exactly as you wrote them. Typed links and links pointing at a heading or block used to be left behind after a rename, still naming the old title, with nothing said about it — a broken link with no warning. They are covered now.
 
-**The update reaches every library in your universe.** Not only the library the renamed note happens to live in — so a note in one library that links to a note in another stays connected. Notes in a **linked (child) universe** are deliberately left untouched: that is a separate knowledge base, and Constellation does not rewrite its notes.
+**The update reaches every library in your universe.** Not only the library the renamed note happens to live in — so a note in one library that links to a note in another stays connected. Notes in a **Linked Universe** are deliberately left untouched: that is a separate knowledge base, and Constellation does not rewrite its notes.
 
 **If some notes could not be updated, you are told which.** Now and then a note's file is locked, read-only, or held open by another program. Rather than reporting a clean success, Constellation names those notes and tells you their links still point at the old title, so you know exactly what to check.
 
@@ -108,11 +108,11 @@ Only the name changes. The relationship (*supports*, *contradicts*, *part-of* an
 
 ### When a name already exists — the collision dialog
 
-Constellation keeps every note title unique **across your whole universe** — every library, and every linked child universe. Unique titles are what let `[[wikilinks]]` resolve to exactly one note; two notes sharing a title would make a link ambiguous.
+Constellation keeps every note title unique **across your whole universe** — every library, and every Linked Universe. Unique titles are what let `[[wikilinks]]` resolve to exactly one note; two notes sharing a title would make a link ambiguous.
 
 So when you **create** a note with a name you typed, or **rename** a note, and that name already belongs to another note *anywhere* in the universe, a dialog appears instead of silently changing your name or failing:
 
-- **Header** — "A note named *Foo* already exists", with a line beneath showing **which library** it already lives in (e.g. "Already in: History"). That can be a *different* library than the one you're working in — the check spans the entire universe, child universes included.
+- **Header** — "A note named *Foo* already exists", with a line beneath showing **which library** it already lives in (e.g. "Already in: History"). That can be a *different* library than the one you're working in — the check spans the entire universe, Linked Universes included.
 - **Change name** — a box is pre-filled with a free suggestion (e.g. *Foo 1*). Edit it if you like, then confirm to create or rename under that name instead.
 - **Overwrite** — replaces the existing note. The displaced note is **moved to its library's `.trash`** first, so it stays recoverable — never hard-deleted. If a same-named note is already in that `.trash`, the new one is filed alongside it with a numeric suffix (*Foo 1*, *Foo 2*), so trashing never overwrites an earlier discarded copy.
 - **Cancel** (button, *Escape*, or click outside) — closes the dialog and does nothing.
@@ -180,16 +180,16 @@ Your selection and scroll position are preserved when switching between tabs.
 
 ## Adaptive sidebar width
 
-The sidebar automatically adjusts its width to fit the longest library or child universe name visible in the current view. This ensures all names are fully readable without manual resizing.
+The sidebar automatically adjusts its width to fit the longest library or Linked Universe name visible in the current view. This ensures all names are fully readable without manual resizing.
 
 ---
 
-## Child universe grouping
+## Linked Universe grouping
 
 Across all three modes, content is organized with consistent grouping:
 
-1. **Child universes first** — each child universe appears as a collapsible group with its libraries nested inside
-2. **Own libraries below** — the parent universe's own libraries appear below a visual separator
+1. **Linked Universes first** — each Linked Universe appears as a collapsible group with its libraries nested inside
+2. **Own libraries below** — the active universe's own libraries appear below a visual separator
 
 This grouping is consistent across Tree and OrgChart modes, so switching tabs does not change the structural hierarchy.
 
@@ -197,13 +197,13 @@ This grouping is consistent across Tree and OrgChart modes, so switching tabs do
 
 ## Cross-mode selection sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph (if Sky View is open). This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base in different modes.
+Clicking a Linked Universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph (if Sky View is open). This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base in different modes.
 
 ---
 
 ## Picture-in-Picture (PiP) overlay
 
-When Sky View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main Sky View graph.
+When Sky View is open and you click a Linked Universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main Sky View graph.
 
 ### What the PiP shows
 
@@ -245,7 +245,7 @@ With items selected, a bar appears at the bottom of the sidebar showing the coun
 - **Move** — move the selection into one folder (a universe-wide picker)
 - **Delete** — delete the selection (trash-backed, with a count confirmation)
 
-Every batch action runs through the same safe, gated operations a single note uses — so batch-tagging never corrupts a note. Notes from linked child-universes (read-only) are skipped automatically.
+Every batch action runs through the same safe, gated operations a single note uses — so batch-tagging never corrupts a note. Notes from Linked Universes (read-only) are skipped automatically.
 
 ### The basics
 
@@ -253,7 +253,7 @@ Every batch action runs through the same safe, gated operations a single note us
 - Right-click for a contextual menu — notes get Open, Open in new tab, Rename, Move, Add tag, Copy path/name, Reveal in tree, Suggest sources, Delete; folders get New note, New folder, New base, Rename, Move, Delete; library roots get New note, New folder, New base
 - Drag and drop to move notes between folders
 - **Move** opens a universe-wide folder picker spanning all libraries — search or scroll, double-click to move instantly
-- Folders and notes are grouped by child universe membership
+- Folders and notes are grouped by Linked Universe membership
 
 ---
 

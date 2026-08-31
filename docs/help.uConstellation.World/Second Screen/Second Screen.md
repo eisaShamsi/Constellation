@@ -75,22 +75,22 @@ When the main window is in File Explorer mode, the second screen displays a comp
 At the top, large stat cards show:
 
 - **Universe** name
-- **Child Universes** count
+- **Child Universes** count (its label predates the current name — it counts Linked Universes)
 - **Libraries** count
 - **Folders** count
 - **Notes** count
 
-### Child Universes
+### Linked Universes
 
-Each child universe is listed with:
+Each Linked Universe (the on-screen section title still reads "Child Universes" — its label predates the current name) is listed with:
 
-- The child universe icon and name
+- The Linked Universe icon and name
 - Stat boxes showing the number of libraries, folders, and notes (in the universe accent color)
 - Expandable list of linked libraries underneath, each with their own folder/note counts
 
 ### Libraries
 
-Libraries not belonging to a child universe are listed separately. Each library shows:
+Libraries not belonging to a Linked Universe are listed separately. Each library shows:
 
 - Library name with its color dot
 - Folder and note counts in color-coded stat boxes matching the library's theme color

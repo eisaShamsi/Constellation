@@ -58,7 +58,7 @@ Bookmarks are now a special, permanent collection called **Starred**:
 - It **can't be deleted**, and it also appears in the sidebar's **Bookmarks** section for one-click access.
 - The **⭐ star** button works exactly as before — anything you star lands in Starred.
 - Everything you had bookmarked before is **migrated in automatically** the first time you open this version. Your old bookmarks file is kept untouched as a backup.
-- In the sidebar, each bookmark shows *where it lives* — **cUniverse / library / folder** — on the far side of its row. **Right-click** a bookmark for Open, Open in new tab, Reveal in tree, **Remove bookmark**, Add to collection, and Copy.
+- In the sidebar, each bookmark shows *where it lives* — **Linked Universe / library / folder** — on the far side of its row. **Right-click** a bookmark for Open, Open in new tab, Reveal in tree, **Remove bookmark**, Add to collection, and Copy.
 
 > [!info] Nothing is ever moved or copied
 > A Collection stores only *membership* — a list of which notes it holds. Your Markdown files stay exactly where they are; adding or removing a note from a collection never touches the file on disk.

@@ -74,7 +74,7 @@ Dosya Gezgini, notlarınızın *yaşadığı* yerdir — kütüphanelerinizin ve
 
 **Çoklu seçim.** Bir notu veya klasörü seçime eklemek/çıkarmak için `Ctrl` (macOS'ta `⌘`) tuşunu basılı tutarak tıklayın. Bir aralığı seçmek için `Shift` tuşunu basılı tutarak tıklayın — ilk seçilen öğe ile en son tıklanan öğe arasındaki her şey seçilir. Düz bir tıklama, her zaman olduğu gibi notu açar. Seçili satırlar vurgulanır. Seçimi temizlemek için `Escape` tuşuna basın.
 
-**Toplu işlem çubuğu.** En az bir öğe seçtiğinizde, ağacın üstünde seçilen öğe sayısını gösteren bir çubuk belirir ve üç eylem sunar: **Etiket ekle**, **Taşı** ve **Sil** (silme çöp kutusu destekli — geri alınabilir). Her eylem, tek bir not için kullandığınız aynı güvenli, korumalı işlemlerin üzerinden çalışır — bu yüzden toplu bir etiket ekleme, açık bir notu bozmaz ve toplu bir silme, çöp kutusuna gider. Bağlı bir alt evrenden gelen salt okunur notlar her toplu işlemden atlanır.
+**Toplu işlem çubuğu.** En az bir öğe seçtiğinizde, ağacın üstünde seçilen öğe sayısını gösteren bir çubuk belirir ve üç eylem sunar: **Etiket ekle**, **Taşı** ve **Sil** (silme çöp kutusu destekli — geri alınabilir). Her eylem, tek bir not için kullandığınız aynı güvenli, korumalı işlemlerin üzerinden çalışır — bu yüzden toplu bir etiket ekleme, açık bir notu bozmaz ve toplu bir silme, çöp kutusuna gider. Bağlı bir evrenden (Bağlı Evren) gelen salt okunur notlar her toplu işlemden atlanır.
 
 ---
 
@@ -135,9 +135,9 @@ Onarımın yaptığı iş: Constellation'ın en son baktığı andan bu yana de�
 
 **Görebileceğiniz bir mesaj daha.** Bir onarım yarıda kesilirse — çoğunlukla, biri çalışırken Constellation'ı kapatmakla — kalan yeniden oluşturma işi bir sonraki açılışta tamamlanır. Bu, pencere açıldıktan ve kullanılabilir hâle geldikten *sonra*, altta *"Yarım kalan dizin onarımı tamamlanıyor…"* diyen bir mesajla gerçekleşir. Yapmanız gereken bir şey değildir; birkaç saniye sürer ve sonra kaybolur. Önceki sürümler bunu uygulama hâlâ başlatılırken, yani kullanılabilir hâle gelmeden önce yapıyordu — ekranda beklemeyi açıklayan hiçbir şey yokken yaklaşık üç saniye.
 
-### Alt Evrenler
+### Bağlı Evrenler
 
-Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
+Evrenleri eş düzeyde birbirine bağlayabilirsiniz. Bir **Bağlı Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür — evreninizin bir parçası olmaz, kütüphaneleri evreninize federe edilen eşit bir evren olarak kalır. Bağlı evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
 ### Otomatik yeniden açma
 
@@ -670,7 +670,7 @@ O gelenegin cipine gecin → notunuz varsayilanin yerine adlandirilmis sektorune
 
 | Kenar Çubuğu Modu | İkinci Ekran Gösterir |
 |---|---|
-| **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, alt evrenler, etiketler, son düzenlenen/açılan notlar |
+| **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, bağlı evrenler, etiketler, son düzenlenen/açılan notlar |
 | **Gökyüzü Görünümü** | Dizin yapısıyla Gökyüzü Görünümü ağacı |
 | **Sky View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Sky View eşliği |
 
@@ -678,8 +678,8 @@ O gelenegin cipine gecin → notunuz varsayilanin yerine adlandirilmis sektorune
 
 Ana pencere Dosya Gezgini modundayken, ikinci ekran aşağıdakileri içeren bir panel görüntüler:
 
-- **İstatistik kartları** — Evren adı, alt evren sayısı, toplam kütüphane, klasör ve not sayısı
-- **Alt Evrenler** — Her alt evren, bağlı kütüphaneleri ve klasör/not sayılarıyla
+- **İstatistik kartları** — Evren adı, bağlı evren sayısı, toplam kütüphane, klasör ve not sayısı
+- **Alt Evrenler** (ekrandaki etiket güncel addan eskidir — bağlı evrenleri listeler) — her bağlı evren, kütüphaneleri ve klasör/not sayılarıyla
 - **Kütüphaneler** — Her kütüphane, renk kodlu istatistik kutularında klasör/not sayılarıyla
 - **Son Düzenlenen** — Geçerli oturumda değiştirdiğiniz notlar (kaydettiğinizde izlenir)
 - **Son Açılan** — Geçerli oturumda açtığınız ancak düzenlemediğiniz notlar
@@ -1043,7 +1043,7 @@ Notu görüntülediğinizde, kod bloğu eşleşen notları gösteren etkileşiml
 
 **v1'de kullanılabilen boyutlar:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
 
-**Federasyon:** varsayılan olarak Lens blokları aktif evren VE bağlı her cUniverse'den okur. Yalnızca aktif evrenle sınırlamak için YAML'da `federation: active` ayarlayın.
+**Federasyon:** varsayılan olarak Lens blokları aktif evren VE her Bağlı Evren'den okur. Yalnızca aktif evrenle sınırlamak için YAML'da `federation: active` ayarlayın.
 
 ### Tam sekme Temel
 
@@ -1116,7 +1116,7 @@ Arayüzün her görünür öğesinin ince ayarı için özel bir sekme, aktif te
 - **Renkler** — arka plan, yüzeyler, metin (normal/azaltılmış/soluk), vurgu, kenarlıklar, durum renkleri
 - **Tipografi** — arayüz/not/kod yazı tipi boyutları, H1–H6 boyutları, başlık ağırlığı, satır yükseklikleri, paragraf aralığı
 - **Düzen ve Şekil** — küçük/orta/büyük köşe yarıçapları, kenarlık genişlikleri, gölgeler, editör okunabilir satır uzunluğu, yan kenar boşlukları
-- **Bileşenler** — şerit dock, yan işlem çubuğu, düzen çubuğu (panel anahtarları), üst çubuk/sekme şeridi, durum çubuğu, sağ kenar çubuğu (müfettiş), dosya gezgini (Evren notları, alt evrenler, kitaplıklar, klasörler, notlar), düğmeler, etiketler, callout'lar — her biri bağımsız boyut, yarıçap, renk ve geçerli olduğunda aktif durum stili ile
+- **Bileşenler** — şerit dock, yan işlem çubuğu, düzen çubuğu (panel anahtarları), üst çubuk/sekme şeridi, durum çubuğu, sağ kenar çubuğu (müfettiş), dosya gezgini (Evren notları, bağlı evrenler, kitaplıklar, klasörler, notlar), düğmeler, etiketler, callout'lar — her biri bağımsız boyut, yarıçap, renk ve geçerli olduğunda aktif durum stili ile
 - **Editör** — bağlantı renk/üzerine gelme/dekorasyon, satır içi kod renk/arka plan/yarıçap, alıntı çubuğu genişlik/renk, imleç rengi, seçim arka planı
 
 **İçe Aktar / Dışa Aktar** — sekmenin üstündeki araç çubuğu:
@@ -1308,7 +1308,7 @@ Bilgi Haritası, tum bilgi evreninizin yapisini, yogunlugunu ve olgunlugunu gost
 ### Ne Gorursunuz
 
 - **Merkez**: Evren adiniz, toplam not ve kelime sayisiyla
-- **Ilk halka**: Kutuphaneler (her biri kendi rengiyle). Evreninizde alt evrenler varsa, burada da gorunurler.
+- **Ilk halka**: Kutuphaneler (her biri kendi rengiyle). Evreninizde bağlı evrenler varsa, burada da gorunurler.
 - **Derin halkalar**: Her kutuphanedeki klasorler ve alt klasorler
 - **En dis segmentler**: Bireysel notlar
 

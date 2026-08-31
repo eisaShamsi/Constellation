@@ -269,7 +269,7 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 - **Link an existing library**: open the Library Manager and choose *Link existing library*, or use Mission Control (`Ctrl+P`) → *Add library*. A folder picker opens; pick a folder that's already on disk (e.g. an Obsidian vault) and Constellation registers it without copying or moving any files.
 - **Remove a library**: open the Library Manager and click the trash icon next to the library. Your files are not deleted — Constellation only forgets about the library.
 - **Library settings**: Each library can have its own appearance settings (fonts, colors).
-- **How a library is marked**: A Library is more than a folder, so it carries its own **library-building mark** (a pediment over columns), tinted in the library's colour — shown next to the library in the sidebar, on the Dashboard, and (as a bold, colour-tinted row) in the **Move** dialog's destination list, where it lets you tell a whole library apart from an ordinary folder. A linked child Universe (cUniverse) is marked with a **planet-and-orbit** glyph instead, because it is a whole other Universe rather than a library inside this one. You can resize the library mark in **Style Setter → Library → Icon size** (it affects the library glyph only; toolbar and folder icons have their own size controls).
+- **How a library is marked**: A Library is more than a folder, so it carries its own **library-building mark** (a pediment over columns), tinted in the library's colour — shown next to the library in the sidebar, on the Dashboard, and (as a bold, colour-tinted row) in the **Move** dialog's destination list, where it lets you tell a whole library apart from an ordinary folder. A Linked Universe is marked with a **planet-and-orbit** glyph instead, because it is a whole other Universe rather than a library inside this one. You can resize the library mark in **Style Setter → Library → Icon size** (it affects the library glyph only; toolbar and folder icons have their own size controls).
 
 ### Syncing and External Changes
 
@@ -350,13 +350,13 @@ When it finishes, the app catches up **without a restart** — search finds the 
 
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.
 
-- Appears at the top of the File Explorer, above child universes and libraries
+- Appears at the top of the File Explorer, above Linked Universes and libraries
 - Included in search, Sky View, and all features
 - When creating a new note (`Ctrl+N`), the Universe Notes folder appears as the first option
 
-### Child Universes
+### Linked Universes
 
-You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Sky View alongside your own notes, with cross-library links shown as dashed lines.
+You can link universes together as peers. A **Linked Universe** is another universe folder referenced by your active universe. Notes from Linked Universes appear in Sky View alongside your own notes, with cross-library links shown as dashed lines.
 
 ### Auto-Reopen
 
@@ -702,24 +702,24 @@ Click a tab to switch modes.
 
 ### Adaptive Sidebar Width
 
-The sidebar automatically adjusts its width to fit the longest library or child universe name visible in the current view. This ensures all names are readable without manual resizing.
+The sidebar automatically adjusts its width to fit the longest library or Linked Universe name visible in the current view. This ensures all names are readable without manual resizing.
 
-### Child Universe Grouping
+### Linked Universe Grouping
 
 Across all three modes, content is organized with consistent grouping:
 
-1. **Child universes first** — each child universe appears as a collapsible group with its libraries nested inside
-2. **Own libraries below** — the parent universe's own libraries appear below a visual separator
+1. **Linked Universes first** — each Linked Universe appears as a collapsible group with its libraries nested inside
+2. **Own libraries below** — the active universe's own libraries appear below a visual separator
 
 This grouping is consistent across Tree, Digest, and OrgChart modes.
 
 ### Cross-Mode Selection Sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
+Clicking a Linked Universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
 
 ### Picture-in-Picture (PiP) Overlay
 
-When Sky View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
+When Sky View is open and you click a Linked Universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
 
 ### Tree Mode (File Explorer)
 
@@ -731,7 +731,7 @@ The file tree for browsing **and organizing** your notes and folders. Beyond the
 
 **Multi-select.** **Ctrl-click** (⌘-click on Mac) to add or remove a note or folder from the selection; **Shift-click** to select a whole range. Plain-clicking a note still just opens it — the selection stays put until you press **Escape** or clear it. Selected rows are highlighted with an accent bar.
 
-**Batch operations.** With items selected, a bar appears at the bottom of the sidebar showing the count, with **Move**, **Add tag**, and **Delete**. Each applies to the whole selection through the same safe, gated operations a single note uses — so batch-tagging never corrupts a note, and delete is trash-backed. Notes from linked child-universes (read-only) are skipped automatically.
+**Batch operations.** With items selected, a bar appears at the bottom of the sidebar showing the count, with **Move**, **Add tag**, and **Delete**. Each applies to the whole selection through the same safe, gated operations a single note uses — so batch-tagging never corrupts a note, and delete is trash-backed. Notes from Linked Universes (read-only) are skipped automatically.
 
 **The basics remain:**
 - Expand/collapse folders with click or arrow keys
@@ -749,7 +749,7 @@ The file tree for browsing **and organizing** your notes and folders. Beyond the
 
 **Renaming a folder changes no links** — by design. Folder names never appear inside a link, so there is nothing to rewrite.
 
-**Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to your trash first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered). It goes to the **same place a deleted note goes**, chosen by your **Deleted files** setting — the Recycle Bin, or the `.trash` folder at whichever scope you picked, or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
+**Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any Linked Universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to your trash first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered). It goes to the **same place a deleted note goes**, chosen by your **Deleted files** setting — the Recycle Bin, or the `.trash` folder at whichever scope you picked, or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
 
 **Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in the File Explorer's batch bar — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or the universe's own **`.trash` folder**. A universe has exactly **one** `.trash`, at its root — the way it has one root — so everything you delete, from any library, is found in one place. Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
 **Two files with the same name are both recoverable**: if you delete `Notes.md` from one folder and
@@ -831,7 +831,7 @@ Search history is stored locally on your device and persists across app restarts
 
 The Quick Switcher is the **jump-to-note-by-name** command — press `Ctrl+O`, type part of a title, press Enter. It searches **titles and aliases only** (never note contents — that's the Search Hub's job below), entirely from memory, so results appear instantly as you type, in any language.
 
-Results are **ranked by how well the title matches**: an exact title always comes first, then titles that *start with* your words, then titles containing them at a word boundary, then looser matches — so typing `islam` puts the note titled *Islam* above *"Abraham in Islam"*. Arabic matching ignores diacritics and hamza variants (typing `اسلام` finds `إسلام`). Notes whose **alias** matches appear as *alias → real title* rows. Titles from **linked cUniverses** are included — the switcher spans your whole universe.
+Results are **ranked by how well the title matches**: an exact title always comes first, then titles that *start with* your words, then titles containing them at a word boundary, then looser matches — so typing `islam` puts the note titled *Islam* above *"Abraham in Islam"*. Arabic matching ignores diacritics and hamza variants (typing `اسلام` finds `إسلام`). Notes whose **alias** matches appear as *alias → real title* rows. Titles from **Linked Universes** are included — the switcher spans your whole universe.
 
 - **Empty Ctrl+O** shows your recently-opened notes — Enter re-opens the last one.
 - **Create note "…"** — when nothing matches your text exactly, a bottom row lets you create a note with that name on the spot (it lands in your universe root and opens immediately).
@@ -851,15 +851,15 @@ A **Collection** is a named, saved basket of notes you hand-pick — the working
 
 **Working with a collection.** The dropdown at the top switches between your collections. Each note shows its live details (title, library) and opens when you click it; the **✕** on the right takes a note out of the collection (it never deletes the note itself). You can **rename** (✎) or **delete** (🗑) any collection you made. Four filter chips — **Due**, **Unlinked**, **Contested**, **Forming** — *narrow* the view to notes in that state (they never add notes; combine them for AND). A collection stays current automatically: edit a note elsewhere and its row updates within a moment.
 
-**Starred (your bookmarks).** Bookmarks are now a special, permanent collection called **Starred** — it can't be deleted, and it's also shown in the sidebar's "Bookmarks" section for quick access. The ⭐ star button works exactly as before; anything you star lands in Starred. Everything you had bookmarked before is migrated in automatically the first time you open this version (your old bookmarks file is kept untouched as a backup). In the sidebar, each bookmark now shows *where it lives* — cUniverse / library / folder — on the far side of its row, and a right-click there gives you Open, Reveal in tree, Remove bookmark, Add to collection, and Copy.
+**Starred (your bookmarks).** Bookmarks are now a special, permanent collection called **Starred** — it can't be deleted, and it's also shown in the sidebar's "Bookmarks" section for quick access. The ⭐ star button works exactly as before; anything you star lands in Starred. Everything you had bookmarked before is migrated in automatically the first time you open this version (your old bookmarks file is kept untouched as a backup). In the sidebar, each bookmark now shows *where it lives* — Linked Universe / library / folder — on the far side of its row, and a right-click there gives you Open, Reveal in tree, Remove bookmark, Add to collection, and Copy.
 
 ### Cross-universe federation
 
-When your active universe has one or more cUniverses linked, search results span the federated set — you'll see notes from BOTH your active universe AND each linked cUniverse in the same result list. The status-bar note count reflects the federated total (e.g. "8751 notes" instead of just the active universe's count). Sidebar library badges show per-library counts including cUniverse libraries.
+When your active universe has one or more Linked Universes, search results span the federated set — you'll see notes from BOTH your active universe AND each Linked Universe in the same result list. The status-bar note count reflects the federated total (e.g. "8751 notes" instead of just the active universe's count). Sidebar library badges show per-library counts including Linked-Universe libraries.
 
-If a cUniverse is unavailable at boot (its `search.db` file is missing, locked by another process, or schema-drifted), a **triangle warning badge** appears in the status bar with a count of skipped cUniverses. Click it to see which cUniverses were skipped and the reason. The rest of the app continues to work — search still spans the cUniverses that DID attach successfully (skip-unavailable model).
+If a Linked Universe is unavailable at boot (its `search.db` file is missing, locked by another process, or schema-drifted), a **triangle warning badge** appears in the status bar with a count of skipped Linked Universes. Click it to see which Linked Universes were skipped and the reason. The rest of the app continues to work — search still spans the Linked Universes that DID attach successfully (skip-unavailable model).
 
-To open a cUniverse as the active universe (e.g. to build its missing `search.db`), use the Universe Manager from the sidebar.
+To open a Linked Universe as the active universe (e.g. to build its missing `search.db`), use the Universe Manager from the sidebar.
 
 ### Link Operators
 
@@ -1219,7 +1219,7 @@ The second screen changes its content based on the active sidebar mode in the ma
 | Main Sidebar Mode | Second Screen Shows |
 |---|---|
 | **Editor** (a note open) | **The Knowledge Cockpit** — a read-only view of the open note: its links as a graph — The Butterfly, The Ledger, or The Orrery plus a deck of gauges showing the note's own statistics |
-| **File Explorer** | Universe Dashboard — stats, library breakdown, child universes, tags, recently edited/opened notes |
+| **File Explorer** | Universe Dashboard — stats, library breakdown, Linked Universes, tags, recently edited/opened notes |
 | **Navigator** | Full Navigator view for browsing notes |
 | **Sky View** | Sky View tree with directory structure |
 | **Sky View** (graph) | Sky View companion with backlinks, forward links, tags, and local graph |
@@ -1269,8 +1269,8 @@ A gauge only appears if the note actually carries that information.
 
 When the main window is in File Explorer mode, the second screen displays a dashboard with:
 
-- **Stat cards** — Universe name, child universe count, total libraries, folders, and notes
-- **Child Universes** — Each child universe with its linked libraries and folder/note counts
+- **Stat cards** — Universe name, Linked Universe count, total libraries, folders, and notes
+- **Child Universes** — Each Linked Universe with its linked libraries and folder/note counts (this section's on-screen label predates the current name)
 - **Libraries** — Each library with folder/note counts in color-coded stat boxes
 - **Recently Edited** — Notes you modified in the current session (tracked when you save changes)
 - **Recently Opened** — Notes you opened but did not edit in the current session
@@ -1767,13 +1767,13 @@ When you view the note, the block becomes the same interactive table. In Live Pr
 
 Plus any of your own frontmatter properties (added from the **+ Add column** picker).
 
-**Federation:** by default a Base reads across the active Universe **and** every linked cUniverse. To limit results to the active Universe only, set `federation: active` under `scope` in the YAML. Notes from a linked Universe are read-only — you can view and sort them, but editing is reserved for notes you own.
+**Federation:** by default a Base reads across the active Universe **and** every Linked Universe. To limit results to the active Universe only, set `federation: active` under `scope` in the YAML. Notes from a linked Universe are read-only — you can view and sort them, but editing is reserved for notes you own.
 
 ### Five Acts — built-in lenses for the Five Acts of Knowledge Creation
 
 The sidebar's **Five Acts** section (above Workspace Bases) lists Constellation-curated host notes — markdown files at `{universe}/Five Acts/*.md` that come pre-loaded with a `base` block. v1 ships with one:
 
-- **Observation — Recent Captures** — a federated list of the 20 most recently captured notes across your active universe + cUniverses. Click it to see what you've been working on lately.
+- **Observation — Recent Captures** — a federated list of the 20 most recently captured notes across your active universe + Linked Universes. Click it to see what you've been working on lately.
 
 You can edit these host notes freely. Constellation will not overwrite your edits — if you change the YAML, your version stays. If you delete the file, Constellation will re-create it on next launch (transfer-on-edit policy).
 
@@ -1882,7 +1882,7 @@ The standalone **Style Settings** tab has been **retired** — every control it 
 - **Typography** — interface / note / code font sizes, H1–H6 sizes, heading weight, line heights, paragraph spacing
 - **Layout & Shape** — small/medium/large corner radii, border widths, shadows, editor readable line length, side margins
 - **Shadows** — the drop-shadow depth for **modal dialogs**, **pop-up menus/pickers**, and **tooltips**, each a preset (None / Soft / Medium / Strong / Dramatic); set one and every surface of that class matches
-- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip **(plus tab-bar extras: the new-tab “+” button, its bulb icon, and the tab-scroll arrows)**, status bar, right sidebar (inspector), file explorer (Universe notes, child universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
+- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip **(plus tab-bar extras: the new-tab “+” button, its bulb icon, and the tab-scroll arrows)**, status bar, right sidebar (inspector), file explorer (Universe notes, Linked Universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
 - **Editor** — link color/hover/decoration, inline code color/background/radius, blockquote bar width/color, cursor color, selection background, **highlight (background · text · radius, shared across `==`, `<mark>`, and the toolbar H)**, **URL color**, **markup-mark color** (the in-editor `#`/`**`/`==` syntax marks), and the **link-traversal (×N) chip** (background · text · radius)
 - **Panels** — knowledge-health card, provenance tag, task badge, stale-review marker, 360 markers, the **traversal chips** (the `×N` badge's colour per lifecycle tier), and the **Link tooltip** — the explanation box Constellation draws when you rest the pointer on a link row, its `×N` badge, an annotation, or a note summary. Background · text · border · radius · **line height** · max width · padding. *Line height is the one to reach for if marks above the letters — Arabic, Persian, Urdu or Hebrew — look cramped against the top of the box.* Its shadow is not set here: it follows the shared **Shadows → tooltips** preset, so every tooltip in the app keeps the same depth.
 
@@ -1915,7 +1915,7 @@ There are two ways you see your edits. The **Editor**, **Sky View**, and **CNS**
 
 **Right-sidebar panels and dialog backdrops.** Two more surfaces round out the Setter. The **Panels** category restyles the small pieces inside the right-sidebar panels — the Knowledge-Health summary cards, the Provenance panel's *External* source tag, the Tasks panel's due badges (Overdue / Today) and tag pill, the Review panel's *Stale* notice, the 360.3D matrix's Tension / Fragile / Blind-spot markers, and the Backlinks / Outgoing **×N** usage chips (each wear-tier — emerging → established → load-bearing → stale — its own colour) — each with a live preview in the centre. And under **Global**, **Overlays → Dimmed opacity** sets how dark the app dims *behind* any dialog box: one slider governs every modal's backdrop at once (0 % = no dim, 100 % = near-black). Context menus and small pop-ups stay undimmed by design — only true dialogs dim.
 
-**Fonts, named colours, and inspect.** Every font picker — Interface, Note, Code, and the file-tree fonts — lists the fonts **installed on your computer**, each shown in its own typeface (with a curated fallback if your system blocks detection). The **Saved colours** palette can be **named**: click **Manage** beside it to label a colour, rename it, or remove it — removing is a deliberate **✕ → Remove / Cancel**, never an accidental right-click. And **⌖ Inspect** now reaches the sidebar's **library** and **child-universe** rows and generic **buttons**, on top of the chrome it already covered.
+**Fonts, named colours, and inspect.** Every font picker — Interface, Note, Code, and the file-tree fonts — lists the fonts **installed on your computer**, each shown in its own typeface (with a curated fallback if your system blocks detection). The **Saved colours** palette can be **named**: click **Manage** beside it to label a colour, rename it, or remove it — removing is a deliberate **✕ → Remove / Cancel**, never an accidental right-click. And **⌖ Inspect** now reaches the sidebar's **library** and **Linked-Universe** rows and generic **buttons**, on top of the chrome it already covered.
 
 **Sky View canvas background.** The Sky View surface has a **Canvas** element — set its **Background** colour (Style Setter → Sky View → Canvas) to give the graph its own backdrop, **independent of the panel/sidebar colour**. A deep canvas makes the bubbles pop; left unset, it follows the panel surface (the default look). The same colour applies to the small Sky View on the second screen, and the Setter's preview card shows it live as you pick.
 
@@ -2144,7 +2144,7 @@ The Constellation Map is a radial sunburst visualization that shows the structur
 ### What You See
 
 - **Center**: Your Universe name with total note and word counts
-- **First ring**: Libraries (each colored with its library color). If your universe has child universes, they appear here too.
+- **First ring**: Libraries (each colored with its library color). If your universe has Linked Universes, they appear here too.
 - **Deeper rings**: Folders and subfolders within each library
 - **Outermost segments**: Individual notes
 

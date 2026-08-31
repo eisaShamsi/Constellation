@@ -122,9 +122,9 @@ Wenn sie fertig ist, zieht die App **ohne Neustart** nach — die Suche findet d
 
 **Eine weitere Meldung, die Ihnen begegnen kann.** Wird eine Reparatur unterbrochen — meist dadurch, dass Constellation während eines laufenden Vorgangs geschlossen wird —, wird der verbliebene Neuaufbau beim nächsten Start abgeschlossen. Das geschieht, *nachdem* das Fenster geöffnet und benutzbar ist, mit einer Meldung am unteren Rand: *"Unterbrochene Indexreparatur wird abgeschlossen…"*. Sie müssen dabei nichts unternehmen; es dauert einige Sekunden und verschwindet dann. Frühere Versionen erledigten dies noch während des Startens, bevor die App benutzbar war — etwa drei Sekunden, ohne dass irgendetwas auf dem Bildschirm die Wartezeit erklärt hätte.
 
-### Kind-Universen
+### Verknuepfte Universen
 
-Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.
+Sie koennen Universen als gleichrangige Partner miteinander verknuepfen. Ein **Verknuepftes Universum** ist ein weiterer Universumsordner, auf den Ihr aktives Universum verweist (einige Beschriftungen in der App sagen noch „Kind-Universum" oder „Unter-Universum" — sie stammen aus der Zeit vor dem heutigen Namen). Notizen aus Verknuepften Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.
 
 ### Automatisches Wiedereröffnen
 
@@ -194,7 +194,7 @@ Sobald mindestens ein Element ausgewählt ist, erscheint eine **Stapelleiste**. 
 - **Verschieben** — verschiebt die Auswahl in einen anderen Ordner.
 - **Löschen** — verschiebt die Auswahl in den Papierkorb (nichts wird endgültig gelöscht; jede Löschung ist umkehrbar).
 
-Jede Stapelaktion läuft über genau dieselben sicheren, abgesicherten Abläufe, die auch eine einzelne Notiz verwendet — dieselben Schutzmechanismen, nur auf viele Notizen zugleich angewandt. Notizen, die schreibgeschützt aus einem verlinkten Kind-Universum stammen, werden dabei übersprungen.
+Jede Stapelaktion läuft über genau dieselben sicheren, abgesicherten Abläufe, die auch eine einzelne Notiz verwendet — dieselben Schutzmechanismen, nur auf viele Notizen zugleich angewandt. Notizen, die schreibgeschützt aus einem Verknüpften Universum stammen, werden dabei übersprungen.
 
 ---
 
@@ -342,7 +342,7 @@ Wenn Sie eine Notiz umbenennen — im Dateibaum (Rechtsklick → Umbenennen) ode
 
 **Jede Form von Link wird aktualisiert**, nicht nur die einfachen: ein einfacher Link (`[[Notizname]]`), ein Link mit Ihrem eigenen Anzeigetext (`[[Notizname|die Worte, die dort stehen sollen]]`), ein **typisierter** Link, der eine Beziehung trägt (`[[supports::Notizname]]`, und mit Ihrer Anmerkung `[[supports::Notizname|warum es stützt]]`), sowie ein Link, der *in* eine Notiz zeigt — auf eine Überschrift (`[[Notizname#Eine Ueberschrift]]`) oder auf einen Block (`[[Notizname^blockid]]`). Nur der Name ändert sich: die Beziehung, Ihr Anzeigetext, Ihre Anmerkung und die angesteuerte Überschrift bzw. der Block bleiben genau so, wie Sie sie geschrieben haben. Früher blieben typisierte Links und Links auf eine Überschrift oder einen Block zurück — sie nannten weiterhin den alten Titel, ohne jeden Hinweis darauf. Auch ein Link, der den Ordner mit angibt (`[[Ordnername/Notizname]]`), wird aktualisiert und behält seinen Ordner genau so — die Notiz wurde umbenannt, nicht verschoben. **Ein Fall ist noch nicht abgedeckt:** Ein Link, der den Titel mit anderer Groß- und Kleinschreibung als die Notiz selbst schreibt, funktioniert weiterhin, nennt nach dem Umbenennen aber weiter den alten Titel.
 
-**Jede Bibliothek Ihres Universums ist erfasst.** Die Aktualisierung erreicht Notizen in **allen** Bibliotheken des geöffneten Universums, nicht nur in jener, in der die umbenannte Notiz liegt — ein Link von einer Bibliothek in eine andere übersteht das Umbenennen also. Notizen in einem **verknüpften (Kind-)Universum** bleiben bewusst unangetastet: Das ist eine eigenständige Wissensbasis, deren Notizen Constellation nicht umschreibt.
+**Jede Bibliothek Ihres Universums ist erfasst.** Die Aktualisierung erreicht Notizen in **allen** Bibliotheken des geöffneten Universums, nicht nur in jener, in der die umbenannte Notiz liegt — ein Link von einer Bibliothek in eine andere übersteht das Umbenennen also. Notizen in einem **Verknüpften Universum** bleiben bewusst unangetastet: Das ist eine eigenständige Wissensbasis, deren Notizen Constellation nicht umschreibt.
 
 **Wenn einzelne Notizen nicht aktualisiert werden konnten, erfahren Sie es.** Gelegentlich ist eine Datei gesperrt, schreibgeschützt oder von einem anderen Programm geöffnet. Statt einen glatten Erfolg zu melden, nennt Constellation diese Notizen und sagt Ihnen, dass deren Links weiterhin auf den alten Titel zeigen — so wissen Sie genau, was zu prüfen ist.
 
@@ -703,7 +703,7 @@ Der zweite Bildschirm aendert seinen Inhalt basierend auf dem aktiven Seitenleis
 
 | Hauptseitenleistenmodus | Zweiter Bildschirm zeigt |
 |---|---|
-| **Datei-Explorer** | Universum-Dashboard — Statistiken, Bibliotheksaufschluesselung, Kind-Universen, Tags, zuletzt bearbeitete/geoeffnete Notizen |
+| **Datei-Explorer** | Universum-Dashboard — Statistiken, Bibliotheksaufschluesselung, Verknuepfte Universen, Tags, zuletzt bearbeitete/geoeffnete Notizen |
 | **Himmelsansicht** | Himmelsansicht-Baum mit Verzeichnisstruktur |
 | **Sternenansicht** | Sternenansicht-Begleiter mit Rueckverweisen, Vorwaertsverweisen, Tags und lokalem Graph |
 
@@ -711,8 +711,8 @@ Der zweite Bildschirm aendert seinen Inhalt basierend auf dem aktiven Seitenleis
 
 Wenn das Hauptfenster im Datei-Explorer-Modus ist, zeigt der zweite Bildschirm ein Dashboard mit:
 
-- **Statistikkarten** — Universumsname, Anzahl der Kind-Universen, Gesamtbibliotheken, Ordner und Notizen
-- **Kind-Universen** — Jedes Kind-Universum mit seinen verknuepften Bibliotheken und Ordner-/Notizanzahlen
+- **Statistikkarten** — Universumsname, Anzahl der Verknuepften Universen, Gesamtbibliotheken, Ordner und Notizen
+- **Verknuepfte Universen** (die Karte traegt auf dem Bildschirm noch die Beschriftung „Unter-Universen" — sie stammt aus der Zeit vor dem heutigen Namen) — Jedes Verknuepfte Universum mit seinen Bibliotheken und Ordner-/Notizanzahlen
 - **Bibliotheken** — Jede Bibliothek mit Ordner-/Notizanzahlen in farbcodierten Statistikboxen
 - **Zuletzt bearbeitet** — Notizen, die Sie in der aktuellen Sitzung geaendert haben (verfolgt beim Speichern)
 - **Zuletzt geoeffnet** — Notizen, die Sie geoeffnet, aber nicht bearbeitet haben
@@ -1076,7 +1076,7 @@ Beim Anzeigen der Notiz wird der Codeblock durch eine interaktive Tabelle mit pa
 
 **Verfuegbare Dimensionen in v1:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
 
-**Foederation:** Standardmaessig lesen Lens-Bloecke ueber das aktive Universum UND jedes verlinkte cUniverse. Setzen Sie `federation: active` im YAML, um nur das aktive Universum zu durchsuchen.
+**Foederation:** Standardmaessig lesen Lens-Bloecke ueber das aktive Universum UND jedes Verknuepfte Universum. Setzen Sie `federation: active` im YAML, um nur das aktive Universum zu durchsuchen.
 
 ### Constellation Base — vollständiger Tab
 
@@ -1149,7 +1149,7 @@ Ein eigener Tab fuer die feinkoernige Anpassung jedes sichtbaren Interface-Eleme
 - **Farben** — Hintergrund, Oberflaechen, Text (normal/gedaempft/schwach), Akzent, Rahmen, Zustandsfarben
 - **Typografie** — Schriftgroessen fuer Interface/Notizen/Code, H1–H6-Groessen, Ueberschriftgewicht, Zeilenhoehen, Absatzabstand
 - **Layout & Form** — klein/mittel/gross Eckenradien, Rahmenbreiten, Schatten, lesbare Editor-Zeilenlaenge, Seitenraender
-- **Komponenten** — Ribbon-Dock, Aktionsleiste der Seitenleiste, Layout-Leiste (Panel-Toggles), Top-Leiste/Tab-Leiste, Statusleiste, rechte Seitenleiste (Inspector), Datei-Explorer (Universum-Notizen, Kind-Universen, Bibliotheken, Ordner, Notizen), Buttons, Tags, Callouts — jeweils mit unabhaengiger Groesse, Radius, Farbe und gegebenenfalls Aktiv-Zustand-Styling
+- **Komponenten** — Ribbon-Dock, Aktionsleiste der Seitenleiste, Layout-Leiste (Panel-Toggles), Top-Leiste/Tab-Leiste, Statusleiste, rechte Seitenleiste (Inspector), Datei-Explorer (Universum-Notizen, Verknuepfte Universen, Bibliotheken, Ordner, Notizen), Buttons, Tags, Callouts — jeweils mit unabhaengiger Groesse, Radius, Farbe und gegebenenfalls Aktiv-Zustand-Styling
 - **Editor** — Linkfarbe/Hover/Dekoration, Inline-Code-Farbe/Hintergrund/Radius, Blockzitat-Balkenbreite/-Farbe, Cursorfarbe, Auswahlhintergrund
 
 **Import / Export** — Symbolleiste oben im Tab:
@@ -1341,7 +1341,7 @@ Die Wissenskarte ist eine radiale Sunburst-Visualisierung, die Struktur, Dichte 
 ### Was Sie sehen
 
 - **Mitte**: Ihr Universums-Name mit Gesamtzahl der Notizen und Woerter
-- **Erster Ring**: Bibliotheken (jeweils in ihrer Bibliotheksfarbe). Wenn Ihr Universum Unteruniversen hat, erscheinen sie hier.
+- **Erster Ring**: Bibliotheken (jeweils in ihrer Bibliotheksfarbe). Wenn Ihr Universum Verknuepfte Universen hat, erscheinen sie hier.
 - **Tiefere Ringe**: Ordner und Unterordner innerhalb jeder Bibliothek
 - **Aeusserste Segmente**: Einzelne Notizen
 

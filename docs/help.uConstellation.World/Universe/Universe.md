@@ -4,7 +4,7 @@ aliases:
   - Universe setup
   - Universe manager
   - Open existing universe
-  - Child universe
+  - Linked universe
 description: Learn how to create, open, and manage Universes in Constellation — your portable data containers for libraries, bases, settings, and more.
 ---
 
@@ -16,7 +16,7 @@ A **Universe** is a portable, user-owned directory where Constellation stores al
 
 ```
 My Universe/
-├── universe.json          # Name, creation date, child references
+├── universe.json          # Name, creation date, Linked Universe references
 ├── libraries.json         # Registered libraries
 ├── bases/                 # Base files (.base)
 ├── bookmarks.json         # Bookmarked notes
@@ -51,18 +51,18 @@ If you chose **Create New Universe**:
 2. Click **Choose Folder** to pick where the universe directory will be created.
 3. Click **Next** to create the universe and proceed.
 
-### Step 2: Add libraries and child universes
+### Step 2: Add libraries and Linked Universes
 
 After creating your universe, you can immediately connect your data:
 
 - **Add Library** — Opens a folder picker. Select a Markdown library folder.
-- **Add Child Universe** — Link another existing Universe as a child. Its libraries become available to your new universe automatically.
-- **Skip for now** — Proceed without adding anything. You can always add libraries and child universes later.
+- **Add Child Universe** — Link another existing Universe as a Linked Universe (the button's label predates the current name). Its libraries become available to your new universe automatically.
+- **Skip for now** — Proceed without adding anything. You can always add libraries and Linked Universes later.
 
 Click **Finish** when you're done.
 
 > [!tip]
-> You can add as many libraries and child universes as you like during setup. They can also be managed later through the Universe Manager and Library Manager.
+> You can add as many libraries and Linked Universes as you like during setup. They can also be managed later through the Universe Manager and Library Manager.
 
 ---
 
@@ -91,7 +91,7 @@ Access the Universe Manager from the sidebar footer (click the universe name) to
 | **Create New** | Create an additional universe. |
 | **Remove** | Remove a universe from the list (files are preserved on disk). |
 | **Open Folder** | Open the universe directory in your file explorer. |
-| **Add Child Universe** | Link a child universe to share its libraries. |
+| **Add Child Universe** | Link another Universe as a Linked Universe to share its libraries (the button's label predates the current name). |
 
 The active universe is highlighted with a **green badge** and green border, making it easy to identify at a glance.
 
@@ -106,23 +106,23 @@ Switching universes is designed to be fast:
 
 ---
 
-## Child universes (Universe of Universes)
+## Linked Universes (Universe of Universes)
 
-A Universe can reference other Universes as **children**. When you add a child universe, its libraries automatically become available in the parent — no duplication needed.
+A Universe can link other Universes as **Linked Universes** — peers whose libraries are federated in. When you add a Linked Universe, its libraries automatically become available in the universe that links it — no duplication needed.
 
 **Example:**
 
 - **Universe A** has libraries: L1, L2, L3
 - **Universe B** has libraries: L4, L5
-- **Universe X** references A and B as children, plus its own library L6
+- **Universe X** links A and B as Linked Universes, plus its own library L6
 - **Effective libraries for X:** L1, L2, L3, L4, L5, L6
 
 If L7 is later added to Universe B, Universe X automatically sees it.
 
-Child universe libraries are fully integrated across all features:
-- **Sky View** — child library notes appear with their own color and convex hull.
-- **Search** — notes from child universe libraries are included in search results.
-- **Cross-library linking** — you can link between your own libraries and child universe libraries using `[[wikilinks]]`.
+Linked Universe libraries are fully integrated across all features:
+- **Sky View** — Linked Universe library notes appear with their own color and convex hull.
+- **Search** — notes from Linked Universe libraries are included in search results.
+- **Cross-library linking** — you can link between your own libraries and Linked Universe libraries using `[[wikilinks]]`.
 
 > [!warning]
 > Circular references are detected and prevented. If Universe A references B and B references A, each is only resolved once.
@@ -131,7 +131,7 @@ Child universe libraries are fully integrated across all features:
 
 ## Sidebar display
 
-Child universes appear in the left sidebar **above** your libraries, separated by a thin divider line. Each child universe is shown with a **globe icon** to visually distinguish it from libraries (which use a colored dot). The library count for each child universe is displayed alongside its name.
+Linked Universes appear in the left sidebar **above** your libraries, separated by a thin divider line. Each Linked Universe is shown with a **globe icon** to visually distinguish it from libraries (which use a colored dot). The library count for each Linked Universe is displayed alongside its name.
 
 This flat layout keeps things simple — no collapsible categories, just universes first, then libraries.
 

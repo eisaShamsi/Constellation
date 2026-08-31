@@ -55,7 +55,7 @@ A Library is a first-class citizen in Constellation — more than a folder — s
 - **In the Move dialog** — the destination list shows each library as a bold, colour-tinted building row, so you can tell a whole library apart from an ordinary folder (folders keep the plain folder icon).
 - **On the Dashboard** — each library card carries the same mark.
 
-A **linked Universe** (a federated child Universe) is marked differently — a small **planet-and-orbit** glyph — because it is a whole other Universe, not a library inside this one.
+A **Linked Universe** (a peer Universe whose libraries are federated in) is marked differently — a small **planet-and-orbit** glyph — because it is a whole other Universe, not a library inside this one.
 
 You can resize the library mark: **Style Setter → Library → Icon size**. This affects the library building glyph only; the toolbar icons and folder icons have their own size controls.
 

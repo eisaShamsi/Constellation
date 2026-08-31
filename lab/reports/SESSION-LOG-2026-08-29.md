@@ -757,3 +757,31 @@ a 14-agent workflow corrected the translated manuals' **stale false promise** ("
 is repaired automatically" — the pre-PJ-435 auto-repair claim English had already dropped) into
 the honest banner-and-button paragraph, each anchored to its locale's own `movedRepairNow`
 string; retest folders deleted; commit + push of everything since `4aee6ea2`.
+
+---
+
+## §29 — Session close (2026-08-31): state of standing, and the naming ruling applied to every living doc
+
+**Boss order at close:** *"PCS + Orientation, and handover file and prompt for a new session,
+including updating all manuals and help files."* The last clause pulled the just-measured naming
+violation into scope: a 26-file workflow (English manual + 11 help topics + 14 translated
+manuals, each with an independent verifier) applied the **Linked Universe** ruling to all living
+user docs — prose renamed; verbatim quotes of on-screen labels kept letter-true to the screen,
+because PJ-331's UI half is still open and the running app still shows the old names
+(`universe.manager.children` = "Child Universes" et al., ×15 locales).
+
+**State of standing at close (SO#5):**
+- **Verified-shipped and protected:** PJ-435 complete at `e48ff80e` — two Boss passes, 8
+  inspection fixes RED→GREEN, suite 1,613/0, "keeps everything" measured (1,000/1,000 created
+  dates; 501/501 review rows). Manuals ×15 honest on the move story. CLAUDE.md storage section
+  amended. Earned layer proven move-safe.
+- **In-flight in this closing commit:** the Linked-Universe doc rename ×26, handover file,
+  ledger v2.08, orientation v4.25, this section.
+- **Known-broken / drift:** PJ-331's UI half (old names on 7+ label keys ×15 locales) is now the
+  most visible naming drift; PJ-439 cosmetic backup filename; PJ-438 race uncharacterized live.
+- **Pending, not started:** PJ-433 (► next), PJ-434, PJ-436, PJ-437 (direction), PJ-419/420–427/
+  429/430/432.
+- **Doc drift:** none known beyond PJ-331's deliberate quoted-label survivals, each verified
+  against its locale file.
+
+Handover: `lab/reports/HANDOVER-2026-08-31.md` (with the ready-to-paste next-session prompt).
