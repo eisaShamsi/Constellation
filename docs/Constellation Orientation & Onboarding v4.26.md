@@ -28,12 +28,25 @@ telling them — and must never record its own substitution as the user's choice
   **no surface today truly wedges boot**, so the chooser is the codebase's first must-answer
   boot surface and its escape hatches must be designed, not inherited. Panel scope rulings: fold
   the amnesiac-wizard fix in; fix the remove-repoint in this pass (Whole-Ecosystem Fix Law).
-- **Open for the Boss** (ruling request sent after this bump, per SO#10): the option pick;
-  whether "Remove from list" belongs on the boot screen; the reappearing-drive taste call
-  (auto-open vs. one click).
+- **THE BOSS RULED (2026-08-31, same day — section updated in place):** (1) the **Boot
+  Chooser** (the panel's recommendation); (2) **no "Remove from list"** on the boot screen —
+  removal stays in the Universe Manager; (3) drive-returns = **wait for the click** ("It's
+  back — Open" lights; no auto-open).
+- **Phase 2 (Plan) complete** — `docs/PJ-433-Boot-Chooser-Plan.md` (workflow `wf_77362636-844`:
+  planner + WA#5 proven-methods cross-check + 3 adversarial attacks + finalizer). Nine steps:
+  Rust `get_registry_status`/`check_universe_reachability` · A′ (`active_id = None` on
+  removing the active; dialog names the successor) · boot-loop rewrite + extracted
+  `finishBoot()` (full post-activation tail — the bare-`handleUniverseCreated` pick path was
+  caught as a partial resume) · `BootChooser.svelte` + mount-watch + "Open from folder…" ·
+  second-screen title from `get_active_universe_path` · i18n ×15 · docs ×15 · /simplify +
+  safety-inspection · staged Boss test. WA#5: matches Lightroom's blocking dialog + Obsidian's
+  picker; avoids VS Code/Logseq anti-patterns. Awaiting the Boss's plan approval (Plan Approval
+  = Build Approval).
 - Surfaced during mapping, to file at the next ledger bump: `migrate_legacy_data`
   (`universe.rs:2505-2515`) half-activation (writes `active_id` + in-memory `active_path` with
-  no invalidation chain). Records: session log 2026-08-31 §1–§2.
+  no invalidation chain); corrupt-registry lenient-load (`universe.rs:154-157` — the wizard
+  shows while `set_aside_corrupt` shunts the file, out of PJ-433 scope). Records: session log
+  2026-08-31 §1–§4.
 
 ---
 

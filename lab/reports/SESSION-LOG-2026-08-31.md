@@ -91,4 +91,64 @@ consumers while nothing is active).
   PJ-322 (no new filing needed).
 
 **Records landed before the ruling request (SO#10):** Architect doc (with panel verdict §6),
-this log, orientation v4.26. Ruling request to the Boss follows the commit.
+this log, orientation v4.26. Ruling request to the Boss follows the commit. Committed
+`3a81bf5d`, pushed.
+
+---
+
+## §3 — THE BOSS RULED (2026-08-31): Boot Chooser; no Remove on the boot screen; wait for the click
+
+Three rulings, taken via the options dialog after the panel's voice reached him:
+
+1. **Fix shape: the Boot Chooser** (Option A / A-LEAN + mount-watch + A′, the panel's unanimous
+   recommendation). The app never opens a substitute universe; an honest screen names the
+   unreachable universe, path, and reason; lists the registry with reachability; Retry /
+   explicit pick / Create-new; nothing activates or persists until the user clicks.
+2. **"Remove from list" stays OFF the boot screen** — removal remains a deliberate act in the
+   Universe Manager only (Architect open question 2 → answered NO).
+3. **Drive-returns behavior: wait for the click** — the "It's back — Open" button lights up when
+   the missing path reappears; no auto-open (the taste call the panel declined → the
+   Constellation Way's letter).
+
+Phase 2 (Plan) launched next: planner + WA#5 proven-methods cross-check + adversarial plan
+attacks (red-flag compliance, whole-ecosystem completeness, migration path) + final synthesis.
+Plan goes to the Boss for approval before any code (Plan Approval = Build Approval).
+
+---
+
+## §4 — Phase 2 (Plan) FINAL: nine steps, all attack findings absorbed, filed for Boss approval
+
+**Workflow `wf_77362636-844`** (first launch `wnnv68uxg` had a script bug — the reviewers would
+have received a literal `${draftPlan}` placeholder instead of the plan; caught before the attack
+phase ran, stopped, fixed, relaunched as `wnlh1eus8`). Final plan filed at
+`docs/PJ-433-Boot-Chooser-Plan.md`.
+
+**Shape:** §1 Rust `get_registry_status` (registry-only, once per boot, replaces `listUniverses`
+— net-zero IPC) + `check_universe_reachability` (async — dead-UNC probes must not block) · §2 A′
+(`remove_universe_from_registry` → `active_id = None`, dialog names the successor) · §3
+boot-loop rewrite + extracted `finishBoot()` (the full post-activation tail incl. the
+federation:ready listener, watcher arming, and the second-screen `notifyUniverseSwitch` — the
+draft's bare-`handleUniverseCreated` pick path was a PARTIAL RESUME, caught by Attack 1) · §4
+`BootChooser.svelte` sibling gate + pick wrapper + mount-watch with epoch guard + "Open from
+folder…" (the Lightroom/Obsidian Locate affordance, adopted from the WA#5 cross-check) + one
+additive `onBack` prop on the wizard (flagged for explicit Boss approval) · §5 second-screen
+title from `get_active_universe_path` (never `universes[0]` blind) + `appReady` spawn guards ·
+§6 i18n ×15 · §7 help + manual ×15 · §8 /simplify + diff-scoped safety-inspection · §9 staged
+Boss test (auditor → inspector → panel first; never touches the daily universe).
+
+**Notable attack catches absorbed:** the draft's "report only on failure" self-contradiction
+(boot must know `active_id` BEFORE attempting — `list_universes` doesn't return it); the partial
+resume; a chooser throw falling to the bare spinner (now degraded-props catch); the dangling
+`active_id` state; the pre-created (`visible:false`) second-screen window invalidating the
+draft's spawn reasoning; the draft's `:7889` mis-anchor (real spawn affordances at :6097/:6122).
+
+**Deliberately out of scope, to file as a PJ at the ledger reconcile:** corrupt-registry
+lenient-load (`universe.rs:154-157` → empty vec → wizard while `set_aside_corrupt` shunts the
+file) — pre-existing, unrelated mechanism, same honesty family.
+
+**WA#5 verdict:** matches Lightroom's blocking dialog + Obsidian's picker; avoids VS Code's
+silent dead-restore and Logseq's disabled-editor anti-patterns. Battle-tested, not inventive.
+
+**Added by me to the plan doc:** the MSIX-virtualization warning stamped on every
+registry-touching verification clause (fsutil route / on-screen evidence only — carried from
+HANDOVER-2026-08-31).
