@@ -3875,6 +3875,56 @@ exact correction this fix makes.
 3. **Build it in the DRAIN cycle**, not at the tail of the 2026-08-31 session. **PJ-454 is the
    drain cycle's first item.**
 
+---
+
+### 📍 STATE AT 2026-09-01 SESSION CLOSE — read this before resuming PJ-454
+
+**THE COUNT IS 43.** Not 102, not 67, not 0 — all three were produced during this investigation and
+are refuted; 43 was reproduced independently twice, and the reconciliation is exact (one file is
+identified only by Templater's `<% %>`). 39 in Eisa Universe, 4 in موسوعة عيسى, **zero** in Eisa
+Cognitive Knowledge and MIG108 Rehearsal. **Do not re-derive it; do not widen the rule** — widening
+is precisely how 102 and 67 happened.
+
+**SHIPPED (`cc507561`, `f1799826`):**
+- The **Two-Signal Choke Point** in `canonical.rs` — nothing acquires a stamp from here on.
+  Boss has NOT tested it. *(He was told the commit preceded his test, against his standing order,
+  and ruled "leave it — test it next".)*
+- The **repair engine**, `src-tauri/src/mold_repair.rs` — `scan_stamped_molds` +
+  `repair_stamped_molds`, registered in `lib.rs`. Suite **1,629/0**, 7 tests.
+  **It has NO UI door, so it cannot touch a file. That is deliberate.**
+
+**REMAINING FOR THE REPAIR:** the settings door · i18n ×15 · diff-scoped inspection · a DRY RUN
+shown to the Boss · his test. Then run it: **batches 1 → the 5 awkward files → the remaining 37**,
+verifying between.
+
+**THE 5 THAT NEED CARE:** `Templater Template (up, related, created).md` (only `<% %>`);
+`Groups Template.md` and BOTH copies of `LYT's Book Notemaking Template.md` (a `---` divider in the
+body); one file with no final newline. All four hazards are covered by tests.
+
+**BOSS RULINGS IN FORCE:** repair the 43 = YES · **show him the exact list first, never automatic**
+· the marker (`kind: template`) is **not** cosmetic — without it the boot healer re-stamps the file
+and the repair silently undoes itself · build the multi-folder templates setting **in this cycle**.
+
+**HIS NEW STANDING ORDER (2026-09-01):** *"consult the panel before taking any action."* The line he
+ruled: **anything that writes, commits, builds or touches his data goes to the panel first, with
+its verdict shown to him before proceeding; reading and measuring stay free, but any finding from
+them reaches him only after an independent check that could contradict it.**
+
+**TWO DECISIONS QUEUED, briefs written, NOT acted on:**
+1. **The 107-file second wave** (64 obvious molds / 24 ambiguous / **19 real notes that must never
+   be touched**). **NO SAFE RULE EXISTS** — the best discriminator catches 41 of 64, misses 23, and
+   catches the Boss's own **unfinished concrete-formwork note**, which on disk is indistinguishable
+   in shape from a mold. Approve **by enumeration in four folder-sized batches**, never by
+   predicate. `القوالب الخرسانية` is the standing counter-example to any future rule proposal.
+2. **The 18 GB duplicate** — `Eisa Universe\موسوعة عيسى`, 9,074 files, **39% of that universe's
+   index**, 60% of its links. Traced: a **MIG-108 unification executed as Copy, 2026-08-07
+   16:48–16:53**, then de-registered as a library with the files left behind (who de-registered it
+   is unknown — the diagnostics log starts after that window). 9,054 of 9,074 shared files are
+   byte-identical; **18 of the 20 that differ, differ ONLY in their identity stamp**; the original
+   holds 9 newer notes; nothing references the copy; **13 links** from outside resolve into it.
+   **Recommended:** add `E:\موسوعة عيسى` as a **Linked Universe** → verify the 13 links → move the
+   copy to `.trash`. Behind a backup, Boss tests the links before deletion.
+
 **BRIEF FOR THE DRAIN CYCLE — how the list must be produced** (written now so the next session
 does not improvise the risky half): identify candidates by **both** arms and **report them
 separately**, never merged — (a) files under a resolved templates folder, (b) files whose own
