@@ -1,11 +1,16 @@
 # Constellation Pending Jobs
 
-**Version 2.09 | 2026-08-31 — PJ-433 CLOSED: the Boot Chooser, Boss-passed on ALL SEVEN stages (1, 1b, 2, 3, 4, 5A, 5B) · A′ folded in (removal never guesses a successor) · docs ×15 · six follow-ups filed (PJ-440…PJ-445) · **the per-cycle whole-app sweep re-run and panelled: 8 new PJs (PJ-446…PJ-453), and the ledger diagnosed as a working NET but a failing QUEUE**. **► BOSS-RULED 2026-08-31: PJ-446 ships tonight (he tests it), and the NEXT CYCLE IS A DRAIN CYCLE — fix the backlog, run NO new hunt.**
+**Version 2.09 | 2026-08-31 — PJ-433 CLOSED: the Boot Chooser, Boss-passed on ALL SEVEN stages (1, 1b, 2, 3, 4, 5A, 5B) · A′ folded in (removal never guesses a successor) · docs ×15 · six follow-ups filed (PJ-440…PJ-445) · **the per-cycle whole-app sweep re-run and panelled: 8 new PJs (PJ-446…PJ-453), and the ledger diagnosed as a working NET but a failing QUEUE**. **► BOSS-RULED: PJ-433 + PJ-446 both PASSED and committed (`5e56c00a`). NEXT = the DRAIN CYCLE, and its FIRST item is PJ-454 (102 stamped molds measured on his disk; repair approved, file-list-first).**
 
 > **What changed in v2.09** (**the PJ-433 `/migration`, run end to end in one session: Architect →
 > panel → Boss rulings → plan → build → /simplify → inspection → Boss test → close**):
 >
-> **► NEXT ACTION: THE DRAIN CYCLE — Boss-ruled 2026-08-31.** The whole-app sweep at this close
+> **► NEXT ACTION: THE DRAIN CYCLE, opening with PJ-454.** Boss-ruled 2026-09-01: the Two-Signal
+> Choke Point is built there, and the **102 stamped molds are repaired after he approves an exact
+> file list** (82 in Eisa Universe, 19 in موسوعة عيسى, 1 in his daily universe — measured, and no
+> cast inherited a stamp). The brief for producing that list safely is in PJ-454's entry.
+>
+> **The rest of the DRAIN CYCLE — Boss-ruled 2026-08-31.** The whole-app sweep at this close
 > proved the ledger is a working NET and a failing QUEUE: 8 of its 17 distinct findings were
 > already filed, some since 2026-08-11, and ~158 confirmed findings sit invisible inside two
 > umbrella entries (**PJ-264 ≈100, PJ-378 = 58**). The panel: *"This sweep spent most of its
@@ -3812,11 +3817,73 @@ on the *recovered-copy* path, not on a cast from a template.
 setting `kind: template` on a note via the Properties panel; importing templates from another
 vault into a different folder.
 
-**Proposed fix — the choke point, not the call site (Whole-Ecosystem):** refuse to stamp inside
-`ensure_cid_cn`/`ensure_cid_cn_cmd` itself when the file's own frontmatter says `kind: template`,
-so EVERY caller inherits the protection and the two halves stop disagreeing. The frontend
-`isTemplatePath` guard stays as the cheap early-out. Needs the Boss's go and a test round; filed
-rather than fixed mid-test.
+---
+
+### 🔬 PANEL VERDICT + BOSS RULINGS (2026-09-01, workflow `wf_77c3801f-411` — 8 agents: 4 investigations, 3 lenses, chair)
+
+**IT HAS ALREADY HAPPENED — 102 stamped molds on his disk, measured, not theorised.** The chair
+re-measured all 13 universes personally *because the first two maps disagreed*:
+
+| Universe | Template files carrying an identity stamp |
+|---|---|
+| **Eisa Universe** | **82** |
+| **موسوعة عيسى** | **19** |
+| **Eisa Cognitive Knowledge** (daily) | **1** |
+
+Read to be certain: `موسوعة عيسى\الموارد الرئيسة\القوالب\1 Base Template (up, related, created).md`
+carries `created: "{{date}}"` — a placeholder waiting to be filled at casting — sitting directly
+beneath a hard stamp dated **2026-04-14**.
+
+**THE CORRECTION THAT MATTERS, in the Boss's favour: no cast inherited a stamp.** `create_note`
+strips identity keys from template-supplied frontmatter before writing
+(`libraries.rs:1666-1686`, with a regression test). His feared consequence is real in MECHANISM
+but has not reached a single note. What IS wrong today: a stamped mold misreports its own birth
+wherever identity is read — and identity **overrides** a correct `created:` line beside it
+(`cockpitGraphData.ts:136`).
+
+**Why the scale — ten doors, two guarded.** The territory map found **ten** paths that can write a
+`cid_cn`; the frontend location guard covers **two** (`store.ts:3369`, `:3713`). The primitive
+itself (`canonical.rs:1449` `ensure_cid_cn`) has **no template check at all**, and three of the
+unguarded sites are BULK passes over every note in a universe — which is how 82 molds in one
+universe acquired stamps *within the same second*. Exactly one stamping site in the codebase
+honours the kind arm: `mig003_step3_soft_rebackfill` (`search.rs:4417`).
+
+**RECOMMENDED FIX — the Two-Signal Choke Point.** Move the template test INTO the single engine
+that writes the identity line, and have it ask **both** questions: does the file declare itself a
+template (`kind: template`), **OR** does it sit under a templates folder? Keep strip-at-creation
+as an independent second layer.
+- *Reason 1:* the guarantee must live where no future caller can bypass it — ten doors, one gate.
+- *Reason 2:* **the data chose the shape.** **ZERO of the 102 damaged files declare themselves
+  templates** — they are Obsidian-era molds Constellation never marked — so a content-only rule
+  would have prevented **none** of them; and location-only is what already failed. Both, OR'd.
+- *Dissent (one lens):* self-declaration should be the sole authority as the File-Over-App-pure
+  answer. **The disk refuted it**; it becomes the second arm, not the only one.
+
+**Prior art (WA#5) is unanimous with the Boss:** Notion mints a new identity per page created from
+a template; Obsidian's unique-note tooling never puts an id in the template (it generates at use);
+Rails blanks id + timestamps on copy; `git init --template` copies structure, never repository
+identity; **Word marks template-vs-document by a marker INSIDE the file, not by folder** — the
+exact correction this fix makes.
+
+### ⚖️ THE BOSS RULED (2026-09-01)
+
+1. **Repair the 102 molds — YES.**
+2. **Show him the exact file list for approval FIRST** — no automatic pass. *(The panel's own
+   folder-based scan flagged ordinary notes with template-like names; stripping identity from a
+   real note silently severs its earned reading history and leaves its links pointing at a dead
+   identity, with nothing on screen. Misidentification is permanent and silent.)*
+3. **Build it in the DRAIN cycle**, not at the tail of the 2026-08-31 session. **PJ-454 is the
+   drain cycle's first item.**
+
+**BRIEF FOR THE DRAIN CYCLE — how the list must be produced** (written now so the next session
+does not improvise the risky half): identify candidates by **both** arms and **report them
+separately**, never merged — (a) files under a resolved templates folder, (b) files whose own
+frontmatter declares `kind: template`, (c) files matching NEITHER but flagged by name heuristics —
+**bucket (c) is not a repair candidate, it is a review list.** For every candidate show: full path,
+the stamp value and its embedded date, whether `earned.jsonl` holds records keyed on that
+`cid_cn`, and whether any `note_links.target_cid_cn` points at it. **A mold with earned records or
+inbound identity links is NOT a mold** — it is a note that was treated as one, and it must be
+excluded and shown to him separately. Repair only after his approval, snapshot-first.
 
 ### 🆕 PJ-444 *(LOW — Group 3 — honesty gap on a corrupt registry)* — an unparseable `universes.json` shows the first-run wizard
 

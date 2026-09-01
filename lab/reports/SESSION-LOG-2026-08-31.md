@@ -583,3 +583,54 @@ practice, and the general prototype-vs-instance pattern), then three adversarial
 (correctness/Whole-Ecosystem, existing damage/migration, ruling-fidelity under File-Over-App),
 then a chair verdict with ONE recommendation, a yes/no on repairing history, and the test that
 would prove it. **No code written until he rules on their recommendation.**
+
+### §14b — The panel's answer: it has ALREADY happened, 102 times, measured on his disk
+
+**The chair re-measured all 13 universes itself because the first two maps disagreed** — the kind
+of self-correction the panel exists for. Result: **102 template files carry an identity stamp** —
+**82** in Eisa Universe, **19** in موسوعة عيسى, **1** in his daily universe. Read to be sure:
+`موسوعة عيسى\…\القوالب\1 Base Template (up, related, created).md` carries `created: "{{date}}"`
+— the placeholder waiting to be filled at casting — directly beneath a hard stamp dated
+**2026-04-14**. The mold was given a birthday.
+
+**The correction that matters, in his favour: NO CAST INHERITED A STAMP.** `create_note` strips
+identity keys from template-supplied frontmatter before writing (`libraries.rs:1666-1686`, with a
+regression test). The feared consequence is real in mechanism and has **not reached a single
+note**. What IS wrong: a stamped mold misreports its own birth, and identity **overrides** a
+correct `created:` line beside it (`cockpitGraphData.ts:136`).
+
+**Why 102 and not 2 — the territory map's real payload: TEN doors, TWO guarded.** Ten paths can
+write a `cid_cn`; the frontend location guard covers two. **The primitive itself
+(`canonical.rs:1449`) has no template check at all**, and three unguarded sites are BULK passes
+over every note — which is how 82 molds in one universe were stamped *within the same second*.
+Exactly one stamping site honours the kind arm (`search.rs:4417`).
+
+**Recommendation: the Two-Signal Choke Point** — the test moves INTO the engine that writes the
+stamp and asks BOTH questions (self-declared `kind: template` OR under a templates folder), with
+strip-at-creation kept as an independent second layer. **The data chose the shape: ZERO of the 102
+declare themselves templates** (Obsidian-era molds Constellation never marked), so a content-only
+rule would have prevented none — and location-only is what failed. One lens dissented for
+content-only as the File-Over-App-pure answer; **the disk refuted it.**
+
+**Prior art unanimous with him:** Notion mints fresh identity per cast; Obsidian's unique-note
+tooling generates at use, never in the template; Rails blanks id+timestamps on copy;
+`git init --template` never copies repository identity; **Word marks template-vs-document by a
+marker INSIDE the file, not by folder** — precisely this fix.
+
+### §14c — HIS RULINGS (2026-09-01) and why the list-first discipline matters
+
+1. **Repair the 102 — YES.**
+2. **File list for approval FIRST**, no automatic pass. The panel's own folder-based scan flagged
+   ordinary notes with template-like names, and **stripping identity from a real note silently
+   severs its earned reading history and leaves its links pointing at a dead identity, with
+   nothing shown on screen.** Permanent, silent, and caused by the repair itself — the one shape
+   worth slowing down for.
+3. **Build in the DRAIN cycle** — PJ-454 is its first item. Not at the tail of a long session.
+
+**The brief for producing that list is written into PJ-454's ledger entry now**, so the next
+session does not improvise the risky half: report the arms SEPARATELY (under-templates-folder /
+self-declared / name-heuristic-only — **the third is a review list, never a repair candidate**);
+for each candidate show path, stamp + embedded date, whether `earned.jsonl` holds records keyed on
+that `cid_cn`, and whether any `note_links.target_cid_cn` points at it. **A "mold" with earned
+records or inbound identity links is not a mold** — it is a note that was treated as one, and it
+is excluded and surfaced to him separately. Repair snapshot-first, only after his approval.
