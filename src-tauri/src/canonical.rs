@@ -1446,9 +1446,118 @@ fn inject_cid_cn(content: &str, stem: &str) -> String {
     format!("---\ncid_cn: {}\n---\n\n{}", stem, content)
 }
 
+/// PJ-454 — does this file's OWN frontmatter declare it a template?
+///
+/// Scoped to the leading `---` fence on purpose: a note whose BODY happens to contain the words
+/// `kind: template` (a doc about templates — this repo's own notes do exactly that) must NOT be
+/// mistaken for a mold, because the cost of a false positive here is a real note that never
+/// receives an identity.
+///
+/// Lenient about what a hand-edited or foreign-authored file looks like (spacing, optional quotes,
+/// CRLF, case of the value) but never about WHERE it looks.
+///
+/// **The `kind` must be a ROOT key** — `is_top_level_key_line` before the test. The 2026-09-01
+/// diff inspection compiled this function and proved the first version returned `true` for an
+/// INDENTED `kind: template`: a nested map child, a block scalar's contents, a tab-indented line.
+/// A frontmatter cheat-sheet note (`example: |` / `  kind: template`) or a Templater config map
+/// would therefore have been judged a mold and **permanently denied an identity** — silently, on
+/// every open, with the boot healer unable to repair it because ITS exemption reads the root
+/// `kind` and would not have matched. That is the indentation-is-data class this same file was
+/// swept for on 2026-08-11, and three of its neighbours (`extract_created_from_frontmatter`,
+/// `extract_fm_field`, `merge_frontmatter`) already call this helper for exactly this reason.
+pub(crate) fn frontmatter_declares_template(content: &str) -> bool {
+    let trimmed = content.trim_start();
+    let Some(after) = trimmed.strip_prefix("---") else { return false };
+    // The fence must close; an unterminated `---` is not frontmatter.
+    let Some(end) = after.find("\n---") else { return false };
+    after[..end].lines().any(|line| {
+        if !crate::yaml_lines::is_top_level_key_line(line) {
+            return false;
+        }
+        let Some((k, v)) = line.split_once(':') else { return false };
+        if k.trim() != "kind" {
+            return false;
+        }
+        let v = v.trim().trim_matches(|c| c == '"' || c == '\'');
+        v.eq_ignore_ascii_case("template")
+    })
+}
+
+/// PJ-454 — the universe's templates folder, resolved from a NOTE path with no AppHandle.
+///
+/// Mirrors `search.rs::templates_dir_for_db`, which resolves the same folder from a db path: walk
+/// up to the universe root (the ancestor holding `.constellation/universe.json`), then read
+/// `templateFolder` out of that universe's persisted settings. Best-effort by design — a note
+/// outside any universe resolves to `None`, and the frontmatter arm carries the guarantee there.
+fn templates_dir_for_note(file_path: &Path) -> Option<PathBuf> {
+    let mut current = file_path.parent().map(|p| p.to_path_buf());
+    let root = loop {
+        let dir = current?;
+        if crate::universe::constellation_dir(&dir).join("universe.json").exists() {
+            break dir;
+        }
+        current = dir.parent().map(|p| p.to_path_buf());
+    };
+    let cdir = crate::universe::constellation_dir(&root);
+    let folder: Option<String> = std::fs::read_to_string(cdir.join("settings.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("templateFolder").and_then(|f| f.as_str().map(str::to_string)));
+    crate::universe::resolve_templates_dir_for_root(&root, folder.as_deref()).ok()
+}
+
+/// PJ-454 — **the two-signal test: is this file a MOLD?**
+///
+/// Boss ruling (MIG-TPL §1, 2026-07-19, restated 2026-09-01): *a template never carries a
+/// `cid_cn`. A template is a MOLD; identity and birth belong to the CAST* — because a note cast
+/// from a stamped mold would inherit the mold's birth date.
+///
+/// It asks BOTH questions because each arm alone has been measured to fail:
+/// - **Location alone** is what the frontend guard did (`isTemplatePath`, location-only), and on
+///   2026-09-01 a panel measured **102 stamped molds** across the Boss's universes that it never
+///   protected — none of them sat in the configured folder.
+/// - **Self-declaration alone** would have protected **none of those 102 either**: they are
+///   Obsidian-era molds Constellation never marked with `kind: template`.
+///
+/// So: either signal is sufficient, and the test lives HERE — inside the one engine that writes
+/// the identity line — rather than at a call site, because ten paths can reach this engine and a
+/// guard at two of them is what produced the 102.
+pub(crate) fn is_template_file(file_path: &Path, content: &str) -> bool {
+    if frontmatter_declares_template(content) {
+        return true;
+    }
+    // The location arm compares CASE-INSENSITIVELY on normalized separators, matching the
+    // frontend's `isTemplatePath`. `Path::starts_with` is case-SENSITIVE on ordinary components
+    // (verified by the 2026-09-01 inspection), and the setting is a free-text field: typing
+    // `templates` against an on-disk `Templates` is invisible on Windows, so the resolved dir and
+    // the walker's on-disk path can differ only in case — and the arm would silently miss. That
+    // divergence would also have made this file's own claim to backstop the frontend false.
+    let Some(td) = templates_dir_for_note(file_path) else { return false };
+    let norm = |p: &Path| p.to_string_lossy().replace('\\', "/").to_lowercase();
+    let (f, dir) = (norm(file_path), norm(&td));
+    let dir = dir.trim_end_matches('/');
+    f.starts_with(&format!("{dir}/"))
+}
+
 pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String> {
-    // Already namespaced — nothing to do
+    // Already namespaced — nothing to do.
+    //
+    // PJ-454 — this stays FIRST, ahead of the template test, and the order is load-bearing for
+    // performance: an already-stamped note is the overwhelmingly common case on the note-OPEN
+    // path, and `is_template_file`'s location arm walks parents and reads the universe's
+    // settings.json. Testing templates first would put that filesystem work on every open of
+    // every note. Same answer either way — a stamped file is returned unchanged by both branches
+    // — so the cheap one goes first. (PJ-446 was this exact lesson on this exact path.)
     if content.contains("\ncid_cn:") || content.trim_start().starts_with("cid_cn:") {
+        return Ok(content.to_string());
+    }
+    // PJ-454 — a MOLD is never stamped, and never written to on this path at all: no mint, and
+    // no legacy `cid:` → `cid_cn:` migration either, since migrating would be maintaining an
+    // identity on a file that must not hold one. Returning the content unchanged also means the
+    // caller's `updated != content` check stays false, so the command skips its reindex — a
+    // template costs nothing on open. (Stripping the stamps 102 molds ALREADY carry is the
+    // separate, Boss-approved repair, which runs from an approved file list — not from here.)
+    if is_template_file(file_path, content) {
         return Ok(content.to_string());
     }
     // Legacy key — migrate in place
@@ -1639,6 +1748,139 @@ pub fn repair_external_libraries_on_startup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── PJ-454 — a MOLD is never stamped (Boss ruling MIG-TPL §1) ──────────────
+
+    /// The SELF-DECLARED arm. This is the arm that protects a template the user has moved out of
+    /// the templates folder — the case the location-only frontend guard missed.
+    #[test]
+    fn pj454_frontmatter_kind_template_is_a_mold() {
+        assert!(frontmatter_declares_template("---\nkind: template\ntitle: T\n---\nbody\n"));
+        // tolerant of how a hand-edited or foreign-authored file actually looks
+        assert!(frontmatter_declares_template("---\r\nkind:   \"template\"\r\ntitle: T\r\n---\r\nb\r\n"));
+        assert!(frontmatter_declares_template("---\ntitle: T\nkind: 'Template'\n---\nb\n"));
+        assert!(frontmatter_declares_template("\n\n---\nkind: template\n---\nb\n"), "leading blank lines");
+    }
+
+    /// The FALSE-POSITIVE direction, which is the dangerous one: judging a real note a mold means
+    /// it never receives an identity. The words must only count inside the frontmatter fence.
+    #[test]
+    fn pj454_a_note_that_merely_mentions_templates_is_not_a_mold() {
+        // body prose — this repo's own docs read exactly like this
+        assert!(!frontmatter_declares_template("---\ntitle: T\n---\nSet `kind: template` to mark a mold.\n"));
+        // no frontmatter at all
+        assert!(!frontmatter_declares_template("kind: template\n"));
+        // unterminated fence is not frontmatter
+        assert!(!frontmatter_declares_template("---\nkind: template\nnever closed\n"));
+        // a different key that merely ends in `kind`, and a different value
+        assert!(!frontmatter_declares_template("---\ntemplate_kind: whole\n---\nb\n"));
+        assert!(!frontmatter_declares_template("---\nkind: note\n---\nb\n"));
+    }
+
+    /// PJ-454 inspection finding 1 (MED, silent-data-loss) — an INDENTED `kind: template` must NOT
+    /// count. Each case below returned `true` from the first version of this function, which the
+    /// inspection proved by compiling it: the note would have been judged a mold and permanently
+    /// denied an identity, on every open, with the boot healer unable to repair it.
+    #[test]
+    fn pj454_an_indented_kind_template_does_not_make_a_note_a_mold() {
+        // a nested map child — e.g. a Templater/Obsidian config block
+        assert!(!frontmatter_declares_template("---\ndefaults:\n  kind: template\n---\nbody\n"));
+        // a block scalar's contents — e.g. a frontmatter cheat-sheet note
+        assert!(!frontmatter_declares_template("---\nexample: |\n  kind: template\n---\nbody\n"));
+        // tab-indented
+        assert!(!frontmatter_declares_template("---\nmap:\n\tkind: template\n---\nbody\n"));
+        // nested AND quoted
+        assert!(!frontmatter_declares_template("---\nm:\n  kind: \"template\"\n---\nbody\n"));
+        // a sequence item is not a root key either
+        assert!(!frontmatter_declares_template("---\nitems:\n  - kind: template\n---\nbody\n"));
+        // ...while the root key still counts, unchanged
+        assert!(frontmatter_declares_template("---\nkind: template\n---\nbody\n"));
+    }
+
+    /// PJ-454 inspection finding 2 (LOW) — the location arm must be CASE-INSENSITIVE, because the
+    /// templates-folder setting is free text and typing `templates` against an on-disk `Templates`
+    /// is invisible on Windows. `Path::starts_with` is case-sensitive, so the first version missed.
+    #[test]
+    fn pj454_location_arm_is_case_insensitive() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        std::fs::create_dir_all(root.join(".constellation")).unwrap();
+        std::fs::write(root.join(".constellation").join("universe.json"), "{}").unwrap();
+        // the SETTING is lowercase…
+        std::fs::write(
+            root.join(".constellation").join("settings.json"),
+            "{\"templateFolder\":\"templates\"}",
+        )
+        .unwrap();
+        // …while the folder on disk is capitalised, as the app originally created it
+        std::fs::create_dir_all(root.join("Templates")).unwrap();
+        let mold = root.join("Templates").join("Mold.md");
+        assert!(
+            is_template_file(&mold, "---\ntitle: Mold\n---\nbody\n"),
+            "a mold in the templates folder must be recognised despite the case difference",
+        );
+    }
+
+    /// The LOCATION arm, end to end through `is_template_file`, on a real universe layout — and
+    /// the two-signal claim itself: a mold OUTSIDE the folder is still a mold (that is the whole
+    /// point of PJ-454), and a note INSIDE the folder is one too.
+    #[test]
+    fn pj454_is_template_file_honours_both_arms() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        std::fs::create_dir_all(root.join(".constellation")).unwrap();
+        std::fs::write(root.join(".constellation").join("universe.json"), "{}").unwrap();
+        std::fs::create_dir_all(root.join("Templates")).unwrap();
+        std::fs::create_dir_all(root.join("Notes")).unwrap();
+
+        let inside = root.join("Templates").join("Mold.md");
+        let stray = root.join("Notes").join("Stray Mold.md");
+        let plain = root.join("Notes").join("Real Note.md");
+
+        // location arm alone (no `kind:` line at all)
+        assert!(is_template_file(&inside, "---\ntitle: Mold\n---\nbody\n"));
+        // self-declared arm alone — outside the folder, exactly the 102-mold shape
+        assert!(is_template_file(&stray, "---\nkind: template\ntitle: Stray\n---\nbody\n"));
+        // neither arm — an ordinary note MUST still be stampable
+        assert!(!is_template_file(&plain, "---\ntitle: Real\n---\nbody\n"));
+    }
+
+    /// The guarantee itself, at the engine: a mold is returned untouched — no mint, and no legacy
+    /// `cid:` migration either — while an ordinary note still receives its identity. The mold is
+    /// never even written, so the command's `updated != content` check stays false and no reindex
+    /// fires.
+    #[test]
+    fn pj454_ensure_cid_cn_never_stamps_a_mold_but_still_stamps_a_note() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        std::fs::create_dir_all(root.join(".constellation")).unwrap();
+        std::fs::write(root.join(".constellation").join("universe.json"), "{}").unwrap();
+        std::fs::create_dir_all(root.join("Notes")).unwrap();
+
+        // A stray mold: declared, outside any templates folder.
+        let mold_body = "---\nkind: template\ntitle: Mold\ncreated: \"{{date}}\"\n---\nMold {{title}}\n";
+        let mold = root.join("Notes").join("Mold.md");
+        std::fs::write(&mold, mold_body).unwrap();
+        let out = ensure_cid_cn(&mold, mold_body).unwrap();
+        assert_eq!(out, mold_body, "a mold must come back byte-identical");
+        assert!(!out.contains("cid_cn"), "a mold must never acquire an identity");
+        assert_eq!(std::fs::read_to_string(&mold).unwrap(), mold_body, "the file must not be rewritten");
+
+        // A stray mold carrying a LEGACY `cid:` is not migrated either — maintaining an identity
+        // on a mold is still an identity on a mold. (Stripping it is the separate repair.)
+        let legacy = "---\nkind: template\ncid: 20260414T101010Z_NOTE_ABCD\n---\nb\n";
+        let lp = root.join("Notes").join("Legacy Mold.md");
+        std::fs::write(&lp, legacy).unwrap();
+        assert_eq!(ensure_cid_cn(&lp, legacy).unwrap(), legacy, "no cid -> cid_cn migration on a mold");
+
+        // The ordinary note is unaffected by all of this — it must still be stamped.
+        let note_body = "---\ntitle: Real\n---\nbody\n";
+        let note = root.join("Notes").join("Real.md");
+        std::fs::write(&note, note_body).unwrap();
+        let stamped = ensure_cid_cn(&note, note_body).unwrap();
+        assert!(stamped.contains("cid_cn: "), "an ordinary note must still receive its identity");
+        assert!(std::fs::read_to_string(&note).unwrap().contains("cid_cn: "), "and it must be written");
+    }
 
     /// PJ-252 — injecting the identity must not push a blank line above the note's first
     /// property. `ensure_cid_cn` runs the FIRST time any note is opened, so before this the

@@ -4864,10 +4864,21 @@ export async function createNote(folderPath: string, fileName: string, initialFr
  * MIG-TPL §1 — is this path inside the user's templates folder?
  *
  * Boss ruling 2026-07-19: **a template never carries `cid_cn` or a creation date.** A template is
- * a MOLD; identity and birth belong to the CAST. Without this guard the rule would be broken by
- * the app itself: simply OPENING a template to edit it runs `ensure_cid_cn_cmd`, which injects a
- * `cid_cn:` into the file — so every mold would acquire an identity on first edit, and every note
- * cast from it would inherit the mold's identity line.
+ * a MOLD; identity and birth belong to the CAST — otherwise every note cast from a stamped mold
+ * inherits the mold's identity line, and with it the mold's birth date.
+ *
+ * **PJ-454 (2026-09-01) — THIS IS NO LONGER THE GUARANTEE. It is a cheap early-out.**
+ * This predicate is LOCATION-ONLY, and location alone was measured to fail: a panel found **102
+ * stamped molds** across the Boss's universes that it never protected, because none of them sat
+ * in the configured folder (they are Obsidian-era molds, and none declares `kind: template`
+ * either — which is why the fix needs BOTH signals, not a second location rule here).
+ *
+ * The rule is now enforced where it cannot be bypassed: `canonical.rs::is_template_file`, inside
+ * the one engine that writes the identity line (`ensure_cid_cn`) — because TEN paths can reach
+ * that engine and a guard at the two frontend call sites is precisely what produced the 102.
+ * Keeping this check only saves an IPC round-trip for templates that do sit in the folder; if it
+ * returns the wrong answer, the Rust side still refuses. **Do not add a second arm here** — a
+ * duplicated predicate is the drift the Whole-Ecosystem Fix Law exists to prevent.
  *
  * Compared case-insensitively on normalized separators, since the setting may be relative
  * ("Templates") or an absolute path from the folder picker.
