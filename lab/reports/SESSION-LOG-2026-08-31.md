@@ -548,6 +548,17 @@ brought into a test universe and its three notes opened — including the 41 KB,
 heavily-wikilinked one — with no stall and responsive typing. **PJ-446 CLOSED.** The commit gate
 is cleared for both features of this session (PJ-433's seven stages + PJ-446).
 
+**POSITIVE PROOF THE TEST ENTERED THE BRANCH — captured at fixture cleanup, not asserted.** Before
+the copy, the three fixture files were 181 / 145 / 41,898 bytes and contained **zero** `cid_cn`
+occurrences (verified at creation). After his test they were **224 / 195 / 41,941** — each grown by
+one frontmatter line — and **3 of 3 carried a stamp** (`Imported Alpha.md` opened with
+`---\ncid_cn: 20260901T055954Z_NOTE_C14B\n---`). So the run did not merely avoid breaking
+something: **`ensure_cid_cn` actually stamped, and `reindex_single_note` actually ran, on the
+fixed `(async)` path — including on the link-dense 41 KB note — with the window responsive.** This
+is the evidence the panel's original test design could not have produced, and it is why that
+design was rejected. Fixture folders (original and the in-universe copy) deleted after this
+reading; zero `PJ4*` artifacts remain anywhere under `E:\Constellation Universes`.
+
 ---
 
 ## §14 — PJ-454 filed from the BOSS'S OWN REMARK, and the panel convened on it
