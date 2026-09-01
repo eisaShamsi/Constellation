@@ -125,9 +125,13 @@ Quando termina, o aplicativo põe-se em dia **sem reiniciar** — a pesquisa enc
 
 Voce pode vincular universos entre si, como pares — um universo nunca e conteudo de outro. Um **Universo Vinculado** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos vinculados aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
 
-### Reabertura automática
+### Reabertura automática — e a tela de escolha quando seu universo não pode ser encontrado
 
-O Constellation lembra o último universo ativo e o reabre automaticamente ao iniciar. Se a pasta do universo foi movida no disco, reabra-a a partir do novo local pelo Gerenciador de Universos (clique no nome do universo na extremidade direita da barra de status → **Abrir universo existente**). Uma barra de mensagem aparece então explicando que o universo foi movido — suas notas estão todas lá e abrem normalmente; nada foi perdido — com um botão **«Reparar o índice — seguro, mantém tudo»** que reescreve o índice com segurança em um único passo tudo-ou-nada, depois de fazer um backup verificado: as idades dos links e o plano de revisão são mantidos e, ao terminar, o aplicativo se recarrega uma vez sozinho. Nada é excluído por causa de uma movimentação.
+O Constellation lembra o último universo ativo e o reabre automaticamente ao iniciar. Se esse universo não puder ser alcançado naquele momento — a unidade desconectada, a pasta movida ou renomeada, um local de rede offline — o Constellation **não abre nada**. Em vez disso, ele mostra uma **tela de escolha** que nomeia o universo que não conseguiu abrir, mostra o caminho da pasta onde procurou e o motivo, e tranquiliza você: nada foi aberto e nada foi alterado. Abaixo disso, seus outros universos registrados são listados, cada um marcado como **Acessível** ou **Inacessível**, com um botão **Abrir** para qualquer um que esteja acessível.
+
+A partir da tela de escolha você pode: **Tentar novamente** (conecte a unidade primeiro); esperar pelo botão **«Voltou — Abrir»**, que se acende sozinho no momento em que o local ausente reaparece — nada é aberto até você clicar nele; **Abrir** outro universo como sua escolha deliberada; **Abrir de uma pasta…** para navegar até uma pasta de universo em qualquer lugar do disco; ou **Criar um novo universo** (com um botão **Voltar** que retorna à tela de escolha). Se *nenhum* dos seus universos puder ser alcançado, a tela de escolha diz isso com clareza e ainda oferece as duas últimas portas — ela nunca finge que você não tem universos.
+
+Em versões anteriores, o Constellation abria silenciosamente um universo *diferente* nessa situação e lembrava esse substituto como sua escolha — de modo que uma janela de aparência normal no universo errado era o sintoma de um universo inacessível, e ela continuava voltando mesmo depois que a unidade retornava. Isso não acontece mais: nada é aberto, e nada é lembrado, até você decidir.
 
 ### Universos portáteis
 
@@ -136,9 +140,11 @@ Os universos do Constellation sao totalmente portáteis. Voce pode mover a pasta
 Para mover um universo:
 1. Feche o Constellation
 2. Mova ou copie a pasta do universo para o novo local
-3. Abra o Constellation → a tela de boas-vindas aparece (o caminho antigo nao e mais valido)
-4. Escolha **Abrir Universo Existente** e aponte para o novo local
+3. Abra o Constellation. A **tela de escolha** aparece, informando que o universo não pôde ser aberto no local antigo — nada foi perdido, e nada é aberto até você escolher.
+4. Clique em **Abrir de uma pasta…** na tela de escolha e aponte para o novo local. Suas notas, pastas e bibliotecas aparecem imediatamente.
 5. Todas as notas e bibliotecas aparecem imediatamente. Uma barra de mensagem avisa que o universo foi movido — clique no botão **«Reparar o índice — seguro, mantém tudo»** para reescrever o índice de busca com segurança (backup verificado primeiro; as idades dos links e o plano de revisão são mantidos; o aplicativo se recarrega uma vez ao terminar)
+
+**Por que a reparação é uma reescrita, e não uma releitura.** Ao abrir um universo movido, o Constellation reescreve a lista de bibliotecas do universo — é por isso que suas notas e pastas aparecem de imediato. O índice de busca é um armazenamento separado, e nele cada nota ainda registra o local *antigo*. O que os seus links **conquistaram** — quais você percorreu, em quais passou a confiar, quais aposentou, as suas prioridades de revisão — viaja junto com a pasta, em um arquivo de texto simples identificado pela identidade da nota, e portanto sobrevive intacto à mudança de local. Duas coisas ainda não viajam: a data de nascimento de cada link e o seu plano de revisão, que continua registrado por local. É por isso que o botão da barra faz uma **reescrita** — as mesmas entradas, com novos endereços, e cada data e cada valor conquistado preservados — e é também por isso que você **não** deve recorrer a uma **Releitura completa** para «consertar» uma mudança de local: ela reconstrói o índice do zero e redefine a data de nascimento de todos os links para hoje.
 
 A estrutura de pastas do universo segue o modelo Obsidian: as notas ficam diretamente na pasta raiz, a configuracao reside em `.constellation/`.
 

@@ -1803,6 +1803,7 @@
       "createNew": "Crear nuevo Universo",
       "remove": "Eliminar",
       "removeConfirm": "¿Eliminar este universo de la lista? Los archivos no se borrarán.",
+      "removeConfirmSuccessor": "Constellation abrirá entonces: {name}",
       "openFolder": "Abrir carpeta",
       "path": "Ruta",
       "created": "Creado",
@@ -1812,6 +1813,24 @@
       "ownLibraries": "Bibliotecas propias",
       "inheritedLibraries": "Bibliotecas heredadas",
       "openExisting": "Abrir universo existente"
+    },
+    "bootChooser": {
+      "title": "Elige un universo para abrir",
+      "couldNotOpen": "Constellation no pudo abrir «{name}»",
+      "pathLabel": "Ubicación",
+      "reasonNotFound": "No se encontró nada en esta ubicación — puede que la unidad esté desconectada, o que la carpeta se haya movido o renombrado.",
+      "reasonNotDirectory": "Hay un archivo donde debería estar la carpeta del universo.",
+      "nothingChanged": "No se abrió nada y no se cambió nada. Tus notas están a salvo donde están.",
+      "retry": "Reintentar",
+      "open": "Abrir",
+      "openFromFolder": "Abrir desde una carpeta…",
+      "itsBack": "Ya está disponible — Abrir",
+      "createNew": "Crear un nuevo universo",
+      "allUnreachable": "Ninguno de tus universos está accesible en este momento.",
+      "noActiveRecorded": "No hay ningún universo registrado como tu última elección. Elige uno para abrirlo.",
+      "reachable": "Accesible",
+      "unreachable": "Inaccesible",
+      "pickFailed": "No se pudo abrir: {error}"
     },
     "switching": "Cambiando universo...",
     "migrating": "Migrando tus datos..."

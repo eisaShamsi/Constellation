@@ -126,9 +126,13 @@ Wenn sie fertig ist, zieht die App **ohne Neustart** nach — die Suche findet d
 
 Sie koennen Universen als gleichrangige Partner miteinander verknuepfen. Ein **Verknuepftes Universum** ist ein weiterer Universumsordner, auf den Ihr aktives Universum verweist (einige Beschriftungen in der App sagen noch „Kind-Universum" oder „Unter-Universum" — sie stammen aus der Zeit vor dem heutigen Namen). Notizen aus Verknuepften Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.
 
-### Automatisches Wiedereröffnen
+### Automatisches Wiedereröffnen — und der Auswahlbildschirm, wenn Ihr Universum nicht gefunden wird
 
-Constellation merkt sich das zuletzt aktive Universum und öffnet es beim Start automatisch wieder. Wurde der Universumsordner auf der Festplatte verschoben, öffnen Sie ihn über den Universum-Manager vom neuen Speicherort aus (Klick auf den Universumsnamen am rechten Ende der Statusleiste → **Bestehendes Universum öffnen**). Danach erscheint eine Meldungsleiste, die erklärt, dass das Universum umgezogen ist: Ihre Notizen sind alle da und öffnen sich normal, nur der Suchindex verzeichnet sie noch unter dem alten Ort — nichts ist verloren, und Constellation entfernt deswegen nichts. Die Schaltfläche **"Index reparieren — sicher, alles bleibt erhalten"** schreibt den Index in einem einzigen Alles-oder-nichts-Schritt sicher um, nachdem zuvor ein verifiziertes Backup angelegt wurde: Das Alter Ihrer Verknüpfungen und Ihre Wiederholungspläne bleiben erhalten, und nach Abschluss lädt sich die App einmal selbst neu. Durch einen Umzug wird niemals etwas gelöscht.
+Constellation merkt sich das zuletzt aktive Universum und öffnet es beim Start automatisch wieder. Ist dieses Universum in diesem Moment nicht erreichbar — das Laufwerk nicht angeschlossen, der Ordner verschoben oder umbenannt, ein Netzwerkspeicherort offline —, öffnet Constellation **nichts**. Stattdessen erscheint ein **Auswahlbildschirm**, der das Universum nennt, das nicht geöffnet werden konnte, den Ordnerpfad zeigt, an dem gesucht wurde, samt dem Grund — und Sie beruhigt: Es wurde nichts geöffnet und nichts verändert. Darunter sind Ihre übrigen registrierten Universen aufgelistet, jedes als **Erreichbar** oder **Nicht erreichbar** markiert, mit einer Schaltfläche **Öffnen** neben jedem erreichbaren.
+
+Vom Auswahlbildschirm aus können Sie: **Erneut versuchen** (schließen Sie zuerst das Laufwerk an); auf die Schaltfläche **„Wieder da — Öffnen“** warten, die von selbst aufleuchtet, sobald der fehlende Speicherort wieder auftaucht — nichts öffnet sich, bevor Sie klicken; ein anderes Universum per **Öffnen** als Ihre bewusste Entscheidung öffnen; mit **Aus Ordner öffnen…** zu einem Universumsordner an einem beliebigen Ort auf der Festplatte navigieren; oder **Neues Universum erstellen** wählen (mit einer Schaltfläche **Zurück**, die zum Auswahlbildschirm zurückführt). Ist *keines* Ihrer Universen erreichbar, sagt der Auswahlbildschirm das offen heraus und bietet weiterhin die letzten beiden Türen an — er tut nie so, als hätten Sie keine Universen.
+
+In älteren Versionen öffnete Constellation in dieser Situation stillschweigend ein *anderes* Universum und merkte sich diesen Ersatz als Ihre Wahl — ein normal aussehendes Fenster mit dem falschen Universum war also das Symptom eines unerreichbaren Universums, und es kam selbst dann immer wieder, wenn das Laufwerk längst zurück war. Das geschieht nicht mehr: Nichts wird geöffnet und nichts wird gemerkt, bis Sie sich entscheiden.
 
 ### Portable Universen
 
@@ -137,9 +141,11 @@ Constellation-Universen sind vollstaendig portabel. Sie koennen einen Universums
 So verschieben Sie ein Universum:
 1. Schliessen Sie Constellation
 2. Verschieben oder kopieren Sie den Universumsordner an den neuen Speicherort
-3. Oeffnen Sie Constellation → der Willkommensbildschirm erscheint (alter Pfad nicht mehr gueltig)
-4. Waehlen Sie **Vorhandenes Universum oeffnen** und navigieren Sie zum neuen Speicherort
-5. Alle Notizen und Bibliotheken erscheinen sofort. Eine Meldungsleiste weist darauf hin, dass das Universum umgezogen ist — klicken Sie auf **"Index reparieren — sicher, alles bleibt erhalten"**, damit auch der Suchindex den neuen Speicherort uebernimmt
+3. Öffnen Sie Constellation. Der **Auswahlbildschirm** erscheint und teilt Ihnen mit, dass das Universum an seinem alten Speicherort nicht geöffnet werden konnte — nichts ist verloren, und nichts öffnet sich, bevor Sie wählen.
+4. Klicken Sie auf dem Auswahlbildschirm auf **Aus Ordner öffnen…** und zeigen Sie damit auf den neuen Speicherort. Ihre Notizen, Ordner und Bibliotheken erscheinen sofort.
+5. Eine Meldungsleiste weist darauf hin, dass das Universum umgezogen ist — klicken Sie auf **"Index reparieren — sicher, alles bleibt erhalten"**, damit auch der Suchindex den neuen Speicherort uebernimmt
+
+**Warum die Reparatur ein Umschreiben ist und kein Neuaufbau.** Was Ihre Verknüpfungen sich *erarbeitet* haben — welche Sie gegangen sind, welchen Sie vertrauen gelernt haben, welche Sie ausgemustert haben, Ihre Wiederholungsprioritäten — reist in einer Klartextdatei mit dem Ordner mit, die nach der Identität der Notiz geführt wird; das übersteht einen Umzug unversehrt. Zweierlei reist noch nicht mit: das Geburtsdatum jeder Verknüpfung und Ihr Wiederholungsplan, der weiterhin nach Speicherort geführt wird. Deshalb schreibt die Schaltfläche um — dieselben Einträge, neue Adressen, jedes Datum und jeder erarbeitete Wert werden mitgeführt — und deshalb sollten Sie zum „Beheben" eines Umzugs niemals zum Befehl **Vollständiges erneutes Einlesen** greifen: Es baut den Index von Grund auf neu auf und setzt dabei das Geburtsdatum jeder Verknüpfung auf heute zurück.
 
 Die Ordnerstruktur des Universums folgt dem Obsidian-Modell: Notizen befinden sich direkt im Stammordner, die Konfiguration befindet sich in `.constellation/`.
 

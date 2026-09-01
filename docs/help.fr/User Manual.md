@@ -139,9 +139,13 @@ Quand elle se termine, l'application se met à jour **sans redémarrage** — la
 
 Vous pouvez lier d'autres univers au vôtre — d'égal à égal, un univers n'est jamais le contenu d'un autre. Un **Univers lié** est un autre dossier d'univers que le vôtre référence. Les notes des univers liés apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
 
-### Réouverture automatique
+### Réouverture automatique — et l'écran de choix quand votre univers est introuvable
 
-Constellation se souvient de votre dernier univers actif et le rouvre au lancement. Si le dossier de l'univers a été déplacé sur le disque, rouvrez-le depuis son nouvel emplacement via le Gestionnaire d'Univers (le nom de l'univers à l'extrémité droite de la barre d'état → **Ouvrir un univers existant**). Une barre de message apparaît alors pour expliquer que l'univers a été déplacé — vos notes sont toutes là et s'ouvrent normalement, rien n'est perdu — avec un bouton **« Réparer l'index — sûr, tout est conservé »** qui réécrit l'index en une seule étape tout-ou-rien, après une sauvegarde vérifiée : l'ancienneté des liens et les plannings de révision sont conservés, et une fois la réparation terminée, l'application se recharge une fois d'elle-même. Rien n'est jamais supprimé à cause d'un déplacement.
+Constellation se souvient de votre dernier univers actif et le rouvre automatiquement au lancement. Si cet univers est inaccessible à ce moment-là — disque débranché, dossier déplacé ou renommé, emplacement réseau hors ligne — Constellation **n'ouvre rien**. À la place, il affiche un **écran de choix** qui nomme l'univers qu'il n'a pas pu ouvrir, montre le chemin du dossier consulté et la raison de l'échec, et vous rassure : « Rien n'a été ouvert et rien n'a été modifié. Vos notes sont en sécurité là où elles sont. » En dessous, vos autres univers enregistrés sont listés, chacun marqué **Accessible** ou **Inaccessible**, avec un bouton **Ouvrir** pour chaque univers accessible.
+
+Depuis l'écran de choix, vous pouvez : **Réessayer** (rebranchez d'abord le disque) ; attendre le bouton **« Il est de retour — Ouvrir »**, qui s'allume de lui-même à l'instant où l'emplacement manquant réapparaît — rien ne s'ouvre tant que vous n'avez pas cliqué ; **Ouvrir** un autre univers, comme choix délibéré de votre part ; **Ouvrir depuis un dossier…** pour naviguer vers un dossier d'univers n'importe où sur le disque ; ou **Créer un nouvel univers** (un bouton **Retour** vous ramène à l'écran de choix). Si *aucun* de vos univers n'est accessible, l'écran le dit clairement et propose toujours les deux dernières portes — il ne prétend jamais que vous n'avez aucun univers.
+
+Dans les versions précédentes, Constellation ouvrait discrètement un univers *différent* dans cette situation et retenait ce substitut comme votre choix — une fenêtre d'apparence normale ouverte sur le mauvais univers était donc le symptôme d'un univers inaccessible, et elle revenait même après le retour du disque. Cela ne se produit plus : rien ne s'ouvre, et rien n'est mémorisé, tant que vous n'avez pas décidé.
 
 ### Univers portables
 
@@ -150,9 +154,11 @@ Les univers de Constellation sont entierement portables. Vous pouvez deplacer le
 Pour deplacer un univers :
 1. Fermez Constellation
 2. Deplacez ou copiez le dossier de l'univers vers le nouvel emplacement
-3. Ouvrez Constellation → l'ecran d'accueil s'affiche (l'ancien chemin n'est plus valide)
-4. Choisissez **Ouvrir un univers existant** et pointez vers le nouvel emplacement
+3. Ouvrez Constellation. L'**écran de choix** apparaît et vous indique que l'univers n'a pas pu être ouvert à son ancien emplacement — rien n'est perdu, et rien ne s'ouvre tant que vous n'avez pas choisi.
+4. Cliquez sur **Ouvrir depuis un dossier…** sur l'écran de choix, et pointez vers le nouvel emplacement. Vos notes, dossiers et bibliothèques apparaissent immédiatement.
 5. Toutes les notes et bibliotheques apparaissent immediatement — une barre de message signale ensuite que l'univers a été déplacé : cliquez sur **« Réparer l'index — sûr, tout est conservé »** pour réécrire l'index de recherche en toute sécurité (sauvegarde vérifiée d'abord, puis l'application se recharge une fois d'elle-même)
+
+**Pourquoi la réparation est une réécriture et non une relecture.** À l'ouverture d'un univers déplacé, Constellation réécrit sa liste de bibliothèques — c'est pourquoi vos notes et vos dossiers réapparaissent aussitôt. L'index de recherche est un magasin distinct, et chaque note y est encore enregistrée à son *ancien* emplacement. Ce que vos liens ont **acquis** — ceux que vous avez parcourus, ceux auxquels vous en êtes venu à faire confiance, ceux que vous avez retirés, vos priorités de révision — voyage avec le dossier dans un fichier en texte brut indexé sur l'identité de chaque note : cela survit donc intact au déménagement. Deux choses ne voyagent pas encore : la date de naissance de chaque lien et votre planning de révision, encore enregistré par emplacement. C'est pourquoi le bouton de la barre effectue une réécriture — les mêmes entrées à de nouvelles adresses, chaque date et chaque valeur acquise conservées — et c'est pourquoi **il ne faut pas recourir à une « Relecture complète » pour réparer un déplacement** : elle reconstruit l'index à partir de zéro et ramène la date de naissance de tous vos liens à aujourd'hui.
 
 La structure du dossier univers suit le modele Obsidian : les notes vont directement dans le dossier racine, la configuration reside dans `.constellation/`.
 

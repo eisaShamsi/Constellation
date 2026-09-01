@@ -1474,7 +1474,21 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
 
 /// Tauri command wrapping `ensure_cid_cn` for call from the frontend's
 /// note-open pipeline.
-#[tauri::command]
+///
+/// PJ-446 (whole-app safety inspection, 2026-08-31 — found independently by THREE hunters):
+/// `(async)` so Tauri routes this OFF the IPC dispatch thread. It is awaited on the note-OPEN
+/// path (`store.ts` openNoteTab / drainCidEnsure), and since PJ-431 its body calls
+/// `reindex_single_note` below — which takes the SQLite writer lock (no timeout) and runs a full
+/// `index_note`. As a SYNC command that ran on the dispatch thread, so no other IPC could be
+/// serviced for its whole duration: the tab bar, search, the watcher flush and every debounced
+/// save parked behind it, with no spinner and no error — the PJ-066 freeze class, re-introduced
+/// at a new site six days earlier. Every sibling that reindexes already carries `(async)` for
+/// exactly this reason: `search.rs::constellation_search_reindex` (whose comment records the
+/// measured 30–50 s connect freeze), `bases.rs::update_note_property`, `shape.rs`'s two, and
+/// `libraries.rs::create_note`. The exposed population is not an edge case — `mig003_backfill_cid_cn`
+/// runs once per universe, so a library imported later from an external vault has no identities
+/// and EVERY note in it takes the reindex branch on first open.
+#[tauri::command(async)]
 pub fn ensure_cid_cn_cmd(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
     crate::libraries::require_own_library(&app, &file_path)?;
     let path = Path::new(&file_path);

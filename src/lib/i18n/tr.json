@@ -2232,6 +2232,7 @@
       "createNew": "Yeni Evren Oluştur",
       "remove": "Kaldır",
       "removeConfirm": "Bu evren listeden kaldırılsın mı? Dosyalar silinmeyecektir.",
+      "removeConfirmSuccessor": "Constellation ardından şu evreni açacak: {name}",
       "openFolder": "Klasörü Aç",
       "path": "Yol",
       "created": "Oluşturulma",
@@ -2241,6 +2242,24 @@
       "openExisting": "Mevcut evreni aç",
       "ownLibraries": "Kendi Kasaları",
       "inheritedLibraries": "Devralınan Kasalar"
+    },
+    "bootChooser": {
+      "title": "Açılacak bir evren seçin",
+      "couldNotOpen": "Constellation “{name}” evrenini açamadı",
+      "pathLabel": "Konum",
+      "reasonNotFound": "Bu konumda hiçbir şey bulunamadı — sürücü takılı olmayabilir ya da klasör taşınmış veya yeniden adlandırılmış olabilir.",
+      "reasonNotDirectory": "Evren klasörünün olması gereken yerde bir dosya duruyor.",
+      "nothingChanged": "Hiçbir şey açılmadı ve hiçbir şey değiştirilmedi. Notlarınız bulundukları yerde güvende.",
+      "retry": "Yeniden dene",
+      "open": "Aç",
+      "openFromFolder": "Klasörden aç…",
+      "itsBack": "Geri geldi — Aç",
+      "createNew": "Yeni bir evren oluştur",
+      "allUnreachable": "Şu anda evrenlerinizin hiçbirine ulaşılamıyor.",
+      "noActiveRecorded": "Son seçiminiz olarak kayıtlı bir evren yok. Açmak için birini seçin.",
+      "reachable": "Ulaşılabilir",
+      "unreachable": "Ulaşılamıyor",
+      "pickFailed": "Açılamadı: {error}"
     },
     "switching": "Evren değiştiriliyor...",
     "migrating": "Verileriniz taşınıyor..."

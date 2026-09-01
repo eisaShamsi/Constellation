@@ -155,16 +155,19 @@
 	import RelatedCandidates from '$lib/components/RelatedCandidates.svelte'; // MIG-086 §D — suggest+one-click typed link
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
+	import BootChooser from '$lib/components/BootChooser.svelte'; // PJ-433
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
 	import Mig108UnifyDialog from '$lib/components/Mig108UnifyDialog.svelte';
 	import BringInDialog from '$lib/components/BringInDialog.svelte';
 	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
-		listUniverses, createUniverse, setActiveUniverse,
+		createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
 		getChildUniverses, getActiveUniversePath,
-		type UniverseEntry, type ChildUniverseInfo
+		getRegistryStatus, getActiveUniverse, // PJ-433
+		type UniverseEntry, type ChildUniverseInfo,
+		type RegistryStatus // PJ-433
 	} from '$lib/universe/store';
 	import { restoreSessionThenTrack, stopSessionTracking, persistSessionNow } from '$lib/libraries/session';
 	import { loadPropertyTypes, flushPendingPropertyTypesSave } from '$lib/libraries/propertyTypeRegistry';
@@ -3229,18 +3232,614 @@
 		setTimeout(() => { invoke('cache_mark_search_ready').catch(() => {}); }, 800);
 	}
 
-	async function handleUniverseCreated(entry: UniverseEntry) {
-		// MIG-100 §4a — leaving the current universe: stop-and-flush its session
-		// tracker (writes to the ARM-time root — safe on either side of the
-		// pointer flip), and clear the old universe's tabs so they can neither
-		// render inside the new universe nor be persisted into ITS session file
-		// by the re-armed tracker (the created-path contamination finding).
+	// PJ-433 — the ONE enter kernel every cold-start door runs: the wizard's
+	// create and the Boot Chooser's pick (the simplify pass folded their two
+	// hand-mirrored copies into this).
+	// MIG-100 §4a — leaving the current desk first: stop-and-flush its session
+	// tracker (writes to the ARM-time root — safe on either side of the
+	// pointer flip), and clear the old tabs so they can neither render inside
+	// the new universe nor be persisted into ITS session file by the re-armed
+	// tracker (the created-path contamination finding). On a failed-boot desk
+	// both are no-ops. Activation throws BEFORE any state below changes, so a
+	// failed enter leaves the calling surface mounted and unchanged.
+	async function enterUniverse(entry: UniverseEntry, flushReason: string) {
 		await stopSessionTracking();
-		await flushDisposeClearTabs('universe_created_flush');
+		await flushDisposeClearTabs(flushReason);
 		await setActiveUniverse(entry.id);
 		activeUniverseName = entry.name;
+		// Door-agnostic: close every pre-app gate surface.
 		showUniverseSetup = false;
-		await initializeApp();
+		showBootChooser = false;
+		bootChooserReturnable = false;
+		// PJ-433 §3 — the WHOLE boot tail. This used to be `initializeApp()`
+		// alone on the wizard path (onMount had returned early), which left the
+		// session with no watcher and no federation listener until restart.
+		await finishBoot();
+	}
+
+	async function handleUniverseCreated(entry: UniverseEntry) {
+		await enterUniverse(entry, 'universe_created_flush');
+	}
+
+	// ─── PJ-433 — Boot Chooser state ───
+	// Armed by onMount when the RECORDED universe cannot open (or none is
+	// recorded); nothing activates and nothing persists until the user picks.
+	// `failed` is null in the pick-one state (active_id null after the A′
+	// remove crash window, or dangling) — there is no recorded choice to
+	// blame, so no "couldn't open" banner shows.
+	let showBootChooser = $state(false);
+	let bootChooserFailed: { entry: UniverseEntry; error: string } | null = $state(null);
+	let bootChooserEntries: UniverseEntry[] = $state([]);
+	// 2026-08-31 inspection F1 — seeds the REOPENED chooser's inline error
+	// after a post-activation boot-tail failure (the original instance is
+	// unmounted by then, so returning the string alone lands in inert state).
+	let bootChooserPickError = $state('');
+	// True only while the setup wizard was entered THROUGH the chooser's
+	// "Create new" door — it puts a Back button on the wizard so a mistaken
+	// click is not a one-way trip. Everywhere else the wizard is unchanged.
+	let bootChooserReturnable = $state(false);
+
+	// PJ-433 §4 — the chooser's pick path: the shared enter kernel (RF2 —
+	// never a partial resume), with errors returned as a string so the chooser
+	// stays mounted and renders them inline — a failed pick must never strand
+	// the user on the bare spinner (RF1). A throw AFTER activation (the
+	// chooser already unmounted) still lands in the console rather than
+	// vanishing into an inert state write.
+	async function handleBootChooserPick(entry: UniverseEntry): Promise<string | null> {
+		try {
+			await enterUniverse(entry, 'boot_chooser_pick');
+			return null;
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			console.error('[boot-chooser] pick failed:', msg);
+			if (!showBootChooser) {
+				// 2026-08-31 inspection F1 — the throw came AFTER activation
+				// (enterUniverse closes the gates only past that point), so the
+				// original chooser instance is gone and the returned string
+				// would land in inert state. Re-open the chooser carrying the
+				// error: the activation itself persisted (the user's genuine
+				// choice — correct), and Retry through the same door re-runs
+				// the boot tail, whose guards make a re-entry safe.
+				bootChooserFailed = null;
+				bootChooserPickError = msg;
+				showBootChooser = true;
+			}
+			return msg;
+		}
+	}
+
+	function handleBootChooserCreateNew() {
+		showBootChooser = false;
+		bootChooserReturnable = true;
+		showUniverseSetup = true;
+	}
+
+	function handleSetupBackToChooser() {
+		showUniverseSetup = false;
+		bootChooserReturnable = false;
+		showBootChooser = true;
+	}
+
+	// ─── PJ-433 §3 — finishBoot: the post-activation ENTER tail ───
+	// Everything that may only run once a universe is ACTIVE: the
+	// federation:ready listener, initializeApp, the §N defensive refreshes,
+	// the watcher + every other boot listener. Extracted from onMount so that
+	// EVERY door into an active universe from a cold start runs the same,
+	// complete ENTER tail: the normal boot, the Boot Chooser's pick, and the
+	// setup wizard's create — which used to run initializeApp alone, a partial
+	// resume with no watcher and no federation listener until restart. (The
+	// LEAVE half is NOT generalized here — handleUniverseSwitch carries its
+	// own per-universe residue sweep; see the simplify-pass note in the
+	// session log.)
+	// Listener registration is once-per-process and COMPLETION-keyed, not
+	// attempt-keyed: a first entry that throws mid-tail (an initializeApp
+	// failure) must not demote every later entry to listener-less. The data
+	// init re-runs on every entry (create-after-remove-last, chooser pick).
+	let federationListenerArmed = false;
+	let bootListenersArmed = false;
+	async function finishBoot() {
+		try {
+			if (!federationListenerArmed) {
+				// MIG-061 §J.2 — federation:ready listener MUST register BEFORE
+				// initializeApp() runs. initializeApp triggers the boot snapshot IPCs,
+				// which call ensure_search_db_ready → spawn the federation attach
+				// thread. On a fast cUniverse setup, attach_all completes + emits
+				// federation:ready BEFORE initializeApp returns. If the listener
+				// registered after that point (as the earlier §J revision did), the
+				// event was dropped — CNS stayed stuck at parent-only data.
+				//
+				// Defensive: on listener registration, immediately invoke
+				// cache_boot_snapshot_sky once. If federation already completed
+				// (event fired and missed), this re-fetch picks up the federated
+				// data. If federation is still pending, the call returns the same
+				// parent-only data the boot path got — no harm — and the live
+				// listener catches the event when it eventually fires.
+				// MIG-061 §N — federation:ready listener (re-fetches BOTH sky AND graph).
+				// §J originally only re-invoked _sky → Backlinks/Outgoing stayed stuck
+				// with parent-only data from boot. §N re-invokes _graph too so
+				// allLibraryLinks updates with federated note_links.
+				// MIG-061 §P — empty-overwrite guard: if a federation:ready re-fire
+				// returns empty data (e.g., federated_conn became None mid-universe-
+				// switch race per Audit S6 / D4 finding), don't clobber the good
+				// data we already have. The guard preserves prior allLibraryLinks
+				// when the new payload is smaller AND the current is non-empty.
+				const unlistenFederationReady = await listen('federation:ready', async () => {
+					// MIG-079 §B — minimal/safe boot: do not re-invoke the satellite
+					// snapshots (the graph re-fetch is the 30s recompute we are skipping).
+					if (get(appSettings)?.safeBootMode) return;
+					// MIG-079 §C.2d — refresh sky ONLY if a sky surface is open; otherwise the
+					// read stays deferred (don't re-introduce the boot read for a closed view).
+					// ensureSky(true) resets the memo, re-invokes the now-async command, and is
+					// epoch-guarded against universe switches.
+					if (skyEverOpened) { try { await ensureSky(true); } catch {} }
+					// Refresh graph (Backlinks / Outgoing / Tags / Aliases).
+					// BootSnapshotGraph has no isReady field; the §M code returns
+					// empty arrays when federated_conn is None mid-race. So we
+					// guard by "new data must not be empty when current isn't"
+					// (D4 audit finding).
+					try {
+						type GraphSnapshot = {
+							links: NoteLink[];
+							tags: Record<string, number>;
+							aliases?: Array<{ path: string; aliasLower: string }>;
+						};
+						const graph = await invoke<GraphSnapshot>('cache_boot_snapshot_graph');
+						// MIG-079 §C.2b — `graph` carries tags + aliases only now. Refresh
+						// them when the federated payload is non-empty (never clobber good
+						// data with a mid-race empty), then force-reload the deferred edge list.
+						if (graph) {
+							if (graph.tags && Object.keys(graph.tags).length > 0) allLibraryTags = graph.tags;
+							if (Array.isArray(graph.aliases) && graph.aliases.length > 0) {
+								notePathToAliases = new Map();
+								for (const a of graph.aliases) {
+									const list = notePathToAliases.get(a.path) ?? [];
+									list.push(a.aliasLower);
+									notePathToAliases.set(a.path, list);
+								}
+							}
+						}
+					} catch {}
+					// MIG-093 §A — refresh the title cache with federated titles (the
+					// boot core snapshot ran before the cUniverses attached, so
+					// allNotes held main-only). Shrink-overwrite guarded: a mid-race
+					// main-only payload never clobbers a bigger federated list.
+					try {
+						const core = await invoke<{ notes: Array<{ name: string; path: string; library_name: string }>; is_cold: boolean }>('cache_boot_snapshot_core');
+						if (core && !core.is_cold && core.notes.length >= allNotes.length) {
+							allNotes = core.notes.map(n => ({ name: n.name, path: n.path, libraryName: n.library_name }));
+						}
+					} catch {}
+					// MIG-079 §C.2b — re-fetch the edge list now cUniverses are attached
+					// (force resets the memo; ensureFullLinks's empty-overwrite guard keeps
+					// prior edges if a race returns empty).
+					try { await ensureFullLinks(true); } catch {}
+					// MIG-062 §E — re-fetch the federated filesystem-walk surfaces so
+					// cUniverse Five Acts notes + Workspace Bases appear once federation
+					// settles. Manifest-based enum means they're usually present at the
+					// first call, but this re-fetch is cheap insurance + covers the
+					// universe-switch case.
+					try { listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {}); } catch {}
+					try { listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}); } catch {}
+				});
+				cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
+				federationListenerArmed = true;
+			}
+
+			// initializeApp paints the shell (appReady=true) at its very first
+			// step, then loads data in the background. We `await` its full
+			// completion here so later onMount steps (watcher setup, etc.)
+			// run with a populated libraries store.
+			await initializeApp();
+
+			// MIG-061 §N — defensive re-invoke after initializeApp.
+			// Refreshes BOTH sky and graph (§N extends §J.2 to cover the graph
+			// payload that feeds Backlinks/Outgoing).
+			// MIG-079 §C.2d — defensive post-init sky refresh, deferred unless a sky
+			// surface is already open (ensureSky is memoised + epoch-guarded).
+			if (skyEverOpened) { try { await ensureSky(true); } catch {} }
+			try {
+				type GraphSnapshot2 = {
+					links: NoteLink[];
+					tags: Record<string, number>;
+					aliases?: Array<{ path: string; aliasLower: string }>;
+				};
+				const graph2 = await invoke<GraphSnapshot2>('cache_boot_snapshot_graph');
+				// MIG-079 §C.2b — defensive post-init refresh of tags + aliases only
+				// (the edge array is no longer in this payload; the boot loadGraph idle
+				// pre-fetch + the federation:ready handler own edge loading). This drops
+				// the redundant second full-graph load that used to run here at boot.
+				if (graph2) {
+					if (graph2.tags && Object.keys(graph2.tags).length > 0) allLibraryTags = graph2.tags;
+					if (Array.isArray(graph2.aliases) && graph2.aliases.length > 0) {
+						notePathToAliases = new Map();
+						for (const a of graph2.aliases) {
+							const list = notePathToAliases.get(a.path) ?? [];
+							list.push(a.aliasLower);
+							notePathToAliases.set(a.path, list);
+						}
+					}
+				}
+			} catch {}
+			if (!bootListenersArmed) {
+				// Attempt-keyed AT THE TOP for this block specifically (2026-08-31
+				// inspection F2): a mid-block throw must NOT let a later entry
+				// re-register these listeners — two live 'library-changed'
+				// handlers share one debounce handle and the loser's pending
+				// Sets grow unboundedly. A partial registration is instead
+				// tracked (every unlisten is pushed to cleanupFns AT its
+				// registration, below) and cleaned on destroy. initializeApp
+				// sits OUTSIDE this block, so its failure still leaves the flag
+				// false and a later entry registers properly.
+				bootListenersArmed = true;
+
+				// Listen for file change events from the watcher
+				let pendingTreeRefresh: Set<string> = new Set();
+				let pendingTabReloads: Set<string> = new Set();
+				// Watcher index-freshness (2026-07-08) — external .md changes to reindex
+				// into note_meta so Quick Switcher / Search Hub / Index / backlinks / counts
+				// go current WITHOUT a reboot. The watcher was emit-only (Rule-8 gap); this
+				// set feeds the scoped reindex_changed_paths command on the flush below.
+				let pendingReindex: Set<string> = new Set();
+				// PJ-187 — how many times the CURRENT batch has been re-queued after a rejected
+				// reindex. Bounded so a permanently-failing path can never spin the flush forever.
+				let reindexRetries = 0;
+				const REINDEX_MAX_RETRIES = 3;
+				// Batch rapid file changes (300ms window)
+				const scheduleWatcherFlush = () => {
+					clearTimeout(watcherDebounce);
+					watcherDebounce = setTimeout(async () => {
+						const libraryIds = [...pendingTreeRefresh];
+						const tabPaths = [...pendingTabReloads];
+						const reindexPaths = [...pendingReindex];
+						pendingTreeRefresh.clear();
+						pendingTabReloads.clear();
+						pendingReindex.clear();
+
+						// Refresh the file tree FIRST — it reads the filesystem, so the
+						// new/renamed files show in the sidebar immediately, regardless of how
+						// large the reindex batch is (a git pull / bulk import). MIG-077
+						// A3-R3: any on-disk change also makes the cached OrgChart tree stale.
+						for (const vid of libraryIds) {
+							await refreshLibraryTree(vid);
+						}
+						markOrgChartDirty();
+
+						// PJ-070 — adopt external changes into OPEN tabs FIRST, before the reindex/stats
+						// awaits below, so the window in which a keystroke could land on a still-stale model
+						// is as small as possible (invariant #11). A CLEAN model adopts the disk + remounts
+						// NotePane/FocusPane on the fresh content; a DIRTY model keeps its unsaved work and the
+						// incoming external edit is preserved to a `.conflict` sidecar (never a silent clobber).
+						// Replaces the old bare tab.content update below that never adopted into the
+						// single-ownership model (the Recipe-O clobber).
+						await adoptExternalChangeIntoTabs(tabPaths, adoptExternalHooks());
+
+						// Reindex the externally-changed paths into note_meta so Quick
+						// Switcher / Search Hub / Index / backlinks / counts go current.
+						// A NORMAL change (a handful of files): AWAIT so the note_meta readers
+						// below see the committed rows within ~1s ((async) Promise resolves on
+						// completion; off the UI thread; app's own writes are already
+						// watcher-suppressed). A LARGE BURST (> cap): run in the BACKGROUND so
+						// the flush never stalls on minutes of indexing — the tree is already
+						// fresh; allNotes/counts refresh via .then() when the reindex settles.
+						const BURST_AWAIT_CAP = 250;
+						if (reindexPaths.length) {
+							// PJ-187 — a rejected reindex used to be swallowed whole. The note read
+							// correctly on screen (it was adopted into the model above), but search, the
+							// quick switcher and backlinks kept serving the OLD text until the next
+							// restart, with nothing to say so. Put the paths back and re-arm the flush,
+							// bounded, so a transient lock (a sync tool, antivirus, a busy DB) heals
+							// itself and a permanent failure still gives up instead of spinning.
+							const requeue = (e: unknown) => {
+								console.warn('[watcher] reindex_changed_paths rejected:', e);
+								if (reindexRetries >= REINDEX_MAX_RETRIES) {
+									reindexRetries = 0;
+									console.error('[watcher] giving up reindexing', reindexPaths.length, 'path(s) after', REINDEX_MAX_RETRIES, 'attempts');
+									return;
+								}
+								reindexRetries++;
+								for (const p of reindexPaths) pendingReindex.add(p);
+								scheduleWatcherFlush();
+							};
+							if (reindexPaths.length <= BURST_AWAIT_CAP) {
+								try {
+									await invoke('reindex_changed_paths', { paths: reindexPaths });
+									reindexRetries = 0;
+								} catch (e) { requeue(e); }
+							} else {
+								invoke('reindex_changed_paths', { paths: reindexPaths })
+									.then(() => { reindexRetries = 0; void loadAllStats(); void refreshLibraryCaches(); })
+									.catch(requeue);
+							}
+						}
+						await loadAllStats();
+
+						// (Open tabs whose files changed were already adopted into their models above,
+						// BEFORE the reindex — PJ-070. The old bare tab.content-only reload lived here.)
+
+						// note_meta is now current for the external changes (awaited reindex
+						// above), so repopulate allNotes/tags/aliases PROMPTLY — the Quick
+						// Switcher refreshes within ~1s of the change, not 5s. The short
+						// debounce still coalesces a burst; refreshLibraryCaches self-guards
+						// re-entry (cacheRefreshing).
+						clearTimeout(cacheRefreshDebounce);
+						cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 800);
+					}, 300);
+				};
+				const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
+					const { libraryId, paths } = event.payload;
+					// 2026-08-01 inspection (APP-KILLER) — libraryId === '' marks a Rust-side
+					// ANNOUNCE (announce_frontmatter_writes / announce_disk_write): the app's own
+					// gated write asking open notes to RE-BASE. It must never pass through
+					// wasRecentlyWritten — that filter exists to keep FRONTEND saves from echoing
+					// back, but an accept within ~2s of a save is exactly when the re-base matters
+					// most; discarding it recreates the erasure the announce was built to prevent.
+					// Announces also adopt NOW, not after the 300ms flush debounce, to shrink the
+					// window in which a pending debounced save composes from the stale base.
+					// (The residual save-side race is the content-integrity class — its ruled
+					// end-state is MIG-076's single content ownership, not another filter here.)
+					const isAnnounce = libraryId === '';
+					if (!isAnnounce) pendingTreeRefresh.add(libraryId);
+					for (const p of paths) {
+						if (isAnnounce || !wasRecentlyWritten(p)) {
+							pendingTabReloads.add(p);
+							pendingReindex.add(p); // external change → reindex into note_meta
+						}
+					}
+					if (isAnnounce) {
+						void adoptExternalChangeIntoTabs(paths, adoptExternalHooks());
+					}
+					scheduleWatcherFlush();
+				});
+				// 2026-08-31 inspection F2 — every unlisten joins cleanupFns AT its
+				// registration (the old end-of-block batch left a mid-block throw's
+				// registrations live and untracked). Same for each listener below.
+				cleanupFns.push(unlistenWatcher);
+
+				// F2′ — the app's own gated creates are watcher-suppressed (write_gate
+				// marks the path), so `library-changed` never fires for them; creation
+				// announces itself via `note-created` (emitted by the store's createNote,
+				// from any window — second-screen wikilink-create included).
+				const unlistenNoteCreated = await listen<{ path: string }>('note-created', (event) => {
+					const libId = libraryIdForPath(event.payload.path);
+					if (!libId) return;
+					pendingTreeRefresh.add(libId);
+					scheduleWatcherFlush();
+				});
+				cleanupFns.push(unlistenNoteCreated);
+
+				// §3-redo.4 — wikilink rename cascade reload listener.
+				// The watcher_suppress map (§3-redo.2) keeps the cascade's fs::write
+				// from re-firing as a `library-changed` event, so the cascade has its
+				// own dedicated event. The orchestration path in handleRenameComplete
+				// already awaits reloadTabsFromDisk directly, so for the rename
+				// cascade this listener is defence-in-depth: reloadTabsFromDisk is
+				// idempotent (no-ops when disk content already matches the tab),
+				// so the second pass costs one parallel batch of read_note IPCs and
+				// no store update. The listener exists so any future Rust path that
+				// emits cascade:rewrote (without going through update_links_on_rename
+				// from the frontend) still triggers the recreate-primitive reload —
+				// per Concept Paper D6, $effect on value/editBody is forbidden
+				// (BUG-015's class).
+				const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
+					// PJ-092 (LL-023 drift fix) — apply the SAME fail-closed exclusion as handleRenameComplete's
+					// belt: an excluded (unflushable) note that LEAKED into the rewritten set must NOT be force-
+					// reloaded here either. This listener is defence-in-depth for the SAME cascade; without the
+					// filter it would re-do exactly the reload the belt skipped, clobbering the dirty model.
+					const paths = (event.payload?.paths ?? []).filter((p) => !renameCascadeExcludedKeys.has(normPathLC(p).normalize('NFC')));
+					// PJ-174 #1 — a dirty model is no longer force-adopted; a genuine conflict goes to the
+					// SAME `.conflict` sidecar + banner the watcher's external-change path uses, so the
+					// user's edits stay live and the cascade's version is preserved rather than either
+					// being silently dropped.
+					await reloadTabsFromDisk(paths, { conflict: reportExternalConflict });
+				});
+				cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
+
+				if ($libraryStats.length === 1) {
+					// Guarded (2026-08-31 inspection F1/F2): read_library_tree is a
+					// fallible fs IPC, and this convenience auto-expand was the one
+					// realistic unguarded throw site in the whole boot tail — its
+					// failure must never abort the listeners below it.
+					try { await toggleLibrary($libraryStats[0]); } catch (e) { console.warn('[boot] single-library auto-expand failed:', e); }
+				}
+
+				// Detect multiple monitors — gate SS features
+				hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
+
+				// Canonical system: no startup rename. Canonicalization happens only when
+				// the user explicitly links/imports with "Adopt Constellation Format".
+				// Native libraries (created by Constellation) are born canonical.
+
+				// When the background reconcile finishes (filesystem walk complete,
+				// any stale cache rows refreshed), re-read the cache snapshot so the
+				// UI picks up any notes/links/tags that changed outside Constellation
+				// since the last launch. Cheap: SQLite queries only.
+				const unlistenCacheReconciled = await listen('cache-reconciled', () => {
+					// Re-read snapshot without kicking off another reconcile —
+					// cacheRefreshing gate prevents the reconcile from running twice.
+					if (!cacheRefreshing) {
+						refreshLibraryCaches().catch(() => {});
+					}
+				});
+				cleanupFns.push(() => { try { unlistenCacheReconciled(); } catch {} });
+
+				// PJ-207 §7 (safety review, finding 6) — the index repair runs on its own thread,
+				// so the stats refresh next to the SUBMIT fires while the work has barely started.
+				// Before this listener existed a cold-started library showed 0 notes until the next
+				// launch. Refresh when the run actually finishes.
+				//
+				// PJ-207 §11 — this is now the ONE place every derived surface learns a repair
+				// finished, so none needs a restart to show repaired data:
+				//   · stats + core caches (pre-existing);
+				//   · the Index panel — its load gate is keyed on `${universe}|${libraryCount}`,
+				//     neither of which a repair changes, so the key is cleared explicitly;
+				//   · Sky View — force-refresh, but only if a sky surface was ever opened
+				//     (ensureSky is memoised; forcing it for a user who never opened Sky is waste);
+				//   · the file tree's stage emoji / maturity dots — re-scanned for every library
+				//     whose tree is loaded (their scans otherwise fire only on FIRST expand);
+				//   · D2: `indexHealthError`'s red bar clears on a ZERO-FAILURE repair and stays
+				//     on any failure — judged from the run's REPORT, not from `ok` (a best-effort
+				//     family can fail inside an ok run; only the walk's own error flips `ok`).
+				const unlistenRepairDone = await listen<{ ok?: boolean; stoppedEarly?: boolean; report?: RepairReport }>('index-repair:done', (ev) => {
+					repairRunning = false;
+					loadAllStats().catch(() => {});
+					refreshLibraryCaches().catch(() => {});
+					// The §11 additions fire only when the run actually CHANGED something —
+					// `ensureSky(true)` is the heaviest read in the boot profile (233k+ sky
+					// links), and a reassurance press on a healthy index changes nothing.
+					const w = ev?.payload?.report?.walk;
+					const changedAnything = !!w && (w.indexed > 0 || w.failed > 0);
+					if (changedAnything) {
+						indexLoadedKey = null;
+						if (skyEverOpened) { ensureSky(true).catch(() => {}); }
+						refreshStageMaturityForLoadedTrees();
+					}
+					// D2 — the red bar clears only on a FULL run's zero-failure report (`report`
+					// rides the event only for Full runs; a boot ColdStart's done must not clear
+					// a bar it did nothing to earn).
+					if (ev?.payload?.ok && ev?.payload?.report && !repairHasFailures(ev.payload.report)) {
+						indexHealthError.set(null);
+					}
+					if (ev?.payload?.stoppedEarly) {
+						console.warn('[index-repair] the run stopped before finishing — it will be completed on the next start');
+					}
+				});
+				cleanupFns.push(() => { try { unlistenRepairDone(); } catch {} });
+
+				// PJ-207 §9 — the boot pass's drift report. BOTH an event and a read-on-mount,
+				// because the pass runs on a background thread scheduled at the same moment as
+				// everything else post-paint: it can finish before this listener is registered
+				// (event missed) or long after (a single read would see nothing). This is the
+				// `classifier_scan_status` discipline the progress strips already follow.
+				if (REPAIR_DOOR_ENABLED) {
+					const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
+						if (ev?.payload) {
+							indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; indexHiddenDismissed = false; indexFencedDismissed = false; indexMovedDismissed = false;
+							// PJ-435 — one fetch, only when armed. The record read is a tiny JSON file.
+							syncMovedInfo(ev.payload.moved);
+						}
+					});
+					cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
+					loadDriftReport().then((r) => {
+						if (r && !indexDrift) {
+							indexDrift = r;
+							syncMovedInfo(r.moved); // PJ-435 — see syncMovedInfo: without this, an armed boot shows NOTHING
+						}
+					});
+				}
+
+				// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
+				// tensions may have changed (added/removed a `contradicts` link, grew past an
+				// orphan word-count tier, gained/lost an inbound link). Invalidate the per-library
+				// tension cache + reload so the right-rail Health reflects the edit without a
+				// manual note-switch. Scoped to the OPEN note + an active Health tab so it does
+				// NOT re-detect the library on every unrelated save.
+				const unlistenTensionSave = await listen<{ path?: string }>('screen:note-saved', (event) => {
+					const savedPath = event.payload?.path;
+					if (!savedPath) return;
+					// §E-fix #6 — match the health-trigger $effect's gate exactly (incl. isHome).
+					if (rightSidebarTab === 'health' && isHome && sidebarTab && savedPath === sidebarTab.path) {
+						// §E-fix #2 — a typing session fires 'screen:note-saved' every ~1.5 s (the
+						// NotePane autosave). Debounce so a burst coalesces into ONE full-library
+						// re-detect ~2.5 s after edits settle, not one scan per autosave tick (Rule 8).
+						if (_tensionSaveTimer) clearTimeout(_tensionSaveTimer);
+						_tensionSaveTimer = setTimeout(() => {
+							_tensionSaveTimer = null;
+							// Re-check the note is still the open one + Health still active.
+							if (rightSidebarTab === 'health' && isHome && sidebarTab && sidebarTab.path === savedPath) {
+								_tensionLibPath = null; // force a fresh detect for this library
+								void loadTensionReport(savedPath);
+								void loadNoteTensionStatus(savedPath);
+							}
+						}, 2500);
+					}
+				});
+				cleanupFns.push(() => {
+					try { unlistenTensionSave(); } catch {}
+					if (_tensionSaveTimer) { clearTimeout(_tensionSaveTimer); _tensionSaveTimer = null; }
+				});
+
+				// Search engine init is driven by cache_reconcile() (which invokes
+				// constellation_search_init on a background thread). When it finishes
+				// the cache-reconciled event fires; we load link counts then.
+				const unlistenSearchReady = await listen('cache-reconciled', async () => {
+					searchEngineReady = true;
+					const seq = ++_linkCountsSeq; // stale-result guard — only the newest fetch may write
+					try {
+						const counts: Record<string, number> = await invoke('constellation_search_link_counts');
+						if (seq !== _linkCountsSeq) return;
+						searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
+					} catch {}
+					// (Living Link decay-on-startup REMOVED 2026-06-10 — decay is display-only; no boot job.)
+				});
+				cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
+
+				// MIG-061 §J — federation:ready listener (registration moved earlier in §J.2).
+				// See the listener block above `await initializeApp()` for the actual
+				// registration. Without that earlier registration, the event fires while
+				// initializeApp is still running (federation completes faster than boot
+				// finishes on a 24-cUniverse universe) and the listener — if registered
+				// here — would miss it.
+
+				// Semantic search: ONNX engine lazy-loads on first search/embed call
+
+				// Second screen event listeners
+				const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
+					await openNoteTab(note.path, note.libraryName, note.libraryColor);
+				});
+				cleanupFns.push(unlistenScreenNote);
+				const unlistenScreenClosed = await onScreenClosed(() => {
+					secondScreenOpen = false;
+					// Restore right sidebar when SS is closed via its own × button
+					if (rightSidebarBeforeSS) rightSidebarOpen = true;
+					emitEditorPanels({ active: false });
+				});
+				cleanupFns.push(unlistenScreenClosed);
+				// The second screen's on-page lens toggle requests the switch; MAIN performs the
+				// settings write (single writer) and its broadcast re-renders the SS.
+				const unlistenLens = await onLensChangeRequest((id) => {
+					updateSettings({ noteGraphStyle: normalizeGraphStyle(id) });
+				});
+				cleanupFns.push(unlistenLens);
+				// When the second screen saves a note, reload it in the main window if open.
+				// PJ-070 — route through the ONE shared adopt helper so the main window's model adopts the
+				// fresh disk AND its NotePane/FocusPane REMOUNTS on it. The old hand-rolled adopt here bumped
+				// the model but FORGOT the reloadVersion bump, so the mounted editor kept showing the pre-save
+				// body until some other remount (the WA#6 sibling gap this fold closes). A dirty local model
+				// is never clobbered (freshness-gated); a genuine conflict lands in a `.conflict` sidecar.
+				const unlistenNoteSaved = await onNoteSaved(async (path) => {
+					if (wasRecentlyWritten(path)) return; // we wrote it ourselves
+					await adoptExternalChangeIntoTabs([path], adoptExternalHooks());
+				});
+				cleanupFns.push(unlistenNoteSaved);
+
+				// Global keyboard shortcuts — capture phase to beat browser defaults
+				document.addEventListener('keydown', handleGlobalKeydown, true);
+				cleanupFns.push(() => document.removeEventListener('keydown', handleGlobalKeydown, true));
+
+				// MIG-096 §2 — the second screen forwards its right-click note actions here
+				// (Display-not-Domain: the 2nd screen never writes). Dispatched through the
+				// SAME contextual handler the OrgChart uses, so rename / move / delete open
+				// their dialogs on this (main) window.
+				const unlistenScreenNoteAction = await listen<{ action: string; path: string; name: string }>('screen:request-note-action', (ev) => {
+					const { action, path, name } = ev.payload;
+					handleOrgNodeMenuAction(action, { kind: 'note', path, name, isMarkdown: path.toLowerCase().endsWith('.md') });
+				});
+				cleanupFns.push(unlistenScreenNoteAction);
+
+				// MIG-100 §4b + PJ-103 — the graceful-close final-flush listener is
+				// registered at the TOP of onMount (before initializeApp), not here:
+				// a close during boot must find a listener or the Rust arm burns its
+				// full 5s cap for nothing (adversarial-review finding, wf_5bb5c713).
+				// (Cleanup pushes live beside each registration above — inspection F2.)
+			}
+		} finally {
+			// PJ-433 — the second screen's window PRE-EXISTS (tauri.conf.json,
+			// visible:false) and can mount while no universe is active yet (the
+			// chooser up, or a too-early read on a normal boot). Tell it which
+			// universe it should be showing, the same way a switch does
+			// (PJ-207 §15) — and in a `finally` for the same reason as there.
+			try { await notifyUniverseSwitch(); } catch (e) { console.error('[boot] the second screen was not notified — it may still be showing a stale universe:', e); }
+		}
 	}
 
 	/**
@@ -3413,10 +4012,10 @@
 		cacheRefreshing = false;
 
 		// Update active universe name for title bar and status bar
+		// (PJ-433 simplify pass — the shared getActiveUniverse helper replaced
+		// this site's hand-rolled path-join).
 		try {
-			const universes = await listUniverses();
-			const activePath = await invoke<string | null>('get_active_universe_path');
-			const active = universes.find(u => u.path === activePath);
+			const active = await getActiveUniverse();
 			if (active) activeUniverseName = active.name;
 		} catch { /* ignore */ }
 
@@ -3684,11 +4283,15 @@
 		// integral of traversals) — there is no stored-decay job to run. The old `linkDecay()` call
 		// mutated + compounded raw weights on a 24h timer. See `constellation_link_decay` (now read-only).
 
-		// 1. Check universe state
-		let universes: UniverseEntry[] = [];
+		// 1. Check universe state — PJ-433: read the registry WITH its recorded
+		// active_id (get_registry_status). The old shape (list_universes, the
+		// active entry hidden behind a sort) is what bred the silent fallback:
+		// a caller that could not tell "first = the user's choice" from
+		// "first = a guess".
+		let registry: RegistryStatus;
 		let needsMigration = false;
 		try {
-			universes = await listUniverses();
+			registry = await getRegistryStatus();
 			needsMigration = await checkMigrationNeeded();
 		} catch {
 			// IPC not available (browser preview) — show setup
@@ -3696,512 +4299,65 @@
 			return;
 		}
 
-		if (universes.length === 0 && !needsMigration) {
+		if (registry.entries.length === 0 && !needsMigration) {
 			// First launch — show universe setup
 			showUniverseSetup = true;
 			return;
 		}
 
-		if (universes.length === 0 && needsMigration) {
+		if (registry.entries.length === 0 && needsMigration) {
 			// Legacy data exists — migrate to default universe
 			// Show setup so user picks location
 			showUniverseSetup = true;
 			return;
 		}
 
-		// Activate the last-active universe — try each entry until one succeeds.
-		// If a universe was moved/deleted, skip it and try the next.
-		let activated = false;
-		for (const entry of universes) {
-			try {
-				await setActiveUniverse(entry.id);
-				activeUniverseName = entry.name;
-				activated = true;
-				break;
-			} catch {
-				// This universe's path doesn't exist — try next
-				continue;
-			}
+		// PJ-433 — activate ONLY the recorded choice. The old loop tried every
+		// entry in order, silently opened the first that worked, and
+		// set_active_universe then persisted that fallback as if the user had
+		// chosen it — a normal-looking window on the WRONG universe, kept even
+		// after the missing drive returned. Now: the recorded universe opens,
+		// or the Boot Chooser opens and NOTHING activates or persists until
+		// the user clicks. (A universe already substituted by an old build
+		// stays as recorded — forward-only honesty; there is no record of the
+		// original intent to restore.)
+		// Pure synchronous state sets — nothing here can throw past the boot
+		// path to the bare spinner (RF1). Per-entry reachability is the
+		// CHOOSER's own fetch (it polls anyway).
+		const armBootChooser = (failed: { entry: UniverseEntry; error: string } | null) => {
+			bootChooserFailed = failed;
+			bootChooserEntries = registry.entries;
+			bootChooserPickError = '';
+			showBootChooser = true;
+		};
+		// (`find` alone handles active_id: null — no entry carries a null id.)
+		const activeEntry = registry.entries.find((e) => e.id === registry.active_id);
+		if (!activeEntry) {
+			// No recorded choice (active_id null — the A′ remove crash window —
+			// or dangling after a hand-edit): the chooser's pick-one state.
+			armBootChooser(null);
+			return;
 		}
-		if (!activated) {
-			showUniverseSetup = true;
+		try {
+			await setActiveUniverse(activeEntry.id);
+			activeUniverseName = activeEntry.name;
+		} catch (e) {
+			// The recorded universe is unreachable (drive unplugged, folder
+			// renamed…). The RECORDED CHOICE is untouched: `active_id` is
+			// written at the very END of set_active_universe, so any failure
+			// leaves it exactly as the user last set it. (Precisely: an
+			// unreachable path errs before ANY write; a later-stage failure —
+			// migrate_to_constellation, ensure_universe_notes_folder — can have
+			// touched that universe's own folder, but never the choice. Phase-4
+			// audit M4.) Open the chooser with the truth.
+			armBootChooser({
+				entry: activeEntry,
+				error: e instanceof Error ? e.message : String(e),
+			});
 			return;
 		}
 
-		// MIG-061 §J.2 — federation:ready listener MUST register BEFORE
-		// initializeApp() runs. initializeApp triggers the boot snapshot IPCs,
-		// which call ensure_search_db_ready → spawn the federation attach
-		// thread. On a fast cUniverse setup, attach_all completes + emits
-		// federation:ready BEFORE initializeApp returns. If the listener
-		// registered after that point (as the earlier §J revision did), the
-		// event was dropped — CNS stayed stuck at parent-only data.
-		//
-		// Defensive: on listener registration, immediately invoke
-		// cache_boot_snapshot_sky once. If federation already completed
-		// (event fired and missed), this re-fetch picks up the federated
-		// data. If federation is still pending, the call returns the same
-		// parent-only data the boot path got — no harm — and the live
-		// listener catches the event when it eventually fires.
-		// MIG-061 §N — federation:ready listener (re-fetches BOTH sky AND graph).
-		// §J originally only re-invoked _sky → Backlinks/Outgoing stayed stuck
-		// with parent-only data from boot. §N re-invokes _graph too so
-		// allLibraryLinks updates with federated note_links.
-		// MIG-061 §P — empty-overwrite guard: if a federation:ready re-fire
-		// returns empty data (e.g., federated_conn became None mid-universe-
-		// switch race per Audit S6 / D4 finding), don't clobber the good
-		// data we already have. The guard preserves prior allLibraryLinks
-		// when the new payload is smaller AND the current is non-empty.
-		const unlistenFederationReady = await listen('federation:ready', async () => {
-			// MIG-079 §B — minimal/safe boot: do not re-invoke the satellite
-			// snapshots (the graph re-fetch is the 30s recompute we are skipping).
-			if (get(appSettings)?.safeBootMode) return;
-			// MIG-079 §C.2d — refresh sky ONLY if a sky surface is open; otherwise the
-			// read stays deferred (don't re-introduce the boot read for a closed view).
-			// ensureSky(true) resets the memo, re-invokes the now-async command, and is
-			// epoch-guarded against universe switches.
-			if (skyEverOpened) { try { await ensureSky(true); } catch {} }
-			// Refresh graph (Backlinks / Outgoing / Tags / Aliases).
-			// BootSnapshotGraph has no isReady field; the §M code returns
-			// empty arrays when federated_conn is None mid-race. So we
-			// guard by "new data must not be empty when current isn't"
-			// (D4 audit finding).
-			try {
-				type GraphSnapshot = {
-					links: NoteLink[];
-					tags: Record<string, number>;
-					aliases?: Array<{ path: string; aliasLower: string }>;
-				};
-				const graph = await invoke<GraphSnapshot>('cache_boot_snapshot_graph');
-				// MIG-079 §C.2b — `graph` carries tags + aliases only now. Refresh
-				// them when the federated payload is non-empty (never clobber good
-				// data with a mid-race empty), then force-reload the deferred edge list.
-				if (graph) {
-					if (graph.tags && Object.keys(graph.tags).length > 0) allLibraryTags = graph.tags;
-					if (Array.isArray(graph.aliases) && graph.aliases.length > 0) {
-						notePathToAliases = new Map();
-						for (const a of graph.aliases) {
-							const list = notePathToAliases.get(a.path) ?? [];
-							list.push(a.aliasLower);
-							notePathToAliases.set(a.path, list);
-						}
-					}
-				}
-			} catch {}
-			// MIG-093 §A — refresh the title cache with federated titles (the
-			// boot core snapshot ran before the cUniverses attached, so
-			// allNotes held main-only). Shrink-overwrite guarded: a mid-race
-			// main-only payload never clobbers a bigger federated list.
-			try {
-				const core = await invoke<{ notes: Array<{ name: string; path: string; library_name: string }>; is_cold: boolean }>('cache_boot_snapshot_core');
-				if (core && !core.is_cold && core.notes.length >= allNotes.length) {
-					allNotes = core.notes.map(n => ({ name: n.name, path: n.path, libraryName: n.library_name }));
-				}
-			} catch {}
-			// MIG-079 §C.2b — re-fetch the edge list now cUniverses are attached
-			// (force resets the memo; ensureFullLinks's empty-overwrite guard keeps
-			// prior edges if a race returns empty).
-			try { await ensureFullLinks(true); } catch {}
-			// MIG-062 §E — re-fetch the federated filesystem-walk surfaces so
-			// cUniverse Five Acts notes + Workspace Bases appear once federation
-			// settles. Manifest-based enum means they're usually present at the
-			// first call, but this re-fetch is cheap insurance + covers the
-			// universe-switch case.
-			try { listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {}); } catch {}
-			try { listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}); } catch {}
-		});
-		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
-
-		// initializeApp paints the shell (appReady=true) at its very first
-		// step, then loads data in the background. We `await` its full
-		// completion here so later onMount steps (watcher setup, etc.)
-		// run with a populated libraries store.
-		await initializeApp();
-
-		// MIG-061 §N — defensive re-invoke after initializeApp.
-		// Refreshes BOTH sky and graph (§N extends §J.2 to cover the graph
-		// payload that feeds Backlinks/Outgoing).
-		// MIG-079 §C.2d — defensive post-init sky refresh, deferred unless a sky
-		// surface is already open (ensureSky is memoised + epoch-guarded).
-		if (skyEverOpened) { try { await ensureSky(true); } catch {} }
-		try {
-			type GraphSnapshot2 = {
-				links: NoteLink[];
-				tags: Record<string, number>;
-				aliases?: Array<{ path: string; aliasLower: string }>;
-			};
-			const graph2 = await invoke<GraphSnapshot2>('cache_boot_snapshot_graph');
-			// MIG-079 §C.2b — defensive post-init refresh of tags + aliases only
-			// (the edge array is no longer in this payload; the boot loadGraph idle
-			// pre-fetch + the federation:ready handler own edge loading). This drops
-			// the redundant second full-graph load that used to run here at boot.
-			if (graph2) {
-				if (graph2.tags && Object.keys(graph2.tags).length > 0) allLibraryTags = graph2.tags;
-				if (Array.isArray(graph2.aliases) && graph2.aliases.length > 0) {
-					notePathToAliases = new Map();
-					for (const a of graph2.aliases) {
-						const list = notePathToAliases.get(a.path) ?? [];
-						list.push(a.aliasLower);
-						notePathToAliases.set(a.path, list);
-					}
-				}
-			}
-		} catch {}
-
-		// Listen for file change events from the watcher
-		let pendingTreeRefresh: Set<string> = new Set();
-		let pendingTabReloads: Set<string> = new Set();
-		// Watcher index-freshness (2026-07-08) — external .md changes to reindex
-		// into note_meta so Quick Switcher / Search Hub / Index / backlinks / counts
-		// go current WITHOUT a reboot. The watcher was emit-only (Rule-8 gap); this
-		// set feeds the scoped reindex_changed_paths command on the flush below.
-		let pendingReindex: Set<string> = new Set();
-		// PJ-187 — how many times the CURRENT batch has been re-queued after a rejected
-		// reindex. Bounded so a permanently-failing path can never spin the flush forever.
-		let reindexRetries = 0;
-		const REINDEX_MAX_RETRIES = 3;
-		// Batch rapid file changes (300ms window)
-		const scheduleWatcherFlush = () => {
-			clearTimeout(watcherDebounce);
-			watcherDebounce = setTimeout(async () => {
-				const libraryIds = [...pendingTreeRefresh];
-				const tabPaths = [...pendingTabReloads];
-				const reindexPaths = [...pendingReindex];
-				pendingTreeRefresh.clear();
-				pendingTabReloads.clear();
-				pendingReindex.clear();
-
-				// Refresh the file tree FIRST — it reads the filesystem, so the
-				// new/renamed files show in the sidebar immediately, regardless of how
-				// large the reindex batch is (a git pull / bulk import). MIG-077
-				// A3-R3: any on-disk change also makes the cached OrgChart tree stale.
-				for (const vid of libraryIds) {
-					await refreshLibraryTree(vid);
-				}
-				markOrgChartDirty();
-
-				// PJ-070 — adopt external changes into OPEN tabs FIRST, before the reindex/stats
-				// awaits below, so the window in which a keystroke could land on a still-stale model
-				// is as small as possible (invariant #11). A CLEAN model adopts the disk + remounts
-				// NotePane/FocusPane on the fresh content; a DIRTY model keeps its unsaved work and the
-				// incoming external edit is preserved to a `.conflict` sidecar (never a silent clobber).
-				// Replaces the old bare tab.content update below that never adopted into the
-				// single-ownership model (the Recipe-O clobber).
-				await adoptExternalChangeIntoTabs(tabPaths, adoptExternalHooks());
-
-				// Reindex the externally-changed paths into note_meta so Quick
-				// Switcher / Search Hub / Index / backlinks / counts go current.
-				// A NORMAL change (a handful of files): AWAIT so the note_meta readers
-				// below see the committed rows within ~1s ((async) Promise resolves on
-				// completion; off the UI thread; app's own writes are already
-				// watcher-suppressed). A LARGE BURST (> cap): run in the BACKGROUND so
-				// the flush never stalls on minutes of indexing — the tree is already
-				// fresh; allNotes/counts refresh via .then() when the reindex settles.
-				const BURST_AWAIT_CAP = 250;
-				if (reindexPaths.length) {
-					// PJ-187 — a rejected reindex used to be swallowed whole. The note read
-					// correctly on screen (it was adopted into the model above), but search, the
-					// quick switcher and backlinks kept serving the OLD text until the next
-					// restart, with nothing to say so. Put the paths back and re-arm the flush,
-					// bounded, so a transient lock (a sync tool, antivirus, a busy DB) heals
-					// itself and a permanent failure still gives up instead of spinning.
-					const requeue = (e: unknown) => {
-						console.warn('[watcher] reindex_changed_paths rejected:', e);
-						if (reindexRetries >= REINDEX_MAX_RETRIES) {
-							reindexRetries = 0;
-							console.error('[watcher] giving up reindexing', reindexPaths.length, 'path(s) after', REINDEX_MAX_RETRIES, 'attempts');
-							return;
-						}
-						reindexRetries++;
-						for (const p of reindexPaths) pendingReindex.add(p);
-						scheduleWatcherFlush();
-					};
-					if (reindexPaths.length <= BURST_AWAIT_CAP) {
-						try {
-							await invoke('reindex_changed_paths', { paths: reindexPaths });
-							reindexRetries = 0;
-						} catch (e) { requeue(e); }
-					} else {
-						invoke('reindex_changed_paths', { paths: reindexPaths })
-							.then(() => { reindexRetries = 0; void loadAllStats(); void refreshLibraryCaches(); })
-							.catch(requeue);
-					}
-				}
-				await loadAllStats();
-
-				// (Open tabs whose files changed were already adopted into their models above,
-				// BEFORE the reindex — PJ-070. The old bare tab.content-only reload lived here.)
-
-				// note_meta is now current for the external changes (awaited reindex
-				// above), so repopulate allNotes/tags/aliases PROMPTLY — the Quick
-				// Switcher refreshes within ~1s of the change, not 5s. The short
-				// debounce still coalesces a burst; refreshLibraryCaches self-guards
-				// re-entry (cacheRefreshing).
-				clearTimeout(cacheRefreshDebounce);
-				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 800);
-			}, 300);
-		};
-		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
-			const { libraryId, paths } = event.payload;
-			// 2026-08-01 inspection (APP-KILLER) — libraryId === '' marks a Rust-side
-			// ANNOUNCE (announce_frontmatter_writes / announce_disk_write): the app's own
-			// gated write asking open notes to RE-BASE. It must never pass through
-			// wasRecentlyWritten — that filter exists to keep FRONTEND saves from echoing
-			// back, but an accept within ~2s of a save is exactly when the re-base matters
-			// most; discarding it recreates the erasure the announce was built to prevent.
-			// Announces also adopt NOW, not after the 300ms flush debounce, to shrink the
-			// window in which a pending debounced save composes from the stale base.
-			// (The residual save-side race is the content-integrity class — its ruled
-			// end-state is MIG-076's single content ownership, not another filter here.)
-			const isAnnounce = libraryId === '';
-			if (!isAnnounce) pendingTreeRefresh.add(libraryId);
-			for (const p of paths) {
-				if (isAnnounce || !wasRecentlyWritten(p)) {
-					pendingTabReloads.add(p);
-					pendingReindex.add(p); // external change → reindex into note_meta
-				}
-			}
-			if (isAnnounce) {
-				void adoptExternalChangeIntoTabs(paths, adoptExternalHooks());
-			}
-			scheduleWatcherFlush();
-		});
-
-		// F2′ — the app's own gated creates are watcher-suppressed (write_gate
-		// marks the path), so `library-changed` never fires for them; creation
-		// announces itself via `note-created` (emitted by the store's createNote,
-		// from any window — second-screen wikilink-create included).
-		const unlistenNoteCreated = await listen<{ path: string }>('note-created', (event) => {
-			const libId = libraryIdForPath(event.payload.path);
-			if (!libId) return;
-			pendingTreeRefresh.add(libId);
-			scheduleWatcherFlush();
-		});
-
-		// §3-redo.4 — wikilink rename cascade reload listener.
-		// The watcher_suppress map (§3-redo.2) keeps the cascade's fs::write
-		// from re-firing as a `library-changed` event, so the cascade has its
-		// own dedicated event. The orchestration path in handleRenameComplete
-		// already awaits reloadTabsFromDisk directly, so for the rename
-		// cascade this listener is defence-in-depth: reloadTabsFromDisk is
-		// idempotent (no-ops when disk content already matches the tab),
-		// so the second pass costs one parallel batch of read_note IPCs and
-		// no store update. The listener exists so any future Rust path that
-		// emits cascade:rewrote (without going through update_links_on_rename
-		// from the frontend) still triggers the recreate-primitive reload —
-		// per Concept Paper D6, $effect on value/editBody is forbidden
-		// (BUG-015's class).
-		const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
-			// PJ-092 (LL-023 drift fix) — apply the SAME fail-closed exclusion as handleRenameComplete's
-			// belt: an excluded (unflushable) note that LEAKED into the rewritten set must NOT be force-
-			// reloaded here either. This listener is defence-in-depth for the SAME cascade; without the
-			// filter it would re-do exactly the reload the belt skipped, clobbering the dirty model.
-			const paths = (event.payload?.paths ?? []).filter((p) => !renameCascadeExcludedKeys.has(normPathLC(p).normalize('NFC')));
-			// PJ-174 #1 — a dirty model is no longer force-adopted; a genuine conflict goes to the
-			// SAME `.conflict` sidecar + banner the watcher's external-change path uses, so the
-			// user's edits stay live and the cascade's version is preserved rather than either
-			// being silently dropped.
-			await reloadTabsFromDisk(paths, { conflict: reportExternalConflict });
-		});
-		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
-
-		if ($libraryStats.length === 1) {
-			await toggleLibrary($libraryStats[0]);
-		}
-
-		// Detect multiple monitors — gate SS features
-		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
-
-		// Canonical system: no startup rename. Canonicalization happens only when
-		// the user explicitly links/imports with "Adopt Constellation Format".
-		// Native libraries (created by Constellation) are born canonical.
-
-		// When the background reconcile finishes (filesystem walk complete,
-		// any stale cache rows refreshed), re-read the cache snapshot so the
-		// UI picks up any notes/links/tags that changed outside Constellation
-		// since the last launch. Cheap: SQLite queries only.
-		const unlistenCacheReconciled = await listen('cache-reconciled', () => {
-			// Re-read snapshot without kicking off another reconcile —
-			// cacheRefreshing gate prevents the reconcile from running twice.
-			if (!cacheRefreshing) {
-				refreshLibraryCaches().catch(() => {});
-			}
-		});
-		cleanupFns.push(() => { try { unlistenCacheReconciled(); } catch {} });
-
-		// PJ-207 §7 (safety review, finding 6) — the index repair runs on its own thread,
-		// so the stats refresh next to the SUBMIT fires while the work has barely started.
-		// Before this listener existed a cold-started library showed 0 notes until the next
-		// launch. Refresh when the run actually finishes.
-		//
-		// PJ-207 §11 — this is now the ONE place every derived surface learns a repair
-		// finished, so none needs a restart to show repaired data:
-		//   · stats + core caches (pre-existing);
-		//   · the Index panel — its load gate is keyed on `${universe}|${libraryCount}`,
-		//     neither of which a repair changes, so the key is cleared explicitly;
-		//   · Sky View — force-refresh, but only if a sky surface was ever opened
-		//     (ensureSky is memoised; forcing it for a user who never opened Sky is waste);
-		//   · the file tree's stage emoji / maturity dots — re-scanned for every library
-		//     whose tree is loaded (their scans otherwise fire only on FIRST expand);
-		//   · D2: `indexHealthError`'s red bar clears on a ZERO-FAILURE repair and stays
-		//     on any failure — judged from the run's REPORT, not from `ok` (a best-effort
-		//     family can fail inside an ok run; only the walk's own error flips `ok`).
-		const unlistenRepairDone = await listen<{ ok?: boolean; stoppedEarly?: boolean; report?: RepairReport }>('index-repair:done', (ev) => {
-			repairRunning = false;
-			loadAllStats().catch(() => {});
-			refreshLibraryCaches().catch(() => {});
-			// The §11 additions fire only when the run actually CHANGED something —
-			// `ensureSky(true)` is the heaviest read in the boot profile (233k+ sky
-			// links), and a reassurance press on a healthy index changes nothing.
-			const w = ev?.payload?.report?.walk;
-			const changedAnything = !!w && (w.indexed > 0 || w.failed > 0);
-			if (changedAnything) {
-				indexLoadedKey = null;
-				if (skyEverOpened) { ensureSky(true).catch(() => {}); }
-				refreshStageMaturityForLoadedTrees();
-			}
-			// D2 — the red bar clears only on a FULL run's zero-failure report (`report`
-			// rides the event only for Full runs; a boot ColdStart's done must not clear
-			// a bar it did nothing to earn).
-			if (ev?.payload?.ok && ev?.payload?.report && !repairHasFailures(ev.payload.report)) {
-				indexHealthError.set(null);
-			}
-			if (ev?.payload?.stoppedEarly) {
-				console.warn('[index-repair] the run stopped before finishing — it will be completed on the next start');
-			}
-		});
-		cleanupFns.push(() => { try { unlistenRepairDone(); } catch {} });
-
-		// PJ-207 §9 — the boot pass's drift report. BOTH an event and a read-on-mount,
-		// because the pass runs on a background thread scheduled at the same moment as
-		// everything else post-paint: it can finish before this listener is registered
-		// (event missed) or long after (a single read would see nothing). This is the
-		// `classifier_scan_status` discipline the progress strips already follow.
-		if (REPAIR_DOOR_ENABLED) {
-			const unlistenDrift = await listen<DriftReport>(DRIFT_REPORT_EVENT, (ev) => {
-				if (ev?.payload) {
-					indexDrift = ev.payload; indexDriftDismissed = false; indexPhantomDismissed = false; indexHiddenDismissed = false; indexFencedDismissed = false; indexMovedDismissed = false;
-					// PJ-435 — one fetch, only when armed. The record read is a tiny JSON file.
-					syncMovedInfo(ev.payload.moved);
-				}
-			});
-			cleanupFns.push(() => { try { unlistenDrift(); } catch {} });
-			loadDriftReport().then((r) => {
-				if (r && !indexDrift) {
-					indexDrift = r;
-					syncMovedInfo(r.moved); // PJ-435 — see syncMovedInfo: without this, an armed boot shows NOTHING
-				}
-			});
-		}
-
-		// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
-		// tensions may have changed (added/removed a `contradicts` link, grew past an
-		// orphan word-count tier, gained/lost an inbound link). Invalidate the per-library
-		// tension cache + reload so the right-rail Health reflects the edit without a
-		// manual note-switch. Scoped to the OPEN note + an active Health tab so it does
-		// NOT re-detect the library on every unrelated save.
-		const unlistenTensionSave = await listen<{ path?: string }>('screen:note-saved', (event) => {
-			const savedPath = event.payload?.path;
-			if (!savedPath) return;
-			// §E-fix #6 — match the health-trigger $effect's gate exactly (incl. isHome).
-			if (rightSidebarTab === 'health' && isHome && sidebarTab && savedPath === sidebarTab.path) {
-				// §E-fix #2 — a typing session fires 'screen:note-saved' every ~1.5 s (the
-				// NotePane autosave). Debounce so a burst coalesces into ONE full-library
-				// re-detect ~2.5 s after edits settle, not one scan per autosave tick (Rule 8).
-				if (_tensionSaveTimer) clearTimeout(_tensionSaveTimer);
-				_tensionSaveTimer = setTimeout(() => {
-					_tensionSaveTimer = null;
-					// Re-check the note is still the open one + Health still active.
-					if (rightSidebarTab === 'health' && isHome && sidebarTab && sidebarTab.path === savedPath) {
-						_tensionLibPath = null; // force a fresh detect for this library
-						void loadTensionReport(savedPath);
-						void loadNoteTensionStatus(savedPath);
-					}
-				}, 2500);
-			}
-		});
-		cleanupFns.push(() => {
-			try { unlistenTensionSave(); } catch {}
-			if (_tensionSaveTimer) { clearTimeout(_tensionSaveTimer); _tensionSaveTimer = null; }
-		});
-
-		// Search engine init is driven by cache_reconcile() (which invokes
-		// constellation_search_init on a background thread). When it finishes
-		// the cache-reconciled event fires; we load link counts then.
-		const unlistenSearchReady = await listen('cache-reconciled', async () => {
-			searchEngineReady = true;
-			const seq = ++_linkCountsSeq; // stale-result guard — only the newest fetch may write
-			try {
-				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
-				if (seq !== _linkCountsSeq) return;
-				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
-			} catch {}
-			// (Living Link decay-on-startup REMOVED 2026-06-10 — decay is display-only; no boot job.)
-		});
-		cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
-
-		// MIG-061 §J — federation:ready listener (registration moved earlier in §J.2).
-		// See the listener block above `await initializeApp()` for the actual
-		// registration. Without that earlier registration, the event fires while
-		// initializeApp is still running (federation completes faster than boot
-		// finishes on a 24-cUniverse universe) and the listener — if registered
-		// here — would miss it.
-
-		// Semantic search: ONNX engine lazy-loads on first search/embed call
-
-		// Second screen event listeners
-		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
-			await openNoteTab(note.path, note.libraryName, note.libraryColor);
-		});
-		const unlistenScreenClosed = await onScreenClosed(() => {
-			secondScreenOpen = false;
-			// Restore right sidebar when SS is closed via its own × button
-			if (rightSidebarBeforeSS) rightSidebarOpen = true;
-			emitEditorPanels({ active: false });
-		});
-		// The second screen's on-page lens toggle requests the switch; MAIN performs the
-		// settings write (single writer) and its broadcast re-renders the SS.
-		const unlistenLens = await onLensChangeRequest((id) => {
-			updateSettings({ noteGraphStyle: normalizeGraphStyle(id) });
-		});
-		// When the second screen saves a note, reload it in the main window if open.
-		// PJ-070 — route through the ONE shared adopt helper so the main window's model adopts the
-		// fresh disk AND its NotePane/FocusPane REMOUNTS on it. The old hand-rolled adopt here bumped
-		// the model but FORGOT the reloadVersion bump, so the mounted editor kept showing the pre-save
-		// body until some other remount (the WA#6 sibling gap this fold closes). A dirty local model
-		// is never clobbered (freshness-gated); a genuine conflict lands in a `.conflict` sidecar.
-		const unlistenNoteSaved = await onNoteSaved(async (path) => {
-			if (wasRecentlyWritten(path)) return; // we wrote it ourselves
-			await adoptExternalChangeIntoTabs([path], adoptExternalHooks());
-		});
-
-		// Global keyboard shortcuts — capture phase to beat browser defaults
-		document.addEventListener('keydown', handleGlobalKeydown, true);
-
-		// MIG-096 §2 — the second screen forwards its right-click note actions here
-		// (Display-not-Domain: the 2nd screen never writes). Dispatched through the
-		// SAME contextual handler the OrgChart uses, so rename / move / delete open
-		// their dialogs on this (main) window.
-		const unlistenScreenNoteAction = await listen<{ action: string; path: string; name: string }>('screen:request-note-action', (ev) => {
-			const { action, path, name } = ev.payload;
-			handleOrgNodeMenuAction(action, { kind: 'note', path, name, isMarkdown: path.toLowerCase().endsWith('.md') });
-		});
-
-		// MIG-100 §4b + PJ-103 — the graceful-close final-flush listener is
-		// registered at the TOP of onMount (before initializeApp), not here:
-		// a close during boot must find a listener or the Rust arm burns its
-		// full 5s cap for nothing (adversarial-review finding, wf_5bb5c713).
-
-		// Cleanup on destroy
-		cleanupFns.push(
-			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
-			unlistenWatcher,
-			unlistenNoteCreated,
-			unlistenScreenNote,
-			unlistenScreenClosed,
-			unlistenNoteSaved,
-			unlistenScreenNoteAction,
-			unlistenLens,
-		);
+		await finishBoot();
 	});
 
 	const cleanupFns: (() => void)[] = [];
@@ -6083,6 +6239,12 @@
 
 	async function handleToggleSecondScreen() {
 		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
+		// PJ-433 §5 — no display window while no universe is active. The real
+		// exposure is the MID-SWITCH window (appReady=false while the global
+		// keydown listener stays live, so palette commands still dispatch);
+		// for the chooser state this is belt-and-braces (the keydown listener
+		// only registers inside finishBoot).
+		if (!appReady) return;
 		const isOpen = await invoke<boolean>('is_second_screen_open');
 		if (isOpen) {
 			await invoke('close_second_screen');
@@ -6114,6 +6276,7 @@
 
 	async function handleSendToSecondScreen() {
 		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
+		if (!appReady) return; // PJ-433 §5 — same guard + rationale as handleToggleSecondScreen
 		const tab = get(activeTab);
 		if (!tab?.path) return;
 		if (!secondScreenOpen) {
@@ -7992,10 +8155,21 @@
 	const allTagsList = $derived(Object.keys(allLibraryTags));
 </script>
 
-{#if showUniverseSetup}
+{#if showBootChooser}
+	<!-- PJ-433 — the Boot Chooser: the recorded universe could not open (or
+	     none is recorded). A sibling of the wizard, never a mode inside it. -->
+	<BootChooser
+		failed={bootChooserFailed}
+		entries={bootChooserEntries}
+		initialError={bootChooserPickError}
+		onPick={handleBootChooserPick}
+		onCreateNew={handleBootChooserCreateNew}
+	/>
+{:else if showUniverseSetup}
 	<UniverseSetup
 		onCreated={handleUniverseCreated}
 		migrationMode={false}
+		onBack={bootChooserReturnable ? handleSetupBackToChooser : undefined}
 	/>
 {:else if !appReady}
 	<div class="app-loading" dir={$dir}>

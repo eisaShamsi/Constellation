@@ -17,9 +17,15 @@
 	let {
 		onCreated,
 		migrationMode = false,
+		onBack,
 	}: {
 		onCreated: (entry: UniverseEntry) => void;
 		migrationMode?: boolean;
+		/** PJ-433 — provided ONLY when the wizard was entered through the Boot
+		 *  Chooser's "Create new" door: renders a Back button on step 0 so a
+		 *  mistaken click is not a one-way trip. Absent everywhere else — the
+		 *  wizard is unchanged outside the chooser context. */
+		onBack?: () => void;
 	} = $props();
 
 	// Wizard state
@@ -448,6 +454,11 @@
 				<div class="us-error">{error}</div>
 			{/if}
 
+			{#if onBack}
+				<!-- PJ-433 — back to the Boot Chooser (rendered only in that context) -->
+				<button class="us-back us-back-step0" onclick={onBack}>{$t('universe.setup.back')}</button>
+			{/if}
+
 		{:else if step === 1}
 			<!-- ═══ STEP 1: Name & Location ═══ -->
 			<h1 class="us-heading">{$t('universe.setup.heading')}</h1>
@@ -864,6 +875,7 @@
 		cursor: pointer;
 	}
 	.us-back:hover { background: var(--background-modifier-hover, #45475a); }
+	.us-back-step0 { margin-top: 16px; } /* PJ-433 — the chooser-context Back sits below the choice grid */
 	.us-skip {
 		padding: 8px 16px;
 		border: none;

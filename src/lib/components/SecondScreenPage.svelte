@@ -57,7 +57,31 @@
 		type IndexTermData, type IndexCompareData,
 		type EditorPanelsData, type MonitorInfo
 	} from '$lib/secondScreen';
-	import { listUniverses } from '$lib/universe/store';
+	import { getActiveUniverse } from '$lib/universe/store';
+
+	// PJ-433 §5 — the path this window last ran loadAllData for; the
+	// onUniverseSwitch handler compares against it so a same-universe notify
+	// (every normal boot, since finishBoot notifies unconditionally) never
+	// re-runs the full rewalk.
+	let loadedUniversePath: string | null = null;
+
+	// PJ-433 §5 — the display window's title comes from the universe that is
+	// ACTUALLY ACTIVE (the store's getActiveUniverse: the in-memory pointer
+	// matched against the registry), never from listUniverses()[0]. The first
+	// entry is sorted by the PERSISTED active_id, and while the Boot Chooser
+	// is up (or right after an A′ removal) that can name a universe that is
+	// not open — a sustained display lie. When nothing is active yet the
+	// title stays plain "Constellation"; finishBoot's notifyUniverseSwitch
+	// re-runs this the moment a universe opens. Returns the active path (null
+	// when none) so callers can compare it with what they last loaded.
+	async function refreshUniverseTitle(): Promise<string | null> {
+		const active = await getActiveUniverse();
+		if (active) {
+			universeName = active.name;
+			getCurrentWindow().setTitle(`Constellation - ${universeName}`).catch(() => {});
+		}
+		return active?.path ?? null;
+	}
 	function renderMarkdownPreview(raw: string): string {
 		// MIG-071 audit HIGH (XSS) — render through the DOMPurify-sanitized renderMarkdown. Was raw
 		// marked.parse(), which let a note body's <img onerror=…>/<script> execute on the 2nd screen.
@@ -723,6 +747,17 @@
 
 		// Listen for universe switch
 		const u3 = await onUniverseSwitch(async () => {
+			// PJ-433 (simplify pass) — finishBoot notifies on EVERY entry,
+			// including a normal boot where this window's own mount load
+			// already read the correct universe. A same-universe notify
+			// refreshes the cheap title only and SKIPS the dispose-and-rewalk
+			// below (on the daily universe that rewalk opens ~8,000 note files
+			// for titles). A genuine change — different path, or this window
+			// loaded before anything was active — still runs the full handler.
+			let activePath: string | null = null;
+			try { activePath = await refreshUniverseTitle(); } catch {}
+			if (activePath && activePath === loadedUniversePath) return;
+			loadedUniversePath = activePath;
 			// 2026-08-01 inspection (LOW) — a universe switch REPLACES the whole context,
 			// exactly like a workspace restore (u7 below): dispose every outgoing tab's
 			// model and clear the SS tab list, or the PREVIOUS universe's tabs and their
@@ -731,13 +766,6 @@
 			openTabs.set([]);
 			activeTabId.set(null);
 			closePeek(); // the peek pane's model is a previous-universe resident too
-			try {
-				const universes = await listUniverses();
-				if (universes.length > 0) {
-					universeName = universes[0].name || '';
-					getCurrentWindow().setTitle(`Constellation - ${universeName}`).catch(() => {});
-				}
-			} catch {}
 			allNotes = []; // Clear stale notes before rebuild
 			// PJ-207 §15 — the tab list was cleared here but the DISPLAYED companion surfaces were
 			// not, and those are what the user is actually looking at: the cockpit went on rendering
@@ -956,17 +984,12 @@
 		await emitScreenReady();
 
 		// Now load data (after listeners are set up so no events are missed)
-		try {
-			const universes = await listUniverses();
-			if (universes.length > 0) {
-				// MIG-079 §A — Display-Not-Domain: the second screen must NOT activate
-				// the universe (that re-inits the search DB = the double-init). The main
-				// window owns activation and listUniverses() returns the active universe
-				// first, so we only READ its name to title this display window.
-				universeName = universes[0].name || '';
-				await win.setTitle(`Constellation - ${universeName}`).catch(() => {});
-			}
-		} catch {}
+		// MIG-079 §A — Display-Not-Domain: the second screen must NOT activate
+		// the universe (that re-inits the search DB = the double-init). The main
+		// window owns activation; we only READ the active universe (PJ-433 §5 —
+		// matched by path, never entry[0]). Record which universe this load is
+		// FOR, so a later same-universe notify skips the rewalk.
+		try { loadedUniversePath = await refreshUniverseTitle(); } catch {}
 
 		await loadAllData();
 	});

@@ -2342,6 +2342,7 @@
       "createNew": "إنشاء كون جديد",
       "remove": "إزالة",
       "removeConfirm": "إزالة هذا الكون من القائمة؟ لن يتم حذف الملفات.",
+      "removeConfirmSuccessor": "سيفتح Constellation بعد ذلك: {name}",
       "openFolder": "فتح المجلد",
       "path": "المسار",
       "created": "تاريخ الإنشاء",
@@ -2351,6 +2352,24 @@
       "ownLibraries": "المكتبات الخاصة",
       "inheritedLibraries": "المكتبات الموروثة",
       "openExisting": "فتح كون موجود"
+    },
+    "bootChooser": {
+      "title": "اختر كوناً لفتحه",
+      "couldNotOpen": "تعذّر على Constellation فتح «{name}»",
+      "pathLabel": "الموقع",
+      "reasonNotFound": "لم يُعثر على شيء في هذا الموقع — قد يكون القرص غير موصول، أو نُقل المجلد أو أُعيدت تسميته.",
+      "reasonNotDirectory": "يوجد ملف في المكان الذي يُفترض أن يكون فيه مجلد الكون.",
+      "nothingChanged": "لم يُفتح شيء ولم يتغيّر شيء. ملاحظاتك في أمان حيث هي.",
+      "retry": "أعد المحاولة",
+      "open": "فتح",
+      "openFromFolder": "فتح من مجلد…",
+      "itsBack": "لقد عاد — افتح",
+      "createNew": "إنشاء كون جديد",
+      "allUnreachable": "لا يمكن الوصول إلى أيٍّ من أكوانك في الوقت الحالي.",
+      "noActiveRecorded": "لا يوجد كون مسجَّل كخيارك الأخير. اختر واحداً لفتحه.",
+      "reachable": "متاح",
+      "unreachable": "غير متاح",
+      "pickFailed": "تعذّر فتحه: {error}"
     },
     "switching": "جارٍ تبديل الكون...",
     "migrating": "جارٍ ترحيل بياناتك..."

@@ -45,13 +45,30 @@
 
 	async function refresh() {
 		universes = await listUniverses();
-		// Find the active one (it's the first one since set_active_universe reorders)
+		// Find the active one by matching get_active_universe_path — the code
+		// never relies on list position. (list_universes sorts the active entry
+		// first at READ time from the persisted active_id; set_active_universe
+		// only writes active_id — PJ-433 §5 fixed this comment, which used to
+		// claim set_active_universe reorders.) Same join as the store's
+		// getActiveUniverse(); kept inline because the sorted list is needed
+		// for display anyway.
 		const activePath = await invoke<string | null>('get_active_universe_path');
 		if (activePath) {
 			const active = universes.find(u => u.path === activePath);
 			if (active) activeId = active.id;
 		}
 	}
+
+	// PJ-433 A′ — the successor when removing the ACTIVE universe: the first
+	// remaining entry. ONE computation — the dialog names it and confirmRemove
+	// opens the captured same entry, so the promise and the act cannot drift.
+	// Null when removing a non-active universe (no switch happens) or the
+	// last one (setup follows instead).
+	const removeSuccessor = $derived.by(() => {
+		if (!confirmRemoveId || confirmRemoveId !== activeId) return null;
+		const rest = universes.filter(u => u.id !== confirmRemoveId);
+		return rest.length > 0 ? rest[0] : null;
+	});
 
 	async function handleSwitch(id: string) {
 		if (id === activeId) return;
@@ -80,6 +97,10 @@
 	async function confirmRemove() {
 		const id = confirmRemoveId;
 		if (!id) return;
+		// PJ-433 A′ — capture the successor the dialog just NAMED before the
+		// clear below nulls the derived: the universe the dialog promised is
+		// the one that opens, by construction.
+		const successor = removeSuccessor;
 		confirmRemoveId = null;
 		const wasActive = id === activeId;
 		await removeUniverseFromRegistry(id);
@@ -91,9 +112,9 @@
 			return;
 		}
 
-		if (wasActive && universes.length > 0) {
-			// Removed the active universe but others remain — switch to first
-			await handleSwitch(universes[0].id);
+		if (wasActive && successor) {
+			// Removed the active universe but others remain — open the named successor
+			await handleSwitch(successor.id);
 		}
 	}
 
@@ -237,6 +258,9 @@
 			{#if confirmRemoveId}
 				<div class="um-confirm">
 					<span class="um-confirm-text">{$t('universe.manager.removeConfirm')}</span>
+					{#if removeSuccessor}
+						<span class="um-confirm-text um-confirm-successor">{$t('universe.manager.removeConfirmSuccessor', { name: removeSuccessor.name })}</span>
+					{/if}
 					<div class="um-confirm-actions">
 						<button class="um-btn um-btn-danger" onclick={confirmRemove}>{$t('universe.manager.remove')}</button>
 						<button class="um-btn" onclick={() => confirmRemoveId = null}>{$t('bases.source.cancel')}</button>
@@ -442,6 +466,9 @@
 	.um-confirm-text {
 		font-size: 0.82rem;
 		color: var(--text-normal);
+	}
+	.um-confirm-successor {
+		font-weight: 600;
 	}
 	.um-confirm-actions {
 		display: flex;

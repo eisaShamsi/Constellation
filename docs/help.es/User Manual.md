@@ -125,9 +125,13 @@ Cuando termina, la aplicación se pone al día **sin reiniciar** — la búsqued
 
 Puedes enlazar universos entre sí, como pares. Un **Universo Enlazado** es otra carpeta de universo referenciada por tu universo principal — no un universo dentro de otro, sino un universo independiente cuyas bibliotecas se federan con las tuyas. Las notas de los universos enlazados aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas. (En algunas pantallas todavía verás etiquetas como «Agregar universo secundario» o «Universos hijos»: son anteriores al nombre actual y se refieren a Universos Enlazados.)
 
-### Reapertura automática
+### Reapertura automática — y la pantalla de selección cuando no se encuentra tu universo
 
-Constellation recuerda tu último universo activo y lo reabre al iniciar. Si moviste la carpeta del universo en el disco, vuelve a abrirlo desde su nueva ubicación mediante el gestor de universos: haz clic en el nombre del universo en el extremo derecho de la barra de estado → **Abrir universo existente** y apunta a la nueva ubicación. A continuación aparece una barra de mensaje que explica que el universo se ha movido — todas tus notas están ahí y se abren con normalidad; no se ha perdido nada — con un botón que dice **«Reparar el índice — seguro, lo conserva todo»**. Ese botón toma primero una copia de seguridad verificada y después reescribe el índice en un solo paso de todo-o-nada: las fechas de nacimiento de los enlaces y el calendario de repaso se conservan, y al terminar la aplicación se recarga una sola vez. Nada se elimina nunca por causa de una mudanza.
+Constellation recuerda tu último universo activo y lo reabre automáticamente al iniciar. Si en ese momento no se puede acceder a ese universo — la unidad desconectada, la carpeta movida o renombrada, una ubicación de red sin conexión — Constellation **no abre nada**. En su lugar muestra una **pantalla de selección** que nombra el universo que no pudo abrir, muestra la ruta de la carpeta donde buscó y el motivo, y te tranquiliza: no se abrió nada y no se cambió nada. Debajo se listan tus demás universos registrados, cada uno marcado como **Accesible** o **Inaccesible**, con un botón **Abrir** para cualquiera que esté accesible.
+
+Desde la pantalla de selección puedes: **Reintentar** (conecta antes la unidad); esperar al botón **«Ya está disponible — Abrir»**, que se ilumina por sí solo en cuanto la ubicación ausente reaparece — nada se abre hasta que tú haces clic; **Abrir** otro universo como tu elección deliberada; **Abrir desde una carpeta…** para navegar hasta una carpeta de universo en cualquier lugar del disco; o **Crear un nuevo universo** (con un botón **Atrás** que te devuelve a la pantalla de selección). Si *ninguno* de tus universos está accesible, la pantalla lo dice con claridad y sigue ofreciendo las dos últimas puertas — nunca finge que no tienes universos.
+
+En versiones anteriores, Constellation abría en silencio un universo *distinto* en esta situación y recordaba ese sustituto como tu elección — de modo que una ventana de aspecto normal sobre el universo equivocado era el síntoma de un universo inaccesible, y seguía reapareciendo incluso después de que la unidad volviera. Eso ya no ocurre: nada se abre y nada se recuerda hasta que tú decides.
 
 ### Universos portátiles
 
@@ -136,9 +140,11 @@ Los universos de Constellation son completamente portátiles. Puedes mover la ca
 Para mover un universo:
 1. Cierra Constellation
 2. Mueve o copia la carpeta del universo a la nueva ubicacion
-3. Abre Constellation → aparece la pantalla de bienvenida (la ruta anterior ya no es valida)
-4. Elige **Abrir Universo Existente** y apunta a la nueva ubicacion
+3. Abre Constellation. Aparece la **pantalla de selección**, que te dice que el universo no se pudo abrir en su ubicación anterior — no se ha perdido nada, y nada se abre hasta que tú eliges.
+4. Haz clic en **Abrir desde una carpeta…** en la pantalla de selección y apunta a la nueva ubicación. Tus notas, carpetas y bibliotecas aparecen inmediatamente.
 5. Todas las notas y bibliotecas aparecen inmediatamente — y una barra de mensaje avisa de que el universo se ha movido: pulsa **«Reparar el índice — seguro, lo conserva todo»** para actualizar el índice de búsqueda de forma segura
+
+**Por qué la reparación es una reescritura y no una relectura.** Al abrir un universo movido, Constellation reescribe su lista de bibliotecas — por eso tus notas y carpetas aparecen de inmediato. El índice de búsqueda es un almacén aparte, y en él cada nota sigue registrada en su ubicación *anterior*. Lo que tus enlaces han **ganado** — cuáles recorriste, en cuáles llegaste a confiar, cuáles retiraste, tus prioridades de repaso — viaja con la carpeta en un archivo de texto plano identificado por la identidad de cada nota, así que sobrevive intacto a la mudanza. Dos cosas todavía no viajan: la fecha de nacimiento de cada enlace y tu calendario de repaso, que aún se registra por ubicación. Por eso el botón de la barra hace una reescritura — las mismas entradas con direcciones nuevas, conservando cada fecha y cada valor ganado — y por eso **no debes recurrir a una «Relectura completa» para reparar una mudanza**: reconstruye el índice desde cero y pone la fecha de nacimiento de todos tus enlaces en el día de hoy.
 
 La estructura de carpetas del universo sigue el modelo de Obsidian: las notas van directamente en la carpeta raiz, la configuracion reside en `.constellation/`.
 

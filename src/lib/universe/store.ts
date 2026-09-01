@@ -21,6 +21,44 @@ export async function listUniverses(): Promise<UniverseEntry[]> {
 	return await invoke('list_universes');
 }
 
+// PJ-433 — the boot flow's registry read: entries PLUS the recorded active_id
+// (list_universes hides the active id behind its sort — the silent boot
+// fallback was born from a caller that couldn't tell choice from guess).
+export interface RegistryStatus {
+	active_id: string | null;
+	entries: UniverseEntry[];
+}
+
+export async function getRegistryStatus(): Promise<RegistryStatus> {
+	return await invoke('get_registry_status');
+}
+
+/**
+ * PJ-433 — the universe that is ACTUALLY OPEN: the in-memory active pointer
+ * matched against the registry. This is deliberately NOT `active_id` — that
+ * is the PERSISTED choice, and while the Boot Chooser is up (or mid-switch)
+ * the two can differ; the whole point of PJ-433 is that surfaces must show
+ * what is open, never what is merely recorded. One shared helper so the
+ * path-join idiom cannot drift per caller.
+ */
+export async function getActiveUniverse(): Promise<UniverseEntry | null> {
+	const [reg, activePath] = await Promise.all([getRegistryStatus(), getActiveUniversePath()]);
+	if (!activePath) return null;
+	return reg.entries.find((u) => u.path === activePath) ?? null;
+}
+
+// PJ-433 — per-entry reachability for the Boot Chooser. Async fs probes;
+// called only while the chooser is open — never on a healthy boot.
+export interface UniverseReachability {
+	id: string;
+	reachable: boolean;
+	reason: string | null;
+}
+
+export async function checkUniverseReachability(): Promise<UniverseReachability[]> {
+	return await invoke('check_universe_reachability');
+}
+
 /** Create a new universe with directory structure at path/name. */
 export async function createUniverse(name: string, path: string): Promise<UniverseEntry> {
 	return await invoke('create_universe', { name, path });

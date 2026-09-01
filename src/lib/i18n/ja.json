@@ -2232,6 +2232,7 @@
       "createNew": "新しいユニバースを作成",
       "remove": "削除",
       "removeConfirm": "このユニバースをリストから削除しますか？ファイルは削除されません。",
+      "removeConfirmSuccessor": "その後、Constellation は「{name}」を開きます",
       "openFolder": "フォルダを開く",
       "path": "パス",
       "created": "作成日",
@@ -2241,6 +2242,24 @@
       "openExisting": "既存のユニバースを開く",
       "ownLibraries": "自身の保管庫",
       "inheritedLibraries": "継承された保管庫"
+    },
+    "bootChooser": {
+      "title": "開くユニバースを選択",
+      "couldNotOpen": "Constellation は「{name}」を開けませんでした",
+      "pathLabel": "場所",
+      "reasonNotFound": "この場所には何も見つかりませんでした。ドライブが接続されていないか、フォルダが移動または名前変更された可能性があります。",
+      "reasonNotDirectory": "ユニバースのフォルダがあるはずの場所にファイルが存在しています。",
+      "nothingChanged": "何も開かれておらず、何も変更されていません。ノートは元の場所に安全に保管されています。",
+      "retry": "再試行",
+      "open": "開く",
+      "openFromFolder": "フォルダから開く…",
+      "itsBack": "見つかりました — 開く",
+      "createNew": "新しいユニバースを作成",
+      "allUnreachable": "現在、どのユニバースにもアクセスできません。",
+      "noActiveRecorded": "最後に開いたユニバースの記録がありません。開くユニバースを選んでください。",
+      "reachable": "アクセス可能",
+      "unreachable": "アクセス不可",
+      "pickFailed": "開けませんでした: {error}"
     },
     "switching": "ユニバースを切替中...",
     "migrating": "データを移行中..."

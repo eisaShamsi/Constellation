@@ -30,9 +30,11 @@ pub struct UniverseEntry {
     pub created: String,
 }
 
-/// Global registry stored in app_data_dir.
+/// Global registry stored in app_data_dir. `pub` (fields private) so
+/// `get_registry_status` can return it directly — the wire shape IS the disk
+/// shape, one struct (PJ-433; a mirror DTO was cut in review).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct UniverseRegistry {
+pub struct UniverseRegistry {
     entries: Vec<UniverseEntry>,
     active_id: Option<String>,
 }
@@ -892,6 +894,71 @@ pub fn list_universes(app: tauri::AppHandle) -> Vec<UniverseEntry> {
     entries
 }
 
+/// PJ-433 — the boot flow's registry read: the entries PLUS the recorded
+/// `active_id`. `list_universes` deliberately hides the active id behind its
+/// sort, and the silent boot fallback was born exactly there: a caller that
+/// cannot tell "the first entry is the user's recorded choice" from "the
+/// first entry is a guess". Registry read only — zero filesystem probes — so
+/// this call replaces the boot's `list_universes` call one-for-one at no new
+/// cost.
+#[tauri::command]
+pub fn get_registry_status(app: tauri::AppHandle) -> UniverseRegistry {
+    load_registry(&app)
+}
+
+/// PJ-433 — per-entry reachability for the Boot Chooser. `async` because a
+/// probe against a dead UNC path can block for seconds; it must never hold
+/// the sync dispatch thread. Called only while the chooser is open (and by
+/// its mount-watch poll) — never on a healthy boot.
+///
+/// `reason` is a machine key the frontend translates: "not-found" (nothing at
+/// the path) | "not-a-directory" (a file sits where the universe root should
+/// be). Failures the probe cannot classify surface at attempt time as the raw
+/// `set_active_universe` error instead.
+#[derive(Debug, Clone, Serialize)]
+pub struct UniverseReachability {
+    pub id: String,
+    pub reachable: bool,
+    pub reason: Option<String>,
+}
+
+/// The probe's classification, alone, so the machine-key vocabulary is pinned by test:
+/// `None` = reachable, `Some("not-found")` = nothing at the path,
+/// `Some("not-a-directory")` = a file sits where the universe root should be.
+fn classify_reachability(p: &Path) -> Option<&'static str> {
+    if p.is_dir() {
+        None
+    } else if p.exists() {
+        Some("not-a-directory")
+    } else {
+        Some("not-found")
+    }
+}
+
+#[tauri::command]
+pub async fn check_universe_reachability(app: tauri::AppHandle) -> Vec<UniverseReachability> {
+    // spawn_blocking: the registry read and the per-entry stats are blocking
+    // fs work, and the dead-UNC probe this command exists for can hang one for
+    // seconds — it must pin a blocking-pool thread, never an async worker.
+    tauri::async_runtime::spawn_blocking(move || {
+        let registry = load_registry(&app);
+        registry
+            .entries
+            .iter()
+            .map(|e| {
+                let reason = classify_reachability(Path::new(&e.path));
+                UniverseReachability {
+                    id: e.id.clone(),
+                    reachable: reason.is_none(),
+                    reason: reason.map(|r| r.to_string()),
+                }
+            })
+            .collect()
+    })
+    .await
+    .unwrap_or_default()
+}
+
 /// Create a new universe: .constellation/ directory structure + config files.
 #[tauri::command]
 pub fn create_universe(
@@ -1439,11 +1506,24 @@ pub fn get_active_universe_path(app: tauri::AppHandle) -> Option<String> {
 #[tauri::command]
 pub fn remove_universe_from_registry(app: tauri::AppHandle, id: String) -> Result<(), String> {
     let mut registry = load_registry_for_update(&app)?;
-    registry.entries.retain(|e| e.id != id);
-    if registry.active_id.as_deref() == Some(&id) {
-        registry.active_id = registry.entries.first().map(|e| e.id.clone());
-    }
+    remove_entry_from_registry(&mut registry, &id);
     save_registry(&app, &registry)
+}
+
+/// PJ-433 A′ — the registry mutation of `remove_universe_from_registry`, alone, so the
+/// no-guessing rule is pinned by test: removing the ACTIVE universe leaves `active_id`
+/// as `None` — never an `entries.first()` guess. The old pick recorded a universe the
+/// user never chose as their choice — the same silent-substitution shape as the boot
+/// fallback. The frontend (UniverseManager.confirmRemove) performs the explicit
+/// successor switch itself and names it in the confirm dialog; until that switch
+/// persists, `active_id: None` is a legal state (create_universe tolerates it, and the
+/// boot flow routes it to the Boot Chooser's pick-one screen instead of activating
+/// anything).
+fn remove_entry_from_registry(registry: &mut UniverseRegistry, id: &str) {
+    registry.entries.retain(|e| e.id != id);
+    if registry.active_id.as_deref() == Some(id) {
+        registry.active_id = None;
+    }
 }
 
 /// Rename the active universe — updates registry, universe.json, notes folder, and library entry.
@@ -3256,6 +3336,61 @@ mod tests {
             .filter(|n| n.ends_with(".cnstmp") || n.ends_with(".tmp"))
             .collect();
         assert!(leftovers.is_empty(), "temp files left behind: {leftovers:?}");
+    }
+
+    // ── PJ-433 — the boot chooser's Rust half: no guessed successor, honest probe ──
+
+    fn entry(id: &str, path: &str) -> UniverseEntry {
+        UniverseEntry {
+            id: id.to_string(),
+            name: id.to_string(),
+            path: path.to_string(),
+            created: String::new(),
+        }
+    }
+
+    /// PJ-433 A′ — removing the ACTIVE universe never guesses a successor. The old
+    /// `entries.first()` pick recorded a universe the user never chose as their choice.
+    #[test]
+    fn pj433_removing_the_active_universe_records_no_successor() {
+        let mut reg = UniverseRegistry {
+            entries: vec![entry("u1", "p1"), entry("u2", "p2"), entry("u3", "p3")],
+            active_id: Some("u1".to_string()),
+        };
+        remove_entry_from_registry(&mut reg, "u1");
+        assert_eq!(reg.entries.len(), 2);
+        assert_eq!(
+            reg.active_id, None,
+            "active_id must become None — an entries.first() guess is the silent-substitution shape PJ-433 removes",
+        );
+    }
+
+    /// PJ-433 A′ — removing a NON-active universe leaves the recorded choice untouched.
+    #[test]
+    fn pj433_removing_a_non_active_universe_keeps_the_choice() {
+        let mut reg = UniverseRegistry {
+            entries: vec![entry("u1", "p1"), entry("u2", "p2")],
+            active_id: Some("u1".to_string()),
+        };
+        remove_entry_from_registry(&mut reg, "u2");
+        assert_eq!(reg.entries.len(), 1);
+        assert_eq!(reg.active_id.as_deref(), Some("u1"));
+    }
+
+    /// PJ-433 §1 — the reachability probe's machine-key vocabulary, pinned: these keys
+    /// are what the Boot Chooser translates ×15; a drift here shows raw keys on screen.
+    #[test]
+    fn pj433_reachability_probe_classifies_dir_file_and_missing() {
+        let dir = TempDir::new().unwrap();
+        let real = dir.path().join("universe");
+        std::fs::create_dir(&real).unwrap();
+        let file = dir.path().join("not-a-universe.txt");
+        std::fs::write(&file, "x").unwrap();
+        let missing = dir.path().join("gone");
+
+        assert_eq!(classify_reachability(&real), None, "an existing directory is reachable");
+        assert_eq!(classify_reachability(&file), Some("not-a-directory"));
+        assert_eq!(classify_reachability(&missing), Some("not-found"));
     }
 
     // ── MIG-103 §4 Slice 2 — the mold a kept kind produces ──────────────────

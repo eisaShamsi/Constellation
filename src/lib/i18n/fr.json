@@ -1803,6 +1803,7 @@
       "createNew": "Créer un nouvel Univers",
       "remove": "Supprimer",
       "removeConfirm": "Supprimer cet univers de la liste ? Les fichiers ne seront pas supprimés.",
+      "removeConfirmSuccessor": "Constellation ouvrira ensuite : {name}",
       "openFolder": "Ouvrir le dossier",
       "path": "Chemin",
       "created": "Créé",
@@ -1812,6 +1813,24 @@
       "ownLibraries": "Bibliothèques propres",
       "inheritedLibraries": "Bibliothèques héritées",
       "openExisting": "Ouvrir un univers existant"
+    },
+    "bootChooser": {
+      "title": "Choisissez un univers à ouvrir",
+      "couldNotOpen": "Constellation n'a pas pu ouvrir « {name} »",
+      "pathLabel": "Emplacement",
+      "reasonNotFound": "Rien n'a été trouvé à cet emplacement — le disque est peut-être débranché, ou le dossier a été déplacé ou renommé.",
+      "reasonNotDirectory": "Un fichier se trouve à la place du dossier de l'univers.",
+      "nothingChanged": "Rien n'a été ouvert et rien n'a été modifié. Vos notes sont en sécurité là où elles sont.",
+      "retry": "Réessayer",
+      "open": "Ouvrir",
+      "openFromFolder": "Ouvrir depuis un dossier…",
+      "itsBack": "Il est de retour — Ouvrir",
+      "createNew": "Créer un nouvel univers",
+      "allUnreachable": "Aucun de vos univers n'est accessible pour le moment.",
+      "noActiveRecorded": "Aucun univers n'est enregistré comme votre dernier choix. Choisissez-en un à ouvrir.",
+      "reachable": "Accessible",
+      "unreachable": "Inaccessible",
+      "pickFailed": "Impossible de l'ouvrir : {error}"
     },
     "switching": "Changement d'univers...",
     "migrating": "Migration de vos données..."

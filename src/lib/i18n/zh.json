@@ -2232,6 +2232,7 @@
       "createNew": "创建新宇宙",
       "remove": "移除",
       "removeConfirm": "从列表中移除此宇宙？文件不会被删除。",
+      "removeConfirmSuccessor": "随后 Constellation 将打开：{name}",
       "openFolder": "打开文件夹",
       "path": "路径",
       "created": "创建时间",
@@ -2241,6 +2242,24 @@
       "openExisting": "打开现有宇宙",
       "ownLibraries": "自有保险库",
       "inheritedLibraries": "继承的保险库"
+    },
+    "bootChooser": {
+      "title": "选择要打开的宇宙",
+      "couldNotOpen": "Constellation 无法打开“{name}”",
+      "pathLabel": "位置",
+      "reasonNotFound": "在此位置没有找到任何内容——驱动器可能已拔出，或文件夹已被移动或重命名。",
+      "reasonNotDirectory": "本应是宇宙文件夹的位置上却是一个文件。",
+      "nothingChanged": "没有打开也没有更改任何内容。你的笔记安然无恙，仍在原处。",
+      "retry": "重试",
+      "open": "打开",
+      "openFromFolder": "从文件夹打开…",
+      "itsBack": "已恢复——打开",
+      "createNew": "创建新宇宙",
+      "allUnreachable": "目前你的所有宇宙都无法访问。",
+      "noActiveRecorded": "没有记录你上次选择的宇宙。请选择一个打开。",
+      "reachable": "可访问",
+      "unreachable": "无法访问",
+      "pickFailed": "无法打开：{error}"
     },
     "switching": "切换宇宙中...",
     "migrating": "正在迁移数据..."

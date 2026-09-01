@@ -2232,6 +2232,7 @@
       "createNew": "Criar novo Universo",
       "remove": "Remover",
       "removeConfirm": "Remover este universo da lista? Os arquivos não serão excluídos.",
+      "removeConfirmSuccessor": "Em seguida, o Constellation abrirá: {name}",
       "openFolder": "Abrir pasta",
       "path": "Caminho",
       "created": "Criado",
@@ -2241,6 +2242,24 @@
       "openExisting": "Abrir universo existente",
       "ownLibraries": "Cofres próprios",
       "inheritedLibraries": "Cofres herdados"
+    },
+    "bootChooser": {
+      "title": "Escolha um universo para abrir",
+      "couldNotOpen": "O Constellation não conseguiu abrir «{name}»",
+      "pathLabel": "Localização",
+      "reasonNotFound": "Nada foi encontrado neste local — a unidade pode estar desconectada, ou a pasta foi movida ou renomeada.",
+      "reasonNotDirectory": "Há um arquivo no lugar onde a pasta do universo deveria estar.",
+      "nothingChanged": "Nada foi aberto e nada foi alterado. Suas notas estão seguras onde estão.",
+      "retry": "Tentar novamente",
+      "open": "Abrir",
+      "openFromFolder": "Abrir de uma pasta…",
+      "itsBack": "Voltou — Abrir",
+      "createNew": "Criar um novo universo",
+      "allUnreachable": "Nenhum dos seus universos está acessível no momento.",
+      "noActiveRecorded": "Nenhum universo está registrado como sua última escolha. Escolha um para abrir.",
+      "reachable": "Acessível",
+      "unreachable": "Inacessível",
+      "pickFailed": "Não foi possível abrir: {error}"
     },
     "switching": "Trocando universo...",
     "migrating": "Migrando seus dados..."

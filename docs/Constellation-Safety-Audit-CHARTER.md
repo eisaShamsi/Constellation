@@ -526,3 +526,46 @@ verified scenario: `lab/reports/safety-sweep-2026-08-23-whole-app.md`.
 PJ-332b slot had been added to sky/review but not the two mirror backfills, and the park-window
 guard to the save funnel but not the delete funnel. Class fixes that stop at the surface where
 the bug was seen keep getting re-found at the sibling.
+
+---
+
+## Register — 2026-08-31 (per-cycle whole-app sweep, at the PJ-433 migration close)
+
+**Run:** `wf_c684def0-3fa` · 65 agents · 14 hunt scopes · **19 confirmed → 17 distinct** (the
+`ensure_cid_cn_cmd` freeze was found independently by three hunters).
+
+**A NON-RESULT recorded first, deliberately:** the initial attempt (`wf_c2f63c5b-dea`) returned
+`confirmed_findings: []` **with all 14 hunters dead on a model rate limit**. An empty findings list
+from a run where nothing ran is not a pass. It was re-run; only the re-run discharges this cycle.
+
+**De-duplicated finding-by-finding against the ledger, this Charter, and both prior sweep registers:**
+**8 NEW** (filed PJ-446…PJ-453) · **8 ALREADY-FILED** (PJ-396, PJ-378 ×2, PJ-348, PJ-347, PJ-264,
+PJ-248 item 13, PJ-346) · **1 REFUTED-STALE** (already fixed in tree — the sweep's own claim
+withdrawn on re-reading the current code).
+
+### The two that matter
+- **PJ-446 (HIGH, freeze-hang)** — `canonical.rs:1477` `ensure_cid_cn_cmd` is a bare
+  `#[tauri::command]` that, since **PJ-431's fix at `4aee6ea2` (2026-08-29)**, calls
+  `reindex_single_note` on the IPC dispatch thread, awaited on the note-open path. **PJ-431
+  re-introduced the very class PJ-066 was opened to kill**, six days ago — which is why no prior
+  sweep could have caught it. Four sibling commands all carry `(async)`; this one does not.
+- **PJ-447 (HIGH, silent data loss)** — `propsCommit.ts:110` emits a colliding property key as a
+  SET on the existing key, silently overwriting it and defeating **a Boss-approved ruling** that a
+  key collision is reported, never last-wins. Reached by ordinary typing; the refusal guard
+  (`renamePropKeyIn`) has zero call sites in `src/`.
+
+### The structural finding — the ledger is a working NET and a failing QUEUE
+Eight of seventeen were already filed, some since 2026-08-11; **nothing was lost, nothing came out.**
+The mechanism is two umbrella entries — **PJ-264 (~100 unnumbered findings) and PJ-378 (58)** —
+inside which a defect is filed but invisible to any human reader. **This sweep spent most of its
+budget re-proving known bugs.** The panel's conclusion, recorded verbatim because it indicts the
+method and not the code: *"The cure is not a better sweep."* Whether the next cycle becomes a DRAIN
+cycle — fix the backlog, run no new hunt — is a Boss ruling, put to him at this close.
+
+### Method notes earned this run
+- **Read the failure count before believing a clean result.** (The non-result above.)
+- **De-duplicate before filing.** Half this register was already in the ledger; filing it again
+  would have inflated the backlog with the appearance of new work.
+- **Let an agent's out-of-scope flag interrupt you.** The most valuable finding of the whole
+  close-out — that the Full-re-read safety warning was missing from all 14 translated manuals —
+  arrived as "outside what you asked me…".

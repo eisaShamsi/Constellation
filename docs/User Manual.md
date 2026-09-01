@@ -358,9 +358,13 @@ Every universe automatically gets a **Universe Notes** folder at its root, named
 
 You can link universes together as peers. A **Linked Universe** is another universe folder referenced by your active universe. Notes from Linked Universes appear in Sky View alongside your own notes, with cross-library links shown as dashed lines.
 
-### Auto-Reopen
+### Auto-Reopen — and the chooser when your universe can't be found
 
-Constellation remembers your last active universe and reopens it automatically on launch. If that universe's folder has moved or its drive is not connected, Constellation quietly tries the next universe it knows about instead — so a normal-looking window on the *wrong* universe is the symptom of an unreachable one. Re-open the moved universe with **Open Existing Universe** and point it at the new location.
+Constellation remembers your last active universe and reopens it automatically on launch. If that universe can't be reached at that moment — its drive unplugged, its folder moved or renamed, a network location offline — Constellation **opens nothing**. Instead it shows a **chooser screen** that names the universe it could not open, shows the folder path it looked at and the reason, and reassures you that nothing was opened and nothing was changed. Below that, your other registered universes are listed, each marked **Reachable** or **Unreachable**, with an **Open** button for any reachable one.
+
+From the chooser you can: **Try again** (plug the drive in first); wait for the **"It's back — Open"** button, which lights up by itself the moment the missing location reappears — nothing opens until you click it; **Open** another universe as your deliberate choice; **Open from folder…** to browse to a universe folder anywhere on disk; or **Create a new universe** (with a **Back** button returning to the chooser). If *none* of your universes can be reached, the chooser says so plainly and still offers the last two doors — it never pretends you have no universes.
+
+In older versions, Constellation quietly opened a *different* universe in this situation and remembered that substitute as your choice — so a normal-looking window on the wrong universe was the symptom of an unreachable one, and it kept coming back even after the drive returned. That no longer happens: nothing opens, and nothing is remembered, until you decide.
 
 ### Portable Universes
 
@@ -369,8 +373,8 @@ Constellation remembers your last active universe and reopens it automatically o
 To move a universe:
 1. Close Constellation.
 2. Move or copy the universe folder wherever you want it.
-3. Open Constellation. It will not announce that the old location is gone — it quietly opens a different universe instead. That is a known shortcoming; nothing is lost.
-4. Click the universe name at the right-hand end of the status bar → **Open Existing Universe**, and point it at the new location. Your notes, folders and libraries appear immediately.
+3. Open Constellation. The **chooser screen** appears, telling you the universe could not be opened at its old location — nothing is lost, and nothing opens until you choose.
+4. Click **Open from folder…** on the chooser, and point it at the new location. Your notes, folders and libraries appear immediately.
 5. Within moments, a message bar appears at the top of the window: *"This universe has moved. It now lives at …, but its search index still records every note at …"* — with a button reading **"Repair the index — safe, keeps everything."** Click it. The repair takes a verified backup first (kept inside the universe folder), rewrites the stored locations in one all-or-nothing step, and proves nothing was lost before finishing. When it finishes, Constellation reloads itself once — the window briefly goes blank and comes back with the message bar gone and everything reading from the new location. Your link ages, review rhythm and everything you have earned come through untouched.
 
 **Why the repair is a rewrite, not a re-read.** When you open a moved universe, Constellation rewrites its list of libraries, which is why your notes and folders show up straight away. The search index is a separate store, and every note in it still records the *old* location. What your links have EARNED — which ones you walked, what you came to trust, what you retired, your review priorities — travels with the folder in a plain-text file keyed by note identity, so that survives a move intact. Two things do not yet travel: each link's birth date, and your review schedule, which is still recorded by location. That is why the button on the bar performs a rewrite — same entries, new addresses, every date and every earned value carried through — and why you should still not reach for a Full re-read to “fix” a move: it rebuilds from scratch and resets every link's birth date to today.

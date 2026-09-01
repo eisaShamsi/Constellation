@@ -139,9 +139,13 @@ Onarımın yaptığı iş: Constellation'ın en son baktığı andan bu yana de�
 
 Evrenleri eş düzeyde birbirine bağlayabilirsiniz. Bir **Bağlı Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür — evreninizin bir parçası olmaz, kütüphaneleri evreninize federe edilen eşit bir evren olarak kalır. Bağlı evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
-### Otomatik yeniden açma
+### Otomatik yeniden açma — ve evreniniz bulunamadığında görünen seçim ekranı
 
-Constellation son aktif evreninizi hatırlar ve başlatıldığında yeniden açar. Evren klasörünü diskte taşıdıysanız, evreni yeni konumundan Evren Yöneticisi üzerinden yeniden açın: durum çubuğunun sağ ucundaki evren adına tıklayın → **Mevcut evreni aç**. Ardından pencerenin üstünde evrenin taşındığını açıklayan bir mesaj çubuğu belirir — notlarınızın tümü yerindedir ve normal şekilde açılır; hiçbir şey kaybolmamıştır ve Constellation bir taşınma yüzünden hiçbir şeyi silmez. Çubuktaki **«Dizini onar — güvenli, her şey korunur»** düğmesi, önce doğrulanmış bir yedek alır ve dizini tek bir ya-hep-ya-hiç adımda güvenle yeniden yazar: bağlantı yaşları ve gözden geçirme zamanlamaları korunur, işlem bitince uygulama kendini bir kez yeniden yükler.
+Constellation son aktif evreninizi hatırlar ve başlatıldığında otomatik olarak yeniden açar. O evrene o anda ulaşılamıyorsa — sürücüsü takılı değilse, klasörü taşınmış ya da yeniden adlandırılmışsa, bir ağ konumu çevrimdışıysa — Constellation **hiçbir şey açmaz**. Bunun yerine bir **seçim ekranı** gösterir: açamadığı evrenin adını söyler, baktığı klasör yolunu ve nedenini gösterir ve sizi rahatlatır: «Hiçbir şey açılmadı ve hiçbir şey değiştirilmedi. Notlarınız bulundukları yerde güvende.» Bunun altında kayıtlı diğer evrenleriniz listelenir; her biri **Ulaşılabilir** ya da **Ulaşılamıyor** olarak işaretlenir ve ulaşılabilir olan her evrenin yanında bir **Aç** düğmesi bulunur.
+
+Seçim ekranından şunları yapabilirsiniz: **Yeniden dene** (önce sürücüyü takın); **«Geri geldi — Aç»** düğmesini bekleyin — kayıp konum yeniden ortaya çıktığı anda bu düğme kendiliğinden yanar, ama siz tıklayana kadar hiçbir şey açılmaz; bilinçli tercihiniz olarak başka bir evreni **Aç**; **Klasörden aç…** ile diskin herhangi bir yerindeki bir evren klasörüne göz atın; ya da **Yeni bir evren oluştur**'u seçin (bir **Geri** düğmesi sizi seçim ekranına geri götürür). Evrenlerinizin *hiçbirine* ulaşılamıyorsa seçim ekranı bunu açıkça söyler ve yine de son iki kapıyı sunmaya devam eder — hiç evreniniz yokmuş gibi davranmaz.
+
+Eski sürümlerde Constellation bu durumda sessizce *başka* bir evreni açar ve o yedeği sizin tercihinizmiş gibi hatırlardı — yani yanlış evrende normal görünen bir pencere, ulaşılamayan bir evrenin belirtisiydi ve sürücü geri geldikten sonra bile aynı yanlış evren açılmaya devam ediyordu. Bu artık olmuyor: siz karar verene kadar hiçbir şey açılmaz ve hiçbir şey hatırlanmaz.
 
 ### Taşınabilir Evrenler
 
@@ -150,9 +154,11 @@ Constellation evrenleri tamamen taşınabilirdir. Evren klasörünü herhangi bi
 Bir evreni taşımak için:
 1. Constellation'ı kapatın
 2. Evren klasörünü yeni konuma taşıyın veya kopyalayın
-3. Constellation'ı açın → Karşılama ekranı görünür (eski yol artık geçerli değil)
-4. **Mevcut Evreni Aç**'ı seçin ve yeni konumu gösterin
+3. Constellation'ı açın. **Seçim ekranı** görünür ve evrenin eski konumunda açılamadığını söyler — hiçbir şey kaybolmamıştır ve siz seçim yapana kadar hiçbir şey açılmaz
+4. Seçim ekranında **Klasörden aç…** düğmesine tıklayın ve yeni konumu gösterin. Notlarınız, klasörleriniz ve kütüphaneleriniz hemen görünür
 5. Tüm notlar ve kütüphaneler anında görünür; arama dizini için pencerenin üstünde beliren mesaj çubuğundaki **«Dizini onar — güvenli, her şey korunur»** düğmesine tıklayın — onarım tek adımda, güvenle yapılır
+
+**Onarım neden bir yeniden yazmadır, yeniden okuma değil.** Bağlantılarınızın **kazandığı** her şey — hangilerini gezdiğiniz, neye güvenmeye başladığınız, neyi emekliye ayırdığınız, gözden geçirme öncelikleriniz — not kimliğine göre anahtarlanan düz metin bir dosyada klasörle birlikte yolculuk eder ve taşımadan olduğu gibi çıkar. Henüz yolculuk etmeyen iki şey vardır: her bağlantının doğum tarihi ve hâlâ konuma göre kaydedilen gözden geçirme zamanlaması. Düğmenin yaptığı iş bu yüzden bir yeniden yazmadır — aynı kayıtlar, yeni adresler, her tarih ve kazanılmış her değer olduğu gibi taşınır. Bir taşımayı "düzeltmek" için **Tam yeniden okuma**'ya başvurmayın: o, dizini sıfırdan kurar ve her bağlantının doğum tarihini bugüne sıfırlar.
 
 Evren klasör yapısı Obsidian modelini takip eder: notlar doğrudan kök klasörde yer alır, yapılandırma `.constellation/` içinde bulunur.
 

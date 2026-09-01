@@ -2232,6 +2232,7 @@
       "createNew": "새 유니버스 만들기",
       "remove": "제거",
       "removeConfirm": "이 유니버스를 목록에서 제거하시겠습니까? 파일은 삭제되지 않습니다.",
+      "removeConfirmSuccessor": "제거 후 Constellation이 열 유니버스: {name}",
       "openFolder": "폴더 열기",
       "path": "경로",
       "created": "생성일",
@@ -2241,6 +2242,24 @@
       "openExisting": "기존 유니버스 열기",
       "ownLibraries": "자체 보관함",
       "inheritedLibraries": "상속된 보관함"
+    },
+    "bootChooser": {
+      "title": "열 유니버스를 선택하세요",
+      "couldNotOpen": "Constellation이 “{name}”을(를) 열지 못했습니다",
+      "pathLabel": "위치",
+      "reasonNotFound": "이 위치에서 아무것도 찾지 못했습니다 — 드라이브가 분리되었거나, 폴더가 이동되었거나 이름이 바뀌었을 수 있습니다.",
+      "reasonNotDirectory": "유니버스 폴더가 있어야 할 자리에 파일이 있습니다.",
+      "nothingChanged": "아무것도 열리지 않았고 아무것도 변경되지 않았습니다. 노트는 원래 자리에 안전하게 그대로 있습니다.",
+      "retry": "다시 시도",
+      "open": "열기",
+      "openFromFolder": "폴더에서 열기…",
+      "itsBack": "다시 연결되었습니다 — 열기",
+      "createNew": "새 유니버스 만들기",
+      "allUnreachable": "지금은 어떤 유니버스에도 접근할 수 없습니다.",
+      "noActiveRecorded": "마지막으로 선택한 유니버스 기록이 없습니다. 열 유니버스를 하나 선택하세요.",
+      "reachable": "접근 가능",
+      "unreachable": "접근 불가",
+      "pickFailed": "열지 못했습니다: {error}"
     },
     "switching": "유니버스 전환 중...",
     "migrating": "데이터 마이그레이션 중..."

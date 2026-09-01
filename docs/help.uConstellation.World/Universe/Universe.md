@@ -5,6 +5,8 @@ aliases:
   - Universe manager
   - Open existing universe
   - Linked universe
+  - Boot Chooser
+  - Universe not found
 description: Learn how to create, open, and manage Universes in Constellation — your portable data containers for libraries, bases, settings, and more.
 ---
 
@@ -167,11 +169,38 @@ Constellation universes are fully portable. You can move a universe folder to an
 To move a universe:
 1. Close Constellation
 2. Move or copy the universe folder to the new location
-3. Open Constellation → it does NOT announce the old path is gone — it quietly opens a different universe instead
-4. Choose **Open Existing Universe** and point to the new location
+3. Open Constellation → the **universe chooser screen** appears, telling you the universe could not be opened at its old location (see *When your universe can't be found at startup* below)
+4. Click **Open from folder…** and point to the new location
 5. All notes and libraries appear immediately — use the **“Repair the index — safe, keeps everything”** button on the bar that appears — it backs up first, rewrites the stored locations in one step, and keeps link ages, review rhythm and everything earned. Do NOT use a Full re-read for a move: it rebuilds from scratch and resets every link's birth date
 
 The universe folder structure follows the Obsidian model: notes go directly in the root folder, configuration lives in `.constellation/`.
+
+---
+
+## When your universe can't be found at startup
+
+If the universe you last worked in can't be reached when Constellation starts — its drive is unplugged, the folder was moved or renamed, or a network location is offline — Constellation **opens nothing**. Instead it shows a **chooser screen** that tells you the truth:
+
+- **Which universe** it could not open, **where** it looked (the full folder path), and **why** it failed.
+- A reassurance that nothing was opened and nothing was changed — your notes are safe where they are.
+- Your **other registered universes**, each marked **Reachable** or **Unreachable**, with an **Open** button for any reachable one.
+
+From this screen you can:
+
+| Action | What happens |
+|---|---|
+| **Try again** | Constellation re-attempts your universe — plug the drive in first, then click. |
+| **It's back — Open** | While the screen is open, Constellation quietly watches the missing location. The moment it reappears, this button lights up in its place. Nothing opens until you click. |
+| **Open** (on another universe) | Opens that universe instead — as your deliberate choice, which is then remembered. |
+| **Open from folder…** | Browse to a universe folder anywhere on disk — the way back in when you moved the folder yourself. |
+| **Create a new universe** | Opens the setup wizard. A **Back** button returns you to the chooser if you clicked this by mistake. |
+
+> [!important]
+> In older versions, Constellation silently opened a **different** universe when the last one was unreachable — and remembered that substitute as your choice, so it kept opening the wrong universe even after the drive returned. That no longer happens: nothing opens and nothing is remembered until you decide.
+
+If **none** of your universes can be reached (for example, everything lives on one unplugged drive), the chooser says so plainly and still offers **Open from folder…** and **Create a new universe** — it never pretends you have no universes.
+
+Removing a universe from your list is deliberately **not** offered on this screen — a missing drive is usually just unplugged. To remove one, open the [[#Universe Manager|Universe Manager]] once a universe is open; when you remove the universe you're currently in, the confirmation now names which universe Constellation will open next.
 
 ---
 

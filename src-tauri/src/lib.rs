@@ -658,6 +658,8 @@ pub fn run() {
             // status-bar badge + popup.
             federation::federation_get_warnings,
             universe::list_universes,
+            universe::get_registry_status,        // PJ-433
+            universe::check_universe_reachability, // PJ-433
             universe::create_universe,
             universe::set_active_universe,
             universe::get_active_universe_path,

@@ -1792,6 +1792,7 @@
       "createNew": "צור יקום חדש",
       "remove": "הסר",
       "removeConfirm": "להסיר יקום זה מהרשימה? הקבצים לא יימחקו.",
+      "removeConfirmSuccessor": "לאחר מכן Constellation יפתח את: {name}",
       "openFolder": "פתח תיקייה",
       "path": "נתיב",
       "created": "נוצר",
@@ -1801,6 +1802,24 @@
       "openExisting": "פתח יקום קיים",
       "ownLibraries": "כספות עצמיות",
       "inheritedLibraries": "כספות בירושה"
+    },
+    "bootChooser": {
+      "title": "בחר יקום לפתיחה",
+      "couldNotOpen": "Constellation לא הצליח לפתוח את „{name}”",
+      "pathLabel": "מיקום",
+      "reasonNotFound": "לא נמצא דבר במיקום הזה — ייתכן שהכונן מנותק, או שהתיקייה הועברה או ששמה שונה.",
+      "reasonNotDirectory": "במקום שבו אמורה להיות תיקיית היקום נמצא קובץ.",
+      "nothingChanged": "שום דבר לא נפתח ושום דבר לא השתנה. הפתקים שלך בטוחים במקומם.",
+      "retry": "נסה שוב",
+      "open": "פתח",
+      "openFromFolder": "פתח מתיקייה…",
+      "itsBack": "הוא חזר — פתח",
+      "createNew": "צור יקום חדש",
+      "allUnreachable": "אף אחד מהיקומים שלך אינו נגיש כרגע.",
+      "noActiveRecorded": "לא נרשם יקום כבחירה האחרונה שלך. בחר אחד לפתיחה.",
+      "reachable": "נגיש",
+      "unreachable": "לא נגיש",
+      "pickFailed": "לא ניתן היה לפתוח אותו: {error}"
     },
     "switching": "מחליף יקום...",
     "migrating": "מעביר את הנתונים שלך..."

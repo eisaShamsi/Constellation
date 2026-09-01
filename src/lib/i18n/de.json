@@ -1803,6 +1803,7 @@
       "createNew": "Neues Universum erstellen",
       "remove": "Entfernen",
       "removeConfirm": "Dieses Universum aus der Liste entfernen? Dateien werden nicht gelöscht.",
+      "removeConfirmSuccessor": "Constellation öffnet danach: {name}",
       "openFolder": "Ordner öffnen",
       "path": "Pfad",
       "created": "Erstellt",
@@ -1812,6 +1813,24 @@
       "ownLibraries": "Eigene Bibliotheken",
       "inheritedLibraries": "Geerbte Bibliotheken",
       "openExisting": "Bestehendes Universum öffnen"
+    },
+    "bootChooser": {
+      "title": "Wähle ein Universum zum Öffnen",
+      "couldNotOpen": "Constellation konnte „{name}“ nicht öffnen",
+      "pathLabel": "Speicherort",
+      "reasonNotFound": "An diesem Speicherort wurde nichts gefunden — möglicherweise ist das Laufwerk nicht angeschlossen, oder der Ordner wurde verschoben oder umbenannt.",
+      "reasonNotDirectory": "Dort, wo der Universum-Ordner liegen sollte, befindet sich eine Datei.",
+      "nothingChanged": "Es wurde nichts geöffnet und nichts verändert. Deine Notizen sind sicher, wo sie sind.",
+      "retry": "Erneut versuchen",
+      "open": "Öffnen",
+      "openFromFolder": "Aus Ordner öffnen…",
+      "itsBack": "Wieder da — Öffnen",
+      "createNew": "Neues Universum erstellen",
+      "allUnreachable": "Keines deiner Universen ist im Moment erreichbar.",
+      "noActiveRecorded": "Es ist kein Universum als deine letzte Wahl vermerkt. Wähle eines zum Öffnen aus.",
+      "reachable": "Erreichbar",
+      "unreachable": "Nicht erreichbar",
+      "pickFailed": "Konnte nicht geöffnet werden: {error}"
     },
     "switching": "Universum wird gewechselt...",
     "migrating": "Daten werden migriert..."

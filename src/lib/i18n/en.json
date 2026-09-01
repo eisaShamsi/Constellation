@@ -2392,6 +2392,7 @@
       "createNew": "Create New Universe",
       "remove": "Remove",
       "removeConfirm": "Remove this universe from the list? Files will not be deleted.",
+      "removeConfirmSuccessor": "Constellation will then open: {name}",
       "openFolder": "Open Folder",
       "path": "Path",
       "created": "Created",
@@ -2401,6 +2402,24 @@
       "ownLibraries": "Own Libraries",
       "inheritedLibraries": "Inherited Libraries",
       "openExisting": "Open Existing Universe"
+    },
+    "bootChooser": {
+      "title": "Choose a universe to open",
+      "couldNotOpen": "Constellation could not open \"{name}\"",
+      "pathLabel": "Location",
+      "reasonNotFound": "Nothing was found at this location — the drive may be unplugged, or the folder was moved or renamed.",
+      "reasonNotDirectory": "A file sits where the universe folder should be.",
+      "nothingChanged": "Nothing was opened and nothing was changed. Your notes are safe where they are.",
+      "retry": "Try again",
+      "open": "Open",
+      "openFromFolder": "Open from folder…",
+      "itsBack": "It's back — Open",
+      "createNew": "Create a new universe",
+      "allUnreachable": "None of your universes can be reached right now.",
+      "noActiveRecorded": "No universe is recorded as your last choice. Pick one to open.",
+      "reachable": "Reachable",
+      "unreachable": "Unreachable",
+      "pickFailed": "Could not open it: {error}"
     },
     "switching": "Switching universe...",
     "migrating": "Migrating your data..."
