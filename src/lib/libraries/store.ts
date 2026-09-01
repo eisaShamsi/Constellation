@@ -4868,10 +4868,13 @@ export async function createNote(folderPath: string, fileName: string, initialFr
  * inherits the mold's identity line, and with it the mold's birth date.
  *
  * **PJ-454 (2026-09-01) — THIS IS NO LONGER THE GUARANTEE. It is a cheap early-out.**
- * This predicate is LOCATION-ONLY, and location alone was measured to fail: a panel found **102
- * stamped molds** across the Boss's universes that it never protected, because none of them sat
- * in the configured folder (they are Obsidian-era molds, and none declares `kind: template`
- * either — which is why the fix needs BOTH signals, not a second location rule here).
+ * This predicate is LOCATION-ONLY, and location alone was measured to fail: **43 stamped molds**
+ * on the Boss's disk that it never protected, because none sits in the configured folder — his
+ * templates live in per-domain Arabic folders, and the configured `Templates` folder is EMPTY in
+ * one affected universe and ABSENT in the other. None declares `kind: template` either, which is
+ * why the fix needs BOTH signals rather than a second location rule here.
+ * (Earlier figures of 102, 67 and 0 appear in this investigation's history and are all refuted;
+ * 43 is the measured one, counted by placeholder syntax inside the frontmatter fence.)
  *
  * The rule is now enforced where it cannot be bypassed: `canonical.rs::is_template_file`, inside
  * the one engine that writes the identity line (`ensure_cid_cn`) — because TEN paths can reach

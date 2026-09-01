@@ -13,6 +13,7 @@ mod boot_bundle;
 mod cache;
 mod derived_heal;
 mod canonical;
+mod mold_repair; // PJ-454 — repairing templates that were given a birthday
 // PJ-207 §6 — the ONE assembly of the five derived-view recomputes. Its `ConvergeKey`
 // has a private field, and every bulk recompute now requires one, so a sixth divergent
 // assembly cannot be written: it could not obtain the argument.
@@ -658,6 +659,8 @@ pub fn run() {
             // status-bar badge + popup.
             federation::federation_get_warnings,
             universe::list_universes,
+            mold_repair::scan_stamped_molds,      // PJ-454
+            mold_repair::repair_stamped_molds,    // PJ-454
             universe::get_registry_status,        // PJ-433
             universe::check_universe_reachability, // PJ-433
             universe::create_universe,

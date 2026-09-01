@@ -206,3 +206,112 @@ HIS organisation, and scope/cost inside a DRAIN cycle.
 placeholders?* Every candidate is also tested against the four real notes that carry `template`
 as a **lens name** with zero earned history and zero inbound links — the ones an
 earned-history exclusion rule would **not** have protected.
+
+---
+
+## §7 — A NEW STANDING ORDER, and the correction that produced it
+
+**The Boss, 2026-09-01, interrupting mid-work:** *"I've noticed you make a lot of mistakes: you
+assume something, take action, and then discover you were wrong. I want you to stop making
+mistakes. From now on, consult the panel before taking any action. Consider this an SO."*
+
+**He is right, and the pattern was six deep by then:** the relayed **102**; my own **67**; the
+indented-`kind` false positive **in the very test I said I had guarded**; the case-sensitive path
+check that made my own new comment a lie; the ordering that put filesystem work on every note open
+(PJ-446's lesson, on PJ-446's path, one day later); and **committing before his test**, against a
+standing order made after that same thing reached main once before.
+
+**The common cause is not carelessness in the moment.** It is acting on something that LOOKED
+verified — a panel's number, my own scan, my own reasoning — without a second check that could
+disagree. The rule for exactly this already existed (*Verify the Finding, Not Just the Wording*,
+and its standing question *if my method were wrong, would this result look different?*); I applied
+it to other people's findings and not to my own actions.
+
+**What actually caught these:** almost every one was found by something that EXECUTED rather than
+reasoned — the inspection compiled my function and ran it; the second sweep measured files instead
+of trusting a count. **Reading my own work has a poor record.**
+
+**THE LINE, proposed by me and RULED BY HIM rather than assumed:** *any action that writes,
+commits, builds, or touches his data goes to the panel first, with its verdict shown to him before
+proceeding. Reading and measuring stay free — but any finding from them reaches him only after an
+independent check that could contradict it.* I put the boundary to him rather than choosing it,
+because guessing where the line falls is the same mistake in a new place.
+
+## §8 — The two read-only follow-ups (`wf_d0957d1f-26b`) — both bigger than expected
+
+### The second wave is 107, not ~54 — and NO SAFE RULE EXISTS
+Re-running the strict rule across all four roots returns **exactly 43, zero additional** — the
+strict set is complete for its own rule. The rest: **107 files needing judgement — 64 obvious
+molds (A), 24 ambiguous (B), 19 real notes that must never be touched (C)**.
+
+**The honest finding is the negative one.** The best discriminator tried (a blank frontmatter key
+plus a body ≤200 chars) catches **41 of 64**, misses 23, and catches **2 of Group C** — the Boss's
+own **unfinished concrete-formwork note**, which on disk is byte-for-byte indistinguishable in
+shape from a mold. Loosening it to catch the missing 23 drags in *more* of C. The one structural
+marker that looked decisive (a `_TMPL_` infix in the stamp) exists on 4 files out of 18,434, and
+one of those four is a real note. **Verdict: stop looking for a rule; approve Group A as an
+ENUMERATED LIST in four folder-sized sub-approvals.** What makes that defensible: **0 of the 107
+appear in `earned.jsonl`**, 92 of 107 carry no authored field at all, and exactly **one** has a
+human inbound link.
+
+`القوالب الخرسانية` is to be recorded as the **standing counter-example** to any future rule
+proposal — it is the file that breaks every heuristic anyone will next suggest.
+
+### The duplicate: 18 GB, still fully indexed, and its origin is now known
+`Eisa Universe\موسوعة عيسى` — **9,074 files, 18 GB**. Traced from evidence, not guessed: a
+**MIG-108 unification executed as Copy on 2026-08-07 16:48–16:53** (the `mig108-backup.prev`
+manifest still lists it at the internal path; the next backup does not), after which it was
+**de-registered as a library and the 18 GB left behind**. Nobody knows who de-registered it — the
+diagnostics log starts after that window. A week later the original was promoted to a universe.
+
+**It is live, not dormant: 824 of the universe's 2,112 notes (39%) are the copy** — with 824
+review rows, 824 sky nodes, 1,610 embeddings — and **60% of the universe's links originate inside
+it**. But the knowledge is the same: of 9,074 shared files, **9,054 are byte-identical**, and of
+the 20 that differ, **18 differ ONLY in their identity stamp** (zero body drift). The original
+holds 9 newer notes. Nothing references the copy; exactly **13 links** from outside resolve into
+it, to two notes that exist in the original too.
+
+**Panel recommendation:** add `E:\موسوعة عيسى` as a **Linked Universe**, verify the 13 links
+resolve, then move the copy to `.trash` — 18 GB recovered, 824 duplicate rows dropped, one
+identity per note instead of two. Behind a backup, with the Boss testing the links before deletion.
+**Not acted on; his call.**
+
+---
+
+## §9 — The repair engine: BUILT and tested, not yet able to run. Where the work stops tonight
+
+**`src-tauri/src/mold_repair.rs`** — the panel's procedure, in the app, as two commands
+(`scan_stamped_molds`, `repair_stamped_molds`), registered in `lib.rs`. **Suite green; 7 new
+tests.**
+
+**What it does, in the panel's order:** re-prove the file against the rule AT THE MOMENT OF THE
+WRITE (a stale approved list can therefore damage nothing — a file edited since the scan is
+refused with a reason) → back up and **read the backup back** (a backup nobody verified is not a
+backup) → **ONE write** through the same gate the rest of the app writes through → verify on disk
+that **exactly one line left and one arrived and nothing else moved**, with an **automatic undo**
+if not → re-index → finally re-index the notes that linked to a repaired mold **by identity**, so
+none is left pointing at an identity nothing holds.
+
+**Design choices worth keeping:**
+- The rule (`mold_evidence`) and the edit (`strip_stamp_and_mark_template`) are **pure functions** —
+  testable without a disk, which is how the awkward cases got proven rather than argued.
+- The edit refuses to run on anything the rule does not claim, so a caller cannot repair a
+  non-mold **even by mistake**.
+- A failed re-index is **not** a failed repair — the file on disk is correct, which is what
+  matters, and the boot walk re-reads it. Reported honestly rather than dressed up either way.
+
+**The seven tests, chosen for the ways this could hurt him:** both placeholder syntaxes (one of
+his 43 is identified ONLY by Templater's `<% %>`); six refusals in the false-positive direction
+(stamped-but-no-placeholder, braces in the BODY, an INDENTED `cid_cn`, unterminated fence…); the
+blank line his molds open with surviving intact; **a `---` divider in the body not being mistaken
+for the fence** (three of his molds have one); CRLF staying CRLF; the verifier REJECTING a body
+change, a dropped property and a missing marker; and — the one that closes the loop — a repaired
+mold being recognised by `canonical::frontmatter_declares_template`, **without which the boot
+healer re-stamps it and the repair silently undoes itself.**
+
+### Deliberately NOT done tonight
+The settings door, i18n ×15, the diff-scoped inspection, a dry run for the Boss to read, and his
+test. **The engine cannot be invoked from the UI, so it cannot touch a file — which is the right
+state to stop in.** The remaining work is the long tail (surface + translation) where, by this
+session's own evidence, my error rate is highest; and the operation writes to his notes. It
+resumes on a clear head, from the brief in the ledger.

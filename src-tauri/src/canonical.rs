@@ -1512,16 +1512,28 @@ fn templates_dir_for_note(file_path: &Path) -> Option<PathBuf> {
 /// `cid_cn`. A template is a MOLD; identity and birth belong to the CAST* — because a note cast
 /// from a stamped mold would inherit the mold's birth date.
 ///
-/// It asks BOTH questions because each arm alone has been measured to fail:
-/// - **Location alone** is what the frontend guard did (`isTemplatePath`, location-only), and on
-///   2026-09-01 a panel measured **102 stamped molds** across the Boss's universes that it never
-///   protected — none of them sat in the configured folder.
-/// - **Self-declaration alone** would have protected **none of those 102 either**: they are
-///   Obsidian-era molds Constellation never marked with `kind: template`.
+/// It asks BOTH questions because each arm alone has been measured to fail. **The measured figure
+/// is 43** — stamped molds on the Boss's disk, 2026-09-01, counted by placeholder syntax inside
+/// the frontmatter fence (39 in Eisa Universe, 4 in موسوعة عيسى; two other universes hold zero).
+/// Earlier figures of 102, 67 and 0 were all produced during this same investigation and are all
+/// **refuted** — recorded here because a refuted number left in a comment is how the wrong one
+/// travels. 102 counted every stamped file in a template-*named* folder (which also sweeps up
+/// ~107 genuine notes — قوالب is the ordinary Arabic word for *mold*); 67 matched braces anywhere
+/// in the first 25 lines rather than inside the fence; 0 asked only the two questions below.
 ///
-/// So: either signal is sufficient, and the test lives HERE — inside the one engine that writes
-/// the identity line — rather than at a call site, because ten paths can reach this engine and a
-/// guard at two of them is what produced the 102.
+/// - **Location alone** is what the frontend guard did (`isTemplatePath`, location-only). It
+///   protects **0 of the 43**: the Boss's configured templates folder is `Templates`, which is
+///   EMPTY in one affected universe and DOES NOT EXIST in the other — his real molds live in
+///   per-domain Arabic folders (`القوالب`, `قوالب العرب`, `قوالب سجل الخليج`, …).
+/// - **Self-declaration alone** protects **0 of the 43** too: not one declares `kind: template`;
+///   they are Obsidian-era molds Constellation never marked.
+///
+/// So neither arm covers the EXISTING damage — that is the separate, Boss-gated repair, which
+/// also writes `kind: template` into each file it repairs so this guard then protects it wherever
+/// it is moved. What the two arms DO guarantee is that nothing acquires a stamp from here on.
+/// The test lives HERE — inside the one engine that writes the identity line — rather than at a
+/// call site, because ten paths can reach this engine and a guard at two of them is what let the
+/// 43 happen.
 pub(crate) fn is_template_file(file_path: &Path, content: &str) -> bool {
     if frontmatter_declares_template(content) {
         return true;
