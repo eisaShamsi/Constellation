@@ -249,6 +249,34 @@ pub fn library_name_for_path(libs: &[LibraryInfo], path: &str) -> Option<String>
         .map(|l| l.name.clone())
 }
 
+/// PJ-455 — **tell the app a file was just born.**
+///
+/// Every gated write is deliberately hidden from the file watcher (`write_gate` marks the path)
+/// so the app's own saves do not echo back at it. The cost of that design is that a file the app
+/// CREATES is invisible to the File Explorer until something says so out loud — and the only
+/// thing that says so is this event, whose listener adds the owning library to the pending
+/// refresh set and schedules the tree redraw.
+///
+/// **Found by the Boss, 2026-09-01:** a template he had just saved did not appear under Templates
+/// until he relaunched (or pressed Ctrl+R). `create_template` wrote the file and announced
+/// nothing; the screen that called it refreshed the template PICKER, not the tree.
+///
+/// **It lives here, at the write, and not in the calling screen — on purpose.** A panel found
+/// that every other creation path in the app appears immediately *only because its own screen
+/// happens to remember to refresh*, while the underlying commands are equally silent. That is
+/// drift waiting to happen, and it is exactly how this bug arrived. Announced at the write, it
+/// fires for every caller — present, future, and from any window (the frontend's own
+/// `createNote` emits the same event, and the listener's Set + 300 ms debounce coalesces the
+/// pair into one refresh).
+///
+/// Safe for a path outside every registered library: the listener resolves the owning library and
+/// returns quietly when there is none (an absolute `templateFolder` pointing outside the universe
+/// has no tree to refresh).
+pub(crate) fn announce_created(app: &tauri::AppHandle, path: &str) {
+    use tauri::Emitter as _;
+    let _ = app.emit("note-created", serde_json::json!({ "path": path }));
+}
+
 /// The most-specific OWN-library name that owns `file_path`, for WRITE/REINDEX
 /// attribution — or None when the path is outside every own library or contains
 /// a `..` component (denied outright; no canonicalization, so a crafted path can
@@ -1787,7 +1815,13 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         }
     }
 
-    Ok(file_path.to_string_lossy().to_string())
+    // PJ-455 — announce at the write, not only from the frontend wrapper. The frontend's
+    // `createNote` emits the same event, and the listener's Set + debounce coalesces the pair
+    // into one refresh; announcing here means a caller that does NOT go through that wrapper
+    // (a future Rust path, another window) still gets a visible file.
+    let p = file_path.to_string_lossy().to_string();
+    announce_created(&app, &p);
+    Ok(p)
 }
 
 /// Check if a library has been canonicalized. Delegates to canonical module.
@@ -1817,7 +1851,12 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
     fs::create_dir(&folder_path)
         .map_err(|e| format!("Failed to create folder: {}", e))?;
 
-    Ok(folder_path.to_string_lossy().to_string())
+    // PJ-455 — announce at the write. This path works today only because both of its callers
+    // remember to refresh the tree themselves; that is the drift that produced the template bug,
+    // so the guarantee moves here where a future caller inherits it.
+    let p = folder_path.to_string_lossy().to_string();
+    announce_created(&app, &p);
+    Ok(p)
 }
 
 /// Rename a file or folder.

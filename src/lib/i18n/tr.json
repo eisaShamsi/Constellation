@@ -417,6 +417,7 @@
       "intro": "Not şablonlarını yönetin. Şablonlar yeni notlara önceden tanımlanmış içerik ekler.",
       "templateFolder": "Şablon klasörü",
       "templateFolderDesc": "Şablon dosyalarınızın depolandığı klasör",
+      "templateFolderOutsideWarning": "Bu klasör evreninizin dışında. Oraya kaydedilen şablonlar doğru biçimde saklanır, ancak Dosya Gezgini'nde görünmezler — Gezgin yalnızca evreninizin içinde bulunanları gösterir. Şablonlarınızı kenar çubuğunda görmek istiyorsanız evreninizin içindeki bir klasör kullanın.",
       "dailyNoteTemplate": "Günlük not şablonu",
       "dailyNoteTemplateDesc": "Günlük notlar oluştururken kullanılacak şablon dosya adı (.md olmadan)",
       "variables": "Şablon değişkenleri",

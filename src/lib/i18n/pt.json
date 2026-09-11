@@ -417,6 +417,7 @@
       "intro": "Gerenciar modelos de notas. Modelos inserem conteúdo predefinido em novas notas.",
       "templateFolder": "Pasta de modelos",
       "templateFolderDesc": "A pasta onde seus arquivos de modelo são armazenados",
+      "templateFolderOutsideWarning": "Esta pasta está fora do seu universo. Os modelos salvos ali são armazenados corretamente, mas não aparecerão no Explorador de arquivos — ele mostra apenas o que está dentro do seu universo. Use uma pasta dentro dele se quiser ver seus modelos na barra lateral.",
       "dailyNoteTemplate": "Modelo de nota diária",
       "dailyNoteTemplateDesc": "Nome do arquivo de modelo para notas diárias (sem .md)",
       "variables": "Variáveis de modelo",

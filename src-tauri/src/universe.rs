@@ -2950,6 +2950,9 @@ pub fn create_template(
             _ => {
                 let p = candidate.to_string_lossy().to_string();
                 reindex_written_template(&app, &p, "create_template");
+                // PJ-455 (the Boss found this): the index was told, the TREE never was — so a
+                // template he had just saved stayed invisible until a relaunch.
+                crate::libraries::announce_created(&app, &p);
                 return Ok(p);
             }
         }
@@ -3097,6 +3100,9 @@ pub fn adopt_discovered_kind(
         _ => {
             let p = target.to_string_lossy().to_string();
             reindex_written_template(&app, &p, "adopt_discovered_kind");
+            // PJ-455 — the second broken surface, and worse than the first: Template Studio's
+            // "Keep" writes a mold into the same folder and its caller refreshes nothing at all.
+            crate::libraries::announce_created(&app, &p);
             Ok(p)
         }
     }

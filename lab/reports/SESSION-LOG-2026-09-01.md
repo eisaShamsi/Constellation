@@ -278,7 +278,19 @@ identity per note instead of two. Behind a backup, with the Boss testing the lin
 
 ---
 
-## §9 — The repair engine: BUILT and tested, not yet able to run. Where the work stops tonight
+## §9 — The repair engine: BUILT, suite-green, **NOT Boss-tested**, and not yet able to run
+
+> **Wording correction, 2026-09-01, at the Boss's challenge.** This heading first read "BUILT and
+> tested", and in my closing summary to him I wrote *"two things shipped today, both tested and
+> green at 1,629/0."* **In this project "tested" means HE tested it** — that is what his standing
+> order says, and it says in terms that "proven by tests" is not proof. Using the word for the
+> automated suite converted an untested state into a finished-sounding one, hours after I had told
+> him plainly that neither piece was Boss-tested. He caught it with one question: *"Who tested the
+> drain cycle?"* **Answer: nobody.**
+>
+> The failure this session was corrected for is not only in my actions; it is in my REPORTING, and
+> that version is worse — a wrong action gets caught by a gate, a wrong summary gets believed. From
+> here: "suite green" for the automated suite, "Boss-tested" only when he has run it.
 
 **`src-tauri/src/mold_repair.rs`** — the panel's procedure, in the app, as two commands
 (`scan_stamped_molds`, `repair_stamped_molds`), registered in `lib.rs`. **Suite green; 7 new
@@ -315,3 +327,136 @@ test. **The engine cannot be invoked from the UI, so it cannot touch a file — 
 state to stop in.** The remaining work is the long tail (surface + translation) where, by this
 session's own evidence, my error rate is highest; and the operation writes to his notes. It
 resumes on a clear head, from the brief in the ledger.
+
+---
+
+## §10 — STAGE 1 BOSS-PASSED (2026-09-01): the guard is validated, and he found a bug while doing it
+
+**The first Boss-validated thing in the drain cycle.** Run on the 15:08:07 binary (verified to
+contain the new code by finding `scan_stamped_molds` / `repair_stamped_molds` / `pj454_mold_repair`
+as symbols inside the exe — not by trusting its timestamp).
+
+- **Step 2 PASS** — `Zarquon Mold` inside the Templates folder: `title`, `kind: template`,
+  `template_kind: whole`, and **no `cid_cn`**. (Worth only what the tutorial said it was worth: the
+  frontend skips the IPC for in-folder templates, so this step never reaches the new code.)
+- **Step 4 PASS — the one that matters.** Screenshot shows the file at the **Scratch root**, no
+  `Templates` folder anywhere above it in the tree, still `kind: template`, still **no `cid_cn`
+  row**; the status bar reads *3 properties*. **The self-declaration arm works.** That is exactly
+  the gap that let 43 of his real templates be stamped, closed and witnessed.
+
+The panel's Step-3 fix earned itself: it required a destination not inside and not named
+`Templates`, because the location arm matches any such path — without it the pass would have
+proven nothing.
+
+### The bug HE found, filed as PJ-455
+*"The template I just created didn't go under the Templates folder inside the File Explorer. But it
+got there after I relaunched the app (or Ctrl+R)."*
+
+**Mechanism, read from source (not guessed):** `create_template` (`universe.rs`) writes the file
+and **emits nothing** — no `note-created`, no `library-changed`. The frontend
+(`+layout.svelte:5723-5731`) then calls `refreshTemplates()`, which refreshes the **template
+picker list**, not the **File Explorer tree**. And the app's own gated writes are
+watcher-suppressed by design, so `library-changed` never fires either. Net: the tree cannot learn
+about the new file until a reload.
+
+**The established remedy already exists**: `note-created` is the app's own announcement for
+exactly this case — its listener adds the library to `pendingTreeRefresh` and schedules the flush,
+and its comment says creation announces itself this way *"from any window"*. `create_template`
+simply never joins in. **Not fixed yet — panelled first, per his standing order.**
+
+### §10b — STAGE 2 BOSS-PASSED: the guard is not too eager. PJ-454's GUARD HALF IS CLOSED.
+
+`Zarquon Ordinary` — a plain note written in Notepad, never touched by Constellation's own
+creation path — opened for the first time and received **exactly one property: `cid_cn:
+20260902T052956Z_NOTE_F934`**. Status bar: *1 property*.
+
+**All three cases witnessed on his screen:**
+| case | result |
+|---|---|
+| template INSIDE the folder | no stamp ✅ |
+| template OUTSIDE the folder, self-declared — **the new capability** | no stamp ✅ |
+| ordinary note — **the false-positive control** | stamped ✅ |
+
+The third is the one that could have gone wrong quietly: had the guard been too eager, real notes
+would have been denied an identity forever, and the failure would have shown as *nothing at all*
+(no Properties strip). The panel's edit E4 made that absence legible in the tutorial; it was not
+needed, but it would have been the only way he could have reported it.
+
+**PJ-454's guard half is Boss-validated and CLOSED.** The repair half (the 43 stamped molds) is
+separate and still needs its door, dry run and approval.
+
+## §11 — PJ-455 panelled; the Boss ruled BUILD, and answered the declined question YES
+
+**Panel verdict:** the write announces nothing; the calling screen refreshes only the template
+picker. **TWO surfaces are broken today** — "Save as template" and **Template Studio's "Keep"**
+(`adopt_discovered_kind`, writing into the same folder, whose caller refreshes nothing at all).
+Every other creation path works **only because its screen happens to remember to refresh** — the
+underlying commands are equally silent, which is the drift that produced this bug. Latent trap:
+`save_clipboard_image` would mint an invisible `attachments/` folder, but has no caller yet.
+
+**Endorsed fix: Rust-side, at each write, not in the screen** — the announcement mechanism
+(`note-created`) already exists and is proven, and putting it at the write means it fires for every
+caller, present and future, from any window. Cost: one tree read plus a stats pass, debounced
+300 ms and coalesced — what creating an ordinary note already pays. **No PJ-454 interaction**:
+indexing only reads, and the stamping engine refuses templates outright.
+
+**Boss ruling on the panel's declined question:** if the Template folder is set to a path OUTSIDE
+the universe, templates can never appear in the tree — **"Should the app warn you at that setting?
+Yes."** That warning is now in scope.
+
+### §11b — PJ-455 built: the announcement moved to the write
+
+**`libraries::announce_created(app, path)`** — one helper, emitting the app's own `note-created`
+event, documented at the site with the Boss's own finding and the panel's reason for the placement.
+
+**Wired at four writes:**
+- `create_template` (`universe.rs`) — **his bug.** The index was told (`reindex_written_template`);
+  the tree never was.
+- `adopt_discovered_kind` (`universe.rs`) — the second broken surface, worse: Template Studio's
+  "Keep" writes a mold into the same folder and its caller refreshes **nothing at all**.
+- `create_note` and `create_folder` (`libraries.rs`) — not broken today, but working only because
+  their screens remember to refresh. That is the drift; the guarantee moves to the write so a
+  future caller inherits it. (The frontend `createNote` still emits too; the listener's Set +
+  300 ms debounce coalesces the pair into one refresh.)
+
+**Deliberately NOT wired, and filed rather than guessed:** `quick_capture` and
+`get_daily_note_path` may return an EXISTING path rather than always creating one, so an
+unconditional announcement there would announce a creation that did not happen. Small harm — one
+wasted tree refresh — but it would be extending on assumption, which is this session's whole
+lesson. Also unwired: `create_base` (its screen refreshes, and the write point needs the same
+read), and `save_clipboard_image` (the panel's latent trap — it would mint an invisible
+`attachments/` folder, but it has **no caller in `src/` at all**, so it is a trap for whoever
+wires paste, not a live defect).
+
+**The setting warning — Boss-ruled "Yes".** Under **Template folder**, when the value is an
+ABSOLUTE path that escapes the universe, a bordered warning now says the templates save correctly
+but will never appear in the File Explorer, and names the remedy. Only absolute paths can escape
+(a relative value always resolves under the root, and the shared resolver refuses `..`), so it
+cannot cry wolf; and if the universe root cannot be resolved it stays **silent rather than
+guessing**. Compared case-insensitively on normalised separators — spelled out at the site because
+PJ-454's own case-sensitivity bug was exactly this mistake.
+
+**Gates:** `cargo check` clean · svelte-check **0 errors** (268 warnings, unchanged — none from
+this diff) · i18n **15/15 in parity** (14 locales translated, each reusing its file's established
+terms for *universe* and *File Explorer*; pt correctly chose the Brazilian *arquivos* variant this
+section already uses over the European *ficheiros* used elsewhere in the same file) ·
+**diff-scoped safety inspection: 0 confirmed findings** — and genuinely so, both hunters completed
+with zero errors (unlike the 2026-08-31 run that reported empty because all 14 had died on a rate
+limit; **read the failure count before believing a clean result**).
+
+### §11c — PJ-455 BOSS-PASSED, all four steps (2026-09-02, 10:07:40 binary)
+
+| step | what it proved | result |
+|---|---|---|
+| 1 | **his bug** — "Save as template" appears under Templates within a second, no reload | ✅ |
+| 2 | **the sibling he had not hit** — Template Studio "Keep" (named `Test`) appears immediately | ✅ |
+| 3 | **no regression** — New note / New folder / New Base still appear at once, app responsive | ✅ |
+| 4 | **the warning he ruled on** — `C:\Temp\MyTemplates` shows the red-edged warning; clearing to `Templates` removes it | ✅ |
+
+His step-2 screenshots also witnessed the Studio's caption changing from *"Type a name to keep this
+kind"* to *"Writes Test.md — with content_type, sources"* once a name was present — the Keep button
+disabled until then. The flow tells him what it is about to do before it does it.
+
+**PJ-455 CLOSED.** Second Boss-validated fix of the drain cycle (after PJ-454's guard). It was found
+BY HIM, during a test of something else — which is the argument for tests that walk real surfaces
+rather than proving one assertion.

@@ -417,6 +417,7 @@
       "intro": "Gestionar plantillas de notas. Las plantillas insertan contenido predefinido en nuevas notas.",
       "templateFolder": "Carpeta de plantillas",
       "templateFolderDesc": "La carpeta donde se guardan los archivos de plantilla",
+      "templateFolderOutsideWarning": "Esta carpeta está fuera de tu universo. Las plantillas que guardes ahí se almacenan correctamente, pero no aparecerán en el Explorador de archivos: este solo muestra lo que vive dentro de tu universo. Usa una carpeta que esté dentro de él si quieres ver tus plantillas en la barra lateral.",
       "dailyNoteTemplate": "Plantilla de nota diaria",
       "dailyNoteTemplateDesc": "Nombre del archivo de plantilla para notas diarias (sin .md)",
       "variables": "Variables de plantilla",

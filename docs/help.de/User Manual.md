@@ -960,6 +960,8 @@ Erstellen Sie wiederverwendbare Notizvorlagen:
 2. Legen Sie den Vorlagenordner-Pfad unter **Einstellungen > Vorlagen** fest
 3. Beim Erstellen einer neuen Notiz waehlen Sie eine Vorlage aus der Vorlagenauswahl
 
+Wenn Sie den Vorlagenordner auf einen Speicherort außerhalb Ihres Universums legen, weist Constellation Sie unter der Einstellung darauf hin: Die Vorlagen werden korrekt gespeichert, erscheinen aber nicht im Dateibaum, der nur anzeigt, was innerhalb Ihres Universums liegt. Behalten Sie den Ordner innerhalb Ihres Universums, damit Ihre Vorlagen in der Seitenleiste erscheinen. Vorlagen tragen niemals den Identitätsstempel einer Notiz, sodass jede daraus erstellte Notiz mit ihrem eigenen Datum entsteht.
+
 Vorlagen unterstuetzen Variablen:
 
 | Variable | Wird ersetzt durch |

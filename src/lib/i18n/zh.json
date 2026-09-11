@@ -417,6 +417,7 @@
       "intro": "管理笔记模板。模板可以在新笔记中插入预定义内容。",
       "templateFolder": "模板文件夹",
       "templateFolderDesc": "存储模板文件的文件夹",
+      "templateFolderOutsideWarning": "此文件夹位于您的宇宙之外。保存到那里的模板会正确存储，但不会显示在文件浏览器中 —— 文件浏览器只显示宇宙内的内容。若希望在侧边栏中看到您的模板，请改用宇宙内的文件夹。",
       "dailyNoteTemplate": "每日笔记模板",
       "dailyNoteTemplateDesc": "创建每日笔记时使用的模板文件名（不含 .md）",
       "variables": "模板变量",

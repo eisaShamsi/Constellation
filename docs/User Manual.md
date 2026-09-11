@@ -1614,6 +1614,13 @@ Create reusable note templates:
 2. Set the template folder path in **Settings > Templates**
 3. When creating a new note, choose a template from the template picker
 
+If you set the template folder to a location outside your universe, Constellation
+warns you under the setting: the templates save correctly, but they will not show
+in the File Explorer, which only lists what lives inside your universe. Keep the
+folder inside your universe to see your templates in the sidebar. Templates never
+carry a note's identity stamp, so every note you create from one is born with its
+own date.
+
 ### New note from template
 
 Run **New note from template** from Mission Control, pick a template, and

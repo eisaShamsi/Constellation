@@ -102,6 +102,37 @@
 		}
 	}
 
+	// PJ-455 (Boss-ruled 2026-09-01, "Yes") — warn when the Template folder points OUTSIDE the
+	// universe. Templates saved there are written correctly but can never appear in the File
+	// Explorer, because the tree only shows what lives under the universe's own libraries. The
+	// app was silent about that; he asked for the warning.
+	//
+	// Only an ABSOLUTE path can escape — a relative setting always resolves under the root
+	// (`resolve_templates_dir_for_root`, which also refuses `..` escapes) — so a relative value
+	// never warns. Compared case-insensitively on normalised separators, matching how the Rust
+	// side compares paths (PJ-454's own case-sensitivity bug is the reason that is spelled out).
+	let universeRootForTpl = $state<string | null>(null);
+	$effect(() => {
+		let alive = true;
+		import('$lib/universe/store')
+			.then(m => m.getActiveUniversePath())
+			.then(r => { if (alive) universeRootForTpl = r; })
+			.catch(() => {});
+		return () => { alive = false; };
+	});
+	const templateFolderOutsideUniverse = $derived.by(() => {
+		const raw = ($appSettings.templateFolder ?? '').trim();
+		if (!raw) return false;                       // empty falls back to the default, inside
+		const isAbsolute = /^([a-zA-Z]:[\\/]|[\\/]{2}|\/)/.test(raw);
+		if (!isAbsolute) return false;                // relative always resolves under the root
+		const root = universeRootForTpl;
+		if (!root) return false;                      // unknown root: say nothing rather than cry wolf
+		const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+		const r = norm(root);
+		const f = norm(raw);
+		return !(f === r || f.startsWith(r + '/'));
+	});
+
 	// MIG-012 §Build.8-fix — fully-localized confirm dialog state.
 	// Replaces browser-native confirm() which forces OS-locale OK/Cancel
 	// labels (always English on Windows-EN) and bypassed our $t chain.
@@ -1342,6 +1373,13 @@
 							</button>
 						</div>
 					</div>
+					{#if templateFolderOutsideUniverse}
+						<div class="setting-item setting-warn-row">
+							<div class="setting-info">
+								<div class="setting-desc setting-warn">{$t('settings.templates.templateFolderOutsideWarning')}</div>
+							</div>
+						</div>
+					{/if}
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -3409,6 +3447,11 @@
 	.setting-info { flex: 1; min-width: 0; }
 	.setting-name { font-size: 0.88rem; font-weight: 500; color: var(--text-normal); }
 	.setting-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+	/* PJ-455 — the outside-the-universe template-folder warning. Bordered and coloured rather
+	   than another grey description line, because it is telling the user their templates will be
+	   invisible; a muted note under a field is exactly what they would skip. */
+	.setting-warn-row { border-inline-start: 3px solid var(--text-error, #f38ba8); padding-inline-start: 10px; }
+	.setting-warn { color: var(--text-normal); }
 	.setting-section-heading {
 		font-size: 0.85rem; font-weight: 600; color: var(--text-accent);
 		padding: 16px 0 4px; margin-top: 8px;

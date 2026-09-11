@@ -417,6 +417,7 @@
       "intro": "Notizvorlagen verwalten. Vorlagen fügen vordefinierte Inhalte in neue Notizen ein.",
       "templateFolder": "Vorlagenordner",
       "templateFolderDesc": "Der Ordner, in dem Ihre Vorlagendateien gespeichert sind",
+      "templateFolderOutsideWarning": "Dieser Ordner liegt außerhalb Ihres Universums. Dort gespeicherte Vorlagen werden korrekt abgelegt, erscheinen aber nicht im Datei-Explorer — dieser zeigt nur, was innerhalb Ihres Universums liegt. Wählen Sie einen Ordner darin, wenn Sie Ihre Vorlagen in der Seitenleiste sehen möchten.",
       "dailyNoteTemplate": "Tagesnotizvorlage",
       "dailyNoteTemplateDesc": "Vorlagendateiname für tägliche Notizen (ohne .md)",
       "variables": "Vorlagenvariablen",

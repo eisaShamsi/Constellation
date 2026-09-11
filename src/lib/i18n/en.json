@@ -478,6 +478,7 @@
     "templates": {
       "templateFolder": "Template folder",
       "templateFolderDesc": "The folder where your template files are stored",
+      "templateFolderOutsideWarning": "This folder is outside your universe. Templates saved there are stored correctly, but they will not appear in the File Explorer — it only shows what lives inside your universe. Use a folder inside it if you want to see your templates in the sidebar.",
       "dailyNoteTemplate": "Daily note template",
       "dailyNoteTemplateDesc": "Template file name to use when creating daily notes (without .md)",
       "variables": "Template variables",

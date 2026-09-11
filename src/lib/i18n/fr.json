@@ -417,6 +417,7 @@
       "intro": "Gérer les modèles de notes. Les modèles insèrent du contenu prédéfini dans les nouvelles notes.",
       "templateFolder": "Dossier de modèles",
       "templateFolderDesc": "Le dossier où sont stockés vos fichiers de modèles",
+      "templateFolderOutsideWarning": "Ce dossier se trouve en dehors de votre univers. Les modèles qui y sont enregistrés sont bien stockés, mais ils n’apparaîtront pas dans l’Explorateur de fichiers : celui-ci ne montre que ce qui se trouve à l’intérieur de votre univers. Choisissez un dossier situé à l’intérieur de celui-ci si vous souhaitez voir vos modèles dans la barre latérale.",
       "dailyNoteTemplate": "Modèle de note quotidienne",
       "dailyNoteTemplateDesc": "Nom du fichier modèle pour les notes quotidiennes (sans .md)",
       "variables": "Variables de modèle",

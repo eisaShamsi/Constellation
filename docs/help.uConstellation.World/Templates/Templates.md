@@ -16,6 +16,17 @@ Constellation's built-in template engine lets you create reusable note templates
 2. Set the **Template folder** (default: `Templates`)
 3. Create `.md` files inside this folder — each file is a template
 
+> **Keep the Template folder inside your universe.** If you point it at a folder
+> outside your universe (an absolute path such as `C:\Temp\MyTemplates`),
+> Constellation warns you right under the setting: the templates still save
+> correctly, but they will not appear in the File Explorer, which only shows what
+> lives inside your universe. A plain folder name like `Templates` is always
+> inside your universe and never triggers the warning.
+>
+> A template also never receives Constellation's hidden identity stamp (`cid_cn`),
+> wherever it lives — a template is a mold, and a note created from it is born with
+> its own date, never the mold's.
+
 ## Template Variables
 
 Use double curly braces to insert dynamic content:

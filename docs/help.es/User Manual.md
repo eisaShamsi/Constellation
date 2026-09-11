@@ -925,6 +925,8 @@ Crea plantillas de notas reutilizables:
 2. Establece la ruta de la carpeta de plantillas en **Configuracion > Plantillas**
 3. Al crear una nueva nota, elige una plantilla desde el selector de plantillas
 
+Si estableces la carpeta de plantillas en una ubicación fuera de tu universo, Constellation te avisa bajo el ajuste: las plantillas se guardan correctamente, pero no aparecerán en el Explorador de Archivos, que solo lista lo que vive dentro de tu universo. Mantén la carpeta dentro de tu universo para ver tus plantillas en la barra lateral. Las plantillas nunca llevan el sello de identidad de una nota, así que cada nota que crees a partir de una nace con su propia fecha.
+
 Las plantillas admiten variables:
 
 | Variable | Se reemplaza con |
