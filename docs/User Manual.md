@@ -1621,6 +1621,13 @@ folder inside your universe to see your templates in the sidebar. Templates neve
 carry a note's identity stamp, so every note you create from one is born with its
 own date.
 
+If older templates still carry such a stamp, Constellation shows a notice after
+startup with a **Review templates to fix** button (also under Settings → Universe &
+Libraries → Templates). The review lists each affected file, shows the exact
+two-line change on a sample, and writes nothing until you click **Fix**. Every file
+is backed up first, and the fix refuses to run while any listed file is open in a
+tab.
+
 ### New note from template
 
 Run **New note from template** from Mission Control, pick a template, and

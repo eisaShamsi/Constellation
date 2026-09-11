@@ -660,6 +660,7 @@ pub fn run() {
             federation::federation_get_warnings,
             universe::list_universes,
             mold_repair::scan_stamped_molds,      // PJ-454
+            mold_repair::preview_mold_repair,     // PJ-454 (the door's pre-flight)
             mold_repair::repair_stamped_molds,    // PJ-454
             universe::get_registry_status,        // PJ-433
             universe::check_universe_reachability, // PJ-433

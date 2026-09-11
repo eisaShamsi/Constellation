@@ -159,6 +159,7 @@
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
 	import Mig108UnifyDialog from '$lib/components/Mig108UnifyDialog.svelte';
+	import MoldRepairDialog from '$lib/components/MoldRepairDialog.svelte'; // PJ-454
 	import BringInDialog from '$lib/components/BringInDialog.svelte';
 	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
@@ -611,6 +612,17 @@
 	let indexHiddenDismissed = $state(false); // PJ-407 — its own flag; its remedy is a rename, not a repair
 	let indexFencedDismissed = $state(false); // PJ-428 — its own flag; its remedy is on disk, not a repair
 	let indexMovedDismissed = $state(false); // PJ-435 — its own flag
+	// PJ-454 — the Mold Repair Door. Count driven by ONE deferred post-boot scan (off the paint,
+	// never a boot-time walk); banner shows while > 0, the dialog mounts on demand and re-scans.
+	let moldRepairCount = $state(0);
+	let moldRepairDismissed = $state(false);
+	let showMoldRepairDialog = $state(false);
+	async function refreshMoldRepairCount() {
+		try {
+			const molds = await invoke<unknown[]>('scan_stamped_molds');
+			moldRepairCount = Array.isArray(molds) ? molds.length : 0;
+		} catch { moldRepairCount = 0; }
+	}
 	// PJ-435 — the old→new pair, fetched via get_relocation_record ONLY when the report says
 	// moved (never on the ordinary boot path). Cleared on universe switch and on a clean report.
 	let movedInfo = $state<{ oldRoot: string; newRoot: string } | null>(null);
@@ -4794,6 +4806,11 @@
 		};
 		schedule(() => { loadGraph().catch(() => { cacheRefreshing = false; }); });
 
+		// PJ-454 — one deferred, off-the-paint scan for stamped molds (a transient repair surface).
+		// requestIdleCallback keeps a full-universe read off the boot path; the banner appears only
+		// if this finds any, and vanishes once they are repaired.
+		if (REPAIR_DOOR_ENABLED) schedule(() => { void refreshMoldRepairCount(); });
+
 		// ═══ ZERO BOOT-TIME WALKS — see initializeApp() comment ════════
 		// `cache_reconcile` and `enrichNodesBackground` used to fire here.
 		// Both walked every library on every boot, causing the audible
@@ -8272,6 +8289,17 @@
 				<button class="tpl-err-x" onclick={() => (indexMovedDismissed = true)} aria-label={$t('common.close')}>✕</button>
 			</div>
 		{/if}
+		<!-- PJ-454 — the stamped-mold repair row. Appears only while the deferred scan found molds
+		     in THIS universe and it has not been dismissed; the button opens the review dialog. -->
+		{#if REPAIR_DOOR_ENABLED && moldRepairCount > 0 && !moldRepairDismissed}
+			<div class="drift-note" role="status" dir="auto">
+				<span>{tOr('moldRepair.bannerText', 'Some template files carry a birth date they should not. Review and fix them.')}</span>
+				<button class="drift-repair-btn" onclick={() => (showMoldRepairDialog = true)}>
+					{tOr('moldRepair.bannerButton', 'Review templates to fix')}
+				</button>
+				<button class="tpl-err-x" onclick={() => (moldRepairDismissed = true)} aria-label={$t('common.close')}>✕</button>
+			</div>
+		{/if}
 	</div>
 	<!-- PJ-088 — the conflict-resolution side-by-side MERGE overlay (mounts when a merge target is set) -->
 	<ConflictMergeView {focusReseed} />
@@ -10575,6 +10603,7 @@
 		<SettingsModal
 			onClose={() => showSettings = false}
 			commands={getCommands()}
+			onRepairMolds={() => { showSettings = false; showMoldRepairDialog = true; }}
 		/>
 	{/if}
 
@@ -10644,6 +10673,14 @@
 	     librariesLoaded so the probe runs against the ACTIVE universe, post-boot. -->
 	{#if librariesLoaded}
 		<Mig108UnifyDialog onDismiss={() => { mig108BootRelease?.(); mig108BootRelease = null; }} />
+	{/if}
+	<!-- PJ-454 — the Mold Repair Door: mounts on demand (banner or Settings), scans on mount,
+	     closes itself if nothing to fix; re-scans the banner count when it is done. -->
+	{#if showMoldRepairDialog}
+		<MoldRepairDialog
+			onDone={() => { showMoldRepairDialog = false; void refreshMoldRepairCount(); }}
+			onDismiss={() => { showMoldRepairDialog = false; }}
+		/>
 	{/if}
 
 	{#if showBringInChoice}

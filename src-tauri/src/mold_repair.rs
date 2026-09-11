@@ -72,6 +72,56 @@ pub struct MoldRepairReport {
     pub relinked_sources: Vec<String>,
 }
 
+/// The pre-flight verdict for ONE file — what the repair WOULD do, computed WITHOUT writing.
+///
+/// The door shows this before the Boss approves, so "what will change" is a proven claim and not a
+/// promise. `will_apply` runs the real edit and the real verifier in memory — a file that no longer
+/// qualifies (edited since the scan, already repaired) or that the verifier would reject comes back
+/// `false` with the reason, and is caught BEFORE the write batch rather than by the engine's undo
+/// after it.
+#[derive(Debug, Clone, Serialize)]
+pub struct MoldPreview {
+    pub path: String,
+    /// True when the edit prepares cleanly AND the verifier accepts it — i.e. the repair will
+    /// verify on disk.
+    pub will_apply: bool,
+    /// The exact stamp line that will be removed (empty when `will_apply` is false).
+    pub removes: String,
+    /// The exact line that will be added — always `kind: template` on success.
+    pub adds: String,
+    /// Plain-language reason, especially when `will_apply` is false.
+    pub reason: String,
+    /// True for a file whose shape needs extra care — a `---` divider in the body, no final
+    /// newline, or a Templater `<% %>` stamp. The engine handles all of these (tested), but the
+    /// door runs them FIRST as their own batch, so a systematic problem with the tricky cases
+    /// halts before the ordinary files are touched.
+    pub needs_care: bool,
+}
+
+/// Does this file's shape warrant running it in the delicate batch first?
+///
+/// Not a correctness signal — the edit is proven on all three shapes — but a sequencing one:
+/// these are the files where a future regression would most plausibly appear, so they go first.
+fn needs_care(content: &str) -> bool {
+    // Templater-only stamp.
+    if matches!(mold_evidence(content), Some((_, "<% %>"))) {
+        return true;
+    }
+    // No final newline.
+    if !content.ends_with('\n') {
+        return true;
+    }
+    // A `---` divider in the BODY (below the frontmatter fence).
+    if let Some((_, _, rest)) = split_frontmatter(content) {
+        // `rest` begins at the closing "\n---"; skip that fence line, then look for another.
+        let body = rest.strip_prefix('\n').and_then(|r| r.strip_prefix("---")).unwrap_or("");
+        if body.lines().any(|l| l.trim_end_matches('\r').trim() == "---") {
+            return true;
+        }
+    }
+    false
+}
+
 // ─── The rule (pure, so it is testable without a disk) ───────────────────────
 
 /// Split a note into (everything before the fence, the fence's inner text, the rest from `\n---`).
@@ -181,13 +231,25 @@ pub(crate) fn strip_stamp_and_mark_template(content: &str) -> Option<String> {
 
 // ─── Scan ────────────────────────────────────────────────────────────────────
 
-/// Every stamped mold in the active universe's own libraries, with its evidence.
+/// Every stamped mold in the active universe's OWN libraries, with its evidence.
 ///
-/// Read-only. Federated (linked-universe) libraries are INCLUDED because a mold is a mold wherever
-/// it lives — but each candidate carries its library name so the user can see what he is approving.
+/// Read-only, and **own-libraries only** — never the federated (linked-universe) libraries.
+///
+/// Safety inspection 2026-09-01 (MED, index-divergence / write-sovereignty): the first version
+/// used `resolve_universe_libraries` (recursive, federated), so a linked universe's mold became a
+/// repair candidate. The repair would then WRITE that universe's file (`gate_write` has no
+/// own-scope check, and stripped content has no `cid_cn` so it takes the unchecked path) but could
+/// NOT update that universe's index — the parent attaches it READ-ONLY and never re-walks it — and
+/// `owning_own_library_name` returned `None` for the foreign path, so the re-index was silently
+/// skipped and a clean "Repaired" was reported over a diverged index. Two rulings settle it: a
+/// template repair is a WRITE, and write sovereignty (MIG-111) says a linked universe's bookkeeping
+/// happens in ITS OWN database — which the parent cannot touch. So a federated mold is repaired
+/// when ITS universe is the active one, never reached into from here. `load_libraries` is the
+/// same own-only resolver the whole write path already uses (MIG-065 §J), so the repair can only
+/// write files whose index it can also fix — no divergence is possible.
 #[tauri::command(async)]
 pub fn scan_stamped_molds(app: tauri::AppHandle) -> Result<Vec<MoldCandidate>, String> {
-    let libs = crate::universe::resolve_universe_libraries(app.clone())?;
+    let libs = crate::libraries::load_libraries(&app);
     let inbound = inbound_cid_counts(&app);
     let mut out: Vec<MoldCandidate> = Vec::new();
     for lib in &libs {
@@ -212,6 +274,72 @@ pub fn scan_stamped_molds(app: tauri::AppHandle) -> Result<Vec<MoldCandidate>, S
 }
 
 // ─── Repair ──────────────────────────────────────────────────────────────────
+
+/// **Pre-flight: what the repair WOULD do, touching nothing.**
+///
+/// Runs the real edit and the real verifier in memory for each path, so the door can show a proven
+/// per-file verdict before the Boss approves — and flag the awkward files (a `---` divider in the
+/// body, a missing final newline, a Templater-only stamp) or a file gone stale since the scan,
+/// BEFORE the write batch rather than after. Read-only: it opens no writer, holds no lock.
+#[tauri::command(async)]
+pub fn preview_mold_repair(_app: tauri::AppHandle, paths: Vec<String>) -> Vec<MoldPreview> {
+    paths
+        .into_iter()
+        .map(|p| {
+            let path = Path::new(&p);
+            let content = match std::fs::read_to_string(path) {
+                Ok(c) => c,
+                Err(e) => {
+                    return MoldPreview {
+                        path: p,
+                        will_apply: false,
+                        removes: String::new(),
+                        adds: String::new(),
+                        reason: format!("Could not read the file: {e}"),
+                        needs_care: false,
+                    }
+                }
+            };
+            let Some((cid, _)) = mold_evidence(&content) else {
+                return MoldPreview {
+                    path: p,
+                    will_apply: false,
+                    removes: String::new(),
+                    adds: String::new(),
+                    reason: "No longer a stamped template — it may have been edited or already repaired.".to_string(),
+                    needs_care: needs_care(&content),
+                };
+            };
+            let care = needs_care(&content);
+            match strip_stamp_and_mark_template(&content) {
+                Some(after) if verify_change(&content, &after).is_ok() => MoldPreview {
+                    path: p,
+                    will_apply: true,
+                    removes: format!("cid_cn: {cid}"),
+                    adds: "kind: template".to_string(),
+                    reason: "Ready: the stamp will be removed and the file marked as a template.".to_string(),
+                    needs_care: care,
+                },
+                Some(_) => MoldPreview {
+                    path: p,
+                    will_apply: false,
+                    removes: String::new(),
+                    adds: String::new(),
+                    reason: "The prepared change did not verify cleanly, so this file would be skipped.".to_string(),
+                    needs_care: care,
+                },
+                None => MoldPreview {
+                    path: p,
+                    will_apply: false,
+                    removes: String::new(),
+                    adds: String::new(),
+                    reason: "The change could not be prepared safely, so this file would be skipped.".to_string(),
+                    needs_care: care,
+                },
+            }
+        })
+        .collect()
+}
 
 /// Repair exactly the paths the user approved.
 ///
@@ -292,6 +420,13 @@ fn repair_one(
 
     if !path.is_file() {
         return refuse("The file is no longer there.".into());
+    }
+    // Write-sovereignty guard (defense in depth — the scan already returns own-only paths, but a
+    // caller must not be able to write a linked universe's file by passing its path directly).
+    // `owning_own_library_name` returns None for anything outside the active universe's OWN
+    // libraries — the same rule the whole write path uses (MIG-065 §J). Refuse, do not write.
+    if crate::libraries::owning_own_library_name(app, &p).is_none() {
+        return refuse("Skipped: this file is not in the current universe's own libraries.".into());
     }
     let before = match std::fs::read_to_string(path) {
         Ok(c) => c,
@@ -516,6 +651,38 @@ mod tests {
             crate::canonical::frontmatter_declares_template(&after),
             "the repair must leave the file recognisable to the guard, or the healer re-stamps it",
         );
+    }
+
+    /// The door's pre-flight verdict must agree with what the repair will actually do — a green
+    /// preview that then fails to verify, or a red one that would have succeeded, is exactly the
+    /// "a cross-check that cannot disagree" trap. This exercises the same pure functions the
+    /// command wraps (the command itself only adds file I/O), so a real mold previews green with
+    /// the exact two lines, and a non-mold previews red.
+    #[test]
+    fn pj454_preview_agrees_with_the_real_edit() {
+        // A real mold: preview must be green, name the exact lines, and the edit it previews must
+        // itself verify — the two can never disagree.
+        let after = strip_stamp_and_mark_template(REAL_MOLD).expect("a mold is repairable");
+        assert!(verify_change(REAL_MOLD, &after).is_ok(), "the previewed edit must verify");
+        let (cid, _) = mold_evidence(REAL_MOLD).unwrap();
+        assert_eq!(format!("cid_cn: {cid}"), "cid_cn: 20260414T152113Z_NOTE_207B");
+
+        // A real note (stamped, no placeholder): preview must be red — no edit, nothing removed.
+        let real_note = "---\ntitle: Real\ncid_cn: 20260414T152113Z_NOTE_0001\n---\nbody\n";
+        assert!(mold_evidence(real_note).is_none(), "a real note is never previewed for repair");
+    }
+
+    /// The three delicate shapes must be flagged for the first batch; an ordinary mold must not be.
+    #[test]
+    fn pj454_needs_care_flags_the_three_delicate_shapes() {
+        // ordinary — not delicate
+        assert!(!needs_care(REAL_MOLD));
+        // Templater-only stamp
+        assert!(needs_care("---\ncreated: <% tp.file.creation_date() %>\ncid_cn: 20251229T125213Z_NOTE_7C1D\n---\nb\n"));
+        // no final newline
+        assert!(needs_care("---\ncreated: \"{{date}}\"\ncid_cn: 20260414T152113Z_NOTE_0007\n---\nbody"));
+        // a `---` divider in the body
+        assert!(needs_care("---\ncreated: \"{{date}}\"\ncid_cn: 20260414T152113Z_NOTE_264E\n---\nintro\n\n---\n\nmore\n"));
     }
 }
 

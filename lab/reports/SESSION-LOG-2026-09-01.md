@@ -460,3 +460,87 @@ disabled until then. The flow tells him what it is about to do before it does it
 **PJ-455 CLOSED.** Second Boss-validated fix of the drain cycle (after PJ-454's guard). It was found
 BY HIM, during a test of something else — which is the argument for tests that walk real surfaces
 rather than proving one assertion.
+
+---
+
+## §12 — PJ-454 repair door: BUILT, gated, Stage 1 BOSS-PASSED; one rendering defect he caught
+
+**The door** (panel-designed, Boss-ruled on three forks: pre-flight YES · banner-when-needed YES ·
+refuse-if-open YES): `preview_mold_repair` added to the engine (read-only pre-flight with
+`needs_care`); `MoldRepairDialog.svelte` (review → blocked → running → summary); a self-retiring
+banner driven by ONE deferred `requestIdleCallback` scan (never on the boot path); a Settings →
+Universe & Libraries → Templates fallback button. 25 i18n keys ×15, parity ✓. Suite **1,631/0**.
+
+**Safety inspection found a real MED in the engine (from `f1799826`) and it was fixed at the root:**
+the scan used the FEDERATED resolver, so a linked universe's mold became a candidate; the repair
+would WRITE that file but could not update that universe's read-only-attached index, and
+`owning_own_library_name` returned None so the re-index was silently skipped under a clean
+"Repaired". Two rulings settle it — a repair is a WRITE, and write sovereignty (MIG-111) keeps a
+linked universe's bookkeeping in its own DB. **Scan now uses `load_libraries` (own-only, the same
+resolver the whole write path uses, MIG-065 §J), and `repair_one` refuses any path outside own
+libraries** as defense in depth. A federated mold is repaired when its universe is active.
+
+**Test pipeline:** auditor (read his disk: موسوعة عيسى holds exactly **4**, verified live again
+before sending) → inspector REJECTED once ("the Settings button does nothing" — it always closes
+Settings, then shows no dialog if nothing to fix; corrected) → panel FIX-FIRST with six edits, all
+applied: kill the hardcoded 4 as pass/fail (count-discipline rule reaching every step) · split
+Stage 2 into 2A rehearsal-on-copy then 2B real files · add a recovery line · lead 7B with the
+notice-bar check · disclose that halt-on-failure is NOT exercised and has no test · drop the
+unverified "several dozen". **Then I caught my own error:** 2A cited **"Open from folder…"**, which
+exists only on the boot screen — not reachable mid-session. Rewrote 2A to use his existing Scratch
+universe via the status bar → Universe Manager → Switch, verified in source.
+
+**STAGE 1 BOSS-PASSED, all four steps:** banner text + button exact; the Settings row under the
+correct "Templates" subheading (the collision warning held); dialog: *"4 template files in this
+universe…"*, grouped under موسوعة عيسى, the four names, *"Wrongly claims it was born 2026-04-14"*,
+LYT with *"2 notes point to this one"*; before/after: `− cid_cn: 20260414T152113Z_NOTE_E198` /
+`+ kind: template`, LYT tagged **needs care**. The door works.
+
+**HIS QUESTION: "why is the dialog box black?" — a defect of mine, of the named class.** I wrote the
+dialog's CSS with variable names I ASSUMED (`--bg-primary`, `--bg-secondary`,
+`--bg-modifier-border`) plus dark fallbacks. `theme.css` defines `--background-primary` /
+`--background-secondary` / `--background-modifier-border` — the short forms do not exist — so the
+card fell to the black fallback while `--text-normal` (which DOES exist) resolved to his light
+theme's dark text: **dark file names on a black card, nearly invisible.** And the one header that
+rendered light is now EXPLAINED FROM EVIDENCE, not theory: `theme.css` DOES define `--bg-secondary`
+(and `--bg-hover`, `--bg-tertiary`) but does NOT define `--bg-primary`, `--bg-active` or
+`--bg-modifier-border` — so the group header (which used `--bg-secondary`) got a real light colour
+while the card (`--bg-primary`) fell to the black fallback. Also `--font-monospace` → real name
+`--font-monospace-theme`.
+
+**Pre-existing bug class surfaced (to FILE, not fix here):** other components also use the three
+non-existent names, and so carry the same wrong-fallback rendering on his theme. Scope measured
+this session; filed at PCS.
+**Fixed by reading `theme.css` and `Mig108UnifyDialog.svelte`, not by guessing again**; all dead
+dark fallbacks stripped so no future reader mistakes dark for the default. Rebuild pending; he sees
+the corrected dialog in Stage 2.
+
+### §12b — STAGE 2 BOSS-PASSED: the repair ran on real files. PJ-454 REPAIR HALF CLOSED for موسوعة عيسى. And he found a UX defect.
+
+**Rehearsal (2A, Scratch, four copies) then the real four (2B, موسوعة عيسى) — both clean.**
+| step | witnessed on his screen | result |
+|---|---|---|
+| dialog rendering | light theme, file names legible — the theme-token fix holds | ✅ |
+| 5 — open-file block | *"Close these files first"* listing `3 Base add-on (rank).md`; the repair did NOT run | ✅ |
+| 6 — receipt | *"4 fixed, 0 skipped"*, backup path `…\Scratch\.constellation\pj454-backup`, four ✓ rows each naming the stamp removed | ✅ |
+| 7 — Properties | `kind: template`, `rank`, `created: {{date}}` — **no `cid_cn`**; status bar *3 properties* | ✅ |
+| 2B — real files | ran from the banner in موسوعة عيسى; *"It is all fixed."* | ✅ |
+
+**Disk-verified independently after his report** (a check that could disagree): all four real files in
+`E:\موسوعة عيسى\الموارد الرئيسة\القوالب` carry `kind: template` and no root `cid_cn`; the backup folder
+exists with its copies. His pass is confirmed by the files themselves.
+
+**THE DEFECT HE FOUND (filed PJ-460):** *"I cannot close the tab while the 'Close these files
+first' dialog box is on. So, I closed the dialog box, closed the tab, then re-clicked 'Review
+templates to fix'."* The blocked screen is a modal overlay, so the tab strip behind it cannot be
+clicked — which makes **"I've closed them — try again" unreachable as designed.** His workaround
+works (close dialog → close tab → reopen), but the button cannot do its job. The block itself is
+correct and load-bearing; only the recovery affordance is wrong. Fix candidates (needs a panel per
+his SO — it is a design choice): make the blocked overlay non-blocking so the tab × is clickable; or
+a "Close these files for me and continue" action that flushes-then-closes the offending tabs; or
+reword the screen to the workaround and demote the button. **Not fixed in this pass; filed and
+queued next.**
+
+**What this closes:** PJ-454's repair half for موسوعة عيسى (4 of the 43). Eisa Universe's 39 remain,
+repaired when it is the active universe, through the same door. Halt-on-failure is still unexercised
+(all four succeeded) — the deliberate-failure rehearsal on copies is owed before the 107-file wave.

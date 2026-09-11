@@ -27,6 +27,24 @@ Constellation's built-in template engine lets you create reusable note templates
 > wherever it lives — a template is a mold, and a note created from it is born with
 > its own date, never the mold's.
 
+## Fixing templates that already carry a birth date
+
+Templates created before this rule existed may still carry an identity stamp. When
+Constellation finds any in the active universe, a notice appears after startup —
+*"Some template files carry a birth date they should not. Review and fix them."* —
+with a **Review templates to fix** button. The same review is always reachable from
+**Settings → Universe & Libraries → Templates → Review templates to fix**.
+
+The review lists every affected file and the date it wrongly claims. **Show me one
+before and after** proves the change on a sample: exactly one line removed (the
+stamp) and one line added (`kind: template`); nothing else in the file changes.
+Nothing is written until you click **Fix**. Every file is backed up first (the
+receipt shows where), and a file whose change does not verify is left untouched.
+
+If one of the listed files is open in a tab, the fix refuses to run and names it —
+close that file first. The review only ever covers the active universe's own
+files: a template in another universe is fixed when that universe is open.
+
 ## Template Variables
 
 Use double curly braces to insert dynamic content:

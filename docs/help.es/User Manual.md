@@ -927,6 +927,8 @@ Crea plantillas de notas reutilizables:
 
 Si estableces la carpeta de plantillas en una ubicación fuera de tu universo, Constellation te avisa bajo el ajuste: las plantillas se guardan correctamente, pero no aparecerán en el Explorador de Archivos, que solo lista lo que vive dentro de tu universo. Mantén la carpeta dentro de tu universo para ver tus plantillas en la barra lateral. Las plantillas nunca llevan el sello de identidad de una nota, así que cada nota que crees a partir de una nace con su propia fecha.
 
+Si alguna plantilla antigua todavía lleva ese sello, Constellation muestra un aviso tras el arranque con un botón **Revisar plantillas por corregir** (también disponible en **Configuracion > Universo y Bibliotecas > Plantillas**). La revisión enumera cada archivo afectado, muestra sobre un archivo de ejemplo las dos líneas exactas que cambiarán y no escribe nada hasta que hagas clic en **Corregir**. Primero se guarda una copia de seguridad de cada archivo, y la corrección se niega a ejecutarse mientras cualquiera de los archivos listados esté abierto en una pestaña.
+
 Las plantillas admiten variables:
 
 | Variable | Se reemplaza con |

@@ -37,9 +37,11 @@
 	let {
 		onClose,
 		commands = [] as { id: string; name: string; shortcut?: string; icon?: string; category?: string }[],
+		onRepairMolds,
 	}: {
 		onClose: () => void;
 		commands?: { id: string; name: string; shortcut?: string; icon?: string; category?: string }[];
+		onRepairMolds?: () => void; // PJ-454 — fallback launcher for the Mold Repair Door
 	} = $props();
 
 	let activeSection = $state('dashboard');
@@ -1378,6 +1380,16 @@
 							<div class="setting-info">
 								<div class="setting-desc setting-warn">{$t('settings.templates.templateFolderOutsideWarning')}</div>
 							</div>
+						</div>
+					{/if}
+
+					{#if onRepairMolds}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{$t('moldRepair.settingsButton')}</div>
+								<div class="setting-desc">{$t('moldRepair.lede')}</div>
+							</div>
+							<button class="setting-input" style="cursor:pointer" onclick={() => onRepairMolds?.()}>{$t('moldRepair.bannerButton')}</button>
 						</div>
 					{/if}
 
