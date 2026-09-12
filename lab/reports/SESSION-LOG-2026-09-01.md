@@ -544,3 +544,348 @@ queued next.**
 **What this closes:** PJ-454's repair half for موسوعة عيسى (4 of the 43). Eisa Universe's 39 remain,
 repaired when it is the active universe, through the same door. Halt-on-failure is still unexercised
 (all four succeeded) — the deliberate-failure rehearsal on copies is owed before the 107-file wave.
+
+---
+
+## §13 — PJ-460 panelled, Boss-ruled, built: the blocked screen's curtain is now porous
+
+**Panel verdict (`wf_cc253664-dbb`): fix (a).** On the "Close these files first" screen only, the
+overlay stops swallowing clicks so the tab's × behind it is reachable and "I've closed them — try
+again" can do its job. **The curtain was never the safety device** — Ctrl+W already reached
+`closeTab` through it with no dialog guard; the safety is the click-time re-check in `startRepair`,
+untouched. In-house precedent: `StyleSetter.svelte`'s `--live` overlay (`background:none;
+pointer-events:none` + card `pointer-events:auto`).
+
+**Rejected:** (b) "close the files for me" — `closeTab` never reports whether the flush landed; on a
+failed save the old stamped text sits in the recovery net and re-stamps on reopen, and (b) would
+make the APP the actor of that branch, close pinned tabs, and need a store change + a string ×15.
+(c) reword — enshrines the workaround the Boss reported as the bug.
+
+**The hole the panel found and the fix closes:** `startRepair` awaited the preview round-trip
+AFTER the open-tab check and BEFORE `mode='running'`. With a clickable app, a candidate opened in
+that window would have been repaired while open — the exact silent re-stamp the block prevents.
+**Now re-checked after that await, and again before batch 2** (a blocker appearing between batches
+halts the cascade exactly as a failed delicate batch does).
+
+**Verified, not assumed (the panel told me to):** a second press of the banner or the Settings
+button while the dialog is up only re-sets one boolean under a single `{#if}` — it cannot mount a
+second dialog (`+layout.svelte:8297, 10606, 10679`).
+
+**Boss rulings on the two declined questions:** behind the card — **faintly dimmed, clickable**
+(18% tint, not none); the class-wide residual (a failed close-flush leaves old content in the net →
+dirty on reopen → re-stamp after repair; pre-existing, on his manual path too) — **file it, fix
+after the drain cycle** → PJ-462 at PCS.
+
+**Built:** `MoldRepairDialog.svelte` only, ~12 lines, **zero new strings**: `class:mr-overlay--porous
+={mode === 'blocked'}`, `aria-modal={mode !== 'blocked'}`, the two CSS rules, and the two re-checks.
+Gates in flight: svelte-check · diff-scoped safety inspection (the change gates a write path) ·
+ui-inspector on the panel's one test · rebuild. **Not yet Boss-tested; not committed.**
+
+**§13 gates landed:** svelte-check **0 errors** (268 warnings, unchanged) · ui-inspector **APPROVED,
+19 claims, zero findings** — including live disk checks (the four Scratch backup files exist under
+`{16-hex}__{name}`; a restored copy still carries `cid_cn` + `created: "{{date}}"` so it re-qualifies
+as a mold; restart brings the banner back via `initializeApp → refreshLibraryCaches → idle scan`) ·
+binary **17:36:10**, edit 17:27:34 · **verified with a check that could fail:** the fresh stylesheet
+`0.C0ITB83c.css` carries the scoped `.mr-overlay--porous` rule with `pointer-events:none` and the 18%
+tint, and `.mr-overlay--porous .mr-card` with `pointer-events:auto`. Safety inspection pending; the
+test goes to the Boss only after it.
+
+### §13b — Safety inspection on the PJ-460 diff: TWO confirmed findings in RUNNING mode, both mine
+
+**MED, false-success — the ✕ is clickable while the repair runs.** `MoldRepairDialog.svelte` renders
+the ✕ outside the mode branches; `close()` hides the dialog and fires `onDone`, the parent unmounts
+it, **while `repair_stamped_molds` keeps writing in Rust for seconds** (sequential loop, no
+cancellation). Consequences: the receipt — including any "undone"/"skipped" outcome — is never
+shown; `refreshMoldRepairCount` runs mid-write and shows a stale banner count; and **the open-tab
+invariant is voided for the rest of the run**: the user can open a not-yet-repaired candidate,
+the engine repairs it underneath (`gate_write` suppresses the watcher, so the tab is never
+adopted), and the tab's next debounced save rewrites the stale content — `cid_cn` back,
+`kind: template` gone, index re-stamped, no error anywhere. Prescribed fix: **render ✕ only when
+`mode !== 'running'`** (and make `close()` a no-op while running).
+
+**LOW, TOCTOU — the running curtain blocks the mouse, not the keyboard.** The checks at click,
+after the preview await, and between batches cannot cover a tab opened DURING a batch (each
+`await invoke(...)` spans a whole multi-second batch). `handleGlobalKeydown` has no gate on the
+dialog, so a quick-switcher / command-palette shortcut mid-run opens a candidate with pre-repair
+bytes; never adopted; next save silently un-repairs it while the receipt reads "Repaired".
+Proportionate fix: **while `mode === 'running'`, swallow shortcut keys** (modifier combos +
+Escape) at the window in capture phase, released when running ends.
+
+Both pre-date the porous-overlay change in mechanism (the ✕ and the keyboard path existed in the
+first build) — the diff-scoped inspection is what surfaced them. **Fixed before commit per WA#6,
+then RE-INSPECTED** — the adversarial pass judges the fix, as with the engine MED earlier.
+
+**§13b fixes applied** (`MoldRepairDialog.svelte` only, zero new strings):
+- **MED:** the ✕ is rendered only when `mode !== 'running'`, and `close()` returns early while
+  running — while the engine writes, the dialog cannot be dismissed, so the receipt is always
+  shown and the open-tab invariant holds for the whole run.
+- **LOW:** a `$effect` that, while `mode === 'running'`, adds a `window` capture-phase keydown
+  listener swallowing any modifier combo and Escape, removed by its cleanup when running ends.
+  Placement verified against source: `+layout` attaches `handleGlobalKeydown` to `document` with
+  `capture:true` (`+layout.svelte:3828`); window-capture precedes it in the event path.
+Gates in flight: svelte-check · rebuild · **re-inspection** (the adversarial pass judges the fix).
+The inspector-approved PJ-460 test is unchanged by these guards (they touch only running mode).
+
+**§13b gates landed:** svelte-check **0 errors** · binary **17:47:07**, edit 17:38:56 · **verified
+on the RIGHT chunk with a check that could fail:** the compiled component (`kRnsrhoV.js`, located by
+`preview_mold_repair` — a symbol only this dialog invokes) carries the window keydown capture
+listener, the `"Escape"` swallow, `stopPropagation`, the `"running"` comparisons and the porous
+class toggle. Re-inspection pending; the test goes to the Boss only after it.
+
+**A locator lesson, second time today.** My first strict check grepped a chunk found by the English
+title string — that is the **i18n bundle** (`BjMykZaL.js`, same hash as hours earlier, confirmed by
+its `"Templates fixed"` value), so it showed zero guards and would have read as "the fix did not
+land." Earlier, the stylesheet check found a stale asset the same way. **Rule: locate a compiled
+artefact by a symbol unique to the code under test (a command name, a scoped class), never by a
+translated string or a class name shared with other components — and treat a same-hash filename
+as "content unchanged", which is itself a signal.**
+
+### §13c — Re-inspection: the two §13b findings are fixed; ONE new MED — the unclosed sibling surface
+
+**MED, cross-window-clobber.** The curtain and the keydown swallow guard the MAIN webview's mouse
+and keyboard. **The second screen is a separate Tauri webview neither can reach.** A click there
+emits `screen:open-in-main` (`secondScreen.ts:110-112`, fired from `SecondScreenPage.svelte`
+1175/1190/1218/1416 and the Cockpit node clicks) and `+layout.svelte:3798-3800` calls
+`openNoteTab(note.path, …)` **unconditionally**. Mid-batch (the awaited invoke spans a
+multi-second loop), that opens a not-yet-repaired candidate with pre-repair bytes; the engine
+rewrites it via `gate_write` (watcher-suppressed → the tab is never told); the receipt says ✓; the
+tab's next debounced save (no expectation passed, gate in shadow mode) re-stamps it silently.
+
+**This is the Whole-Ecosystem law, exactly:** I closed the hazard at two surfaces (mouse, keyboard)
+and left the third (second screen → main). The fix that honours the law is **one gate at the single
+place a tab mounts** — `openNoteTab` — so EVERY open path (second screen, quick switcher, wikilink,
+command palette, programmatic) is covered at once. **Signature and caller contract being read
+before writing**, because a guard that returns early can break a caller that depends on the return.
+
+**§13c fix applied — one gate, every caller (Whole-Ecosystem):**
+- `store.ts`: `export const moldRepairRunning = writable(false)` beside `openTabs`, documented with the
+  finding; and at the top of `openNoteTab` — the ONE place a tab mounts — `if (get(moldRepairRunning))
+  return;`. **Caller contract read before writing:** the function returns nothing and **none of the 67
+  call sites assigns its result** (`grep "= await openNoteTab\|= openNoteTab("` → empty), so the
+  early return breaks no caller. The second-screen handler (`+layout.svelte:3798-3800`) discards it
+  too — it is now covered without being touched, as are the quick switcher, wikilinks, the command
+  palette and every programmatic open.
+- `MoldRepairDialog.svelte`: imports the signal; an `$effect` mirrors `mode === 'running'` into it
+  and its cleanup resets it to `false` on every exit — including an unmount mid-run — so a stale
+  `true` can never lock note-opening after the dialog is gone.
+Gates in flight: svelte-check · vitest · rebuild · **re-inspection widened to both files** (the gate
+is on a central store function). The inspector-approved PJ-460 test is unchanged; the second-screen
+path it closes is not exercised by that test and will be disclosed as such.
+
+**§13c gate landed:** vitest **87 files / 1,008 tests, all passed** — the `openNoteTab` gate and the
+new store signal break no frontend test. svelte-check, rebuild and the two-file re-inspection pending.
+**§13c gate landed:** svelte-check **0 errors** (268 warnings, unchanged). Rebuild + two-file re-inspection pending.
+
+**§13c build verified — by OBSERVING the compiled output, not by trusting a regex.** Binary
+**18:03:07**, edits 17:55:31 / 17:55:37. The dialog and the store now share one fresh chunk
+(`Ca26-km3.js`, a new hash — content provably changed). All four guards are visible in it as
+emitted: the signal effect `g1.set(i(o)==="running"),()=>g1.set(!1)`; the keydown swallow
+`if(i(o)!=="running")return;const $=V=>{(V.ctrlKey||V.metaKey…`; the close guard
+`i(o)!=="running"&&(m(a,!1),…`; the conditional ✕ `i(o)!=="running"&&pe(ee)`.
+
+**Why my two "strict" regexes returned 0 — the third locator lesson today.** Svelte 5 compiles a
+`$state` read to a getter call `i(o)`; my pattern `\.set\([^)]{0,40}==="running"\)` excluded `)`,
+so the `)` inside `i(o)` broke the match. A check that returns 0 is only meaningful once the
+SHAPE of a true positive has been seen. **Rule: when a strict check fails, print the real context
+around the anchor and read it — never tighten or loosen the regex on a theory.** (The earlier
+locator lesson was the mirror image: a check that returned 1 for the wrong file.)
+
+### §13d — Re-inspection ×2: the second-screen gate holds; ONE new LOW — no re-entrancy guard
+
+**LOW, concurrency-race.** `startRepair` has no busy guard. On the default path (no sample shown)
+the Repair button stays mounted and enabled across `await showSample()` — one IPC round-trip
+reading every candidate — so a double-click launches **two concurrent `repair_stamped_molds`
+runs** over the same paths. Disk side is benign (per-path lock, identical bytes, `repair_one`
+re-proves and the loser refuses "no longer a stamped template"). **The frontend side is the
+defect:** whichever run finishes or refuses first sets `mode='summary'`, and the `$effect`
+immediately drops `moldRepairRunning` to false **while the other run's engine is still writing** —
+lifting the `openNoteTab` gate, the keydown swallow, and the close refusal for the remainder of a
+live run: the exact invariant the last three fixes exist to hold. Prescribed fix: a `busy` flag
+at entry (return early if set; clear in `finally`) and `disabled={busy}` on Repair / try-again.
+
+**The pattern across four findings in three rounds:** each fix was right and each exposed a
+sibling, because I never stated the invariant whole — *while the engine runs, NOTHING may change
+mode, close the dialog, or mount a tab.* Curtain, keydown, second-screen gate, and now re-entrancy
+are its four edges. Recorded so the next surface of this shape starts from the invariant.
+
+**§13d fix applied** (`MoldRepairDialog.svelte` only, zero new strings): a `busy` latch. `startRepair`
+is now a thin wrapper — `if (busy) return; busy = true; try { await startRepairInner() } finally
+{ busy = false }` — so the latch clears on EVERY exit path (blocked, error, summary) without
+rewriting the body; the Repair and "try again" buttons carry `disabled={busy}`. A second click
+during the preview await can no longer enter. Gates in flight: svelte-check · rebuild ·
+re-inspection ×3. The inspector-approved test is unchanged.
+**§13d gate landed:** svelte-check **0 errors** (268 warnings, unchanged). Rebuild + re-inspection ×3 pending.
+
+**§13d build verified — by OBSERVING, again.** Binary **18:15:02**, edit 18:07:39; dialog chunk
+`CNFbMDSM.js` (new hash — content changed). Among the chunk's 61 `finally{` sites, mine is
+unmistakable by reading: `async function M(){if(!i(O)){m(O,!0);try{await D()}finally{m(O,!1)}` —
+`O` = `busy`, `D` = `startRepairInner` — immediately after `showSample`'s catch. The wrapper IS the
+guard; a second click cannot enter across the await. (Method note: a `head -3` on a shared
+61-site list had shown only store helpers first — the limit, not the code, was hiding mine.)
+**§13d `disabled` bindings observed:** `Xe.disabled=i(O)` inside the review template effect (keyed
+`moldRepair.title`) = the Repair button; `ve.disabled=i(O)` inside the blocked effect (keyed
+`moldRepair.blockedTitle`) = "try again". Both bound to `busy`. Re-inspection ×3 pending; the test
+goes to the Boss only after it.
+
+### §13e — Re-inspection ×3: the latch holds; ONE new LOW — the openNoteTab gate is entry-only
+
+**LOW, TOCTOU (in-flight open).** `openNoteTab` checks `moldRepairRunning` only at ENTRY. A call
+that entered just before the Repair / try-again click — gate passed while nothing ran — and is
+still awaiting (`resolveNoteContent`, `ensure_cid_cn_cmd`, or the departing dirty tab's durable
+`flushOutgoing`) is in neither set: not yet in `openTabs` (so `currentOpenBlockers` cannot see it)
+and never re-gated before `openTabs.update` mounts it. On the porous blocked screen: click a
+candidate in the tree (open enters, parks on the flush) → click try-again → running → engine
+writes (watcher-suppressed) → the in-flight open resumes and mounts the PRE-repair bytes, clean →
+next save re-stamps silently while the receipt reads "Repaired". Window: tens of ms (≈500 ms only
+on the retry ladder), two human clicks inside it; bounded, backup exists, next scan re-surfaces.
+
+**My own rule, not applied where I delegated:** "re-check after every await" was applied inside the
+dialog and not inside the one gate it hands off to. Fix at the root: **re-read
+`get(moldRepairRunning)` immediately before each `openTabs.update` in `openNoteTab`**, restashing a
+consumed recovery-net entry on refusal so nothing is lost. Sites and net handling being READ first.
+
+**§13e fix applied** (`store.ts` only, zero new strings): `get(moldRepairRunning)` is re-read
+immediately before BOTH real mount points in `openNoteTab` — the replace-active-tab path (before
+`openTabs.update(tabs => tabs.map(...))`) and the append path (before `openTabs.update(tabs =>
+[...tabs, tab])`). On refusal each calls the existing `restashConsumedNet()` (self-guarded on
+`resolved.recoveredFromNet`, so safe unconditionally) and traces `openNoteTab:repairGate`, exactly
+as the flush-abort path does. The two `highlightTerm`-only updates are not mounts (the note is
+already open and already visible to the blocker check) and are left alone. Gates in flight:
+svelte-check · vitest · rebuild · re-inspection ×4.
+**§13e gate landed:** vitest **87 files / 1,008 tests, all passed**. svelte-check, rebuild, re-inspection ×4 pending.
+**§13e gate landed:** svelte-check **0 errors** (268 warnings, unchanged). Rebuild + re-inspection ×4 pending.
+
+**§13e build verified — OBSERVED, on session resume.** The previous Claude Code process ended with
+the rebuild done but unread and the re-inspection ×4 stopped mid-run. On resume: binary
+**18:27:41**, store edit 18:18:28; chunk `CBfmqZHb.js` (18:20:45) carries BOTH re-gates verbatim,
+located by the trace literal that survives minification —
+`if(cr(Gf)){T(),Ic("openNoteTab:repairGate",c.id,t);return}kn.update(B=>…` (replace-active-tab) and
+`…if(cr(Gf)){T(),Ic("openNoteTab:repairGate",I,t);return}kn.update(D=>[…` (append) — `cr(Gf)` =
+`get(moldRepairRunning)`, `T()` = `restashConsumedNet()`, `Ic` = `_traceNav`. 2 occurrences, as
+expected. Remote checked read-only before any pull: local == origin/main at `0a820f96`, nothing to
+pull, 3 files uncommitted (the PJ-460 work, correctly held until his test). Re-inspection ×4
+relaunched from its cached run (`wf_9f72724b-29c`); the test goes to the Boss only after it.
+
+### §13f — Re-inspection ×4: the mount-point re-gates hold; ONE new LOW — a mount site I said did not exist
+
+**LOW, cross-window-clobber (history navigation).** `loadTabHistoryEntry` (Alt-←/→) re-seeds a
+tab via `openNoteModel` at `store.ts:2148` with NO `moldRepairRunning` check. **My own comment —
+"`openNoteTab` — the ONE place a tab mounts" — is FALSE**: `noteModel.ts:195` and `store.ts:692/723`
+list `loadTabHistoryEntry` as a re-seed site. A candidate in the active tab's HISTORY is invisible
+to `currentOpenBlockers()` (it inspects `openTabs` paths only). Reachable during a run two ways my
+keydown swallow (ctrl/meta/alt/Escape only) does not stop: a nav-back key the user re-mapped to a
+bare F-key or Shift+F-key (the Hotkeys screen accepts both, `utils.ts:888-889`), or Tab-focus onto
+NotePane's back arrow behind the curtain (no focus trap, no `inert`) + Enter. Then: pre-repair
+bytes mount → engine writes (watcher-suppressed) → receipt "Repaired" → next save re-stamps.
+
+**Two class fixes, not one instance fix:** (1) enumerate EVERY `openNoteModel` call site from the
+code's own lists and re-gate each that mounts from disk — the comment gets corrected to name
+them all; (2) running mode renders NO interactive control (the ✕ is hidden, no buttons), so the
+swallow stops **every** keydown for the seconds of the run — closing bare F-keys, Shift-combos,
+and Tab-focus travel behind the curtain in one rule. Sites being READ before writing.
+
+**§13f fixes applied, enumeration first.** All `openNoteModel` sites in `store.ts` read in context:
+| site | function | mounts an UNLISTED path mid-run? | action |
+|---|---|---|---|
+| 3537 / 3564 | `openNoteTab` (replace / append) | yes | already gated (§13e) |
+| 2148 | `loadTabHistoryEntry` (Alt-←/→) | **yes — history is not in `openTabs`** | **gated now**, mirroring the two above (`restashConsumedNet()` in scope, `loadTabHistoryEntry:repairGate` trace) |
+| 1207 | `reloadTabsFromDisk` | no — re-seeds tabs already in `openTabs`, which block the run | none |
+| 5052 | `renameItem` | no — same; and running mode's curtain + full swallow prevent a rename | none |
+| 3877 | `restoreSessionTabs` | no — boot only; the dialog cannot be running | none |
+**My false comment ("the ONE place a tab mounts") is corrected** to this enumeration at the signal's
+doc block, with the rule that a future disk-reading mount for an unlisted path must gate too.
+**Swallow widened:** running mode has no interactive control, so every keydown is stopped for the
+seconds of the run — bare F-keys, Shift-combos and Tab-focus travel closed in one rule.
+Gates in flight: svelte-check · vitest · rebuild; re-inspection ×5 launches after the comment lands.
+**§13f gate landed:** vitest **87 files / 1,008 tests, all passed**. svelte-check, rebuild, re-inspection ×5 pending.
+**§13f gate landed:** svelte-check **0 errors** (268 warnings, unchanged). Rebuild + re-inspection ×5 pending.
+
+**§13f build verified — OBSERVED.** Binary **19:26:01**, edits 19:15:00 / 19:15:35; chunk `DQ8f56O_.js`
+(new hash). The history gate as emitted: `if(cr(gm)){a(),yc("loadTabHistoryEntry:repairGate",t,e);
+return}dv(t,e,o)` — 1 occurrence. The swallow as emitted: `!=="running")return;const W=Z=>{Z.stop
+Propagation(),Z.preventDefault()};return window.addEventListener("keydown"` — no condition.
+
+### §13g — Re-inspection ×5: TWO confirmed, both mine, one of them a no-op gate I shipped
+
+**MED, false-success — the invariant was incomplete: it must hold while BUSY, not only while
+running.** `close()` refuses only on `mode === 'running'`. The `busy` window that precedes running
+— `await showSample()`, one IPC that reads every candidate — leaves the ✕ (rendered for `mode !==
+'running'`) and both Cancel/Close buttons (never `disabled={busy}`) live. Cancel there → `visible=
+false`, `onDone` → `+layout` unmounts the dialog → the `$effect`s tear down (`moldRepairRunning`
+→ false; the swallow never armed) → the pending promise resumes on the DESTROYED component (Svelte
+5 `store_get` does not throw after unmount; `mode='running'` is a plain source write with no live
+effect to react) → `invoke('repair_stamped_molds')` runs anyway. **Files modified after an explicit
+Cancel**, no receipt, and every guard off for the seconds of the run. Fix: `close()` also returns
+while `busy`; ✕ renders only when `!busy && mode !== 'running'`; `disabled={busy}` on both Cancel
+buttons; and `if (!visible) return;` after EVERY await in `startRepairInner`, so a dismissed dialog
+can never launch the engine.
+
+**LOW, content-corruption — my §13f `loadTabHistoryEntry` gate does not guard.** I placed it before
+`openNoteModel`; the MOUNT is the `openTabs.update` a few lines earlier, which re-seeds the tab's
+path/content — NoteEditor's `ensureModel` effect then opens a clean model from `tab.content`
+regardless. In `openNoteTab` I gated BEFORE `openTabs.update` (correct); here I mirrored the wrong
+line. Fix: move the gate to immediately before that `openTabs.update`, so a refused nav leaves the
+tab on its current note. **Lesson: the mount is the tab-store write, not the model call.**
+
+**§13g fixes applied** (zero new strings):
+- `MoldRepairDialog.svelte`: `close()` returns while `mode === 'running' || busy`; the ✕ renders only
+  when `mode !== 'running' && !busy`; both Cancel/Close buttons carry `disabled={busy}`; and
+  `if (!visible) return;` follows EVERY await in `startRepairInner` (after the preview read and
+  after each engine invoke) — so a dismissed dialog can never launch or continue the engine. The
+  invariant is now stated whole in code: **while busy or running, the dialog cannot be dismissed,
+  no key reaches the app, and no tab may mount.**
+- `store.ts`: the no-op gate before `openNoteModel` is removed; the gate now sits immediately
+  BEFORE the `openTabs.update` in `loadTabHistoryEntry` — the tab-store write that IS the mount —
+  with the comment recording why the first placement did not guard. Gates next: svelte-check ·
+  vitest · rebuild · re-inspection ×6.
+
+**§13g gate — vitest did NOT pass: 3 of 1,008 failed**, all in `tests/sight-v6/tradition-perf.test.ts`
+(per-tradition switch ≤16 ms on 7,636 notes: `maldonado-torres`, `time-dome`, +1). Reported as-is.
+Two prior runs this session passed 1,008/1,008 with the same store gate present; the run coincided
+with a release build, a safety inspection and a type-check all competing for the CPU. **Contention
+is the leading explanation and remains a HYPOTHESIS** until the one file is rerun alone on a quiet
+machine after the build lands. What the test imports is being read to establish independence from
+the diff by evidence, not inference.
+**Independence established from the file itself:** `tradition-perf.test.ts` imports only
+`sight/v6/anchor`, `sight/v6/traditions`, `sight/v6/types` — zero references to `libraries/store`,
+`MoldRepairDialog`, `openNoteTab`, `loadTabHistoryEntry` or `moldRepairRunning`. It asserts
+`expect(elapsed).toBeLessThan(16)` on wall-clock. The diff cannot reach it; CPU availability can.
+**The isolated rerun waits for the release build to finish** — rerunning under the same load would
+measure the same contention and prove nothing either way.
+**§13g gate landed:** svelte-check **0 errors** (268 warnings, unchanged). Rebuild + re-inspection ×6 pending; the isolated perf rerun waits on the rebuild.
+
+**§13g gates landed.** Isolated perf rerun after the build: `tradition-perf.test.ts` **27/27 passed** —
+the earlier 3 failures were CPU contention, now PROVEN by rerun rather than assumed.
+**Re-inspection ×6: ZERO confirmed findings** — a genuine zero (1 agent, completed, 0 errors). Six
+rounds: MED ✕-mid-run · LOW keyboard-through-curtain · MED second-screen open · LOW re-entrancy ·
+LOW entry-only gate · LOW history mount + LOW no-op gate + MED busy-window close — each real, each
+fixed, each re-inspected; the sixth pass found nothing.
+**Build OBSERVED:** binary **19:36:13**, edits 19:27:57 / 19:28:14; chunk `DMD6wTGO.js`. History gate
+precedes the tab-store write as emitted: `loadTabHistoryEntry:repairGate",t,e);return}if(kn.update(
+h=>h.map(…` — the `.update(` follows the gate's `return`. ✕ condition: `!=="running"&&!i(O)&&ue(Q)`
+(`i(O)` = busy). Two `!visible` returns after the engine invokes. The close-refusal's compiled shape
+is being READ (a regex printed nothing — the lesson says print and read, never re-guess the regex).
+**Close-refusal OBSERVED:** `function B(){var W,Z;i(o)==="running"||i(O)||(m(a,!1),(W=e.onDismiss)…` — the
+compiler emitted `close()` as a short-circuit, and `i(O)` (busy) is in the refusal. All §13g fixes are
+now seen in the shipped chunk. **Every gate green; the PJ-460 test goes to the Boss on binary 19:36:13.**
+
+### §13h — PJ-460 BOSS-PASSED, all four steps. CLOSED.
+
+| step | witnessed on his screen | result |
+|---|---|---|
+| 1 | *"Close these files first"* naming `LYT's Book Notemaking Template.md`; the app faintly dimmed but visible behind the card (the porous curtain, as ruled) | ✅ |
+| 2 | the tab's × behind the card **closed the tab while the dialog stayed up** — the fix itself | ✅ |
+| 3 | "I've closed them — try again" → running → *"Templates fixed — 1 fixed, 0 skipped"*, backup path, ✓ with the stamp named | ✅ |
+| 4 | **with the tab still open, "try again" stayed on "Close these files first"; clicking had no effect** — the block held while the curtain was open | ✅ |
+
+**PJ-460 CLOSED.** Six inspection rounds between the panel's design and his pass, each finding real
+and fixed: ✕ mid-run · keyboard through the curtain · second-screen open · re-entrancy · entry-only
+gate · history mount + a no-op gate + the busy-window close. The invariant now stands whole in code
+and was witnessed holding on his screen: **while the repair is busy or running, the dialog cannot be
+dismissed, no key reaches the app, and no tab may mount by any enumerated path.** Third
+Boss-validated fix of the drain cycle (after PJ-454's guard and door, PJ-455).
+**Disk-verified after his report:** `Scratch\Templates\LYT's Book Notemaking Template.md` — no root
+`cid_cn`, `kind: template` present. The receipt's "1 fixed" is confirmed by the file. **PCS in
+progress:** ledger v2.12 (PJ-460 closed; PJ-462, PJ-463 filed), orientation v4.31, MoCh
+`2026-09-01-1730`, English help + manual updated (the try-again affordance; running mode
+undismissable by design), 8 translated manuals in flight, handover refreshed. Commit follows.

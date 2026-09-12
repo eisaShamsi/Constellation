@@ -1626,7 +1626,8 @@ startup with a **Review templates to fix** button (also under Settings → Unive
 Libraries → Templates). The review lists each affected file, shows the exact
 two-line change on a sample, and writes nothing until you click **Fix**. Every file
 is backed up first, and the fix refuses to run while any listed file is open in a
-tab.
+tab — close that tab behind the dialog, then press **I've closed them — try again**.
+While a fix is running the dialog cannot be dismissed, by design.
 
 ### New note from template
 

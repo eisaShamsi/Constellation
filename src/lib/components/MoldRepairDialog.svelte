@@ -29,7 +29,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { t } from '$lib/i18n';
-	import { openTabs } from '$lib/libraries/store';
+	import { openTabs, moldRepairRunning } from '$lib/libraries/store';
 
 	interface MoldCandidate {
 		path: string;
@@ -69,6 +69,12 @@
 	let errorText = $state<string | null>(null);
 	let outcomes = $state<MoldRepairOutcome[]>([]);
 	let report = $state<MoldRepairReport | null>(null);
+	// Safety inspection (re-run ×2, LOW concurrency-race): a re-entrancy latch. Without it a
+	// double-click on Repair during the preview await launches TWO engine runs; the loser's refusal
+	// flips mode to 'summary' while the winner is still writing, which drops `moldRepairRunning`
+	// and lifts every running-mode guard for the rest of a live run. Held across the whole of
+	// startRepair, cleared in `finally` on every exit path; the buttons are disabled while set.
+	let busy = $state(false);
 
 	// The last path segment — what the user sees in the File Explorer.
 	function baseName(p: string): string {
@@ -122,6 +128,16 @@
 	}
 
 	async function startRepair() {
+		if (busy) return;
+		busy = true;
+		try {
+			await startRepairInner();
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function startRepairInner() {
 		errorText = null;
 		// (1) Open-tab hard block, re-checked at THIS click — not at scan time.
 		openBlockers = currentOpenBlockers();
@@ -129,6 +145,15 @@
 
 		// Ensure we have previews (for the delicate/ordinary split); compute if the user skipped the sample.
 		if (previews.size === 0) { await showSample(); if (errorText) return; }
+		// Re-inspection ×5: a dismissed dialog must never launch the engine. `busy` now refuses close
+		// across this await, so this is defense in depth against any other unmount path.
+		if (!visible) return;
+
+		// PJ-460 (panel): the await above is a window. With a clickable app behind the blocked
+		// screen, a candidate opened DURING that wait would otherwise be repaired while open —
+		// exactly the silent re-stamp the block exists to prevent. Re-check after every await.
+		openBlockers = currentOpenBlockers();
+		if (openBlockers.length > 0) { mode = 'blocked'; return; }
 
 		const delicate = candidates.map((c) => c.path).filter((p) => previews.get(p)?.needs_care);
 		const ordinary = candidates.map((c) => c.path).filter((p) => !previews.get(p)?.needs_care);
@@ -140,6 +165,7 @@
 			if (delicate.length > 0) {
 				phaseLabel = $t('moldRepair.phaseDelicate');
 				const r1 = await invoke<MoldRepairReport>('repair_stamped_molds', { paths: delicate });
+				if (!visible) return; // re-inspection ×5: never continue on a dismissed dialog
 				outcomes = [...outcomes, ...r1.outcomes];
 				report = r1;
 				if (r1.failed > 0) {
@@ -148,10 +174,19 @@
 					return; // do not touch the ordinary files if the tricky ones failed
 				}
 			}
+			// PJ-460: a blocker that appeared between the batches halts the cascade the same way a
+			// failed delicate batch does — nothing in batch 2 is touched.
+			if (ordinary.length > 0 && currentOpenBlockers().length > 0) {
+				errorText = $t('moldRepair.blockedLede');
+				phaseLabel = '';
+				mode = 'summary';
+				return;
+			}
 			// Batch 2 — the ordinary files. Re-scan is implicit: the engine re-proves each file.
 			if (ordinary.length > 0) {
 				phaseLabel = $t('moldRepair.phaseOrdinary');
 				const r2 = await invoke<MoldRepairReport>('repair_stamped_molds', { paths: ordinary });
+				if (!visible) return; // re-inspection ×5: never continue on a dismissed dialog
 				outcomes = [...outcomes, ...r2.outcomes];
 				report = mergeReports(report, r2);
 			}
@@ -176,13 +211,63 @@
 		};
 	}
 
-	function close() { visible = false; onDismiss?.(); onDone?.(); }
+	// Safety inspection (PJ-460 diff, MED): closing while the engine is mid-run unmounts the dialog,
+	// hides the receipt, refreshes the banner count against a half-written universe, and — worst —
+	// voids the open-tab invariant for the rest of the run (a candidate opened after ✕ is repaired
+	// underneath its tab and the tab's next save silently re-stamps it). The Rust loop has no
+	// cancellation, so the only honest behaviour is: while running, the dialog cannot be closed.
+	function close() {
+		// Re-inspection ×5 (MED): the invariant holds while BUSY, not only while running. The busy
+		// window before running (the preview read) left ✕/Cancel live; a Cancel there unmounted the
+		// dialog and the pending work resumed on the destroyed component and launched the engine
+		// anyway — files modified after an explicit Cancel, with every guard torn down.
+		if (mode === 'running' || busy) return;
+		visible = false; onDismiss?.(); onDone?.();
+	}
+
+	// Safety inspection (PJ-460 diff, LOW): the running curtain blocks the MOUSE, not the keyboard —
+	// a quick-switcher / command-palette shortcut mid-batch can open a candidate with pre-repair
+	// bytes, which is then repaired underneath its tab and un-repaired by its next save. While the
+	// engine runs, swallow shortcut keys (any modifier combo, and Escape) at the WINDOW in capture
+	// phase — that precedes +layout's document-capture handler in the event path (verified:
+	// `document.addEventListener('keydown', handleGlobalKeydown, true)`). Plain typing is untouched;
+	// nothing behind a running modal should be receiving it anyway. Released the moment running ends.
+	// Safety inspection (re-run, MED cross-window-clobber): the curtain and the keydown swallow reach
+	// only THIS webview. A click in the second screen emits `screen:open-in-main`, which the main
+	// window honours — so the real gate lives where every tab mounts, `openNoteTab`, keyed on this
+	// shared signal. Mirror the running state into it; the cleanup resets it on every exit, including
+	// an unmount mid-run, so a stale `true` can never lock note-opening after the dialog is gone.
+	$effect(() => {
+		moldRepairRunning.set(mode === 'running');
+		return () => moldRepairRunning.set(false);
+	});
+
+	$effect(() => {
+		if (mode !== 'running') return;
+		// Re-inspection ×4 (LOW): modifier-only swallowing missed a nav key the user re-mapped to a
+		// bare F-key or Shift+F-key, and Tab-focus travelling to a button behind the curtain. Running
+		// mode renders NO interactive control (the ✕ is hidden, there are no buttons — only a spinner),
+		// so for the seconds the engine writes there is nothing a key could legitimately do here.
+		// Swallow every keydown: that closes bare F-keys, Shift-combos and Tab-focus travel in one rule.
+		const swallow = (e: KeyboardEvent) => {
+			e.stopPropagation();
+			e.preventDefault();
+		};
+		window.addEventListener('keydown', swallow, true);
+		return () => window.removeEventListener('keydown', swallow, true);
+	});
 </script>
 
 {#if visible}
-<div class="mr-overlay" role="dialog" aria-modal="true" aria-label={$t('moldRepair.title')}>
+<!-- PJ-460 (the Boss found it): on the BLOCKED screen the curtain must not swallow clicks, or the
+     user cannot close the offending tab behind it and "try again" can never do its job. The curtain
+     was never the safety device (Ctrl+W already reached the tab through it); the safety is the
+     click-time re-check in startRepair, which stays. Precedent: StyleSetter's `--live` overlay. -->
+<div class="mr-overlay" class:mr-overlay--porous={mode === 'blocked'} role="dialog" aria-modal={mode !== 'blocked'} aria-label={$t('moldRepair.title')}>
 	<div class="mr-card" dir="auto">
-		<button class="mr-x" onclick={close} aria-label={$t('common.close')}>✕</button>
+		{#if mode !== 'running' && !busy}
+			<button class="mr-x" onclick={close} aria-label={$t('common.close')}>✕</button>
+		{/if}
 
 		{#if mode === 'review'}
 			<h2 class="mr-title">{$t('moldRepair.title')}</h2>
@@ -223,8 +308,8 @@
 			{#if errorText}<p class="mr-err">{errorText}</p>{/if}
 
 			<div class="mr-actions">
-				<button class="mr-cancel" onclick={close}>{$t('common.cancel')}</button>
-				<button class="mr-go" onclick={startRepair}>{$t('moldRepair.repair', { count: String(candidates.length) })}</button>
+				<button class="mr-cancel" onclick={close} disabled={busy}>{$t('common.cancel')}</button>
+				<button class="mr-go" onclick={startRepair} disabled={busy}>{$t('moldRepair.repair', { count: String(candidates.length) })}</button>
 			</div>
 		{:else if mode === 'blocked'}
 			<h2 class="mr-title">{$t('moldRepair.blockedTitle')}</h2>
@@ -233,8 +318,8 @@
 				{#each openBlockers as p}<li>{baseName(p)}</li>{/each}
 			</ul>
 			<div class="mr-actions">
-				<button class="mr-cancel" onclick={close}>{$t('common.close')}</button>
-				<button class="mr-go" onclick={() => { openBlockers = currentOpenBlockers(); if (openBlockers.length === 0) startRepair(); }}>{$t('moldRepair.recheck')}</button>
+				<button class="mr-cancel" onclick={close} disabled={busy}>{$t('common.close')}</button>
+				<button class="mr-go" onclick={() => { openBlockers = currentOpenBlockers(); if (openBlockers.length === 0) startRepair(); }} disabled={busy}>{$t('moldRepair.recheck')}</button>
 			</div>
 		{:else if mode === 'running'}
 			<h2 class="mr-title">{$t('moldRepair.runningTitle')}</h2>
@@ -269,6 +354,10 @@
 		background: color-mix(in srgb, var(--background-primary) 55%, transparent);
 		display: flex; align-items: center; justify-content: center; padding: 24px;
 	}
+	/* PJ-460 — blocked screen only: faintly dimmed (Boss-ruled) but CLICKABLE behind the card, so the
+	   tab strip's × is reachable. The card itself keeps taking clicks. */
+	.mr-overlay--porous { background: color-mix(in srgb, var(--background-primary) 18%, transparent); pointer-events: none; }
+	.mr-overlay--porous .mr-card { pointer-events: auto; }
 	.mr-card {
 		background: var(--background-primary); color: var(--text-normal);
 		border: 1px solid var(--background-modifier-border); border-radius: 10px;

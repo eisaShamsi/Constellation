@@ -1975,6 +1975,29 @@ export function wasRecentlyWritten(filePath: string): boolean {
 
 // ─── Multi-tab state ───
 export const openTabs = writable<OpenTab[]>([]);
+/**
+ * PJ-454 / PJ-460 — TRUE while the mold-repair engine is mid-run.
+ *
+ * Safety inspection (2026-09-01, MED cross-window-clobber): while the repair door's batch is
+ * awaited, a candidate opened in a tab receives the PRE-repair bytes; the engine then rewrites
+ * the file through the write gate (watcher-suppressed, so the tab is never told), and the tab's
+ * next debounced save silently re-stamps it — undoing a repair the receipt reported as done. The
+ * door guards the main window's mouse (curtain) and keyboard (capture swallow), but a click in
+ * the SECOND SCREEN — a separate webview — emits `screen:open-in-main`, which the main window
+ * honoured unconditionally. So the gate lives at the MOUNT, not at the callers.
+ *
+ * The mount sites, enumerated from the code (re-inspection ×4 corrected an earlier claim here
+ * that `openNoteTab` was "the ONE place a tab mounts" — it is not):
+ *   - `openNoteTab`, two mount points (replace-active-tab, append) — GATED, re-read at the mount.
+ *   - `loadTabHistoryEntry` (Alt-←/→) — GATED: a history entry is NOT in `openTabs`, so it is the
+ *     one path that can bring an unlisted candidate into a tab mid-run.
+ *   - `reloadTabsFromDisk` / `renameItem` — re-seed tabs ALREADY in `openTabs`; a candidate open
+ *     in a tab already blocks the run from starting, so these need no gate.
+ *   - `restoreSessionTabs` — boot only; the dialog cannot be running at boot.
+ * A future mount site that reads disk for a path not in `openTabs` must gate here too.
+ * Set by `MoldRepairDialog` for the seconds the engine runs; reset on completion or unmount.
+ */
+export const moldRepairRunning = writable<boolean>(false);
 export const activeTabId = writable<string | null>(null);
 
 export const activeTab = derived(
@@ -2100,6 +2123,13 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 		// (or any future cross-library nav) don't keep the old library's
 		// name/path on the tab.
 		const { library: resolvedLibrary } = deriveLibraryForPath(filePath);
+
+		// PJ-460 (re-inspection ×4 found the site; ×5 found my gate a NO-OP): history navigation is
+		// the one path that brings a candidate NOT in openTabs into a tab mid-run. The MOUNT is this
+		// `openTabs.update` — NoteEditor's ensureModel effect opens the model from `tab.content`
+		// regardless of the openNoteModel call below — so the gate must sit HERE, before the tab-store
+		// write (as openNoteTab's two gates do), leaving a refused nav on its current note.
+		if (get(moldRepairRunning)) { restashConsumedNet(); _traceNav('loadTabHistoryEntry:repairGate', tabId, filePath); return; }
 
 		openTabs.update(tabs => tabs.map(t => {
 			if (t.id !== tabId) return t;
@@ -3277,6 +3307,9 @@ function deriveTabName(filePath: string, content: string): string {
 }
 
 export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string, targetLine?: number, preserveNet?: boolean) {
+	// PJ-460 (safety inspection, MED): no tab may mount while the mold-repair engine is writing —
+	// see `moldRepairRunning`. Safe for every caller: none of the 67 call sites uses the return.
+	if (get(moldRepairRunning)) return;
 	const tabs = get(openTabs);
 
 	// If the same file is already the active tab, just update highlight
@@ -3487,6 +3520,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		if (trimmedHistory.length > 50) trimmedHistory.shift();
 		const newHistoryIndex = trimmedHistory.length - 1;
 
+		// PJ-460 (re-inspection ×3, LOW TOCTOU): the entry gate above cannot see a repair that
+		// STARTED while this call was awaiting (the read, the identity stamp, or the departing tab's
+		// flush). Re-read the signal at the moment of mounting — the same "re-check after every
+		// await" rule the dialog applies — and abort exactly as the flush-abort path does.
+		if (get(moldRepairRunning)) { restashConsumedNet(); _traceNav('openNoteTab:repairGate', currentTab.id, filePath); return; }
+
 		openTabs.update(tabs => tabs.map(t => {
 			if (t.id !== currentTab.id) return t;
 			return {
@@ -3535,6 +3574,8 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		cursorPos,
 		scrollTop,
 	};
+	// PJ-460 (re-inspection ×3): same re-gate at the second mount point — see above.
+	if (get(moldRepairRunning)) { restashConsumedNet(); _traceNav('openNoteTab:repairGate', id, filePath); return; }
 	openTabs.update(tabs => [...tabs, tab]);
 	openNoteModel(id, filePath, content); // MIG-076 §C — model born with the tab, synchronously
 	// PJ-102b — net-recovered content is UNSAVED work: born dirty + true disk baseline.

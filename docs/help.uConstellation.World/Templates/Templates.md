@@ -41,9 +41,13 @@ stamp) and one line added (`kind: template`); nothing else in the file changes.
 Nothing is written until you click **Fix**. Every file is backed up first (the
 receipt shows where), and a file whose change does not verify is left untouched.
 
-If one of the listed files is open in a tab, the fix refuses to run and names it —
-close that file first. The review only ever covers the active universe's own
-files: a template in another universe is fixed when that universe is open.
+If one of the listed files is open in a tab, the fix refuses to run and names it.
+You can close that tab right there — the screen behind the card stays clickable —
+then press **I've closed them — try again**. While a fix is actually running, the
+dialog cannot be dismissed and no shortcut reaches the app; that is deliberate, so
+nothing can overwrite a file mid-repair. The review only ever covers the active
+universe's own files: a template in another universe is fixed when that universe
+is open.
 
 ## Template Variables
 
