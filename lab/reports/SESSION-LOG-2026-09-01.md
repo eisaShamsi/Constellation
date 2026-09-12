@@ -889,3 +889,51 @@ Boss-validated fix of the drain cycle (after PJ-454's guard and door, PJ-455).
 progress:** ledger v2.12 (PJ-460 closed; PJ-462, PJ-463 filed), orientation v4.31, MoCh
 `2026-09-01-1730`, English help + manual updated (the try-again affordance; running mode
 undismissable by design), 8 translated manuals in flight, handover refreshed. Commit follows.
+
+---
+
+## §14 — SESSION CLOSE: state of standing (SO#5), and the PCS
+
+**Boss: "PCS + Orientation, and prepare the next order handover file and prompt."**
+
+### (a) Verified-shipped and Boss-tested this session — all on `main`, pushed
+| commit | what | Boss test |
+|---|---|---|
+| `cc507561` → proven at `b03ed34d` | **PJ-454 guard** — the Two-Signal Choke Point in `canonical.rs` | 3 cases: in-folder, out-of-folder self-declared, ordinary note still stamped ✅ |
+| `b03ed34d` | **PJ-455** — tree refresh at the write (4 creation commands) + the outside-universe Template-folder warning | 4 steps ✅ |
+| `0a820f96` | **PJ-454 repair door** — banner · dialog · Settings fallback · `preview_mold_repair` · own-libraries only | Stage 1 + Stage 2 on real files; **موسوعة عيسى's 4 repaired**, disk-confirmed ✅ |
+| `82a574e4` | **PJ-460** — porous blocked-screen curtain + the complete running-state invariant (6 inspection rounds) | 4 steps incl. "block still holds" ✅ |
+
+### (b) In flight / uncommitted
+**Nothing.** Tree clean at `82a574e4`. No untested code on `main`.
+
+### (c) Known-broken, filed, not fixed
+- **PJ-461** (LOW) — `--bg-primary` / `--bg-active` / `--bg-modifier-border` do not exist in `theme.css`;
+  used at `CalendarPanel.svelte:287,291` and `+layout.svelte:11553,12291,12309`.
+- **PJ-462** (LOW, Boss: after the drain) — a failed close-flush leaves stamped text in the recovery net.
+- **PJ-463** (LOW) — wall-clock perf tests fail under CPU load (27/27 alone).
+
+### (d) Pending, not started
+- **Eisa Universe's 39 molds** — through the same door with Eisa Universe active. **His click.** Scale
+  (39 vs the tested 4) is undisclosed territory; the ledger lists it before the rehearsal, but the
+  rehearsal-first order is defensible and the choice is his.
+- **The deliberate-failure rehearsal on copies** — halt-on-failure and re-scan-between-batches have
+  NEVER fired and have no test. Owed before PJ-456's 107-file wave.
+- **PJ-456** second wave (approve by enumeration, never by predicate) · **PJ-457** the 18 GB duplicate
+  (link the original, verify 13 links, bin the copy) · **PJ-458** unwired creation commands · **PJ-459**
+  English-only Templates help topic · the **multi-folder templates setting** (Boss-ruled for this cycle)
+  · the umbrella unpack **PJ-264 / PJ-378** · then PJ-434, PJ-438.
+
+### (e) Documentation drift
+None known. Orientation → **v4.32** (this close). Ledger **v2.12** — **reviewed at close, no change**
+(SO#9: everything surfaced this session is filed: PJ-455…PJ-463). MoCh `1230` + `1730`. Help topic +
+manual + 8 translated manuals current for the door and its try-again affordance (PJ-459 records the
+6 manuals with no template section and the English-only help topic). Handover:
+**`HANDOVER-2026-09-01-close.md`** supersedes `HANDOVER-2026-09-01.md` for the next session.
+
+### The per-cycle whole-app inspection — deliberately NOT run at this boundary
+The standing cadence makes each session-close PCS a cycle boundary for the whole-app sweep. **The
+Boss ruled this cycle a DRAIN cycle — "fix the backlog, run NO new whole-app hunt"** — after the last
+sweep spent its budget re-proving known bugs. That ruling governs; the sweep resumes when the drain
+is declared done. Every build this session had its diff-scoped inspection (nine runs; every confirmed
+finding fixed before its commit).
