@@ -33,7 +33,7 @@
 //! undoes itself on the next launch.** So the two edits land in ONE write, or not at all.
 
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 /// One file the strict rule identifies, with the evidence a human needs to judge it.
@@ -250,27 +250,101 @@ pub(crate) fn strip_stamp_and_mark_template(content: &str) -> Option<String> {
 #[tauri::command(async)]
 pub fn scan_stamped_molds(app: tauri::AppHandle) -> Result<Vec<MoldCandidate>, String> {
     let libs = crate::libraries::load_libraries(&app);
+    let foreign = crate::libraries::foreign_library_roots(&app, &libs);
     let inbound = inbound_cid_counts(&app);
+    Ok(scan_stamped_molds_in(&libs, &foreign, &inbound))
+}
+
+/// The scan, free of `AppHandle`, so a test drives THIS function and not a copy of its loop.
+///
+/// Scoped as `index_repair::run_full` scopes the same collector (panel ruling 2026-09-12):
+/// top-level own roots only, a linked universe's files dropped after collection, and each file
+/// attributed by `library_name_for_path` — the resolver that stamps `note_meta.library_name`, so
+/// the review screen's group heads agree with the index by identity of function.
+///
+/// Deliberately NO dedupe: a dedupe would make the on-screen count unable to disagree with a
+/// re-introduced double walk. The guard is
+/// `pj454_scan_lists_a_mold_in_a_nested_own_library_once_under_its_owner`, which carries the
+/// incident (74 rows for 39 files) and was written RED against the previous loop.
+///
+/// One thing the plain top-level rule got wrong (safety inspection 2026-09-12): a nested own
+/// library the parent's walk cannot ENTER — a dot-named path component, or a junction — was
+/// skipped as a start point too, so its molds were silently absent (the previous loop, which
+/// started at every own root, listed them). Rather than a second copy of the collector's skip
+/// rules, which would drift, the collector's own behaviour is the oracle: after the top-level
+/// walk, a nested root that no collected path falls under is walked from its own root —
+/// shortest first, so a nested-in-nested root sees its parent's second-pass walk and is not
+/// listed twice. Guard: `pj454_scan_reaches_a_nested_own_library_the_parent_walk_cannot_enter`.
+pub(crate) fn scan_stamped_molds_in(
+    libs: &[crate::libraries::LibraryInfo],
+    foreign: &HashSet<String>,
+    inbound: &BTreeMap<String, u32>,
+) -> Vec<MoldCandidate> {
     let mut out: Vec<MoldCandidate> = Vec::new();
-    for lib in &libs {
-        let mut paths: Vec<PathBuf> = Vec::new();
-        crate::libraries::collect_md_paths(Path::new(&lib.path), &mut paths);
-        for p in paths {
-            let Ok(content) = std::fs::read_to_string(&p) else { continue };
-            let Some((cid, syntax)) = mold_evidence(&content) else { continue };
-            let path = p.to_string_lossy().to_string();
-            out.push(MoldCandidate {
-                stamp_date: stamp_date(&cid),
-                inbound_cid_links: inbound.get(&cid).copied().unwrap_or(0),
-                path,
-                library: lib.name.clone(),
-                cid_cn: cid,
-                syntax: syntax.to_string(),
-            });
+    // Every path a walk has collected so far, normalized — the oracle for "did a walk enter it".
+    let mut reached: Vec<String> = Vec::new();
+
+    let (top, mut nested): (Vec<_>, Vec<_>) = libs.iter().partition(|lib| {
+        !crate::libraries::path_is_under_any(&lib.path, &crate::libraries::nested_library_paths(libs, &lib.path))
+    });
+    // A root under another own root is normally reached by the parent's walk — walk the top level first.
+    for lib in top {
+        walk_own_root(lib, libs, foreign, inbound, &mut out, &mut reached);
+    }
+    // Then the nested roots the walks so far did not enter, shortest path first.
+    nested.sort_by_key(|lib| norm_path(&lib.path).len());
+    for lib in nested {
+        let root: HashSet<String> = [norm_path(&lib.path)].into_iter().collect();
+        if reached.iter().any(|r| crate::libraries::path_is_under_any(r, &root)) {
+            continue;
         }
+        walk_own_root(lib, libs, foreign, inbound, &mut out, &mut reached);
     }
     out.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(out)
+    out
+}
+
+/// The normalization `nested_library_paths` / `path_is_under_any` use for a root: forward
+/// slashes, no trailing slash, lowercase.
+fn norm_path(p: &str) -> String {
+    p.replace('\\', "/").trim_end_matches('/').to_lowercase()
+}
+
+/// One walk from `lib`'s own root: collect, drop a linked universe's files, keep the molds, and
+/// attribute each to its longest-root owner. Records every collected path in `reached`.
+fn walk_own_root(
+    lib: &crate::libraries::LibraryInfo,
+    libs: &[crate::libraries::LibraryInfo],
+    foreign: &HashSet<String>,
+    inbound: &BTreeMap<String, u32>,
+    out: &mut Vec<MoldCandidate>,
+    reached: &mut Vec<String>,
+) {
+    let mut paths: Vec<PathBuf> = Vec::new();
+    crate::libraries::collect_md_paths(Path::new(&lib.path), &mut paths);
+    for p in paths {
+        let path = p.to_string_lossy().into_owned();
+        reached.push(norm_path(&path));
+        // A linked universe's note is never this universe's candidate (write sovereignty).
+        if !foreign.is_empty() && crate::libraries::path_is_under_any(&path, foreign) {
+            continue;
+        }
+        let Ok(content) = std::fs::read_to_string(&p) else { continue };
+        let Some((cid, syntax)) = mold_evidence(&content) else { continue };
+        // The fallback is reachable: a root registered WITH a trailing separator resolves to
+        // None (`library_name_for_path` does not trim it, unlike its siblings) — then the
+        // walking library is the owner by construction. Display-only either way.
+        let library = crate::libraries::library_name_for_path(libs, &path)
+            .unwrap_or_else(|| lib.name.clone());
+        out.push(MoldCandidate {
+            stamp_date: stamp_date(&cid),
+            inbound_cid_links: inbound.get(&cid).copied().unwrap_or(0),
+            path,
+            library,
+            cid_cn: cid,
+            syntax: syntax.to_string(),
+        });
+    }
 }
 
 // ─── Repair ──────────────────────────────────────────────────────────────────
@@ -552,6 +626,18 @@ fn reindex_sources_linking_to(app: &tauri::AppHandle, cids: &[String]) -> Vec<St
 mod tests {
     use super::*;
 
+    /// A registered library for the scan tests. `is_universe_notes` is not read by anything the
+    /// scan calls, so it is not a parameter.
+    fn test_lib(name: &str, path: &Path) -> crate::libraries::LibraryInfo {
+        crate::libraries::LibraryInfo {
+            id: name.into(),
+            name: name.into(),
+            path: path.to_string_lossy().into(),
+            is_universe_notes: false,
+            canonical_mode: "native".into(),
+        }
+    }
+
     /// The exact shape of the Boss's molds: a blank line after the fence, blank fields waiting to
     /// be filled, `created` holding a placeholder, and the stamp beneath it.
     const REAL_MOLD: &str = "---\n\nup:\nrelated:\ncreated: \"{{date}}\"\ncid_cn: 20260414T152113Z_NOTE_207B\n---\n\nbody\n";
@@ -670,6 +756,127 @@ mod tests {
         // A real note (stamped, no placeholder): preview must be red — no edit, nothing removed.
         let real_note = "---\ntitle: Real\ncid_cn: 20260414T152113Z_NOTE_0001\n---\nbody\n";
         assert!(mold_evidence(real_note).is_none(), "a real note is never previewed for repair");
+    }
+
+    /// PJ-454 (panel 2026-09-12) — **the scan lists a mold in a nested own library ONCE, under its
+    /// owner.** Eisa Universe registers its root plus four libraries nested under it; the root's walk
+    /// reaches the nested folders and each nested library's own walk reaches them again, so the door
+    /// showed 74 rows for 39 files, ran three delicate files twice, and the second pass's refusal
+    /// halted the cascade before the ordinary files. `Nested 2` shares a prefix with `Nested` and
+    /// must NOT be treated as its boundary (separator-bounded compare). Written RED first: on the
+    /// verbatim-extracted loop this yields FOUR rows with `Nested mold.md` under both libraries.
+    #[test]
+    fn pj454_scan_lists_a_mold_in_a_nested_own_library_once_under_its_owner() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        let nested = root.join("Nested");
+        let lookalike = root.join("Nested 2"); // shares the prefix; must NOT be a boundary
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::create_dir_all(&lookalike).unwrap();
+        std::fs::write(root.join("Root mold.md"), REAL_MOLD).unwrap();
+        std::fs::write(nested.join("Nested mold.md"), REAL_MOLD).unwrap();
+        std::fs::write(lookalike.join("Lookalike mold.md"), REAL_MOLD).unwrap();
+        let libs = vec![test_lib("Root", root), test_lib("Nested", &nested)];
+        let out = scan_stamped_molds_in(&libs, &Default::default(), &Default::default());
+        let mut seen: Vec<(&str, &str)> = out
+            .iter()
+            .map(|c| (c.library.as_str(), Path::new(&c.path).file_name().unwrap().to_str().unwrap()))
+            .collect();
+        seen.sort();
+        assert_eq!(
+            seen,
+            [("Nested", "Nested mold.md"), ("Root", "Lookalike mold.md"), ("Root", "Root mold.md")],
+            "each mold exactly once, under its owner"
+        );
+    }
+
+    /// PJ-454 (safety inspection 2026-09-12, LOW, confirmed) — **a nested own library the parent's
+    /// walk cannot ENTER is still listed, once, under its owner.** `collect_md_paths` skips a
+    /// dot-named entry and a junction on descent but reads either as a START directory, so the
+    /// pre-fix loop (a walk from every own root) listed such a library's molds and the plain
+    /// top-level-roots rule silently dropped them. `A` and `B` nested inside `.archive` check the
+    /// nested-in-nested case too: `B` must be listed once, under `B`, not again from `A`'s walk.
+    /// Written RED first against the top-level-only rule.
+    #[test]
+    fn pj454_scan_reaches_a_nested_own_library_the_parent_walk_cannot_enter() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        let a = root.join(".archive").join("A");
+        let b = a.join("B");
+        std::fs::create_dir_all(&b).unwrap();
+        std::fs::write(root.join("Root mold.md"), REAL_MOLD).unwrap();
+        std::fs::write(a.join("A mold.md"), REAL_MOLD).unwrap();
+        std::fs::write(b.join("B mold.md"), REAL_MOLD).unwrap();
+        let libs = vec![test_lib("Root", root), test_lib("A", &a), test_lib("B", &b)];
+        let out = scan_stamped_molds_in(&libs, &Default::default(), &Default::default());
+        let mut seen: Vec<(&str, &str)> = out
+            .iter()
+            .map(|c| (c.library.as_str(), Path::new(&c.path).file_name().unwrap().to_str().unwrap()))
+            .collect();
+        seen.sort();
+        assert_eq!(
+            seen,
+            [("A", "A mold.md"), ("B", "B mold.md"), ("Root", "Root mold.md")],
+            "every own library's molds, each once, under its owner"
+        );
+    }
+
+    /// PJ-454 — **a linked universe's file under the own root is never a candidate** (write
+    /// sovereignty). The collector fences a root that carries a universe manifest, but a linked
+    /// universe's pre-MIG-108 external library, or a legacy bare manifest without a `name`, is a
+    /// plain folder to the walk; only the post-collection `foreign` drop keeps it out. Nothing else
+    /// in this module exercises a non-empty `foreign`.
+    #[test]
+    fn pj454_scan_drops_a_linked_universe_file_that_sits_under_the_root() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        let linked = root.join("Linked"); // no manifest — a plain folder to the collector
+        std::fs::create_dir_all(&linked).unwrap();
+        std::fs::write(root.join("Root mold.md"), REAL_MOLD).unwrap();
+        std::fs::write(linked.join("Linked mold.md"), REAL_MOLD).unwrap();
+        let libs = vec![test_lib("Root", root)];
+        // As `foreign_library_roots` spells its set: forward slashes, no trailing slash, lowercase.
+        let foreign: HashSet<String> =
+            [linked.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase()]
+                .into_iter()
+                .collect();
+        let out = scan_stamped_molds_in(&libs, &foreign, &Default::default());
+        let names: Vec<&str> =
+            out.iter().map(|c| Path::new(&c.path).file_name().unwrap().to_str().unwrap()).collect();
+        assert_eq!(names, ["Root mold.md"], "the linked universe's mold must be dropped");
+    }
+
+    /// PJ-454 — **the on-demand reproduction against a REAL registry, read-only.** Point it at a
+    /// universe's `libraries.json` and it prints what the door would list: rows, distinct paths,
+    /// paths listed more than once. On the verbatim loop Eisa Universe printed 74 / 39 / 35; with
+    /// the top-level-roots rule it prints 39 / 39 / 0. Reads note files only; opens no database,
+    /// writes nothing. `foreign` is empty here (no `AppHandle`), so a linked universe's molds
+    /// would appear only if its root were not manifest-fenced by the collector.
+    ///
+    /// ```text
+    ///   PJ454_LIBS="E:/…/Universe/.constellation/libraries.json" \
+    ///     cargo test --lib pj454_scan_real_registry_read_only -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore]
+    fn pj454_scan_real_registry_read_only() {
+        let Ok(reg) = std::env::var("PJ454_LIBS") else {
+            eprintln!("[pj454] PJ454_LIBS unset — skipping");
+            return;
+        };
+        let libs = crate::libraries::try_load_libraries_at(Path::new(&reg)).expect("a readable libraries.json");
+        let out = scan_stamped_molds_in(&libs, &Default::default(), &Default::default());
+        let mut counts = std::collections::HashMap::<String, usize>::new();
+        for c in &out {
+            // Normalized the way the boundary helpers spell paths, so two rows for one file that
+            // differ only in separator (two roots registered in different styles) still count as one.
+            *counts.entry(c.path.replace('\\', "/").to_lowercase()).or_default() += 1;
+        }
+        let dup = counts.values().filter(|&&n| n > 1).count();
+        eprintln!("[pj454] rows {} / distinct {} / listed more than once {}", out.len(), counts.len(), dup);
+        for c in &out {
+            eprintln!("  {} | {} | {}", c.library, c.path, c.cid_cn);
+        }
     }
 
     /// The three delicate shapes must be flagged for the first batch; an ordinary mold must not be.
