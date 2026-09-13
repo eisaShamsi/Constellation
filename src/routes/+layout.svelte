@@ -3939,6 +3939,8 @@
 		indexHiddenDismissed = false;  // PJ-407 — same, for the hidden-note row
 		indexFencedDismissed = false;  // PJ-428 — same, for the fenced-library row
 		indexMovedDismissed = false;   // PJ-435 — same, for the moved-universe row
+		moldRepairDismissed = false;   // PJ-454 — same, for the mold-repair banner
+		moldRepairCount = 0;           // PJ-454 — and its payload, so the banner cannot show the universe-just-left's count until the new scan lands
 		movedInfo = null;
 		// PJ-369 (safety inspection 2026-08-25) — the prune receipt is per-universe too, and it
 		// was the one item on this list nothing cleared. It is a MODULE-level store, chosen so it
