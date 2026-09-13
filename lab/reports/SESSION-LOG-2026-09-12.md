@@ -526,3 +526,18 @@ handover `HANDOVER-2026-09-13.md`.
 Not run — the DRAIN ruling governs. Every build this session had its diff-scoped inspection
 (two runs; the one confirmed finding fixed before commit).
 - Correction: the new filings run **PJ-464 … PJ-474** (eleven entries; PJ-474 bundles the four out-of-scope CSS-audit finds).
+
+## §10 — SESSION CLOSE (2026-09-13) — "PCS + Orientation, then handover file and prompt"
+
+The job-close PCS (§9) is the session-close PCS: code `7d79daba` + `d58955c8`, records
+`b0d8a5d1`, all pushed; tree clean. **Ledger v2.13 reviewed at close — no change** (SO#9:
+everything surfaced this session is filed, PJ-464…PJ-474; ► NEXT = PJ-461). **Orientation v4.33
+is the close orientation** (its preamble covers the whole session; the body needed no structural
+edit — the door's behaviour is described in the preamble and the handover). MoCh: `2026-09-12-0945`,
+`2026-09-13-0919` (+ its close note). Handover: `HANDOVER-2026-09-13.md`, marked as the session-close
+handover, with the ready-to-paste prompt. Help + User Manual: no user-facing string changed.
+Memory: nothing new to save that the repo does not already record.
+
+**The per-cycle whole-app inspection was NOT run at this boundary** — the DRAIN ruling governs the
+cadence until the Boss declares the drain done. Both builds this session had their diff-scoped
+inspection (two runs; one confirmed finding, fixed before commit; the re-run a genuine zero).
