@@ -104,6 +104,14 @@ is a plausible-looking source of custom-property names — exactly the input a "
 audit reads, and it produced a false CONFIRM in this job's own verification until the key shape was
 checked (it stores ids WITHOUT the `--` prefix).
 
+**Named sub-item, so closing this PJ cannot lose it: the orphaned `sidebar-width` control.**
+`constellationStyleSettings.ts:94` declares it as a `variable-number-slider`; `generateStyleSettingsCSS`
+would emit `--sidebar-width: 260px` from it but **has zero callers**; the live Style Setter
+deliberately removed its own Width control and says why at `StyleSetter.svelte:534-535` (the sidebar is
+sized by a drag handle, which a CSS var cannot override). A shipped-then-unwired control. PJ-461
+retired its last consumer, so nothing reads the name now — but the control still sits in the dead
+registry advertising itself.
+
 ### 🆕 PJ-483 *(LOW — Group 3)* — the row-selection tint now exists at four strengths
 `color-mix(in srgb, var(--interactive-accent) N%, transparent)` for "this row is selected" is 12%
 (`LinkTypesEditor:317`), 15% (`+layout:11328`), 18% (`MoveDialog:185` + PJ-461's three sites) and 20%

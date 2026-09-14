@@ -430,3 +430,27 @@ Commit carries: 21 source files · ledger **v2.14** (PJ-461 closed, PJ-475…PJ-
 two renders · the MoCh · this handover. **SO#2 (help + User Manual): no change owed** — verified, no
 user-facing document asserts anything this build makes untrue. Memory updated with the new law and
 the theme ruling.
+
+## §20 — Post-commit addendum from the findings-verifier, and the method point in it
+Its background sweep returned after the close. Two things, both acted on.
+
+**1. A claim strengthened, and re-verified by me.** No retired name is written via
+`element.style.setProperty(...)` anywhere in `src/` or `static/` — so **no retired name is declared by
+ANY mechanism, static or runtime.** Checked myself: the only `setProperty` hit matching that pattern
+is `--font-monospace-theme`, a *replacement* name. The only occurrences of retired names anywhere in
+the repo outside `src/` are in the stale `.claude/worktrees/*` checkouts — the very parallel trees
+filed as PJ-479.
+
+**2. The sharper point, and it is about me, not the code.** My claim that "none of the 15 retired names
+is a Style Setter / style-settings registry key" was **already refuted by a record sitting in my own
+working tree**: `PJ-461-PANEL-VERDICT-2026-09-13.md:201` had filed the orphaned `--sidebar-width`
+control, naming the same registry line, the same zero-caller generator and the same `CORE_BLOCK_IDS`
+strip. Ledger v2.13:4075 carried it too. **This is the same failure shape as the law written today** —
+a claim drafted against a record that already contained the answer — and had it been confirmed, a PJ
+the panel correctly opened would have been lost.
+
+**Disposition:** the substance already survived into ledger v2.14 inside PJ-482 (the dead parallel
+registry), but it was folded into prose. It is now a **named sub-item** of PJ-482 so that closing that
+PJ cannot quietly drop it. The verifier's own recommendation — *"the sentence needs the exception
+written in, not removed"* — is honoured: `--sidebar-width` IS a registry key, it is safe to retire
+because the generator has no callers, and the orphaned control remains filed.
