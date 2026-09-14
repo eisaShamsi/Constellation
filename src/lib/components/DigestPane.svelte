@@ -535,7 +535,7 @@
 		border-radius: 3px;
 	}
 	.dg-chev-btn:hover {
-		background: var(--background-modifier-active);
+		background: var(--background-modifier-hover);
 		color: var(--text-normal);
 	}
 	.dg-chev {

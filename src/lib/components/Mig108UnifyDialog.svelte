@@ -447,7 +447,7 @@
 	.m108-backup { font-size: 0.8rem; color: var(--text-muted); border-inline-start: 3px solid var(--interactive-accent); padding-inline-start: 10px; }
 	/* The journaled failure reason — monospace so a path or a count reads exactly. */
 	.m108-reason {
-		font-family: var(--font-monospace, ui-monospace, monospace);
+		font-family: var(--font-monospace-theme, ui-monospace, monospace);
 		font-size: 0.78rem;
 		color: var(--text-muted);
 		background: var(--background-secondary, rgba(0,0,0,0.04));

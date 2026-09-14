@@ -1358,7 +1358,7 @@
 		   +layout.svelte's theme $effect. */
 		background: var(--background-primary, #080c16);
 		color: var(--text-normal, #e8ebf2);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 
 		/* MIG-027 §-fix-2 — Sight highlight color (the "this is your
 		   current focus / active filter / hover-linked context" indicator).
@@ -1681,7 +1681,7 @@
 		border-radius: 8px;
 		box-shadow: var(--shadow-l, 0 12px 36px rgba(0, 0, 0, 0.5));
 		color: var(--text-normal, #cdd5e0);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 		line-height: 1.55;
 	}
 
@@ -1761,7 +1761,7 @@
 	}
 	.sight-v6-manifest-body :global(code) {
 		padding: 1px 5px;
-		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-family: var(--font-monospace-theme, 'Fira Code', monospace);
 		font-size: 12px;
 		background: var(--background-secondary, rgba(40, 50, 70, 0.5));
 		border-radius: 3px;
@@ -1796,7 +1796,7 @@
 		border-radius: 6px;
 		background: var(--background-secondary, rgba(20, 30, 50, 0.5));
 		color: var(--text-normal, #cdd5e0);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 		font-size: 12px;
 		line-height: 1.4;
 	}
@@ -1826,14 +1826,14 @@
 	}
 	.banner-detail :global(code) {
 		padding: 0 4px;
-		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-family: var(--font-monospace-theme, 'Fira Code', monospace);
 		font-size: 10.5px;
 		background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
 		border-radius: 2px;
 	}
 	.banner-path {
 		margin-top: 3px;
-		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-family: var(--font-monospace-theme, 'Fira Code', monospace);
 		font-size: 9.5px;
 		color: var(--text-faint, #5a6275);
 		overflow: hidden;

@@ -86,7 +86,12 @@
 		font-size: calc(0.82rem * var(--rs-scale, 1));
 	}
 	.ks-row:hover { background: var(--background-modifier-hover); }
-	.ks-row-sel { background: var(--background-modifier-active-hover, var(--background-modifier-hover)); }
+	/* PJ-461. The old selector was the bare `.ks-row-sel` — (0,1,0) against `.ks-row:hover`'s
+	   (0,2,0) — so hover WON and the selected row repainted to plain grey under the pointer, which is
+	   the defect this rule exists to remove. Two classes make it (0,2,0): it does NOT out-rank hover,
+	   it TIES and wins on source order, so it must stay BELOW the :hover rule. Svelte adds the same
+	   scope class to both, which preserves the tie. Reordering this block silently breaks it. */
+	.ks-row.ks-row-sel { background: color-mix(in srgb, var(--interactive-accent) 18%, transparent); }
 	.ks-count {
 		font-variant-numeric: tabular-nums;
 		text-align: end;

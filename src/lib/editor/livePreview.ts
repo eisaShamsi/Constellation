@@ -1753,9 +1753,9 @@ export const livePreviewTheme = EditorView.theme({
 		padding: '1px 4px',
 	},
 	'.cm-md-link': {
-		color: 'var(--link-color, var(--library-accent, var(--interactive-accent)))',
+		color: 'var(--link-color, var(--interactive-accent))',
 		textDecoration: 'var(--link-decoration, underline)',
-		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--library-accent, var(--interactive-accent))) 40%, transparent)',
+		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--interactive-accent)) 40%, transparent)',
 		cursor: 'pointer',
 	},
 	'.cm-md-link:hover': {
@@ -1801,13 +1801,13 @@ export const livePreviewTheme = EditorView.theme({
 	// label), so the type is carried by the LABEL alone. Two classes + !important
 	// out-rank the single-class `.cm-ltyped` colour rules above.
 	'.cm-lt-plain .cm-ltyped, .cm-lt-plain .cm-ltyped *': {
-		color: 'var(--link-color, var(--library-accent, var(--interactive-accent))) !important',
+		color: 'var(--link-color, var(--interactive-accent)) !important',
 	},
 	'.cm-lt-plain .cm-ltyped': {
-		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--library-accent, var(--interactive-accent))) 40%, transparent) !important',
+		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--interactive-accent)) 40%, transparent) !important',
 	},
 	'.cm-lt-plain .cm-ltyped::before': {
-		color: 'var(--link-color, var(--library-accent, var(--interactive-accent))) !important',
+		color: 'var(--link-color, var(--interactive-accent)) !important',
 	},
 	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
@@ -1838,8 +1838,8 @@ export const livePreviewTheme = EditorView.theme({
 		color: 'var(--blockquote-text-color, var(--text-muted))',
 	},
 	'.cm-md-tag': {
-		color: 'var(--library-accent, var(--interactive-accent))',
-		backgroundColor: 'color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 10%, transparent)',
+		color: 'var(--interactive-accent)',
+		backgroundColor: 'color-mix(in srgb, var(--interactive-accent) 10%, transparent)',
 		borderRadius: '3px',
 		padding: '1px 4px',
 		fontSize: '0.9em',
@@ -1848,7 +1848,7 @@ export const livePreviewTheme = EditorView.theme({
 		verticalAlign: 'middle',
 		marginInlineEnd: '4px',
 		cursor: 'pointer',
-		accentColor: 'var(--library-accent, var(--interactive-accent))',
+		accentColor: 'var(--interactive-accent)',
 	},
 	// ─── MIG-055 §D — Lens block widget (Constellation Base renderer) ───
 	'.cm-lens-block': {
@@ -1881,7 +1881,7 @@ export const livePreviewTheme = EditorView.theme({
 	},
 	'.cm-lens-table td': {
 		padding: '4px 10px',
-		borderBottom: '1px solid var(--background-modifier-border-hover, var(--background-modifier-border))',
+		borderBottom: '1px solid var(--background-modifier-border)',
 		verticalAlign: 'top',
 	},
 	'.cm-lens-trow:hover': {
@@ -1905,7 +1905,7 @@ export const livePreviewTheme = EditorView.theme({
 	},
 	'.cm-lens-error-label': { fontWeight: '600' },
 	'.cm-lens-error-msg': {
-		fontFamily: 'var(--font-monospace)',
+		fontFamily: 'var(--font-monospace-theme)',
 		whiteSpace: 'pre-wrap',
 	},
 	'.cm-lens-header': {
@@ -1927,7 +1927,7 @@ export const livePreviewTheme = EditorView.theme({
 		fontSize: '0.75em',
 		fontWeight: '600',
 		color: '#fff',
-		background: 'var(--interactive-accent, var(--library-accent, #6c5ce7))',
+		background: 'var(--interactive-accent, #6c5ce7)',
 		padding: '1px 8px',
 		borderRadius: '10px',
 	},

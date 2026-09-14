@@ -153,7 +153,7 @@
 		background: var(--background-secondary, #0c1322);
 		border-right: 1px solid var(--background-modifier-border, #1a1f2e);
 		color: var(--text-normal, #cdd5e0);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 		font-size: 11px;
 		overflow: hidden;
 	}

@@ -131,12 +131,12 @@
 	.lg-stage { flex: 1; min-height: 0; position: relative; }
 	/* see NoteButterflyGraph: SVG text-anchor flips under an inherited dir=rtl. */
 	.lg-svg { width: 100%; height: 100%; display: block; direction: ltr; }
-	.lg-cn { font: 600 13px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a);  unicode-bidi: plaintext; }
-	.lg-side { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
-	.lg-type { font: 500 12px var(--font-sans); text-transform: lowercase; letter-spacing: 0.02em;  unicode-bidi: plaintext; }
-	.lg-ct { font: 11px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
-	.lg-tick { font: 10px var(--font-sans); fill: var(--text-faint, #9ca3af);  unicode-bidi: plaintext; }
-	.lg-empty { font: 14px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.lg-cn { font: 600 13px var(--font-text-theme); fill: var(--text-normal, #1a1a1a);  unicode-bidi: plaintext; }
+	.lg-side { font: 500 12px var(--font-interface-theme); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.lg-type { font: 500 12px var(--font-interface-theme); text-transform: lowercase; letter-spacing: 0.02em;  unicode-bidi: plaintext; }
+	.lg-ct { font: 11px var(--font-interface-theme); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.lg-tick { font: 10px var(--font-interface-theme); fill: var(--text-faint, #9ca3af);  unicode-bidi: plaintext; }
+	.lg-empty { font: 14px var(--font-interface-theme); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
 	.lg-bar { cursor: pointer; }
 	.lg-bar rect { transition: opacity 0.12s; }
 	.lg-bar:hover rect { opacity: 0.82; }

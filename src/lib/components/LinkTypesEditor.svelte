@@ -261,7 +261,7 @@
 	.lte-child { margin-inline-start: 20px; }
 	.lte-nest { color: var(--text-faint); margin-inline-end: -2px; }
 	.lte-name { font-size: 0.9rem; color: var(--text-normal); }
-	.lte-id { font-size: 0.74rem; color: var(--text-faint); font-family: var(--font-monospace, monospace); }
+	.lte-id { font-size: 0.74rem; color: var(--text-faint); font-family: var(--font-monospace-theme, monospace); }
 	.lte-locked {
 		margin-inline-start: auto; font-size: 0.66rem; color: var(--text-faint);
 		background: var(--background-modifier-hover); padding: 1px 7px; border-radius: 999px;
@@ -294,7 +294,7 @@
 	}
 	.lte-add-btn:disabled { opacity: 0.45; cursor: default; }
 	.lte-hint { font-size: 0.76rem; color: var(--text-muted); padding: 6px 2px 0; }
-	.lte-hint code { font-family: var(--font-monospace, monospace); color: var(--text-normal); }
+	.lte-hint code { font-family: var(--font-monospace-theme, monospace); color: var(--text-normal); }
 	.lte-warn { color: var(--text-error, #e53e3e); }
 	.lte-state { color: var(--text-muted); font-size: 0.82rem; padding: 8px 2px; }
 	/* MIG-070 §C Phase 5 — self-contained colour swatch: a fixed PILL, identical in Settings AND the

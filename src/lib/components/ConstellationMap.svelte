@@ -921,7 +921,7 @@
 		text-align: start; border-bottom: 1px solid var(--background-modifier-border, #f0f0f0);
 	}
 	.cmap-result-row:hover { background: var(--background-modifier-hover, #f5f5f5); }
-	.cmap-result-row.active { background: var(--background-modifier-active-hover, #e8e8ff); font-weight: 600; }
+	.cmap-result-row.active { background: color-mix(in srgb, var(--interactive-accent) 18%, transparent); font-weight: 600; }
 	.cmap-result-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cmap-result-badges { display: flex; gap: 2px; flex-shrink: 0; }
 	.cmap-result-badge {

@@ -132,14 +132,14 @@
 <style>
 	.rg { width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; }
 	.rg svg { width: 100%; flex: 1; min-height: 0; }
-	.rg-side { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	.rg-side { font: 500 12px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
 	.rg-dot { cursor: pointer; transition: r 0.08s; }
 	.rg-dot:hover { stroke: var(--text-normal, #1a1a1a); stroke-width: 1.5; }
 	.rg-dot.rg-disabled { cursor: default; }
-	.rg-htype { font: 500 12px var(--font-sans); }
-	.rg-hname { font: 13px var(--font-sans); fill: var(--text-normal, #1a1a1a); }
-	.rg-cn { font: 500 14px var(--font-sans); fill: var(--text-normal, #1a1a1a); }
-	.rg-cs { font: 10px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	.rg-htype { font: 500 12px var(--font-interface-theme); }
+	.rg-hname { font: 13px var(--font-interface-theme); fill: var(--text-normal, #1a1a1a); }
+	.rg-cn { font: 500 14px var(--font-interface-theme); fill: var(--text-normal, #1a1a1a); }
+	.rg-cs { font: 10px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
 	.rg-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: center; padding: 6px 0 2px; font-size: 11px; color: var(--text-secondary, #4b5563); }
 	.rg-lg { display: inline-flex; align-items: center; gap: 5px; text-transform: lowercase; }
 	.rg-lgd { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }

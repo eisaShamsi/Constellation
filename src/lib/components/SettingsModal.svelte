@@ -3998,7 +3998,7 @@
 	}
 	.bp-timestamp { font-size: 0.78rem; color: var(--text-muted); }
 	.bp-timestamp code {
-		font-family: var(--font-monospace, monospace);
+		font-family: var(--font-monospace-theme, monospace);
 		font-size: 0.75rem; color: var(--text-normal);
 		background: var(--background-primary);
 		padding: 1px 5px; border-radius: 3px;
@@ -4027,11 +4027,11 @@
 	.bp-row-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 	.bp-target {
 		font-size: 0.72rem; color: var(--text-faint);
-		font-family: var(--font-monospace, monospace);
+		font-family: var(--font-monospace-theme, monospace);
 	}
 	.bp-value {
 		font-size: 0.82rem; color: var(--text-normal);
-		font-family: var(--font-monospace, monospace);
+		font-family: var(--font-monospace-theme, monospace);
 		min-width: 60px; text-align: end;
 	}
 	.bp-status {
@@ -4069,13 +4069,13 @@
 	}
 	.bp-kv {
 		display: flex; justify-content: space-between; align-items: baseline;
-		padding: 2px 0; font-family: var(--font-monospace, monospace); font-size: 0.76rem;
+		padding: 2px 0; font-family: var(--font-monospace-theme, monospace); font-size: 0.76rem;
 	}
 	.bp-k { color: var(--text-muted); }
 	.bp-v { color: var(--text-normal); }
 	.bp-raw {
 		max-height: 280px; overflow: auto;
-		font-family: var(--font-monospace, monospace); font-size: 0.72rem;
+		font-family: var(--font-monospace-theme, monospace); font-size: 0.72rem;
 		background: var(--background-primary); color: var(--text-muted);
 		padding: 8px 10px; border-radius: 4px;
 		white-space: pre; margin: 0;
@@ -4132,7 +4132,7 @@
 		margin: 8px 0 16px;
 	}
 	.deleted-row {
-		border: 1px solid var(--border-color, rgba(128,128,128,0.25));
+		border: 1px solid var(--border);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -4159,7 +4159,7 @@
 	}
 	.deleted-detail {
 		padding: 8px 10px 10px;
-		border-top: 1px solid var(--border-color, rgba(128,128,128,0.25));
+		border-top: 1px solid var(--border);
 	}
 	.deleted-path {
 		font-size: 0.8em;
@@ -4180,7 +4180,7 @@
 		overflow: auto;
 		white-space: pre-wrap;
 		word-break: break-word;
-		font-family: var(--font-mono, monospace);
+		font-family: var(--font-monospace-theme, monospace);
 		font-size: 0.85em;
 		background: var(--bg-secondary, rgba(128,128,128,0.06));
 		border-radius: 4px;

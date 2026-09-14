@@ -11552,7 +11552,7 @@
 		cursor: pointer; text-align: start; border-radius: 3px;
 	}
 	.ws-base-item:hover { background: var(--bg-hover); color: var(--text-normal); }
-	.ws-base-item.active { background: var(--bg-active); color: var(--text-normal); }
+	.ws-base-item.active { background: color-mix(in srgb, var(--interactive-accent) 18%, transparent); color: var(--text-normal); }
 	.ws-base-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	/* MIG-062 §E — federated cUniverse sub-group header (Five Acts / Bases). */
@@ -12290,7 +12290,7 @@
 		display: flex; gap: 1.25rem; max-width: 580px; width: 100%; margin-top: 0.5rem;
 	}
 	.w-option-card {
-		flex: 1; background: var(--bg-primary); border: var(--border-width, 1px) solid var(--border);
+		flex: 1; background: var(--bg); border: var(--border-width, 1px) solid var(--border);
 		border-radius: 12px; padding: 1.5rem; text-align: center;
 		display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
 		transition: border-color 0.15s, box-shadow 0.15s;
@@ -12308,7 +12308,7 @@
 		border-radius: 6px; font-size: 0.85rem; font-family: inherit; text-align: center;
 		color: var(--text); background: var(--bg-secondary);
 	}
-	.w-option-input:focus { border-color: var(--accent); outline: none; background: var(--bg-primary); }
+	.w-option-input:focus { border-color: var(--accent); outline: none; background: var(--bg); }
 	.w-option-btn {
 		padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
 		font-family: inherit; cursor: pointer; border: none; width: 100%; transition: background 0.15s;
@@ -12524,7 +12524,7 @@
 	}
 	.federation-popup-item:last-child { border-bottom: none; }
 	.federation-popup-path {
-		font-family: var(--font-monospace);
+		font-family: var(--font-monospace-theme);
 		font-size: 0.85em;
 		word-break: break-all;
 		margin-bottom: 4px;

@@ -212,7 +212,7 @@
 		min-height: 0;
 		background: var(--background-primary, #0c1322);
 		color: var(--text-normal, #cdd5e0);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 	}
 	.sight-v7-header {
 		flex: 0 0 auto;

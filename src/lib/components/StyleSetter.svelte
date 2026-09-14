@@ -772,26 +772,103 @@
 		supports: 'Supports', generalizes: 'Generalizes', contradicts: 'Contradicts', supersedes: 'Supersedes',
 		associative: 'Untyped',
 	};
-	const relWedges = $derived.by(() => {
-		void $linkTypesStore;                     // re-resolve when the vocabulary is recoloured
-		const CX = 450, CY = 180, S = 70, RIN = 16, R = 148, W = 28, STEP = 32, D2R = Math.PI / 180;
-		const out: { id: string; label: string; color: string; d: string; lx: number; ly: number; sign: number }[] = [];
+	// PJ-461 follow-up (Eisa, 2026-09-13: "I rather it take advantage of the empty space. You could
+	// enlarge it more."). The wedges were 148u long inside a 638x360 box because the nine labels rode
+	// radially past their own tips and ate ~19% of the width, while the top and bottom of the card
+	// were air. The labels move into two CALLOUT ROWS at the card edges — colour chip + name, joined
+	// to the wedge by a leader in the same colour — the device NoteButterflyGraph already uses for its
+	// own callout lanes (ladder(), 205-236) and NoteLedgerGraph uses on its rail. All the freed width
+	// goes to R: 148 -> 243 (measured 243/148 = 1.642x, and 243 = CX - S - EDGE by construction).
+	// The viewBox also narrows, 900x360 -> 638x360, because the labels no longer need the radial room.
+	// NOTE on scale, stated precisely: with preserveAspectRatio="xMidYMid meet" the scale is
+	// min(boxW/vbW, boxH/vbH). Height is unchanged at 360, so the rendered scale is identical to
+	// before ONLY where the fit is height-limited. Between the old aspect (2.500) and the new (1.772)
+	// the old render was width-limited and the new is height-limited, and the 12px label grows by up
+	// to 900/638 = 1.41x. On a ~1056px-wide stage that window is roughly 423-596px of stage height.
+	// MEASURED in a headless-Chrome harness over the real CSS chain, all 15 locales. That harness is
+	// NOT in the repo, so of the figures below only R (243/148) is re-derivable from this file alone:
+	// R 1.642x, visible wedge ink 1.720x,
+	// wedge area 2.64x; the drawing fills 98.1% x 90.0% of the viewBox in EVERY locale (today 85.4% x
+	// 43.5% in English, 92.9% x 43.5% across all 15); 0 label-label, 0 label-over-wedge, 0
+	// leader-over-wedge, 0 leader-over-own-text, 0 spine crossings, 0 outside the box — where the old
+	// radial layout measured 11 label-label pairs and 14 labels sitting on a wedge, English included.
+	const REL_CX = 319, REL_CY = 180, REL_S = 70, REL_RIN = 16, REL_EDGE = 6;
+	const REL_VW = 638, REL_W = 28, REL_STEP = 32, REL_BOXW = 116, REL_BOXH = 44;
+	const REL_R = REL_CX - REL_S - REL_EDGE;          // 243 — the f=1.0 tip lands exactly on the margin
+	const REL_SW = 9, REL_SWGAP = 4, REL_GAP = 12, REL_GAPMIN = 6, REL_SPINE = 8;
+	const REL_ROWTOP = 26, REL_ROWBOT = 334;          // symmetric about CY; 18u of air at each box edge
+	const relModel = $derived.by(() => {
+		void $linkTypesStore;                         // re-resolve when the vocabulary is recoloured
+		void $t;                                      // and when the interface language changes
+		void $appSettings;                            // and when the font is changed OUTSIDE this draft:
+		// curVal() falls through to getComputedStyle(body) for anything not in `draft`, which is not a
+		// reactive read — without this the labels would keep being measured against the previous font
+		// until the next draft edit. Cheap: this derived is read only while the Note-graph surface is
+		// on screen, so an unrelated settings change costs nothing anywhere else.
+		const D2R = Math.PI / 180;
+		// ONE getComputedStyle for the whole layout, not one per label.
+		const relFont = `500 12px ${curVal('--font-interface-theme') || 'sans-serif'}`;
+		const wedges: { id: string; color: string; d: string }[] = [];
+		const cells: any[] = [];
 		for (const wing of REL_WINGS) {
-			const ox = CX + wing.sign * S;
+			const ox = REL_CX + wing.sign * REL_S;
 			wing.items.forEach(([id, f], k) => {
-				const phi = k === 0 ? 0 : (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * STEP;
-				const a0 = phi - W / 2, a1 = phi + W / 2, rOut = RIN + (R - RIN) * f;
+				const phi = k === 0 ? 0 : (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * REL_STEP;
+				const a0 = phi - REL_W / 2, a1 = phi + REL_W / 2, rOut = REL_RIN + (REL_R - REL_RIN) * f;
 				const P = (r: number, a: number): [number, number] =>
-					[ox + wing.sign * r * Math.cos(a * D2R), CY - r * Math.sin(a * D2R)];
-				const [ix0, iy0] = P(RIN, a0), [ix1, iy1] = P(RIN, a1);
+					[ox + wing.sign * r * Math.cos(a * D2R), REL_CY - r * Math.sin(a * D2R)];
+				const [ix0, iy0] = P(REL_RIN, a0), [ix1, iy1] = P(REL_RIN, a1);
 				const [ex1, ey1] = P(rOut, a1), [ex0, ey0] = P(rOut, a0);
+				const [rimX, rimY] = P(rOut, phi);
 				const sIn = wing.sign > 0 ? 1 : 0, sOut = wing.sign > 0 ? 0 : 1;
-				const [lx, ly] = P(rOut + 12, phi);
-				out.push({ id, label: REL_LABELS[id] ?? id, color: relColor(id), sign: wing.sign, lx, ly,
-					d: `M${ix0} ${iy0} A${RIN} ${RIN} 0 0 ${sIn} ${ix1} ${iy1} L${ex1} ${ey1} A${rOut} ${rOut} 0 0 ${sOut} ${ex0} ${ey0} Z` });
+				const color = relColor(id);
+				wedges.push({ id, color, d: `M${ix0} ${iy0} A${REL_RIN} ${REL_RIN} 0 0 ${sIn} ${ix1} ${iy1} L${ex1} ${ey1} A${rOut} ${rOut} 0 0 ${sOut} ${ex0} ${ey0} Z` });
+				cells.push({ id, color, sign: wing.sign, phi, rimX, rimY, label: L(REL_LABELS[id] ?? id) });
 			});
 		}
-		return out;
+		// Two rows. The wedges that fan UP label at the top; everything else at the bottom, and phi=0
+		// (the strongest link of each wing, on the wing axis) goes DOWN — it balances the rows 4/5 and
+		// fills the emptier band, because the centre-out alternation always sends the heavier of each
+		// pair upward. Each row is packed SEPARATELY IN EACH HALF and may never cross the spine:
+		// left = incoming, right = outgoing is this diagram's only directional encoding, and a cell
+		// that crossed would contradict it. Inside a half, cells sit under their own rim where there
+		// is room, are ordered by rim x (so leaders cannot cross), and are >= gap apart — which makes
+		// their boxes provably disjoint for any text width or locale (NoteButterflyGraph's ladder()
+		// proof, axes swapped). `k` is the last-resort guard: should a future translation or a wide
+		// interface font ever exceed a half, the row condenses its glyphs instead of spilling across
+		// the spine or off the card. MEASURED k = 1.000 in all 15 locales today; worst half-row slack
+		// 42.7u (ru), next worst 66.8u (de).
+		const rows: [any[], number][] = [
+			[cells.filter((c) => c.phi > 0), REL_ROWTOP],
+			[cells.filter((c) => c.phi <= 0), REL_ROWBOT],
+		];
+		for (const [row, y] of rows) {
+			for (const sign of [-1, 1]) {
+				const g = row.filter((c) => c.sign === sign).sort((a, b) => a.rimX - b.rimX);
+				if (!g.length) continue;
+				const xMin = sign < 0 ? REL_EDGE : REL_CX + REL_SPINE;
+				const xMax = sign < 0 ? REL_CX - REL_SPINE : REL_VW - REL_EDGE;
+				const avail = xMax - xMin, n = g.length;
+				for (const c of g) c.w = REL_SW + REL_SWGAP + relTextW(c.label, relFont);
+				const sumW = g.reduce((acc, c) => acc + c.w, 0);
+				const k = Math.min(1, (avail - REL_GAPMIN * (n - 1)) / sumW);
+				const gap = n > 1 ? Math.min(REL_GAP, (avail - sumW * k) / (n - 1)) : 0;
+				let right = xMin - gap;
+				for (const c of g) { c.k = k; c.wS = c.w * k; c.x = Math.max(c.rimX, right + gap + c.wS / 2); right = c.x + c.wS / 2; }
+				if (right > xMax) { let xx = xMax; for (let i = n - 1; i >= 0; i--) { g[i].x = Math.min(g[i].x, xx - g[i].wS / 2); xx = g[i].x - g[i].wS / 2 - gap; } }
+				for (const c of g) {
+					c.y = y;
+					const lx = c.x - c.wS / 2, rx = c.x + c.wS / 2;
+					// the chip sits on the side of the word that FACES its own wedge, so the leader always
+					// reaches it from outside and can never cross the word (measured: 0 in all 15 locales).
+					c.swx = sign < 0 ? lx : rx - REL_SW;
+					c.tx = sign < 0 ? lx + REL_SW + REL_SWGAP : lx;
+					c.ldx = c.swx + REL_SW / 2;
+					c.tlen = k < 1 ? (c.w - REL_SW - REL_SWGAP) * k : 0;
+				}
+			}
+		}
+		return { wedges, cells };
 	});
 
 
@@ -857,6 +934,24 @@
 	function curVal(v: string): string {
 		if (v in draft) return draft[v];
 		try { return getComputedStyle(document.body).getPropertyValue(v).trim(); } catch { return ''; }
+	}
+
+	/** Real rendered width of a preview label, in viewBox units (the svg is 638 wide and 1 unit = 1
+	    CSS px of the 12px font). Canvas, not an estimator: MEASURED against getComputedTextLength()
+	    over all 15 locales x 9 labels, worst disagreement 0.014u. The caller passes the font string,
+	    resolved ONCE per recompute — measuring it per label would run getComputedStyle nine times
+	    inside a derived, i.e. nine forced style reads during render for one answer.
+	    `relCtxTried` is the guard: without it, a host where getContext('2d') returns null (jsdom with
+	    no canvas backend) would allocate a FRESH <canvas> on every single call. */
+	let relCtx: CanvasRenderingContext2D | null = null;
+	let relCtxTried = false;
+	function relTextW(s: string, font: string): number {
+		try {
+			if (!relCtxTried) { relCtxTried = true; relCtx = document.createElement('canvas').getContext('2d'); }
+			if (!relCtx) return s.length * 7;
+			relCtx.font = font;
+			return relCtx.measureText(s).width;
+		} catch { return s.length * 7; }
 	}
 	/** Numeric current value for a range control: the draft/live value parsed, else the catalog
 	    default. Reads `draft` first so the slider + readout track edits live. */
@@ -1034,7 +1129,7 @@
 		if (_updTimer) clearTimeout(_updTimer);
 		_updTimer = setTimeout(() => { if (updatedId === p.id) updatedId = null; }, 1500);
 	}
-	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); stopInspect(); if (typeof document !== 'undefined') document.body.classList.remove('ss-inspecting'); });
+	onDestroy(() => { relCtx = null; if (_updTimer) clearTimeout(_updTimer); stopInspect(); if (typeof document !== 'undefined') document.body.classList.remove('ss-inspecting'); });
 
 	// §C item 3 (REMOVED) — a built-in-theme picker in the Setter froze it AGAIN, even as a plain
 	// `<select>` over BUILTIN_THEMES (2026-06-05). LL-032 strengthened: rendering BUILTIN_THEMES /
@@ -1427,15 +1522,23 @@
 									role="button" tabindex="0" aria-label={L('Relationship colours')}
 									onclick={() => selectEl('relTypes')}
 									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('relTypes'); } }}>
-									<svg class="ss-relsvg" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-										<line class="ss-relseam" x1="450" y1="12" x2="450" y2="152"/>
-										<line class="ss-relseam" x1="450" y1="208" x2="450" y2="348"/>
-										{#each relWedges as w (w.id)}
-											<path d={w.d} fill={w.color} fill-opacity="0.85" stroke={w.color} stroke-opacity="0.55" stroke-width="1"/>
-											<text class="ss-rellabel" x={w.lx} y={w.ly} text-anchor={w.sign < 0 ? 'end' : 'start'}>{L(w.label)}</text>
+									<svg class="ss-relsvg" viewBox="0 0 {REL_VW} 360" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+										<line class="ss-relseam" x1={REL_CX} y1={REL_ROWTOP + 18} x2={REL_CX} y2={REL_CY - REL_BOXH / 2 - 8}/>
+										<line class="ss-relseam" x1={REL_CX} y1={REL_CY + REL_BOXH / 2 + 8} x2={REL_CX} y2={REL_ROWBOT - 18}/>
+										<!-- leaders FIRST: a wedge always paints over a leader, never the reverse -->
+										{#each relModel.cells as c (c.id)}
+											<path class="ss-relleader" d="M{c.rimX} {c.rimY} L{c.ldx} {c.y}" stroke={c.color}/>
 										{/each}
-										<rect class="ss-relbox" x="392" y="158" width="116" height="44" rx="10"/>
-										<text class="ss-reltitle" x="450" y="185" text-anchor="middle">{L('Note')}</text>
+										{#each relModel.wedges as w (w.id)}
+											<path d={w.d} fill={w.color} fill-opacity="0.85" stroke={w.color} stroke-opacity="0.55" stroke-width="1"/>
+										{/each}
+										<rect class="ss-relbox" x={REL_CX - REL_BOXW / 2} y={REL_CY - REL_BOXH / 2} width={REL_BOXW} height={REL_BOXH} rx="10"/>
+										<text class="ss-reltitle" x={REL_CX} y={REL_CY + 5} text-anchor="middle">{L('Note')}</text>
+										{#each relModel.cells as c (c.id)}
+											<rect x={c.swx} y={c.y - 4.5} width={REL_SW} height={REL_SW} rx="2" fill={c.color}/>
+											<text class="ss-rellabel" x={c.tx} y={c.y} text-anchor="start"
+												textLength={c.tlen || undefined} lengthAdjust="spacingAndGlyphs">{c.label}</text>
+										{/each}
 									</svg>
 								</div>
 							{:else if activeSurface === 'calendar'}
@@ -1908,7 +2011,13 @@
 	.ss-gprev-warn { color: var(--text-warning, #f5a623); }
 	.ss-gprev-ok { color: var(--text-success, #30a46c); }
 	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
-	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
+	/* min-height: 0 — MEASURED 2026-09-13. `.ss-center` is a grid item in the `1fr` row, so its
+	   default `min-height: auto` refused to shrink below the preview's intrinsic height and the card
+	   overflowed `.ss`'s `overflow: hidden`. This clipped the Note-graph preview by 86px at a 460px
+	   viewport and 29px at 520 BEFORE this job touched anything; tightening the viewBox widened it to
+	   230/173/84px and pushed it into the 1366x768-at-125% case. With this line the preview scales
+	   down instead of being cut, at every viewport from 460 to 1080. */
+	.ss-center { grid-area: center; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; flex: 1; align-self: stretch; min-height: 0; display: flex; align-items: center; justify-content: center; }
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
@@ -1977,11 +2086,24 @@
 	   CalendarPanel scales to it. The wrapper is the single click-target (selects calendar). */
 	.ss-prev-alt--relgraph { width: 100%; height: 100%; max-width: 1100px; padding: 18px 22px; }
 	.ss-relprev { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer; }
-	.ss-relsvg { width: 100%; height: 100%; display: block; }
+	/* PJ-461 (Eisa, 2026-09-13: "take advantage of the empty space"). Against the committed baseline
+	   the box goes 900x360 -> 638x360; its origin was already 0. (An intermediate state in that session
+	   cropped to a 138 origin — it is not what this commit changes.) The
+	   packer clamps every callout cell inside [6, 632], so the drawing's envelope is text-INDEPENDENT:
+	   it measures 626x324u in all 15 locales, where the old radial labels rode past their own wedge
+	   tips. `overflow: visible` stays as the belt-and-braces guard. */
+	/* direction: ltr — the same fix NoteButterflyGraph.svelte:398-404 documents for the real lens,
+	   which this preview mimics and which it never carried. SVG `text-anchor` resolves against the
+	   inline base direction, so under an RTL interface `end` becomes the LEFT edge: measured, every
+	   Arabic label collapsed back onto its own wedge (content 220..680, i.e. the anchors themselves).
+	   The geometry is LTR by construction — left wing, right wing — so the box is pinned LTR and each
+	   label shapes itself via unicode-bidi: plaintext below. */
+	.ss-relsvg { width: 100%; height: 100%; display: block; overflow: visible; direction: ltr; }
 	.ss-relseam { stroke: var(--text-normal, #2e3338); stroke-opacity: 0.7; stroke-dasharray: 1 4; stroke-width: 1; }
-	.ss-rellabel { font: 500 12px var(--font-sans); fill: var(--text-muted, #6b7280); dominant-baseline: middle; }
+	.ss-rellabel { font: 500 12px var(--font-interface-theme); fill: var(--text-muted, #6b7280); dominant-baseline: middle; unicode-bidi: plaintext; }
+	.ss-relleader { fill: none; stroke-width: 1; stroke-opacity: .55; }
 	.ss-relbox { fill: var(--background-primary, #fff); stroke: var(--background-modifier-border, #d4d4d8); }
-	.ss-reltitle { font: 600 14px var(--font-sans); fill: var(--text-normal, #2e3338); }
+	.ss-reltitle { font: 600 14px var(--font-interface-theme); fill: var(--text-normal, #2e3338); }
 	.ss-prev-alt--calendar { width: 100%; height: 100%; max-width: 1100px; padding: 14px 18px; }
 	.ss-calprev { align-self: stretch; flex: 1; width: 100%; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
 	.ss-calprev.ss-sel { border-color: #b9acff; }
@@ -2208,7 +2330,7 @@
 	}
 	.ss-tiphint { font-size: 12px; color: var(--text-muted, #6b7280); margin-top: 4px; }
 	.ss-tiprowlbl { font-size: 12px; font-weight: 600; color: var(--text-muted, #6b7280); min-width: 66px; }
-	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
+	.ss-fsidebar { width: 260px; height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
 	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
 	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }
 	.ss-fbox { width: 44px; height: 30px; border-radius: var(--radius-m, 8px); background: var(--background-secondary, #ececed); border: var(--border-width, 1px) solid var(--background-modifier-border, #ccc); display: inline-block; }

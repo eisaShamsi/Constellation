@@ -1323,7 +1323,7 @@
 		top: 0;
 		width: 0;
 		height: 100%;
-		border-inline-start: 1px solid var(--background-modifier-border-hover, #555);
+		border-inline-start: 1px solid var(--background-modifier-border);
 	}
 	.tree-vline.tree-vline-last {
 		height: 50%;
@@ -1335,7 +1335,7 @@
 		top: 50%;
 		width: 100%;
 		height: 0;
-		border-top: 1px solid var(--background-modifier-border-hover, #555);
+		border-top: 1px solid var(--background-modifier-border);
 	}
 
 	/* Children container — adds the continuing vertical line */
@@ -1352,7 +1352,7 @@
 		top: 0;
 		bottom: 14px; /* Stop at the last child's connector midpoint */
 		width: 0;
-		border-inline-start: 1px solid var(--background-modifier-border-hover, #555);
+		border-inline-start: 1px solid var(--background-modifier-border);
 	}
 
 	/* ─── Node ─── */

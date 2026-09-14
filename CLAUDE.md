@@ -611,6 +611,41 @@ This is the third statement of one principle. *Don't Make Things Up* forbids fab
 
 **Canonical violation (the law's origin, 2026-08-03).** In a single §6 test tutorial I told the Boss to look for "bands/levels" in Sky View — which is a 3D force-directed cloud with no bands — and to "add a link type in **Settings → Links**", a page whose own text says link types live in the **Style Setter** and which carries a button linking there. I had opened neither screen. Two earlier turns in the same session had already required him to ask "which Review panel?" and "which Sky View?". His verdict: *"This test is unrealistic at all! You are referring to something I am not familiar with. I have designed the application, and don't know what this test is about!!!"*
 
+## Check What Is Already Built BEFORE You Ask (top of all rules — Boss-dictated 2026-09-14, LAW)
+
+> "This kind of mistakes is unacceptable. Don't ASSUME at all. GO and CHECK what have been built
+> before construct a question for something already done, or solved." — Eisa, 2026-09-14
+
+**Before putting ANY question, option paper, or design choice to the Boss, go and read what already
+exists in the app.** Not a grep for one symbol — open the surface, read its control registry, read
+its category, read every option it offers. If the thing is already built, the question is not a
+question: it is a gap in my knowledge of a codebase I wrote, and asking it spends his time to close
+that gap.
+
+**This is the third statement of one principle, and it is the one that costs HIM.** *Don't Make
+Things Up* forbids fabricating claims in output. *No Guessing* forbids fabricating them in reasoning.
+*Never Describe the App Without Looking At It* forbids fabricating the app. **This law forbids
+fabricating the OPEN QUESTION** — presenting as undecided something the app has already decided.
+
+**The test, before any question reaches him:** *have I opened the screen this question is about, and
+read what it already offers?* If not, the question is not ready. "I don't know yet — I'll look" is
+always available, and always cheaper than his answer.
+
+**Canonical violations, all on 2026-09-14, all in one sitting:**
+1. **The Calendar typeface.** I put a three-option design question to him about what the Calendar
+   should fall back to, **without opening the Style Setter's Calendar category** — which he had built,
+   and which carries **33 controls including "Calendar font"**. He had to tell me it existed. The
+   question was never open; only the *unset default* was, which is a fraction of what I asked.
+2. **"Do we have a Theme control?"** I filed "no Settings control writes `colorScheme`" as a
+   discoverability defect, reasoning outward from code, **without checking the Style Setter** — which
+   IS Constellation's theme control, with Saved Styles as the themes. He had to correct the frame.
+3. **"Nothing was written."** I told him an edit had not landed, from a tool's rejection message,
+   **without opening the file.** It had landed, on both lines.
+
+**How to apply.** Before a question: open the surface in the source, list its controls, read the
+options each offers, and check the ledger and session logs for whether it was already ruled. Then ask
+only what genuinely remains — and say what you checked, so he can see the question is real.
+
 ## The Test Pipeline: Auditor → Inspector → Boss (top of all rules — Boss-mandated 2026-08-03, LAW)
 
 > "Create a UI inspector. Their main role is to check and approve the intended tutorials/tests you want me to examine and approve. You shall not send me any test materials unless they are approved by the 'UI inspector'." — Eisa, 2026-08-03

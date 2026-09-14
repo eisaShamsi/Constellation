@@ -1114,7 +1114,7 @@
 	}
 	.base-error-msg {
 		color: var(--text-muted);
-		font-family: var(--font-monospace, monospace);
+		font-family: var(--font-monospace-theme, monospace);
 		font-size: 0.82rem;
 		white-space: pre-wrap;
 	}

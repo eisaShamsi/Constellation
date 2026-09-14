@@ -131,7 +131,7 @@
 		padding: 24px 28px 20px;
 		color: #cdd5e0;
 		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-family: var(--font-interface-theme, 'Inter', system-ui, sans-serif);
 	}
 
 	.sight-v6-tour-step {

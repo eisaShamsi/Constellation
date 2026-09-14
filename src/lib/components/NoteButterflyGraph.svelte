@@ -402,14 +402,14 @@
 	   unicode-bidi: plaintext (Arabic still reads right-to-left inside its own box). */
 	.bf-svg { width: 100%; height: 100%; display: block; outline: none; direction: ltr; }
 	.bf-seam { stroke: var(--text-normal); stroke-opacity: 0.7; stroke-dasharray: 1 4; stroke-width: 1; }
-	.bf-flank { font: 12px var(--font-sans); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
-	.bf-label { font: 12px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext;  }
+	.bf-flank { font: 12px var(--font-interface-theme); fill: var(--text-muted, #6b7280);  unicode-bidi: plaintext; }
+	.bf-label { font: 12px var(--font-interface-theme); dominant-baseline: middle; unicode-bidi: plaintext;  }
 	.bf-fil { cursor: pointer; }
 	.bf-marks.dimmed { opacity: 0.16; transition: opacity 0.12s; }
 	.bf-box { fill: var(--background-primary, #fff); stroke: var(--background-modifier-border, #d4d4d8); }
-	.bf-title { font: 600 15px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
-	.bf-sub { font: 11px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.bf-empty { font: 13px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	.bf-title { font: 600 15px var(--font-text-theme); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
+	.bf-sub { font: 11px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
+	.bf-empty { font: 13px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
 	.bf-plate { fill: var(--background-primary, #fff); fill-opacity: 0.94; stroke: var(--background-modifier-border, #d4d4d8); }
-	.bf-pname { font: 13px var(--font-sans); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
+	.bf-pname { font: 13px var(--font-interface-theme); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
 </style>

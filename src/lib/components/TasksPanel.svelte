@@ -226,7 +226,7 @@
 		align-items: flex-start;
 		gap: 8px;
 		padding: 6px 12px;
-		border-bottom: 1px solid var(--border-faint, #222);
+		border-bottom: 1px solid var(--border);
 		transition: background 0.1s;
 	}
 	.tp-item:hover {

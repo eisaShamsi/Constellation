@@ -811,22 +811,22 @@
 	.orr-body { cursor: pointer; }
 	.orr-cluster { cursor: pointer; }
 	.orr-marks.dimmed { opacity: 0.2; transition: opacity 0.12s; }
-	.orr-cn { font: 600 9px var(--font-sans); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
-	.orr-rim { font: 11px var(--font-sans); dominant-baseline: middle; unicode-bidi: plaintext; pointer-events: none; }
+	.orr-cn { font: 600 9px var(--font-interface-theme); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
+	.orr-rim { font: 11px var(--font-interface-theme); dominant-baseline: middle; unicode-bidi: plaintext; pointer-events: none; }
 	/* Remark 2: the recency label spoke + its ring chips / corner legend. */
 	.orr-spine { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.35; stroke-width: 1; stroke-dasharray: 1 3; }
 	.orr-tick { stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.5; stroke-width: 1; }
 	.orr-ring-chip { fill: var(--background-primary, #fff); fill-opacity: 0.72; stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; }
 	.orr-legend-box { fill: var(--background-primary, #fff); fill-opacity: 0.82; stroke: var(--background-modifier-border, #d4d4d8); stroke-opacity: 0.6; }
-	.orr-ring-lbl { font-family: var(--font-sans); font-weight: 600; fill: var(--text-muted, #6b7280); dominant-baseline: middle; unicode-bidi: plaintext; }
+	.orr-ring-lbl { font-family: var(--font-interface-theme); font-weight: 600; fill: var(--text-muted, #6b7280); dominant-baseline: middle; unicode-bidi: plaintext; }
 	.orr-ring-lbl.cold { fill: var(--text-faint, #9ca3af); }
 	.orr-pill { fill: var(--background-secondary, #f4f4f5); stroke: var(--background-modifier-border, #d4d4d8); }
-	.orr-title { font: 600 12px var(--font-text, var(--font-sans)); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
-	.orr-sub { font: 10px var(--font-sans); fill: var(--text-muted, #6b7280); }
-	.orr-empty { font: 13px var(--font-sans); fill: var(--text-muted, #6b7280); }
+	.orr-title { font: 600 12px var(--font-text-theme); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
+	.orr-sub { font: 10px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
+	.orr-empty { font: 13px var(--font-interface-theme); fill: var(--text-muted, #6b7280); }
 	.orr-plate { fill: var(--background-primary, #fff); fill-opacity: 0.96; stroke: var(--background-modifier-border, #d4d4d8); }
-	.orr-pn { font: 600 12px var(--font-sans); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
-	.orr-pm { font: 10.5px var(--font-sans); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
+	.orr-pn { font: 600 12px var(--font-interface-theme); fill: var(--text-normal, #1a1a1a); unicode-bidi: plaintext; }
+	.orr-pm { font: 10.5px var(--font-interface-theme); fill: var(--text-muted, #6b7280); unicode-bidi: plaintext; }
 	/* ALARM: a STATUS-coloured ring (distinct from every relationship hue) with a slow breathe-pulse. */
 	.orr-alarm { stroke: var(--text-error, var(--text-warning, #E5701F)); stroke-width: 1.6; animation: orr-breathe 2.6s ease-in-out infinite; }
 	@keyframes orr-breathe { 0%, 100% { stroke-opacity: 0.9; } 50% { stroke-opacity: 0.28; } }
