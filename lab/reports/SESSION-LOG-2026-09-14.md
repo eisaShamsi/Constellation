@@ -454,3 +454,83 @@ registry), but it was folded into prose. It is now a **named sub-item** of PJ-48
 PJ cannot quietly drop it. The verifier's own recommendation — *"the sentence needs the exception
 written in, not removed"* — is honoured: `--sidebar-width` IS a registry key, it is safe to retire
 because the generator has no callers, and the orphaned control remains filed.
+
+---
+
+## §21 — PJ-466 opened: the panel ruled, and the ledger's own entry was wrong in two ways
+
+**Function in hand:** the Mold Repair Door's end-of-run screen (`MoldRepairDialog.svelte`) — the
+receipt a run gives of itself. Ledger v2.14 has PJ-466 as the ► NEXT ACTION.
+
+**Nothing was written to the app.** This section records reads, one read-only design panel
+(`wf_6d74a307-646`, 13 agents) and one `findings-verifier` pass. Full verdict:
+`lab/reports/PJ-466-PANEL-VERDICT-2026-09-14.md`.
+
+### What the ledger's entry got wrong
+1. **"three exits" is FOUR.** `MoldRepairDialog.svelte:173` (delicate halt), `:182` (between-batches
+   blocker), **`:194` (normal completion)** and `:198` (the catch). The omitted one is where the Boss
+   has **already** seen a genuine write failure worded "skipped" — the rehearsal's Recovery 1,
+   `SESSION-LOG-2026-09-12.md:444`: *"3 fixed, 1 skipped."* over a `✕ … ReplaceFileW error 5` row. A
+   fix scoped to the ledger's three would have left a confirmed-wrong screen shipping. There is also
+   a **fifth honesty exit** nobody had scoped: a thrown `scan_stamped_molds` (`:99-106`) dismisses
+   the door in silence and `+layout.svelte:624`'s `catch { moldRepairCount = 0; }` retracts the
+   banner — a scan that could not run is reported as a universe with zero molds.
+2. **"his question" was not open, and asking it would have broken the law written today.** The entry
+   carries *"should a stale-file refusal halt the cascade at all?"* as a question for the Boss. The
+   app already answers it: `phantom_prune.rs:590-592` defines that exact class — *"the file
+   reappeared, or the row no longer classified as a phantom. **Never an error.**"* — and the door's
+   own header (`MoldRepairDialog.svelte:25-26`) says the halt exists *"so a systematic problem never
+   reaches the ordinary files"*, which an already-fixed file is not. It is a coding defect, not a
+   design choice. **Withdrawn.** The sibling question ("should a genuine write failure still halt?")
+   is likewise answered: `mig108.rs:1044-1046` — a consented, journaled, batched file operation
+   halts on the first genuine failure.
+
+### The finding that set the scope — the house already ships this receipt
+Three of the four lenses independently proposed **inventing** an outcome taxonomy while telling the
+panel no precedent existed. An attacker found one, and I verified it myself:
+`phantom_prune.rs:585-604` `PruneReceipt { removed, skipped, failed, unknown, stopped_early,
+refused }`, whose doc comments draw exactly the line this job needs. It is **rendered** at
+`SettingsModal.svelte:2753-2790` — neutral title ("Last removal"), one sentence per non-zero class, a
+refusal replacing the lot, every count through `$tn('plurals.entries', n)` — **in the same Settings
+page as the mold door's own entry point**. My own check found it is not alone: `repairReport`
+(`:2791+`) is a second shipped receipt with the same grammar and its own `stoppedEarly` line. The
+chair ruled for the shipped shape and against all three inventions. Under the Whole-Ecosystem Fix
+Law, a thirteenth vocabulary beside a working twelfth is the drift the law exists to prevent.
+
+### The root cause, stated once
+`MoldRepairOutcome` carries only `ok: bool` and free text (`mold_repair.rs:56-62`). There is no
+sentence in any language that separates *"left alone, nothing owed"* from *"still broken"*. That one
+missing field is why a benign refusal halts the run, why PJ-469's refusal causes a needless write,
+why `relinked_sources` over-counts, and why the receipt speaks English in fifteen languages. **One
+field, four ledger entries.**
+
+### Two checks disagreed, and reading settled it
+My register claimed `report` can be `null` at the summary via the between-batches blocker with zero
+delicate files. The `findings-verifier` **confirmed** it; the panel **refuted** it. I read the code:
+the only `await` between the blocker check at `:155-156` and the one at `:179` sits **inside**
+`if (delicate.length > 0)`, so with no delicate files the two checks cannot disagree and that exit is
+unreachable. **The panel is right; my verifier was wrong.** `report === null` reaches the summary by
+exactly one path — the catch at `:198`. And the real Exit-2 screen is *worse* than the empty one I
+imagined: a success headline with a green count over a run whose second half never happened.
+
+The verifier earned its keep elsewhere, correcting three of my claims: there are **ten** non-success
+sites in `repair_one`, not nine (`:507` "Could not read it" was in nobody's taxonomy); `:537` leaves
+the file **changed** on disk while reporting `ok:false`, so "skipped" is false about a file that was
+written; and `:540`'s rollback is `let _ = std::fs::write(...)` while `:541` asserts *"so it was
+undone"* regardless. The panel added that `:517` is provably **unreachable** and that
+`mold_repair.rs:443-447` is dead code.
+
+### Where it now stands
+Scope, build plan (6 steps), the full proposed copy, the risks and the dissent are in the panel
+verdict. The job is **a small `/migration`** by CLAUDE.md's own boundary test — it changes the IPC
+report shape, Rust ↔ Svelte — and it closes **PJ-466 + PJ-469 + PJ-470 + PJ-471** together, for about
+24 new keys and one new plural noun across 15 locales.
+
+**Two questions go to the Boss, and only two** — the copy (his vocabulary, by standing ruling) and
+the priority + the WA#6 filing of two defects found on other doors (the importer's green tick over a
+failed import; a progress strip that can never say it failed). Eleven other candidate questions were
+answered by the app and are recorded in the verdict's *Already decided* section rather than spent on
+his time.
+
+**Orientation:** NOT bumped in this commit. No SO#6 trigger has fired — no migration has opened, no
+PJ has closed, no rule changed. It bumps when PJ-466 closes. Stated so the skip is not silent.
