@@ -1,5 +1,88 @@
 # Constellation — Orientation & Onboarding
 
+## What changed in v4.36 — 2026-09-15 — PJ-475 prepared: the entry's own premise was wrong, a filed feature was killed on measurement, and applying a Saved Style turns out to discard his tuned work
+
+**Read this first if you are a fresh session.** Then `lab/reports/HANDOVER-2026-09-15.md`, then
+`lab/reports/PJ-475-BRIEF-2026-09-15.md` if you are building it.
+
+### What was asked, and what preparing it actually found
+He asked for one thing: *"Let me put on a different theme without going anywhere."* A 13-agent
+read-only design panel plus my own measurements produced a build-ready brief — **and seven
+pre-existing defects, two of them Group 1.** No code was written.
+
+### THE ENTRY'S OWN PREMISE WAS FALSE, and I wrote it
+PJ-475 said the Saved Styles are "loaded only when the Style Setter opens", so the job was to make
+them available app-level. **`<StyleSetter />` is at `+layout.svelte:10613`, at ONE tab of indent,
+inside no `{#if}`.** The `{#if $styleSetterOpen}` at `StyleSetter.svelte:1320` gates the MARKUP, not
+the lifecycle — so its `onMount` already calls `loadStylePresets()` at first paint on every boot.
+The list is invisible to the app because it lands in a component-local `$state`, not because of when
+it loads. **Building on the old premise would have added a second boot-time IPC.** The work is
+consolidation. *(I had recorded the false version as a "measured fact" and handed it to the panel;
+a lens caught it by opening the file.)*
+
+### A FILED FEATURE, KILLED ON MEASUREMENT — "mark the active style"
+Three of four lenses wanted it; one claimed to have proved it derivable on his real data. The proof
+covered five of six sections and omitted the one that breaks it. **`applyPreset` MERGES `linkColors`
+by explicit design** (`stylePresets.ts:258-266`); his registry resolves to 11 link types and "Eisa
+Default" carries 9 — so a whole-section equality test is **FALSE for that style one second after he
+applies it.** The mark would be permanently dark for one row in three and correct for the other two,
+so any test written against the other two confirms a broken predicate. **The filed question presumed
+the feature; the honest answer is that it should not exist.** This is the shape to remember: a
+question in the ledger can smuggle in an assumption that the measurement destroys.
+
+### THE FINDING THAT CHANGES THE JOB — applying a Saved Style is LOSSY, and there is no undo
+`styleOverride` is written WHOLE through a shallow spread, so apply **REPLACES** the map, and the
+main window then actively REMOVES the CSS variables that vanished. Measured by me against his live
+files, and reproduced in a second universe:
+
+| applying | to `Eisa Cognitive Knowledge` (174 tuned values) | |
+|---|---|---|
+| **Eisa Default** | ► 120 | **loses 54** — `--confidence-*`, `--i360-*`, `--link-tier-accent`… |
+| **تنسيق عيسى الرئيس** | ► 174 | loses 0 (a superset) |
+| **Eisa Default 02** | ► 157 | **loses 17** |
+
+None of the lost variables has a `:root` fallback. **The Setter's Keep MERGES while apply REPLACES** —
+an asymmetry nothing documents. This has been true of every click in the gallery; one keystroke just
+makes it reflexive. So PJ-475 ships an **Undo**, and the underlying decision is filed as **PJ-497
+(Group 1)**.
+
+### Filed: PJ-497 — PJ-503, none of them introduced by this feature
+PJ-497 the lossy replace (Group 1) · **PJ-498** a failed link-type write makes the whole apply a
+silent no-op, the named app-killer class (Group 1) · PJ-499 the second screen keeps variables the
+main window removed · PJ-500 a duplicate/missing preset `id` throws in a keyed `{#each}`, in
+production · PJ-501 no `dir` on a user-authored command name (one of his Styles is Arabic) · PJ-502
+shortcuts are per-universe while Styles are app-global · PJ-503 the PJ-294 guard cannot match a
+template-literal command id, so it would miss the very defect it exists for.
+
+### THE METHOD SECTION OF v4.35 IS CORRECTED — the shadow trap is PER-FILE, and it caught me
+v4.35 recorded that `%APPDATA%\world.uconstellation.app` is unreadable from this session. **Right in
+mechanism, overstated in scope** — and I then tried to correct it in the WRONG direction. Reading
+`style-presets.json` there worked, and `write-journal.jsonl` in the same folder was written by the
+app **today**, so I concluded the folder was live and the shadow story false, and was about to
+rewrite four documents. **A pass-through file always looks live whether or not its neighbour is
+shadowed** — a cross-check that cannot disagree. A `findings-verifier` refuted me with file
+IDENTITY, which I had not tested: `fsutil file queryfileid` returns the **same NTFS file ID** for
+both paths — one file object, two paths, not two copies. I reproduced it myself.
+
+**The test, per FILE:** `fsutil hardlink list <path>` — **`Error 50` = genuine**; a `LocalCache`
+path = **shadowed**. In that folder `universes.json` is shadowed; `style-presets.json`,
+`app-prefs.json` and `write-journal.jsonl` are genuine. Two consequences recorded in the same pass:
+the orientation **contradicted itself** (a v4.x passage concluded from the same redirect that *"the
+registry really does hold one entry"* — the trap, one paragraph after naming it), and **§17's
+2026-08-07 premises are the artifact**; its advice stands, the mystery it describes may not exist.
+**PJ-233 rests on the same read and is flagged** — PJ-321 was CLOSED for exactly this trap.
+
+### For the next session's habits
+- **A "measured fact" in a brief is still a claim.** I handed the panel one that was false; it cost a
+  lens's time and would have cost a wrong build.
+- **A filed question can smuggle an assumption.** "Mark the active style?" presumed the mark was
+  possible. Measure the feature before answering the question about it.
+- **Three instruments failed in one hour and only the falsifiable ones held** — a panel lens, my
+  own inference, and my own grep loop (which mis-reported `universes.json` as genuine; the raw
+  command disagreed with my matcher).
+
+---
+
 ## What changed in v4.35 — 2026-09-15 — PJ-466 CLOSED: one missing field was the whole defect, four of the bugs fixed were mine, and a new standing order on how tests are delivered
 
 **Read this first if you are a fresh session.** Then `lab/reports/HANDOVER-2026-09-15.md`.

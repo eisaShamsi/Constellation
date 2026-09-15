@@ -1,39 +1,129 @@
 # Constellation Pending Jobs
 
-**Version 2.16 | 2026-09-15 — PJ-466 CLOSED, Boss-passed on his screen: the repair door's receipt now tells the truth, and it closed PJ-469 + PJ-470 + PJ-471 with it. One missing field was the whole defect — `MoldRepairOutcome` carried only `ok: bool`, so a file that needed nothing halted the run and a real write failure was called "skipped" in fifteen languages. The fix is the shape the house already ships (`PruneReceipt`), not an invented one. FOUR defects were mine and each was caught by a different gate: a boot regression I measured at 7,768 ms on his 2.03 GB universe, a safety guard wired to the wrong loader (a rule `index_repair.rs` already enforces as a test), PJ-469 fixed at the wrong layer with a false receipt line in it, and a placeholder mismatch two translators caught that neither inspection round did. The wrap panel then found a fifth: a required test step presented as optional, which would have produced a false PASS. Filed PJ-493…PJ-495 + a method note. NEXT: PJ-475 — his own request.**
+**Version 2.17 | 2026-09-15 — PJ-475 PREPARED and build-ready for a fresh session, and the preparation found more than the feature. The entry's OWN premise was wrong (the Saved Styles already load at first paint on every boot — the Style Setter is mounted unconditionally — so the work is consolidation, not addition). Two of its three filed questions dissolved and the third, "mark the active style", was KILLED on measurement: it cannot tell the truth for one of his three styles even one second after he applies it. And the finding that changes the job — applying a Saved Style REPLACES his tuned `styleOverride` map: measured, "Eisa Default" discards 54 of the 174 values he has tuned, and the app has no undo of any kind. Filed PJ-497…PJ-503, two of them Group 1. The shadow-trap method note is CORRECTED (it is per-FILE, and it caught me too). NEXT: build PJ-475 from its brief.**
 
-> **What changed in v2.16** — PJ-466 / PJ-469 / PJ-470 / PJ-471 CLOSED (`5e3e6857`); PJ-493…PJ-495
-> filed; a standing method note recorded about `%APPDATA%` reads; and a new standing order in
-> `CLAUDE.md` (Testing Instructions Rule 5, Boss-dictated): **deliver every test tutorial IN THE CHAT
-> in full detailed steps** — the file in `lab/reports/` is the archive, not the delivery.
+> **What changed in v2.17** — PJ-475 rewritten as a build-ready, panel-ruled entry with its brief at
+> `lab/reports/PJ-475-BRIEF-2026-09-15.md`; **PJ-497…PJ-503 filed** (PJ-497 and PJ-498 are Group 1);
+> the `%APPDATA%` method note corrected from folder-wide to **per-file**; **PJ-233 flagged** as
+> resting on the same shadow artifact that closed PJ-321.
 >
-> **► NEXT ACTION: PJ-475** — switch a Saved Style from the command palette. **His own request**,
-> which he timed as *"after PJ-461 closes"*; PJ-466 was taken first on his ruling. `loadStylePresets()`
-> and `applyPreset()` already exist and are standalone — only app-level wiring is missing. Three open
-> questions are in the entry. Then PJ-456 (the 107-file wave) · PJ-457 · PJ-458 · PJ-459 · PJ-462 ·
-> PJ-463 · PJ-489 · PJ-493 · the multi-folder templates setting · the PJ-264/PJ-378 unpack · PJ-434 ·
-> PJ-438.
+> **► NEXT ACTION: build PJ-475** from `lab/reports/PJ-475-BRIEF-2026-09-15.md`. Nothing is left for
+> the Boss to decide on it. Then PJ-497 / PJ-498 (both Group 1, both pre-existing and both reachable
+> today through the Style Setter's gallery), then PJ-456 · PJ-457 · PJ-458 · PJ-459 · PJ-462 · PJ-463 ·
+> PJ-489 · PJ-493 · the multi-folder templates setting · the PJ-264/PJ-378 unpack · PJ-434 · PJ-438.
 >
-> - **Still open from the same family:** PJ-467 (the mold scan re-runs on every watcher flush — Rule 8)
->   and PJ-468 (a failed repair leaves no journal line; `gate_write` returns before `journal_ext`).
->   Neither was in PJ-466's scope and both were ruled out deliberately, not forgotten.
-> - **PJ-430 corroborated, not re-filed:** three translators independently measured the "vault"
->   terminology defect in their own locales while working on PJ-466 (ko 11 strings, hi 18, pt 33).
+> - **A caution for whoever builds PJ-475:** the panel found SEVEN defects in the surrounding code,
+>   none introduced by this feature. Read the brief's risk list before writing a line — several of
+>   them (the silent false success, the duplicate-id crash) are reachable from the new door on day
+>   one and must be closed in the same pass under the Whole-Ecosystem Fix Law.
 
 ---
 
 ## 🧾 Filed 2026-09-14 — from the PJ-461 close (his requests, the panels' findings, and my own errors)
 
-### 🆕 PJ-475 *(Group 2 — HIS REQUEST, timed by him: "after PJ-461 closes")* — switch a Saved Style from the command palette
-**Concept:** *"Let me put on a different theme without going anywhere."* The Style Setter is the theme
-control and Saved Styles are the themes (his ruling, 2026-09-14); choosing one should not require
-opening a full-page editor. **What already exists:** `loadStylePresets()` and `applyPreset(preset)` are
-exported from `src/lib/libraries/stylePresets.ts`, independent of the component; `StyleSetter.svelte`'s
-`applyStyle()` is a four-line wrapper over `applyPreset`. **The only gap:** `savedStyles` is
-component-local (`StyleSetter.svelte:727`), loaded when the Setter opens, while `getCommands()`
-(`+layout.svelte:2711+`) builds synchronously — so the presets must be available app-level. **Open
-questions:** refresh when a style is renamed/deleted with the palette closed? mark the active style?
-stable ids so a favourite theme can be bound to a key in Hotkeys?
+### 🔼 PJ-475 *(Group 2 — HIS REQUEST; PREPARED 2026-09-15, panel-ruled, BUILD-READY)* — switch a Saved Style from the command palette
+**Brief: `lab/reports/PJ-475-BRIEF-2026-09-15.md`** — written for a session that has never seen this
+code. 13-agent read-only design panel (`wf_9b00de31-003`) + my own measurements. No code written.
+
+**Concept:** *"Put on a saved look from wherever you are standing — without opening the editor that
+made it."* His request, his framing (2026-09-14: the Style Setter IS the theme control, Saved Styles
+ARE the themes).
+
+**⚠ THIS ENTRY'S OWN PREMISE WAS WRONG — corrected here before anyone builds on it.** The old text
+said the presets are "loaded when the Setter opens", so the work was to make them available
+app-level. **False.** `<StyleSetter />` sits at `+layout.svelte:10613` at ONE tab of indent, inside
+no `{#if}`; the `{#if $styleSetterOpen}` at `StyleSetter.svelte:1320` gates the MARKUP, not the
+lifecycle. Its `onMount` therefore already calls `loadStylePresets()` at first paint on EVERY boot.
+The list is invisible to the app because it lands in a component-local `$state`
+(`StyleSetter.svelte:727`) — **the work is CONSOLIDATION, not addition.** Building on the old premise
+would have added a second boot-time IPC.
+
+**The three filed questions are SETTLED. Do not re-ask them.**
+- *Stable ids for Hotkeys?* — **already exist.** `StylePreset.id` is a `crypto.randomUUID()`
+  (`stylePresets.ts:36`), and Hotkeys binds by arbitrary command id
+  (`utils.ts:753`, `customShortcuts: Record<string,string>`). Binding comes free — but a row
+  WITHOUT `shortcut: scRaw(id)` is worse than no row: the Clear button only renders `{#if
+  cmd.shortcut}`, so a binding would permanently reserve a combination and fire nothing.
+- *Refresh when a style is renamed/deleted?* — **dissolved by the build.** One list, one owner;
+  there is nothing to refresh. Re-loading on palette open was considered and killed (an `invoke()`
+  on a surface that must feel instant).
+- *Mark the active style?* — **KILLED, and it must stay killed.** Measured on his real data:
+  `applyPreset` MERGES `linkColors` by explicit design (`stylePresets.ts:258-266`), his registry
+  resolves to 11 link types and "Eisa Default" carries 9 — so any whole-section equality test is
+  FALSE for that style one second after he applies it. The mark would be permanently dark for one
+  row in three, and correct for the other two, so any test using the other two confirms a broken
+  predicate. **The filed question presumed the feature; the honest answer is that it should not
+  exist.**
+
+**THE FINDING THAT CHANGES THE JOB — applying a Saved Style is LOSSY and irreversible.**
+`styleOverride` is written WHOLE through a shallow top-level spread, so apply REPLACES the map; the
+main window then actively REMOVES vanished CSS variables. Measured by me against his live files:
+
+| applying | to Eisa Cognitive Knowledge (174 tuned values) | |
+|---|---|---|
+| **Eisa Default** | ► 120 | **loses 54** (incl. `--confidence-contested`, `--confidence-established`, `--i360-blind`, `--i360-tension`, `--link-tier-accent`) |
+| **تنسيق عيسى الرئيس** | ► 174 | loses 0 (a superset) |
+| **Eisa Default 02** | ► 157 | **loses 17** |
+
+Reproduced in Scratch (173 ► 120, losing 53). **There is no settings undo anywhere in the app.**
+This has been true of every click in the Setter's gallery, but that took two navigations; one
+keystroke is different. **So the build ships an Undo** — a small fixed line after a switch, one
+button, restores exactly, self-dismissing. NOT in the status bar: `.status-bar` is
+`display: none !important` under `body.focus-active`, and the palette works in Focus mode.
+
+**Nothing is left for the Boss to decide on the build.** He has been told the lossy behaviour and
+that all three of his Saved Styles are light.
+
+---
+
+## 🧾 Filed 2026-09-15 (later) — from the PJ-475 design panel (WA#6: discovered, therefore filed)
+
+All measured against the working tree or his live data. **None is introduced by PJ-475** — each is
+pre-existing and reachable today through the Style Setter's own gallery.
+
+### 🆕 PJ-497 *(HIGH — Group 1 — silent data loss of his own design work)* — applying a Saved Style REPLACES `styleOverride` and discards tuned values, with no undo
+The Setter's **Keep** MERGES; **apply** REPLACES — an asymmetry nothing documents. Measured: applying
+"Eisa Default" to `Eisa Cognitive Knowledge` drops **54 of 174** tuned CSS variables, none of which
+has a `:root` fallback, and the main window removes vanished keys immediately. Reproduced in
+Scratch. No settings undo exists. PJ-475 ships a per-action Undo at the new door; **the underlying
+replace-vs-merge decision, and the same exposure at the Setter's gallery, are this entry.**
+
+### 🆕 PJ-498 *(HIGH — Group 1 — silent false success, the named app-killer class)* — a failed link-type write makes the whole Style apply a silent no-op
+`applyPreset` awaits `saveLinkTypes` BEFORE `updateSettings` (`stylePresets.ts:258-267`), and
+`saveLinkTypes` THROWS on its never-read latch (`linkTypeRegistry.ts:190-198`). `StyleSetter.applyStyle`
+(`:1048-1052`) has no `try/catch`. Net: the click appears to work, nothing changes, nothing is said.
+The palette door is MORE exposed — it can be opened before the registry has loaded.
+
+### 🆕 PJ-499 *(MED — Group 2)* — the second screen keeps CSS variables the main window has removed
+`+layout.svelte:2513-2517` tracks written variables and REMOVES the ones that vanish;
+`SecondScreenPage.svelte:596` only `setProperty`s the present keys, with no removal counterpart.
+Applying "Eisa Default" drops 54 variables: the main window clears them, the second screen keeps
+rendering them, and the two windows disagree until it is reopened.
+
+### 🆕 PJ-500 *(MED — Group 2 — a crash, in production)* — a duplicate or missing preset `id` throws in the palette and the Setter gallery
+`loadStylePresets` does no per-item validation and `isValidPreset` (`stylePresets.ts:285`) never
+checks `id`. Two id-less presets both key as the same value, and a keyed `{#each}` throws on a
+duplicate key (Svelte's non-DEV branch calls `e.each_key_duplicate` deliberately). Reachable via a
+hand-edited or imported `.json`.
+
+### 🆕 PJ-501 *(LOW — Group 3 — RTL)* — the command palette and the Hotkeys list have no `dir` on a command name
+Every command name today is a `$t()` value matching the UI direction, so `.pi-name`
+(`CommandPalette.svelte:93`) and `.hotkey-name` (`SettingsModal.svelte:2933`) have never needed
+one. One of his Saved Styles is **تنسيق عيسى الرئيس**. Sibling surfaces already do it
+(`StyleSetter.svelte:1370`, `QuickSwitcher.svelte:178,194`). PJ-475 fixes both sites in its own pass;
+this entry carries any other surface that renders a user-authored name as a command.
+
+### 🆕 PJ-502 *(LOW — Group 3 — a namespace mismatch worth writing down before it bites)* — a hotkey bound to a Saved Style is per-universe, but the Styles are app-global
+`customShortcuts` lives in the per-universe `.constellation/settings.json` (`universe.rs:2157`);
+`style-presets.json` is app-global (`style_presets.rs:16-24`). A key bound to a Style in one universe
+is silently dead in another, and deleting a Style prunes the binding only in the universe that is
+open. Latent for him today (his `customShortcuts` is empty). Per-universe is probably right — it
+matches every other shortcut — but the asymmetry must be recorded, not discovered.
+
+### 🆕 PJ-503 *(LOW — Group 3 — a guard that cannot catch what it exists for)* — the PJ-294 hotkey-binding test cannot see a template-literal command id
+`tests/pj-294/hotkeyBinding.test.ts:250` pins that every palette command carries a `shortcut` field,
+using a regex that cannot match an id built from a template literal. PJ-475 introduces exactly such
+ids (`style:${'{'}p.id{'}'}`), so the guard would not catch the very defect it was written for.
 
 ### 🆕 PJ-476 *(LOW — Group 3)* — "Toggle dark/light mode" cannot be found by its own concept word
 `CommandPalette.svelte:27-31` matches only `name` and `category`; the command is "Toggle dark/light
