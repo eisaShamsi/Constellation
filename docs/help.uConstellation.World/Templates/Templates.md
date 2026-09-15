@@ -38,8 +38,10 @@ with a **Review templates to fix** button. The same review is always reachable f
 The review lists every affected file and the date it wrongly claims. **Show me one
 before and after** proves the change on a sample: exactly one line removed (the
 stamp) and one line added (`kind: template`); nothing else in the file changes.
-Nothing is written until you click **Fix**. Every file is backed up first (the
-receipt shows where), and a file whose change does not verify is left untouched.
+Nothing is written until you click **Fix**. Each file that is actually changed is
+backed up first, and the receipt tells you where. A file whose change does not
+verify has the original written back; in the rare case that even that cannot be
+done, the receipt says so and points you at the backup.
 
 If one of the listed files is open in a tab, the fix refuses to run and names it.
 You can close that tab right there — the screen behind the card stays clickable —
@@ -48,6 +50,26 @@ dialog cannot be dismissed and no shortcut reaches the app; that is deliberate, 
 nothing can overwrite a file mid-repair. The review only ever covers the active
 universe's own files: a template in another universe is fixed when that universe
 is open.
+
+### What the receipt tells you
+
+When the fix finishes, a screen headed **What the fix did** accounts for every file.
+It never claims more than happened: there is one plain sentence for each kind of
+outcome, and a sentence only appears if that outcome occurred.
+
+- **Fixed** — the birth date was removed and the file marked as a template.
+- **Kept** — nothing needed doing: the file was already fixed, was edited after the
+  review, or is no longer there. **A kept file is never a failure and never stops
+  the run**; the fix carries on to the remaining files.
+- **Could not fix** — the repair did not complete, and each file's own reason is
+  listed beneath. Your file is named, and so is what to do about it.
+- **Did not reach** — the run stopped before these files. Nothing in them was
+  changed and nothing in them was fixed.
+
+If the run stopped early, a single line above the counts says why, and a line below
+tells you that you can run it again from **Settings → Universe & Libraries**.
+Files with an unusual shape are repaired first, on their own, so that if something
+is systematically wrong it stops there rather than reaching the rest.
 
 ## Template Variables
 

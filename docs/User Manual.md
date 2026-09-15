@@ -1624,10 +1624,20 @@ own date.
 If older templates still carry such a stamp, Constellation shows a notice after
 startup with a **Review templates to fix** button (also under Settings → Universe &
 Libraries → Templates). The review lists each affected file, shows the exact
-two-line change on a sample, and writes nothing until you click **Fix**. Every file
-is backed up first, and the fix refuses to run while any listed file is open in a
-tab — close that tab behind the dialog, then press **I've closed them — try again**.
-While a fix is running the dialog cannot be dismissed, by design.
+two-line change on a sample, and writes nothing until you click **Fix**. Each file
+that is actually changed is backed up first, and the fix refuses to run while any
+listed file is open in a tab — close that tab behind the dialog, then press
+**I've closed them — try again**. While a fix is running the dialog cannot be
+dismissed, by design.
+
+When it finishes, a screen headed **What the fix did** accounts for every file, with
+one plain sentence per kind of outcome and no sentence for an outcome that did not
+occur: *Fixed*, *Kept* (nothing needed doing — already fixed, edited since the
+review, or no longer there), *Could not fix* (with each file's own reason beneath),
+and *Did not reach* (the run stopped before them; nothing there was changed). **A
+kept file is never treated as a failure and never stops the run.** If the run did
+stop early, one line says why and another tells you that you can run it again from
+Settings → Universe & Libraries.
 
 ### New note from template
 
