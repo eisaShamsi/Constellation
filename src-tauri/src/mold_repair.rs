@@ -52,23 +52,67 @@ pub struct MoldCandidate {
     pub inbound_cid_links: u32,
 }
 
+/// Which class an outcome belongs to (PJ-466).
+///
+/// `ok: bool` could not tell "left alone, nothing owed" from "still broken", so the door counted
+/// both as failures: a file that needed nothing halted the run, and a genuine write failure was
+/// reported to the user as "skipped". The three-way split is not invented here — it is the shipped
+/// `PruneReceipt`'s (`phantom_prune.rs:585-604`), whose own doc comments draw the same line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MoldOutcomeKind {
+    /// Changed on disk and verified. Nothing is owed.
+    Repaired,
+    /// Nothing was attempted and nothing is owed — this file no longer needs the repair.
+    /// **Never an error** (`phantom_prune.rs:590-592`): the second look disagreeing with the first
+    /// is the system working, not failing. A `Kept` outcome must never halt the cascade.
+    Kept,
+    /// The repair did not complete. The user is owed an account of every one of these, and a
+    /// `Failed` in the delicate batch halts the run — the same rule a consented batched file
+    /// operation already follows at `mig108.rs:1044-1046`.
+    ///
+    /// **Do NOT write "the birth date is still on disk" here, however natural it reads.** It is
+    /// true of most members and FALSE of `readBackFailed`, where `gate_write` already succeeded and
+    /// only the verifying read failed; and it is UNKNOWN for `verifyNotRestored`. A false claim in
+    /// a doc comment is how a removed sentence gets re-derived by the next author — PJ-466 removed
+    /// exactly that sentence from the user-facing copy.
+    Failed,
+}
+
 /// What happened to one file.
 #[derive(Debug, Clone, Serialize)]
 pub struct MoldRepairOutcome {
     pub path: String,
-    pub ok: bool,
-    /// Plain-language detail — the reason on failure, the confirmation on success.
+    pub kind: MoldOutcomeKind,
+    /// A STABLE code naming why, for the frontend to translate. The codes are the contract:
+    /// `repaired` · `repairedIndexLater` · `gone` · `notStamped` · `notOurs` · `unreadable` ·
+    /// `notPreparable` · `backupFailed` · `backupMismatch` · `writeFailed` · `readBackFailed` ·
+    /// `verifyFailed` · `verifyNotRestored`. Never render this to a user untranslated.
+    pub reason: &'static str,
+    /// The raw technical detail (English, may carry an OS error). Shown as a dimmed tail under the
+    /// translated sentence, the way `settings.index.repair.familyFailed` already does it.
     pub detail: String,
+    /// True once this file's backup was written AND read back identical — so the report can say
+    /// "each file that was changed was backed up first" as a counted fact rather than an
+    /// assumption. Several return paths come back before the backup is ever attempted.
+    pub backed_up: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MoldRepairReport {
+    /// Every file the caller submitted — including those that turned out to need nothing.
     pub attempted: usize,
     pub repaired: usize,
+    /// Left alone with nothing owed. NOT a failure, and deliberately not counted as one.
+    pub kept: usize,
+    /// Not repaired AND still carrying the defect. This is what the halt reads.
     pub failed: usize,
+    /// How many files actually got a verified backup. `backup_dir` names where.
+    pub backed_up: usize,
     pub backup_dir: String,
     pub outcomes: Vec<MoldRepairOutcome>,
-    /// Notes re-read because they linked to a repaired mold by identity.
+    /// Notes re-read because they linked to a repaired mold by identity — only those whose
+    /// re-index actually SUCCEEDED (PJ-470: the failures used to be counted as refreshed).
     pub relinked_sources: Vec<String>,
 }
 
@@ -251,8 +295,21 @@ pub(crate) fn strip_stamp_and_mark_template(content: &str) -> Option<String> {
 pub fn scan_stamped_molds(app: tauri::AppHandle) -> Result<Vec<MoldCandidate>, String> {
     let libs = crate::libraries::load_libraries(&app);
     let foreign = crate::libraries::foreign_library_roots(&app, &libs);
-    let inbound = inbound_cid_counts(&app);
-    Ok(scan_stamped_molds_in(&libs, &foreign, &inbound))
+    // Walk FIRST, then ask about the handful of identities the walk actually found.
+    //
+    // This scan runs on every boot (`refreshMoldRepairCount`), so its cost is boot cost. The
+    // whole-table `GROUP BY` that used to feed it was cheap only because `COUNT(*)` could be
+    // answered from the covering index; counting NOTES instead of LINK ROWS needs `source_path`,
+    // which drops that plan and seeks into a 2 GB table for every one of ~234,000 rows, then
+    // builds a temp B-tree per group. MEASURED on Eisa Cognitive Knowledge: 23 ms → 1,128 ms warm
+    // and 8,215 ms cold. Asking for ~43 known cids instead is 0.10 ms, with no new index.
+    // Rule 8's hard constraint: no new feature may regress boot.
+    let mut found = scan_stamped_molds_in(&libs, &foreign, &BTreeMap::new());
+    let inbound = inbound_cid_counts(&app, &found.iter().map(|c| c.cid_cn.clone()).collect::<Vec<_>>());
+    for c in &mut found {
+        c.inbound_cid_links = inbound.get(&c.cid_cn).copied().unwrap_or(0);
+    }
+    Ok(found)
 }
 
 /// The scan, free of `AppHandle`, so a test drives THIS function and not a copy of its loop.
@@ -431,6 +488,25 @@ pub fn repair_stamped_molds(
     paths: Vec<String>,
 ) -> Result<MoldRepairReport, String> {
     let root = crate::universe::active_universe_dir(&app)?;
+
+    // PJ-466: refuse the RUN, not every file in it. Without this, an unreadable registry makes the
+    // per-file sovereignty check answer "not ours" for all 43 rows — a receipt that blames the
+    // user's files for a problem with the registry. The house already refuses whole runs this way:
+    // `PruneReceipt` carries a `refused` field precisely so "the run did not happen" is not told as
+    // N failures.
+    //
+    // It MUST be `try_load_libraries` — the strict, own-only, UNCACHED loader that `require_own_library`
+    // itself resolves through. The federation-recursive `load_all_libraries` would be the wrong
+    // predicate twice over: it reads a module-level cache that can answer from a warm copy after
+    // `libraries.json` has become unreadable, and it counts a Linked Universe's libraries, which can
+    // make the list non-empty while THIS universe's own registry is unreadable. Either way the guard
+    // would pass and the 43 refusals it exists to prevent would print anyway. `index_repair.rs`'s
+    // `no_index_write_module_resolves_libraries_through_the_federation` test now pins this module too.
+    let own = crate::libraries::try_load_libraries(&app).map_err(|e| {
+        format!("Constellation could not read this universe's libraries just now, so it has stopped and changed nothing: {e}")
+    })?;
+    let foreign = crate::libraries::foreign_library_roots(&app, &own);
+
     let backup_dir = crate::universe::constellation_dir(&root).join("pj454-backup");
     std::fs::create_dir_all(&backup_dir)
         .map_err(|e| format!("Could not create the backup folder: {e}"))?;
@@ -440,12 +516,11 @@ pub fn repair_stamped_molds(
 
     for p in &paths {
         let path = Path::new(p);
-        let outcome = repair_one(&app, path, &backup_dir).unwrap_or_else(|e| MoldRepairOutcome {
-            path: p.clone(),
-            ok: false,
-            detail: e,
-        });
-        if outcome.ok {
+        // PJ-466: `repair_one` returns an outcome directly. It previously returned a `Result` whose
+        // `Err` arm none of its exits could produce, so the `unwrap_or_else` fallback here was dead
+        // code that could never be constructed — dead code in a receipt path is a class nobody reads.
+        let outcome = repair_one(&app, path, &backup_dir, &own, &foreign);
+        if outcome.kind == MoldOutcomeKind::Repaired {
             if let Ok(prev) = std::fs::read_to_string(backup_path_for(&backup_dir, path)) {
                 if let Some((cid, _)) = mold_evidence(&prev) {
                     repaired_cids.push(cid);
@@ -460,15 +535,39 @@ pub fn repair_stamped_molds(
     // re-indexed — so re-index them here rather than leave the residue.
     let relinked = reindex_sources_linking_to(&app, &repaired_cids);
 
-    let repaired = outcomes.iter().filter(|o| o.ok).count();
+    let Tally { repaired, kept, failed, backed_up } = tally(&outcomes);
     Ok(MoldRepairReport {
         attempted: outcomes.len(),
         repaired,
-        failed: outcomes.len() - repaired,
+        kept,
+        failed,
+        backed_up,
         backup_dir: backup_dir.to_string_lossy().to_string(),
         outcomes,
         relinked_sources: relinked,
     })
+}
+
+struct Tally {
+    pub repaired: usize,
+    pub kept: usize,
+    pub failed: usize,
+    pub backed_up: usize,
+}
+
+/// Count the outcomes BY CLASS.
+///
+/// PJ-466: the report used to compute `failed = attempted - repaired`, which is what made a file
+/// that needed nothing indistinguishable from one the app could not write — and what let a benign
+/// second-look disagreement halt the whole cascade. Counting each class on its own terms is the
+/// whole fix; pulled out here so the arithmetic is provable without a running app.
+fn tally(outcomes: &[MoldRepairOutcome]) -> Tally {
+    Tally {
+        repaired: outcomes.iter().filter(|o| o.kind == MoldOutcomeKind::Repaired).count(),
+        kept: outcomes.iter().filter(|o| o.kind == MoldOutcomeKind::Kept).count(),
+        failed: outcomes.iter().filter(|o| o.kind == MoldOutcomeKind::Failed).count(),
+        backed_up: outcomes.iter().filter(|o| o.backed_up).count(),
+    }
 }
 
 /// Where a file's backup lives: flattened, with the stamp in the name so two same-named molds from
@@ -486,82 +585,163 @@ fn repair_one(
     app: &tauri::AppHandle,
     path: &Path,
     backup_dir: &Path,
-) -> Result<MoldRepairOutcome, String> {
+    own: &[crate::libraries::LibraryInfo],
+    foreign: &HashSet<String>,
+) -> MoldRepairOutcome {
     let p = path.to_string_lossy().to_string();
-    let refuse = |detail: String| {
-        Ok(MoldRepairOutcome { path: p.clone(), ok: false, detail })
+    // KEPT — nothing attempted, nothing owed. FAILED — the defect is still on disk.
+    // The two are not interchangeable: KEPT must never halt the cascade, FAILED must.
+    let keep = |reason: &'static str, detail: String| MoldRepairOutcome {
+        path: p.clone(), kind: MoldOutcomeKind::Kept, reason, detail, backed_up: false,
+    };
+    let fail = |reason: &'static str, detail: String| MoldRepairOutcome {
+        path: p.clone(), kind: MoldOutcomeKind::Failed, reason, detail, backed_up: false,
+    };
+    // After the backup verifies, a failure still carries `backed_up` — the file has a restore point
+    // even though the repair did not land, and the receipt is entitled to say so.
+    let fail_backed = |reason: &'static str, detail: String| MoldRepairOutcome {
+        path: p.clone(), kind: MoldOutcomeKind::Failed, reason, detail, backed_up: true,
     };
 
-    if !path.is_file() {
-        return refuse("The file is no longer there.".into());
+    // "Gone" must mean GENUINELY ABSENT. `is_file()` also returns false when the metadata call
+    // itself fails — a permission denial, an antivirus lock — and classing those as Kept would tell
+    // the user a file is no longer there while it sits on disk still carrying the stamp, AND let it
+    // pass the halt as "nothing owed". Only NotFound is Kept; every other error is Failed.
+    match path.symlink_metadata() {
+        Ok(m) if m.is_file() => {}
+        Ok(_) => return fail("unreadable", "That path is not a file.".into()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return keep("gone", "The file is no longer there.".into());
+        }
+        Err(e) => return fail("unreadable", format!("Could not look at the file: {e}")),
     }
     // Write-sovereignty guard (defense in depth — the scan already returns own-only paths, but a
     // caller must not be able to write a linked universe's file by passing its path directly).
-    // `owning_own_library_name` returns None for anything outside the active universe's OWN
-    // libraries — the same rule the whole write path uses (MIG-065 §J). Refuse, do not write.
-    if crate::libraries::owning_own_library_name(app, &p).is_none() {
-        return refuse("Skipped: this file is not in the current universe's own libraries.".into());
-    }
-    let before = match std::fs::read_to_string(path) {
-        Ok(c) => c,
-        Err(e) => return refuse(format!("Could not read it: {e}")),
+    //
+    // `require_own_library` rather than `owning_own_library_name`: it is FAIL-CLOSED on an
+    // unreadable own registry (a bare prefix match cannot tell "not ours" from "cannot tell", and
+    // its own doc records the inspection proving the prefix test admits a Linked Universe nested
+    // under the root). It also hands back the owning library's name, so the post-write re-index
+    // does not resolve the same path a second time.
+    //
+    // FAILED, not kept, and deliberately so: the file still carries the stamp, so something IS
+    // owed; and this guard firing at all means the scan and the guard disagree about which
+    // universe owns the file — the most systematic fault in the set, exactly what the halt is for.
+    // The user-facing sentence says only "could not confirm it belongs to a library this universe
+    // owns", which is true of BOTH the foreign case and the unreadable-registry case.
+    let lib_name = match crate::libraries::require_own_library_in(own, foreign, &p) {
+        Ok(name) => name,
+        Err(e) => return fail("notOurs", e),
     };
-    // Re-prove it, now — never trust the list alone.
+    let before = match std::fs::read_to_string(path) {
+        // FAILED: nothing was attempted, but the file is NOT known to be fine — an unreadable file
+        // is a lock, a permission denial or bad bytes, and the stamp is still there.
+        Err(e) => return fail("unreadable", format!("Could not read it: {e}")),
+        Ok(c) => c,
+    };
+    // Re-prove it, now — never trust the list alone. A second look disagreeing with the first is
+    // the system working: KEPT (`phantom_prune.rs:590-592` states the same rule for its own class).
     let Some((cid, _)) = mold_evidence(&before) else {
-        return refuse(
-            "Skipped: this file is no longer a stamped template (it may have been edited or already repaired)."
+        return keep(
+            "notStamped",
+            "This file is no longer a stamped template (it may have been edited or already repaired)."
                 .into(),
         );
     };
     let Some(after) = strip_stamp_and_mark_template(&before) else {
-        return refuse("Skipped: the change could not be prepared safely.".into());
+        return fail("notPreparable", "The change could not be prepared safely.".into());
     };
+    // Prove the edit BEFORE writing it, on the bytes just read.
+    //
+    // PJ-469 reported that a file the preview already knew would refuse was still written and then
+    // rolled back. The first fix filtered those out in the DOOR, using a preview taken minutes
+    // earlier — which put the judgement in the wrong layer and on staler evidence, and could label
+    // a file "kept · already fixed" that had been re-stamped since. This is the same check the
+    // preview runs (`preview_mold_repair`), made here on fresh bytes: the needless write is gone
+    // and there is exactly one judgement, made once, where the file is.
+    if let Err(why) = verify_change(&before, &after) {
+        return fail("notPreparable", format!("The change could not be prepared safely: {why}"));
+    }
+
+    // ─── THE NO-WRITE LINE ────────────────────────────────────────────────────────────────────
+    // Every return ABOVE this point happens before anything is written, and that is the one
+    // invariant every "nothing was changed" sentence on the receipt rests on: no KEPT outcome may
+    // ever reach a write. A test pins it, because a future return site could break it in silence.
+    // ──────────────────────────────────────────────────────────────────────────────────────────
 
     // Back up, then READ THE BACKUP BACK. A backup nobody verified is not a backup.
     let bpath = backup_path_for(backup_dir, path);
     if let Err(e) = std::fs::write(&bpath, before.as_bytes()) {
-        return refuse(format!("Could not write the backup, so nothing was changed: {e}"));
+        return fail("backupFailed", format!("Could not write the backup, so nothing was changed: {e}"));
     }
     match std::fs::read_to_string(&bpath) {
         Ok(v) if v == before => {}
-        _ => return refuse("The backup did not read back identical, so nothing was changed.".into()),
+        _ => return fail("backupMismatch", "The backup did not read back identical, so nothing was changed.".into()),
     }
 
     // ONE write, through the gate the rest of the app writes through.
     if let Err(e) = crate::write_gate::gate_write(path, &after, None, "pj454_mold_repair") {
-        return refuse(format!("The change could not be written: {e}"));
+        // `atomic_write` writes a same-dir temp and replaces; the original is never opened for
+        // writing, and the temp is removed when the retries are exhausted (`write_gate.rs`). So
+        // the note itself is byte-identical here — which is what lets the receipt say so.
+        return fail_backed("writeFailed", format!("The change could not be written: {e}"));
     }
 
     // Verify on disk: exactly one line gone, one line added, everything else identical.
     let Ok(written) = std::fs::read_to_string(path) else {
-        return refuse("Wrote the file but could not read it back to verify it.".into());
+        // The ONE non-success class where the file WAS changed. It must never be worded as though
+        // nothing happened — the write landed and only the read-back failed.
+        return fail_backed("readBackFailed", "Wrote the file but could not read it back to verify it.".into());
     };
     if let Err(why) = verify_change(&before, &written) {
-        let _ = std::fs::write(path, before.as_bytes()); // put it back
-        return refuse(format!("The change did not verify, so it was undone: {why}"));
+        // PJ-466: this restore's Result used to be discarded (`let _ = …`) while the message
+        // asserted "so it was undone" regardless — a sentence nothing checked, which is precisely
+        // the class of claim this job exists to remove. Check it, and give the failure its own code.
+        return match std::fs::write(path, before.as_bytes()) {
+            Ok(()) => fail_backed("verifyFailed", format!("The change did not verify, so it was undone: {why}")),
+            Err(e) => fail_backed(
+                "verifyNotRestored",
+                format!("The change did not verify and could not be put back ({e}): {why}"),
+            ),
+        };
     }
 
-    // Tell the index. A failure here is NOT a failed repair — the file on disk is correct, which
-    // is what matters (files are the source of truth), and the boot walk's mtime gate re-reads it
-    // on the next launch. Reported honestly rather than swallowed or dressed up as an error.
-    if let Some(lib_name) = crate::libraries::owning_own_library_name(app, &p) {
+    // Tell the index. A failure here is NOT a failed repair — the file on disk is correct, which is
+    // what matters (files are the source of truth). It is reported honestly rather than swallowed
+    // or dressed up as an error, and the receipt tells the user where to put it right.
+    //
+    // PJ-466: this comment used to add "and the boot walk's mtime gate re-reads it on the next
+    // launch." That is FALSE, and the user-facing string that repeated it was removed in the same
+    // pass — `reconcile.rs` states in its own words that the boot pass heals EXISTENCE drift only,
+    // and that "every drifted note in the report is still drifted when the user reads it." The
+    // launch NOTICES; it does not repair. Leaving the claim in a comment is how a removed sentence
+    // gets re-derived by the next author, which is why it is corrected here and not just deleted.
+    {
         use tauri::Manager as _;
         let search_state = app.state::<crate::search::SearchState>();
         if let Err(e) = crate::search::reindex_single_note(&search_state, &p, &lib_name) {
-            return Ok(MoldRepairOutcome {
+            return MoldRepairOutcome {
                 path: p,
-                ok: true,
+                kind: MoldOutcomeKind::Repaired,
+                reason: "repairedIndexLater",
+                // PJ-466: this used to promise the index "will catch up on the next launch". It
+                // does not — the boot pass NOTICES drift and reports it; it does not silently
+                // re-read. The dimmed technical tail must not carry in English the exact promise
+                // the translated sentence above it was corrected to drop.
                 detail: format!(
-                    "Repaired (stamp {cid} removed, marked as a template). The index could not be updated now, so it will catch up on the next launch: {e}"
+                    "Repaired (stamp {cid} removed, marked as a template). The search index could not be updated just now: {e}"
                 ),
-            });
+                backed_up: true,
+            };
         }
     }
-    Ok(MoldRepairOutcome {
+    MoldRepairOutcome {
         path: p,
-        ok: true,
+        kind: MoldOutcomeKind::Repaired,
+        reason: "repaired",
         detail: format!("Repaired: stamp {cid} removed, marked as a template."),
-    })
+        backed_up: true,
+    }
 }
 
 /// Prove the write did exactly the two intended things and nothing else.
@@ -614,12 +794,18 @@ fn reindex_sources_linking_to(app: &tauri::AppHandle, cids: &[String]) -> Vec<St
         }
         Ok(())
     });
+    // PJ-466/PJ-470: report what was actually REFRESHED, not what was attempted. This number is
+    // rendered to the user as "{n} notes … were refreshed"; a discarded `Err` used to be counted
+    // among them, so the sentence could overstate by exactly the failures it hid.
+    let mut refreshed: Vec<String> = Vec::new();
     for s in &sources {
         if let Some(lib) = crate::libraries::owning_own_library_name(app, s) {
-            let _ = crate::search::reindex_single_note(&state, s, &lib);
+            if crate::search::reindex_single_note(&state, s, &lib).is_ok() {
+                refreshed.push(s.clone());
+            }
         }
     }
-    sources
+    refreshed
 }
 
 #[cfg(test)]
@@ -891,6 +1077,132 @@ mod tests {
         // a `---` divider in the body
         assert!(needs_care("---\ncreated: \"{{date}}\"\ncid_cn: 20260414T152113Z_NOTE_264E\n---\nintro\n\n---\n\nmore\n"));
     }
+
+    // ── PJ-466 — the outcome classification ───────────────────────────────────────────────────
+
+    /// The source text of `repair_one`, for the tests that assert against the SHIPPING code rather
+    /// than a paraphrase of it. One helper, so a signature change breaks one place instead of three
+    /// — which it just did: the marker was `fn repair_one(app: &tauri::AppHandle` until the
+    /// function grew a multi-line signature, and all three tests would have panicked.
+    fn repair_one_source() -> &'static str {
+        let src = include_str!("mold_repair.rs");
+        let start = src.find("fn repair_one(").expect("repair_one moved");
+        let end = src[start..].find("
+fn verify_change(").expect("verify_change moved") + start;
+        &src[start..end]
+    }
+
+    fn outcome(kind: MoldOutcomeKind, reason: &'static str, backed_up: bool) -> MoldRepairOutcome {
+        MoldRepairOutcome { path: "p".into(), kind, reason, detail: String::new(), backed_up }
+    }
+
+    /// The whole point of PJ-466: a file that needed nothing is NOT a failure, and the halt reads
+    /// `failed`. Before this, `failed = attempted - repaired` put both in the same bucket.
+    #[test]
+    fn pj466_a_kept_outcome_is_not_counted_as_a_failure() {
+        let outcomes = vec![
+            outcome(MoldOutcomeKind::Repaired, "repaired", true),
+            outcome(MoldOutcomeKind::Kept, "notStamped", false),
+            outcome(MoldOutcomeKind::Kept, "gone", false),
+            outcome(MoldOutcomeKind::Failed, "writeFailed", true),
+        ];
+        let t = tally(&outcomes);
+        assert_eq!(t.repaired, 1);
+        assert_eq!(t.kept, 2, "a second look disagreeing with the first is never an error");
+        assert_eq!(t.failed, 1, "only the write failure is owed an account");
+        assert_eq!(t.backed_up, 2, "counted, so the receipt never assumes every file was backed up");
+        // The defect, stated as the test that would have caught it: subtraction says 3.
+        assert_ne!(t.failed, outcomes.len() - t.repaired);
+    }
+
+    /// A run in which nothing needed doing must report ZERO failures — the shape that produced
+    /// "0 fixed, 1 skipped." over a healthy file and halted the cascade behind it.
+    #[test]
+    fn pj466_an_all_kept_run_has_nothing_to_halt_on() {
+        let outcomes = vec![
+            outcome(MoldOutcomeKind::Kept, "notStamped", false),
+            outcome(MoldOutcomeKind::Kept, "gone", false),
+        ];
+        let t = tally(&outcomes);
+        assert_eq!(t.failed, 0);
+        assert_eq!(t.backed_up, 0);
+    }
+
+    /// THE INVARIANT every "nothing was changed" sentence on the receipt rests on: no KEPT outcome
+    /// may be produced after anything has been written. Asserted against the shipping source rather
+    /// than a paraphrase of it, because the risk is a FUTURE return site added below the write —
+    /// which no behavioural test of today's code could see.
+    #[test]
+    fn pj466_no_kept_outcome_can_be_returned_after_the_first_write() {
+        let body = repair_one_source();
+
+        // The first byte written by this function, found in the source rather than assumed.
+        let first_write = body.find("std::fs::write(&bpath").expect("the backup write moved");
+
+        // Every call that MINTS a Kept outcome. `keep(` is the only one.
+        let mut kept_sites = 0;
+        for (idx, _) in body.match_indices("keep(") {
+            // skip the closure's own definition
+            if body[..idx].ends_with("let ") { continue; }
+            kept_sites += 1;
+            assert!(
+                idx < first_write,
+                "a `keep(` at byte {idx} sits AFTER the first write at {first_write} — a Kept \
+                 outcome would then be claiming nothing was changed about a file that was"
+            );
+        }
+        assert!(kept_sites >= 2, "expected the gone/notStamped keeps, found {kept_sites}");
+    }
+
+    /// The `reason` codes are an IPC contract: the frontend translates them into fifteen languages,
+    /// so a code invented in Rust without a matching string ships an untranslated screen. This
+    /// fails the moment a new one appears, which is the point.
+    #[test]
+    fn pj466_reason_codes_are_exactly_the_documented_contract() {
+        let body = repair_one_source();
+
+        let documented = [
+            "repaired", "repairedIndexLater", "gone", "notStamped", "notOurs", "unreadable",
+            "notPreparable", "backupFailed", "backupMismatch", "writeFailed", "readBackFailed",
+            "verifyFailed", "verifyNotRestored",
+        ];
+        // Every code the function actually emits, read out of the source.
+        let mut emitted: Vec<&str> = Vec::new();
+        for (idx, _) in body.match_indices("\"") {
+            let rest = &body[idx + 1..];
+            if let Some(end) = rest.find('"') {
+                let lit = &rest[..end];
+                if documented.contains(&lit) && !emitted.contains(&lit) {
+                    emitted.push(lit);
+                }
+            }
+        }
+        for code in documented {
+            assert!(
+                emitted.contains(&code),
+                "documented reason code `{code}` is no longer emitted — the contract and the code \
+                 have drifted, and the frontend has a string nothing produces"
+            );
+        }
+        assert_eq!(
+            emitted.len(),
+            documented.len(),
+            "emitted {emitted:?} vs documented {documented:?}"
+        );
+    }
+
+    /// The rollback used to be `let _ = std::fs::write(...)` under a message that asserted
+    /// "so it was undone" regardless. Pinned in the source: the restore's result is now consumed.
+    #[test]
+    fn pj466_the_verify_rollback_is_checked() {
+        let body = repair_one_source();
+        assert!(
+            !body.contains("let _ = std::fs::write(path, before.as_bytes())"),
+            "the rollback discards its Result again — the receipt would assert an undo nobody checked"
+        );
+        // (that `verifyNotRestored` is EMITTED is pinned by
+        // `pj466_reason_codes_are_exactly_the_documented_contract`, which reads the same slice.)
+    }
 }
 
 /// `cid_cn` → how many notes link to it BY IDENTITY.
@@ -898,19 +1210,27 @@ mod tests {
 /// Best-effort: an unavailable index yields an empty map, and the caller then reports zero rather
 /// than failing the scan. The count is shown to the user and drives the post-repair re-read; it is
 /// never a gate, because a link by identity does not make a mold a note.
-fn inbound_cid_counts(app: &tauri::AppHandle) -> BTreeMap<String, u32> {
+fn inbound_cid_counts(app: &tauri::AppHandle, cids: &[String]) -> BTreeMap<String, u32> {
+    let mut map = BTreeMap::new();
+    if cids.is_empty() {
+        return map;
+    }
     use tauri::Manager as _;
     let state = app.state::<crate::search::SearchState>();
-    let mut map = BTreeMap::new();
+    // COUNT(DISTINCT source_path), not COUNT(*): the label says "Linked from N notes", and one
+    // note linking twice is still one note. Bounded to the cids the scan found, so the distinct
+    // pass touches ~43 identities rather than the whole link table — see `scan_stamped_molds`.
+    let placeholders = std::iter::repeat("?").take(cids.len()).collect::<Vec<_>>().join(",");
+    let sql = format!(
+        "SELECT target_cid_cn, COUNT(DISTINCT source_path) FROM note_links \
+         WHERE target_cid_cn IN ({placeholders}) GROUP BY target_cid_cn"
+    );
     let _ = crate::search::with_read_conn(&state, |conn| {
-        let mut stmt = conn
-            .prepare(
-                "SELECT target_cid_cn, COUNT(*) FROM note_links \
-                 WHERE target_cid_cn IS NOT NULL AND target_cid_cn != '' GROUP BY target_cid_cn",
-            )
-            .map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
         let rows = stmt
-            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .query_map(rusqlite::params_from_iter(cids.iter()), |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+            })
             .map_err(|e| e.to_string())?;
         for row in rows.flatten() {
             map.insert(row.0, row.1 as u32);

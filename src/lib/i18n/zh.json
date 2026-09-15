@@ -2119,29 +2119,51 @@
   "moldRepair": {
     "title": "修复带有诞生日期的模板",
     "lede": "模板就像一个铸模——由它创建的笔记应当带着属于自己的日期诞生。这些模板文件却错误地带有一个固定的诞生日期。修复某个模板会移除该日期，并将文件标记为模板；除此之外，它的内容不会被改动。",
-    "count": "本宇宙中有 {count} 个模板文件带有本不该有的诞生日期。",
+    "count": "Constellation 在本宇宙中发现 {noun}带有本不该有的诞生日期。",
     "claimsBorn": "错误地声称它诞生于 {date}。",
-    "inbound": "有 {count} 条笔记指向它。",
+    "inbound": "有 {noun}链接到它。",
     "needsCare": "需要特别处理",
     "needsCareHint": "此文件的结构较为特殊，因此会在其余文件之前单独优先修复。",
     "showSample": "给我看一个修复前后的对比",
     "sampleHead": "{name} 中将发生的变化：",
     "sampleFoot": "只有这两行会发生变化。文件的其余部分将保持原样。",
-    "repair": "修复这 {count} 个模板",
+    "repair": "修复 {noun}",
     "blockedTitle": "请先关闭这些文件",
     "blockedLede": "有些待修复的模板当前正处于打开状态。请先关闭它们，以免有内容覆盖修复结果，然后再试一次。",
     "recheck": "我已关闭它们——再试一次",
     "runningTitle": "正在修复您的模板…",
     "phaseDelicate": "正在先修复需要特别处理的文件…",
     "phaseOrdinary": "正在修复其余文件…",
-    "summaryTitle": "模板已修复",
-    "summaryLine": "已修复 {repaired} 个，跳过 {failed} 个。",
-    "backupAt": "在修复前，已先为每个文件保存了备份，位置：{dir}",
-    "relinked": "已刷新 {count} 条链接到被修复模板的笔记。",
-    "done": "完成",
+    "summaryTitle": "这次修复做了什么",
+    "backupAt": "在更改任何文件之前，已先保存了备份。它们位于：",
+    "relinked": "已刷新链接到被修复模板的 {noun}。",
     "bannerText": "有些模板文件带有本不该有的诞生日期。请查看并修复它们。",
     "bannerButton": "查看待修复的模板",
-    "settingsButton": "修复带有诞生日期的模板…"
+    "settingsButton": "修复带有诞生日期的模板…",
+    "stoppedCare": "Constellation 未能修复完一个需要特别处理的文件，因此就地停下，以免同样的问题波及其余文件。",
+    "stoppedOpen": "修复运行期间有一个模板被打开。Constellation 就地停下，以免有内容覆盖修复结果。",
+    "stoppedError": "修复未能完成：{reason}。未经备份，没有任何内容被改动——您可以再次运行。",
+    "resume": "您可以随时在「设置 → 宇宙与资料库」中再次运行此修复。",
+    "sumFixed": "已修复 {noun}。",
+    "sumKept": "保留了 {noun}：已经修复过、在扫描之后被编辑过，或已不存在。",
+    "sumFailed": "无法修复 {noun}——每一个的原因列在下方。",
+    "sumNotAttempted": "未处理到 {noun}。其中没有任何内容被改动，也没有任何内容被修复。",
+    "reason": {
+      "repaired": "诞生日期已移除，文件已标记为模板。",
+      "repairedIndexLater": "诞生日期已移除，文件已标记为模板。搜索索引暂时未能更新，因此搜索时可能仍会显示此文件的旧内容——「设置 → 索引」可以让它恢复到最新。",
+      "gone": "该文件已不存在。",
+      "notStamped": "此文件已不再带有诞生日期——它可能已被编辑过，或已被修复。",
+      "notOurs": "没有向此文件写入任何内容：Constellation 无法确认它属于本宇宙所拥有的库。",
+      "unreadable": "无法读取该文件，因此您的模板未被改动。",
+      "notPreparable": "无法安全地准备此次更改，因此您的模板未被改动。",
+      "backupFailed": "无法保存备份，因此您的模板未被改动。",
+      "backupMismatch": "Constellation 检查时发现备份与原文件不一致，因此您的模板未被改动。",
+      "writeFailed": "更改未能写入。您的文件与此前完全一样。",
+      "readBackFailed": "文件已被更改，但 Constellation 未能重新读取它来核对这次更改。请打开此文件查看——修复前的副本在上方的文件夹中。",
+      "verifyFailed": "更改的结果不正确，因此 Constellation 已把原文件写回。",
+      "verifyNotRestored": "更改的结果不正确，而且未能把原文件写回。请打开此文件，并用上方文件夹中的副本替换它。",
+      "notReached": "Constellation 在处理到此文件之前就停下了。这里没有任何内容被改动——请再次运行修复以完成。"
+    }
   },
   "common": {
     "cancel": "取消",
@@ -4088,6 +4110,9 @@
     },
     "deleted_historyEvents": {
       "other": "已记录 {count} 项更改"
+    },
+    "templates": {
+      "other": "{count}个模板文件"
     }
   },
   "embeds": {

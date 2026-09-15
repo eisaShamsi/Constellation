@@ -534,3 +534,89 @@ his time.
 
 **Orientation:** NOT bumped in this commit. No SO#6 trigger has fired — no migration has opened, no
 PJ has closed, no rule changed. It bumps when PJ-466 closes. Stated so the skip is not silent.
+
+---
+
+## §22 — PJ-466 BUILT (uncommitted, awaiting the Boss's test): the receipt rebuilt, and three defects of mine that the gates caught
+
+**His rulings, 2026-09-14:** run it NOW (ahead of PJ-456's wave) · file the two sibling-door defects
+separately (PJ-489…PJ-492, confirmed) · the heading is **"What the fix did"** · the noun is
+**"template file"**, including on the Fix button he wrote. And, on the wording: *"I want to hear
+from the panel."*
+
+### The copy panel — he asked for it, and it refuted eleven of my sentences
+Five lenses (the reader · Arabic & RTL · the 15 languages · the house voice · an honesty
+adversary), two adversaries each, one chair. Verdict: `lab/reports/PJ-466-PANEL-VERDICT-2026-09-14.md`
+holds the design panel; the copy panel's ruled set is reproduced in §23 below.
+
+It killed my whole title ladder — *"Some templates were fixed"* would have printed over a run that
+fixed **nothing**, the same flattery he saw live, one branch to the left. One constant neutral
+heading now, with the class sentences carrying the outcome; that is what the phantom-removal receipt
+two doors away already does. Four sentences promised what the code cannot prove:
+- *"They still carry the birth date"* — **false** on `readBackFailed`, where the write landed.
+- *"it will catch up on the next launch"* — **false**; `reconcile.rs:1014-1016` says in its own
+  words that the pass heals EXISTENCE drift only and *"every drifted note in the report is still
+  drifted when the user reads it."* The launch NOTICES. Nothing catches up.
+- *"not in this universe's own libraries"* — the app only knows it **could not confirm** it belongs.
+- *"put back exactly as it was"* — the original is written back and **never re-read**.
+
+It also cut the scan-failure screen: `scan_stamped_molds` returns `Ok` unconditionally, so the cause
+I was about to write copy for **cannot happen**. The underlying gap is real and is filed, not invented.
+
+### What shipped in the code
+`MoldOutcomeKind` (`repaired` | `kept` | `failed`) + a stable `reason` code + `backed_up`, modelled
+on the shipped `PruneReceipt`, NOT invented — three of four design-panel lenses proposed inventing a
+taxonomy while telling the panel no precedent existed. Counted by class; `failed = attempted -
+repaired` is gone from both sides. The halt reads `failed`, so **a file that needs nothing can no
+longer stop the run**. The verify rollback is checked (`verifyNotRestored` is its own code); `gone`
+no longer swallows a permission denial; `relinked_sources` counts only successful re-indexes.
+22 new keys + `plurals.templates` (37 CLDR forms) × 15 locales; `summaryLine` and `done` retired, and
+the word **"skipped" has left this door in every language**.
+
+### THREE DEFECTS OF MINE, each caught by a different gate — this is the section worth re-reading
+1. **A boot regression I introduced.** Counting NOTES instead of link rows was right, but it turned a
+   query that runs on **every boot** (`refreshMoldRepairCount`) into a whole-table distinct pass.
+   **Measured by me on his own 2.03 GB `Eisa Cognitive Knowledge`: 7,768 ms**, against ~23 ms before,
+   and an efficiency review measured 8,215 ms cold. Rule 8 forbids exactly this. Fixed by walking
+   first and asking only about the ~43 identities found: **70 ms, 111× cheaper**, count unchanged.
+2. **A guard that guarded nothing.** My run-level refusal used `load_all_libraries` — cached and
+   federation-recursive — to predict what the per-file check would do through `load_libraries` —
+   uncached and own-only. On a warm cache it would pass and print the 43 false refusals it existed to
+   prevent. **`index_repair.rs` already enforces this rule as a test; `mold_repair.rs` was simply not
+   in its list.** It is now, so this cannot recur silently. The per-file check moved to
+   `require_own_library_in` — fail-closed, and it returns the library name, so the double resolution
+   went with it.
+3. **PJ-469 fixed at the wrong layer, with a false receipt line in it.** My first version had the
+   DOOR skip files a preview had judged — a preview minutes old. A file re-stamped since would have
+   been silently skipped and reported **"kept · already fixed"**: a false statement on the screen this
+   job exists to make truthful. The check moved into the engine, on freshly-read bytes; ~25 lines of
+   frontend synthesis deleted.
+
+**And the translators caught a fourth.** Two of them (zh and ar), independently and unprompted,
+noticed that three strings now took `{noun}` while the component still passed `{count}` — the screen
+would have rendered the literal text `{noun}` in all fifteen languages. Neither inspection round had
+seen it.
+
+### Gates, all green
+Rust **1,639 / 0** · svelte-check **0 errors** · `i18n-parity` **15/15** (and it was RED before the
+merge, so it can disagree) · 55 i18n tests · zero placeholder mismatches · zero locales left as
+English copies. Two diff-scoped safety inspections, both a **genuine** zero — 3 candidates raised and
+adversarially refuted each time; the second refuted a stale comment as factually true but not a
+runtime failure, **and it was corrected anyway** (WA#6). `/simplify` ran 4 lenses; findings applied.
+The structural no-write test was RED-proved twice, the second time after its helper changed.
+
+### Corroboration, not a new filing
+Three translators independently measured the "vault" terminology defect in their own locales (ko 11
+strings, hi 18, pt 33). That is **PJ-430** (HIGH, Group 1), already filed. Recorded as corroboration.
+
+### Binary
+`src-tauri/target/release/constellation.exe`, 2026-09-14 21:11. Proven to embed THIS build by finding
+this build's content-hashed chunk name `D7b0EyC5.js` inside the exe — never by mtime. (The new
+strings do not grep out of the exe: Tauri compresses the embedded assets. The chunk name is in the
+plaintext manifest, which is why it is the right probe.)
+
+### The test must be STAGED — measured, not assumed
+The shipping scan run against each real registry returns **0 / 0 / 0 / 0** (Eisa Universe · Eisa
+Cognitive Knowledge · موسوعة عيسى · Scratch). PJ-454 closed all 43, so **the door cannot open on his
+machine**. The test is staged on copies in Scratch from its own `pj454-backup`, as the 09-13
+rehearsal was — and the staging plan goes through the test pipeline before anything is written.

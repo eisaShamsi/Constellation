@@ -2292,29 +2292,51 @@
   "moldRepair": {
     "title": "Fix templates that carry a birth date",
     "lede": "A template is a mold — a note you create from it should be born with its own date. These template files wrongly carry a fixed birth date. Fixing one removes that date and marks the file as a template; its content is not otherwise touched.",
-    "count": "{count} template files in this universe carry a birth date they should not.",
+    "count": "Constellation found {noun} in this universe carrying a birth date that should not be there.",
     "claimsBorn": "Wrongly claims it was born {date}.",
-    "inbound": "{count} notes point to this one.",
+    "inbound": "Linked from {noun}.",
     "needsCare": "needs care",
     "needsCareHint": "This file has an unusual shape, so it is fixed first, on its own, before the rest.",
     "showSample": "Show me one before and after",
     "sampleHead": "What will change in {name}:",
     "sampleFoot": "Only these two lines change. The rest of the file stays exactly as it is.",
-    "repair": "Fix these {count} templates",
+    "repair": "Fix {noun}",
     "blockedTitle": "Close these files first",
     "blockedLede": "Some of the templates to fix are open right now. Please close them so nothing overwrites the fix, then try again.",
     "recheck": "I've closed them — try again",
     "runningTitle": "Fixing your templates…",
     "phaseDelicate": "Fixing the files that need care first…",
     "phaseOrdinary": "Fixing the rest…",
-    "summaryTitle": "Templates fixed",
-    "summaryLine": "{repaired} fixed, {failed} skipped.",
-    "backupAt": "A backup of every file was saved first, at: {dir}",
-    "relinked": "{count} notes that linked to a fixed template were refreshed.",
-    "done": "Done",
+    "summaryTitle": "What the fix did",
+    "backupAt": "Backups were saved before any file was changed. They are here:",
+    "relinked": "Refreshed {noun} that linked to a fixed template.",
     "bannerText": "Some template files carry a birth date they should not. Review and fix them.",
     "bannerButton": "Review templates to fix",
-    "settingsButton": "Fix templates carrying a birth date…"
+    "settingsButton": "Fix templates carrying a birth date…",
+    "stoppedCare": "Constellation could not finish fixing a file that needs care, so it stopped there rather than let the same problem reach the rest.",
+    "stoppedOpen": "A template was opened while the fix was running. Constellation stopped there, so nothing would overwrite the fix.",
+    "stoppedError": "The fix could not finish: {reason}. Nothing was changed without a backup — you can run it again.",
+    "resume": "You can run this again at any time from Settings → Universe & Libraries.",
+    "sumFixed": "Fixed {noun}.",
+    "sumKept": "Kept {noun}: already fixed, edited since the scan, or no longer there.",
+    "sumFailed": "Could not fix {noun} — each one's reason is below.",
+    "sumNotAttempted": "Did not reach {noun}. Nothing there was changed, and nothing there was fixed.",
+    "reason": {
+      "repaired": "The birth date was removed and the file is marked as a template.",
+      "repairedIndexLater": "The birth date was removed and the file is marked as a template. The search index could not be updated just now, so searching may still show this file's old text — Settings → Index will bring it up to date.",
+      "gone": "The file is no longer there.",
+      "notStamped": "This file no longer carries a birth date — it may have been edited, or already fixed.",
+      "notOurs": "Nothing was written to this file: Constellation could not confirm it belongs to a library this universe owns.",
+      "unreadable": "The file could not be read, so your template was not changed.",
+      "notPreparable": "The change could not be prepared safely, so your template was not changed.",
+      "backupFailed": "The backup could not be saved, so your template was not changed.",
+      "backupMismatch": "The backup did not match the original when Constellation checked it, so your template was not changed.",
+      "writeFailed": "The change could not be written. Your file is exactly as it was.",
+      "readBackFailed": "The file was changed, but Constellation could not read it back to check the change. Please open this file and look at it — the copy from before the fix is in the folder above.",
+      "verifyFailed": "The change did not come out right, so Constellation wrote the original back.",
+      "verifyNotRestored": "The change did not come out right and the original could not be written back. Open this file and replace it with its copy from the folder above.",
+      "notReached": "Constellation stopped before reaching this file. Nothing here was changed — run the fix again to finish."
+    }
   },
   "bases": {
     "untitled": "Untitled Base",
@@ -4298,6 +4320,10 @@
     "deleted_historyEvents": {
       "one": "{count} change recorded",
       "other": "{count} changes recorded"
+    },
+    "templates": {
+      "one": "{count} template file",
+      "other": "{count} template files"
     }
   },
   "embeds": {

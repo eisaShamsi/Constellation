@@ -1390,11 +1390,16 @@ mod tests_pj207_s8_write_scope_guard {
             .collect()
     }
 
-    /// These three modules are index-WRITE paths end to end. None of them may resolve
+    /// These modules are index-WRITE paths end to end. None of them may resolve
     /// libraries through the federation-recursive loader.
+    ///
+    /// PJ-466 added `mold_repair.rs`: it rewrites `.md` files and re-indexes them, so it is the
+    /// same kind of path — and it shipped a run-level guard built on `load_all_libraries` that
+    /// this test would have caught had the module been listed. The cache and the federated members
+    /// both make that loader the wrong predicate for "can I tell which libraries are mine?".
     #[test]
     fn no_index_write_module_resolves_libraries_through_the_federation() {
-        for file in ["reconcile.rs", "index_repair.rs", "library_attribution_backfill.rs"] {
+        for file in ["reconcile.rs", "index_repair.rs", "library_attribution_backfill.rs", "mold_repair.rs"] {
             let body = src_production(file);
             let hits = offending_lines(&body);
             assert!(

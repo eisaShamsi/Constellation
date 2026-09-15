@@ -2132,29 +2132,51 @@
   "moldRepair": {
     "title": "Doğum tarihi taşıyan şablonları düzelt",
     "lede": "Şablon bir kalıptır — ondan oluşturduğunuz bir not kendi tarihiyle doğmalıdır. Bu şablon dosyaları, taşımamaları gereken sabit bir doğum tarihi taşıyor. Birini düzeltmek bu tarihi kaldırır ve dosyayı şablon olarak işaretler; içeriğine başka hiçbir şekilde dokunulmaz.",
-    "count": "Bu evrende {count} şablon dosyası, taşımaması gereken bir doğum tarihi taşıyor.",
+    "count": "Constellation bu evrende, taşımaması gereken bir doğum tarihi taşıyan {noun} buldu.",
     "claimsBorn": "{date} tarihinde doğduğunu yanlışlıkla iddia ediyor.",
-    "inbound": "{count} not bu dosyaya işaret ediyor.",
+    "inbound": "{noun} bu dosyaya işaret ediyor.",
     "needsCare": "özen gerektiriyor",
     "needsCareHint": "Bu dosyanın alışılmadık bir yapısı var; bu yüzden diğerlerinden önce, tek başına düzeltilir.",
     "showSample": "Bana bir önce/sonra örneği göster",
     "sampleHead": "{name} dosyasında ne değişecek:",
     "sampleFoot": "Yalnızca bu iki satır değişir. Dosyanın geri kalanı olduğu gibi kalır.",
-    "repair": "Bu {count} şablonu düzelt",
+    "repair": "Düzelt ({noun})",
     "blockedTitle": "Önce bu dosyaları kapatın",
     "blockedLede": "Düzeltilecek şablonlardan bazıları şu anda açık. Düzeltmenin üzerine hiçbir şeyin yazılmaması için lütfen bunları kapatıp yeniden deneyin.",
     "recheck": "Kapattım — yeniden dene",
     "runningTitle": "Şablonlarınız düzeltiliyor…",
     "phaseDelicate": "Önce özen gerektiren dosyalar düzeltiliyor…",
     "phaseOrdinary": "Geri kalanlar düzeltiliyor…",
-    "summaryTitle": "Şablonlar düzeltildi",
-    "summaryLine": "{repaired} düzeltildi, {failed} atlandı.",
-    "backupAt": "Her dosyanın bir yedeği önce şuraya kaydedildi: {dir}",
-    "relinked": "Düzeltilen bir şablona bağlantı veren {count} not yenilendi.",
-    "done": "Tamam",
+    "summaryTitle": "Düzeltmenin yaptıkları",
+    "backupAt": "Herhangi bir dosya değiştirilmeden önce yedekler kaydedildi. Şuradalar:",
+    "relinked": "Düzeltilen bir şablona bağlantı veren {noun} yenilendi.",
     "bannerText": "Bazı şablon dosyaları, taşımamaları gereken bir doğum tarihi taşıyor. Bunları gözden geçirip düzeltin.",
     "bannerButton": "Düzeltilecek şablonları gözden geçir",
-    "settingsButton": "Doğum tarihi taşıyan şablonları düzelt…"
+    "settingsButton": "Doğum tarihi taşıyan şablonları düzelt…",
+    "stoppedCare": "Constellation, özen gerektiren bir dosyayı düzeltmeyi tamamlayamadı; aynı sorunun geri kalanına ulaşmasına izin vermek yerine orada durdu.",
+    "stoppedOpen": "Düzeltme çalışırken bir şablon açıldı. Düzeltmenin üzerine hiçbir şeyin yazılmaması için Constellation orada durdu.",
+    "stoppedError": "Düzeltme tamamlanamadı: {reason}. Yedeği alınmadan hiçbir şey değiştirilmedi — yeniden çalıştırabilirsiniz.",
+    "resume": "Bunu istediğiniz zaman Ayarlar → Evren & Kütüphaneler bölümünden yeniden çalıştırabilirsiniz.",
+    "sumFixed": "{noun} düzeltildi.",
+    "sumKept": "{noun} korundu: zaten düzeltilmiş, taramadan bu yana düzenlenmiş ya da artık orada değil.",
+    "sumFailed": "{noun} düzeltilemedi — her birinin nedeni aşağıda.",
+    "sumNotAttempted": "{noun} hiç ele alınmadı. Orada hiçbir şey değiştirilmedi ve hiçbir şey düzeltilmedi.",
+    "reason": {
+      "repaired": "Doğum tarihi kaldırıldı ve dosya şablon olarak işaretlendi.",
+      "repairedIndexLater": "Doğum tarihi kaldırıldı ve dosya şablon olarak işaretlendi. Arama dizini şu anda güncellenemedi; bu yüzden arama bu dosyanın eski metnini hâlâ gösterebilir — Ayarlar → Dizin bunu güncel hâle getirir.",
+      "gone": "Dosya artık orada değil.",
+      "notStamped": "Bu dosya artık bir doğum tarihi taşımıyor — düzenlenmiş ya da zaten düzeltilmiş olabilir.",
+      "notOurs": "Bu dosyaya hiçbir şey yazılmadı: Constellation, dosyanın bu evrene ait bir kütüphanede olduğunu doğrulayamadı.",
+      "unreadable": "Dosya okunamadı; bu yüzden şablonunuz değiştirilmedi.",
+      "notPreparable": "Değişiklik güvenli biçimde hazırlanamadı; bu yüzden şablonunuz değiştirilmedi.",
+      "backupFailed": "Yedek kaydedilemedi; bu yüzden şablonunuz değiştirilmedi.",
+      "backupMismatch": "Constellation denetlediğinde yedek aslıyla eşleşmedi; bu yüzden şablonunuz değiştirilmedi.",
+      "writeFailed": "Değişiklik yazılamadı. Dosyanız tam olarak eskisi gibi.",
+      "readBackFailed": "Dosya değiştirildi, ancak Constellation değişikliği denetlemek için dosyayı geri okuyamadı. Lütfen bu dosyayı açıp gözden geçirin — düzeltmeden önceki kopyası yukarıdaki klasörde.",
+      "verifyFailed": "Değişiklik doğru çıkmadı; bu yüzden Constellation aslını geri yazdı.",
+      "verifyNotRestored": "Değişiklik doğru çıkmadı ve aslı geri yazılamadı. Bu dosyayı açın ve yukarıdaki klasördeki kopyasıyla değiştirin.",
+      "notReached": "Constellation bu dosyaya ulaşmadan önce durdu. Burada hiçbir şey değiştirilmedi — tamamlamak için düzeltmeyi yeniden çalıştırın."
+    }
   },
   "bases": {
     "untitled": "Adsız Temel",
@@ -4121,6 +4143,10 @@
     "deleted_historyEvents": {
       "one": "{count} değişiklik kaydedildi",
       "other": "{count} değişiklik kaydedildi"
+    },
+    "templates": {
+      "one": "{count} şablon dosyası",
+      "other": "{count} şablon dosyası"
     }
   },
   "embeds": {

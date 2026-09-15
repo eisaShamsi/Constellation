@@ -1703,29 +1703,51 @@
   "moldRepair": {
     "title": "Vorlagen reparieren, die ein Geburtsdatum tragen",
     "lede": "Eine Vorlage ist eine Gussform — eine daraus erstellte Notiz sollte mit ihrem eigenen Datum entstehen. Diese Vorlagendateien tragen fälschlicherweise ein festes Geburtsdatum. Beim Reparieren wird dieses Datum entfernt und die Datei als Vorlage gekennzeichnet; ihr Inhalt bleibt ansonsten unberührt.",
-    "count": "{count} Vorlagendateien in diesem Universum tragen ein Geburtsdatum, das ihnen nicht zusteht.",
+    "count": "Constellation hat in diesem Universum {noun} mit einem Geburtsdatum gefunden, das dort nicht stehen sollte.",
     "claimsBorn": "Behauptet fälschlicherweise, am {date} entstanden zu sein.",
-    "inbound": "{count} Notizen verweisen auf diese.",
+    "inbound": "Verknüpft von {noun}.",
     "needsCare": "braucht Sorgfalt",
     "needsCareHint": "Diese Datei hat eine ungewöhnliche Form und wird daher zuerst und für sich allein repariert, bevor die übrigen folgen.",
     "showSample": "Ein Vorher und Nachher anzeigen",
     "sampleHead": "Was sich in {name} ändert:",
     "sampleFoot": "Nur diese beiden Zeilen ändern sich. Der Rest der Datei bleibt genau so, wie er ist.",
-    "repair": "Diese {count} Vorlagen reparieren",
+    "repair": "{noun} reparieren",
     "blockedTitle": "Schließen Sie zuerst diese Dateien",
     "blockedLede": "Einige der zu reparierenden Vorlagen sind gerade geöffnet. Bitte schließen Sie sie, damit die Reparatur nicht überschrieben wird, und versuchen Sie es dann erneut.",
     "recheck": "Ich habe sie geschlossen — erneut versuchen",
     "runningTitle": "Ihre Vorlagen werden repariert…",
     "phaseDelicate": "Zuerst werden die Dateien repariert, die Sorgfalt brauchen…",
     "phaseOrdinary": "Die übrigen werden repariert…",
-    "summaryTitle": "Vorlagen repariert",
-    "summaryLine": "{repaired} repariert, {failed} übersprungen.",
-    "backupAt": "Von jeder Datei wurde zuvor eine Sicherung angelegt, unter: {dir}",
-    "relinked": "{count} Notizen, die auf eine reparierte Vorlage verwiesen, wurden aktualisiert.",
-    "done": "Fertig",
+    "summaryTitle": "Was die Reparatur bewirkt hat",
+    "backupAt": "Sicherungen wurden angelegt, bevor irgendeine Datei verändert wurde. Sie liegen hier:",
+    "relinked": "Constellation hat {noun} mit einer Verknüpfung zu einer reparierten Vorlage aktualisiert.",
     "bannerText": "Einige Vorlagendateien tragen ein Geburtsdatum, das ihnen nicht zusteht. Prüfen und reparieren Sie sie.",
     "bannerButton": "Zu reparierende Vorlagen prüfen",
-    "settingsButton": "Vorlagen reparieren, die ein Geburtsdatum tragen…"
+    "settingsButton": "Vorlagen reparieren, die ein Geburtsdatum tragen…",
+    "stoppedCare": "Constellation konnte eine Datei, die Sorgfalt braucht, nicht zu Ende reparieren und hat dort angehalten, statt dasselbe Problem auf die übrigen Dateien übergreifen zu lassen.",
+    "stoppedOpen": "Während der Reparatur wurde eine Vorlage geöffnet. Constellation hat dort angehalten, damit nichts die Reparatur überschreibt.",
+    "stoppedError": "Die Reparatur konnte nicht abgeschlossen werden: {reason}. Ohne Sicherung wurde nichts verändert — Sie können sie erneut ausführen.",
+    "resume": "Sie können dies jederzeit erneut über Einstellungen → Universum & Bibliotheken ausführen.",
+    "sumFixed": "{noun} repariert.",
+    "sumKept": "{noun} behalten: bereits repariert, seit der Prüfung bearbeitet oder nicht mehr vorhanden.",
+    "sumFailed": "Constellation konnte {noun} nicht reparieren — der jeweilige Grund steht unten.",
+    "sumNotAttempted": "Constellation hat {noun} nicht mehr erreicht. Dort wurde nichts verändert, und dort wurde nichts repariert.",
+    "reason": {
+      "repaired": "Das Geburtsdatum wurde entfernt und die Datei ist als Vorlage gekennzeichnet.",
+      "repairedIndexLater": "Das Geburtsdatum wurde entfernt und die Datei ist als Vorlage gekennzeichnet. Der Suchindex konnte gerade nicht aktualisiert werden, daher zeigt die Suche möglicherweise noch den alten Text dieser Datei — Einstellungen → Index bringt ihn auf den neuesten Stand.",
+      "gone": "Die Datei ist nicht mehr vorhanden.",
+      "notStamped": "Diese Datei trägt kein Geburtsdatum mehr — möglicherweise wurde sie bearbeitet oder bereits repariert.",
+      "notOurs": "In diese Datei wurde nichts geschrieben: Constellation konnte nicht bestätigen, dass sie zu einer Bibliothek dieses Universums gehört.",
+      "unreadable": "Die Datei konnte nicht gelesen werden, daher wurde Ihre Vorlage nicht verändert.",
+      "notPreparable": "Die Änderung konnte nicht sicher vorbereitet werden, daher wurde Ihre Vorlage nicht verändert.",
+      "backupFailed": "Die Sicherung konnte nicht angelegt werden, daher wurde Ihre Vorlage nicht verändert.",
+      "backupMismatch": "Als Constellation die Sicherung prüfte, stimmte sie nicht mit dem Original überein, daher wurde Ihre Vorlage nicht verändert.",
+      "writeFailed": "Die Änderung konnte nicht geschrieben werden. Ihre Datei ist genau so, wie sie war.",
+      "readBackFailed": "Die Datei wurde geändert, aber Constellation konnte sie nicht erneut lesen, um die Änderung zu prüfen. Bitte öffnen Sie diese Datei und sehen Sie sie sich an — die Kopie von vor der Reparatur liegt im oben genannten Ordner.",
+      "verifyFailed": "Das Ergebnis der Änderung war nicht korrekt, daher hat Constellation das Original zurückgeschrieben.",
+      "verifyNotRestored": "Das Ergebnis der Änderung war nicht korrekt, und das Original konnte nicht zurückgeschrieben werden. Öffnen Sie diese Datei und ersetzen Sie sie durch ihre Kopie aus dem oben genannten Ordner.",
+      "notReached": "Constellation hat angehalten, bevor diese Datei an der Reihe war. Hier wurde nichts verändert — führen Sie die Reparatur erneut aus, um sie abzuschließen."
+    }
   },
   "bases": {
     "untitled": "Unbenannte Basis",
@@ -4121,6 +4143,10 @@
     "deleted_historyEvents": {
       "one": "{count} Änderung(en) verzeichnet",
       "other": "{count} Änderung(en) verzeichnet"
+    },
+    "templates": {
+      "one": "{count} Vorlagendatei",
+      "other": "{count} Vorlagendateien"
     }
   },
   "embeds": {

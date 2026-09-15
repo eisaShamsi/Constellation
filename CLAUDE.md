@@ -445,6 +445,13 @@ After every phase, step, or significant commit:
 
 The user is a human, not an AI. They are the Boss, not a developer in your team. They should never have to read source, parse internal jargon, or set up test scenarios from a sentence-long description.
 
+5. **Deliver it IN THE CHAT, in full.** *(Boss-dictated 2026-09-15: "Bring the tutorial in detailed
+steps here, and consider it a standing order for my future tests and examinations.")* The complete
+tutorial — every step, every expected screen, every failure mode — is written into the message itself.
+Never attach it as a file and summarise it; never point him at a path. The durable copy in
+`lab/reports/PJ-NNN-BOSS-TEST-YYYY-MM-DD.md` is the ARCHIVE for the session log and the next session,
+not the delivery. Write both.
+
 This rule sits at the same tier as Working Agreement #4 (validate before shipping) and Standing Order #5 (state-of-standing record). It overrides terseness and overrides delivery pressure.
 
 ## Plan Approval = Build Approval (top principal)
